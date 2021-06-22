@@ -1,5 +1,99 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="ru_RU" version="2.1">
 <context>
+    <name>Card</name>
+    <message>
+        <source>Outline</source>
+        <translation>Контур</translation>
+    </message>
+</context>
+<context>
+    <name>CardForm.ui</name>
+    <message>
+        <source>Go in</source>
+        <translation>Входить</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPage</name>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Показать панель инструментов тегов</translation>
+    </message>
+    <message>
+        <source>Card view of %1</source>
+        <translation>Карточка вида %1</translation>
+    </message>
+    <message>
+        <source>Card view page</source>
+        <translation>Страница просмотра карты</translation>
+    </message>
+    <message>
+        <source>Card View</source>
+        <translation>Карточка</translation>
+    </message>
+    <message>
+        <source>Show the card view</source>
+        <translation>Показать карточку</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPageForm.ui</name>
+    <message>
+        <source>Go up</source>
+        <translation>Подниматься</translation>
+    </message>
+    <message>
+        <source>Add an item</source>
+        <translation>Добавить товар</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolbox</name>
+    <message>
+        <source>Show the card view toolbox</source>
+        <translation>Показать панель инструментов просмотра карточек</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Отображать</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Режим отображения:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Отступ дерева:</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Показать схему</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Показать заметки</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Показать теги</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Показать количество символов</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Показать количество слов</translation>
+    </message>
+    <message>
+        <source>Card size:</source>
+        <translation>Размер карты:</translation>
+    </message>
+</context>
+<context>
     <name>CheckableTree</name>
     <message>
         <source>Level %1</source>
@@ -393,10 +487,6 @@
         <translation>Текст</translation>
     </message>
     <message>
-        <source>Markdown</source>
-        <translation>Уценка</translation>
-    </message>
-    <message>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -669,33 +759,6 @@
     </message>
 </context>
 <context>
-    <name>LeftDock</name>
-    <message>
-        <source>Show navigation</source>
-        <translation>Показать навигацию</translation>
-    </message>
-    <message>
-        <source>Show recent sheets</source>
-        <translation>Показать последние листы</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation dock</source>
-        <translation>&amp; Док-станция для навигации</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation>&amp; Навигация</translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation>&amp; Документы</translation>
-    </message>
-    <message>
-        <source>Show recent notes</source>
-        <translation>Показать последние заметки</translation>
-    </message>
-</context>
-<context>
     <name>ListItemAttributes</name>
     <message>
         <source>Non printable</source>
@@ -733,12 +796,20 @@
         <translation>Мусор</translation>
     </message>
     <message>
+        <source>Select</source>
+        <translation>Выбирать</translation>
+    </message>
+    <message>
         <source>Add</source>
         <translation>Добавлять</translation>
     </message>
     <message>
         <source>Projects</source>
         <translation>Проекты</translation>
+    </message>
+    <message>
+        <source>Navigation list</source>
+        <translation>Список навигации</translation>
     </message>
     <message>
         <source>is a folder</source>
@@ -805,6 +876,10 @@
         <translation>Сделать активным проектом</translation>
     </message>
     <message>
+        <source>Close this project</source>
+        <translation>Закрыть этот проект</translation>
+    </message>
+    <message>
         <source>Rename</source>
         <translation>Переименовать</translation>
     </message>
@@ -844,18 +919,6 @@
         <source>Send to trash</source>
         <translation>Отправить в корзину</translation>
     </message>
-    <message>
-        <source>Navigation list</source>
-        <translation>Список навигации</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation>Выбирать</translation>
-    </message>
-    <message>
-        <source>Close this project</source>
-        <translation>Закрыть этот проект</translation>
-    </message>
 </context>
 <context>
     <name>NavigationListForm.ui</name>
@@ -870,6 +933,17 @@
     <message>
         <source>Select</source>
         <translation>Выбирать</translation>
+    </message>
+</context>
+<context>
+    <name>NavigationProjectToolbox</name>
+    <message>
+        <source>Show navigation toolbox</source>
+        <translation>Показать панель инструментов навигации</translation>
+    </message>
+    <message>
+        <source>Navigation Project Toolbox</source>
+        <translation>Панель инструментов проекта навигации</translation>
     </message>
 </context>
 <context>
@@ -916,6 +990,14 @@
         <source>Create</source>
         <translation>Создавать</translation>
     </message>
+    <message>
+        <source>Quantity to create:</source>
+        <translation>Количество для создания:</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Отмена</translation>
+    </message>
 </context>
 <context>
     <name>NewProjectPage</name>
@@ -943,16 +1025,8 @@
         <translation>Файл проекта:</translation>
     </message>
     <message>
-        <source>project file</source>
-        <translation>файл проекта</translation>
-    </message>
-    <message>
         <source>Project path :</source>
         <translation>Путь к проекту:</translation>
-    </message>
-    <message>
-        <source>project path</source>
-        <translation>путь проекта</translation>
     </message>
     <message>
         <source>Select</source>
@@ -973,6 +1047,14 @@
     <message>
         <source>Dictionary :</source>
         <translation>Словарь :</translation>
+    </message>
+    <message>
+        <source>Project file</source>
+        <translation>Файл проекта</translation>
+    </message>
+    <message>
+        <source>Project path</source>
+        <translation>Путь к проекту</translation>
     </message>
 </context>
 <context>
@@ -1054,29 +1136,6 @@
     </message>
 </context>
 <context>
-    <name>NoteSearchItemForm.ui</name>
-    <message>
-        <source>Search</source>
-        <translation>Поиск</translation>
-    </message>
-    <message>
-        <source>Show tags list</source>
-        <translation>Показать список тегов</translation>
-    </message>
-    <message>
-        <source>Deselect tags</source>
-        <translation>Отменить выбор тегов</translation>
-    </message>
-    <message>
-        <source>Note search result list</source>
-        <translation>Обратите внимание на список результатов поиска</translation>
-    </message>
-    <message>
-        <source>Note overview list</source>
-        <translation>Обзорный список заметок</translation>
-    </message>
-</context>
-<context>
     <name>OutlinePad</name>
     <message>
         <source>Open outline</source>
@@ -1099,6 +1158,82 @@
     </message>
 </context>
 <context>
+    <name>OverviewPage</name>
+    <message>
+        <source>Overview page</source>
+        <translation>Обзорная страница</translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation>Обзор</translation>
+    </message>
+    <message>
+        <source>Show the overview</source>
+        <translation>Показать обзор</translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Показать панель инструментов тегов</translation>
+    </message>
+    <message>
+        <source>The focus is currently on %1</source>
+        <translation>В настоящее время основное внимание уделяется %1</translation>
+    </message>
+    <message>
+        <source>Overview of %1</source>
+        <translation>Обзор %1</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewPageForm.ui</name>
+    <message>
+        <source>Unfocus</source>
+        <translation>Расфокусировать</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolbox</name>
+    <message>
+        <source>Show the overview toolbox</source>
+        <translation>Показать набор инструментов обзора</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Отображать</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Режим отображения:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Отступ дерева:</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Показать схему</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Показать заметки</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Показать теги</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Показать количество символов</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Показать количество слов</translation>
+    </message>
+</context>
+<context>
     <name>OverviewTree</name>
     <message>
         <source>Level %1</source>
@@ -1109,24 +1244,8 @@
         <translation>этикетка: %1</translation>
     </message>
     <message>
-        <source>has %1 sub-items</source>
-        <translation>имеет подпункты %1</translation>
-    </message>
-    <message>
         <source>navigation item</source>
         <translation>элемент навигации</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Открыть документ</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Открыть документ в новой вкладке</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Открыть документ в окне</translation>
     </message>
     <message>
         <source>Enter label</source>
@@ -1219,6 +1338,14 @@
     <message>
         <source>Send to trash</source>
         <translation>Отправить в корзину</translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation>есть дети</translation>
+    </message>
+    <message>
+        <source>Item menu</source>
+        <translation>Меню предметов</translation>
     </message>
 </context>
 <context>
@@ -1331,6 +1458,14 @@
         <source>Install new dictionaries</source>
         <translation>Установить новые словари</translation>
     </message>
+    <message>
+        <source>Notes</source>
+        <translation>Заметки</translation>
+    </message>
+    <message>
+        <source>Note folder:</source>
+        <translation>Папка для заметок:</translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -1386,6 +1521,80 @@
     </message>
 </context>
 <context>
+    <name>RelationshipPanel</name>
+    <message>
+        <source>Note</source>
+        <translation>Примечание</translation>
+    </message>
+    <message>
+        <source>Type your text here …</source>
+        <translation>Вводите текст здесь …</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Открыть</translation>
+    </message>
+    <message>
+        <source>Open in another view</source>
+        <translation>Открыть в другом представлении</translation>
+    </message>
+    <message>
+        <source>Open in new window</source>
+        <translation>Открыть в новом окне</translation>
+    </message>
+    <message>
+        <source>Dissociate</source>
+        <translation>Диссоциировать</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Переименовать</translation>
+    </message>
+    <message>
+        <source>Send to trash</source>
+        <translation>Отправить в корзину</translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
+        <translation>Переименовать элемент</translation>
+    </message>
+</context>
+<context>
+    <name>RelationshipPanelForm.ui</name>
+    <message>
+        <source>All</source>
+        <translation>Все</translation>
+    </message>
+    <message>
+        <source>Extend this panel</source>
+        <translation>Расширить эту панель</translation>
+    </message>
+    <message>
+        <source>Hide the sub panel</source>
+        <translation>Скрыть дополнительную панель</translation>
+    </message>
+    <message>
+        <source>Open item</source>
+        <translation>Открытый элемент</translation>
+    </message>
+    <message>
+        <source>Close this panel</source>
+        <translation>Закройте эту панель</translation>
+    </message>
+    <message>
+        <source>Proposed</source>
+        <translation>Предложил</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation>Заметки</translation>
+    </message>
+    <message>
+        <source>Relationship list</source>
+        <translation>Список отношений</translation>
+    </message>
+</context>
+<context>
     <name>RestoreListView</name>
     <message>
         <source>Restore</source>
@@ -1431,45 +1640,6 @@
     <message>
         <source>List of trashed items to be restored</source>
         <translation>Список удаленных элементов для восстановления</translation>
-    </message>
-</context>
-<context>
-    <name>RightDock</name>
-    <message>
-        <source>&amp;Tools dock</source>
-        <translation>Док &amp; Инструменты</translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Редактировать</translation>
-    </message>
-    <message>
-        <source>&amp;Properties</source>
-        <translation>&amp;Характеристики</translation>
-    </message>
-    <message>
-        <source>&amp;Tags</source>
-        <translation>&amp; Теги</translation>
-    </message>
-    <message>
-        <source>&amp;Overview</source>
-        <translation>&amp; Обзор</translation>
-    </message>
-    <message>
-        <source>Show overview toolbox</source>
-        <translation>Показать панель инструментов обзора</translation>
-    </message>
-    <message>
-        <source>Show edit toolbox</source>
-        <translation>Показать панель инструментов редактирования</translation>
-    </message>
-    <message>
-        <source>Show properties toolbox</source>
-        <translation>Показать панель свойств</translation>
-    </message>
-    <message>
-        <source>Show tags toolbox</source>
-        <translation>Показать панель инструментов тегов</translation>
     </message>
 </context>
 <context>
@@ -1572,6 +1742,100 @@
     <message>
         <source>Cut</source>
         <translation>Резать</translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation>&amp;Настройки</translation>
+    </message>
+    <message>
+        <source>&amp;Print</source>
+        <translation>&amp;Распечатать</translation>
+    </message>
+    <message>
+        <source>Fullscreen</source>
+        <translation>Полноэкранный</translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
+        <translation>Центрировать текстовый курсор по вертикали</translation>
+    </message>
+    <message>
+        <source>&amp;User manual</source>
+        <translation>&amp;Руководство пользователя</translation>
+    </message>
+    <message>
+        <source>&amp;New Project</source>
+        <translation>&amp;Новый проект</translation>
+    </message>
+    <message>
+        <source>&amp;Check spelling</source>
+        <translation>&amp;Проверять орфографию</translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation>&amp;Открыть</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation>&amp;Сохранить</translation>
+    </message>
+    <message>
+        <source>&amp;Save All</source>
+        <translation>&amp;Сохранить все</translation>
+    </message>
+    <message>
+        <source>&amp;Save As …</source>
+        <translation>&amp;Сохранить как …</translation>
+    </message>
+    <message>
+        <source>&amp;Quit</source>
+        <translation>&amp;Покидать</translation>
+    </message>
+    <message>
+        <source>Ctrl+Q</source>
+        <translation>Ctrl + Q</translation>
+    </message>
+    <message>
+        <source>Create a new page of the same type</source>
+        <translation>Создать новую страницу того же типа</translation>
+    </message>
+    <message>
+        <source>Add a quick note</source>
+        <translation>Добавить небольшую заметку</translation>
+    </message>
+    <message>
+        <source>Show relationships</source>
+        <translation>Показать отношения</translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <comment>center-vert-text-cursor</comment>
+        <translation>Alt + C</translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <comment>check-spelling</comment>
+        <translation>Shift + F7</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <comment>save-all-project</comment>
+        <translation>Ctrl + Shift + S</translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <comment>create-new-identical-page</comment>
+        <translation>Ctrl + Return</translation>
+    </message>
+    <message>
+        <source>Alt+R</source>
+        <comment>show-relationship-panel</comment>
+        <translation>Alt + R</translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <comment>add-quick-note</comment>
+        <translation>Alt + N</translation>
     </message>
 </context>
 <context>
@@ -1742,167 +2006,9 @@
         <source>Show properties toolbox</source>
         <translation>Показать панель свойств</translation>
     </message>
-</context>
-<context>
-    <name>SheetOverviewToolForm.ui</name>
     <message>
-        <source>Project</source>
-        <translation>Проект</translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation>Отображать</translation>
-    </message>
-    <message>
-        <source>Display mode :</source>
-        <translation>Режим отображения :</translation>
-    </message>
-    <message>
-        <source>Tree indentation :</source>
-        <translation>Отступ дерева:</translation>
-    </message>
-    <message>
-        <source>Show outline</source>
-        <translation>Показать схему</translation>
-    </message>
-    <message>
-        <source>Show notes</source>
-        <translation>Показать заметки</translation>
-    </message>
-    <message>
-        <source>Show tags</source>
-        <translation>Показать теги</translation>
-    </message>
-    <message>
-        <source>Show character count</source>
-        <translation>Показать количество символов</translation>
-    </message>
-    <message>
-        <source>Show word count</source>
-        <translation>Показать количество слов</translation>
-    </message>
-</context>
-<context>
-    <name>SheetOverviewTree</name>
-    <message>
-        <source>Level %1</source>
-        <translation>Уровень %1</translation>
-    </message>
-    <message>
-        <source>label: %1</source>
-        <translation>этикетка: %1</translation>
-    </message>
-    <message>
-        <source>has children</source>
-        <translation>есть дети</translation>
-    </message>
-    <message>
-        <source>navigation item</source>
-        <translation>элемент навигации</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Открыть документ</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Открыть документ в новой вкладке</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Открыть документ в окне</translation>
-    </message>
-    <message>
-        <source>Enter label</source>
-        <translation>Введите ярлык</translation>
-    </message>
-    <message>
-        <source>Enter name</source>
-        <translation>Введите имя</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <translation>Контур</translation>
-    </message>
-    <message>
-        <source>c: %1</source>
-        <translation>c: %1</translation>
-    </message>
-    <message>
-        <source>all c: %1</source>
-        <translation>все c: %1</translation>
-    </message>
-    <message>
-        <source>w: %1</source>
-        <translation>w: %1</translation>
-    </message>
-    <message>
-        <source>all w: %1</source>
-        <translation>все w: %1</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation>Открыть</translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation>Открыть в новой вкладке</translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation>Открыть в новом окне</translation>
-    </message>
-    <message>
-        <source>Unset focus</source>
-        <translation>Снять фокус</translation>
-    </message>
-    <message>
-        <source>Set focus</source>
-        <translation>Установить фокус</translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation>Переименовать</translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation>Установить метку</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Резать</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Копировать</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation>Вставить</translation>
-    </message>
-    <message>
-        <source>Add before</source>
-        <translation>Добавить перед</translation>
-    </message>
-    <message>
-        <source>Add after</source>
-        <translation>Добавить после</translation>
-    </message>
-    <message>
-        <source>Add a sub-item</source>
-        <translation>Добавить подпункт</translation>
-    </message>
-    <message>
-        <source>Move up</source>
-        <translation>Двигаться вверх</translation>
-    </message>
-    <message>
-        <source>Move down</source>
-        <translation>Двигаться вниз</translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
-        <translation>Отправить в корзину</translation>
+        <source>Enable animations</source>
+        <translation>Включить анимацию</translation>
     </message>
 </context>
 <context>
@@ -2128,6 +2234,17 @@
     <message>
         <source>Show tags toolbox</source>
         <translation>Показать панель инструментов тегов</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>Примечание</translation>
+    </message>
+</context>
+<context>
+    <name>TextPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation>Меню страницы</translation>
     </message>
 </context>
 <context>
@@ -2381,30 +2498,12 @@
         <translation>Распечатать</translation>
     </message>
     <message>
-        <source>Settings</source>
-        <translation>Настройки</translation>
-    </message>
-    <message>
         <source>Help</source>
         <translation>Помощь</translation>
     </message>
     <message>
         <source>Go Back to the menu</source>
         <translation>Вернуться в меню</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPage</name>
-    <message>
-        <source>The focus is currently on %1</source>
-        <translation>В настоящее время основное внимание уделяется %1</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPageForm.ui</name>
-    <message>
-        <source>Unfocus</source>
-        <translation>Расфокусировать</translation>
     </message>
 </context>
 <context>
@@ -2439,14 +2538,6 @@
 <context>
     <name>main</name>
     <message>
-        <source>Fullscreen</source>
-        <translation>Полноэкранный</translation>
-    </message>
-    <message>
-        <source>Center vertically the text cursor</source>
-        <translation>Центрировать текстовый курсор по вертикали</translation>
-    </message>
-    <message>
         <source>Themes</source>
         <translation>Темы</translation>
     </message>
@@ -2463,36 +2554,8 @@
         <translation>О &amp; Qt</translation>
     </message>
     <message>
-        <source>&amp;New Project</source>
-        <translation>&amp;Новый проект</translation>
-    </message>
-    <message>
-        <source>&amp;Check spelling</source>
-        <translation>&amp;Проверять орфографию</translation>
-    </message>
-    <message>
-        <source>&amp;Open Project</source>
-        <translation>&amp; Открыть проект</translation>
-    </message>
-    <message>
         <source>Open an existing project</source>
         <translation>Открыть существующий проект</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation>Сохранить</translation>
-    </message>
-    <message>
-        <source>Save All</source>
-        <translation>Сохранить все</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation>Ctrl + Shift + S</translation>
-    </message>
-    <message>
-        <source>Save As …</source>
-        <translation>Сохранить как …</translation>
     </message>
     <message>
         <source>Save the &quot;%1&quot; project as …</source>
@@ -2535,10 +2598,6 @@
         <translation>Ошибка резервного копирования: резервный путь %1 доступен только для чтения</translation>
     </message>
     <message>
-        <source>&amp;Print</source>
-        <translation>&amp;Распечатать</translation>
-    </message>
-    <message>
         <source>&amp;Import</source>
         <translation>&amp;Импортировать</translation>
     </message>
@@ -2559,18 +2618,6 @@
         <translation>&amp; Закройте проект &quot;%1&quot;</translation>
     </message>
     <message>
-        <source>&amp;Quit</source>
-        <translation>&amp;Покидать</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Резать</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Копировать</translation>
-    </message>
-    <message>
         <source>Italic</source>
         <translation>Курсив</translation>
     </message>
@@ -2589,10 +2636,6 @@
     <message>
         <source>First steps</source>
         <translation>Первые шаги</translation>
-    </message>
-    <message>
-        <source>&amp;User manual</source>
-        <translation>&amp;Руководство пользователя</translation>
     </message>
     <message>
         <source>Back up successful</source>
