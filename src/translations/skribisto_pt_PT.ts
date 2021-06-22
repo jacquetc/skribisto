@@ -1,5 +1,99 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="pt_PT" version="2.1">
 <context>
+    <name>Card</name>
+    <message>
+        <source>Outline</source>
+        <translation>Contorno</translation>
+    </message>
+</context>
+<context>
+    <name>CardForm.ui</name>
+    <message>
+        <source>Go in</source>
+        <translation>Entre</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPage</name>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Mostrar caixa de ferramentas de tags</translation>
+    </message>
+    <message>
+        <source>Card view of %1</source>
+        <translation>Visualização do cartão de %1</translation>
+    </message>
+    <message>
+        <source>Card view page</source>
+        <translation>Página de visualização de cartão</translation>
+    </message>
+    <message>
+        <source>Card View</source>
+        <translation>Visualização de cartão</translation>
+    </message>
+    <message>
+        <source>Show the card view</source>
+        <translation>Mostrar a visualização do cartão</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPageForm.ui</name>
+    <message>
+        <source>Go up</source>
+        <translation>Suba</translation>
+    </message>
+    <message>
+        <source>Add an item</source>
+        <translation>Adicionar um item</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolbox</name>
+    <message>
+        <source>Show the card view toolbox</source>
+        <translation>Mostrar a caixa de ferramentas de visualização do cartão</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Exibição</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Modo de exibição:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Recuo da árvore:</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Mostrar esboço</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Mostrar notas</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Mostrar tags</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Mostrar contagem de personagens</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Mostrar contagem de palavras</translation>
+    </message>
+    <message>
+        <source>Card size:</source>
+        <translation>Tamanho do cartão:</translation>
+    </message>
+</context>
+<context>
     <name>CheckableTree</name>
     <message>
         <source>Level %1</source>
@@ -782,6 +876,10 @@
         <translation>Definir como projeto ativo</translation>
     </message>
     <message>
+        <source>Close this project</source>
+        <translation>Feche este projeto</translation>
+    </message>
+    <message>
         <source>Rename</source>
         <translation>Renomear</translation>
     </message>
@@ -820,10 +918,6 @@
     <message>
         <source>Send to trash</source>
         <translation>Enviar para o lixo</translation>
-    </message>
-    <message>
-        <source>Close this project</source>
-        <translation>Feche este projeto</translation>
     </message>
 </context>
 <context>
@@ -895,6 +989,14 @@
     <message>
         <source>Create</source>
         <translation>Crio</translation>
+    </message>
+    <message>
+        <source>Quantity to create:</source>
+        <translation>Quantidade para criar:</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancelar</translation>
     </message>
 </context>
 <context>
@@ -1142,24 +1244,8 @@
         <translation>rótulo: %1</translation>
     </message>
     <message>
-        <source>has %1 sub-items</source>
-        <translation>tem subitens %1</translation>
-    </message>
-    <message>
         <source>navigation item</source>
         <translation>item de navegação</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Abrir documento</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Abra o documento em uma nova guia</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Abra o documento em uma janela</translation>
     </message>
     <message>
         <source>Enter label</source>
