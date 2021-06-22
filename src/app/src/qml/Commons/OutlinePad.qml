@@ -12,9 +12,19 @@ OutlinePadForm {
     //---------------------------------------------------------
     Component.onCompleted: {
 
-        if (outlineWritingZone.writingZone.textArea.length === 0) {
-            addOutlineToolButton.visible = true
-            outlineWritingZone.Layout.preferredHeight = 0
+        temp.start()
+    }
+
+    Timer{
+        id :temp
+        interval: 20
+        onTriggered: {
+            console.log("outlineWritingZone.writingZone.textArea.length", outlineWritingZone.writingZone.textArea.length)
+            if (outlineWritingZone.writingZone.textArea.length !== 0) {
+                outlineWritingZone.visible = true
+                addOutlineToolButton.visible = false
+                outlineWritingZone.Layout.preferredHeight = 400
+            }
         }
     }
 
@@ -39,6 +49,7 @@ OutlinePadForm {
         text: qsTr("Add outline")
         icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
+            addOutlineToolButton.visible = false
             outlineWritingZone.visible = true
             outlineWritingZone.forceActiveFocus()
             outlineWritingZone.Layout.preferredHeight = 400
