@@ -1,5 +1,99 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="uk_UA" version="2.1">
 <context>
+    <name>Card</name>
+    <message>
+        <source>Outline</source>
+        <translation>Контур</translation>
+    </message>
+</context>
+<context>
+    <name>CardForm.ui</name>
+    <message>
+        <source>Go in</source>
+        <translation>Заходь</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPage</name>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Показати набір інструментів тегів</translation>
+    </message>
+    <message>
+        <source>Card view of %1</source>
+        <translation>Вигляд картки %1</translation>
+    </message>
+    <message>
+        <source>Card view page</source>
+        <translation>Сторінка перегляду картки</translation>
+    </message>
+    <message>
+        <source>Card View</source>
+        <translation>Перегляд картки</translation>
+    </message>
+    <message>
+        <source>Show the card view</source>
+        <translation>Показати вигляд картки</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewPageForm.ui</name>
+    <message>
+        <source>Go up</source>
+        <translation>Підніматися</translation>
+    </message>
+    <message>
+        <source>Add an item</source>
+        <translation>Додайте елемент</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolbox</name>
+    <message>
+        <source>Show the card view toolbox</source>
+        <translation>Показати набір інструментів перегляду карт</translation>
+    </message>
+</context>
+<context>
+    <name>CardViewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Дисплей</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Режим відображення:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Відступ дерева:</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Показати контур</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Показати нотатки</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Показати теги</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Показати кількість символів</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Показати кількість слів</translation>
+    </message>
+    <message>
+        <source>Card size:</source>
+        <translation>Розмір картки:</translation>
+    </message>
+</context>
+<context>
     <name>CheckableTree</name>
     <message>
         <source>Level %1</source>
@@ -665,33 +759,6 @@
     </message>
 </context>
 <context>
-    <name>LeftDock</name>
-    <message>
-        <source>Show navigation</source>
-        <translation>Показати навігацію</translation>
-    </message>
-    <message>
-        <source>Show recent sheets</source>
-        <translation>Показати нещодавні сторінки</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation dock</source>
-        <translation>&amp;Навігаційна панель</translation>
-    </message>
-    <message>
-        <source>&amp;Navigation</source>
-        <translation>&amp;Навігація</translation>
-    </message>
-    <message>
-        <source>&amp;Documents</source>
-        <translation>&amp;Документи</translation>
-    </message>
-    <message>
-        <source>Show recent notes</source>
-        <translation>Показати нещодавні нотатки</translation>
-    </message>
-</context>
-<context>
     <name>ListItemAttributes</name>
     <message>
         <source>Non printable</source>
@@ -809,6 +876,10 @@
         <translation>Встановити активним проєктом</translation>
     </message>
     <message>
+        <source>Close this project</source>
+        <translation>Закрийте цей проект</translation>
+    </message>
+    <message>
         <source>Rename</source>
         <translation>Перейменувати</translation>
     </message>
@@ -847,10 +918,6 @@
     <message>
         <source>Send to trash</source>
         <translation>В смітник</translation>
-    </message>
-    <message>
-        <source>Close this project</source>
-        <translation>Закрийте цей проект</translation>
     </message>
 </context>
 <context>
@@ -922,6 +989,14 @@
     <message>
         <source>Create</source>
         <translation>Створити</translation>
+    </message>
+    <message>
+        <source>Quantity to create:</source>
+        <translation>Кількість для створення:</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Скасувати</translation>
     </message>
 </context>
 <context>
@@ -1061,29 +1136,6 @@
     </message>
 </context>
 <context>
-    <name>NoteSearchItemForm.ui</name>
-    <message>
-        <source>Search</source>
-        <translation>Пошук</translation>
-    </message>
-    <message>
-        <source>Show tags list</source>
-        <translation>Показати список нотаток</translation>
-    </message>
-    <message>
-        <source>Deselect tags</source>
-        <translation>Скасувати вибір тегів</translation>
-    </message>
-    <message>
-        <source>Note search result list</source>
-        <translation>Список результатів пошуку нотаток</translation>
-    </message>
-    <message>
-        <source>Note overview list</source>
-        <translation>Список всіх нотаток</translation>
-    </message>
-</context>
-<context>
     <name>OutlinePad</name>
     <message>
         <source>Open outline</source>
@@ -1106,6 +1158,82 @@
     </message>
 </context>
 <context>
+    <name>OverviewPage</name>
+    <message>
+        <source>Overview page</source>
+        <translation>Сторінка огляду</translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation>Огляд</translation>
+    </message>
+    <message>
+        <source>Show the overview</source>
+        <translation>Показати огляд</translation>
+    </message>
+    <message>
+        <source>Show tags toolbox</source>
+        <translation>Показати набір інструментів тегів</translation>
+    </message>
+    <message>
+        <source>The focus is currently on %1</source>
+        <translation>В даний час фокус зосереджений на %1</translation>
+    </message>
+    <message>
+        <source>Overview of %1</source>
+        <translation>Огляд %1</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewPageForm.ui</name>
+    <message>
+        <source>Unfocus</source>
+        <translation>Розфокусувати</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolbox</name>
+    <message>
+        <source>Show the overview toolbox</source>
+        <translation>Показати набір інструментів огляду</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewToolboxForm.ui</name>
+    <message>
+        <source>Display</source>
+        <translation>Дисплей</translation>
+    </message>
+    <message>
+        <source>Display mode:</source>
+        <translation>Режим відображення:</translation>
+    </message>
+    <message>
+        <source>Tree indentation:</source>
+        <translation>Відступ дерева:</translation>
+    </message>
+    <message>
+        <source>Show outline</source>
+        <translation>Показати контур</translation>
+    </message>
+    <message>
+        <source>Show notes</source>
+        <translation>Показати нотатки</translation>
+    </message>
+    <message>
+        <source>Show tags</source>
+        <translation>Показати теги</translation>
+    </message>
+    <message>
+        <source>Show character count</source>
+        <translation>Показати кількість символів</translation>
+    </message>
+    <message>
+        <source>Show word count</source>
+        <translation>Показати кількість слів</translation>
+    </message>
+</context>
+<context>
     <name>OverviewTree</name>
     <message>
         <source>Level %1</source>
@@ -1116,24 +1244,8 @@
         <translation>позначка: %1</translation>
     </message>
     <message>
-        <source>has %1 sub-items</source>
-        <translation>має %1 підпунктів</translation>
-    </message>
-    <message>
         <source>navigation item</source>
         <translation>навігаційний елемент</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Відкрити документ</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Відкрити документ в новій вкладці</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Відкрити документ у вікні</translation>
     </message>
     <message>
         <source>Enter label</source>
@@ -1226,6 +1338,14 @@
     <message>
         <source>Send to trash</source>
         <translation>Перемістити до смітника</translation>
+    </message>
+    <message>
+        <source>has children</source>
+        <translation>має дітей</translation>
+    </message>
+    <message>
+        <source>Item menu</source>
+        <translation>Елемент меню</translation>
     </message>
 </context>
 <context>
@@ -1523,45 +1643,6 @@
     </message>
 </context>
 <context>
-    <name>RightDock</name>
-    <message>
-        <source>&amp;Tools dock</source>
-        <translation>&amp;Панель інструментів</translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Редагувати</translation>
-    </message>
-    <message>
-        <source>&amp;Properties</source>
-        <translation>&amp;Властивості</translation>
-    </message>
-    <message>
-        <source>&amp;Tags</source>
-        <translation>&amp;Теги</translation>
-    </message>
-    <message>
-        <source>&amp;Overview</source>
-        <translation>&amp;Огляд</translation>
-    </message>
-    <message>
-        <source>Show overview toolbox</source>
-        <translation>Показати набір інструментів огляду</translation>
-    </message>
-    <message>
-        <source>Show edit toolbox</source>
-        <translation>Показати панель інструментів редагування</translation>
-    </message>
-    <message>
-        <source>Show properties toolbox</source>
-        <translation>Показати панель інструментів властивостей</translation>
-    </message>
-    <message>
-        <source>Show tags toolbox</source>
-        <translation>Показати набір інструментів тегів</translation>
-    </message>
-</context>
-<context>
     <name>RootPage</name>
     <message>
         <source>Ok</source>
@@ -1679,10 +1760,6 @@
         <translation>Центрувати курсор вертикально</translation>
     </message>
     <message>
-        <source>Alt+C</source>
-        <translation>Alt + C</translation>
-    </message>
-    <message>
         <source>&amp;User manual</source>
         <translation>&amp;Посібник користувача</translation>
     </message>
@@ -1695,10 +1772,6 @@
         <translation>&amp;Перевір орфографію</translation>
     </message>
     <message>
-        <source>Shift+F7</source>
-        <translation>Shift + F7</translation>
-    </message>
-    <message>
         <source>&amp;Open</source>
         <translation>&amp;Відчинено</translation>
     </message>
@@ -1709,10 +1782,6 @@
     <message>
         <source>&amp;Save All</source>
         <translation>&amp;Зберегти все</translation>
-    </message>
-    <message>
-        <source>Ctrl+Shift+S</source>
-        <translation>Ctrl + Shift + S</translation>
     </message>
     <message>
         <source>&amp;Save As …</source>
@@ -1731,24 +1800,42 @@
         <translation>Створіть нову сторінку того ж типу</translation>
     </message>
     <message>
-        <source>Ctrl+Return</source>
-        <translation>Ctrl + Return</translation>
-    </message>
-    <message>
         <source>Add a quick note</source>
         <translation>Додайте швидку нотатку</translation>
-    </message>
-    <message>
-        <source>Alt+N</source>
-        <translation>Alt + N</translation>
     </message>
     <message>
         <source>Show relationships</source>
         <translation>Показати стосунки</translation>
     </message>
     <message>
+        <source>Alt+C</source>
+        <comment>center-vert-text-cursor</comment>
+        <translation>Alt + C</translation>
+    </message>
+    <message>
+        <source>Shift+F7</source>
+        <comment>check-spelling</comment>
+        <translation>Shift + F7</translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <comment>save-all-project</comment>
+        <translation>Ctrl + Shift + S</translation>
+    </message>
+    <message>
+        <source>Ctrl+Return</source>
+        <comment>create-new-identical-page</comment>
+        <translation>Ctrl + Return</translation>
+    </message>
+    <message>
         <source>Alt+R</source>
+        <comment>show-relationship-panel</comment>
         <translation>Alt + R</translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <comment>add-quick-note</comment>
+        <translation>Alt + N</translation>
     </message>
 </context>
 <context>
@@ -1922,168 +2009,6 @@
     <message>
         <source>Enable animations</source>
         <translation>Увімкнути анімацію</translation>
-    </message>
-</context>
-<context>
-    <name>SheetOverviewToolForm.ui</name>
-    <message>
-        <source>Project</source>
-        <translation>Проєкт</translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation>Показ</translation>
-    </message>
-    <message>
-        <source>Display mode :</source>
-        <translation>Режим показу:</translation>
-    </message>
-    <message>
-        <source>Tree indentation :</source>
-        <translation>Деревовидний відступ:</translation>
-    </message>
-    <message>
-        <source>Show outline</source>
-        <translation>Показати обрис</translation>
-    </message>
-    <message>
-        <source>Show notes</source>
-        <translation>Показати нотатки</translation>
-    </message>
-    <message>
-        <source>Show tags</source>
-        <translation>Показати теги</translation>
-    </message>
-    <message>
-        <source>Show character count</source>
-        <translation>Показати кількість символів</translation>
-    </message>
-    <message>
-        <source>Show word count</source>
-        <translation>Показати кількість слів</translation>
-    </message>
-</context>
-<context>
-    <name>SheetOverviewTree</name>
-    <message>
-        <source>Level %1</source>
-        <translation>Рівень %1</translation>
-    </message>
-    <message>
-        <source>label: %1</source>
-        <translation>позначка: %1</translation>
-    </message>
-    <message>
-        <source>has children</source>
-        <translation>має нащадків</translation>
-    </message>
-    <message>
-        <source>navigation item</source>
-        <translation>навігаційний елемент</translation>
-    </message>
-    <message>
-        <source>Open document</source>
-        <translation>Відкрити документ</translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation>Відкрити документ в новій вкладці</translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation>Відкрити документ у вікні</translation>
-    </message>
-    <message>
-        <source>Enter label</source>
-        <translation>Ввести позначку</translation>
-    </message>
-    <message>
-        <source>Enter name</source>
-        <translation>Ввести ім’я</translation>
-    </message>
-    <message>
-        <source>Outline</source>
-        <translation>Обрис</translation>
-    </message>
-    <message>
-        <source>c: %1</source>
-        <translation>c: %1</translation>
-    </message>
-    <message>
-        <source>all c: %1</source>
-        <translation>всі c: %1</translation>
-    </message>
-    <message>
-        <source>w: %1</source>
-        <translation>w: %1</translation>
-    </message>
-    <message>
-        <source>all w: %1</source>
-        <translation>всі w: %1</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation>Відкрити</translation>
-    </message>
-    <message>
-        <source>Open in new tab</source>
-        <translation>Відкрити в новій вкладці</translation>
-    </message>
-    <message>
-        <source>Open in new window</source>
-        <translation>Відкрити у новому вікні</translation>
-    </message>
-    <message>
-        <source>Unset focus</source>
-        <translation>Зняти фокус</translation>
-    </message>
-    <message>
-        <source>Set focus</source>
-        <translation>Встановити фокус</translation>
-    </message>
-    <message>
-        <source>Rename</source>
-        <translation>Перейменувати</translation>
-    </message>
-    <message>
-        <source>Set label</source>
-        <translation>Встановити позначку</translation>
-    </message>
-    <message>
-        <source>Cut</source>
-        <translation>Вирізати</translation>
-    </message>
-    <message>
-        <source>Copy</source>
-        <translation>Копіювати</translation>
-    </message>
-    <message>
-        <source>Paste</source>
-        <translation>Вставити</translation>
-    </message>
-    <message>
-        <source>Add before</source>
-        <translation>Додати до</translation>
-    </message>
-    <message>
-        <source>Add after</source>
-        <translation>Додати після</translation>
-    </message>
-    <message>
-        <source>Add a sub-item</source>
-        <translation>Додати підпункт</translation>
-    </message>
-    <message>
-        <source>Move up</source>
-        <translation>Підняти вгору</translation>
-    </message>
-    <message>
-        <source>Move down</source>
-        <translation>Опустити</translation>
-    </message>
-    <message>
-        <source>Send to trash</source>
-        <translation>До смітника</translation>
     </message>
 </context>
 <context>
@@ -2579,20 +2504,6 @@
     <message>
         <source>Go Back to the menu</source>
         <translation>Поверніться до меню</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPage</name>
-    <message>
-        <source>The focus is currently on %1</source>
-        <translation>Фокус наразі на %1</translation>
-    </message>
-</context>
-<context>
-    <name>WriteOverviewPageForm.ui</name>
-    <message>
-        <source>Unfocus</source>
-        <translation>Зняти фокус</translation>
     </message>
 </context>
 <context>
