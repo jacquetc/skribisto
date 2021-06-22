@@ -2316,7 +2316,7 @@ NavigationListForm {
 
                                             onTriggered: {
 
-                                                if (selectedTreeItemsIds) {
+                                                if (selectedTreeItemsIds.length > 0) {
                                                     console.log("cut action",
                                                                  menu.projectId,
                                                                 selectedTreeItemsIds)
@@ -2349,7 +2349,7 @@ NavigationListForm {
                                             enabled: listView.enabled
 
                                             onTriggered: {
-                                                if (selectedTreeItemsIds) {
+                                                if (selectedTreeItemsIds.length > 0) {
                                                     console.log("copy action",
                                                                  menu.projectId,
                                                                 selectedTreeItemsIds)
