@@ -282,7 +282,13 @@ RootPageForm {
     Connections{
         target: rootWindow.protectedSignals
         function onFullScreenCalled(value){
-            headerRowLayout.visible = !value
+            if(value){
+                hideHeaderRowLayout()
+            }
+            else {
+                showHeaderRowLayout()
+            }
+
         }
 
 
@@ -291,7 +297,7 @@ RootPageForm {
     Item{
         id: headerShowZone
 
-        anchors.leftMargin: 50
+        anchors.leftMargin: 0
         anchors.rightMargin: 50
         anchors.top: parent.top
         anchors.left: parent.left
@@ -315,7 +321,7 @@ RootPageForm {
                 }
 
 
-                headerRowLayout.visible = true
+                showHeaderRowLayout()
             }
         }
         HoverHandler{
@@ -323,7 +329,7 @@ RootPageForm {
 
             onHoveredChanged: {
                 if(hovered){
-                    headerRowLayout.visible = true
+                    showHeaderRowLayout()
                 }
             }
         }
@@ -332,7 +338,7 @@ RootPageForm {
     headerStayVisibleHoverHandler.enabled: headerRowLayout.visible && rootWindow.isDistractionFree
     headerStayVisibleHoverHandler.onHoveredChanged: {
         if(!headerStayVisibleHoverHandler.hovered){ // leaving
-            headerRowLayout.visible = false
+            hideHeaderRowLayout()
         }
     }
 
@@ -350,11 +356,67 @@ RootPageForm {
         id: headerStayVisibleTimer
         interval: 5000
         onTriggered: {
-            headerRowLayout.visible = false
+            hideHeaderRowLayout()
         }
     }
 
+    function showHeaderRowLayout() {
+//        if(SkrSettings.ePaperSettings.animationEnabled){
+//            showHeaderAnimation.start()
+//        }
+//        else{
+            headerRowLayout.visible = true
+//        }
+    }
 
+    function hideHeaderRowLayout() {
+        if(!rootWindow.isDistractionFree){
+            return
+        }
+
+//        if(SkrSettings.ePaperSettings.animationEnabled){
+//            hideHeaderAnimation.start()
+//        }
+//        else{
+            headerRowLayout.visible = false
+//        }
+    }
+
+//    SequentialAnimation {
+//        id: hideHeaderAnimation
+
+//        NumberAnimation{
+//            //target: headerRowLayout
+//            property: "headerRowLayoutPreferredHeight"
+//            from: 30
+//            to: 0
+//            easing.type: Easing.InQuad
+//            duration: 10000
+//        }
+//        PropertyAction {
+//            target: headerRowLayout
+//            property: "visible"
+//            value: false
+//        }
+//    }
+//    SequentialAnimation {
+//        id: showHeaderAnimation
+
+//        PropertyAction {
+//            target: headerRowLayout
+//            property: "visible"
+//            value: true
+//        }
+//        NumberAnimation{
+//            //target: headerRowLayout
+//            property: "headerRowLayoutPreferredHeight"
+//            from: 0
+//            to: 30
+//            easing.type: Easing.InQuad
+//            duration: 10000
+//        }
+
+//    }
 
     //------------------------------------------------------------
     //------------------------------------------------------------

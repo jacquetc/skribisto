@@ -262,8 +262,8 @@ ApplicationWindow {
             } else {
                 visibility = Window.AutomaticVisibility
             }
-            SkrTheme.setDistractionFree(value)
             rootWindow.isDistractionFree = value
+            SkrTheme.setDistractionFree(value)
         }
     }
     Action {

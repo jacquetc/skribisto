@@ -27,6 +27,7 @@ SkrPopup {
                 focus: true
                 Layout.preferredWidth: 150
                 Layout.fillHeight: true
+                spacing: 2
             }
 
 

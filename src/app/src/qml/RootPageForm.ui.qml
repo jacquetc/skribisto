@@ -19,6 +19,7 @@ Item {
     property alias showRightDockButton: showRightDockButton
     property alias topToolBarRepeater: topToolBarRepeater
     property alias headerRowLayout: headerRowLayout
+    property alias headerRowLayoutPreferredHeight: headerRowLayout.layoutPreferredHeight
     property alias headerStayVisibleHoverHandler: headerStayVisibleHoverHandler
     property alias headerStayVisibleTapHandler: headerStayVisibleTapHandler
     property int showLeftDockButtonWidth: 30
@@ -31,10 +32,10 @@ Item {
 
         RowLayout {
             id: headerRowLayout
-            width: 100
-            height: 100
             spacing: 0
-            Layout.preferredHeight: 30
+
+            property int layoutPreferredHeight: 30
+            Layout.preferredHeight: layoutPreferredHeight
             Layout.fillWidth: true
 
 
@@ -148,21 +149,6 @@ Item {
                                                                             * rightDrawer.position
 
 
-                //                RowLayout {
-                //                    id: rowLayout
-                //                    Layout.fillHeight: true
-                //                    Layout.fillWidth: true
-                //                    spacing: 0
-
-                //                    Item {
-                //                        id: leftBase
-                //                        Layout.preferredWidth: leftBasePreferredWidth
-                //                        Layout.maximumWidth: leftBasePreferredWidth
-                //                        visible: !Globals.compactMode
-                //                        Layout.fillHeight: true
-
-
-                //                    }
 
 
                 Item {
@@ -177,17 +163,6 @@ Item {
 
                 }
 
-
-                //                    Item {
-                //                        id: rightBase
-                //                        Layout.preferredWidth: rightBasePreferredWidth
-                //                        visible: !Globals.compactMode
-                //                        Layout.fillHeight: true
-
-                //                    }
-
-
-                // }
             }
 
         }
