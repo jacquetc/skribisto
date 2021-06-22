@@ -18,6 +18,7 @@ SkrBasePage {
     property alias titleLabel: titleLabel
     property alias goUpToolButton: goUpToolButton
     property alias viewButtons: viewButtons
+    property alias addItemToolButton: addItemToolButton
 
     ColumnLayout {
         anchors.fill: parent
@@ -49,13 +50,13 @@ SkrBasePage {
                     Layout.fillHeight: true
                 }
 
-                //                    SkrToolButton {
-                //                        id: pageMenuToolButton
-                //                        text: qsTr("Page menu")
-                //                        icon.source: "qrc:///icons/backup/overflow-menu.svg"
-                //                        Layout.alignment: Qt.AlignCenter
-                //                        Layout.preferredHeight: 30
-                //                    }
+                SkrToolButton {
+                    id: addItemToolButton
+                    text: qsTr("Add an item")
+                    icon.source: "qrc:///icons/backup/list-add.svg"
+                    Layout.alignment: Qt.AlignCenter
+                    Layout.preferredHeight: 30
+                }
                 //                    SkrLabel {
                 //                        id: countLabel
                 //                        verticalAlignment: Qt.AlignVCenter

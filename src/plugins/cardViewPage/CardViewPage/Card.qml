@@ -31,7 +31,27 @@ CardForm {
 
 
     Component {
-        id: noteWritingZoneComponent
+        id: tagBoxComponent
+        TagPad {
+            id: tagPad
+
+            minimalMode: true
+            projectId: model.projectId
+            treeItemId: model.treeItemId
+
+            //proxy model for tag list :
+            SKRSearchTagListProxyModel {
+                id: tagProxyModel
+                projectIdFilter: model.projectId
+                treeItemIdFilter: model.treeItemId
+            }
+            tagListModel: tagProxyModel
+        }
+    }
+
+
+    Component {
+        id: outlineWritingZoneComponent
 
         OutlineWritingZone {
             id: writingZone
@@ -75,6 +95,10 @@ CardForm {
     //-----------dropArea----------------------------------------
     //-----------------------------------------------------------
 
+    touchTapHandler.onLongPressed: {
+        Globals.touchUsed  = true
+        draggableContent.dragging = true
+    }
 
 
 
@@ -96,7 +120,7 @@ CardForm {
         //        console.log("onActiveChanged",
         //                    mouseDragHandler.active, draggableContent.visualIndex)
         if (mouseDragHandler.active) {
-            console.log("active")
+            Globals.touchUsed  = false
             root.GridView.view.moveSourceIndex = draggableContent.visualIndex
             root.GridView.view.dragging = true
             draggableContent.dragging = true
@@ -122,6 +146,39 @@ CardForm {
     mouseDragHandler.grabPermissions: PointerHandler.CanTakeOverFromItems
                                       | PointerHandler.CanTakeOverFromAnything | PointerHandler.TakeOverForbidden
 
+
+
+    //--------------------------------------------------------------
+
+    touchDragHandler.onActiveChanged: {
+        //        console.log("onActiveChanged",
+        //                    touchDragHandler.active, draggableContent.visualIndex)
+        if (touchDragHandler.active) {
+            Globals.touchUsed  = true
+            root.GridView.view.moveSourceIndex = draggableContent.visualIndex
+            root.GridView.view.dragging = true
+            draggableContent.dragging = true
+            draggableContent.Drag.start()
+        } else {
+            draggableContent.Drag.drop()
+            root.GridView.view.dragging = false
+            draggableContent.dragging = false
+            root.GridView.view.moveSourceIndex = -2
+
+        }
+    }
+    touchDragHandler.enabled: draggableContent.dragging
+
+    touchDragHandler.onCanceled: {
+        console.log("onCanceled")
+        root.GridView.view.dragging = false
+        draggableContent.dragging = false
+        root.GridView.view.moveSourceIndex = -2
+    }
+
+
+    touchDragHandler.grabPermissions: PointerHandler.CanTakeOverFromItems
+                                      | PointerHandler.CanTakeOverFromAnything | PointerHandler.TakeOverForbidden
 
 
     //--------------------------------------------------------------

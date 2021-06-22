@@ -6,6 +6,7 @@ import "../../Items"
 
 SkrToolbox {
     property alias displayGroupBox: displayGroupBox
+    property alias cardSizeMultiplierSlider: cardSizeMultiplierSlider
     property alias showNotePadSwitch: showNotePadSwitch
     property alias showTagPadSwitch: showTagPadSwitch
     property alias showOutlineSwitch: showOutlineSwitch
@@ -48,6 +49,7 @@ SkrToolbox {
 
                         SkrLabel {
                             text: qsTr("Display mode:")
+                            visible: false
                         }
 
                         SkrSlider {
@@ -55,10 +57,22 @@ SkrToolbox {
                             stepSize: 1
                             from: 0
                             to: 2
+                            visible: false
+                        }
+
+                        SkrLabel {
+                            text: qsTr("Card size:")
+                        }
+                        SkrSlider {
+                            id: cardSizeMultiplierSlider
+                            stepSize: 0.1
+                            from: 1
+                            to: 3
                         }
 
                         SkrLabel {
                             text: qsTr("Tree indentation:")
+                            visible: false
                         }
 
                         SkrSlider {
@@ -66,6 +80,7 @@ SkrToolbox {
                             stepSize: 1
                             from: 0
                             to: 200
+                            visible: false
                         }
 
                         SkrSwitch {
@@ -84,10 +99,12 @@ SkrToolbox {
                         SkrSwitch {
                             id: showCharacterCountSwitch
                             text: qsTr("Show character count")
+                            visible: false
                         }
                         SkrSwitch {
                             id: showWordCountSwitch
                             text: qsTr("Show word count")
+                            visible: false
                         }
                     }
                 }

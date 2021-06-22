@@ -9,6 +9,7 @@ Item {
     id: root
     property alias model: visualModel.model
     property var proxyModel
+    property alias cardViewGrid: cardViewGrid
 
     clip: true
 
@@ -45,8 +46,8 @@ Item {
             leftMargin: 2
             rightMargin: 2
 
-            cellHeight: 300
-            cellWidth: 200
+            cellHeight: 300 * SkrSettings.cardViewSettings.cardSizeMultiplier
+            cellWidth: 200 * SkrSettings.cardViewSettings.cardSizeMultiplier
             interactive: !dragging
 
             model: visualModel

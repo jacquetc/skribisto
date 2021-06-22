@@ -781,7 +781,8 @@ WritingZoneForm {
                 contentYBehavior.enabled = true
                 return
             } else if (!textCenteringEnabled
-                       && flickable.contentY + value + 20 > flickable.contentHeight) {
+                       && flickable.contentY + value + 20 > flickable.contentHeight
+                       && flickable.contentHeight > textArea.height) {
                 flickable.contentY = flickable.contentHeight - textArea.viewHeight
                 contentYBehavior.enabled = true
                 return

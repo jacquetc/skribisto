@@ -111,6 +111,34 @@ CardViewPageForm {
         viewManager.loadProjectDependantPageAt(projectId, pageType, position)
     }
 
+    //--------------------------------------------------------
+    //--- Add Item-----------------------------------------
+    //--------------------------------------------------------
+
+    addItemToolButton.onClicked: {
+
+        newItemPopup.projectId =  root.projectId
+        newItemPopup.treeItemId =  root.currentParentId
+        newItemPopup.visualIndex = 0
+        newItemPopup.createFunction
+                = afterNewItemTypeIsChosen
+        newItemPopup.open()
+    }
+    function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
+        newItemPopup.close()
+
+        for(var i = 0; i < quantity ; i++){
+            cardViewProxyModel.addChildItem(
+                        projectId, treeItemId, pageType)
+        }
+        cardViewGrid.cardViewGrid.positionViewAtEnd()
+    }
+
+    NewItemPopup {
+        id: newItemPopup
+        anchors.centerIn: Overlay.overlay
+    }
+
     //-------------------------------------------------------------
     //-------CardView------------------------------------------
     //-------------------------------------------------------------

@@ -44,6 +44,10 @@
         <source>Go up</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Add an item</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CardViewToolbox</name>
@@ -84,6 +88,10 @@
     </message>
     <message>
         <source>Show word count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Card size:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -981,6 +989,14 @@
     <name>NewItemPopupForm.ui</name>
     <message>
         <source>Create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Quantity to create:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

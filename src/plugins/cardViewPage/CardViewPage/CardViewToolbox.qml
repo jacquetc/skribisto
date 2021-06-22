@@ -30,6 +30,17 @@ CardViewToolboxForm {
 //    }
 
 
+// card size :
+        cardSizeMultiplierSlider.value: SkrSettings.cardViewSettings.cardSizeMultiplier
+
+        Binding {
+            target: SkrSettings.cardViewSettings
+            property: "cardSizeMultiplier"
+            value: cardSizeMultiplierSlider.value
+            delayed: true
+            restoreMode: Binding.RestoreBindingOrValue
+        }
+
 //    // textWidthSlider :
 
 
@@ -45,15 +56,15 @@ CardViewToolboxForm {
 
 //    // showOutlineSwitch
 
-//    showOutlineSwitch.checked: SkrSettings.cardViewTreeSettings.outlineBoxVisible
+    showOutlineSwitch.checked: SkrSettings.cardViewSettings.outlineBoxVisible
 
-//    Binding {
-//        target: SkrSettings.cardViewTreeSettings
-//        property: "outlineBoxVisible"
-//        value: showOutlineSwitch.checked
-//        delayed: true
-//        restoreMode: Binding.RestoreBindingOrValue
-//    }
+    Binding {
+        target: SkrSettings.cardViewSettings
+        property: "outlineBoxVisible"
+        value: showOutlineSwitch.checked
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
 
 
 //    // showNotePadSwitch
@@ -70,15 +81,15 @@ CardViewToolboxForm {
 
 //    // showTagPadSwitch
 
-//    showTagPadSwitch.checked: SkrSettings.cardViewTreeSettings.tagBoxVisible
+    showTagPadSwitch.checked: SkrSettings.cardViewSettings.tagBoxVisible
 
-//    Binding {
-//        target: SkrSettings.cardViewTreeSettings
-//        property: "tagBoxVisible"
-//        value: showTagPadSwitch.checked
-//        delayed: true
-//        restoreMode: Binding.RestoreBindingOrValue
-//    }
+    Binding {
+        target: SkrSettings.cardViewSettings
+        property: "tagBoxVisible"
+        value: showTagPadSwitch.checked
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
 
 //    // showCharacterCountSwitch
 

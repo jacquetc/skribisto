@@ -1422,8 +1422,13 @@ OverviewTreeForm {
                                 ScriptAction {
                                     script: {
                                         // shakes the writingZone to avoid blanks when resizing
-                                        outlineBox.writingZone.flickable.contentY = 1
-                                        outlineBox.writingZone.flickable.contentY = 0
+                                        if(noteWritingZoneLoader.status === Loader.Ready){
+                                            outlineBox.writingZone.writingZone.flickable.contentY = 1
+                                            outlineBox.writingZone.writingZone.flickable.contentY = 0
+                                        }
+
+
+
                                     }
                                 }
                             }
@@ -1953,11 +1958,15 @@ OverviewTreeForm {
             newItemPopup.createFunction = afterNewItemTypeIsChosen
             newItemPopup.open()
         }
-        function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
+        function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
             newItemPopup.close()
-            var result = skrData.treeHub().addTreeItemAbove(projectId,
+            var result
+
+            for(var i = 0; i < quantity ; i++){
+                    result = skrData.treeHub().addTreeItemAbove(projectId,
                                                             treeItemId,
                                                             pageType)
+            }
 
             if (result.success) {
                 var newId = result.getData("treeItemId", -2)
@@ -1995,11 +2004,16 @@ OverviewTreeForm {
             newItemPopup.open()
         }
 
-        function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
+        function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
             newItemPopup.close()
-            var result = skrData.treeHub().addTreeItemBelow(projectId,
-                                                            treeItemId,
-                                                            pageType)
+
+            var result
+            for(var i = 0; i < quantity ; i++){
+                result = skrData.treeHub().addTreeItemBelow(projectId,
+                                                                treeItemId,
+                                                                pageType)
+            }
+
             if (result.success) {
                 var newId = result.getData("treeItemId", -2)
 
@@ -2033,12 +2047,16 @@ OverviewTreeForm {
             newItemPopup.open()
         }
 
-        function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
+        function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
             newItemPopup.close()
 
-            var result = skrData.treeHub().addChildTreeItem(projectId,
+            var result
+            for(var i = 0; i < quantity ; i++){
+                result = skrData.treeHub().addChildTreeItem(projectId,
                                                             treeItemId,
                                                             pageType)
+            }
+
             if (result.success) {
                 var newId = result.getData("treeItemId", -2)
 

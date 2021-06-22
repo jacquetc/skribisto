@@ -11,7 +11,9 @@ SkrPopup {
 
     property alias listView: listView
     property alias createButton: createButton
+    property alias cancelButton: cancelButton
     property alias detailsTextArea: detailsTextArea
+    property alias quantitySpinbox: quantitySpinbox
 
     ColumnLayout {
         anchors.fill: parent
@@ -46,11 +48,44 @@ SkrPopup {
 
         }
 
+        RowLayout{
+            Layout.alignment: Qt.AlignCenter
+
+            SkrLabel {
+                text: qsTr("Quantity to create:")
+            }
+
+            SkrSpinBox{
+                id: quantitySpinbox
+                from: 1
+                to: 50
+                value: 1
+
+                editable: true
 
 
-        SkrButton{
-            id: createButton
-            text: qsTr("Create")
+            }
+
+
+        }
+
+
+
+        RowLayout{
+
+            Layout.fillWidth: true
+            SkrButton{
+                id: cancelButton
+                Layout.alignment: Qt.AlignLeft
+                text: qsTr("Cancel")
+            }
+
+            SkrButton{
+                id: createButton
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignRight
+                text: qsTr("Create")
+            }
         }
 
     }

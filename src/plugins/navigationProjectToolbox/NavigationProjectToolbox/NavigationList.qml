@@ -771,9 +771,11 @@ NavigationListForm {
                         }
                     }
 
-                    function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
+                    function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
 
-                        addItemAtCurrentParent(pageType)
+                        for(var i = 0; i < quantity ; i++){
+                            addItemAtCurrentParent(pageType)
+                        }
                     }
 
                     //----------------------------------------------------------------------
@@ -1219,6 +1221,7 @@ NavigationListForm {
                                         //grabPermissions: PointerHandler.TakeOverForbidden
                                         onActiveChanged: {
                                             if (active) {
+                                                Globals.touchUsed  = false
                                                 listView.interactive = false
                                                 moveSourceInt = content.visualIndex
                                                 moveSourceTreeItemId = content.treeItemId
@@ -1257,6 +1260,7 @@ NavigationListForm {
                                         //grabPermissions: PointerHandler.TakeOverForbidden
                                         onActiveChanged: {
                                             if (active) {
+                                                Globals.touchUsed  = true
                                                 listView.interactive = false
                                                 moveSourceInt = content.visualIndex
                                                 moveSourceTreeItemId = content.treeItemId
@@ -1306,6 +1310,7 @@ NavigationListForm {
                                             }
                                             if (eventPoint.event.device.type
                                                     === PointerDevice.Mouse) {
+                                                Globals.touchUsed  = false
                                                 listView.interactive = false
                                             }
 
@@ -1313,6 +1318,7 @@ NavigationListForm {
                                                     === PointerDevice.TouchScreen
                                                     | eventPoint.event.device.type
                                                     === PointerDevice.Stylus) {
+                                                Globals.touchUsed  = true
                                                 listView.interactive = true
                                             }
 
@@ -1344,6 +1350,7 @@ NavigationListForm {
                                             }
                                             if (eventPoint.event.device.type
                                                     === PointerDevice.Mouse) {
+                                                Globals.touchUsed  = false
                                                 listView.interactive = false
                                             }
 
@@ -1351,6 +1358,7 @@ NavigationListForm {
                                                     === PointerDevice.TouchScreen
                                                     | eventPoint.event.device.type
                                                     === PointerDevice.Stylus) {
+                                                Globals.touchUsed  = true
                                                 listView.interactive = true
                                             }
                                             //console.log("double tapped")
@@ -1391,6 +1399,7 @@ NavigationListForm {
                                         onSingleTapped: function(eventPoint) {
                                             listView.interactive = eventPoint.event.device.type
                                                     === PointerDevice.Mouse
+                                            Globals.touchUsed  = false
 
                                             if (menu.visible) {
                                                 menu.close()
@@ -1401,6 +1410,7 @@ NavigationListForm {
                                             priv.currentTreeItemId = model.treeItemId
 
 
+                                            menu.index = model.index
                                             menu.treeItemId = model.treeItemId
                                             menu.projectId = model.projectId
                                             menu.isOpenable = model.isOpenable
@@ -1427,6 +1437,7 @@ NavigationListForm {
                                         onSingleTapped: function(eventPoint) {
                                             listView.interactive = eventPoint.event.device.type
                                                     === PointerDevice.Mouse
+                                            Globals.touchUsed  = true
                                             listView.currentIndex = model.index
                                             priv.currentTreeItemId = model.treeItemId
                                             swipeDelegate.forceActiveFocus()
@@ -1456,6 +1467,7 @@ NavigationListForm {
                                                          | PointerDevice.Stylus
 
                                         onLongPressed: {
+                                            Globals.touchUsed  = true
 
                                             // needed to activate the grab handler
 
@@ -2009,6 +2021,7 @@ NavigationListForm {
 
 
 
+                                                    menu.index = model.index
                                                     menu.treeItemId = model.treeItemId
                                                     menu.projectId = model.projectId
                                                     menu.isOpenable = model.isOpenable
@@ -2102,6 +2115,7 @@ NavigationListForm {
                                     z: 101
                                     closePolicy: Popup.CloseOnPressOutside | Popup.CloseOnEscape
 
+                                    property int index
                                     property int treeItemId
                                     property int projectId
                                     property bool isOpenable
@@ -2416,12 +2430,15 @@ NavigationListForm {
                                                 newItemPopup.open()
                                             }
 
-                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
-                                                newItemPopup.close()
-                                                proxyModel.addItemAbove(
-                                                            projectId,
-                                                            treeItemId,
-                                                            pageType)
+                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
+
+                                                for(var i = 0; i < quantity ; i++){
+                                                    proxyModel.addItemAbove(
+                                                                projectId,
+                                                                treeItemId,
+                                                                pageType)
+
+                                                }
                                                 listView.itemAtIndex(
                                                             visualIndex).editName()
                                             }
@@ -2453,12 +2470,15 @@ NavigationListForm {
                                                 newItemPopup.open()
                                             }
 
-                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
-                                                newItemPopup.close()
-                                                proxyModel.addItemBelow(
-                                                            projectId,
-                                                            treeItemId,
-                                                            pageType)
+                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
+
+                                                for(var i = 0; i < quantity ; i++){
+                                                    proxyModel.addItemBelow(
+                                                                projectId,
+                                                                treeItemId,
+                                                                pageType)
+                                                }
+
                                                 listView.itemAtIndex(
                                                             visualIndex).editName()
                                             }
@@ -2493,8 +2513,7 @@ NavigationListForm {
                                                 newItemPopup.open()
                                             }
 
-                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType) {
-                                                newItemPopup.close()
+                                            function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
 
                                                 // push new view
                                                 var newItem = navigationListStackView.push(
@@ -2506,7 +2525,9 @@ NavigationListForm {
                                                             priv.transitionOperation)
                                                 newItem.setCurrent()
 
-                                                addItemAtCurrentParent(pageType)
+                                                for(var i = 0; i < quantity ; i++){
+                                                    addItemAtCurrentParent(pageType)
+                                                }
                                             }
                                         }
                                     }

@@ -14,6 +14,9 @@ FocusScope {
     property alias dropArea: dropArea
     property alias draggableContent: draggableContent
     property alias mouseDragHandler: mouseDragHandler
+    property alias touchDragHandler: touchDragHandler
+    property alias touchTapHandler: touchTapHandler
+
 
     property int visualIndex: DelegateModel.itemsIndex
     DropArea {
@@ -53,11 +56,30 @@ FocusScope {
                 anchors.fill: parent
                 RowLayout{
                     id: header
+                    Layout.alignment: Qt.AlignTop
 
                     DragHandler{
                         id: mouseDragHandler
                         acceptedDevices: PointerDevice.Mouse
                         target: draggableContent
+                        cursorShape: Qt.ClosedHandCursor
+
+                    }
+
+                    DragHandler{
+                        id: touchDragHandler
+                        acceptedDevices: PointerDevice.TouchScreen
+                                         | PointerDevice.Stylus
+                        target: draggableContent
+                        cursorShape: Qt.ClosedHandCursor
+
+                    }
+
+                    TapHandler {
+                        id: touchTapHandler
+                        acceptedDevices: PointerDevice.TouchScreen
+                                         | PointerDevice.Stylus
+
 
                     }
 
@@ -121,11 +143,23 @@ FocusScope {
                         }
                     }
 
+                    Loader {
+                        id: tagBoxLoader
+                        sourceComponent: tagBoxComponent
+                        asynchronous: true
 
+                        Layout.minimumHeight: 40
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 1
+                        Layout.rightMargin: 1
+                        visible: active
+
+                        active: SkrSettings.cardViewSettings.tagBoxVisible
+                    }
 
                     Loader {
-                        id: noteWritingZoneLoader
-                        sourceComponent: noteWritingZoneComponent
+                        id: outlineWritingZoneLoader
+                        sourceComponent: outlineWritingZoneComponent
                         asynchronous: true
 
                         Layout.fillHeight: true
@@ -133,6 +167,9 @@ FocusScope {
                         Layout.leftMargin: 1
                         Layout.rightMargin: 1
                         Layout.bottomMargin: 1
+                        visible: active
+
+                        active: SkrSettings.cardViewSettings.outlineBoxVisible
                     }
                 }
 
