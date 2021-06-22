@@ -28,7 +28,7 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.24" date="2021-06-22T00:00:00Z">
+    <release type="stable" version="1.9.25" date="2021-06-22T00:00:00Z">
       <description>
         <ul>
           <li>Card view: add drag &amp; drop</li>
@@ -36,7 +36,7 @@
           <li>Card view: toolbox manages size, tag and outline</li>
           <li>New item dialog: allow to set the quantity of the item to create</li>
           <li>Breadcrumb: adapt to small size</li>
-          <li>Navigation: fix 'Sort Alphabetically' action</li>
+          <li>Navigation: fix Sort Alphabetically action</li>
           <li>Navigation: Fix cut, copy, paste</li>
         </ul>
       </description>
