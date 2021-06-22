@@ -50,8 +50,12 @@ WritingGamesPageToolboxForm {
 
             event.accepted = true
             return true
-        }
+        }        
+        if((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_Z){
 
+            event.accepted = true
+            return true
+        }
         return false
     }
 

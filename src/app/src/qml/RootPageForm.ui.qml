@@ -8,8 +8,8 @@ import "Items"
 Item {
     id: rootPageBase
     property alias viewManager: multiViewArea.viewManager
-//    property int leftBasePreferredWidth: 0
-//    property int rightBasePreferredWidth: 0
+    //    property int leftBasePreferredWidth: 0
+    //    property int rightBasePreferredWidth: 0
     property alias mainMenuButton: mainMenuButton
     property alias showWelcomeButton: showWelcomeButton
     property alias baseForDrawers: baseForDrawers
@@ -18,7 +18,9 @@ Item {
     property alias showLeftDockButton: showLeftDockButton
     property alias showRightDockButton: showRightDockButton
     property alias topToolBarRepeater: topToolBarRepeater
-
+    property alias headerRowLayout: headerRowLayout
+    property alias headerStayVisibleHoverHandler: headerStayVisibleHoverHandler
+    property alias headerStayVisibleTapHandler: headerStayVisibleTapHandler
     property int showLeftDockButtonWidth: 30
     property int showRightDockButtonWidth: 30
 
@@ -35,6 +37,19 @@ Item {
             Layout.preferredHeight: 30
             Layout.fillWidth: true
 
+
+            HoverHandler{
+                id: headerStayVisibleHoverHandler
+                acceptedDevices: PointerDevice.Mouse
+            }
+
+            TapHandler{
+                id: headerStayVisibleTapHandler
+                acceptedDevices: PointerDevice.TouchScreen
+                                 | PointerDevice.Stylus
+
+
+            }
             SkrToolButton {
                 id: showLeftDockButton
 
@@ -70,8 +85,9 @@ Item {
             Breadcrumb {
                 id: breadcrumb
                 Layout.preferredHeight: 30
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                Layout.alignment: Qt.AlignCenter
                 Layout.fillWidth: true
+                Layout.minimumWidth: 300
             }
 
             RowLayout{
@@ -86,6 +102,7 @@ Item {
             Item {
                 id: stretcher
                 Layout.fillWidth: true
+                Layout.minimumWidth: rootPageBase.width / 6 > 300 ? 300 : 0
 
             }
 
@@ -126,51 +143,51 @@ Item {
                 id: columnLayout
                 anchors.fill: parent
                 anchors.leftMargin: ApplicationWindow.window.compactMode ? 0 : leftDrawer.width
-                                                                    * leftDrawer.position
+                                                                           * leftDrawer.position
                 anchors.rightMargin: ApplicationWindow.window.compactMode ? 0 : rightDrawer.width
-                                                                     * rightDrawer.position
+                                                                            * rightDrawer.position
 
 
-//                RowLayout {
-//                    id: rowLayout
-//                    Layout.fillHeight: true
-//                    Layout.fillWidth: true
-//                    spacing: 0
+                //                RowLayout {
+                //                    id: rowLayout
+                //                    Layout.fillHeight: true
+                //                    Layout.fillWidth: true
+                //                    spacing: 0
 
-//                    Item {
-//                        id: leftBase
-//                        Layout.preferredWidth: leftBasePreferredWidth
-//                        Layout.maximumWidth: leftBasePreferredWidth
-//                        visible: !Globals.compactMode
-//                        Layout.fillHeight: true
-
-
-//                    }
+                //                    Item {
+                //                        id: leftBase
+                //                        Layout.preferredWidth: leftBasePreferredWidth
+                //                        Layout.maximumWidth: leftBasePreferredWidth
+                //                        visible: !Globals.compactMode
+                //                        Layout.fillHeight: true
 
 
-                    Item {
-                        id: middleBase
+                //                    }
+
+
+                Item {
+                    id: middleBase
+                    anchors.fill: parent
+
+                    MultiViewArea{
+                        id: multiViewArea
+
                         anchors.fill: parent
-
-                        MultiViewArea{
-                            id: multiViewArea
-
-                            anchors.fill: parent
-                        }
-
                     }
 
-
-//                    Item {
-//                        id: rightBase
-//                        Layout.preferredWidth: rightBasePreferredWidth
-//                        visible: !Globals.compactMode
-//                        Layout.fillHeight: true
-
-//                    }
+                }
 
 
-               // }
+                //                    Item {
+                //                        id: rightBase
+                //                        Layout.preferredWidth: rightBasePreferredWidth
+                //                        visible: !Globals.compactMode
+                //                        Layout.fillHeight: true
+
+                //                    }
+
+
+                // }
             }
 
         }

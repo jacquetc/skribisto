@@ -18,7 +18,7 @@ RootPageForm {
 
 
     Component.onCompleted: {
-       populateProjectPageModel()
+        populateProjectPageModel()
     }
 
     //---------------------------------------------------------
@@ -279,6 +279,82 @@ RootPageForm {
     //-------------------------------------------------------------------------
     //--------------------------------------------------------------------------
     //-------------------------------------------------------------------------
+    Connections{
+        target: rootWindow.protectedSignals
+        function onFullScreenCalled(value){
+            headerRowLayout.visible = !value
+        }
+
+
+    }
+
+    Item{
+        id: headerShowZone
+
+        anchors.leftMargin: 50
+        anchors.rightMargin: 50
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 10
+        visible: !headerRowLayout.visible && rootWindow.isDistractionFree
+        TapHandler{
+            onTapped: function(eventPoint){
+
+                if(eventPoint.event.device.type === PointerDevice.Mouse){
+                    Globals.touchUsed  = false
+                }
+                if(eventPoint.event.device.type === PointerDevice.TouchScreen
+                        | eventPoint.event.device.type === PointerDevice.Stylus){
+                    Globals.touchUsed  = true
+
+                    if(headerStayVisibleTimer.running){
+                        headerStayVisibleTimer.stop()
+                    }
+                    headerStayVisibleTimer.start()
+                }
+
+
+                headerRowLayout.visible = true
+            }
+        }
+        HoverHandler{
+            acceptedDevices: PointerDevice.Mouse
+
+            onHoveredChanged: {
+                if(hovered){
+                    headerRowLayout.visible = true
+                }
+            }
+        }
+    }
+
+    headerStayVisibleHoverHandler.enabled: headerRowLayout.visible && rootWindow.isDistractionFree
+    headerStayVisibleHoverHandler.onHoveredChanged: {
+        if(!headerStayVisibleHoverHandler.hovered){ // leaving
+            headerRowLayout.visible = false
+        }
+    }
+
+    headerStayVisibleTapHandler.enabled: headerRowLayout.visible && rootWindow.isDistractionFree
+    headerStayVisibleTapHandler.onTapped: function(eventPoint){
+        if(headerStayVisibleTimer.running){
+            headerStayVisibleTimer.stop()
+        }
+        headerStayVisibleTimer.start()
+    }
+
+
+
+    Timer{
+        id: headerStayVisibleTimer
+        interval: 5000
+        onTriggered: {
+            headerRowLayout.visible = false
+        }
+    }
+
+
 
     //------------------------------------------------------------
     //------------------------------------------------------------
