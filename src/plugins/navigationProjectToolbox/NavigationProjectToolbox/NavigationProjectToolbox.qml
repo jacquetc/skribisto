@@ -87,14 +87,7 @@ SkrToolbox {
 
     function restoreTreeItemList(projectId, treeItemIdList) {
 
-        // restore is difficult to explain : a restored parent will restore its children, even those trashed years before. To avoid that,
-        // children trashed at the same minute will be checked to allow restore. The older ones will stay unchecked by default.
-        // All that is done in RestoreView.qml
-        var i
-        for (i = 0; i < treeItemIdList.length; i++) {
-            skrData.treeHub().untrashOnlyOneTreeItem(projectId,
-                                                     treeItemIdList[i])
-        }
+
 
         //console.log("restored: sheet:", sheetIdList)
     }

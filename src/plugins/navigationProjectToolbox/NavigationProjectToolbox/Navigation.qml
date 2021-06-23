@@ -16,7 +16,6 @@ NavigationForm {
     signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
     signal openDocumentInAnotherView(int projectId, int treeItemId)
     signal openDocumentInNewWindow(int projectId, int treeItemId)
-    signal restoreDocumentList(int projectId, var treeItemIdList)
 
     function setNavigationTreeItemId(projectId, treeItemId){
          stackView.get(0, StackView.DontLoad).setCurrentTreeItemId(projectId, treeItemId)
@@ -115,7 +114,6 @@ NavigationForm {
                 restoreListView.openDocument.connect(root.openDocument)
                 restoreListView.openDocumentInAnotherView.connect(root.openDocumentInAnotherView)
                 restoreListView.openDocumentInNewWindow.connect(root.openDocumentInNewWindow)
-                restoreListView.restoreDocumentList.connect(root.restoreDocumentList)
                 restoreListView.goBack.connect(root.popRestoreListView)
 
             }

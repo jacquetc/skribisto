@@ -22,7 +22,6 @@ RestoreListViewForm {
     signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
     signal openDocumentInAnotherView(int projectId, int treeItemId)
     signal openDocumentInNewWindow(int projectId, int treeItemId)
-    signal restoreDocumentList(int projectId, var treeItemIdList)
 
     property var trashedChildrenList: []
     onTrashedChildrenListChanged: {
@@ -100,8 +99,14 @@ RestoreListViewForm {
         }
         onTriggered: {
             var treeItemIdListToBeFinallyRestored = listView.getCheckedTreeItemIdList()
-
-            restoreDocumentList(currentProjectId, treeItemIdListToBeFinallyRestored)
+            // restore is difficult to explain : a restored parent will restore its children, even those trashed years before. To avoid that,
+            // children trashed at the same minute will be checked to allow restore. The older ones will stay unchecked by default.
+            // All that is done in RestoreView.qml
+            var i
+            for (i = 0; i < treeItemIdListToBeFinallyRestored.length; i++) {
+                skrData.treeHub().untrashOnlyOneTreeItem(currentProjectId,
+                                                         treeItemIdListToBeFinallyRestored[i])
+            }
             //console.log('finally restore list', currentProjectId, treeItemIdListToBeFinallyRestored)
 
         }
