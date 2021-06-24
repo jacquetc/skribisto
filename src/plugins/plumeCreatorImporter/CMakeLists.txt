@@ -11,8 +11,8 @@ set(PROJECT_NAME "skribisto-plugin-plumeCreatorImporter")
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION} )
 add_definitions(-DSKRIBISTO_PLUGIN_LIBRARY)
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Quick Svg QuickControls2 CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Quick Svg QuickControls2 CONFIG REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Quick Svg Sql QuickControls2 CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Quick Svg Sql QuickControls2 CONFIG REQUIRED)
 
 
 
@@ -35,7 +35,7 @@ add_library(${PROJECT_NAME} SHARED ${SRCS} ${RESOURCES})
 add_dependencies(${PROJECT_NAME} skribisto-data)
 add_dependencies(${PROJECT_NAME} skribisto)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::QuickControls2)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-data)
 
 

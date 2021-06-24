@@ -1,13 +1,12 @@
 #include "skrplumecreatorimporter.h"
 #include "skrdata.h"
-#include <QtSql/QSqlDatabase>
-#include <QtSql/QSqlError>
-#include <QtSql/QSqlRecord>
-#include <QtSql/QSqlQuery>
 #include <QUrl>
 #include <QTemporaryDir>
 #include <quazip/JlCompress.h>
 #include <QTextDocument>
+#include <QtSql/QSqlError>
+#include <QtSql/QSqlRecord>
+#include <QtSql/QSqlQuery>
 
 
 SKRPlumeCreatorImporter::SKRPlumeCreatorImporter(QObject *parent) : QObject(parent)

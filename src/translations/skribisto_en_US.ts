@@ -1764,7 +1764,7 @@
     <name>S:</name>
     <message>
         <source></source>
-        <comment>the capital letters are shortcuts, mark one letter similarly in your translation and translate the standalone letter accordingly later</comment>
+        <comment>translate this letter according to the shortcut * letter y)es</comment>
         <translation></translation>
     </message>
 </context>

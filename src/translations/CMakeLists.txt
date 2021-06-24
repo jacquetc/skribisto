@@ -19,7 +19,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lupdate")
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lupdate.exe")
+    set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/../../bin/lupdate.exe")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
 message(${LUPDATE_EXECUTABLE})
@@ -37,7 +37,7 @@ add_custom_target("update_ts_en_US" ALL
 
 set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease")
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease.exe")
+    set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/../../bin/lrelease.exe")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 message(${LRELEASE_EXECUTABLE})
 
@@ -48,7 +48,7 @@ foreach(TS_FILEPATH ${TS_FILES})
       string(REGEX MATCH "\\_([0-9a-zA-Z_]*)\\." LANGSTR ${TS_FILENAME})
       string(REPLACE "." ""  LANGSTR ${LANGSTR})
       set(QM_FILENAME "skribisto${LANGSTR}.qm")
-      add_custom_target("release_ts_${LANGSTR}" ALL
+      add_custom_target("release_ts${LANGSTR}" ALL
         COMMAND ${LRELEASE_EXECUTABLE} ${TS_FILEPATH} -silent -qm ${QM_FILENAME}
         DEPENDS ${TS_FILEPATH}
       )

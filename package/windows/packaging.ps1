@@ -2,9 +2,9 @@
 $env:Path += ";C:\Qt\5.15.2\mingw81_64\bin;C:\Qt\Tools\mingw810_64\bin;C:\Qt\Tools\CMake_64\bin"
 
 
+# clean
 Remove-Item -Recurse -Force -Path ../../../build_skribisto_Release
 mkdir ../../../build_skribisto_Release
-mkdir ../../../build_skribisto_Release/package
 
 # prepare
 cmake.exe -B../../../build_skribisto_Release -GNinja `
@@ -20,9 +20,6 @@ cmake.exe -B../../../build_skribisto_Release -GNinja `
 # compile
 cd ../../../build_skribisto_Release
 C:/Qt/Tools/Ninja/ninja.exe
-
-# clean
-Remove-Item -Recurse -Path package
 
 # copy
 mkdir package
