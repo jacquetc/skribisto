@@ -65,6 +65,11 @@ public:
     Q_INVOKABLE QString        getNativeCountryNameFromLocale(const QString& name) const;
     Q_INVOKABLE QString        getNativeLanguageNameFromLocale(const QString& name) const;
 
+    Q_INVOKABLE QStringList    findImporterNames() const;
+    Q_INVOKABLE QString        findImporterIconSource(const QString& name) const;
+    Q_INVOKABLE QString        findImporterButtonText(const QString& name) const;
+    Q_INVOKABLE QString        findImporterUrl(const QString& name) const;
+
 signals:
 
     void currentTranslationLanguageCodeChanged(const QString& langCode);

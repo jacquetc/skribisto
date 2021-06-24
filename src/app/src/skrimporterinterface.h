@@ -1,8 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2016 by Cyril Jacquet                                 *
+*   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmimporter.h                                                   *
+*  Filename: skrimporterinterface.h
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -19,39 +20,31 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef PLMIMPORTER_H
-#define PLMIMPORTER_H
+#ifndef SKRIMPORTERINTERFACE_H
+#define SKRIMPORTERINTERFACE_H
 
-#include <QObject>
-#include <QtSql/QSqlDatabase>
-
+#include <QString>
 #include "skrresult.h"
+#include "skrcoreinterface.h"
 
-class PLMImporter : public QObject {
-    Q_OBJECT
 
+class SKRImporterInterface : public SKRCoreInterface  {
 public:
 
-    explicit PLMImporter(QObject *parent = 0);
+    virtual ~SKRImporterInterface() {}
 
-    QSqlDatabase createSQLiteDbFrom(const QString& type,
-                                    const QUrl   & fileName,
-                                    int            projectId,
-                                    SKRResult    & result);
-    QSqlDatabase createEmptySQLiteProject(int            projectId,
-                                          SKRResult    & result,
-                                          const QString& sqlFile = "");
 
-signals:
-
-public slots:
-
-private:
-
-    //    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
-    // projectId, SKRResult &result);
-
-private:
+    virtual QString iconSource() const = 0;
+    virtual QString buttonText() const = 0;
+    virtual QString qmlUrl() const     = 0;
+    virtual int     weight() const {
+        return 500;
+    }
 };
 
-#endif // PLMIMPORTER_H
+#define SKRImporterInterface_iid "com.skribisto.ImporterInterface/1.0"
+
+
+Q_DECLARE_INTERFACE(SKRImporterInterface, SKRImporterInterface_iid)
+
+#endif // SKRIMPORTERINTERFACE_H

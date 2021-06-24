@@ -1,8 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2016 by Cyril Jacquet                                 *
+*   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmimporter.h                                                   *
+*  Filename: plugin.cpp
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,40 +19,23 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
+#include "plugin.h"
+#include "skrdata.h"
+#include "skrplumecreatorimporter.h"
+#include <QQmlApplicationEngine>
 
-#ifndef PLMIMPORTER_H
-#define PLMIMPORTER_H
+Plugin::Plugin(QObject *parent) : QObject(parent)
+{
+    qmlRegisterType<SKRPlumeCreatorImporter>("eu.skribisto.plumecreatorimporter",
+                                             1,
+                                             0,
+                                             "SKRPlumeCreatorImporter");
+}
 
-#include <QObject>
-#include <QtSql/QSqlDatabase>
+// ---------------------------------------------------
 
-#include "skrresult.h"
+Plugin::~Plugin()
+{}
 
-class PLMImporter : public QObject {
-    Q_OBJECT
 
-public:
-
-    explicit PLMImporter(QObject *parent = 0);
-
-    QSqlDatabase createSQLiteDbFrom(const QString& type,
-                                    const QUrl   & fileName,
-                                    int            projectId,
-                                    SKRResult    & result);
-    QSqlDatabase createEmptySQLiteProject(int            projectId,
-                                          SKRResult    & result,
-                                          const QString& sqlFile = "");
-
-signals:
-
-public slots:
-
-private:
-
-    //    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
-    // projectId, SKRResult &result);
-
-private:
-};
-
-#endif // PLMIMPORTER_H
+// ---------------------------------------------------

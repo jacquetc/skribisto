@@ -1,9 +1,11 @@
 import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQml 2.15
 import QtQuick.Layouts 1.15
-import "../Items"
-import "../Commons"
-import ".."
+import QtQuick.Controls 2.15
+
+import "../../Items"
+import "../../Commons"
+import "../.."
 
 Item {
     property alias goBackToolButton: goBackToolButton
@@ -13,6 +15,7 @@ Item {
     property alias plumeProjectFileTextField: plumeProjectFileTextField
     readonly property int columnWidth: 550
 
+    clip: true
     ColumnLayout {
         id: columnLayout6
         anchors.fill: parent
@@ -104,3 +107,4 @@ Item {
 
     }
 }
+

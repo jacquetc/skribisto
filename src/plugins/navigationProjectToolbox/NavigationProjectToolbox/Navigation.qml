@@ -134,7 +134,6 @@ NavigationForm {
     }
 
     function popRestoreListView() {
-        //console.log("popRestoreListView")
         stackView.pop()
         root.restoreListViewProxyModel.clearCheckedList()
     }

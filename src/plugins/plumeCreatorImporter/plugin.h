@@ -1,8 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2016 by Cyril Jacquet                                 *
+*   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmimporter.h                                                   *
+*  Filename: plugin.h
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,40 +19,55 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-
-#ifndef PLMIMPORTER_H
-#define PLMIMPORTER_H
+#ifndef PLUMECREATORIMPORTER_H
+#define PLUMECREATORIMPORTER_H
 
 #include <QObject>
-#include <QtSql/QSqlDatabase>
+#include "skrimporterinterface.h"
 
-#include "skrresult.h"
-
-class PLMImporter : public QObject {
+class Plugin : public QObject,
+               public SKRImporterInterface {
     Q_OBJECT
+    Q_PLUGIN_METADATA(
+        IID "eu.skribisto.PlumeCreatorImporterPlugin/1.0" FILE
+        "plugin_info.json")
+    Q_INTERFACES(SKRImporterInterface)
 
 public:
 
-    explicit PLMImporter(QObject *parent = 0);
+    explicit Plugin(QObject *parent = nullptr);
+    ~Plugin();
+    QString name() const override {
+        return "PlumeCreatorImporter";
+    }
 
-    QSqlDatabase createSQLiteDbFrom(const QString& type,
-                                    const QUrl   & fileName,
-                                    int            projectId,
-                                    SKRResult    & result);
-    QSqlDatabase createEmptySQLiteProject(int            projectId,
-                                          SKRResult    & result,
-                                          const QString& sqlFile = "");
+    QString displayedName() const override {
+        return tr("Plume Creator importer");
+    }
+
+    QString use() const override {
+        return tr("Import a project from Plume Creator");
+    }
+
+    QString iconSource() const override {
+        return "qrc:/pics/skribisto.svg";
+    }
+
+    QString buttonText() const override {
+        return tr("Import a project from Plume Creator ");
+    }
+
+    QString qmlUrl() const override {
+        return "qrc:///qml/plugins/PlumeCreatorImporter/PlumeCreatorImporter.qml";
+    }
+
+    int weight() const override {
+        return 500;
+    }
 
 signals:
-
-public slots:
-
-private:
-
-    //    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
-    // projectId, SKRResult &result);
 
 private:
 };
 
-#endif // PLMIMPORTER_H
+#endif // PLUGIN_H
