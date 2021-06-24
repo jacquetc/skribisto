@@ -28,6 +28,17 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release type="stable" version="1.9.26" date="2021-06-24T00:00:00Z">
+      <description>
+        <ul>
+          <li>Plugin: create plugin interface for importer</li>
+          <li>Navigation: fix restore</li>
+          <li>Icons: fix some icons not following the theme</li>
+          <li>Distraction free: header bar can now hide</li>
+          <li>Writing games: forbid Ctrl+Z</li>
+        </ul>
+      </description>
+    </release>
     <release type="stable" version="1.9.25" date="2021-06-22T00:00:00Z">
       <description>
         <ul>
