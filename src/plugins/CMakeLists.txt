@@ -11,6 +11,7 @@ add_subdirectory(themePage)
 add_subdirectory(writingGamesPageToolbox)
 add_subdirectory(favoritesProjectToolbox)
 add_subdirectory(navigationProjectToolbox)
+add_subdirectory(plumeCreatorImporter)
 #add_subdirectory(welcomewindow)
 #add_subdirectory(writewindow)
 

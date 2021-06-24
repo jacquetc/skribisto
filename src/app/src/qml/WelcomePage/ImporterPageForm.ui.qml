@@ -6,7 +6,8 @@ import "../Commons"
 import ".."
 
 Item {
-    property alias importFromPlumeToolButton: importFromPlumeToolButton
+    property alias importerButtonRepeater: importerButtonRepeater
+
     property alias stackView: stackView
 
     StackView  {
@@ -35,20 +36,14 @@ Item {
                     }
                 }
 
-
-
-                SkrButton {
-                    id: importFromPlumeToolButton
-                    text: qsTr("Import from Plume Creator project")
-
-                    icon.height: 90
-                    icon.width: 90
-
+                Repeater {
+                    id: importerButtonRepeater
                     Layout.minimumHeight: 100
                     Layout.minimumWidth: 200
                     Layout.fillWidth: true
                     Layout.maximumWidth: 500
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+
                 }
 
                 Item {

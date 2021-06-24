@@ -244,6 +244,14 @@ ApplicationWindow {
         anchors.fill: parent
     }
 
+
+
+    //------------------------------------------------------------------
+    //---------Fullscreen---------
+    //------------------------------------------------------------------
+
+    property bool isDistractionFree: false
+
     Connections {
         target: protectedSignals
         function onFullScreenCalled(value) {
@@ -254,13 +262,10 @@ ApplicationWindow {
             } else {
                 visibility = Window.AutomaticVisibility
             }
+            rootWindow.isDistractionFree = value
             SkrTheme.setDistractionFree(value)
         }
     }
-
-    //------------------------------------------------------------------
-    //---------Fullscreen---------
-    //------------------------------------------------------------------
     Action {
 
         id: fullscreenAction

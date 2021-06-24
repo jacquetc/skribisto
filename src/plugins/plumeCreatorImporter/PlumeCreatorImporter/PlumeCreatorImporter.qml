@@ -1,18 +1,33 @@
 import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
-import Qt.labs.platform 1.1 as LabPlatform
 import QtQml 2.15
-import eu.skribisto.result 1.0
-import "../Items"
-import "../Commons"
-import ".."
+import QtQuick.Controls 2.15
+import Qt.labs.platform 1.1 as LabPlatform
+import eu.skribisto.plumecreatorimporter 1.0
 
-PlumeImporterForm {
+import "../../Items"
+import "../../Commons"
+import "../.."
+
+PlumeCreatorImporterForm {
+    id: root
+
 
     property string plumeFileName: ""
     property string targetFileName: ""
     signal closeCalled()
+
+
+
+
+    SKRPlumeCreatorImporter{
+        id: plumeCreatorImporter
+    }
+
+
+
+
+
+
 
     goBackToolButton.icon.source: "qrc:///icons/backup/go-previous.svg"
     signal goBackButtonClicked()
@@ -50,7 +65,7 @@ PlumeImporterForm {
 
         if(plumeProjectFileTextField.text.length !== 0){
 
-            skrData.projectHub().importPlumeCreatorProject(plumeFileName, targetFileName)
+            plumeCreatorImporter.importPlumeCreatorProject(plumeFileName, targetFileName)
             closeCalled()
         }
     }
@@ -64,4 +79,5 @@ PlumeImporterForm {
             selectPlumeProjectFileToolButton.forceActiveFocus()
         }
     }
+
 }

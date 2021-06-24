@@ -594,97 +594,103 @@ RelationshipPanelForm {
 
         property string tip
 
-        SkrToolTip {
-            text: control.tip ? control.tip : text
-            visible: hoverHandler.hovered && text.length !== 0
-        }
 
+        Item {
+            anchors.fill: parent
+            z: 1
 
-        HoverHandler{
-            id: hoverHandler
-        }
-
-
-        TapHandler{
-            id: tapHandler
-
-            onSingleTapped: function(eventPoint) {
-                control.forceActiveFocus()
-                gridView.currentIndex = model.index
-
-                root.openTreeItemInPanel(projectId, model.treeItemId)
-
+            SkrToolTip {
+                text: control.tip ? control.tip : text
+                visible: hoverHandler.hovered && text.length !== 0
             }
 
 
-
-            onDoubleTapped: function(eventPoint) {
-                control.forceActiveFocus()
-                gridView.currentIndex = model.index
-                priv.currentTreeItemId = model.treeItemId
-                viewManager.loadTreeItem(root.projectId, model.treeItemId)
+            HoverHandler{
+                id: hoverHandler
             }
 
-            grabPermissions: PointerHandler.TakeOverForbidden
 
-        }
-        TapHandler{
-            id: middleClickTapHandler
-            acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
-            acceptedButtons: Qt.MiddleButton
+            TapHandler{
+                id: tapHandler
 
-            onSingleTapped: function(eventPoint) {
-                control.forceActiveFocus()
-                gridView.currentIndex = model.index
-                priv.currentTreeItemId = model.treeItemId
-                viewManager.loadTreeItemAtAnotherView(root.projectId, model.treeItemId)
-            }
+                onSingleTapped: function(eventPoint) {
+                    control.forceActiveFocus()
+                    gridView.currentIndex = model.index
 
-            grabPermissions: PointerHandler.TakeOverForbidden
+                    root.openTreeItemInPanel(projectId, model.treeItemId)
 
-        }
-
-        TapHandler {
-            id: rightClickTapHandler
-            acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
-            acceptedButtons: Qt.RightButton
-            onSingleTapped: function(eventPoint) {
-                control.forceActiveFocus()
-                gridView.currentIndex = model.index
-                priv.currentTreeItemId = model.treeItemId
-
-                if (menu.visible) {
-                    menu.close()
-                    return
                 }
 
-                menu.open()
-                eventPoint.accepted = true
-            }
 
-            grabPermissions: PointerHandler.TakeOverForbidden
-        }
 
-        //----------------------------------------------------------------------
-        //-----------touch handler--------------------------------------------------
-        //----------------------------------------------------------------------
-        TapHandler {
-            id: touchHandler
-            acceptedDevices: PointerDevice.TouchScreen
-            acceptedPointerTypes: PointerDevice.Finger
-
-            onLongPressed: {
-                control.forceActiveFocus()
-                gridView.currentIndex = model.index
-                priv.currentTreeItemId = model.treeItemId
-
-                if (menu.visible) {
-                    menu.close()
-                    return
+                onDoubleTapped: function(eventPoint) {
+                    control.forceActiveFocus()
+                    gridView.currentIndex = model.index
+                    priv.currentTreeItemId = model.treeItemId
+                    viewManager.loadTreeItem(root.projectId, model.treeItemId)
                 }
 
-                menu.open()
-                eventPoint.accepted = true
+                grabPermissions: PointerHandler.TakeOverForbidden
+
+            }
+            TapHandler{
+                id: middleClickTapHandler
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                acceptedButtons: Qt.MiddleButton
+
+                onSingleTapped: function(eventPoint) {
+                    control.forceActiveFocus()
+                    gridView.currentIndex = model.index
+                    priv.currentTreeItemId = model.treeItemId
+                    viewManager.loadTreeItemAtAnotherView(root.projectId, model.treeItemId)
+                }
+
+                grabPermissions: PointerHandler.TakeOverForbidden
+
+            }
+
+            TapHandler {
+                id: rightClickTapHandler
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                acceptedButtons: Qt.RightButton
+                onSingleTapped: function(eventPoint) {
+                    control.forceActiveFocus()
+                    gridView.currentIndex = model.index
+                    priv.currentTreeItemId = model.treeItemId
+
+                    if (menu.visible) {
+                        menu.close()
+                        return
+                    }
+
+                    menu.open()
+                    eventPoint.accepted = true
+                }
+
+                grabPermissions: PointerHandler.TakeOverForbidden
+            }
+
+            //----------------------------------------------------------------------
+            //-----------touch handler--------------------------------------------------
+            //----------------------------------------------------------------------
+            TapHandler {
+                id: touchHandler
+                acceptedDevices: PointerDevice.TouchScreen
+                acceptedPointerTypes: PointerDevice.Finger
+
+                onLongPressed: {
+                    control.forceActiveFocus()
+                    gridView.currentIndex = model.index
+                    priv.currentTreeItemId = model.treeItemId
+
+                    if (menu.visible) {
+                        menu.close()
+                        return
+                    }
+
+                    menu.open()
+                    eventPoint.accepted = true
+                }
             }
         }
 
@@ -913,11 +919,11 @@ RelationshipPanelForm {
             anchors.fill: parent
             focus: true
 
-            Image {
-                source: skrTreeManager.getIconUrlFromPageType(type)
+            SkrToolButton {
+                icon.source: skrTreeManager.getIconUrlFromPageType(type)
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-                Layout.preferredHeight: 30
-                Layout.preferredWidth: 30
+                Layout.preferredHeight: 40
+                Layout.preferredWidth: 40
             }
             SkrLabel {
                 text: title

@@ -83,9 +83,7 @@
         <file>qml/WelcomePage/About.qml</file>
         <file>qml/WelcomePage/ImporterPage.qml</file>
         <file>qml/WelcomePage/FileMenuPageForm.ui.qml</file>
-        <file>qml/WelcomePage/PlumeImporterForm.ui.qml</file>
         <file>qml/WelcomePage/ProjectPageForm.ui.qml</file>
-        <file>qml/WelcomePage/PlumeImporter.qml</file>
         <file>qml/WelcomePage/ImporterPageForm.ui.qml</file>
         <file>qml/Commons/NewItemPopup.qml</file>
         <file>qml/Commons/NewItemPopupForm.ui.qml</file>

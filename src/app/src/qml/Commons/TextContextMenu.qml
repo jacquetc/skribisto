@@ -124,6 +124,7 @@ TextContextMenuForm {
 
             ColumnLayout{
                 anchors.fill: parent
+                spacing: 20
 
                 GridLayout{
                     columns: 4

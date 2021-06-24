@@ -795,10 +795,6 @@
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Import from Plume Creator project</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>ListItemAttributes</name>
@@ -1391,6 +1387,21 @@
     </message>
 </context>
 <context>
+    <name>Plugin</name>
+    <message>
+        <source>Plume Creator importer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import a project from Plume Creator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import a project from Plume Creator </source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PluginPage</name>
     <message>
         <source>%1 (mandatory)</source>
@@ -1417,7 +1428,7 @@
     </message>
 </context>
 <context>
-    <name>PlumeImporterForm.ui</name>
+    <name>PlumeCreatorImporterForm.ui</name>
     <message>
         <source>Go back</source>
         <translation type="unfinished"></translation>
@@ -1753,7 +1764,7 @@
     <name>S:</name>
     <message>
         <source></source>
-        <comment>the capital letters are shortcuts, mark one letter similarly in your translation and translate the standalone letter accordingly later</comment>
+        <comment>translate this letter according to the shortcut * letter y)es</comment>
         <translation></translation>
     </message>
 </context>

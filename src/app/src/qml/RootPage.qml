@@ -18,7 +18,7 @@ RootPageForm {
 
 
     Component.onCompleted: {
-       populateProjectPageModel()
+        populateProjectPageModel()
     }
 
     //---------------------------------------------------------
@@ -279,6 +279,144 @@ RootPageForm {
     //-------------------------------------------------------------------------
     //--------------------------------------------------------------------------
     //-------------------------------------------------------------------------
+    Connections{
+        target: rootWindow.protectedSignals
+        function onFullScreenCalled(value){
+            if(value){
+                hideHeaderRowLayout()
+            }
+            else {
+                showHeaderRowLayout()
+            }
+
+        }
+
+
+    }
+
+    Item{
+        id: headerShowZone
+
+        anchors.leftMargin: 0
+        anchors.rightMargin: 50
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 10
+        visible: !headerRowLayout.visible && rootWindow.isDistractionFree
+        TapHandler{
+            onTapped: function(eventPoint){
+
+                if(eventPoint.event.device.type === PointerDevice.Mouse){
+                    Globals.touchUsed  = false
+                }
+                if(eventPoint.event.device.type === PointerDevice.TouchScreen
+                        | eventPoint.event.device.type === PointerDevice.Stylus){
+                    Globals.touchUsed  = true
+
+                    if(headerStayVisibleTimer.running){
+                        headerStayVisibleTimer.stop()
+                    }
+                    headerStayVisibleTimer.start()
+                }
+
+
+                showHeaderRowLayout()
+            }
+        }
+        HoverHandler{
+            acceptedDevices: PointerDevice.Mouse
+
+            onHoveredChanged: {
+                if(hovered){
+                    showHeaderRowLayout()
+                }
+            }
+        }
+    }
+
+    headerStayVisibleHoverHandler.enabled: headerRowLayout.visible && rootWindow.isDistractionFree
+    headerStayVisibleHoverHandler.onHoveredChanged: {
+        if(!headerStayVisibleHoverHandler.hovered){ // leaving
+            hideHeaderRowLayout()
+        }
+    }
+
+    headerStayVisibleTapHandler.enabled: headerRowLayout.visible && rootWindow.isDistractionFree
+    headerStayVisibleTapHandler.onTapped: function(eventPoint){
+        if(headerStayVisibleTimer.running){
+            headerStayVisibleTimer.stop()
+        }
+        headerStayVisibleTimer.start()
+    }
+
+
+
+    Timer{
+        id: headerStayVisibleTimer
+        interval: 5000
+        onTriggered: {
+            hideHeaderRowLayout()
+        }
+    }
+
+    function showHeaderRowLayout() {
+//        if(SkrSettings.ePaperSettings.animationEnabled){
+//            showHeaderAnimation.start()
+//        }
+//        else{
+            headerRowLayout.visible = true
+//        }
+    }
+
+    function hideHeaderRowLayout() {
+        if(!rootWindow.isDistractionFree){
+            return
+        }
+
+//        if(SkrSettings.ePaperSettings.animationEnabled){
+//            hideHeaderAnimation.start()
+//        }
+//        else{
+            headerRowLayout.visible = false
+//        }
+    }
+
+//    SequentialAnimation {
+//        id: hideHeaderAnimation
+
+//        NumberAnimation{
+//            //target: headerRowLayout
+//            property: "headerRowLayoutPreferredHeight"
+//            from: 30
+//            to: 0
+//            easing.type: Easing.InQuad
+//            duration: 10000
+//        }
+//        PropertyAction {
+//            target: headerRowLayout
+//            property: "visible"
+//            value: false
+//        }
+//    }
+//    SequentialAnimation {
+//        id: showHeaderAnimation
+
+//        PropertyAction {
+//            target: headerRowLayout
+//            property: "visible"
+//            value: true
+//        }
+//        NumberAnimation{
+//            //target: headerRowLayout
+//            property: "headerRowLayoutPreferredHeight"
+//            from: 0
+//            to: 30
+//            easing.type: Easing.InQuad
+//            duration: 10000
+//        }
+
+//    }
 
     //------------------------------------------------------------
     //------------------------------------------------------------

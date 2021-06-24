@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qml/plugins">
+        <file>PlumeCreatorImporter/PlumeCreatorImporter.qml</file>
+        <file>PlumeCreatorImporter/PlumeCreatorImporterForm.ui.qml</file>
+    </qresource>
+</RCC>

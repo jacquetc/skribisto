@@ -650,21 +650,6 @@ QString PLMProjectHub::getProjectUniqueId(int projectId) const
 
 // ----------------------------------------------------------------------------
 
-SKRResult PLMProjectHub::importPlumeCreatorProject(const QUrl& plumeURL, const QUrl& skribistoFileURL)
-{
-    PLMImporter importer;
-
-    SKRResult result =  importer.importPlumeCreatorProject(plumeURL, skribistoFileURL);
-
-    IFKO(result) {
-        emit errorSent(result);
-    }
-
-    return result;
-}
-
-// ----------------------------------------------------------------------------
-
 SKRResult PLMProjectHub::set(int             projectId,
                              const QString & fieldName,
                              const QVariant& value,

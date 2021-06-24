@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import "../Items"
 
 NewItemPopupForm {
     id: root
@@ -44,18 +45,18 @@ NewItemPopupForm {
 
     listView.delegate: delegateComponent
 
- //---------------------------------------------------------   createButton.enabled: chosenPageType !== ""
+    //---------------------------------------------------------   createButton.enabled: chosenPageType !== ""
 
     createButton.onClicked: {
         pageTypeChosen(chosenPageType)
         root.close()
     }
-//---------------------------------------------------------
+    //---------------------------------------------------------
     cancelButton.onClicked: {
         root.close()
     }
 
-//---------------------------------------------------------
+    //---------------------------------------------------------
 
     listView.onCurrentIndexChanged: {
         chosenPageType = listView.currentItem.type
@@ -65,21 +66,28 @@ NewItemPopupForm {
     Component{
         id: delegateComponent
 
-        ItemDelegate {
+        SkrListItemPane {
             id: itemDelegate
             width: parent.width
-            text: getPageTypeText(type)
+            height: 40
             property string type: modelData
-            icon.source: getIconUrlFromPageType(type)
-            onClicked: {
-                itemDelegate.ListView.view.currentIndex = model.index
-                detailsTextArea.text = skrTreeManager.getPageDetailText(type)
-                chosenPageType = itemDelegate.type
-            }
-            onDoubleClicked: {
-                itemDelegate.ListView.view.currentIndex = model.index
-                pageTypeChosen(modelData)
-                root.close()
+
+            Item{
+                anchors.fill: parent
+                z:1
+                TapHandler{
+                    onTapped: function(eventPoint){
+                        itemDelegate.ListView.view.currentIndex = model.index
+                        detailsTextArea.text = skrTreeManager.getPageDetailText(type)
+                        chosenPageType = itemDelegate.type
+                    }
+                    onDoubleTapped: function(eventPoint){
+                        itemDelegate.ListView.view.currentIndex = model.index
+                        pageTypeChosen(modelData)
+                        root.close()
+                    }
+
+                }
             }
 
 
@@ -87,20 +95,27 @@ NewItemPopupForm {
                 id: rowLayout
                 spacing: 2
                 anchors.fill: parent
-            Rectangle {
-                id: currentItemIndicator
-                color: "#cccccc"
-                Layout.fillHeight: true
-                Layout.preferredWidth: 5
-                visible: listView.currentIndex === model.index
-            }
+                Rectangle {
+                    id: currentItemIndicator
+                    color: "#cccccc"
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: 5
+                    visible: listView.currentIndex === model.index
+                }
 
-            Item{
-                id: stretcher
-                Layout.fillHeight: true
-                Layout.fillWidth: true
+                RowLayout{
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
 
-            }
+                    SkrToolButton{
+                        icon.source: getIconUrlFromPageType(type)
+                    }
+
+                    SkrLabel{
+                        text: getPageTypeText(type)
+                    }
+
+                }
             }
 
         }
