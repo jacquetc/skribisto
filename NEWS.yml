@@ -45,3 +45,15 @@ Description:
 - "Breadcrumb: adapt to small size"
 - "Navigation: fix Sort Alphabetically action"
 - "Navigation: Fix cut, copy, paste"
+---
+Version: 1.9.26
+Date: 2021-06-24
+Type: stable
+Description:
+- "Plugin: create plugin interface for importer"
+- "Navigation: fix restore"
+- "Icons: fix some icons not following the theme"
+- "Distraction free: header bar can now hide"
+- "Writing games: forbid Ctrl+Z"
+
+

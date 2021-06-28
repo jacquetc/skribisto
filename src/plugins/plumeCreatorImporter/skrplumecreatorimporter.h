@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QUrl>
 #include <QXmlStreamReader>
+#include <QtSql/QSqlDatabase>
 #include "skrresult.h"
 
 class SKRPlumeCreatorImporter : public QObject {

@@ -9,8 +9,8 @@ cmake_minimum_required(VERSION 3.5.0)
 project(skribisto-data LANGUAGES CXX VERSION ${VERSION} )
 add_definitions(-DSKRIBISTO_DATA_LIBRARY)
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Network Sql Xml CONFIG REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Sql Xml CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Sql Xml CONFIG REQUIRED)
 
 
 
@@ -104,7 +104,7 @@ qt_add_resources(RESOURCES ${QRC})
 # Tell CMake to create the executable
 add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${RESOURCES})
 
-target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
+target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
 
 
 
