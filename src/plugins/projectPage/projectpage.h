@@ -43,11 +43,19 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Project page");
+        return tr("Project page", "plugin name");
     }
 
     QString use() const override {
         return "Display a page for the project item";
+    }
+
+    QString pluginGroup() const override {
+        return "Page";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Mandatory";
     }
 
     // Page

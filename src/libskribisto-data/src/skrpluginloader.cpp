@@ -89,13 +89,22 @@ SKRPluginLoader::~SKRPluginLoader()
 // ---------------------------------------------------------------------------
 
 
-QStringList SKRPluginLoader::listAllByName()
+QStringList SKRPluginLoader::listAllByName(bool sorted)
 {
     QStringList nameList;
 
     for (SKRPlugin plugin : m_pluginsListHash.values()) {
         nameList << plugin.name;
     }
+
+    if (sorted) {
+        std::sort(nameList.begin(), nameList.end(),
+                  [this](const QString& plugin1, const QString& plugin2) -> bool {
+            return this->getPluginGroup(plugin1) < this->getPluginGroup(plugin2);
+        }
+                  );
+    }
+
 
     return nameList;
 }
@@ -139,6 +148,50 @@ QString SKRPluginLoader::getDisplayedName(const QString& pluginName) const
         ++i;
     }
     return name;
+}
+
+// ---------------------------------------------------------------------------
+
+QString SKRPluginLoader::getPluginGroup(const QString& pluginName) const
+{
+    QString group;
+    QHash<QString, SKRPlugin>::const_iterator i = m_pluginsListHash.constBegin();
+
+    while (i != m_pluginsListHash.constEnd()) {
+        SKRPlugin plugin = i.value();
+
+        if (plugin.name == pluginName) {
+            if (dynamic_cast<SKRCoreInterface *>(plugin.object)) {
+                SKRCoreInterface *coreInterface = dynamic_cast<SKRCoreInterface *>(plugin.object);
+                group = coreInterface->pluginGroup();
+                break;
+            }
+        }
+        ++i;
+    }
+    return group;
+}
+
+// ---------------------------------------------------------------------------
+
+QString SKRPluginLoader::getPluginSelectionGroup(const QString& pluginName) const
+{
+    QString group;
+    QHash<QString, SKRPlugin>::const_iterator i = m_pluginsListHash.constBegin();
+
+    while (i != m_pluginsListHash.constEnd()) {
+        SKRPlugin plugin = i.value();
+
+        if (plugin.name == pluginName) {
+            if (dynamic_cast<SKRCoreInterface *>(plugin.object)) {
+                SKRCoreInterface *coreInterface = dynamic_cast<SKRCoreInterface *>(plugin.object);
+                group = coreInterface->pluginSelectionGroup();
+                break;
+            }
+        }
+        ++i;
+    }
+    return group;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,7 +248,8 @@ bool SKRPluginLoader::isThisPluginEnabled(const QString& pluginName)
 
         if (plugin.name == pluginName) {
             SKRCoreInterface *corePlugin = dynamic_cast<SKRCoreInterface *>(plugin.object);
-            if(!corePlugin){
+
+            if (!corePlugin) {
                 qDebug() << plugin.name << "is not SKRCoreInterface";
                 return false;
             }

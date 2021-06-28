@@ -16,29 +16,18 @@ PlumeCreatorImporterForm {
     property string targetFileName: ""
     signal closeCalled()
 
-
-
-
     SKRPlumeCreatorImporter{
         id: plumeCreatorImporter
     }
-
-
-
-
-
-
 
     goBackToolButton.icon.source: "qrc:///icons/backup/go-previous.svg"
     signal goBackButtonClicked()
     goBackToolButton.onClicked: goBackButtonClicked()
 
 
-    selectPlumeProjectFileToolButton.onClicked:   {
+    selectPlumeProjectFileToolButton.onClicked: {
         fileDialog.open()
         fileDialog.folder = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
-
-
     }
 
     LabPlatform.FileDialog{

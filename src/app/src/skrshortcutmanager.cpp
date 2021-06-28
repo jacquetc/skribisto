@@ -145,7 +145,8 @@ void SKRShortcutManager::populateShortcutList()
 
     m_shortcutList <<
         createShortcut("fullscreen", tr("Fullscreen"), (QStringList() << "global"),
-                       (QStringList() << convertStandardKeyToList(QKeySequence::FullScreen)));
+                       (QStringList() <<
+                        tr("F11", "fullscreen") << convertStandardKeyToList(QKeySequence::FullScreen)));
 
     m_shortcutList <<
         createShortcut("center-vert-text-cursor", tr("Center vertically the text cursor"), (QStringList() << "global"),

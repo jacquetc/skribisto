@@ -977,10 +977,18 @@ WritingZoneForm {
     //focus :
     onActiveFocusChanged: {
         if (activeFocus) {
-            textArea.forceActiveFocus()
+            if(priv.forceActiveFocusEnabled){
+                textArea.forceActiveFocus()
+            }
+
         } else {
 
         }
+    }
+
+    QtObject{
+        id: priv
+        property bool forceActiveFocusEnabled: true
     }
 
     //----------------------------------------------------------------------------
@@ -990,13 +998,27 @@ WritingZoneForm {
     findPanel.highlighter: documentHandler.highlighter
     findPanel.textArea: textArea
 
+
+    function showFindPanel(){
+        if(textArea.selectedText.length > 0){
+            findPanel.stringToFind = textArea.selectedText
+        }
+
+        findPanel.visible = true
+        priv.forceActiveFocusEnabled = false
+        findPanel.forceActiveFocus()
+        priv.forceActiveFocusEnabled = true
+    }
+
+
     Action {
         id: findAction
+        enabled: root.activeFocus
         text: qsTr("Find")
         shortcut: "Ctrl+F"
         icon.source: "qrc:///icons/backup/edit-find.svg"
         onTriggered: {
-            findPanel.visible = true
+            showFindPanel()
         }
     }
 }

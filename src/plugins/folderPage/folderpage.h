@@ -43,11 +43,19 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Folder page");
+        return tr("Folder page", "plugin name");
     }
 
     QString use() const override {
         return "Display a page for the folder item";
+    }
+
+    QString pluginGroup() const override {
+        return "Page";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Mandatory";
     }
 
     // Page

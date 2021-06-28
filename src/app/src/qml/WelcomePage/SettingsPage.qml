@@ -169,6 +169,10 @@ SettingsPageForm {
             closePolicy: Popup.CloseOnEscape
             onClosed: loader_pluginPagePopup.active = false
 
+            onOpened: {
+                pluginPage.forceActiveFocus()
+            }
+
             background: Rectangle {
 
                 radius: 10
@@ -195,6 +199,7 @@ SettingsPageForm {
                     }
 
                     PluginPage {
+                        id: pluginPage
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 

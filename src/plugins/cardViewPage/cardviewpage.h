@@ -24,6 +24,7 @@
 #include <QObject>
 #include "skrprojectpageinterface.h"
 
+
 class CardViewPage : public QObject,
                      public SKRProjectPageInterface {
     Q_OBJECT
@@ -41,11 +42,19 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Card view page");
+        return tr("Card view page", "plugin name");
     }
 
     QString use() const override {
-        return "Display a grid-like overview";
+        return tr("Display a grid-like overview", "plugin description");
+    }
+
+    QString pluginGroup() const override {
+        return "ProjectPage";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Writing";
     }
 
     // Page
@@ -72,7 +81,7 @@ public:
     }
 
     QString showButtonText() const override {
-        return tr("Show the card view");
+        return tr("Show the card view", "showButtonText");
     }
 
     QStringList shortcutSequences() const override {

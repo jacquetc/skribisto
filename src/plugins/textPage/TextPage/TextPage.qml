@@ -629,6 +629,7 @@ TextPageForm {
                 id: editView
                 anchors.fill: parent
                 skrSettingsGroup: SkrSettings.textSettings
+                writingZone: root.writingZone
             }
         }
     }

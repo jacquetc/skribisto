@@ -7,6 +7,12 @@ FindPanelForm {
     required property var documentHandler
     required property var highlighter
     required property var textArea
+    property string stringToFind: ""
+
+
+    onStringToFindChanged: {
+        findTextField.text = stringToFind
+    }
 
     visible: false
 
@@ -116,6 +122,13 @@ FindPanelForm {
     findAndReplaceWithToolButton.onClicked: {
         if(findNext() !== -1){
             replace()
+        }
+    }
+
+
+    onActiveFocusChanged: {
+        if(activeFocus){
+            findTextField.forceActiveFocus()
         }
     }
 }

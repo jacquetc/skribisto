@@ -27,6 +27,7 @@ SkrPane {
     property alias settingsButton: settingsButton
     property alias helpButton: helpButton
     property alias versionLabel: versionLabel
+    property alias quitButton: quitButton
 
     ColumnLayout {
         id: columnLayout2
@@ -196,6 +197,14 @@ SkrPane {
                             id: element
                             Layout.preferredWidth: 10
                             Layout.fillHeight: true
+                        }
+
+                        SkrToolButton {
+                            id: quitButton
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
+                            display: AbstractButton.TextBesideIcon
+                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                         }
                     }
 

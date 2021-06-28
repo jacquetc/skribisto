@@ -24,6 +24,7 @@ Item {
     property alias themesToolButton: themesToolButton
     property alias centerTextCursorToolButton: centerTextCursorToolButton
     property alias quickPrintToolButton: quickPrintToolButton
+    property alias findToolButton: findToolButton
 
 
     readonly property int sizePageLayoutHeight: sizePageLayout.childrenRect.height + sizePage.padding * 2
@@ -133,6 +134,12 @@ Item {
                             SkrToolButton {
                                 id: centerTextCursorToolButton
                                 text: qsTr("Center vertically the text cursor")
+                                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                display: AbstractButton.IconOnly
+                            }
+                            SkrToolButton {
+                                id: findToolButton
+                                text: qsTr("Find")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
                             }

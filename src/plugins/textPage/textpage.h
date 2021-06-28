@@ -44,11 +44,19 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Text page");
+        return tr("Text page", "plugin name");
     }
 
     QString use() const override {
         return "Display a page for text";
+    }
+
+    QString pluginGroup() const override {
+        return "Page";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Mandatory";
     }
 
     // Page

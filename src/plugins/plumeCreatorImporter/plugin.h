@@ -42,11 +42,19 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Plume Creator importer");
+        return tr("Plume Creator importer", "plugin name");
     }
 
     QString use() const override {
-        return tr("Import a project from Plume Creator");
+        return tr("Import a project from Plume Creator", "plugin description");
+    }
+
+    QString pluginGroup() const override {
+        return "Importer";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Common";
     }
 
     QString iconSource() const override {

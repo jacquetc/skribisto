@@ -43,11 +43,19 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Theme page");
+        return tr("Theme page", "plugin name");
     }
 
     QString use() const override {
         return "Display a page for the theme";
+    }
+
+    QString pluginGroup() const override {
+        return "Page";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Mandatory";
     }
 
     // Page

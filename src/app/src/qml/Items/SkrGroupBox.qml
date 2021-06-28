@@ -22,6 +22,9 @@ GroupBox {
         if (event.key === Qt.Key_Tab){
             Globals.setFocusTemporarilyVisible()
         }
+        if (event.key === Qt.Key_Backtab) {
+            Globals.setFocusTemporarilyVisible()
+        }
     }
 
     label:

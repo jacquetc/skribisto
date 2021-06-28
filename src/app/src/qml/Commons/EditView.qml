@@ -10,6 +10,7 @@ EditViewForm {
 
     property int projectId: -2
     property int treeItemId: -2
+    property var writingZone
 
     // must be set :
     property var skrSettingsGroup
@@ -41,6 +42,23 @@ EditViewForm {
         }
     }
 
+    findToolButton.action: findAction
+    Action{
+        id: findAction
+        text: qsTr("Find")
+        icon {
+            source: "qrc:///icons/backup/edit-find.svg"
+            height: 50
+            width: 50
+        }
+
+        //shortcut: StandardKey.Backspace
+        onTriggered: {
+            writingZone.showFindPanel()
+        }
+
+    }
+
     Action{
         id: sizeAction
         text: qsTr("Sizes")
@@ -58,8 +76,6 @@ EditViewForm {
 
     }
     sizeToolButton.action: sizeAction
-
-
 
 
     Action{

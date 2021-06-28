@@ -24,15 +24,20 @@
 
 
 #include <QSettings>
+#include "skr.h"
 
 class SKRInterfaceSettings {
 public:
 
+    enum {};
+
     virtual ~SKRInterfaceSettings() {}
 
-    virtual QString name() const          = 0;
-    virtual QString displayedName() const = 0;
-    virtual QString use() const           = 0;
+    virtual QString name() const                 = 0;
+    virtual QString displayedName() const        = 0;
+    virtual QString use() const                  = 0;
+    virtual QString pluginGroup() const          = 0;
+    virtual QString pluginSelectionGroup() const = 0;
 
     bool            isPluginEnabledSettingExisting() const
     {

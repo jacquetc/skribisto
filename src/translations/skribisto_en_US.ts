@@ -37,15 +37,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Card view page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Card View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Card view page</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display a grid-like overview</source>
+        <comment>plugin description</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Show the card view</source>
+        <comment>showButtonText</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -346,6 +353,10 @@
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>EditViewForm.ui</name>
@@ -419,6 +430,10 @@
     </message>
     <message>
         <source>Top margin :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -554,7 +569,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Favorites Project Toolbox</source>
+        <source>Favorites project toolbox</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -732,15 +748,19 @@
         <source>Welcome to Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Plugin selection can be changed later in settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please restart to apply changes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>FolderPage</name>
     <message>
         <source>Note</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Folder page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -753,6 +773,11 @@
     </message>
     <message>
         <source>%1 words, %2 characters (all)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder page</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -981,6 +1006,7 @@
     </message>
     <message>
         <source>Navigation Project Toolbox</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1198,10 +1224,6 @@
 <context>
     <name>OverviewPage</name>
     <message>
-        <source>Overview page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Overview</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1219,6 +1241,11 @@
     </message>
     <message>
         <source>Overview of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Overview page</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1389,20 +1416,50 @@
 <context>
     <name>Plugin</name>
     <message>
+        <source>Import a project from Plume Creator </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Plume Creator importer</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Import a project from Plume Creator</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import a project from Plume Creator </source>
+        <comment>plugin description</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PluginPage</name>
+    <message>
+        <source>Page Toolboxes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project Toolboxes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Importers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Examples</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Templates</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>%1 (mandatory)</source>
         <translation type="unfinished"></translation>
@@ -1415,15 +1472,31 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Classic</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Writing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Personalized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Descripton:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1481,11 +1554,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Project page</source>
+        <source>Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Project</source>
+        <source>Project page</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1909,6 +1983,11 @@
         <comment>add-quick-note</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>F11</source>
+        <comment>fullscreen</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
@@ -2267,10 +2346,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Text page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2306,6 +2381,11 @@
         <source>Note</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Text page</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>TextPageForm.ui</name>
@@ -2322,10 +2402,6 @@
     </message>
     <message>
         <source>Edit color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Theme page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2374,6 +2450,11 @@
     </message>
     <message>
         <source>Distraction free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Theme page</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2575,11 +2656,17 @@
 <context>
     <name>WritingGamesPageToolbox</name>
     <message>
-        <source>Writing Games Page Toolbox</source>
+        <source>Show Writing Games toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show Writing Games toolbox</source>
+        <source>Writing Games Page Toolbox</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display a toolbox offering some writing game</source>
+        <comment>plugin description</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
