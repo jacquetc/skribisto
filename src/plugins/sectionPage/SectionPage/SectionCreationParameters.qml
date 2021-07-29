@@ -11,6 +11,7 @@ Item {
     implicitHeight: layout.childrenRect.height
     implicitWidth: layout.childrenRect.width
 
+
     ColumnLayout{
         id: layout
         anchors.fill: parent
@@ -20,7 +21,7 @@ Item {
             Layout.fillWidth: true
 
             wheelEnabled: true
-            visible: SkrSettings.accessibilitySettings.accessibilityEnabled
+            //visible: SkrSettings.accessibilitySettings.accessibilityEnabled
             model: [
                 { value: "book-beginning ", text: qsTr("Beginning of a book") },
                 { value: "chapter", text: qsTr("Chapter") },

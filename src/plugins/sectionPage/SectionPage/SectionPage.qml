@@ -172,6 +172,29 @@ SectionPageForm {
 
 
     //-----------------------------------------------------------------
+
+    Component.onCompleted: {
+        sectionTypeComboBox.currentIndex = sectionTypeComboBox.indexOfValue(skrData.treePropertyHub().getProperty(root.projectId, root.treeItemId, "section_type", "separator"))
+        built = true
+    }
+
+    property bool built: false
+
+    sectionTypeComboBox.onCurrentValueChanged: {
+        if(built){
+            skrData.treePropertyHub().setProperty(root.projectId, root.treeItemId, "section_type", sectionTypeComboBox.currentValue)
+        }
+    }
+
+
+
+
+
+
+
+
+
+    //-----------------------------------------------------------------
     //----- Related Panel------------------------------------------------
     //-----------------------------------------------------------------
     relationshipPanel.projectId: root.projectId

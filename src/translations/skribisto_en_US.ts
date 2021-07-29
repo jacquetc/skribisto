@@ -1570,6 +1570,10 @@
         <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
@@ -1619,6 +1623,10 @@
     </message>
     <message>
         <source>Dictionary:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a &quot;Notes&quot; folder</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2051,6 +2059,26 @@
     <name>SectionPageForm.ui</name>
     <message>
         <source>Page menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Beginning of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Chapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Separator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>End of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Section</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
