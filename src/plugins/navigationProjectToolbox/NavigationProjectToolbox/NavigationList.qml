@@ -211,9 +211,9 @@ NavigationListForm {
             }
             priv.currentProjectId = navigationListStackView.currentItem.projectId
             priv.currentParentId = navigationListStackView.currentItem.parentId
-            console.log("priv.currentProjectId", priv.currentProjectId)
-            console.log("priv.currentParentId", priv.currentParentId)
-            console.log("priv.currentTreeItemId", priv.currentTreeItemId)
+//            console.log("priv.currentProjectId", priv.currentProjectId)
+//            console.log("priv.currentParentId", priv.currentParentId)
+//            console.log("priv.currentTreeItemId", priv.currentTreeItemId)
 
             rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
                         priv.currentProjectId, priv.currentParentId)
@@ -386,11 +386,61 @@ NavigationListForm {
                 property string type: modelData
                 icon.source: getIconUrlFromPageType(modelData)
                 onTriggered: {
-                    addItemAtCurrentParent(type)
+                    if(skrQMLTools.isURLValid(skrTreeManager.getCreationParametersQmlUrlFromPageType(type))){
+                        creationParameterDialog.pageType = type
+                        creationParameterDialog.open()
+                    }
+                    else{
+                        addItemAtCurrentParent(type)
+                    }
                 }
             }
         }
     }
+
+    //----------------------------------------------------------------------------
+
+
+
+    SimpleDialog {
+        id: creationParameterDialog
+        property string pageType: ""
+        title: qsTr("New item's parameters")
+
+        contentItem: Loader{
+            id: loader
+            source: skrTreeManager.getCreationParametersQmlUrlFromPageType(creationParameterDialog.pageType)
+        }
+
+
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        onRejected: {
+            creationParameterDialog.pageType = ""
+        }
+
+        onDiscarded: {
+
+            creationParameterDialog.pageType = ""
+        }
+
+        onAccepted: {
+            addItemAtCurrentParent(creationParameterDialog.pageType)
+
+            creationParameterDialog.pageType = ""
+        }
+
+        onActiveFocusChanged: {
+            if (activeFocus) {
+                contentItem.forceActiveFocus()
+            }
+        }
+
+        onOpened: {
+            contentItem.forceActiveFocus()
+        }
+    }
+
 
     //----------------------------------------------------------------------------
 

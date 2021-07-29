@@ -43,6 +43,9 @@ public:
     Q_INVOKABLE void        updateAllCharAndWordCount(int projectId);
     Q_INVOKABLE QStringList findToolboxUrlsForPage(const QString& pageType) const;
     Q_INVOKABLE QStringList findToolboxUrlsForProject() const;
+    Q_INVOKABLE QUrl        getCreationParametersQmlUrlFromPageType(const QString& pageType) const;
+    Q_INVOKABLE void        setCreationParametersForPageType(const QString    & pageType,
+                                                             const QVariantMap& parameters) const;
 
     Q_INVOKABLE QStringList findProjectPageNamesForLocation(const QString& location) const;
     Q_INVOKABLE QString     findProjectPageIconSource(const QString& name) const;

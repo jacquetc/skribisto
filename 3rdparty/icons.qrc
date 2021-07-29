@@ -121,5 +121,6 @@
         <file>icons/backup/link.svg</file>
         <file>icons/backup/remove-link.svg</file>
         <file>icons/backup/view-list-icons.svg</file>
+        <file>icons/backup/artifact.svg</file>
     </qresource>
 </RCC>

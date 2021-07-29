@@ -16,6 +16,7 @@ FocusScope {
     property alias mouseDragHandler: mouseDragHandler
     property alias touchDragHandler: touchDragHandler
     property alias touchTapHandler: touchTapHandler
+    property alias titleTapHandler: titleTapHandler
 
 
     property int visualIndex: DelegateModel.itemsIndex
@@ -92,6 +93,7 @@ FocusScope {
                     }
 
                     SkrLabel {
+                        id: cardTitle
 
                         Layout.preferredHeight: 40
                         Layout.fillWidth: true
@@ -101,6 +103,20 @@ FocusScope {
                         horizontalAlignment: Qt.AlignHCenter
                         verticalAlignment: Qt.AlignVCenter
 
+
+
+                        TapHandler {
+                            id: titleTapHandler
+                            acceptedDevices: PointerDevice.TouchScreen
+                                             | PointerDevice.Stylus | PointerDevice.Mouse
+
+
+                        }
+
+                        HoverHandler{
+                            cursorShape: Qt.IBeamCursor
+
+                        }
 
                     }
 

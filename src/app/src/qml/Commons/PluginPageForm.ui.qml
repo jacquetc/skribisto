@@ -124,7 +124,7 @@ Item {
                     Layout.fillWidth: true
                 }
                 SkrGroupBox{
-                    title: qsTr("Descripton:")
+                    title: qsTr("Description:")
                     Layout.fillWidth: true
                     Layout.minimumHeight: 50
                     SkrLabel {

@@ -23,6 +23,7 @@
 #define SKRPAGEINTERFACE_H
 
 #include <QString>
+#include <QVariantMap>
 #include "skrresult.h"
 #include "skrcoreinterface.h"
 
@@ -32,10 +33,18 @@ public:
 
     virtual ~SKRPageInterface() {}
 
-    virtual QString   pageType() const        = 0;
-    virtual QString   visualText() const      = 0;
-    virtual QString   pageDetailText() const  = 0;
-    virtual QString   pageUrl() const         = 0;
+    virtual QString pageType() const       = 0;
+    virtual QString visualText() const     = 0;
+    virtual QString pageDetailText() const = 0;
+    virtual QString pageUrl() const        = 0;
+    virtual QString pageCreationParametersUrl() const {
+        return "";
+    }
+
+    void setPageCreationParameters(const QVariantMap& parametersMap) {
+        m_creationParametersMap = parametersMap;
+    }
+
     virtual bool      isConstructible() const = 0;
     virtual QString   pageTypeIconUrl() const = 0;
 
@@ -45,6 +54,10 @@ public:
     virtual void      updateCharAndWordCount(int  projectId,
                                              int  treeItemId,
                                              bool sameThread = false) {}
+
+protected:
+
+    QVariantMap m_creationParametersMap;
 };
 
 #define SKRPageInterface_iid "com.skribisto.PageInterface/1.0"

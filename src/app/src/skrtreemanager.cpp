@@ -205,6 +205,37 @@ QStringList SKRTreeManager::findToolboxUrlsForProject() const
 // ---------------------------------------------------------------------------------
 
 
+QUrl SKRTreeManager::getCreationParametersQmlUrlFromPageType(const QString& pageType) const
+{
+    QUrl url;
+
+    QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
+
+    for (SKRPageInterface *plugin: qAsConst(pluginList)) {
+        if (pageType == plugin->pageType()) {
+            url = plugin->pageCreationParametersUrl();
+        }
+    }
+
+    return url;
+}
+
+// ---------------------------------------------------------------------------------
+
+void SKRTreeManager::setCreationParametersForPageType(const QString& pageType, const QVariantMap& parameters) const
+{
+    QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
+
+    for (SKRPageInterface *plugin: qAsConst(pluginList)) {
+        if (pageType == plugin->pageType()) {
+            plugin->setPageCreationParameters(parameters);
+            break;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------
+
 SKRResult SKRTreeManager::finaliseAfterCreationOfTreeItem(int projectId, int treeItemId, const QString& pageType)
 {
     SKRResult result(this);

@@ -18,6 +18,10 @@
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Rename an item</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CardForm.ui</name>
@@ -982,6 +986,10 @@
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>New item&apos;s parameters</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NavigationListForm.ui</name>
@@ -1496,7 +1504,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Descripton:</source>
+        <source>Description:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1993,6 +2001,56 @@
     <name>SKRTreeManager</name>
     <message>
         <source>Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SectionCreationParameters</name>
+    <message>
+        <source>Beginning of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Chapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Separator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>End of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SectionPage</name>
+    <message>
+        <source>%1 words, %2 characters (all)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Section page</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Section</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a logical separation between items.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SectionPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

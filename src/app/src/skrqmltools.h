@@ -66,6 +66,10 @@ public:
         return newUrl;
     }
 
+    Q_INVOKABLE bool isURLValid(const QUrl& url) const {
+        return url.isValid();
+    }
+
     Q_INVOKABLE QString mnemonic(const QString& text) {
         return QKeySequence::mnemonic(text).toString();
     }
