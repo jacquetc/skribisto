@@ -61,6 +61,10 @@ public:
         return "OVERVIEW";
     }
 
+    int weight() const override {
+        return 500;
+    }
+
     QString visualText() const override {
         return tr("Overview");
     }
@@ -85,10 +89,6 @@ public:
 
     QStringList shortcutSequences() const override {
         return QStringList() << "F5";
-    }
-
-    int weight() const override {
-        return 500;
     }
 
     QStringList locations() const override {

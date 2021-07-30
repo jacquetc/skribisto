@@ -63,6 +63,10 @@ public:
         return "THEME";
     }
 
+    int weight() const override {
+        return 500;
+    }
+
     QString visualText() const override {
         return tr("Themes");
     }
@@ -79,7 +83,9 @@ public:
         return false;
     }
 
-    QString pageTypeIconUrl() const override {
+    QString pageTypeIconUrl(int projectId, int treeItemId) const override {
+        Q_UNUSED(projectId)
+        Q_UNUSED(treeItemId)
         return "qrc:///icons/backup/color-picker-white.svg";
     }
 

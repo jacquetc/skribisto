@@ -45,7 +45,7 @@ SKRTreeManager::SKRTreeManager(QObject *parent) : QObject(parent)
 
 // ---------------------------------------------------------------------------------
 
-QUrl SKRTreeManager::getIconUrlFromPageType(const QString& pageType) const
+QUrl SKRTreeManager::getIconUrlFromPageType(const QString& pageType, int projectId, int treeItemId) const
 {
     QUrl url;
 
@@ -54,7 +54,7 @@ QUrl SKRTreeManager::getIconUrlFromPageType(const QString& pageType) const
 
     for (SKRPageInterface *plugin: qAsConst(pluginList)) {
         if (pageType == plugin->pageType()) {
-            url = plugin->pageTypeIconUrl();
+            url = plugin->pageTypeIconUrl(projectId, treeItemId);
         }
     }
 
@@ -72,6 +72,14 @@ QStringList SKRTreeManager::getPageTypeList(bool constructibleOnly = true) const
     QStringList stringList;
 
     QList<SKRPageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRPageInterface>();
+
+
+    std::sort(pluginList.begin(), pluginList.end(),
+              [](SKRPageInterface *plugin1, SKRPageInterface *plugin2) -> bool {
+        return plugin1->weight() < plugin2->weight();
+    }
+              );
+
 
     for (SKRPageInterface *plugin: qAsConst(pluginList)) {
         if (constructibleOnly && !plugin->isConstructible()) {

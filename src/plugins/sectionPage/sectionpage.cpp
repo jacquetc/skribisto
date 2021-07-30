@@ -31,6 +31,29 @@ SectionPage::~SectionPage()
 
 // ---------------------------------------------------
 
+QString SectionPage::pageTypeIconUrl(int projectId, int treeItemId) const {
+    QString section_type = skrdata->treePropertyHub()->getProperty(projectId, treeItemId, "section_type", "separator");
+
+
+    if (section_type == "book-beginning") {
+        return "qrc:///icons/backup/skribisto-book-beginning.svg";
+    }
+    else if (section_type == "book-end") {
+        return "qrc:///icons/backup/skribisto-book-end.svg";
+    }
+    else if (section_type == "chapter") {
+        return "qrc:///icons/backup/bookmark-new.svg";
+    }
+    else if (section_type == "separator") {
+        return "qrc:///icons/backup/menu_new_sep.svg";
+    }
+
+
+    return "qrc:///icons/backup/bookmark-new.svg";
+}
+
+// ---------------------------------------------------
+
 SKRResult SectionPage::finaliseAfterCreationOfTreeItem(int projectId, int treeItemId)
 {
     SKRResult result(this);

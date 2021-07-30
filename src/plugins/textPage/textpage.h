@@ -64,6 +64,10 @@ public:
         return "TEXT";
     }
 
+    int weight() const override {
+        return 500;
+    }
+
     QString visualText() const override {
         return tr("Text");
     }
@@ -80,7 +84,9 @@ public:
         return true;
     }
 
-    QString pageTypeIconUrl() const override {
+    QString pageTypeIconUrl(int projectId, int treeItemId) const override {
+        Q_UNUSED(projectId)
+        Q_UNUSED(treeItemId)
         return "qrc:///icons/backup/document-edit-sign.svg";
     }
 

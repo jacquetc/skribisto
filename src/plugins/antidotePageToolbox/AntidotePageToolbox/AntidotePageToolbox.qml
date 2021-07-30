@@ -10,7 +10,7 @@ import "../.."
 AntidotePageToolboxForm {
     id: root
 
-    iconSource: "qrc:///icons/backup/story-editor.svg"
+    iconSource: "qrc:///plugins/AntidotePageToolbox/icons/AntidoteIcone.png"
     showButtonText: qsTr( "Show Druide Antidote\u2122 toolbox")
 
     //required property var writingZone
@@ -34,9 +34,6 @@ AntidotePageToolboxForm {
         onActivateDocument: writingZone.textArea.forceActiveFocus()
 
         onForceFocusOnTextAreaCalled: writingZone.textArea.forceActiveFocus()
-        onSelect: function(begin, end){
-            writingZone.textArea.select(begin, end)
-        }
 
     }
 

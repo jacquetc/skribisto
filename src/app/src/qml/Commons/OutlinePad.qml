@@ -20,7 +20,11 @@ OutlinePadForm {
         interval: 20
         onTriggered: {
             console.log("outlineWritingZone.writingZone.textArea.length", outlineWritingZone.writingZone.textArea.length)
-            if (outlineWritingZone.writingZone.textArea.length !== 0) {
+            if (outlineWritingZone.writingZone.textArea.length === 0) {
+                addOutlineToolButton.visible = true
+                openOutlineToolButton.visible = false
+            }
+            else {
                 outlineWritingZone.visible = true
                 addOutlineToolButton.visible = false
                 outlineWritingZone.Layout.preferredHeight = 400
@@ -50,6 +54,7 @@ OutlinePadForm {
         icon.source: "qrc:///icons/backup/list-add.svg"
         onTriggered: {
             addOutlineToolButton.visible = false
+            openOutlineToolButton.visible = true
             outlineWritingZone.visible = true
             outlineWritingZone.forceActiveFocus()
             outlineWritingZone.Layout.preferredHeight = 400

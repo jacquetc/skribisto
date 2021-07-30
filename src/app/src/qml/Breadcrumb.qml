@@ -103,7 +103,7 @@ Item {
 
         SkrToolButton {
             id: showTheBeginningButton
-            visible: listView.contentWidth > listView.width && !listView.atXBeginning
+            visible: listView.contentWidth > listView.width && !listView.atXBeginning && !listView.goingAtTheBeginning
             Layout.alignment: Qt.AlignCenter
             Layout.preferredHeight: 30
             Layout.preferredWidth: 20
@@ -113,7 +113,8 @@ Item {
 
 
             onClicked: {
-                listView.positionViewAtBeginning()
+                listView.goingAtTheBeginning = true
+                listView.contentX = 0
             }
         }
 
@@ -129,23 +130,18 @@ Item {
             padding: 0
 
 
-            //            Flickable {
-            //                id: flickable
-            //                flickableDirection: Qt.Horizontal
-
-            //                Row {
-            //                    id: row
-            //                    height: scrollView.height
-            //                    spacing: 1
-            //                    padding: 0
-            //                    Repeater {
-
             ListView{
                 id: listView
                 model: pathModel
                 orientation: Qt.Horizontal
                 spacing: 1
 
+                property bool goingAtTheBeginning: false
+                onContentXChanged: {
+                    if(contentX === 0){
+                        goingAtTheBeginning = false
+                    }
+                }
 
                 delegate: SkrToolButton {
                     text: model.text
@@ -161,9 +157,6 @@ Item {
 
                     icon {
                         source: skrTreeManager.getIconUrlFromPageType(pageType)
-
-                        height: 22
-                        width: 22
                     }
 
                     onClicked: {
@@ -195,8 +188,17 @@ Item {
                     }
 
                 }
-                //                    }
+
+                Behavior on contentX {
+                    enabled: SkrSettings.ePaperSettings.animationEnabled
+                    SpringAnimation {
+                        spring: 2
+                        mass: 0.2
+                        damping: 0.2
+                    }
                 }
+
+            }
             }
 
         SkrToolButton {
@@ -211,7 +213,9 @@ Item {
             text: qsTr("Show the end")
 
             onClicked: {
-                listView.positionViewAtEnd()
+
+                listView.contentX = listView.contentWidth - listView.width + showTheEndButton.width
+
             }
         }
 

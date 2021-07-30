@@ -10,10 +10,15 @@ add_subdirectory(overviewPage)
 add_subdirectory(cardViewPage)
 add_subdirectory(themePage)
 add_subdirectory(writingGamesPageToolbox)
-add_subdirectory(antidotePageToolbox)
 add_subdirectory(favoritesProjectToolbox)
 add_subdirectory(navigationProjectToolbox)
 add_subdirectory(plumeCreatorImporter)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_subdirectory(antidotePageToolbox)
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
+
 #add_subdirectory(welcomewindow)
 #add_subdirectory(writewindow)
 

@@ -37,15 +37,15 @@ Item {
 
             wheelEnabled: true
             visible: SkrSettings.accessibilitySettings.accessibilityEnabled
-            model: [
-                { value: "", text: "" },
-                { value: "Writing", text: qsTr("Writing") },
-                { value: "Notes", text: qsTr("Notes") },
-                { value: "Minimum", text: qsTr("Minimum") },
-                { value: "All", text: qsTr("All") },
-                { value: "Empty", text: qsTr("Empty") },
-                { value: "Personalized", text: qsTr("Personalized") },
-            ]
+            model: ListModel {
+                ListElement{ value: ""; text: "" }
+                ListElement{ value: "Writing"; text: qsTr("Writing") }
+                ListElement{ value: "Notes"; text: qsTr("Notes") }
+                ListElement{ value: "Minimum"; text: qsTr("Minimum") }
+                ListElement{ value: "All"; text: qsTr("All") }
+                ListElement{ value: "Empty"; text: qsTr("Empty") }
+                ListElement{ value: "Personalized"; text: qsTr("Personalized") }
+            }
             textRole: "text"
             valueRole: "value"
             currentIndex: 0

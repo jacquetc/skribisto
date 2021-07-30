@@ -63,6 +63,10 @@ public:
         return "SECTION";
     }
 
+    int weight() const override {
+        return 700;
+    }
+
     QString visualText() const override {
         return tr("Section");
     }
@@ -83,9 +87,8 @@ public:
         return true;
     }
 
-    QString pageTypeIconUrl() const override {
-        return "qrc:///icons/backup/artifact.svg";
-    }
+    QString   pageTypeIconUrl(int projectId,
+                              int treeItemId) const override;
 
     SKRResult finaliseAfterCreationOfTreeItem(int projectId,
                                               int treeItemId) override;

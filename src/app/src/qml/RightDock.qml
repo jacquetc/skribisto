@@ -66,42 +66,58 @@ RightDockForm {
     ListModel {
         id: toolButtonModel
     }
-    toolButtonRepeater.model: toolButtonModel
+    toolButtonListView.model: toolButtonModel
 
-    Component {
-        id: toolButtonLoaderComponent
+    toolButtonListView.delegate: toolButtonComponent
 
-        Loader {
-            id: toolButtonLoader
-            sourceComponent: toolButtonComponent
+    toolButtonListView.onContentXChanged: {
+        if(toolButtonListView.contentX === 0){
+            goingAtTheBeginningOfToolButtonListView = false
+        }
 
-            onLoaded: {
-                toolButtonLoader.item.iconSource = model.iconSource
-                toolButtonLoader.item.text = model.showButtonText
-                toolButtonLoader.item.toolbox = model.toolbox
-            }
+    }
+
+    Behavior on toolButtonListView.contentX {
+        enabled: SkrSettings.ePaperSettings.animationEnabled
+        SpringAnimation {
+            spring: 2
+            mass: 0.2
+            damping: 0.2
         }
     }
-    toolButtonRepeater.delegate: toolButtonLoaderComponent
+
+    showTheBeginningButton.onClicked: {
+        goingAtTheBeginningOfToolButtonListView = true
+        toolButtonListView.contentX = 0
+    }
+
+    showTheEndButton.onClicked: {
+        toolButtonListView.contentX = toolButtonListView.contentWidth - toolButtonListView.width + showTheEndButton.width
+    }
 
     Component {
         id: toolButtonComponent
         SkrToolButton {
             id: toolButton
             checkable: true
-            icon.source: iconSource
-
-            property var toolbox
-            property string iconSource
+            icon.source: model.iconSource
+            text: model.showButtonText
 
             onCheckedChanged: {
-                toolbox.visible = toolButton.checked
+                 model.toolbox.visible = toolButton.checked
             }
 
             Binding on checked {
-                value: toolbox.visible
+                value: model.toolbox.visible
                 delayed: true
                 restoreMode: Binding.RestoreBindingOrValue
+            }
+
+
+            WheelHandler {
+                onWheel: function(event) {
+                    toolButtonListView.flick((event.angleDelta.y * 4), 0)
+                }
             }
         }
     }

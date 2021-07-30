@@ -34,6 +34,7 @@ public:
     virtual ~SKRPageInterface() {}
 
     virtual QString pageType() const       = 0;
+    virtual int     weight() const         = 0;
     virtual QString visualText() const     = 0;
     virtual QString pageDetailText() const = 0;
     virtual QString pageUrl() const        = 0;
@@ -46,7 +47,8 @@ public:
     }
 
     virtual bool      isConstructible() const = 0;
-    virtual QString   pageTypeIconUrl() const = 0;
+    virtual QString   pageTypeIconUrl(int projectId,
+                                      int treeItemId) const = 0;
 
     virtual SKRResult finaliseAfterCreationOfTreeItem(int projectId,
                                                       int treeItemId) = 0;

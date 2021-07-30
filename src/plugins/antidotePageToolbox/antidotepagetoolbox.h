@@ -46,7 +46,8 @@ public:
     }
 
     QString use() const override {
-        return tr("Display a toolbox offering a quick access to Druide Antidote\u2122", "plugin description");
+        return tr("Display a toolbox offering a quick access to Druide Antidote\u2122 (Linux only)",
+                  "plugin description");
     }
 
     QString pluginGroup() const override {

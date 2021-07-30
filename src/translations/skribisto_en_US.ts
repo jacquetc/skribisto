@@ -4,17 +4,17 @@
 <context>
     <name>AntidotePageToolbox</name>
     <message>
-        <source>Display a toolbox offering a quick access to Druide Antidote™</source>
-        <comment>plugin description</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Druide Antidote™ Page Toolbox</source>
         <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Druide Antidote™ toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display a toolbox offering a quick access to Druide Antidote™ (Linux only)</source>
+        <comment>plugin description</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -858,6 +858,17 @@
     <name>ImporterPageForm.ui</name>
     <message>
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LeftDockForm.ui</name>
+    <message>
+        <source>Show the beginning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the end</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1841,6 +1852,17 @@
     </message>
 </context>
 <context>
+    <name>RightDockForm.ui</name>
+    <message>
+        <source>Show the beginning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the end</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>RootPage</name>
     <message>
         <source>Ok</source>
@@ -2273,10 +2295,6 @@
     </message>
     <message>
         <source>Show the first steps dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show properties toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -23,6 +23,7 @@ set(SRCS
 
 set(QRC
     plugin_qml.qrc
+    plugin_icons.qrc
     )
 
 qt_add_resources(RESOURCES ${QRC})

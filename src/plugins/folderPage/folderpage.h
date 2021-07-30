@@ -63,6 +63,10 @@ public:
         return "FOLDER";
     }
 
+    int weight() const override {
+        return 600;
+    }
+
     QString visualText() const override {
         return tr("Folder");
     }
@@ -79,7 +83,9 @@ public:
         return true;
     }
 
-    QString pageTypeIconUrl() const override {
+    QString pageTypeIconUrl(int projectId, int treeItemId) const override {
+        Q_UNUSED(projectId)
+        Q_UNUSED(treeItemId)
         return "qrc:///icons/backup/document-open.svg";
     }
 

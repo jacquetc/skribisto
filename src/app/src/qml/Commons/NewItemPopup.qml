@@ -17,7 +17,6 @@ NewItemPopupForm {
     property int quantity: quantitySpinbox.value
 
     onOpened: {
-        quantitySpinbox.value = 1
         forcefocusTimer.start()
     }
 
@@ -29,7 +28,7 @@ NewItemPopupForm {
         }
     }
 
-    function getIconUrlFromPageType(type){
+    function getIconUrlFromPageType(type) {
         return skrTreeManager.getIconUrlFromPageType(type)
     }
 

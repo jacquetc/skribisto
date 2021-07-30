@@ -101,7 +101,6 @@
         <file>icons/backup/view-right-close.svg</file>
         <file>icons/backup/view-close.svg</file>
         <file>icons/backup/go-home.svg</file>
-        <file>icons/backup/document-print-none.svg</file>
         <file>icons/backup/whitebalance.svg</file>
         <file>icons/backup/color-picker-black.svg</file>
         <file>icons/backup/question.svg</file>
@@ -122,5 +121,13 @@
         <file>icons/backup/remove-link.svg</file>
         <file>icons/backup/view-list-icons.svg</file>
         <file>icons/backup/artifact.svg</file>
+        <file>icons/backup/bookmark-new.svg</file>
+        <file>icons/backup/menu_new_sep.svg</file>
+        <file>icons/backup/skribisto-document-print-none.svg</file>
+        <file>icons/backup/skribisto-book-beginning.svg</file>
+        <file>icons/backup/skribisto-book-end.svg</file>
+        <file>icons/backup/roll.svg</file>
+        <file>icons/backup/view-filter.svg</file>
+        <file>icons/backup/format-font-size-less.svg</file>
     </qresource>
 </RCC>

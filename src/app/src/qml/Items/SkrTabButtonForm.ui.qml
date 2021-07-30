@@ -34,8 +34,8 @@ TabButton {
             id: image
             focusPolicy: Qt.NoFocus
             enabled: true
-            implicitHeight: 24
-            implicitWidth: 24
+            implicitHeight: 30
+            implicitWidth: 30
             Layout.maximumHeight: 30
             rightPadding: 0
             bottomPadding: 0
@@ -46,8 +46,6 @@ TabButton {
                 source: iconSource
                 name: iconName
                 color: iconColor
-                height: 24
-                width: 24
             }
             onClicked: base.checked = true
 

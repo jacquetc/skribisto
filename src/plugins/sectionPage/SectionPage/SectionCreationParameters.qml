@@ -14,20 +14,21 @@ Item {
 
     ColumnLayout{
         id: layout
-        anchors.fill: parent
+        anchors.centerIn: parent
 
         SkrComboBox {
             id: sectionTypeComboBox
-            Layout.fillWidth: true
+            //Layout.fillWidth: true
 
             wheelEnabled: true
             //visible: SkrSettings.accessibilitySettings.accessibilityEnabled
-            model: [
-                { value: "book-beginning ", text: qsTr("Beginning of a book") },
-                { value: "chapter", text: qsTr("Chapter") },
-                { value: "separator", text: qsTr("Separator") },
-                { value: "book-end", text: qsTr("End of a book") }
-            ]
+            model: ListModel {
+                ListElement{ value: "book-beginning "; text: qsTr("Beginning of a book") }
+                ListElement{ value: "chapter"; text: qsTr("Chapter") }
+                ListElement{ value: "separator"; text: qsTr("Separator") }
+                ListElement{ value: "book-end"; text: qsTr("End of a book") }
+}
+
             textRole: "text"
             valueRole: "value"
             currentIndex: 2

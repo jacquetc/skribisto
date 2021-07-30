@@ -42,14 +42,27 @@ SkrPane {
             SkrPane {
                 id: mainButtonsPane
                 Layout.minimumWidth: 200
-                Layout.maximumWidth: 400
+                Layout.preferredWidth: columnLayout3.childrenRect.width + 30
+                //Layout.fillWidth: true
                 Layout.fillHeight: true
+
+
+                ScrollView {
+                    id: scrollView
+                    anchors.fill: parent
+                    clip: true
+
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                    contentWidth: columnLayout3.width
+                    contentHeight: columnLayout3.implicitHeight
+
 
                 ColumnLayout {
                     id: columnLayout1
-                    anchors.fill: parent
 
                     ColumnLayout {
+                        id: columnLayout3
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
@@ -196,6 +209,7 @@ SkrPane {
                         Item {
                             id: element
                             Layout.preferredWidth: 10
+                            Layout.minimumHeight: 30
                             Layout.fillHeight: true
                         }
 
@@ -208,11 +222,8 @@ SkrPane {
                         }
                     }
 
-                    SkrLabel {
-                        id: versionLabel
-                        Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
-                    }
                 }
+            }
             }
 
             Rectangle {
@@ -262,6 +273,11 @@ SkrPane {
                     initialItem: Item {}
                 }
             }
+        }
+
+        SkrLabel {
+            id: versionLabel
+            Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
         }
     }
 }

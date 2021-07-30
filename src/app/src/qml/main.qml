@@ -128,8 +128,6 @@ ApplicationWindow {
         text: qsTr("First steps")
         icon {
             source: ""
-            height: 50
-            width: 50
         }
 
         onTriggered: {
@@ -272,8 +270,6 @@ ApplicationWindow {
         text: skrShortcutManager.description("fullscreen")
         icon {
             source: "qrc:///icons/backup/view-fullscreen.svg"
-            height: 50
-            width: 50
         }
 
         checkable: true
@@ -430,8 +426,6 @@ ApplicationWindow {
         text: qsTr("Themes")
         icon {
             source: "qrc:///icons/backup/color-picker-white.svg"
-            height: 50
-            width: 50
         }
 
         onTriggered: {
@@ -480,8 +474,6 @@ ApplicationWindow {
         text: qsTr("&FAQ")
         icon {
             source: "qrc:///icons/backup/question.svg"
-            height: 50
-            width: 50
         }
 
         onTriggered: {
@@ -595,8 +587,6 @@ ApplicationWindow {
         text: skrShortcutManager.description("open-project")
         icon {
             source: "qrc:///icons/backup/document-open.svg"
-            height: 50
-            width: 50
         }
 
         onTriggered: {
@@ -659,8 +649,6 @@ ApplicationWindow {
         text: skrShortcutManager.description("save-project")
         icon {
             source: "qrc:///icons/backup/document-save.svg"
-            height: 50
-            width: 50
         }
         enabled: false
 
@@ -720,8 +708,6 @@ ApplicationWindow {
         text: skrShortcutManager.description("save-all-project")
         icon {
             source: "qrc:///icons/backup/document-save-all.svg"
-            height: 50
-            width: 50
         }
         enabled: false
 
@@ -766,8 +752,6 @@ ApplicationWindow {
         text: skrShortcutManager.description("save-as-project")
         icon {
             source: "qrc:///icons/backup/document-save-as.svg"
-            height: 50
-            width: 50
         }
         enabled: false
 
@@ -853,8 +837,6 @@ ApplicationWindow {
         text: qsTr("Save a Copy")
         icon {
             source: "qrc:///icons/backup/document-save-as-template.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey.SaveAs
@@ -1082,8 +1064,6 @@ ApplicationWindow {
         text: qsTr("Back up")
         icon {
             source: "qrc:///icons/backup/tools-media-optical-burn-image.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey.SaveAs
@@ -1155,8 +1135,6 @@ ApplicationWindow {
         text: skrShortcutManager.description("settings")
         icon {
             source: "qrc:///icons/backup/configure.svg"
-            height: 50
-            width: 50
         }
 
         onTriggered: {
@@ -1179,8 +1157,6 @@ ApplicationWindow {
         text: skrShortcutManager.description("print")
         icon {
             source: "qrc:///icons/backup/document-print.svg"
-            height: 50
-            width: 50
         }
         enabled: skrRootItem.hasPrintSupport()
 
@@ -1204,8 +1180,6 @@ ApplicationWindow {
         text: qsTr("&Import")
         icon {
             source: "qrc:///icons/backup/document-import.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey
@@ -1222,8 +1196,6 @@ ApplicationWindow {
         text: qsTr("&Export")
         icon {
             source: "qrc:///icons/backup/document-export.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey.New
@@ -1397,8 +1369,7 @@ ApplicationWindow {
         text: skrShortcutManager.description("quit")
         icon {
             source: "qrc:///icons/backup/window-close.svg"
-            height: 50
-            width: 50
+            color: "transparent"
         }
 
         //        shortcut: StandardKey.Quit
@@ -1642,8 +1613,6 @@ ApplicationWindow {
         text: qsTr("Italic")
         icon {
             source: "qrc:///icons/backup/format-text-italic.svg"
-            height: 50
-            width: 50
         }
 
         shortcut: StandardKey.Italic
@@ -1669,8 +1638,6 @@ ApplicationWindow {
         text: qsTr("Bold")
         icon {
             source: "qrc:///icons/backup/format-text-bold.svg"
-            height: 50
-            width: 50
         }
 
         shortcut: StandardKey.Bold
@@ -1697,8 +1664,6 @@ ApplicationWindow {
         text: qsTr("Strike")
         icon {
             source: "qrc:///icons/backup/format-text-strikethrough.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey
@@ -1724,8 +1689,6 @@ ApplicationWindow {
         text: qsTr("Underline")
         icon {
             source: "qrc:///icons/backup/format-text-underline.svg"
-            height: 50
-            width: 50
         }
 
         shortcut: StandardKey.Underline

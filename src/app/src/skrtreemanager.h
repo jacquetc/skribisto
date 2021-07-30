@@ -32,7 +32,9 @@ class SKRTreeManager : public QObject {
 public:
 
     explicit SKRTreeManager(QObject *parent = nullptr);
-    Q_INVOKABLE QUrl        getIconUrlFromPageType(const QString& pageType) const;
+    Q_INVOKABLE QUrl        getIconUrlFromPageType(const QString& pageType,
+                                                   int            projectI   = -1,
+                                                   int            treeItemId = -1) const;
     Q_INVOKABLE QStringList getPageTypeList(bool constructibleOnly) const;
     Q_INVOKABLE QString     getPageTypeText(const QString& pageType) const;
     Q_INVOKABLE QString     getPageDetailText(const QString& pageType) const;

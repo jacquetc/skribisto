@@ -22,7 +22,6 @@ Item {
     property alias backupPathListView: backupPathListView
     property alias removeBackupPathButton: removeBackupPathButton
     property alias addBackupPathButton: addBackupPathButton
-    property alias showPropertiesCheckBox: showPropertiesCheckBox
     property alias setTextCursorUnblinkingCheckBox: setTextCursorUnblinkingCheckBox
     property alias animationEnabledCheckBox: animationEnabledCheckBox
     property alias langComboBox: langComboBox
@@ -466,11 +465,6 @@ Item {
                             id: columnLayout7
                             width: 100
                             height: 100
-
-                            SkrSwitch {
-                                id: showPropertiesCheckBox
-                                text: qsTr("Show properties toolbox")
-                            }
 
                             SkrSwitch {
                                 id: devModeCheckBox

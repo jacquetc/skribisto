@@ -62,6 +62,10 @@ public:
         return "CARDVIEW";
     }
 
+    int weight() const override {
+        return 500;
+    }
+
     QString visualText() const override {
         return tr("Card View");
     }
@@ -86,10 +90,6 @@ public:
 
     QStringList shortcutSequences() const override {
         return QStringList() << "F6";
-    }
-
-    int weight() const override {
-        return 500;
     }
 
     QStringList locations() const override {
