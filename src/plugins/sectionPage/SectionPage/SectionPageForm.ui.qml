@@ -101,22 +101,31 @@ SkrBasePage {
                             id: layout
                             anchors.fill: parent
 
-                            SkrComboBox {
-                                id: sectionTypeComboBox
+                            RowLayout {
                                 Layout.fillWidth: true
+                                Layout.fillHeight: true
 
-                                wheelEnabled: true
-                                //visible: SkrSettings.accessibilitySettings.accessibilityEnabled
-                                model: [
-                                    { value: "book-beginning ", text: qsTr("Beginning of a book") },
-                                    { value: "chapter", text: qsTr("Chapter") },
-                                    { value: "separator", text: qsTr("Separator") },
-                                    { value: "book-end", text: qsTr("End of a book") }
-                                ]
-                                textRole: "text"
-                                valueRole: "value"
+                                SkrLabel{
+                                    text: qsTr("Type:")
+                                }
+
+                                SkrComboBox {
+                                    id: sectionTypeComboBox
+                                    Layout.fillWidth: true
+
+                                    wheelEnabled: true
+                                    //visible: SkrSettings.accessibilitySettings.accessibilityEnabled
+                                    model: [
+                                        { value: "book-beginning ", text: qsTr("Beginning of a book") },
+                                        { value: "chapter", text: qsTr("Chapter") },
+                                        { value: "separator", text: qsTr("Separator") },
+                                        { value: "book-end", text: qsTr("End of a book") }
+                                    ]
+                                    textRole: "text"
+                                    valueRole: "value"
 
 
+                                }
                             }
 
                         }

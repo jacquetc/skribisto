@@ -500,19 +500,19 @@ ProjectPageForm {
     }
     Connections{
         target: skrData.treeHub()
-        function onTreeItemTitleChanged(projectId, treeItemId) {
+        function onTitleChanged(projectId, treeItemId, newTitle) {
             populateNoteFolderComboBox()
         }
     }
     Connections{
         target: skrData.treeHub()
-        function onTreeItemInternalTitleChanged(projectId, treeItemId) {
+        function onInternalTitleChanged(projectId, treeItemId, newTitle) {
             populateNoteFolderComboBox()
         }
     }
     Connections{
         target: skrData.treeHub()
-        function onTrashedChanged(projectId, treeItemId) {
+        function onTrashedChanged(projectId, treeItemId, newTrashedState) {
             populateNoteFolderComboBox()
         }
     }

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qml/plugins">
+        <file>AntidotePageToolbox/AntidotePageToolbox.qml</file>
+        <file>AntidotePageToolbox/AntidotePageToolboxForm.ui.qml</file>
+    </qresource>
+</RCC>

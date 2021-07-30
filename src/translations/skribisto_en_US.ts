@@ -2,6 +2,42 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
 <context>
+    <name>AntidotePageToolbox</name>
+    <message>
+        <source>Display a toolbox offering a quick access to Druide Antidote™</source>
+        <comment>plugin description</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Druide Antidote™ Page Toolbox</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Druide Antidote™ toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AntidotePageToolboxForm.ui</name>
+    <message>
+        <source>Druide Antidote</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Corrector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guide</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Breadcrumb</name>
     <message>
         <source>Show the beginning</source>
@@ -2079,6 +2115,10 @@
     </message>
     <message>
         <source>Section</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
