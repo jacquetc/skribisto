@@ -1,9 +1,60 @@
 <?xml version="1.0" ?><!DOCTYPE TS><TS language="fr_FR" version="2.1">
 <context>
+    <name>AntidotePageToolbox</name>
+    <message>
+        <source>Druide Antidote™ Page Toolbox</source>
+        <comment>plugin name</comment>
+        <translation>Boîte à outils de Druide Antidote™</translation>
+    </message>
+    <message>
+        <source>Show Druide Antidote™ toolbox</source>
+        <translation>Montrer la boîte à outils de Druide Antidote™</translation>
+    </message>
+    <message>
+        <source>Display a toolbox offering a quick access to Druide Antidote™ (Linux only)</source>
+        <comment>plugin description</comment>
+        <translation>Montre une boîte à outils offrant un accès rapide à Druide Antidote™ (Linux seulement)</translation>
+    </message>
+</context>
+<context>
+    <name>AntidotePageToolboxForm.ui</name>
+    <message>
+        <source>Druide Antidote</source>
+        <translation>Druide Antidote</translation>
+    </message>
+    <message>
+        <source>Corrector</source>
+        <translation>Correcteur</translation>
+    </message>
+    <message>
+        <source>Dictionary</source>
+        <translation>Dictionnaire</translation>
+    </message>
+    <message>
+        <source>Guide</source>
+        <translation>Guide</translation>
+    </message>
+</context>
+<context>
+    <name>Breadcrumb</name>
+    <message>
+        <source>Show the beginning</source>
+        <translation>Afficher le début</translation>
+    </message>
+    <message>
+        <source>Show the end</source>
+        <translation>Afficher la fin</translation>
+    </message>
+</context>
+<context>
     <name>Card</name>
     <message>
         <source>Outline</source>
         <translation>Plan</translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
+        <translation>Renommer un élément</translation>
     </message>
 </context>
 <context>
@@ -24,16 +75,23 @@
         <translation>Vue carte de %1</translation>
     </message>
     <message>
-        <source>Card view page</source>
-        <translation>Page d&apos;affichage en cartes</translation>
-    </message>
-    <message>
         <source>Card View</source>
         <translation>Vue Carte</translation>
     </message>
     <message>
+        <source>Card view page</source>
+        <comment>plugin name</comment>
+        <translation>Page d&apos;affichage de la carte</translation>
+    </message>
+    <message>
+        <source>Display a grid-like overview</source>
+        <comment>plugin description</comment>
+        <translation>Afficher une vue d&apos;ensemble en forme de grille</translation>
+    </message>
+    <message>
         <source>Show the card view</source>
-        <translation>Afficher la vue en cartes</translation>
+        <comment>showButtonText</comment>
+        <translation>Afficher la vue de la carte</translation>
     </message>
 </context>
 <context>
@@ -333,6 +391,10 @@
         <source>Quick print</source>
         <translation>Impression rapide</translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation>Chercher</translation>
+    </message>
 </context>
 <context>
     <name>EditViewForm.ui</name>
@@ -407,6 +469,14 @@
     <message>
         <source>Top margin :</source>
         <translation>Marge supérieure du texte :</translation>
+    </message>
+    <message>
+        <source>Find</source>
+        <translation>Chercher</translation>
+    </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
+        <translation>Afficher la barre de défilement de la minicarte</translation>
     </message>
 </context>
 <context>
@@ -542,8 +612,9 @@
         <translation>Afficher la boîte à outils des favoris</translation>
     </message>
     <message>
-        <source>Favorites Project Toolbox</source>
-        <translation>Boîte à outils du projet Favoris</translation>
+        <source>Favorites project toolbox</source>
+        <comment>plugin name</comment>
+        <translation>Boîte à outils de favoris du projet </translation>
     </message>
 </context>
 <context>
@@ -720,6 +791,45 @@
         <source>Welcome to Skribisto</source>
         <translation>Bienvenue dans Skribisto</translation>
     </message>
+    <message>
+        <source>Plugin selection can be changed later in settings.</source>
+        <translation>La sélection du plugin peut être modifiée ultérieurement dans les paramètres.</translation>
+    </message>
+    <message>
+        <source>Please restart to apply changes</source>
+        <translation>Veuillez redémarrer pour appliquer les modifications</translation>
+    </message>
+</context>
+<context>
+    <name>FolderPage</name>
+    <message>
+        <source>Note</source>
+        <translation>Note</translation>
+    </message>
+    <message>
+        <source>Folder</source>
+        <translation>Dossier</translation>
+    </message>
+    <message>
+        <source>Group your items in folders.</source>
+        <translation>Regroupez vos éléments dans des dossiers.</translation>
+    </message>
+    <message>
+        <source>%1 words, %2 characters (all)</source>
+        <translation>%1 mots, %2 caractères (tous)</translation>
+    </message>
+    <message>
+        <source>Folder page</source>
+        <comment>plugin name</comment>
+        <translation>Page du dossier</translation>
+    </message>
+</context>
+<context>
+    <name>FolderPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation>Menu des pages</translation>
+    </message>
 </context>
 <context>
     <name>HelpContentsForm.ui</name>
@@ -753,9 +863,16 @@
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
         <translation> &lt;h2&gt; Importation &lt;/h2&gt;</translation>
     </message>
+</context>
+<context>
+    <name>LeftDockForm.ui</name>
     <message>
-        <source>Import from Plume Creator project</source>
-        <translation>Importer depuis le projet Plume Creator</translation>
+        <source>Show the beginning</source>
+        <translation>Montrer le début</translation>
+    </message>
+    <message>
+        <source>Show the end</source>
+        <translation>Montrer la fin</translation>
     </message>
 </context>
 <context>
@@ -919,6 +1036,10 @@
         <source>Send to trash</source>
         <translation>Envoyer à la corbeille</translation>
     </message>
+    <message>
+        <source>New item&apos;s parameters</source>
+        <translation>Paramètres du nouvel élément</translation>
+    </message>
 </context>
 <context>
     <name>NavigationListForm.ui</name>
@@ -943,6 +1064,7 @@
     </message>
     <message>
         <source>Navigation Project Toolbox</source>
+        <comment>plugin name</comment>
         <translation>Boîte à outils de projet de navigation</translation>
     </message>
 </context>
@@ -1160,10 +1282,6 @@
 <context>
     <name>OverviewPage</name>
     <message>
-        <source>Overview page</source>
-        <translation>Page de la vue d&apos;ensemble</translation>
-    </message>
-    <message>
         <source>Overview</source>
         <translation>Vue d&apos;ensemble</translation>
     </message>
@@ -1182,6 +1300,11 @@
     <message>
         <source>Overview of %1</source>
         <translation>Aperçu de %1</translation>
+    </message>
+    <message>
+        <source>Overview page</source>
+        <comment>plugin name</comment>
+        <translation>Page de présentation</translation>
     </message>
 </context>
 <context>
@@ -1349,7 +1472,52 @@
     </message>
 </context>
 <context>
+    <name>Plugin</name>
+    <message>
+        <source>Import a project from Plume Creator </source>
+        <translation>Importer un projet depuis Plume Creator</translation>
+    </message>
+    <message>
+        <source>Plume Creator importer</source>
+        <comment>plugin name</comment>
+        <translation>Importateur Plume Creator</translation>
+    </message>
+    <message>
+        <source>Import a project from Plume Creator</source>
+        <comment>plugin description</comment>
+        <translation>Importer un projet depuis Plume Creator</translation>
+    </message>
+</context>
+<context>
     <name>PluginPage</name>
+    <message>
+        <source>Page Toolboxes</source>
+        <translation>Boîtes à outils de page</translation>
+    </message>
+    <message>
+        <source>Project Toolboxes</source>
+        <translation>Boîtes à outils de projet</translation>
+    </message>
+    <message>
+        <source>Pages</source>
+        <translation>Pages</translation>
+    </message>
+    <message>
+        <source>Project Pages</source>
+        <translation>Pages de projet</translation>
+    </message>
+    <message>
+        <source>Importers</source>
+        <translation>Importateurs</translation>
+    </message>
+    <message>
+        <source>Examples</source>
+        <translation>Exemples</translation>
+    </message>
+    <message>
+        <source>Templates</source>
+        <translation>Modèles</translation>
+    </message>
     <message>
         <source>%1 (mandatory)</source>
         <translation>%1 (obligatoire)</translation>
@@ -1362,10 +1530,6 @@
         <translation>Plugins</translation>
     </message>
     <message>
-        <source>Classic</source>
-        <translation>Classique</translation>
-    </message>
-    <message>
         <source>Writing</source>
         <translation>L&apos;écriture</translation>
     </message>
@@ -1373,20 +1537,40 @@
         <source>Personalized</source>
         <translation>Personnalisé</translation>
     </message>
+    <message>
+        <source>Notes</source>
+        <translation> Notes</translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <translation>Vide</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Tous</translation>
+    </message>
+    <message>
+        <source>Minimum</source>
+        <translation>Minimum</translation>
+    </message>
+    <message>
+        <source>Description:</source>
+        <translation>Description:</translation>
+    </message>
 </context>
 <context>
-    <name>PlumeImporterForm.ui</name>
+    <name>PlumeCreatorImporterForm.ui</name>
     <message>
         <source>Go back</source>
-        <translation>Revenir</translation>
+        <translation>Retourner</translation>
     </message>
     <message>
         <source>&lt;h2&gt;Import Plume Creator project&lt;/h2&gt;</source>
-        <translation>&lt;h2&gt;Importer un projet de Plume Creator&lt;/h2&gt;</translation>
+        <translation> &lt;h2&gt; Importer un projet de Plume Creator &lt;/h2&gt;</translation>
     </message>
     <message>
         <source>Plume project file (*.plume) :</source>
-        <translation>Fichier de projet de Plume (*.plume) :</translation>
+        <translation>Fichier projet Plume (*.plume) :</translation>
     </message>
     <message>
         <source>plume project file</source>
@@ -1398,7 +1582,7 @@
     </message>
     <message>
         <source>This project will be imported as : </source>
-        <translation>Ce projet sera importé en tant que : </translation>
+        <translation>Ce projet sera importé en tant que :</translation>
     </message>
     <message>
         <source>Import</source>
@@ -1419,6 +1603,27 @@
         <source>Word count : %1</source>
         <translation>Nombre de mots: %1</translation>
     </message>
+    <message>
+        <source>%1 words, %2 characters (all)</source>
+        <translation>%1 mots, %2 caractères (tous)</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>Note</translation>
+    </message>
+    <message>
+        <source>Project</source>
+        <translation>Projet</translation>
+    </message>
+    <message>
+        <source>Project page</source>
+        <comment>plugin name</comment>
+        <translation>Page du projet</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation>Notes</translation>
+    </message>
 </context>
 <context>
     <name>ProjectPageForm.ui</name>
@@ -1427,16 +1632,8 @@
         <translation>Éditer le nom du projet</translation>
     </message>
     <message>
-        <source>Location :</source>
-        <translation>Emplacement :</translation>
-    </message>
-    <message>
         <source>Language</source>
         <translation>Langue</translation>
-    </message>
-    <message>
-        <source>Dictionary :</source>
-        <translation>Dictionnaire :</translation>
     </message>
     <message>
         <source>Selected dictionary not found</source>
@@ -1460,11 +1657,27 @@
     </message>
     <message>
         <source>Notes</source>
-        <translation>Remarques</translation>
+        <translation>Notes</translation>
     </message>
     <message>
         <source>Note folder:</source>
         <translation>Dossier de notes :</translation>
+    </message>
+    <message>
+        <source>Page menu</source>
+        <translation>Menu des pages</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Lieu:</translation>
+    </message>
+    <message>
+        <source>Dictionary:</source>
+        <translation>Dictionnaire:</translation>
+    </message>
+    <message>
+        <source>Add a &quot;Notes&quot; folder</source>
+        <translation>Ajouter un dossier &quot;Notes&quot;</translation>
     </message>
 </context>
 <context>
@@ -1524,7 +1737,7 @@
     <name>RelationshipPanel</name>
     <message>
         <source>Note</source>
-        <translation>Noter</translation>
+        <translation>Note</translation>
     </message>
     <message>
         <source>Type your text here …</source>
@@ -1587,7 +1800,7 @@
     </message>
     <message>
         <source>Notes</source>
-        <translation>Remarques</translation>
+        <translation>Notes</translation>
     </message>
     <message>
         <source>Relationship list</source>
@@ -1643,6 +1856,17 @@
     </message>
 </context>
 <context>
+    <name>RightDockForm.ui</name>
+    <message>
+        <source>Show the beginning</source>
+        <translation>Montrer le début</translation>
+    </message>
+    <message>
+        <source>Show the end</source>
+        <translation>Montrer la fin</translation>
+    </message>
+</context>
+<context>
     <name>RootPage</name>
     <message>
         <source>Ok</source>
@@ -1692,7 +1916,7 @@
     <name>S:</name>
     <message>
         <source/>
-        <comment>the capital letters are shortcuts, mark one letter similarly in your translation and translate the standalone letter accordingly later</comment>
+        <comment>translate this letter according to the shortcut * letter y)es</comment>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -1837,6 +2061,20 @@
         <comment>add-quick-note</comment>
         <translation>Alt+N</translation>
     </message>
+    <message>
+        <source>F11</source>
+        <comment>fullscreen</comment>
+        <translation>F11</translation>
+    </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
+        <translation>Afficher la barre de défilement de la minicarte</translation>
+    </message>
+    <message>
+        <source>Alt+M</source>
+        <comment>center-vert-text-cursor</comment>
+        <translation>Alt+M</translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
@@ -1844,9 +2082,79 @@
         <source>Project</source>
         <translation>Projet</translation>
     </message>
+</context>
+<context>
+    <name>SectionCreationParameters</name>
     <message>
-        <source>Folder</source>
-        <translation>Dossier</translation>
+        <source>Beginning of a book</source>
+        <translation>Début d&apos;un livre</translation>
+    </message>
+    <message>
+        <source>Chapter</source>
+        <translation>Chapitre</translation>
+    </message>
+    <message>
+        <source>Separator</source>
+        <translation>Séparateur</translation>
+    </message>
+    <message>
+        <source>End of a book</source>
+        <translation>Fin d&apos;un livre</translation>
+    </message>
+</context>
+<context>
+    <name>SectionPage</name>
+    <message>
+        <source>%1 words, %2 characters (all)</source>
+        <translation>%1 mots, %2 caractères (tous)</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>Note</translation>
+    </message>
+    <message>
+        <source>Section page</source>
+        <comment>plugin name</comment>
+        <translation>Page de rubrique</translation>
+    </message>
+    <message>
+        <source>Section</source>
+        <translation>Section</translation>
+    </message>
+    <message>
+        <source>Create a logical separation between items.</source>
+        <translation>Créez une séparation logique entre les éléments.</translation>
+    </message>
+</context>
+<context>
+    <name>SectionPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation>Menu des pages</translation>
+    </message>
+    <message>
+        <source>Beginning of a book</source>
+        <translation>Début d&apos;un livre</translation>
+    </message>
+    <message>
+        <source>Chapter</source>
+        <translation>Chapitre</translation>
+    </message>
+    <message>
+        <source>Separator</source>
+        <translation>Séparateur</translation>
+    </message>
+    <message>
+        <source>End of a book</source>
+        <translation>Fin d&apos;un livre</translation>
+    </message>
+    <message>
+        <source>Section</source>
+        <translation>Section</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Taper:</translation>
     </message>
 </context>
 <context>
@@ -2003,12 +2311,16 @@
         <translation>Afficher la boîte de dialogue des premiers pas</translation>
     </message>
     <message>
-        <source>Show properties toolbox</source>
-        <translation>Afficher la boîte à outils des propriétés</translation>
-    </message>
-    <message>
         <source>Enable animations</source>
         <translation>Activer les animations</translation>
+    </message>
+    <message>
+        <source>Minimap scrollbar</source>
+        <translation>Barre de défilement de la minicarte</translation>
+    </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
+        <translation>Afficher la barre de défilement de la minicarte</translation>
     </message>
 </context>
 <context>
@@ -2072,10 +2384,6 @@
         <translation>Accent</translation>
     </message>
     <message>
-        <source>Spellcheck</source>
-        <translation>Correcteur orthographique</translation>
-    </message>
-    <message>
         <source>ToolBar background</source>
         <translation>Arrière-plan de la barre d&apos;outils</translation>
     </message>
@@ -2094,6 +2402,42 @@
     <message>
         <source>List item background</source>
         <translation>Arrière-plan de l&apos;élément de liste</translation>
+    </message>
+    <message>
+        <source>Spell check highlight</source>
+        <translation>Vérification orthographique en surbrillance</translation>
+    </message>
+    <message>
+        <source>Find highlight</source>
+        <translation>Trouver le point culminant</translation>
+    </message>
+    <message>
+        <source>Other highlight 1</source>
+        <translation>Autre point culminant 1</translation>
+    </message>
+    <message>
+        <source>Other highlight 2</source>
+        <translation>Autre point culminant 2</translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s spell check highlight</source>
+        <translation>Surbrillance de la vérification orthographique de la minicarte</translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s find highlight</source>
+        <translation>Point culminant de la recherche de la minicarte</translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s other highlight 1</source>
+        <translation>L&apos;autre point fort de la minicarte 1</translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s other highlight 2</source>
+        <translation>L&apos;autre point fort de la minimap 2</translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s other highlight 3</source>
+        <translation>L&apos;autre point fort de la minimap 3</translation>
     </message>
 </context>
 <context>
@@ -2192,18 +2536,6 @@
 <context>
     <name>TextPage</name>
     <message>
-        <source>Plan of %1</source>
-        <translation>Plan de %1</translation>
-    </message>
-    <message>
-        <source>%1 words, %2 characters</source>
-        <translation>%1 mots, %2 caractères</translation>
-    </message>
-    <message>
-        <source>Text page</source>
-        <translation>Page de texte</translation>
-    </message>
-    <message>
         <source>Text</source>
         <translation>Texte</translation>
     </message>
@@ -2212,12 +2544,21 @@
         <translation>Écrivez ici n&apos;importe quel texte, que ce soit une scène ou une note</translation>
     </message>
     <message>
-        <source>Close quick view</source>
-        <translation>Fermer la vue rapide</translation>
+        <source>Text page</source>
+        <comment>plugin name</comment>
+        <translation>Page de texte</translation>
     </message>
     <message>
-        <source>Open quick view</source>
-        <translation>Ouvrir la vue rapide</translation>
+        <source>Plan of %1</source>
+        <translation>Plan de %1</translation>
+    </message>
+    <message>
+        <source>%1 words, %2 characters</source>
+        <translation>%1 mots, %2 caractères</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>Note</translation>
     </message>
     <message>
         <source>Show edit toolbox</source>
@@ -2236,8 +2577,12 @@
         <translation>Afficher la boîte à outils des balises</translation>
     </message>
     <message>
-        <source>Note</source>
-        <translation>Noter</translation>
+        <source>Close quick view</source>
+        <translation>Fermer la vue rapide</translation>
+    </message>
+    <message>
+        <source>Open quick view</source>
+        <translation>Ouvrir la vue rapide</translation>
     </message>
 </context>
 <context>
@@ -2256,10 +2601,6 @@
     <message>
         <source>Edit color</source>
         <translation>Editer la couleur</translation>
-    </message>
-    <message>
-        <source>Theme page</source>
-        <translation>Page thématique</translation>
     </message>
     <message>
         <source>Choose or modify your themes</source>
@@ -2308,6 +2649,11 @@
     <message>
         <source>Distraction free</source>
         <translation>Sans distraction</translation>
+    </message>
+    <message>
+        <source>Theme page</source>
+        <comment>plugin name</comment>
+        <translation>Page thématique</translation>
     </message>
 </context>
 <context>
@@ -2509,12 +2855,18 @@
 <context>
     <name>WritingGamesPageToolbox</name>
     <message>
+        <source>Show Writing Games toolbox</source>
+        <translation>Afficher la boîte à outils des jeux d&apos;écriture</translation>
+    </message>
+    <message>
         <source>Writing Games Page Toolbox</source>
+        <comment>plugin name</comment>
         <translation>Boîte à outils de la page de jeux d&apos;écriture</translation>
     </message>
     <message>
-        <source>Show Writing Games toolbox</source>
-        <translation>Afficher la boîte à outils des jeux d&apos;écriture</translation>
+        <source>Display a toolbox offering some writing game</source>
+        <comment>plugin description</comment>
+        <translation>Afficher une boîte à outils proposant un jeu d&apos;écriture</translation>
     </message>
 </context>
 <context>
