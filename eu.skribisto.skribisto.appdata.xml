@@ -39,8 +39,8 @@
           <li>Docks: toolbox top buttons are now in a list</li>
           <li>Notes: fix set note folder does nothing</li>
           <li>Notes: add a quick button to add Notes folder</li>
-          <li>section: add Section page type</li>
-          <li>paramters: add a way to add custom parameters to new pages</li>
+          <li>Section: add Section page type</li>
+          <li>Parameters: add a way to add custom parameters to new pages</li>
         </ul>
       </description>
     </release>
