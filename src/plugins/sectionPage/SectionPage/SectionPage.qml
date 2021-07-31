@@ -63,7 +63,7 @@ SectionPageForm {
             if (projectId === root.projectId
                     && treeItemId === root.treeItemId) {
 
-                if (name === "word_count_with_children") {
+                if (name === "word_count") {
                     countPriv.wordCount = value
                     updateCountLabel()
                 }
@@ -77,7 +77,7 @@ SectionPageForm {
             if (projectId === root.projectId
                     && treeItemId === root.treeItemId) {
 
-                if (name === "char_count_with_children") {
+                if (name === "char_count") {
                     countPriv.characterCount = value
                     updateCountLabel()
                 }

@@ -27,7 +27,7 @@ AntidotePageToolboxForm {
         textDocument: writingZone.textArea.textDocument
         selectionStart: writingZone.textArea.selectionStart
         selectionEnd: writingZone.textArea.selectionEnd
-        title: "test"
+        title: skrData.treeHub().getTitle(page.projectId, page.treeItemId)
         textIndent: SkrSettings.textSettings.textIndent
         textTopMargin: SkrSettings.textSettings.textTopMargin
 
