@@ -56,4 +56,19 @@ Description:
 - "Distraction free: header bar can now hide"
 - "Writing games: forbid Ctrl+Z"
 
+Version: 1.9.27
+Date: 2021-08-01
+Type: stable
+Description:
+- "Minimap: new minimap scrollbar"
+- "Icons: use bigger and sharper icons"
+- "Pages: creation list of items is sorted"
+- "Druide Antidote: add plugin to use Druide Antidote with text page"
+- "Breadcrumb: make buttons action to go to the beginning/end smoother"
+- "Docks: toolbox top buttons are now in a list"
+- "Notes: fix set note folder does nothing"
+- "Notes: add a quick button to add Notes folder"
+- "section: add Section page type"
+- "paramters: add a way to add custom parameters to new pages"
+
 
