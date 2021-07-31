@@ -96,7 +96,7 @@ FocusScope {
                             font.preferShaping: false
                             font.kerning: false
                             //clip: true
-                            textFormat: Text.MarkdownText
+                            textFormat: Text.RichText
                             focus: true
                             selectByMouse: true
                             wrapMode: TextEdit.Wrap

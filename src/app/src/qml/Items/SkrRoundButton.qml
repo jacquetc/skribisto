@@ -6,7 +6,7 @@ import ".."
 RoundButton {
     id: control
     icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
-                                          (control.action.icon.color === "transparent" ?
+                                          (control.action.icon.color ?
                                                (enabled ? control.action.icon.color: SkrTheme.buttonIconDisabled) :
                                                (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
 
@@ -22,6 +22,9 @@ RoundButton {
     }
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Tab){
+            Globals.setFocusTemporarilyVisible()
+        }
+        if (event.key === Qt.Key_Backtab) {
             Globals.setFocusTemporarilyVisible()
         }
     }

@@ -8,6 +8,7 @@ import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
 import eu.skribisto.skr 1.0
 import "../../Commons"
+import "../../Items"
 import "../.."
 
 CardForm {
@@ -180,6 +181,62 @@ CardForm {
     touchDragHandler.grabPermissions: PointerHandler.CanTakeOverFromItems
                                       | PointerHandler.CanTakeOverFromAnything | PointerHandler.TakeOverForbidden
 
+
+    //--------------------------------------------------------------
+    titleTapHandler.onSingleTapped: {
+        renameDialog.projectId =  model.projectId
+        renameDialog.treeItemId =  model.treeItemId
+        renameDialog.treeItemTitle = skrData.treeHub().getTitle(
+                    model.projectId, model.treeItemId)
+        renameDialog.open()
+    }
+
+
+    SimpleDialog {
+        id: renameDialog
+        property int projectId: -2
+        property int treeItemId: -2
+        property string treeItemTitle: ""
+        title: qsTr("Rename an item")
+        contentItem: SkrTextField {
+            id: renameTextField
+            text: renameDialog.treeItemTitle
+
+            onAccepted: {
+                renameDialog.accept()
+            }
+        }
+
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        onRejected: {
+            renameDialog.treeItemTitle = ""
+        }
+
+        onDiscarded: {
+
+            renameDialog.treeItemTitle = ""
+        }
+
+        onAccepted: {
+            skrData.treeHub().setTitle(renameDialog.projectId,
+                                       renameDialog.treeItemId,
+                                       renameTextField.text)
+
+            renameDialog.treeItemTitle = ""
+        }
+
+        onActiveFocusChanged: {
+            if (activeFocus) {
+                contentItem.forceActiveFocus()
+            }
+        }
+
+        onOpened: {
+            contentItem.forceActiveFocus()
+            renameTextField.selectAll()
+        }
+    }
 
     //--------------------------------------------------------------
     states: [

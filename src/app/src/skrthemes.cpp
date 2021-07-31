@@ -217,9 +217,27 @@ void SKRThemes::applyTheme(const QString& themeName, bool selected)
             normalObject.value("buttonIcon").toString("").toLower();
         m_buttonIconDisabled =
             normalObject.value("buttonIconDisabled").toString("").toLower();
-        m_accent     =  normalObject.value("accent").toString("").toLower();
-        m_spellcheck =
-            normalObject.value("spellcheck").toString("").toLower();
+        m_accent              =  normalObject.value("accent").toString("").toLower();
+        m_spellCheckHighlight =
+            normalObject.value("spellCheckHighlight").toString("").toLower();
+        m_findHighlight =
+            normalObject.value("findHighlight").toString("").toLower();
+        m_otherHighlight_1 =
+            normalObject.value("otherHighlight_1").toString("").toLower();
+        m_otherHighlight_2 =
+            normalObject.value("otherHighlight_2").toString("").toLower();
+        m_otherHighlight_3 =
+            normalObject.value("otherHighlight_3").toString("").toLower();
+        m_minimapSpellCheckHighlight =
+            normalObject.value("minimapSpellCheckHighlight").toString("").toLower();
+        m_minimapFindHighlight =
+            normalObject.value("minimapFindHighlight").toString("").toLower();
+        m_minimapOtherHighlight_1 =
+            normalObject.value("minimapOtherHighlight_1").toString("").toLower();
+        m_minimapOtherHighlight_2 =
+            normalObject.value("minimapOtherHighlight_2").toString("").toLower();
+        m_minimapOtherHighlight_3 =
+            normalObject.value("minimapOtherHighlight_3").toString("").toLower();
         m_toolBarBackground =
             normalObject.value("toolBarBackground").toString("").toLower();
         m_pageToolBarBackground =

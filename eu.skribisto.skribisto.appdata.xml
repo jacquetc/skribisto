@@ -28,14 +28,19 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.26" date="2021-06-24T00:00:00Z">
+    <release type="stable" version="1.9.27" date="2021-08-01T00:00:00Z">
       <description>
         <ul>
-          <li>Plugin: create plugin interface for importer</li>
-          <li>Navigation: fix restore</li>
-          <li>Icons: fix some icons not following the theme</li>
-          <li>Distraction free: header bar can now hide</li>
-          <li>Writing games: forbid Ctrl+Z</li>
+          <li>Minimap: new minimap scrollbar</li>
+          <li>Icons: use bigger and sharper icons</li>
+          <li>Pages: creation list of items is sorted</li>
+          <li>Druide Antidote: add plugin to use Druide Antidote with text page</li>
+          <li>Breadcrumb: make buttons action to go to the beginning/end smoother</li>
+          <li>Docks: toolbox top buttons are now in a list</li>
+          <li>Notes: fix set note folder does nothing</li>
+          <li>Notes: add a quick button to add Notes folder</li>
+          <li>Section: add Section page type</li>
+          <li>Parameters: add a way to add custom parameters to new pages</li>
         </ul>
       </description>
     </release>

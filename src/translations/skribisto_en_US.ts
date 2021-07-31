@@ -2,6 +2,42 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
 <context>
+    <name>AntidotePageToolbox</name>
+    <message>
+        <source>Druide Antidote™ Page Toolbox</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Druide Antidote™ toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display a toolbox offering a quick access to Druide Antidote™ (Linux only)</source>
+        <comment>plugin description</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AntidotePageToolboxForm.ui</name>
+    <message>
+        <source>Druide Antidote</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Corrector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guide</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Breadcrumb</name>
     <message>
         <source>Show the beginning</source>
@@ -16,6 +52,10 @@
     <name>Card</name>
     <message>
         <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename an item</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -37,15 +77,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Card view page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Card View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Card view page</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display a grid-like overview</source>
+        <comment>plugin description</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Show the card view</source>
+        <comment>showButtonText</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -346,6 +393,10 @@
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>EditViewForm.ui</name>
@@ -419,6 +470,14 @@
     </message>
     <message>
         <source>Top margin :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -554,7 +613,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Favorites Project Toolbox</source>
+        <source>Favorites project toolbox</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -732,15 +792,19 @@
         <source>Welcome to Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Plugin selection can be changed later in settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please restart to apply changes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>FolderPage</name>
     <message>
         <source>Note</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Folder page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -753,6 +817,11 @@
     </message>
     <message>
         <source>%1 words, %2 characters (all)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Folder page</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -793,6 +862,17 @@
     <name>ImporterPageForm.ui</name>
     <message>
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LeftDockForm.ui</name>
+    <message>
+        <source>Show the beginning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the end</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -957,6 +1037,10 @@
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>New item&apos;s parameters</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NavigationListForm.ui</name>
@@ -981,6 +1065,7 @@
     </message>
     <message>
         <source>Navigation Project Toolbox</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1198,10 +1283,6 @@
 <context>
     <name>OverviewPage</name>
     <message>
-        <source>Overview page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Overview</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1219,6 +1300,11 @@
     </message>
     <message>
         <source>Overview of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Overview page</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1389,20 +1475,50 @@
 <context>
     <name>Plugin</name>
     <message>
+        <source>Import a project from Plume Creator </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Plume Creator importer</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Import a project from Plume Creator</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import a project from Plume Creator </source>
+        <comment>plugin description</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PluginPage</name>
+    <message>
+        <source>Page Toolboxes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project Toolboxes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Project Pages</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Importers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Examples</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Templates</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <source>%1 (mandatory)</source>
         <translation type="unfinished"></translation>
@@ -1415,15 +1531,31 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Classic</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Writing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Personalized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1481,11 +1613,16 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Project page</source>
+        <source>Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Project</source>
+        <source>Project page</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1537,6 +1674,10 @@
     </message>
     <message>
         <source>Dictionary:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a &quot;Notes&quot; folder</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1711,6 +1852,17 @@
     </message>
     <message>
         <source>List of trashed items to be restored</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RightDockForm.ui</name>
+    <message>
+        <source>Show the beginning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the end</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1909,11 +2061,99 @@
         <comment>add-quick-note</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>F11</source>
+        <comment>fullscreen</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+M</source>
+        <comment>center-vert-text-cursor</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
     <message>
         <source>Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SectionCreationParameters</name>
+    <message>
+        <source>Beginning of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Chapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Separator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>End of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SectionPage</name>
+    <message>
+        <source>%1 words, %2 characters (all)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Section page</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Section</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a logical separation between items.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SectionPageForm.ui</name>
+    <message>
+        <source>Page menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Beginning of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Chapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Separator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>End of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Section</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2071,11 +2311,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show properties toolbox</source>
+        <source>Enable animations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable animations</source>
+        <source>Minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2140,10 +2384,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Spellcheck</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>ToolBar background</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2161,6 +2401,42 @@
     </message>
     <message>
         <source>List item background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Spell check highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other highlight 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other highlight 2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s spell check highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s find highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s other highlight 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s other highlight 2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s other highlight 3</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2259,18 +2535,6 @@
 <context>
     <name>TextPage</name>
     <message>
-        <source>Plan of %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 words, %2 characters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Text page</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2279,11 +2543,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close quick view</source>
+        <source>Text page</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open quick view</source>
+        <source>Plan of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 words, %2 characters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2303,7 +2576,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Note</source>
+        <source>Close quick view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open quick view</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2322,10 +2599,6 @@
     </message>
     <message>
         <source>Edit color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Theme page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2374,6 +2647,11 @@
     </message>
     <message>
         <source>Distraction free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Theme page</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2575,11 +2853,17 @@
 <context>
     <name>WritingGamesPageToolbox</name>
     <message>
-        <source>Writing Games Page Toolbox</source>
+        <source>Show Writing Games toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show Writing Games toolbox</source>
+        <source>Writing Games Page Toolbox</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display a toolbox offering some writing game</source>
+        <comment>plugin description</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

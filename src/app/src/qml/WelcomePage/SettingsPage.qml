@@ -169,6 +169,10 @@ SettingsPageForm {
             closePolicy: Popup.CloseOnEscape
             onClosed: loader_pluginPagePopup.active = false
 
+            onOpened: {
+                pluginPage.forceActiveFocus()
+            }
+
             background: Rectangle {
 
                 radius: 10
@@ -195,6 +199,7 @@ SettingsPageForm {
                     }
 
                     PluginPage {
+                        id: pluginPage
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
@@ -668,10 +673,40 @@ SettingsPageForm {
     }
 
 
+    // -------------------------------------------------------
+    // ---- minimap scrollbar --------------------------------
+    // --------------------------------------------------------
 
-    // --------------------------------------------
-    // ---- save --------------------------------
-    // --------------------------------------------
+
+
+    showMinimapCheckBox.checked: SkrSettings.minimapSettings.visible
+    Binding {
+        target: SkrSettings.minimapSettings
+        property: "visible"
+        value: showMinimapCheckBox.checked
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    //dials :
+
+    minimapDividerDial.onMoved: minimapDividerSpinBox.value = minimapDividerDial.value
+    minimapDividerSpinBox.onValueModified: minimapDividerDial.value = minimapDividerSpinBox.value
+
+
+    minimapDividerDial.value: SkrSettings.minimapSettings.divider
+    minimapDividerSpinBox.value: SkrSettings.minimapSettings.divider
+    Binding {
+        delayed: true
+        target: SkrSettings.minimapSettings
+        property: "divider"
+        value: minimapDividerDial.value
+        restoreMode: Binding.RestoreBindingOrValue
+
+    }
+
+    // ------------------------------------------------------
+    // ---- save -------------------------------------------
+    // -------------------------------------------------------
 
 
     saveEveryCheckBox.checked: SkrSettings.saveSettings.saveEveryCheckBoxChecked

@@ -5,7 +5,10 @@ import ".."
 
 Button {
     id: control
-    icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) : (control.action.icon.color === "transparent" ? (enabled ? control.action.icon.color : SkrTheme.buttonIconDisabled) : (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
+    icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
+                                          (control.action.icon.color === "transparent" ?
+                                               (enabled ? control.action.icon.color : SkrTheme.buttonIconDisabled) :
+                                               (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
 
     Material.background: SkrTheme.buttonBackground
     Material.foreground: SkrTheme.buttonForeground
@@ -20,6 +23,9 @@ Button {
         if (event.key === Qt.Key_Tab) {
             Globals.setFocusTemporarilyVisible()
         }
+        if (event.key === Qt.Key_Backtab) {
+            Globals.setFocusTemporarilyVisible()
+        }
     }
 
     property string tip
@@ -29,4 +35,5 @@ Button {
         text: control.tip ? control.tip : control.text
         visible: control.hovered && text.length !== 0
     }
+
 }

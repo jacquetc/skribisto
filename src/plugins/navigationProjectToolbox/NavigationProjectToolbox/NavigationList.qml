@@ -211,9 +211,9 @@ NavigationListForm {
             }
             priv.currentProjectId = navigationListStackView.currentItem.projectId
             priv.currentParentId = navigationListStackView.currentItem.parentId
-            console.log("priv.currentProjectId", priv.currentProjectId)
-            console.log("priv.currentParentId", priv.currentParentId)
-            console.log("priv.currentTreeItemId", priv.currentTreeItemId)
+//            console.log("priv.currentProjectId", priv.currentProjectId)
+//            console.log("priv.currentParentId", priv.currentParentId)
+//            console.log("priv.currentTreeItemId", priv.currentTreeItemId)
 
             rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
                         priv.currentProjectId, priv.currentParentId)
@@ -364,8 +364,8 @@ NavigationListForm {
         navigationListStackView.currentItem.listView.currentItem.editName()
     }
 
-    function getIconUrlFromPageType(type) {
-        return skrTreeManager.getIconUrlFromPageType(type)
+    function getIconUrlFromPageType(type, projectId, treeItemId) {
+        return skrTreeManager.getIconUrlFromPageType(type, projectId, treeItemId)
     }
 
     function getPageTypeText(type) {
@@ -384,13 +384,63 @@ NavigationListForm {
             SkrMenuItem {
                 text: getPageTypeText(modelData)
                 property string type: modelData
-                icon.source: getIconUrlFromPageType(modelData)
+                icon.source: getIconUrlFromPageType(modelData, -1, -1)
                 onTriggered: {
-                    addItemAtCurrentParent(type)
+                    if(skrQMLTools.isURLValid(skrTreeManager.getCreationParametersQmlUrlFromPageType(type))){
+                        creationParameterDialog.pageType = type
+                        creationParameterDialog.open()
+                    }
+                    else{
+                        addItemAtCurrentParent(type)
+                    }
                 }
             }
         }
     }
+
+    //----------------------------------------------------------------------------
+
+
+
+    SimpleDialog {
+        id: creationParameterDialog
+        property string pageType: ""
+        title: qsTr("New item's parameters")
+
+        contentItem: Loader{
+            id: loader
+            source: skrTreeManager.getCreationParametersQmlUrlFromPageType(creationParameterDialog.pageType)
+        }
+
+
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        onRejected: {
+            creationParameterDialog.pageType = ""
+        }
+
+        onDiscarded: {
+
+            creationParameterDialog.pageType = ""
+        }
+
+        onAccepted: {
+            addItemAtCurrentParent(creationParameterDialog.pageType)
+
+            creationParameterDialog.pageType = ""
+        }
+
+        onActiveFocusChanged: {
+            if (activeFocus) {
+                contentItem.forceActiveFocus()
+            }
+        }
+
+        onOpened: {
+            contentItem.forceActiveFocus()
+        }
+    }
+
 
     //----------------------------------------------------------------------------
 
@@ -1724,8 +1774,8 @@ NavigationListForm {
                                                     //visible: model.projectIsBackup && model.treeItemId === -1
                                                     enabled: true
                                                     focusPolicy: Qt.NoFocus
-                                                    implicitHeight: 32
-                                                    implicitWidth: 32
+                                                    implicitHeight: 36
+                                                    implicitWidth: 36
                                                     padding: 0
                                                     rightPadding: 0
                                                     bottomPadding: 0
@@ -1740,10 +1790,8 @@ NavigationListForm {
 
                                                     icon {
                                                         source: getIconUrlFromPageType(
-                                                                    model.type)
+                                                                    model.type, model.projectId, model.treeItemId)
 
-                                                        height: 22
-                                                        width: 22
                                                     }
 
                                                     hoverEnabled: true
@@ -2230,23 +2278,6 @@ NavigationListForm {
                                         }
                                     }
 
-                                    SkrMenuItem {
-                                        height:  menu.treeItemId === 0 ? undefined : 0
-                                        visible:  menu.treeItemId === 0
-                                        enabled: listView.enabled
-                                                 &&  menu.treeItemId === 0
-                                        text: qsTr("Close this project")
-                                        icon {
-                                            source: "qrc:///icons/backup/document-close.svg"
-                                        }
-                                        onTriggered: {
-                                            console.log("close project",
-                                                         menu.projectId)
-                                            sidePopupListModel.clear()
-                                            Globals.closeProjectCalled(
-                                                         menu.projectId)
-                                        }
-                                    }
                                     MenuSeparator {
                                         height:  menu.isRenamable ? undefined : 0
                                         visible:  menu.isRenamable
@@ -2613,6 +2644,7 @@ NavigationListForm {
                                             //shortcut: "Del"
                                             icon {
                                                 source: "qrc:///icons/backup/edit-delete.svg"
+                                                color: "transparent"
                                             }
                                             enabled: listView.enabled
                                                      &&  menu.indent !== -1
@@ -2643,11 +2675,13 @@ NavigationListForm {
                                         text: qsTr("Close this project")
                                         icon {
                                             source: "qrc:///icons/backup/document-close.svg"
+                                            color: "transparent"
                                         }
                                         onTriggered: {
                                             console.log("close this project",
                                                          menu.projectId)
 
+                                            sidePopupListModel.clear()
                                             Globals.closeProjectCalled(
                                                          menu.projectId)
                                         }

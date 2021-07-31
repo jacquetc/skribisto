@@ -22,7 +22,7 @@ Dialog {
     Material.accent: SkrTheme.accent
 
     modal: true
-    implicitWidth: Math.max(contentLabel.implicitWidth, footer.implicitWidth)
+    implicitWidth: Math.max(Math.max(contentLabel.implicitWidth, footer.implicitWidth), header.implicitWidth) + 20
 
     header: SkrLabel {
         id: headerLabel
@@ -39,5 +39,17 @@ Dialog {
         wrapMode: Text.WordWrap
     }
     standardButtons: Dialog.Ok
+
+
+    TapHandler {
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus | PointerDevice.TouchScreen
+        grabPermissions: PointerHandler.CanTakeOverFromAnything
+
+        onGrabChanged: function(transition, point) {
+            point.accepted = true
+        }
+    }
+
+
 
 }

@@ -42,11 +42,19 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Favorites Project Toolbox");
+        return tr("Favorites project toolbox", "plugin name");
     }
 
     QString use() const override {
         return "Display a toolbox offering access to favorite items";
+    }
+
+    QString pluginGroup() const override {
+        return "ProjectToolbox";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Common";
     }
 
     QString qmlUrl() const override {

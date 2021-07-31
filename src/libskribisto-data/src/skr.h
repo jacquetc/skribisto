@@ -10,11 +10,8 @@ class EXPORT SKR : public QObject {
 
 public:
 
-    enum ItemType {
-        Sheet,
-        Note
-    };
-    Q_ENUM(ItemType)
+    SKR() : QObject() {}
 };
+
 
 #endif // SKR_H

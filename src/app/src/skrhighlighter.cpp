@@ -2,10 +2,11 @@
 #include <QDebug>
 #include <QTextDocument>
 #include <QTextBoundaryFinder>
+#include <QColor>
 #include "skrdata.h"
 
 SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
-    : QSyntaxHighlighter(parentDoc), m_spellCheckerSet(false), m_projectId(-2)
+    : QSyntaxHighlighter(parentDoc), m_spellCheckerSet(false), m_projectId(-2), m_isForMinimap(false)
 {
     SKRSpellChecker *spellChecker = new SKRSpellChecker(this);
 
@@ -56,22 +57,27 @@ SKRHighlighter::SKRHighlighter(QTextDocument *parentDoc)
 
 void SKRHighlighter::highlightBlock(const QString& text)
 {
+    //    if (text.length() > 7000) { // cancel the highlighting to prevent
+    // slowing.
+    //        qWarning() << "a paragraph is too long for highlighting !";
+    //        return;
+    //    }
+
     setCurrentBlockState(0);
 
-
-    if (text.length() > 7000) { // cancel the highlighting to prevent slowing.
-        qWarning() << "a paragraph is too long for highlighting !";
-        return;
-    }
-
-
+    // -----------------------------------------------------------------
     // find  :
 
     QList<int> findList;
 
     QTextCharFormat findFormat;
 
-    findFormat.setBackground(Qt::yellow);
+    if (m_isForMinimap) {
+        findFormat.setBackground(QBrush(QColor(m_findHighlightColor)));
+    }
+    else {
+        findFormat.setBackground(QColor(m_findHighlightColor));
+    }
 
     if (!textToHighLight.isEmpty()) {
         int position = 0;
@@ -91,11 +97,86 @@ void SKRHighlighter::highlightBlock(const QString& text)
                                     position + textToHighLight.size(),
                                     sensitivity);
         }
-
-        setCurrentBlockState(1);
     }
 
+    // -----------------------------------------------------------------
+    //  dialogs:
 
+
+    QList<int> dialogList;
+    QTextCharFormat dialogFormat;
+
+    if (m_isForMinimap) {
+        // french dialogs
+        dialogFormat.setBackground(QBrush(QColor(m_otherHighlightColor_1)));
+
+        QRegularExpression startExpression("\\«");
+        QRegularExpression endExpression("\\»");
+
+        int startIndex = 0;
+
+        if (previousBlockState() != 1) startIndex = text.indexOf(startExpression);
+
+        while (startIndex >= 0) {
+            QRegularExpressionMatch endMatch;
+            int endIndex = text.indexOf(endExpression, startIndex, &endMatch);
+            int dialogLength;
+
+            if (endIndex == -1) {
+                setCurrentBlockState(1);
+                dialogLength = text.length() - startIndex;
+            } else {
+                dialogLength = endIndex - startIndex
+                               + endMatch.capturedLength();
+            }
+            setFormat(startIndex, dialogLength, dialogFormat);
+
+
+            for (int i = startIndex; i < startIndex + dialogLength; i++) {
+                dialogList << i;
+            }
+
+            startIndex = text.indexOf(startExpression,
+                                      startIndex + dialogLength);
+        }
+    }
+
+    if (m_isForMinimap) {
+        // english dialogs
+        dialogFormat.setBackground(QBrush(QColor(m_otherHighlightColor_1)));
+
+        QRegularExpression startExpression("^-|^–|^—");
+        QRegularExpression endExpression("\\»|.$");
+
+        int startIndex = 0;
+
+        if (previousBlockState() != 1) startIndex = text.indexOf(startExpression);
+
+        while (startIndex >= 0) {
+            QRegularExpressionMatch endMatch;
+            int endIndex = text.indexOf(endExpression, startIndex, &endMatch);
+            int dialogLength;
+
+            if (endIndex == -1) {
+                setCurrentBlockState(1);
+                dialogLength = text.length() - startIndex;
+            } else {
+                dialogLength = endIndex - startIndex
+                               + endMatch.capturedLength();
+            }
+            setFormat(startIndex, dialogLength, dialogFormat);
+
+
+            for (int i = startIndex; i < startIndex + dialogLength; i++) {
+                dialogList << i;
+            }
+
+            startIndex = text.indexOf(startExpression,
+                                      startIndex + dialogLength);
+        }
+    }
+
+    // -----------------------------------------------------------------
     //    spell check :
 
     QList<int> spellcheckerList;
@@ -104,12 +185,17 @@ void SKRHighlighter::highlightBlock(const QString& text)
 
     // BUG to be uncommented when bug
     // https://bugreports.qt.io/browse/QTBUG-87260 is fixed
-    spellcheckFormat.setUnderlineColor(Qt::GlobalColor::red);
+    spellcheckFormat.setUnderlineColor(QColor(m_spellCheckHighlightColor));
 
     //
     spellcheckFormat.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
 
-    spellcheckFormat.setForeground(QBrush(Qt::GlobalColor::darkRed));
+    if (m_isForMinimap) {
+        spellcheckFormat.setBackground(QBrush(QColor(m_spellCheckHighlightColor)));
+    }
+    else {
+        spellcheckFormat.setForeground(QBrush(QColor(m_spellCheckHighlightColor)));
+    }
 
     if (m_spellCheckerSet)
         if (m_spellChecker->isActive()) {
@@ -178,7 +264,6 @@ void SKRHighlighter::highlightBlock(const QString& text)
                          ++i) spellcheckerList.append(i);
                 }
             }
-            setCurrentBlockState(2);
         }
 
 
@@ -187,9 +272,14 @@ void SKRHighlighter::highlightBlock(const QString& text)
     for (int k = 0; k < text.length(); ++k) {
         QTextCharFormat finalFormat;
 
+        if (dialogList.contains(k)) {
+            finalFormat.merge(dialogFormat);
+        }
+
         if (findList.contains(k)) {
             finalFormat.merge(findFormat);
         }
+
 
         if (spellcheckerList.contains(k)) {
             finalFormat.merge(spellcheckFormat);
@@ -252,10 +342,100 @@ void SKRHighlighter::setSpellChecker(SKRSpellChecker *spellChecker)
     }
 }
 
+QString SKRHighlighter::getOtherHighlightColor_3() const
+{
+    return m_otherHighlightColor_3;
+}
+
+void SKRHighlighter::setOtherHighlightColor_3(const QString& newOtherHighlightColor_3)
+{
+    if (m_otherHighlightColor_3 == newOtherHighlightColor_3) return;
+
+    m_otherHighlightColor_3 = newOtherHighlightColor_3;
+    this->rehighlight();
+    emit otherHighlightColor_3Changed();
+}
+
+QString SKRHighlighter::getOtherHighlightColor_2() const
+{
+    return m_otherHighlightColor_2;
+}
+
+void SKRHighlighter::setOtherHighlightColor_2(const QString& newOtherHighlightColor_2)
+{
+    if (m_otherHighlightColor_2 == newOtherHighlightColor_2) return;
+
+    m_otherHighlightColor_2 = newOtherHighlightColor_2;
+    this->rehighlight();
+    emit otherHighlightColor_2Changed();
+}
+
+QString SKRHighlighter::getOtherHighlightColor_1() const
+{
+    return m_otherHighlightColor_1;
+}
+
+void SKRHighlighter::setOtherHighlightColor_1(const QString& newOtherHighlightColor_1)
+{
+    if (m_otherHighlightColor_1 == newOtherHighlightColor_1) return;
+
+    m_otherHighlightColor_1 = newOtherHighlightColor_1;
+    this->rehighlight();
+    emit otherHighlightColor_1Changed();
+}
+
+QString SKRHighlighter::getFindHighlightColor() const
+{
+    return m_findHighlightColor;
+}
+
+void SKRHighlighter::setFindHighlightColor(const QString& newFindHighlightColor)
+{
+    if (m_findHighlightColor == newFindHighlightColor) return;
+
+    m_findHighlightColor = newFindHighlightColor;
+    this->rehighlight();
+    emit findHighlightColorChanged();
+}
+
+QString SKRHighlighter::spellCheckHighlightColor() const
+{
+    return m_spellCheckHighlightColor;
+}
+
+void SKRHighlighter::setSpellCheckHighlightColor(const QString& newSpellCheckHighlightColor)
+{
+    if (m_spellCheckHighlightColor == newSpellCheckHighlightColor) return;
+
+    m_spellCheckHighlightColor = newSpellCheckHighlightColor;
+
+    this->rehighlight();
+    emit spellCheckHighlightColorChanged();
+}
+
+// -------------------------------------------------------------------
+
+bool SKRHighlighter::getIsForMinimap() const
+{
+    return m_isForMinimap;
+}
+
+void SKRHighlighter::setIsForMinimap(bool newIsForMinimap)
+{
+    m_isForMinimap = newIsForMinimap;
+
+    this->rehighlight();
+    emit isForMinimapChanged(newIsForMinimap);
+}
+
+// -------------------------------------------------------------------
+
 int SKRHighlighter::getProjectId() const
 {
     return m_projectId;
 }
+
+// -------------------------------------------------------------------
 
 void SKRHighlighter::setProjectId(int projectId)
 {

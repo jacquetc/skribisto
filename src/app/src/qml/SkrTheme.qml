@@ -67,7 +67,19 @@ QtObject {
 
     readonly property string accent:  skrThemes.accent
 
-    readonly property string spellcheck: skrThemes.spellcheck
+    readonly property string spellCheckHighlight: skrThemes.spellCheckHighlight
+    readonly property string findHighlight: skrThemes.findHighlight
+    readonly property string otherHighlight_1: skrThemes.otherHighlight_1
+    readonly property string otherHighlight_2: skrThemes.otherHighlight_2
+    readonly property string otherHighlight_3: skrThemes.otherHighlight_3
+
+    readonly property string minimapSpellCheckHighlight: skrThemes.minimapSpellCheckHighlight
+    readonly property string minimapFindHighlight: skrThemes.minimapFindHighlight
+    readonly property string minimapOtherHighlight_1: skrThemes.minimapOtherHighlight_1
+    readonly property string minimapOtherHighlight_2: skrThemes.minimapOtherHighlight_2
+    readonly property string minimapOtherHighlight_3: skrThemes.minimapOtherHighlight_3
+
+
     readonly property string toolBarBackground: skrThemes.toolBarBackground
     readonly property string pageToolBarBackground: skrThemes.pageToolBarBackground
 
@@ -113,7 +125,16 @@ QtObject {
         map["buttonIcon"] = qsTr("Button icon")
         map["buttonIconDisabled"] = qsTr("Button icon (disabled)")
         map["accent"] = qsTr("Accent")
-        map["spellcheck"] = qsTr("Spellcheck")
+        map["spellCheckHighlight"] = qsTr("Spell check highlight")
+        map["findHighlight"] = qsTr("Find highlight")
+        map["otherHighlight_1"] = qsTr("Other highlight 1")
+        map["otherHighlight_2"] = qsTr("Other highlight 2")
+        map["otherHighlight_3"] = qsTr("Other highlight 2")
+        map["minimapSpellCheckHighlight"] = qsTr("Minimap's spell check highlight")
+        map["minimapFindHighlight"] = qsTr("Minimap's find highlight")
+        map["minimapOtherHighlight_1"] = qsTr("Minimap's other highlight 1")
+        map["minimapOtherHighlight_2"] = qsTr("Minimap's other highlight 2")
+        map["minimapOtherHighlight_3"] = qsTr("Minimap's other highlight 3")
         map["toolBarBackground"] = qsTr("ToolBar background")
         map["pageToolBarBackground"] = qsTr("Page ToolBar background")
         map["divider"] = qsTr("Divider")

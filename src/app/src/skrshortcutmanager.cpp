@@ -145,11 +145,16 @@ void SKRShortcutManager::populateShortcutList()
 
     m_shortcutList <<
         createShortcut("fullscreen", tr("Fullscreen"), (QStringList() << "global"),
-                       (QStringList() << convertStandardKeyToList(QKeySequence::FullScreen)));
+                       (QStringList() <<
+                        tr("F11", "fullscreen") << convertStandardKeyToList(QKeySequence::FullScreen)));
 
     m_shortcutList <<
         createShortcut("center-vert-text-cursor", tr("Center vertically the text cursor"), (QStringList() << "global"),
                        (QStringList() << tr("Alt+C", "center-vert-text-cursor")));
+
+    m_shortcutList <<
+        createShortcut("show-minimap-scrollbar", tr("Show the minimap scrollbar"), (QStringList() << "global"),
+                       (QStringList() << tr("Alt+M", "center-vert-text-cursor")));
 
     m_shortcutList <<
         createShortcut("user-manual", tr("&User manual"), (QStringList() << "global"),

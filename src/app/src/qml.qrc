@@ -11,7 +11,6 @@
         <file>qml/Gallery/GalleryPage.qml</file>
         <file>qml/Commons/WritingZone.qml</file>
         <file>qml/Commons/WritingZoneForm.ui.qml</file>
-        <file>qml/Commons/Minimap.qml</file>
         <file>qml/Commons/SimpleDialog.qml</file>
         <file>qml/Commons/SKRTextArea.qml</file>
         <file>qml/Commons/TagPad.qml</file>

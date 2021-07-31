@@ -8,8 +8,6 @@ import ".."
 
 Item {
     id: base
-    width: 400
-    height: 400
     property alias outlineWritingZone: outlineWritingZone
     property bool minimalMode: false
     property alias openOutlineToolButton: openOutlineToolButton
@@ -59,10 +57,12 @@ Item {
                     }
 
                     SkrToolButton {
-                        id: openOutlineToolButton                    }
+                        id: openOutlineToolButton
+                    }
 
                     SkrToolButton {
-                        id: addOutlineToolButton                    }
+                        id: addOutlineToolButton
+                    }
 
                 }
 

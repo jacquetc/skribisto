@@ -32,8 +32,6 @@ public:
     virtual ~SKRProjectPageInterface() {}
 
     virtual QStringList locations() const = 0;
-    virtual int         weight() const    = 0;
-
 
     virtual QString     iconSource() const = 0;
 
@@ -45,7 +43,10 @@ public:
         return false;
     }
 
-    QString pageTypeIconUrl() const override {
+    QString pageTypeIconUrl(int projectId, int treeItemId) const override {
+        Q_UNUSED(projectId)
+        Q_UNUSED(treeItemId)
+
         return "";
     }
 

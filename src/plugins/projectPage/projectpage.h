@@ -43,16 +43,28 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Project page");
+        return tr("Project page", "plugin name");
     }
 
     QString use() const override {
         return "Display a page for the project item";
     }
 
+    QString pluginGroup() const override {
+        return "Page";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Mandatory";
+    }
+
     // Page
     QString pageType() const override {
         return "PROJECT";
+    }
+
+    int weight() const override {
+        return 500;
     }
 
     QString visualText() const override {
@@ -71,7 +83,9 @@ public:
         return false;
     }
 
-    QString pageTypeIconUrl() const override {
+    QString pageTypeIconUrl(int projectId, int treeItemId) const override {
+        Q_UNUSED(projectId)
+        Q_UNUSED(treeItemId)
         return "qrc:///icons/backup/address-book-new.svg";
     }
 

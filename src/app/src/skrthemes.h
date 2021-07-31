@@ -39,7 +39,16 @@ class SKRThemes : public QObject {
 
     Q_PROPERTY(QString accent MEMBER m_accent NOTIFY colorsChanged)
 
-    Q_PROPERTY(QString spellcheck MEMBER m_spellcheck NOTIFY colorsChanged)
+    Q_PROPERTY(QString spellCheckHighlight MEMBER m_spellCheckHighlight NOTIFY colorsChanged)
+    Q_PROPERTY(QString findHighlight MEMBER m_findHighlight NOTIFY colorsChanged)
+    Q_PROPERTY(QString otherHighlight_1 MEMBER m_otherHighlight_1 NOTIFY colorsChanged)
+    Q_PROPERTY(QString otherHighlight_2 MEMBER m_otherHighlight_2 NOTIFY colorsChanged)
+    Q_PROPERTY(QString otherHighlight_3 MEMBER m_otherHighlight_3 NOTIFY colorsChanged)
+    Q_PROPERTY(QString minimapSpellCheckHighlight MEMBER m_minimapSpellCheckHighlight NOTIFY colorsChanged)
+    Q_PROPERTY(QString minimapFindHighlight MEMBER m_minimapFindHighlight NOTIFY colorsChanged)
+    Q_PROPERTY(QString minimapOtherHighlight_1 MEMBER m_minimapOtherHighlight_1 NOTIFY colorsChanged)
+    Q_PROPERTY(QString minimapOtherHighlight_2 MEMBER m_minimapOtherHighlight_2 NOTIFY colorsChanged)
+    Q_PROPERTY(QString minimapOtherHighlight_3 MEMBER m_minimapOtherHighlight_3 NOTIFY colorsChanged)
 
     Q_PROPERTY(QString toolBarBackground MEMBER m_toolBarBackground NOTIFY colorsChanged)
 
@@ -133,7 +142,16 @@ private:
     QString m_buttonIcon;
     QString m_buttonIconDisabled;
     QString m_accent;
-    QString m_spellcheck;
+    QString m_spellCheckHighlight;
+    QString m_findHighlight;
+    QString m_otherHighlight_1;
+    QString m_otherHighlight_2;
+    QString m_otherHighlight_3;
+    QString m_minimapSpellCheckHighlight;
+    QString m_minimapFindHighlight;
+    QString m_minimapOtherHighlight_1;
+    QString m_minimapOtherHighlight_2;
+    QString m_minimapOtherHighlight_3;
     QString m_toolBarBackground;
     QString m_pageToolBarBackground;
     QString m_divider;

@@ -9,7 +9,7 @@ import "../.."
 WritingGamesPageToolboxForm {
     id: root
 
-    iconSource: "qrc:///icons/backup/story-editor.svg"
+    iconSource: "qrc:///icons/backup/roll.svg"
     showButtonText: qsTr( "Show Writing Games toolbox")
 
     //required property var writingZone

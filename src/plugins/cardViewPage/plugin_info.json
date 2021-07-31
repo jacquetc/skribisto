@@ -3,7 +3,7 @@
     "shortname" :       "CardViewPage",
     "longname" :        "Skribisto Card View Page",
     "version" :         "1.0",
-    "mandatory" :    true,
+    "mandatory" :    false,
     "activatedByDefault" :    true,
     "dependencies" :    []
 }

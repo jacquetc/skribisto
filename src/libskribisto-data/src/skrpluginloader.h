@@ -12,6 +12,7 @@
 #include <QCoreApplication>
 #include "skribisto_data_global.h"
 #include "skrcoreinterface.h"
+#include "skr.h"
 
 // #include <string>
 // #include <cstdlib>
@@ -57,8 +58,10 @@ public:
     // void reload();
 
 
-    Q_INVOKABLE QStringList  listAllByName();
+    Q_INVOKABLE QStringList  listAllByName(bool sorted = false);
     Q_INVOKABLE QString      getDisplayedName(const QString& pluginName) const;
+    Q_INVOKABLE QString      getPluginGroup(const QString& pluginName) const;
+    Q_INVOKABLE QString      getPluginSelectionGroup(const QString& pluginName) const;
     Q_INVOKABLE QString      getUse(const QString& pluginName) const;
     Q_INVOKABLE bool         getMandatory(const QString& pluginName) const;
 

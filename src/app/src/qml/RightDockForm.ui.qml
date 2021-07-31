@@ -6,13 +6,15 @@ import "Commons"
 import "Items"
 
 Item {
-    width: 400
-    height: 400
+    id: base
 
     property alias toolboxRepeater: toolboxRepeater
-    property alias toolButtonRepeater: toolButtonRepeater
     property alias scrollView: scrollView
     property alias hideDockToolButton: hideDockToolButton
+    property alias toolButtonListView: toolButtonListView
+    property alias showTheBeginningButton: showTheBeginningButton
+    property alias showTheEndButton: showTheEndButton
+    property bool goingAtTheBeginningOfToolButtonListView: false
 
 
     RowLayout {
@@ -49,18 +51,56 @@ Item {
                         focusPolicy: Qt.NoFocus
                     }
 
-                    Item {
+                    SkrToolButton {
+                        id: showTheBeginningButton
+                        visible: toolButtonListView.contentWidth > toolButtonListView.width
+                                 && !toolButtonListView.atXBeginning && !goingAtTheBeginningOfToolButtonListView
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.preferredHeight: 30
+                        Layout.preferredWidth: 20
+                        focusPolicy: Qt.NoFocus
+                        icon.source: "qrc:///icons/backup/go-previous.svg"
+                        text: qsTr("Show the beginning")
+
+                    }
+
+                    ScrollView {
+                        id: toolButtonScrollView
+                        focusPolicy: Qt.NoFocus
                         Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        clip: true
+                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                        padding: 0
+
+                        ListView {
+                            id: toolButtonListView
+                            smooth: true
+                            boundsBehavior: Flickable.StopAtBounds
+                            orientation: Qt.Horizontal
+                            spacing: 2
+
+
+
+                        }
+
                     }
 
-                    Repeater {
-                        id: toolButtonRepeater
+                    SkrToolButton {
+
+                        id: showTheEndButton
+                        visible: toolButtonListView.contentWidth > toolButtonListView.width && !toolButtonListView.atXEnd
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.preferredHeight: 30
+                        Layout.preferredWidth: 20
+                        focusPolicy: Qt.NoFocus
+                        icon.source: "qrc:///icons/backup/go-next.svg"
+                        text: qsTr("Show the end")
 
                     }
 
-                    Item {
-                        Layout.fillWidth: true
-                    }
                 }
 
 

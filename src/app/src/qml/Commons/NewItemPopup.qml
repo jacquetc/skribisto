@@ -17,7 +17,6 @@ NewItemPopupForm {
     property int quantity: quantitySpinbox.value
 
     onOpened: {
-        quantitySpinbox.value = 1
         forcefocusTimer.start()
     }
 
@@ -29,7 +28,7 @@ NewItemPopupForm {
         }
     }
 
-    function getIconUrlFromPageType(type){
+    function getIconUrlFromPageType(type) {
         return skrTreeManager.getIconUrlFromPageType(type)
     }
 
@@ -61,6 +60,7 @@ NewItemPopupForm {
     listView.onCurrentIndexChanged: {
         chosenPageType = listView.currentItem.type
         detailsTextArea.text = skrTreeManager.getPageDetailText(listView.currentItem.type)
+        parametersLoader.source = skrTreeManager.getCreationParametersQmlUrlFromPageType(chosenPageType)
     }
 
     Component{
@@ -76,6 +76,14 @@ NewItemPopupForm {
                 anchors.fill: parent
                 z:1
                 TapHandler{
+
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus | PointerDevice.TouchScreen
+                    grabPermissions: PointerHandler.CanTakeOverFromAnything
+
+                    onGrabChanged: function(transition, point) {
+                        point.accepted = false
+                    }
+
                     onTapped: function(eventPoint){
                         itemDelegate.ListView.view.currentIndex = model.index
                         detailsTextArea.text = skrTreeManager.getPageDetailText(type)
@@ -88,6 +96,8 @@ NewItemPopupForm {
                     }
 
                 }
+
+
             }
 
 
@@ -121,4 +131,10 @@ NewItemPopupForm {
         }
 
     }
+
+
+    //------------------------------------------------------------
+
+
+
 }

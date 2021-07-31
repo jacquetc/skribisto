@@ -31,6 +31,7 @@ SkrBasePage {
     property alias wordCountLabel: wordCountLabel
     property alias installDictButton: installDictButton
     property alias noteFolderComboBox: noteFolderComboBox
+    property alias addNewNoteFolderButton: addNewNoteFolderButton
 
 
 
@@ -283,6 +284,13 @@ SkrBasePage {
                                             SkrComboBox {
                                                 id: noteFolderComboBox
                                             }
+                                        }
+
+                                        SkrButton{
+                                            id: addNewNoteFolderButton
+
+                                            text: qsTr("Add a \"Notes\" folder")
+
                                         }
 
                                     }

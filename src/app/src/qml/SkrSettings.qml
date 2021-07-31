@@ -58,6 +58,12 @@ QtObject {
         property string textFontFamily: skrRootItem.defaultFontFamily()
     }
 
+    property Settings minimapSettings: Settings {
+        category: "minimap"
+        property int divider: 5
+        property bool visible: true
+    }
+
     property Settings outlinePadSettings: Settings {
         category: "outlinePad"
         property int textPointSize: Qt.application.font.pointSize

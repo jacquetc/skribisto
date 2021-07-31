@@ -14,6 +14,7 @@ SkrPopup {
     property alias cancelButton: cancelButton
     property alias detailsTextArea: detailsTextArea
     property alias quantitySpinbox: quantitySpinbox
+    property alias parametersLoader: parametersLoader
 
     ColumnLayout {
         anchors.fill: parent
@@ -28,26 +29,39 @@ SkrPopup {
                 Layout.preferredWidth: 150
                 Layout.fillHeight: true
                 spacing: 2
+
+
             }
 
 
-            TextArea{
-                id: detailsTextArea
+            ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                TextArea{
+                    id: detailsTextArea
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
 
-                color: SkrTheme.buttonForeground
-                background: Rectangle {
-                    color: SkrTheme.pageBackground
+                    color: SkrTheme.buttonForeground
+                    background: Rectangle {
+                        color: SkrTheme.pageBackground
+                    }
+
+                    readOnly: true
+                    wrapMode: TextArea.WrapAtWordBoundaryOrAnywhere
+
                 }
 
-                readOnly: true
-                wrapMode: TextArea.WrapAtWordBoundaryOrAnywhere
+                Loader {
+                    id: parametersLoader
+                    Layout.fillWidth: true
+                    Layout.minimumHeight: 150
+                }
 
             }
-
         }
+
 
         RowLayout{
             Layout.alignment: Qt.AlignCenter

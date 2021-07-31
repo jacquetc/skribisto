@@ -203,7 +203,7 @@ ProjectPageForm {
     //-----------------------------------------------------------------
     //----- Project ------------------------------------------------
     //-----------------------------------------------------------------
-
+    property bool built: false
 
     Component.onCompleted: {
         editTitleTextFieldLoader.sourceComponent = editTitleTextFieldComponent
@@ -217,6 +217,8 @@ ProjectPageForm {
         populateStatistics()
 
         populateNoteFolderComboBox()
+
+        built =true
     }
 
 
@@ -473,6 +475,55 @@ ProjectPageForm {
             noteFolderComboBox.currentIndex = noteFolderComboBox.indexOfValue(foldersList[j])
             break
         }
+    }
+
+    noteFolderComboBox.onCurrentValueChanged: {
+        if(built){
+            // clear other folders:
+            for(var j in foldersList){
+                if(skrData.treeHub().getInternalTitle(projectId, foldersList[j]) === "note_folder"){
+                    skrData.treeHub().setInternalTitle(root.projectId, foldersList[j], "")
+                }
+            }
+
+            //set new folder
+            skrData.treeHub().setInternalTitle(root.projectId, noteFolderComboBox.currentValue, "note_folder")
+        }
+    }
+
+
+    Connections{
+        target: skrData.treeHub()
+        function onTreeItemAdded(projectId, treeItemId) {
+            populateNoteFolderComboBox()
+        }
+    }
+    Connections{
+        target: skrData.treeHub()
+        function onTitleChanged(projectId, treeItemId, newTitle) {
+            populateNoteFolderComboBox()
+        }
+    }
+    Connections{
+        target: skrData.treeHub()
+        function onInternalTitleChanged(projectId, treeItemId, newTitle) {
+            populateNoteFolderComboBox()
+        }
+    }
+    Connections{
+        target: skrData.treeHub()
+        function onTrashedChanged(projectId, treeItemId, newTrashedState) {
+            populateNoteFolderComboBox()
+        }
+    }
+
+    addNewNoteFolderButton.onClicked: {
+        skrData.treeHub().addChildTreeItem(root.projectId, 0, "FOLDER")
+        var folderId = skrData.treeHub().getLastAddedId()
+
+        skrData.treeHub().setTitle(root.projectId, folderId, qsTr("Notes"))
+        skrData.treeHub().setInternalTitle(root.projectId, folderId, "note_folder")
+        populateNoteFolderComboBox()
     }
 
 }

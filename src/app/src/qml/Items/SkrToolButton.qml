@@ -6,7 +6,7 @@ import ".."
 ToolButton {
     id: control
     icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
-                                          (control.action.icon.color === "transparent" ?
+                                          (control.action.icon.color === "transparent"?
                                                (enabled ? control.action.icon.color: SkrTheme.buttonIconDisabled) :
                                                (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
 
@@ -23,6 +23,9 @@ ToolButton {
     }
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Tab){
+            Globals.setFocusTemporarilyVisible()
+        }
+        if (event.key === Qt.Key_Backtab) {
             Globals.setFocusTemporarilyVisible()
         }
     }

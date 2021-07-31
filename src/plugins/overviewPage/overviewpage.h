@@ -41,16 +41,28 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Overview page");
+        return tr("Overview page", "plugin name");
     }
 
     QString use() const override {
         return "Display an overview of the project";
     }
 
+    QString pluginGroup() const override {
+        return "ProjectPage";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Common";
+    }
+
     // Page
     QString pageType() const override {
         return "OVERVIEW";
+    }
+
+    int weight() const override {
+        return 500;
     }
 
     QString visualText() const override {
@@ -77,10 +89,6 @@ public:
 
     QStringList shortcutSequences() const override {
         return QStringList() << "F5";
-    }
-
-    int weight() const override {
-        return 500;
     }
 
     QStringList locations() const override {

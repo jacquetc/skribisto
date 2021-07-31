@@ -43,16 +43,28 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Folder page");
+        return tr("Folder page", "plugin name");
     }
 
     QString use() const override {
         return "Display a page for the folder item";
     }
 
+    QString pluginGroup() const override {
+        return "Page";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Mandatory";
+    }
+
     // Page
     QString pageType() const override {
         return "FOLDER";
+    }
+
+    int weight() const override {
+        return 600;
     }
 
     QString visualText() const override {
@@ -71,7 +83,9 @@ public:
         return true;
     }
 
-    QString pageTypeIconUrl() const override {
+    QString pageTypeIconUrl(int projectId, int treeItemId) const override {
+        Q_UNUSED(projectId)
+        Q_UNUSED(treeItemId)
         return "qrc:///icons/backup/document-open.svg";
     }
 

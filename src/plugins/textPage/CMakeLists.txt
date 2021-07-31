@@ -19,6 +19,8 @@ set(SRCS
     plugin_info.json
     textpage.cpp
     textpage.h
+    minimapcanvas.h
+    minimapcanvas.cpp
 )
 
 set(QRC

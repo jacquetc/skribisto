@@ -13,11 +13,12 @@ SkrBasePage {
 
     property alias writingZone: writingZone
     property alias loader_previousWritingZone: loader_previousWritingZone
-    property alias minimap: minimap
+    property alias minimapLoader: minimapLoader
     property alias middleBase: middleBase
     property alias viewButtons: viewButtons
     property alias pageMenuToolButton: pageMenuToolButton
     property alias titleLabel: titleLabel
+
 
     property alias countLabel: countLabel
     property alias relationshipPanel: relationshipPanel
@@ -89,9 +90,10 @@ SkrBasePage {
                     id: leftBase
                     //                Layout.preferredWidth: leftBasePreferredWidth
                     //                Layout.maximumWidth: leftBasePreferredWidth
-                    Layout.minimumWidth: 20
-                    visible: !Globals.compactMode
+                    //Layout.minimumWidth: rightBase.Layout.minimumWidth
+                    //visible: !Globals.compactMode
                     Layout.fillHeight: true
+                    Layout.minimumWidth:  viewManager.rootWindow.compactMode ? 0 : rightBaseLayout.childrenRect.width
 
                     z: 1
 
@@ -162,31 +164,37 @@ SkrBasePage {
 
                 Item {
                     id: rightBase
-                    visible: !Globals.compactMode
+                    //visible: !Globals.compactMode
                     Layout.fillHeight: true
                     //                Layout.preferredWidth: rightBasePreferredWidth
-                    Layout.minimumWidth: 20
+                    Layout.minimumWidth: rightBaseLayout.childrenRect.width
 
                     //Layout.maximumWidth: 300
                     z: 1
 
                     RowLayout {
+                        id: rightBaseLayout
                         spacing: 0
-                        anchors.fill: parent
 
-                        Minimap {
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        //width: childrenRect.width
+                        Loader {
+                            id: minimapLoader
+                            asynchronous : true
+
                             Layout.fillHeight: true
                             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            Layout.preferredWidth: Qt.isQtObject(minimapLoader.item) ? minimapLoader.item.preferredWidth : -1
 
-                            id: minimap
-                            //width: minimapFlickable.width
-                            //pageSize: (writingZone.flickable.height) / (writingZone.textArea.contentHeight + 16)
-                            //textScale: minimapFlickable.height / writingZone.flickable.contentHeight
-                            sourceWidth: writingZone.textArea.width
-                            sourcePointSize: writingZone.textArea.font.pointSize
+
                         }
+
                     }
                 }
+
+
             }
         }
 

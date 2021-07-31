@@ -564,32 +564,88 @@ TextPageForm {
         }
     }
 
+
+
+    writingZone.highlighter.spellCheckHighlightColor: SkrTheme.spellCheckHighlight
+    writingZone.highlighter.findHighlightColor: SkrTheme.findHighlight
+    writingZone.highlighter.otherHighlightColor_1: SkrTheme.otherHighlight_1
+    writingZone.highlighter.otherHighlightColor_2: SkrTheme.otherHighlight_2
+    writingZone.highlighter.otherHighlightColor_3: SkrTheme.otherHighlight_3
+
+
     //------------------------------------------------------------------------
     //-----minimap------------------------------------------------------------
     //------------------------------------------------------------------------
-    property bool minimapVisibility: false
-    minimap.visible: minimapVisibility
+    property bool minimapVisibility: SkrSettings.minimapSettings.visible
+    minimapLoader.visible: minimapVisibility
+    minimapLoader.active: minimapVisibility
+    minimapLoader.sourceComponent: minimapComponent
 
-    Binding on minimap.text {
-        when: minimapVisibility
-        value: writingZone.textArea.text
-        restoreMode: Binding.RestoreBindingOrValue
-        delayed: true
+    Component{
+        id: minimapComponent
+
+        Minimap{
+            id: minimap
+            sourceViewHeight: writingZone.flickable.height
+            sourceTextPointSize: SkrSettings.textSettings.textPointSize
+            sourceTextIndent: SkrSettings.textSettings.textIndent
+            sourceTextTopMargin: SkrSettings.textSettings.textTopMargin
+            sourceTextFontFamily: SkrSettings.textSettings.textFontFamily
+
+            styleBackgroundColor: "transparent"
+            styleForegroundColor: SkrTheme.mainTextAreaForeground
+            styleAccentColor: SkrTheme.accent
+
+            projectId: root.projectId
+            treeItemId: root.treeItemId
+            isSecondary: root.isSecondary
+            milestone: root.milestone
+
+            divider: SkrSettings.minimapSettings.divider
+
+            Binding on sourceViewWidth {
+                value: writingZone.textArea.width
+                restoreMode: Binding.RestoreBindingOrValue
+                delayed: true
+            }
+
+
+            //Scrolling minimap
+
+            Binding on value {
+                when: !minimap.wheelHandler.active
+                value: writingZone.flickable.contentY
+                restoreMode: Binding.RestoreBindingOrValue
+                delayed: true
+            }
+
+            Binding {
+                target: writingZone.flickable
+                property: "contentY"
+                value: minimap.value
+                restoreMode: Binding.RestoreBindingOrValue
+                delayed: true
+            }
+            dragHandler.onActiveChanged: {
+                writingZone.contentYBehaviorEnabled = !minimap.dragHandler.active
+            }
+
+            wheelHandler.onActiveChanged: {
+                writingZone.contentYBehaviorEnabled = !minimap.wheelHandler.active
+            }
+
+            onTappingChanged: {
+                writingZone.contentYBehaviorEnabled = !minimap.tapping
+            }
+
+        }
+
+
+
     }
 
-    //Scrolling minimap
-    Binding on writingZone.internalScrollBar.position {
-        when: minimapVisibility
-        value: minimap.position
-        restoreMode: Binding.RestoreBindingOrValue
-        delayed: true
-    }
-    Binding on minimap.position {
-        when: minimapVisibility
-        value: writingZone.internalScrollBar.position
-        restoreMode: Binding.RestoreBindingOrValue
-        delayed: true
-    }
+
+
 
     // ScrollBar invisible while minimap is on
     writingZone.scrollBarVerticalPolicy: minimapVisibility ? ScrollBar.AlwaysOff : ScrollBar.AsNeeded
@@ -629,6 +685,7 @@ TextPageForm {
                 id: editView
                 anchors.fill: parent
                 skrSettingsGroup: SkrSettings.textSettings
+                writingZone: root.writingZone
             }
         }
     }
@@ -710,6 +767,15 @@ TextPageForm {
             textTopMargin: SkrSettings.textSettings.textTopMargin
 
             stretch: root.width < 300 ? true : viewManager.rootWindow.compactMode
+
+
+
+            highlighter.spellCheckHighlightColor: SkrTheme.spellCheckHighlight
+            highlighter.findHighlightColor: SkrTheme.findHighlight
+            highlighter.otherHighlightColor_1: SkrTheme.otherHighlight_1
+            highlighter.otherHighlightColor_2: SkrTheme.otherHighlight_2
+            highlighter.otherHighlightColor_3: SkrTheme.otherHighlight_3
+
 
             //needed to adapt width to a shrinking window
             Binding on textAreaWidth {
@@ -1016,6 +1082,7 @@ TextPageForm {
             openPreviousWritingZoneButton.visible = true
         }
     }
+
 
     //-----------------------------------------------------------------
     //----- Related Panel------------------------------------------------

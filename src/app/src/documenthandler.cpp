@@ -55,7 +55,7 @@ void DocumentHandler::setTextDocument(QQuickTextDocument *textDocument)
         m_selectionCursor =
             textDocument->textDocument()->rootFrame()->firstCursorPosition();
 
-        m_highlighter = new SKRHighlighter(m_textDoc->textDocument());
+        m_highlighter->setDocument(m_textDoc->textDocument());
         m_highlighter->setProjectId(m_projectId);
         connect(this,
                 &DocumentHandler::projectIdChanged,

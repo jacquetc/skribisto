@@ -66,7 +66,7 @@ Item {
 
         case "printable":
             //inverted
-            iconSource = "qrc:///icons/backup/document-print-none.svg"
+            iconSource = "qrc:///icons/backup/skribisto-document-print-none.svg"
             text = qsTr("Non printable")
             break;
 

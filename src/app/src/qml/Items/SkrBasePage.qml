@@ -100,8 +100,8 @@ FocusScope {
     }
 
     Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_F2) {
-            if (control.projectId !== -2) {
+        if (event.key === Qt.Key_F2 && treeItemId != -1) {
+            if (control.projectId !== -1) {
                 renameDialog.projectId = control.projectId
                 renameDialog.treeItemId = control.treeItemId
                 renameDialog.treeItemTitle = skrData.treeHub().getTitle(
@@ -109,6 +109,20 @@ FocusScope {
                 renameDialog.open()
             }
         }
+    }
+
+    TapHandler {
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+
+        onSingleTapped: function(eventPoint){
+            control.forceActiveFocus()
+        }
+
+        onDoubleTapped: function(eventPoint){
+            control.forceActiveFocus()
+        }
+
+
     }
 
     SimpleDialog {

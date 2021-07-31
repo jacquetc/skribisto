@@ -12,12 +12,21 @@
         "buttonIcon": "#e2e2e2",
         "buttonIconDisabled": "#414141",
         "accent": "#b56c17",
-        "spellcheck": "#DC0029",
         "toolBarBackground": "#4a4842",
         "pageToolBarBackground": "#404142",
         "divider": "#9a9996",
         "menuBackground": "#313131",
-        "listItemBackground": "#525252"
+        "listItemBackground": "#525252",
+        "spellCheckHighlight": "#000000",
+        "findHighlight": "#ffff00",
+        "otherHighlight_1": "",
+        "otherHighlight_2": "",
+        "otherHighlight_3": "",
+        "minimapSpellCheckHighlight": "#7f7f7f",
+        "minimapFindHighlight": "#ffff00",
+        "minimapOtherHighlight_1": "#8bc34a",
+        "minimapOtherHighlight_2": "",
+        "minimapOtherHighlight_3": ""
 
     }
 }

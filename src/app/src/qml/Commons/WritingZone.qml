@@ -542,17 +542,15 @@ WritingZoneForm {
         Component.onCompleted: {
 
             if (!spellCheckerKilled) {
-                // activate
-                SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(
-                            determineSpellCheckerActivation)
-                determineSpellCheckerActivation()
-//                paintUnderlineForSpellcheckCalled.connect(
-//                            paintUnderlineForSpellcheck)
-
                 //lang
                 SkrSettings.spellCheckingSettings.onSpellCheckingLangCodeChanged.connect(
                             determineSpellCheckerLanguageCode)
                 determineSpellCheckerLanguageCode()
+                // activate
+                SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(
+                            determineSpellCheckerActivation)
+                determineSpellCheckerActivation()
+
             }
         }
         Component.onDestruction: {
@@ -756,6 +754,8 @@ WritingZoneForm {
     //--------Page Up/Down-------------------------------------------------------------
     //--------Text centering----------------------------------------------------------
     //--------------------------------------------------------------------------------
+
+    property alias contentYBehaviorEnabled: contentYBehavior.enabled
     textArea.viewHeight: flickable.height - textArea.topPadding - textArea.bottomPadding
 
     Connections {
@@ -977,10 +977,18 @@ WritingZoneForm {
     //focus :
     onActiveFocusChanged: {
         if (activeFocus) {
-            textArea.forceActiveFocus()
+            if(priv.forceActiveFocusEnabled){
+                textArea.forceActiveFocus()
+            }
+
         } else {
 
         }
+    }
+
+    QtObject{
+        id: priv
+        property bool forceActiveFocusEnabled: true
     }
 
     //----------------------------------------------------------------------------
@@ -990,13 +998,27 @@ WritingZoneForm {
     findPanel.highlighter: documentHandler.highlighter
     findPanel.textArea: textArea
 
+
+    function showFindPanel(){
+        if(textArea.selectedText.length > 0){
+            findPanel.stringToFind = textArea.selectedText
+        }
+
+        findPanel.visible = true
+        priv.forceActiveFocusEnabled = false
+        findPanel.forceActiveFocus()
+        priv.forceActiveFocusEnabled = true
+    }
+
+
     Action {
         id: findAction
+        enabled: root.activeFocus
         text: qsTr("Find")
         shortcut: "Ctrl+F"
         icon.source: "qrc:///icons/backup/edit-find.svg"
         onTriggered: {
-            findPanel.visible = true
+            showFindPanel()
         }
     }
 }

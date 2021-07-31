@@ -42,7 +42,7 @@ public:
     QObject         * rootWindow() const;
     void              setRootWindow(QObject *rootWindow);
 
-    Q_INVOKABLE QUrl  getQmlUrlFromPageType(const QString& type) const;
+    Q_INVOKABLE QUrl  getQmlUrlFromPageType(const QString& pageType) const;
 
 signals:
 

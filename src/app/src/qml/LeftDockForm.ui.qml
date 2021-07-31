@@ -9,10 +9,12 @@ Item {
     id: base
 
     property alias scrollView: scrollView
-    property alias toolboxLayout: toolboxLayout
     property alias toolboxRepeater: toolboxRepeater
-    property alias toolButtonRepeater: toolButtonRepeater
     property alias hideDockToolButton: hideDockToolButton
+    property alias toolButtonListView: toolButtonListView
+    property alias showTheBeginningButton: showTheBeginningButton
+    property alias showTheEndButton: showTheEndButton
+    property bool goingAtTheBeginningOfToolButtonListView: false
 
     RowLayout {
         anchors.fill: parent
@@ -33,16 +35,57 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignTop
-                    Item {
-                        Layout.fillWidth: true
-                    }
-                    Repeater {
-                        id: toolButtonRepeater
+
+                    SkrToolButton {
+                        id: showTheBeginningButton
+                        visible: toolButtonListView.contentWidth > toolButtonListView.width
+                                 && !toolButtonListView.atXBeginning && !goingAtTheBeginningOfToolButtonListView
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.preferredHeight: 30
+                        Layout.preferredWidth: 20
+                        focusPolicy: Qt.NoFocus
+                        icon.source: "qrc:///icons/backup/go-previous.svg"
+                        text: qsTr("Show the beginning")
+
                     }
 
-                    Item {
+                    ScrollView {
+                        id: toolButtonScrollView
+                        focusPolicy: Qt.NoFocus
                         Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        clip: true
+                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                        ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                        padding: 0
+
+                        ListView {
+                            id: toolButtonListView
+                            smooth: true
+                            boundsBehavior: Flickable.StopAtBounds
+                            orientation: Qt.Horizontal
+                            spacing: 2
+
+
+
+                        }
+
                     }
+
+                    SkrToolButton {
+
+                        id: showTheEndButton
+                        visible: toolButtonListView.contentWidth > toolButtonListView.width && !toolButtonListView.atXEnd
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.preferredHeight: 30
+                        Layout.preferredWidth: 20
+                        focusPolicy: Qt.NoFocus
+                        icon.source: "qrc:///icons/backup/go-next.svg"
+                        text: qsTr("Show the end")
+
+                    }
+
                     SkrToolButton {
                         id: hideDockToolButton
                         focusPolicy: Qt.NoFocus

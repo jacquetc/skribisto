@@ -43,16 +43,28 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Theme page");
+        return tr("Theme page", "plugin name");
     }
 
     QString use() const override {
         return "Display a page for the theme";
     }
 
+    QString pluginGroup() const override {
+        return "Page";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Mandatory";
+    }
+
     // Page
     QString pageType() const override {
         return "THEME";
+    }
+
+    int weight() const override {
+        return 500;
     }
 
     QString visualText() const override {
@@ -71,7 +83,9 @@ public:
         return false;
     }
 
-    QString pageTypeIconUrl() const override {
+    QString pageTypeIconUrl(int projectId, int treeItemId) const override {
+        Q_UNUSED(projectId)
+        Q_UNUSED(treeItemId)
         return "qrc:///icons/backup/color-picker-white.svg";
     }
 

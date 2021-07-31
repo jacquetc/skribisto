@@ -42,11 +42,19 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Navigation Project Toolbox");
+        return tr("Navigation Project Toolbox", "plugin name");
     }
 
     QString use() const override {
         return "Display a toolbox offering access to navigation by list";
+    }
+
+    QString pluginGroup() const override {
+        return "ProjectToolbox";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Mandatory";
     }
 
     QString qmlUrl() const override {

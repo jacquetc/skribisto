@@ -42,11 +42,19 @@ public:
     }
 
     QString displayedName() const override {
-        return tr("Writing Games Page Toolbox");
+        return tr("Writing Games Page Toolbox", "plugin name");
     }
 
     QString use() const override {
-        return "Display a toolbox offering some writing game";
+        return tr("Display a toolbox offering some writing game", "plugin description");
+    }
+
+    QString pluginGroup() const override {
+        return "PageToolbox";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Writing";
     }
 
     QStringList associatedPageTypes() const override {
