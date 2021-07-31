@@ -5,10 +5,9 @@ import ".."
 MenuItem {
     id: control
     icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
-                                          (control.action.icon.color ?
+                                          (control.action.icon.color === "transparent" ?
                                                (enabled ? control.action.icon.color : SkrTheme.buttonIconDisabled) :
                                                (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
-
 
     //Material.background: SkrTheme.menuBackground
     Material.foreground: SkrTheme.buttonForeground

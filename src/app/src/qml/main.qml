@@ -393,20 +393,46 @@ ApplicationWindow {
     }
 
     //------------------------------------------------------------------
+    //---------Show minimap scrollbar---------------------------
+    //------------------------------------------------------------------
+    Action {
+
+        id: minimapAction
+        text: skrShortcutManager.description("show-minimap-scrollbar")
+        icon {
+            source: "qrc:///icons/backup/view-preview.svg"
+        }
+
+        //shortcut: StandardKey.FullScreen
+        checkable: true
+        checked: SkrSettings.minimapSettings.visible
+        onCheckedChanged: {
+            SkrSettings.minimapSettings.visible = minimapAction.checked
+        }
+    }
+
+    Shortcut {
+        sequences: skrShortcutManager.shortcuts("show-minimap-scrollbar")
+        context: Qt.ApplicationShortcut
+        onActivated: minimapAction.trigger()
+    }
+
+
+    //------------------------------------------------------------------
     //---------Center vertically text cursor---------------------------
     //------------------------------------------------------------------
+
     Action {
 
         id: centerTextCursorAction
         text: skrShortcutManager.description("center-vert-text-cursor")
         icon {
             source: "qrc:///icons/backup/format-align-vertical-center.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey.FullScreen
         checkable: true
+        checked: SkrSettings.behaviorSettings.centerTextCursor
         onCheckedChanged: {
             SkrSettings.behaviorSettings.centerTextCursor = centerTextCursorAction.checked
         }
@@ -533,8 +559,6 @@ ApplicationWindow {
         text: skrShortcutManager.description("new-project")
         icon {
             source: "qrc:///icons/backup/document-new.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey.New

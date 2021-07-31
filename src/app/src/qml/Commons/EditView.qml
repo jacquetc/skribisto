@@ -33,6 +33,7 @@ EditViewForm {
     checkSpellingToolButton.action: checkSpellingAction
     centerTextCursorToolButton.action: centerTextCursorAction
     themesToolButton.action: themesColorAction
+    minimapToolButton.action: minimapAction
 
     swipeView.onCurrentIndexChanged: {
         var i = 0
@@ -48,8 +49,6 @@ EditViewForm {
         text: qsTr("Find")
         icon {
             source: "qrc:///icons/backup/edit-find.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey.Backspace
@@ -64,8 +63,6 @@ EditViewForm {
         text: qsTr("Sizes")
         icon {
             source: "qrc:///icons/backup/format-font-size-more.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey.
@@ -78,13 +75,12 @@ EditViewForm {
     sizeToolButton.action: sizeAction
 
 
+
     Action{
         id: goBackAction
         text: qsTr("Go back")
         icon {
             source: "qrc:///icons/backup/go-previous.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey.Backspace
@@ -197,8 +193,6 @@ EditViewForm {
         text: qsTr("Quick print")
         icon {
             source: "qrc:///icons/backup/document-print-direct.svg"
-            height: 50
-            width: 50
         }
 
         //shortcut: StandardKey.

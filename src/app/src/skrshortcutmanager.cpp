@@ -153,6 +153,10 @@ void SKRShortcutManager::populateShortcutList()
                        (QStringList() << tr("Alt+C", "center-vert-text-cursor")));
 
     m_shortcutList <<
+        createShortcut("show-minimap-scrollbar", tr("Show the minimap scrollbar"), (QStringList() << "global"),
+                       (QStringList() << tr("Alt+M", "center-vert-text-cursor")));
+
+    m_shortcutList <<
         createShortcut("user-manual", tr("&User manual"), (QStringList() << "global"),
                        (QStringList() << convertStandardKeyToList(QKeySequence::HelpContents)));
 

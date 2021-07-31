@@ -476,6 +476,10 @@
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>EmptyPage</name>
@@ -2062,6 +2066,15 @@
         <comment>fullscreen</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+M</source>
+        <comment>center-vert-text-cursor</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
@@ -2301,6 +2314,14 @@
         <source>Enable animations</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SkrBasePage</name>
@@ -2363,10 +2384,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Spellcheck</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>ToolBar background</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2384,6 +2401,42 @@
     </message>
     <message>
         <source>List item background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Spell check highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other highlight 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other highlight 2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s spell check highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s find highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s other highlight 1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s other highlight 2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap&apos;s other highlight 3</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2482,14 +2535,6 @@
 <context>
     <name>TextPage</name>
     <message>
-        <source>Plan of %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 words, %2 characters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2498,11 +2543,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close quick view</source>
+        <source>Text page</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open quick view</source>
+        <source>Plan of %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 words, %2 characters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2522,12 +2576,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Note</source>
+        <source>Close quick view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Text page</source>
-        <comment>plugin name</comment>
+        <source>Open quick view</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

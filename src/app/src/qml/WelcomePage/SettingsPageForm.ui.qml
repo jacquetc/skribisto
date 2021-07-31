@@ -37,6 +37,9 @@ Item {
     property alias devModeCheckBox: devModeCheckBox
     property alias pluginPageButton: pluginPageButton
     property alias firstStepsButton: firstStepsButton
+    property alias showMinimapCheckBox: showMinimapCheckBox
+    property alias minimapDividerSpinBox: minimapDividerSpinBox
+    property alias minimapDividerDial: minimapDividerDial
 
     SkrPane {
         id: pane2
@@ -175,6 +178,43 @@ Item {
                             SkrComboBox {
                                 id: checkSpellingComboBox
 
+                            }
+                        }
+                    }
+                }
+
+                SkrGroupBox {
+                    id: minimapGroupBox
+                    Layout.rowSpan: 2
+                    Layout.fillWidth: true
+                    focusPolicy: Qt.TabFocus
+                    title: qsTr("Minimap scrollbar")
+
+                    ColumnLayout {
+                        anchors.fill: parent
+
+                        SkrSwitch {
+                            id: showMinimapCheckBox
+                            text: qsTr("Show the minimap scrollbar")
+
+                        }
+                        RowLayout {
+                            Layout.fillHeight: true
+                            Layout.fillWidth: true
+
+
+                            SkrSpinBox {
+                                id: minimapDividerSpinBox
+                                to: 10
+                                from: 3
+
+                            }
+
+                            SkrDial {
+                                id: minimapDividerDial
+                                to: 10
+                                from: 3
+                                wheelEnabled: true
                             }
                         }
                     }

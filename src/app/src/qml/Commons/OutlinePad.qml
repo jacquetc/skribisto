@@ -19,7 +19,7 @@ OutlinePadForm {
         id :temp
         interval: 20
         onTriggered: {
-            console.log("outlineWritingZone.writingZone.textArea.length", outlineWritingZone.writingZone.textArea.length)
+            //console.log("outlineWritingZone.writingZone.textArea.length", outlineWritingZone.writingZone.textArea.length)
             if (outlineWritingZone.writingZone.textArea.length === 0) {
                 addOutlineToolButton.visible = true
                 openOutlineToolButton.visible = false
@@ -67,4 +67,13 @@ OutlinePadForm {
     outlineWritingZone.projectId: projectId
     outlineWritingZone.treeItemId: treeItemId
     outlineWritingZone.milestone: milestone
+
+
+    outlineWritingZone.writingZone.highlighter.spellCheckHighlightColor: SkrTheme.spellCheckHighlight
+    outlineWritingZone.writingZone.highlighter.findHighlightColor: SkrTheme.findHighlight
+    outlineWritingZone.writingZone.highlighter.otherHighlightColor_1: SkrTheme.otherHighlight_1
+    outlineWritingZone.writingZone.highlighter.otherHighlightColor_2: SkrTheme.otherHighlight_2
+    outlineWritingZone.writingZone.highlighter.otherHighlightColor_3: SkrTheme.otherHighlight_3
+
+
 }
