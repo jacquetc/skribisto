@@ -107,6 +107,7 @@ void SKRHighlighter::highlightBlock(const QString& text)
     QTextCharFormat dialogFormat;
 
     if (m_isForMinimap) {
+        // french dialogs
         dialogFormat.setBackground(QBrush(QColor(m_otherHighlightColor_1)));
 
         QRegularExpression startExpression("\\«");
@@ -141,6 +142,7 @@ void SKRHighlighter::highlightBlock(const QString& text)
     }
 
     if (m_isForMinimap) {
+        // english dialogs
         dialogFormat.setBackground(QBrush(QColor(m_otherHighlightColor_1)));
 
         QRegularExpression startExpression("^-|^–|^—");
