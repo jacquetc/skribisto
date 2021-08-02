@@ -134,6 +134,18 @@ void SKRShortcutManager::populateShortcutList()
     m_shortcutList <<
         createShortcut("paste", tr("Paste"), (QStringList() << "text" << "navigation"),
                        (QStringList() <<  convertStandardKeyToList(QKeySequence::Paste)));
+    m_shortcutList <<
+        createShortcut("italic", tr("Italic"), (QStringList() << "text"),
+                       (QStringList() <<  convertStandardKeyToList(QKeySequence::Italic)));
+    m_shortcutList <<
+        createShortcut("bold", tr("Bold"), (QStringList() << "text"),
+                       (QStringList() <<  convertStandardKeyToList(QKeySequence::Bold)));
+    m_shortcutList <<
+        createShortcut("strike", tr("Strike"), (QStringList() << "text"),
+                       (QStringList()));
+    m_shortcutList <<
+        createShortcut("underline", tr("Underline"), (QStringList() << "text"),
+                       (QStringList() <<  convertStandardKeyToList(QKeySequence::Underline)));
 
     m_shortcutList <<
         createShortcut("settings", tr("&Settings"), (QStringList() << "global"),
@@ -277,8 +289,34 @@ QStringList SKRShortcutManager::shortcuts(const QString& name) const
             break;
         }
     }
+    shortcuts.removeDuplicates();
 
     return shortcuts;
+}
+
+// -----------------------------------------------------------------
+
+QStringList SKRShortcutManager::nativeShortcuts(const QString& name) const
+{
+    QStringList shortcuts = this->shortcuts(name);
+
+    QStringList nativeShortcuts;
+
+    for (const QString& shortcut : qAsConst(shortcuts)) {
+        nativeShortcuts << QKeySequence(shortcut).toString(QKeySequence::NativeText);
+    }
+
+
+    return nativeShortcuts;
+}
+// -----------------------------------------------------------------
+
+
+QString SKRShortcutManager::nativeShortcutsToString(const QString &name) const
+{
+    QStringList nativeShortcuts = this->nativeShortcuts(name);
+
+    return nativeShortcuts.join(",");
 }
 
 // -----------------------------------------------------------------

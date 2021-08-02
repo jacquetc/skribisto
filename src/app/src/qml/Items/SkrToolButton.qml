@@ -37,7 +37,7 @@ ToolButton {
     display: AbstractButton.IconOnly
 
     SkrToolTip {
-        text: control.tip ? control.tip : control.text
+        text: control.tip ? control.tip + priv.finalShortcutText : control.text + priv.finalShortcutText
         visible: control.hovered && text.length !== 0
     }
 
@@ -53,5 +53,11 @@ ToolButton {
         visible: control.checked
     }
 
+    QtObject{
+        id: priv
+        property string finalShortcutText: shortcutText ? " (" + shortcutText +")" : ""
+    }
+
+    property string shortcutText:  action === null ? "" : action.shortcutText
 
 }

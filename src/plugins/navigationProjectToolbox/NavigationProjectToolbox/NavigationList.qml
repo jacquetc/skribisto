@@ -2881,6 +2881,7 @@ NavigationListForm {
             property int popupId: sidePopupListModel.count - 1
             property int headerHeight: 0
             enabled: false
+            enableBehavior: false
 
             width: 200
             z: 100 - popupId

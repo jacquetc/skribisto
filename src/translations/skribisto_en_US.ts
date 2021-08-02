@@ -2075,6 +2075,22 @@
         <comment>center-vert-text-cursor</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Italic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Strike</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SKRTreeManager</name>
@@ -2965,22 +2981,6 @@
     </message>
     <message>
         <source>&amp;Close &quot;%1&quot; project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Italic</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Strike</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

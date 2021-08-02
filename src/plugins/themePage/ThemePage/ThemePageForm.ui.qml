@@ -251,11 +251,13 @@ SkrBasePage {
                             }
 
                             SkrPane {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 50
+                                //Layout.fillWidth: true
+                                Layout.preferredHeight: 100
+                                Layout.preferredWidth: 500
 
                                 GridLayout {
                                     anchors.fill: parent
+                                    columns: 4
 
                                     SkrButton {
                                         text: qsTr("Button")
