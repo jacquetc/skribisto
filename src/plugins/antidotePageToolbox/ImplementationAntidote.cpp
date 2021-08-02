@@ -7,7 +7,8 @@
 
 ImplementationAntidote::ImplementationAntidote(QObject *parent)
     : QObject(parent),     m_textDoc(nullptr), m_language(Context),
-    m_connexionDBus(QDBusConnection::sessionBus()), m_adaptateur(nullptr)
+    m_connexionDBus(QDBusConnection::sessionBus()),
+    m_adaptateur(nullptr)
 {
     m_textTopMargin = 2;
     m_textIndent    = 2;
@@ -266,7 +267,30 @@ void ImplementationAntidote::launchAntidote(TypeOuvrage ouvrage)
         break;
     }
 
-    QProcess::startDetached(cheminCompletVersAntidote, arguments);
+    QFile antidoteFile(cheminCompletVersAntidote);
+
+    if (antidoteFile.exists()) {
+        qDebug() << "Found" << cheminCompletVersAntidote;
+
+        if (!QProcess::startDetached(cheminCompletVersAntidote, arguments)) {
+            qCritical() << "Antidote wouldn't start";
+        }
+    }
+    else if (QFile("/app/manifest.json").exists()) { // means it's in Flatpak
+        qDebug() << "Found /app/manifest.json --> Flatpak !";
+
+        QProcess   *proc =  new QProcess();
+        QStringList allArguments;
+        allArguments << "--host" << cheminCompletVersAntidote << arguments;
+        proc->start("flatpak-spawn", allArguments);
+
+        if (!proc->waitForStarted(2000)) {
+            qCritical() << "Antidote wouldn't start";
+        }
+    }
+    else {
+        qCritical() << "Antidote wouldn't find the executable at" << cheminCompletVersAntidote;
+    }
 }
 
 // -------------------------------------------------------------------------

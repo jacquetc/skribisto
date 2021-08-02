@@ -412,16 +412,32 @@ int main(int argc, char *argv[])
     if (returnCode == -1)
     {
         QProcess *proc = new QProcess();
-        proc->start(QCoreApplication::applicationFilePath(), app.arguments());
+
+        if (QFile("/app/manifest.json").exists()) { // means it's in Flatpak
+            QStringList allArguments;
+            allArguments << "--host" << "flatpak" <<  "run" << "eu.skribisto.skribisto";
+            proc->start("flatpak-spawn", allArguments);
+        }
+        else {
+            proc->start(QCoreApplication::applicationFilePath(), QStringList());
+        }
     }
 
     // restart with Fist step opened and at plugin page:
     if (returnCode == -2)
     {
-        QStringList args = app.arguments();
-        args << "--firstStepsAtPluginPage";
         QProcess *proc = new QProcess();
-        proc->start(QCoreApplication::applicationFilePath(), args);
+
+        if (QFile("/app/manifest.json").exists()) { // means it's in Flatpak
+            QStringList allArguments;
+            allArguments << "--host" << "flatpak" <<  "run" << "eu.skribisto.skribisto" << "--firstStepsAtPluginPage";
+            proc->start("flatpak-spawn", allArguments);
+        }
+        else {
+            QStringList args;
+            args << "--firstStepsAtPluginPage";
+            proc->start(QCoreApplication::applicationFilePath(), args);
+        }
     }
 
     return returnCode;

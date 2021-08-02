@@ -10,7 +10,9 @@
     "--socket=fallback-x11",
     "--socket=wayland",
     "--filesystem=home",
-    "--device=dri"
+    "--device=dri",
+    "--own-name=com.druide.antidote.*",
+    "--talk-name=org.freedesktop.Flatpak"
   ],
   "separate-locales": false,
   "modules": [

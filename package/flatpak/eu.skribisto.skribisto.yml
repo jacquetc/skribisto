@@ -10,6 +10,8 @@ finish-args:
   - --socket=wayland
   - --filesystem=home
   - --device=dri
+  - --own-name=com.druide.antidote.*
+  - --talk-name=org.freedesktop.Flatpak
 separate-locales: false
 modules:
 
