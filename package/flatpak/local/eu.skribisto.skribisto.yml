@@ -8,8 +8,10 @@ finish-args:
   - --share=network
   - --socket=fallback-x11
   - --socket=wayland
-  - --filesystem=host
+  - --filesystem=home
   - --device=dri
+  - --own-name=com.druide.antidote.*
+  - --talk-name=org.freedesktop.Flatpak
 separate-locales: false
 modules:
 
