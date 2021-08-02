@@ -1021,7 +1021,7 @@ ApplicationWindow {
 
                 Layout.alignment: Qt.AlignHCenter
 
-                text: "<h1>" + qsTr("Loading a project") + "</h1>"
+                text: "<h1>" + qsTr("Loading a projects") + "</h1>"
                 focus: true
             }
 

@@ -2940,10 +2940,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Loading a project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Back up</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2997,6 +2993,10 @@
     </message>
     <message>
         <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Loading a projects</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -606,7 +606,6 @@ TextPageForm {
             Binding on sourceViewWidth {
                 value: writingZone.textArea.width
                 restoreMode: Binding.RestoreBindingOrValue
-                delayed: true
             }
 
 
