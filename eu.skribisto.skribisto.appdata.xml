@@ -28,7 +28,7 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.27" date="2021-08-01T00:00:00Z">
+    <release type="stable" version="1.9.27" date="2021-08-02T00:00:00Z">
       <description>
         <ul>
           <li>Minimap: new minimap scrollbar</li>
