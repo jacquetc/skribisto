@@ -19,7 +19,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lupdate")
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/../../bin/lupdate.exe")
+    if(EXISTS "${CMAKE_PREFIX_PATH}/../../bin/lupdate.exe")
+        set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/../../bin/lupdate.exe")
+    else()
+        set(LUPDATE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lupdate.exe")
+    endif()
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
 message(${LUPDATE_EXECUTABLE})
@@ -37,7 +41,11 @@ add_custom_target("update_ts_en_US" ALL
 
 set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease")
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/../../bin/lrelease.exe")
+    if(EXISTS "${CMAKE_PREFIX_PATH}/../../bin/lrelease.exe")
+        set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/../../bin/lrelease.exe")
+    else()
+        set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease.exe")
+    endif()
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 message(${LRELEASE_EXECUTABLE})
 
