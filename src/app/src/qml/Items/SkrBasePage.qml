@@ -42,8 +42,7 @@ FocusScope {
 
         keys: dropAreaEnabled ? ["application/skribisto-tree-item"] : []
         onEntered: {
-            //console.debug("entered page")
-            if (drag.keys === ["application/skribisto-tree-item"]) {
+            if (drag.keys.includes("application/skribisto-tree-item")) {
                 dropIndicator.visible = true
             }
         }
@@ -98,6 +97,8 @@ FocusScope {
         border.color: SkrTheme.accent
         border.width: 4
     }
+
+
 
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_F2 && treeItemId != -1) {

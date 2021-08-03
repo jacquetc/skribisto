@@ -112,6 +112,12 @@ Item {
                             priv.textColorCode = model.textColorCode
                             priv.colorCode = model.colorCode
                         }
+
+                        onGrabChanged: function(transition, point) {
+                            point.accepted = false
+                        }
+
+                        grabPermissions: PointerHandler.TakeOverForbidden
                     }
 
                     HoverHandler{
