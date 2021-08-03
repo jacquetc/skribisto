@@ -230,10 +230,10 @@ SKRResult PLMProjectHub::backupAProject(int            projectId,
         result.addData("projectId", projectId);
     }
 
-    if (projectPath.scheme() == "qrc") {
-        result = SKRResult(SKRResult::Warning, this, "qrc_projects_cant_back_up");
-        result.addData("projectId", projectId);
-    }
+//    if (projectPath.scheme() == "qrc") {
+//        result = SKRResult(SKRResult::Warning, this, "qrc_projects_cant_back_up");
+//        result.addData("projectId", projectId);
+//    }
 
 
     IFOK(result) {
@@ -260,7 +260,15 @@ SKRResult PLMProjectHub::backupAProject(int            projectId,
     // determine file base
     QFileInfo info(projectPath.toLocalFile());
     QFileInfo backupFolderInfo(folderPath.toLocalFile());
-    QString   backupFile = backupFolderInfo.filePath() + "/" + info.completeBaseName();
+
+    QString   backupFile;
+    if(projectPath.scheme() == "qrc"){
+        backupFile = backupFolderInfo.filePath() + "/" + projectPath.path().split("/").last();
+        backupFile.remove(".skrib");
+    }
+    else{
+        backupFile = backupFolderInfo.filePath() + "/" + info.completeBaseName();
+    }
 
     // add date and time :
     QDateTime now     = QDateTime::currentDateTime();
@@ -272,7 +280,9 @@ SKRResult PLMProjectHub::backupAProject(int            projectId,
     backupFile = backupFile + "." + type;
 
     // firstly, save the project
-    IFOKDO(result, this->saveProject(projectId));
+    if(projectPath.scheme() != "qrc"){
+        IFOKDO(result, this->saveProject(projectId));
+    }
 
     // then create a copy
     IFOK(result) {

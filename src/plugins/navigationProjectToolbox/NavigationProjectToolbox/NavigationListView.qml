@@ -644,6 +644,7 @@ Item {
                                 && event.key === Qt.Key_X
                                 && swipeDelegate.state !== "edit_name"
                                 && swipeDelegate.state !== "edit_label") {
+                            swipeDelegate.configureMenu()
                             cutAction.trigger()
                             event.accepted = true
                         }
@@ -654,6 +655,7 @@ Item {
                                 && event.key === Qt.Key_C
                                 && swipeDelegate.state !== "edit_name"
                                 && swipeDelegate.state !== "edit_label") {
+                            swipeDelegate.configureMenu()
                             copyAction.trigger()
                             event.accepted = true
                         }
@@ -664,6 +666,7 @@ Item {
                                 && event.key === Qt.Key_V
                                 && swipeDelegate.state !== "edit_name"
                                 && swipeDelegate.state !== "edit_label") {
+                            swipeDelegate.configureMenu()
                             pasteAction.trigger()
                             event.accepted = true
                         }
@@ -1061,10 +1064,22 @@ Item {
                                                 model.treeItemId,
                                                 "can_add_child_paper",
                                                 "true") === "true") {
-                                        swipeDelegate.ListView.view.currentIndex = model.index
-                                        goToChildTimer.start()
+
+                                        if( root.popupId >= 0){
+                                            setCurrentTreeItemParentIdCalled(model.projectId , model.treeItemId)
+                                        }
+                                        else{
+                                            swipeDelegate.ListView.view.currentIndex = model.index
+                                            goToChildTimer.start()
+                                         }
+
                                     } else {
-                                        swipeDelegate.ListView.view.currentIndex = model.index
+                                        if( root.popupId >= 0){
+                                            openDocumentTimer.start()
+                                        }
+                                        else {
+                                            swipeDelegate.ListView.view.currentIndex = model.index
+                                        }
                                     }
 
                                     swipeDelegate.forceActiveFocus()
@@ -1092,7 +1107,7 @@ Item {
                                 }
 
                                 onGrabChanged: function(transition, point) {
-                                    point.accepted = true
+                                    point.accepted = false
                                 }
 
                                 grabPermissions: PointerHandler.TakeOverForbidden
@@ -1360,6 +1375,7 @@ Item {
                                         onCheckStateChanged: {
                                             model.checkState = selectionCheckBox.checkState
                                             determineSelectedTreeItems()
+                                            console.log("onCheckStateChanged")
                                         }
 
                                         Binding on checkState {
@@ -1374,7 +1390,7 @@ Item {
                                                     = navigationProxyModel.getCheckedIdsList()
                                             priv.selectedProjectId = currentProjectId
 
-                                            console.log(selectedTreeItemsIds)
+                                            console.log(priv.selectedTreeItemsIds)
                                         }
                                     }
 
@@ -2121,13 +2137,13 @@ Item {
 
                 onTriggered: {
 
-                    if (selectedTreeItemsIds.length > 0) {
+                    if (priv.selectedTreeItemsIds.length > 0) {
                         console.log("cut action",
                                     menu.projectId,
-                                    selectedTreeItemsIds)
+                                    priv.selectedTreeItemsIds)
                         skrData.treeHub().cut(
                                     menu.projectId,
-                                    selectedTreeItemsIds)
+                                    priv.selectedTreeItemsIds)
                     } else {
                         console.log("cut action",
                                     menu.projectId,
@@ -2154,13 +2170,13 @@ Item {
                 enabled: listView.enabled
 
                 onTriggered: {
-                    if (selectedTreeItemsIds.length > 0) {
+                    if (priv.selectedTreeItemsIds.length > 0) {
                         console.log("copy action",
                                     menu.projectId,
-                                    selectedTreeItemsIds)
+                                    priv.selectedTreeItemsIds)
                         skrData.treeHub().copy(
                                     menu.projectId,
-                                    selectedTreeItemsIds)
+                                    priv.selectedTreeItemsIds)
                     } else {
                         console.log("copy action",
                                     menu.projectId,

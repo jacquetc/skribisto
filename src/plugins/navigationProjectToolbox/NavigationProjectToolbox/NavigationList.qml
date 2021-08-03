@@ -210,7 +210,6 @@ NavigationListForm {
         }
         //enabled:
         onTriggered: {
-            console.log("depth", navigationListStackView.depth)
 
             navigationListStackView.pop(priv.transitionOperation)
             navigationListStackView.currentItem.setCurrent()

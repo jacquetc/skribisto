@@ -1045,6 +1045,8 @@ SKRResult SKRTreeHub::moveTreeItemAsChildOf(int projectId, int noteId, int targe
     IFKO(result) {
         emit errorSent(result);
     }
+
+
     return result;
 }
 
@@ -1745,26 +1747,52 @@ void SKRTreeHub::copy(int projectId, QList<int>treeItemIds)
 SKRResult SKRTreeHub::paste(int projectId, int parentTreeItemId)
 {
     SKRResult result(this);
+    QList<int> treeItemIdList;
+    int targetProjectId;
 
     if (m_cutCopy.type != CutCopy::Type::None) {
         if (m_cutCopy.type == CutCopy::Type::Cut) {
             for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
                 result = this->moveTreeItemAsChildOf(m_cutCopy.projectId, treeItemId, parentTreeItemId);
+                treeItemIdList << treeItemId;
             }
+            targetProjectId = m_cutCopy.projectId;
+
+            // become a Copy after first paste
+            m_cutCopy.treeItemIds = treeItemIdList;
+            m_cutCopy.type = CutCopy::Type::Copy;
         }
         else if (m_cutCopy.type == CutCopy::Type::Copy) {
             for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
                 result = this->duplicateTreeItem(m_cutCopy.projectId, treeItemId);
                 int newTreeItemId = result.getData("treeItemId", -2).toInt();
-
+                treeItemIdList << newTreeItemId;
                 IFOKDO(result, this->moveTreeItemAsChildOf(m_cutCopy.projectId, newTreeItemId, parentTreeItemId))
             }
+            targetProjectId = m_cutCopy.projectId;
         }
+
+
+    }
+    IFOK(result){
+        result.addData("treeItemIdList", QVariant::fromValue<QList<int>>(treeItemIdList));
+
+        result = this->renumberSortOrders(projectId);
     }
     IFKO(result) {
         emit errorSent(result);
     }
 
+    IFOK(result) {
+        if (m_cutCopy.type == CutCopy::Type::Cut) {
+            emit treeItemMoved(projectId, treeItemIdList, targetProjectId, parentTreeItemId);
+        }
+       else if (m_cutCopy.type == CutCopy::Type::Copy) {
+            emit treeItemsAdded(projectId, treeItemIdList);
+        }
+
+        emit projectModified(projectId);
+    }
 
     return result;
 }

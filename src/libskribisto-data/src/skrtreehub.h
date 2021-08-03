@@ -309,6 +309,8 @@ signals:
                            const QDateTime& newDate);
     void treeItemAdded(int projectId,
                        int treeItemId);
+    void treeItemsAdded(int projectId,
+                       QList<int> treeItemIds);
     void treeItemRemoved(int projectId,
                          int treeItemId);
     void treeItemMoved(int       sourceProjectId,

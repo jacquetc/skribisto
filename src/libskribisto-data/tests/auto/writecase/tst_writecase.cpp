@@ -69,6 +69,14 @@ private Q_SLOTS:
     void cleanUpHtml();
     void sortAlphabetically();
 
+    // cut /copy /paste
+    void simpleCutPaste();
+    void multipleCutPaste();
+    void simpleCutPasteInTheSameFolder();
+    void simpleCopyPaste();
+    void multipleCopyPaste();
+    void simpleCopyPasteInTheSameFolder();
+
 private:
 
     SKRData *m_data;
@@ -194,9 +202,9 @@ void WriteCase::setTitle()
 
 void WriteCase::getTitle()
 {
-    QString title = skrdata->treeHub()->getTitle(m_currentProjectId, 1);
+    QString title = skrdata->treeHub()->getTitle(m_currentProjectId, 4);
 
-    QCOMPARE(title, QString("First title"));
+    QCOMPARE(title, QString("Sol"));
 }
 
 void WriteCase::setIndent()
@@ -231,21 +239,21 @@ void WriteCase::setTrashed()
     QSignalSpy spy(skrdata->treeHub(), SIGNAL(trashedChanged(int,int,bool)));
 
     SKRResult result = skrdata->treeHub()->setTrashedWithChildren(m_currentProjectId,
-                                                                  55,
+                                                                  5,
                                                                   true);
 
     QCOMPARE(result.isSuccess(), true);
-    QVERIFY(spy.count() == 3);
+    QVERIFY(spy.count() == 5);
 
     // make sure the signal was emitted exactly one time
     QList<QVariant> arguments = spy.takeFirst(); // take the first signal
 
     QVERIFY(arguments.at(2).toBool() == true);
-    bool value = skrdata->treeHub()->getTrashed(m_currentProjectId, 55);
+    bool value = skrdata->treeHub()->getTrashed(m_currentProjectId, 5);
 
     QCOMPARE(value, true);
 
-    QDateTime date = skrdata->treeHub()->getTrashedDate(m_currentProjectId, 55);
+    QDateTime date = skrdata->treeHub()->getTrashedDate(m_currentProjectId, 5);
 
     QCOMPARE(date.isValid(), true);
 }
@@ -259,7 +267,7 @@ void WriteCase::restoring()
     // restoring
     QSignalSpy spy(skrdata->treeHub(), SIGNAL(trashedChanged(int,int,bool)));
 
-    SKRResult result = skrdata->treeHub()->untrashOnlyOneTreeItem(m_currentProjectId, 2);
+    SKRResult result = skrdata->treeHub()->untrashOnlyOneTreeItem(m_currentProjectId, 5);
 
     QCOMPARE(result.isSuccess(), true);
 
@@ -268,11 +276,11 @@ void WriteCase::restoring()
 
     QVERIFY(arguments.at(2).toBool() == false);
 
-    bool value = skrdata->treeHub()->getTrashed(m_currentProjectId, 2);
+    bool value = skrdata->treeHub()->getTrashed(m_currentProjectId, 5);
 
     QCOMPARE(value, false);
 
-    QDateTime date = skrdata->treeHub()->getTrashedDate(m_currentProjectId, 2);
+    QDateTime date = skrdata->treeHub()->getTrashedDate(m_currentProjectId, 5);
 
     QCOMPARE(date.isNull(), true);
 }
@@ -281,7 +289,7 @@ void WriteCase::restoring()
 
 void WriteCase::getTrashed()
 {
-    bool value = skrdata->treeHub()->getTrashed(m_currentProjectId, 1);
+    bool value = skrdata->treeHub()->getTrashed(m_currentProjectId, 2);
 
     QCOMPARE(value, false);
 }
@@ -308,14 +316,14 @@ void WriteCase::setPrimaryContent()
 
 void WriteCase::getPrimaryContent()
 {
-    QString value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 1);
+    QString value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 16);
     QTextDocument doc;
 
     doc.setHtml(value);
-    QCOMPARE(doc.toPlainText(), QString("first content test_project_dict_word badword"));
+    QCOMPARE(doc.toPlainText(), QString("second content test_project_dict_word badword"));
 
     // lorem ipsum :
-    value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 8);
+    value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 14);
     QVERIFY(value.size() > 5000);
 }
 
@@ -342,9 +350,9 @@ void WriteCase::setCreationDate()
 
 void WriteCase::getCreationDate()
 {
-    QDateTime value = skrdata->treeHub()->getCreationDate(m_currentProjectId, 1);
+    QDateTime value = skrdata->treeHub()->getCreationDate(m_currentProjectId, 2);
 
-    QCOMPARE(value, QDateTime(QDate(2000, 1, 1), QTime(0, 0, 0)));
+    QCOMPARE(value, QDateTime(QDate(2010, 1, 1), QTime(1, 1, 1)));
 }
 
 // ------------------------------------------------------------------------------------
@@ -370,7 +378,7 @@ void WriteCase::setUpdateDate()
 
 void WriteCase::getUpdateDate()
 {
-    QDateTime value = skrdata->treeHub()->getUpdateDate(m_currentProjectId, 1);
+    QDateTime value = skrdata->treeHub()->getUpdateDate(m_currentProjectId, 2);
 
     QCOMPARE(value, QDateTime(QDate(2010, 1, 1), QTime(1, 1, 1)));
 }
@@ -379,9 +387,9 @@ void WriteCase::getUpdateDate()
 
 void WriteCase::queue()
 {
-    QString value = skrdata->treeHub()->getTitle(m_currentProjectId, 1);
+    QString value = skrdata->treeHub()->getTitle(m_currentProjectId, 4);
 
-    QCOMPARE(value, QString("First title"));
+    QCOMPARE(value, QString("Sol"));
     QSignalSpy spy(skrdata->treeHub(), SIGNAL(titleChanged(int,int,QString)));
 
     skrdata->treeHub()->setTitle(m_currentProjectId, 1, "new_title1");
@@ -454,9 +462,9 @@ void WriteCase::property()
     QVERIFY(spy.count() == 1);
     QString value =  skrdata->treePropertyHub()->getProperty(m_currentProjectId,
                                                              1,
-                                                             "test0");
+                                                             "test1");
 
-    QCOMPARE(value, QString("value0"));
+    QCOMPARE(value, QString("value1"));
     QHash<int, bool> hash = skrdata->treePropertyHub()->getAllIsSystems(
         m_currentProjectId);
 
@@ -489,7 +497,7 @@ void WriteCase::property_replace()
 void WriteCase::getTreeLabel()
 {
     QString value = skrdata->treePropertyHub()->getProperty(m_currentProjectId,
-                                                            1,
+                                                            5,
                                                             "label");
 
     QCOMPARE(value, "this is a label");
@@ -529,9 +537,156 @@ void WriteCase::sortAlphabetically() {
 
     QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
     QList<int> wantedIds;
-    wantedIds << 0 << 1 << 2 << 55 << 4 << 57 << 54 << 5 << 6 << 7 << 50 << 51 << 56 << 52 << 3 << 8 << 24;
+    wantedIds << 0 << 3 << 21 << 22 << 23 << 1 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << 7 << 8 << 9 << 10 << 11 << 12;
     QCOMPARE(ids, wantedIds);
 }
+
+//-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
+
+void WriteCase::simpleCutPaste(){
+
+
+    skrdata->treeHub()->cut(m_currentProjectId, QList<int>() << 14);
+    skrdata->treeHub()->paste(m_currentProjectId, 6);
+
+
+    QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
+    // original:
+    //0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23
+    QList<int> wantedIds;
+    wantedIds << 0 << 2 << 4 << 5 << 13 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << 14 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23;
+    QCOMPARE(ids, wantedIds);
+
+
+    int indent = skrdata->treeHub()->getIndent(m_currentProjectId, 14);
+
+    QCOMPARE(indent, 3);
+
+
+}
+
+void WriteCase::simpleCutPasteInTheSameFolder(){
+    skrdata->treeHub()->cut(m_currentProjectId, QList<int>() << 14);
+    skrdata->treeHub()->paste(m_currentProjectId, 5);
+
+
+    QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
+    // original:
+    //0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23
+    QList<int> wantedIds;
+    wantedIds << 0 << 2 << 4 << 5 << 13 << 15 << 16 << 14 << 6 << 17 << 18 << 19 << 20 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23;
+    QCOMPARE(ids, wantedIds);
+
+
+    int indent = skrdata->treeHub()->getIndent(m_currentProjectId, 14);
+
+    QCOMPARE(indent, 3);
+
+
+}
+
+void WriteCase::multipleCutPaste(){
+
+
+    skrdata->treeHub()->cut(m_currentProjectId, QList<int>() << 14 << 15 << 16);
+    skrdata->treeHub()->paste(m_currentProjectId, 6);
+
+
+    QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
+    // original:
+    //0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23
+    QList<int> wantedIds;
+    wantedIds << 0 << 2 << 4 << 5 << 13 << 6 << 17 << 18 << 19 << 20 << 14 << 15 << 16 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23;
+    QCOMPARE(ids, wantedIds);
+
+
+    int indent = skrdata->treeHub()->getIndent(m_currentProjectId, 14);
+    QCOMPARE(indent, 3);
+    indent = skrdata->treeHub()->getIndent(m_currentProjectId, 15);
+    QCOMPARE(indent, 3);
+    indent = skrdata->treeHub()->getIndent(m_currentProjectId, 16);
+    QCOMPARE(indent, 3);
+}
+
+
+void WriteCase::simpleCopyPaste(){
+
+
+    skrdata->treeHub()->copy(m_currentProjectId, QList<int>() << 14);
+    SKRResult result = skrdata->treeHub()->paste(m_currentProjectId, 6);
+
+    QCOMPARE(result.isSuccess(), true);
+    QList<int> newIdList = result.getData("treeItemIdList",  QVariant::fromValue<QList<int>>(QList<int>())).value<QList<int>>();
+
+    QCOMPARE(newIdList.isEmpty(), false);
+
+    QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
+    // original:
+    //0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23
+    QList<int> wantedIds;
+    wantedIds << 0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << newIdList.first() << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23;
+    QCOMPARE(ids, wantedIds);
+
+
+    int indent = skrdata->treeHub()->getIndent(m_currentProjectId, 14);
+
+    QCOMPARE(indent, 3);
+
+}
+
+void WriteCase::simpleCopyPasteInTheSameFolder(){
+
+
+    skrdata->treeHub()->copy(m_currentProjectId, QList<int>() << 14);
+    SKRResult result = skrdata->treeHub()->paste(m_currentProjectId, 5);
+
+    QCOMPARE(result.isSuccess(), true);
+    QList<int> newIdList = result.getData("treeItemIdList",  QVariant::fromValue<QList<int>>(QList<int>())).value<QList<int>>();
+
+    QCOMPARE(newIdList.isEmpty(), false);
+
+    QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
+    // original:
+    //0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23
+    QList<int> wantedIds;
+    wantedIds << 0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << newIdList.first() << 6 << 17 << 18 << 19 << 20 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23;
+    QCOMPARE(ids, wantedIds);
+
+
+    int indent = skrdata->treeHub()->getIndent(m_currentProjectId, 14);
+
+    QCOMPARE(indent, 3);
+
+}
+
+void WriteCase::multipleCopyPaste(){
+
+    skrdata->treeHub()->copy(m_currentProjectId, QList<int>() << 14 << 15 << 16);
+    SKRResult result = skrdata->treeHub()->paste(m_currentProjectId, 6);
+
+    QCOMPARE(result.isSuccess(), true);
+    QList<int> newIdList = result.getData("treeItemIdList",  QVariant::fromValue<QList<int>>(QList<int>())).value<QList<int>>();
+
+    QCOMPARE(newIdList.count(), 3);
+
+    QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
+    // original:
+    //0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23
+    QList<int> wantedIds;
+    wantedIds << 0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 << newIdList.first() << newIdList.at(1) << newIdList.at(2) << 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23;
+    QCOMPARE(ids, wantedIds);
+
+
+    int indent = skrdata->treeHub()->getIndent(m_currentProjectId, 14);
+    QCOMPARE(indent, 3);
+    indent = skrdata->treeHub()->getIndent(m_currentProjectId, 15);
+    QCOMPARE(indent, 3);
+    indent = skrdata->treeHub()->getIndent(m_currentProjectId, 16);
+    QCOMPARE(indent, 3);
+}
+
 
 QTEST_GUILESS_MAIN(WriteCase)
 

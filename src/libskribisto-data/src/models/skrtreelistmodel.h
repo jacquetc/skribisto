@@ -81,14 +81,6 @@ private slots:
                                   int                treeItemId,
                                   SKRTreeItem::Roles role);
 
-    void refreshAfterDataAddition(int projectId,
-                                  int treeItemId);
-    void refreshAfterDataRemove(int projectId,
-                                int treeItemId);
-    void refreshAfterDataMove(int       sourceProjectId,
-                              QList<int>sourceTreeItemIds,
-                              int       targetProjectId,
-                              int       targetTreeItemId);
     void refreshAfterTrashedStateChanged(int  projectId,
                                          int  treeItemId,
                                          bool newTrashedState);
