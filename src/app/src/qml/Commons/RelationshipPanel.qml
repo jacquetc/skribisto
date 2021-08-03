@@ -794,7 +794,6 @@ RelationshipPanelForm {
                 action: Action {
                     id: renameAction
                     text: qsTr("Rename")
-                    shortcut: "F2"
                     icon {
                         source: "qrc:///icons/backup/edit-rename.svg"
                     }
@@ -850,7 +849,7 @@ RelationshipPanelForm {
                 property int projectId: model.projectId
                 property int treeItemId: model.treeItemId
                 property string treeItemTitle: model.title
-                title: qsTr("Rename an item")
+                title: qsTr("Rename a linked item")
                 contentItem: SkrTextField {
                     id: inner_renameTextField
                     text: renameDialog.treeItemTitle

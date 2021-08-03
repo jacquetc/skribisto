@@ -93,7 +93,7 @@ public:
     SKRResult             setIndent(int projectId,
                                     int treeItemId,
                                     int newIndent);
-    int                   getIndent(int projectId,
+    Q_INVOKABLE int       getIndent(int projectId,
                                     int treeItemId) const;
     SKRResult             setSortOrder(int projectId,
                                        int treeItemId,
@@ -184,7 +184,7 @@ public:
     Q_INVOKABLE SKRResult addChildTreeItem(int            projectId,
                                            int            targetId,
                                            const QString& type);
-    SKRResult             removeTreeItem(int projectId,
+    Q_INVOKABLE SKRResult removeTreeItem(int projectId,
                                          int targetId);
 
 

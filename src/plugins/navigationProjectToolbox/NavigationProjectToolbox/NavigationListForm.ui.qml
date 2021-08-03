@@ -75,7 +75,6 @@ FocusScope {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                initialItem: stackViewComponent
             }
         }
     }

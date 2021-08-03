@@ -32,6 +32,11 @@ SectionPage::~SectionPage()
 // ---------------------------------------------------
 
 QString SectionPage::pageTypeIconUrl(int projectId, int treeItemId) const {
+
+    if(projectId == -1 && treeItemId == -1){
+        return "qrc:///icons/backup/bookmark-new.svg";
+    }
+
     QString section_type = skrdata->treePropertyHub()->getProperty(projectId, treeItemId, "section_type", "separator");
 
 

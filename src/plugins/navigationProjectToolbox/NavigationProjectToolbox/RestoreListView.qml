@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import QtQuick.Controls.Material 2.15
 import eu.skribisto.projecthub 1.0
+import eu.skribisto.searchtreelistproxymodel 1.0
 import "../../Commons"
 import "../../Items"
 
@@ -12,11 +13,16 @@ RestoreListViewForm {
 
     id: root
 
-    property var proxyModel
+    SKRSearchTreeListProxyModel {
+            id: restoreTreeProxyModel
+            showTrashedFilter: true
+            showNotTrashedFilter: false
+        }
+
     property var model
     onModelChanged: {
         listView.visualModel.model = model
-        proxyModel.projectIdFilter = currentProjectId
+        restoreTreeProxyModel.projectIdFilter = currentProjectId
 
     }
     signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
@@ -25,7 +31,7 @@ RestoreListViewForm {
 
     property var trashedChildrenList: []
     onTrashedChildrenListChanged: {
-        proxyModel.treeItemIdListFilter = trashedChildrenList
+        restoreTreeProxyModel.treeItemIdListFilter = trashedChildrenList
     }
 
     property int parentTreeItemIdToBeRestored: -2
@@ -71,17 +77,17 @@ RestoreListViewForm {
         listView.escapeKeyPressed.connect( function() {goBackAction.trigger()})
         listView.deleteDefinitivelyCalled.connect(root.prepareDeleteDefinitivelyDialog)
 
-        listView.proxyModel = proxyModel
+        listView.proxyModel = restoreTreeProxyModel
         listView.treeIndentOffset = treeIndentOffset
         listView.currentProjectId = currentProjectId
-        proxyModel.projectIdFilter = currentProjectId
+        restoreTreeProxyModel.projectIdFilter = currentProjectId
         listView.currentTreeItemId = parentTreeItemIdToBeRestored
         listView.currentIndex = currentIndex
 
 
         //pre-check same time trashed :
-        var idList = proxyModel.findIdsTrashedAtTheSameTimeThan(currentProjectId, parentTreeItemIdToBeRestored)
-        proxyModel.setCheckedIdsList(idList)
+        var idList = restoreTreeProxyModel.findIdsTrashedAtTheSameTimeThan(currentProjectId, parentTreeItemIdToBeRestored)
+        restoreTreeProxyModel.setCheckedIdsList(idList)
 
     }
 
@@ -148,7 +154,7 @@ RestoreListViewForm {
     function prepareDeleteDefinitivelyDialog(projectId, treeItemId){
 
         var idList = [treeItemId]
-        idList = idList.concat(proxyModel.getChildrenList(projectId, treeItemId, true, false))
+        idList = idList.concat(skrData.treeHub().getAllChildren(projectId, treeItemId))
 
         //get names
         var nameList = []
@@ -156,7 +162,7 @@ RestoreListViewForm {
         for(i = 0 ; i < idList.length ; i++){
             var id = idList[i]
 
-            nameList.push(proxyModel.getItemName(projectId, id))
+            nameList.push(skrData.treeHub().getTitle(projectId, id))
 
         }
 
@@ -190,7 +196,7 @@ RestoreListViewForm {
             for(i = 0 ; i < treeItemIdList.length ; i++){
                 var id = treeItemIdList[i]
 
-                proxyModel.deleteDefinitively(projectId, id)
+                skrData.treeHub().removeTreeItem(projectId, id)
             }
 
         }
@@ -241,10 +247,10 @@ RestoreListViewForm {
         onTriggered: {
 
             if(selectAllAction.checked){
-                proxyModel.checkAll()
+                restoreTreeProxyModel.checkAll()
             }
             else {
-                proxyModel.checkNone()
+                restoreTreeProxyModel.checkNone()
 
             }
 
@@ -283,7 +289,7 @@ RestoreListViewForm {
     Binding {
         target: listView
         property: "currentIndex"
-        value: proxyModel.forcedCurrentIndex
+        value: restoreTreeProxyModel.forcedCurrentIndex
     }
 
     //----------------------------------------------------------------------------

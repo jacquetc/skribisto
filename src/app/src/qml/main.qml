@@ -1428,6 +1428,7 @@ ApplicationWindow {
                     saveOrNotBeforeQuittingDialog.projectName = skrData.projectHub(
                                 ).getProjectName(projectId)
                     saveOrNotBeforeQuittingDialog.open()
+                    saveOrNotBeforeQuittingDialog.forceActiveFocus()
                     //saveAsBeforeQuittingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
                 }
             }

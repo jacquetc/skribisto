@@ -102,6 +102,7 @@ FocusScope {
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_F2 && treeItemId != -1) {
             if (control.projectId !== -1) {
+                console.log("control.projectId", control.projectId, control.treeItemId)
                 renameDialog.projectId = control.projectId
                 renameDialog.treeItemId = control.treeItemId
                 renameDialog.treeItemTitle = skrData.treeHub().getTitle(
@@ -122,7 +123,7 @@ FocusScope {
             control.forceActiveFocus()
         }
 
-
+        grabPermissions: PointerHandler.TakeOverForbidden
     }
 
     SimpleDialog {

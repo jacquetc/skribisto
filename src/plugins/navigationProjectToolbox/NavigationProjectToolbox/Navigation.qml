@@ -13,7 +13,7 @@ NavigationForm {
     property int openedProjectId
     property int openedTreeItemId
 
-    signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
+    signal openDocument(int projectId, int treeItemId)
     signal openDocumentInAnotherView(int projectId, int treeItemId)
     signal openDocumentInNewWindow(int projectId, int treeItemId)
 
@@ -30,9 +30,6 @@ NavigationForm {
 
         NavigationList {
             id: navigationList
-            proxyModel: root.navigationListProxyModel
-            openedProjectId: root.openedProjectId
-            openedTreeItemId: root.openedTreeItemId
 
             Component.onCompleted: {
                 navigationList.openDocument.connect(root.openDocument)
@@ -64,7 +61,6 @@ NavigationForm {
 
         TrashedListView {
             id: trashedListView
-            proxyModel: root.trashedListViewProxyModel
 
             Component.onCompleted: {
                 trashedListView.openDocument.connect(root.openDocument)
@@ -82,8 +78,8 @@ NavigationForm {
 
 
         // if get children :
-        var trashedChildrenList = trashedListViewProxyModel.getChildrenList(projectId, treeItemId, true, false)
-        var trashedAncestorsList = trashedListViewProxyModel.getAncestorsList(projectId, treeItemId, true, false)
+        var trashedChildrenList = skrData.treeHub().getAllChildren(projectId, treeItemId)
+        var trashedAncestorsList = skrData.treeHub().getAllAncestors(projectId, treeItemId)
         // if no children :
         if(trashedChildrenList.length === 0 && trashedAncestorsList === 0){
             restoreDocumentList(projectId, [treeItemId])
@@ -108,7 +104,6 @@ NavigationForm {
 
         RestoreListView {
             id: restoreListView
-            proxyModel: root.restoreListViewProxyModel
 
             Component.onCompleted: {
                 restoreListView.openDocument.connect(root.openDocument)
@@ -124,7 +119,7 @@ NavigationForm {
 
         trashedChildrenList.push(parentTreeItemIdToBeRestored)
 
-        var treeIndentOffset = root.restoreListViewProxyModel.getItemIndent(projectId, parentTreeItemIdToBeRestored)
+        var treeIndentOffset = skrData.treeHub().getIndent(projectId, parentTreeItemIdToBeRestored)
 
         stackView.push(restoreListViewComponent, {currentProjectId: projectId,
                            parentTreeItemIdToBeRestored: parentTreeItemIdToBeRestored,
@@ -135,7 +130,6 @@ NavigationForm {
 
     function popRestoreListView() {
         stackView.pop()
-        root.restoreListViewProxyModel.clearCheckedList()
     }
 
 

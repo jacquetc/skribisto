@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.15
 import QtQml.Models 2.15
 import eu.skribisto.projecthub 1.0
 import QtQuick.Controls.Material 2.15
+import eu.skribisto.searchtreelistproxymodel 1.0
 import "../../Commons"
 import "../../Items"
 import "../.."
@@ -11,11 +12,17 @@ import "../.."
 TrashedListViewForm {
     id: root
 
-    property var proxyModel
+    SKRSearchTreeListProxyModel {
+            id: trashedTreeProxyModel
+            showTrashedFilter: true
+            showNotTrashedFilter: false
+        }
+
+
     property var model
     onModelChanged: {
         listView.visualModel.model = model
-        proxyModel.projectIdFilter = currentProjectId
+        trashedTreeProxyModel.projectIdFilter = currentProjectId
     }
     signal openDocument(int openedProjectId, int openedTreeItemId, int projectId, int treeItemId)
     signal openDocumentInAnotherView(int projectId, int treeItemId)
@@ -64,9 +71,9 @@ TrashedListViewForm {
         listView.escapeKeyPressed.connect( function() {goBackAction.trigger()})
         listView.deleteDefinitivelyCalled.connect(root.prepareDeleteDefinitivelyDialog)
 
-        listView.proxyModel = proxyModel
+        listView.proxyModel = trashedTreeProxyModel
         listView.currentProjectId = currentProjectId
-        proxyModel.projectIdFilter = currentProjectId
+        trashedTreeProxyModel.projectIdFilter = currentProjectId
         listView.currentIndex = currentIndex
 
     }
@@ -122,7 +129,7 @@ TrashedListViewForm {
         if (projectList.length > 0){
             trashProjectComboBox.currentIndex = projectList.length - 1;
             var _projectId = trashProjectComboBox.valueAt(projectList.length - 1)
-            proxyModel.projectIdFilter = _projectId
+            trashedTreeProxyModel.projectIdFilter = _projectId
             currentProjectId = _projectId
         }
     }
@@ -134,11 +141,11 @@ TrashedListViewForm {
             var projectList = skrData.projectHub().getProjectIdList()
             trashProjectComboBox.currentIndex = projectList.length - 1;
             var _projectId = trashProjectComboBox.valueAt(projectList.length - 1)
-            proxyModel.projectIdFilter = _projectId
+            trashedTreeProxyModel.projectIdFilter = _projectId
             currentProjectId = _projectId
         }
         else {
-            proxyModel.projectIdFilter = trashProjectComboBox.currentValue
+            trashedTreeProxyModel.projectIdFilter = trashProjectComboBox.currentValue
             currentProjectId = trashProjectComboBox.currentValue
 
         }
@@ -179,7 +186,7 @@ TrashedListViewForm {
     function prepareDeleteDefinitivelyDialog(projectId, treeItemId){
 
         var idList = [treeItemId]
-        idList = idList.concat(proxyModel.getChildrenList(projectId, treeItemId, true, false))
+        idList = idList.concat(skrData.treeHub().getAllChildren(projectId, treeItemId))
 
         //get names
         var nameList = []
@@ -187,7 +194,7 @@ TrashedListViewForm {
         for(i = 0 ; i < idList.length ; i++){
             var id = idList[i]
 
-            nameList.push(proxyModel.getItemName(projectId, id))
+            nameList.push(skrData.treeHub().getTitle(projectId, id))
 
         }
 
@@ -221,7 +228,7 @@ TrashedListViewForm {
             for(i = 0 ; i < treeItemIdList.length ; i++){
                 var id = treeItemIdList[i]
 
-                proxyModel.deleteDefinitively(projectId, id)
+                skrData.treeHub().removeTreeItem(projectId, id)
             }
 
         }
@@ -303,7 +310,7 @@ TrashedListViewForm {
     Binding {
         target: listView
         property: "currentIndex"
-        value: proxyModel.forcedCurrentIndex
+        value: trashedTreeProxyModel.forcedCurrentIndex
     }
 
     //----------------------------------------------------------------------------

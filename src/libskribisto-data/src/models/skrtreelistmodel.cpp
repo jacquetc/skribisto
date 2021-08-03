@@ -64,7 +64,7 @@ SKRTreeListModel::SKRTreeListModel(QObject *parent)
 
     connect(m_treeHub,
             &SKRTreeHub::trashedChanged, // careful, treeItem is trashed = true,
-                                         // not a true removal
+            // not a true removal
             this,
             &SKRTreeListModel::refreshAfterTrashedStateChanged);
 
@@ -472,112 +472,114 @@ void SKRTreeListModel::clear()
 
 void SKRTreeListModel::refreshAfterDataAddition(int projectId, int treeItemId)
 {
+    this->populate();
+
     // find parentIndex and row
     //    QModelIndex parentIndex;
-    int row = 0;
+//    int row = 0;
 
-    auto idList         = m_treeHub->getAllIds(projectId);
-    auto sortOrdersHash = m_treeHub->getAllSortOrders(projectId);
-    auto indentsHash    = m_treeHub->getAllIndents(projectId);
-
-
-    int treeItemIndex = idList.indexOf(treeItemId);
-
-    if (treeItemIndex == 0) { // meaning the parent have to be a project item
-        for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
-            item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
-            item->invalidateData(SKRTreeItem::Roles::HasChildrenRole);
-        }
+//    auto idList         = m_treeHub->getAllIds(projectId);
+//    auto sortOrdersHash = m_treeHub->getAllSortOrders(projectId);
+//    auto indentsHash    = m_treeHub->getAllIndents(projectId);
 
 
-        // find project PLMTreeItemItem:
-        SKRTreeItem *itemBefore = this->getItem(projectId, -1);
+//    int treeItemIndex = idList.indexOf(treeItemId);
 
-        int indexBefore = m_allTreeItems.indexOf(itemBefore);
-
-        int itemIndex = indexBefore + 1;
-
-
-        beginInsertRows(QModelIndex(), itemIndex, itemIndex);
-
-        m_allTreeItems.insert(itemIndex,
-                              new SKRTreeItem(projectId, treeItemId,
-                                              indentsHash.value(treeItemId),
-                                              sortOrdersHash.value(treeItemId)));
-        this->index(itemIndex, 0, QModelIndex());
-        endInsertRows();
-
-        return;
-    }
-
-    //    if (!parentFound) {
-    //        for (int i = treeItemIndex - 1; i >= 0; --i) {
-    //            int possibleParentId     = idList.at(i);
-    //            int possibleParentIndent =
-    // indentsHash.value(possibleParentId);
-
-    //            if (treeItemIndent == possibleParentIndent + 1) {
-    //                //                auto modelIndexList =
-    //                // this->getModelIndex(projectId, possibleParentId);
-    //                //                if(modelIndexList.isEmpty()){
-    //                //                    qWarning() << Q_FUNC_INFO << "if
-    //                // treeItemIndent == possibleParentIndent =>
-    //                // modelIndexList.isEmpty()";
-    //                //                    return;
-    //                //                }
-    //                //                parentIndex = modelIndexList.first();
-    //                // int parentTreeItemId =
-    //                //
-    // parentIndex.data(SKRTreeItem::Roles::TreeItemIdRole).toInt();
-    //                row         = treeItemIndex - i;
-    //                parentFound = true;
-    //                break;
-    //            }
-    //        }
-    //    }
-
-    //    if (!parentFound) {
-    //        qWarning() << Q_FUNC_INFO << "parent not found, failsafe used";
-    //        this->populate();
-    //        return;
-    //    }
+//    if (treeItemIndex == 0) { // meaning the parent have to be a project item
+//        for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
+//            item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
+//            item->invalidateData(SKRTreeItem::Roles::HasChildrenRole);
+//        }
 
 
-    // find item just before in m_allNoteItems to determine item index to insert
-    // in:
+//        // find project PLMTreeItemItem:
+//        SKRTreeItem *itemBefore = this->getItem(projectId, -1);
+
+//        int indexBefore = m_allTreeItems.indexOf(itemBefore);
+
+//        int itemIndex = indexBefore + 1;
 
 
-    int idBefore            = idList.at(treeItemIndex - 1);
-    SKRTreeItem *itemBefore = this->getItem(projectId, idBefore);
+//        beginInsertRows(QModelIndex(), itemIndex, itemIndex);
 
-    // needed because m_allTreeItems can have multiple projects :
-    int indexBefore = m_allTreeItems.indexOf(itemBefore);
+//        m_allTreeItems.insert(itemIndex,
+//                              new SKRTreeItem(projectId, treeItemId,
+//                                              indentsHash.value(treeItemId),
+//                                              sortOrdersHash.value(treeItemId)));
+//        this->index(itemIndex, 0, QModelIndex());
+//        endInsertRows();
 
-    int itemIndex = indexBefore + 1;
+//        return;
+//    }
 
-    //        if(itemIndex >= m_allNoteItems.count() && treeItemIndent ==
-    // itemBefore->indent() + 1){
-    //            qWarning() << Q_FUNC_INFO << "last in the m_allNoteItems list
-    // and child of previous item, so failsafe used";
-    //            this->populate();
-    //            return;
-    //        }
+//    //    if (!parentFound) {
+//    //        for (int i = treeItemIndex - 1; i >= 0; --i) {
+//    //            int possibleParentId     = idList.at(i);
+//    //            int possibleParentIndent =
+//    // indentsHash.value(possibleParentId);
+
+//    //            if (treeItemIndent == possibleParentIndent + 1) {
+//    //                //                auto modelIndexList =
+//    //                // this->getModelIndex(projectId, possibleParentId);
+//    //                //                if(modelIndexList.isEmpty()){
+//    //                //                    qWarning() << Q_FUNC_INFO << "if
+//    //                // treeItemIndent == possibleParentIndent =>
+//    //                // modelIndexList.isEmpty()";
+//    //                //                    return;
+//    //                //                }
+//    //                //                parentIndex = modelIndexList.first();
+//    //                // int parentTreeItemId =
+//    //                //
+//    // parentIndex.data(SKRTreeItem::Roles::TreeItemIdRole).toInt();
+//    //                row         = treeItemIndex - i;
+//    //                parentFound = true;
+//    //                break;
+//    //            }
+//    //        }
+//    //    }
+
+//    //    if (!parentFound) {
+//    //        qWarning() << Q_FUNC_INFO << "parent not found, failsafe used";
+//    //        this->populate();
+//    //        return;
+//    //    }
 
 
-    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
-        item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
-        item->invalidateData(SKRTreeItem::Roles::HasChildrenRole);
-    }
+//    // find item just before in m_allNoteItems to determine item index to insert
+//    // in:
 
 
-    beginInsertRows(QModelIndex(), itemIndex, itemIndex);
+//    int idBefore            = idList.at(treeItemIndex - 1);
+//    SKRTreeItem *itemBefore = this->getItem(projectId, idBefore);
 
-    m_allTreeItems.insert(itemIndex, new SKRTreeItem(projectId, treeItemId,
-                                                     indentsHash.value(treeItemId),
-                                                     sortOrdersHash.value(treeItemId)));
-    this->index(itemIndex, 0, QModelIndex());
-    this->sortAllTreeItemItems();
-    endInsertRows();
+//    // needed because m_allTreeItems can have multiple projects :
+//    int indexBefore = m_allTreeItems.indexOf(itemBefore);
+
+//    int itemIndex = indexBefore + 1;
+
+//    //        if(itemIndex >= m_allNoteItems.count() && treeItemIndent ==
+//    // itemBefore->indent() + 1){
+//    //            qWarning() << Q_FUNC_INFO << "last in the m_allNoteItems list
+//    // and child of previous item, so failsafe used";
+//    //            this->populate();
+//    //            return;
+//    //        }
+
+
+//    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
+//        item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
+//        item->invalidateData(SKRTreeItem::Roles::HasChildrenRole);
+//    }
+
+
+//    beginInsertRows(QModelIndex(), itemIndex, itemIndex);
+
+//    m_allTreeItems.insert(itemIndex, new SKRTreeItem(projectId, treeItemId,
+//                                                     indentsHash.value(treeItemId),
+//                                                     sortOrdersHash.value(treeItemId)));
+//    this->index(itemIndex, 0, QModelIndex());
+//    this->sortAllTreeItemItems();
+//    endInsertRows();
 }
 
 // --------------------------------------------------------------------
@@ -587,24 +589,26 @@ void SKRTreeListModel::refreshAfterDataRemove(int projectId, int treeItemId)
     Q_UNUSED(projectId)
     Q_UNUSED(treeItemId)
 
-    QModelIndex modelIndex = this->getModelIndex(projectId, treeItemId).first();
+    this->populate();
 
-    beginRemoveRows(QModelIndex(), modelIndex.row(), modelIndex.row());
+//    QModelIndex modelIndex = this->getModelIndex(projectId, treeItemId).first();
 
-    SKRTreeItem *item = this->getItem(projectId, treeItemId);
+//    beginRemoveRows(QModelIndex(), modelIndex.row(), modelIndex.row());
 
-    m_allTreeItems.removeAll(item);
-    this->sortAllTreeItemItems();
+//    SKRTreeItem *item = this->getItem(projectId, treeItemId);
 
-    endRemoveRows();
+//    m_allTreeItems.removeAll(item);
+//    this->sortAllTreeItemItems();
+
+//    endRemoveRows();
 
 
-    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
-        item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
-        item->invalidateData(SKRTreeItem::Roles::HasChildrenRole);
-        this->exploitSignalFromSKRData(projectId, item->treeItemId(), SKRTreeItem::Roles::SortOrderRole);
-        this->exploitSignalFromSKRData(projectId, item->treeItemId(), SKRTreeItem::Roles::HasChildrenRole);
-    }
+//    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
+//        item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
+//        item->invalidateData(SKRTreeItem::Roles::HasChildrenRole);
+//        this->exploitSignalFromSKRData(projectId, item->treeItemId(), SKRTreeItem::Roles::SortOrderRole);
+//        this->exploitSignalFromSKRData(projectId, item->treeItemId(), SKRTreeItem::Roles::HasChildrenRole);
+//    }
 }
 
 // --------------------------------------------------------------------
@@ -614,83 +618,87 @@ void SKRTreeListModel::refreshAfterDataMove(int       sourceProjectId,
                                             int       targetProjectId,
                                             int       targetTreeItemId)
 {
+    this->populate();
+
     // this->resetAllTreeItemsList();
 
-    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
-        item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
-    }
-
-    this->sortAllTreeItemItems();
+    //    beginMoveRows(QModelIndex(), 0, m_allTreeItems.count(), QModelIndex(), 0);
 
     //    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
-    //        qDebug() << "sortOrder" << item->sortOrder();
-
-    // this->exploitSignalFromSKRData(targetProjectId, item->treeItemId(),
-    // SKRTreeItem::Roles::SortOrderRole);
+    //        item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
     //    }
-
-    //    this->exploitSignalFromSKRData(targetProjectId, targetTreeItemId,
-    // SKRTreeItem::Roles::SortOrderRole);
-    //    for(int sourceTreeItemId : sourceTreeItemIds){
-    //    this->exploitSignalFromSKRData(sourceProjectId, sourceTreeItemId,
-    // SKRTreeItem::Roles::SortOrderRole);
-    //    }
-
-    //    QList<int> sourceIndexList;
-    //    int targetIndex = -2;
-    //    int sourceRow   = -2;
-    //    int targetRow   = -2;
-
-
-    //    SKRTreeItem *targetItem = this->getItem(targetProjectId,
-    // targetTreeItemId);
-
-    //    if (!targetItem) {
-    //        qWarning() << "refreshAfterDataMove no targetItem";
-    //        return;
-    //    }
-
-    //    SKRTreeItem *sourceItem = this->getItem(sourceProjectId,
-    // sourceTreeItemIds.first());
-
-    //    if (!sourceItem) {
-    //        qWarning() << "refreshAfterDataMove no sourceItem";
-    //        return;
-    //    }
-
-    //    int i = 0;
-
-    //    for (SKRTreeItem *item : m_allTreeItems) {
-    //        if (sourceTreeItemIds.contains(item->treeItemId())) {
-    //            sourceIndexList.append(i);
-    //        }
-
-    //        if ((item->treeItemId() == targetTreeItemId) && (targetIndex ==
-    // -2)) {
-    //            targetIndex = i;
-    //        }
-    //        i++;
-    //    }
-    //    int firstSourceIndex = sourceIndexList.first();
-
-    //    sourceRow = firstSourceIndex;
-    //    targetRow = targetIndex;
-
-    //    if (sourceRow < targetRow) {
-    //        targetRow += 1;
-    //    }
-
-
-    //    beginMoveRows(QModelIndex(), sourceRow, sourceRow +
-    // sourceIndexList.count() - 1, QModelIndex(), targetRow);
-
-
-    //        this->sortAllTreeItemItems();
-    //        for (SKRTreeItem *item : m_allTreeItems) {
-    //            item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
-    //        }
-
     //    endMoveRows();
+    //    this->sortAllTreeItemItems();
+
+
+//    QList<int> sourceIndexList;
+//    int targetIndex = -2;
+//    int sourceRow   = -2;
+//    int targetRow   = -2;
+
+
+//    SKRTreeItem *targetItem = this->getItem(targetProjectId,
+//                                            targetTreeItemId);
+
+//    if (!targetItem) {
+//        qWarning() << "refreshAfterDataMove no targetItem";
+//        return;
+//    }
+
+//    SKRTreeItem *sourceItem = this->getItem(sourceProjectId,
+//                                            sourceTreeItemIds.first());
+
+//    if (!sourceItem) {
+//        qWarning() << "refreshAfterDataMove no sourceItem";
+//        return;
+//    }
+
+//    int i = 0;
+
+//    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
+//        if (sourceTreeItemIds.contains(item->treeItemId())) {
+//            sourceIndexList.append(i);
+//        }
+
+//        if ((item->treeItemId() == targetTreeItemId) && (targetIndex ==
+//                                                         -2)) {
+//            targetIndex = i;
+//        }
+//        i++;
+//    }
+//    int firstSourceIndex = sourceIndexList.first();
+
+//    sourceRow = firstSourceIndex;
+//    targetRow = targetIndex;
+
+//    if (sourceRow < targetRow) {
+//        targetRow += 1;
+//    }
+
+
+//    beginMoveRows(QModelIndex(), sourceRow, sourceRow +
+//                  sourceIndexList.count() - 1, QModelIndex(), targetRow);
+
+
+//    this->sortAllTreeItemItems();
+//    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
+//        item->invalidateData(SKRTreeItem::Roles::SortOrderRole);
+//    }
+//    for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
+//        //qDebug() << "sortOrder" << item->sortOrder();
+
+//        this->exploitSignalFromSKRData(item->projectId(), item->treeItemId(),
+//                                       SKRTreeItem::Roles::SortOrderRole);
+//    }
+
+//    this->exploitSignalFromSKRData(targetProjectId, targetTreeItemId,
+//                                   SKRTreeItem::Roles::SortOrderRole);
+//    for(int sourceTreeItemId : sourceTreeItemIds){
+//        this->exploitSignalFromSKRData(sourceProjectId, sourceTreeItemId,
+//                                       SKRTreeItem::Roles::SortOrderRole);
+//    }
+
+//    endMoveRows();
 }
 
 // --------------------------------------------------------------------
@@ -759,7 +767,7 @@ void SKRTreeListModel::sortAllTreeItemItems() {
     std::sort(m_allTreeItems.begin(), m_allTreeItems.end(), [](SKRTreeItem *item1, SKRTreeItem *item2) -> bool {
         return item1->sortOrder() < item2->sortOrder();
     }
-              );
+    );
 }
 
 // --------------------------------------------------------------------
@@ -806,7 +814,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::titleChanged, this,
                                            [this](int projectId, int treeItemId,
-                                                  const QString& value) {
+                                           const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId, SKRTreeItem::Roles::TitleRole);
     });
@@ -814,7 +822,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
     m_dataConnectionsList << this->connect(skrdata->projectHub(),
                                            &PLMProjectHub::projectNameChanged, this,
                                            [this](int projectId,
-                                                  const QString& value) {
+                                           const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, 0,
                                        SKRTreeItem::Roles::ProjectNameRole);
@@ -824,7 +832,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::treeItemIdChanged, this,
                                            [this](int projectId, int treeItemId,
-                                                  int value) {
+                                           int value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::TreeItemIdRole);
@@ -833,7 +841,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::indentChanged, this,
                                            [this](int projectId, int treeItemId,
-                                                  int value) {
+                                           int value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::IndentRole);
@@ -842,7 +850,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::sortOrderChanged, this,
                                            [this](int projectId, int treeItemId,
-                                                  int value) {
+                                           int value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::SortOrderRole);
@@ -852,7 +860,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::updateDateChanged, this,
                                            [this](int projectId, int treeItemId,
-                                                  const QDateTime& value) {
+                                           const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::UpdateDateRole);
@@ -861,7 +869,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::trashedChanged, this,
                                            [this](int projectId, int treeItemId,
-                                                  bool value) {
+                                           bool value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
                                        SKRTreeItem::Roles::TrashedRole);
@@ -882,9 +890,9 @@ void SKRTreeListModel::connectToSKRDataSignals()
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &SKRPropertyHub::propertyChanged, this,
                                            [this](int projectId, int propertyId,
-                                                  int            treeItemCode,
-                                                  const QString& name,
-                                                  const QString& value) {
+                                           int            treeItemCode,
+                                           const QString& name,
+                                           const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
 

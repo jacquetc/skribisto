@@ -922,6 +922,28 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>New item&apos;s parameters</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NavigationListForm.ui</name>
+    <message>
+        <source>Add a document</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigation menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NavigationListView</name>
+    <message>
         <source>Projects</source>
         <translation type="unfinished"></translation>
     </message>
@@ -950,18 +972,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>This project is a backup</source>
         <translation type="unfinished"></translation>
     </message>
@@ -986,15 +996,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open in new window</source>
+        <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Set as active project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1011,6 +1017,10 @@
     </message>
     <message>
         <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1038,22 +1048,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>New item&apos;s parameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>NavigationListForm.ui</name>
-    <message>
-        <source>Add a document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigation menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select</source>
+        <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1125,7 +1120,7 @@
 <context>
     <name>NewProjectPage</name>
     <message>
-        <source>Part </source>
+        <source>Part %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1769,7 +1764,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Rename an item</source>
+        <source>Rename a linked item</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

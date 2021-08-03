@@ -57,7 +57,8 @@ NewItemPopupForm {
 
     //---------------------------------------------------------
 
-    listView.onCurrentIndexChanged: {
+    listView.onCurrentItemChanged: {
+
         chosenPageType = listView.currentItem.type
         detailsTextArea.text = skrTreeManager.getPageDetailText(listView.currentItem.type)
         parametersLoader.source = skrTreeManager.getCreationParametersQmlUrlFromPageType(chosenPageType)

@@ -477,9 +477,17 @@ ProjectPageForm {
         }
     }
 
+    QtObject{
+        id: priv
+        property bool internalTitleConnectionEnabled: true
+    }
+
     noteFolderComboBox.onCurrentValueChanged: {
         if(built){
             // clear other folders:
+            var foldersList = skrData.treeHub().getIdsWithInternalTitle(projectId, "note_folder")
+
+            priv.internalTitleConnectionEnabled = false
             for(var j in foldersList){
                 if(skrData.treeHub().getInternalTitle(projectId, foldersList[j]) === "note_folder"){
                     skrData.treeHub().setInternalTitle(root.projectId, foldersList[j], "")
@@ -488,6 +496,7 @@ ProjectPageForm {
 
             //set new folder
             skrData.treeHub().setInternalTitle(root.projectId, noteFolderComboBox.currentValue, "note_folder")
+            priv.internalTitleConnectionEnabled = true
         }
     }
 
@@ -507,7 +516,9 @@ ProjectPageForm {
     Connections{
         target: skrData.treeHub()
         function onInternalTitleChanged(projectId, treeItemId, newTitle) {
-            populateNoteFolderComboBox()
+            if(priv.internalTitleConnectionEnabled){
+                populateNoteFolderComboBox()
+            }
         }
     }
     Connections{

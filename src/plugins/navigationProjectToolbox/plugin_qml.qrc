@@ -9,5 +9,6 @@
         <file>NavigationProjectToolbox/RestoreListViewForm.ui.qml</file>
         <file>NavigationProjectToolbox/RestoreListView.qml</file>
         <file>NavigationProjectToolbox/Navigation.qml</file>
+        <file>NavigationProjectToolbox/NavigationListView.qml</file>
     </qresource>
 </RCC>

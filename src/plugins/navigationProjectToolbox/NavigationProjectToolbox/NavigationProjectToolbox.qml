@@ -3,7 +3,6 @@ import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import eu.skribisto.projecthub 1.0
-import eu.skribisto.searchtreelistproxymodel 1.0
 
 import "../../Items"
 import "../../Commons"
@@ -21,10 +20,6 @@ SkrToolbox {
 
         width: scrollView.width
         height: navigationView.implicitHeight
-
-        navigationListProxyModel: navigationProxyModel
-        trashedListViewProxyModel: trashedTreeProxyModel
-        restoreListViewProxyModel: restoreTreeProxyModel
     }
 
     //    Connections {
@@ -35,7 +30,7 @@ SkrToolbox {
     //    }
     Connections {
         target: navigationView
-        function onOpenDocument(openedProjectId, openedPaperId, _projectId, _treeItemId) {
+        function onOpenDocument(_projectId, _treeItemId) {
             viewManager.loadTreeItem(_projectId, _treeItemId)
         }
     }
@@ -58,32 +53,6 @@ SkrToolbox {
         navigationView.restoreDocumentList.connect(root.restoreTreeItemList)
     }
 
-    SKRSearchTreeListProxyModel {
-        id: navigationProxyModel
-        showTrashedFilter: false
-        showNotTrashedFilter: true
-        navigateByBranchesEnabled: true
-    }
-
-    Connections {
-        target: skrData.projectHub()
-        function onActiveProjectChanged(projectId) {
-            navigationProxyModel.projectIdFilter = projectId
-            navigationProxyModel.parentIdFilter = -1
-        }
-    }
-
-    SKRSearchTreeListProxyModel {
-        id: trashedTreeProxyModel
-        showTrashedFilter: true
-        showNotTrashedFilter: false
-    }
-
-    SKRSearchTreeListProxyModel {
-        id: restoreTreeProxyModel
-        showTrashedFilter: true
-        showNotTrashedFilter: false
-    }
 
     function restoreTreeItemList(projectId, treeItemIdList) {
 

@@ -72,7 +72,7 @@ OverviewPageForm {
         id: overviewProxyModel
         showTrashedFilter: false
         showNotTrashedFilter: true
-        projectIdFilter: root.projectId
+        projectIdFilter: skrData.projectHub().activeProjectId
 
         onParentIdFilterChanged: {
             if (overviewProxyModel.parentIdFilter === -2) {
