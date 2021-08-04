@@ -94,6 +94,15 @@ Item {
         }
     }
 
+    function checkAll(){
+        navigationProxyModel.checkAll()
+    }
+
+    function checkNone(){
+        navigationProxyModel.checkNone()
+    }
+
+
     NewItemPopup {
         id: newItemPopup
     }
@@ -124,12 +133,6 @@ Item {
         else if (parentId === -2 && root.currentProjectId === -2) {
             listView.section.delegate = null
         }
-    }
-
-
-
-    function checkNone(){
-        navigationProxyModel.checkNone()
     }
 
     Item {
@@ -212,38 +215,30 @@ Item {
 
         keys: ["application/skribisto-tree-item"]
         onEntered: {
+            if(!model.canAddChildTreeItem){
+                drag.accepted = false
+                return
+            }
 
-            //console.log("entered")
-            //content.sourceIndex = drag.source.visualIndex
-            //            visualModel.items.move(
-            //                        drag.source.visualIndex,
-            //                        visualModel.items.count - 1)
+            if(skrData.treeHub().getAllAncestors(projectId, parentId).includes(drag.source.treeItemId)){
+                drag.accepted = false
+                return
+            }
+
         }
         onExited: {
 
         }
         onDropped: {
-            //                                console.log("dropped")
             if (drop.proposedAction === Qt.MoveAction) {
 
-                //console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
                 listView.interactive = true
                 priv.dragging = false
-                dropTimer.start()
-                //proxyModel.moveItemById(moveSourceProjectId, moveSourceTreeItemId, content.treeItemId)
+                skrData.treeHub().moveTreeItemAsChildOf(drag.source.projectId, drag.source.treeItemId, projectId, parentId)
             }
         }
 
 
-
-        Timer{
-            id: dropTimer
-            interval: 20
-            onTriggered: {
-                //                navigationProxyModel.moveItem(moveSourceInt,
-                //                                              visualModel.items.count - 1)
-            }
-        }
 
 
 
@@ -933,6 +928,12 @@ Item {
                                     return
                                 }
 
+                                if(skrData.treeHub().getAllAncestors(projectId, parentId).includes(drag.source.treeItemId)){
+                                    drag.accepted = false
+                                    return
+                                }
+
+
                                 topOnEnteredTimer.start()
                             }
 
@@ -997,33 +998,26 @@ Item {
                                 }
 
 
+                                if(skrData.treeHub().getAllAncestors(projectId, parentId).includes(drag.source.treeItemId)){
+                                    drag.accepted = false
+                                    return
+                                }
+
                                 middleDropIndicator.visible = true
 
-
-                                //content.sourceIndex = drag.source.visualIndex
-                                //                            visualModel.items.move(
-                                //                                        drag.source.visualIndex,
-                                //                                        content.visualIndex)
                             }
                             onExited: {
                                 middleDropIndicator.visible = false
-                                //                            visualModel.items.move( content.visualIndex,  moveSourceInt)
 
                             }
 
                             onDropped: function(drop) {
                                 middleDropIndicator.visible = false
-                                //                                console.log("dropped")
 
-                                skrData.treeHub().moveTreeItemAsChildOf(model.projectId, drag.source.treeItemId, model.treeItemId)
+                                skrData.treeHub().moveTreeItemAsChildOf(drag.source.projectId, drag.source.treeItemId, model.projectId, model.treeItemId)
 
                                 if (drop.proposedAction === Qt.MoveAction) {
 
-                                    //console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
-                                    //                                cancelDragTimer.stop()
-                                    //                                listView.interactive = true
-                                    //                                priv.dragging = false
-                                    //                                dropTimer.start()
 
                                 }
                             }
@@ -1079,6 +1073,12 @@ Item {
                                 }
 
                                 if(drag.source.treeItemId === model.treeItemId){
+                                    drag.accepted = false
+                                    return
+                                }
+
+
+                                if(skrData.treeHub().getAllAncestors(projectId, parentId).includes(drag.source.treeItemId)){
                                     drag.accepted = false
                                     return
                                 }
@@ -1166,8 +1166,8 @@ Item {
 
                             Drag.active: mouseDragHandler.active | touchDragHandler.active
                             Drag.source: content
-                            Drag.hotSpot.x: dragPoint.x
-                            Drag.hotSpot.y: dragPoint.y
+                            Drag.hotSpot.x: dragPoint.x  / 1.5
+                            Drag.hotSpot.y: dragPoint.y  / 1.5
                             Drag.keys: ["application/skribisto-tree-item"]
 
                             Drag.supportedActions: Qt.MoveAction
@@ -1350,11 +1350,10 @@ Item {
                                 }
 
                                 onPressedChanged: {
-                                    content.opacity = 0.2
                                     content.grabToImage(function(result) {
                                         content.Drag.imageSource = result.url
-                                    })
-                                    content.opacity = 1.0
+                                    }, Qt.size(content.width / 1.5, content.height / 1.5))
+
                                     content.dragPoint = point.pressPosition
                                 }
 

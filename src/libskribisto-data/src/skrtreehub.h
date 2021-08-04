@@ -53,9 +53,9 @@ public:
     }
 
     CutCopy() {
-        this->type = Type::None;
-        this->projectId   = -2;
-        this->hasRunOnce  = false;
+        this->type       = Type::None;
+        this->projectId  = -2;
+        this->hasRunOnce = false;
     }
 
     CutCopy::Type type;
@@ -201,10 +201,12 @@ public:
                                          int treeItemId);
     Q_INVOKABLE SKRResult moveTreeItemDown(int projectId,
                                            int treeItemId);
-    Q_INVOKABLE SKRResult moveTreeItemAsChildOf(int projectId,
-                                                int noteId,
-                                                int targetParentId,
-                                                int wantedSortOrder = -1);
+    Q_INVOKABLE SKRResult moveTreeItemAsChildOf(int  sourceProjectId,
+                                                int  sourceTreeItemId,
+                                                int  targetProjectId,
+                                                int  targetParentId,
+                                                bool sendSignal      = true,
+                                                int  wantedSortOrder = -1);
     Q_INVOKABLE int getParentId(int projectId,
                                 int treeItemId);
 
@@ -263,7 +265,9 @@ public:
                                        const QString& type,
                                        const QString& noteName);
 
-    Q_INVOKABLE bool isCutCopy(int projectId, int treeItemId) const;
+    Q_INVOKABLE bool isCutCopy(int projectId,
+                               int treeItemId) const;
+
 private:
 
     SKRResult setTrashedDateToNow(int projectId,
@@ -314,8 +318,8 @@ signals:
                            const QDateTime& newDate);
     void treeItemAdded(int projectId,
                        int treeItemId);
-    void treeItemsAdded(int projectId,
-                       QList<int> treeItemIds);
+    void treeItemsAdded(int       projectId,
+                        QList<int>treeItemIds);
     void treeItemRemoved(int projectId,
                          int treeItemId);
     void treeItemMoved(int       sourceProjectId,
@@ -334,8 +338,8 @@ signals:
                                int sourceTreeItemId,
                                int receiverTreeItemId);
 
-    void cutCopyChanged(int projectId,
-                        int treeItemId,
+    void cutCopyChanged(int  projectId,
+                        int  treeItemId,
                         bool value);
 
 protected:

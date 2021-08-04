@@ -974,7 +974,17 @@ RelationshipPanelForm {
 
 
         keys: ["application/skribisto-tree-item"]
-        onEntered: {
+        onEntered: function(drag) {
+
+            if(drag.source.projectId === root.projectId){
+                drag.accepted = false
+                return
+            }
+            if(drag.source.treeItemId === root.treeItemId){
+                drag.accepted = false
+                return
+            }
+
             dropIndicator.visible = true
         }
         onExited: {
@@ -982,7 +992,7 @@ RelationshipPanelForm {
 
         }
 
-        onDropped: {
+        onDropped: function(drop) {
             if(drop.proposedAction === Qt.MoveAction){
                 skrData.treeHub().setTreeRelationship(drag.source.projectId, drag.source.treeItemId, root.treeItemId)
             }

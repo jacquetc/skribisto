@@ -53,7 +53,6 @@ NavigationListForm {
 
         property bool devModeEnabled: SkrSettings.devSettings.devModeEnabled
 
-        property bool goingUp: false
     }
 
     onCurrentParentIdChanged: {
@@ -243,10 +242,8 @@ NavigationListForm {
         onTriggered: {
             console.log("goUpAction triggered")
 
-            priv.goingUp = true
             navigationListStackView.pop(priv.transitionOperation)
             navigationListStackView.currentItem.setCurrent()
-            priv.goingUp = false
 
             //            if(navigationListStackView.currentItem.listView.currentItem){
             //                navigationListStackView.currentItem.listView.currentItem.forceActiveFocus()
@@ -340,6 +337,31 @@ NavigationListForm {
     }
 
     //----------------------------------------------------------------------------
+    //------------------ select all button :------------------------------------------
+    //----------------------------------------------------------------------------
+    Action {
+        id: selectAllTreeItemsAction
+        text: selectAllTreeItemsAction.checked ? qsTr("Select none") : qsTr("Select all")
+        enabled: root.enabled && currentParentId !== -2
+        checkable: true
+        icon {
+            source: selectAllTreeItemsAction.checked ? "qrc:///icons/backup/edit-select-none.svg" : "qrc:///icons/backup/edit-select-all.svg"
+        }
+        onCheckedChanged: {
+            if(selectAllTreeItemsAction.checked){
+                navigationListStackView.currentItem.checkAll()
+            }
+            else{
+                navigationListStackView.currentItem.checkNone()
+
+            }
+        }
+    }
+
+    selectAllToolButton.action: selectAllTreeItemsAction
+    selectAllToolButton.visible: selectTreeItemAction.checked
+
+    //----------------------------------------------------------------------------
     //------------------ select button :------------------------------------------
     //----------------------------------------------------------------------------
     Action {
@@ -349,8 +371,6 @@ NavigationListForm {
         checkable: true
         icon {
             source: "qrc:///icons/backup/dialog-ok-apply.svg"
-            height: 100
-            width: 100
         }
         onCheckedChanged: {
             priv.selecting = selectTreeItemAction.checked
@@ -369,8 +389,6 @@ NavigationListForm {
         enabled: root.enabled && currentParentId !== -2
         icon {
             source: "qrc:///icons/backup/list-add.svg"
-            height: 100
-            width: 100
         }
         onTriggered: {
             addItemMenu.open()
@@ -518,7 +536,7 @@ NavigationListForm {
 
         XAnimator {
             from: 0
-            to: /*(priv.goingUp ? -1 : 1) **/ (navigationListStackView.mirrored ? -1 : 1) * navigationListStackView.width
+            to: (navigationListStackView.mirrored ? -1 : 1) * navigationListStackView.width
             duration: 200
             easing.type: Easing.OutCubic
         }

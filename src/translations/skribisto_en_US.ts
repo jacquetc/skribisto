@@ -925,19 +925,19 @@
         <source>New item&apos;s parameters</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>NavigationListForm.ui</name>
     <message>
-        <source>Add a document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Navigation menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
