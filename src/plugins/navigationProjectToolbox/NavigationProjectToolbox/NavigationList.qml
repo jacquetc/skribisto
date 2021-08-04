@@ -34,6 +34,10 @@ NavigationListForm {
         property int currentProjectId: -2
         property int currentTreeItemId: -2
         property bool dragging: false
+        onDraggingChanged: if(dragging){
+                               sidePopupListModel.clear()
+                           }
+
         property bool renaming: false
         property bool selecting: false
         property bool animationEnabled: SkrSettings.ePaperSettings.animationEnabled
@@ -48,6 +52,8 @@ NavigationListForm {
         property int selectedProjectId: -2
 
         property bool devModeEnabled: SkrSettings.devSettings.devModeEnabled
+
+        property bool goingUp: false
     }
 
     onCurrentParentIdChanged: {
@@ -81,6 +87,8 @@ NavigationListForm {
         if (projectId > -1 & treeItemParentId > -1) {
             var ancestorsList = skrData.treeHub().getAllAncestors(
                         projectId, treeItemParentId)
+            var currentAncestorsList = skrData.treeHub().getAllAncestors(
+                        projectId, root.currentParentId)
         }
 
         //compare with current parent id
@@ -96,6 +104,23 @@ NavigationListForm {
             navigationListStackView.get(0).treeItemId = -2
             navigationListStackView.get(0).init()
             navigationListStackView.get(0).setCurrent()
+        }
+        else if (projectId > 0 && treeItemParentId >= 0 && root.currentParentId === ancestorsList[0]) {
+
+            var newItem = navigationListStackView.push("NavigationListView.qml", {
+                                                           "projectId": projectId,
+                                                           "parentId": treeItemParentId
+                                                       },
+                                                       priv.transitionOperation)
+
+
+            newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
+            newItem.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
+            newItem.openDocument.connect(openDocument)
+            newItem.openDocumentInAnotherView.connect(openDocumentInAnotherView)
+            newItem.openDocumentInNewWindow.connect(openDocumentInNewWindow)
+            newItem.init()
+            newItem.setCurrent()
         }
         else {
             navigationListStackView.pop(null, priv.transitionOperation)
@@ -114,7 +139,7 @@ NavigationListForm {
                                                                "projectId": projectId,
                                                                "treeItemId": ancestorsList[i]
                                                            },
-                                                           priv.transitionOperation)
+                                                           StackView.Immediate)
 
 
                 newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
@@ -173,11 +198,16 @@ NavigationListForm {
             navigationListStackView.get(0).setCurrent()
 
             for (var i = 1; i < ancestorsList.length; i++) {
+                var transition = StackView.Immediate
+                if(i === ancestorsList.length - 1){
+                    transition = StackView.Transition
+                }
+
                 var newItem = navigationListStackView.push("NavigationListView.qml", {
                                                                "projectId": projectId,
                                                                "treeItemId": ancestorsList[i]
                                                            },
-                                                           priv.transitionOperation)
+                                                           transition)
                 newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
                 newItem.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
                 newItem.openDocument.connect(openDocument)
@@ -211,22 +241,25 @@ NavigationListForm {
         }
         //enabled:
         onTriggered: {
+            console.log("goUpAction triggered")
 
+            priv.goingUp = true
             navigationListStackView.pop(priv.transitionOperation)
             navigationListStackView.currentItem.setCurrent()
+            priv.goingUp = false
 
-//            if(navigationListStackView.currentItem.listView.currentItem){
-//                navigationListStackView.currentItem.listView.currentItem.forceActiveFocus()
-//            }
+            //            if(navigationListStackView.currentItem.listView.currentItem){
+            //                navigationListStackView.currentItem.listView.currentItem.forceActiveFocus()
+            //            }
 
-//            var index = navigationListStackView.currentItem.listView.currentIndex
-//            var item = navigationListStackView.currentItem.listView.itemAtIndex(index)
+            //            var index = navigationListStackView.currentItem.listView.currentIndex
+            //            var item = navigationListStackView.currentItem.listView.itemAtIndex(index)
 
-//            if (item) {
-//                item.forceActiveFocus()
-//            } else {
-//                navigationListStackView.currentItem.listView.forceActiveFocus()
-//            }
+            //            if (item) {
+            //                item.forceActiveFocus()
+            //            } else {
+            //                navigationListStackView.currentItem.listView.forceActiveFocus()
+            //            }
             priv.currentProjectId = navigationListStackView.currentItem.projectId
             priv.currentParentId = navigationListStackView.currentItem.parentId
 
@@ -466,6 +499,10 @@ NavigationListForm {
     //----------------------------------------------------------------------------
 
     navigationListStackView.popEnter: Transition {
+        onRunningChanged: {
+            if(running)
+                console.log("popEnter")
+        }
         XAnimator {
             from: (navigationListStackView.mirrored ? -1 : 1) * -navigationListStackView.width
             to: 0
@@ -473,17 +510,26 @@ NavigationListForm {
             easing.type: Easing.OutCubic
         }
     }
-        navigationListStackView.popExit: Transition {
-            XAnimator {
-                from: 0
-                to: (navigationListStackView.mirrored ? -1 : 1) * navigationListStackView.width
-                duration: 200
-                easing.type: Easing.OutCubic
-            }
+    navigationListStackView.popExit: Transition {
+        onRunningChanged: {
+            if(running)
+                console.log("popExit")
         }
+
+        XAnimator {
+            from: 0
+            to: /*(priv.goingUp ? -1 : 1) **/ (navigationListStackView.mirrored ? -1 : 1) * navigationListStackView.width
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
 
 
     navigationListStackView.pushEnter: Transition {
+        onRunningChanged: {
+            if(running)
+                console.log("pushEnter")
+        }
         XAnimator {
             from: (navigationListStackView.mirrored ? -1 : 1) * navigationListStackView.width
             to: 0
@@ -491,14 +537,20 @@ NavigationListForm {
             easing.type: Easing.OutCubic
         }
     }
-        navigationListStackView.pushExit: Transition {
-            XAnimator {
-                from: 0
-                to: (navigationListStackView.mirrored ? -1 : 1) * -navigationListStackView.width
-                duration: 200
-                easing.type: Easing.OutCubic
-            }
+    navigationListStackView.pushExit: Transition {
+        onRunningChanged: {
+            if(running)
+                console.log("pushExit")
         }
+        XAnimator {
+            from: 0
+            to: (navigationListStackView.mirrored ? -1 : 1) * -navigationListStackView.width
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+
+
     //-------------------------------------------------------------------------------------
     //---------side Navigation Popup---------------------------------------------------------
     //-------------------------------------------------------------------------------------

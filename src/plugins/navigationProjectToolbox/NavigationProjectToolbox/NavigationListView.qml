@@ -215,9 +215,9 @@ Item {
 
             //console.log("entered")
             //content.sourceIndex = drag.source.visualIndex
-            visualModel.items.move(
-                        drag.source.visualIndex,
-                        visualModel.items.count - 1)
+            //            visualModel.items.move(
+            //                        drag.source.visualIndex,
+            //                        visualModel.items.count - 1)
         }
         onExited: {
 
@@ -240,8 +240,8 @@ Item {
             id: dropTimer
             interval: 20
             onTriggered: {
-                navigationProxyModel.moveItem(moveSourceInt,
-                                              visualModel.items.count - 1)
+                //                navigationProxyModel.moveItem(moveSourceInt,
+                //                                              visualModel.items.count - 1)
             }
         }
 
@@ -471,7 +471,9 @@ Item {
                     id: swipeDelegate
                     property int indent: model.indent
                     property alias content: content
-                    property alias dropArea: dropArea
+                    property alias topDropIndicator: topDropIndicator
+                    property alias middleDropIndicator: middleDropIndicator
+                    property alias bottomDropIndicator: bottomDropIndicator
                     property alias checkState: selectionCheckBox.checkState
                     focus: true
 
@@ -874,47 +876,278 @@ Item {
                         }
                     }
 
-                    contentItem: DropArea {
-                        id: dropArea
+                    contentItem: Item {
+                        id: dropAreaHolder
 
-                        keys: ["application/skribisto-tree-item"]
-                        onEntered: {
+                        property int dropAreaSizeDivider: 4
 
-                            console.log("entered", content.visualIndex)
-                            if(content.visualIndex === 0){
+                        Rectangle{
+                            id: topDropIndicator
+                            z: 1
+
+
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: parent.height / dropAreaHolder.dropAreaSizeDivider
+                            visible : false
+                            onVisibleChanged: {
+                                var previousItem = swipeDelegate.ListView.view.itemAtIndex(model.index -1)
+                                if(previousItem){
+                                    previousItem.bottomDropIndicator.visible = visible
+                                }
+                            }
+
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop {
+                                    position: 0.00;
+                                    color: SkrTheme.accent;
+                                }
+                                GradientStop {
+                                    position: 1.00;
+                                    color: "transparent";
+                                }
+                            }
+
+                        }
+
+                        DropArea {
+                            id: topDropArea
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: parent.height / dropAreaHolder.dropAreaSizeDivider
+
+
+                            keys:["application/skribisto-tree-item"]
+                            onEntered: function(drag) {
+
+                                if(!model.canAddSiblingTreeItem){
+                                    drag.accepted = false
+                                    return
+                                }
+
+                                if(drag.source.treeItemId === model.treeItemId){
+                                    drag.accepted = false
+                                    return
+                                }
+
+                                topOnEnteredTimer.start()
+                            }
+
+                            Timer{
+                                id: topOnEnteredTimer
+                                property bool visible: false
+                                interval: 10
+                                onTriggered: {
+
+
+                                    topDropIndicator.visible = true
+
+                                }
+                            }
+
+                            onExited: {
+                                topOnExitedTimer.start()
 
                             }
 
-                            //content.sourceIndex = drag.source.visualIndex
-                            visualModel.items.move(
-                                        drag.source.visualIndex,
-                                        content.visualIndex)
-                        }
-                        onExited: {
+                            Timer{
+                                id: topOnExitedTimer
+                                property bool visible: false
+                                interval: 10
+                                onTriggered: {
+                                    topDropIndicator.visible = false
 
-                        }
-                        onDropped: {
-                            //                                console.log("dropped")
-                            if (drop.proposedAction === Qt.MoveAction) {
-
-                                //console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
-                                cancelDragTimer.stop()
-                                listView.interactive = true
-                                priv.dragging = false
-                                dropTimer.start()
-                                //proxyModel.moveItemById(moveSourceProjectId, moveSourceTreeItemId, content.treeItemId)
+                                }
                             }
+
+                            onDropped: function(drop){
+                                topDropIndicator.visible = false
+                                skrData.treeHub().moveTreeItem(model.projectId, drag.source.treeItemId, model.treeItemId, false)
+
+                            }
+
                         }
 
 
+                        DropArea {
+                            id: middleDropArea
+                            anchors.fill: parent
+                            anchors.topMargin: topDropArea.height
+                            anchors.bottomMargin: bottomDropArea.height
 
-                        Timer{
-                            id: dropTimer
-                            interval: 20
-                            onTriggered: {
-                                swipeDelegate.ListView.view.proxyModel.moveItem(moveSourceInt,
-                                                                                content.visualIndex)
+                            keys: ["application/skribisto-tree-item"]
+
+
+                            onEntered: function(drag) {
+                                console.log("entered", content.visualIndex)
+
+                                if(!model.canAddChildTreeItem){
+                                    middleDropArea.visible = false
+                                    dropAreaHolder.dropAreaSizeDivider = 2
+                                    drag.accepted = false
+                                    return
+                                }
+
+                                if(drag.source.treeItemId === model.treeItemId){
+                                    drag.accepted = false
+                                    return
+                                }
+
+
+                                middleDropIndicator.visible = true
+
+
+                                //content.sourceIndex = drag.source.visualIndex
+                                //                            visualModel.items.move(
+                                //                                        drag.source.visualIndex,
+                                //                                        content.visualIndex)
                             }
+                            onExited: {
+                                middleDropIndicator.visible = false
+                                //                            visualModel.items.move( content.visualIndex,  moveSourceInt)
+
+                            }
+
+                            onDropped: function(drop) {
+                                middleDropIndicator.visible = false
+                                //                                console.log("dropped")
+
+                                skrData.treeHub().moveTreeItemAsChildOf(model.projectId, drag.source.treeItemId, model.treeItemId)
+
+                                if (drop.proposedAction === Qt.MoveAction) {
+
+                                    //console.log("dropped from :", moveSourceInt, "to :", content.visualIndex)
+                                    //                                cancelDragTimer.stop()
+                                    //                                listView.interactive = true
+                                    //                                priv.dragging = false
+                                    //                                dropTimer.start()
+
+                                }
+                            }
+
+
+                        }
+
+                        Rectangle{
+                            id: middleDropIndicator
+                            z: 1
+
+
+                            anchors.fill: parent
+                            anchors.topMargin: topDropArea.height
+                            anchors.bottomMargin: bottomDropArea.height
+                            visible : false
+
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop {
+                                    position: 0.00;
+                                    color: "transparent";
+                                }
+                                GradientStop {
+                                    position: 0.33;
+                                    color: SkrTheme.accent;
+                                }
+                                GradientStop {
+                                    position: 0.66;
+                                    color: SkrTheme.accent;
+                                }
+                                GradientStop {
+                                    position: 1.00;
+                                    color: "transparent";
+                                }
+                            }
+
+                        }
+                        DropArea {
+                            id: bottomDropArea
+
+                            anchors.bottom: parent.bottom
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: parent.height / dropAreaHolder.dropAreaSizeDivider
+
+                            keys: ["application/skribisto-tree-item"]
+                            onEntered: function(drag) {
+
+                                if(!model.canAddSiblingTreeItem){
+                                    drag.accepted = false
+                                    return
+                                }
+
+                                if(drag.source.treeItemId === model.treeItemId){
+                                    drag.accepted = false
+                                    return
+                                }
+
+                                bottomOnEnteredTimer.start()
+                            }
+
+
+                            Timer{
+                                id: bottomOnEnteredTimer
+                                property bool visible: false
+                                interval: 10
+                                onTriggered: {
+                                    bottomDropIndicator.visible = true
+
+                                }
+                            }
+
+                            onExited: {
+                                bottomOnExitedTimer.start()
+
+                            }
+
+                            Timer{
+                                id: bottomOnExitedTimer
+                                property bool visible: false
+                                interval: 10
+                                onTriggered: {
+                                    bottomDropIndicator.visible = false
+
+                                }
+                            }
+                            onDropped: function(drop){
+                                bottomDropIndicator.visible = false
+
+                                skrData.treeHub().moveTreeItem(model.projectId, drag.source.treeItemId, model.treeItemId, true)
+
+                            }
+
+                        }
+
+                        Rectangle{
+                            id: bottomDropIndicator
+                            z: 1
+
+
+                            anchors.bottom: parent.bottom
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: parent.height / dropAreaHolder.dropAreaSizeDivider
+                            visible : false
+                            onVisibleChanged: {
+                                var nextItem = swipeDelegate.ListView.view.itemAtIndex(model.index + 1)
+                                if(nextItem){
+                                    nextItem.topDropIndicator.visible = visible
+                                }
+                            }
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop {
+                                    position: 0.00;
+                                    color: "transparent";
+                                }
+                                GradientStop {
+                                    position: 1.00;
+                                    color: SkrTheme.accent;
+                                }
+                            }
+
                         }
 
 
@@ -924,26 +1157,27 @@ Item {
                             property int sourceIndex: -2
                             property int projectId: model.projectId
                             property int treeItemId: model.treeItemId
+                            property point dragPoint: Qt.point(width / 2, height / 2)
 
                             property bool isCurrent: model.index === listView.currentIndex ? true : false
 
-                            anchors {
-                                horizontalCenter: priv.dragging ? undefined : parent.horizontalCenter
-                                verticalCenter: priv.dragging ? undefined : parent.verticalCenter
-                            }
-                            width: parent.width
-                            height: swipeDelegate.height
+                            anchors.fill: parent
+                            opacity: model.cutCopy ? 0.2 : 1.0
 
                             Drag.active: mouseDragHandler.active | touchDragHandler.active
                             Drag.source: content
-                            Drag.hotSpot.x: width / 2
-                            Drag.hotSpot.y: height / 2
+                            Drag.hotSpot.x: dragPoint.x
+                            Drag.hotSpot.y: dragPoint.y
                             Drag.keys: ["application/skribisto-tree-item"]
 
                             Drag.supportedActions: Qt.MoveAction
 
-                            opacity: mouseDragHandler.active | touchDragHandler.active | model.cutCopy ? 0.2 : 1.0
-                            //sDrag.dragType: Drag.Internal
+                            Drag.dragType: Drag.Automatic
+                            Drag.mimeData: {
+                                "application/skribisto-tree-item": "Copied text"
+                            }
+
+
                             borderWidth: 2
                             borderColor: mouseDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
                             Behavior on borderColor {
@@ -963,28 +1197,33 @@ Item {
                                 //grabPermissions: PointerHandler.TakeOverForbidden
                                 onActiveChanged: {
                                     if (active) {
-                                        swipeDelegate.ListView.view.enableSection(false)
+                                        //swipeDelegate.ListView.view.enableSection(false)
+
+
                                         Globals.touchUsed  = false
                                         listView.interactive = false
                                         moveSourceInt = content.visualIndex
                                         moveSourceTreeItemId = content.treeItemId
                                         moveSourceProjectId = content.projectId
                                         priv.dragging = true
-                                        cancelDragTimer.stop()
+
+
+                                        //cancelDragTimer.stop()
                                     } else {
-                                        cancelDragTimer.stop()
+                                        //cancelDragTimer.stop()
                                         priv.dragging = false
                                         content.dragging = false
 
                                         content.Drag.drop()
-                                        swipeDelegate.ListView.view.enableSection(true)
+                                        //swipeDelegate.ListView.view.enableSection(true)
                                     }
+
                                 }
                                 enabled: swipeDelegate.ListView.view.popupId === -1
 
                                 onCanceled: {
                                     console.log("drag cancelled")
-                                    cancelDragTimer.stop()
+                                    //cancelDragTimer.stop()
                                     priv.dragging = false
                                     content.dragging = false
                                 }
@@ -1004,27 +1243,27 @@ Item {
                                 //grabPermissions: PointerHandler.TakeOverForbidden
                                 onActiveChanged: {
                                     if (active) {
-                                        swipeDelegate.ListView.view.enableSection(false)
+                                        //swipeDelegate.ListView.view.enableSection(false)
                                         Globals.touchUsed  = true
                                         listView.interactive = false
                                         moveSourceInt = content.visualIndex
                                         moveSourceTreeItemId = content.treeItemId
                                         moveSourceProjectId = content.projectId
                                         priv.dragging = true
-                                        cancelDragTimer.stop()
+                                        //cancelDragTimer.stop()
                                     } else {
                                         listView.interactive = true
-                                        cancelDragTimer.stop()
+                                        //cancelDragTimer.stop()
                                         priv.dragging = false
                                         content.dragging = false
                                         content.Drag.drop()
-                                        swipeDelegate.ListView.view.enableSection(true)
+                                        //swipeDelegate.ListView.view.enableSection(true)
                                     }
                                 }
                                 enabled: content.dragging && swipeDelegate.ListView.view.popupId === -1
 
                                 onCanceled: {
-                                    cancelDragTimer.stop()
+                                    //cancelDragTimer.stop()
                                     priv.dragging = false
                                     content.dragging = false
                                 }
@@ -1032,15 +1271,15 @@ Item {
                                                  | PointerHandler.CanTakeOverFromAnything
                             }
 
-                            Timer {
-                                id: cancelDragTimer
-                                repeat: false
-                                interval: 3000
-                                onTriggered: {
-                                    priv.dragging = false
-                                    content.dragging = false
-                                }
-                            }
+                            //                            Timer {
+                            //                                id: cancelDragTimer
+                            //                                repeat: false
+                            //                                interval: 3000
+                            //                                onTriggered: {
+                            //                                    priv.dragging = false
+                            //                                    content.dragging = false
+                            //                                }
+                            //                            }
 
                             TapHandler {
                                 id: tapHandler
@@ -1071,7 +1310,7 @@ Item {
                                         else{
                                             swipeDelegate.ListView.view.currentIndex = model.index
                                             goToChildTimer.start()
-                                         }
+                                        }
 
                                     } else {
                                         if( root.popupId >= 0){
@@ -1108,6 +1347,15 @@ Item {
 
                                 onGrabChanged: function(transition, point) {
                                     point.accepted = false
+                                }
+
+                                onPressedChanged: {
+                                    content.opacity = 0.2
+                                    content.grabToImage(function(result) {
+                                        content.Drag.imageSource = result.url
+                                    })
+                                    content.opacity = 1.0
+                                    content.dragPoint = point.pressPosition
                                 }
 
                                 grabPermissions: PointerHandler.TakeOverForbidden
@@ -1178,6 +1426,14 @@ Item {
 
                                 onGrabChanged: function(transition, point) {
                                     point.accepted = true
+                                }
+
+                                onPressedChanged: {
+                                    content.grabToImage(function(result) {
+                                        content.Drag.imageSource = result.url
+                                    })
+
+                                    content.dragPoint = point.pressPosition
                                 }
 
                                 grabPermissions: PointerHandler.TakeOverForbidden
@@ -1808,26 +2064,26 @@ Item {
                     property int animationDuration: 150
 
                     states: [
-                        State {
-                            name: "drag_active"
-                            when: content.Drag.active
+                        //                        State {
+                        //                            name: "drag_active"
+                        //                            when: content.Drag.active
 
-                            //                            ParentChange {
-                            //                                target: swipeDelegate
-                            //                                parent: Overlay.overlay
-                            //                            }
-                            PropertyChanges {
-                                target: swipeDelegate
-                                z: 3
-                            }
-                            AnchorChanges {
-                                target: content
-                                anchors {
-                                    horizontalCenter: undefined
-                                    verticalCenter: undefined
-                                }
-                            }
-                        },
+                        //                            //                            ParentChange {
+                        //                            //                                target: swipeDelegate
+                        //                            //                                parent: Overlay.overlay
+                        //                            //                            }
+                        //                            PropertyChanges {
+                        //                                target: swipeDelegate
+                        //                                z: 3
+                        //                            }
+                        //                            AnchorChanges {
+                        //                                target: content
+                        //                                anchors {
+                        //                                    horizontalCenter: undefined
+                        //                                    verticalCenter: undefined
+                        //                                }
+                        //                            }
+                        //                        },
                         State {
                             name: "edit_name"
                             PropertyChanges {
