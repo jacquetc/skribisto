@@ -942,7 +942,7 @@ Item {
 
                             Drag.supportedActions: Qt.MoveAction
 
-                            opacity: mouseDragHandler.active | touchDragHandler.active ? 0.2 : 1.0
+                            opacity: mouseDragHandler.active | touchDragHandler.active | model.cutCopy ? 0.2 : 1.0
                             //sDrag.dragType: Drag.Internal
                             borderWidth: 2
                             borderColor: mouseDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"

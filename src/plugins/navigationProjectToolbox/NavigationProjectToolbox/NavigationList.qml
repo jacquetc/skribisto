@@ -60,7 +60,7 @@ NavigationListForm {
 
 
     Component.onCompleted: {
-        var newItem = navigationListStackView.push("NavigationListView.qml")
+        var newItem = navigationListStackView.push("NavigationListView.qml", priv.transitionOperation)
         newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
         newItem.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
         newItem.openDocument.connect(openDocument)
@@ -68,6 +68,7 @@ NavigationListForm {
         newItem.openDocumentInNewWindow.connect(openDocumentInNewWindow)
 
     }
+
 
 
 
@@ -113,7 +114,7 @@ NavigationListForm {
                                                                "projectId": projectId,
                                                                "treeItemId": ancestorsList[i]
                                                            },
-                                                           StackView.Immediate)
+                                                           priv.transitionOperation)
 
 
                 newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
@@ -176,7 +177,7 @@ NavigationListForm {
                                                                "projectId": projectId,
                                                                "treeItemId": ancestorsList[i]
                                                            },
-                                                           StackView.Immediate)
+                                                           priv.transitionOperation)
                 newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
                 newItem.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
                 newItem.openDocument.connect(openDocument)
@@ -464,7 +465,40 @@ NavigationListForm {
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
 
+    navigationListStackView.popEnter: Transition {
+        XAnimator {
+            from: (navigationListStackView.mirrored ? -1 : 1) * -navigationListStackView.width
+            to: 0
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+        navigationListStackView.popExit: Transition {
+            XAnimator {
+                from: 0
+                to: (navigationListStackView.mirrored ? -1 : 1) * navigationListStackView.width
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
+        }
 
+
+    navigationListStackView.pushEnter: Transition {
+        XAnimator {
+            from: (navigationListStackView.mirrored ? -1 : 1) * navigationListStackView.width
+            to: 0
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+        navigationListStackView.pushExit: Transition {
+            XAnimator {
+                from: 0
+                to: (navigationListStackView.mirrored ? -1 : 1) * -navigationListStackView.width
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
+        }
     //-------------------------------------------------------------------------------------
     //---------side Navigation Popup---------------------------------------------------------
     //-------------------------------------------------------------------------------------

@@ -25,23 +25,24 @@ public:
         CreationDateRole  = Qt::UserRole + 10,
         UpdateDateRole    = Qt::UserRole + 11,
         ContentDateRole   = Qt::UserRole + 12,
+        CutCopyRole       = Qt::UserRole + 13,
 
         // implemented in list proxy :
-        HasChildrenRole           = Qt::UserRole + 13,
-        CharCountRole             = Qt::UserRole + 14,
-        WordCountRole             = Qt::UserRole + 15,
-        CharCountWithChildrenRole = Qt::UserRole + 16,
-        WordCountWithChildrenRole = Qt::UserRole + 17,
-        ProjectIsBackupRole       = Qt::UserRole + 18,
-        ProjectIsActiveRole       = Qt::UserRole + 19,
-        IsRenamableRole           = Qt::UserRole + 20,
-        IsMovableRole             = Qt::UserRole + 21,
-        CanAddSiblingTreeItemRole = Qt::UserRole + 22,
-        CanAddChildTreeItemRole   = Qt::UserRole + 23,
-        IsTrashableRole           = Qt::UserRole + 24,
-        IsOpenableRole            = Qt::UserRole + 25,
-        IsCopyableRole            = Qt::UserRole + 26,
-        OtherPropertiesRole       = Qt::UserRole + 27
+        HasChildrenRole           = Qt::UserRole + 14,
+        CharCountRole             = Qt::UserRole + 15,
+        WordCountRole             = Qt::UserRole + 16,
+        CharCountWithChildrenRole = Qt::UserRole + 17,
+        WordCountWithChildrenRole = Qt::UserRole + 18,
+        ProjectIsBackupRole       = Qt::UserRole + 19,
+        ProjectIsActiveRole       = Qt::UserRole + 20,
+        IsRenamableRole           = Qt::UserRole + 21,
+        IsMovableRole             = Qt::UserRole + 22,
+        CanAddSiblingTreeItemRole = Qt::UserRole + 23,
+        CanAddChildTreeItemRole   = Qt::UserRole + 24,
+        IsTrashableRole           = Qt::UserRole + 25,
+        IsOpenableRole            = Qt::UserRole + 26,
+        IsCopyableRole            = Qt::UserRole + 27,
+        OtherPropertiesRole       = Qt::UserRole + 28
     };
     Q_ENUM(Roles)
 

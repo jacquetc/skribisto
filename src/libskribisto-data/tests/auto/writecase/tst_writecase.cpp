@@ -591,7 +591,10 @@ void WriteCase::multipleCutPaste(){
 
 
     skrdata->treeHub()->cut(m_currentProjectId, QList<int>() << 14 << 15 << 16);
+    QCOMPARE(skrdata->treeHub()->isCutCopy(m_currentProjectId, 14), true);
+
     skrdata->treeHub()->paste(m_currentProjectId, 6);
+    QCOMPARE(skrdata->treeHub()->isCutCopy(m_currentProjectId, 14), false);
 
 
     QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);

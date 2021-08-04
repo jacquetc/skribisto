@@ -279,6 +279,10 @@ QVariant SKRTreeListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
+    if (role == SKRTreeItem::Roles::CutCopyRole) {
+        return item->data(role);
+    }
+
     return QVariant();
 }
 
@@ -443,6 +447,7 @@ QHash<int, QByteArray>SKRTreeListModel::roleNames() const {
     roles[SKRTreeItem::Roles::IsOpenableRole]            = "isOpenable";
     roles[SKRTreeItem::Roles::IsCopyableRole]            = "isCopyable";
     roles[SKRTreeItem::Roles::OtherPropertiesRole]       = "otherProperties";
+    roles[SKRTreeItem::Roles::CutCopyRole]               = "cutCopy";
     return roles;
 }
 
@@ -662,6 +667,14 @@ void SKRTreeListModel::connectToSKRDataSignals()
         }
     });
 
+    m_dataConnectionsList << this->connect(skrdata->treeHub(),
+                                           &SKRTreeHub::cutCopyChanged, this,
+                                           [this](int projectId, int treeItemId, bool value) {
+        Q_UNUSED(value)
+       this->exploitSignalFromSKRData(projectId, treeItemId,
+                                           SKRTreeItem::Roles::CutCopyRole);
+
+    });
 
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &SKRPropertyHub::propertyChanged, this,

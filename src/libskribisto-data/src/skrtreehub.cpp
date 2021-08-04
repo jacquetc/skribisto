@@ -27,7 +27,7 @@
 #include <QCollator>
 
 SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree"), m_last_added_id(-1), m_cutCopy(
-        CutCopy())
+                                                                                                             CutCopy())
 {
     connect(this,                  &SKRTreeHub::errorSent,        this, &SKRTreeHub::setError, Qt::DirectConnection);
 
@@ -871,7 +871,7 @@ SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId, in
 
     IFOKDO(result, queries.renumberSortOrder())
 
-    IFKO(result) {
+            IFKO(result) {
         queries.rollback();
         emit errorSent(result);
     }
@@ -927,7 +927,7 @@ SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
 
             if (this->getIndent(projectId,
                                 possibleTargetTreeItemId) ==
-                this->getIndent(projectId, treeItemId)) {
+                    this->getIndent(projectId, treeItemId)) {
                 targetTreeItemId = possibleTargetTreeItemId;
                 break;
             }
@@ -948,7 +948,7 @@ SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
     IFOKDO(result, this->moveTreeItem(projectId, treeItemId, targetTreeItemId))
 
 
-    IFKO(result) {
+            IFKO(result) {
         emit errorSent(result);
     }
     return result;
@@ -991,7 +991,7 @@ SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
 
             if (this->getIndent(projectId,
                                 possibleTargetTreeItemId) ==
-                this->getIndent(projectId, treeItemId)) {
+                    this->getIndent(projectId, treeItemId)) {
                 targetTreeItemId = possibleTargetTreeItemId;
                 break;
             }
@@ -1012,7 +1012,7 @@ SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
     IFOKDO(result, this->moveTreeItem(projectId, treeItemId, targetTreeItemId, true))
 
 
-    IFKO(result) {
+            IFKO(result) {
         emit errorSent(result);
     }
     return result;
@@ -1447,7 +1447,7 @@ QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId, bool treeIte
 
     // alone, so no siblings
     if ((minSiblingIndex == treeItemSortedIdIndex) &&
-        (maxSiblingIndex == treeItemSortedIdIndex)) {
+            (maxSiblingIndex == treeItemSortedIdIndex)) {
         return siblingsList;
     }
 
@@ -1731,45 +1731,76 @@ SKRResult SKRTreeHub::duplicateTreeItem(int projectId, int treeItemId)
 // ----------------------------------------------------------------------------------------
 
 void SKRTreeHub::cut(int projectId, QList<int>treeItemIds)
-{
+{  
+    // unset old treeItems
+    m_cutCopy.hasRunOnce = true;
+    int oldProjectId = m_cutCopy.projectId;
+    for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
+        emit cutCopyChanged(oldProjectId, treeItemId, false);
+    }
+
+    // set new treeItems
     m_cutCopy = CutCopy(CutCopy::Cut, projectId, treeItemIds);
+
+    for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
+        emit cutCopyChanged(projectId, treeItemId, true);
+    }
 }
 
 // ----------------------------------------------------------------------------------------
 
 void SKRTreeHub::copy(int projectId, QList<int>treeItemIds)
 {
+    // unset old treeItems
+    m_cutCopy.hasRunOnce = true;
+    int oldProjectId = m_cutCopy.projectId;
+    for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
+        emit cutCopyChanged(oldProjectId, treeItemId, false);
+    }
+
+    // set new treeItems
     m_cutCopy = CutCopy(CutCopy::Copy, projectId, treeItemIds);
+
+    for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
+        emit cutCopyChanged(projectId, treeItemId, true);
+    }
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::paste(int projectId, int parentTreeItemId)
+SKRResult SKRTreeHub::paste(int targetProjectId, int parentTreeItemId)
 {
     SKRResult result(this);
     QList<int> treeItemIdList;
-    int targetProjectId;
+    QList<int> originalTreeItemIdList = m_cutCopy.treeItemIds;
+    int sourceProjectId = m_cutCopy.projectId;
 
     if (m_cutCopy.type != CutCopy::Type::None) {
         if (m_cutCopy.type == CutCopy::Type::Cut) {
-            for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
-                result = this->moveTreeItemAsChildOf(m_cutCopy.projectId, treeItemId, parentTreeItemId);
-                treeItemIdList << treeItemId;
+
+            if(targetProjectId == sourceProjectId){
+                for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
+                    result = this->moveTreeItemAsChildOf(sourceProjectId, treeItemId, parentTreeItemId);
+                    treeItemIdList << treeItemId;
+                }
             }
-            targetProjectId = m_cutCopy.projectId;
+            //TODO: case if projects are different
 
             // become a Copy after first paste
+            m_cutCopy.projectId = targetProjectId;
             m_cutCopy.treeItemIds = treeItemIdList;
             m_cutCopy.type = CutCopy::Type::Copy;
         }
         else if (m_cutCopy.type == CutCopy::Type::Copy) {
             for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
-                result = this->duplicateTreeItem(m_cutCopy.projectId, treeItemId);
-                int newTreeItemId = result.getData("treeItemId", -2).toInt();
-                treeItemIdList << newTreeItemId;
-                IFOKDO(result, this->moveTreeItemAsChildOf(m_cutCopy.projectId, newTreeItemId, parentTreeItemId))
+                if(targetProjectId == sourceProjectId){
+                    result = this->duplicateTreeItem(sourceProjectId, treeItemId);
+                    int newTreeItemId = result.getData("treeItemId", -2).toInt();
+                    treeItemIdList << newTreeItemId;
+                    IFOKDO(result, this->moveTreeItemAsChildOf(sourceProjectId, newTreeItemId, parentTreeItemId))
+                }
+                //TODO: case if projects are different
             }
-            targetProjectId = m_cutCopy.projectId;
         }
 
 
@@ -1777,7 +1808,15 @@ SKRResult SKRTreeHub::paste(int projectId, int parentTreeItemId)
     IFOK(result){
         result.addData("treeItemIdList", QVariant::fromValue<QList<int>>(treeItemIdList));
 
-        result = this->renumberSortOrders(projectId);
+        result = this->renumberSortOrders(targetProjectId);
+
+        // unset old treeItems
+        m_cutCopy.hasRunOnce = true;
+        for (int treeItemId : qAsConst(originalTreeItemIdList)) {
+            emit cutCopyChanged(sourceProjectId, treeItemId, false);
+        }
+
+
     }
     IFKO(result) {
         emit errorSent(result);
@@ -1785,17 +1824,28 @@ SKRResult SKRTreeHub::paste(int projectId, int parentTreeItemId)
 
     IFOK(result) {
         if (m_cutCopy.type == CutCopy::Type::Cut) {
-            emit treeItemMoved(projectId, treeItemIdList, targetProjectId, parentTreeItemId);
+            emit treeItemMoved(sourceProjectId, treeItemIdList, targetProjectId, parentTreeItemId);
         }
-       else if (m_cutCopy.type == CutCopy::Type::Copy) {
-            emit treeItemsAdded(projectId, treeItemIdList);
+        else if (m_cutCopy.type == CutCopy::Type::Copy) {
+            emit treeItemsAdded(targetProjectId, treeItemIdList);
         }
 
-        emit projectModified(projectId);
+        emit projectModified(targetProjectId);
     }
 
     return result;
 }
+
+bool SKRTreeHub::isCutCopy(int projectId, int treeItemId) const{
+
+    if(m_cutCopy.projectId == projectId && !m_cutCopy.hasRunOnce){
+
+        return m_cutCopy.treeItemIds.contains(treeItemId);
+    }
+
+    return false;
+}
+
 
 // ----------------------------------------------------------------------------------------
 

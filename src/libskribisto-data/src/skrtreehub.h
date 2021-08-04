@@ -49,15 +49,19 @@ public:
         this->type        = type;
         this->projectId   = projectId;
         this->treeItemIds = treeItemIds;
+        this->hasRunOnce  = false;
     }
 
     CutCopy() {
         this->type = Type::None;
+        this->projectId   = -2;
+        this->hasRunOnce  = false;
     }
 
     CutCopy::Type type;
     int           projectId;
     QList<int>    treeItemIds;
+    bool          hasRunOnce;
 };
 Q_DECLARE_METATYPE(CutCopy)
 
@@ -251,7 +255,7 @@ public:
                               QList<int>treeItemIds);
     Q_INVOKABLE void      copy(int       projectId,
                                QList<int>treeItemIds);
-    Q_INVOKABLE SKRResult paste(int projectId,
+    Q_INVOKABLE SKRResult paste(int targetProjectId,
                                 int parentTreeItemId);
 
     Q_INVOKABLE SKRResult addQuickNote(int            projectId,
@@ -259,6 +263,7 @@ public:
                                        const QString& type,
                                        const QString& noteName);
 
+    Q_INVOKABLE bool isCutCopy(int projectId, int treeItemId) const;
 private:
 
     SKRResult setTrashedDateToNow(int projectId,
@@ -328,6 +333,10 @@ signals:
     void treeRelationshipAdded(int projectId,
                                int sourceTreeItemId,
                                int receiverTreeItemId);
+
+    void cutCopyChanged(int projectId,
+                        int treeItemId,
+                        bool value);
 
 protected:
 
