@@ -89,3 +89,11 @@ endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "bin/plugins")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
+
+
+
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_subdirectory(tests)
+endif()

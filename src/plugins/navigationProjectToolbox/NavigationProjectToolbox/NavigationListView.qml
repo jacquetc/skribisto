@@ -1419,7 +1419,6 @@ Item {
 
                                     content.dragging = true
                                     listView.interactive = false
-                                    cancelDragTimer.start()
                                     priv.selecting = false
                                 }
 
@@ -1428,9 +1427,10 @@ Item {
                                 }
 
                                 onPressedChanged: {
+
                                     content.grabToImage(function(result) {
                                         content.Drag.imageSource = result.url
-                                    })
+                                    }, Qt.size(content.width / 1.5, content.height / 1.5))
 
                                     content.dragPoint = point.pressPosition
                                 }

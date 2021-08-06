@@ -2,6 +2,7 @@
     <qresource prefix="/sql">
         <file>sqlite_project.sql</file>
         <file>sqlite_project_1_6.sql</file>
+        <file>sqlite_project_1_8.sql</file>
     </qresource>
     <qresource prefix="/"/>
 </RCC>

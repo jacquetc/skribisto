@@ -246,6 +246,52 @@ SKRResult SKRTagHub::setTagTextColor(int projectId, int tagId, const QString& co
     return result;
 }
 
+// --------------------------------------------------------------------------------
+
+SKRResult SKRTagHub::setTagRandomColors(int projectId, int tagId)
+{
+    int randColorIndex = QRandomGenerator::global()->bounded(27);
+
+    QMap<QString, QString> colorMap;
+
+    colorMap.insert("#FFFFFF", "#000000");
+    colorMap.insert("#FFFAFA", "#000000");
+    colorMap.insert("#F0FFFF", "#000000");
+    colorMap.insert("#F5F5DC", "#000000");
+    colorMap.insert("#000000", "#FFFFFF");
+    colorMap.insert("#FF0000", "#000000");
+    colorMap.insert("#8B0000", "#FFFFFF");
+    colorMap.insert("#98FB98", "#000000");
+    colorMap.insert("#7FFF00", "#000000");
+    colorMap.insert("#008000", "#FFFFFF");
+    colorMap.insert("#006400", "#FFFFFF");
+    colorMap.insert("#E0FFFF", "#000000");
+    colorMap.insert("#00FFFF", "#000000");
+    colorMap.insert("#008B8B", "#FFFFFF");
+    colorMap.insert("#0000FF", "#FFFFFF");
+    colorMap.insert("#00008B", "#FFFFFF");
+    colorMap.insert("#FFB6C1", "#000000");
+    colorMap.insert("#FFC0CB", "#000000");
+    colorMap.insert("#FF69B4", "#000000");
+    colorMap.insert("#FF00FF", "#000000");
+    colorMap.insert("#8B008B", "#FFFFFF");
+    colorMap.insert("#FFFFE0", "#000000");
+    colorMap.insert("#FFFF00", "#000000");
+    colorMap.insert("#FFD700", "#000000");
+    colorMap.insert("#FFA500", "#000000");
+    colorMap.insert("#FF8C00", "#FFFFFF");
+    colorMap.insert("#808080", "#FFFFFF");
+    colorMap.insert("#A9A9A9", "#FFFFFF");
+
+
+    SKRResult result = setTagColor(projectId, tagId, colorMap.keys().at(randColorIndex));
+
+    result = setTagTextColor(projectId, tagId, colorMap.values().at(randColorIndex));
+
+
+    return result;
+}
+
 // ------------------------------------------------------------
 
 SKRResult SKRTagHub::setCreationDate(int projectId, int tagId,

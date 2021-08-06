@@ -17,7 +17,7 @@ SKRPlumeCreatorImporter::SKRPlumeCreatorImporter(QObject *parent) : QObject(pare
 
 SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFileName, const QUrl& skribistoFileName)
 {
-    QString   sqlFile = ":/sql/sqlite_project_1_6.sql";
+    QString   sqlFile = ":/sql/sqlite_project_1_8.sql";
     SKRResult result  = skrdata->projectHub()->createSilentlyNewSpecificEmptyProject(skribistoFileName, sqlFile);
 
     int projectId = -2;
@@ -45,27 +45,8 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
 
     // extract zip
 
-    JlCompress::extractDir(plumeFileName.toLocalFile(), tempDirPath);
+    JlCompress::extractDir(plumeFileName.path(), tempDirPath);
 
-    //    QFile qf(plumeFileName.toLocalFile());
-    //    qf.open(QIODevice::ReadOnly);
-    //    int   fd        = qf.handle();
-    //    FILE *plumeFile = fdopen(dup(fd), "rb");
-
-
-    //    //    QFile tf(plumeFileName.toLocalFile());
-    //    //    tf.open(QIODevice::ReadOnly);
-    //    FILE *fp;
-    //    QByteArray  ba     = tempDirPath.toLocal8Bit();
-    //    const char *c_str2 = ba.data();
-    //    fp = fopen(c_str2, "w");
-
-    //    //    int   fd2 = tf.handle();
-    //    //    FILE *t   = fdopen(dup(fd2), "rb");
-
-    //    decompress(plumeFile, fp);
-    //    fclose(plumeFile); // correct
-    //    fclose(fp);
 
     // ----------- create text folder---------------------------------------
 
@@ -78,7 +59,7 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
     int textFolderId = result.getData("treeItemId", -2).toInt();
 
     IFOKDO(result, skrdata->treeHub()->setSortOrder(projectId, textFolderId, 1000));
-    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, textFolderId, "text"));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, textFolderId, tr("Text")));
 
 
     // ----------- create attend folder---------------------------------------
@@ -92,7 +73,7 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
     int attendFolderId = result.getData("treeItemId", -2).toInt();
 
     IFOKDO(result, skrdata->treeHub()->setSortOrder(projectId, attendFolderId, 80000000));
-    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, attendFolderId, "attendance"));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, attendFolderId, tr("Attendance")));
 
 
     // ----------- create note folder---------------------------------------
@@ -106,7 +87,7 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
     int noteFolderId = result.getData("treeItemId", -2).toInt();
 
     IFOKDO(result, skrdata->treeHub()->setSortOrder(projectId, noteFolderId, 90000000));
-    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, noteFolderId, "note"));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, noteFolderId, tr("Notes")));
 
 
     // ----------------------------- read
@@ -134,59 +115,78 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
 
 
     m_attendanceConversionHash.clear();
+    QStringList rolesNames;
+    QStringList levelsNames;
+    QStringList box_1Names;
+    QStringList box_2Names;
+    QStringList box_3Names;
+    QStringList spinBox_1Names;
 
+    while (attendXml.readNext() != QXmlStreamReader::EndDocument) {
+        qDebug() << "xml.name().toString()" << attendXml.name().toString() <<
+            attendXml.attributes().value("name").toString();
 
-    while (attendXml.readNextStartElement() && attendXml.name().toString() == "plume-attendance") {
-        QStringList rolesNames  = attendXml.attributes().value("rolesNames").toString().split("--", Qt::SkipEmptyParts);
-        QStringList levelsNames =
-            attendXml.attributes().value("levelsNames").toString().split("--", Qt::SkipEmptyParts);
+        if ((attendXml.tokenType() == QXmlStreamReader::StartElement) &&
+            (attendXml.name().toString() == "plume-attendance")) {
+            rolesNames = attendXml.attributes().value("rolesNames").toString().split("--",
+                                                                                     Qt::SkipEmptyParts);
+            levelsNames =
+                attendXml.attributes().value("levelsNames").toString().split("--", Qt::SkipEmptyParts);
+            box_1Names     = attendXml.attributes().value("box_1").toString().split("--", Qt::SkipEmptyParts);
+            box_2Names     = attendXml.attributes().value("box_2").toString().split("--", Qt::SkipEmptyParts);
+            box_3Names     = attendXml.attributes().value("box_3").toString().split("--", Qt::SkipEmptyParts);
+            spinBox_1Names =
+                attendXml.attributes().value("spinBox_1").toString().split("--", Qt::SkipEmptyParts);
+        }
 
-        QStringList box_1Names = attendXml.attributes().value("box_1").toString().split("--", Qt::SkipEmptyParts);
-        QStringList box_2Names = attendXml.attributes().value("box_2").toString().split("--", Qt::SkipEmptyParts);
-        QStringList box_3Names = attendXml.attributes().value("box_3").toString().split("--", Qt::SkipEmptyParts);
+        if ((attendXml.tokenType() == QXmlStreamReader::StartElement) && (attendXml.name() == "group")) {
+            result = this->createAttendFolder(projectId, 2,
+                                              attendXml,
+                                              tempDirPath,
+                                              attendFolderId);
 
-        QStringList spinBox_1Names =
-            attendXml.attributes().value("spinBox_1").toString().split("--", Qt::SkipEmptyParts);
-
-
-        while (attendXml.readNextStartElement() && attendXml.name().toString() == "group") {
-            int attendNumber  = attendXml.attributes().value("number").toInt();
-            QString groupName = attendXml.attributes().value("name").toString();
-            result = this->createNote(projectId, 1, attendNumber, groupName, tempDirPath + "/attend/A", attendFolderId);
             IFOK(result) {
                 int groupNoteId = result.getData("treeItemId", -2).toInt();
 
+                int attendNumber = attendXml.attributes().value("number").toInt();
+
                 m_attendanceConversionHash.insert(attendNumber, groupNoteId);
 
+                result = this->createTagsFromAttend(projectId, groupNoteId, attendXml, "rolesNames", rolesNames);
+                result = this->createTagsFromAttend(projectId, groupNoteId, attendXml, "levelsNames", rolesNames);
                 result = this->createTagsFromAttend(projectId, groupNoteId, attendXml, "box_1", box_1Names);
                 result = this->createTagsFromAttend(projectId, groupNoteId, attendXml, "box_2", box_2Names);
                 result = this->createTagsFromAttend(projectId, groupNoteId, attendXml, "box_3", box_3Names);
                 result = this->createTagsFromAttend(projectId, groupNoteId, attendXml, "spinBox_1", spinBox_1Names);
             }
+        }
 
 
-            while (attendXml.readNextStartElement() && attendXml.name().toString() == "obj") {
+        if ((attendXml.tokenType() == QXmlStreamReader::StartElement) && (attendXml.name() == "obj")) {
+            result = this->createAttendObject(projectId, 3,
+                                              attendXml,
+                                              tempDirPath,
+                                              attendFolderId);
+
+            IFOK(result) {
+                int objNoteId = result.getData("treeItemId", -2).toInt();
+
                 int attendNumber = attendXml.attributes().value("number").toInt();
-                QString objName  = attendXml.attributes().value("name").toString();
-                result =
-                    this->createNote(projectId, 2, attendNumber, objName, tempDirPath + "/attend/A", attendFolderId);
-                IFOK(result) {
-                    int objNoteId = result.getData("treeItemId", -2).toInt();
 
-                    m_attendanceConversionHash.insert(attendNumber, objNoteId);
+                m_attendanceConversionHash.insert(attendNumber, objNoteId);
 
 
-                    result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "box_1", box_1Names);
-                    result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "box_2", box_2Names);
-                    result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "box_3", box_3Names);
-                    result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "spinBox_1", spinBox_1Names);
+                result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "rolesNames", rolesNames);
+                result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "levelsNames", rolesNames);
+                result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "box_1", box_1Names);
+                result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "box_2", box_2Names);
+                result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "box_3", box_3Names);
+                result = this->createTagsFromAttend(projectId, objNoteId, attendXml, "spinBox_1", spinBox_1Names);
 
-                    QString objQuickDetail = attendXml.attributes().value("quickDetails").toString();
 
-                    skrdata->treePropertyHub()->setProperty(projectId, objNoteId, "label", objQuickDetail);
-                }
-
-                attendXml.readElementText();
+                QString objQuickDetail = attendXml.attributes().value("quickDetails").toString();
+                skrdata->treePropertyHub()->setProperty(projectId, objNoteId, "label", objQuickDetail, true, true,
+                                                        false);
             }
         }
     }
@@ -218,28 +218,85 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
 
     QXmlStreamReader xml(lines);
 
+    bool isInAct     = false;
+    bool isInChapter = false;
 
-    while (xml.readNextStartElement() && xml.name().toString() == "plume-tree") {
-        // pick project name
-        QString projectName = xml.attributes().value("projectName").toString();
-        IFOKDO(result, skrdata->projectHub()->setProjectName(projectId, projectName));
+    while (xml.readNext() != QXmlStreamReader::EndDocument) {
+        qDebug() << "xml.name().toString()" << xml.name().toString() <<
+            xml.attributes().value("name").toString();
 
+        int indent = 0;
 
-        while (xml.readNextStartElement()) {
-            if (xml.name().toString() == "trash") {
-                xml.skipCurrentElement();
-                continue;
-            }
-
-            if (xml.name().toString() == "book") {
-                IFOKDO(result,
-                       this->readXMLRecursivelyAndCreatePaper(projectId, 1, &xml, tempDirPath, textFolderId,
-                                                              noteFolderId));
-            }
+        if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "plume-tree")) {
+            skrdata->projectHub()->setProjectName(projectId, xml.attributes().value("projectName").toString());
         }
 
-        while (xml.readNext() != QXmlStreamReader::EndDocument) {}
+        if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "book")) {
+            indent = 2;
+            result = this->createFolderAndAssociations(projectId, indent, xml, tempDirPath, textFolderId, noteFolderId);
+
+
+            result = this->createSection(projectId, indent + 1, textFolderId, "book-beginning");
+        }
+        else if ((xml.tokenType() == QXmlStreamReader::EndElement) && (xml.name() == "book")) {
+            indent = 3;
+            result = this->createSection(projectId, indent, textFolderId, "book-end");
+        }
+        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "act")) {
+            isInAct = true;
+            indent  = 3;
+            this->createFolderAndAssociations(projectId, indent, xml, tempDirPath, textFolderId, noteFolderId);
+        }
+        else if ((xml.tokenType() == QXmlStreamReader::EndElement) && (xml.name() == "act")) {
+            isInAct = false;
+        }
+        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "chapter")) {
+            isInChapter = true;
+            indent      = 3 + (isInAct ? 1 : 0);
+            this->createFolderAndAssociations(projectId, indent, xml, tempDirPath, textFolderId, noteFolderId);
+
+            result = this->createSection(projectId, indent + 1, textFolderId, "chapter");
+        }
+        else if ((xml.tokenType() == QXmlStreamReader::EndElement) && (xml.name() == "chapter")) {
+            isInChapter = false;
+        }
+        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "scene")) {
+            indent = 3 + (isInAct ? 1 : 0) + (isInChapter ? 1 : 0);
+            this->createPapersAndAssociations(projectId, indent, xml, tempDirPath, textFolderId, noteFolderId);
+        }
+        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "separator")) {
+            indent = 3 + (isInAct ? 1 : 0) + (isInChapter ? 1 : 0);
+
+            result = this->createSection(projectId, indent, textFolderId, "separator");
+        }
+
+
+        //            while (xml.readNextStartElement()) {
+        //                if (xml.name().toString() == "trash") {
+        //                    xml.skipCurrentElement();
+        //                    continue;
+        //                }
+        //                qDebug() << "xml.name().toString()" <<
+        // xml.name().toString() <<
+        //                            xml.attributes().value("name").toString();
+
+        //                if (xml.name().toString() == "book") {
+        //                    IFOKDO(result,
+        //
+        //
+        //
+        //                   this->readXMLRecursivelyAndCreatePaper(projectId,
+        // 1, &xml, tempDirPath, textFolderId,
+        //
+        //
+        //
+        //
+        //                                                       noteFolderId));
+        //                }
+        //            }
     }
+
+    //    }
 
     IFKO(result) {
         result = SKRResult(SKRResult::Critical, this, "error_while_exploiting_tree");
@@ -291,7 +348,7 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
 
     // transform texts with children in folders
 
-    IFOKDO(result, transformParentsToFolder(projectId));
+    // IFOKDO(result, transformParentsToFolder(projectId));
 
 
     // save
@@ -308,188 +365,165 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
 }
 
 // -----------------------------------------------------------
+SKRResult SKRPlumeCreatorImporter::createSection(int            projectId,
+                                                 int            indent,
+                                                 int            textFolderId,
+                                                 const QString& section_type) {
+    SKRResult result(this);
 
+    result = skrdata->treeHub()->addChildTreeItem(projectId, textFolderId, "SECTION");
+    int newItemId = result.getData("treeItemId", -2).toInt();
 
-SKRResult SKRPlumeCreatorImporter::transformParentsToFolder(int projectId) {
-    SKRResult result;
-    QSqlDatabase sqlDb = plmProjectManager->project(projectId)->getSqlDb();
-
-
-    // retrieve sorted id with indent list
-
-    QList<int> treeIdList;
-    QList<int> treeIndentList;
-    QList<int> treeSortOrderList;
-    QList<QString> typeList;
-    QSqlQuery query(sqlDb);
-    QString   queryStr = "SELECT l_tree_id, l_indent, l_sort_order, t_type FROM tbl_tree ORDER BY l_sort_order";
-
-
-    query.prepare(queryStr);
-
-
-    query.exec();
-
-    if (query.lastError().isValid()) {
-        result = SKRResult(SKRResult::Critical, this, "sql_error");
-        result.addData("SQLError",   query.lastError().text());
-        result.addData("SQL string", queryStr);
-
-        return result;
+    if (newItemId != -2) {
+        IFOKDO(result, skrdata->treeHub()->setIndent(projectId, newItemId, indent));
+        result = skrdata->treePropertyHub()->setProperty(projectId,
+                                                         newItemId,
+                                                         "section_type",
+                                                         section_type,
+                                                         false);
     }
-
-    while (query.next()) {
-        treeIdList.append(query.value(0).toInt());
-        treeIndentList.append(query.value(1).toInt());
-        treeSortOrderList.append(query.value(2).toInt());
-        typeList.append(query.value(2).toString());
-    }
-
-    // remove project item (the first one)
-    treeIdList.takeFirst();
-    treeIndentList.takeFirst();
-    treeSortOrderList.takeFirst();
-    typeList.takeFirst();
-
-    // remove folders
-
-    QList<int> indexesToRemove;
-
-    for (int k = 0; k < typeList.count(); k++) {
-        if (typeList.at(k) == "TEXT") {
-            indexesToRemove.append(k);
-        }
-    }
-
-    for (int m = indexesToRemove.count() - 1; m >= 0; m++) {
-        treeIdList.removeAt(m);
-        treeIndentList.removeAt(m);
-        treeSortOrderList.removeAt(m);
-        typeList.removeAt(m);
-    }
-
-
-    // create folders
-
-    sqlDb.transaction();
-
-    QString treeQueryStr = "INSERT INTO tbl_tree (t_title, l_indent, l_sort_order, t_type, dt_trashed, b_trashed)"
-                           "                       VALUES ("
-                           "                       (SELECT t_title FROM tbl_tree WHERE l_tree_id = :treeId),"
-                           "                       (SELECT l_indent FROM tbl_tree WHERE l_tree_id = :treeId),"
-                           "                       :newSortOrder,"
-                           "                       'FOLDER',"
-                           "                       (SELECT dt_trashed FROM tbl_tree WHERE l_tree_id = :treeId),"
-                           "                       (SELECT b_trashed FROM tbl_tree WHERE l_tree_id = :treeId)"
-                           ")";
-
-
-    QString incrementIndentQueryStr = "UPDATE tbl_tree SET l_indent = :newIndent WHERE l_tree_id = :treeId";
-
-    int previousIdIndent = -1;
-
-    for (int i = treeIdList.count() - 1; i >= 0; i--) {
-        int currentTreeId = treeIdList.at(i);
-        int currentIndent = treeIndentList.at(i);
-
-        if (i < treeIdList.count() - 1) {
-            previousIdIndent = treeIndentList.at(i + 1);
-        }
-
-
-        if (previousIdIndent > currentIndent) {
-            int currentSortOrder = treeSortOrderList.at(i);
-
-
-            // create folder
-            query.prepare(treeQueryStr);
-
-            query.bindValue(":treeId",       currentTreeId);
-            query.bindValue(":newSortOrder", currentSortOrder - 1);
-
-            query.exec();
-
-            if (query.lastError().isValid()) {
-                result = SKRResult(SKRResult::Critical, this, "sql_error");
-                result.addData("SQLError",     query.lastError().text());
-                result.addData("SQL string",   queryStr);
-                result.addData("treeId",       currentTreeId);
-                result.addData("newSortOrder", currentSortOrder - 1);
-                sqlDb.rollback();
-
-                return result;
-            }
-
-            int newFolderTreeId = query.lastInsertId().toInt();
-
-            // increment current item's indent
-
-            query.prepare(incrementIndentQueryStr);
-
-            query.bindValue(":treeId",    currentTreeId);
-            query.bindValue(":newIndent", currentIndent + 1);
-
-            query.exec();
-
-            if (query.lastError().isValid()) {
-                result = SKRResult(SKRResult::Critical, this, "sql_error");
-                result.addData("SQLError",   query.lastError().text());
-                result.addData("SQL string", queryStr);
-                result.addData("treeId",     currentTreeId);
-                result.addData("sortOrder",  currentSortOrder);
-                result.addData("newIndent",  currentIndent + 1);
-                sqlDb.rollback();
-
-                return result;
-            }
-        }
-    }
-
-    IFOK(result) {
-        sqlDb.commit();
-    }
-
 
     return result;
 }
 
-// -----------------------------------------------------------
+// ---------------------------------------------------
 
-SKRResult SKRPlumeCreatorImporter::readXMLRecursivelyAndCreatePaper(int projectId,
-                                                                    int indent,
-                                                                    QXmlStreamReader *xml,
-                                                                    const QString& tempDirPath,
-                                                                    int textFolderId, int noteFolderId)
+SKRResult SKRPlumeCreatorImporter::createFolderAndAssociations(int projectId,
+                                                               int indent,
+                                                               const QXmlStreamReader& xml,
+                                                               const QString& tempDirPath,
+                                                               int textFolderId, int noteFolderId)
 {
-    SKRResult result;
+    SKRResult result(this);
 
-    if (!xml->readNextStartElement()) {
-        xml->readElementText();
+    int plumeId       = xml.attributes().value("number").toInt();
+    QString name      = xml.attributes().value("name").toString();
+    bool    isTrashed = xml.attributes().value("isTrashed").toString() == "yes";
+    QString badge     = xml.attributes().value("badge").toString();
+
+    // create folder
+
+    result = skrdata->treeHub()->addChildTreeItem(projectId, textFolderId, "FOLDER");
+    IFKO(result) {
+        result = SKRResult(SKRResult::Critical, this, "text_creation");
         return result;
     }
-    else {
-        if (xml->name().toString() == "separator") {
-            xml->skipCurrentElement();
-        }
-        else {
-            IFOKDO(result,
-                   this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath, textFolderId, noteFolderId));
-            IFOKDO(result,
-                   readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath, textFolderId,
-                                                    noteFolderId));
-        }
+    int folderId = result.getData("treeItemId", -2).toInt();
+
+    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, folderId, indent));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, folderId, name));
+    IFOKDO(result, skrdata->treeHub()->setTrashedWithChildren(projectId, folderId, isTrashed));
+    IFOKDO(result, skrdata->treePropertyHub()->setProperty(projectId, folderId, "label", badge, true, true, false));
+
+
+    // - fetch text
+
+    QFileInfo textFileInfo(tempDirPath + "/text/T" + QString::number(plumeId) + ".html");
+
+    if (!textFileInfo.exists()) {
+        result = SKRResult(SKRResult::Critical, this, "no_text_file");
+        result.addData("filePath", textFileInfo.absoluteFilePath());
+        return result;
     }
 
-    while (xml->readNextStartElement()) {
-        if (xml->name().toString() == "separator") {
-            xml->skipCurrentElement();
+
+    QFile textFile(textFileInfo.absoluteFilePath());
+
+    if (!textFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        result = SKRResult(SKRResult::Critical, this, "cant_open_text_file");
+        result.addData("filePath", textFileInfo.absoluteFilePath());
+        return result;
+    }
+
+    QByteArray textLines = textFile.readAll();
+
+
+    QTextDocument folderDoc;
+
+    folderDoc.setHtml(QString::fromUtf8(textLines));
+
+
+    // create note
+
+
+    result = this->createNote(projectId, 2, plumeId, name, tempDirPath + "/text/N", noteFolderId);
+    bool ok;
+    int  noteId = result.getData("treeItemId", -2).toInt(&ok);
+
+    if (!ok) {
+        result = SKRResult(SKRResult::Critical, this, "bad_conversion_to_int");
+        return result;
+    }
+
+    if (result.getData("hasContent", false).toBool()) {
+        result = skrdata->treeHub()->setTreeRelationship(projectId, noteId, folderId);
+    }
+
+    // create synopsis
+
+
+    QFileInfo synFileInfo(tempDirPath + "/text/S" + QString::number(plumeId) + ".html");
+
+    if (!synFileInfo.exists()) {
+        result = SKRResult(SKRResult::Critical, this, "no_synopsis_file");
+        result.addData("filePath", synFileInfo.absoluteFilePath());
+        return result;
+    }
+
+
+    QFile synFile(synFileInfo.absoluteFilePath());
+
+    if (!synFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        result = SKRResult(SKRResult::Critical, this, "cant_open_synopsis_file");
+        result.addData("filePath", synFileInfo.absoluteFilePath());
+        return result;
+    }
+
+    QByteArray lines = synFile.readAll();
+
+
+    QTextDocument synDoc;
+
+    synDoc.setHtml(QString::fromUtf8(lines));
+
+    IFOKDO(result, skrdata->treeHub()->setSecondaryContent(projectId, folderId, synDoc.toHtml()));
+
+
+    // create sheet
+
+    result = skrdata->treeHub()->addChildTreeItem(projectId, textFolderId, "TEXT");
+    IFKO(result) {
+        result = SKRResult(SKRResult::Critical, this, "text_creation_after_folder");
+        return result;
+    }
+    int sheetId = result.getData("treeItemId", -2).toInt();
+
+
+    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, sheetId, indent + 1));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, sheetId, tr("%1 (content)").arg(name)));
+
+
+    //
+    IFOKDO(result, skrdata->treeHub()->setPrimaryContent(projectId, sheetId, folderDoc.toHtml()));
+
+
+    // associate "attendance" notes
+
+    QStringList attendIds = xml.attributes().value("attend").toString().split("-", Qt::SkipEmptyParts);
+
+    for (const QString& attendIdString : qAsConst(attendIds)) {
+        int attendId = attendIdString.toInt();
+
+        if (attendId == 0) {
             continue;
         }
-        IFOKDO(result,
-               this->createPapersAndAssociations(projectId, indent, *xml, tempDirPath, textFolderId, noteFolderId));
-        IFOKDO(result,
-               readXMLRecursivelyAndCreatePaper(projectId, indent + 1, xml, tempDirPath, textFolderId, noteFolderId));
+
+        int skrNoteId = m_attendanceConversionHash.value(attendId);
+
+        // associate :
+        result = skrdata->treeHub()->setTreeRelationship(projectId, skrNoteId, folderId);
     }
+
 
     return result;
 }
@@ -502,8 +536,10 @@ SKRResult SKRPlumeCreatorImporter::createPapersAndAssociations(int projectId,
 {
     SKRResult result(this);
 
-    int plumeId  = xml.attributes().value("number").toInt();
-    QString name = xml.attributes().value("name").toString();
+    int plumeId       = xml.attributes().value("number").toInt();
+    QString name      = xml.attributes().value("name").toString();
+    bool    isTrashed = xml.attributes().value("isTrashed").toString() == "yes";
+    QString badge     = xml.attributes().value("badge").toString();
 
     // create sheet
 
@@ -514,11 +550,11 @@ SKRResult SKRPlumeCreatorImporter::createPapersAndAssociations(int projectId,
     }
     int sheetId = result.getData("treeItemId", -2).toInt();
 
-    int textFolderIndent = skrdata->treeHub()->getIndent(projectId, textFolderId);
 
-    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, sheetId, textFolderIndent + indent));
+    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, sheetId, indent));
     IFOKDO(result, skrdata->treeHub()->setTitle(projectId, sheetId, name));
-    IFOKDO(result, skrdata->treeHub()->setType(projectId, sheetId, "TEXT"));
+    IFOKDO(result, skrdata->treeHub()->setTrashedWithChildren(projectId, sheetId, isTrashed));
+    IFOKDO(result, skrdata->treePropertyHub()->setProperty(projectId, sheetId, "label", badge, true, true, false));
 
 
     // - fetch text
@@ -557,7 +593,7 @@ SKRResult SKRPlumeCreatorImporter::createPapersAndAssociations(int projectId,
     // create note
 
 
-    result = this->createNote(projectId, indent, plumeId, name, tempDirPath + "/text/N", noteFolderId);
+    result = this->createNote(projectId, 2, plumeId, name, tempDirPath + "/text/N", noteFolderId);
     bool ok;
     int  noteId = result.getData("treeItemId", -2).toInt(&ok);
 
@@ -630,53 +666,134 @@ SKRResult SKRPlumeCreatorImporter::createPapersAndAssociations(int projectId,
 
 // -----------------------------------------------------------------------------------------------
 
-SKRResult SKRPlumeCreatorImporter::createNote(int projectId, int indent, int plumeId, const QString& name,
-                                              const QString& tempDirPath, int parentFolderId)
+SKRResult SKRPlumeCreatorImporter::createAttendFolder(int                     projectId,
+                                                      int                     indent,
+                                                      const QXmlStreamReader& xml,
+                                                      const QString         & tempDirPath,
+                                                      int                     attendFolderId)
 {
     SKRResult result(this);
 
+    int plumeId  = xml.attributes().value("number").toInt();
+    QString name = xml.attributes().value("name").toString();
 
-    result = skrdata->treeHub()->addChildTreeItem(projectId, parentFolderId, "TEXT");
+
+    // create folder
+
+    result = skrdata->treeHub()->addChildTreeItem(projectId, attendFolderId, "FOLDER");
     IFKO(result) {
-        result = SKRResult(SKRResult::Critical, this, "note_creation");
+        result = SKRResult(SKRResult::Critical, this, "text_creation");
         return result;
     }
-    int noteId = result.getData("treeItemId", -2).toInt();
+    int folderId = result.getData("treeItemId", -2).toInt();
+
+    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, folderId, indent));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, folderId, name));
 
 
-    int parentFolderIndent = skrdata->treeHub()->getIndent(projectId, parentFolderId);
+    // - fetch text
 
-    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, noteId, parentFolderIndent + indent));
-    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, noteId, name));
-    IFOKDO(result, skrdata->treeHub()->setType(projectId, noteId, "TEXT"));
+    QFileInfo textFileInfo(tempDirPath + "/attend/A" + QString::number(plumeId) + ".html");
 
-
-    // fetch text
-
-    QFileInfo attendFileInfo(tempDirPath + QString::number(plumeId) + ".html");
-
-    if (!attendFileInfo.exists()) {
-        result = SKRResult(SKRResult::Critical, this, "no_attend_file");
-        result.addData("filePath", attendFileInfo.absoluteFilePath());
+    if (!textFileInfo.exists()) {
+        result = SKRResult(SKRResult::Critical, this, "no_text_file");
+        result.addData("filePath", textFileInfo.absoluteFilePath());
         return result;
     }
 
 
-    QFile attendFile(attendFileInfo.absoluteFilePath());
+    QFile textFile(textFileInfo.absoluteFilePath());
 
-    if (!attendFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        result = SKRResult(SKRResult::Critical, this, "cant_open_attend_file");
-        result.addData("filePath", attendFileInfo.absoluteFilePath());
+    if (!textFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        result = SKRResult(SKRResult::Critical, this, "cant_open_text_file");
+        result.addData("filePath", textFileInfo.absoluteFilePath());
         return result;
     }
 
-    QByteArray lines = attendFile.readAll();
+    QByteArray textLines = textFile.readAll();
 
 
-    QTextDocument noteDoc;
+    QTextDocument folderDoc;
 
-    noteDoc.setHtml(QString::fromUtf8(lines));
-    IFOKDO(result, skrdata->treeHub()->setPrimaryContent(projectId, noteId, noteDoc.toHtml()));
+    folderDoc.setHtml(QString::fromUtf8(textLines));
+
+
+    // create sheet
+
+    result = skrdata->treeHub()->addChildTreeItem(projectId, attendFolderId, "TEXT");
+    IFKO(result) {
+        result = SKRResult(SKRResult::Critical, this, "text_creation_after_folder");
+        return result;
+    }
+    int sheetId = result.getData("treeItemId", -2).toInt();
+
+
+    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, sheetId, indent + 1));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, sheetId, tr("%1 (content)").arg(name)));
+
+
+    //
+    IFOKDO(result, skrdata->treeHub()->setPrimaryContent(projectId, sheetId, folderDoc.toHtml()));
+
+    result.addData("treeItemId", folderId);
+
+    return result;
+}
+
+// -----------------------------------------------------------------------------------------------
+
+
+SKRResult SKRPlumeCreatorImporter::createAttendObject(int                     projectId,
+                                                      int                     indent,
+                                                      const QXmlStreamReader& xml,
+                                                      const QString         & tempDirPath,
+                                                      int                     attendFolderId)
+{
+    SKRResult result(this);
+
+    int plumeId  = xml.attributes().value("number").toInt();
+    QString name = xml.attributes().value("name").toString();
+
+
+    QFileInfo textFileInfo(tempDirPath + "/attend/A" + QString::number(plumeId) + ".html");
+
+    if (!textFileInfo.exists()) {
+        result = SKRResult(SKRResult::Critical, this, "no_text_file");
+        result.addData("filePath", textFileInfo.absoluteFilePath());
+        return result;
+    }
+
+
+    QFile textFile(textFileInfo.absoluteFilePath());
+
+    if (!textFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        result = SKRResult(SKRResult::Critical, this, "cant_open_text_file");
+        result.addData("filePath", textFileInfo.absoluteFilePath());
+        return result;
+    }
+
+    QByteArray textLines = textFile.readAll();
+
+
+    QTextDocument attendDoc;
+
+    attendDoc.setHtml(QString::fromUtf8(textLines));
+
+
+    // create sheet
+
+    result = skrdata->treeHub()->addChildTreeItem(projectId, attendFolderId, "TEXT");
+    IFKO(result) {
+        result = SKRResult(SKRResult::Critical, this, "text_creation_after_folder");
+        return result;
+    }
+    int sheetId = result.getData("treeItemId", -2).toInt();
+
+
+    IFOKDO(result, skrdata->treeHub()->setIndent(projectId, sheetId, indent));
+    IFOKDO(result, skrdata->treeHub()->setTitle(projectId, sheetId, name));
+
+    IFOKDO(result, skrdata->treeHub()->setPrimaryContent(projectId, sheetId, attendDoc.toHtml()));
 
 
     return result;
@@ -684,8 +801,66 @@ SKRResult SKRPlumeCreatorImporter::createNote(int projectId, int indent, int plu
 
 // -----------------------------------------------------------------------------------------------
 
+SKRResult SKRPlumeCreatorImporter::createNote(int projectId, int indent, int plumeId, const QString& name,
+                                              const QString& tempDirPath, int parentFolderId)
+{
+    SKRResult result(this);
+
+    // fetch text
+
+    QFileInfo noteFileInfo(tempDirPath + QString::number(plumeId) + ".html");
+
+    if (!noteFileInfo.exists()) {
+        result = SKRResult(SKRResult::Critical, this, "no_attend_file");
+        result.addData("filePath", noteFileInfo.absoluteFilePath());
+        return result;
+    }
+
+
+    QFile noteFile(noteFileInfo.absoluteFilePath());
+
+    if (!noteFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        result = SKRResult(SKRResult::Critical, this, "cant_open_attend_file");
+        result.addData("filePath", noteFileInfo.absoluteFilePath());
+        return result;
+    }
+
+    QByteArray lines = noteFile.readAll();
+
+
+    QTextDocument noteDoc;
+
+    noteDoc.setHtml(QString::fromUtf8(lines));
+
+
+    if (noteDoc.characterCount() > 1) {
+        result.addData("hasContent", true);
+
+        result = skrdata->treeHub()->addChildTreeItem(projectId, parentFolderId, "TEXT");
+        IFKO(result) {
+            result = SKRResult(SKRResult::Critical, this, "note_creation");
+            return result;
+        }
+        int noteId = result.getData("treeItemId", -2).toInt();
+
+
+        IFOKDO(result, skrdata->treeHub()->setIndent(projectId, noteId, indent));
+        IFOKDO(result, skrdata->treeHub()->setTitle(projectId, noteId, name));
+        IFOKDO(result, skrdata->treeHub()->setType(projectId, noteId, "TEXT"));
+
+
+        IFOKDO(result, skrdata->treeHub()->setPrimaryContent(projectId, noteId, noteDoc.toHtml()));
+    }
+    else {
+        result.addData("hasContent", false);
+    }
+    return result;
+}
+
+// -----------------------------------------------------------------------------------------------
+
 SKRResult SKRPlumeCreatorImporter::createTagsFromAttend(int                     projectId,
-                                                        int                     noteId,
+                                                        int                     attendId,
                                                         const QXmlStreamReader& xml,
                                                         const QString         & attributeName,
                                                         const QStringList     & values)
@@ -713,11 +888,16 @@ SKRResult SKRPlumeCreatorImporter::createTagsFromAttend(int                     
     IFOK(result) {
         result = skrdata->tagHub()->addTag(projectId, values.at(index));
         IFOK(result) {
+            int tagId = result.getData("tagId", -2).toInt();
+
             result = skrdata->tagHub()->setTagRelationship(projectId,
-                                                           noteId,
-                                                           result.getData("tagId", -2).toInt());
+                                                           attendId,
+                                                           tagId);
+
+            skrdata->tagHub()->setTagRandomColors(projectId, tagId);
         }
     }
+
 
     return result;
 }

@@ -976,7 +976,7 @@ RelationshipPanelForm {
         keys: ["application/skribisto-tree-item"]
         onEntered: function(drag) {
 
-            if(drag.source.projectId === root.projectId){
+            if(drag.source.projectId !== root.projectId){
                 drag.accepted = false
                 return
             }
@@ -998,9 +998,6 @@ RelationshipPanelForm {
             }
             dropIndicator.visible = false
         }
-
-
-
     }
 
 

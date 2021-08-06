@@ -48,7 +48,7 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKR
             info.setFile(fileName.toString().replace("qrc:", ":"));
         }
         else {
-            info.setFile(fileName.toLocalFile());
+            info.setFile(fileName.path());
         }
 
         if (!info.exists()) {

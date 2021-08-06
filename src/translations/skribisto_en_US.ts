@@ -1942,6 +1942,25 @@
     </message>
 </context>
 <context>
+    <name>SKRPlumeCreatorImporter</name>
+    <message>
+        <source>Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attendance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (content)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SKRRootItem</name>
     <message>
         <source>No translation found.</source>
@@ -2991,7 +3010,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Loading a projects</source>
+        <source>Loading a project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

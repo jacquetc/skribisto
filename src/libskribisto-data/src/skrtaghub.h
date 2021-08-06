@@ -93,6 +93,9 @@ public:
                                                 int treeItemId,
                                                 int tagId);
 
+    Q_INVOKABLE SKRResult setTagRandomColors(int projectId,
+                                             int tagId);
+
 signals:
 
     void errorSent(const SKRResult& result) const;

@@ -52,7 +52,7 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
             fileNameString = ":" + fileNameString;
         }
         else {
-            fileNameString = fileName.toLocalFile();
+            fileNameString = fileName.path();
         }
 
         QFile file(fileNameString);
