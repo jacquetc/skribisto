@@ -5,7 +5,7 @@ import ".."
 
 ToolButton {
     id: control
-    icon.color: control.action ? (control.action.icon.color === "transparent"?
+    icon.color: control.action ? (control.action.icon.color == "transparent"?
                                       (enabled ? control.action.icon.color: SkrTheme.buttonIconDisabled) :
                                       (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled)) :
                                         (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled)
@@ -36,7 +36,7 @@ ToolButton {
     display: AbstractButton.IconOnly
 
     SkrToolTip {
-        text: control.tip ? control.tip + priv.finalShortcutText : control.text + priv.finalShortcutText
+        text: (control.tip ? control.tip : control.text) + priv.finalShortcutText
         visible: control.hovered && text.length !== 0
     }
 

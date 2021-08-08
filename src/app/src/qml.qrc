@@ -107,5 +107,6 @@
         <file>qml/Commons/RelationshipPanelForm.ui.qml</file>
         <file>qml/Items/SkrBusyIndicator.qml</file>
         <file>qml/Commons/OutlineWritingZone.qml</file>
+        <file>qml/Items/SkrFlickable.qml</file>
     </qresource>
 </RCC>

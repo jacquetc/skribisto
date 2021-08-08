@@ -17,6 +17,7 @@ ApplicationWindow {
     objectName: "rootWindow"
     minimumHeight: 500
     minimumWidth: 600
+    visible: true
 
     color: SkrTheme.pageBackground
 

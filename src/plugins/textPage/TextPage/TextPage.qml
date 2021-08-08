@@ -572,6 +572,47 @@ TextPageForm {
     writingZone.highlighter.otherHighlightColor_2: SkrTheme.otherHighlight_2
     writingZone.highlighter.otherHighlightColor_3: SkrTheme.otherHighlight_3
 
+    //------------------------------------------------------------------------
+    //----- scrollarea------------------------------------------------------------
+    //------------------------------------------------------------------------
+
+    Binding{
+        target: leftScrollFlickable
+        property: "contentY"
+        value: writingZone.flickable.contentY
+        restoreMode: Binding.RestoreBindingOrValue
+            }
+
+
+    Binding{
+        target: writingZone.flickable
+        property: "contentY"
+        value: leftScrollFlickable.contentY
+        restoreMode: Binding.RestoreBindingOrValue
+        delayed: true
+    }
+
+
+    //leftScrollWheel.grabPermissions: PointerHandler.TakeOverForbidden
+
+
+    //---------------------------
+
+    Binding{
+        target: rightScrollFlickable
+        property: "contentY"
+        value: writingZone.flickable.contentY
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
+    Binding{
+        target: writingZone.flickable
+        property: "contentY"
+        value: rightScrollFlickable.contentY
+        restoreMode: Binding.RestoreBindingOrValue
+        delayed: true
+    }
 
     //------------------------------------------------------------------------
     //-----minimap------------------------------------------------------------
@@ -580,6 +621,30 @@ TextPageForm {
     minimapLoader.visible: minimapVisibility
     minimapLoader.active: minimapVisibility
     minimapLoader.sourceComponent: minimapComponent
+
+    QtObject{
+    id: minimapPriv
+        property bool minimapBindingDelayed: true
+    }
+
+    writingZone.onWidthChanged: {
+        minimapPriv.minimapBindingDelayed = false
+
+        if(minimapBindingDelayedTimer.running){
+            minimapBindingDelayedTimer.stop()
+        }
+
+        minimapBindingDelayedTimer.start()
+    }
+
+    Timer{
+        id: minimapBindingDelayedTimer
+        interval: 50
+        onTriggered: {
+            minimapPriv.minimapBindingDelayed = true
+
+        }
+    }
 
     Component{
         id: minimapComponent
@@ -606,6 +671,7 @@ TextPageForm {
             Binding on sourceViewWidth {
                 value: writingZone.textArea.width
                 restoreMode: Binding.RestoreBindingOrValue
+                delayed: minimapPriv.minimapBindingDelayed
             }
 
 
@@ -623,6 +689,9 @@ TextPageForm {
                 property: "contentY"
                 value: minimap.value
                 restoreMode: Binding.RestoreBindingOrValue
+                when: !(leftScrollFlickable.flicking || leftScrollFlickable.dragging ||
+                        writingZone.flicking || writingZone.dragging ||
+                        rightScrollFlickable.flicking || rightScrollFlickable.dragging)
                 delayed: true
             }
             dragHandler.onActiveChanged: {

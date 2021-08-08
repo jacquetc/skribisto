@@ -18,6 +18,8 @@ SkrBasePage {
     property alias viewButtons: viewButtons
     property alias pageMenuToolButton: pageMenuToolButton
     property alias titleLabel: titleLabel
+    property alias leftScrollFlickable: leftScrollFlickable
+    property alias rightScrollFlickable: rightScrollFlickable
 
 
     property alias countLabel: countLabel
@@ -97,35 +99,15 @@ SkrBasePage {
 
                     z: 1
 
-                    //                    RowLayout {
-                    //                        spacing: 0
-                    //                        anchors.fill: parent
 
-                    //                        SkrPane {
-                    //                            id: leftPane
-                    //                            Layout.fillHeight: true
-                    //                            Layout.fillWidth: true
+                    SkrFlickable{
+                        id: leftScrollFlickable
+                        anchors.fill: parent
+                        flickableDirection: Qt.Vertical
+                        contentHeight: writingZone.flickable.contentHeight
+                        contentWidth: width
+                    }
 
-                    //                            MultiPointTouchArea {
-                    //                                id: leftPaneScrollTouchArea
-                    //                                z: 1
-                    //                                anchors.fill: parent
-                    //                                mouseEnabled: false
-                    //                                maximumTouchPoints: 1
-                    //                                touchPoints: [
-                    //                                    TouchPoint {
-                    //                                        id: leftTouch1
-                    //                                    }
-                    //                                ]
-                    //                            }
-
-                    //                            MouseArea {
-                    //                                id: leftPaneScrollMouseArea
-                    //                                z: 0
-                    //                                anchors.fill: parent
-                    //                            }
-                    //                        }
-                    //                    }
                 }
 
                 Item {
@@ -171,6 +153,23 @@ SkrBasePage {
 
                     //Layout.maximumWidth: 300
                     z: 1
+
+                    Flickable{
+                        id: rightScrollFlickable
+                        anchors.fill: parent
+                        anchors.rightMargin: rightBaseLayout.width
+                        clip: true
+                        flickableDirection: Flickable.VerticalFlick
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        contentHeight: writingZone.flickable.contentHeight
+                        contentWidth: width
+
+                        maximumFlickVelocity: 200
+                        flickDeceleration: 0
+                        interactive: true
+
+                    }
 
                     RowLayout {
                         id: rightBaseLayout

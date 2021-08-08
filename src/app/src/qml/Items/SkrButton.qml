@@ -5,10 +5,10 @@ import ".."
 
 Button {
     id: control
-    icon.color: control.action === null ? (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled) :
-                                          (control.action.icon.color === "transparent" ?
-                                               (enabled ? control.action.icon.color : SkrTheme.buttonIconDisabled) :
-                                               (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled))
+    icon.color: control.action ? (control.action.icon.color == "transparent"?
+                                      (enabled ? control.action.icon.color: SkrTheme.buttonIconDisabled) :
+                                      (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled)) :
+                                        (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled)
 
     Material.background: SkrTheme.buttonBackground
     Material.foreground: SkrTheme.buttonForeground
@@ -32,8 +32,17 @@ Button {
     hoverEnabled: true
 
     SkrToolTip {
-        text: control.tip ? control.tip : control.text
+        text: (control.tip ? control.tip : control.text) + priv.finalShortcutText
         visible: control.hovered && text.length !== 0
     }
+
+
+
+    QtObject{
+        id: priv
+        property string finalShortcutText: shortcutText ? " (" + shortcutText +")" : ""
+    }
+
+    property string shortcutText:  action ? (action.shortcutText ? action.shortcutText : "") : ""
 
 }
