@@ -20,15 +20,9 @@
 ***************************************************************************/
 #include "textpage.h"
 #include "skrdata.h"
-#include "minimapcanvas.h"
 
 TextPage::TextPage(QObject *parent) : QObject(parent)
 {
-    qmlRegisterType<MinimapCanvas>("eu.skribisto.minimapcanvas",
-                                   1,
-                                   0,
-                                   "MinimapCanvas");
-
     m_wordMeter = new SKRWordMeter(this);
 
     connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, skrdata->statHub(),

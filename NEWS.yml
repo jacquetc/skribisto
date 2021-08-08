@@ -71,4 +71,23 @@ Description:
 - "Section: add Section page type"
 - "Parameters: add a way to add custom parameters to new pages"
 
-
+Version: 1.9.28
+Date: 2021-08-09
+Type: stable
+Description:
+- "Fix Windows support"
+- "Save: add a save button at the top of the window"
+- "Shortcuts: display shortcuts in tips"
+- "Minimap: fix wobbling of minimap width and text area width"
+- "Navigation: disable animation for side lists"
+- "Navigation: better navigation with cleaner code and more usable"
+- "Navigation: fix keyboard navigation"
+- "Navigation: add visual clue when Cut and Copy items"
+- "Navigation: set a smoother transition between lists"
+- "Navigation: fix clicking in side popups doing nothing"
+- "Plume Creator importer: fix completely importer with new approach"
+- "Drag Drop: switch to a new way to drag drop in and from the navigation list"
+- "Notes: fix setting a note folder in Project page"
+- "Section : fix section icons not displaying correctly"
+- "Tags: forbid clicks passing through a color square"
+- "View: fix lack of drop visual clue"

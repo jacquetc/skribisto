@@ -9,6 +9,7 @@ FocusScope {
     property int scrollBarVerticalPolicy: ScrollBar.AlwaysOff
     property alias goUpToolButton: goUpToolButton
     property alias selectToolButton: selectToolButton
+    property alias selectAllToolButton: selectAllToolButton
     property alias addToolButton: addToolButton
     property alias treeMenuToolButton: treeMenuToolButton
     property alias navigationListStackView: navigationListStackView
@@ -47,16 +48,20 @@ FocusScope {
                     }
 
                     SkrToolButton {
+                        id: selectAllToolButton
+                        flat: true
+                        display: AbstractButton.IconOnly
+                    }
+
+                    SkrToolButton {
                         id: selectToolButton
                         flat: true
-                        text: qsTr("Select")
                         display: AbstractButton.IconOnly
                     }
 
                     SkrToolButton {
                         id: addToolButton
                         flat: true
-                        text: qsTr("Add a document")
                         display: AbstractButton.IconOnly
                     }
 
@@ -75,7 +80,6 @@ FocusScope {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                initialItem: stackViewComponent
             }
         }
     }

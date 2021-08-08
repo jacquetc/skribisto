@@ -117,7 +117,7 @@ NewProjectPageForm {
             var result = skrData.treeHub().addChildTreeItem(projectId, 0, "TEXT")
             //console.log("new project : add sheet : ", result.isSuccess())
             var treeItemId = skrData.treeHub().getLastAddedId()
-            skrData.treeHub().setTitle(projectId, treeItemId, qsTr("Part ") + i)
+            skrData.treeHub().setTitle(projectId, treeItemId, qsTr("Part %1").arg(i))
 
             //            if(sheetId === 1){
             //                firstSheetId = sheetId

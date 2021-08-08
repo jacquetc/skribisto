@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5.0)
 
 # Populate a CMake variable with the sources
 
-project(navigationlist LANGUAGES CXX VERSION ${VERSION})
+project(flickable LANGUAGES CXX VERSION ${VERSION})
 
 if(ANDROID)
     set(SKR_PRINT_SUPPORT false)
@@ -93,12 +93,12 @@ endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 # Tell CMake to create the executable
 
 if(ANDROID AND NOT SKR_TEST_APP)
-    add_library(navigationlist SHARED ${app_SRCS} ${RESOURCES} ${QRC} )
+    add_library(flickable SHARED ${app_SRCS} ${RESOURCES} ${QRC} )
 else()
-    add_executable(navigationlist ${app_SRCS} ${RESOURCES} ${QRC} )
+    add_executable(flickable ${app_SRCS} ${RESOURCES} ${QRC} )
 endif()
 
-target_compile_definitions(navigationlist
+target_compile_definitions(flickable
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
 if(${SKR_PRINT_SUPPORT})
@@ -108,14 +108,14 @@ else()
 endif()
 
 if(SKR_TEST_APP)
-target_link_libraries(navigationlist PRIVATE skribisto skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2
+target_link_libraries(flickable PRIVATE skribisto skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2
     ${PRINT} ${HUNSPELL_LIBRARIES})
 endif()
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/" "${CMAKE_SOURCE_DIR}/src/app/src/")
-target_include_directories(navigationlist SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
-target_include_directories(navigationlist SYSTEM PUBLIC "${CMAKE_SOURCE_DIR}/src/app/src/")
+target_include_directories(flickable SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
+target_include_directories(flickable SYSTEM PUBLIC "${CMAKE_SOURCE_DIR}/src/app/src/")
 
-install(TARGETS navigationlist RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS flickable RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 #set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/data/Info.plist)

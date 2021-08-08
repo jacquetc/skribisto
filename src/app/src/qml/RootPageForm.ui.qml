@@ -83,6 +83,15 @@ Item {
 
             }
 
+            SkrToolButton {
+                id: saveButton
+                action: saveAction
+
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 30
+
+            }
+
             Breadcrumb {
                 id: breadcrumb
                 Layout.preferredHeight: 30

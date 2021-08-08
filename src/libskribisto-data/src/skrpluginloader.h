@@ -99,7 +99,7 @@ public:
                                          "fileName").toString(), obj);
 
                     if (!m_pluginsListHash.contains(plugin.name)) {
-                        qDebug() << "plugin found : " << plugin.name;
+                        qDebug() << "plugin found : " << plugin.name << "at" << path;
                         m_pluginsListHash.insert(plugin.name, plugin);
                     }
                 }

@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 import QtQuick.Layouts 1.15
@@ -14,12 +15,11 @@ FocusScope {
     property alias scrollView: scrollView
     property alias textArea: textArea
     property alias flickable: textAreaFlickable
+    readonly property bool flicking: textAreaFlickable.flicking || leftScrollFlickable.flicking || rightScrollFlickable.flicking
+    readonly property bool dragging: textAreaFlickable.dragging || leftScrollFlickable.dragging || rightScrollFlickable.dragging
     property alias internalScrollBar: internalScrollBar
     property int scrollBarVerticalPolicy: ScrollBar.AsNeeded
     property alias leftScrollItem: leftScrollItem
-    property alias leftTouch1: leftTouch1
-    property alias leftScrollTouchArea: leftScrollTouchArea
-    property alias rightScrollTouchArea: rightScrollTouchArea
     property alias rightScrollItem: rightScrollItem
     property alias placeholderText: textArea.placeholderText
 
@@ -50,17 +50,35 @@ FocusScope {
                     id: leftScrollItem
                     Layout.fillHeight: true
                     Layout.fillWidth: true
-                    MultiPointTouchArea {
-                        id: leftScrollTouchArea
-                        z: 1
+
+
+                    Flickable{
+                        id: leftScrollFlickable
                         anchors.fill: parent
-                        mouseEnabled: false
-                        maximumTouchPoints: 1
-                        touchPoints: [
-                            TouchPoint {
-                                id: leftTouch1
-                            }
-                        ]
+                        clip: true
+                        flickableDirection: Flickable.VerticalFlick
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        contentHeight: textAreaFlickable.contentHeight
+                        contentWidth: width
+
+                        maximumFlickVelocity: 200
+                        flickDeceleration: 0
+                        Binding{
+                            target: leftScrollFlickable
+                            property: "contentY"
+                            value: textAreaFlickable.contentY
+                            restoreMode: Binding.RestoreBindingOrValue
+                        }
+
+
+                        Binding{
+                            target: textAreaFlickable
+                            property: "contentY"
+                            value: leftScrollFlickable.contentY
+                            restoreMode: Binding.RestoreBindingOrValue
+                            delayed: true
+                        }
                     }
 
 
@@ -85,6 +103,8 @@ FocusScope {
                         flickableDirection: Flickable.VerticalFlick
                         boundsBehavior: Flickable.StopAtBounds
                         interactive: true
+                        maximumFlickVelocity: 200
+                        flickDeceleration: 0
                         //clip: true
                         ScrollBar.vertical: ScrollBar {
                             id: internalScrollBar
@@ -116,17 +136,34 @@ FocusScope {
                     id: rightScrollItem
                     Layout.fillHeight: true
                     Layout.fillWidth: true
-                    MultiPointTouchArea {
-                        id: rightScrollTouchArea
-                        z: 1
+
+                    Flickable{
+                        id: rightScrollFlickable
                         anchors.fill: parent
-                        mouseEnabled: false
-                        maximumTouchPoints: 1
-                        touchPoints: [
-                            TouchPoint {
-                                id: rightTouch1
-                            }
-                        ]
+                        clip: true
+                        flickableDirection: Flickable.VerticalFlick
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        contentHeight: textAreaFlickable.contentHeight
+                        contentWidth: width
+                        maximumFlickVelocity: 200
+                        flickDeceleration: 0
+
+                        Binding{
+                            target: rightScrollFlickable
+                            property: "contentY"
+                            value: textAreaFlickable.contentY
+                            restoreMode: Binding.RestoreBindingOrValue
+                        }
+
+
+                        Binding{
+                            target: textAreaFlickable
+                            property: "contentY"
+                            value: rightScrollFlickable.contentY
+                            restoreMode: Binding.RestoreBindingOrValue
+                            delayed: true
+                        }
                     }
                 }
             }

@@ -444,6 +444,7 @@ ListView {
                     }
 
                     text: "Open document"
+                    property string shortcutText: ""
                     onTriggered: {
                         //console.log("model.openedProjectId", openedProjectId)
                         //console.log("model.projectId", model.projectId)
@@ -455,6 +456,7 @@ ListView {
                 Action {
                     id: openDocumentInAnotherViewAction
                     //shortcut: "Alt+Return"
+                    property string shortcutText: ""
                     enabled: {
                         if (root.focus === true
                                 && titleTextField.visible === false

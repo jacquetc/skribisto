@@ -31,16 +31,15 @@ SKRSearchTreeListProxyModel::SKRSearchTreeListProxyModel()
     connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this,
             [this](int
                    projectId) {
-        this->clearHistory(projectId);
     });
     connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this, [this]() {
         this->invalidateFilter();
     });
-    connect(skrdata->treeHub(),    &SKRTreeHub::sortOrderChanged, this, [this]() {
-        sort(0);
-        emit sortOtherProxyModelsCalled();
-        this->invalidateFilter();
-    });
+//    connect(skrdata->treeHub(),    &SKRTreeHub::sortOrderChanged, this, [this]() {
+//        sort(0);
+//        emit sortOtherProxyModelsCalled();
+//        this->invalidateFilter();
+//    });
 
     connect(this->sourceModel(), &SKRTreeListModel::dataChanged, this,
             [this](const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles) {
@@ -1418,8 +1417,8 @@ void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
 
     sort(0);
     emit sortOtherProxyModelsCalled();
-
-    this->invalidate();
+    this->invalidateFilter();
+    //this->invalidate();
 }
 
 // --------------------------------------------------------------

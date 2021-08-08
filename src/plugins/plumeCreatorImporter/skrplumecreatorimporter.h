@@ -23,7 +23,6 @@ private:
 
     //    QSqlDatabase copySQLiteDbToMemory(QSqlDatabase sourceSqlDb, int
     // projectId, SKRResult &result);
-    SKRResult transformParentsToFolder(int projectId);
 
     SKRResult createPapersAndAssociations(int                     projectId,
                                           int                     indent,
@@ -39,18 +38,32 @@ private:
                          int            parentFolderId);
 
     SKRResult createTagsFromAttend(int                     projectId,
-                                   int                     noteId,
+                                   int                     attendId,
                                    const QXmlStreamReader& xml,
                                    const QString         & attributeName,
                                    const QStringList     & values);
 
-    SKRResult readXMLRecursivelyAndCreatePaper(int               projectId,
-                                               int               indent,
-                                               QXmlStreamReader *xml,
-                                               const QString   & tempDirPath,
-                                               int               textFolderId,
-                                               int               noteFolderId);
-
     QHash<int, int>m_attendanceConversionHash;
+    SKRResult createSection(int            projectId,
+                            int            indent,
+                            int            textFolderId,
+                            const QString& section_type);
+
+    SKRResult createFolderAndAssociations(int                     projectId,
+                                          int                     indent,
+                                          const QXmlStreamReader& xml,
+                                          const QString         & tempDirPath,
+                                          int                     textFolderId,
+                                          int                     noteFolderId);
+    SKRResult createAttendFolder(int                     projectId,
+                                 int                     indent,
+                                 const QXmlStreamReader& xml,
+                                 const QString         & tempDirPath,
+                                 int                     attendFolderId);
+    SKRResult createAttendObject(int                     projectId,
+                                 int                     indent,
+                                 const QXmlStreamReader& xml,
+                                 const QString         & tempDirPath,
+                                 int                     attendFolderId);
 };
 #endif // SKRPLUMECREATORIMPORTER_H

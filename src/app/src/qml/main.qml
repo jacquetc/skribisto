@@ -17,6 +17,7 @@ ApplicationWindow {
     objectName: "rootWindow"
     minimumHeight: 500
     minimumWidth: 600
+    visible: true
 
     color: SkrTheme.pageBackground
 
@@ -267,6 +268,7 @@ ApplicationWindow {
     Action {
 
         id: fullscreenAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("fullscreen")
         text: skrShortcutManager.description("fullscreen")
         icon {
             source: "qrc:///icons/backup/view-fullscreen.svg"
@@ -398,6 +400,7 @@ ApplicationWindow {
     Action {
 
         id: minimapAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("show-minimap-scrollbar")
         text: skrShortcutManager.description("show-minimap-scrollbar")
         icon {
             source: "qrc:///icons/backup/view-preview.svg"
@@ -413,7 +416,7 @@ ApplicationWindow {
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("show-minimap-scrollbar")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: minimapAction.trigger()
     }
 
@@ -425,6 +428,7 @@ ApplicationWindow {
     Action {
 
         id: centerTextCursorAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("center-vert-text-cursor")
         text: skrShortcutManager.description("center-vert-text-cursor")
         icon {
             source: "qrc:///icons/backup/format-align-vertical-center.svg"
@@ -440,7 +444,7 @@ ApplicationWindow {
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("center-vert-text-cursor")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: centerTextCursorAction.trigger()
     }
 
@@ -472,6 +476,7 @@ ApplicationWindow {
     Action {
 
         id: showUserManualAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("user-manual")
         text: skrShortcutManager.description("user-manual")
         icon {
             source: "qrc:///icons/backup/system-help.svg"
@@ -487,7 +492,7 @@ ApplicationWindow {
     }
     Shortcut {
         sequences: skrShortcutManager.shortcuts("user-manual")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: showUserManualAction.trigger()
     }
 
@@ -556,6 +561,7 @@ ApplicationWindow {
     Action {
 
         id: newProjectAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("new-project")
         text: skrShortcutManager.description("new-project")
         icon {
             source: "qrc:///icons/backup/document-new.svg"
@@ -580,6 +586,7 @@ ApplicationWindow {
     Action {
 
         id: checkSpellingAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("check-spelling")
         text: skrShortcutManager.description("check-spelling")
         icon {
             source: "qrc:///icons/backup/tools-check-spelling.svg"
@@ -598,7 +605,7 @@ ApplicationWindow {
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("check-spelling")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: checkSpellingAction.trigger()
     }
 
@@ -608,6 +615,7 @@ ApplicationWindow {
     Action {
 
         id: openProjectAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("open-project")
         text: skrShortcutManager.description("open-project")
         icon {
             source: "qrc:///icons/backup/document-open.svg"
@@ -621,7 +629,7 @@ ApplicationWindow {
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("open-project")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: openProjectAction.trigger()
     }
 
@@ -670,6 +678,7 @@ ApplicationWindow {
     Action {
 
         id: saveAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("save-project")
         text: skrShortcutManager.description("save-project")
         icon {
             source: "qrc:///icons/backup/document-save.svg"
@@ -688,7 +697,7 @@ ApplicationWindow {
     }
     Shortcut {
         sequences: skrShortcutManager.shortcuts("save-project")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: saveAction.trigger()
     }
 
@@ -729,6 +738,7 @@ ApplicationWindow {
     Action {
 
         id: saveAllAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("save-all-project")
         text: skrShortcutManager.description("save-all-project")
         icon {
             source: "qrc:///icons/backup/document-save-all.svg"
@@ -773,6 +783,7 @@ ApplicationWindow {
     Action {
 
         id: saveAsAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("save-as-project")
         text: skrShortcutManager.description("save-as-project")
         icon {
             source: "qrc:///icons/backup/document-save-as.svg"
@@ -801,7 +812,7 @@ ApplicationWindow {
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("save-as-project")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: saveAsAction.trigger()
     }
 
@@ -988,7 +999,7 @@ ApplicationWindow {
     SkrPopup {
         id: loadingPopup
         parent: Overlay.overlay
-        property int timeoutInterval: 5000
+        property int timeoutInterval: 3000
         signal timeout
         anchors.centerIn: Overlay.overlay
         height: 200
@@ -1156,6 +1167,7 @@ ApplicationWindow {
     //------------------------------------------------------------
     Action {
         id: showSettingsAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("settings")
         text: skrShortcutManager.description("settings")
         icon {
             source: "qrc:///icons/backup/configure.svg"
@@ -1178,6 +1190,7 @@ ApplicationWindow {
     //------------------------------------------------------------
     Action {
         id: printAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("print")
         text: skrShortcutManager.description("print")
         icon {
             source: "qrc:///icons/backup/document-print.svg"
@@ -1390,6 +1403,7 @@ ApplicationWindow {
 
     Action {
         id: quitAction
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("quit")
         text: skrShortcutManager.description("quit")
         icon {
             source: "qrc:///icons/backup/window-close.svg"
@@ -1415,6 +1429,7 @@ ApplicationWindow {
                     saveOrNotBeforeQuittingDialog.projectName = skrData.projectHub(
                                 ).getProjectName(projectId)
                     saveOrNotBeforeQuittingDialog.open()
+                    saveOrNotBeforeQuittingDialog.forceActiveFocus()
                     //saveAsBeforeQuittingFileDialog.currentFile = LabPlatform.StandardPaths.writableLocation(LabPlatform.StandardPaths.DocumentsLocation)
                 }
             }
@@ -1573,10 +1588,13 @@ ApplicationWindow {
         lastFocusedItem = item
     }
 
+
+    //-------------------------------------------------------------------
+
     Action {
         id: cutTextAction
         text: skrShortcutManager.description("cut")
-        shortcut: StandardKey.Cut
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("cut")
         icon {
             source: "qrc:///icons/backup/edit-cut.svg"
         }
@@ -1588,14 +1606,17 @@ ApplicationWindow {
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("cut")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: cutTextAction.trigger()
     }
+
+
+    //-------------------------------------------------------------------
 
     Action {
         id: copyTextAction
         text: skrShortcutManager.description("copy")
-        shortcut: StandardKey.Copy
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("copy")
         icon {
             source: "qrc:///icons/backup/edit-copy.svg"
         }
@@ -1607,13 +1628,17 @@ ApplicationWindow {
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("copy")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: copyTextAction.trigger()
     }
+
+
+    //-------------------------------------------------------------------
 
     Action {
         id: pasteTextAction
         text: skrShortcutManager.description("paste")
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("paste")
         icon {
             source: "qrc:///icons/backup/edit-paste.svg"
         }
@@ -1625,21 +1650,23 @@ ApplicationWindow {
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("paste")
-        context: Qt.ApplicationShortcut
+        context: Qt.WindowShortcut
         onActivated: pastetextAction.trigger()
     }
+
+    //-------------------------------------------------------------------
 
     Action {
         property bool preventTrigger: false
         property bool actionTriggeredVolontarily: false
 
         id: italicAction
-        text: qsTr("Italic")
+        text: skrShortcutManager.description("italic")
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("italic")
         icon {
             source: "qrc:///icons/backup/format-text-italic.svg"
         }
 
-        shortcut: StandardKey.Italic
         checkable: true
 
         onCheckedChanged: {
@@ -1649,22 +1676,25 @@ ApplicationWindow {
             skrEditMenuSignalHub.italicActionTriggered(italicAction.checked)
         }
     }
+    Shortcut{
+        sequence: skrShortcutManager.shortcuts("italic")
+        context: Qt.WindowShortcut
+        onActivated: italicAction.trigger()
+    }
 
-    //    Shortcut{
-    //        sequence: StandardKey.Italic
-    //        context: Qt.ApplicationShortcut
-    //        onActivated: italicAction.trigger()
-    //    }
+
+    //-------------------------------------------------------------------
+
     Action {
         property bool preventTrigger: false
 
         id: boldAction
-        text: qsTr("Bold")
+        text: skrShortcutManager.description("bold")
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("bold")
         icon {
             source: "qrc:///icons/backup/format-text-bold.svg"
         }
 
-        shortcut: StandardKey.Bold
         checkable: true
 
         onCheckedChanged: {
@@ -1676,21 +1706,25 @@ ApplicationWindow {
         }
     }
 
-    //    Shortcut{
-    //        sequence: StandardKey.Bold
-    //        context: Qt.ApplicationShortcut
-    //        onActivated: boldAction.trigger()
-    //    }
+    Shortcut{
+        sequence: skrShortcutManager.shortcuts("bold")
+        context: Qt.WindowShortcut
+        onActivated: boldAction.trigger()
+    }
+
+
+    //-------------------------------------------------------------------
+
     Action {
         property bool preventTrigger: false
 
         id: strikeAction
-        text: qsTr("Strike")
+        text: skrShortcutManager.description("strike")
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("strike")
         icon {
             source: "qrc:///icons/backup/format-text-strikethrough.svg"
         }
 
-        //shortcut: StandardKey
         checkable: true
 
         onCheckedChanged: {
@@ -1701,21 +1735,26 @@ ApplicationWindow {
         }
     }
 
-    //        Shortcut{
-    //            sequence:
-    //            context: Qt.ApplicationShortcut
-    //            onActivated: strikeAction.trigger()
-    //        }
+    Shortcut{
+        sequence: skrShortcutManager.shortcuts("strike")
+        context: Qt.WindowShortcut
+        onActivated: strikeAction.trigger()
+    }
+
+
+
+    //-------------------------------------------------------------------
+
     Action {
         property bool preventTrigger: false
 
         id: underlineAction
-        text: qsTr("Underline")
+        text: skrShortcutManager.description("underline")
+        property string shortcutText: skrShortcutManager.nativeShortcutsToString("underline")
         icon {
             source: "qrc:///icons/backup/format-text-underline.svg"
         }
 
-        shortcut: StandardKey.Underline
         checkable: true
 
         onCheckedChanged: {
@@ -1726,11 +1765,13 @@ ApplicationWindow {
                         underlineAction.checked)
         }
     }
-    //    Shortcut{
-    //        sequence: StandardKey.Underline
-    //        context: Qt.ApplicationShortcut
-    //        onActivated: underlineAction.trigger()
-    //    }
+    Shortcut{
+        sequence: skrShortcutManager.shortcuts("underline")
+        context: Qt.WindowShortcut
+        onActivated: underlineAction.trigger()
+    }
+
+
     //    Keys.onReleased: {
     //        if(event.key === Qt.Key_Alt){
     //            console.log("alt")

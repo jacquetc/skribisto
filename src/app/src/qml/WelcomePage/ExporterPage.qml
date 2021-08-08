@@ -75,7 +75,7 @@ ExporterPageForm {
         //shortcut: "Ctrl+Shift+Del"
         icon.source: selectAllTreeItemsAction.checked ? "qrc:///icons/backup/edit-select-none.svg" : "qrc:///icons/backup/edit-select-all.svg"
         checkable: true
-        onTriggered: {
+        onCheckedChanged: {
 
             if(selectAllTreeItemsAction.checked){
                 treeProxyModel.checkAll()

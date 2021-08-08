@@ -922,6 +922,28 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>New item&apos;s parameters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NavigationListForm.ui</name>
+    <message>
+        <source>Navigation menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>NavigationListView</name>
+    <message>
         <source>Projects</source>
         <translation type="unfinished"></translation>
     </message>
@@ -950,18 +972,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a new tab</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open document in a window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>This project is a backup</source>
         <translation type="unfinished"></translation>
     </message>
@@ -986,15 +996,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open in new window</source>
+        <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Set as active project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1011,6 +1017,10 @@
     </message>
     <message>
         <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1038,22 +1048,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>New item&apos;s parameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>NavigationListForm.ui</name>
-    <message>
-        <source>Add a document</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigation menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select</source>
+        <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1125,7 +1120,7 @@
 <context>
     <name>NewProjectPage</name>
     <message>
-        <source>Part </source>
+        <source>Part %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1769,7 +1764,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Rename an item</source>
+        <source>Rename a linked item</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1947,6 +1942,25 @@
     </message>
 </context>
 <context>
+    <name>SKRPlumeCreatorImporter</name>
+    <message>
+        <source>Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attendance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (content)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SKRRootItem</name>
     <message>
         <source>No translation found.</source>
@@ -2073,6 +2087,22 @@
     <message>
         <source>Alt+M</source>
         <comment>center-vert-text-cursor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Strike</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2924,10 +2954,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Loading a project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Back up</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2968,22 +2994,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Italic</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bold</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Strike</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Underline</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>First steps</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2997,6 +3007,10 @@
     </message>
     <message>
         <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Loading a project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -794,7 +794,6 @@ RelationshipPanelForm {
                 action: Action {
                     id: renameAction
                     text: qsTr("Rename")
-                    shortcut: "F2"
                     icon {
                         source: "qrc:///icons/backup/edit-rename.svg"
                     }
@@ -850,7 +849,7 @@ RelationshipPanelForm {
                 property int projectId: model.projectId
                 property int treeItemId: model.treeItemId
                 property string treeItemTitle: model.title
-                title: qsTr("Rename an item")
+                title: qsTr("Rename a linked item")
                 contentItem: SkrTextField {
                     id: inner_renameTextField
                     text: renameDialog.treeItemTitle
@@ -975,7 +974,17 @@ RelationshipPanelForm {
 
 
         keys: ["application/skribisto-tree-item"]
-        onEntered: {
+        onEntered: function(drag) {
+
+            if(drag.source.projectId !== root.projectId){
+                drag.accepted = false
+                return
+            }
+            if(drag.source.treeItemId === root.treeItemId){
+                drag.accepted = false
+                return
+            }
+
             dropIndicator.visible = true
         }
         onExited: {
@@ -983,15 +992,12 @@ RelationshipPanelForm {
 
         }
 
-        onDropped: {
+        onDropped: function(drop) {
             if(drop.proposedAction === Qt.MoveAction){
                 skrData.treeHub().setTreeRelationship(drag.source.projectId, drag.source.treeItemId, root.treeItemId)
             }
             dropIndicator.visible = false
         }
-
-
-
     }
 
 

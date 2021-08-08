@@ -65,6 +65,8 @@ public:
                                                    const QStringList& userShortcuts);
 
     Q_INVOKABLE QStringList       getNativeFormatOfDefaultShortcuts(const QString& name) const;
+    Q_INVOKABLE QStringList nativeShortcuts(const QString &name) const;
+    Q_INVOKABLE QString nativeShortcutsToString(const QString &name) const;
 
 public slots:
 

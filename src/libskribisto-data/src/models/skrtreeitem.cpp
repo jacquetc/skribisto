@@ -142,6 +142,10 @@ QVariant SKRTreeItem::data(int role)
             m_data.insert(role, m_treeHub->getUpdateDate(projectId, treeItemId));
             break;
 
+        case Roles::CutCopyRole:
+            m_data.insert(role, m_treeHub->isCutCopy(projectId, treeItemId));
+            break;
+
         case Roles::CharCountRole:
             m_data.insert(role,
                           m_propertyHub->getProperty(projectId, treeItemId,

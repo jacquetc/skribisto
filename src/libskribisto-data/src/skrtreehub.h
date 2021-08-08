@@ -49,15 +49,19 @@ public:
         this->type        = type;
         this->projectId   = projectId;
         this->treeItemIds = treeItemIds;
+        this->hasRunOnce  = false;
     }
 
     CutCopy() {
-        this->type = Type::None;
+        this->type       = Type::None;
+        this->projectId  = -2;
+        this->hasRunOnce = false;
     }
 
     CutCopy::Type type;
     int           projectId;
     QList<int>    treeItemIds;
+    bool          hasRunOnce;
 };
 Q_DECLARE_METATYPE(CutCopy)
 
@@ -93,7 +97,7 @@ public:
     SKRResult             setIndent(int projectId,
                                     int treeItemId,
                                     int newIndent);
-    int                   getIndent(int projectId,
+    Q_INVOKABLE int       getIndent(int projectId,
                                     int treeItemId) const;
     SKRResult             setSortOrder(int projectId,
                                        int treeItemId,
@@ -184,7 +188,7 @@ public:
     Q_INVOKABLE SKRResult addChildTreeItem(int            projectId,
                                            int            targetId,
                                            const QString& type);
-    SKRResult             removeTreeItem(int projectId,
+    Q_INVOKABLE SKRResult removeTreeItem(int projectId,
                                          int targetId);
 
 
@@ -197,10 +201,12 @@ public:
                                          int treeItemId);
     Q_INVOKABLE SKRResult moveTreeItemDown(int projectId,
                                            int treeItemId);
-    Q_INVOKABLE SKRResult moveTreeItemAsChildOf(int projectId,
-                                                int noteId,
-                                                int targetParentId,
-                                                int wantedSortOrder = -1);
+    Q_INVOKABLE SKRResult moveTreeItemAsChildOf(int  sourceProjectId,
+                                                int  sourceTreeItemId,
+                                                int  targetProjectId,
+                                                int  targetParentId,
+                                                bool sendSignal      = true,
+                                                int  wantedSortOrder = -1);
     Q_INVOKABLE int getParentId(int projectId,
                                 int treeItemId);
 
@@ -251,13 +257,16 @@ public:
                               QList<int>treeItemIds);
     Q_INVOKABLE void      copy(int       projectId,
                                QList<int>treeItemIds);
-    Q_INVOKABLE SKRResult paste(int projectId,
+    Q_INVOKABLE SKRResult paste(int targetProjectId,
                                 int parentTreeItemId);
 
     Q_INVOKABLE SKRResult addQuickNote(int            projectId,
                                        int            receiverTreeItemId,
                                        const QString& type,
                                        const QString& noteName);
+
+    Q_INVOKABLE bool isCutCopy(int projectId,
+                               int treeItemId) const;
 
 private:
 
@@ -309,6 +318,8 @@ signals:
                            const QDateTime& newDate);
     void treeItemAdded(int projectId,
                        int treeItemId);
+    void treeItemsAdded(int       projectId,
+                        QList<int>treeItemIds);
     void treeItemRemoved(int projectId,
                          int treeItemId);
     void treeItemMoved(int       sourceProjectId,
@@ -326,6 +337,10 @@ signals:
     void treeRelationshipAdded(int projectId,
                                int sourceTreeItemId,
                                int receiverTreeItemId);
+
+    void cutCopyChanged(int  projectId,
+                        int  treeItemId,
+                        bool value);
 
 protected:
 
