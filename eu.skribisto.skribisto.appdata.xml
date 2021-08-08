@@ -28,19 +28,25 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.27" date="2021-08-02T00:00:00Z">
+    <release type="stable" version="1.9.28" date="2021-08-09T00:00:00Z">
       <description>
         <ul>
-          <li>Minimap: new minimap scrollbar</li>
-          <li>Icons: use bigger and sharper icons</li>
-          <li>Pages: creation list of items is sorted</li>
-          <li>Druide Antidote: add plugin to use Druide Antidote with text page</li>
-          <li>Breadcrumb: make buttons action to go to the beginning/end smoother</li>
-          <li>Docks: toolbox top buttons are now in a list</li>
-          <li>Notes: fix set note folder does nothing</li>
-          <li>Notes: add a quick button to add Notes folder</li>
-          <li>Section: add Section page type</li>
-          <li>Parameters: add a way to add custom parameters to new pages</li>
+          <li>Fix Windows support</li>
+          <li>Save: add a save button at the top of the window</li>
+          <li>Shortcuts: display shortcuts in tips</li>
+          <li>Minimap: fix wobbling of minimap width and text area width</li>
+          <li>Navigation: disable animation for side lists</li>
+          <li>Navigation: better navigation with cleaner code and more usable</li>
+          <li>Navigation: fix keyboard navigation</li>
+          <li>Navigation: add visual clue when Cut and Copy items</li>
+          <li>Navigation: set a smoother transition between lists</li>
+          <li>Navigation: fix clicking in side popups doing nothing</li>
+          <li>Plume Creator importer: fix completely importer with new approach</li>
+          <li>Drag Drop: switch to a new way to drag drop in and from the navigation list</li>
+          <li>Notes: fix setting a note folder in Project page</li>
+          <li>Section : fix section icons not displaying correctly</li>
+          <li>Tags: forbid clicks passing through a color square</li>
+          <li>View: fix lack of drop visual clue</li>
         </ul>
       </description>
     </release>
