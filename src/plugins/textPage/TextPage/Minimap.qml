@@ -218,7 +218,7 @@ MinimapForm {
             root.active = true
         }
         else {
-            root.active = false
+            deactivateTimer.start()
         }
     }
 

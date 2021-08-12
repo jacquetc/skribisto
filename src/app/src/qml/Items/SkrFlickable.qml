@@ -277,13 +277,13 @@ Item {
                 {
                     root.flickEnded()
 
-                    if(deactivateTimer.running){
-                        deactivateTimer.stop()
-                    }
-                  deactivateTimer.interval = momentumAnimation.duration
-                  deactivateTimer.start()
-                  deactivateTimer.interval = 100
                 }
+                if(deactivateTimer.running){
+                    deactivateTimer.stop()
+                }
+              deactivateTimer.interval = momentumAnimation.duration
+              deactivateTimer.start()
+              deactivateTimer.interval = 100
             }
     }
 
