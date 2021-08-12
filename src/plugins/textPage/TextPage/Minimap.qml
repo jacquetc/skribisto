@@ -15,6 +15,7 @@ MinimapForm {
     // orientation can be either Qt.Vertical or Qt.Horizontal
     property int value: 0
     readonly property double position: priv.position
+    property bool active: false
 
     property double sourceViewHeight
     property double sourceViewWidth
@@ -125,6 +126,14 @@ MinimapForm {
     }
 
     wheelHandler.onWheel: function(event) {
+
+        root.active = true
+        if(deactivateTimer.running){
+            deactivateTimer.stop()
+        }
+        deactivateTimer.start()
+
+
         var newValue = root.value - event.angleDelta.y * 4
         if(newValue <= - handle.height / 2){
             root.value = - handle.height / 2
@@ -136,10 +145,34 @@ MinimapForm {
             root.value = newValue
         }
 
+        handle.y = root.value
+
+            priv.position = handle.y / (textArea.height - handle.height)
+
+            if(textArea.height * scaleValue > minimapFlickable.height){
+                minimapFlickable.contentY = (textArea.height * scaleValue - minimapFlickable.height) * priv.position
+            }
+            else{
+                minimapFlickable.contentY = 0
+            }
+
+
 
     }
 
+    Timer{
+        id: deactivateTimer
+        interval: 100
+        onTriggered: {
+            root.active = false
+        }
+    }
+
     onValueChanged:{
+        if(active || dragHandler.active){
+            return
+        }
+
         priv.position = handle.y / (textArea.height - handle.height)
 
         if(textArea.height * scaleValue > minimapFlickable.height){
@@ -153,21 +186,21 @@ MinimapForm {
 
 
     Binding on value {
-        value: handle.y// / scaleValue/ scaleValue
-        restoreMode: Binding.RestoreBindingOrValue
+        when: active
+        value: handle.y
+        restoreMode: Binding.RestoreNone
 //delayed: true
     }
-    Binding on handle.y {
-        when:  !dragHandler.active && !tapping
-        value: root.value// * scaleValue
-        restoreMode: Binding.RestoreBindingOrValue
-        //delayed: true
 
+    Binding on handle.y {
+        when:  !active
+        value: root.value
+        restoreMode: Binding.RestoreNone
     }
 
 
     Behavior on handle.y{
-        enabled: SkrSettings.ePaperSettings.animationEnabled && !dragHandler.active && !tapping
+        enabled: SkrSettings.ePaperSettings.animationEnabled && !active
 
             SpringAnimation {
                 duration: 200
@@ -180,10 +213,27 @@ MinimapForm {
 
     }
 
-    property bool tapping: false
+    dragHandler.onActiveChanged: {
+        if(dragHandler.active){
+            root.active = true
+        }
+        else {
+            deactivateTimer.start()
+        }
+    }
+
+    //property bool tapping: false
 
     tapHandler.onSingleTapped: function(eventPoint){
-        tapping = true
+
+        root.active = true
+        if(deactivateTimer.running){
+            deactivateTimer.stop()
+        }
+        deactivateTimer.start()
+
+
+//        tapping = true
         var newValue = eventPoint.position.y
 
         if(newValue < 0){
@@ -197,18 +247,18 @@ MinimapForm {
         }
 
         //tapping = false
-        tappingTimer.start()
+//        tappingTimer.start()
 
     }
 
-    Timer{
-        id: tappingTimer
-        interval: 100
-        onTriggered: {
-            tapping = false
+//    Timer{
+//        id: tappingTimer
+//        interval: 100
+//        onTriggered: {
+//            tapping = false
 
-        }
-    }
+//        }
+//    }
 
 
     //--------------------------------------------------------------------

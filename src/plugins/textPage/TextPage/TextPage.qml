@@ -577,19 +577,21 @@ TextPageForm {
     //------------------------------------------------------------------------
 
     Binding{
+        when: !leftScrollFlickable.active
         target: leftScrollFlickable
         property: "contentY"
-        value: writingZone.flickable.contentY
-        restoreMode: Binding.RestoreBindingOrValue
+        value: wholeViewContentY
+        restoreMode: Binding.RestoreNone
             }
 
 
     Binding{
-        target: writingZone.flickable
-        property: "contentY"
+        when: leftScrollFlickable.active
+        target: root
+        property: "wholeViewContentY"
         value: leftScrollFlickable.contentY
-        restoreMode: Binding.RestoreBindingOrValue
-        delayed: true
+        restoreMode: Binding.RestoreNone
+        //delayed: true
     }
 
 
@@ -599,20 +601,46 @@ TextPageForm {
     //---------------------------
 
     Binding{
+        when: !rightScrollFlickable.active
         target: rightScrollFlickable
         property: "contentY"
-        value: writingZone.flickable.contentY
-        restoreMode: Binding.RestoreBindingOrValue
+        value: wholeViewContentY
+        restoreMode: Binding.RestoreNone
     }
 
 
     Binding{
-        target: writingZone.flickable
-        property: "contentY"
+        when: rightScrollFlickable.active
+        target: root
+        property: "wholeViewContentY"
         value: rightScrollFlickable.contentY
-        restoreMode: Binding.RestoreBindingOrValue
-        delayed: true
+        restoreMode: Binding.RestoreNone
+        //delayed: true
     }
+
+    //---------------------------
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+
+    Binding on writingZone.contentY {
+        when: !writingZone.active
+        value: wholeViewContentY
+        restoreMode: Binding.RestoreNone
+        //delayed: true
+    }
+
+
+    Binding {
+        when: writingZone.active
+        target: root
+        property: "wholeViewContentY"
+        value: writingZone.contentY
+        restoreMode: Binding.RestoreNone
+
+    }
+
+
+
 
     //------------------------------------------------------------------------
     //-----minimap------------------------------------------------------------
@@ -621,6 +649,7 @@ TextPageForm {
     minimapLoader.visible: minimapVisibility
     minimapLoader.active: minimapVisibility
     minimapLoader.sourceComponent: minimapComponent
+    property int wholeViewContentY: 0
 
     QtObject{
     id: minimapPriv
@@ -678,32 +707,25 @@ TextPageForm {
             //Scrolling minimap
 
             Binding on value {
-                when: !minimap.wheelHandler.active
-                value: writingZone.flickable.contentY
-                restoreMode: Binding.RestoreBindingOrValue
-                delayed: true
+                when: !minimap.active
+                value: wholeViewContentY
+                restoreMode: Binding.RestoreNone
             }
 
             Binding {
-                target: writingZone.flickable
-                property: "contentY"
+                when: minimap.active
+                target: root
+                property: "wholeViewContentY"
                 value: minimap.value
-                restoreMode: Binding.RestoreBindingOrValue
-                when: !(leftScrollFlickable.flicking || leftScrollFlickable.dragging ||
-                        writingZone.flicking || writingZone.dragging ||
-                        rightScrollFlickable.flicking || rightScrollFlickable.dragging)
-                delayed: true
-            }
-            dragHandler.onActiveChanged: {
-                writingZone.contentYBehaviorEnabled = !minimap.dragHandler.active
+                restoreMode: Binding.RestoreNone
+//                when: !(leftScrollFlickable.flicking || leftScrollFlickable.dragging ||
+//                        writingZone.flicking || writingZone.dragging ||
+//                        rightScrollFlickable.flicking || rightScrollFlickable.dragging)
+//                delayed: true
             }
 
-            wheelHandler.onActiveChanged: {
-                writingZone.contentYBehaviorEnabled = !minimap.wheelHandler.active
-            }
-
-            onTappingChanged: {
-                writingZone.contentYBehaviorEnabled = !minimap.tapping
+            onActiveChanged: {
+                writingZone.contentYBehaviorEnabled = !minimap.active
             }
 
         }

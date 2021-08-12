@@ -91,3 +91,10 @@ Description:
 - "Section : fix section icons not displaying correctly"
 - "Tags: forbid clicks passing through a color square"
 - "View: fix lack of drop visual clue"
+
+Version: 1.9.29
+Date: 2021-08-13
+Type: stable
+Description:
+- "Scrolling: Fix text scrolling"
+- "Recent: fix close actions"

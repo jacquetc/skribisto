@@ -234,7 +234,7 @@ RecentPageForm {
                                 visible: model.isOpened
                                 icon.source: "qrc:///icons/backup/document-close.svg"
                                 onClicked: {
-                                    closeAction.trigger()
+                                    rootWindow.closeProject(model.projectId)
                                 }
                                 text: qsTr("Close project")
                             }
@@ -272,8 +272,7 @@ RecentPageForm {
                                     }
                                     onTriggered: {
                                         console.log("close project action")
-                                        skrData.projectHub().closeProject(
-                                                    menu.projectId)
+                                        rootWindow.closeProject(menu.projectId)
                                     }
                                 }
                             }

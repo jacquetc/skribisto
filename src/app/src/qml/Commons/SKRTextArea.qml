@@ -36,6 +36,18 @@ TextArea {
         Material.background: styleBackgroundColor
         Material.elevation: styleElevation ? 6 : 0
     }
+    //-------------------------------------------------
+    property bool active: false
+
+    Timer{
+        id: deactivateTimer
+        interval: 100
+        onTriggered: {
+            root.active = false
+        }
+    }
+    //-------------------------------------------------
+
 
     property int viewHeight: 200
     signal moveViewYCalled(int height, bool animationEnabled)
@@ -45,6 +57,12 @@ TextArea {
     property int initialCursorPositionX: -1
     property int initialCursorPosition: -1
     Keys.onPressed: function(event) {
+        root.active = true
+        if(deactivateTimer.running){
+            deactivateTimer.stop()
+        }
+        deactivateTimer.start()
+
         // paste :
         if (((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V)
                 || event.key === Qt.Key_Paste) {
