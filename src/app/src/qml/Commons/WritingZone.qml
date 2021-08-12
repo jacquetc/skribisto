@@ -56,6 +56,41 @@ WritingZoneForm {
     Component.onCompleted: {
         determineTextCursorUnblinkingSetting()
     }
+    //-------------------------------------------------
+    property bool active: false
+
+    onActiveChanged: {
+        console.log("active",active )
+    }
+
+    Timer{
+        id: deactivateTimer
+        interval: 200
+        onTriggered: {
+            root.active = false
+        }
+    }
+    //-------------------------------------------------
+
+    property int contentY: 0
+
+    Binding{
+        when: !active || leftScrollFlickable.active || rightScrollFlickable.active
+        target: flickable
+        property: "contentY"
+        value: root.contentY
+        restoreMode: Binding.RestoreNone
+
+    }
+
+    Binding{
+        when: active && !leftScrollFlickable.active && !rightScrollFlickable.active
+        target: root
+        property: "contentY"
+        value: flickable.contentY
+        restoreMode: Binding.RestoreNone
+
+    }
 
     //-------------------------------------------------
 
@@ -661,6 +696,26 @@ WritingZoneForm {
 
     // scrollView :
 
+
+    leftScrollFlickable.onActiveChanged: {
+            root.active = leftScrollFlickable.active
+    }
+
+    rightScrollFlickable.onActiveChanged: {
+        root.active = rightScrollFlickable.active
+    }
+
+    flickable.onContentYChanged:{
+
+        if(textArea.active){
+            root.active = true
+            if(deactivateTimer.running){
+                deactivateTimer.stop()
+            }
+            deactivateTimer.start()
+        }
+    }
+
     //--------------------------------------------------------------------------------
     //--------Page Up/Down-------------------------------------------------------------
     //--------Text centering----------------------------------------------------------
@@ -672,6 +727,14 @@ WritingZoneForm {
     Connections {
         target: textArea
         function onMoveViewYCalled(height, animationEnabled) {
+
+
+            root.active = true
+            if(deactivateTimer.running){
+                deactivateTimer.stop()
+            }
+            deactivateTimer.start()
+
             var value = height - textArea.topPadding - textArea.bottomPadding
 
             contentYBehavior.enabled = animationEnabled

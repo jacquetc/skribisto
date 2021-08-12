@@ -3,6 +3,7 @@ import QtQml 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 import QtQuick.Layouts 1.15
+import "../Items"
 
 FocusScope {
     id: base
@@ -15,10 +16,10 @@ FocusScope {
     property alias scrollView: scrollView
     property alias textArea: textArea
     property alias flickable: textAreaFlickable
-    readonly property bool flicking: textAreaFlickable.flicking || leftScrollFlickable.flicking || rightScrollFlickable.flicking
-    readonly property bool dragging: textAreaFlickable.dragging || leftScrollFlickable.dragging || rightScrollFlickable.dragging
     property alias internalScrollBar: internalScrollBar
     property int scrollBarVerticalPolicy: ScrollBar.AsNeeded
+    property alias rightScrollFlickable: rightScrollFlickable
+    property alias leftScrollFlickable: leftScrollFlickable
     property alias leftScrollItem: leftScrollItem
     property alias rightScrollItem: rightScrollItem
     property alias placeholderText: textArea.placeholderText
@@ -28,6 +29,7 @@ FocusScope {
     property string paneStyleBackgroundColor: "#FAFAFA"
 
     property alias findPanel: findPanel
+
 
     Pane {
         id: pane
@@ -52,33 +54,48 @@ FocusScope {
                     Layout.fillWidth: true
 
 
-                    Flickable{
+                    SkrFlickable{
                         id: leftScrollFlickable
                         anchors.fill: parent
-                        clip: true
                         flickableDirection: Flickable.VerticalFlick
-                        boundsBehavior: Flickable.StopAtBounds
 
                         contentHeight: textAreaFlickable.contentHeight
                         contentWidth: width
 
-                        maximumFlickVelocity: 200
-                        flickDeceleration: 0
                         Binding{
+                            when: !leftScrollFlickable.active
                             target: leftScrollFlickable
                             property: "contentY"
-                            value: textAreaFlickable.contentY
-                            restoreMode: Binding.RestoreBindingOrValue
+                            value: root.contentY
+                            restoreMode: Binding.RestoreNone
                         }
 
 
                         Binding{
-                            target: textAreaFlickable
+                            when: leftScrollFlickable.active
+                            target: root
                             property: "contentY"
                             value: leftScrollFlickable.contentY
-                            restoreMode: Binding.RestoreBindingOrValue
-                            delayed: true
+                            restoreMode: Binding.RestoreNone
                         }
+
+
+
+                        Binding {
+                            target: leftScrollFlickable.contentItem
+                            property: "height"
+                            value: textAreaFlickable.contentHeight
+                            restoreMode: Binding.RestoreNone
+                        }
+
+
+                        Binding {
+                            target: leftScrollFlickable.contentItem
+                            property: "width"
+                            value: textAreaFlickable.contentWidth
+                            restoreMode: Binding.RestoreNone
+                        }
+
                     }
 
 
@@ -137,33 +154,49 @@ FocusScope {
                     Layout.fillHeight: true
                     Layout.fillWidth: true
 
-                    Flickable{
+                    SkrFlickable{
                         id: rightScrollFlickable
                         anchors.fill: parent
-                        clip: true
                         flickableDirection: Flickable.VerticalFlick
-                        boundsBehavior: Flickable.StopAtBounds
 
                         contentHeight: textAreaFlickable.contentHeight
                         contentWidth: width
-                        maximumFlickVelocity: 200
-                        flickDeceleration: 0
 
                         Binding{
+                            when: !rightScrollFlickable.active
                             target: rightScrollFlickable
                             property: "contentY"
-                            value: textAreaFlickable.contentY
-                            restoreMode: Binding.RestoreBindingOrValue
+                            value: root.contentY
+                            restoreMode: Binding.RestoreNone
                         }
 
 
                         Binding{
-                            target: textAreaFlickable
+                            when: rightScrollFlickable.active
+                            target: root
                             property: "contentY"
                             value: rightScrollFlickable.contentY
-                            restoreMode: Binding.RestoreBindingOrValue
-                            delayed: true
+                            restoreMode: Binding.RestoreNone
                         }
+
+
+
+                        Binding {
+                            target: rightScrollFlickable.contentItem
+                            property: "height"
+                            value: textAreaFlickable.contentHeight
+                            restoreMode: Binding.RestoreNone
+                        }
+
+
+                        Binding {
+                            target: rightScrollFlickable.contentItem
+                            property: "width"
+                            value: textAreaFlickable.contentWidth
+                            restoreMode: Binding.RestoreNone
+                        }
+
+
                     }
                 }
             }

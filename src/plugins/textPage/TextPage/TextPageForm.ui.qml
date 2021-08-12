@@ -90,6 +90,7 @@ SkrBasePage {
 
                 Item {
                     id: leftBase
+                    //color: "blue"
                     //                Layout.preferredWidth: leftBasePreferredWidth
                     //                Layout.maximumWidth: leftBasePreferredWidth
                     //Layout.minimumWidth: rightBase.Layout.minimumWidth
@@ -104,8 +105,28 @@ SkrBasePage {
                         id: leftScrollFlickable
                         anchors.fill: parent
                         flickableDirection: Qt.Vertical
+                        //contentHeight: writingZone.textArea.height
+
+
                         contentHeight: writingZone.flickable.contentHeight
                         contentWidth: width
+
+                        Binding {
+                            target: leftScrollFlickable.contentItem
+                            property: "height"
+                            value: writingZone.flickable.contentHeight
+                            restoreMode: Binding.RestoreNone
+                        }
+
+
+                        Binding {
+                            target: leftScrollFlickable.contentItem
+                            property: "width"
+                            value: writingZone.flickable.contentWidth
+                            restoreMode: Binding.RestoreNone
+                        }
+
+
                     }
 
                 }
@@ -154,21 +175,13 @@ SkrBasePage {
                     //Layout.maximumWidth: 300
                     z: 1
 
-                    Flickable{
+                    SkrFlickable{
                         id: rightScrollFlickable
                         anchors.fill: parent
                         anchors.rightMargin: rightBaseLayout.width
-                        clip: true
-                        flickableDirection: Flickable.VerticalFlick
-                        boundsBehavior: Flickable.StopAtBounds
-
+                        flickableDirection: Qt.Vertical
                         contentHeight: writingZone.flickable.contentHeight
                         contentWidth: width
-
-                        maximumFlickVelocity: 200
-                        flickDeceleration: 0
-                        interactive: true
-
                     }
 
                     RowLayout {
