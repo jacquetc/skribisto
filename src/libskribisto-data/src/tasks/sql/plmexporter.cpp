@@ -47,7 +47,16 @@ SKRResult PLMExporter::exportWholeSQLiteDbTo(PLMProject    *db,
 
         // copy db temp to file
         QFile tempFile(databaseTempFileName);
-        QFile file(fileName.path());
+
+
+        QFile file;
+        if(fileName.path().at(2) == ":"){ // means Windows
+            file.setFileName(fileName.path().remove(0, 1));
+        }
+        else {
+            file.setFileName(fileName.path());
+
+        }
 
         if (!tempFile.open(QIODevice::ReadOnly)) {
             result = SKRResult(SKRResult::Critical, this, "tempfile_cant_be_opened");
