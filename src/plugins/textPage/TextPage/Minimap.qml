@@ -159,6 +159,8 @@ MinimapForm {
 
 
     }
+    wheelHandler.grabPermissions: PointerHandler.TakeOverForbidden
+
 
     Timer{
         id: deactivateTimer
@@ -222,6 +224,9 @@ MinimapForm {
         }
     }
 
+    dragHandler.grabPermissions: PointerHandler.TakeOverForbidden
+
+
     //property bool tapping: false
 
     tapHandler.onSingleTapped: function(eventPoint){
@@ -250,6 +255,10 @@ MinimapForm {
 //        tappingTimer.start()
 
     }
+
+
+    tapHandler.grabPermissions: PointerHandler.TakeOverForbidden
+
 
 //    Timer{
 //        id: tappingTimer

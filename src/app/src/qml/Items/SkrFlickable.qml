@@ -285,6 +285,8 @@ Item {
               deactivateTimer.start()
               deactivateTimer.interval = 100
             }
+
+        grabPermissions: PointerHandler.TakeOverForbidden
     }
 
 
