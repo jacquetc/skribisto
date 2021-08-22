@@ -8,6 +8,17 @@ SKRNetworkAccessManager::SKRNetworkAccessManager(QObject *parent) : QNetworkAcce
 {
     Q_ASSERT_X(!m_instance, "QuickDownloadMaster", "there should be only one instance of this object");
     m_instance = this;
+
+    this->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
+
+    qDebug() << QSslSocket::supportsSsl() << QSslSocket::sslLibraryBuildVersionString() << QSslSocket::sslLibraryVersionString();
+
+    this->connect(this, &QNetworkAccessManager::sslErrors, this, [](QNetworkReply *reply, const QList<QSslError> &errors){
+        for(const QSslError &error : errors){
+            qWarning() << error.errorString();
+        }
+    }
+    );
 }
 
 SKRNetworkAccessManager::~SKRNetworkAccessManager()
@@ -25,7 +36,8 @@ SKRDownload::SKRDownload(QObject *parent) : QObject(parent),
     m_progress(0.0),
     m_saveFile(nullptr),
     m_networkReply(nullptr)
-{}
+{
+}
 
 SKRDownload::~SKRDownload()
 {
@@ -96,7 +108,6 @@ void SKRDownload::setDestination(const QUrl& destination)
 
         if (m_saveFile && !m_running) {
             QString newDestination = m_destination.toDisplayString(QUrl::PreferLocalFile);
-            qDebug() << "j";
 
             if (m_saveFile->fileName() != newDestination) m_saveFile->setFileName(newDestination);
         }
