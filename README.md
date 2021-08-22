@@ -32,7 +32,7 @@
 
 **Skribisto** is born from the ashes of **Plume Creator**, keeping the goals while adopting more recent ways to think an application.
 
-Where its ancestor was geared toward writing novels, Skribisto aims to be more generic. Ther user can organize his project with items and folders. Each item displays a 'page' and 
+Where its ancestor was geared toward writing novels, Skribisto aims to be more generic. The user can organize his project with items and folders. Each item displays a 'page' and
 can be of a different type : 
 
 - Text
@@ -349,7 +349,7 @@ Using the Linux Superbuild instructions, it runs.
 ![alt text](https://www.transifex.com/_/charts/redirects/skribisto/skribisto/image_png/ "Translation advancement")
 
 As you can see in the chart, all the main languages are translated. That's not the reality ! A first pass of translation was done with Google Translate, 
-so if you find errors or a distinct lack of logic in a few words, you now the culprit ! You are invited to fix such mistakes by following the below instructions.
+so if you find errors or a distinct lack of logic in a few words, you know the culprit ! You are invited to fix such mistakes by following the below instructions.
 
 SKribisto uses Transifex to manage translation from english to any language. 
 

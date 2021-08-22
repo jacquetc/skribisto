@@ -11,9 +11,7 @@ TextPageForm {
 
     pageType: "TEXT"
 
-    property string title: {
-        return getTitle()
-    }
+    property string title: ""
 
     function getTitle() {
         var fetchedTitle = skrData.treeHub().getTitle(projectId, treeItemId)
@@ -226,10 +224,10 @@ TextPageForm {
                         writingZone.textArea.objectName,
                         writingZone.textArea.textDocument)
 
-            root.projectId = -2
-            root.treeItemId = -2
-            writingZone.treeItemId = -2
-            writingZone.projectId = -2
+//            root.treeItemId = -2
+//            root.projectId = -2
+//            writingZone.treeItemId = -2
+//            writingZone.projectId = -2
         }
 
         writingZone.setCursorPosition(0)
