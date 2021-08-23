@@ -28,11 +28,14 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.29" date="2021-08-13T00:00:00Z">
+    <release type="stable" version="1.9.30" date="2021-08-23T00:00:00Z">
       <description>
         <ul>
-          <li>Scrolling: Fix text scrolling</li>
-          <li>Recent: fix close actions</li>
+          <li>Text: fix error when closing a text item</li>
+          <li>Windows support: fix projects not loading or saving</li>
+          <li>Scrolling: Fix scrolling in Welcome menu scrolled the text behind it</li>
+          <li>Dictionaries: add missing OpenSSL libraries in Windows</li>
+          <li>Docks: save visibility of toolboxes</li>
         </ul>
       </description>
     </release>
