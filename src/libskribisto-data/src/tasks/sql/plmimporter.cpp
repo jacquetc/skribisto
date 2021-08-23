@@ -51,6 +51,9 @@ QSqlDatabase PLMImporter::createSQLiteDbFrom(const QString& type,
             fileNameString = fileName.toString(QUrl::RemoveScheme);
             fileNameString = ":" + fileNameString;
         }
+        else if(fileName.path().at(2) == ":"){ // means Windows
+            fileNameString = fileName.path().remove(0, 1);
+        }
         else {
             fileNameString = fileName.path();
         }

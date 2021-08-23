@@ -14,20 +14,20 @@ LeftDockForm {
     //--------------- toolboxes Behavior------------------------
     //-----------------------------------------------------------
 
-    //    Settings {
-    //        id: settings
-    //        category: "leftDock"
+    //        Settings {
+    //            id: settings
+    //            category: "leftDock"
 
-    //        property bool navigationViewVisible: true
-    //        property bool documentViewVisible: true
-    //    }
+    //            property bool navigationViewVisible: true
+    //            property bool documentViewVisible: true
+    //        }
 
-    //    function loadConf(){
+    //        function loadConf(){
 
-    //        navigationViewToolButton.checked = settings.navigationViewVisible
-    //        documentViewToolButton.checked = settings.documentViewVisible
+    //            navigationViewToolButton.checked = settings.navigationViewVisible
+    //            documentViewToolButton.checked = settings.documentViewVisible
 
-    //    }
+    //        }
 
     //    function resetConf(){
     //        settings.navigationViewVisible = true
@@ -61,17 +61,26 @@ LeftDockForm {
 
             width: scrollView.width
 
+            property string name: ""
+            property bool visibleByDefault: false
+
             onLoaded: {
 
                 //toolboxFlickable.contentHeight = toolboxLayout.childrenRect.height
                 var iconSource = toolboxLoader.item.iconSource
                 var showButtonText = toolboxLoader.item.showButtonText
+                name = toolboxLoader.item.name
+                visibleByDefault = toolboxLoader.item.visibleByDefault
                 toolButtonModel.append({
                                            "iconSource": iconSource,
                                            "showButtonText": showButtonText,
+                                           "name": name,
+                                           "visibleByDefault": visibleByDefault,
                                            "toolbox": toolboxLoader
                                        })
+
             }
+
 
             Binding {
                 target: toolboxLoader.item
@@ -80,6 +89,19 @@ LeftDockForm {
                 value: toolboxLoader.item.implicitHeight
                 restoreMode: Binding.RestoreBindingOrValue
             }
+
+            Binding {
+                target: toolboxLoader
+                when: toolboxLoader.status === Loader.Ready
+                property: "visible"
+                value:  skrUserSettings.getSetting("leftDock_toolboxes", toolboxLoader.name + "_visible", toolboxLoader.visibleByDefault)
+                restoreMode: Binding.RestoreBindingOrValue
+            }
+
+            onVisibleChanged: {
+                skrUserSettings.setSetting("leftDock_toolboxes", name + "_visible", toolboxLoader.visible)
+            }
+
         }
     }
     toolboxRepeater.delegate: toolboxLoaderComponent
@@ -144,6 +166,13 @@ LeftDockForm {
                     toolButtonListView.flick((event.angleDelta.y * 4), 0)
                 }
             }
+
+            //            Component.onCompleted: {
+            //                model.toolbox.visible =
+
+            //            }
+
+
         }
     }
 

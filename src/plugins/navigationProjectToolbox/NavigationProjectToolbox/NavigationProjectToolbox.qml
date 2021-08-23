@@ -13,6 +13,8 @@ SkrToolbox {
 
     iconSource: "qrc:///icons/backup/compass.svg"
     showButtonText: qsTr("Show navigation toolbox")
+    name: "navigation"
+    visibleByDefault: true
 
     Navigation {
         id: navigationView

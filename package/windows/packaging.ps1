@@ -37,6 +37,9 @@ copy C:\Qt\5.15.2\mingw81_64\bin\Qt5Sql.dll  package\
 mkdir package\sqldrivers
 copy C:\Qt\5.15.2\mingw81_64\plugins\sqldrivers\qsqlite.dll package\sqldrivers\
 
+# add OpenSSL dll
+copy C:\Qt\Tools\OpenSSL\Win_x64\bin\*.dll package\
+
 # remove useless files
 Remove-Item -Recurse -Path package/qmltooling
 Remove-Item -Recurse -Path package/bearer

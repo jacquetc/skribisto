@@ -47,8 +47,11 @@ PLMProject::PLMProject(QObject *parent, int projectId, const QUrl& fileName, SKR
         if (fileName.scheme() == "qrc") {
             info.setFile(fileName.toString().replace("qrc:", ":"));
         }
+        else if(fileName.path().at(2) == ":"){ // means Windows
+                info.setFile(fileName.path().remove(0, 1));
+            }
         else {
-            info.setFile(fileName.path());
+                info.setFile(fileName.path());
         }
 
         if (!info.exists()) {

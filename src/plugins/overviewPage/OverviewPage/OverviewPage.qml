@@ -28,7 +28,7 @@ OverviewPageForm {
         SkrToolbox {
             showButtonText: qsTr("Show tags toolbox")
             iconSource: "qrc:///icons/backup/tag.svg"
-
+            name: "tagPad"
             TagPad {
                 id: tagPad
                 anchors.fill: parent
