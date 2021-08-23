@@ -98,3 +98,15 @@ Type: stable
 Description:
 - "Scrolling: Fix text scrolling"
 - "Recent: fix close actions"
+
+Version: 1.9.30
+Date: 2021-08-23
+Type: stable
+Description:
+- "Text: fix error when closing a text item"
+- "Windows support: fix projects not loading or saving"
+- "Scrolling: Fix scrolling in Welcome menu scrolled the text behind it"
+- "Dictionaries: add missing OpenSSL libraries in Windows"
+- "Docks: save visibility of toolboxes"
+
+
