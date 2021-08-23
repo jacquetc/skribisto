@@ -13,7 +13,8 @@ FavoritesProjectToolboxForm {
 
     iconSource: "qrc:///icons/backup/favorite.svg"
     showButtonText: qsTr( "Show Favorites toolbox")
-
+    name: "favorites"
+    visibleByDefault: true
 
 
 

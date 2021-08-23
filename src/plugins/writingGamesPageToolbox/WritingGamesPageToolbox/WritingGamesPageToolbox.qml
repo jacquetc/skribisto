@@ -11,6 +11,7 @@ WritingGamesPageToolboxForm {
 
     iconSource: "qrc:///icons/backup/roll.svg"
     showButtonText: qsTr( "Show Writing Games toolbox")
+    name: "writingGames"
 
     //required property var writingZone
     property var page: rootWindow.viewManager.focusedPage

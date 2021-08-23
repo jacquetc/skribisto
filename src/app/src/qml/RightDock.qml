@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQml 2.15
+import Qt.labs.settings 1.1
 import "Items"
 import "Commons"
 
@@ -37,17 +38,22 @@ RightDockForm {
             sourceComponent: modelData
 
             width: scrollView.width
+            property string name: ""
+            property bool visibleByDefault: false
 
             onLoaded: {
 
                 //toolboxFlickable.contentHeight = toolboxLayout.childrenRect.height
                 var iconSource = toolboxLoader.item.iconSource
                 var showButtonText = toolboxLoader.item.showButtonText
+                name = toolboxLoader.item.name
+                visibleByDefault = toolboxLoader.item.visibleByDefault
                 toolButtonModel.append({
                                            "iconSource": iconSource,
                                            "showButtonText": showButtonText,
                                            "toolbox": toolboxLoader
                                        })
+
             }
 
             Binding {
@@ -56,6 +62,20 @@ RightDockForm {
                 property: "height"
                 value: toolboxLoader.item.implicitHeight
                 restoreMode: Binding.RestoreBindingOrValue
+            }
+
+
+            Binding {
+                target: toolboxLoader
+                when: toolboxLoader.status === Loader.Ready
+                property: "visible"
+                value:  skrUserSettings.getSetting("rightDock_toolboxes", toolboxLoader.name + "_visible", toolboxLoader.visibleByDefault)
+                restoreMode: Binding.RestoreBindingOrValue
+            }
+
+
+            onVisibleChanged: {
+                skrUserSettings.setSetting("rightDock_toolboxes", name + "_visible", visible)
             }
         }
     }

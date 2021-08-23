@@ -7,6 +7,7 @@ OverviewToolboxForm {
 
     iconSource: "qrc:///icons/backup/configure.svg"
     showButtonText: qsTr( "Show the overview toolbox")
+    name: "overview"
 
     property int projectId: -1
 

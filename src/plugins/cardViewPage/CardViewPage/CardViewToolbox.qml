@@ -7,6 +7,7 @@ CardViewToolboxForm {
 
     iconSource: "qrc:///icons/backup/configure.svg"
     showButtonText: qsTr( "Show the card view toolbox")
+    name: "cardView"
 
     property int projectId: -1
 

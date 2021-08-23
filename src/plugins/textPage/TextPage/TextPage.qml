@@ -769,6 +769,7 @@ TextPageForm {
 
             showButtonText: qsTr("Show edit toolbox")
             iconSource: "qrc:///icons/backup/format-text-italic.svg"
+            name: "edit"
             EditView {
                 id: editView
                 anchors.fill: parent
@@ -785,6 +786,7 @@ TextPageForm {
 
             showButtonText: qsTr("Show properties toolbox")
             iconSource: "qrc:///icons/backup/configure.svg"
+            name: "propertyPad"
             PropertyPad {
                 id: propertyPad
                 anchors.fill: parent
@@ -802,6 +804,7 @@ TextPageForm {
 
             showButtonText: qsTr("Show outline toolbox")
             iconSource: "qrc:///icons/backup/story-editor.svg"
+            name: "outlinePad"
             OutlinePad {
                 id: outlinePad
                 anchors.fill: parent
@@ -819,6 +822,7 @@ TextPageForm {
 
             showButtonText: qsTr("Show tags toolbox")
             iconSource: "qrc:///icons/backup/tag.svg"
+            name: "tagPad"
             TagPad {
                 id: tagPad
                 anchors.fill: parent
