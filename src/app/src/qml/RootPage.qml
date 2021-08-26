@@ -909,6 +909,18 @@ RootPageForm {
             }
 
             SkrMenuItem {
+                action: showDiscordAction
+            }
+
+            SkrMenuItem {
+                action: showGitHubAction
+            }
+
+            SkrMenuItem {
+                action: showSkribistoWebsiteAction
+            }
+
+            SkrMenuItem {
                 action: showAboutAction
             }
 

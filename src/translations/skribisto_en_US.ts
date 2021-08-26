@@ -835,11 +835,11 @@
 <context>
     <name>HelpContentsForm.ui</name>
     <message>
-        <source>User manual</source>
+        <source>Frequently Asked Questions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Frequently Asked Questions</source>
+        <source>Let&apos;s discuss it !</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3011,6 +3011,18 @@
     </message>
     <message>
         <source>Loading a project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Discord</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;GitHub</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Skribisto website</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

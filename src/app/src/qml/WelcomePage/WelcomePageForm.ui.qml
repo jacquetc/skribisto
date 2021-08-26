@@ -275,9 +275,31 @@ SkrPane {
             }
         }
 
-        SkrLabel {
-            id: versionLabel
-            Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
+        RowLayout{
+            SkrLabel {
+                id: versionLabel
+                Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
+            }
+
+            Item{
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+            }
+
+            SkrToolButton{
+                action: showSkribistoWebsiteAction
+                icon.color: "transparent"
+            }
+
+            SkrToolButton{
+                action: showDiscordAction
+                icon.color: "transparent"
+            }
+
+            SkrToolButton{
+                action: showGitHubAction
+            }
         }
     }
 }

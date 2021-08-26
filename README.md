@@ -119,7 +119,9 @@ Other features will be implemented more for fun. Thanks to the plugin system, Sk
 ## User manual
 
 The dedicated website for the user manual is [here](https://manual.skribisto.eu/en_US/manual.html)
+
 The dedicated website for the FAQ is [here](https://manual.skribisto.eu/en_US/faq.html)
+
 Each one can be translated (see [Translation](#translation) section)
 
 ## Discussions
