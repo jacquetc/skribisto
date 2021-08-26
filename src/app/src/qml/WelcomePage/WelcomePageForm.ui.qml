@@ -205,6 +205,20 @@ SkrPane {
                                 source: "qrc:///icons/backup/system-help.svg"
                             }
                         }
+                        SkrToolButton {
+                            action: showDonateAction
+
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
+                            display: AbstractButton.TextBesideIcon
+                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+
+                            icon {
+                                color: "transparent"
+                            }
+
+
+                        }
 
                         Item {
                             id: element

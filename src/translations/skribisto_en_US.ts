@@ -3025,5 +3025,9 @@
         <source>&amp;Skribisto website</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Donate</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>
