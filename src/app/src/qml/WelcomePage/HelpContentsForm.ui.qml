@@ -9,6 +9,7 @@ Item {
 
     property alias userManualToolButton: userManualToolButton
     property alias faqToolButton: faqToolButton
+    property alias discordToolButton: discordToolButton
 
     ColumnLayout{
 
@@ -18,8 +19,6 @@ Item {
 
         SkrButton {
             id: userManualToolButton
-            text: qsTr("User manual")
-
             icon.height: 90
             icon.width: 90
 
@@ -38,6 +37,22 @@ Item {
 
             icon.height: 90
             icon.width: 90
+
+            Layout.minimumHeight: 100
+            Layout.minimumWidth: 200
+            Layout.fillWidth: true
+            Layout.maximumWidth: 500
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+        }
+
+
+        SkrButton {
+            id: discordToolButton
+            text: qsTr("Let's discuss it !")
+
+            icon.height: 90
+            icon.width: 90
+            icon.color: "transparent"
 
             Layout.minimumHeight: 100
             Layout.minimumWidth: 200

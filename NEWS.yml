@@ -109,4 +109,13 @@ Description:
 - "Dictionaries: add missing OpenSSL libraries in Windows"
 - "Docks: save visibility of toolboxes"
 
+Version: 1.9.31
+Date: 2021-08-26
+Type: stable
+Description:
+- "Social medias: add social medias links"
+- "Test: add test for internal titles"
+- "Text: make context menu quicker"
+- "Manual : change URL"
+
 

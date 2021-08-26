@@ -487,7 +487,7 @@ ApplicationWindow {
         onTriggered: {
             console.log("show user manual")
             Qt.openUrlExternally(
-                        "https://manual.skribisto.eu/en_US/manual.html")
+                        "https://manual.skribisto.eu/manual")
         }
     }
     Shortcut {
@@ -509,7 +509,77 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show FAQ")
-            Qt.openUrlExternally("https://manual.skribisto.eu/en_US/faq.html")
+            Qt.openUrlExternally("https://manual.skribisto.eu/faq")
+        }
+    }
+
+    //------------------------------------------------------------------
+    //---------Website---------------------------------------------
+    //------------------------------------------------------------------
+    Action {
+
+        id: showSkribistoWebsiteAction
+        text: qsTr("&Skribisto website")
+        icon {
+            source: "qrc:///pics/skribisto.svg"
+            color: "transparent"
+        }
+
+        onTriggered: {
+            console.log("show Skribisto website")
+            Qt.openUrlExternally("https://www.skribisto.eu")
+        }
+    }
+
+
+    //------------------------------------------------------------------
+    //---------Discord---------------------------------------------
+    //------------------------------------------------------------------
+    Action {
+
+        id: showDiscordAction
+        text: qsTr("&Discord")
+        icon {
+            source: "qrc:///pics/Discord-Logo-Color.svg"
+        }
+
+        onTriggered: {
+            console.log("show Discord")
+            Qt.openUrlExternally("https://discord.gg/5BSkvQmyVH")
+        }
+    }
+
+    //------------------------------------------------------------------
+    //---------Discord---------------------------------------------
+    //------------------------------------------------------------------
+    Action {
+
+        id: showGitHubAction
+        text: qsTr("&GitHub")
+        icon {
+            source: "qrc:///pics/Octicons-mark-github.svg"
+        }
+
+        onTriggered: {
+            console.log("show GitHub")
+            Qt.openUrlExternally("https://github.com/jacquetc/skribisto")
+        }
+    }
+
+    //------------------------------------------------------------------
+    //---------Donate---------------------------------------------
+    //------------------------------------------------------------------
+    Action {
+
+        id: showDonateAction
+        text: qsTr("&Donate")
+        icon {
+            source: "qrc:///pics/Love_Heart_symbol.svg"
+        }
+
+        onTriggered: {
+            console.log("show Donate")
+            Qt.openUrlExternally("https://www.skribisto.eu/index.php/donate/")
         }
     }
 
