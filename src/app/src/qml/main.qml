@@ -487,7 +487,7 @@ ApplicationWindow {
         onTriggered: {
             console.log("show user manual")
             Qt.openUrlExternally(
-                        "https://manual.skribisto.eu/en_US/manual.html")
+                        "https://manual.skribisto.eu/manual")
         }
     }
     Shortcut {
@@ -509,7 +509,7 @@ ApplicationWindow {
 
         onTriggered: {
             console.log("show FAQ")
-            Qt.openUrlExternally("https://manual.skribisto.eu/en_US/faq.html")
+            Qt.openUrlExternally("https://manual.skribisto.eu/faq")
         }
     }
 

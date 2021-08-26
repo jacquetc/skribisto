@@ -225,7 +225,6 @@ WritingZoneForm {
     function callTextAreaContextMenu(posX, posY) {
         if (textContextMenu.visible) {
             textContextMenu.close()
-            return
         }
 
         // deselect if outside selection :

@@ -71,6 +71,7 @@ Short term goal is to rejoin its ancestor Plume Creator feature-wise. A few outs
 
 - **navigating between texts**
 - **distraction-free mode**
+- **e-ink friendly**
 - **rich text (bold/italic/underline/strikeout)**
 - **synopsis**
 - **label (named 'tag' in Plume) next to each text title**
@@ -112,7 +113,7 @@ Medium term goals are :
 - Sort of gallery to manage all external documents/images
 - Android support
 
-Other features will be implemented more for fun. Thanks to the plugin system, Skribisto can accomodate other goals than writing. I added "Writing Games" plugin for fun.
+Other features will be implemented more for fun. Thanks to the plugin system, Skribisto can accomodate other goals than writing. I added the "Writing Games" plugin for fun.
 
 
 ## User manual
@@ -120,6 +121,10 @@ Other features will be implemented more for fun. Thanks to the plugin system, Sk
 The dedicated website for the user manual is [here](https://manual.skribisto.eu/en_US/manual.html)
 The dedicated website for the FAQ is [here](https://manual.skribisto.eu/en_US/faq.html)
 Each one can be translated (see [Translation](#translation) section)
+
+## Discussions
+
+A Discord server is available. Do you need help, offer suggestions or talk ? Join us [here](https://discord.gg/5BSkvQmyVH)
 
 ## Support
 
