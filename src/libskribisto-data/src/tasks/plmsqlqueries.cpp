@@ -92,10 +92,6 @@ SKRResult PLMSqlQueries::get(int id, const QString& valueName, QVariant& out) co
         while (query.next()) {
             out = query.value(0);
         }
-
-        if (query.size() == 0) {
-            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
-        }
     }
 
     return result;
@@ -144,10 +140,6 @@ SKRResult PLMSqlQueries::getMultipleValues(int id, const QStringList& valueList,
                 out.insert(valueName, query.value(valueName));
             }
         }
-
-        if (query.size() == 0) {
-            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
-        }
     }
 
     return result;
@@ -176,10 +168,6 @@ SKRResult PLMSqlQueries::getSortedIds(QList<int>& out) const
         while (query.next()) {
             out.append(query.value(0).toInt());
         }
-
-        if (query.size() == 0) {
-            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
-        }
     }
 
     return result;
@@ -206,10 +194,6 @@ SKRResult PLMSqlQueries::getIds(QList<int>& out) const
 
         while (query.next()) {
             out.append(query.value(0).toInt());
-        }
-
-        if (query.size() == 0) {
-            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
         }
     }
 
@@ -242,10 +226,10 @@ bool PLMSqlQueries::idExists(int id) const
 /// \return
 /// You can use "id" as 'where' ; result QHash isn't garantied to keep the same
 // order ! Use getSortedIds to have the sort order
-SKRResult PLMSqlQueries::getValueByIds(const QString       & valueName,
+SKRResult PLMSqlQueries::getValueByIds(const QString& valueName,
                                        QHash<int, QVariant>& out,
-                                       const QString       & where,
-                                       const QVariant      & whereValue,
+                                       const QString& where,
+                                       const QVariant& whereValue,
                                        bool                  sorted) const
 {
     out.clear();
@@ -292,17 +276,13 @@ SKRResult PLMSqlQueries::getValueByIds(const QString       & valueName,
         while (query.next()) {
             out.insert(query.value(0).toInt(), query.value(1));
         }
-
-        if (query.size() == 0) {
-            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
-        }
     }
 
     return result;
 }
 
-SKRResult PLMSqlQueries::getValueByIdsWhere(const QString                 & valueName,
-                                            QHash<int, QVariant>          & out,
+SKRResult PLMSqlQueries::getValueByIdsWhere(const QString& valueName,
+                                            QHash<int, QVariant>& out,
                                             const QHash<QString, QVariant>& where,
                                             bool                            sorted) const
 {
@@ -359,12 +339,9 @@ SKRResult PLMSqlQueries::getValueByIdsWhere(const QString                 & valu
             result.addData("SQL string", queryStr);
         }
 
+
         while (query.next()) {
             out.insert(query.value(0).toInt(), query.value(1));
-        }
-
-        if (query.size() == 0) {
-            result = SKRResult(SKRResult::Critical, this, "query.size() == 0");
         }
     }
 

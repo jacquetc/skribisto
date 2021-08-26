@@ -48,6 +48,8 @@ private Q_SLOTS:
     void getCreationDate();
     void setUpdateDate();
     void getUpdateDate();
+    void getInternalTitle();
+
 
     void queue();
     void missingProjectError();
@@ -384,6 +386,15 @@ void TreeHubCase::getUpdateDate()
     QDateTime value = skrdata->treeHub()->getUpdateDate(m_currentProjectId, 2);
 
     QCOMPARE(value, QDateTime(QDate(2010, 1, 1), QTime(1, 1, 1)));
+}
+
+// ------------------------------------------------------------------------------------
+
+void TreeHubCase::getInternalTitle()
+{
+    QList<int> folders = skrdata->treeHub()->getIdsWithInternalTitle(m_currentProjectId, "note_folder");
+
+    QCOMPARE(folders.at(0), 3);
 }
 
 // ------------------------------------------------------------------------------------

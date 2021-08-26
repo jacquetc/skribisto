@@ -14,6 +14,7 @@ SkrPopup {
     height: stackView.currentItem.implicitHeight + tabBar.height + separator.height + columnLayout.spacing
     padding: 1
     modal: false
+    enableBehavior: false
 
     ColumnLayout {
         id: columnLayout
