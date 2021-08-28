@@ -2,6 +2,40 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
 <context>
+    <name>AccessibilityPanelForm.ui</name>
+    <message>
+        <source>Accessibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Help with accessibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show menu button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AdvancedPanelForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Development mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AntidotePageToolbox</name>
     <message>
         <source>Druide Antidote™ Page Toolbox</source>
@@ -34,6 +68,83 @@
     </message>
     <message>
         <source>Guide</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AppearancePanelForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Interface language :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage themes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale: 1/%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set scale:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>BackupPanel</name>
+    <message>
+        <source>Add backup path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove backup path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a path to back up to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>BackupPanelForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backup paths :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back up every</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back up once a day</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -376,6 +487,25 @@
     </message>
     <message>
         <source>Color: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>EPaperPanelForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E-Paper</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set the text cursor unblinking</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable animations</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2114,6 +2244,25 @@
     </message>
 </context>
 <context>
+    <name>SavePanelForm.ui</name>
+    <message>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save every</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>minutes</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SectionCreationParameters</name>
     <message>
         <source>Beginning of a book</source>
@@ -2190,18 +2339,6 @@
 <context>
     <name>SettingsPage</name>
     <message>
-        <source>Add backup path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove backup path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a path to back up to</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2209,9 +2346,6 @@
         <source>Please restart to apply changes.</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>SettingsPageForm.ui</name>
     <message>
         <source>Accessibility</source>
         <translation type="unfinished"></translation>
@@ -2221,13 +2355,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Interface language :</source>
+        <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Manage themes</source>
+        <source>Backup</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>E-Paper</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SettingsPageForm.ui</name>
     <message>
         <source>Behavior</source>
         <translation type="unfinished"></translation>
@@ -2250,38 +2391,6 @@
     </message>
     <message>
         <source>Default dictionary :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backup</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Backup paths :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Back up every</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>hours</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Back up once a day</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Save every</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>minutes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2309,47 +2418,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Special E-Paper</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set the text cursor unblinking</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Advanced</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Development mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Help with accessibility</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show menu button</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Manage plugins</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show the first steps dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable animations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Minimap scrollbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the minimap scrollbar</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2877,6 +2950,22 @@
     </message>
     <message>
         <source>Go Back to the menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Skribisto website</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discord</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GitHub</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

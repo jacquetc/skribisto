@@ -15,8 +15,8 @@
   </categories>
   <url type="homepage">https://github.com/jacquetc/skribisto</url>
   <url type="bugtracker">https://github.com/jacquetc/skribisto/issues</url>
-  <url type="faq">https://manual.skribisto.eu/en_US/faq.html</url>
-  <url type="help">https://manual.skribisto.eu/en_US/manual.html</url>
+  <url type="faq">https://manual.skribisto.eu/faq/</url>
+  <url type="help">https://manual.skribisto.eu/manual/</url>
   <url type="translate">https://github.com/jacquetc/skribisto#translation</url>
   <url type="contact">https://github.com/jacquetc/skribisto#to-contact-me</url>
   <launchable type="desktop-id">eu.skribisto.skribisto.desktop</launchable>

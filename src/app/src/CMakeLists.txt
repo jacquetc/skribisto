@@ -111,6 +111,7 @@ set(app_SRCS
     skrprojectpageinterface.h
     skrimporterinterface.h
     skrprojecttemplateinterface.h
+    skrsettingspanelinterface.h
     )
 
 set(QML qml.qrc

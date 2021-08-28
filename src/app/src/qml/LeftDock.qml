@@ -114,7 +114,6 @@ LeftDockForm {
     }
     toolButtonListView.model: toolButtonModel
 
-    toolButtonListView.delegate: toolButtonComponent
 
     toolButtonListView.onContentXChanged: {
         if(toolButtonListView.contentX === 0){
