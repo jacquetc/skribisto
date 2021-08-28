@@ -13,11 +13,6 @@ import "../../Commons"
 
 AccessibilityPanelForm {
 
-    property var stackView: StackView.view
-    goBackButton.onClicked: {
-        stackView.pop()
-    }
-
     // --------------------------------------------
     // ---- accessibility --------------------------------
     // --------------------------------------------

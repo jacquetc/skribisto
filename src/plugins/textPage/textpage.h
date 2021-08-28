@@ -24,16 +24,18 @@
 #include <QObject>
 #include "skrpageinterface.h"
 #include "skrexporterinterface.h"
+#include "skrsettingspanelinterface.h"
 #include "skrwordmeter.h"
 
 class TextPage : public QObject,
                  public SKRPageInterface,
-                 public SKRExporterInterface {
+                 public SKRExporterInterface,
+                 public SKRSettingsPanelInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.TextPagePlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(SKRPageInterface SKRExporterInterface)
+    Q_INTERFACES(SKRPageInterface SKRExporterInterface SKRSettingsPanelInterface)
 
 public:
 
@@ -102,6 +104,24 @@ public:
                                                        int                treeItemId,
                                                        const QVariantMap& exportProperties,
                                                        SKRResult        & result) const override;
+
+    // settings:
+
+    QString settingsPanelQmlUrl() const override    {
+        return "qrc:///qml/plugins/TextPage/Settings.qml";
+    }
+
+    QString settingsPanelButtonText() const override      {
+        return tr("Text page");
+    }
+
+    QString settingsPanelIconSource() const override {
+        return "qrc:///icons/backup/document-edit-sign.svg";
+    }
+
+    int settingsPanelWeight() const override     {
+        return 600;
+    }
 
 signals:
 

@@ -4,11 +4,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../../Items"
 
-Item {
-    width: 400
-    height: 400
-    property alias goBackButton: goBackButton
-
+SkrSettingsPanel {
 
     property alias saveDial: saveDial
     property alias saveSpinBox: saveSpinBox
@@ -20,19 +16,11 @@ Item {
         id: pillarLayout
         anchors.fill: parent
 
-        SkrToolButton{
-            id: goBackButton
-            icon.source: "qrc:///icons/backup/go-previous.svg"
-            text: qsTr("Go back")
-            Layout.alignment: Qt.AlignLeft
-        }
-
-
-
         SkrGroupBox {
             id: saveGroupBox
             Layout.rowSpan: 2
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
             focusPolicy: Qt.TabFocus
             title: qsTr("Save")
 

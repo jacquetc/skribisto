@@ -4,11 +4,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../../Items"
 
-Item {
-    width: 400
-    height: 400
-    property alias goBackButton: goBackButton
-
+SkrSettingsPanel {
     property alias devModeCheckBox: devModeCheckBox
     property alias advancedGroupBox: advancedGroupBox
 
@@ -16,18 +12,13 @@ Item {
         id: pillarLayout
         anchors.fill: parent
 
-        SkrToolButton{
-            id: goBackButton
-            icon.source: "qrc:///icons/backup/go-previous.svg"
-            text: qsTr("Go back")
-            Layout.alignment: Qt.AlignLeft
-        }
 
         SkrGroupBox {
             id: advancedGroupBox
             width: 200
             height: 200
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
             focusPolicy: Qt.TabFocus
             title: qsTr("Advanced")
 

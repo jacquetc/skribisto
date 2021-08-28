@@ -14,12 +14,6 @@ import "../../Commons"
 AdvancedPanelForm {
 
 
-    property var stackView: StackView.view
-    goBackButton.onClicked: {
-        stackView.pop()
-    }
-
-
     // --------------------------------------------
     // ---- advanced --------------------------------
     // --------------------------------------------

@@ -120,5 +120,6 @@
         <file>qml/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml</file>
         <file>qml/WelcomePage/SettingsPanels/AdvancedPanel.qml</file>
         <file>qml/WelcomePage/SettingsPanels/AdvancedPanelForm.ui.qml</file>
+        <file>qml/Items/SkrSettingsPanel.qml</file>
     </qresource>
 </RCC>

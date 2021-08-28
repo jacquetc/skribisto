@@ -10,7 +10,6 @@ Item {
     property alias checkSpellingCheckBox: checkSpellingCheckBox
     property alias checkSpellingComboBox: checkSpellingComboBox
     property alias createEmpyProjectAtStartSwitch: createEmpyProjectAtStartSwitch
-    property alias centerTextCursorSwitch: centerTextCursorSwitch
     property alias textPointSizeSlider: textPointSizeSlider
     property alias fontFamilyComboBox: fontFamilyComboBox
     property alias textTopMarginSlider: textTopMarginSlider
@@ -77,10 +76,6 @@ Item {
                                 text: qsTr("Create an empty project at start")
                             }
 
-                            SkrSwitch {
-                                id: centerTextCursorSwitch
-                                text: qsTr("Center vertically the text cursor")
-                            }
 
 
                             SkrButton {

@@ -16,6 +16,7 @@ SettingsPageForm {
 
 
     Component.onCompleted: {
+        populateSettingsPanelButtonModel()
         //        determineAndAddSettingsPanelPlugins()
         //buildButtons()
 
@@ -35,6 +36,18 @@ SettingsPageForm {
     //-----setting panels------------------------------------------------------------
     //-----------------------------------------------------------------------
     //    property list<Component> panels
+    function populateSettingsPanelButtonModel(){
+        var list = skrPluginGetter.findSettingsPanelNames()
+
+        for(var i in list){
+            var name = list[i]
+            var iconSource = skrPluginGetter.findSettingsPanelIconSource(name)
+            var buttonText = skrPluginGetter.findSettingsPanelButtonText(name)
+            var qmlUrl = skrPluginGetter.findSettingsPanelUrl(name)
+
+            toolButtonModel.append({ "name": name, "qmlUrl": qmlUrl, "iconSource": iconSource, "buttonText": buttonText})
+        }
+    }
 
 
     //    function determineAndAddSettingsPanelPlugins() {
@@ -64,40 +77,40 @@ SettingsPageForm {
 
         ListElement{
             name: "accessibility"
-            text :qsTr("Accessibility")
+            buttonText :qsTr("Accessibility")
             iconSource: "qrc:///icons/backup/accessibility.svg"
-            url: "qrc:///qml/WelcomePage/SettingsPanels/AccessibilityPanel.qml"
+            qmlUrl: "qrc:///qml/WelcomePage/SettingsPanels/AccessibilityPanel.qml"
 
         }
         ListElement{
             name: "appearance"
-            text :qsTr("Appearance")
+            buttonText :qsTr("Appearance")
             iconSource: "qrc:///icons/backup/folder-pictures.svg"
-            url: "qrc:///qml/WelcomePage/SettingsPanels/AppearancePanel.qml"
+            qmlUrl: "qrc:///qml/WelcomePage/SettingsPanels/AppearancePanel.qml"
 
         }
 
         ListElement{
             name: "save"
-            text :qsTr("Save")
+            buttonText :qsTr("Save")
             iconSource: "qrc:///icons/backup/document-save.svg"
-            url: "qrc:///qml/WelcomePage/SettingsPanels/SavePanel.qml"
+            qmlUrl: "qrc:///qml/WelcomePage/SettingsPanels/SavePanel.qml"
 
         }
 
 
         ListElement{
             name: "backup"
-            text :qsTr("Backup")
+            buttonText :qsTr("Backup")
             iconSource: "qrc:///icons/backup/tools-media-optical-burn-image.svg"
-            url: "qrc:///qml/WelcomePage/SettingsPanels/BackupPanel.qml"
+            qmlUrl: "qrc:///qml/WelcomePage/SettingsPanels/BackupPanel.qml"
 
         }
         ListElement{
             name: "ePaper"
-            text :qsTr("E-Paper")
+            buttonText :qsTr("E-Paper")
             iconSource: "qrc:///icons/backup/smartphone.svg"
-            url: "qrc:///qml/WelcomePage/SettingsPanels/EPaperPanel.qml"
+            qmlUrl: "qrc:///qml/WelcomePage/SettingsPanels/EPaperPanel.qml"
 
         }
 
@@ -117,11 +130,11 @@ SettingsPageForm {
                 width: 100
                 height: 100
             }
-            text: model.text
+            text: model.buttonText
             display: AbstractButton.TextUnderIcon
 
             onClicked: {
-                stackView.push(model.url)
+                stackView.push(model.qmlUrl)
             }
         }
     }
@@ -189,14 +202,6 @@ SettingsPageForm {
     }
 
 
-
-    centerTextCursorSwitch.checked: SkrSettings.behaviorSettings.centerTextCursor
-    Binding {
-        target: SkrSettings.behaviorSettings
-        property: "centerTextCursor"
-        value: centerTextCursorSwitch.checked
-        restoreMode: Binding.RestoreBindingOrValue
-    }
 
 
     // plugins:

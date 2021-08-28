@@ -14,13 +14,6 @@ import "../../Commons"
 EPaperPanelForm {
 
 
-
-    property var stackView: StackView.view
-    goBackButton.onClicked: {
-        stackView.pop()
-    }
-
-
     Component.onCompleted: {
 
     }

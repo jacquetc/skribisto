@@ -25,18 +25,18 @@
 
 #include <QString>
 #include "skrresult.h"
-#include "skrcoreinterface.h"
 
 
-class SKRSettingsPanelInterface : public SKRCoreInterface  {
+class SKRSettingsPanelInterface {
 public:
 
     virtual ~SKRSettingsPanelInterface() {}
 
+    virtual QString name() const                    = 0;
     virtual QString settingsPanelQmlUrl() const     = 0;
-    virtual QString settingsPanelText() const       = 0;
+    virtual QString settingsPanelButtonText() const = 0;
     virtual QString settingsPanelIconSource() const = 0;
-    virtual int     weight() const {
+    virtual int     settingsPanelWeight() const {
         return 500;
     }
 };

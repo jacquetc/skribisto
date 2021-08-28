@@ -14,13 +14,6 @@ import "../../Commons"
 BackupPanelForm {
 
 
-    property var stackView: StackView.view
-    goBackButton.onClicked: {
-        stackView.pop()
-    }
-
-
-
 
     Component.onCompleted: {
 

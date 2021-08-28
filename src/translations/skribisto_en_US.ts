@@ -15,17 +15,9 @@
         <source>Show menu button</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>AdvancedPanelForm.ui</name>
-    <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Advanced</source>
         <translation type="unfinished"></translation>
@@ -74,10 +66,6 @@
 <context>
     <name>AppearancePanelForm.ui</name>
     <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
@@ -87,22 +75,6 @@
     </message>
     <message>
         <source>Manage themes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Minimap scrollbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the minimap scrollbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Scale: 1/%1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Set scale:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -123,10 +95,6 @@
 </context>
 <context>
     <name>BackupPanelForm.ui</name>
-    <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Backup</source>
         <translation type="unfinished"></translation>
@@ -492,10 +460,6 @@
 </context>
 <context>
     <name>EPaperPanelForm.ui</name>
-    <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>E-Paper</source>
         <translation type="unfinished"></translation>
@@ -2246,10 +2210,6 @@
 <context>
     <name>SavePanelForm.ui</name>
     <message>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2337,6 +2297,33 @@
     </message>
 </context>
 <context>
+    <name>SettingsForm.ui</name>
+    <message>
+        <source>Minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the minimap scrollbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale: 1/%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set scale:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Center vertically the text cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SettingsPage</name>
     <message>
         <source>Close</source>
@@ -2375,10 +2362,6 @@
     </message>
     <message>
         <source>Create an empty project at start</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Center vertically the text cursor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2434,6 +2417,13 @@
     </message>
     <message>
         <source>Rename an item</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SkrSettingsPanel</name>
+    <message>
+        <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2684,6 +2674,10 @@
     </message>
     <message>
         <source>Open quick view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text page</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

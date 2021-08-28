@@ -52,6 +52,7 @@ using namespace std;
 #include "skrtreemanager.h"
 #include "skrdownload.h"
 #include "skrshortcutmanager.h"
+#include "skrplugingetter.h"
 
 #if SKR_DEBUG
 # include <QQmlDebuggingEnabler>
@@ -221,7 +222,7 @@ int main(int argc, char *argv[])
                       &SKRShortcutManager::populateShortcutList);
     rootItem->applyLanguageFromSettings();
 
-
+    SKRPluginGetter *skrPluginGetter           = new SKRPluginGetter(&engine);
     SKRModels *models                          = new SKRModels(&engine);
     SKRFonts  *skrFonts                        = new SKRFonts(&engine);
     SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(&engine);
@@ -377,6 +378,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("skrData", data);
     engine.rootContext()->setContextProperty("skrShortcutManager", shortcutManager);
     engine.rootContext()->setContextProperty("skrRootItem", rootItem);
+    engine.rootContext()->setContextProperty("skrPluginGetter", skrPluginGetter);
     engine.rootContext()->setContextProperty("skrModels", models);
     engine.rootContext()->setContextProperty("skrFonts", skrFonts);
     engine.rootContext()->setContextProperty("skrQMLTools", skrQMLTools);
