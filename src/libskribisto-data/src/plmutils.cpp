@@ -881,7 +881,7 @@ void PLMUtils::Lang::setUserLang(const QString& value)
     userLang = value;
 }
 
-void PLMUtils::Lang::setUserLangFile(const QString& fileName)
+bool PLMUtils::Lang::setUserLangFile(const QString& fileName)
 {
-    userTranslator.load(fileName);
+    return userTranslator.load(fileName);
 }
