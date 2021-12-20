@@ -1,8 +1,8 @@
-import QtQuick 2.15
+import QtQuick
 import eu.skribisto.searchtreelistproxymodel 1.0
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
-import QtQml 2.15
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQml
 import "../Commons"
 import "../Items"
 import ".."

@@ -1,7 +1,7 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls
 import Qt.labs.settings 1.1
-import QtQml 2.15
+import QtQml
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.searchtreelistproxymodel 1.0
 import eu.skribisto.exporter 1.0

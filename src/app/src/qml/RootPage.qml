@@ -1,8 +1,8 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
-import QtQml.Models 2.15
-import QtQml 2.15
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQml.Models
+import QtQml
 import eu.skribisto.usersettings 1.0
 import eu.skribisto.errorhub 1.0
 import eu.skribisto.result 1.0
@@ -165,13 +165,13 @@ RootPageForm {
                                 case 0:
                                     icon = "qrc:///icons/backup/data-information.svg"
                                     break
-                                case SKRResult.Warning:
+                                case skrResult.Warning:
                                     icon = "qrc:///icons/backup/data-warning.svg"
                                     break
-                                case SKRResult.Critical:
+                                case skrResult.Critical:
                                     icon = "qrc:///icons/backup/data-error.svg"
                                     break
-                                case SKRResult.Fatal:
+                                case skrResult.Fatal:
                                     icon = "qrc:///icons/backup/data-error.svg"
                                     break
                                 default:
@@ -193,13 +193,13 @@ RootPageForm {
                                 case 0:
                                     errorType = qsTr("Ok")
                                     break
-                                case SKRResult.Warning:
+                                case skrResult.Warning:
                                     errorType = qsTr("Warning")
                                     break
-                                case SKRResult.Critical:
+                                case skrResult.Critical:
                                     errorType = qsTr("Critical")
                                     break
-                                case SKRResult.Fatal:
+                                case skrResult.Fatal:
                                     errorType = qsTr("Fatal")
                                     break
                                 default:

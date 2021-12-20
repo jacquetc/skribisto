@@ -680,8 +680,26 @@ QStringList PLMUtils::Dir::addonsPathsList()
         list.append(dir.path());
     }
 
-    // to find plugins when devolping in Qt Creator
+    // to find plugins when developing in Qt Creator
     dir.setPath(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    dir.cdUp();
+
+    if (dir.cd("plugins")) {
+        if (dir.isReadable()) {
+            list.append(dir.path());
+
+            QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+            for (const QString& pluginDir : qAsConst(dirList)) {
+                list.append(dir.path() + "/" + pluginDir);
+            }
+        }
+    }
+
+    // to find plugins when developing in Qt Creator for test apps
+    dir.setPath(QCoreApplication::applicationDirPath());
+    dir.cdUp();
     dir.cdUp();
     dir.cdUp();
 

@@ -1,13 +1,13 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Window 2.15
-import QtQml.Models 2.15
-import QtQml 2.15
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Window
+import QtQml.Models
+import QtQml
 import Qt.labs.settings 1.1
 import eu.skribisto.result 1.0
 import eu.skribisto.projecthub 1.0
 import eu.skribisto.searchtreelistproxymodel 1.0
-import QtQuick.Controls.Material 2.15
+import QtQuick.Controls.Material
 import "qrc:///qml/Commons"
 import "qrc:///qml/Items"
 import "qrc:///qml/"

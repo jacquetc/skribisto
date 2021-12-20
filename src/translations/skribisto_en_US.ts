@@ -1208,52 +1208,52 @@
 <context>
     <name>NavigationList</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="237"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="239"/>
         <source>Go up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="302"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="304"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="313"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="315"/>
         <source>Advanced</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="315"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="317"/>
         <source>Sort alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="332"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="334"/>
         <source>Trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="369"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="371"/>
         <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="387"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="389"/>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="451"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="453"/>
         <source>New item&apos;s parameters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="344"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="346"/>
         <source>Select none</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="344"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationList.qml" line="346"/>
         <source>Select all</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1831,7 +1831,7 @@
     </message>
     <message>
         <location filename="../plugins/overviewPage/OverviewPage/OverviewTree.qml" line="1771"/>
-        <source>Open in new tab</source>
+        <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
