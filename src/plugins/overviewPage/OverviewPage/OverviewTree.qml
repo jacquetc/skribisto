@@ -484,13 +484,13 @@ OverviewTreeForm {
                                     eventPoint.accepted = false
                                     return
                                 }
-                                if (eventPoint.event.device.type === PointerDevice.Mouse) {
+                                if (eventPoint.device.type === PointerDevice.Mouse) {
                                     listView.interactive = false
                                     Globals.touchUsed = false
                                 }
 
-                                if (eventPoint.event.device.type === PointerDevice.TouchScreen
-                                        | eventPoint.event.device.type === PointerDevice.Stylus) {
+                                if (eventPoint.device.type === PointerDevice.TouchScreen
+                                        | eventPoint.device.type === PointerDevice.Stylus) {
                                     listView.interactive = true
                                     Globals.touchUsed = true
                                 }
@@ -508,13 +508,13 @@ OverviewTreeForm {
                                     eventPoint.accepted = false
                                     return
                                 }
-                                if (eventPoint.event.device.type === PointerDevice.Mouse) {
+                                if (eventPoint.device.type === PointerDevice.Mouse) {
                                     listView.interactive = false
                                     Globals.touchUsed = false
                                 }
 
-                                if (eventPoint.event.device.type === PointerDevice.TouchScreen
-                                        | eventPoint.event.device.type === PointerDevice.Stylus) {
+                                if (eventPoint.device.type === PointerDevice.TouchScreen
+                                        | eventPoint.device.type === PointerDevice.Stylus) {
                                     listView.interactive = true
                                     Globals.touchUsed = true
                                 }
@@ -546,7 +546,7 @@ OverviewTreeForm {
                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                             acceptedButtons: Qt.RightButton
                             onSingleTapped: function(eventPoint) {
-                                listView.interactive = eventPoint.event.device.type
+                                listView.interactive = eventPoint.device.type
                                         === PointerDevice.Mouse
 
                                 Globals.touchUsed = false
@@ -590,7 +590,7 @@ OverviewTreeForm {
                             acceptedButtons: Qt.MiddleButton
                             onSingleTapped: function(eventPoint) {
                                 Globals.touchUsed = false
-                                listView.interactive = eventPoint.event.device.type
+                                listView.interactive = eventPoint.device.type
                                         === PointerDevice.Mouse
                                 priv.currentTreeItemId = model.treeItemId
                                 priv.currentProjectId = model.projectId

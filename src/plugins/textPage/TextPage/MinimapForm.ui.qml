@@ -101,7 +101,7 @@ Item {
             }
 
             WheelHandler {
-                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                acceptedDevices: PointerDevice.Mouse
                 id: wheelHandler
 
             }

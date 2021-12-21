@@ -1283,7 +1283,6 @@ Item {
 
                             TapHandler {
                                 id: tapHandler
-                                acceptedDevices: PointerDevice.Mouse
 
                                 onSingleTapped: function(eventPoint) {
                                     priv.selecting = false
@@ -1357,7 +1356,7 @@ Item {
                                     content.dragPoint = point.pressPosition
                                 }
 
-                                grabPermissions: PointerHandler.TakeOverForbidden
+                                //grabPermissions: PointerHandler.TakeOverForbidden
                             }
 
                             TapHandler {
@@ -1435,7 +1434,7 @@ Item {
                                     content.dragPoint = point.pressPosition
                                 }
 
-                                grabPermissions: PointerHandler.TakeOverForbidden
+                               // grabPermissions: PointerHandler.TakeOverForbidden
                             }
                             Timer {
                                 id: openDocumentTimer
@@ -1456,10 +1455,9 @@ Item {
 
                             TapHandler {
                                 id: rightClickTapHandler
-                                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                 acceptedButtons: Qt.RightButton
                                 onSingleTapped: function(eventPoint) {
-                                    listView.interactive = eventPoint.event.device.type
+                                    listView.interactive = eventPoint.device.type
                                             === PointerDevice.Mouse
                                     Globals.touchUsed  = false
 
@@ -1484,10 +1482,9 @@ Item {
 
                             TapHandler {
                                 id: middleClickTapHandler
-                                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                                 acceptedButtons: Qt.MiddleButton
                                 onSingleTapped: function(eventPoint) {
-                                    listView.interactive = eventPoint.event.device.type
+                                    listView.interactive = eventPoint.device.type
                                             === PointerDevice.Mouse
                                     Globals.touchUsed  = false
                                     listView.currentIndex = model.index
@@ -1711,7 +1708,7 @@ Item {
                                                 }
 
                                                 TapHandler {
-                                                    acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                                                    acceptedDevices: PointerDevice.Mouse| PointerDevice.Stylus
                                                     acceptedButtons: Qt.RightButton
 
                                                     onSingleTapped: function(eventPoint) {

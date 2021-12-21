@@ -118,8 +118,8 @@ CardForm {
     //--------------------------------------------------------------
 
     mouseDragHandler.onActiveChanged: {
-        //        console.log("onActiveChanged",
-        //                    mouseDragHandler.active, draggableContent.visualIndex)
+                console.log("onActiveChanged",
+                            mouseDragHandler.active, draggableContent.visualIndex)
         if (mouseDragHandler.active) {
             Globals.touchUsed  = false
             root.GridView.view.moveSourceIndex = draggableContent.visualIndex
