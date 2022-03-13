@@ -1,6 +1,6 @@
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 import ".."
 import "../Items"
 import "../Commons"
@@ -192,6 +192,7 @@ SkrPane {
                             Layout.preferredHeight: 40
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            text: qsTr("Settings")
                         }
 
                         SkrToolButton {
@@ -304,15 +305,18 @@ SkrPane {
             SkrToolButton{
                 action: showSkribistoWebsiteAction
                 icon.color: "transparent"
+                text: qsTr("Skribisto website")
             }
 
             SkrToolButton{
                 action: showDiscordAction
                 icon.color: "transparent"
-            }
+                text: qsTr("Discord")
+           }
 
             SkrToolButton{
                 action: showGitHubAction
+                text: qsTr("GitHub")
             }
         }
     }

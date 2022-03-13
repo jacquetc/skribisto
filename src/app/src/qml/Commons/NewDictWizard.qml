@@ -1,5 +1,5 @@
-import QtQuick 2.15
-import QtQml 2.15
+import QtQuick
+import QtQml
 import eu.skribisto.spellchecker 1.0
 import eu.skribisto.download 1.0
 

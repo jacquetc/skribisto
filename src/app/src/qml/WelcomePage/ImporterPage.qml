@@ -1,5 +1,5 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls
 import "../Items"
 
 ImporterPageForm {
@@ -34,13 +34,13 @@ Component.onCompleted: {
     function populateImporterButtonModel(){
         importerButtonModel.clear()
 
-        var list = skrRootItem.findImporterNames()
+        var list = skrPluginGetter.findImporterNames()
 
         for(var i in list){
             var name = list[i]
-            var iconSource = skrRootItem.findImporterIconSource(name)
-            var buttonText = skrRootItem.findImporterButtonText(name)
-            var qmlUrl = skrRootItem.findImporterUrl(name)
+            var iconSource = skrPluginGetter.findImporterIconSource(name)
+            var buttonText = skrPluginGetter.findImporterButtonText(name)
+            var qmlUrl = skrPluginGetter.findImporterUrl(name)
 
             importerButtonModel.append({ "name": name, "qmlUrl": qmlUrl, "iconSource": iconSource, "buttonText": buttonText})
         }

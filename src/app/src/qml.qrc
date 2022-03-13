@@ -108,5 +108,18 @@
         <file>qml/Items/SkrBusyIndicator.qml</file>
         <file>qml/Commons/OutlineWritingZone.qml</file>
         <file>qml/Items/SkrFlickable.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/AccessibilityPanel.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/AccessibilityPanelForm.ui.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/AppearancePanel.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/SavePanel.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/SavePanelForm.ui.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/BackupPanel.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/EPaperPanel.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/AdvancedPanel.qml</file>
+        <file>qml/WelcomePage/SettingsPanels/AdvancedPanelForm.ui.qml</file>
+        <file>qml/Items/SkrSettingsPanel.qml</file>
     </qresource>
 </RCC>

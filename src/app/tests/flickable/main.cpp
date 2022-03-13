@@ -6,7 +6,6 @@
 using namespace std;
 
 // for translator
-#include <QTextCodec>
 #include <QDebug>
 #include <QString>
 #include <QGuiApplication>
@@ -56,9 +55,6 @@ using namespace std;
 void startCore()
 {
     // new PLMPluginLoader(qApp);
-
-    // UTF-8 codec
-    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 
     // Names for the QSettings
     QCoreApplication::setOrganizationName("skribisto");
@@ -197,7 +193,7 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<SKRResult>("eu.skribisto.result",
                                           1,
                                           0,
-                                          "SKRResult",
+                                          "skrResult",
                                           "Can't instantiate SKRResult");
 
 

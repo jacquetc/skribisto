@@ -1,7 +1,7 @@
-import QtQuick 2.15
-import QtQml 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls.Material 2.15
+import QtQuick
+import QtQml
+import QtQuick.Controls
+import QtQuick.Controls.Material
 
 Item {
     id: base
@@ -101,7 +101,7 @@ Item {
             }
 
             WheelHandler {
-                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                acceptedDevices: PointerDevice.Mouse
                 id: wheelHandler
 
             }

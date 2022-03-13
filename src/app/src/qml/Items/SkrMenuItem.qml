@@ -1,10 +1,10 @@
-import QtQuick.Controls 2.15
-import QtQuick.Controls.Material 2.15
+import QtQuick.Controls
+import QtQuick.Controls.Material
 import ".."
 
 MenuItem {
     id: control
-    icon.color: control.action ? (control.action.icon.color == "transparent"?
+    icon.color: control.action ? (control.action.icon.color === "transparent"?
                                       (enabled ? control.action.icon.color: SkrTheme.buttonIconDisabled) :
                                       (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled)) :
                                         (enabled ? SkrTheme.buttonIcon : SkrTheme.buttonIconDisabled)

@@ -1,6 +1,6 @@
-import QtQuick 2.15
-import QtQml 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQml
+import QtQuick.Controls
 import Qt.labs.animation 1.0
 import ".."
 import "../Commons"
@@ -102,7 +102,7 @@ Item {
     //        target: contentItem
     //        property: "x"
     //        orientation: Qt.Horizontal
-    //        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    //        acceptedDevices: PointerDevice.Mouse
     //        onWheel: function(event){
     //            root.contentX = contentItem.x
     //        }
@@ -130,7 +130,7 @@ Item {
     //        target: contentItem
     //        property: "y"
     //        orientation: Qt.Vertical
-    //        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    //        acceptedDevices: PointerDevice.Mouse
     ////        onWheel: function(event){
     ////            root.contentY = contentItem.y
     ////        }
@@ -156,7 +156,7 @@ Item {
     //    onContentXChanged: console.log("contentX", contentX)
 
     WheelHandler{
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        acceptedDevices: PointerDevice.Mouse
         onActiveChanged: {
             if (active) {
                 momentumAnimation.stop()

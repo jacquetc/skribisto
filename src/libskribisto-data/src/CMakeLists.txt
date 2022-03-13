@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.5.0)
 project(skribisto-data LANGUAGES CXX VERSION ${VERSION} )
 add_definitions(-DSKRIBISTO_DATA_LIBRARY)
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Sql Xml CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Gui Sql Xml CONFIG REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Sql Xml CONFIG REQUIRED)
 
 

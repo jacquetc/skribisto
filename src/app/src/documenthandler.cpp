@@ -142,12 +142,16 @@ QString DocumentHandler::fontFamily() const
 
 void DocumentHandler::setFontFamily(const QString& fontFamily)
 {
+    QStringList families;
+
+    families << fontFamily;
+
     if (m_selectionCursor.selectedText().isEmpty()) {
-        m_nextFormat.setFontFamily(fontFamily);
+        m_nextFormat.setFontFamilies(families);
         m_formatPosition = m_textCursor.position();
     } else {
         QTextCharFormat f = m_selectionCursor.charFormat();
-        f.setFontFamily(fontFamily);
+        f.setFontFamilies(families);
         m_selectionCursor.mergeCharFormat(f);
     }
     emit formatChanged();

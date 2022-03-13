@@ -114,8 +114,15 @@ Date: 2021-08-26
 Type: stable
 Description:
 - "Social medias: add social medias links"
-- "Test: add test for internal titles"
 - "Text: make context menu quicker"
 - "Manual : change URL"
+
+Version: 1.9.32
+Date: 2022-03-13
+Type: stable
+Description:
+- "Migrate to Qt 6.2.3"
+- "Fix mouse clicks not well recognised in Flatpak package"
+- "Remove Plume Crator importer and Quazip"
 
 

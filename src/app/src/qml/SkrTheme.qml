@@ -1,6 +1,6 @@
 pragma Singleton
 
-import QtQuick 2.15
+import QtQuick
 import eu.skribisto.themes 1.0
 import Qt.labs.settings 1.1
 

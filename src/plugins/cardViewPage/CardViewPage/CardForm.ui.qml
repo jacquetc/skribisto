@@ -53,28 +53,31 @@ FocusScope {
 
             opacity: draggableContent.dragging ? 0.2 : 1.0
 
+
+
+            DragHandler{
+                id: mouseDragHandler
+                acceptedDevices: PointerDevice.Mouse
+                target: draggableContent
+                cursorShape: Qt.ClosedHandCursor
+
+            }
+
+            DragHandler{
+                id: touchDragHandler
+                acceptedDevices: PointerDevice.TouchScreen
+                                 | PointerDevice.Stylus
+                target: draggableContent
+                cursorShape: Qt.ClosedHandCursor
+
+            }
+
             contentItem: ColumnLayout{
                 anchors.fill: parent
                 RowLayout{
                     id: header
                     Layout.alignment: Qt.AlignTop
 
-                    DragHandler{
-                        id: mouseDragHandler
-                        acceptedDevices: PointerDevice.Mouse
-                        target: draggableContent
-                        cursorShape: Qt.ClosedHandCursor
-
-                    }
-
-                    DragHandler{
-                        id: touchDragHandler
-                        acceptedDevices: PointerDevice.TouchScreen
-                                         | PointerDevice.Stylus
-                        target: draggableContent
-                        cursorShape: Qt.ClosedHandCursor
-
-                    }
 
                     TapHandler {
                         id: touchTapHandler

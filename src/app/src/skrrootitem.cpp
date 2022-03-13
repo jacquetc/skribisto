@@ -1,7 +1,6 @@
 #include "skrrootitem.h"
 #include "plmutils.h"
 #include "skrdata.h"
-#include "skrimporterinterface.h"
 #include <QLocale>
 #include <QLibraryInfo>
 #include <QApplication>
@@ -11,8 +10,6 @@
 
 SKRRootItem::SKRRootItem(QObject *parent) : QObject(parent)
 {
-    skrdata->pluginHub()->addPluginType<SKRImporterInterface>();
-
     skribistoTranslator = new QTranslator(this);
     qtTranslator        = new QTranslator(this);
 }
@@ -58,8 +55,7 @@ void SKRRootItem::setCurrentTranslationLanguageCode(const QString& langCode)
     }
 
     if (qtTranslator->load(locale, "qt", "_",
-                           QLibraryInfo::location(QLibraryInfo::
-                                                  TranslationsPath))) {
+                           QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
         qApp->installTranslator(qtTranslator);
     }
 
@@ -327,102 +323,4 @@ void SKRRootItem::removeFile(const QString& fileName) {
     QFile file(fileName);
 
     file.remove();
-}
-
-// --------------------------------------------------------------------------------------
-// ------------Import
-// --------------------------------------------------------------------
-// --------------------------------------------------------------------------------------
-
-QStringList SKRRootItem::findImporterNames() const
-{
-    QList<SKRImporterInterface *> pluginList =
-        skrdata->pluginHub()->pluginsByType<SKRImporterInterface>();
-
-    // reorder by weight, lightest is top, heavier is last
-
-    std::sort(pluginList.begin(), pluginList.end(),
-              [](SKRImporterInterface *plugin1, SKRImporterInterface
-                 *plugin2) -> bool {
-        return plugin1->weight() < plugin2->weight();
-    }
-              );
-
-    QStringList list;
-
-    for (SKRImporterInterface *plugin: qAsConst(pluginList)) {
-        list << plugin->name();
-    }
-
-
-    return list;
-}
-
-// ---------------------------------------------------------------------------------
-
-QString SKRRootItem::findImporterIconSource(const QString& name) const
-{
-    QList<SKRImporterInterface *> pluginList =
-        skrdata->pluginHub()->pluginsByType<SKRImporterInterface>();
-
-
-    QString icon;
-
-    for (SKRImporterInterface *plugin: qAsConst(pluginList)) {
-        if (plugin->name() == name) {
-            icon = plugin->iconSource();
-            break;
-        }
-    }
-
-
-    return icon;
-}
-
-// ---------------------------------------------------------------------------
-
-QString SKRRootItem::findImporterButtonText(const QString& name) const
-{
-    QList<SKRImporterInterface *> pluginList =
-        skrdata->pluginHub()->pluginsByType<SKRImporterInterface>();
-
-
-    QString text;
-
-    for (SKRImporterInterface *plugin: qAsConst(pluginList)) {
-        if (plugin->name() == name) {
-            text = plugin->buttonText();
-            break;
-        }
-    }
-
-
-    return text;
-}
-
-// ---------------------------------------------------------------------------------
-
-
-QString SKRRootItem::findImporterUrl(const QString& name) const
-{
-    QList<SKRImporterInterface *> pluginList = skrdata->pluginHub()->pluginsByType<SKRImporterInterface>();
-
-    // reorder by weight, lightest is top, heavier is last
-
-    std::sort(pluginList.begin(),
-              pluginList.end(),
-              [](SKRImporterInterface *plugin1, SKRImporterInterface *plugin2) -> bool {
-        return plugin1->weight() < plugin2->weight();
-    }
-              );
-
-    QString url;
-
-    for (SKRImporterInterface *plugin: qAsConst(pluginList)) {
-        if (plugin->name() == name) {
-            url = plugin->qmlUrl();
-        }
-    }
-
-    return url;
 }

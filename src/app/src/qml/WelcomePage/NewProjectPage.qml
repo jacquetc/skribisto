@@ -1,6 +1,6 @@
-import QtQuick 2.15
+import QtQuick
 import Qt.labs.platform 1.1 as LabPlatform
-import QtQml 2.15
+import QtQml
 import eu.skribisto.result 1.0
 import eu.skribisto.spellchecker 1.0
 import "../Items"

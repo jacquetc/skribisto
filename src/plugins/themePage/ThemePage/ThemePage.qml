@@ -1,9 +1,9 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.themes 1.0
-import QtQuick.Window 2.15
+import QtQuick.Window
 
 import "../../Items"
 import "../../Commons"

@@ -6,8 +6,8 @@ cmake_minimum_required(VERSION 3.5.0)
 #if (POLICY CMP0071)
 #    cmake_policy(SET CMP0071 NEW)
 #endif()
-set(QT_MIN_VERSION "5.15.0")
-# set(QT_DEFAULT_MAJOR_VERSION 6)
+set(QT_MIN_VERSION "6.2.2")
+set(QT_DEFAULT_MAJOR_VERSION 6)
 
 set(OpenGL_GL_PREFERENCE "GLVND")
 
@@ -82,7 +82,7 @@ set(CMAKE_AUTORCC ON)
 
 #set(BREEZEICONS_DIR ${CMAKE_SOURCE_DIR}/3rdparty/breeze-icons/)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 #set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fsanitize=address,undefined -O0")
 

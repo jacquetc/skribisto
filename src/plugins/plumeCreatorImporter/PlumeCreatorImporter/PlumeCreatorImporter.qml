@@ -1,6 +1,6 @@
-import QtQuick 2.15
-import QtQml 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQml
+import QtQuick.Controls
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.plumecreatorimporter 1.0
 

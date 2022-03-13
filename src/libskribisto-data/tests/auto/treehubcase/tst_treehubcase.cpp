@@ -50,6 +50,8 @@ private Q_SLOTS:
     void getUpdateDate();
     void getInternalTitle();
 
+    void getParentId();
+
 
     void queue();
     void missingProjectError();
@@ -81,7 +83,7 @@ private Q_SLOTS:
     void simpleCopyPasteInTheSameFolder();
 
     // move
-
+    void  moveIntoFolder();
 private:
 
     SKRData *m_data;
@@ -395,6 +397,19 @@ void TreeHubCase::getInternalTitle()
     QList<int> folders = skrdata->treeHub()->getIdsWithInternalTitle(m_currentProjectId, "note_folder");
 
     QCOMPARE(folders.at(0), 3);
+}
+
+// ------------------------------------------------------------------------------------
+
+void TreeHubCase::getParentId()
+{
+    int parentId = skrdata->treeHub()->getParentId(m_currentProjectId, 18);
+
+    QCOMPARE(parentId, 6);
+
+    int nullParentId = skrdata->treeHub()->getParentId(m_currentProjectId, 0);
+
+    QCOMPARE(nullParentId, -1);
 }
 
 // ------------------------------------------------------------------------------------
@@ -741,6 +756,11 @@ void TreeHubCase::multipleCopyPaste() {
     indent = skrdata->treeHub()->getIndent(m_currentProjectId, 16);
     QCOMPARE(indent, 3);
 }
+
+void TreeHubCase::moveIntoFolder() {
+//    skrdata->treeHub()->moveTreeItemAsChildOf(m_currentProjectId, ,m_currentProjectId, )
+}
+
 
 QTEST_GUILESS_MAIN(TreeHubCase)
 

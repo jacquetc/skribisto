@@ -4,5 +4,7 @@
         <file>TextPage/TextPageForm.ui.qml</file>
         <file>TextPage/Minimap.qml</file>
         <file>TextPage/MinimapForm.ui.qml</file>
+        <file>TextPage/Settings.qml</file>
+        <file>TextPage/SettingsForm.ui.qml</file>
     </qresource>
 </RCC>

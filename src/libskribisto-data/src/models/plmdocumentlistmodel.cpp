@@ -343,6 +343,7 @@ QString PLMDocumentListModel::translateRole(PLMDocumentListModel::Roles role) co
         break;
 
     case PLMDocumentListModel::Roles::ProjectIdRole:
+
         // useless
         break;
 
@@ -380,6 +381,7 @@ QString PLMDocumentListModel::translateRole(PLMDocumentListModel::Roles role) co
 
         return string;
     }
+    return string;
 }
 
 void PLMDocumentListModel::populate()

@@ -171,7 +171,7 @@ Each project is a SQLite3 file, more robust than the zipped projects in Plume.
    Contains all the translation sources. DO NOT TOUCH directly. See the [Translation](#translation) section for details.
 
 ### Languages used
-- C++ with Qt 5.15 (later Qt6)
+- C++ with Qt 6.2.2
 - QML and Qt Quick
 - Qt's Javascript
 - SQL basics with SQLite3 only for the skribisto-data library.
@@ -215,13 +215,13 @@ Install 5.15 Desktop or superior and Qt Creator
 #### Building prerequisites 
 
 - Download the latest from GitHub, then you can use Qt Creator to open the superbuild at *cmake/Superbuild/CMakeLists.txt* in the project. 
-- Configure against Qt 5.15 minimum to be sure.
+- Configure against Qt 6.2 minimum to be sure.
 - **Before** compiling it, set the build directory (in Projects tab) to *build_skribisto_Release* just outside the skribisto folder
     - Example:
     
        Git repo: /home/cyril/Devel/skribisto
        
-       Superbuild's CMakeLists.txt: /home/cyril/Devel/skribisto/make/Superbuild/CMakeLists.txt
+       Superbuild's CMakeLists.txt: /home/cyril/Devel/skribisto/cmake/Superbuild/CMakeLists.txt
        
        Superbuild's build directory: /home/cyril/Devel/build_skribisto_Release
 
@@ -260,9 +260,9 @@ Needed sources and libs :
 - zlib (devel)
 - quazip (devel), version 1.1 minimum needed. Install it by hand.
 
-Minimum Qt : 5.15
-If you have not Qt 5.15, use the Qt installer found at [Qt website](https://www.qt.io/download-open-source)
-Install 5.15 Desktop or superior and Qt Creator
+Minimum Qt : 6.2.2
+If you have not Qt 6.2.2, use the Qt installer found at [Qt website](https://www.qt.io/download-open-source)
+Install 6.2.2 Desktop or superior and Qt Creator
 Open the project using the CMakeLists.txt file
 Build and run it, optionally with --testProject
 
@@ -276,8 +276,8 @@ Build and run it, optionally with --testProject
 Prerequisites (>1Go):
 ```
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak install flathub org.kde.Sdk//5.15
-flatpak install flathub org.kde.Platform//5.15
+flatpak install flathub org.kde.Sdk//6.2
+flatpak install flathub org.kde.Platform//6.2
 ```
 
 Older flatpak-builder doesn't support YAML manifest files. Convert it to JSON using one of the online website easily found, then place the new file by eu.skribisto.skribisto.yml. Adapt the flatpak commands to point to this new file instead of the .yml file.

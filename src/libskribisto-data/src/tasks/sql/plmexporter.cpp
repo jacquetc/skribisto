@@ -50,12 +50,12 @@ SKRResult PLMExporter::exportWholeSQLiteDbTo(PLMProject    *db,
 
 
         QFile file;
-        if(fileName.path().at(2) == ":"){ // means Windows
+
+        if (fileName.path().at(2) == ':') { // means Windows
             file.setFileName(fileName.path().remove(0, 1));
         }
         else {
             file.setFileName(fileName.path());
-
         }
 
         if (!tempFile.open(QIODevice::ReadOnly)) {
