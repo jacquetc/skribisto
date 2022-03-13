@@ -159,8 +159,7 @@ if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 
     elseif(${QT_VERSION_MAJOR} EQUAL 6)
         find_package(Qt6 COMPONENTS QmlCompiler)
-        # qt6 alternative for qtquick_compiler_add_resources not found
-        #qt_compiler_add_resources(RESOURCES ${QML})
+        qt6_add_resources(RESOURCES ${QML})
         qt_add_resources(RESOURCES ${QML})
     endif()
 
