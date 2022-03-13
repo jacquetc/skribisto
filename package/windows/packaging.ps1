@@ -1,5 +1,5 @@
  
-$env:Path += ";C:\Qt\6.2.3\mingw81_64\bin;C:\Qt\Tools\mingw900_64\bin;C:\Qt\Tools\CMake_64\bin"
+$env:Path += ";C:\Qt\6.2.3\mingw_64\bin;C:\Qt\Tools\mingw900_64\bin;C:\Qt\Tools\CMake_64\bin"
 
 
 # clean

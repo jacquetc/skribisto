@@ -2203,6 +2203,50 @@
     </message>
 </context>
 <context>
+    <name>QuaGzipFile</name>
+    <message>
+        <location filename="../../cmake/build-Superbuild-Desktop_Qt_6_2_3_MinGW_64_bit-Release/quazip-prefix/src/quazip/quazip/quagzipfile.cpp" line="60"/>
+        <source>QIODevice::Append is not supported for GZIP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/build-Superbuild-Desktop_Qt_6_2_3_MinGW_64_bit-Release/quazip-prefix/src/quazip/quazip/quagzipfile.cpp" line="66"/>
+        <source>Opening gzip for both reading and writing is not supported</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/build-Superbuild-Desktop_Qt_6_2_3_MinGW_64_bit-Release/quazip-prefix/src/quazip/quazip/quagzipfile.cpp" line="74"/>
+        <source>You can open a gzip either for reading or for writing. Which is it?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/build-Superbuild-Desktop_Qt_6_2_3_MinGW_64_bit-Release/quazip-prefix/src/quazip/quazip/quagzipfile.cpp" line="80"/>
+        <source>Could not gzopen() file</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QuaZIODevice</name>
+    <message>
+        <location filename="../../cmake/build-Superbuild-Desktop_Qt_6_2_3_MinGW_64_bit-Release/quazip-prefix/src/quazip/quazip/quaziodevice.cpp" line="188"/>
+        <source>QIODevice::Append is not supported for QuaZIODevice</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/build-Superbuild-Desktop_Qt_6_2_3_MinGW_64_bit-Release/quazip-prefix/src/quazip/quazip/quaziodevice.cpp" line="193"/>
+        <source>QIODevice::ReadWrite is not supported for QuaZIODevice</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QuaZipFile</name>
+    <message>
+        <location filename="../../cmake/build-Superbuild-Desktop_Qt_6_2_3_MinGW_64_bit-Release/quazip-prefix/src/quazip/quazip/quazipfile.cpp" line="251"/>
+        <source>ZIP/UNZIP API error %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>RecentPage</name>
     <message>
         <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="44"/>
