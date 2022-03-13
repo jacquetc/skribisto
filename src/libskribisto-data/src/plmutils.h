@@ -123,7 +123,7 @@ public:
 
     static QString getUserLang();
     static void    setUserLang(const QString& value);
-    static void    setUserLangFile(const QString& fileName);
+    static bool    setUserLangFile(const QString& fileName);
 
 private:
 

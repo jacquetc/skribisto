@@ -55,8 +55,7 @@ void SKRRootItem::setCurrentTranslationLanguageCode(const QString& langCode)
     }
 
     if (qtTranslator->load(locale, "qt", "_",
-                           QLibraryInfo::location(QLibraryInfo::
-                                                  TranslationsPath))) {
+                           QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
         qApp->installTranslator(qtTranslator);
     }
 

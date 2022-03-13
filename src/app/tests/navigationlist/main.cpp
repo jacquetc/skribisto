@@ -2,11 +2,11 @@
 #include <QSettings>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-
+#include <QtSvg>
 using namespace std;
 
 // for translator
-#include <QTextCodec>
+
 #include <QDebug>
 #include <QString>
 #include <QGuiApplication>
@@ -15,6 +15,8 @@ using namespace std;
 #include <QDir>
 #include <QQuickStyle>
 #include <QIcon>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "skrpluginloader.h"
 #include "skrdata.h"
@@ -48,17 +50,17 @@ using namespace std;
 #include "skrwindowmanager.h"
 #include "skrviewmanager.h"
 #include "skrtreemanager.h"
+#include "skrdownload.h"
+#include "skrshortcutmanager.h"
+#include "skrplugingetter.h"
 
-#ifdef QT_DEBUG
+#if SKR_DEBUG
 # include <QQmlDebuggingEnabler>
-#endif // QT_DEBUG
+#endif // SKR_DEBUG
 // -------------------------------------------------------
 void startCore()
 {
     // new PLMPluginLoader(qApp);
-
-    // UTF-8 codec
-    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 
     // Names for the QSettings
     QCoreApplication::setOrganizationName("skribisto");
@@ -143,6 +145,7 @@ int main(int argc, char *argv[])
 
 
     QApplication app(argc, argv);
+
     // icons :
     // qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
 
@@ -180,24 +183,30 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine(qApp);
 
-    SKRData   *data                            = new SKRData(&engine);
-    SKRRootItem *rootItem = new SKRRootItem(&engine);
+    SKRData *data = new SKRData(&engine);
+
+    SKRShortcutManager *shortcutManager = new SKRShortcutManager(&engine);
+    SKRRootItem *rootItem               = new SKRRootItem(&engine);
+    rootItem->connect(rootItem,
+                      &SKRRootItem::currentTranslationLanguageCodeChanged,
+                      shortcutManager,
+                      &SKRShortcutManager::populateShortcutList);
     rootItem->applyLanguageFromSettings();
 
-
+    SKRPluginGetter *skrPluginGetter           = new SKRPluginGetter(&engine);
     SKRModels *models                          = new SKRModels(&engine);
     SKRFonts  *skrFonts                        = new SKRFonts(&engine);
     SKREditMenuSignalHub *skrEditMenuSignalHub = new SKREditMenuSignalHub(&engine);
-    SKRQMLTools   *skrQMLTools                 = new SKRQMLTools(&engine);
-    SKRTextBridge *skrTextBridge               = new SKRTextBridge(&engine);
-    SKRUserSettings *skrUserSettings         = new SKRUserSettings(&engine);
-    SKRTreeManager *skrTreeManager         = new SKRTreeManager(&engine);
+    SKRQMLTools     *skrQMLTools               = new SKRQMLTools(&engine);
+    SKRTextBridge   *skrTextBridge             = new SKRTextBridge(&engine);
+    SKRUserSettings *skrUserSettings           = new SKRUserSettings(&engine);
+    SKRTreeManager  *skrTreeManager            = new SKRTreeManager(&engine);
 
     qmlRegisterUncreatableType<SKRResult>("eu.skribisto.result",
-                                         1,
-                                         0,
-                                         "SKRResult",
-                                         "Can't instantiate SKRResult");
+                                          1,
+                                          0,
+                                          "skrResult",
+                                          "Can't instantiate SKRResult");
 
 
     qmlRegisterUncreatableType<PLMProjectHub>("eu.skribisto.projecthub",
@@ -211,6 +220,13 @@ int main(int argc, char *argv[])
                                            0,
                                            "SKRTreeHub",
                                            "Can't instantiate SKRTreeHub");
+
+    qmlRegisterUncreatableType<SKRPluginHub>("eu.skribisto.pluginhub",
+                                             1,
+                                             0,
+                                             "SKRPluginHub",
+                                             "Can't instantiate SKRPluginHub");
+
 
     qmlRegisterUncreatableType<SKRTagHub>("eu.skribisto.taghub",
                                           1,
@@ -227,27 +243,27 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<SKRPropertyHub>("eu.skribisto.propertyhub",
                                                1,
                                                0,
-                                               "SKRProjectDictHub",
+                                               "SKRPropertyHub",
                                                "Can't instantiate SKRPropertyHub");
 
     qmlRegisterUncreatableType<SKRStatHub>("eu.skribisto.stathub",
-                                               1,
-                                               0,
-                                               "SKRStatHub",
-                                               "Can't instantiate SKRStatHub");
+                                           1,
+                                           0,
+                                           "SKRStatHub",
+                                           "Can't instantiate SKRStatHub");
 
     qmlRegisterUncreatableType<SKRErrorHub>("eu.skribisto.errorhub",
-                                               1,
-                                               0,
-                                               "SKRStatHub",
-                                               "Can't instantiate SKRErrorHub");
+                                            1,
+                                            0,
+                                            "SKRErrorHub",
+                                            "Can't instantiate SKRErrorHub");
 
 
     qmlRegisterUncreatableType<SKR>("eu.skribisto.skr",
-                                               1,
-                                               0,
-                                               "SKR",
-                                               "Can't instantiate SKR");
+                                    1,
+                                    0,
+                                    "SKR",
+                                    "Can't instantiate SKR");
 
     qmlRegisterUncreatableType<SKRModels>("eu.skribisto.models",
                                           1,
@@ -267,7 +283,6 @@ int main(int argc, char *argv[])
                                                  1,
                                                  0,
                                                  "SKRSearchTreeListProxyModel");
-
 
 
     qmlRegisterType<SKRSearchTagListProxyModel>("eu.skribisto.searchtaglistproxymodel",
@@ -296,6 +311,11 @@ int main(int argc, char *argv[])
                                      0,
                                      "SKRSpellChecker");
 
+    qmlRegisterType<SKRDownload>("eu.skribisto.download",
+                                 1,
+                                 0,
+                                 "Download");
+
     qmlRegisterType<SKRUserSettings>("eu.skribisto.usersettings",
                                      1,
                                      0,
@@ -307,20 +327,19 @@ int main(int argc, char *argv[])
                                "SKRThemes");
 
     qmlRegisterType<SKRExporter>("eu.skribisto.exporter",
-                               1,
-                               0,
-                               "SKRExporter");
+                                 1,
+                                 0,
+                                 "SKRExporter");
 
     qmlRegisterType<SKRClipboard>("eu.skribisto.clipboard",
-                               1,
-                               0,
-                               "SKRClipboard");
-
-    qmlRegisterType<SKRViewManager>("eu.skribisto.viewmanager",
                                   1,
                                   0,
-                                  "SKRViewManager");
+                                  "SKRClipboard");
 
+    qmlRegisterType<SKRViewManager>("eu.skribisto.viewmanager",
+                                    1,
+                                    0,
+                                    "SKRViewManager");
 
 
     const QUrl url(QStringLiteral("qrc:/qml/test/test_navigationlist.qml"));
@@ -328,7 +347,9 @@ int main(int argc, char *argv[])
     SKRWindowManager *skrWindowManager = new SKRWindowManager(qApp, &engine, url);
 
     engine.rootContext()->setContextProperty("skrData", data);
+    engine.rootContext()->setContextProperty("skrShortcutManager", shortcutManager);
     engine.rootContext()->setContextProperty("skrRootItem", rootItem);
+    engine.rootContext()->setContextProperty("skrPluginGetter", skrPluginGetter);
     engine.rootContext()->setContextProperty("skrModels", models);
     engine.rootContext()->setContextProperty("skrFonts", skrFonts);
     engine.rootContext()->setContextProperty("skrQMLTools", skrQMLTools);
@@ -339,18 +360,12 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("skrTreeManager", skrTreeManager);
 
 
-
-
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl& objUrl) {
         if (!obj && (url == objUrl)) QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
 
     skrWindowManager->restoreWindows();
-
-
-
-
 
 
     //            QCoreApplication *app = qApp;

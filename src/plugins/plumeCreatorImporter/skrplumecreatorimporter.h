@@ -6,9 +6,8 @@
 #include <QXmlStreamReader>
 #include <QtSql/QSqlDatabase>
 #include "skrresult.h"
-#include "plumecreatorimporter_global.h"
 
-class EXPORT SKRPlumeCreatorImporter : public QObject {
+class SKRPlumeCreatorImporter : public QObject {
     Q_OBJECT
 
 public:

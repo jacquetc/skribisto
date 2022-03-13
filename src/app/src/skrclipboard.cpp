@@ -62,7 +62,11 @@ void SKRClipboard::prepareAndSendLastClipboardText()
 }
 
 void SKRClipboard::createFormats() {
-    m_charFormat.setFontFamily(m_fontFamily);
+    QStringList families;
+
+    families << m_fontFamily;
+
+    m_charFormat.setFontFamilies(families);
     m_charFormat.setFontPointSize(m_fontPointSize);
     m_blockFormat.setTopMargin(m_textTopMargin);
     m_blockFormat.setTextIndent(m_textIndent);

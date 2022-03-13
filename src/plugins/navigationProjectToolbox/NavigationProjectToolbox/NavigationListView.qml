@@ -1,9 +1,9 @@
-import QtQuick 2.15
-import QtQml 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
-import QtQml.Models 2.15
-import QtQuick.Controls.Material 2.15
+import QtQuick
+import QtQml
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQml.Models
+import QtQuick.Controls.Material
 import eu.skribisto.searchtreelistproxymodel 1.0
 import "../../Commons"
 import "../../Items"
@@ -966,10 +966,25 @@ Item {
 
                             onDropped: function(drop){
                                 topDropIndicator.visible = false
-                                skrData.treeHub().moveTreeItem(model.projectId, drag.source.treeItemId, model.treeItemId, false)
+
+                                topMoveTreeItemTimer.sourceTreeItemId = drag.source.treeItemId
+                                topMoveTreeItemTimer.targetTreeItemId = model.treeItemId
+                                topMoveTreeItemTimer.projectId = model.projectId
+                                topMoveTreeItemTimer.start()
 
                             }
 
+                            Timer{
+                                id: topMoveTreeItemTimer
+                                property int sourceTreeItemId: -1
+                                property int targetTreeItemId: -1
+                                property int projectId: -1
+                                interval: 600
+                                onTriggered: {
+                                    skrData.treeHub().moveTreeItem(projectId, sourceTreeItemId, targetTreeItemId, false)
+
+                                }
+                            }
                         }
 
 
@@ -1014,10 +1029,28 @@ Item {
                             onDropped: function(drop) {
                                 middleDropIndicator.visible = false
 
-                                skrData.treeHub().moveTreeItemAsChildOf(drag.source.projectId, drag.source.treeItemId, model.projectId, model.treeItemId)
+
 
                                 if (drop.proposedAction === Qt.MoveAction) {
 
+                                    middleMoveTreeItemTimer.sourceProjectId = drag.source.projectId
+                                    middleMoveTreeItemTimer.sourceTreeItemId = drag.source.treeItemId
+                                    middleMoveTreeItemTimer.targetProjectId = model.projectId
+                                    middleMoveTreeItemTimer.targetTreeItemId = model.treeItemId
+                                    middleMoveTreeItemTimer.start()
+
+                                }
+                            }
+
+                            Timer{
+                                id: middleMoveTreeItemTimer
+                                property int sourceProjectId: -1
+                                property int sourceTreeItemId: -1
+                                property int targetProjectId: -1
+                                property int targetTreeItemId: -1
+                                interval: 600
+                                onTriggered: {
+                                    skrData.treeHub().moveTreeItemAsChildOf(sourceProjectId, sourceTreeItemId, targetProjectId, targetTreeItemId)
 
                                 }
                             }
@@ -1113,9 +1146,24 @@ Item {
                             }
                             onDropped: function(drop){
                                 bottomDropIndicator.visible = false
+                                bottomMoveTreeItemTimer.sourceTreeItemId = drag.source.treeItemId
+                                bottomMoveTreeItemTimer.targetTreeItemId = model.treeItemId
+                                bottomMoveTreeItemTimer.projectId = model.projectId
+                                bottomMoveTreeItemTimer.start()
 
-                                skrData.treeHub().moveTreeItem(model.projectId, drag.source.treeItemId, model.treeItemId, true)
+                            }
 
+
+                            Timer{
+                                id: bottomMoveTreeItemTimer
+                                property int sourceTreeItemId: -1
+                                property int targetTreeItemId: -1
+                                property int projectId: -1
+                                interval: 600
+                                onTriggered: {
+                                    skrData.treeHub().moveTreeItem(projectId, sourceTreeItemId, targetTreeItemId, true)
+
+                                }
                             }
 
                         }
@@ -1357,7 +1405,7 @@ Item {
                                     content.dragPoint = point.pressPosition
                                 }
 
-                                grabPermissions: PointerHandler.TakeOverForbidden
+                                //grabPermissions: PointerHandler.TakeOverForbidden
                             }
 
                             TapHandler {
@@ -1435,7 +1483,7 @@ Item {
                                     content.dragPoint = point.pressPosition
                                 }
 
-                                grabPermissions: PointerHandler.TakeOverForbidden
+                               // grabPermissions: PointerHandler.TakeOverForbidden
                             }
                             Timer {
                                 id: openDocumentTimer
@@ -1456,10 +1504,10 @@ Item {
 
                             TapHandler {
                                 id: rightClickTapHandler
-                                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                                acceptedDevices: PointerDevice.Mouse
                                 acceptedButtons: Qt.RightButton
                                 onSingleTapped: function(eventPoint) {
-                                    listView.interactive = eventPoint.event.device.type
+                                    listView.interactive = eventPoint.device.type
                                             === PointerDevice.Mouse
                                     Globals.touchUsed  = false
 
@@ -1484,10 +1532,10 @@ Item {
 
                             TapHandler {
                                 id: middleClickTapHandler
-                                acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                                acceptedDevices: PointerDevice.Mouse
                                 acceptedButtons: Qt.MiddleButton
                                 onSingleTapped: function(eventPoint) {
-                                    listView.interactive = eventPoint.event.device.type
+                                    listView.interactive = eventPoint.device.type
                                             === PointerDevice.Mouse
                                     Globals.touchUsed  = false
                                     listView.currentIndex = model.index
@@ -1711,7 +1759,7 @@ Item {
                                                 }
 
                                                 TapHandler {
-                                                    acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                                                    acceptedDevices: PointerDevice.Mouse| PointerDevice.Stylus
                                                     acceptedButtons: Qt.RightButton
 
                                                     onSingleTapped: function(eventPoint) {
@@ -2724,5 +2772,7 @@ Item {
             }
         }
     }
+
+
 }
 

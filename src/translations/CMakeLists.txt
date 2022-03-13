@@ -1,6 +1,6 @@
 
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS LinguistTools REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS LinguistTools REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS LinguistTools REQUIRED)
 
 

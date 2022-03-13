@@ -83,7 +83,7 @@ private Q_SLOTS:
     void simpleCopyPasteInTheSameFolder();
 
     // move
-
+    void  moveIntoFolder();
 private:
 
     SKRData *m_data;
@@ -756,6 +756,11 @@ void TreeHubCase::multipleCopyPaste() {
     indent = skrdata->treeHub()->getIndent(m_currentProjectId, 16);
     QCOMPARE(indent, 3);
 }
+
+void TreeHubCase::moveIntoFolder() {
+//    skrdata->treeHub()->moveTreeItemAsChildOf(m_currentProjectId, ,m_currentProjectId, )
+}
+
 
 QTEST_GUILESS_MAIN(TreeHubCase)
 

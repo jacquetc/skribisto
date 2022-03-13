@@ -1,12 +1,12 @@
-import QtQuick 2.15
-import QtQml 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
+import QtQuick
+import QtQml
+import QtQuick.Controls
+import QtQuick.Layouts
 import Qt.labs.platform 1.1 as LabPlatform
 import Qt.labs.settings 1.1
 import eu.skribisto.projecthub 1.0
 import eu.skribisto.spellchecker 1.0
-import QtQuick.Controls.Material 2.15
+import QtQuick.Controls.Material
 import ".."
 import "../Items"
 import "../Commons"

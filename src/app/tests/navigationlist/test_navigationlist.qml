@@ -1,16 +1,17 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Window 2.15
-import QtQml.Models 2.15
-import QtQml 2.15
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Window
+import QtQml.Models
+import QtQml
 import Qt.labs.settings 1.1
 import eu.skribisto.result 1.0
 import eu.skribisto.projecthub 1.0
 import eu.skribisto.searchtreelistproxymodel 1.0
-import QtQuick.Controls.Material 2.15
+import QtQuick.Controls.Material
 import "qrc:///qml/Commons"
 import "qrc:///qml/Items"
 import "qrc:///qml/"
+import "qrc:///qml/plugins/NavigationProjectToolbox"
 
 ApplicationWindow {
 
@@ -19,6 +20,20 @@ ApplicationWindow {
     minimumHeight: 800
     minimumWidth: 600
     visible: true
+
+    property int projectIdToBeLoaded: -1
+    property int treeItemIdToBeLoaded: -1
+    property string pageTypeToBeLoaded: ""
+    property var additionalPropertiesForViewManager: ({})
+
+    property int windowId: -1
+
+
+    property alias protectedSignals: protectedSignals
+    QtObject {
+        id: protectedSignals
+        signal setBreadcrumbCurrentTreeItemCalled(int projectId, int treeItemId)
+    }
 
 
     Material.background: SkrTheme.pageBackground

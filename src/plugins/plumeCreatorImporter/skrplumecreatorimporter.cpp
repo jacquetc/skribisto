@@ -139,7 +139,7 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
                 attendXml.attributes().value("spinBox_1").toString().split("--", Qt::SkipEmptyParts);
         }
 
-        if ((attendXml.tokenType() == QXmlStreamReader::StartElement) && (attendXml.name() == "group")) {
+        if ((attendXml.tokenType() == QXmlStreamReader::StartElement) && (attendXml.name() == QString("group"))) {
             result = this->createAttendFolder(projectId, 2,
                                               attendXml,
                                               tempDirPath,
@@ -162,7 +162,7 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
         }
 
 
-        if ((attendXml.tokenType() == QXmlStreamReader::StartElement) && (attendXml.name() == "obj")) {
+        if ((attendXml.tokenType() == QXmlStreamReader::StartElement) && (attendXml.name() == QString("obj"))) {
             result = this->createAttendObject(projectId, 3,
                                               attendXml,
                                               tempDirPath,
@@ -227,44 +227,44 @@ SKRResult SKRPlumeCreatorImporter::importPlumeCreatorProject(const QUrl& plumeFi
 
         int indent = 0;
 
-        if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "plume-tree")) {
+        if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == QString("plume-tree"))) {
             skrdata->projectHub()->setProjectName(projectId, xml.attributes().value("projectName").toString());
         }
 
-        if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "book")) {
+        if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == QString("book"))) {
             indent = 2;
             result = this->createFolderAndAssociations(projectId, indent, xml, tempDirPath, textFolderId, noteFolderId);
 
 
             result = this->createSection(projectId, indent + 1, textFolderId, "book-beginning");
         }
-        else if ((xml.tokenType() == QXmlStreamReader::EndElement) && (xml.name() == "book")) {
+        else if ((xml.tokenType() == QXmlStreamReader::EndElement) && (xml.name().toString() == QString("book"))) {
             indent = 3;
             result = this->createSection(projectId, indent, textFolderId, "book-end");
         }
-        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "act")) {
+        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == QString("act"))) {
             isInAct = true;
             indent  = 3;
             this->createFolderAndAssociations(projectId, indent, xml, tempDirPath, textFolderId, noteFolderId);
         }
-        else if ((xml.tokenType() == QXmlStreamReader::EndElement) && (xml.name() == "act")) {
+        else if ((xml.tokenType() == QXmlStreamReader::EndElement) && (xml.name() == QString("act"))) {
             isInAct = false;
         }
-        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "chapter")) {
+        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == QString("chapter"))) {
             isInChapter = true;
             indent      = 3 + (isInAct ? 1 : 0);
             this->createFolderAndAssociations(projectId, indent, xml, tempDirPath, textFolderId, noteFolderId);
 
             result = this->createSection(projectId, indent + 1, textFolderId, "chapter");
         }
-        else if ((xml.tokenType() == QXmlStreamReader::EndElement) && (xml.name() == "chapter")) {
+        else if ((xml.tokenType() == QXmlStreamReader::EndElement) && (xml.name() == QString("chapter"))) {
             isInChapter = false;
         }
-        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "scene")) {
+        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == QString("scene"))) {
             indent = 3 + (isInAct ? 1 : 0) + (isInChapter ? 1 : 0);
             this->createPapersAndAssociations(projectId, indent, xml, tempDirPath, textFolderId, noteFolderId);
         }
-        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == "separator")) {
+        else if ((xml.tokenType() == QXmlStreamReader::StartElement) && (xml.name() == QString("separator"))) {
             indent = 3 + (isInAct ? 1 : 0) + (isInChapter ? 1 : 0);
 
             result = this->createSection(projectId, indent, textFolderId, "separator");

@@ -1,6 +1,6 @@
-import QtQuick 2.15
-import QtQml 2.15
-import QtQuick.Layouts 1.15
+import QtQuick
+import QtQml
+import QtQuick.Layouts
 
 import "../../Items"
 import "../../Commons"
@@ -18,8 +18,6 @@ SkrBasePage {
     property alias viewButtons: viewButtons
     property alias pageMenuToolButton: pageMenuToolButton
     property alias titleLabel: titleLabel
-    property alias leftScrollFlickable: leftScrollFlickable
-    property alias rightScrollFlickable: rightScrollFlickable
 
 
     property alias countLabel: countLabel
@@ -82,54 +80,7 @@ SkrBasePage {
             //-------------------------------------------------
             //-------------------------------------------------
             //-------------------------------------------------
-            RowLayout {
-                id: rowLayout2
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-                spacing: 0
 
-                Item {
-                    id: leftBase
-                    //color: "blue"
-                    //                Layout.preferredWidth: leftBasePreferredWidth
-                    //                Layout.maximumWidth: leftBasePreferredWidth
-                    //Layout.minimumWidth: rightBase.Layout.minimumWidth
-                    //visible: !Globals.compactMode
-                    Layout.fillHeight: true
-                    Layout.minimumWidth:  viewManager.rootWindow.compactMode ? 0 : rightBaseLayout.childrenRect.width
-
-                    z: 1
-
-
-                    SkrFlickable{
-                        id: leftScrollFlickable
-                        anchors.fill: parent
-                        flickableDirection: Qt.Vertical
-                        //contentHeight: writingZone.textArea.height
-
-
-                        contentHeight: writingZone.flickable.contentHeight
-                        contentWidth: width
-
-                        Binding {
-                            target: leftScrollFlickable.contentItem
-                            property: "height"
-                            value: writingZone.flickable.contentHeight
-                            restoreMode: Binding.RestoreNone
-                        }
-
-
-                        Binding {
-                            target: leftScrollFlickable.contentItem
-                            property: "width"
-                            value: writingZone.flickable.contentWidth
-                            restoreMode: Binding.RestoreNone
-                        }
-
-
-                    }
-
-                }
 
                 Item {
                     id: middleBase
@@ -161,53 +112,33 @@ SkrBasePage {
                             textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
                             textAreaStyleAccentColor: SkrTheme.accent
                             paneStyleBackgroundColor: SkrTheme.pageBackground
+
                         }
                     }
-                }
 
-                Item {
-                    id: rightBase
-                    //visible: !Globals.compactMode
-                    Layout.fillHeight: true
-                    //                Layout.preferredWidth: rightBasePreferredWidth
-                    Layout.minimumWidth: rightBaseLayout.childrenRect.width
 
-                    //Layout.maximumWidth: 300
-                    z: 1
-
-                    SkrFlickable{
-                        id: rightScrollFlickable
-                        anchors.fill: parent
-                        anchors.rightMargin: rightBaseLayout.width
-                        flickableDirection: Qt.Vertical
-                        contentHeight: writingZone.flickable.contentHeight
-                        contentWidth: width
-                    }
-
-                    RowLayout {
-                        id: rightBaseLayout
-                        spacing: 0
+                    Loader {
+                        id: minimapLoader
+                        asynchronous : true
 
                         anchors.top: parent.top
+                        anchors.right: parent.right
                         anchors.bottom: parent.bottom
-                        anchors.left: parent.left
-                        //width: childrenRect.width
-                        Loader {
-                            id: minimapLoader
-                            asynchronous : true
+                        width: Qt.isQtObject(minimapLoader.item) ? minimapLoader.item.preferredWidth : -1
 
-                            Layout.fillHeight: true
-                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            Layout.preferredWidth: Qt.isQtObject(minimapLoader.item) ? minimapLoader.item.preferredWidth : -1
-
-
-                        }
 
                     }
+
                 }
 
 
-            }
+
+
+
+
+
+
+
         }
 
         RelationshipPanel {

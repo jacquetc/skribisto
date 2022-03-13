@@ -1,6 +1,6 @@
-import QtQuick 2.15
-import QtQml 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQml
+import QtQuick.Controls
 
 import "../../Items"
 import "../../Commons"
@@ -574,47 +574,12 @@ TextPageForm {
     //----- scrollarea------------------------------------------------------------
     //------------------------------------------------------------------------
 
-    Binding{
-        when: !leftScrollFlickable.active
-        target: leftScrollFlickable
-        property: "contentY"
-        value: wholeViewContentY
-        restoreMode: Binding.RestoreNone
-            }
-
-
-    Binding{
-        when: leftScrollFlickable.active
-        target: root
-        property: "wholeViewContentY"
-        value: leftScrollFlickable.contentY
-        restoreMode: Binding.RestoreNone
-        //delayed: true
-    }
-
 
     //leftScrollWheel.grabPermissions: PointerHandler.TakeOverForbidden
 
 
     //---------------------------
 
-    Binding{
-        when: !rightScrollFlickable.active
-        target: rightScrollFlickable
-        property: "contentY"
-        value: wholeViewContentY
-        restoreMode: Binding.RestoreNone
-    }
-
-
-    Binding{
-        when: rightScrollFlickable.active
-        target: root
-        property: "wholeViewContentY"
-        value: rightScrollFlickable.contentY
-        restoreMode: Binding.RestoreNone
-        //delayed: true
-    }
 
     //---------------------------
     //------------------------------------------------------------------------
@@ -636,8 +601,6 @@ TextPageForm {
         restoreMode: Binding.RestoreNone
 
     }
-
-
 
 
     //------------------------------------------------------------------------

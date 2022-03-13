@@ -11,7 +11,7 @@ set(PROJECT_NAME "skribisto-plugin-plumeCreatorImporter")
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION} )
 add_definitions(-DSKRIBISTO_PLUGIN_LIBRARY)
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Quick Svg Sql QuickControls2 CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Gui Quick Svg Sql QuickControls2 CONFIG REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Quick Svg Sql QuickControls2 CONFIG REQUIRED)
 
 
@@ -20,7 +20,6 @@ set(SRCS
     plugin_info.json
     plugin.cpp
     plugin.h
-    plumecreatorimporter_global.h
     skrplumecreatorimporter.h
     skrplumecreatorimporter.cpp
 )
