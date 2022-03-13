@@ -28,12 +28,12 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.31" date="2021-08-26T00:00:00Z">
+    <release type="stable" version="1.9.32" date="2022-03-13T00:00:00Z">
       <description>
         <ul>
-          <li>Social medias: add social medias links</li>
-          <li>Text: make context menu quicker</li>
-          <li>Manual : change URL</li>
+          <li>Migrate to Qt 6.2.3</li>
+          <li>Fix mouse clicks not well recognised in Flatpak package</li>
+          <li>Remove Plume Crator importer and Quazip</li>
         </ul>
       </description>
     </release>
