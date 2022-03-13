@@ -117,4 +117,12 @@ Description:
 - "Text: make context menu quicker"
 - "Manual : change URL"
 
+Version: 1.9.32
+Date: 2022-03-13
+Type: stable
+Description:
+- "Migrate to Qt 6.2.3"
+- "Fix mouse clicks not well recognised in Flatpak package"
+- "Remove Plume Crator importer and Quazip"
+
 
