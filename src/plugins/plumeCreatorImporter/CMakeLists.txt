@@ -20,7 +20,6 @@ set(SRCS
     plugin_info.json
     plugin.cpp
     plugin.h
-    plumecreatorimporter_global.h
     skrplumecreatorimporter.h
     skrplumecreatorimporter.cpp
 )

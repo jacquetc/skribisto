@@ -29,8 +29,6 @@
 class SKRInterfaceSettings {
 public:
 
-    enum {};
-
     virtual ~SKRInterfaceSettings() {}
 
     virtual QString name() const                 = 0;

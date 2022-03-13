@@ -1300,107 +1300,107 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1524"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1572"/>
         <source>See sub-items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1611"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1659"/>
         <source>This project is a backup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1791"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1839"/>
         <source>Enter label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1839"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1887"/>
         <source>Enter title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1937"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1985"/>
         <source>Item menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2237"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2285"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2260"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2308"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2283"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2331"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2311"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2359"/>
         <source>Set as active project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2334"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2382"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2354"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2402"/>
         <source>Set label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2383"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2431"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2417"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2465"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2450"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2498"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2486"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2534"/>
         <source>Add before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2526"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2574"/>
         <source>Add after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2567"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2615"/>
         <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2608"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2656"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2640"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2688"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2677"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2725"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2709"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2757"/>
         <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>
