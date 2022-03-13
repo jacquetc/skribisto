@@ -21,7 +21,7 @@ else()
 endif()
 
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 ${PRINTPACKAGE} REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 ${PRINTPACKAGE} REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Quick Network Gui Widgets LinguistTools Svg QuickControls2 ${PRINTPACKAGE} REQUIRED)
 
 
@@ -161,6 +161,7 @@ if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         find_package(Qt6 COMPONENTS QmlCompiler)
         # qt6 alternative for qtquick_compiler_add_resources not found
         #qt_compiler_add_resources(RESOURCES ${QML})
+        qt_add_resources(RESOURCES ${QML})
     endif()
 
     qt_add_resources(RESOURCES ${QRC})

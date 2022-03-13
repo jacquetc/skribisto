@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.5.0)
 #    cmake_policy(SET CMP0071 NEW)
 #endif()
 set(QT_MIN_VERSION "6.2.2")
-# set(QT_DEFAULT_MAJOR_VERSION 6)
+set(QT_DEFAULT_MAJOR_VERSION 6)
 
 set(OpenGL_GL_PREFERENCE "GLVND")
 

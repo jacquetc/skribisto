@@ -1283,6 +1283,7 @@ Item {
 
                             TapHandler {
                                 id: tapHandler
+                                acceptedDevices: PointerDevice.Mouse
 
                                 onSingleTapped: function(eventPoint) {
                                     priv.selecting = false
@@ -1455,6 +1456,7 @@ Item {
 
                             TapHandler {
                                 id: rightClickTapHandler
+                                acceptedDevices: PointerDevice.Mouse
                                 acceptedButtons: Qt.RightButton
                                 onSingleTapped: function(eventPoint) {
                                     listView.interactive = eventPoint.device.type
@@ -1482,6 +1484,7 @@ Item {
 
                             TapHandler {
                                 id: middleClickTapHandler
+                                acceptedDevices: PointerDevice.Mouse
                                 acceptedButtons: Qt.MiddleButton
                                 onSingleTapped: function(eventPoint) {
                                     listView.interactive = eventPoint.device.type
