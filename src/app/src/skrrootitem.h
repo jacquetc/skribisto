@@ -53,6 +53,7 @@ public:
 
     Q_INVOKABLE static QString cleanUpHtml(const QString& html);
 
+    Q_INVOKABLE bool           createPath(const QString &path);
     Q_INVOKABLE QString        getWritableAddonsPathsListDir() const;
 
     Q_INVOKABLE QString        getTempPath() const;

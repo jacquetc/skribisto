@@ -30,7 +30,11 @@ NewDictWizardForm {
 
     Download {
         id: downloader
-        onError: infoLabel.text = errorString
+        onError: function(errorCode, errorString){
+            infoLabel.text = errorString
+        }
+
+
     }
 
 
@@ -45,6 +49,7 @@ NewDictWizardForm {
         downloader.onFinished.connect(downloadAff)
         downloader.url = "https://github.com/wooorm/dictionaries/blob/main/dictionaries/" + lang + "/index.dic?raw=true"
 
+        skrRootItem.createPath(skrRootItem.getWritableAddonsPathsListDir() + "/dicts/")
         var file = skrQMLTools.getURLFromLocalFile(skrRootItem.getWritableAddonsPathsListDir() + "/dicts/" + lang + ".dic")
 
         downloader.destination = file
@@ -63,6 +68,7 @@ NewDictWizardForm {
 
         downloader.url = "https://github.com/wooorm/dictionaries/blob/main/dictionaries/" + lang + "/index.aff?raw=true"
 
+        skrRootItem.createPath(skrRootItem.getWritableAddonsPathsListDir() + "/dicts/")
         var file = skrQMLTools.getURLFromLocalFile(skrRootItem.getWritableAddonsPathsListDir() + "/dicts/" + lang + ".aff")
 
         downloader.destination = file
@@ -142,6 +148,7 @@ NewDictWizardForm {
         downloader.onFinished.connect(displayLicense)
         downloader.url = "https://github.com/wooorm/dictionaries/blob/main/dictionaries/" + lang + "/license?raw=true"
 
+        skrRootItem.createPath(skrRootItem.getWritableAddonsPathsListDir() + "/dicts/")
         var file = skrQMLTools.getURLFromLocalFile(skrRootItem.getWritableAddonsPathsListDir() + "/dicts/" + lang + "_license.txt")
         priv.licenseFileName = file
         downloader.destination = file
