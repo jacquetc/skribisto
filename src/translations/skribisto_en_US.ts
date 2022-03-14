@@ -78,18 +78,23 @@
 <context>
     <name>AppearancePanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="26"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="27"/>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="37"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="38"/>
         <source>Interface language :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="46"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="47"/>
         <source>Manage themes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="54"/>
+        <source>Zoom</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -217,7 +222,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewPage/CardViewPageForm.ui.qml" line="55"/>
+        <location filename="../plugins/cardViewPage/CardViewPage/CardViewPageForm.ui.qml" line="56"/>
         <source>Add an item</source>
         <translation type="unfinished"></translation>
     </message>
@@ -613,92 +618,92 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="75"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="77"/>
         <source>Bold</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="82"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="86"/>
         <source>Strike</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="90"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="96"/>
         <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="101"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="109"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="112"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="120"/>
         <source>Full screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="119"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="129"/>
         <source>Size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="125"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="137"/>
         <source>Full screen Colors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="131"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="145"/>
         <source>Check spelling</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="137"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="153"/>
         <source>Center vertically the text cursor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="160"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="182"/>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="171"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="195"/>
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="198"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="224"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="205"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="231"/>
         <source>Text width :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="216"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="242"/>
         <source>Text size :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="233"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="259"/>
         <source>Text indent :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="245"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="271"/>
         <source>Top margin :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="143"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="161"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="149"/>
+        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="169"/>
         <source>Show the minimap scrollbar</source>
         <translation type="unfinished"></translation>
     </message>
@@ -873,12 +878,12 @@
 <context>
     <name>FavoritesProjectToolboxForm.ui</name>
     <message>
-        <location filename="../plugins/favoritesProjectToolbox/FavoritesProjectToolbox/FavoritesProjectToolboxForm.ui.qml" line="39"/>
+        <location filename="../plugins/favoritesProjectToolbox/FavoritesProjectToolbox/FavoritesProjectToolboxForm.ui.qml" line="38"/>
         <source>Favorites</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/favoritesProjectToolbox/FavoritesProjectToolbox/FavoritesProjectToolboxForm.ui.qml" line="71"/>
+        <location filename="../plugins/favoritesProjectToolbox/FavoritesProjectToolbox/FavoritesProjectToolboxForm.ui.qml" line="70"/>
         <source>Favorites list</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1037,7 +1042,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="303"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="305"/>
         <source>Next</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1068,7 +1073,7 @@
     </message>
     <message>
         <location filename="../app/src/qml/FirstStepsWizard.qml" line="59"/>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="321"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="325"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1261,7 +1266,7 @@
 <context>
     <name>NavigationListForm.ui</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListForm.ui.qml" line="71"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListForm.ui.qml" line="78"/>
         <source>Navigation menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1310,97 +1315,97 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1842"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1845"/>
         <source>Enter label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1890"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1893"/>
         <source>Enter title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1988"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="1991"/>
         <source>Item menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2288"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2291"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2311"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2314"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2334"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2337"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2362"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2365"/>
         <source>Set as active project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2385"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2388"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2405"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2408"/>
         <source>Set label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2434"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2437"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2468"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2471"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2501"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2504"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2537"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2540"/>
         <source>Add before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2577"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2580"/>
         <source>Add after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2618"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2621"/>
         <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2659"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2662"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2691"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2694"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2728"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2731"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2760"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/NavigationListView.qml" line="2763"/>
         <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1638,17 +1643,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="79"/>
+        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="80"/>
         <source>Open note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="137"/>
+        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="140"/>
         <source>Notes list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="146"/>
+        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="149"/>
         <source>Type your note here …</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1669,12 +1674,12 @@
 <context>
     <name>OutlinePadForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="51"/>
+        <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="50"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="77"/>
+        <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="81"/>
         <source>Type your outline here …</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2192,12 +2197,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="53"/>
+        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="55"/>
         <source>Modifiable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="61"/>
+        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="64"/>
         <source>Favorite</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2367,27 +2372,27 @@
 <context>
     <name>RestoreListViewForm.ui</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="57"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="58"/>
         <source>Restore a document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="64"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="67"/>
         <source>Select all</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="71"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="76"/>
         <source>Trashed menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="79"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="86"/>
         <source>The checked documents are those which were trashed at the same time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="106"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/RestoreListViewForm.ui.qml" line="113"/>
         <source>List of trashed items to be restored</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2395,12 +2400,12 @@
 <context>
     <name>RightDockForm.ui</name>
     <message>
-        <location filename="../app/src/qml/RightDockForm.ui.qml" line="63"/>
+        <location filename="../app/src/qml/RightDockForm.ui.qml" line="65"/>
         <source>Show the beginning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RightDockForm.ui.qml" line="100"/>
+        <location filename="../app/src/qml/RightDockForm.ui.qml" line="102"/>
         <source>Show the end</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3115,23 +3120,23 @@
 <context>
     <name>SkrViewButtons</name>
     <message>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="102"/>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="158"/>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="104"/>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="160"/>
         <source>Split</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="130"/>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="132"/>
         <source>Close view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="171"/>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="173"/>
         <source>Split vertically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="182"/>
+        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="184"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3193,7 +3198,7 @@
 <context>
     <name>TagPadForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/TagPadForm.ui.qml" line="53"/>
+        <location filename="../app/src/qml/Commons/TagPadForm.ui.qml" line="52"/>
         <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3534,12 +3539,12 @@
 <context>
     <name>TrashedListViewForm.ui</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/TrashedListViewForm.ui.qml" line="59"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/TrashedListViewForm.ui.qml" line="60"/>
         <source>Restore a document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/TrashedListViewForm.ui.qml" line="66"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox/TrashedListViewForm.ui.qml" line="69"/>
         <source>Trashed menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3666,12 +3671,12 @@
 <context>
     <name>WritingGamesPageToolboxForm.ui</name>
     <message>
-        <location filename="../plugins/writingGamesPageToolbox/WritingGamesPageToolbox/WritingGamesPageToolboxForm.ui.qml" line="50"/>
+        <location filename="../plugins/writingGamesPageToolbox/WritingGamesPageToolbox/WritingGamesPageToolboxForm.ui.qml" line="49"/>
         <source>Forbid erasing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/writingGamesPageToolbox/WritingGamesPageToolbox/WritingGamesPageToolboxForm.ui.qml" line="36"/>
+        <location filename="../plugins/writingGamesPageToolbox/WritingGamesPageToolbox/WritingGamesPageToolboxForm.ui.qml" line="35"/>
         <source>Writing games</source>
         <translation type="unfinished"></translation>
     </message>

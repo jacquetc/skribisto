@@ -45,7 +45,9 @@ Item {
                         text: qsTr("Printable")
                         checkable: true
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                        display: AbstractButton.IconOnly
+
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
@@ -53,7 +55,8 @@ Item {
                         text: qsTr("Modifiable")
                         checkable: true
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                        display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
@@ -61,7 +64,8 @@ Item {
                         text: qsTr("Favorite")
                         checkable: true
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                        display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
 

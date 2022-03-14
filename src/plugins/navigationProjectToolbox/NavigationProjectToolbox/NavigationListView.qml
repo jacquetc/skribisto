@@ -488,7 +488,7 @@ Item {
                         rightMargin: 5
                     }
 
-                    height: 40
+                    height: 40 * SkrSettings.interfaceSettings.zoom
 
                     padding: 0
                     topPadding: 0
@@ -1638,8 +1638,8 @@ Item {
                                                  && model.type === 'PROJECT'
                                         enabled: true
                                         focusPolicy: Qt.NoFocus
-                                        implicitHeight: 32
-                                        implicitWidth: 32
+                                        implicitHeight: 32 * SkrSettings.interfaceSettings.zoom
+                                        implicitWidth: 32 * SkrSettings.interfaceSettings.zoom
                                         Layout.maximumHeight: 30
                                         padding: 0
                                         rightPadding: 0
@@ -1651,8 +1651,8 @@ Item {
 
                                         icon {
                                             source: "qrc:///icons/backup/tools-media-optical-burn-image.svg"
-                                            height: 32
-                                            width: 32
+                                            height: 32 * SkrSettings.interfaceSettings.zoom
+                                            width: 32 * SkrSettings.interfaceSettings.zoom
                                         }
 
                                         hoverEnabled: true
@@ -1665,9 +1665,9 @@ Item {
                                     SkrCheckBox {
                                         id: selectionCheckBox
                                         visible: priv.selecting
-                                        implicitHeight: 32
-                                        implicitWidth: 32
-                                        Layout.maximumHeight: 30
+                                        implicitHeight: 32 * SkrSettings.interfaceSettings.zoom
+                                        implicitWidth: 32 * SkrSettings.interfaceSettings.zoom
+                                        Layout.maximumHeight: 32 * SkrSettings.interfaceSettings.zoom
                                         padding: 0
                                         rightPadding: 0
                                         bottomPadding: 0
@@ -1698,7 +1698,7 @@ Item {
                                     }
 
                                     Item {
-                                        Layout.maximumHeight: 30
+                                        Layout.maximumHeight: 30 * SkrSettings.interfaceSettings.zoom
                                         implicitHeight: treeItemIconIndicator.implicitHeight
                                         implicitWidth: treeItemIconIndicator.implicitWidth
 
@@ -1707,8 +1707,8 @@ Item {
                                             //visible: model.projectIsBackup && model.treeItemId === -1
                                             enabled: true
                                             focusPolicy: Qt.NoFocus
-                                            implicitHeight: 36
-                                            implicitWidth: 36
+                                            implicitHeight: 36 * SkrSettings.interfaceSettings.zoom
+                                            implicitWidth: 36 * SkrSettings.interfaceSettings.zoom
                                             padding: 0
                                             rightPadding: 0
                                             bottomPadding: 0
@@ -1722,6 +1722,9 @@ Item {
                                             }
 
                                             icon {
+
+                                                height: 36 * SkrSettings.interfaceSettings.zoom
+                                                width: 36 * SkrSettings.interfaceSettings.zoom
                                                 source: model.otherProperties ? getIconUrlFromPageType(
                                                                                     model.type, model.projectId, model.treeItemId) : getIconUrlFromPageType(
                                                                                     model.type, model.projectId, model.treeItemId)
@@ -1983,7 +1986,7 @@ Item {
                                     SkrToolButton {
                                         id: menuButton
                                         Layout.fillHeight: true
-                                        Layout.preferredWidth: 30
+                                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
                                         text: qsTr("Item menu")
                                         icon.source: "qrc:///icons/backup/overflow-menu.svg"

@@ -49,6 +49,7 @@ TextField {
         }
 
     }
+    font.pointSize: Application.font.pointSize * SkrSettings.interfaceSettings.zoom
 
 
 }

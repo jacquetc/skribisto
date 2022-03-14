@@ -68,6 +68,8 @@ Item {
                                 text: qsTr("Italic")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
                             }
                             SkrToolButton {
@@ -75,6 +77,8 @@ Item {
                                 text: qsTr("Bold")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
                             }
                             SkrToolButton {
@@ -82,6 +86,8 @@ Item {
                                 text: qsTr("Strike")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
                             }
 
@@ -90,6 +96,8 @@ Item {
                                 text: qsTr("Underline")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
                             }
                         }
@@ -112,6 +120,8 @@ Item {
                                 text: qsTr("Full screen")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                             }
 
                             SkrToolButton {
@@ -119,36 +129,48 @@ Item {
                                 text: qsTr("Size")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                             }
                             SkrToolButton {
                                 id: themesToolButton
                                 text: qsTr("Full screen Colors")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                             }
                             SkrToolButton {
                                 id: checkSpellingToolButton
                                 text: qsTr("Check spelling")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                             }
                             SkrToolButton {
                                 id: centerTextCursorToolButton
                                 text: qsTr("Center vertically the text cursor")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                             }
                             SkrToolButton {
                                 id: findToolButton
                                 text: qsTr("Find")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                             }
                             SkrToolButton {
                                 id: minimapToolButton
                                 text: qsTr("Show the minimap scrollbar")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                             }
                         }
                     }
@@ -165,12 +187,16 @@ Item {
                             columnSpacing: 3
                             rowSpacing: 3
                             columns: groupBox3.width / quickPrintToolButton.width - 1
+                            Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                            Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
                             SkrToolButton {
                                 id: quickPrintToolButton
                                 text: qsTr("Quick print")
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                 display: AbstractButton.IconOnly
+                                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                             }
 
                         }

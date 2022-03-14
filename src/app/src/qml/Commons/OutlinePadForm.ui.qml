@@ -34,8 +34,7 @@ Item {
 
             SkrToolBar {
                 id: toolBar
-                Layout.maximumHeight: 40
-                Layout.preferredHeight: 40
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                 Layout.alignment: Qt.AlignTop
                 Layout.fillWidth: true
                 visible: !minimalMode
@@ -58,10 +57,15 @@ Item {
 
                     SkrToolButton {
                         id: openOutlineToolButton
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
+
                     }
 
                     SkrToolButton {
                         id: addOutlineToolButton
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                 }

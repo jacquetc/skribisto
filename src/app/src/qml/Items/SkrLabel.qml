@@ -24,4 +24,6 @@ Label {
     }
 
     elide: Qt.ElideRight
+
+    font.pointSize: Application.font.pointSize * SkrSettings.interfaceSettings.zoom
 }

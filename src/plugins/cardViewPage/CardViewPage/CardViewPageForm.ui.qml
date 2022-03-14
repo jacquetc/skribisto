@@ -29,7 +29,7 @@ SkrBasePage {
         //-------------------------------------------------
         SkrPageToolBar {
             Layout.fillWidth: true
-            Layout.preferredHeight: 30
+            Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
 
             RowLayout {
                 anchors.fill: parent
@@ -39,7 +39,8 @@ SkrBasePage {
                     text: qsTr("Go up")
                     icon.source: "qrc:///icons/backup/go-parent-folder.svg"
                     Layout.alignment: Qt.AlignCenter
-                    Layout.preferredHeight: 30
+                    Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                    Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                 }
 
                 SkrLabel {
@@ -55,7 +56,9 @@ SkrBasePage {
                     text: qsTr("Add an item")
                     icon.source: "qrc:///icons/backup/list-add.svg"
                     Layout.alignment: Qt.AlignCenter
-                    Layout.preferredHeight: 30
+                    Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                    Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
+
                 }
                 //                    SkrLabel {
                 //                        id: countLabel

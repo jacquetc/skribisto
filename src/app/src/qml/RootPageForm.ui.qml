@@ -22,8 +22,8 @@ Item {
     property alias headerRowLayoutPreferredHeight: headerRowLayout.layoutPreferredHeight
     property alias headerStayVisibleHoverHandler: headerStayVisibleHoverHandler
     property alias headerStayVisibleTapHandler: headerStayVisibleTapHandler
-    property int showLeftDockButtonWidth: 30
-    property int showRightDockButtonWidth: 30
+    property int showLeftDockButtonWidth: 30 * SkrSettings.interfaceSettings.zoom
+    property int showRightDockButtonWidth: 30 * SkrSettings.interfaceSettings.zoom
 
     ColumnLayout {
         id: baseColumnLayout
@@ -34,7 +34,7 @@ Item {
             id: headerRowLayout
             spacing: 0
 
-            property int layoutPreferredHeight: 30
+            property int layoutPreferredHeight: 30 * SkrSettings.interfaceSettings.zoom
             Layout.preferredHeight: layoutPreferredHeight
             Layout.fillWidth: true
 
@@ -54,7 +54,7 @@ Item {
             SkrToolButton {
                 id: showLeftDockButton
 
-                Layout.preferredHeight: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                 Layout.preferredWidth: showLeftDockButtonWidth
 
                 focusPolicy: Qt.NoFocus
@@ -67,10 +67,9 @@ Item {
                 visible: SkrSettings.accessibilitySettings.showMenuButton
                 focusPolicy: Qt.NoFocus
                 padding: 2
-                Layout.preferredHeight: 30
-                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                 checkable: true
-                flat: true
             }
 
 
@@ -78,8 +77,8 @@ Item {
                 id: showWelcomeButton
                 icon.color: "transparent"
 
-                Layout.preferredHeight: 30
-                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
             }
 
@@ -87,14 +86,14 @@ Item {
                 id: saveButton
                 action: saveAction
 
-                Layout.preferredHeight: 30
-                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
             }
 
             Breadcrumb {
                 id: breadcrumb
-                Layout.preferredHeight: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                 Layout.alignment: Qt.AlignCenter
                 Layout.fillWidth: true
                 Layout.minimumWidth: 300
@@ -119,23 +118,23 @@ Item {
             SkrToolButton {
                 id: distractionFreeButton
 
-                Layout.preferredHeight: 30
-                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
             }
 
             SkrToolButton {
                 id: themeColorButton
 
-                Layout.preferredHeight: 30
-                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
             }
 
             SkrToolButton {
                 id: showRightDockButton
 
-                Layout.preferredHeight: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                 Layout.preferredWidth: showRightDockButtonWidth
 
                 focusPolicy: Qt.NoFocus

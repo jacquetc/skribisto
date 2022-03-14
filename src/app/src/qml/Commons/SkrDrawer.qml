@@ -15,8 +15,8 @@ Item {
     readonly property bool isVisible: position === 1.0
     property bool dockModeEnabled: false
     property string settingsCategory
-    property int widthInDockMode: 400
-    property int widthInDrawerMode: 400
+    property int widthInDockMode: 400   * SkrSettings.interfaceSettings.zoom
+    property int widthInDrawerMode: 400   * SkrSettings.interfaceSettings.zoom
 
 
     z:1

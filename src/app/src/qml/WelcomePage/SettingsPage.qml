@@ -123,12 +123,12 @@ SettingsPageForm {
         id: toolButtonComponent
         SkrToolButton {
             id: toolButton
-            width: 200
-            height: 200
+            width: 200 * SkrSettings.interfaceSettings.zoom
+            height: 200 * SkrSettings.interfaceSettings.zoom
             icon{
                 source: model.iconSource
-                width: 100
-                height: 100
+                width: 100 * SkrSettings.interfaceSettings.zoom
+                height: 100 * SkrSettings.interfaceSettings.zoom
             }
             text: model.buttonText
             display: AbstractButton.TextUnderIcon
@@ -219,8 +219,8 @@ SettingsPageForm {
 
             id: pluginPagePopup
             parent: Overlay.overlay
-            width: Overlay.overlay.width >= 1000 ? 1000 : Overlay.overlay.width
-            height: Overlay.overlay.height >= 1000 ? 1000 : Overlay.overlay.height
+            width: Overlay.overlay.width >= 1000 * SkrSettings.interfaceSettings.zoom ? 1000 * SkrSettings.interfaceSettings.zoom : Overlay.overlay.width
+            height: Overlay.overlay.height >= 1000 * SkrSettings.interfaceSettings.zoom ? 1000 * SkrSettings.interfaceSettings.zoom : Overlay.overlay.height
             anchors.centerIn: Overlay.overlay
 
             modal: true
@@ -404,7 +404,7 @@ SettingsPageForm {
     }
     checkSpellingComboBox.onCurrentValueChanged: {
         if(checkSpellingComboBox.activeFocus){
-            SkrSettings.spellCheckingSettings.spellCheckingLangCode = langComboBox.currentValue
+            SkrSettings.spellCheckingSettings.spellCheckingLangCode = checkSpellingComboBox.currentValue
         }
     }
 

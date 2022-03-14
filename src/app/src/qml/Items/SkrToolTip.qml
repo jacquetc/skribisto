@@ -9,11 +9,13 @@ ToolTip {
     delay: 1000
     timeout: 5000
 
+    font.pointSize: Application.font.pointSize * SkrSettings.interfaceSettings.zoom
 
     contentItem: Label {
         text: control.text
         font: control.font
         color: SkrTheme.buttonForeground
+
     }
 
     background: Rectangle {

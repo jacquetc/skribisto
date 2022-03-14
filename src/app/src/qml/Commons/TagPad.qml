@@ -963,7 +963,7 @@ TagPadForm {
                                         text: qsTr("Existing tags")
                                         font.bold: true
                                         color: SkrTheme.buttonForeground
-                                        //font.pixelSize: 20
+                                        //font.pointSize: 20
                                     }
                                 }
                             }

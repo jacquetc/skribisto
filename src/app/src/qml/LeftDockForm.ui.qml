@@ -41,8 +41,8 @@ Item {
                         visible: toolButtonListView.contentWidth > toolButtonListView.width
                                  && !toolButtonListView.atXBeginning && !goingAtTheBeginningOfToolButtonListView
                         Layout.alignment: Qt.AlignCenter
-                        Layout.preferredHeight: 30
-                        Layout.preferredWidth: 20
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 25 * SkrSettings.interfaceSettings.zoom
                         focusPolicy: Qt.NoFocus
                         icon.source: "qrc:///icons/backup/go-previous.svg"
                         text: qsTr("Show the beginning")
@@ -53,7 +53,7 @@ Item {
                         id: toolButtonScrollView
                         focusPolicy: Qt.NoFocus
                         Layout.fillWidth: true
-                        Layout.fillHeight: true
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
 
                         clip: true
                         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -78,8 +78,8 @@ Item {
                         id: showTheEndButton
                         visible: toolButtonListView.contentWidth > toolButtonListView.width && !toolButtonListView.atXEnd
                         Layout.alignment: Qt.AlignCenter
-                        Layout.preferredHeight: 30
-                        Layout.preferredWidth: 20
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 25 * SkrSettings.interfaceSettings.zoom
                         focusPolicy: Qt.NoFocus
                         icon.source: "qrc:///icons/backup/go-next.svg"
                         text: qsTr("Show the end")
@@ -89,6 +89,8 @@ Item {
                     SkrToolButton {
                         id: hideDockToolButton
                         focusPolicy: Qt.NoFocus
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 25 * SkrSettings.interfaceSettings.zoom
                     }
                 }
 

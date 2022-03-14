@@ -42,7 +42,7 @@ SkrBasePage {
             //-------------------------------------------------
             SkrPageToolBar {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
 
                 RowLayout {
                     anchors.fill: parent
@@ -60,7 +60,7 @@ SkrBasePage {
                         text: qsTr("Page menu")
                         icon.source: "qrc:///icons/backup/overflow-menu.svg"
                         Layout.alignment: Qt.AlignCenter
-                        Layout.preferredHeight: 30
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrLabel {

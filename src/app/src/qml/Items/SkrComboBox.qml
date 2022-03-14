@@ -13,6 +13,8 @@ ComboBox {
     property bool sizeToContents: true
     property int modelWidth: 50
 
+    font.pointSize: Application.font.pointSize * SkrSettings.interfaceSettings.zoom
+
     implicitWidth: sizeToContents
                    ? (modelWidth + leftPadding + contentItem.leftPadding
                       + rightPadding + contentItem.rightPadding)

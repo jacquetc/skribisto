@@ -9,6 +9,7 @@ QtObject {
     property Settings interfaceSettings: Settings {
         category: "interface"
         property bool firstLaunch: true
+        property double zoom: 1
     }
 
     property Settings backupSettings: Settings {

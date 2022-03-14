@@ -91,7 +91,7 @@ TextContextMenuForm {
 
     QtObject{
         id: priv
-        property int buttonHeight: 40
+        property int buttonHeight: 30 * SkrSettings.interfaceSettings.zoom
 
     }
 

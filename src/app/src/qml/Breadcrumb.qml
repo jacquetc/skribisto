@@ -105,8 +105,8 @@ Item {
             id: showTheBeginningButton
             visible: listView.contentWidth > listView.width && !listView.atXBeginning && !listView.goingAtTheBeginning
             Layout.alignment: Qt.AlignCenter
-            Layout.preferredHeight: 30
-            Layout.preferredWidth: 20
+            Layout.preferredHeight: 30   * SkrSettings.interfaceSettings.zoom
+            Layout.preferredWidth: 20   * SkrSettings.interfaceSettings.zoom
             focusPolicy: Qt.NoFocus
             icon.source: "qrc:///icons/backup/go-previous.svg"
             text: qsTr("Show the beginning")
@@ -206,8 +206,8 @@ Item {
             id: showTheEndButton
             visible: listView.contentWidth > listView.width && !listView.atXEnd
             Layout.alignment: Qt.AlignCenter
-            Layout.preferredHeight: 30
-            Layout.preferredWidth: 20
+            Layout.preferredHeight: 30   * SkrSettings.interfaceSettings.zoom
+            Layout.preferredWidth: 20   * SkrSettings.interfaceSettings.zoom
             focusPolicy: Qt.NoFocus
             icon.source: "qrc:///icons/backup/go-next.svg"
             text: qsTr("Show the end")

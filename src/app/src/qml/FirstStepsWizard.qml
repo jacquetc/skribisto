@@ -13,8 +13,8 @@ SkrPopup {
 
     id: root
     parent: Overlay.overlay
-    width: Overlay.overlay.width >= 1000 ? 1000 : Overlay.overlay.width
-    height: Overlay.overlay.height >= 1000 ? 1000 : Overlay.overlay.height
+    width: Overlay.overlay.width >= 1000 * SkrSettings.interfaceSettings.zoom ? 1000 * SkrSettings.interfaceSettings.zoom : Overlay.overlay.width
+    height: Overlay.overlay.height >= 1000 * SkrSettings.interfaceSettings.zoom ? 1000 * SkrSettings.interfaceSettings.zoom : Overlay.overlay.height
     anchors.centerIn: Overlay.overlay
 
     modal: true
@@ -187,13 +187,13 @@ SkrPopup {
                                 id: userManualToolButton
                                 text: qsTr("User manual")
                                 action: showUserManualAction
-                                icon.height: 90
-                                icon.width: 90
+                                icon.height: 90 * SkrSettings.interfaceSettings.zoom
+                                icon.width: 90 * SkrSettings.interfaceSettings.zoom
 
                                 Layout.minimumHeight: 100
                                 Layout.minimumWidth: 200
                                 Layout.fillWidth: true
-                                Layout.maximumWidth: 500
+                                Layout.maximumWidth: 500 * SkrSettings.interfaceSettings.zoom
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                             }
 
@@ -204,13 +204,13 @@ SkrPopup {
                                 text: qsTr("Frequently Asked Questions")
                                 action: showFaqAction
 
-                                icon.height: 90
-                                icon.width: 90
+                                icon.height: 90 * SkrSettings.interfaceSettings.zoom
+                                icon.width: 90 * SkrSettings.interfaceSettings.zoom
 
                                 Layout.minimumHeight: 100
                                 Layout.minimumWidth: 200
                                 Layout.fillWidth: true
-                                Layout.maximumWidth: 500
+                                Layout.maximumWidth: 500 * SkrSettings.interfaceSettings.zoom
                                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                             }
                         }
@@ -274,6 +274,8 @@ SkrPopup {
                     Layout.alignment: Qt.AlignLeft
                     visible: swipeView.currentIndex !== 0
                     icon {
+                        height: 30 * SkrSettings.interfaceSettings.zoom
+                        width: 30 * SkrSettings.interfaceSettings.zoom
                         source: "qrc:///icons/backup/go-previous.svg"
                     }
 
@@ -305,6 +307,8 @@ SkrPopup {
                     Layout.alignment: Qt.AlignRight
                     visible: swipeView.currentIndex !== swipeView.count - 1
                     icon {
+                        height: 30 * SkrSettings.interfaceSettings.zoom
+                        width: 30 * SkrSettings.interfaceSettings.zoom
                         source: "qrc:///icons/backup/go-next.svg"
                     }
 
@@ -323,6 +327,8 @@ SkrPopup {
                     Layout.alignment: Qt.AlignRight
                     visible: swipeView.currentIndex === swipeView.count - 1
                     icon {
+                        height: 30 * SkrSettings.interfaceSettings.zoom
+                        width: 30 * SkrSettings.interfaceSettings.zoom
                         source: "qrc:///icons/backup/arrow-down.svg"
                     }
 

@@ -210,7 +210,7 @@ BackupPanelForm {
                 SkrButton {
                     id: selectFolderButton
                     Layout.fillHeight: true
-                    Layout.preferredWidth: 30
+                    Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     flat: true
                     icon.source: "qrc:///icons/backup/document-open.svg"
 

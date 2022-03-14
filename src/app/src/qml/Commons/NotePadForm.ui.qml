@@ -71,14 +71,16 @@ Item {
                         id: openSynopsisToolButton
                         flat: true
                         text: qsTr("Show outline")
-                        display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
                         id: openNoteInNewTabToolButton
                         text: qsTr("Open note")
                         flat: true
-                        display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
 
@@ -87,7 +89,8 @@ Item {
                     SkrToolButton {
                         id: addNoteMenuToolButton
                         flat: true
-                        display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                 }

@@ -41,8 +41,8 @@ SkrPane {
 
             SkrPane {
                 id: mainButtonsPane
-                Layout.minimumWidth: 200
-                Layout.preferredWidth: columnLayout3.childrenRect.width + 30
+                Layout.minimumWidth: 200 * SkrSettings.interfaceSettings.zoom
+                Layout.preferredWidth: columnLayout3.childrenRect.width + 30 * SkrSettings.interfaceSettings.zoom
                 //Layout.fillWidth: true
                 Layout.fillHeight: true
 
@@ -81,7 +81,7 @@ SkrPane {
                             id: newButton
                             text: qsTr("New")
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                             icon {
@@ -93,7 +93,7 @@ SkrPane {
                             id: recentButton
                             text: qsTr("Recent")
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                             icon {
@@ -104,7 +104,7 @@ SkrPane {
                         SkrToolButton {
                             id: openButton
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                         }
@@ -112,28 +112,28 @@ SkrPane {
                         SkrToolButton {
                             id: saveButton
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                         }
                         SkrToolButton {
                             id: saveAsButton
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                         }
                         SkrToolButton {
                             id: backUpButton
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                         }
                         SkrToolButton {
                             id: saveACopyButton
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                         }
@@ -141,7 +141,7 @@ SkrPane {
                             id: exampleButton
                             text: qsTr("Examples")
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                             icon {
@@ -153,7 +153,7 @@ SkrPane {
                             id: importButton
                             text: qsTr("Import")
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                             icon {
@@ -165,7 +165,7 @@ SkrPane {
                             id: exportButton
                             text: qsTr("Export")
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                             icon {
@@ -178,7 +178,7 @@ SkrPane {
                             id: printButton
                             text: qsTr("Print")
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                             icon {
@@ -189,7 +189,7 @@ SkrPane {
                         SkrToolButton {
                             id: settingsButton
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                             text: qsTr("Settings")
@@ -199,7 +199,7 @@ SkrPane {
                             id: helpButton
                             text: qsTr("Help")
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                             icon {
@@ -210,7 +210,7 @@ SkrPane {
                             action: showDonateAction
 
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
@@ -231,7 +231,7 @@ SkrPane {
                         SkrToolButton {
                             id: quitButton
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
                             display: AbstractButton.TextBesideIcon
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                         }
