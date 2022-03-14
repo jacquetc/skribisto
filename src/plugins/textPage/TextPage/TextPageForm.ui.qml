@@ -24,6 +24,9 @@ SkrBasePage {
     property alias relationshipPanel: relationshipPanel
     property int relationshipPanelPreferredHeight: 200
 
+    property alias zoomWheelHandler: zoomWheelHandler
+
+
     clip: true
 
     ColumnLayout {
@@ -112,6 +115,15 @@ SkrBasePage {
                             textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
                             textAreaStyleAccentColor: SkrTheme.accent
                             paneStyleBackgroundColor: SkrTheme.pageBackground
+
+                            WheelHandler{
+                                id: zoomWheelHandler
+                                acceptedModifiers: Qt.ControlModifier
+                                target: SkrSettings.textSettings
+                                property: "textPointSize"
+                                grabPermissions: PointerHandler.CanTakeOverFromAnything
+                                rotationScale: 0.01
+                            }
 
                         }
                     }

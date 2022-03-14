@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import QtQuick.Controls
 import Qt.labs.settings 1.1
+import Qt.labs.animation
 
 QtObject {
 
@@ -57,7 +58,14 @@ QtObject {
         property real textIndent: 2
         property real textTopMargin: 2
         property string textFontFamily: skrRootItem.defaultFontFamily()
+
+        BoundaryRule on textPointSize {
+                     id: ybr
+                     minimum: 5
+                     maximum: 80
+                 }
     }
+
 
     property Settings minimapSettings: Settings {
         category: "minimap"

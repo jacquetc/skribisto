@@ -678,6 +678,7 @@ TextArea {
     //--------------------------------------------------------------
     WheelHandler {
         acceptedModifiers: Qt.NoModifier
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         onWheel: function(event) {
             moveViewYCalled(-event.angleDelta.y / 2, false)
         }

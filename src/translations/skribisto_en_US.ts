@@ -3704,7 +3704,7 @@
 <context>
     <name>WritingZone</name>
     <message>
-        <location filename="../app/src/qml/Commons/WritingZone.qml" line="992"/>
+        <location filename="../app/src/qml/Commons/WritingZone.qml" line="994"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>

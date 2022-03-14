@@ -157,6 +157,7 @@ Item {
 
     WheelHandler{
         acceptedDevices: PointerDevice.Mouse
+        acceptedModifiers: Qt.NoModifier
         onActiveChanged: {
             if (active) {
                 momentumAnimation.stop()
