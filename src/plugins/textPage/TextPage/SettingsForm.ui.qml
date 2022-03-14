@@ -15,6 +15,12 @@ SkrSettingsPanel {
     property alias showMinimapCheckBox: showMinimapCheckBox
     property alias minimapDividerSpinBox: minimapDividerSpinBox
     property alias minimapDividerDial: minimapDividerDial
+    property alias textWidthLabel: textWidthLabel
+    property alias textWidthSlider: textWidthSlider
+    property alias textPointSizeSlider: textPointSizeSlider
+    property alias fontFamilyComboBox: fontFamilyComboBox
+    property alias textTopMarginSlider: textTopMarginSlider
+    property alias textIndentSlider: textIndentSlider
 
     ColumnLayout {
         id: pillarLayout
@@ -84,6 +90,61 @@ SkrSettingsPanel {
                         wheelEnabled: true
                     }
                 }
+
+
+                SkrLabel {
+                    id: textWidthLabel
+                    text: qsTr("Text width :")
+                }
+
+                SkrSlider {
+                    id: textWidthSlider
+                    from: 400
+                    to: rootWindow.width
+                    Layout.fillWidth: true
+                }
+
+                SkrLabel {
+                    text: qsTr("Text size :")
+                }
+
+                SkrSlider {
+                    id: textPointSizeSlider
+                    stepSize: 1
+                    from: 8
+                    to: 40
+                    Layout.fillWidth: true
+                }
+
+                SkrComboBox {
+                    id: fontFamilyComboBox
+                    wheelEnabled: true
+                    Layout.fillWidth: true
+                }
+                SkrLabel {
+                    text: qsTr("Text indent :")
+                }
+
+                SkrSlider {
+                    id: textIndentSlider
+                    stepSize: 1
+                    from: 0
+                    to: 200
+                    Layout.fillWidth: true
+                }
+
+                SkrLabel {
+                    text: qsTr("Top margin :")
+                }
+
+                SkrSlider {
+                    id: textTopMarginSlider
+                    stepSize: 1
+                    from: 0
+                    to: 30
+                    Layout.fillWidth: true
+                }
+
             }
         }
 

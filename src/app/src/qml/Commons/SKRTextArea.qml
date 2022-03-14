@@ -677,6 +677,7 @@ TextArea {
     //--------Wheel---------------------------------------------
     //--------------------------------------------------------------
     WheelHandler {
+        acceptedModifiers: Qt.NoModifier
         onWheel: function(event) {
             moveViewYCalled(-event.angleDelta.y / 2, false)
         }

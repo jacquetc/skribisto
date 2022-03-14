@@ -369,7 +369,7 @@ ListView {
                     verticalCenter: parent.verticalCenter
                 }
                 width: delegateRoot.width
-                height: 40
+                height: 40 * SkrSettings.interfaceSettings.zoom
 
                 padding: 1
 
@@ -572,9 +572,9 @@ ListView {
                                      && model.treeItemId === -1
                             enabled: true
                             focusPolicy: Qt.NoFocus
-                            implicitHeight: 32
-                            implicitWidth: 32
-                            Layout.maximumHeight: 30
+                            implicitHeight: 32 * SkrSettings.interfaceSettings.zoom
+                            implicitWidth: 32 * SkrSettings.interfaceSettings.zoom
+                            Layout.maximumHeight: 30 * SkrSettings.interfaceSettings.zoom
                             padding: 0
                             rightPadding: 0
                             bottomPadding: 0
@@ -742,7 +742,7 @@ ListView {
                         SkrToolButton {
                             id: menuButton
                             Layout.fillHeight: true
-                            Layout.preferredWidth: 30
+                            Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
 
                             text: "..."
                             flat: true

@@ -39,8 +39,8 @@ GroupBox {
             topPadding:  bigTitleEnabled ? Qt.application.font.pointSize * 2 : Qt.application.font.pointSize
             bottomPadding:  bigTitleEnabled ? Qt.application.font.pointSize * 2 : Qt.application.font.pointSize
             text: control.title
-            font.bold: true
-            font.pointSize: bigTitleEnabled ? Qt.application.font.pointSize * 1.5 * SkrSettings.interfaceSettings.zoom :  Qt.application.font.pointSize * SkrSettings.interfaceSettings.zoom
+            font.bold: bigTitleEnabled
+            font.pointSize: bigTitleEnabled ? Qt.application.font.pointSize * 1.5 * SkrSettings.interfaceSettings.zoom :  Qt.application.font.pointSize * 0.8 * SkrSettings.interfaceSettings.zoom
             color: SkrTheme.buttonForeground
             elide: Text.ElideRight
 

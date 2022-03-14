@@ -2828,32 +2828,52 @@
 <context>
     <name>SettingsForm.ui</name>
     <message>
-        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="49"/>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="55"/>
         <source>Minimap scrollbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="56"/>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="62"/>
         <source>Show the minimap scrollbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="61"/>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="67"/>
         <source>Scale: 1/%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="70"/>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="76"/>
         <source>Set scale:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="29"/>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="97"/>
+        <source>Text width :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="108"/>
+        <source>Text size :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="125"/>
+        <source>Text indent :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="137"/>
+        <source>Top margin :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="35"/>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="38"/>
+        <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="44"/>
         <source>Center vertically the text cursor</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3301,7 +3321,7 @@
 <context>
     <name>TextPageForm.ui</name>
     <message>
-        <location filename="../plugins/textPage/TextPage/TextPageForm.ui.qml" line="60"/>
+        <location filename="../plugins/textPage/TextPage/TextPageForm.ui.qml" line="63"/>
         <source>Page menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3684,7 +3704,7 @@
 <context>
     <name>WritingZone</name>
     <message>
-        <location filename="../app/src/qml/Commons/WritingZone.qml" line="990"/>
+        <location filename="../app/src/qml/Commons/WritingZone.qml" line="992"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>

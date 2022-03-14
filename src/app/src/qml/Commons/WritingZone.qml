@@ -787,6 +787,7 @@ WritingZoneForm {
     // wheel :
     WheelHandler {
         id: leftWheelHandler
+        acceptedModifiers: Qt.NoModifier
         target: leftScrollItem
         onWheel: function(event) {
             textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
@@ -795,6 +796,7 @@ WritingZoneForm {
 
     WheelHandler {
         id: rightWheelHandler
+        acceptedModifiers: Qt.NoModifier
         target: rightScrollItem
         onWheel: function(event) {
             textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
