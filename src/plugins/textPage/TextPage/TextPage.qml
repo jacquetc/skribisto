@@ -1165,4 +1165,28 @@ TextPageForm {
             damping: 0.2
         }
     }
+
+
+
+    //----------------------------------------------------------------------------
+    //-----Zoom------------------------------------------------------------
+    //----------------------------------------------------------------------------
+
+    Shortcut {
+        sequences: skrShortcutManager.shortcuts("plugin-text-page-zoom-in")
+        context: Qt.WindowShortcut
+        enabled: writingZone.activeFocus
+        onActivated: {SkrSettings.textSettings.textPointSize += 1}
+    }
+
+    Shortcut {
+        sequences: skrShortcutManager.shortcuts("plugin-text-page-zoom-out")
+        context: Qt.WindowShortcut
+        enabled: writingZone.activeFocus
+        onActivated: {SkrSettings.textSettings.textPointSize -= 1}
+    }
+
+
+
+
 }

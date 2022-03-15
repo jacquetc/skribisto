@@ -2,7 +2,7 @@ pragma Singleton
 
 import QtQuick
 import QtQuick.Controls
-import Qt.labs.settings 1.1
+import Qt.labs.settings
 import Qt.labs.animation
 
 QtObject {

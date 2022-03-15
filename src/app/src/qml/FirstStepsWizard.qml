@@ -150,6 +150,40 @@ SkrPopup {
                                 }
                             }
                         }
+
+                        SkrButton {
+                            id: installDictButton
+                            text: qsTr("Install new dictionaries")
+
+
+                            Component {
+                                id: component_newDictWizard
+                                NewDictWizard {
+                                    id: newDictWizard
+
+                                    onClosed: loader_newDictWizard.active = false
+                                }
+                            }
+                            Loader {
+                                id: loader_newDictWizard
+                                active: false
+                                sourceComponent: component_newDictWizard
+                            }
+
+                            onClicked: {
+                                loader_newDictWizard.active = true
+                            }
+
+                            Connections {
+                                target: Globals
+                                function onNewDictInstalled(dictName){
+                                    populateCheckSpellingComboBox()
+
+                                }
+                            }
+                        }
+
+
                     }
 
 

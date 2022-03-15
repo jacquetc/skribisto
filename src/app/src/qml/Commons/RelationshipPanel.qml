@@ -560,6 +560,25 @@ RelationshipPanelForm {
                 }
             }
 
+            //----------------------------------------------------------------------------
+            //-----Zoom------------------------------------------------------------
+            //----------------------------------------------------------------------------
+
+            Shortcut {
+                sequences: skrShortcutManager.shortcuts("relationship-text-zoom-in")
+                context: Qt.WindowShortcut
+                enabled: writingZone.activeFocus
+                onActivated: {SkrSettings.relatedTextSettings.textPointSize += 1}
+            }
+
+            Shortcut {
+                sequences: skrShortcutManager.shortcuts("relationship-text-zoom-out")
+                context: Qt.WindowShortcut
+                enabled: writingZone.activeFocus
+                onActivated: {SkrSettings.relatedTextSettings.textPointSize -= 1}
+            }
+
+
         }
 
     }

@@ -76,4 +76,19 @@ OutlinePadForm {
     outlineWritingZone.writingZone.highlighter.otherHighlightColor_3: SkrTheme.otherHighlight_3
 
 
+    //-----Zoom------------------------------------------------------------
+
+    Shortcut {
+        sequences: skrShortcutManager.shortcuts("outline-text-zoom-in")
+        context: Qt.WindowShortcut
+        enabled: outlineWritingZone.activeFocus
+        onActivated: {SkrSettings.outlinePadSettings.textPointSize += 1}
+    }
+
+    Shortcut {
+        sequences: skrShortcutManager.shortcuts("outline-text-zoom-out")
+        context: Qt.WindowShortcut
+        enabled: outlineWritingZone.activeFocus
+        onActivated: {SkrSettings.outlinePadSettings.textPointSize -= 1}
+    }
 }

@@ -811,7 +811,7 @@ Item {
 
                     HoverHandler {
                         id: itemHoverHandler
-                        acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad | PointerDevice.Stylus
                         enabled: root.hoverEnabled
 
                         //grabPermissions:  PointerHandler.CanTakeOverFromItems | PointerHandler.CanTakeOverFromHandlersOfSameType | PointerHandler.ApprovesTakeOverByAnything
@@ -1238,7 +1238,7 @@ Item {
                             property bool dragging: false
                             DragHandler {
                                 id: mouseDragHandler
-                                acceptedDevices: PointerDevice.Mouse
+                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                                 cursorShape: Qt.ClosedHandCursor
 
                                 //xAxis.enabled: false
@@ -1331,7 +1331,7 @@ Item {
 
                             TapHandler {
                                 id: tapHandler
-                                acceptedDevices: PointerDevice.Mouse
+                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
 
                                 onSingleTapped: function(eventPoint) {
                                     priv.selecting = false
@@ -1504,7 +1504,7 @@ Item {
 
                             TapHandler {
                                 id: rightClickTapHandler
-                                acceptedDevices: PointerDevice.Mouse
+                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                                 acceptedButtons: Qt.RightButton
                                 onSingleTapped: function(eventPoint) {
                                     listView.interactive = eventPoint.device.type
@@ -1532,7 +1532,7 @@ Item {
 
                             TapHandler {
                                 id: middleClickTapHandler
-                                acceptedDevices: PointerDevice.Mouse
+                                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                                 acceptedButtons: Qt.MiddleButton
                                 onSingleTapped: function(eventPoint) {
                                     listView.interactive = eventPoint.device.type

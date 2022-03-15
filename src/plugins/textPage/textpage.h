@@ -23,19 +23,19 @@
 
 #include <QObject>
 #include "skrpageinterface.h"
-#include "skrexporterinterface.h"
+#include "skritemexporterinterface.h"
 #include "skrsettingspanelinterface.h"
 #include "skrwordmeter.h"
 
 class TextPage : public QObject,
                  public SKRPageInterface,
-                 public SKRExporterInterface,
+                 public SKRItemExporterInterface,
                  public SKRSettingsPanelInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.TextPagePlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(SKRPageInterface SKRExporterInterface SKRSettingsPanelInterface)
+    Q_INTERFACES(SKRPageInterface SKRItemExporterInterface SKRSettingsPanelInterface)
 
 public:
 

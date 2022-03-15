@@ -16,6 +16,7 @@ Item {
     property alias textIndentSlider: textIndentSlider
     property alias pluginPageButton: pluginPageButton
     property alias firstStepsButton: firstStepsButton
+    property alias installDictButton: installDictButton
 
     property alias toolButtonFlow: toolButtonFlow
     property alias toolButtonRepeater: toolButtonRepeater
@@ -119,6 +120,11 @@ Item {
                                     id: checkSpellingComboBox
 
                                 }
+                            }
+
+                            SkrButton {
+                                id: installDictButton
+                                text: qsTr("Install new dictionaries")
                             }
                         }
                     }
