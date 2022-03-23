@@ -119,7 +119,7 @@ FocusScope {
                         id: textAreaFlickable
                         flickableDirection: Flickable.VerticalFlick
                         boundsBehavior: Flickable.StopAtBounds
-                        interactive: true
+                        interactive: false
                         maximumFlickVelocity: 200
                         flickDeceleration: 0
                         //clip: true

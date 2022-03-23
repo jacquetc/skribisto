@@ -136,6 +136,7 @@ SkrBasePage {
                         anchors.top: parent.top
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
+                        anchors.bottomMargin: writingZone.findPanel.visible ? writingZone.findPanel.height : 0
                         width: Qt.isQtObject(minimapLoader.item) ? minimapLoader.item.preferredWidth : -1
 
 
