@@ -13,7 +13,7 @@ add_subdirectory(writingGamesPageToolbox)
 add_subdirectory(favoritesProjectToolbox)
 add_subdirectory(navigationProjectToolbox)
 #add_subdirectory(plumeCreatorImporter)
-add_subdirectory(selectionExporter)
+#add_subdirectory(selectionExporter)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_subdirectory(antidotePageToolbox)
