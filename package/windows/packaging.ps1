@@ -32,9 +32,9 @@ copy 3rdparty/*/bin/* package/
 windeployqt.exe  package\skribisto.exe --qmldir ..\skribisto\src\app\src\qml\
 
 # add missing files
-copy C:\Qt\6.2.3\mingw81_64\bin\Qt6Sql.dll  package\
+copy C:\Qt\6.2.3\mingw_64\bin\Qt6Sql.dll  package\
 mkdir package\sqldrivers
-copy C:\Qt\6.2.3\mingw81_64\plugins\sqldrivers\qsqlite.dll package\sqldrivers\
+copy C:\Qt\6.2.3\mingw_64\plugins\sqldrivers\qsqlite.dll package\sqldrivers\
 
 # add OpenSSL dll
 copy C:\Qt\Tools\OpenSSL\Win_x64\bin\*.dll package\

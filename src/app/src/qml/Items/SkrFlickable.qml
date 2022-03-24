@@ -85,6 +85,7 @@ Item {
         restoreMode: Binding.RestoreNone
     }
 
+
     property real wheelMultiplier: 1
 
     Timer{
@@ -158,6 +159,7 @@ Item {
     WheelHandler{
         acceptedDevices: PointerDevice.Mouse
         acceptedModifiers: Qt.NoModifier
+        grabPermissions: PointerHandler.TakeOverForbidden
         onActiveChanged: {
             if (active) {
                 momentumAnimation.stop()
@@ -179,6 +181,7 @@ Item {
             var futureValue = 0
             if(flickableDirection === Qt.Vertical){
                 futureValue = contentY - event.angleDelta.y * wheelMultiplier
+                console.log("contentY", contentY)
                 console.log("futureValue", futureValue)
                 //                if(futureValue < 0){
                 //                    contentY =  0

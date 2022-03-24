@@ -731,10 +731,133 @@
     </message>
 </context>
 <context>
+    <name>ExporterPage</name>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="73"/>
+        <source>Select none</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="73"/>
+        <source>Select all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="143"/>
+        <source>.odt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="160"/>
+        <source>.txt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="176"/>
+        <source>.md</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="192"/>
+        <source>.html</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="208"/>
+        <source>.pdf</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="269"/>
+        <source>Levels with titles: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="373"/>
+        <source>Export &quot;%1&quot; project as …</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ExporterPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="31"/>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="51"/>
         <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="51"/>
+        <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
+        <source>OpenDocument</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
+        <source>Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
+        <source>HTML</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="169"/>
+        <source>Include outline in each sheet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="175"/>
+        <source>Numbered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="181"/>
+        <source>Add tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="199"/>
+        <source>Text size :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="217"/>
+        <source>Text indent :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="230"/>
+        <source>Top margin :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="247"/>
+        <source>Destination file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="252"/>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="261"/>
+        <source>Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="267"/>
+        <source>Print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="267"/>
+        <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1821,23 +1944,6 @@
         <comment>plugin description</comment>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <location filename="../plugins/selectionExporter/plugin.h" line="45"/>
-        <source>selection exporter</source>
-        <comment>plugin name</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/plugin.h" line="49"/>
-        <source>Export or print a selection</source>
-        <comment>plugin description</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/plugin.h" line="65"/>
-        <source>Selection</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>PluginPage</name>
@@ -2743,142 +2849,6 @@
     </message>
 </context>
 <context>
-    <name>SelectionExporter</name>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporter.qml" line="87"/>
-        <source>Select none</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporter.qml" line="87"/>
-        <source>Select all</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporter.qml" line="157"/>
-        <source>.odt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporter.qml" line="174"/>
-        <source>.txt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporter.qml" line="190"/>
-        <source>.md</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporter.qml" line="206"/>
-        <source>.html</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporter.qml" line="222"/>
-        <source>.pdf</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporter.qml" line="283"/>
-        <source>Levels with titles: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporter.qml" line="387"/>
-        <source>Export &quot;%1&quot; project as …</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>SelectionExporterForm.ui</name>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="53"/>
-        <source>Go back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="58"/>
-        <source>&lt;h2&gt;Print a selection&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="58"/>
-        <source>&lt;h2&gt;Export a selection&lt;/h2&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="168"/>
-        <source>OpenDocument</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="168"/>
-        <source>Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="168"/>
-        <source>HTML</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="176"/>
-        <source>Include outline in each sheet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="182"/>
-        <source>Numbered</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="188"/>
-        <source>Add tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="206"/>
-        <source>Text size :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="224"/>
-        <source>Text indent :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="237"/>
-        <source>Top margin :</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="254"/>
-        <source>Destination file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="268"/>
-        <source>Preview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="274"/>
-        <source>Print</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="274"/>
-        <source>Export</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/selectionExporter/SelectionExporter/SelectionExporterForm.ui.qml" line="259"/>
-        <source>Select</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>SettingsForm.ui</name>
     <message>
         <location filename="../plugins/textPage/TextPage/SettingsForm.ui.qml" line="55"/>
@@ -3467,125 +3437,125 @@
 <context>
     <name>ThemePageForm.ui</name>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="93"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="95"/>
         <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="379"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="381"/>
         <source>Color properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="411"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="413"/>
         <source>Colors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="430"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="432"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="437"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="439"/>
         <source>Reset theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="441"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="443"/>
         <source>Save theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="147"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="149"/>
         <source>Example</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="263"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="265"/>
         <source>Button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="268"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="270"/>
         <source>Button (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="275"/>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="280"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="277"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="282"/>
         <source>Tool Button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="286"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="288"/>
         <source>Tool Button (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="292"/>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="297"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="294"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="299"/>
         <source>Round button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="303"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="305"/>
         <source>Round button (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="308"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="310"/>
         <source>Switch (checked)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="315"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="317"/>
         <source>Switch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="338"/>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="362"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="340"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="364"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="363"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="365"/>
         <source>Secondary text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="189"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="191"/>
         <source>Tool bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="211"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="213"/>
         <source>Page tool bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="239"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="241"/>
         <source>List item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="162"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="164"/>
         <source>Light</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="168"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="170"/>
         <source>Dark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="174"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="176"/>
         <source>Distraction free</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="158"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="160"/>
         <source>Force a color mode:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3762,7 +3732,7 @@
 <context>
     <name>WritingZone</name>
     <message>
-        <location filename="../app/src/qml/Commons/WritingZone.qml" line="994"/>
+        <location filename="../app/src/qml/Commons/WritingZone.qml" line="1001"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>

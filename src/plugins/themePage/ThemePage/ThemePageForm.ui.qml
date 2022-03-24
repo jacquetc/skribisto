@@ -69,6 +69,7 @@ SkrBasePage {
 
             padding: 0
 
+
             ScrollView {
                 id: scrollView
                 anchors.fill: parent
@@ -78,6 +79,8 @@ SkrBasePage {
                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
                 contentWidth: pillarLayout.width
                 contentHeight: pillarLayout.implicitHeight
+
+                Flickable{
 
                 SKRPillarLayout {
                     id: pillarLayout
@@ -445,6 +448,7 @@ SkrBasePage {
                     }
                 }
             }
+        }
         }
     }
 }

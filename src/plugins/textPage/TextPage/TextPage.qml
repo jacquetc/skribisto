@@ -501,12 +501,12 @@ TextPageForm {
     }
 
     //needed to adapt width to a shrinking window
-    Binding on writingZone.textAreaWidth {
-        when: !Globals.compactMode
-              && middleBase.width - 40 < writingZone.maximumTextAreaWidth
-        value: middleBase.width - 40
-        restoreMode: Binding.RestoreBindingOrValue
-    }
+//    Binding on writingZone.textAreaWidth {
+//        when: !Globals.compactMode
+//              && middleBase.width - 40 < writingZone.maximumTextAreaWidth
+//        value: middleBase.width - 40
+//        restoreMode: Binding.RestoreBindingOrValue
+//    }
     Binding on writingZone.textAreaWidth {
         when: !Globals.compactMode
               && middleBase.width - 40 >= writingZone.maximumTextAreaWidth
