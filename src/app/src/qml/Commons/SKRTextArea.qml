@@ -2,10 +2,13 @@ import QtQuick
 import QtQml
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import "../Items"
 import ".."
 
 TextArea {
     id: root
+    selectByMouse: true
+    selectByKeyboard: true
 
     antialiasing: true
     property bool styleElevation: false
@@ -227,10 +230,15 @@ TextArea {
             priv.touchDetected = false
 
             if (pressed) {
-                //                console.log("pressed")
+                console.log("pressed")
                 startedWithSelectedText = selectedText.length !== 0
                 priv.selectionStart = selectionStart
                 priv.selectionEnd = selectionEnd
+
+                grabbedTextLabel.text = root.selectedText
+                grabbedTextLabel.grabToImage(function(result) {
+                    parent.Drag.imageSource = result.url;
+                })
             }
         }
 
@@ -238,13 +246,15 @@ TextArea {
 
             // means dragThreshold was reached
             if (selectedText.length === 0) {
+                console.log("e")
+                falseDraggableItem.Drag.active = false
 
                 return
             }
-            if (startedWithSelectedText && isMouseIsInSelectedRect(
+            else if (startedWithSelectedText && isMouseIsInSelectedRect(
                         pressPosition.x, pressPosition.y)) {
 
-                //                    console.log("dragging")
+                                   console.log("dragging")
                 startedWithSelectedText = false
 
                 priv.selectedText = getText(priv.selectionStart,
@@ -252,14 +262,15 @@ TextArea {
                 priv.selectedText = documentHandler.getHtmlAtSelection(
                             priv.selectionStart, priv.selectionEnd)
 
-                //                    console.log("tedText", priv.selectedText)
-                //                    console.log("priv.selectedText", priv.selectedText)
-                //                    console.log("  textL", priv.selectedText.length)
-                //                    console.log("selectL", selectionEnd - selectionEnd)
-                root.Drag.active = true
 
-                point.accepted = true
+                falseDraggableItem.Drag.active = true
+
             }
+            else{
+                falseDraggableItem.Drag.active = false
+
+            }
+
             // }
         }
 
@@ -267,8 +278,11 @@ TextArea {
             return selectionStart <= positionAt(eventX, eventY) && positionAt(
                         eventX, eventY) <= selectionEnd
         }
+
     }
 
+    Item{
+        id: falseDraggableItem
     Drag.dragType: Drag.Automatic
 
     Drag.supportedActions: Qt.MoveAction
@@ -276,20 +290,47 @@ TextArea {
     Drag.mimeData: {
         "text/html": priv.selectedText
     }
+    }
 
+
+
+
+    SkrLabel{
+        id: grabbedTextLabel
+        width: 200
+        visible: false
+
+    }
+
+
+    QtObject {
+        id: priv
+        //property bool dragging: false
+        property string selectedText: ""
+        property int selectionStart: 0
+        property int selectionEnd: 0
+        property bool touchDetected: false
+    }
     DropArea {
         anchors.fill: parent
 
         keys: ["text/html"]
 
-        onPositionChanged: {
+        onContainsDragChanged: console.log("onContainsDragChanged", containsDrag)
 
-            cursorPosition = positionAt(drag.x, drag.y)
+        onPositionChanged: (drag)=>{
+            console.log("onPositionChanged")
+            if(containsDrag){
+                cursorPosition = positionAt(drag.x, drag.y)
+                                   cursorVisible = true
+                               }
             //must select falsly by highlighter
         }
 
-        onDropped: {
+        onDropped: (drop)=>{
+
             if (!containsDrag) {
+                console.log("dropped !containsDrag")
                 priv.selectionStart = 0
                 priv.selectionEnd = 0
                 drop.accept()
@@ -321,7 +362,7 @@ TextArea {
                                                    drop.html))
                 } else if (drop.hasText) {
                     var st = drop.text
-                    console.log("text:", st)
+                    //console.log("text:", st)
                     insert(cursorPosition, st)
                 }
 
@@ -338,27 +379,26 @@ TextArea {
                 console.log("priv.selectionEnd", priv.selectionEnd)
 
                 remove(priv.selectionStart, priv.selectionEnd)
-                priv.selectionStart = 0
-                priv.selectionEnd = 0
                 drop.accept()
+                           priv.selectionStart = 0
+                           priv.selectionEnd = 0
             }
+                       if(!root.activeFocus){
+                           cursorVisible = false
+                       }
         }
 
         onExited: {
 
-        }
-        onEntered: {
+            if(!root.activeFocus){
+                cursorVisible = false
+            }
 
         }
-    }
+        onEntered: (drag)=> {
+                       console.log("onEntered", "entered")
 
-    QtObject {
-        id: priv
-        //property bool dragging: false
-        property string selectedText: ""
-        property int selectionStart: 0
-        property int selectionEnd: 0
-        property bool touchDetected: false
+        }
     }
 
     //----------------------------------------------------------------------
@@ -372,7 +412,6 @@ TextArea {
         onSingleTapped: function(eventPoint) {
             console.log("tapped")
             forceActiveFocus()
-            priv.touchDetected = false
             priv.touchDetected = true
             cursorPosition = positionAt(eventPoint.position.x,
                                         eventPoint.position.y)
@@ -380,6 +419,7 @@ TextArea {
 
         onDoubleTapped: function(eventPoint) {
             console.log("double tapped")
+            priv.touchDetected = true
             cursorPosition = positionAt(eventPoint.position.x,
                                         eventPoint.position.y)
             selectWord()
@@ -677,6 +717,8 @@ TextArea {
     //--------Wheel---------------------------------------------
     //--------------------------------------------------------------
     WheelHandler {
+        acceptedModifiers: Qt.NoModifier
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         onWheel: function(event) {
             moveViewYCalled(-event.angleDelta.y / 2, false)
         }

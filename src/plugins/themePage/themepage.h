@@ -23,7 +23,7 @@
 
 #include <QObject>
 #include "skrpageinterface.h"
-#include "skrexporterinterface.h"
+#include "skritemexporterinterface.h"
 #include "skrwordmeter.h"
 
 class ThemePage : public QObject,

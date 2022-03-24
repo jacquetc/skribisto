@@ -60,7 +60,7 @@ WritingZoneForm {
     property bool active: false
 
     onActiveChanged: {
-        console.log("active",active )
+        //console.log("active",active )
     }
 
     Timer{
@@ -787,6 +787,8 @@ WritingZoneForm {
     // wheel :
     WheelHandler {
         id: leftWheelHandler
+        acceptedModifiers: Qt.NoModifier
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         target: leftScrollItem
         onWheel: function(event) {
             textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
@@ -795,6 +797,8 @@ WritingZoneForm {
 
     WheelHandler {
         id: rightWheelHandler
+        acceptedModifiers: Qt.NoModifier
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         target: rightScrollItem
         onWheel: function(event) {
             textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
@@ -995,3 +999,4 @@ WritingZoneForm {
         }
     }
 }
+

@@ -7,6 +7,7 @@
 #include <QSettings>
 #include <QFont>
 #include <QDebug>
+#include <QDir>
 
 SKRRootItem::SKRRootItem(QObject *parent) : QObject(parent)
 {
@@ -190,6 +191,13 @@ QString SKRRootItem::getNativeLanguageNameFromLocale(const QString& name) const 
     QLocale locale(name);
 
     return locale.nativeLanguageName();
+}
+
+// ------------------------------------------------------
+
+bool SKRRootItem::createPath(const QString &path){
+    QDir dir;
+    return dir.mkpath(path);
 }
 
 // ------------------------------------------------------

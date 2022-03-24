@@ -23,8 +23,7 @@ SkrToolbox {
 
             SkrToolBar {
                 id: toolBar
-                Layout.maximumHeight: 40
-                Layout.preferredHeight: 40
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                 Layout.alignment: Qt.AlignTop
                 Layout.fillWidth: true
 

@@ -52,10 +52,10 @@ RootPageForm {
     SkrToolButton {
         id: notificationButton
 
-        width: 20
-        height: 20
-        x: rootPage.width -20
-        y: rootPage.height -20
+        width: 20   * SkrSettings.interfaceSettings.zoom
+        height: 20   * SkrSettings.interfaceSettings.zoom
+        x: rootPage.width -20   * SkrSettings.interfaceSettings.zoom
+        y: rootPage.height -20   * SkrSettings.interfaceSettings.zoom
 
 
         padding: 0
@@ -66,8 +66,8 @@ RootPageForm {
         id: notificationButtonAction
         icon{
             source: "qrc:///icons/backup/dialog-messages.svg"
-            width: 50
-            height: 50
+            width: 50   * SkrSettings.interfaceSettings.zoom
+            height: 50   * SkrSettings.interfaceSettings.zoom
         }
         checkable: true
 
@@ -438,13 +438,13 @@ RootPageForm {
 
 
     property alias leftDock: leftDock
-    property int leftDrawerFixedWidth: 300
+    property int leftDrawerFixedWidth: 300  * SkrSettings.interfaceSettings.zoom
 
     SkrDrawer {
         id: leftDrawer
         parent: baseForDrawers
         widthInDockMode: leftDrawerFixedWidth
-        widthInDrawerMode: 400
+        widthInDrawerMode: 400  * SkrSettings.interfaceSettings.zoom
         height: baseForDrawers.height
         interactive: ApplicationWindow.window.compactMode
         dockModeEnabled: !ApplicationWindow.window.compactMode
@@ -468,7 +468,7 @@ RootPageForm {
                 showLeftDockButtonWidth = 0
             }
             else {
-                showLeftDockButtonWidth = 30
+                showLeftDockButtonWidth = 30 * SkrSettings.interfaceSettings.zoom
             }
         }
 
@@ -496,12 +496,12 @@ RootPageForm {
     //------------------------------------------------
 
     property alias rightDock: rightDock
-    property int rightDrawerFixedWidth: 300
+    property int rightDrawerFixedWidth: 300  * SkrSettings.interfaceSettings.zoom
     SkrDrawer {
         id: rightDrawer
         parent: baseForDrawers
         widthInDockMode: rightDrawerFixedWidth
-        widthInDrawerMode: 400
+        widthInDrawerMode: 400  * SkrSettings.interfaceSettings.zoom
         height: baseForDrawers.height
         interactive: ApplicationWindow.window.compactMode
         dockModeEnabled: !ApplicationWindow.window.compactMode
@@ -524,7 +524,7 @@ RootPageForm {
                 showRightDockButtonWidth = 0
             }
             else {
-                showRightDockButtonWidth = 30
+                showRightDockButtonWidth = 30 * SkrSettings.interfaceSettings.zoom
             }
         }
 
@@ -596,8 +596,8 @@ RootPageForm {
         text: qsTr("Show the welcome page")
         icon {
             source: "qrc:///pics/skribisto.svg"
-            height: 50
-            width: 50
+            height: 50 * SkrSettings.interfaceSettings.zoom
+            width: 50 * SkrSettings.interfaceSettings.zoom
             color: "transparent"
         }
 
@@ -612,7 +612,7 @@ RootPageForm {
         parent: Overlay.overlay
         x: 0
         y: 0
-        width: Overlay.overlay.width >= 1000 ? 1000 : Overlay.overlay.width
+        width: Overlay.overlay.width  >= 1000 * SkrSettings.interfaceSettings.zoom ? 1000 * SkrSettings.interfaceSettings.zoom : Overlay.overlay.width
         height: Overlay.overlay.height
 
         modal: true
@@ -929,46 +929,14 @@ RootPageForm {
             }
 
         }
+
         SkrMenuItem {
-            id: bottomMenuItem
-            objectName: "bottomMenuItem"
-            focus: false
-
-            onActiveFocusChanged: {
-                if(activeFocus){
-                    closeCurrentProjectToolButtonInMenuItem.forceActiveFocus()
-                }
-            }
-
-            background: SkrPane {
-                anchors.fill: parent
-                anchors.margins: 2
-            }
-            contentItem:
-                RowLayout{
-                anchors.fill: parent
-                SkrToolButton{
-                    id: closeCurrentProjectToolButtonInMenuItem
-                    action: closeCurrentProjectAction
-                    display: AbstractButton.IconOnly
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-
-                    KeyNavigation.down: quitToolButtonInMenuItem
-
-                }
-                SkrToolButton{
-                    id: quitToolButtonInMenuItem
-                    action: quitAction
-                    display: AbstractButton.IconOnly
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                }
-
-            }
-
-
-
+            action: closeCurrentProjectAction
         }
 
+        SkrMenuItem {
+            action: quitAction
+        }
     }
 
 

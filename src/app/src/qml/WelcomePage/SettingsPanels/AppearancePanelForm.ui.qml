@@ -10,6 +10,7 @@ SkrSettingsPanel {
     property alias langComboBox: langComboBox
     property alias openThemePageButton: openThemePageButton
     property alias appearanceGroupBox: appearanceGroupBox
+    property alias zoomSpinBox: zoomSpinBox
 
     ColumnLayout {
         id: pillarLayout
@@ -44,6 +45,23 @@ SkrSettingsPanel {
                     SkrButton {
                         id: openThemePageButton
                         text: qsTr("Manage themes")
+                    }
+
+                    RowLayout {
+                        id: rowLayout
+
+                        SkrLabel {
+                            text: qsTr("Zoom")
+                        }
+                    SkrSpinBox {
+                        id: zoomSpinBox
+                        wheelEnabled: true
+                        editable: true
+
+                        to: 300
+                        from: 70
+
+                    }
                     }
                 }
 

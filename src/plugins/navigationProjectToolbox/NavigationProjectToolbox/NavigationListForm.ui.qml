@@ -27,8 +27,7 @@ FocusScope {
 
             SkrToolBar {
                 id: toolBar
-                Layout.maximumHeight: 40
-                Layout.preferredHeight: 40
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                 Layout.fillWidth: true
 
                 RowLayout {
@@ -40,6 +39,8 @@ FocusScope {
                         id: goUpToolButton
                         flat: true
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     Item {
@@ -51,18 +52,24 @@ FocusScope {
                         id: selectAllToolButton
                         flat: true
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
                         id: selectToolButton
                         flat: true
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
                         id: addToolButton
                         flat: true
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
@@ -71,6 +78,8 @@ FocusScope {
                         text: qsTr("Navigation menu")
                         display: AbstractButton.IconOnly
                         KeyNavigation.tab: navigationListStackView.currentItem
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
                 }
             }

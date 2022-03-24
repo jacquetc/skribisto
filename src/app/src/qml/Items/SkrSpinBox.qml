@@ -34,4 +34,7 @@ SpinBox {
         text: control.tip
         visible: control.hovered && tip.length !== 0
     }
+
+    font.pointSize: Application.font.pointSize * SkrSettings.interfaceSettings.zoom
+
 }

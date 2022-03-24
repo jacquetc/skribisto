@@ -1068,7 +1068,23 @@ OverviewTreeForm {
                                             textAreaStyleAccentColor: SkrTheme.accent
                                             name: "overviewOutline"
 
+                                            //-----Zoom------------------------------------------------------------
+
+                                            Shortcut {
+                                                sequences: skrShortcutManager.shortcuts("plugin-overview-outline-text-zoom-in")
+                                                context: Qt.WindowShortcut
+                                                enabled: writingZone.activeFocus
+                                                onActivated: {SkrSettings.overviewTreeOutlineSettings.textPointSize += 1}
+                                            }
+
+                                            Shortcut {
+                                                sequences: skrShortcutManager.shortcuts("plugin-overview-outline-text-zoom-out")
+                                                context: Qt.WindowShortcut
+                                                enabled: writingZone.activeFocus
+                                                onActivated: {SkrSettings.overviewTreeOutlineSettings.textPointSize -= 1}
+                                            }
                                         }
+
                                     }
 
                                     Loader {

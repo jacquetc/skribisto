@@ -1469,7 +1469,7 @@ NotePadForm {
                                     text: qsTr("Existing notes")
                                     font.bold: true
                                     color: SkrTheme.buttonForeground
-                                    //font.pixelSize: 20
+                                    //font.pointSize: 20
                                 }
                             }
                         }

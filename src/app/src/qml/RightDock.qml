@@ -123,6 +123,8 @@ RightDockForm {
             checkable: true
             icon.source: model.iconSource
             text: model.showButtonText
+            height: 30 * SkrSettings.interfaceSettings.zoom
+            width: 30 * SkrSettings.interfaceSettings.zoom
 
             onCheckedChanged: {
                  model.toolbox.visible = toolButton.checked

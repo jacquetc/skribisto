@@ -24,6 +24,9 @@ SkrBasePage {
     property alias relationshipPanel: relationshipPanel
     property int relationshipPanelPreferredHeight: 200
 
+    property alias zoomWheelHandler: zoomWheelHandler
+
+
     clip: true
 
     ColumnLayout {
@@ -42,7 +45,7 @@ SkrBasePage {
             //-------------------------------------------------
             SkrPageToolBar {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
 
                 RowLayout {
                     anchors.fill: parent
@@ -60,7 +63,7 @@ SkrBasePage {
                         text: qsTr("Page menu")
                         icon.source: "qrc:///icons/backup/overflow-menu.svg"
                         Layout.alignment: Qt.AlignCenter
-                        Layout.preferredHeight: 30
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrLabel {
@@ -113,6 +116,15 @@ SkrBasePage {
                             textAreaStyleAccentColor: SkrTheme.accent
                             paneStyleBackgroundColor: SkrTheme.pageBackground
 
+                            WheelHandler{
+                                id: zoomWheelHandler
+                                acceptedModifiers: Qt.ControlModifier
+                                target: SkrSettings.textSettings
+                                property: "textPointSize"
+                                grabPermissions: PointerHandler.CanTakeOverFromAnything
+                                rotationScale: 0.01
+                            }
+
                         }
                     }
 
@@ -124,6 +136,7 @@ SkrBasePage {
                         anchors.top: parent.top
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
+                        anchors.bottomMargin: writingZone.findPanel.visible ? writingZone.findPanel.height : 0
                         width: Qt.isQtObject(minimapLoader.item) ? minimapLoader.item.preferredWidth : -1
 
 

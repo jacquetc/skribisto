@@ -220,7 +220,68 @@ void SKRShortcutManager::populateShortcutList()
                        (QStringList() << "page"),
                        (QStringList() << tr("Alt+N", "add-quick-note")));
 
-    // add shortcuts from plugins
+
+    m_shortcutList <<
+        createShortcut("relationship-zoom-in",
+                       tr("Zoom in"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomIn)));
+
+    m_shortcutList <<
+        createShortcut("relationship-zoom-out",
+                       tr("Zoom out"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomOut)));
+
+    m_shortcutList <<
+        createShortcut("plugin-cardview-outline-text-zoom-in",
+                       tr("Zoom in"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomIn)));
+
+    m_shortcutList <<
+        createShortcut("plugin-cardview-outline-text-zoom-out",
+                       tr("Zoom out"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomOut)));
+
+    m_shortcutList <<
+        createShortcut("plugin-overview-outline-text-zoom-in",
+                       tr("Zoom in"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomIn)));
+
+    m_shortcutList <<
+        createShortcut("plugin-overview-outline-text-zoom-out",
+                       tr("Zoom out"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomOut)));
+
+    m_shortcutList <<
+        createShortcut("plugin-text-page-zoom-in",
+                       tr("Zoom in"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomIn)));
+
+    m_shortcutList <<
+        createShortcut("plugin-text-page-zoom-out",
+                       tr("Zoom out"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomOut)));
+
+    m_shortcutList <<
+        createShortcut("outline-text-zoom-in",
+                       tr("Zoom in"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomIn)));
+
+    m_shortcutList <<
+        createShortcut("outline-text-zoom-out",
+                       tr("Zoom out"),
+                       (QStringList() << "page"),
+                       (QStringList() << convertStandardKeyToList(QKeySequence::ZoomOut)));
+
+    //TODO: add shortcuts from plugins
 }
 
 QStringList SKRShortcutManager::convertStandardKeyToList(QKeySequence::StandardKey key) {

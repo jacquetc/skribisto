@@ -99,7 +99,7 @@ set(app_SRCS
     skrviewmanager.cpp
     skrviewmanager.h
     skrpageinterface.h
-    skrexporterinterface.h
+    skritemexporterinterface.h
     skrtreemanager.cpp
     skrtreemanager.h
     skrpagetoolboxinterface.h
@@ -114,6 +114,7 @@ set(app_SRCS
     skrsettingspanelinterface.h
     skrplugingetter.h
     skrplugingetter.cpp
+    skrexporterinterface.h
     )
 
 set(QML qml.qrc

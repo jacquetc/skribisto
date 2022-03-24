@@ -1,6 +1,7 @@
 import QtQuick
+import ".."
 
-Item {
+FocusScope {
     id: root
     property alias stretch: writingZone.stretch
     property alias textPointSize: writingZone.textPointSize
@@ -304,5 +305,7 @@ Item {
             //console.log("saving note success", projectId, treeItemId)
         }
     }
+
+
 }
 

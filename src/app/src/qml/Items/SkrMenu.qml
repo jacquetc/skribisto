@@ -13,7 +13,11 @@ Menu {
     background: Rectangle {
         color: SkrTheme.menuBackground
         border.color: SkrTheme.buttonForeground
-        implicitWidth: 200
-        implicitHeight: 40
+        implicitWidth: 250 * SkrSettings.interfaceSettings.zoom
+        implicitHeight: 30 * SkrSettings.interfaceSettings.zoom
     }
+    topPadding: 2
+    bottomPadding: 2
+
+    font.pointSize: Application.font.pointSize * SkrSettings.interfaceSettings.zoom
 }

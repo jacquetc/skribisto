@@ -9,7 +9,7 @@ import "../.."
 SkrBasePage {
     id: base
 
-    readonly property int columnWidth: 550
+    readonly property int columnWidth: 550 * SkrSettings.interfaceSettings.zoom
     property alias themeListView: themeListView
     property alias propertiesListView: propertiesListView
     property alias colorCodeTextField: colorCodeTextField

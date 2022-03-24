@@ -4,6 +4,8 @@ import QtQml
 import QtQuick.Controls
 
 import "../Items"
+import ".."
+
 Item {
     id: base
 
@@ -100,8 +102,8 @@ Item {
         SkrToolButton {
             id: splitMenuButton
             text: qsTr("Split")
-            Layout.preferredHeight: 30
-            Layout.preferredWidth: 30
+            Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+            Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
             checkable: true
             padding: 0
             icon{
@@ -128,8 +130,8 @@ Item {
         SkrToolButton {
             id: closeSplitButton
             text: qsTr("Close view")
-            Layout.preferredHeight: 30
-            Layout.preferredWidth: 30
+            Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+            Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
             padding: 0
             icon{
                 source: "qrc:///icons/backup/view-close.svg"

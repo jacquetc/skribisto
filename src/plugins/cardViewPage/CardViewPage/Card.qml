@@ -80,6 +80,21 @@ CardForm {
             textAreaStyleAccentColor: SkrTheme.accent
             name: "cardViewOutline"
 
+            //-----Zoom------------------------------------------------------------
+
+            Shortcut {
+                sequences: skrShortcutManager.shortcuts("plugin-cardview-outline-text-zoom-in")
+                context: Qt.WindowShortcut
+                enabled: writingZone.activeFocus
+                onActivated: {SkrSettings.cardViewOutlineSettings.textPointSize += 1}
+            }
+
+            Shortcut {
+                sequences: skrShortcutManager.shortcuts("plugin-cardview-outline-text-zoom-out")
+                context: Qt.WindowShortcut
+                enabled: root.activeFocus
+                onActivated: {SkrSettings.cardViewOutlineSettings.textPointSize -= 1}
+            }
         }
     }
 

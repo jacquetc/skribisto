@@ -99,8 +99,7 @@ Skribisto will add to these features with :
 - **Open texts in a new window**
 - **Open texts in tabs**
 - **Linux (Flatpak) support**
-- **importing old Plume Creator projects**
-- **Windows 10 support**
+- **Windows 10/11 support**
 - **Examples**
 - **Help page**
 - project management
@@ -257,8 +256,6 @@ Install 5.15 Desktop or superior and Qt Creator
 
 Needed sources and libs :
 - hunspell (devel)
-- zlib (devel)
-- quazip (devel), version 1.1 minimum needed. Install it by hand.
 
 Minimum Qt : 6.2.2
 If you have not Qt 6.2.2, use the Qt installer found at [Qt website](https://www.qt.io/download-open-source)

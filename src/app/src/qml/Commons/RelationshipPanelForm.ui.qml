@@ -100,31 +100,31 @@ SkrPane {
                         id: extendPanelButton
                         text: qsTr("Extend this panel")
                         icon.source: extended ? "qrc:///icons/backup/go-down.svg" : "qrc:///icons/backup/go-up.svg"
-                        Layout.preferredHeight: 30
-                        Layout.preferredWidth: 30
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
                         id: closeSubPanelButton
                         text: qsTr("Hide the sub panel")
                         icon.source: subPanel.visible ? "qrc:///icons/backup/go-next.svg" : "qrc:///icons/backup/go-previous.svg"
-                        Layout.preferredHeight: 30
-                        Layout.preferredWidth: 30
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
                         id: openTreeItemButton
                         text: qsTr("Open item")
                         icon.source: "qrc:///icons/backup/quickopen-file.svg"
-                        Layout.preferredHeight: 30
-                        Layout.preferredWidth: 30
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
                         id: addQuickNoteItemButton
                         icon.source: "qrc:///icons/backup/list-add.svg"
-                        Layout.preferredHeight: 30
-                        Layout.preferredWidth: 30
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
 
@@ -137,8 +137,8 @@ SkrPane {
                         id: closePanelButton
                         text: qsTr("Close this panel")
                         icon.source: "qrc:///icons/backup/go-down.svg"
-                        Layout.preferredHeight: 30
-                        Layout.preferredWidth: 30
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
                 }
             }

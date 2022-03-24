@@ -32,8 +32,7 @@ Item {
 
             SkrToolBar {
                 id: toolBar
-                Layout.maximumHeight: 40
-                Layout.preferredHeight: 40
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                 Layout.fillWidth: true
 
                 RowLayout {
@@ -46,6 +45,8 @@ Item {
                         id: goBackToolButton
                         flat: true
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30  * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrComboBox {
@@ -58,6 +59,8 @@ Item {
                         flat: true
                         text: qsTr("Restore a document")
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
@@ -65,6 +68,8 @@ Item {
                         flat: true
                         text: qsTr("Trashed menu")
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
                 }
             }

@@ -59,5 +59,7 @@ ToolButton {
 
     property string shortcutText:  action ? (action.shortcutText ? action.shortcutText : "") : ""
 
+    font.pointSize: Application.font.pointSize * SkrSettings.interfaceSettings.zoom
+
 
 }

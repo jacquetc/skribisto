@@ -32,8 +32,7 @@ Item {
 
             SkrToolBar {
                 id: toolBar
-                Layout.maximumHeight: 40
-                Layout.preferredHeight: 40
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignTop
                 visible: !minimalMode
@@ -62,7 +61,8 @@ Item {
                     SkrToolButton {
                         id: addTagMenuToolButton
                         flat: true
-                        display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                 }
@@ -73,7 +73,7 @@ Item {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 property int flowHeight: tagFlow.height + tagFlickable.topMargin + tagFlickable.bottomMargin
-                Layout.preferredHeight: minimalMode ? -1 : (flowHeight > 200 ? 200 : flowHeight)
+                Layout.preferredHeight: minimalMode ? -1 : (flowHeight  * SkrSettings.interfaceSettings.zoom > 200   * SkrSettings.interfaceSettings.zoom ? 200   * SkrSettings.interfaceSettings.zoom : flowHeight   * SkrSettings.interfaceSettings.zoom)
 
                 ScrollView {
                     id: scrollView

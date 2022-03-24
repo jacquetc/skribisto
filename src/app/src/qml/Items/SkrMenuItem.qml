@@ -12,4 +12,8 @@ MenuItem {
     //Material.background: SkrTheme.menuBackground
     Material.foreground: SkrTheme.buttonForeground
     Material.accent: SkrTheme.accent
+
+    implicitHeight: 30 * SkrSettings.interfaceSettings.zoom
+    topPadding: 0
+    bottomPadding: 0
 }

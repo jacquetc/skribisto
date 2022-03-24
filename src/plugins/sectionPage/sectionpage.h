@@ -23,16 +23,16 @@
 
 #include <QObject>
 #include "skrpageinterface.h"
-#include "skrexporterinterface.h"
+#include "skritemexporterinterface.h"
 
 class SectionPage : public QObject,
                     public SKRPageInterface,
-                    public SKRExporterInterface {
+                    public SKRItemExporterInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.SectionPagePlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(SKRPageInterface SKRExporterInterface)
+    Q_INTERFACES(SKRPageInterface SKRItemExporterInterface)
 
 public:
 

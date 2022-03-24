@@ -28,12 +28,17 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.32" date="2022-03-13T00:00:00Z">
+    <release type="stable" version="1.9.33" date="2022-03-24T00:00:00Z">
       <description>
         <ul>
-          <li>Migrate to Qt 6.2.3</li>
-          <li>Fix mouse clicks not well recognised in Flatpak package</li>
-          <li>Remove Plume Crator importer and Quazip</li>
+          <li>Fix installation of new dictionaries</li>
+          <li>Fix drag and drop of texts</li>
+          <li>Add interface zoom in settings</li>
+          <li>Resize buttons and menus for a more desktop feel</li>
+          <li>Move text settings into its own setting page</li>
+          <li>Add Ctrl+Wheel to zoom text in text areas</li>
+          <li>Add zoom shortcuts to zoom text in text areas</li>
+          <li>Add a button to add new dictioinaries from the first time dialog</li>
         </ul>
       </description>
     </release>

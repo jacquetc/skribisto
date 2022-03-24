@@ -14,7 +14,7 @@ Item {
     property alias projectLabel: projectLabel
     property alias tree: tree
     property alias selectAllTreeItemsToolButton: selectAllTreeItemsToolButton
-    readonly property int columnWidth: 550
+    readonly property int columnWidth: 550 * SkrSettings.interfaceSettings.zoom
 
     property alias odtButton: odtButton
     property alias txtButton: txtButton
@@ -79,7 +79,7 @@ Item {
 
                 ColumnLayout{
                     Layout.fillWidth: true
-                    height: Window.window === null ? 300 : Window.window.height * 3/4
+                    height: Window.window === null ? 300 * SkrSettings.interfaceSettings.zoom  : Window.window.height * 3/4
                     SkrToolBar{
                         id: sheetTreeToolBar
                         Layout.fillWidth: true
@@ -118,7 +118,7 @@ Item {
                         Layout.fillWidth: true
                         checkButtonsVisible: true
                         treelikeIndentsVisible: true
-                        treeIndentMultiplier: 40
+                        treeIndentMultiplier: 40 * SkrSettings.interfaceSettings.zoom
                         KeyNavigation.tab: odtButton
                     }
 

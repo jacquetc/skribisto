@@ -70,6 +70,19 @@ AppearancePanelForm {
 
 
     //--------------------------------------------------
+   // Zoom
+
+    zoomSpinBox.value: SkrSettings.interfaceSettings.zoom * 100
+    Binding {
+        delayed: true
+        target: SkrSettings.interfaceSettings
+        property: "zoom"
+        value: zoomSpinBox.value / 100
+        restoreMode: Binding.RestoreBindingOrValue
+
+    }
+
+    //--------------------------------------------------
 
     onActiveFocusChanged: {
         if (activeFocus) {

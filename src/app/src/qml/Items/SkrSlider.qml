@@ -36,5 +36,6 @@ Slider {
     snapMode: Slider.SnapOnRelease
 
 
+    font.pointSize: Application.font.pointSize * SkrSettings.interfaceSettings.zoom
 
 }

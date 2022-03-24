@@ -30,4 +30,7 @@ CheckBox {
         text: control.tip ? control.tip : control.text
         visible: control.hovered && text.length !== 0
     }
+
+    font.pointSize: Application.font.pointSize * SkrSettings.interfaceSettings.zoom
+
 }

@@ -12,6 +12,7 @@ import "../../Items"
 import "../../Commons"
 
 SettingsForm {
+    property var skrSettingsGroup: SkrSettings.textSettings
 
 
 
@@ -53,6 +54,98 @@ SettingsForm {
         value: minimapDividerDial.value
         restoreMode: Binding.RestoreBindingOrValue
 
+    }
+
+
+    // -------------------------------------------------------
+    // ---- text layout --------------------------------
+    // --------------------------------------------------------
+
+    textWidthLabel.visible: !rootWindow.compactMode && textWidthSliderVisible
+    textWidthSlider.visible: !rootWindow.compactMode && textWidthSliderVisible
+
+    textWidthSlider.value: skrSettingsGroup.textWidth
+
+    Binding {
+        target: skrSettingsGroup
+        property: "textWidth"
+        value: textWidthSlider.value
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    // textPointSizeSlider :
+
+    textPointSizeSlider.value: skrSettingsGroup.textPointSize
+
+
+    Binding {
+        target: skrSettingsGroup
+        property: "textPointSize"
+        value: textPointSizeSlider.value
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    // Font family combo :
+    fontFamilyComboBox.model: skrFonts.fontFamilies()
+
+    Binding {
+        target: skrSettingsGroup
+        property: "textFontFamily"
+        value: fontFamilyComboBox.currentText
+        when:  fontFamilyLoaded
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
+    property bool fontFamilyLoaded: false
+
+    function loadFontFamily(){
+        var fontFamily = skrSettingsGroup.textFontFamily
+        //console.log("fontFamily", fontFamily)
+        //console.log("application fontFamily", Qt.application.font.family)
+
+        var index = fontFamilyComboBox.find(fontFamily, Qt.MatchFixedString)
+        //console.log("index", index)
+        if(index === -1){
+            index = fontFamilyComboBox.find("Liberation Serif", Qt.MatchFixedString)
+        }
+        if(index === -1){
+            index = fontFamilyComboBox.find(Qt.application.font.family, Qt.MatchContains)
+        }
+        //console.log("index", index)
+
+        fontFamilyComboBox.currentIndex = index
+        fontFamilyLoaded = true
+    }
+
+    // Indent :
+    textIndentSlider.value: skrSettingsGroup.textIndent
+
+    Binding {
+        target: skrSettingsGroup
+        property: "textIndent"
+        value: textIndentSlider.value
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    // Margins :
+    textTopMarginSlider.value: skrSettingsGroup.textTopMargin
+
+    Binding {
+        target: skrSettingsGroup
+        property: "textTopMargin"
+        value: textTopMarginSlider.value
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+
+    Component.onCompleted: {
+        loadFontFamily()
     }
 
 

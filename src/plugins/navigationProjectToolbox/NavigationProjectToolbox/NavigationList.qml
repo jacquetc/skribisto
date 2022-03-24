@@ -586,7 +586,7 @@ NavigationListForm {
             enabled: false
             enableBehavior: false
 
-            width: 200
+            width: 200 * SkrSettings.interfaceSettings.zoom
             z: 100 - popupId
             modal: false
             closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent

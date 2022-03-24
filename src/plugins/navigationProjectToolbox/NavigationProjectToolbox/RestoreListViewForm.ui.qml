@@ -29,8 +29,7 @@ Item {
 
             SkrToolBar {
                 id: toolBar
-                Layout.maximumHeight: 40
-                Layout.preferredHeight: 40
+                Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                 Layout.fillWidth: true
 
                 RowLayout {
@@ -41,7 +40,9 @@ Item {
                     SkrToolButton {
                         id: goBackToolButton
                         flat: true
-                        display: AbstractButton.IconOnly
+                        display: AbstractButton.IconOnly                
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     Item {
@@ -56,6 +57,8 @@ Item {
                         flat: true
                         text: qsTr("Restore a document")
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
@@ -63,6 +66,8 @@ Item {
                         flat: true
                         text: qsTr("Select all")
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrToolButton {
@@ -70,6 +75,8 @@ Item {
                         flat: true
                         text: qsTr("Trashed menu")
                         display: AbstractButton.IconOnly
+                        Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
                 }
             }
@@ -77,7 +84,7 @@ Item {
             SkrLabel {
                 id: text1
                 text: qsTr("The checked documents are those which were trashed at the same time")
-                font.pixelSize: 12
+                font.pointSize: 12
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }

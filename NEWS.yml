@@ -125,4 +125,16 @@ Description:
 - "Fix mouse clicks not well recognised in Flatpak package"
 - "Remove Plume Crator importer and Quazip"
 
+Version: 1.9.33
+Date: 2022-03-24
+Type: stable
+Description:
+- "Fix installation of new dictionaries"
+- "Fix drag and drop of texts"
+- "Add interface zoom in settings"
+- "Resize buttons and menus for a more desktop feel"
+- "Move text settings into its own setting page"
+- "Add Ctrl+Wheel to zoom text in text areas"
+- "Add zoom shortcuts to zoom text in text areas"
+- "Add a button to add new dictioinaries from the first time dialog"
 

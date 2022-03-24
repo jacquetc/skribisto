@@ -157,6 +157,7 @@ Item {
 
     WheelHandler{
         acceptedDevices: PointerDevice.Mouse
+        acceptedModifiers: Qt.NoModifier
         onActiveChanged: {
             if (active) {
                 momentumAnimation.stop()
@@ -225,7 +226,7 @@ Item {
         maximum: contentHeight - root.height >= 0 ? contentHeight - root.height : 0
         maximumOvershoot: root.maximumOvershoot
         onMaximumChanged: {
-            console.log("maximum", maximum)
+            //console.log("maximum", maximum)
         }
     }
 
