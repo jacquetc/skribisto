@@ -2942,72 +2942,72 @@
 <context>
     <name>SettingsPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="69"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="71"/>
         <source>Behavior</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="77"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="79"/>
         <source>Create an empty project at start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="100"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="102"/>
         <source>Spell checking</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="108"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="110"/>
         <source>Check spelling</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="116"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="118"/>
         <source>Default dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="127"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="129"/>
         <source>Install new dictionaries</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="140"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="142"/>
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="153"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="155"/>
         <source>Include outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="158"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="160"/>
         <source>Add tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="169"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="171"/>
         <source>Text size :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="186"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="188"/>
         <source>Text indent :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="198"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="200"/>
         <source>Top margin :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="84"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="86"/>
         <source>Manage plugins</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="89"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="91"/>
         <source>Show the first steps dialog</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3437,125 +3437,125 @@
 <context>
     <name>ThemePageForm.ui</name>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="95"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="96"/>
         <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="381"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="382"/>
         <source>Color properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="413"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="414"/>
         <source>Colors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="432"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="433"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="439"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="440"/>
         <source>Reset theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="443"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="444"/>
         <source>Save theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="149"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="150"/>
         <source>Example</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="265"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="266"/>
         <source>Button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="270"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="271"/>
         <source>Button (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="277"/>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="282"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="278"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="283"/>
         <source>Tool Button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="288"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="289"/>
         <source>Tool Button (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="294"/>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="299"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="295"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="300"/>
         <source>Round button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="305"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="306"/>
         <source>Round button (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="310"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="311"/>
         <source>Switch (checked)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="317"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="318"/>
         <source>Switch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="340"/>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="364"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="341"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="365"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="365"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="366"/>
         <source>Secondary text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="191"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="192"/>
         <source>Tool bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="213"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="214"/>
         <source>Page tool bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="241"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="242"/>
         <source>List item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="164"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="165"/>
         <source>Light</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="170"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="171"/>
         <source>Dark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="176"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="177"/>
         <source>Distraction free</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="160"/>
+        <location filename="../plugins/themePage/ThemePage/ThemePageForm.ui.qml" line="161"/>
         <source>Force a color mode:</source>
         <translation type="unfinished"></translation>
     </message>
