@@ -35,8 +35,6 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #foreach(plugin ${Qt5Gui_PLUGINS})
 #  get_target_property(_loc ${plugin} LOCATION)
