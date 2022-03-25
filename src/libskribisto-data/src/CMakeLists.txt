@@ -102,7 +102,11 @@ set(QRC
 qt_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
-add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${RESOURCES})
+if(CMAKE_SYSTEM_NAME STREQUAL "IOS")
+    add_library(skribisto-data STATIC ${data_SRCS} ${data_HDR} ${RESOURCES})
+else()
+    add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${RESOURCES})
+endif(CMAKE_SYSTEM_NAME STREQUAL "IOS")
 
 target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
 

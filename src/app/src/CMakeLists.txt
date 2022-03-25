@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.16.0)
 
 # Populate a CMake variable with the sources
 
@@ -159,7 +159,7 @@ if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         qtquick_compiler_add_resources(RESOURCES ${QML})
 
     elseif(${QT_VERSION_MAJOR} EQUAL 6)
-        find_package(Qt6 COMPONENTS QmlCompiler)
+        #find_package(Qt6 COMPONENTS QmlCompiler)
         qt_add_resources(RESOURCES ${QML})
     endif()
 
@@ -168,6 +168,9 @@ endif (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     qt_add_resources(RESOURCES ${QRC} ${QML})
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+
+
 
 # Tell CMake to create the executable
 
@@ -210,6 +213,18 @@ else()
     add_executable(skribisto ${GUI_TYPE} ${app_SRCS} ${RESOURCES} ${QRC} ${VERSION_RC})
 endif()
 
+
+set_target_properties(skribisto PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER eu.skribisto.skribisto
+    MACOSX_BUNDLE_BUNDLE_VERSION ${SKR_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${SKR_VERSION_MAJOR}.${SKR_VERSION_MINOR}
+    MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE TRUE
+)
+
+
+
+
 target_compile_definitions(skribisto
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
@@ -219,8 +234,6 @@ else()
     set(PRINT "")
 endif()
 
-target_link_libraries(skribisto PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2
-    ${PRINT})
 
 
 
@@ -241,9 +254,7 @@ target_link_libraries(skribisto PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Co
     if(${SKR_DEV})
         set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
         set(PKG_HUNSPELL_LIBRARY_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/lib)
-
         set(PKG_HUNSPELL_INCLUDE_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/include)
-        set(PKG_HUNSPELL_LIBRARY_DIRS ${PKG_HUNSPELL_LIBRARY_DIRS})
     endif(${SKR_DEV})
 
 
@@ -251,12 +262,13 @@ target_link_libraries(skribisto PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Co
 
 
 find_package(hunspell REQUIRED)
-target_link_libraries(skribisto PRIVATE ${HUNSPELL_LIBRARY})
 target_include_directories(skribisto SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
 
 
 #---------------------------------
 
+target_link_libraries(skribisto PRIVATE skribisto-data ${HUNSPELL_LIBRARY} Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2
+    ${PRINT})
 
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
