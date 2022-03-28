@@ -1,6 +1,0 @@
-<RCC>
-    <qresource prefix="/qml/plugins">
-        <file>WritingGamesPageToolbox/WritingGamesPageToolbox.qml</file>
-        <file>WritingGamesPageToolbox/WritingGamesPageToolboxForm.ui.qml</file>
-    </qresource>
-</RCC>

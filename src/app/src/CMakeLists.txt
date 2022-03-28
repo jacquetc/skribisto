@@ -149,7 +149,6 @@ set(QRC pics.qrc
     ${CMAKE_SOURCE_DIR}/resources/examples/examples.qrc
     ${TEST_FILES_QRC}
     ${CMAKE_SOURCE_DIR}/readme.qrc
-    qml.qrc
 )
 
 # needed to allow qML debugging :
@@ -163,7 +162,7 @@ set(QRC pics.qrc
 #        qt_add_resources(RESOURCES ${QML})
 #    endif()
 
-    qt_add_resources(RESOURCES ${QRC})
+#qt_add_resources(RESOURCES ${QRC})
 #endif (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 #if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 #    qt_add_resources(RESOURCES ${QRC} ${QML})
@@ -243,11 +242,11 @@ if(IOS OR ANDROID OR SKR_TEST_APP)
 
 if(ANDROID)
     message("------- library is to be built ---------")
-    add_library(skribisto SHARED ${app_SRCS} ${RESOURCES} ${VERSION_RC} ${hunspell_SRCS})
+    add_library(skribisto SHARED ${app_SRCS} ${QRC} {VERSION_RC} ${hunspell_SRCS})
 endif()
 if(IOS)
     message("------- executable is to be built ---------")
-    add_executable(skribisto ${app_SRCS} ${RESOURCES} ${VERSION_RC} ${hunspell_SRCS})
+    add_executable(skribisto ${app_SRCS} ${VERSION_RC} ${QRC} ${hunspell_SRCS})
 
 
 
@@ -258,140 +257,143 @@ if(IOS)
 endif()
 else()
     message("------- executable is to be built ---------")
-    add_executable(skribisto ${GUI_TYPE} ${app_SRCS} ${RESOURCES} ${VERSION_RC})
+    add_executable(skribisto ${GUI_TYPE} ${app_SRCS} ${QRC} ${VERSION_RC})
 endif()
 
 qt_add_qml_module(skribisto
     URI skribisto
     VERSION 1.0
     NO_RESOURCE_TARGET_PATH
+    RESOURCE_PREFIX /eu.skribisto.skribisto/imports
     QML_FILES
-        qml/Breadcrumb.qml
-        qml/EmptyPage.qml
-        qml/FirstStepsWizard.qml
-        qml/Globals.qml
-        qml/LeftDock.qml
-        qml/LeftDockForm.ui.qml
-        qml/MultiViewArea.qml
-        qml/MultiViewAreaForm.ui.qml
-        qml/RightDock.qml
-        qml/RightDockForm.ui.qml
-        qml/RootPage.qml
-        qml/RootPageForm.ui.qml
-        qml/SkrSettings.qml
-        qml/SkrTheme.qml
-        qml/main.qml
-        qml/Commons/CheckableTree.qml
-        qml/Commons/ColorChooser.qml
-        qml/Commons/DocumentListView.qml
-        qml/Commons/DocumentListViewForm.ui.qml
-        qml/Commons/EditView.qml
-        qml/Commons/EditViewForm.ui.qml
-        qml/Commons/FindPanel.qml
-        qml/Commons/FindPanelForm.ui.qml
-        qml/Commons/ListItemAttributes.qml
-        qml/Commons/NewDictWizard.qml
-        qml/Commons/NewDictWizardForm.ui.qml
-        qml/Commons/NewItemPopup.qml
-        qml/Commons/NewItemPopupForm.ui.qml
-        qml/Commons/NotePad.qml
-        qml/Commons/NotePadForm.ui.qml
-        qml/Commons/OutlinePad.qml
-        qml/Commons/OutlinePadForm.ui.qml
-        qml/Commons/OutlineWritingZone.qml
-        qml/Commons/PluginPage.qml
-        qml/Commons/PluginPageForm.ui.qml
-        qml/Commons/PropertyPad.qml
-        qml/Commons/PropertyPadForm.ui.qml
-        qml/Commons/RelationshipPanel.qml
-        qml/Commons/RelationshipPanelForm.ui.qml
-        qml/Commons/SKRPillarLayout.qml
-        qml/Commons/SKRTextArea.qml
-        qml/Commons/SimpleDialog.qml
-        qml/Commons/SkrDrawer.qml
-        qml/Commons/SkrViewButtons.qml
-        qml/Commons/SkrViewManager.qml
-        qml/Commons/TagPad.qml
-        qml/Commons/TagPadForm.ui.qml
-        qml/Commons/TextContextMenu.qml
-        qml/Commons/TextContextMenuForm.ui.qml
-        qml/Commons/WritingZone.qml
-        qml/Commons/WritingZoneForm.ui.qml
-        qml/Items/SkrBasePage.qml
-        qml/Items/SkrBusyIndicator.qml
-        qml/Items/SkrButton.qml
-        qml/Items/SkrCheckBox.qml
-        qml/Items/SkrComboBox.qml
-        qml/Items/SkrDial.qml
-        qml/Items/SkrFlickable.qml
-        qml/Items/SkrFocusIndicator.qml
-        qml/Items/SkrGroupBox.qml
-        qml/Items/SkrLabel.qml
-        qml/Items/SkrListItemPane.qml
-        qml/Items/SkrMenu.qml
-        qml/Items/SkrMenuItem.qml
-        qml/Items/SkrPageToolBar.qml
-        qml/Items/SkrPane.qml
-        qml/Items/SkrPopup.qml
-        qml/Items/SkrRoundButton.qml
-        qml/Items/SkrSettingsPanel.qml
-        qml/Items/SkrSlider.qml
-        qml/Items/SkrSpinBox.qml
-        qml/Items/SkrSplitViewHandler.qml
-        qml/Items/SkrSwitch.qml
-        qml/Items/SkrTabBar.qml
-        qml/Items/SkrTabButton.qml
-        qml/Items/SkrTabButtonForm.ui.qml
-        qml/Items/SkrTextField.qml
-        qml/Items/SkrToolBar.qml
-        qml/Items/SkrToolButton.qml
-        qml/Items/SkrToolTip.qml
-        qml/Items/SkrToolbox.qml
-        qml/Gallery/GalleryPage.qml
-        qml/Gallery/GalleryPageForm.ui.qml
-        qml/WelcomePage/About.qml
-        qml/WelcomePage/AboutForm.ui.qml
-        qml/WelcomePage/ExamplePage.qml
-        qml/WelcomePage/ExamplePageForm.ui.qml
-        qml/WelcomePage/ExporterPage.qml
-        qml/WelcomePage/ExporterPageForm.ui.qml
-        qml/WelcomePage/FileMenuPage.qml
-        qml/WelcomePage/FileMenuPageForm.ui.qml
-        qml/WelcomePage/HelpContents.qml
-        qml/WelcomePage/HelpContentsForm.ui.qml
-        qml/WelcomePage/HelpPage.qml
-        qml/WelcomePage/HelpPageForm.ui.qml
-        qml/WelcomePage/ImporterPage.qml
-        qml/WelcomePage/ImporterPageForm.ui.qml
-        qml/WelcomePage/NewProjectPage.qml
-        qml/WelcomePage/NewProjectPageForm.ui.qml
-        qml/WelcomePage/ProjectPage.qml
-        qml/WelcomePage/ProjectPageForm.ui.qml
-        qml/WelcomePage/RecentPage.qml
-        qml/WelcomePage/RecentPageForm.ui.qml
-        qml/WelcomePage/SettingsPage.qml
-        qml/WelcomePage/SettingsPageForm.ui.qml
-        qml/WelcomePage/WelcomePage.qml
-        qml/WelcomePage/WelcomePageForm.ui.qml
-        qml/WelcomePage/SettingsPanels/AccessibilityPanel.qml
-        qml/WelcomePage/SettingsPanels/AccessibilityPanelForm.ui.qml
-        qml/WelcomePage/SettingsPanels/AdvancedPanel.qml
-        qml/WelcomePage/SettingsPanels/AdvancedPanelForm.ui.qml
-        qml/WelcomePage/SettingsPanels/AppearancePanel.qml
-        qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml
-        qml/WelcomePage/SettingsPanels/BackupPanel.qml
-        qml/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml
-        qml/WelcomePage/SettingsPanels/EPaperPanel.qml
-        qml/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml
-        qml/WelcomePage/SettingsPanels/SavePanel.qml
-        qml/WelcomePage/SettingsPanels/SavePanelForm.ui.qml
+    qml/Breadcrumb.qml
+    qml/EmptyPage.qml
+    qml/FirstStepsWizard.qml
+    qml/Globals.qml
+    qml/LeftDock.qml
+    qml/LeftDockForm.ui.qml
+    qml/MultiViewArea.qml
+    qml/MultiViewAreaForm.ui.qml
+    qml/RightDock.qml
+    qml/RightDockForm.ui.qml
+    qml/RootPage.qml
+    qml/RootPageForm.ui.qml
+    qml/SkrSettings.qml
+    qml/SkrTheme.qml
+    qml/main.qml
+    qml/Commons/CheckableTree.qml
+    qml/Commons/ColorChooser.qml
+    qml/Commons/DocumentListView.qml
+    qml/Commons/DocumentListViewForm.ui.qml
+    qml/Commons/EditView.qml
+    qml/Commons/EditViewForm.ui.qml
+    qml/Commons/FindPanel.qml
+    qml/Commons/FindPanelForm.ui.qml
+    qml/Commons/ListItemAttributes.qml
+    qml/Commons/NewDictWizard.qml
+    qml/Commons/NewDictWizardForm.ui.qml
+    qml/Commons/NewItemPopup.qml
+    qml/Commons/NewItemPopupForm.ui.qml
+    qml/Commons/NotePad.qml
+    qml/Commons/NotePadForm.ui.qml
+    qml/Commons/OutlinePad.qml
+    qml/Commons/OutlinePadForm.ui.qml
+    qml/Commons/OutlineWritingZone.qml
+    qml/Commons/PluginPage.qml
+    qml/Commons/PluginPageForm.ui.qml
+    qml/Commons/PropertyPad.qml
+    qml/Commons/PropertyPadForm.ui.qml
+    qml/Commons/RelationshipPanel.qml
+    qml/Commons/RelationshipPanelForm.ui.qml
+    qml/Commons/SKRPillarLayout.qml
+    qml/Commons/SKRTextArea.qml
+    qml/Commons/SimpleDialog.qml
+    qml/Commons/SkrDrawer.qml
+    qml/Commons/SkrViewButtons.qml
+    qml/Commons/SkrViewManager.qml
+    qml/Commons/TagPad.qml
+    qml/Commons/TagPadForm.ui.qml
+    qml/Commons/TextContextMenu.qml
+    qml/Commons/TextContextMenuForm.ui.qml
+    qml/Commons/WritingZone.qml
+    qml/Commons/WritingZoneForm.ui.qml
+    qml/Items/SkrBasePage.qml
+    qml/Items/SkrBusyIndicator.qml
+    qml/Items/SkrButton.qml
+    qml/Items/SkrCheckBox.qml
+    qml/Items/SkrComboBox.qml
+    qml/Items/SkrDial.qml
+    qml/Items/SkrFlickable.qml
+    qml/Items/SkrFocusIndicator.qml
+    qml/Items/SkrGroupBox.qml
+    qml/Items/SkrLabel.qml
+    qml/Items/SkrListItemPane.qml
+    qml/Items/SkrMenu.qml
+    qml/Items/SkrMenuItem.qml
+    qml/Items/SkrPageToolBar.qml
+    qml/Items/SkrPane.qml
+    qml/Items/SkrPopup.qml
+    qml/Items/SkrRoundButton.qml
+    qml/Items/SkrSettingsPanel.qml
+    qml/Items/SkrSlider.qml
+    qml/Items/SkrSpinBox.qml
+    qml/Items/SkrSplitViewHandler.qml
+    qml/Items/SkrSwitch.qml
+    qml/Items/SkrTabBar.qml
+    qml/Items/SkrTabButton.qml
+    qml/Items/SkrTabButtonForm.ui.qml
+    qml/Items/SkrTextField.qml
+    qml/Items/SkrToolBar.qml
+    qml/Items/SkrToolButton.qml
+    qml/Items/SkrToolTip.qml
+    qml/Items/SkrToolbox.qml
+    qml/Gallery/GalleryPage.qml
+    qml/Gallery/GalleryPageForm.ui.qml
+    qml/WelcomePage/About.qml
+    qml/WelcomePage/AboutForm.ui.qml
+    qml/WelcomePage/ExamplePage.qml
+    qml/WelcomePage/ExamplePageForm.ui.qml
+    qml/WelcomePage/ExporterPage.qml
+    qml/WelcomePage/ExporterPageForm.ui.qml
+    qml/WelcomePage/FileMenuPage.qml
+    qml/WelcomePage/FileMenuPageForm.ui.qml
+    qml/WelcomePage/HelpContents.qml
+    qml/WelcomePage/HelpContentsForm.ui.qml
+    qml/WelcomePage/HelpPage.qml
+    qml/WelcomePage/HelpPageForm.ui.qml
+    qml/WelcomePage/ImporterPage.qml
+    qml/WelcomePage/ImporterPageForm.ui.qml
+    qml/WelcomePage/NewProjectPage.qml
+    qml/WelcomePage/NewProjectPageForm.ui.qml
+    qml/WelcomePage/ProjectPage.qml
+    qml/WelcomePage/ProjectPageForm.ui.qml
+    qml/WelcomePage/RecentPage.qml
+    qml/WelcomePage/RecentPageForm.ui.qml
+    qml/WelcomePage/SettingsPage.qml
+    qml/WelcomePage/SettingsPageForm.ui.qml
+    qml/WelcomePage/WelcomePage.qml
+    qml/WelcomePage/WelcomePageForm.ui.qml
+    qml/WelcomePage/SettingsPanels/AccessibilityPanel.qml
+    qml/WelcomePage/SettingsPanels/AccessibilityPanelForm.ui.qml
+    qml/WelcomePage/SettingsPanels/AdvancedPanel.qml
+    qml/WelcomePage/SettingsPanels/AdvancedPanelForm.ui.qml
+    qml/WelcomePage/SettingsPanels/AppearancePanel.qml
+    qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml
+    qml/WelcomePage/SettingsPanels/BackupPanel.qml
+    qml/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml
+    qml/WelcomePage/SettingsPanels/EPaperPanel.qml
+    qml/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml
+    qml/WelcomePage/SettingsPanels/SavePanel.qml
+    qml/WelcomePage/SettingsPanels/SavePanelForm.ui.qml
+    RESOURCES
+       qtquickcontrols2.conf
+       qml/qmldir
+
 
 
 
 
 )
-
-qt_import_plugins(skribisto INCLUDE Qt::qtquick2plugin)
 
 
 set_target_properties(skribisto PROPERTIES

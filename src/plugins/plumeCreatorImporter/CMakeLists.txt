@@ -24,14 +24,23 @@ set(SRCS
     skrplumecreatorimporter.cpp
 )
 
-set(QRC
-    plugin_qml.qrc
-    )
-
-qt_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
-add_library(${PROJECT_NAME} SHARED ${SRCS} ${RESOURCES})
+add_library(${PROJECT_NAME} SHARED ${SRCS})
+
+
+qt_add_qml_module(${PROJECT_NAME}
+    URI ${PROJECT_NAME}
+    VERSION 1.0
+    NO_PLUGIN
+    RESOURCE_PREFIX /eu.skribisto.skribisto/imports/qml/plugins
+    QML_FILES
+       PlumeCreatorImporter.qml
+       PlumeCreatorImporterForm.ui.qml
+
+)
+
+
 add_dependencies(${PROJECT_NAME} skribisto-data)
 add_dependencies(${PROJECT_NAME} skribisto)
 

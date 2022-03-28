@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/qml/plugins">
+    <qresource prefix="/eu.skribisto.skribisto/imports/qml/plugins">
         <file>ProjectPage/ProjectPage.qml</file>
         <file>ProjectPage/ProjectPageForm.ui.qml</file>
         <file>ProjectPage/UserDictPage.qml</file>

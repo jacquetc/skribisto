@@ -76,11 +76,11 @@ public:
     }
 
     QString pageUrl() const override {
-        return "qrc:///qml/plugins/SectionPage/SectionPage.qml";
+        return "qrc:///eu.skribisto.skribisto/imports/qml/plugins/skribisto-plugin-sectionPage/SectionPage.qml";
     }
 
     QString pageCreationParametersUrl() const override {
-        return "qrc:///qml/plugins/SectionPage/SectionCreationParameters.qml";
+        return "qrc:///eu.skribisto.skribisto/imports/qml/plugins/skribisto-plugin-sectionPage/SectionCreationParameters.qml";
     }
 
     bool isConstructible() const override {

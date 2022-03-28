@@ -61,7 +61,7 @@ QUrl SKRViewManager::getQmlUrlFromPageType(const QString& pageType) const
     }
 
     if (url.isEmpty()) {
-        url = "qrc:///qml/EmptyPage.qml";
+        url = "qrc:///eu.skribisto.skribisto/imports/qml/EmptyPage.qml";
     }
 
 
