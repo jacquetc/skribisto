@@ -264,7 +264,7 @@ qt_add_qml_module(skribisto
     URI eu.skribisto.skribisto
     VERSION 1.0
     NO_RESOURCE_TARGET_PATH
-    RESOURCE_PREFIX /eu.skribisto.skribisto/imports
+    RESOURCE_PREFIX /eu.skribisto.skribisto
     QML_FILES
     qml/Breadcrumb.qml
     qml/EmptyPage.qml

@@ -30,10 +30,10 @@ qt_add_qml_module(${PROJECT_NAME}
     URI eu.skribisto.writingGamesPageToolbox
     VERSION 1.0
     NO_PLUGIN
-    RESOURCE_PREFIX /eu.skribisto.skribisto/imports/qml/plugins
+    RESOURCE_PREFIX /eu.skribisto.skribisto/qml/plugins
     QML_FILES
-        WritingGamesPageToolbox.qml
-        WritingGamesPageToolboxForm.ui.qml
+        PageToolbox.qml
+        PageToolboxForm.ui.qml
 )
 
 add_dependencies(${PROJECT_NAME} skribisto-data)
