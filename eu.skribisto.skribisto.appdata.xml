@@ -28,17 +28,14 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.33" date="2022-03-24T00:00:00Z">
+    <release type="stable" version="1.9.34" date="2022-03-28T00:00:00Z">
       <description>
         <ul>
-          <li>Fix installation of new dictionaries</li>
-          <li>Fix drag and drop of texts</li>
-          <li>Add interface zoom in settings</li>
-          <li>Resize buttons and menus for a more desktop feel</li>
-          <li>Move text settings into its own setting page</li>
-          <li>Add Ctrl+Wheel to zoom text in text areas</li>
-          <li>Add zoom shortcuts to zoom text in text areas</li>
-          <li>Add a button to add new dictioinaries from the first time dialog</li>
+          <li>Fix slow scrolling in settings</li>
+          <li>Fix writing zone suddenly small</li>
+          <li>Fix Windows deployement script</li>
+          <li>Faster plugins</li>
+          <li>Use Qt 6.2.4</li>
         </ul>
       </description>
     </release>

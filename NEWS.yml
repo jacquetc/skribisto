@@ -138,3 +138,13 @@ Description:
 - "Add zoom shortcuts to zoom text in text areas"
 - "Add a button to add new dictioinaries from the first time dialog"
 
+Version: 1.9.34
+Date: 2022-03-28
+Type: stable
+Description:
+- "Fix slow scrolling in settings"
+- "Fix writing zone suddenly small"
+- "Fix Windows deployement script"
+- "Faster plugins"
+- "Use Qt 6.2.4"
+
