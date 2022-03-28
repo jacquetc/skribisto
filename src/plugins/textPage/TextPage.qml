@@ -101,13 +101,37 @@ TextPageForm {
         property string characterCount: ""
     }
 
+
+    Connections{
+        target: SkrSettings.interfaceSettings
+        function onWordCountBoxVisibleChanged(){
+            updateCountLabel()
+        }
+    }
+
+    Connections{
+        target: SkrSettings.interfaceSettings
+        function onCharacterCountBoxVisibleChanged(){
+            updateCountLabel()
+        }
+    }
+
+
     function updateCountLabel() {
         var wordCountString = skrRootItem.toLocaleIntString(countPriv.wordCount)
         var characterCountString = skrRootItem.toLocaleIntString(
                     countPriv.characterCount)
 
-        countLabel.text = qsTr("%1 words, %2 characters").arg(
-                    wordCountString).arg(characterCountString)
+        if(SkrSettings.interfaceSettings.wordCountBoxVisible){
+            countLabel.text = qsTr("%1 words").arg(
+                        wordCountString)
+        }
+        else if(SkrSettings.interfaceSettings.characterCountBoxVisible){
+            countLabel.text = qsTr("%1 characters").arg(characterCountString)
+        }
+        else {
+            countLabel.text = ""
+        }
     }
 
     //-----------------------------------------------------------------

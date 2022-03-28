@@ -78,23 +78,43 @@
 <context>
     <name>AppearancePanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="27"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="29"/>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="38"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="37"/>
+        <source>General</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="46"/>
         <source>Interface language :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="47"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="55"/>
         <source>Manage themes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="54"/>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="62"/>
         <source>Zoom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="79"/>
+        <source>Word count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="87"/>
+        <source>Show word count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="91"/>
+        <source>Show character count</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -125,7 +145,7 @@
     </message>
     <message>
         <location filename="../app/src/qml/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="40"/>
-        <source>Backup paths :</source>
+        <source>Backup paths:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1093,7 +1113,17 @@
 <context>
     <name>FolderPage</name>
     <message>
-        <location filename="../plugins/folderPage/FolderPage.qml" line="146"/>
+        <location filename="../plugins/folderPage/FolderPage.qml" line="115"/>
+        <source>%1 words (all)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/folderPage/FolderPage.qml" line="119"/>
+        <source>%1 characters (all)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/folderPage/FolderPage.qml" line="169"/>
         <source>Note</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1105,11 +1135,6 @@
     <message>
         <location filename="../plugins/folderPage/folderpage.h" line="75"/>
         <source>Group your items in folders.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/folderPage/FolderPage.qml" line="99"/>
-        <source>%1 words, %2 characters (all)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1719,43 +1744,33 @@
 <context>
     <name>OverviewToolboxForm.ui</name>
     <message>
-        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="38"/>
+        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="35"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="50"/>
+        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="47"/>
         <source>Display mode:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="61"/>
+        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="58"/>
         <source>Tree indentation:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="73"/>
+        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="70"/>
         <source>Show outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="77"/>
+        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="74"/>
         <source>Show notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="82"/>
+        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="79"/>
         <source>Show tags</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="86"/>
-        <source>Show character count</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/overviewPage/OverviewToolboxForm.ui.qml" line="90"/>
-        <source>Show word count</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1792,102 +1807,102 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1246"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1247"/>
         <source>c: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1257"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1258"/>
         <source>all c: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1275"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1277"/>
         <source>w: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1286"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1288"/>
         <source>all w: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1765"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1767"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1787"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1789"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1806"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1808"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1829"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1831"/>
         <source>Unset focus</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1829"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1831"/>
         <source>Set focus</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1860"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1862"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1880"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1882"/>
         <source>Set label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1898"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1900"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1917"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1919"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1937"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1939"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1956"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1958"/>
         <source>Add before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2002"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2004"/>
         <source>Add after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2047"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2049"/>
         <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2091"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2093"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2110"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2112"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2131"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2133"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1897,7 +1912,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1332"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1334"/>
         <source>Item menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3307,42 +3322,47 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="109"/>
-        <source>%1 words, %2 characters</source>
+        <location filename="../plugins/textPage/TextPage.qml" line="126"/>
+        <source>%1 words</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="156"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="130"/>
+        <source>%1 characters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/textPage/TextPage.qml" line="180"/>
         <source>Note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="733"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="757"/>
         <source>Show edit toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="750"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="774"/>
         <source>Show properties toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="768"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="792"/>
         <source>Show outline toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="786"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="810"/>
         <source>Show tags toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="858"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="882"/>
         <source>Close quick view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="1075"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="1099"/>
         <source>Open quick view</source>
         <translation type="unfinished"></translation>
     </message>

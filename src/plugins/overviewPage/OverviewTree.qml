@@ -1234,12 +1234,13 @@ OverviewTreeForm {
 
                                 ColumnLayout {
                                     id: characterCountLayout
-                                    visible: SkrSettings.overviewTreeSettings.characterCountBoxVisible
+                                    visible: SkrSettings.interfaceSettings.characterCountBoxVisible
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
                                     SkrLabel {
                                         id: characterCountLabel
+                                        visible: !model.hasChildren
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
@@ -1263,12 +1264,13 @@ OverviewTreeForm {
 
                                 ColumnLayout {
                                     id: wordCountLayout
-                                    visible: SkrSettings.overviewTreeSettings.wordCountBoxVisible
+                                    visible: SkrSettings.interfaceSettings.wordCountBoxVisible
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
                                     SkrLabel {
                                         id: wordCountLabel
+                                        visible: !model.hasChildren
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft

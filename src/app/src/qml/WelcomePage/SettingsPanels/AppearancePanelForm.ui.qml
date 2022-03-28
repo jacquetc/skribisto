@@ -11,6 +11,8 @@ SkrSettingsPanel {
     property alias openThemePageButton: openThemePageButton
     property alias appearanceGroupBox: appearanceGroupBox
     property alias zoomSpinBox: zoomSpinBox
+    property alias wordCountSwitch: wordCountSwitch
+    property alias charCountSwitch: charCountSwitch
 
     ColumnLayout {
         id: pillarLayout
@@ -29,6 +31,12 @@ SkrSettingsPanel {
             ColumnLayout {
                 id: columnLayout5
                 anchors.fill: parent
+
+                SkrGroupBox {
+                    id: groupBox1
+                    title: qsTr("General")
+                    focusPolicy: Qt.TabFocus
+                    bigTitleEnabled: true
 
                 ColumnLayout {
                     id: rowLayout4
@@ -63,7 +71,28 @@ SkrSettingsPanel {
 
                     }
                     }
+
                 }
+}
+                SkrGroupBox {
+                    id: groupBox2
+                    title: qsTr("Word count")
+                    focusPolicy: Qt.TabFocus
+                    bigTitleEnabled: false
+
+                ColumnLayout {
+                    id: rowLayout5
+                    SkrSwitch{
+                        id: wordCountSwitch
+                        text: qsTr("Show word count")
+                    }
+                    SkrSwitch{
+                        id: charCountSwitch
+                        text: qsTr("Show character count")
+                    }
+                    }
+                }
+
 
             }
         }

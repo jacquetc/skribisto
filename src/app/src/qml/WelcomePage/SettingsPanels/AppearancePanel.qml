@@ -84,6 +84,41 @@ AppearancePanelForm {
 
     //--------------------------------------------------
 
+    // --------------------------------------------
+    // ---- word count --------------------------------
+    // --------------------------------------------
+
+    wordCountSwitch.checked: SkrSettings.interfaceSettings.showWordCount
+    Binding {
+        target: SkrSettings.interfaceSettings
+        property: "showWordCount"
+        value: wordCountSwitch.checked
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    wordCountSwitch.onCheckedChanged: {
+        if(wordCountSwitch.checked){
+            SkrSettings.interfaceSettings.showCharCount = false
+        }
+    }
+
+    charCountSwitch.checked: SkrSettings.interfaceSettings.showCharCount
+    Binding {
+        target: SkrSettings.interfaceSettings
+        property: "showCharCount"
+        value: charCountSwitch.checked
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    charCountSwitch.onCheckedChanged: {
+        if(charCountSwitch.checked){
+            SkrSettings.interfaceSettings.showWordCount = false
+        }
+    }
+
+    //--------------------------------------------------
+
+
     onActiveFocusChanged: {
         if (activeFocus) {
             appearanceGroupBox.forceActiveFocus()
