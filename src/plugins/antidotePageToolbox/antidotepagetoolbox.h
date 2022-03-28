@@ -66,7 +66,7 @@ public:
     }
 
     QString qmlUrl() const override {
-        return "qrc:///qml/plugins/AntidotePageToolbox/AntidotePageToolbox.qml";
+        return "qrc:///eu.skribisto.skribisto/imports/qml/plugins/skribisto-plugin-antidotePageToolbox/AntidotePageToolbox.qml";
     }
 
     int weight() const override {
