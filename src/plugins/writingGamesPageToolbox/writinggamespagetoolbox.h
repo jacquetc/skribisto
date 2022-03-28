@@ -65,7 +65,7 @@ public:
     }
 
     QString qmlUrl() const override {
-        return "qrc:///qml/plugins/WritingGamesPageToolbox/WritingGamesPageToolbox.qml";
+        return "qrc:///eu.skribisto.skribisto/imports/qml/plugins/eu/skribisto/writingGamesPageToolbox/WritingGamesPageToolbox.qml";
     }
 
     int weight() const override {

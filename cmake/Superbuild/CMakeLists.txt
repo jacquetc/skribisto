@@ -1,24 +1,51 @@
 cmake_minimum_required(VERSION 3.5.1)
 
+if (POLICY CMP0114)
+    cmake_policy(SET CMP0114 NEW)
+endif()
+
 project(Skribisto-SuperBuild C CXX)
 
 include(ExternalProject)
 
 set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/3rdparty)
 
-ExternalProject_Add(hunspell
-    GIT_REPOSITORY https://github.com/jacquetc/hunspell.git
-    GIT_TAG 35181ea34da9b4f3996e32e46728a68174a64cd4
-    CMAKE_ARGS
-    -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-    -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
-    -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
-    -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION}/hunspell
-    -DHUNSPELL_BUILD_TOOLS:BOOL=false
-    -DHUNSPELL_BUILD_STATIC_LIB:BOOL=false
-    )
+if(ANDROID OR IOS)
+    message("Selecting IOS / ANDROID")
+
+    ExternalProject_Add(hunspell
+#        SOURCE_DIR ../../hunspell
+        GIT_REPOSITORY https://github.com/jacquetc/hunspell.git
+        GIT_TAG 5e39dffd4e6e51c57f55a867282d3d59ae266b65
+        CMAKE_ARGS
+        -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+        -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+        -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+        -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION}/hunspell
+        -DHUNSPELL_BUILD_TOOLS:BOOL=false
+        -DHUNSPELL_BUILD_STATIC_LIB:BOOL=true
+        -DHUNSPELL_BUILD_SHARED_LIB:BOOL=false
+        )
+
+else()
+
+    ExternalProject_Add(hunspell
+        GIT_REPOSITORY https://github.com/jacquetc/hunspell.git
+        GIT_TAG 5e39dffd4e6e51c57f55a867282d3d59ae266b65
+        CMAKE_ARGS
+        -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+        -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+        -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+        -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION}/hunspell
+        -DHUNSPELL_BUILD_TOOLS:BOOL=false
+        -DHUNSPELL_BUILD_STATIC_LIB:BOOL=false
+        -DHUNSPELL_BUILD_SHARED_LIB:BOOL=true
+        )
+endif(ANDROID OR IOS)
 
 set(PKG_HUNSPELL_LIBRARY_DIRS
     ${EXTERNAL_INSTALL_LOCATION}/hunspell/lib
@@ -48,5 +75,9 @@ set(CMAKE_MODULE_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/
     )
 message(${CMAKE_MODULE_PATH})
+
+
+
+
 include(add_ide_support)
 target_add_ide_support(skribisto "../../")

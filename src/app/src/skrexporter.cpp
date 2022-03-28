@@ -7,7 +7,7 @@
 #include <QPagedPaintDevice>
 #include <QTextBlock>
 
-#ifdef SKR_PRINT_SUPPORT
+#if SKR_PRINT_SUPPORT
 # include <QPrinter>
 # include <QPrintPreviewDialog>
 # include <QPrintDialog>
@@ -144,7 +144,7 @@ void SKRExporter::run()
         finalDocument->print(&pdfPrinter);
     }
 
-#ifdef SKR_PRINT_SUPPORT
+#if SKR_PRINT_SUPPORT
 
     // Print preview:
 

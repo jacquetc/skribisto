@@ -22,7 +22,6 @@ set(SRCS
 )
 
 set(QRC
-    plugin_qml.qrc
     plugin_icons.qrc
     )
 
@@ -30,6 +29,18 @@ qt_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
 add_library(${PROJECT_NAME} SHARED ${SRCS} ${RESOURCES})
+
+qt_add_qml_module(${PROJECT_NAME}
+    URI eu.skribisto.sectionPage
+    VERSION 1.0
+    NO_PLUGIN
+    RESOURCE_PREFIX /eu.skribisto.skribisto/imports/qml/plugins
+    QML_FILES
+        SectionPage.qml
+        SectionPageForm.ui.qml
+        SectionCreationParameters.qml
+)
+
 add_dependencies(${PROJECT_NAME} skribisto-data)
 add_dependencies(${PROJECT_NAME} skribisto)
 

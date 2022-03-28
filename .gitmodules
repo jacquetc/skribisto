@@ -1,0 +1,3 @@
+[submodule "src/hunspell"]
+	path = src/hunspell
+	url = https://github.com/jacquetc/hunspell.git

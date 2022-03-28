@@ -1,5 +1,5 @@
-find_library(HUNSPELL_LIBRARY NAMES ${PKG_HUNSPELL_LIBRARIES} "libhunspell" "hunspell" "hunspell-1.7" "hunspell-1.8" "hunspell/lib/x86_64-linux-gnu"
-  PATHS "/usr/local/lib" ${SYSTEM_LIB_DIRS} "/usr/lib64" "/lib/x86_64-linux-gnu"
+find_library(HUNSPELL_LIBRARY NAMES ${PKG_HUNSPELL_LIBRARIES} "libhunspell-1.7.a" "libhunspell" "hunspell" "libhunspell-1.7" "hunspell-1.7" "hunspell-1.8" "hunspell/lib/x86_64-linux-gnu"
+  PATHS "/usr/local/lib" ${SYSTEM_LIB_DIRS} "/usr/lib64" "/lib/x86_64-linux-gnu" "/opt/homebrew/Cellar/hunspell/*/"
   HINTS ${PKG_HUNSPELL_LIBRARY_DIRS}
   )
 

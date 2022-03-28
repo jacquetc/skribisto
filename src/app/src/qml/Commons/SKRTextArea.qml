@@ -211,6 +211,7 @@ TextArea {
         }
 
         gesturePolicy: TapHandler.DragThreshold
+        grabPermissions: PointerHandler.TakeOverForbidden
 
         function dist(pointA, pointB) {
             var x1 = pointA.x

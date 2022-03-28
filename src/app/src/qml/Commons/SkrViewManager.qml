@@ -37,7 +37,7 @@ Item {
 
 
     function openBottomLeftView() {
-        loader_bottom_left.setSource("qrc:///qml/EmptyPage.qml", {"position": Qt.BottomLeftCorner, "viewManager": viewManager})
+        loader_bottom_left.setSource("qrc:///eu.skribisto.skribisto/imports/qml/EmptyPage.qml", {"position": Qt.BottomLeftCorner, "viewManager": viewManager})
         loader_bottom_left.item.position = Qt.BottomLeftCorner
         loader_bottom_left.visible = true
         loader_top_left.preferredHeight = leftVerticalSplitView.height / 2
@@ -53,14 +53,14 @@ Item {
     //---------------------------------------------------------------
 
     function closeBottomLeftView() {
-        loader_bottom_left.setSource("qrc:///qml/EmptyPage.qml", {"position": Qt.BottomLeftCorner, "viewManager": viewManager})
+        loader_bottom_left.setSource("qrc:///eu.skribisto.skribisto/imports/qml/EmptyPage.qml", {"position": Qt.BottomLeftCorner, "viewManager": viewManager})
         loader_bottom_left.visible = false
     }
 
     //---------------------------------------------------------------
 
     function openTopRightView() {
-        loader_top_right.setSource("qrc:///qml/EmptyPage.qml", {"position": Qt.TopRightCorner, "viewManager": viewManager})
+        loader_top_right.setSource("qrc:///eu.skribisto.skribisto/imports/qml/EmptyPage.qml", {"position": Qt.TopRightCorner, "viewManager": viewManager})
         loader_top_right.item.position = Qt.TopRightCorner
         rightVerticalSplitView.visible = true
         loader_top_right.visible = true
@@ -76,7 +76,7 @@ Item {
     //---------------------------------------------------------------
 
     function closeTopRightView() {
-        loader_top_right.setSource("qrc:///qml/EmptyPage.qml", {"position": Qt.TopRightCorner, "viewManager": viewManager})
+        loader_top_right.setSource("qrc:///eu.skribisto.skribisto/imports/qml/EmptyPage.qml", {"position": Qt.TopRightCorner, "viewManager": viewManager})
         loader_top_right.visible = false
         if(loader_bottom_right.visible === false){
             rightVerticalSplitView.visible = false
@@ -87,7 +87,7 @@ Item {
     //---------------------------------------------------------------
 
     function openBottomRightView() {
-        loader_bottom_right.setSource("qrc:///qml/EmptyPage.qml", {"position": Qt.BottomRightCorner, "viewManager": viewManager})
+        loader_bottom_right.setSource("qrc:///eu.skribisto.skribisto/imports/qml/EmptyPage.qml", {"position": Qt.BottomRightCorner, "viewManager": viewManager})
         loader_bottom_right.item.position = Qt.BottomRightCorner
 
         rightVerticalSplitView.visible = true
@@ -110,7 +110,7 @@ Item {
     //---------------------------------------------------------------
 
     function closeBottomRightView() {
-        loader_bottom_right.setSource("qrc:///qml/EmptyPage.qml", {"position": Qt.BottomRightCorner, "viewManager": viewManager})
+        loader_bottom_right.setSource("qrc:///eu.skribisto.skribisto/imports/qml/EmptyPage.qml", {"position": Qt.BottomRightCorner, "viewManager": viewManager})
         loader_bottom_right.visible = false
         if(loader_top_right.visible === false){
             rightVerticalSplitView.visible = false

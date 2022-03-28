@@ -43,7 +43,7 @@ MultiViewAreaForm {
 
     Component.onCompleted: {
         //console.log("onCompleted");
-        loader_top_left.setSource("qrc:///qml/EmptyPage.qml", {"position": Qt.TopLeftCorner, "viewManager": viewManager})
+        loader_top_left.setSource("qrc:///eu.skribisto.skribisto/imports/qml/EmptyPage.qml", {"position": Qt.TopLeftCorner, "viewManager": viewManager})
         restoreViewsFromSettingsTimer.start()
     }
 

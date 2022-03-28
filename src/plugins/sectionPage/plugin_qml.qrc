@@ -1,7 +1,0 @@
-<RCC>
-    <qresource prefix="/qml/plugins">
-        <file>SectionPage/SectionPage.qml</file>
-        <file>SectionPage/SectionPageForm.ui.qml</file>
-        <file>SectionPage/SectionCreationParameters.qml</file>
-    </qresource>
-</RCC>

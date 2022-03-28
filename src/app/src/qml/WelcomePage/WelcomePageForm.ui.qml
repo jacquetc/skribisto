@@ -57,188 +57,188 @@ SkrPane {
                     contentWidth: columnLayout3.width
                     contentHeight: columnLayout3.implicitHeight
 
+                    Flickable{
 
-                ColumnLayout {
-                    id: columnLayout1
 
-                    ColumnLayout {
-                        id: columnLayout3
-                        Layout.fillHeight: true
-                        Layout.fillWidth: true
+                            ColumnLayout {
+                                id: columnLayout3
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
 
-                        SkrToolButton {
-                            id: goBackButton
-                            text: qsTr("Go Back")
-                            focusPolicy: Qt.NoFocus
-                            display: AbstractButton.IconOnly
-                            Layout.alignment: Qt.AlignTop | Qt.AlignLeft
-                            icon {
-                                source: "qrc:///icons/backup/arrow-down.svg"
+                                SkrToolButton {
+                                    id: goBackButton
+                                    text: qsTr("Go Back")
+                                    focusPolicy: Qt.NoFocus
+                                    display: AbstractButton.IconOnly
+                                    Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+                                    icon {
+                                        source: "qrc:///icons/backup/arrow-down.svg"
+                                    }
+                                }
+
+                                SkrToolButton {
+                                    id: newButton
+                                    text: qsTr("New")
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                    icon {
+                                        source: "qrc:///icons/backup/document-new.svg"
+                                    }
+                                }
+
+                                SkrToolButton {
+                                    id: recentButton
+                                    text: qsTr("Recent")
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                    icon {
+                                        source: "qrc:///icons/backup/document-open-recent.svg"
+                                    }
+                                }
+
+                                SkrToolButton {
+                                    id: openButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                }
+
+                                SkrToolButton {
+                                    id: saveButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                }
+                                SkrToolButton {
+                                    id: saveAsButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                }
+                                SkrToolButton {
+                                    id: backUpButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                }
+                                SkrToolButton {
+                                    id: saveACopyButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                }
+                                SkrToolButton {
+                                    id: exampleButton
+                                    text: qsTr("Examples")
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                    icon {
+                                        source: "qrc:///icons/backup/view-group.svg"
+                                    }
+                                }
+
+                                SkrToolButton {
+                                    id: importButton
+                                    text: qsTr("Import")
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                    icon {
+                                        source: "qrc:///icons/backup/document-import.svg"
+                                    }
+                                }
+
+                                SkrToolButton {
+                                    id: exportButton
+                                    text: qsTr("Export")
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                    icon {
+                                        source: "qrc:///icons/backup/document-export.svg"
+                                    }
+
+                                }
+
+                                SkrToolButton {
+                                    id: printButton
+                                    text: qsTr("Print")
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                    icon {
+                                        source: "qrc:///icons/backup/document-print.svg"
+                                    }
+                                }
+
+                                SkrToolButton {
+                                    id: settingsButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                    text: qsTr("Settings")
+                                }
+
+                                SkrToolButton {
+                                    id: helpButton
+                                    text: qsTr("Help")
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                    icon {
+                                        source: "qrc:///icons/backup/system-help.svg"
+                                    }
+                                }
+                                SkrToolButton {
+                                    action: showDonateAction
+
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+
+                                    icon {
+                                        color: "transparent"
+                                    }
+
+
+                                }
+
+                                Item {
+                                    id: element
+                                    Layout.preferredWidth: 10
+                                    Layout.minimumHeight: 30
+                                    Layout.fillHeight: true
+                                }
+
+                                SkrToolButton {
+                                    id: quitButton
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
+                                    display: AbstractButton.TextBesideIcon
+                                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                                }
                             }
-                        }
-
-                        SkrToolButton {
-                            id: newButton
-                            text: qsTr("New")
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            icon {
-                                source: "qrc:///icons/backup/document-new.svg"
-                            }
-                        }
-
-                        SkrToolButton {
-                            id: recentButton
-                            text: qsTr("Recent")
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            icon {
-                                source: "qrc:///icons/backup/document-open-recent.svg"
-                            }
-                        }
-
-                        SkrToolButton {
-                            id: openButton
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                        }
-
-                        SkrToolButton {
-                            id: saveButton
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                        }
-                        SkrToolButton {
-                            id: saveAsButton
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                        }
-                        SkrToolButton {
-                            id: backUpButton
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                        }
-                        SkrToolButton {
-                            id: saveACopyButton
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                        }
-                        SkrToolButton {
-                            id: exampleButton
-                            text: qsTr("Examples")
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40  * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            icon {
-                                source: "qrc:///icons/backup/view-group.svg"
-                            }
-                        }
-
-                        SkrToolButton {
-                            id: importButton
-                            text: qsTr("Import")
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            icon {
-                                source: "qrc:///icons/backup/document-import.svg"
-                            }
-                        }
-
-                        SkrToolButton {
-                            id: exportButton
-                            text: qsTr("Export")
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            icon {
-                                source: "qrc:///icons/backup/document-export.svg"
-                            }
-
-                        }
-
-                        SkrToolButton {
-                            id: printButton
-                            text: qsTr("Print")
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            icon {
-                                source: "qrc:///icons/backup/document-print.svg"
-                            }
-                        }
-
-                        SkrToolButton {
-                            id: settingsButton
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            text: qsTr("Settings")
-                        }
-
-                        SkrToolButton {
-                            id: helpButton
-                            text: qsTr("Help")
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            icon {
-                                source: "qrc:///icons/backup/system-help.svg"
-                            }
-                        }
-                        SkrToolButton {
-                            action: showDonateAction
-
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-
-                            icon {
-                                color: "transparent"
-                            }
 
 
-                        }
-
-                        Item {
-                            id: element
-                            Layout.preferredWidth: 10
-                            Layout.minimumHeight: 30
-                            Layout.fillHeight: true
-                        }
-
-                        SkrToolButton {
-                            id: quitButton
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40 * SkrSettings.interfaceSettings.zoom
-                            display: AbstractButton.TextBesideIcon
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                        }
                     }
-
                 }
-            }
             }
 
             Rectangle {
@@ -291,30 +291,36 @@ SkrPane {
         }
 
         RowLayout{
+            Layout.alignment: Qt.AlignBottom
+
             SkrLabel {
                 id: versionLabel
                 Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
             }
 
             Item{
+                Layout.alignment: Qt.AlignBottom
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
             }
 
             SkrToolButton{
+                Layout.alignment: Qt.AlignRight | Qt.AlignBottom
                 action: showSkribistoWebsiteAction
                 icon.color: "transparent"
                 text: qsTr("Skribisto website")
             }
 
             SkrToolButton{
+                Layout.alignment: Qt.AlignRight | Qt.AlignBottom
                 action: showDiscordAction
                 icon.color: "transparent"
                 text: qsTr("Discord")
-           }
+            }
 
             SkrToolButton{
+                Layout.alignment: Qt.AlignRight | Qt.AlignBottom
                 action: showGitHubAction
                 text: qsTr("GitHub")
             }

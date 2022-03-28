@@ -58,7 +58,7 @@ public:
     }
 
     QString qmlUrl() const override {
-        return "qrc:///qml/plugins/FavoritesProjectToolbox/FavoritesProjectToolbox.qml";
+        return "qrc:///eu.skribisto.skribisto/imports/qml/plugins/eu/skribisto/favoritesProjectToolbox/FavoritesProjectToolbox.qml";
     }
 
     int weight() const override {

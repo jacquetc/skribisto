@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.16.0)
 
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
@@ -102,7 +102,12 @@ set(QRC
 qt_add_resources(RESOURCES ${QRC})
 
 # Tell CMake to create the executable
-add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${RESOURCES})
+if(IOS)
+    message("static lib chosen")
+    add_library(skribisto-data STATIC ${data_SRCS} ${data_HDR} ${RESOURCES})
+else()
+    add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${RESOURCES})
+endif(IOS)
 
 target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
 
@@ -112,7 +117,10 @@ target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_
 #---------------------------------
 
 
+if(IOS)
+    install(TARGETS skribisto-data LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
+endif(IOS)
 
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")

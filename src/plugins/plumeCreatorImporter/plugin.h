@@ -66,7 +66,7 @@ public:
     }
 
     QString qmlUrl() const override {
-        return "qrc:///qml/plugins/PlumeCreatorImporter/PlumeCreatorImporter.qml";
+        return "qrc:///eu.skribisto.skribisto/imports/qml/plugins/eu/skribisto/plumeCreatorImporter/PlumeCreatorImporter.qml";
     }
 
     int weight() const override {

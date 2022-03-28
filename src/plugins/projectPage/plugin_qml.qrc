@@ -1,8 +1,0 @@
-<RCC>
-    <qresource prefix="/qml/plugins">
-        <file>ProjectPage/ProjectPage.qml</file>
-        <file>ProjectPage/ProjectPageForm.ui.qml</file>
-        <file>ProjectPage/UserDictPage.qml</file>
-        <file>ProjectPage/UserDictPageForm.ui.qml</file>
-    </qresource>
-</RCC>

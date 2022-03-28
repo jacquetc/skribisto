@@ -209,7 +209,7 @@ ExporterPageForm {
         checkable: true
         ActionGroup.group: typeActionGroup
         onCheckedChanged: {
-            if(checked){
+            if(pdfTypeAction.checked){
                 settings.type = "pdf"
                 exporter.outputType = SKRExporter.Pdf
             }

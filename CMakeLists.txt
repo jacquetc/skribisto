@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.16.0)
 #if (POLICY CMP0063)
 #    cmake_policy(SET CMP0063 NEW)
 #endif()
@@ -6,6 +6,11 @@ cmake_minimum_required(VERSION 3.5.0)
 #if (POLICY CMP0071)
 #    cmake_policy(SET CMP0071 NEW)
 #endif()
+
+if (POLICY CMP0114)
+    cmake_policy(SET CMP0114 NEW)
+endif()
+
 set(QT_MIN_VERSION "6.2.2")
 set(QT_DEFAULT_MAJOR_VERSION 6)
 
@@ -25,11 +30,15 @@ add_definitions(-DSKR_VERSION=${VERSION})
 add_definitions(-DSKR_SEMANTIC_VERSION=${SEMVER})
 add_definitions(-DSKR_GIT_TAG=${GIT_TAG})
 add_compile_definitions(SKR_VERSION=${VERSION})
+set(SKR_VERSION ${VERSION})
 add_compile_definitions(SKR_SEMANTIC_VERSION=${SEMVER})
 add_compile_definitions(SKR_GIT_TAG=${GIT_TAG})
 add_compile_definitions(SKR_VERSION_MAJOR=${VERSION_MAJOR})
+set(SKR_VERSION_MAJOR ${VERSION_MAJOR})
 add_compile_definitions(SKR_VERSION_MINOR=${VERSION_MINOR})
+set(SKR_VERSION_MINOR ${VERSION_MINOR})
 add_compile_definitions(SKR_VERSION_PATCH=${VERSION_PATCH})
+set(SKR_VERSION_PATCH ${VERSION_PATCH})
 
 
 
@@ -82,11 +91,11 @@ set(CMAKE_AUTORCC ON)
 
 #set(BREEZEICONS_DIR ${CMAKE_SOURCE_DIR}/3rdparty/breeze-icons/)
 
+
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 #set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fsanitize=address,undefined -O0")
-
-
 
 
 add_subdirectory(src/libskribisto-data/src)
