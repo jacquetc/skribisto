@@ -118,9 +118,6 @@ set(app_SRCS
     skrexporterinterface.h
 )
 
-set(QML qml.qrc
-)
-
 #ADD_CUSTOM_TARGET(qml.qrc SOURCES qml.qrc)
 
 #FILE(GLOB QML_SRC "qml/*.qml")
@@ -152,6 +149,7 @@ set(QRC pics.qrc
     ${CMAKE_SOURCE_DIR}/resources/examples/examples.qrc
     ${TEST_FILES_QRC}
     ${CMAKE_SOURCE_DIR}/readme.qrc
+    qml.qrc
 )
 
 # needed to allow qML debugging :
@@ -243,12 +241,13 @@ if(IOS OR ANDROID OR SKR_TEST_APP)
 
 
 
-message("------- library is to be built ---------")
 if(ANDROID)
-    add_library(skribisto SHARED ${app_SRCS} ${RESOURCES} ${QRC} ${VERSION_RC} ${hunspell_SRCS})
+    message("------- library is to be built ---------")
+    add_library(skribisto SHARED ${app_SRCS} ${RESOURCES} ${VERSION_RC} ${hunspell_SRCS})
 endif()
 if(IOS)
-    add_executable(skribisto ${app_SRCS} ${RESOURCES} ${QRC} ${VERSION_RC} ${hunspell_SRCS})
+    message("------- executable is to be built ---------")
+    add_executable(skribisto ${app_SRCS} ${RESOURCES} ${VERSION_RC} ${hunspell_SRCS})
 
 
 
@@ -259,7 +258,7 @@ if(IOS)
 endif()
 else()
     message("------- executable is to be built ---------")
-    add_executable(skribisto ${GUI_TYPE} ${app_SRCS} ${RESOURCES} ${QRC} ${VERSION_RC})
+    add_executable(skribisto ${GUI_TYPE} ${app_SRCS} ${RESOURCES} ${VERSION_RC})
 endif()
 
 qt_add_qml_module(skribisto
@@ -282,7 +281,6 @@ qt_add_qml_module(skribisto
         qml/SkrSettings.qml
         qml/SkrTheme.qml
         qml/main.qml
-        qml/qmldir
         qml/Commons/CheckableTree.qml
         qml/Commons/ColorChooser.qml
         qml/Commons/DocumentListView.qml
