@@ -317,6 +317,7 @@ qt_add_qml_module(skribisto
     qml/Commons/TextContextMenuForm.ui.qml
     qml/Commons/WritingZone.qml
     qml/Commons/WritingZoneForm.ui.qml
+    qml/Commons/ItemWordGoalDialog.qml
     qml/Items/SkrBasePage.qml
     qml/Items/SkrBusyIndicator.qml
     qml/Items/SkrButton.qml

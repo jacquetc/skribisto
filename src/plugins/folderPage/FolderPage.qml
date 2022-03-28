@@ -93,14 +93,14 @@ FolderPageForm {
 
     Connections{
         target: SkrSettings.interfaceSettings
-        function onWordCountBoxVisibleChanged(){
+        function onWordCountVisibleChanged(){
             updateCountLabel()
         }
     }
 
     Connections{
         target: SkrSettings.interfaceSettings
-        function onCharacterCountBoxVisibleChanged(){
+        function onCharacterCountVisibleChanged(){
             updateCountLabel()
         }
     }
@@ -111,11 +111,11 @@ FolderPageForm {
         var characterCountString = skrRootItem.toLocaleIntString(
                     countPriv.characterCount)
 
-        if(SkrSettings.interfaceSettings.wordCountBoxVisible){
+        if(SkrSettings.interfaceSettings.wordCountVisible){
             countLabel.text = qsTr("%1 words (all)").arg(
                         wordCountString)
         }
-        else if(SkrSettings.interfaceSettings.characterCountBoxVisible){
+        else if(SkrSettings.interfaceSettings.characterCountVisible){
             countLabel.text = qsTr("%1 characters (all)").arg(characterCountString)
         }
         else {

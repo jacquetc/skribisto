@@ -1192,6 +1192,19 @@
     </message>
 </context>
 <context>
+    <name>ItemWordGoalDialog</name>
+    <message>
+        <location filename="../app/src/qml/Commons/ItemWordGoalDialog.qml" line="44"/>
+        <source>Please set the number of words to reach for this item:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/qml/Commons/ItemWordGoalDialog.qml" line="44"/>
+        <source>Please set the number of characters to reach for this item:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LeftDockForm.ui</name>
     <message>
         <location filename="../app/src/qml/LeftDockForm.ui.qml" line="48"/>
@@ -2582,7 +2595,7 @@
     </message>
     <message>
         <location filename="../app/src/skrshortcutmanager.cpp" line="151"/>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="406"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="410"/>
         <source>&amp;Settings</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2657,20 +2670,31 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="226"/>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="238"/>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="250"/>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="262"/>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="274"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="225"/>
+        <source>Set a goal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="227"/>
+        <source>Ctrl+Shift+J</source>
+        <comment>set-goal</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="230"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="242"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="254"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="266"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="278"/>
         <source>Zoom in</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="232"/>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="244"/>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="256"/>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="268"/>
-        <location filename="../app/src/skrshortcutmanager.cpp" line="280"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="236"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="248"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="260"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="272"/>
+        <location filename="../app/src/skrshortcutmanager.cpp" line="284"/>
         <source>Zoom out</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3337,32 +3361,32 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="757"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="775"/>
         <source>Show edit toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="774"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="792"/>
         <source>Show properties toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="792"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="810"/>
         <source>Show outline toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="810"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="828"/>
         <source>Show tags toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="882"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="900"/>
         <source>Close quick view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="1099"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="1117"/>
         <source>Open quick view</source>
         <translation type="unfinished"></translation>
     </message>

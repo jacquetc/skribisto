@@ -12,7 +12,7 @@ QtObject {
         property bool firstLaunch: true
         property double zoom: 1
         property bool wordCountVisible: true
-        property bool characterCountBoxVisible: false
+        property bool characterCountVisible: false
     }
 
     property Settings backupSettings: Settings {

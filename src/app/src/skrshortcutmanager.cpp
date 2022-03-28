@@ -220,7 +220,11 @@ void SKRShortcutManager::populateShortcutList()
                        (QStringList() << "page"),
                        (QStringList() << tr("Alt+N", "add-quick-note")));
 
-
+    m_shortcutList <<
+        createShortcut("set-goal",
+                       tr("Set a goal"),
+                       (QStringList() << "page"),
+                       (QStringList() << tr("Ctrl+Shift+J", "set-goal")));
     m_shortcutList <<
         createShortcut("relationship-zoom-in",
                        tr("Zoom in"),
