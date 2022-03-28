@@ -1,5 +1,5 @@
  
-$env:Path += ";C:\Qt\6.2.3\mingw_64\bin;C:\Qt\Tools\mingw900_64\bin;C:\Qt\Tools\CMake_64\bin"
+$env:Path += ";C:\Qt\6.2.4\mingw_64\bin;C:\Qt\Tools\mingw1120_64\bin;C:\Qt\Tools\CMake_64\bin"
 
 
 # clean
@@ -8,11 +8,11 @@ mkdir ../../../build_skribisto_Release
 
 # prepare
 cmake.exe -B../../../build_skribisto_Release -GNinja `
--DCMAKE_PREFIX_PATH="C:\Qt\6.2.3\mingw_64\lib\cmake" `
+-DCMAKE_PREFIX_PATH="C:\Qt\6.2.4\mingw_64\lib\cmake" `
 -DCMAKE_BUILD_TYPE=Release `
 -DCMAKE_MAKE_PROGRAM:UNINITIALIZED=C:/Qt/Tools/Ninja/ninja.exe `
--DCMAKE_CXX_COMPILER:UNINITIALIZED=C:/Qt/Tools/mingw900_64/bin/g++.exe `
--DCMAKE_C_COMPILER:UNINITIALIZED=C:/Qt/Tools/mingw900_64/bin/gcc.exe `
+-DCMAKE_CXX_COMPILER:UNINITIALIZED=C:/Qt/Tools/mingw1120_64/bin/g++.exe `
+-DCMAKE_C_COMPILER:UNINITIALIZED=C:/Qt/Tools/mingw1120_64/bin/gcc.exe `
 ..\..\cmake\Superbuild\
 
 
@@ -32,9 +32,9 @@ copy 3rdparty/*/bin/* package/
 windeployqt.exe  package\skribisto.exe --qmldir ..\skribisto\src\app\src\qml\
 
 # add missing files
-copy C:\Qt\6.2.3\mingw_64\bin\Qt6Sql.dll  package\
+copy C:\Qt\6.2.4\mingw_64\bin\Qt6Sql.dll  package\
 mkdir package\sqldrivers
-copy C:\Qt\6.2.3\mingw_64\plugins\sqldrivers\qsqlite.dll package\sqldrivers\
+copy C:\Qt\6.2.4\mingw_64\plugins\sqldrivers\qsqlite.dll package\sqldrivers\
 
 # add OpenSSL dll
 copy C:\Qt\Tools\OpenSSL\Win_x64\bin\*.dll package\

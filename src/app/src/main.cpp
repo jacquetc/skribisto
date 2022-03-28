@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
                                     "SKRViewManager");
 
 
-    const QUrl url(QStringLiteral("qrc:/eu.skribisto.skribisto/imports/qml/main.qml"));
+    const QUrl url(QStringLiteral("qrc:/eu.skribisto.skribisto/qml/main.qml"));
 
     SKRWindowManager *skrWindowManager = new SKRWindowManager(qApp, &engine, url);
 

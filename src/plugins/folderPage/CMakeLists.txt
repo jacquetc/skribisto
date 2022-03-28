@@ -34,7 +34,7 @@ qt_add_qml_module(${PROJECT_NAME}
     URI eu.skribsito.folderPage
     VERSION 1.0
     NO_PLUGIN
-    RESOURCE_PREFIX /eu.skribisto.skribisto/imports/qml/plugins
+    RESOURCE_PREFIX /eu.skribisto.skribisto/qml/plugins
     QML_FILES
         FolderPage.qml
         FolderPageForm.ui.qml

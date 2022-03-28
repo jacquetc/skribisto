@@ -79,14 +79,14 @@ SettingsPageForm {
             name: "accessibility"
             buttonText :qsTr("Accessibility")
             iconSource: "qrc:///icons/backup/accessibility.svg"
-            qmlUrl: "qrc:///eu.skribisto.skribisto/imports/qml/WelcomePage/SettingsPanels/AccessibilityPanel.qml"
+            qmlUrl: "qrc:///eu.skribisto.skribisto/qml/WelcomePage/SettingsPanels/AccessibilityPanel.qml"
 
         }
         ListElement{
             name: "appearance"
             buttonText :qsTr("Appearance")
             iconSource: "qrc:///icons/backup/folder-pictures.svg"
-            qmlUrl: "qrc:///eu.skribisto.skribisto/imports/qml/WelcomePage/SettingsPanels/AppearancePanel.qml"
+            qmlUrl: "qrc:///eu.skribisto.skribisto/qml/WelcomePage/SettingsPanels/AppearancePanel.qml"
 
         }
 
@@ -94,7 +94,7 @@ SettingsPageForm {
             name: "save"
             buttonText :qsTr("Save")
             iconSource: "qrc:///icons/backup/document-save.svg"
-            qmlUrl: "qrc:///eu.skribisto.skribisto/imports/qml/WelcomePage/SettingsPanels/SavePanel.qml"
+            qmlUrl: "qrc:///eu.skribisto.skribisto/qml/WelcomePage/SettingsPanels/SavePanel.qml"
 
         }
 
@@ -103,14 +103,14 @@ SettingsPageForm {
             name: "backup"
             buttonText :qsTr("Backup")
             iconSource: "qrc:///icons/backup/tools-media-optical-burn-image.svg"
-            qmlUrl: "qrc:///eu.skribisto.skribisto/imports/qml/WelcomePage/SettingsPanels/BackupPanel.qml"
+            qmlUrl: "qrc:///eu.skribisto.skribisto/qml/WelcomePage/SettingsPanels/BackupPanel.qml"
 
         }
         ListElement{
             name: "ePaper"
             buttonText :qsTr("E-Paper")
             iconSource: "qrc:///icons/backup/smartphone.svg"
-            qmlUrl: "qrc:///eu.skribisto.skribisto/imports/qml/WelcomePage/SettingsPanels/EPaperPanel.qml"
+            qmlUrl: "qrc:///eu.skribisto.skribisto/qml/WelcomePage/SettingsPanels/EPaperPanel.qml"
 
         }
 

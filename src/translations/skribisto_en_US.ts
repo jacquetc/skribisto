@@ -864,27 +864,9 @@
 <context>
     <name>FavoritesProjectToolbox</name>
     <message>
-        <location filename="../plugins/favoritesProjectToolbox/FavoritesProjectToolbox.qml" line="15"/>
-        <source>Show Favorites toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../plugins/favoritesProjectToolbox/favoritesprojecttoolbox.h" line="45"/>
         <source>Favorites project toolbox</source>
         <comment>plugin name</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>FavoritesProjectToolboxForm.ui</name>
-    <message>
-        <location filename="../plugins/favoritesProjectToolbox/FavoritesProjectToolboxForm.ui.qml" line="38"/>
-        <source>Favorites</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/favoritesProjectToolbox/FavoritesProjectToolboxForm.ui.qml" line="70"/>
-        <source>Favorites list</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1418,11 +1400,6 @@
 <context>
     <name>NavigationProjectToolbox</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationProjectToolbox.qml" line="15"/>
-        <source>Show navigation toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../plugins/navigationProjectToolbox/navigationprojecttoolbox.h" line="45"/>
         <source>Navigation Project Toolbox</source>
         <comment>plugin name</comment>
@@ -1926,6 +1903,27 @@
     </message>
 </context>
 <context>
+    <name>PageToolbox</name>
+    <message>
+        <location filename="../plugins/writingGamesPageToolbox/PageToolbox.qml" line="13"/>
+        <source>Show Writing Games toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PageToolboxForm.ui</name>
+    <message>
+        <location filename="../plugins/writingGamesPageToolbox/PageToolboxForm.ui.qml" line="35"/>
+        <source>Writing games</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/writingGamesPageToolbox/PageToolboxForm.ui.qml" line="49"/>
+        <source>Forbid erasing</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Plugin</name>
     <message>
         <location filename="../plugins/plumeCreatorImporter/plugin.h" line="65"/>
@@ -2186,6 +2184,14 @@
     <message>
         <location filename="../plugins/projectPage/ProjectPageForm.ui.qml" line="292"/>
         <source>Add a &quot;Notes&quot; folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ProjectToolbox</name>
+    <message>
+        <location filename="../plugins/navigationProjectToolbox/ProjectToolbox.qml" line="15"/>
+        <source>Show navigation toolbox</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3561,6 +3567,27 @@
     </message>
 </context>
 <context>
+    <name>Toolbox</name>
+    <message>
+        <location filename="../plugins/favoritesProjectToolbox/Toolbox.qml" line="15"/>
+        <source>Show Favorites toolbox</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ToolboxForm.ui</name>
+    <message>
+        <location filename="../plugins/favoritesProjectToolbox/ToolboxForm.ui.qml" line="38"/>
+        <source>Favorites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/favoritesProjectToolbox/ToolboxForm.ui.qml" line="70"/>
+        <source>Favorites list</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TrashedListView</name>
     <message>
         <location filename="../plugins/navigationProjectToolbox/TrashedListView.qml" line="107"/>
@@ -3699,11 +3726,6 @@
 <context>
     <name>WritingGamesPageToolbox</name>
     <message>
-        <location filename="../plugins/writingGamesPageToolbox/WritingGamesPageToolbox.qml" line="13"/>
-        <source>Show Writing Games toolbox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../plugins/writingGamesPageToolbox/writinggamespagetoolbox.h" line="45"/>
         <source>Writing Games Page Toolbox</source>
         <comment>plugin name</comment>
@@ -3713,19 +3735,6 @@
         <location filename="../plugins/writingGamesPageToolbox/writinggamespagetoolbox.h" line="49"/>
         <source>Display a toolbox offering some writing game</source>
         <comment>plugin description</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>WritingGamesPageToolboxForm.ui</name>
-    <message>
-        <location filename="../plugins/writingGamesPageToolbox/WritingGamesPageToolboxForm.ui.qml" line="49"/>
-        <source>Forbid erasing</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/writingGamesPageToolbox/WritingGamesPageToolboxForm.ui.qml" line="35"/>
-        <source>Writing games</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

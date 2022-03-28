@@ -8,7 +8,7 @@ import "../../../../Items"
 import "../../../../Commons"
 import "../../../.."
 
-FavoritesProjectToolboxForm {
+ToolboxForm {
     id: root
 
     iconSource: "qrc:///icons/backup/favorite.svg"

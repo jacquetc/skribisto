@@ -6,7 +6,7 @@ import "../../../../Items"
 import "../../../../Commons"
 import "../../../.."
 
-WritingGamesPageToolboxForm {
+PageToolboxForm {
     id: root
 
     iconSource: "qrc:///icons/backup/roll.svg"
