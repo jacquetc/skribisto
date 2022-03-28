@@ -58,7 +58,7 @@ public:
     }
 
     QString qmlUrl() const override {
-        return "qrc:///eu.skribisto.skribisto/imports/qml/plugins/skribisto-plugin-navigationProjectToolbox/NavigationProjectToolbox.qml";
+        return "qrc:///eu.skribisto.skribisto/imports/qml/plugins/eu/skribisto/navigationProjectToolbox/NavigationProjectToolbox.qml";
     }
 
     int weight() const override {

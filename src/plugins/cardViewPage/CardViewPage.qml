@@ -3,9 +3,9 @@ import QtQml
 import QtQuick.Controls
 import eu.skribisto.searchtreelistproxymodel 1.0
 
-import "../../Items"
-import "../../Commons"
-import "../.."
+import "../../../../Items"
+import "../../../../Commons"
+import "../../../.."
 
 CardViewPageForm {
     id: root

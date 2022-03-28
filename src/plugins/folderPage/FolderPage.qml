@@ -2,9 +2,9 @@ import QtQuick
 import QtQml
 import QtQuick.Controls
 
-import "../../Items"
-import "../../Commons"
-import "../.."
+import "../../../../Items"
+import "../../../../Commons"
+import "../../../.."
 
 FolderPageForm {
     id: root

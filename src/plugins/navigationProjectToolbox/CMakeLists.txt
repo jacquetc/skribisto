@@ -26,7 +26,7 @@ add_library(${PROJECT_NAME} SHARED ${SRCS})
 
 
 qt_add_qml_module(${PROJECT_NAME}
-    URI ${PROJECT_NAME}
+    URI eu.skribisto.navigationProjectToolbox
     VERSION 1.0
     NO_PLUGIN
     RESOURCE_PREFIX /eu.skribisto.skribisto/imports/qml/plugins

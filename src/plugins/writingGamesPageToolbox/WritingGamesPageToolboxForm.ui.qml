@@ -2,9 +2,9 @@ import QtQuick
 import QtQml
 import QtQuick.Layouts
 
-import "../../Items"
-import "../../Commons"
-import "../.."
+import "../../../../Items"
+import "../../../../Commons"
+import "../../../.."
 
 SkrToolbox {
     id: base

@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQml.Models
-import "../../Commons"
-import "../../Items"
-import "../.."
+import "../../../../Commons"
+import "../../../../Items"
+import "../../../.."
 
 Item {
     id: root

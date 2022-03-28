@@ -5,9 +5,9 @@ import QtQuick.Layouts
 import QtQml.Models
 import QtQuick.Controls.Material
 import eu.skribisto.searchtreelistproxymodel 1.0
-import "../../Commons"
-import "../../Items"
-import "../.."
+import "../../../../Commons"
+import "../../../../Items"
+import "../../../.."
 
 
 Item {

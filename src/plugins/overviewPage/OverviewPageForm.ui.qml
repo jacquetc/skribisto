@@ -3,9 +3,9 @@ import QtQuick.Controls
 import QtQml
 import QtQuick.Layouts
 
-import "../../Items"
-import "../../Commons"
-import "../.."
+import "../../../../Items"
+import "../../../../Commons"
+import "../../../.."
 
 SkrBasePage {
     id: base

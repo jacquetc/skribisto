@@ -76,7 +76,7 @@ public:
     }
 
     QString pageUrl() const override {
-        return "qrc:///eu.skribisto.skribsito/imports/qml/plugins/skribisto-plugin-projectPage/ProjectPage.qml";
+        return "qrc:///eu.skribisto.skribsito/imports/qml/plugins/eu/skribisto/projectPage/ProjectPage.qml";
     }
 
     bool isConstructible() const override {

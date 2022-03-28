@@ -41,7 +41,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/antidotePageToolbox/AntidotePageToolbox/AntidotePageToolbox.qml" line="14"/>
+        <location filename="../plugins/antidotePageToolbox/AntidotePageToolbox.qml" line="14"/>
         <source>Show Druide Antidote™ toolbox</source>
         <translation type="unfinished"></translation>
     </message>
@@ -55,22 +55,22 @@
 <context>
     <name>AntidotePageToolboxForm.ui</name>
     <message>
-        <location filename="../plugins/antidotePageToolbox/AntidotePageToolbox/AntidotePageToolboxForm.ui.qml" line="38"/>
+        <location filename="../plugins/antidotePageToolbox/AntidotePageToolboxForm.ui.qml" line="38"/>
         <source>Druide Antidote</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/antidotePageToolbox/AntidotePageToolbox/AntidotePageToolboxForm.ui.qml" line="58"/>
+        <location filename="../plugins/antidotePageToolbox/AntidotePageToolboxForm.ui.qml" line="58"/>
         <source>Corrector</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/antidotePageToolbox/AntidotePageToolbox/AntidotePageToolboxForm.ui.qml" line="85"/>
+        <location filename="../plugins/antidotePageToolbox/AntidotePageToolboxForm.ui.qml" line="85"/>
         <source>Dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/antidotePageToolbox/AntidotePageToolbox/AntidotePageToolboxForm.ui.qml" line="72"/>
+        <location filename="../plugins/antidotePageToolbox/AntidotePageToolboxForm.ui.qml" line="72"/>
         <source>Guide</source>
         <translation type="unfinished"></translation>
     </message>

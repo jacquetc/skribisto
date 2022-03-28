@@ -1,7 +1,7 @@
 import QtQuick
 import QtQml
 import QtQuick.Controls
-import '../..'
+import '../../../..'
 
 OverviewToolboxForm {
 

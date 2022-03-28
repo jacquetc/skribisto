@@ -2,7 +2,7 @@ import QtQuick
 import QtQml
 import QtQuick.Controls
 import eu.skribisto.documenthandler 1.0
-import "../.."
+import "../../../.."
 
 MinimapForm {
     id: root

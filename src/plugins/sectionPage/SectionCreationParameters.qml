@@ -3,9 +3,9 @@ import QtQml
 import QtQuick.Layouts
 import QtQuick.Controls
 
-import "../../Items"
-import "../../Commons"
-import "../.."
+import "../../../../Items"
+import "../../../../Commons"
+import "../../../.."
 
 Item {
     implicitHeight: layout.childrenRect.height

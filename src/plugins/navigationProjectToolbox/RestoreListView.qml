@@ -5,8 +5,8 @@ import QtQml.Models
 import QtQuick.Controls.Material
 import eu.skribisto.projecthub 1.0
 import eu.skribisto.searchtreelistproxymodel 1.0
-import "../../Commons"
-import "../../Items"
+import "../../../../Commons"
+import "../../../../Items"
 
 
 RestoreListViewForm {

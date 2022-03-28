@@ -7,9 +7,9 @@ import eu.skribisto.projecthub 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
 import eu.skribisto.skr 1.0
-import "../../Commons"
-import "../../Items"
-import "../.."
+import "../../../../Commons"
+import "../../../../Items"
+import "../../../.."
 
 CardForm {
     id: root

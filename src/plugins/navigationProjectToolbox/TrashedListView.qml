@@ -5,9 +5,9 @@ import QtQml.Models
 import eu.skribisto.projecthub 1.0
 import QtQuick.Controls.Material
 import eu.skribisto.searchtreelistproxymodel 1.0
-import "../../Commons"
-import "../../Items"
-import "../.."
+import "../../../../Commons"
+import "../../../../Items"
+import "../../../.."
 
 TrashedListViewForm {
     id: root

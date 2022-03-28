@@ -3,9 +3,9 @@ import QtQml
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import "../../Items"
-import "../../Commons"
-import "../.."
+import "../../../../Items"
+import "../../../../Commons"
+import "../../../.."
 
 SkrSettingsPanel {
     property alias textGroupBox: textGroupBox

@@ -5,9 +5,9 @@ import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.themes 1.0
 import QtQuick.Window
 
-import "../../Items"
-import "../../Commons"
-import "../.."
+import "../../../../Items"
+import "../../../../Commons"
+import "../../../.."
 
 
 
