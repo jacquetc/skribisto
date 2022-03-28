@@ -7,11 +7,13 @@
 #include <QDir>
 #include <QCoreApplication>
 
-// #ifdef Q_OS_WIN
-// # include "externals/hunspell/hunspell.hxx"
-// #endif // Q_OS_WIN
-
+#ifdef Q_OS_IOS
+# include "../../hunspell/src/hunspell/hunspell.hxx"
+#else
 #include <hunspell.hxx>
+#endif // Q_OS_IOS
+
+
 #include "plmutils.h"
 
 SKRSpellChecker::SKRSpellChecker(QObject *parent) :

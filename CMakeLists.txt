@@ -98,8 +98,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fsanitize=address,undefined -O0")
 
 
-
-
 add_subdirectory(src/libskribisto-data/src)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -113,8 +111,8 @@ else()
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 add_subdirectory(src/app/src)
-add_subdirectory(src/plugins)
-add_subdirectory(src/translations)
+#add_subdirectory(src/plugins)
+#add_subdirectory(src/translations)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")

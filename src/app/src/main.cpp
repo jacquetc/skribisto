@@ -410,6 +410,7 @@ int main(int argc, char *argv[])
 
     int returnCode = app.exec();
 
+#ifndef Q_OS_IOS
     // restart :
     if (returnCode == -1)
     {
@@ -441,6 +442,8 @@ int main(int argc, char *argv[])
             proc->start(QCoreApplication::applicationFilePath(), args);
         }
     }
+
+#endif
 
     return returnCode;
 }
