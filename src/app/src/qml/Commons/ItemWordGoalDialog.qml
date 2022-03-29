@@ -24,7 +24,7 @@ Dialog {
     Material.accent: SkrTheme.accent
 
     modal: true
-    implicitWidth: Math.max(Math.max(contentLabel.implicitWidth, footer.implicitWidth), header.implicitWidth) + 20
+    implicitWidth: Math.max(Math.max(contentItem.implicitWidth, footer.implicitWidth), header.implicitWidth) + 30
 
     header: SkrLabel {
         id: headerLabel
@@ -37,20 +37,20 @@ Dialog {
     }
 
     contentItem: ColumnLayout {
+
         SkrLabel {
             id: contentLabel
             Layout.alignment: Qt.AlignCenter
             wrapMode: Text.WordWrap
             text: SkrSettings.interfaceSettings.wordCountVisible ? qsTr("Please set the number of words to reach for this item:") : qsTr("Please set the number of characters to reach for this item:")
         }
-        SkrSpinBox {
+        SkrTextField {
             id: spinBox
             Layout.alignment: Qt.AlignCenter
-            from: 0
-            to: 100000000
-            inputMethodHints: Qt.ImhDigitsOnly
-            editable: true
-            stepSize: 100
+            inputMethodHints: Qt.ImhDigitsOnly | Qt.ImhPreferNumbers | Qt.ImhExclusiveInputMask
+            selectByMouse: true
+            maximumLength: 7
+            inputMask: "0000000"
 
             Keys.onReturnPressed: dialog.accept()
             Keys.onEnterPressed: dialog.accept()
@@ -68,7 +68,7 @@ Dialog {
 
     onAccepted: {
         var propertyId = "-2"
-        if(spinBox.value === 0){
+        if(spinBox.text === "0" || spinBox.text === ""){
             if(SkrSettings.interfaceSettings.wordCountVisible){
                propertyId = skrData.treePropertyHub().findPropertyId(dialog.projectId, dialog.treeItemId, "word_goal")
             }
@@ -82,10 +82,10 @@ Dialog {
         else {
 
             if(SkrSettings.interfaceSettings.wordCountVisible){
-               skrData.treePropertyHub().setProperty(dialog.projectId, dialog.treeItemId, "word_goal", spinBox.value, true, false, true)
+               skrData.treePropertyHub().setProperty(dialog.projectId, dialog.treeItemId, "word_goal", spinBox.text, true, false, true)
             }
             else {
-                skrData.treePropertyHub().setProperty(dialog.projectId, dialog.treeItemId, "character_goal", spinBox.value, true, false, true)
+                skrData.treePropertyHub().setProperty(dialog.projectId, dialog.treeItemId, "character_goal", spinBox.text, true, false, true)
             }
         }
 
@@ -103,12 +103,13 @@ Dialog {
         }
 
         if(propertyValue === "0"){
-            spinBox.value = 2000
+            spinBox.text = "2000"
         }
         else {
-            spinBox.value = propertyValue
+            spinBox.text = propertyValue
         }
         spinBox.forceActiveFocus()
+        spinBox.selectAll()
     }
 
     onRejected: {
@@ -121,10 +122,10 @@ Dialog {
         }
 
         if(propertyValue === "0"){
-            spinBox.value = 2000
+            spinBox.text = "2000"
         }
         else {
-            spinBox.value = propertyValue
+            spinBox.text = propertyValue
         }
     }
 

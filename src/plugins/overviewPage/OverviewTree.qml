@@ -1675,6 +1675,12 @@ OverviewTreeForm {
                 action: setLabelAction
             }
 
+            SkrMenuItem {
+                visible: currentTreeItemId !== -1
+                height: currentTreeItemId !== -1 ? undefined : 0
+                action: setGoalAction
+            }
+
             MenuSeparator {}
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
@@ -1892,6 +1898,30 @@ OverviewTreeForm {
             console.log("sel label", currentProjectId, currentTreeItemId)
             listView.itemAtIndex(currentIndex).editLabel()
         }
+    }
+
+    //-------------------------------------------------------------------------------------
+    Action {
+
+        id: setGoalAction
+        text: qsTr("Set goal")
+        //shortcut: "F2"
+        icon {
+            source: "qrc:///icons/backup/label.svg"
+        }
+        enabled: currentTreeItemId !== -1
+        onTriggered: {
+
+            itemWordGoalDialog.projectId = currentProjectId
+            itemWordGoalDialog.treeItemId = currentTreeItemId
+            itemWordGoalDialog.open()
+            console.log("set goal", currentProjectId, currentTreeItemId)
+
+
+        }
+    }
+    ItemWordGoalDialog{
+        id: itemWordGoalDialog
     }
 
     //-------------------------------------------------------------------------------------
