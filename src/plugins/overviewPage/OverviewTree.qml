@@ -101,6 +101,10 @@ OverviewTreeForm {
             property bool isRenamable: model.isRenamable
             property bool isTrashable: model.isTrashable
 
+            Material.background: SkrTheme.buttonBackground
+            Material.foreground: SkrTheme.buttonForeground
+            Material.accent: SkrTheme.accent
+
             Accessible.name: {
 
                 var levelText
