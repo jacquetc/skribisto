@@ -1790,62 +1790,62 @@
 <context>
     <name>OverviewTree</name>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="112"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="121"/>
         <source>Level %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="119"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="128"/>
         <source>label: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="124"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="133"/>
         <source>has children</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="130"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="139"/>
         <source>navigation item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="690"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="694"/>
         <source>Enter label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="731"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="735"/>
         <source>Enter name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1064"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1068"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1257"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1261"/>
         <source>c: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1268"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1272"/>
         <source>all c: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1287"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1291"/>
         <source>w: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1298"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1302"/>
         <source>all w: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1348"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1352"/>
         <source>Item menu</source>
         <translation type="unfinished"></translation>
     </message>

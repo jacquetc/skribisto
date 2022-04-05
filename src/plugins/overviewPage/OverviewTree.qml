@@ -54,6 +54,15 @@ OverviewTreeForm {
         property int selectedProjectId: -2
 
         property bool devModeEnabled: SkrSettings.devSettings.devModeEnabled
+
+        property bool isOpenable
+        property bool canAddChildTreeItem
+        property bool canAddSiblingTreeItem
+        property bool isCopyable
+        property bool isMovable
+        property bool isRenamable
+        property bool isTrashable
+
     }
 
     //-----------------------------------------------------------------------------
@@ -559,33 +568,28 @@ OverviewTreeForm {
 
                                 Globals.touchUsed = false
                                 //console.log("right clicked")
-                                if (loader_menu.active) {
-                                    if (loader_menu.item.visible) {
-                                        loader_menu.item.close()
-                                        return
+                                    if (menu.visible) {
+                                        menu.close()
                                     }
-                                }
+
+
+
 
                                 priv.currentTreeItemId = model.treeItemId
                                 priv.currentProjectId = model.projectId
-
                                 listView.currentIndex = model.index
-
-                                loader_menu.active = true
-
-                                loader_menu.item.treeItemId = model.treeItemId
-                                loader_menu.item.projectId = model.projectId
-                                loader_menu.item.isOpenable = model.isOpenable
-                                loader_menu.item.canAddChildTreeItem = model.canAddChildTreeItem
-                                loader_menu.item.canAddSiblingTreeItem = model.canAddSiblingTreeItem
-                                loader_menu.item.isCopyable = model.isCopyable
-                                loader_menu.item.isMovable = model.isMovable
-                                loader_menu.item.isRenamable = model.isRenamable
-                                loader_menu.item.isTrashable = model.isTrashable
+                                priv.isOpenable = model.isOpenable
+                                priv.canAddChildTreeItem = model.canAddChildTreeItem
+                                priv.canAddSiblingTreeItem = model.canAddSiblingTreeItem
+                                priv.isCopyable = model.isCopyable
+                                priv.isMovable = model.isMovable
+                                priv.isRenamable = model.isRenamable
+                                priv.isTrashable = model.isTrashable
 
 
 
-                                loader_menu.item.popup(content,
+
+                                menu.popup(content,
                                                        eventPoint.position.x,
                                                        eventPoint.position.y)
                                 eventPoint.accepted = true
@@ -1350,36 +1354,32 @@ OverviewTreeForm {
                                         focusPolicy: Qt.NoFocus
 
                                         onClicked: {
-                                            if (loader_menu.active) {
-                                                    loader_menu.active = false
-                                                return
+                                            if (menu.visible) {
+                                                    menu.close()
 
 
                                             }
+
+
+                                            swipeDelegate.forceActiveFocus()
+
 
                                             priv.currentTreeItemId = model.treeItemId
                                             priv.currentProjectId = model.projectId
                                             listView.currentIndex = model.index
-                                            swipeDelegate.forceActiveFocus()
+                                            priv.isOpenable = model.isOpenable
+                                            priv.canAddChildTreeItem = model.canAddChildTreeItem
+                                            priv.canAddSiblingTreeItem = model.canAddSiblingTreeItem
+                                            priv.isCopyable = model.isCopyable
+                                            priv.isMovable = model.isMovable
+                                            priv.isRenamable = model.isRenamable
+                                            priv.isTrashable = model.isTrashable
 
-                                            loader_menu.active = true
+                                            menu.popup(
+                                                        menuButton,
+                                                        menuButton.x,
+                                                        menuButton.height)
 
-                                            if (loader_menu.status ===  Loader.Ready){
-                                                loader_menu.item.treeItemId = model.treeItemId
-                                                loader_menu.item.projectId = model.projectId
-                                                loader_menu.item.isOpenable = model.isOpenable
-                                                loader_menu.item.canAddChildTreeItem = model.canAddChildTreeItem
-                                                loader_menu.item.canAddSiblingTreeItem = model.canAddSiblingTreeItem
-                                                loader_menu.item.isCopyable = model.isCopyable
-                                                loader_menu.item.isMovable = model.isMovable
-                                                loader_menu.item.isRenamable = model.isRenamable
-                                                loader_menu.item.isTrashable = model.isTrashable
-
-                                                loader_menu.item.popup(
-                                                            menuButton,
-                                                            menuButton.x,
-                                                            menuButton.height)
-                                            }
 
                                         }
 
@@ -1615,27 +1615,27 @@ OverviewTreeForm {
         }
     }
 
-    Component {
-        id: component_menu
+//    Component {
+//        id: component_menu
         SkrMenu {
             id: menu
 
-            property int treeItemId
-            property int projectId
-            property bool isOpenable
-            property bool canAddChildTreeItem
-            property bool canAddSiblingTreeItem
-            property bool isCopyable
-            property bool isMovable
-            property bool isRenamable
-            property bool isTrashable
+            property int treeItemId: priv.currentTreeItemId
+            property int projectId: priv.currentProjectId
+            property bool isOpenable: priv.isOpenable
+            property bool canAddChildTreeItem: priv.canAddChildTreeItem
+            property bool canAddSiblingTreeItem: priv.canAddSiblingTreeItem
+            property bool isCopyable: priv.isCopyable
+            property bool isMovable: priv.isMovable
+            property bool isRenamable: priv.isRenamable
+            property bool isTrashable: priv.isTrashable
 
             onOpened: {
 
             }
 
             onClosed: {
-                loader_menu.active = false
+                //loader_menu.active = false
             }
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
@@ -1778,12 +1778,12 @@ OverviewTreeForm {
                 action: sendToTrashAction
             }
         }
-    }
-    Loader {
-        id: loader_menu
-        sourceComponent: component_menu
-        active: false
-    }
+//    }
+//    Loader {
+//        id: loader_menu
+//        sourceComponent: component_menu
+//        active: false
+//    }
 
     //-------------------------------------------------------------------------------------
     //------Actions------------------------------------------------------------------------

@@ -19,8 +19,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRPAPERLISTMODEL_H
-#define SKRPAPERLISTMODEL_H
+#ifndef SKRTREELISTMODEL_H
+#define SKRTREELISTMODEL_H
 
 #include <QAbstractTableModel>
 #include "skrdata.h"
@@ -112,4 +112,4 @@ private:
 };
 
 
-#endif // SKRPAPERLISTMODEL_H
+#endif // SKRTREELISTMODEL_H
