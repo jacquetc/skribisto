@@ -568,9 +568,9 @@ OverviewTreeForm {
 
                                 Globals.touchUsed = false
                                 //console.log("right clicked")
-                                    if (menu.visible) {
-                                        menu.close()
-                                    }
+                                if (menu.visible) {
+                                    menu.close()
+                                }
 
 
 
@@ -590,8 +590,8 @@ OverviewTreeForm {
 
 
                                 menu.popup(content,
-                                                       eventPoint.position.x,
-                                                       eventPoint.position.y)
+                                           eventPoint.position.x,
+                                           eventPoint.position.y)
                                 eventPoint.accepted = true
                             }
                             grabPermissions: PointerHandler.TakeOverForbidden
@@ -812,11 +812,11 @@ OverviewTreeForm {
                                         color: model.indent === 0 ? Material.color(
                                                                         Material.Indigo) : (model.indent === 1 ? Material.color(Material.LightBlue) : (model.indent === 2 ? Material.color(Material.LightGreen) : (model.indent === 3 ? Material.color(Material.Amber) : (model.indent === 4 ? Material.color(Material.DeepOrange) : Material.color(Material.Teal)))))
 
-//                                        MouseArea {
-//                                                anchors.fill: parent
-//                                                cursorShape: Qt.PointingHandCursor
-//                                                hoverEnabled: true
-//                                                acceptedButtons: Qt.NoButton
+                                        //                                        MouseArea {
+                                        //                                                anchors.fill: parent
+                                        //                                                cursorShape: Qt.PointingHandCursor
+                                        //                                                hoverEnabled: true
+                                        //                                                acceptedButtons: Qt.NoButton
 
                                         ColumnLayout {
                                             anchors.fill: parent
@@ -837,7 +837,7 @@ OverviewTreeForm {
 
 
                                         }
-//                                        }
+                                        //                                        }
 
 
 
@@ -1030,7 +1030,7 @@ OverviewTreeForm {
                                         Layout.preferredHeight: content.height / 2
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                                         gradient: Gradient {
-                                            orientation: Qt.Vertical
+                                            orientation: Gradient.Vertical
                                             GradientStop {
                                                 position: 0.00
                                                 color: "transparent"
@@ -1191,7 +1191,7 @@ OverviewTreeForm {
                                     Layout.preferredHeight: content.height / 2
                                     Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                                     gradient: Gradient {
-                                        orientation: Qt.Vertical
+                                        orientation: Gradient.Vertical
                                         GradientStop {
                                             position: 0.00
                                             color: "transparent"
@@ -1248,7 +1248,7 @@ OverviewTreeForm {
 
                                 ColumnLayout {
                                     id: characterCountLayout
-                                    visible: SkrSettings.interfaceSettings.characterCountVisible
+                                    visible: SkrSettings.interfaceSettings.charCountVisible
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
@@ -1258,9 +1258,13 @@ OverviewTreeForm {
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                        text: qsTr("c: %1").arg(
-                                                  skrRootItem.toLocaleIntString(
-                                                      model.charCount))
+                                        text: model.charCountGoal > 0 ? qsTr("c: %1 / %2").arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.charCount)).arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.charCountGoal)) : qsTr("c: %1").arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.charCount))
                                         verticalAlignment: Qt.AlignVCenter
                                     }
                                     SkrLabel {
@@ -1269,9 +1273,13 @@ OverviewTreeForm {
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                        text: qsTr("all c: %1").arg(
-                                                  skrRootItem.toLocaleIntString(
-                                                      model.charCountWithChildren))
+                                        text: model.charCountGoal > 0 ? qsTr("all c: %1 / %2").arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.charCountWithChildren)).arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.charCountGoal)) : qsTr("all c: %1").arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.charCountWithChildren))
                                         verticalAlignment: Qt.AlignVCenter
                                     }
                                 }
@@ -1288,9 +1296,13 @@ OverviewTreeForm {
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                        text: qsTr("w: %1").arg(
-                                                  skrRootItem.toLocaleIntString(
-                                                      model.wordCount))
+                                        text: model.wordCountGoal > 0 ? qsTr("w: %1 / %2").arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.wordCount)).arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.wordCountGoal)) : qsTr("w: %1").arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.wordCount))
                                         verticalAlignment: Qt.AlignVCenter
                                     }
                                     SkrLabel {
@@ -1299,9 +1311,13 @@ OverviewTreeForm {
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                        text: qsTr("all w: %1").arg(
-                                                  skrRootItem.toLocaleIntString(
-                                                      model.wordCountWithChildren))
+                                        text: model.wordCountGoal > 0 ? qsTr("all w: %1 / %2").arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.wordCountWithChildren)).arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.wordCountGoal)) : qsTr("all w: %1").arg(
+                                                                           skrRootItem.toLocaleIntString(
+                                                                               model.wordCountWithChildren))
                                         verticalAlignment: Qt.AlignVCenter
                                     }
                                 }
@@ -1321,7 +1337,7 @@ OverviewTreeForm {
                                     Layout.preferredHeight: content.height / 2
                                     Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                                     gradient: Gradient {
-                                        orientation: Qt.Vertical
+                                        orientation: Gradient.Vertical
                                         GradientStop {
                                             position: 0.00
                                             color: "transparent"
@@ -1355,7 +1371,7 @@ OverviewTreeForm {
 
                                         onClicked: {
                                             if (menu.visible) {
-                                                    menu.close()
+                                                menu.close()
 
 
                                             }
@@ -1406,10 +1422,10 @@ OverviewTreeForm {
                                             priv.currentTreeItemId = model.treeItemId
                                             priv.currentProjectId = model.projectId
 
-                                                listView.currentIndex = model.index
-                                                swipeDelegate.forceActiveFocus()
+                                            listView.currentIndex = model.index
+                                            swipeDelegate.forceActiveFocus()
 
-                                                focusOnbranchAction.trigger()
+                                            focusOnbranchAction.trigger()
 
                                         }
                                     }
@@ -1615,175 +1631,175 @@ OverviewTreeForm {
         }
     }
 
-//    Component {
-//        id: component_menu
-        SkrMenu {
-            id: menu
+    //    Component {
+    //        id: component_menu
+    SkrMenu {
+        id: menu
 
-            property int treeItemId: priv.currentTreeItemId
-            property int projectId: priv.currentProjectId
-            property bool isOpenable: priv.isOpenable
-            property bool canAddChildTreeItem: priv.canAddChildTreeItem
-            property bool canAddSiblingTreeItem: priv.canAddSiblingTreeItem
-            property bool isCopyable: priv.isCopyable
-            property bool isMovable: priv.isMovable
-            property bool isRenamable: priv.isRenamable
-            property bool isTrashable: priv.isTrashable
+        property int treeItemId: priv.currentTreeItemId
+        property int projectId: priv.currentProjectId
+        property bool isOpenable: priv.isOpenable
+        property bool canAddChildTreeItem: priv.canAddChildTreeItem
+        property bool canAddSiblingTreeItem: priv.canAddSiblingTreeItem
+        property bool isCopyable: priv.isCopyable
+        property bool isMovable: priv.isMovable
+        property bool isRenamable: priv.isRenamable
+        property bool isTrashable: priv.isTrashable
 
-            onOpened: {
+        onOpened: {
 
-            }
-
-            onClosed: {
-                //loader_menu.active = false
-            }
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isOpenable
-                height: currentTreeItemId !== -1
-                        && menu.isOpenable ? undefined : 0
-                action: openDocumentAction
-            }
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isOpenable
-                height: currentTreeItemId !== -1
-                        && menu.isOpenable ? undefined : 0
-
-                action: openDocumentInAnotherViewAction
-            }
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isOpenable
-                height: currentTreeItemId !== -1
-                        && menu.isOpenable ? undefined : 0
-
-                action: openPaperInNewWindowAction
-            }
-
-            MenuSeparator {
-                visible: menu.canAddChildTreeItem
-                height: menu.canAddChildTreeItem ? undefined : 0
-            }
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.canAddChildTreeItem
-                height: currentTreeItemId !== -1
-                        && menu.canAddChildTreeItem ? undefined : 0
-
-                action: focusOnbranchAction
-            }
-
-            MenuSeparator {}
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isRenamable
-                height: currentTreeItemId !== -1
-                        && menu.isRenamable ? undefined : 0
-
-                action: renameAction
-            }
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isRenamable
-                height: currentTreeItemId !== -1
-                        && menu.isRenamable ? undefined : 0
-                action: setLabelAction
-            }
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                height: currentTreeItemId !== -1 ? undefined : 0
-                action: setGoalAction
-            }
-
-            MenuSeparator {}
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isMovable
-                height: currentTreeItemId !== -1
-                        && menu.isMovable ? undefined : 0
-                action: cutAction
-            }
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isCopyable
-                height: currentTreeItemId !== -1
-                        && menu.isCopyable ? undefined : 0
-                action: copyAction
-            }
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.canAddChildTreeItem
-                height: currentTreeItemId !== -1
-                        && menu.canAddChildTreeItem ? undefined : 0
-                action: pasteAction
-            }
-
-            MenuSeparator {}
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.canAddSiblingTreeItem
-                height: currentTreeItemId !== -1
-                        && menu.canAddSiblingTreeItem ? undefined : 0
-                action: addBeforeAction
-            }
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.canAddSiblingTreeItem
-                height: currentTreeItemId !== -1
-                        && menu.canAddSiblingTreeItem ? undefined : 0
-                action: addAfterAction
-            }
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.canAddChildTreeItem
-                height: currentTreeItemId !== -1
-                        && menu.canAddChildTreeItem ? undefined : 0
-
-                action: addChildAction
-            }
-
-            MenuSeparator {}
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isMovable
-                height: currentTreeItemId !== -1
-                        && menu.isMovable ? undefined : 0
-                action: moveUpAction
-            }
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isMovable
-                height: currentTreeItemId !== -1
-                        && menu.isMovable ? undefined : 0
-                action: moveDownAction
-            }
-            MenuSeparator {}
-
-            SkrMenuItem {
-                visible: currentTreeItemId !== -1
-                         && menu.isTrashable
-                height: currentTreeItemId !== -1
-                        && menu.isTrashable ? undefined : 0
-                action: sendToTrashAction
-            }
         }
-//    }
-//    Loader {
-//        id: loader_menu
-//        sourceComponent: component_menu
-//        active: false
-//    }
+
+        onClosed: {
+            //loader_menu.active = false
+        }
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isOpenable
+            height: currentTreeItemId !== -1
+                    && menu.isOpenable ? undefined : 0
+            action: openDocumentAction
+        }
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isOpenable
+            height: currentTreeItemId !== -1
+                    && menu.isOpenable ? undefined : 0
+
+            action: openDocumentInAnotherViewAction
+        }
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isOpenable
+            height: currentTreeItemId !== -1
+                    && menu.isOpenable ? undefined : 0
+
+            action: openPaperInNewWindowAction
+        }
+
+        MenuSeparator {
+            visible: menu.canAddChildTreeItem
+            height: menu.canAddChildTreeItem ? undefined : 0
+        }
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.canAddChildTreeItem
+            height: currentTreeItemId !== -1
+                    && menu.canAddChildTreeItem ? undefined : 0
+
+            action: focusOnbranchAction
+        }
+
+        MenuSeparator {}
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isRenamable
+            height: currentTreeItemId !== -1
+                    && menu.isRenamable ? undefined : 0
+
+            action: renameAction
+        }
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isRenamable
+            height: currentTreeItemId !== -1
+                    && menu.isRenamable ? undefined : 0
+            action: setLabelAction
+        }
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+            height: currentTreeItemId !== -1 ? undefined : 0
+            action: setGoalAction
+        }
+
+        MenuSeparator {}
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isMovable
+            height: currentTreeItemId !== -1
+                    && menu.isMovable ? undefined : 0
+            action: cutAction
+        }
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isCopyable
+            height: currentTreeItemId !== -1
+                    && menu.isCopyable ? undefined : 0
+            action: copyAction
+        }
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.canAddChildTreeItem
+            height: currentTreeItemId !== -1
+                    && menu.canAddChildTreeItem ? undefined : 0
+            action: pasteAction
+        }
+
+        MenuSeparator {}
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.canAddSiblingTreeItem
+            height: currentTreeItemId !== -1
+                    && menu.canAddSiblingTreeItem ? undefined : 0
+            action: addBeforeAction
+        }
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.canAddSiblingTreeItem
+            height: currentTreeItemId !== -1
+                    && menu.canAddSiblingTreeItem ? undefined : 0
+            action: addAfterAction
+        }
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.canAddChildTreeItem
+            height: currentTreeItemId !== -1
+                    && menu.canAddChildTreeItem ? undefined : 0
+
+            action: addChildAction
+        }
+
+        MenuSeparator {}
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isMovable
+            height: currentTreeItemId !== -1
+                    && menu.isMovable ? undefined : 0
+            action: moveUpAction
+        }
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isMovable
+            height: currentTreeItemId !== -1
+                    && menu.isMovable ? undefined : 0
+            action: moveDownAction
+        }
+        MenuSeparator {}
+
+        SkrMenuItem {
+            visible: currentTreeItemId !== -1
+                     && menu.isTrashable
+            height: currentTreeItemId !== -1
+                    && menu.isTrashable ? undefined : 0
+            action: sendToTrashAction
+        }
+    }
+    //    }
+    //    Loader {
+    //        id: loader_menu
+    //        sourceComponent: component_menu
+    //        active: false
+    //    }
 
     //-------------------------------------------------------------------------------------
     //------Actions------------------------------------------------------------------------
@@ -2031,7 +2047,7 @@ OverviewTreeForm {
             var result
 
             for(var i = 0; i < quantity ; i++){
-                    result = skrData.treeHub().addTreeItemAbove(projectId,
+                result = skrData.treeHub().addTreeItemAbove(projectId,
                                                             treeItemId,
                                                             pageType)
             }
@@ -2078,8 +2094,8 @@ OverviewTreeForm {
             var result
             for(var i = 0; i < quantity ; i++){
                 result = skrData.treeHub().addTreeItemBelow(projectId,
-                                                                treeItemId,
-                                                                pageType)
+                                                            treeItemId,
+                                                            pageType)
             }
 
             if (result.success) {

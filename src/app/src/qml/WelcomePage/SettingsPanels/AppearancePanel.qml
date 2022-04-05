@@ -88,31 +88,31 @@ AppearancePanelForm {
     // ---- word count --------------------------------
     // --------------------------------------------
 
-    wordCountSwitch.checked: SkrSettings.interfaceSettings.showWordCount
+    wordCountSwitch.checked: SkrSettings.interfaceSettings.wordCountVisible
     Binding {
         target: SkrSettings.interfaceSettings
-        property: "showWordCount"
+        property: "wordCountVisible"
         value: wordCountSwitch.checked
         restoreMode: Binding.RestoreBindingOrValue
     }
 
     wordCountSwitch.onCheckedChanged: {
         if(wordCountSwitch.checked){
-            SkrSettings.interfaceSettings.showCharCount = false
+            SkrSettings.interfaceSettings.charCountVisible = false
         }
     }
 
-    charCountSwitch.checked: SkrSettings.interfaceSettings.showCharCount
+    charCountSwitch.checked: SkrSettings.interfaceSettings.charCountVisible
     Binding {
         target: SkrSettings.interfaceSettings
-        property: "showCharCount"
+        property: "charCountVisible"
         value: charCountSwitch.checked
         restoreMode: Binding.RestoreBindingOrValue
     }
 
     charCountSwitch.onCheckedChanged: {
         if(charCountSwitch.checked){
-            SkrSettings.interfaceSettings.showWordCount = false
+            SkrSettings.interfaceSettings.wordCountVisible = false
         }
     }
 

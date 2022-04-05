@@ -247,7 +247,7 @@ SkrPane {
                 Layout.preferredHeight: base.height * 3 / 4
                 Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                 gradient: Gradient {
-                    orientation: Qt.Vertical
+                    orientation: Gradient.Vertical
                     GradientStop {
                         position: 0.00
                         color: "transparent"

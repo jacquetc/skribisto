@@ -74,7 +74,7 @@ SkrPopup {
            Layout.preferredWidth: base.height * 3 / 4
            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
            gradient: Gradient {
-               orientation: Qt.Horizontal
+               orientation: Gradient.Horizontal
                GradientStop {
                    position: 0.00;
                    color: "transparent";

@@ -58,7 +58,7 @@ GroupBox {
             Layout.alignment: Qt.AlignVCenter
             //Layout.preferredWidth: control.availableWidth//content.width / 2
             gradient: Gradient {
-                orientation: Qt.Horizontal
+                orientation: Gradient.Horizontal
                 GradientStop {
                     position: 0.10;
                     color: SkrTheme.accent;

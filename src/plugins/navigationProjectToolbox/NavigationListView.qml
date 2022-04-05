@@ -2025,7 +2025,7 @@ Item {
                                     Layout.preferredWidth: content.width / 2
                                     Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
                                     gradient: Gradient {
-                                        orientation: Qt.Horizontal
+                                        orientation: Gradient.Horizontal
                                         GradientStop {
                                             position: 0.00
                                             color: "transparent"

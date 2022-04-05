@@ -42,7 +42,9 @@ public:
         IsTrashableRole           = Qt::UserRole + 25,
         IsOpenableRole            = Qt::UserRole + 26,
         IsCopyableRole            = Qt::UserRole + 27,
-        OtherPropertiesRole       = Qt::UserRole + 28
+        OtherPropertiesRole       = Qt::UserRole + 28,
+        CharCountGoalRole         = Qt::UserRole + 29,
+        WordCountGoalRole         = Qt::UserRole + 30
     };
     Q_ENUM(Roles)
 
