@@ -78,6 +78,7 @@ private:
     QString m_langCode;
     QTranslator *skribistoTranslator;
     QTranslator *qtTranslator;
+    static QString trimStyle(const QString &styleValue) ;
 };
 
 #endif // SKRROOTITEM_H

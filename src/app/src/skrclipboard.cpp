@@ -25,8 +25,11 @@ void SKRClipboard::prepareAndSendLastClipboardText()
 
 
     if (mimeData->hasHtml()) {
+        qDebug()<< "prepare HTML";
         QString subType  = "html";
         QString htmlText = clipboard->text(subType, QClipboard::Clipboard);
+//        qDebug()<< "prepare HTML" << htmlText;
+//        qDebug()<< "cleaned HTML" << SKRRootItem::cleanUpHtml(htmlText);
         originalTextDoc.setHtml(SKRRootItem::cleanUpHtml(htmlText));
     }
     else if (mimeData->hasText()) {
@@ -50,12 +53,12 @@ void SKRClipboard::prepareAndSendLastClipboardText()
 
         finalCursor.mergeBlockFormat(m_blockFormat);
         finalCursor.mergeCharFormat(m_charFormat);
-
+//        qDebug() << "finalCursor" << finalCursor.selection().toHtml();
         if (i < originalTextDoc.blockCount() - 1) {
             finalCursor.insertBlock(m_blockFormat, m_charFormat);
         }
     }
-
+//    qDebug() << "ee" << finalTextDoc.toHtml();
 
     qDebug() << "pasted from SKRClipboard";
     emit lastClipboardTextPrepared(QTextDocumentFragment(&finalTextDoc));

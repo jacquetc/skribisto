@@ -8,6 +8,7 @@
 #include <QFont>
 #include <QDebug>
 #include <QDir>
+#include <QTextDocument>
 
 SKRRootItem::SKRRootItem(QObject *parent) : QObject(parent)
 {
@@ -216,25 +217,101 @@ QString SKRRootItem::getWritableAddonsPathsListDir() const {
 
 QString SKRRootItem::cleanUpHtml(const QString& html)
 {
-    QString text = html;
+    //    QString text = html;
+    //    qDebug() << "§§§§§§§§§§§§§§§§§§§§§§§§";
+//    qDebug() << "pre" << html;
 
-    QStringList styleToRemoveList;
+    QTextDocument doc;
+    doc.setHtml(html);
 
-    styleToRemoveList << "font-family";
-    styleToRemoveList << "font-size";
-    styleToRemoveList << "font-style";
-    styleToRemoveList << "margin-left";
-    styleToRemoveList << "margin-right";
-    styleToRemoveList << "margin-top";
-    styleToRemoveList << "margin-bottom";
-    styleToRemoveList << "-qt-block-indent";
-    styleToRemoveList << "-qt-user-state";
-    styleToRemoveList << "text-indent";
+    QString text = doc.toHtml();
+//    qDebug() << "post doc" << text;
 
-    for (const QString& style : qAsConst(styleToRemoveList)) text.remove(QRegularExpression(" " + style + ":.*?;"));
-    text.remove(QRegularExpression("<h[0-9].*?>"));
-    text.remove(QRegularExpression("<h[0-9]>"));
-    return text;
+    QXmlStreamReader xml(text);
+    QString finalHtml;
+    QXmlStreamWriter finalXml(&finalHtml);
+    QString parentElementName;
+    QStringList nameList;
+    nameList << "body" << "html" << "b" << "span" << "i" << "p" << "u" << "s"<< "ul" << "ol" << "li";
+
+    finalXml.writeStartDocument();
+    finalXml.writeDTD("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">");
+
+    while (!xml.atEnd()) {
+        xml.readNext();
+
+        if(nameList.contains(xml.name()) && xml.tokenType() == QXmlStreamReader::StartElement){
+            finalXml.writeStartElement(xml.name().toString());
+            parentElementName = xml.name().toString();
+            //            qDebug() << "token" << xml.tokenString();
+            //            qDebug() << "name" << xml.name();
+            //qDebug() << "style" << xml.attributes().value("style");
+            QXmlStreamAttributes attributes;
+            attributes.append("style", trimStyle(xml.attributes().value("style").toString()));
+            finalXml.writeAttributes(attributes);
+
+        }
+
+        else if(parentElementName != "html" && xml.tokenType() == QXmlStreamReader::Characters){
+            finalXml.writeCharacters(xml.text().toString());
+            //            qDebug() << "token" << xml.tokenString();
+            //            qDebug() << "name" << xml.name();
+            //            qDebug() << "text" << xml.text();
+        }
+        else if(nameList.contains(xml.name()) && xml.tokenType() == QXmlStreamReader::EndElement){
+            finalXml.writeEndElement();
+        }
+//                qDebug() << "token" << xml.tokenString();
+//                qDebug() << "name" << xml.name();
+        //        qDebug() << "att" << xml.attributes().value("");
+        //        qDebug() << "text" << xml.text();
+
+        if (xml.hasError()) {
+        qDebug() << "errors" << xml.errorString() << xml.lineNumber();
+    }
+    }
+
+    finalXml.writeEndDocument();
+
+    //qDebug() << "finalHtml" << finalHtml;
+
+    return finalHtml;
+}
+
+
+// ------------------------------------------------------
+QString SKRRootItem::trimStyle(const QString &styleValue){
+
+    QString final;
+
+    QStringList styleList = styleValue.split(";", Qt::SkipEmptyParts);
+
+    QStringList styleToKeep;
+    styleToKeep << "text-decoration"<< "font-style" << "font-weight";
+
+    QMutableListIterator<QString> i(styleList);
+    while (i.hasNext()) {
+        QString val = i.next();
+        i.setValue(val.remove("\\\"").trimmed());
+    }
+
+    QHash<QString, QString> hash;
+
+
+    QStringListIterator iterator(styleList);
+    while (iterator.hasNext()){
+
+        QStringList splitted = iterator.next().split(":", Qt::KeepEmptyParts);
+        if(styleToKeep.contains(splitted.at(0).trimmed())){
+            if(splitted.count() == 2){
+                final.append(splitted.at(0).trimmed() + ":" + splitted.at(1).trimmed() + "; ");
+            }
+        }
+    }
+
+    qDebug() << "final" << final;
+    return final;
+
 }
 
 // ------------------------------------------------------
@@ -243,7 +320,7 @@ QString SKRRootItem::skribistoVersion() const {
     QStringList strings;
 
     strings << QString::number(SKR_VERSION_MAJOR) <<
-        QString::number(SKR_VERSION_MINOR) <<  QString::number(SKR_VERSION_PATCH);
+               QString::number(SKR_VERSION_MINOR) <<  QString::number(SKR_VERSION_PATCH);
 
 
     return strings.join(".");
@@ -299,7 +376,7 @@ QStringList SKRRootItem::getDictFoldersFromGitHubTree(const QString& treeFile) c
 
     if (jsonError.error != QJsonParseError::NoError) {
         qDebug() << "Error JSON in theme" << treeFile <<
-            "result :" << jsonError.errorString();
+                    "result :" << jsonError.errorString();
     }
 
     if (jsonDoc.isNull()) {
