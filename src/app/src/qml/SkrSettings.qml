@@ -11,6 +11,8 @@ QtObject {
         category: "interface"
         property bool firstLaunch: true
         property double zoom: 1
+        property bool wordCountVisible: true
+        property bool characterCountVisible: false
     }
 
     property Settings backupSettings: Settings {
@@ -133,8 +135,6 @@ QtObject {
         property bool outlineBoxVisible: true
         property bool noteBoxVisible: true
         property bool tagBoxVisible: true
-        property bool characterCountBoxVisible: true
-        property bool wordCountBoxVisible: true
     }
 
     property Settings quickPrintSettings: Settings {

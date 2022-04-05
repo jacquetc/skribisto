@@ -28,14 +28,12 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.34" date="2022-03-28T00:00:00Z">
+    <release type="stable" version="1.9.35" date="2022-04-05T00:00:00Z">
       <description>
         <ul>
-          <li>Fix slow scrolling in settings</li>
-          <li>Fix writing zone suddenly small</li>
-          <li>Fix Windows deployement script</li>
-          <li>Faster plugins</li>
-          <li>Use Qt 6.2.4</li>
+          <li>Add word goals</li>
+          <li>Fix plugin path</li>
+          <li>Fix Copy paste</li>
         </ul>
       </description>
     </release>

@@ -101,13 +101,37 @@ TextPageForm {
         property string characterCount: ""
     }
 
+
+    Connections{
+        target: SkrSettings.interfaceSettings
+        function onWordCountVisibleChanged(){
+            updateCountLabel()
+        }
+    }
+
+    Connections{
+        target: SkrSettings.interfaceSettings
+        function onCharacterCountVisibleChanged(){
+            updateCountLabel()
+        }
+    }
+
+
     function updateCountLabel() {
         var wordCountString = skrRootItem.toLocaleIntString(countPriv.wordCount)
         var characterCountString = skrRootItem.toLocaleIntString(
                     countPriv.characterCount)
 
-        countLabel.text = qsTr("%1 words, %2 characters").arg(
-                    wordCountString).arg(characterCountString)
+        if(SkrSettings.interfaceSettings.wordCountVisible){
+            countLabel.text = qsTr("%1 words").arg(
+                        wordCountString)
+        }
+        else if(SkrSettings.interfaceSettings.characterCountVisible){
+            countLabel.text = qsTr("%1 characters").arg(characterCountString)
+        }
+        else {
+            countLabel.text = ""
+        }
     }
 
     //-----------------------------------------------------------------
@@ -163,7 +187,25 @@ TextPageForm {
                 }
             }
         }
+
+        SkrMenuItem {
+            action: Action {
+                id: setGoalAction
+                text: skrShortcutManager.description("set-goal")
+                icon.source: "qrc:///icons/backup/list-add.svg"
+                onTriggered: {
+                    itemWordGoalDialog.projectId = projectId
+                    itemWordGoalDialog.treeItemId = treeItemId
+                    itemWordGoalDialog.open()
+                }
+            }
+        }
     }
+
+    ItemWordGoalDialog{
+        id: itemWordGoalDialog
+    }
+
 
     Shortcut {
         sequences: skrShortcutManager.shortcuts("add-quick-note")

@@ -37,7 +37,7 @@ SkrSettingsPanel {
 
                 SkrGroupBox {
                     id: groupBox1
-                    title: qsTr("Backup paths :")
+                    title: qsTr("Backup paths:")
                     focusPolicy: Qt.TabFocus
                     bigTitleEnabled: false
 

@@ -148,3 +148,10 @@ Description:
 - "Faster plugins"
 - "Use Qt 6.2.4"
 
+Version: 1.9.35
+Date: 2022-04-05
+Type: stable
+Description:
+- "Add word goals"
+- "Fix plugin path"
+- "Fix Copy paste"

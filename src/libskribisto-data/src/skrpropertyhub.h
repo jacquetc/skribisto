@@ -54,7 +54,7 @@ public:
     SKRResult             addProperty(int projectId,
                                       int treeItemCode,
                                       int imposedPropertyId = -1);
-    SKRResult             removeProperty(int projectId,
+    Q_INVOKABLE SKRResult removeProperty(int projectId,
                                          int propertyId);
     SKRResult             setId(int projectId,
                                 int propertyId,
@@ -95,7 +95,7 @@ public:
     bool                  propertyExists(int            projectId,
                                          int            treeItemCode,
                                          const QString& name);
-    int                   findPropertyId(int            projectId,
+    Q_INVOKABLE int       findPropertyId(int            projectId,
                                          int            treeItemCode,
                                          const QString& name);
     QString               getProperty(int            projectId,

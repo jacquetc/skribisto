@@ -470,8 +470,12 @@ OverviewTreeForm {
                         //                        color: Material.backgroundColor
                         //                        radius: 5
                         //                    }
-                        HoverHandler {
-                            id: hoverHandler
+                        Item {
+                            anchors.fill: parent
+                            z: 1
+                            HoverHandler {
+                                id: hoverHandler
+                            }
                         }
 
                         TapHandler {
@@ -1217,7 +1221,9 @@ OverviewTreeForm {
                                         treeItemIdFilter: model.treeItemId
                                     }
                                     tagListModel: tagProxyModel
+
                                 }
+
                             }
 
                             //-----------------------------------------------------------
@@ -1225,8 +1231,8 @@ OverviewTreeForm {
                             //-----------------------------------------------------------
                             ColumnLayout {
                                 id: countBox
-                                visible: SkrSettings.overviewTreeSettings.characterCountBoxVisible
-                                         || SkrSettings.overviewTreeSettings.wordCountBoxVisible
+                                visible: SkrSettings.interfaceSettings.characterCountVisible
+                                         || SkrSettings.interfaceSettings.wordCountVisible
                                 //Layout.minimumWidth: 50
                                 //Layout.maximumWidth: 100
                                 Layout.fillHeight: true
@@ -1234,12 +1240,13 @@ OverviewTreeForm {
 
                                 ColumnLayout {
                                     id: characterCountLayout
-                                    visible: SkrSettings.overviewTreeSettings.characterCountBoxVisible
+                                    visible: SkrSettings.interfaceSettings.characterCountVisible
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
                                     SkrLabel {
                                         id: characterCountLabel
+                                        visible: !model.hasChildren
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
@@ -1263,12 +1270,13 @@ OverviewTreeForm {
 
                                 ColumnLayout {
                                     id: wordCountLayout
-                                    visible: SkrSettings.overviewTreeSettings.wordCountBoxVisible
+                                    visible: SkrSettings.interfaceSettings.wordCountVisible
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
                                     SkrLabel {
                                         id: wordCountLabel
+                                        visible: !model.hasChildren
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
@@ -1290,6 +1298,10 @@ OverviewTreeForm {
                                     }
                                 }
                             }
+
+                            //-----------------------------------------------------------
+                            //---------------Counts :---------------------------------------------
+                            //-----------------------------------------------------------
 
                             RowLayout {
                                 id: buttonsBox
@@ -1334,38 +1346,44 @@ OverviewTreeForm {
                                         focusPolicy: Qt.NoFocus
 
                                         onClicked: {
+                                            if (loader_menu.active) {
+                                                    loader_menu.active = false
+                                                return
+
+
+                                            }
+
                                             priv.currentTreeItemId = model.treeItemId
                                             priv.currentProjectId = model.projectId
                                             listView.currentIndex = model.index
                                             swipeDelegate.forceActiveFocus()
 
-                                            if (loader_menu.active) {
-                                                if (loader_menu.item.visible) {
-                                                    loader_menu.item.close()
-                                                    return
-                                                }
-                                            }
-
                                             loader_menu.active = true
 
-                                            loader_menu.item.treeItemId = model.treeItemId
-                                            loader_menu.item.projectId = model.projectId
-                                            loader_menu.item.isOpenable = model.isOpenable
-                                            loader_menu.item.canAddChildTreeItem = model.canAddChildTreeItem
-                                            loader_menu.item.canAddSiblingTreeItem = model.canAddSiblingTreeItem
-                                            loader_menu.item.isCopyable = model.isCopyable
-                                            loader_menu.item.isMovable = model.isMovable
-                                            loader_menu.item.isRenamable = model.isRenamable
-                                            loader_menu.item.isTrashable = model.isTrashable
+                                            if (loader_menu.status ===  Loader.Ready){
+                                                loader_menu.item.treeItemId = model.treeItemId
+                                                loader_menu.item.projectId = model.projectId
+                                                loader_menu.item.isOpenable = model.isOpenable
+                                                loader_menu.item.canAddChildTreeItem = model.canAddChildTreeItem
+                                                loader_menu.item.canAddSiblingTreeItem = model.canAddSiblingTreeItem
+                                                loader_menu.item.isCopyable = model.isCopyable
+                                                loader_menu.item.isMovable = model.isMovable
+                                                loader_menu.item.isRenamable = model.isRenamable
+                                                loader_menu.item.isTrashable = model.isTrashable
 
-                                            loader_menu.item.popup(
-                                                        menuButton,
-                                                        menuButton.x,
-                                                        menuButton.height)
+                                                loader_menu.item.popup(
+                                                            menuButton,
+                                                            menuButton.x,
+                                                            menuButton.height)
+                                            }
+
                                         }
 
-                                        visible: hoverHandler.hovered | draggableContent.isCurrent
+
+                                        //'visible: hoverHandler.hovered | draggableContent.isCurrent
                                     }
+
+
 
                                     SkrToolButton {
                                         id: focusOnBranchButton
@@ -1381,14 +1399,14 @@ OverviewTreeForm {
                                         checked: swipeDelegate.focusOnBranchChecked
 
                                         onCheckedChanged: {
-
-                                            if (focusOnBranchButton.activeFocus) {
+                                            priv.currentTreeItemId = model.treeItemId
+                                            priv.currentProjectId = model.projectId
 
                                                 listView.currentIndex = model.index
                                                 swipeDelegate.forceActiveFocus()
 
                                                 focusOnbranchAction.trigger()
-                                            }
+
                                         }
                                     }
                                 }
@@ -1673,6 +1691,12 @@ OverviewTreeForm {
                 action: setLabelAction
             }
 
+            SkrMenuItem {
+                visible: currentTreeItemId !== -1
+                height: currentTreeItemId !== -1 ? undefined : 0
+                action: setGoalAction
+            }
+
             MenuSeparator {}
             SkrMenuItem {
                 visible: currentTreeItemId !== -1
@@ -1890,6 +1914,30 @@ OverviewTreeForm {
             console.log("sel label", currentProjectId, currentTreeItemId)
             listView.itemAtIndex(currentIndex).editLabel()
         }
+    }
+
+    //-------------------------------------------------------------------------------------
+    Action {
+
+        id: setGoalAction
+        text: qsTr("Set goal")
+        //shortcut: "F2"
+        icon {
+            source: "qrc:///icons/backup/label.svg"
+        }
+        enabled: currentTreeItemId !== -1
+        onTriggered: {
+
+            itemWordGoalDialog.projectId = currentProjectId
+            itemWordGoalDialog.treeItemId = currentTreeItemId
+            itemWordGoalDialog.open()
+            console.log("set goal", currentProjectId, currentTreeItemId)
+
+
+        }
+    }
+    ItemWordGoalDialog{
+        id: itemWordGoalDialog
     }
 
     //-------------------------------------------------------------------------------------

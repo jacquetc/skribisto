@@ -9,9 +9,6 @@ SkrToolbox {
     property alias showNotePadSwitch: showNotePadSwitch
     property alias showTagPadSwitch: showTagPadSwitch
     property alias showOutlineSwitch: showOutlineSwitch
-    property alias showCharacterCountSwitch: showCharacterCountSwitch
-    property alias showWordCountSwitch: showWordCountSwitch
-
     property alias treeItemDisplayModeSlider: treeItemDisplayModeSlider
     property alias treeIndentationSlider: treeIndentationSlider
 
@@ -80,14 +77,6 @@ SkrToolbox {
                         SkrSwitch {
                             id: showTagPadSwitch
                             text: qsTr("Show tags")
-                        }
-                        SkrSwitch {
-                            id: showCharacterCountSwitch
-                            text: qsTr("Show character count")
-                        }
-                        SkrSwitch {
-                            id: showWordCountSwitch
-                            text: qsTr("Show word count")
                         }
                     }
                 }
