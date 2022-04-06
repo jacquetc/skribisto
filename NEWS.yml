@@ -155,3 +155,11 @@ Description:
 - "Add word goals"
 - "Fix plugin path"
 - "Fix Copy paste"
+
+Version: 1.9.36
+Date: 2022-04-06
+Type: stable
+Description:
+- "Fix context menu crashing in Overview"
+- "Add visible word count goals in Overview"
+- "Fix missing color in Overview"
