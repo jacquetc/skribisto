@@ -31,7 +31,7 @@ jobs:
         run: |
           SEMVERSION=$(echo "${{ github.ref_name }}" | sed 's/v//')
           echo ::set-output name=description-output::$(\
-          xmlstarlet select --template --var semvers="'$SEMVERSION'" --value-of "/component/releases/release[@version=$semvers]/description/ul/li" --nl ./eu.skribisto.skribisto.appdata.xml \
+          xmlstarlet select --template --var semvers="'$SEMVERSION'" --value-of '/component/releases/release[@version=$semvers]/description/ul/li' --nl ./eu.skribisto.skribisto.appdata.xml \
           )
         
       - name: Create Release
