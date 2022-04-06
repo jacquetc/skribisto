@@ -55,7 +55,7 @@ Description:
 - "Icons: fix some icons not following the theme"
 - "Distraction free: header bar can now hide"
 - "Writing games: forbid Ctrl+Z"
-
+---
 Version: 1.9.27
 Date: 2021-08-02
 Type: stable
@@ -70,7 +70,7 @@ Description:
 - "Notes: add a quick button to add Notes folder"
 - "Section: add Section page type"
 - "Parameters: add a way to add custom parameters to new pages"
-
+---
 Version: 1.9.28
 Date: 2021-08-09
 Type: stable
@@ -91,14 +91,14 @@ Description:
 - "Section : fix section icons not displaying correctly"
 - "Tags: forbid clicks passing through a color square"
 - "View: fix lack of drop visual clue"
-
+---
 Version: 1.9.29
 Date: 2021-08-13
 Type: stable
 Description:
 - "Scrolling: Fix text scrolling"
 - "Recent: fix close actions"
-
+---
 Version: 1.9.30
 Date: 2021-08-23
 Type: stable
@@ -108,7 +108,7 @@ Description:
 - "Scrolling: Fix scrolling in Welcome menu scrolled the text behind it"
 - "Dictionaries: add missing OpenSSL libraries in Windows"
 - "Docks: save visibility of toolboxes"
-
+---
 Version: 1.9.31
 Date: 2021-08-26
 Type: stable
@@ -116,7 +116,7 @@ Description:
 - "Social medias: add social medias links"
 - "Text: make context menu quicker"
 - "Manual : change URL"
-
+---
 Version: 1.9.32
 Date: 2022-03-13
 Type: stable
@@ -124,7 +124,7 @@ Description:
 - "Migrate to Qt 6.2.3"
 - "Fix mouse clicks not well recognised in Flatpak package"
 - "Remove Plume Crator importer and Quazip"
-
+---
 Version: 1.9.33
 Date: 2022-03-24
 Type: stable
@@ -137,7 +137,7 @@ Description:
 - "Add Ctrl+Wheel to zoom text in text areas"
 - "Add zoom shortcuts to zoom text in text areas"
 - "Add a button to add new dictioinaries from the first time dialog"
-
+---
 Version: 1.9.34
 Date: 2022-03-28
 Type: stable
@@ -147,7 +147,7 @@ Description:
 - "Fix Windows deployement script"
 - "Faster plugins"
 - "Use Qt 6.2.4"
-
+---
 Version: 1.9.35
 Date: 2022-04-05
 Type: stable
@@ -155,7 +155,7 @@ Description:
 - "Add word goals"
 - "Fix plugin path"
 - "Fix Copy paste"
-
+---
 Version: 1.9.36
 Date: 2022-04-06
 Type: stable
