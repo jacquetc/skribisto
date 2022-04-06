@@ -2,6 +2,9 @@
 
 name: Generate Windows package
 
+env:
+  INNO_VERSION: 6.2.0
+
 # Controls when the action will run. 
 on:
   workflow_run:
@@ -25,10 +28,40 @@ jobs:
           
           
 
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2.14.0
+        with:
+          version: '6.2.4'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw81'
+          install-deps: 'true'
+          modules: 'qtcharts'
+          cached: 'false'
+          setup-python: 'false'
+          tools: 'tools_ifw'
+          set-env: 'false'
+          tools-only: 'false'
+          aqtversion: '==2.0.6'
+          py7zrversion: '==0.16.1'
+          extra: '--external 7z'
+          
 
-          
-          
-          
+      - name: Download Inno Setup installer
+        run: curl -L -o installer.exe http://files.jrsoftware.org/is/6/innosetup-${{ env.INNO_VERSION }}.exe
+
+      - name: Install Inno Setup
+        run: ./installer.exe /verysilent /allusers /dir=inst
+
+      - name: Download encryption module
+        run: curl -L -o inst/ISCrypt.dll https://jrsoftware.org/download.php/iscrypt.dll
+            
+
+      - name: Build
+        shell: pwsh
+        run: |
+          .\package\windows\packaging.ps1
+
       - name: Gets latest created release info
         id: latest_release_info
         uses: jossef/action-latest-release-info@v1.2.0
@@ -43,6 +76,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.latest_release_info.outputs.upload_url }}
-          asset_path: ./dist/output.tar
-          asset_name: output_${{ steps.latest_release_info.outputs.tag_name }}.tar
-          asset_content_type: application/x-tar
+          asset_path: ../Output/Skribisto-setup.exe
+          asset_name: Skribisto-setup.exe
