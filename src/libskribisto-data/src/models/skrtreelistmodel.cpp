@@ -227,6 +227,14 @@ QVariant SKRTreeListModel::data(const QModelIndex& index, int role) const
         return item->data(role);
     }
 
+    if (role == SKRTreeItem::Roles::CharCountGoalRole) {
+        return item->data(role);
+    }
+
+    if (role == SKRTreeItem::Roles::WordCountGoalRole) {
+        return item->data(role);
+    }
+
     if (role == SKRTreeItem::Roles::CharCountWithChildrenRole) {
         return item->data(role);
     }
@@ -435,6 +443,8 @@ QHash<int, QByteArray>SKRTreeListModel::roleNames() const {
     roles[SKRTreeItem::Roles::TrashedRole]               = "trashed";
     roles[SKRTreeItem::Roles::WordCountRole]             = "wordCount";
     roles[SKRTreeItem::Roles::CharCountRole]             = "charCount";
+    roles[SKRTreeItem::Roles::WordCountGoalRole]         = "wordCountGoal";
+    roles[SKRTreeItem::Roles::CharCountGoalRole]         = "charCountGoal";
     roles[SKRTreeItem::Roles::WordCountWithChildrenRole] = "wordCountWithChildren";
     roles[SKRTreeItem::Roles::CharCountWithChildrenRole] = "charCountWithChildren";
     roles[SKRTreeItem::Roles::ProjectIsBackupRole]       = "projectIsBackup";
@@ -696,6 +706,14 @@ void SKRTreeListModel::connectToSKRDataSignals()
         if (name == "word_count") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                  SKRTreeItem::Roles::
                                                                  WordCountRole);
+
+        if (name == "char_count_goal") this->exploitSignalFromSKRData(projectId, treeItemCode,
+                                                                 SKRTreeItem::Roles::
+                                                                 CharCountGoalRole);
+
+        if (name == "word_count_goal") this->exploitSignalFromSKRData(projectId, treeItemCode,
+                                                                 SKRTreeItem::Roles::
+                                                                 WordCountGoalRole);
 
         if (name == "char_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                                SKRTreeItem::Roles::

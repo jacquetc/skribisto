@@ -148,11 +148,12 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QS
 
 int main(int argc, char *argv[])
 {
+    QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
+     qInstallMessageHandler(myMessageOutput);
 #if SKR_DEBUG
     QQmlDebuggingEnabler enabler;
 
-    QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
-    qInstallMessageHandler(myMessageOutput);
+
 #endif // SKR_DEBUG
 
     // Allows qml styling

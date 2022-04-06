@@ -70,10 +70,10 @@ Dialog {
         var propertyId = "-2"
         if(spinBox.text === "0" || spinBox.text === ""){
             if(SkrSettings.interfaceSettings.wordCountVisible){
-               propertyId = skrData.treePropertyHub().findPropertyId(dialog.projectId, dialog.treeItemId, "word_goal")
+               propertyId = skrData.treePropertyHub().findPropertyId(dialog.projectId, dialog.treeItemId, "word_count_goal")
             }
             else {
-                propertyId = skrData.treePropertyHub().findPropertyId(dialog.projectId, dialog.treeItemId, "character_goal")
+                propertyId = skrData.treePropertyHub().findPropertyId(dialog.projectId, dialog.treeItemId, "char_count_goal")
             }
             if(propertyId !== "-2"){
                 skrData.treePropertyHub.removeProperty(dialog.projectId, propertyId)
@@ -82,10 +82,10 @@ Dialog {
         else {
 
             if(SkrSettings.interfaceSettings.wordCountVisible){
-               skrData.treePropertyHub().setProperty(dialog.projectId, dialog.treeItemId, "word_goal", spinBox.text, true, false, true)
+               skrData.treePropertyHub().setProperty(dialog.projectId, dialog.treeItemId, "word_count_goal", spinBox.text, true, false, true)
             }
             else {
-                skrData.treePropertyHub().setProperty(dialog.projectId, dialog.treeItemId, "character_goal", spinBox.text, true, false, true)
+                skrData.treePropertyHub().setProperty(dialog.projectId, dialog.treeItemId, "char_count_goal", spinBox.text, true, false, true)
             }
         }
 
@@ -96,10 +96,10 @@ Dialog {
     onAboutToShow: {
         var propertyValue = "0"
         if(SkrSettings.interfaceSettings.wordCountVisible){
-            propertyValue = skrData.treePropertyHub().getProperty(dialog.projectId, dialog.treeItemId, "word_goal", "0")
+            propertyValue = skrData.treePropertyHub().getProperty(dialog.projectId, dialog.treeItemId, "word_count_goal", "0")
         }
         else {
-            propertyValue = skrData.treePropertyHub().getProperty(dialog.projectId, dialog.treeItemId, "character_goal", "0")
+            propertyValue = skrData.treePropertyHub().getProperty(dialog.projectId, dialog.treeItemId, "char_count_goal", "0")
         }
 
         if(propertyValue === "0"){
@@ -115,10 +115,10 @@ Dialog {
     onRejected: {
         var propertyValue = "0"
         if(SkrSettings.interfaceSettings.wordCountVisible){
-            propertyValue = skrData.treePropertyHub().getProperty(dialog.projectId, dialog.treeItemId, "word_goal", "0")
+            propertyValue = skrData.treePropertyHub().getProperty(dialog.projectId, dialog.treeItemId, "word_count_goal", "0")
         }
         else {
-            propertyValue = skrData.treePropertyHub().getProperty(dialog.projectId, dialog.treeItemId, "character_goal", "0")
+            propertyValue = skrData.treePropertyHub().getProperty(dialog.projectId, dialog.treeItemId, "char_count_count", "0")
         }
 
         if(propertyValue === "0"){

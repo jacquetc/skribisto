@@ -28,12 +28,12 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.35" date="2022-04-05T00:00:00Z">
+    <release type="stable" version="1.9.36" date="2022-04-06T00:00:00Z">
       <description>
         <ul>
-          <li>Add word goals</li>
-          <li>Fix plugin path</li>
-          <li>Fix Copy paste</li>
+          <li>Fix context menu crashing in Overview</li>
+          <li>Add visible word count goals in Overview</li>
+          <li>Fix missing color in Overview</li>
         </ul>
       </description>
     </release>

@@ -158,6 +158,18 @@ QVariant SKRTreeItem::data(int role)
                                                      "word_count"));
             break;
 
+        case Roles::CharCountGoalRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, treeItemId,
+                                                     "char_count_goal", "0").toInt());
+            break;
+
+        case Roles::WordCountGoalRole:
+            m_data.insert(role,
+                          m_propertyHub->getProperty(projectId, treeItemId,
+                                                     "word_count_goal", "0").toInt());
+            break;
+
         case Roles::CharCountWithChildrenRole:
             m_data.insert(role,
                           m_propertyHub->getProperty(projectId, treeItemId,

@@ -309,7 +309,7 @@ QString SKRRootItem::trimStyle(const QString &styleValue){
         }
     }
 
-    qDebug() << "final" << final;
+    //qDebug() << "final" << final;
     return final;
 
 }
