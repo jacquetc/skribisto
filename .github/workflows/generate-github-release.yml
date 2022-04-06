@@ -30,9 +30,9 @@ jobs:
         id: last-description
         run: |
           SEMVERSION=$(echo "${{ github.ref_name }}" | sed 's/v//')
-          echo "::set-output name=description-output::$(\
-          xmlstarlet select --template --value-of "/component/releases/release[@version=$SEMVERSION]/description/ul/li" --nl ./eu.skribisto.skribisto.appdata.xml \
-          )"
+          echo ::set-output name=description-output::$(\
+          xmlstarlet select --template --var semvers="'$SEMVERSION'" --value-of "/component/releases/release[@version=$semvers]/description/ul/li" --nl ./eu.skribisto.skribisto.appdata.xml \
+          )
         
       - name: Create Release
         id: create_release
@@ -42,9 +42,9 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           release_name: Release ${{ github.ref_name }}
-          body: |
-            Automated Release by GitHub Action CI
-            
+          body: |           
             ${{ steps.last-description.outputs.description-output }}
+            
+            Automated Release by GitHub Action CI
           draft: false
           prerelease: false
