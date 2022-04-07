@@ -1,3 +1,12 @@
+Version: 1.9.38
+Date: 2022-04-07
+Type: stable
+Description:
+- "Add item icons in Overview"
+- "Show word count goal in Text page"
+- "word count stats ignore non-printable items"
+- "Fix: Property buttons don't reflect in item trees"
+---
 Version: 1.9.37
 Date: 2022-04-07
 Type: stable
