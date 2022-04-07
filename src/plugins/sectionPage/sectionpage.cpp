@@ -63,7 +63,7 @@ SKRResult SectionPage::finaliseAfterCreationOfTreeItem(int projectId, int treeIt
 {
     SKRResult result(this);
 
-    result = skrdata->treePropertyHub()->setProperty(projectId, treeItemId, "can_add_child_paper", "false", true);
+    result = skrdata->treePropertyHub()->setProperty(projectId, treeItemId, "can_add_child_tree_item", "false", true);
 
     QString section_type = m_creationParametersMap.value("section_type", "separator").toString();
     result = skrdata->treePropertyHub()->setProperty(projectId, treeItemId, "section_type", section_type, true);

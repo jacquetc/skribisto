@@ -1349,7 +1349,7 @@ Item {
                                                 ).getProperty(
                                                 model.projectId,
                                                 model.treeItemId,
-                                                "can_add_child_paper",
+                                                "can_add_child_tree_item",
                                                 "true") === "true") {
 
                                         if( root.popupId >= 0){
@@ -1430,7 +1430,7 @@ Item {
                                                 ).getProperty(
                                                 model.projectId,
                                                 model.treeItemId,
-                                                "can_add_child_paper",
+                                                "can_add_child_tree_item",
                                                 "true") === "true") {
                                         goToChildTimer.start()
                                     } else {

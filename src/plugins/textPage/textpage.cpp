@@ -44,7 +44,7 @@ SKRResult TextPage::finaliseAfterCreationOfTreeItem(int projectId, int treeItemI
 {
     SKRResult result(this);
 
-    result = skrdata->treePropertyHub()->setProperty(projectId, treeItemId, "can_add_child_paper", "false", true);
+    result = skrdata->treePropertyHub()->setProperty(projectId, treeItemId, "can_add_child_tree_item", "false", true);
 
 
     return result;

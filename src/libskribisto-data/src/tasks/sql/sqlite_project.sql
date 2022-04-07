@@ -3,7 +3,7 @@
 --
 -- Text encoding used: UTF-8
 --
--- skribisto_db_version:1.8
+-- skribisto_db_version:1.9
 
 PRAGMA foreign_keys = off;
 BEGIN TRANSACTION;
@@ -37,8 +37,8 @@ CREATE TABLE tbl_tag_relationship (l_tag_relationship_id INTEGER PRIMARY KEY ON 
 INSERT INTO tbl_tree (l_tree_id, l_sort_order, l_indent, t_type) VALUES (0, -1, 0, 'PROJECT');
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_renamable', 'BOOL', 'true');
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_movable', 'BOOL', 'false');
-INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_sibling_paper', 'BOOL', 'false');
-INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_child_paper', 'BOOL', 'true');
+INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_sibling_tree_item', 'BOOL', 'false');
+INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_child_tree_item', 'BOOL', 'true');
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_trashable', 'BOOL', 'false');
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_openable', 'BOOL', 'true');
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_copyable', 'BOOL', 'false');

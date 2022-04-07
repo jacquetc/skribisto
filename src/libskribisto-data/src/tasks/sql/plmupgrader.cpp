@@ -811,9 +811,12 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 
 
         IFOKDO(result, SKRSqlTools::executeSQLString(queryStr, sqlDb));
+        IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
 
+        IFOK(result) {
+            dbVersion = newDbVersion;
+        }
 
-        // fill here
     }
     IFKO(result) {
         return result;
@@ -821,12 +824,71 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
 
     // ---------------------------------
 
-    // from 1.7 to 1.8
+    // from 1.8 to 1.9
     if (dbVersion == 1.8) {
         double newDbVersion = 1.9;
 
 
+        QString queryStr =
+            R""""(PRAGMA foreign_keys = 0;
+
+                UPDATE
+                    tbl_tree_property
+                SET
+                    t_name = REPLACE(t_name,'can_add_sibling_paper','can_add_sibling_tree_item');
+
+                UPDATE
+                    tbl_tree_property
+                SET
+                    t_name = REPLACE(t_name,'can_add_child_paper','can_add_child_tree_item');
+
+                UPDATE
+                    tbl_tree_property
+                SET
+                    t_value_type = 'BOOL'
+                WHERE
+                    t_name='can_add_sibling_tree_item' OR t_name='can_add_child_tree_item';
+
+                UPDATE
+                    tbl_tree_property
+                SET
+                    t_value_type = 'INT'
+                WHERE
+                    t_name='word_count_with_children'
+                 OR t_name='word_count'
+                 OR t_name='char_count'
+                 OR t_name='char_count_with_children';
+
+                PRAGMA foreign_keys = 1;
+        )"""";
+
+
+        IFOKDO(result, SKRSqlTools::executeSQLString(queryStr, sqlDb));
+        IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
+
+        IFOK(result) {
+            dbVersion = newDbVersion;
+        }
+    }
+
+    IFKO(result) {
+        return result;
+    }
+    // ---------------------------------
+
+    // from 1.9 to 2.0
+    if (dbVersion == 1.9) {
+        double newDbVersion = 2.0;
+
+
         // fill here
+
+        //IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
+
+//        IFOK(result) {
+//            dbVersion = newDbVersion;
+//        }
+
     }
     IFKO(result) {
         return result;
