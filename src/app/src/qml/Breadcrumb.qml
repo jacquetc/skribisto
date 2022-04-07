@@ -165,7 +165,7 @@ Item {
                                         projectId, treeItemId)
                         } else if (skrData.treePropertyHub().getProperty(
                                        projectId, treeItemId,
-                                       "can_add_child_paper",
+                                       "can_add_child_tree_item",
                                        "true") === "true") {
                             rootWindow.setNavigationTreeItemParentIdCalled(
                                         projectId, treeItemId)

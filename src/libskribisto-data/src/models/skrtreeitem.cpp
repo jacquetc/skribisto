@@ -209,7 +209,7 @@ QVariant SKRTreeItem::data(int role)
         case Roles::CanAddSiblingTreeItemRole:
             m_data.insert(role,
                           m_propertyHub->getProperty(projectId, treeItemId,
-                                                     "can_add_sibling_paper",
+                                                     "can_add_sibling_tree_item",
                                                      "true") == "true" ? true : false);
             break;
 
@@ -217,7 +217,7 @@ QVariant SKRTreeItem::data(int role)
         case Roles::CanAddChildTreeItemRole:
             m_data.insert(role,
                           m_propertyHub->getProperty(projectId, treeItemId,
-                                                     "can_add_child_paper",
+                                                     "can_add_child_tree_item",
                                                      "true") == "true" ? true : false);
             break;
 
