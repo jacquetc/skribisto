@@ -89,6 +89,17 @@ OverviewTreeForm {
     property int moveSourceTreeItemId: -2
     property int moveSourceProjectId: -2
 
+    //-----------------------------------------------------------------------------
+
+
+
+    function getIconUrlFromPageType(type, projectId, treeItemId) {
+        return skrTreeManager.getIconUrlFromPageType(type, projectId, treeItemId)
+    }
+
+
+    //-----------------------------------------------------------------------------
+
     // TreeView item :
     listView.delegate: Component {
         id: swipeDelegateComponent
@@ -658,6 +669,36 @@ OverviewTreeForm {
                                         Layout.fillHeight: true
                                         Layout.preferredWidth: 5
                                         //visible: listView.currentIndex === model.index
+                                    }
+
+                                    SkrToolButton {
+                                        id: treeItemIconIndicator
+                                        //visible: model.projectIsBackup && model.treeItemId === -1
+                                        enabled: true
+                                        focusPolicy: Qt.NoFocus
+                                        implicitHeight: 36 * SkrSettings.interfaceSettings.zoom
+                                        implicitWidth: 36 * SkrSettings.interfaceSettings.zoom
+                                        padding: 0
+                                        rightPadding: 0
+                                        bottomPadding: 0
+                                        leftPadding: 2
+                                        topPadding: 0
+                                        flat: true
+                                        onDownChanged: down = false
+
+                                        onClicked: {
+
+                                        }
+
+                                        icon {
+
+                                            height: 36 * SkrSettings.interfaceSettings.zoom
+                                            width: 36 * SkrSettings.interfaceSettings.zoom
+                                            source: model.otherProperties ? getIconUrlFromPageType(
+                                                                                model.type, model.projectId, model.treeItemId) : getIconUrlFromPageType(
+                                                                                model.type, model.projectId, model.treeItemId)
+
+                                        }
                                     }
 
                                     ColumnLayout {
