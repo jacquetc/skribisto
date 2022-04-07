@@ -163,3 +163,10 @@ Description:
 - "Fix context menu crashing in Overview"
 - "Add visible word count goals in Overview"
 - "Fix missing color in Overview"
+
+---
+Version: 1.9.37
+Date: 2022-04-07
+Type: stable
+Description:
+- "Fix new item can always create a sub-item"
