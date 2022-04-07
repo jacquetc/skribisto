@@ -4,10 +4,22 @@
 SKRStatHub::SKRStatHub(QObject *parent) : QObject(parent)
 {
     connect(skrdata->treeHub(), &SKRTreeHub::trashedChanged,
-            this, &SKRStatHub::setTreeItemTrashed);
+            this, &SKRStatHub::updateTreeItemCounts);
 
     connect(skrdata->treeHub(), &SKRTreeHub::treeItemRemoved,
             this, &SKRStatHub::removeTreeItemFromStat);
+
+    connect(skrdata->treePropertyHub(), &SKRPropertyHub::propertyChanged, this, [this]( int projectId,
+            int            propertyId,
+            int            treeItemCode,
+            const QString& name,
+            const QString& value)
+    {
+        if (name == "printable")
+            updateTreeItemCounts(projectId, treeItemCode);
+
+    }
+    );
 }
 
 int SKRStatHub::getTreeItemTotalCount(SKRStatHub::StatType type, int project)
@@ -15,14 +27,14 @@ int SKRStatHub::getTreeItemTotalCount(SKRStatHub::StatType type, int project)
     int totalCount                                = 0;
     QHash<int, QHash<QString, int> > treeItemHash = m_treeItemHashByProjectHash.value(project,
                                                                                       QHash<int,
-                                                                                            QHash<QString, int> >());
+                                                                                      QHash<QString, int> >());
 
     QHash<int, QHash<QString, int> >::const_iterator i = treeItemHash.constBegin();
 
     while (i != treeItemHash.constEnd()) {
         QHash<QString, int> hash = i.value();
 
-        if (!hash.value("isTrashed", 0)) {
+        if (!hash.value("isTrashed", 0) && hash.value("isPrintable", 1)) {
             switch (type) {
             case SKRStatHub::Character:
                 totalCount += hash.value("characterCount", 0);
@@ -53,6 +65,7 @@ void SKRStatHub::updateWordStats(int  projectId,
 
     // ------------- get trashed
     bool isTrashed = treeHub->getTrashed(projectId, treeItemId);
+    bool isPrintable = propertyHub->getProperty(projectId, treeItemId, "printable", "true") == "true" ? true : false;
 
     // ------------- update word_count
 
@@ -73,6 +86,7 @@ void SKRStatHub::updateWordStats(int  projectId,
         treeItemHash.insert("wordCount", wordCount);
     }
     treeItemHash.insert("isTrashed", isTrashed);
+    treeItemHash.insert("isPrintable", isPrintable);
     projectHash.insert(treeItemId, treeItemHash);
 
     int totalCount = 0;
@@ -102,7 +116,7 @@ void SKRStatHub::updateWordStats(int  projectId,
             int childId                   = i.next();
             QHash<QString, int> childHash = projectHash.value(childId, QHash<QString, int>());
 
-            if (childHash.value("isTrashed", 0)) {
+            if (childHash.value("isTrashed", 0) || !childHash.value("isPrintable", 1)) {
                 i.remove();
             }
         }
@@ -139,6 +153,7 @@ void SKRStatHub::updateCharacterStats(int  projectId,
 
     // ------------- get trashed
     bool isTrashed = treeHub->getTrashed(projectId, treeItemId);
+    bool isPrintable = propertyHub->getProperty(projectId, treeItemId, "printable", "true") == "true" ? true : false;
 
     // ------------- update char_count
 
@@ -160,6 +175,7 @@ void SKRStatHub::updateCharacterStats(int  projectId,
     }
 
     treeItemHash.insert("isTrashed", isTrashed);
+    treeItemHash.insert("isPrintable", isPrintable);
     projectHash.insert(treeItemId, treeItemHash);
 
     int totalCount = 0;
@@ -188,7 +204,7 @@ void SKRStatHub::updateCharacterStats(int  projectId,
             int childId                   = i.next();
             QHash<QString, int> childHash = projectHash.value(childId, QHash<QString, int>());
 
-            if (childHash.value("isTrashed", 0)) {
+            if (childHash.value("isTrashed", 0) || !childHash.value("isPrintable", 1)) {
                 i.remove();
             }
         }
@@ -214,9 +230,8 @@ void SKRStatHub::updateCharacterStats(int  projectId,
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::setTreeItemTrashed(int projectId, int treeItemId, bool isTrashed)
+void SKRStatHub::updateTreeItemCounts(int projectId, int treeItemId)
 {
-    Q_UNUSED(isTrashed)
     updateCharacterStats(projectId, treeItemId);
     updateWordStats(projectId, treeItemId);
 }
@@ -225,8 +240,8 @@ void SKRStatHub::setTreeItemTrashed(int projectId, int treeItemId, bool isTrashe
 
 void SKRStatHub::removeTreeItemFromStat(int projectId, int treeItemId)
 {
-    // if not done, trash it, needed for cleaner calculation
-    setTreeItemTrashed(projectId, treeItemId, true);
+    //  needed for cleaner calculation
+    updateTreeItemCounts(projectId, treeItemId);
 
     // delete ref to treeItemId
     QHash<int, QHash<QString, int> > projectHash = m_treeItemHashByProjectHash.value(projectId);

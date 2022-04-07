@@ -9,7 +9,6 @@ Item {
     property int treeItemId: -1
 
     Component.onCompleted: {
-        listModel.clear()
 
         createVisualAttributes()
 
@@ -19,7 +18,6 @@ Item {
         target: skrData.treePropertyHub()
         function onPropertyChanged(projectId, propertyId, treeItemId, name, value){
             if(projectId === root.projectId && treeItemId === root.treeItemId){
-                listModel.clear()
                 if(name === "printable"){
                     createVisualAttributes()
                 }
@@ -34,7 +32,7 @@ Item {
     }
 
     function createVisualAttributes(){
-
+        listModel.clear()
         var propertyName = "printable"
         if(!(skrData.treePropertyHub().getProperty(projectId, treeItemId, propertyName, "true") === "true"? true : false)){
             listModel.append(createDictFromPropertyName(propertyName))

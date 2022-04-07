@@ -1220,17 +1220,17 @@
 <context>
     <name>ListItemAttributes</name>
     <message>
-        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="70"/>
+        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="68"/>
         <source>Non printable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="76"/>
+        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="74"/>
         <source>Locked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="81"/>
+        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="79"/>
         <source>Favorite</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3366,13 +3366,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="20"/>
-        <source>Plan of %1</source>
+        <location filename="../plugins/textPage/textpage.h" line="115"/>
+        <source>Text page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="130"/>
-        <source>%1 words</source>
+        <location filename="../plugins/textPage/TextPage.qml" line="20"/>
+        <source>Plan of %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3381,8 +3381,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="133"/>
-        <source>%1 characters</source>
+        <location filename="../plugins/textPage/TextPage.qml" line="130"/>
+        <source>%1 words</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3391,43 +3391,43 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../plugins/textPage/TextPage.qml" line="133"/>
+        <source>%1 characters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../plugins/textPage/TextPage.qml" line="183"/>
         <source>Note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="778"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="779"/>
         <source>Show edit toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="795"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="796"/>
         <source>Show properties toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="813"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="814"/>
         <source>Show outline toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="831"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="832"/>
         <source>Show tags toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="903"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="904"/>
         <source>Close quick view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="1120"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="1121"/>
         <source>Open quick view</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../plugins/textPage/textpage.h" line="115"/>
-        <source>Text page</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
