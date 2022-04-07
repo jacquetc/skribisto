@@ -34,9 +34,8 @@ public slots:
 
 private slots:
 
-    void setTreeItemTrashed(int  projectId,
-                            int  treeItemId,
-                            bool isTrashed);
+    void updateTreeItemCounts(int  projectId,
+                            int  treeItemId);
     void removeTreeItemFromStat(int projectId,
                                 int treeItemId);
 

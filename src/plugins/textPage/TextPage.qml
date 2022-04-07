@@ -49,7 +49,7 @@ TextPageForm {
     viewButtons.position: root.position
 
     viewButtons.onOpenInNewWindowCalled: {
-        saveContent()
+        saveContent(true)
         saveCurrentCursorPositionAndY()
         skrWindowManager.insertAdditionalPropertyForViewManager("isSecondary",
                                                                 isSecondary)
@@ -58,7 +58,7 @@ TextPageForm {
     }
 
     viewButtons.onSplitCalled: function (position) {
-        saveContent()
+        saveContent(true)
         saveCurrentCursorPositionAndY()
         viewManager.insertAdditionalProperty("isSecondary", isSecondary)
         viewManager.loadTreeItemAt(projectId, treeItemId, position)
@@ -77,28 +77,29 @@ TextPageForm {
                     countPriv.wordCount = value
                     updateCountLabel()
                 }
-            }
-        }
-    }
-
-    Connections {
-        target: skrData.treePropertyHub()
-        function onPropertyChanged(projectId, propertyId, treeItemId, name, value) {
-            if (projectId === root.projectId
-                    && treeItemId === root.treeItemId) {
-
                 if (name === "char_count") {
                     countPriv.characterCount = value
+                    updateCountLabel()
+                }
+                if (name === "word_count_goal") {
+                    countPriv.wordCountGoal = value
+                    updateCountLabel()
+                }
+                if (name === "char_count_goal") {
+                    countPriv.characterCountGoal = value
                     updateCountLabel()
                 }
             }
         }
     }
 
+
     QtObject {
         id: countPriv
-        property string wordCount: ""
-        property string characterCount: ""
+        property int wordCount: 0
+        property int characterCount: 0
+        property int wordCountGoal: 0
+        property int characterCountGoal: 0
     }
 
 
@@ -111,7 +112,7 @@ TextPageForm {
 
     Connections{
         target: SkrSettings.interfaceSettings
-        function onCharacterCountVisibleChanged(){
+        function onCharCountVisibleChanged(){
             updateCountLabel()
         }
     }
@@ -119,15 +120,17 @@ TextPageForm {
 
     function updateCountLabel() {
         var wordCountString = skrRootItem.toLocaleIntString(countPriv.wordCount)
+        var wordCountGoalString = skrRootItem.toLocaleIntString(countPriv.wordCountGoal)
         var characterCountString = skrRootItem.toLocaleIntString(
                     countPriv.characterCount)
+        var characterCountGoalString = skrRootItem.toLocaleIntString(
+                    countPriv.characterCountGoal)
 
         if(SkrSettings.interfaceSettings.wordCountVisible){
-            countLabel.text = qsTr("%1 words").arg(
-                        wordCountString)
+            countLabel.text =  countPriv.wordCountGoal > 0 ? qsTr("%1 / %2 words").arg(wordCountString).arg(wordCountGoalString) : qsTr("%1 words").arg(wordCountString)
         }
         else if(SkrSettings.interfaceSettings.characterCountVisible){
-            countLabel.text = qsTr("%1 characters").arg(characterCountString)
+            countLabel.text = countPriv.characterCountGoal > 0 ? qsTr("%1 / %2 characters").arg(characterCountString).arg(characterCountGoalString) :qsTr("%1 characters").arg(characterCountString)
         }
         else {
             countLabel.text = ""
@@ -256,7 +259,7 @@ TextPageForm {
         if (root.treeItemId !== -2 && root.projectId !== -2
                 && milestone === -2) {
             contentSaveTimer.stop()
-            saveContent()
+            saveContent(true)
             saveCurrentCursorPositionAndYTimer.stop()
             saveCurrentCursorPositionAndY()
             var uniqueDocumentReference = projectId + "_" + treeItemId + "_"
@@ -571,15 +574,17 @@ TextPageForm {
         if (documentPrivate.contentSaveTimerAllowedToStart) {
             contentSaveTimer.start()
         }
+
+
     }
     Timer {
         id: contentSaveTimer
         repeat: false
-        interval: 200
-        onTriggered: saveContent()
+        interval: 50
+        onTriggered: saveContent(false)
     }
 
-    function saveContent() {
+    function saveContent(sameThread) {
         //console.log("saving text")
         var result
 
@@ -590,10 +595,9 @@ TextPageForm {
                         projectId, treeItemId, skrRootItem.cleanUpHtml(text))
         } else {
             result = skrData.treeHub().setPrimaryContent(
-                        projectId, treeItemId, skrRootItem.cleanUpHtml(text))
-            if (!contentSaveTimer.running)
-                skrTreeManager.updateCharAndWordCount(projectId, treeItemId,
-                                                      root.pageType, true)
+                        projectId, treeItemId, skrRootItem.cleanUpHtml(text))  
+            skrTreeManager.updateCharAndWordCount(projectId, treeItemId,
+                                         root.pageType, sameThread)
         }
 
         if (!result.success) {
@@ -925,7 +929,7 @@ TextPageForm {
                 if (previousTextItemTreeItemId !== -2 && root.projectId !== -2
                         && milestone === -2) {
                     previousContentSaveTimer.stop()
-                    savePreviousContent()
+                    savePreviousContent(true)
                     var uniqueDocumentReference = projectId + "_" + previousTextItemTreeItemId
                             + "_" + (isSecondary ? "secondary" : "primary")
                     skrTextBridge.unsubscribeTextDocument(
@@ -1016,10 +1020,10 @@ TextPageForm {
                 id: previousContentSaveTimer
                 repeat: false
                 interval: 200
-                onTriggered: savePreviousContent()
+                onTriggered: savePreviousContent(false)
             }
 
-            function savePreviousContent() {
+            function savePreviousContent(sameThread) {
                 //console.log("saving text")
                 var result
 
@@ -1031,10 +1035,9 @@ TextPageForm {
                 } else {
                     result = skrData.treeHub().setPrimaryContent(
                                 projectId, previousTextItemTreeItemId, text)
-                    if (!previousContentSaveTimer.running)
-                        skrTreeManager.updateCharAndWordCount(
-                                    projectId, previousTextItemTreeItemId,
-                                    root.pageType, true)
+                    skrTreeManager.updateCharAndWordCount(projectId, previousTextItemTreeItemId,
+                                                          root.pageType, sameThread)
+
                 }
 
                 if (!result.success) {
@@ -1045,6 +1048,7 @@ TextPageForm {
                     //console.log("saving text success", projectId, treeItemId)
                 }
             }
+
 
             //---------------------------------------------------------
             function openPreviousDocument(_projectId, _treeItemId, isSecondary, milestone) {
