@@ -3371,47 +3371,57 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="126"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="130"/>
         <source>%1 words</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../plugins/textPage/TextPage.qml" line="130"/>
+        <source>%1 / %2 words</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/textPage/TextPage.qml" line="133"/>
         <source>%1 characters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="180"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="133"/>
+        <source>%1 / %2 characters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../plugins/textPage/TextPage.qml" line="183"/>
         <source>Note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="775"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="778"/>
         <source>Show edit toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="792"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="795"/>
         <source>Show properties toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="810"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="813"/>
         <source>Show outline toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="828"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="831"/>
         <source>Show tags toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="900"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="903"/>
         <source>Close quick view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/textPage/TextPage.qml" line="1117"/>
+        <location filename="../plugins/textPage/TextPage.qml" line="1120"/>
         <source>Open quick view</source>
         <translation type="unfinished"></translation>
     </message>

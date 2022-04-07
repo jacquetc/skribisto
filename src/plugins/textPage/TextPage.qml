@@ -77,28 +77,29 @@ TextPageForm {
                     countPriv.wordCount = value
                     updateCountLabel()
                 }
-            }
-        }
-    }
-
-    Connections {
-        target: skrData.treePropertyHub()
-        function onPropertyChanged(projectId, propertyId, treeItemId, name, value) {
-            if (projectId === root.projectId
-                    && treeItemId === root.treeItemId) {
-
                 if (name === "char_count") {
                     countPriv.characterCount = value
+                    updateCountLabel()
+                }
+                if (name === "word_count_goal") {
+                    countPriv.wordCountGoal = value
+                    updateCountLabel()
+                }
+                if (name === "char_count_goal") {
+                    countPriv.characterCountGoal = value
                     updateCountLabel()
                 }
             }
         }
     }
 
+
     QtObject {
         id: countPriv
-        property string wordCount: ""
-        property string characterCount: ""
+        property int wordCount: 0
+        property int characterCount: 0
+        property int wordCountGoal: 0
+        property int characterCountGoal: 0
     }
 
 
@@ -119,15 +120,17 @@ TextPageForm {
 
     function updateCountLabel() {
         var wordCountString = skrRootItem.toLocaleIntString(countPriv.wordCount)
+        var wordCountGoalString = skrRootItem.toLocaleIntString(countPriv.wordCountGoal)
         var characterCountString = skrRootItem.toLocaleIntString(
                     countPriv.characterCount)
+        var characterCountGoalString = skrRootItem.toLocaleIntString(
+                    countPriv.characterCountGoal)
 
         if(SkrSettings.interfaceSettings.wordCountVisible){
-            countLabel.text = qsTr("%1 words").arg(
-                        wordCountString)
+            countLabel.text =  countPriv.wordCountGoal > 0 ? qsTr("%1 / %2 words").arg(wordCountString).arg(wordCountGoalString) : qsTr("%1 words").arg(wordCountString)
         }
         else if(SkrSettings.interfaceSettings.characterCountVisible){
-            countLabel.text = qsTr("%1 characters").arg(characterCountString)
+            countLabel.text = countPriv.characterCountGoal > 0 ? qsTr("%1 / %2 characters").arg(characterCountString).arg(characterCountGoalString) :qsTr("%1 characters").arg(characterCountString)
         }
         else {
             countLabel.text = ""
