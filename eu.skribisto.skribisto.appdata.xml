@@ -28,6 +28,16 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release type="stable" version="1.9.38" date="2022-04-07T00:00:00Z">
+      <description>
+        <ul>
+          <li>Add item icons in Overview</li>
+          <li>Show word count goal in Text page</li>
+          <li>word count stats ignore non-printable items</li>
+          <li>Fix: Property buttons don't reflect in item trees</li>
+        </ul>
+      </description>
+    </release>
     <release type="stable" version="1.9.37" date="2022-04-07T00:00:00Z">
       <description>
         <p>Fix new item can always create a sub-item</p>
@@ -39,15 +49,6 @@
           <li>Fix context menu crashing in Overview</li>
           <li>Add visible word count goals in Overview</li>
           <li>Fix missing color in Overview</li>
-        </ul>
-      </description>
-    </release>
-    <release type="stable" version="1.9.35" date="2022-04-05T00:00:00Z">
-      <description>
-        <ul>
-          <li>Add word goals</li>
-          <li>Fix plugin path</li>
-          <li>Fix Copy paste</li>
         </ul>
       </description>
     </release>
