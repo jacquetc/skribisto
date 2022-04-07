@@ -676,8 +676,8 @@ OverviewTreeForm {
                                         //visible: model.projectIsBackup && model.treeItemId === -1
                                         enabled: true
                                         focusPolicy: Qt.NoFocus
-                                        implicitHeight: 36 * SkrSettings.interfaceSettings.zoom
-                                        implicitWidth: 36 * SkrSettings.interfaceSettings.zoom
+                                        implicitHeight: 30 * SkrSettings.interfaceSettings.zoom
+                                        implicitWidth: 30 * SkrSettings.interfaceSettings.zoom
                                         padding: 0
                                         rightPadding: 0
                                         bottomPadding: 0
@@ -692,8 +692,8 @@ OverviewTreeForm {
 
                                         icon {
 
-                                            height: 36 * SkrSettings.interfaceSettings.zoom
-                                            width: 36 * SkrSettings.interfaceSettings.zoom
+                                            height: 30 * SkrSettings.interfaceSettings.zoom
+                                            width: 30 * SkrSettings.interfaceSettings.zoom
                                             source: model.otherProperties ? getIconUrlFromPageType(
                                                                                 model.type, model.projectId, model.treeItemId) : getIconUrlFromPageType(
                                                                                 model.type, model.projectId, model.treeItemId)
