@@ -1,75 +1,80 @@
----
-Version: 1.9.20
-Date: 2021-06-10
+Version: 1.9.37
+Date: 2022-04-07
 Type: stable
 Description:
-- First release on FlatHub
+- "Fix new item can always create a sub-item"
 ---
-Version: 1.9.22
-Date: 2021-06-11
+Version: 1.9.36
+Date: 2022-04-06
 Type: stable
 Description:
-- "Translations: add rough translations for it_IT, pt_BR, es_ES, eo, de_DE, ru_RU"
-- "Navigation: now focus when clicking on the empty part of the list"
-- "Navigation: now select the first item when navigating in a folder"
-- "Dictionaries: add dialog to add dictionaries from Web"
+- "Fix context menu crashing in Overview"
+- "Add visible word count goals in Overview"
+- "Fix missing color in Overview"
 ---
-Version: 1.9.23
-Date: 2021-06-21
+Version: 1.9.35
+Date: 2022-04-05
 Type: stable
 Description:
-- "Overview: add basic plugin without move by drag & drop"
-- "Card view: add basic Card view plugin without move  by drag & drop nor menu"
-- "Windows 10 support: fix deployment script"
-- "Text: stop wheel when the text is smaller than the TextArea"
-- "Highlighter: bring back the colored text because of poor performance of Canvas painting, waiting for bug fix from Qt"
-- "Menu: Add show settings action"
-- "New item dialog: creating a blank item is no longer possible"
-- "Shortcuts: fix menu not appearing when using Alt+[key] shortcuts"
-- "notes: can select a folder dedicated to notes in the project page"
-- "related items: add panel to show related items"
-- "related items: add quick access to notes"
-- "related items: add drag and drop"
-- "animations: add setting for e-papers to stop animations"
-- "Navigation: converted to a plugin"
-- "Plugins: add support project-dependent pages"
+- "Add word goals"
+- "Fix plugin path"
+- "Fix Copy paste"
 ---
-Version: 1.9.25
-Date: 2021-06-22
+Version: 1.9.34
+Date: 2022-03-28
 Type: stable
 Description:
-- "Card view: add drag & drop"
-- "Card view: add tags"
-- "Card view: toolbox manages size, tag and outline"
-- "New item dialog: allow to set the quantity of the item to create"
-- "Breadcrumb: adapt to small size"
-- "Navigation: fix Sort Alphabetically action"
-- "Navigation: Fix cut, copy, paste"
+- "Fix slow scrolling in settings"
+- "Fix writing zone suddenly small"
+- "Fix Windows deployement script"
+- "Faster plugins"
+- "Use Qt 6.2.4"
 ---
-Version: 1.9.26
-Date: 2021-06-24
+Version: 1.9.33
+Date: 2022-03-24
 Type: stable
 Description:
-- "Plugin: create plugin interface for importer"
-- "Navigation: fix restore"
-- "Icons: fix some icons not following the theme"
-- "Distraction free: header bar can now hide"
-- "Writing games: forbid Ctrl+Z"
+- "Fix installation of new dictionaries"
+- "Fix drag and drop of texts"
+- "Add interface zoom in settings"
+- "Resize buttons and menus for a more desktop feel"
+- "Move text settings into its own setting page"
+- "Add Ctrl+Wheel to zoom text in text areas"
+- "Add zoom shortcuts to zoom text in text areas"
+- "Add a button to add new dictioinaries from the first time dialog"
 ---
-Version: 1.9.27
-Date: 2021-08-02
+Version: 1.9.32
+Date: 2022-03-13
 Type: stable
 Description:
-- "Minimap: new minimap scrollbar"
-- "Icons: use bigger and sharper icons"
-- "Pages: creation list of items is sorted"
-- "Druide Antidote: add plugin to use Druide Antidote with text page"
-- "Breadcrumb: make buttons action to go to the beginning/end smoother"
-- "Docks: toolbox top buttons are now in a list"
-- "Notes: fix set note folder does nothing"
-- "Notes: add a quick button to add Notes folder"
-- "Section: add Section page type"
-- "Parameters: add a way to add custom parameters to new pages"
+- "Migrate to Qt 6.2.3"
+- "Fix mouse clicks not well recognised in Flatpak package"
+- "Remove Plume Crator importer and Quazip"
+---
+Version: 1.9.31
+Date: 2021-08-26
+Type: stable
+Description:
+- "Social medias: add social medias links"
+- "Text: make context menu quicker"
+- "Manual : change URL"
+---
+Version: 1.9.30
+Date: 2021-08-23
+Type: stable
+Description:
+- "Text: fix error when closing a text item"
+- "Windows support: fix projects not loading or saving"
+- "Scrolling: Fix scrolling in Welcome menu scrolled the text behind it"
+- "Dictionaries: add missing OpenSSL libraries in Windows"
+- "Docks: save visibility of toolboxes"
+---
+Version: 1.9.29
+Date: 2021-08-13
+Type: stable
+Description:
+- "Scrolling: Fix text scrolling"
+- "Recent: fix close actions"
 ---
 Version: 1.9.28
 Date: 2021-08-09
@@ -92,80 +97,75 @@ Description:
 - "Tags: forbid clicks passing through a color square"
 - "View: fix lack of drop visual clue"
 ---
-Version: 1.9.29
-Date: 2021-08-13
+Version: 1.9.27
+Date: 2021-08-02
 Type: stable
 Description:
-- "Scrolling: Fix text scrolling"
-- "Recent: fix close actions"
+- "Minimap: new minimap scrollbar"
+- "Icons: use bigger and sharper icons"
+- "Pages: creation list of items is sorted"
+- "Druide Antidote: add plugin to use Druide Antidote with text page"
+- "Breadcrumb: make buttons action to go to the beginning/end smoother"
+- "Docks: toolbox top buttons are now in a list"
+- "Notes: fix set note folder does nothing"
+- "Notes: add a quick button to add Notes folder"
+- "Section: add Section page type"
+- "Parameters: add a way to add custom parameters to new pages"
 ---
-Version: 1.9.30
-Date: 2021-08-23
+Version: 1.9.26
+Date: 2021-06-24
 Type: stable
 Description:
-- "Text: fix error when closing a text item"
-- "Windows support: fix projects not loading or saving"
-- "Scrolling: Fix scrolling in Welcome menu scrolled the text behind it"
-- "Dictionaries: add missing OpenSSL libraries in Windows"
-- "Docks: save visibility of toolboxes"
+- "Plugin: create plugin interface for importer"
+- "Navigation: fix restore"
+- "Icons: fix some icons not following the theme"
+- "Distraction free: header bar can now hide"
+- "Writing games: forbid Ctrl+Z"
 ---
-Version: 1.9.31
-Date: 2021-08-26
+Version: 1.9.25
+Date: 2021-06-22
 Type: stable
 Description:
-- "Social medias: add social medias links"
-- "Text: make context menu quicker"
-- "Manual : change URL"
+- "Card view: add drag & drop"
+- "Card view: add tags"
+- "Card view: toolbox manages size, tag and outline"
+- "New item dialog: allow to set the quantity of the item to create"
+- "Breadcrumb: adapt to small size"
+- "Navigation: fix Sort Alphabetically action"
+- "Navigation: Fix cut, copy, paste"
 ---
-Version: 1.9.32
-Date: 2022-03-13
+Version: 1.9.23
+Date: 2021-06-21
 Type: stable
 Description:
-- "Migrate to Qt 6.2.3"
-- "Fix mouse clicks not well recognised in Flatpak package"
-- "Remove Plume Crator importer and Quazip"
+- "Overview: add basic plugin without move by drag & drop"
+- "Card view: add basic Card view plugin without move  by drag & drop nor menu"
+- "Windows 10 support: fix deployment script"
+- "Text: stop wheel when the text is smaller than the TextArea"
+- "Highlighter: bring back the colored text because of poor performance of Canvas painting, waiting for bug fix from Qt"
+- "Menu: Add show settings action"
+- "New item dialog: creating a blank item is no longer possible"
+- "Shortcuts: fix menu not appearing when using Alt+[key] shortcuts"
+- "notes: can select a folder dedicated to notes in the project page"
+- "related items: add panel to show related items"
+- "related items: add quick access to notes"
+- "related items: add drag and drop"
+- "animations: add setting for e-papers to stop animations"
+- "Navigation: converted to a plugin"
+- "Plugins: add support project-dependent pages"
 ---
-Version: 1.9.33
-Date: 2022-03-24
+Version: 1.9.22
+Date: 2021-06-11
 Type: stable
 Description:
-- "Fix installation of new dictionaries"
-- "Fix drag and drop of texts"
-- "Add interface zoom in settings"
-- "Resize buttons and menus for a more desktop feel"
-- "Move text settings into its own setting page"
-- "Add Ctrl+Wheel to zoom text in text areas"
-- "Add zoom shortcuts to zoom text in text areas"
-- "Add a button to add new dictioinaries from the first time dialog"
+- "Translations: add rough translations for it_IT, pt_BR, es_ES, eo, de_DE, ru_RU"
+- "Navigation: now focus when clicking on the empty part of the list"
+- "Navigation: now select the first item when navigating in a folder"
+- "Dictionaries: add dialog to add dictionaries from Web"
 ---
-Version: 1.9.34
-Date: 2022-03-28
+Version: 1.9.20
+Date: 2021-06-10
 Type: stable
 Description:
-- "Fix slow scrolling in settings"
-- "Fix writing zone suddenly small"
-- "Fix Windows deployement script"
-- "Faster plugins"
-- "Use Qt 6.2.4"
+- First release on FlatHub
 ---
-Version: 1.9.35
-Date: 2022-04-05
-Type: stable
-Description:
-- "Add word goals"
-- "Fix plugin path"
-- "Fix Copy paste"
----
-Version: 1.9.36
-Date: 2022-04-06
-Type: stable
-Description:
-- "Fix context menu crashing in Overview"
-- "Add visible word count goals in Overview"
-- "Fix missing color in Overview"
----
-Version: 1.9.37
-Date: 2022-04-07
-Type: stable
-Description:
-- "Fix new item can always create a sub-item"
