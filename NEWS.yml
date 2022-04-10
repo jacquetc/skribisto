@@ -1,3 +1,10 @@
+Version: 1.9.39
+Date: 2022-04-10
+Type: stable
+Description:
+- "Fix missing tabulations"
+- "Fix First Steps Dialog transparency"
+---
 Version: 1.9.38
 Date: 2022-04-07
 Type: stable
