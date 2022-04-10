@@ -1,3 +1,10 @@
+Version: 1.9.40
+Date: 2022-04-11
+Type: stable
+Description:
+- "Copy paste includes sub-items"
+- "Fix crash when drag drop in the empty space below the navigation list"
+---
 Version: 1.9.39
 Date: 2022-04-10
 Type: stable

@@ -178,7 +178,7 @@ public:
     Q_INVOKABLE int       getLastAddedId();
 
     SKRResult             addTreeItem(const QHash<QString, QVariant>& values,
-                                      int                             projectId);
+                                      int                             projectId, bool renumber= true);
     Q_INVOKABLE SKRResult addTreeItemAbove(int            projectId,
                                            int            targetId,
                                            const QString& type);
@@ -252,13 +252,15 @@ public:
                                                              int treeItemId);
 
     Q_INVOKABLE SKRResult duplicateTreeItem(int projectId,
-                                            int treeItemId);
+                                            int treeItemId,
+                                            bool duplicateChildren=true, bool renumber=true);
     Q_INVOKABLE void      cut(int       projectId,
                               QList<int>treeItemIds);
     Q_INVOKABLE void      copy(int       projectId,
                                QList<int>treeItemIds);
     Q_INVOKABLE SKRResult paste(int targetProjectId,
-                                int parentTreeItemId);
+                                int parentTreeItemId,
+                                bool copyChildren=true);
 
     Q_INVOKABLE SKRResult addQuickNote(int            projectId,
                                        int            receiverTreeItemId,

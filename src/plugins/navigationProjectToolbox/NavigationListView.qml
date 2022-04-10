@@ -229,15 +229,28 @@ Item {
         onExited: {
 
         }
-        onDropped: {
+        onDropped: function(drop){
             if (drop.proposedAction === Qt.MoveAction) {
 
                 listView.interactive = true
                 priv.dragging = false
-                skrData.treeHub().moveTreeItemAsChildOf(drag.source.projectId, drag.source.treeItemId, projectId, parentId)
+                console.log("onDropped", drag.source.projectId, drag.source.treeItemId, projectId, parentId)
+                focusZoneMoveTreeItemAsChildOfTimer.sourceProjectId = drag.source.projectId
+                focusZoneMoveTreeItemAsChildOfTimer.sourceTreeItemId = drag.source.treeItemId
+                focusZoneMoveTreeItemAsChildOfTimer.start()
+                //skrData.treeHub().moveTreeItemAsChildOf(drag.source.projectId, drag.source.treeItemId, projectId, parentId)
             }
         }
+        Timer{
+            id: focusZoneMoveTreeItemAsChildOfTimer
 
+            property int sourceProjectId: -1
+            property int sourceTreeItemId: -1
+            interval: 1000
+            onTriggered: {
+                skrData.treeHub().moveTreeItemAsChildOf(sourceProjectId, sourceTreeItemId, projectId, parentId)
+            }
+        }
 
 
 
@@ -2515,7 +2528,8 @@ Item {
                     var result = skrData.treeHub(
                                 ).paste(
                                 menu.projectId,
-                                menu.treeItemId)
+                                menu.treeItemId,
+                                true)
 
                     if (!result.success) {
                         console.debug(
