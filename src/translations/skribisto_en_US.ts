@@ -1039,73 +1039,73 @@
 <context>
     <name>FirstStepsWizard</name>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="308"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="310"/>
         <source>Previous</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="341"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="343"/>
         <source>Next</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="91"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="92"/>
         <source>First steps with Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="114"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="115"/>
         <source>Select a language:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="139"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="140"/>
         <source>Default dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="108"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="109"/>
         <source>This assistant will help you set up Skribisto to your liking. To begin with, please select the best options for your use.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="193"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="194"/>
         <source>Help with accessibility</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../app/src/qml/FirstStepsWizard.qml" line="59"/>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="361"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="363"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="157"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="158"/>
         <source>Install new dictionaries</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="224"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="226"/>
         <source>User manual</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="240"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="242"/>
         <source>Frequently Asked Questions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="103"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="104"/>
         <source>Welcome to Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="270"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="272"/>
         <source>Plugin selection can be changed later in settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="275"/>
+        <location filename="../app/src/qml/FirstStepsWizard.qml" line="277"/>
         <source>Please restart to apply changes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2596,7 +2596,7 @@
 <context>
     <name>SKRRootItem</name>
     <message>
-        <location filename="../app/src/skrrootitem.cpp" line="167"/>
+        <location filename="../app/src/skrrootitem.cpp" line="170"/>
         <source>No translation found.</source>
         <translation type="unfinished"></translation>
     </message>

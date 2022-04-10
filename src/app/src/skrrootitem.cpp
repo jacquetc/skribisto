@@ -9,6 +9,9 @@
 #include <QDebug>
 #include <QDir>
 #include <QTextDocument>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QBrush>
 
 SKRRootItem::SKRRootItem(QObject *parent) : QObject(parent)
 {
@@ -222,70 +225,119 @@ QString SKRRootItem::cleanUpHtml(const QString& html)
     qDebug() << "pre" << html;
 
     QTextDocument doc;
+
     doc.setHtml(html);
 
+
+
     QString text = doc.toHtml();
+
+    QStringList styleToRemoveList;
+    styleToRemoveList << "font-family";
+    styleToRemoveList << "font-size";
+//    styleToRemoveList << "font-style";
+    styleToRemoveList << "margin-left";
+    styleToRemoveList << "margin-right";
+    styleToRemoveList << "margin-top";
+    styleToRemoveList << "margin-bottom";
+    styleToRemoveList << "-qt-block-indent";
+    styleToRemoveList << "-qt-user-state";
+    styleToRemoveList << "text-indent";
+
+    for (const QString& style : qAsConst(styleToRemoveList)) text.remove(QRegularExpression(style + ":.*?;"));
+    text.remove(QRegularExpression("<h[0-9].*?>"));
+    text.remove(QRegularExpression("<h[0-9]>"));
+    return text;
+
+
+
     //qDebug() << "post doc" << text;
 
-    QXmlStreamReader xml(html);
-    QString finalHtml;
-    QXmlStreamWriter finalXml(&finalHtml);
-    QString parentElementName;
-    QStringList nameList;
-    nameList << "body" << "meta" << "html" << "b" << "span" << "i" << "p" << "u" << "s"<< "ul" << "ol" << "li";
+//    QXmlStreamReader xml(html);
+//    QString finalHtml;
+//    QXmlStreamWriter finalXml(&finalHtml);
+//    //finalXml.setAutoFormatting(true);
+//    QString parentElementName;
+//    QStringList nameList;
+//    nameList << "body" << "html" << "b" << "span" << "i" << "p" << "u" << "s"<< "ul" << "ol" << "li";
 
-    finalXml.writeStartDocument();
-    finalXml.writeDTD("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">");
+//    finalXml.writeStartDocument();
+//    finalXml.writeDTD("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">");
 
 
-    while (!xml.atEnd()) {
-        xml.readNext();
+//    while (!xml.atEnd()) {
+//        xml.readNext();
 
-        if(xml.tokenType() == QXmlStreamReader::StartElement){
-            parentElementName = xml.name().toString();
-        }
+//        if(xml.tokenType() == QXmlStreamReader::StartElement){
+//            parentElementName = xml.name().toString();
+//        }
 
-        if(nameList.contains(xml.name()) && xml.tokenType() == QXmlStreamReader::StartElement){
-            finalXml.writeStartElement(xml.name().toString());
-                        //qDebug() << "token" << xml.tokenString();
-                        //qDebug() << "name" << xml.name();
-            //qDebug() << "style" << xml.attributes().value("style");
-            if(!xml.attributes().value("style").isEmpty()){
-                QXmlStreamAttributes attributes;
-                attributes.append("style", trimStyle(xml.attributes().value("style").toString()));
-                finalXml.writeAttributes(attributes);
+//        if(nameList.contains(xml.name()) && xml.tokenType() == QXmlStreamReader::StartElement){
+//            finalXml.writeStartElement(xml.name().toString());
 
-            }
+////            if(parentElementName == "meta"){
+////                if(!xml.attributes().value("charset").isEmpty()){
+////                    QXmlStreamAttributes attributes;
+////                    attributes.append("charset", xml.attributes().value("charset").toString());
+////                    finalXml.writeAttributes(attributes);
+////                }
+////                if(!xml.attributes().value("content").isEmpty()){
+////                    QXmlStreamAttributes attributes;
+////                    attributes.append("content", xml.attributes().value("content").toString());
+////                    finalXml.writeAttributes(attributes);
+////                }
+////            }
+//                        //qDebug() << "token" << xml.tokenString();
+//                        //qDebug() << "name" << xml.name();
+//            //qDebug() << "style" << xml.attributes().value("style");
+//            if(!xml.attributes().value("style").isEmpty()){
+//                QXmlStreamAttributes attributes;
+//                attributes.append("style", trimStyle(xml.attributes().value("style").toString()));
+//                finalXml.writeAttributes(attributes);
 
-        }
+////                if(!xml.attributes().value("type").isEmpty()){
+////                    QXmlStreamAttributes attributes;
+////                    attributes.append("type", xml.attributes().value("type").toString());
+////                    finalXml.writeAttributes(attributes);
+////                }
+//            }
 
-        else if(parentElementName != "html" && parentElementName != "style" && xml.tokenType() == QXmlStreamReader::Characters){
+//        }
 
-            finalXml.writeCharacters(xml.text().toString());
-            //            qDebug() << "token" << xml.tokenString();
-            //            qDebug() << "name" << xml.name();
-            qDebug() << "parentElementName" << parentElementName;
-            qDebug() << "text" << xml.text();
-        }
+//        else if(parentElementName != "html" && parentElementName != "style" && xml.tokenType() == QXmlStreamReader::Characters){
 
-        else if(nameList.contains(xml.name()) && xml.tokenType() == QXmlStreamReader::EndElement){
-            finalXml.writeEndElement();
-        }
-//                qDebug() << "token" << xml.tokenString();
-//                qDebug() << "name" << xml.name();
-        //        qDebug() << "att" << xml.attributes().value("");
-        //        qDebug() << "text" << xml.text();
+////            QString charString = xml.text().toString();
+////            if(charString.contains("\t")){
+////                qDebug() << "TAB HERE";
+////            }
 
-        if (xml.hasError()) {
-        qDebug() << "errors" << xml.errorString() << xml.lineNumber();
-    }
-    }
 
-    finalXml.writeEndDocument();
+//            finalXml.writeCharacters(xml.text().toString());
+//            //            qDebug() << "token" << xml.tokenString();
+//            //            qDebug() << "name" << xml.name();
+//            qDebug() << "parentElementName" << parentElementName;
+//            qDebug() << "text" << xml.text();
 
-    qDebug() << "finalHtml" << finalHtml;
+//        }
 
-    return finalHtml;
+//        else if(nameList.contains(xml.name()) && xml.tokenType() == QXmlStreamReader::EndElement){
+//            finalXml.writeEndElement();
+//        }
+////                qDebug() << "token" << xml.tokenString();
+////                qDebug() << "name" << xml.name();
+//        //        qDebug() << "att" << xml.attributes().value("");
+//        //        qDebug() << "text" << xml.text();
+
+//        if (xml.hasError()) {
+//        qDebug() << "errors" << xml.errorString() << xml.lineNumber();
+//    }
+//    }
+
+//    finalXml.writeEndDocument();
+
+//    qDebug() << "finalHtml" << finalHtml;
+
+    return text;
 }
 
 

@@ -595,7 +595,7 @@ TextPageForm {
                         projectId, treeItemId, skrRootItem.cleanUpHtml(text))
         } else {
             result = skrData.treeHub().setPrimaryContent(
-                        projectId, treeItemId, skrRootItem.cleanUpHtml(text))  
+                        projectId, treeItemId, skrRootItem.cleanUpHtml(text))
             skrTreeManager.updateCharAndWordCount(projectId, treeItemId,
                                          root.pageType, sameThread)
         }
