@@ -243,6 +243,7 @@ QString SKRRootItem::cleanUpHtml(const QString& html)
     styleToRemoveList << "-qt-block-indent";
     styleToRemoveList << "-qt-user-state";
     styleToRemoveList << "text-indent";
+    styleToRemoveList << "color";
 
     for (const QString& style : qAsConst(styleToRemoveList)) text.remove(QRegularExpression(style + ":.*?;"));
     text.remove(QRegularExpression("<h[0-9].*?>"));
