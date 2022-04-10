@@ -35,7 +35,7 @@ jobs:
           git checkout develop
           git config user.name github-actions
           git config user.email github-actions@github.com
-          appstreamcli news-to-metainfo --limit=3 ./NEWS.yml ./eu.skribisto.skribisto.appdata.xml
+          appstreamcli news-to-metainfo --limit=1 ./NEWS.yml ./eu.skribisto.skribisto.appdata.xml
           git add .
           git commit -m "releases in AppData generated"
           git push

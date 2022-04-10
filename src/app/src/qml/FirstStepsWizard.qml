@@ -82,176 +82,180 @@ SkrPopup {
                     }
                 }
 
-                ColumnLayout {
-                    id: welcome
+                Item{
+                    anchors.fill: parent
+                    ColumnLayout {
+                        id: welcome
 
-                    SkrLabel{
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "<h1>" + qsTr("First steps with Skribisto") + "</h1>"
-                    }
-
-                    Image {
-                        id: skribistoImage
-                        Layout.alignment: Qt.AlignHCenter
-                        source: "qrc:///pics/skribisto.png"
-                        Layout.preferredHeight: 200
-                        Layout.preferredWidth: 200
-                    }
-
-                    SkrLabel{
-                        text: qsTr("Welcome to Skribisto")
-                        font.bold: true
-                    }
-
-                    SkrLabel{
-                        text: qsTr("This assistant will help you set up Skribisto to your liking. To begin with, please select the best options for your use.")
-                        font.bold: true
-                    }
-
-                    RowLayout{
                         SkrLabel{
-                            text: qsTr("Select a language:")
-                        }
-                        SkrComboBox {
-                            id: langComboBox
-                            wheelEnabled: true
-                            model: langModel
-                            textRole: "text"
-                            valueRole: "langCode"
-                            onCurrentValueChanged: {
-                                if(langComboBox.activeFocus){
-                                    skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
-                                    skrWindowManager.retranslate()
-                                    //skrData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
-
-                                    checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(langComboBox.currentValue)
-                                }
-                            }
-                        }
-                    }
-
-                    RowLayout {
-                        id: rowLayout5
-
-                        SkrLabel {
-                            id: label
-                            text: qsTr("Default dictionary :")
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "<h1>" + qsTr("First steps with Skribisto") + "</h1>"
                         }
 
-                        SkrComboBox {
-                            id: checkSpellingComboBox
-                            wheelEnabled: true
-                            model: checkSpellingComboBoxModel
-                            textRole: "text"
-                            valueRole: "dictCode"
-                            onCurrentValueChanged: {
-                                if(checkSpellingComboBox.activeFocus){
-                                    SkrSettings.spellCheckingSettings.spellCheckingLangCode = langComboBox.currentValue
-                                }
-                            }
+                        Image {
+                            id: skribistoImage
+                            Layout.alignment: Qt.AlignHCenter
+                            source: "qrc:///pics/skribisto.png"
+                            Layout.preferredHeight: 200
+                            Layout.preferredWidth: 200
                         }
 
-                        SkrButton {
-                            id: installDictButton
-                            text: qsTr("Install new dictionaries")
-
-
-                            Component {
-                                id: component_newDictWizard
-                                NewDictWizard {
-                                    id: newDictWizard
-
-                                    onClosed: loader_newDictWizard.active = false
-                                }
-                            }
-                            Loader {
-                                id: loader_newDictWizard
-                                active: false
-                                sourceComponent: component_newDictWizard
-                            }
-
-                            onClicked: {
-                                loader_newDictWizard.active = true
-                            }
-
-                            Connections {
-                                target: Globals
-                                function onNewDictInstalled(dictName){
-                                    populateCheckSpellingComboBox()
-
-                                }
-                            }
+                        SkrLabel{
+                            text: qsTr("Welcome to Skribisto")
+                            font.bold: true
                         }
 
-
-                    }
-
-
-                    SkrSwitch {
-                        id: accessibilityCheckBox
-                        text: qsTr("Help with accessibility")
-                        checked: SkrSettings.accessibilitySettings.accessibilityEnabled
-                        Binding {
-                            target: SkrSettings.accessibilitySettings
-                            property: "accessibilityEnabled"
-                            value: accessibilityCheckBox.checked
-                            restoreMode: Binding.RestoreBindingOrValue
+                        SkrLabel{
+                            text: qsTr("This assistant will help you set up Skribisto to your liking. To begin with, please select the best options for your use.")
+                            font.bold: true
                         }
-
-                        onCheckedChanged: {
-                            SkrSettings.accessibilitySettings.showMenuButton = accessibilityCheckBox.checked
-                        }
-
-                    }
-
-
-                    Item {
-                        Layout.fillHeight: true
-                    }
-                }
-
-
-                ColumnLayout {
-                    id: shortcutsPage
-
-                    ColumnLayout{
 
                         RowLayout{
-                            SkrButton {
-                                id: userManualToolButton
-                                text: qsTr("User manual")
-                                action: showUserManualAction
-                                icon.height: 90 * SkrSettings.interfaceSettings.zoom
-                                icon.width: 90 * SkrSettings.interfaceSettings.zoom
-
-                                Layout.minimumHeight: 100
-                                Layout.minimumWidth: 200
-                                Layout.fillWidth: true
-                                Layout.maximumWidth: 500 * SkrSettings.interfaceSettings.zoom
-                                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                            SkrLabel{
+                                text: qsTr("Select a language:")
                             }
+                            SkrComboBox {
+                                id: langComboBox
+                                wheelEnabled: true
+                                model: langModel
+                                textRole: "text"
+                                valueRole: "langCode"
+                                onCurrentValueChanged: {
+                                    if(langComboBox.activeFocus){
+                                        skrRootItem.currentTranslationLanguageCode = langComboBox.currentValue
+                                        skrWindowManager.retranslate()
+                                        //skrData.errorHub().addOk(qsTr("Please restart Skribisto to apply the change"))
 
-
-
-                            SkrButton {
-                                id: faqToolButton
-                                text: qsTr("Frequently Asked Questions")
-                                action: showFaqAction
-
-                                icon.height: 90 * SkrSettings.interfaceSettings.zoom
-                                icon.width: 90 * SkrSettings.interfaceSettings.zoom
-
-                                Layout.minimumHeight: 100
-                                Layout.minimumWidth: 200
-                                Layout.fillWidth: true
-                                Layout.maximumWidth: 500 * SkrSettings.interfaceSettings.zoom
-                                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                                        checkSpellingComboBox.currentIndex = checkSpellingComboBox.indexOfValue(langComboBox.currentValue)
+                                    }
+                                }
                             }
                         }
-                    }
 
+                        RowLayout {
+                            id: rowLayout5
+
+                            SkrLabel {
+                                id: label
+                                text: qsTr("Default dictionary :")
+                            }
+
+                            SkrComboBox {
+                                id: checkSpellingComboBox
+                                wheelEnabled: true
+                                model: checkSpellingComboBoxModel
+                                textRole: "text"
+                                valueRole: "dictCode"
+                                onCurrentValueChanged: {
+                                    if(checkSpellingComboBox.activeFocus){
+                                        SkrSettings.spellCheckingSettings.spellCheckingLangCode = langComboBox.currentValue
+                                    }
+                                }
+                            }
+
+                            SkrButton {
+                                id: installDictButton
+                                text: qsTr("Install new dictionaries")
+
+
+                                Component {
+                                    id: component_newDictWizard
+                                    NewDictWizard {
+                                        id: newDictWizard
+
+                                        onClosed: loader_newDictWizard.active = false
+                                    }
+                                }
+                                Loader {
+                                    id: loader_newDictWizard
+                                    active: false
+                                    sourceComponent: component_newDictWizard
+                                }
+
+                                onClicked: {
+                                    loader_newDictWizard.active = true
+                                }
+
+                                Connections {
+                                    target: Globals
+                                    function onNewDictInstalled(dictName){
+                                        populateCheckSpellingComboBox()
+
+                                    }
+                                }
+                            }
+
+
+                        }
+
+
+                        SkrSwitch {
+                            id: accessibilityCheckBox
+                            text: qsTr("Help with accessibility")
+                            checked: SkrSettings.accessibilitySettings.accessibilityEnabled
+                            Binding {
+                                target: SkrSettings.accessibilitySettings
+                                property: "accessibilityEnabled"
+                                value: accessibilityCheckBox.checked
+                                restoreMode: Binding.RestoreBindingOrValue
+                            }
+
+                            onCheckedChanged: {
+                                SkrSettings.accessibilitySettings.showMenuButton = accessibilityCheckBox.checked
+                            }
+
+                        }
+
+
+                        Item {
+                            Layout.fillHeight: true
+                        }
+                    }
                 }
 
+                Item{
+                    ColumnLayout {
+                        id: shortcutsPage
+                        anchors.fill: parent
+
+                        ColumnLayout{
+
+                            RowLayout{
+                                SkrButton {
+                                    id: userManualToolButton
+                                    text: qsTr("User manual")
+                                    action: showUserManualAction
+                                    icon.height: 90 * SkrSettings.interfaceSettings.zoom
+                                    icon.width: 90 * SkrSettings.interfaceSettings.zoom
+
+                                    Layout.minimumHeight: 100
+                                    Layout.minimumWidth: 200
+                                    Layout.fillWidth: true
+                                    Layout.maximumWidth: 500 * SkrSettings.interfaceSettings.zoom
+                                    Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                                }
+
+
+
+                                SkrButton {
+                                    id: faqToolButton
+                                    text: qsTr("Frequently Asked Questions")
+                                    action: showFaqAction
+
+                                    icon.height: 90 * SkrSettings.interfaceSettings.zoom
+                                    icon.width: 90 * SkrSettings.interfaceSettings.zoom
+
+                                    Layout.minimumHeight: 100
+                                    Layout.minimumWidth: 200
+                                    Layout.fillWidth: true
+                                    Layout.maximumWidth: 500 * SkrSettings.interfaceSettings.zoom
+                                    Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                                }
+                            }
+                        }
+
+                    }
+                }
                 Item{
 
                     ColumnLayout{
@@ -432,7 +436,7 @@ SkrPopup {
         var index = checkSpellingComboBox.indexOfValue(value)
         if(index >= 0){
             checkSpellingComboBox.currentIndex = index
-           }
+        }
         else {
             value = skrRootItem.getOnlyLanguageFromLocale(value);
             index = checkSpellingComboBox.indexOfValue(value)
