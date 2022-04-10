@@ -28,11 +28,11 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.39" date="2022-04-10T00:00:00Z">
+    <release type="stable" version="1.9.40" date="2022-04-11T00:00:00Z">
       <description>
         <ul>
-          <li>Fix missing tabulations</li>
-          <li>Fix First Steps Dialog transparency</li>
+          <li>Copy paste includes sub-items</li>
+          <li>Fix crash when drag drop in the empty space below the navigation list</li>
         </ul>
       </description>
     </release>
