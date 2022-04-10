@@ -28,27 +28,11 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.38" date="2022-04-07T00:00:00Z">
+    <release type="stable" version="1.9.39" date="2022-04-10T00:00:00Z">
       <description>
         <ul>
-          <li>Add item icons in Overview</li>
-          <li>Show word count goal in Text page</li>
-          <li>word count stats ignore non-printable items</li>
-          <li>Fix: Property buttons don't reflect in item trees</li>
-        </ul>
-      </description>
-    </release>
-    <release type="stable" version="1.9.37" date="2022-04-07T00:00:00Z">
-      <description>
-        <p>Fix new item can always create a sub-item</p>
-      </description>
-    </release>
-    <release type="stable" version="1.9.36" date="2022-04-06T00:00:00Z">
-      <description>
-        <ul>
-          <li>Fix context menu crashing in Overview</li>
-          <li>Add visible word count goals in Overview</li>
-          <li>Fix missing color in Overview</li>
+          <li>Fix missing tabulations</li>
+          <li>Fix First Steps Dialog transparency</li>
         </ul>
       </description>
     </release>
