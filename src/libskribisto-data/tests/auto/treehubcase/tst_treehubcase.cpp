@@ -82,6 +82,10 @@ private Q_SLOTS:
     void multipleCopyPaste();
     void simpleCopyPasteInTheSameFolder();
 
+    //duplicate
+    void duplicate();
+    void duplicateWithChildren();
+
     // move
     void  moveIntoFolder();
 private:
@@ -726,6 +730,45 @@ void TreeHubCase::simpleCopyPasteInTheSameFolder() {
     int indent = skrdata->treeHub()->getIndent(m_currentProjectId, 14);
 
     QCOMPARE(indent, 3);
+}
+
+void TreeHubCase::duplicate()
+{
+    SKRResult result = skrdata->treeHub()->duplicateTreeItem(m_currentProjectId, 5, false);
+    QList<int> newIdList = result.getData("treeItemIdList",
+                                          QVariant::fromValue<QList<int> >(QList<int>())).value<QList<int> >();
+    QCOMPARE(newIdList.isEmpty(), false);
+    QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
+
+    // original:
+    // 0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 <<
+    // 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23
+    QList<int> wantedIds;
+    wantedIds << 0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << newIdList.first() << 6 << 17 << 18 << 19 << 20 << 7 << 8 <<
+       9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23;
+
+    QCOMPARE(ids, wantedIds);
+}
+
+void TreeHubCase::duplicateWithChildren()
+{
+    SKRResult result = skrdata->treeHub()->duplicateTreeItem(m_currentProjectId, 5, true);
+    QList<int> newIdList = result.getData("treeItemIdList",
+                                          QVariant::fromValue<QList<int> >(QList<int>())).value<QList<int> >();
+
+    QList<int> ids = skrdata->treeHub()->getAllIds(m_currentProjectId);
+
+    // original:
+    // 0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << 6 << 17 << 18 << 19 << 20 <<
+    // 7 << 8 << 9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23
+    QList<int> wantedIds;
+    qDebug() << "newIdList" << newIdList;
+    qDebug() << "ids" << ids;
+    wantedIds << 0 << 2 << 4 << 5 << 13 << 14 << 15 << 16 << newIdList << 6 << 17 << 18 << 19 << 20 << 7 << 8 <<
+       9 << 10 << 11 << 12 << 1 << 3 << 21 << 22 << 23;
+
+    QCOMPARE(ids, wantedIds);
+
 }
 
 void TreeHubCase::multipleCopyPaste() {

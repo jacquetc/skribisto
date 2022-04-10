@@ -1400,37 +1400,37 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2553"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2554"/>
         <source>Add before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2593"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2594"/>
         <source>Add after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2634"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2635"/>
         <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2675"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2676"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2707"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2708"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2744"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2745"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2776"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2777"/>
         <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>

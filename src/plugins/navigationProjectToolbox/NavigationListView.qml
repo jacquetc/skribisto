@@ -2528,7 +2528,8 @@ Item {
                     var result = skrData.treeHub(
                                 ).paste(
                                 menu.projectId,
-                                menu.treeItemId)
+                                menu.treeItemId,
+                                true)
 
                     if (!result.success) {
                         console.debug(

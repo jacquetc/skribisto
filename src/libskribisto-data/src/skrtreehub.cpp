@@ -27,7 +27,7 @@
 #include <QCollator>
 
 SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree"), m_last_added_id(-1), m_cutCopy(
-        CutCopy())
+                                                                                                             CutCopy())
 {
     connect(this,                  &SKRTreeHub::errorSent,        this, &SKRTreeHub::setError, Qt::DirectConnection);
 
@@ -131,6 +131,7 @@ QString SKRTreeHub::getTitle(int projectId, int treeItemId) const
 
 SKRResult SKRTreeHub::setInternalTitle(int projectId, int treeItemId, const QString& internalTitle)
 {
+
     SKRResult result = set(projectId, treeItemId, "t_internal_title", internalTitle);
 
     IFOK(result) {
@@ -629,7 +630,7 @@ int SKRTreeHub::getLastAddedId()
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::addTreeItem(const QHash<QString, QVariant>& values, int projectId)
+SKRResult SKRTreeHub::addTreeItem(const QHash<QString, QVariant>& values, int projectId, bool renumber)
 {
     PLMSqlQueries queries(projectId, m_tableName);
 
@@ -637,7 +638,9 @@ SKRResult SKRTreeHub::addTreeItem(const QHash<QString, QVariant>& values, int pr
     int newId        = -1;
     SKRResult result = queries.add(values, newId);
 
-    IFOKDO(result, queries.renumberSortOrder());
+    if(renumber){
+        IFOKDO(result, queries.renumberSortOrder());
+    }
     IFKO(result) {
         queries.rollback();
     }
@@ -871,7 +874,7 @@ SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId, in
 
     IFOKDO(result, queries.renumberSortOrder())
 
-    IFKO(result) {
+            IFKO(result) {
         queries.rollback();
         emit errorSent(result);
     }
@@ -927,7 +930,7 @@ SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
 
             if (this->getIndent(projectId,
                                 possibleTargetTreeItemId) ==
-                this->getIndent(projectId, treeItemId)) {
+                    this->getIndent(projectId, treeItemId)) {
                 targetTreeItemId = possibleTargetTreeItemId;
                 break;
             }
@@ -948,7 +951,7 @@ SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
     IFOKDO(result, this->moveTreeItem(projectId, treeItemId, targetTreeItemId))
 
 
-    IFKO(result) {
+            IFKO(result) {
         emit errorSent(result);
     }
     return result;
@@ -991,7 +994,7 @@ SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
 
             if (this->getIndent(projectId,
                                 possibleTargetTreeItemId) ==
-                this->getIndent(projectId, treeItemId)) {
+                    this->getIndent(projectId, treeItemId)) {
                 targetTreeItemId = possibleTargetTreeItemId;
                 break;
             }
@@ -1012,7 +1015,7 @@ SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
     IFOKDO(result, this->moveTreeItem(projectId, treeItemId, targetTreeItemId, true))
 
 
-    IFKO(result) {
+            IFKO(result) {
         emit errorSent(result);
     }
     return result;
@@ -1487,7 +1490,7 @@ QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId, bool treeIte
 
     // alone, so no siblings
     if ((minSiblingIndex == treeItemSortedIdIndex) &&
-        (maxSiblingIndex == treeItemSortedIdIndex)) {
+            (maxSiblingIndex == treeItemSortedIdIndex)) {
         return siblingsList;
     }
 
@@ -1740,27 +1743,66 @@ int SKRTreeHub::getPreviousTreeItemIdOfTheSameType(int projectId, int treeItemId
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::duplicateTreeItem(int projectId, int treeItemId)
+SKRResult SKRTreeHub::duplicateTreeItem(int projectId, int treeItemId, bool duplicateChildren, bool renumber)
 {
     SKRResult result(this);
-
-    // TODO: create duplicate
-    int newItemId = -2;
-
+    QList<int> resultTreeItemIdList;
 
     QHash<QString, QVariant> values;
 
+    int validSortOrder = getValidSortOrderAfterTree(projectId, treeItemId);
+
+    if(duplicateChildren && getAllChildren(projectId, treeItemId).count() > 0){
+        validSortOrder -= getAllChildren(projectId, treeItemId).count();
+    }
+
+
     values.insert("t_title",             getTitle(projectId, treeItemId));
     values.insert("l_indent",            getIndent(projectId, treeItemId));
-    values.insert("l_sort_order",        getSortOrder(projectId, treeItemId) + 1);
+    values.insert("l_sort_order",        validSortOrder);
     values.insert("t_type",              getType(projectId, treeItemId));
     values.insert("m_primary_content",   getPrimaryContent(projectId, treeItemId));
     values.insert("m_secondary_content", getSecondaryContent(projectId, treeItemId));
 
-    result = this->addTreeItem(values, projectId);
+    result = this->addTreeItem(values, projectId, false);
 
+    int newTreeItemId = result.getData("treeItemId", -2).toInt();
+    resultTreeItemIdList << newTreeItemId;
+
+    if(duplicateChildren){
+        QList<int> childrenList = getAllChildren(projectId, treeItemId);
+        QList<int> childrenNotTrashed;
+        for(int childId: childrenList){
+            if(!getTrashed(projectId, childId)){
+                childrenNotTrashed.append(childId);
+            }
+        }
+        childrenList = childrenNotTrashed;
+
+        int sortOrderOffset = 1;
+        for(int childId: childrenList){
+
+            QHash<QString, QVariant> childValues;
+
+            childValues.insert("t_title",             getTitle(projectId, childId));
+            childValues.insert("l_indent",            getIndent(projectId, childId));
+            childValues.insert("l_sort_order",        validSortOrder + sortOrderOffset);
+            childValues.insert("t_type",              getType(projectId, childId));
+            childValues.insert("m_primary_content",   getPrimaryContent(projectId, childId));
+            childValues.insert("m_secondary_content", getSecondaryContent(projectId, childId));
+            result = this->addTreeItem(childValues, projectId, false);
+
+            resultTreeItemIdList << result.getData("treeItemId", -2).toInt();
+
+            sortOrderOffset += 1;
+
+        }
+    }
+    if(renumber){
+        IFOKDO(result, renumberSortOrders(projectId))
+    }
     IFOK(result) {
-        result.addData("treeItemId", result.getData("treeItemId", -2));
+        result.addData("treeItemIdList", QVariant::fromValue<QList<int> >(resultTreeItemIdList));
     }
     IFKO(result) {
         emit errorSent(result);
@@ -1810,7 +1852,7 @@ void SKRTreeHub::copy(int projectId, QList<int>treeItemIds)
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::paste(int targetProjectId, int parentTreeItemId)
+SKRResult SKRTreeHub::paste(int targetProjectId, int parentTreeItemId, bool copyChildren)
 {
     SKRResult  result(this);
     QList<int> treeItemIdList;
@@ -1841,14 +1883,15 @@ SKRResult SKRTreeHub::paste(int targetProjectId, int parentTreeItemId)
         else if (m_cutCopy.type == CutCopy::Type::Copy) {
             for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
                 if (targetProjectId == sourceProjectId) {
-                    result = this->duplicateTreeItem(sourceProjectId, treeItemId);
-                    int newTreeItemId = result.getData("treeItemId", -2).toInt();
-                    treeItemIdList << newTreeItemId;
+                    result = this->duplicateTreeItem(sourceProjectId, treeItemId, copyChildren, false);
+                    QList<int> newTreeItemIdList = result.getData("treeItemIdList",
+                                                                  QVariant::fromValue<QList<int> >(QList<int>())).value<QList<int> >();
+                    treeItemIdList << newTreeItemIdList.first();
                     IFOKDO(result,
-                           this->moveTreeItemAsChildOf(sourceProjectId, newTreeItemId, targetProjectId,
+                           this->moveTreeItemAsChildOf(sourceProjectId, newTreeItemIdList.first(), targetProjectId,
                                                        parentTreeItemId,
                                                        false))
-                    result = this->renumberSortOrders(targetProjectId);
+                            result = this->renumberSortOrders(targetProjectId);
                 }
 
                 // TODO: case if projects are different
