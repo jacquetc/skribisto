@@ -28,12 +28,9 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.40" date="2022-04-11T00:00:00Z">
+    <release type="stable" version="1.9.41" date="2022-04-11T00:00:00Z">
       <description>
-        <ul>
-          <li>Copy paste includes sub-items</li>
-          <li>Fix crash when drag drop in the empty space below the navigation list</li>
-        </ul>
+        <p>Quick fix: First Dialog crash</p>
       </description>
     </release>
   </releases>
