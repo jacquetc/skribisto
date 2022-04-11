@@ -83,9 +83,9 @@ SkrPopup {
                 }
 
                 Item{
-                    anchors.fill: parent
                     ColumnLayout {
                         id: welcome
+                        anchors.fill: parent
 
                         SkrLabel{
                             Layout.alignment: Qt.AlignHCenter
