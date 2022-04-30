@@ -221,8 +221,8 @@ QString SKRRootItem::getWritableAddonsPathsListDir() const {
 QString SKRRootItem::cleanUpHtml(const QString& html)
 {
     //    QString text = html;
-    qDebug() << "§§§§§§§§§§§§§§§§§§§§§§§§";
-    qDebug() << "pre" << html;
+    //qDebug() << "§§§§§§§§§§§§§§§§§§§§§§§§";
+    //qDebug() << "pre" << html;
 
     QTextDocument doc;
 

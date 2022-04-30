@@ -86,7 +86,7 @@ private:
     // fix bug when hunspell gives me latin1 encoded results on several Linux
     // systems :
     QString testHunspellForEncoding();
-    void    addWordToDict(const QString& word);
+    void    addWordToDict(const QString& word, const QString &affix);
     Hunspell *m_hunspell;
     bool m_isActive, m_hunspellLaunched;
     QStringList m_userDict;

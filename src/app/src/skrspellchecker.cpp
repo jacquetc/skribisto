@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QStringList>
+#include <QList>
 #include <QDebug>
 #include <QDir>
 #include <QCoreApplication>
@@ -183,16 +184,29 @@ QStringList SKRSpellChecker::suggest(const QString& word)
 // NOTE maybe useless
 void SKRSpellChecker::ignoreWord(const QString& word)
 {
-    addWordToDict(word);
+    addWordToDict(word, "");
 }
 
-void SKRSpellChecker::addWordToDict(const QString& word)
+void SKRSpellChecker::addWordToDict(const QString& word, const QString& affix)
 {
     if (word == "") return;
 
-    if (m_encodingFix == "latin1") m_hunspell->add(word.toLatin1().toStdString());
+    qDebug() << "word added to user dict" << word << affix;
 
-    if (m_encodingFix == "utf8") m_hunspell->add(word.toUtf8().toStdString());
+    if(affix.isEmpty()){
+
+        if (m_encodingFix == "latin1") m_hunspell->add(word.toLatin1().toStdString());
+
+        if (m_encodingFix == "utf8") m_hunspell->add(word.toUtf8().toStdString());
+
+    }
+    else{
+
+        if (m_encodingFix == "latin1") m_hunspell->add_with_affix(word.toLatin1().toStdString(), affix.toLatin1().toStdString());
+
+        if (m_encodingFix == "utf8") m_hunspell->add_with_affix(word.toUtf8().toStdString(), affix.toUtf8().toStdString());
+
+    }
 }
 
 // ---------------------------------------------------------------------------------
@@ -204,7 +218,25 @@ void SKRSpellChecker::addWordToUserDict(const QString& word, bool emitSignal)
         return;
     }
 
-    addWordToDict(word);
+    QString affix = "";
+    qDebug() << "m_langCode" << m_langCode;
+    if(m_langCode.contains("en")){
+        affix = "M";
+    }
+
+
+    addWordToDict(word, affix);
+    std::vector<std::string> stringVector = m_hunspell->suffix_suggest(word.toUtf8().toStdString());
+    QList<std::string> stringList;
+    stringList.reserve(stringVector.size());
+    std::copy(stringVector.begin(), stringVector.end(), std::back_inserter(stringList));
+
+    QStringList suffixList;
+    for(const std::string &str : stringList){
+        qDebug()<< "suffix_suggest" << QString::fromStdString(str);
+    }
+
+
 
     if (!m_userDict.contains(word)) {
         m_userDict.append(word);
@@ -394,6 +426,7 @@ void SKRSpellChecker::setLangCode(const QString& newLangCode)
         qWarning() << QString("Dict %1 not found, using en_US").arg(newLangCode);
     }
     this->setDict(dictPath);
+    m_langCode = newLangCode;
 
 
     emit langCodeChanged(newLangCode);
