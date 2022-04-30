@@ -3442,13 +3442,13 @@
 <context>
     <name>ThemePage</name>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="17"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="15"/>
         <location filename="../plugins/themePage/themepage.h" line="71"/>
         <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="480"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="437"/>
         <source>Edit color</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3458,57 +3458,57 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="182"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="167"/>
         <source>Light</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="196"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="182"/>
         <source>Dark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="182"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="167"/>
         <source>Set as light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="196"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="182"/>
         <source>Set as dark theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="211"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="199"/>
         <source>Set as distraction free theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="160"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="146"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="232"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="217"/>
         <source>Rename a theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="296"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="272"/>
         <source>Remove a theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="297"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="273"/>
         <source>Do you really want to remove the theme &quot;%1&quot;?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="520"/>
-        <source>Primary text %1</source>
+        <location filename="../plugins/themePage/ThemePage.qml" line="471"/>
+        <source>Primary text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePage.qml" line="211"/>
+        <location filename="../plugins/themePage/ThemePage.qml" line="199"/>
         <source>Distraction free</source>
         <translation type="unfinished"></translation>
     </message>

@@ -1,0 +1,32 @@
+{
+    "colors": {
+        "": "",
+        "accent": "#b56c17",
+        "buttonBackground": "#0e0e0e",
+        "buttonForeground": "#b1b1b1",
+        "buttonIcon": "#e2e2e2",
+        "buttonIconDisabled": "#414141",
+        "divider": "#9a9996",
+        "findHighlight": "#ffff00",
+        "listItemBackground": "#525252",
+        "mainTextAreaBackground": "#282525",
+        "mainTextAreaForeground": "#deddda",
+        "menuBackground": "#313131",
+        "minimapFindHighlight": "#ffff00",
+        "minimapOtherHighlight_1": "#8bc34a",
+        "minimapOtherHighlight_2": "",
+        "minimapOtherHighlight_3": "",
+        "minimapSpellCheckHighlight": "#7f7f7f",
+        "otherHighlight_1": "",
+        "otherHighlight_2": "",
+        "otherHighlight_3": "",
+        "pageBackground": "#313131",
+        "pageToolBarBackground": "#404142",
+        "secondaryTextAreaBackground": "#282525",
+        "secondaryTextAreaForeground": "#deddda",
+        "spellCheckHighlight": "#e66100",
+        "toolBarBackground": "#4a4842"
+    },
+    "isEditable": false,
+    "themeName": "The Answer to Snowblind"
+}

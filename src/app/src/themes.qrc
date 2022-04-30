@@ -3,5 +3,7 @@
         <file>themes/default-light.json</file>
         <file>themes/space-opera-theme.json</file>
         <file>themes/default-dark.json</file>
+        <file>themes/the-answer-to-snowblind.json</file>
+        <file>themes/snowblind.json</file>
     </qresource>
 </RCC>
