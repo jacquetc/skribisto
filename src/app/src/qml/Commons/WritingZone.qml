@@ -40,7 +40,7 @@ WritingZoneForm {
     }
     property string placeholderText: ""
     onPlaceholderTextChanged: {
-                textArea.placeholderText = placeholderText
+        textArea.placeholderText = placeholderText
     }
     // clipboard :
     SKRClipboard {
@@ -60,36 +60,37 @@ WritingZoneForm {
     property bool active: false
 
     onActiveChanged: {
+
         //console.log("active",active )
     }
 
-    Timer{
+    Timer {
         id: deactivateTimer
         interval: 200
         onTriggered: {
             root.active = false
         }
     }
-    //-------------------------------------------------
 
+    //-------------------------------------------------
     property int contentY: 0
 
-    Binding{
-        when: !active || leftScrollFlickable.active || rightScrollFlickable.active
+    Binding {
+        when: !active || leftScrollFlickable.active
+              || rightScrollFlickable.active
         target: flickable
         property: "contentY"
         value: root.contentY
         restoreMode: Binding.RestoreNone
-
     }
 
-    Binding{
-        when: active && !leftScrollFlickable.active && !rightScrollFlickable.active
+    Binding {
+        when: active && !leftScrollFlickable.active
+              && !rightScrollFlickable.active
         target: root
         property: "contentY"
         value: flickable.contentY
         restoreMode: Binding.RestoreNone
-
     }
 
     //-------------------------------------------------
@@ -216,7 +217,7 @@ WritingZoneForm {
     //-----------------------------------------------------------
     // ---------context menu :----------------------------------
     //-----------------------------------------------------------
-    textArea.onPressed: function(event) {
+    textArea.onPressed: function (event) {
         if (event.buttons === Qt.RightButton) {
             callTextAreaContextMenu(event.x, event.y)
         }
@@ -584,7 +585,6 @@ WritingZoneForm {
                 SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.connect(
                             determineSpellCheckerActivation)
                 determineSpellCheckerActivation()
-
             }
         }
         Component.onDestruction: {
@@ -627,9 +627,13 @@ WritingZoneForm {
     }
 
     function determineSpellCheckerActivation() {
-        var value = SkrSettings.spellCheckingSettings.spellCheckingActivation
-        highlighter.spellChecker.activate(
-                    SkrSettings.spellCheckingSettings.spellCheckingActivation)
+        var activated = SkrSettings.spellCheckingSettings.spellCheckingActivation
+
+        if (activated) {
+            highlighter.spellChecker.activate(false)
+            highlighter.spellChecker.activate(true)
+        }
+
         highlighter.rehighlight()
 
         // needed to "shake" the highlighter
@@ -663,7 +667,7 @@ WritingZoneForm {
             setProjectDictInSpellChecker(projectId)
         }
 
-        highlighter.rehighlight()
+        determineSpellCheckerActivation()
         //console.log("langCode :", langCode)
     }
 
@@ -694,39 +698,29 @@ WritingZoneForm {
     }
 
     // scrollView :
-
-
     leftScrollFlickable.onActiveChanged: {
-            root.active = leftScrollFlickable.active
+        root.active = leftScrollFlickable.active
     }
 
     rightScrollFlickable.onActiveChanged: {
         root.active = rightScrollFlickable.active
     }
 
-    flickable.onContentYChanged:{
+    flickable.onContentYChanged: {
 
-        if(textArea.active){
+        if (textArea.active) {
             root.active = true
-            if(deactivateTimer.running){
+            if (deactivateTimer.running) {
                 deactivateTimer.stop()
             }
             deactivateTimer.start()
         }
     }
 
-
-
-
-
-
-
-
     //--------------------------------------------------------------------------------
     //--------Page Up/Down-------------------------------------------------------------
     //--------Text centering----------------------------------------------------------
     //--------------------------------------------------------------------------------
-
     property alias contentYBehaviorEnabled: contentYBehavior.enabled
     textArea.viewHeight: flickable.height - textArea.topPadding - textArea.bottomPadding
 
@@ -734,9 +728,8 @@ WritingZoneForm {
         target: textArea
         function onMoveViewYCalled(height, animationEnabled) {
 
-
             root.active = true
-            if(deactivateTimer.running){
+            if (deactivateTimer.running) {
                 deactivateTimer.stop()
             }
             deactivateTimer.start()
@@ -766,12 +759,9 @@ WritingZoneForm {
                 flickable.contentY = flickable.contentHeight - textArea.viewHeight
                 contentYBehavior.enabled = true
                 return
-            }
-            else if(flickable.contentHeight < textArea.height){
+            } else if (flickable.contentHeight < textArea.height) {
                 return
             }
-
-
 
             // normal move
             flickable.contentY += value
@@ -797,7 +787,7 @@ WritingZoneForm {
         acceptedModifiers: Qt.NoModifier
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         target: leftScrollItem
-        onWheel: function(event) {
+        onWheel: function (event) {
             textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
         }
     }
@@ -807,7 +797,7 @@ WritingZoneForm {
         acceptedModifiers: Qt.NoModifier
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         target: rightScrollItem
-        onWheel: function(event) {
+        onWheel: function (event) {
             textArea.moveViewYCalled(-event.angleDelta.y / 2, false)
         }
     }
@@ -817,160 +807,159 @@ WritingZoneForm {
     //--------------------------------------------------------------
     //--------Highlighter---------------------------------------------
     //--------------------------------------------------------------
-//    property rect visibleRect: Qt.rect(0, 0, 0, 0)
-//    //--------------------------------------------------------------------------------
-//    flickable.onContentYChanged: determineVisibleRect()
+    //    property rect visibleRect: Qt.rect(0, 0, 0, 0)
+    //    //--------------------------------------------------------------------------------
+    //    flickable.onContentYChanged: determineVisibleRect()
 
-//    function determineVisibleRect() {
-//        visibleRect = Qt.rect(flickable.contentX, flickable.contentY,
-//                              flickable.contentWidth, flickable.contentHeight)
-//    }
+    //    function determineVisibleRect() {
+    //        visibleRect = Qt.rect(flickable.contentX, flickable.contentY,
+    //                              flickable.contentWidth, flickable.contentHeight)
+    //    }
 
-//    function paintUnderlineForSpellcheck(positionList, blockBegin, blockEnd, uniqueBlock) {
-//        if (paintUnderlineForSpellcheckTimer.running) {
-//            paintUnderlineForSpellcheckTimer.stop()
-//        }
+    //    function paintUnderlineForSpellcheck(positionList, blockBegin, blockEnd, uniqueBlock) {
+    //        if (paintUnderlineForSpellcheckTimer.running) {
+    //            paintUnderlineForSpellcheckTimer.stop()
+    //        }
 
-//        paintUnderlineForSpellcheckTimer.positionList = positionList
-//        paintUnderlineForSpellcheckTimer.blockBegin = blockBegin
-//        paintUnderlineForSpellcheckTimer.blockEnd = blockEnd
-//        paintUnderlineForSpellcheckTimer.uniqueBlock = uniqueBlock
-//        paintUnderlineForSpellcheckTimer.start()
-//    }
-//    Timer {
-//        id: paintUnderlineForSpellcheckTimer
-//        property var positionList
-//        property int blockBegin
-//        property int blockEnd
-//        property bool uniqueBlock
+    //        paintUnderlineForSpellcheckTimer.positionList = positionList
+    //        paintUnderlineForSpellcheckTimer.blockBegin = blockBegin
+    //        paintUnderlineForSpellcheckTimer.blockEnd = blockEnd
+    //        paintUnderlineForSpellcheckTimer.uniqueBlock = uniqueBlock
+    //        paintUnderlineForSpellcheckTimer.start()
+    //    }
+    //    Timer {
+    //        id: paintUnderlineForSpellcheckTimer
+    //        property var positionList
+    //        property int blockBegin
+    //        property int blockEnd
+    //        property bool uniqueBlock
 
-//        interval: 20
-//        onTriggered: {
-//            determineVisibleRect()
-//            canvas.positionList = positionList
-//            canvas.blockBegin = blockBegin
-//            canvas.blockEnd = blockEnd
-//            canvas.uniqueBlock = uniqueBlock
-//            canvas.requestPaint()
-//        }
-//    }
+    //        interval: 20
+    //        onTriggered: {
+    //            determineVisibleRect()
+    //            canvas.positionList = positionList
+    //            canvas.blockBegin = blockBegin
+    //            canvas.blockEnd = blockEnd
+    //            canvas.uniqueBlock = uniqueBlock
+    //            canvas.requestPaint()
+    //        }
+    //    }
 
-//    Connections {
-//        target: SkrSettings.spellCheckingSettings
-//        function onSpellCheckingActivationChanged() {
-//            canvas.spellcheckEnabled = SkrSettings.spellCheckingSettings.spellCheckingActivation
-//            if (canvas.available) {
-//                canvas.requestPaint()
-//            }
-//        }
-//    }
+    //    Connections {
+    //        target: SkrSettings.spellCheckingSettings
+    //        function onSpellCheckingActivationChanged() {
+    //            canvas.spellcheckEnabled = SkrSettings.spellCheckingSettings.spellCheckingActivation
+    //            if (canvas.available) {
+    //                canvas.requestPaint()
+    //            }
+    //        }
+    //    }
 
-//    onVisibleRectChanged: {
-//        canvas.spellcheckEnabled = SkrSettings.spellCheckingSettings.spellCheckingActivation
-//        if (canvas.available) {
-//            canvas.requestPaint()
-//        }
-//    }
+    //    onVisibleRectChanged: {
+    //        canvas.spellcheckEnabled = SkrSettings.spellCheckingSettings.spellCheckingActivation
+    //        if (canvas.available) {
+    //            canvas.requestPaint()
+    //        }
+    //    }
 
-//    Canvas {
-//        id: canvas
-//        parent: scrollView
-//        anchors.fill: parent
+    //    Canvas {
+    //        id: canvas
+    //        parent: scrollView
+    //        anchors.fill: parent
 
-//        //renderStrategy: Canvas.Immediate
-//        //renderTarget: Canvas.FramebufferObject
-//        property var positionList: []
-//        property int blockBegin: -1
-//        property int blockEnd: -1
-//        property bool uniqueBlock: false
-//        property bool spellcheckEnabled: true
+    //        //renderStrategy: Canvas.Immediate
+    //        //renderTarget: Canvas.FramebufferObject
+    //        property var positionList: []
+    //        property int blockBegin: -1
+    //        property int blockEnd: -1
+    //        property bool uniqueBlock: false
+    //        property bool spellcheckEnabled: true
 
-//        onPaint: {
+    //        onPaint: {
 
-//            var pointList = []
-//            var charWidthList = []
-//            var visiblePositionList = []
+    //            var pointList = []
+    //            var charWidthList = []
+    //            var visiblePositionList = []
 
-//            //console.log(positionList)
-//            for (var i = 0; i < positionList.length; i++) {
-//                var position = positionList[i]
-//                var rectangle = textArea.positionToRectangle(position)
+    //            //console.log(positionList)
+    //            for (var i = 0; i < positionList.length; i++) {
+    //                var position = positionList[i]
+    //                var rectangle = textArea.positionToRectangle(position)
 
-//                if (rectangle.y + rectangle.height > visibleRect.y
-//                        && rectangle.y + rectangle.height < visibleRect.y + visibleRect.height) {
-//                    visiblePositionList.push(position)
-//                }
+    //                if (rectangle.y + rectangle.height > visibleRect.y
+    //                        && rectangle.y + rectangle.height < visibleRect.y + visibleRect.height) {
+    //                    visiblePositionList.push(position)
+    //                }
 
-//                //            if(rectangle.height < font.pointSize){
-//                //               return
-//            }
-//            for (var j = 0; j < visiblePositionList.length; j++) {
-//                var position2 = visiblePositionList[j]
-//                var rectangle2 = textArea.positionToRectangle(position2)
-//                var nextRectangle = textArea.positionToRectangle(position2 + 1)
-//                pointList.push(
-//                            Qt.point(
-//                                rectangle2.x,
-//                                rectangle2.y + rectangle2.height - visibleRect.y))
-//                var charWidth = nextRectangle.x - rectangle2.x
-//                if (charWidth < 0) {
-//                    charWidthList.push(charWidthList[charWidthList.lenght - 1])
-//                } else {
-//                    charWidthList.push(charWidth)
-//                }
-//            }
+    //                //            if(rectangle.height < font.pointSize){
+    //                //               return
+    //            }
+    //            for (var j = 0; j < visiblePositionList.length; j++) {
+    //                var position2 = visiblePositionList[j]
+    //                var rectangle2 = textArea.positionToRectangle(position2)
+    //                var nextRectangle = textArea.positionToRectangle(position2 + 1)
+    //                pointList.push(
+    //                            Qt.point(
+    //                                rectangle2.x,
+    //                                rectangle2.y + rectangle2.height - visibleRect.y))
+    //                var charWidth = nextRectangle.x - rectangle2.x
+    //                if (charWidth < 0) {
+    //                    charWidthList.push(charWidthList[charWidthList.lenght - 1])
+    //                } else {
+    //                    charWidthList.push(charWidth)
+    //                }
+    //            }
 
-//            if (uniqueBlock) {
-//                var blockBeginRectangle = textArea.positionToRectangle(
-//                            blockBegin)
-//                var blockEndRectangle = textArea.positionToRectangle(blockEnd)
-//                var blockRectangle = Qt.rect(
-//                            0, blockBeginRectangle.y - visibleRect.y,
-//                            canvas.width,
-//                            blockEndRectangle.y - blockBeginRectangle.y
-//                            + blockBeginRectangle.height)
-//            }
+    //            if (uniqueBlock) {
+    //                var blockBeginRectangle = textArea.positionToRectangle(
+    //                            blockBegin)
+    //                var blockEndRectangle = textArea.positionToRectangle(blockEnd)
+    //                var blockRectangle = Qt.rect(
+    //                            0, blockBeginRectangle.y - visibleRect.y,
+    //                            canvas.width,
+    //                            blockEndRectangle.y - blockBeginRectangle.y
+    //                            + blockBeginRectangle.height)
+    //            }
 
-//            var ctx = getContext("2d")
-//            ctx.setLineDash([2, 4])
-//            ctx.strokeStyle = SkrTheme.spellcheck
-//            ctx.beginPath()
+    //            var ctx = getContext("2d")
+    //            ctx.setLineDash([2, 4])
+    //            ctx.strokeStyle = SkrTheme.spellcheck
+    //            ctx.beginPath()
 
-//            if (uniqueBlock) {
-//                ctx.clearRect(blockRectangle.x, blockRectangle.y,
-//                              blockRectangle.width, blockRectangle.height)
-//            } else {
-//                ctx.clearRect(0, 0, canvas.width, canvas.height)
-//            }
-//            if (spellcheckEnabled) {
-//                for (var k = 0; k < pointList.length; k++) {
-//                    var spellcheckPoint = pointList[k]
+    //            if (uniqueBlock) {
+    //                ctx.clearRect(blockRectangle.x, blockRectangle.y,
+    //                              blockRectangle.width, blockRectangle.height)
+    //            } else {
+    //                ctx.clearRect(0, 0, canvas.width, canvas.height)
+    //            }
+    //            if (spellcheckEnabled) {
+    //                for (var k = 0; k < pointList.length; k++) {
+    //                    var spellcheckPoint = pointList[k]
 
-//                    ctx.moveTo(spellcheckPoint.x, spellcheckPoint.y)
-//                    ctx.lineTo(spellcheckPoint.x + charWidthList[k],
-//                               spellcheckPoint.y)
-//                    ctx.moveTo(spellcheckPoint.x, spellcheckPoint.y + 1)
-//                    ctx.lineTo(spellcheckPoint.x + charWidthList[k],
-//                               spellcheckPoint.y + 1)
-//                }
+    //                    ctx.moveTo(spellcheckPoint.x, spellcheckPoint.y)
+    //                    ctx.lineTo(spellcheckPoint.x + charWidthList[k],
+    //                               spellcheckPoint.y)
+    //                    ctx.moveTo(spellcheckPoint.x, spellcheckPoint.y + 1)
+    //                    ctx.lineTo(spellcheckPoint.x + charWidthList[k],
+    //                               spellcheckPoint.y + 1)
+    //                }
 
-//                ctx.stroke()
-//            }
-//        }
-//    }
+    //                ctx.stroke()
+    //            }
+    //        }
+    //    }
     //focus :
     onActiveFocusChanged: {
         if (activeFocus) {
-            if(priv.forceActiveFocusEnabled){
+            if (priv.forceActiveFocusEnabled) {
                 textArea.forceActiveFocus()
             }
-
         } else {
 
         }
     }
 
-    QtObject{
+    QtObject {
         id: priv
         property bool forceActiveFocusEnabled: true
     }
@@ -982,9 +971,8 @@ WritingZoneForm {
     findPanel.highlighter: documentHandler.highlighter
     findPanel.textArea: textArea
 
-
-    function showFindPanel(){
-        if(textArea.selectedText.length > 0){
+    function showFindPanel() {
+        if (textArea.selectedText.length > 0) {
             findPanel.stringToFind = textArea.selectedText
         }
 
@@ -993,7 +981,6 @@ WritingZoneForm {
         findPanel.forceActiveFocus()
         priv.forceActiveFocusEnabled = true
     }
-
 
     Action {
         id: findAction
@@ -1006,4 +993,3 @@ WritingZoneForm {
         }
     }
 }
-

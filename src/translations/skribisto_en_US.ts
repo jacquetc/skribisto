@@ -3706,22 +3706,22 @@
 <context>
     <name>UserDictPage</name>
     <message>
-        <location filename="../plugins/projectPage/UserDictPage.qml" line="156"/>
+        <location filename="../plugins/projectPage/UserDictPage.qml" line="141"/>
         <source>Add word to dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/projectPage/UserDictPage.qml" line="192"/>
+        <location filename="../plugins/projectPage/UserDictPage.qml" line="178"/>
         <source>Add a word to the project dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/projectPage/UserDictPage.qml" line="213"/>
+        <location filename="../plugins/projectPage/UserDictPage.qml" line="191"/>
         <source>Word already in dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/projectPage/UserDictPage.qml" line="273"/>
+        <location filename="../plugins/projectPage/UserDictPage.qml" line="253"/>
         <source>Remove word from dictionary</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3820,7 +3820,7 @@
 <context>
     <name>WritingZone</name>
     <message>
-        <location filename="../app/src/qml/Commons/WritingZone.qml" line="1001"/>
+        <location filename="../app/src/qml/Commons/WritingZone.qml" line="988"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
