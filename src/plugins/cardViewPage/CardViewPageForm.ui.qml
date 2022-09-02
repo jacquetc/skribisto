@@ -2,19 +2,16 @@
 import QtQuick.Controls
 import QtQml
 import QtQuick.Layouts
-
-import "../../../../Items"
-import "../../../../Commons"
-import "../../../.."
+import Skribisto
+import SkrControls
 
 SkrBasePage {
     id: base
 
     width: 1000
     height: 600
-    property alias base: base
     property alias cardViewGrid: cardViewGrid
-    property alias currentParentId : cardViewGrid.currentParentId
+    property alias currentParentId: cardViewGrid.currentParentId
     property alias titleLabel: titleLabel
     property alias goUpToolButton: goUpToolButton
     property alias viewButtons: viewButtons
@@ -58,7 +55,6 @@ SkrBasePage {
                     Layout.alignment: Qt.AlignCenter
                     Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                     Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
-
                 }
                 //                    SkrLabel {
                 //                        id: countLabel
@@ -79,6 +75,5 @@ SkrBasePage {
             Layout.fillHeight: true
             Layout.fillWidth: true
         }
-
     }
 }

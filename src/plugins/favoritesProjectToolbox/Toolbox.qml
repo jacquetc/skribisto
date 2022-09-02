@@ -4,9 +4,9 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import eu.skribisto.projecthub 1.0
 
-import "../../../../Items"
-import "../../../../Commons"
-import "../../../.."
+import SkrControls
+import Skribisto
+
 
 ToolboxForm {
     id: root

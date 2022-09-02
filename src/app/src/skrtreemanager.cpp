@@ -59,7 +59,7 @@ QUrl SKRTreeManager::getIconUrlFromPageType(const QString& pageType, int project
     }
 
     if (url.isEmpty()) {
-        url = "qrc:///icons/backup/data-warning.svg";
+        url = "icons/backup/data-warning.svg";
     }
 
     return url;

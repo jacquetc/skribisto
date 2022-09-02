@@ -2,11 +2,10 @@ import QtQuick
 import QtQml
 import QtQuick.Controls
 import eu.skribisto.documenthandler 1.0
-import "../../../.."
+import Skribisto
 
 MinimapForm {
     id: root
-
 
     // The properties that define the scrollbar's state.
     // position and pageSize are in the range 0.0 - 1.0.  They are relative to the
@@ -23,11 +22,11 @@ MinimapForm {
         adaptWidth()
     }
 
-    property int sourceTextPointSize : 12
+    property int sourceTextPointSize: 12
     onSourceTextPointSizeChanged: {
         textArea.font.pointSize = sourceTextPointSize
     }
-    property string sourceTextFontFamily : ""
+    property string sourceTextFontFamily: ""
     onSourceTextFontFamilyChanged: {
         textArea.font.family = sourceTextFontFamily
     }
@@ -60,7 +59,6 @@ MinimapForm {
 
     //--------------------------------------------------------------------------------------------
     // size:
-
     property int preferredWidth: 200
     property int maximumWidth: 300
     property int minimumWidth: 50
@@ -71,24 +69,21 @@ MinimapForm {
 
     textArea.width: sourceViewWidth
 
-    function adaptWidth(){
+    function adaptWidth() {
 
         var newValue = sourceViewWidth / divider
 
-        if(newValue > maximumWidth){
+        if (newValue > maximumWidth) {
             preferredWidth = maximumWidth
         }
-        if(newValue < minimumWidth){
+        if (newValue < minimumWidth) {
             preferredWidth = minimumWidth
-        }
-        else {
+        } else {
             preferredWidth = newValue
         }
 
         textArea.width = sourceViewWidth
-
     }
-
 
     textArea.transform: Scale {
         origin.x: 0
@@ -96,12 +91,12 @@ MinimapForm {
         xScale: scaleValue
         yScale: scaleValue
     }
-    //--------------------------------------------------------------------------------------------
 
-    QtObject{
+    //--------------------------------------------------------------------------------------------
+    QtObject {
         id: priv
-        property string objectName: "TextArea-" + Qt.formatDateTime(new Date(),
-                                                                    "yyyyMMddhhmmsszzz")
+        property string objectName: "TextArea-" + Qt.formatDateTime(
+                                        new Date(), "yyyyMMddhhmmsszzz")
         property double position: 0
     }
 
@@ -109,9 +104,6 @@ MinimapForm {
     //required property var textDoc
 
     //implicitWidth: sourceWidth * scaleValue
-
-
-
     Component.onCompleted: {
         openDocument()
     }
@@ -119,50 +111,42 @@ MinimapForm {
     Component.onDestruction: {
         var uniqueDocumentReference = projectId + "_" + treeItemId + "_"
                 + (isSecondary ? "secondary" : "primary")
-        skrTextBridge.unsubscribeTextDocument(
-                    uniqueDocumentReference,
-                    priv.objectName,
-                    textArea.textDocument)
+        skrTextBridge.unsubscribeTextDocument(uniqueDocumentReference,
+                                              priv.objectName,
+                                              textArea.textDocument)
     }
 
-    wheelHandler.onWheel: function(event) {
+    wheelHandler.onWheel: function (event) {
 
         root.active = true
-        if(deactivateTimer.running){
+        if (deactivateTimer.running) {
             deactivateTimer.stop()
         }
         deactivateTimer.start()
 
-
         var newValue = root.value - event.angleDelta.y * 4
-        if(newValue <= - handle.height / 2){
-            root.value = - handle.height / 2
-        }
-        else if(newValue >= textArea.height  - sourceViewHeight  / 2){
+        if (newValue <= -handle.height / 2) {
+            root.value = -handle.height / 2
+        } else if (newValue >= textArea.height - sourceViewHeight / 2) {
             root.value = textArea.height - sourceViewHeight / 2
-        }
-        else{
+        } else {
             root.value = newValue
         }
 
         handle.y = root.value
 
-            priv.position = handle.y / (textArea.height - handle.height)
+        priv.position = handle.y / (textArea.height - handle.height)
 
-            if(textArea.height * scaleValue > minimapFlickable.height){
-                minimapFlickable.contentY = (textArea.height * scaleValue - minimapFlickable.height) * priv.position
-            }
-            else{
-                minimapFlickable.contentY = 0
-            }
-
-
-
+        if (textArea.height * scaleValue > minimapFlickable.height) {
+            minimapFlickable.contentY = (textArea.height * scaleValue
+                                         - minimapFlickable.height) * priv.position
+        } else {
+            minimapFlickable.contentY = 0
+        }
     }
     wheelHandler.grabPermissions: PointerHandler.TakeOverForbidden
 
-
-    Timer{
+    Timer {
         id: deactivateTimer
         interval: 100
         onTriggered: {
@@ -170,115 +154,98 @@ MinimapForm {
         }
     }
 
-    onValueChanged:{
-        if(active || dragHandler.active){
+    onValueChanged: {
+        if (active || dragHandler.active) {
             return
         }
 
         priv.position = handle.y / (textArea.height - handle.height)
 
-        if(textArea.height * scaleValue > minimapFlickable.height){
-            minimapFlickable.contentY = (textArea.height * scaleValue - minimapFlickable.height) * priv.position
-        }
-        else{
+        if (textArea.height * scaleValue > minimapFlickable.height) {
+            minimapFlickable.contentY = (textArea.height * scaleValue
+                                         - minimapFlickable.height) * priv.position
+        } else {
             minimapFlickable.contentY = 0
         }
-
     }
-
 
     Binding on value {
         when: active
         value: handle.y
         restoreMode: Binding.RestoreNone
-//delayed: true
+        //delayed: true
     }
 
     Binding on handle.y {
-        when:  !active
+        when: !active
         value: root.value
         restoreMode: Binding.RestoreNone
     }
 
-
-    Behavior on handle.y{
+    Behavior on handle.y {
         enabled: SkrSettings.ePaperSettings.animationEnabled && !active
 
-            SpringAnimation {
-                duration: 200
-                spring: 2
-                mass: 0.2
-                damping: 0.2
-            }
-
-
-
+        SpringAnimation {
+            duration: 200
+            spring: 2
+            mass: 0.2
+            damping: 0.2
+        }
     }
 
     dragHandler.onActiveChanged: {
-        if(dragHandler.active){
+        if (dragHandler.active) {
             root.active = true
-        }
-        else {
+        } else {
             deactivateTimer.start()
         }
     }
 
     dragHandler.grabPermissions: PointerHandler.TakeOverForbidden
 
-
     //property bool tapping: false
-
-    tapHandler.onSingleTapped: function(eventPoint){
+    tapHandler.onSingleTapped: function (eventPoint) {
 
         root.active = true
-        if(deactivateTimer.running){
+        if (deactivateTimer.running) {
             deactivateTimer.stop()
         }
         deactivateTimer.start()
 
-
-//        tapping = true
+        //        tapping = true
         var newValue = eventPoint.position.y
 
-        if(newValue < 0){
-            handle.y = - handle.height / 2
-        }
-        else if(newValue >= textArea.height){
-            handle.y =  textArea.height - handle.height / 2
-        }
-        else{
+        if (newValue < 0) {
+            handle.y = -handle.height / 2
+        } else if (newValue >= textArea.height) {
+            handle.y = textArea.height - handle.height / 2
+        } else {
             handle.y = newValue - handle.height / 2
         }
 
         //tapping = false
-//        tappingTimer.start()
-
+        //        tappingTimer.start()
     }
-
 
     tapHandler.grabPermissions: PointerHandler.TakeOverForbidden
 
+    //    Timer{
+    //        id: tappingTimer
+    //        interval: 100
+    //        onTriggered: {
+    //            tapping = false
 
-//    Timer{
-//        id: tappingTimer
-//        interval: 100
-//        onTriggered: {
-//            tapping = false
-
-//        }
-//    }
-
+    //        }
+    //    }
 
     //--------------------------------------------------------------------
     //--------------------------------------------------------------------
     //--------------------------------------------------------------------
-
     property bool spellCheckerKilled: false
     property alias documentHandler: documentHandler
     property alias highlighter: documentHandler.highlighter
 
-    DocumentHandler{
+    DocumentHandler {
         id: documentHandler
         textDocument: textArea.textDocument
         cursorPosition: textArea.cursorPosition
@@ -305,7 +272,6 @@ MinimapForm {
 
             documentHandler.indentEverywhere = sourceTextIndent
             documentHandler.topMarginEverywhere = sourceTextTopMargin
-
         }
         Component.onDestruction: {
             SkrSettings.spellCheckingSettings.onSpellCheckingActivationChanged.disconnect(
@@ -314,7 +280,6 @@ MinimapForm {
                         determineSpellCheckerLanguageCode)
         }
     }
-
 
     Connections {
         target: skrData.projectDictHub()
@@ -413,14 +378,10 @@ MinimapForm {
         }
     }
 
-
-
-
     //---------------------------------------------------------
     function openDocument() {
 
         if (milestone === -2) {
-
 
             if (isSecondary) {
                 textArea.text = skrRootItem.cleanUpHtml(
@@ -440,24 +401,12 @@ MinimapForm {
             var uniqueDocumentReference = projectId + "_" + treeItemId + "_"
                     + (isSecondary ? "secondary" : "primary")
 
-            skrTextBridge.subscribeTextDocument(
-                        uniqueDocumentReference,
-                        priv.objectName,
-                        textArea.textDocument)
+            skrTextBridge.subscribeTextDocument(uniqueDocumentReference,
+                                                priv.objectName,
+                                                textArea.textDocument)
         }
-
 
         writingZone.documentHandler.indentEverywhere = SkrSettings.textSettings.textIndent
         writingZone.documentHandler.topMarginEverywhere = SkrSettings.textSettings.textTopMargin
-
-
     }
-
-
-
-
-
-
-
-
 }

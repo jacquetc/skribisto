@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../../Commons"
-import "../../../../Items"
-import "../../../.."
+import Skribisto
+import SkrControls
+
 
 SkrPane {
 

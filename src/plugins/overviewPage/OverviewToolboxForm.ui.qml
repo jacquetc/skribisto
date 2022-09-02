@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import "../../../.."
-import "../../../../Items"
+
+import SkrControls
 
 SkrToolbox {
     property alias displayGroupBox: displayGroupBox

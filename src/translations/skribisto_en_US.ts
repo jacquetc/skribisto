@@ -4,17 +4,17 @@
 <context>
     <name>AccessibilityPanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AccessibilityPanelForm.ui.qml" line="26"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AccessibilityPanelForm.ui.qml" line="26"/>
         <source>Accessibility</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AccessibilityPanelForm.ui.qml" line="34"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AccessibilityPanelForm.ui.qml" line="34"/>
         <source>Help with accessibility</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AccessibilityPanelForm.ui.qml" line="40"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AccessibilityPanelForm.ui.qml" line="39"/>
         <source>Show menu button</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22,12 +22,12 @@
 <context>
     <name>AdvancedPanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AdvancedPanelForm.ui.qml" line="23"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AdvancedPanelForm.ui.qml" line="25"/>
         <source>Advanced</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AdvancedPanelForm.ui.qml" line="36"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AdvancedPanelForm.ui.qml" line="38"/>
         <source>Development mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -76,44 +76,191 @@
     </message>
 </context>
 <context>
+    <name>App</name>
+    <message>
+        <location filename="../app/content/App.qml" line="159"/>
+        <source>First steps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="484"/>
+        <source>Themes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="533"/>
+        <source>&amp;FAQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="550"/>
+        <source>&amp;Skribisto website</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="568"/>
+        <source>&amp;Discord</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="585"/>
+        <source>&amp;GitHub</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="602"/>
+        <source>&amp;Donate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="619"/>
+        <source>&amp;About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="640"/>
+        <source>About &amp;Qt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="739"/>
+        <source>Open an existing project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="927"/>
+        <source>Save the &quot;%1&quot; project as …</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="965"/>
+        <location filename="../app/content/App.qml" line="1034"/>
+        <source>This path is read-only, please choose another path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="975"/>
+        <source>Save a Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="995"/>
+        <source>Save a copy of the &quot;%1&quot; project as …</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1033"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1128"/>
+        <source>Loading a project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1202"/>
+        <source>Back up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1216"/>
+        <source>Back up failed: The backup is not configured</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1233"/>
+        <source>Back up failed:  the project must be saved at least once</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1246"/>
+        <source>Back up failed: The backup path %1 can&apos;t be used</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1257"/>
+        <source>Back up failed: The backup path %1 is read only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1261"/>
+        <source>Back up successful</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1322"/>
+        <source>&amp;Import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1338"/>
+        <source>&amp;Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1380"/>
+        <location filename="../app/content/App.qml" line="1587"/>
+        <source>Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1381"/>
+        <location filename="../app/content/App.qml" line="1588"/>
+        <source>The project %1 is not saved. Do you want to save it before quitting ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1418"/>
+        <location filename="../app/content/App.qml" line="1621"/>
+        <source>Save the %1 project as …</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/content/App.qml" line="1465"/>
+        <source>&amp;Close &quot;%1&quot; project</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AppearancePanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="29"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="31"/>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="37"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="39"/>
         <source>General</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="46"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="48"/>
         <source>Interface language :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="55"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="57"/>
         <source>Manage themes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="62"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="64"/>
         <source>Zoom</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="79"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="81"/>
         <source>Word count</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="87"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="89"/>
         <source>Show word count</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="91"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/AppearancePanelForm.ui.qml" line="93"/>
         <source>Show character count</source>
         <translation type="unfinished"></translation>
     </message>
@@ -121,17 +268,17 @@
 <context>
     <name>BackupPanel</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/BackupPanel.qml" line="114"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/BackupPanel.qml" line="109"/>
         <source>Add backup path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/BackupPanel.qml" line="128"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/BackupPanel.qml" line="120"/>
         <source>Remove backup path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/BackupPanel.qml" line="235"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/BackupPanel.qml" line="214"/>
         <source>Enter a path to back up to</source>
         <translation type="unfinished"></translation>
     </message>
@@ -139,27 +286,27 @@
 <context>
     <name>BackupPanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="32"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="34"/>
         <source>Backup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="40"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="42"/>
         <source>Backup paths:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="108"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="110"/>
         <source>Back up every</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="123"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="125"/>
         <source>hours</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="138"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="140"/>
         <source>Back up once a day</source>
         <translation type="unfinished"></translation>
     </message>
@@ -167,12 +314,12 @@
 <context>
     <name>Breadcrumb</name>
     <message>
-        <location filename="../app/src/qml/Breadcrumb.qml" line="112"/>
+        <location filename="../app/content/Breadcrumb.qml" line="112"/>
         <source>Show the beginning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Breadcrumb.qml" line="213"/>
+        <location filename="../app/content/Breadcrumb.qml" line="209"/>
         <source>Show the end</source>
         <translation type="unfinished"></translation>
     </message>
@@ -180,12 +327,12 @@
 <context>
     <name>Card</name>
     <message>
-        <location filename="../plugins/cardViewPage/Card.qml" line="68"/>
+        <location filename="../plugins/cardViewPage/Card.qml" line="67"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/Card.qml" line="215"/>
+        <location filename="../plugins/cardViewPage/Card.qml" line="209"/>
         <source>Rename an item</source>
         <translation type="unfinished"></translation>
     </message>
@@ -193,7 +340,7 @@
 <context>
     <name>CardForm.ui</name>
     <message>
-        <location filename="../plugins/cardViewPage/CardForm.ui.qml" line="128"/>
+        <location filename="../plugins/cardViewPage/CardForm.ui.qml" line="111"/>
         <source>Go in</source>
         <translation type="unfinished"></translation>
     </message>
@@ -201,12 +348,12 @@
 <context>
     <name>CardViewPage</name>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewPage.qml" line="30"/>
+        <location filename="../plugins/cardViewPage/CardViewPage.qml" line="27"/>
         <source>Show tags toolbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewPage.qml" line="95"/>
+        <location filename="../plugins/cardViewPage/CardViewPage.qml" line="87"/>
         <source>Card view of %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -237,12 +384,12 @@
 <context>
     <name>CardViewPageForm.ui</name>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewPageForm.ui.qml" line="39"/>
+        <location filename="../plugins/cardViewPage/CardViewPageForm.ui.qml" line="36"/>
         <source>Go up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewPageForm.ui.qml" line="56"/>
+        <location filename="../plugins/cardViewPage/CardViewPageForm.ui.qml" line="53"/>
         <source>Add an item</source>
         <translation type="unfinished"></translation>
     </message>
@@ -250,7 +397,7 @@
 <context>
     <name>CardViewToolbox</name>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolbox.qml" line="9"/>
+        <location filename="../plugins/cardViewPage/CardViewToolbox.qml" line="10"/>
         <source>Show the card view toolbox</source>
         <translation type="unfinished"></translation>
     </message>
@@ -258,47 +405,47 @@
 <context>
     <name>CardViewToolboxForm.ui</name>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="39"/>
+        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="38"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="51"/>
+        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="50"/>
         <source>Display mode:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="74"/>
+        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="73"/>
         <source>Tree indentation:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="88"/>
+        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="87"/>
         <source>Show outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="92"/>
+        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="91"/>
         <source>Show notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="97"/>
+        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="96"/>
         <source>Show tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="101"/>
+        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="100"/>
         <source>Show character count</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="106"/>
+        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="105"/>
         <source>Show word count</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="64"/>
+        <location filename="../plugins/cardViewPage/CardViewToolboxForm.ui.qml" line="63"/>
         <source>Card size:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -306,132 +453,132 @@
 <context>
     <name>CheckableTree</name>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="87"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="86"/>
         <source>Level %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="94"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="93"/>
         <source>partially checked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="94"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="93"/>
         <source>checked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="94"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="93"/>
         <source>unchecked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="99"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="98"/>
         <source>label: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="104"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="103"/>
         <source>has children</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="111"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="110"/>
         <source>navigation item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="488"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="487"/>
         <source>Open document in a window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="596"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="595"/>
         <source>This project is a backup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="632"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="631"/>
         <source>Enter label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="676"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="675"/>
         <source>Enter name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="936"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="935"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="959"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="958"/>
         <source>Open in new tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="982"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="981"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1011"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1010"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1033"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1032"/>
         <source>Set label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1065"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1064"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1087"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1086"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1110"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1109"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1145"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1144"/>
         <source>Add before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1174"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1173"/>
         <source>Add after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1203"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1202"/>
         <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1235"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1234"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1257"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1256"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1288"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1287"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/CheckableTree.qml" line="1311"/>
+        <location filename="../app/imports/Skribisto/CheckableTree.qml" line="1310"/>
         <source>Delete definitively</source>
         <translation type="unfinished"></translation>
     </message>
@@ -439,147 +586,147 @@
 <context>
     <name>ColorChooser</name>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="60"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="59"/>
         <source>White</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="61"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="60"/>
         <source>Snow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="62"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="61"/>
         <source>Azure</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="63"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="62"/>
         <source>Beige</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="64"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="63"/>
         <source>Black</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="65"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="64"/>
         <source>Red</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="66"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="65"/>
         <source>Dark red</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="67"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="66"/>
         <source>Pale Green</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="68"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="67"/>
         <source>Chartreuse</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="69"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="68"/>
         <source>Green</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="70"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="69"/>
         <source>Dark green</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="71"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="70"/>
         <source>Light cyan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="72"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="71"/>
         <source>Cyan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="73"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="72"/>
         <source>Dark cyan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="74"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="73"/>
         <source>Blue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="75"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="74"/>
         <source>Dark blue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="76"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="75"/>
         <source>Light pink</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="77"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="76"/>
         <source>Pink</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="78"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="77"/>
         <source>Hot pink</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="79"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="78"/>
         <source>Magenta</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="80"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="79"/>
         <source>Dark magenta</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="81"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="80"/>
         <source>Light yellow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="82"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="81"/>
         <source>Yellow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="83"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="82"/>
         <source>Gold</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="84"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="83"/>
         <source>Orange</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="85"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="84"/>
         <source>Dark orange</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="86"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="85"/>
         <source>Grey</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="87"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="86"/>
         <source>Dark grey</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ColorChooser.qml" line="108"/>
+        <location filename="../app/imports/Skribisto/ColorChooser.qml" line="107"/>
         <source>Color: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -587,17 +734,17 @@
 <context>
     <name>EPaperPanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml" line="26"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml" line="28"/>
         <source>E-Paper</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml" line="34"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml" line="36"/>
         <source>Set the text cursor unblinking</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml" line="40"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/EPaperPanelForm.ui.qml" line="42"/>
         <source>Enable animations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -605,22 +752,22 @@
 <context>
     <name>EditView</name>
     <message>
-        <location filename="../app/src/qml/Commons/EditView.qml" line="63"/>
+        <location filename="../app/imports/Skribisto/EditView.qml" line="59"/>
         <source>Sizes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditView.qml" line="81"/>
+        <location filename="../app/imports/Skribisto/EditView.qml" line="74"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditView.qml" line="193"/>
+        <location filename="../app/imports/Skribisto/EditView.qml" line="180"/>
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditView.qml" line="49"/>
+        <location filename="../app/imports/Skribisto/EditView.qml" line="45"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
@@ -628,102 +775,102 @@
 <context>
     <name>EditViewForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="57"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="56"/>
         <source>Edit text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="68"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="67"/>
         <source>Italic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="77"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="75"/>
         <source>Bold</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="86"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="83"/>
         <source>Strike</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="96"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="92"/>
         <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="109"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="104"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="120"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="115"/>
         <source>Full screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="129"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="124"/>
         <source>Size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="137"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="132"/>
         <source>Full screen Colors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="145"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="140"/>
         <source>Check spelling</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="153"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="148"/>
         <source>Center vertically the text cursor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="182"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="177"/>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="195"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="190"/>
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="224"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="218"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="231"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="225"/>
         <source>Text width :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="242"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="236"/>
         <source>Text size :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="259"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="253"/>
         <source>Text indent :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="271"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="265"/>
         <source>Top margin :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="161"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="156"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/EditViewForm.ui.qml" line="169"/>
+        <location filename="../app/imports/Skribisto/EditViewForm.ui.qml" line="164"/>
         <source>Show the minimap scrollbar</source>
         <translation type="unfinished"></translation>
     </message>
@@ -731,12 +878,12 @@
 <context>
     <name>EmptyPage</name>
     <message>
-        <location filename="../app/src/qml/EmptyPage.qml" line="69"/>
+        <location filename="../app/content/EmptyPage.qml" line="69"/>
         <source>&lt;h2&gt;Open a document&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/EmptyPage.qml" line="74"/>
+        <location filename="../app/content/EmptyPage.qml" line="74"/>
         <source>- Drag and drop here
 - Click here then select a document in Navigation</source>
         <translation type="unfinished"></translation>
@@ -745,7 +892,7 @@
 <context>
     <name>ExamplePageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExamplePageForm.ui.qml" line="23"/>
+        <location filename="../app/content/WelcomePage/ExamplePageForm.ui.qml" line="24"/>
         <source>&lt;h2&gt;Examples&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -753,47 +900,47 @@
 <context>
     <name>ExporterPage</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="73"/>
+        <location filename="../app/content/WelcomePage/ExporterPage.qml" line="73"/>
         <source>Select none</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="73"/>
+        <location filename="../app/content/WelcomePage/ExporterPage.qml" line="73"/>
         <source>Select all</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="143"/>
+        <location filename="../app/content/WelcomePage/ExporterPage.qml" line="143"/>
         <source>.odt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="160"/>
+        <location filename="../app/content/WelcomePage/ExporterPage.qml" line="160"/>
         <source>.txt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="176"/>
+        <location filename="../app/content/WelcomePage/ExporterPage.qml" line="176"/>
         <source>.md</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="192"/>
+        <location filename="../app/content/WelcomePage/ExporterPage.qml" line="192"/>
         <source>.html</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="208"/>
+        <location filename="../app/content/WelcomePage/ExporterPage.qml" line="208"/>
         <source>.pdf</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="269"/>
+        <location filename="../app/content/WelcomePage/ExporterPage.qml" line="269"/>
         <source>Levels with titles: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPage.qml" line="373"/>
+        <location filename="../app/content/WelcomePage/ExporterPage.qml" line="373"/>
         <source>Export &quot;%1&quot; project as …</source>
         <translation type="unfinished"></translation>
     </message>
@@ -801,82 +948,82 @@
 <context>
     <name>ExporterPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="51"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="51"/>
         <source>&lt;h2&gt;Export&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="51"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="51"/>
         <source>&lt;h2&gt;Print&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
         <source>OpenDocument</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="161"/>
         <source>HTML</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="169"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="169"/>
         <source>Include outline in each sheet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="175"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="175"/>
         <source>Numbered</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="181"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="181"/>
         <source>Add tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="199"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="199"/>
         <source>Text size :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="217"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="217"/>
         <source>Text indent :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="230"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="230"/>
         <source>Top margin :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="247"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="247"/>
         <source>Destination file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="252"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="252"/>
         <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="261"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="261"/>
         <source>Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="267"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="267"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ExporterPageForm.ui.qml" line="267"/>
+        <location filename="../app/content/WelcomePage/ExporterPageForm.ui.qml" line="267"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
@@ -893,28 +1040,28 @@
 <context>
     <name>FileMenuPage</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="76"/>
+        <location filename="../app/content/WelcomePage/FileMenuPage.qml" line="77"/>
         <source>Opened</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="79"/>
+        <location filename="../app/content/WelcomePage/FileMenuPage.qml" line="80"/>
         <source>last modified %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="84"/>
+        <location filename="../app/content/WelcomePage/FileMenuPage.qml" line="85"/>
         <source>recent projects list item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="252"/>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="271"/>
+        <location filename="../app/content/WelcomePage/FileMenuPage.qml" line="253"/>
+        <location filename="../app/content/WelcomePage/FileMenuPage.qml" line="272"/>
         <source>Close project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPage.qml" line="292"/>
+        <location filename="../app/content/WelcomePage/FileMenuPage.qml" line="293"/>
         <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
@@ -922,68 +1069,68 @@
 <context>
     <name>FileMenuPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="48"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="46"/>
         <source>Projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="62"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="60"/>
         <source>New project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="68"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="66"/>
         <source>Open project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="79"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="77"/>
         <source>Recent projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="107"/>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="121"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="105"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="119"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="129"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="127"/>
         <source>Save as</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="136"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="134"/>
         <source>Save all</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="150"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="148"/>
         <source>Save a copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="158"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="156"/>
         <source>Back up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="171"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="169"/>
         <source>Share</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="185"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="183"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="190"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="188"/>
         <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/FileMenuPageForm.ui.qml" line="195"/>
+        <location filename="../app/content/WelcomePage/FileMenuPageForm.ui.qml" line="193"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
@@ -991,47 +1138,47 @@
 <context>
     <name>FindPanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/FindPanelForm.ui.qml" line="33"/>
+        <location filename="../app/imports/Skribisto/FindPanelForm.ui.qml" line="33"/>
         <source>Find</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/FindPanelForm.ui.qml" line="69"/>
+        <location filename="../app/imports/Skribisto/FindPanelForm.ui.qml" line="69"/>
         <source>Replace with</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/FindPanelForm.ui.qml" line="38"/>
+        <location filename="../app/imports/Skribisto/FindPanelForm.ui.qml" line="38"/>
         <source>Find Previous</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/FindPanelForm.ui.qml" line="44"/>
+        <location filename="../app/imports/Skribisto/FindPanelForm.ui.qml" line="44"/>
         <source>Find Next</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/FindPanelForm.ui.qml" line="74"/>
+        <location filename="../app/imports/Skribisto/FindPanelForm.ui.qml" line="74"/>
         <source>Replace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/FindPanelForm.ui.qml" line="80"/>
+        <location filename="../app/imports/Skribisto/FindPanelForm.ui.qml" line="80"/>
         <source>Find &amp; Replace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/FindPanelForm.ui.qml" line="55"/>
+        <location filename="../app/imports/Skribisto/FindPanelForm.ui.qml" line="55"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/FindPanelForm.ui.qml" line="86"/>
+        <location filename="../app/imports/Skribisto/FindPanelForm.ui.qml" line="86"/>
         <source>Replace all</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/FindPanelForm.ui.qml" line="49"/>
+        <location filename="../app/imports/Skribisto/FindPanelForm.ui.qml" line="49"/>
         <source>Show replace tool</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1039,73 +1186,73 @@
 <context>
     <name>FirstStepsWizard</name>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="310"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="298"/>
         <source>Previous</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="343"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="328"/>
         <source>Next</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="92"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="90"/>
         <source>First steps with Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="115"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="114"/>
         <source>Select a language:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="140"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="142"/>
         <source>Default dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="109"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="108"/>
         <source>This assistant will help you set up Skribisto to your liking. To begin with, please select the best options for your use.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="194"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="192"/>
         <source>Help with accessibility</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="59"/>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="363"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="58"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="347"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="158"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="161"/>
         <source>Install new dictionaries</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="226"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="223"/>
         <source>User manual</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="242"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="237"/>
         <source>Frequently Asked Questions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="104"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="103"/>
         <source>Welcome to Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="272"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="265"/>
         <source>Plugin selection can be changed later in settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/FirstStepsWizard.qml" line="277"/>
+        <location filename="../app/content/FirstStepsWizard.qml" line="270"/>
         <source>Please restart to apply changes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1155,12 +1302,12 @@
 <context>
     <name>HelpContentsForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/HelpContentsForm.ui.qml" line="36"/>
+        <location filename="../app/content/WelcomePage/HelpContentsForm.ui.qml" line="33"/>
         <source>Frequently Asked Questions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/HelpContentsForm.ui.qml" line="51"/>
+        <location filename="../app/content/WelcomePage/HelpContentsForm.ui.qml" line="47"/>
         <source>Let&apos;s discuss it !</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1168,17 +1315,17 @@
 <context>
     <name>HelpPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/HelpPageForm.ui.qml" line="34"/>
+        <location filename="../app/content/WelcomePage/HelpPageForm.ui.qml" line="35"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/HelpPageForm.ui.qml" line="39"/>
+        <location filename="../app/content/WelcomePage/HelpPageForm.ui.qml" line="40"/>
         <source>About Qt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/HelpPageForm.ui.qml" line="29"/>
+        <location filename="../app/content/WelcomePage/HelpPageForm.ui.qml" line="30"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1186,7 +1333,7 @@
 <context>
     <name>ImporterPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/ImporterPageForm.ui.qml" line="31"/>
+        <location filename="../app/content/WelcomePage/ImporterPageForm.ui.qml" line="29"/>
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1194,12 +1341,12 @@
 <context>
     <name>ItemWordGoalDialog</name>
     <message>
-        <location filename="../app/src/qml/Commons/ItemWordGoalDialog.qml" line="45"/>
+        <location filename="../app/imports/Skribisto/ItemWordGoalDialog.qml" line="44"/>
         <source>Please set the number of words to reach for this item:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ItemWordGoalDialog.qml" line="45"/>
+        <location filename="../app/imports/Skribisto/ItemWordGoalDialog.qml" line="44"/>
         <source>Please set the number of characters to reach for this item:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1207,12 +1354,12 @@
 <context>
     <name>LeftDockForm.ui</name>
     <message>
-        <location filename="../app/src/qml/LeftDockForm.ui.qml" line="48"/>
+        <location filename="../app/content/LeftDockForm.ui.qml" line="49"/>
         <source>Show the beginning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/LeftDockForm.ui.qml" line="85"/>
+        <location filename="../app/content/LeftDockForm.ui.qml" line="86"/>
         <source>Show the end</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1220,17 +1367,17 @@
 <context>
     <name>ListItemAttributes</name>
     <message>
-        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="68"/>
+        <location filename="../app/imports/Skribisto/ListItemAttributes.qml" line="68"/>
         <source>Non printable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="74"/>
+        <location filename="../app/imports/Skribisto/ListItemAttributes.qml" line="74"/>
         <source>Locked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/ListItemAttributes.qml" line="79"/>
+        <location filename="../app/imports/Skribisto/ListItemAttributes.qml" line="79"/>
         <source>Favorite</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1238,52 +1385,62 @@
 <context>
     <name>NavigationList</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="239"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="232"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="239"/>
         <source>Go up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="304"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="297"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="304"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="315"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="308"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="315"/>
         <source>Advanced</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="317"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="310"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="317"/>
         <source>Sort alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="334"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="327"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="334"/>
         <source>Trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="371"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="363"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="371"/>
         <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="389"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="381"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="389"/>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="453"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="445"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="453"/>
         <source>New item&apos;s parameters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="346"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="339"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="346"/>
         <source>Select none</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="346"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationList.qml" line="339"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationList.qml" line="346"/>
         <source>Select all</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1292,6 +1449,7 @@
     <name>NavigationListForm.ui</name>
     <message>
         <location filename="../plugins/navigationProjectToolbox/NavigationListForm.ui.qml" line="78"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListForm.ui.qml" line="78"/>
         <source>Navigation menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1300,137 +1458,165 @@
     <name>NavigationListView</name>
     <message>
         <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="45"/>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="130"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="117"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="45"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="130"/>
         <source>Projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="299"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="281"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="299"/>
         <source>Navigation list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="489"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="464"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="489"/>
         <source>is a folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="489"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="464"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="489"/>
         <source>label:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="491"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="466"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="491"/>
         <source>has child</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="494"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="469"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="494"/>
         <source>navigation item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="1588"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="1523"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="1588"/>
         <source>See sub-items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="1675"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="1608"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="1675"/>
         <source>This project is a backup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="1858"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="1788"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="1858"/>
         <source>Enter label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="1906"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="1835"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="1906"/>
         <source>Enter title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2004"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="1932"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2004"/>
         <source>Item menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2304"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2232"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2304"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2327"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2252"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2327"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2350"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2273"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2350"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2378"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2295"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2378"/>
         <source>Set as active project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2401"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2315"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2401"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2421"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2334"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2421"/>
         <source>Set label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2450"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2359"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2450"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2484"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2388"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2484"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2517"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2417"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2517"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2554"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2447"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2554"/>
         <source>Add before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2594"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2481"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2594"/>
         <source>Add after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2635"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2515"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2635"/>
         <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2676"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2554"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2676"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2708"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2582"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2708"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2745"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2617"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2745"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2777"/>
+        <location filename="../plugins/navigationProjectToolbox/NavigationListView.qml" line="2646"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/NavigationListView.qml" line="2777"/>
         <source>Close this project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1447,18 +1633,18 @@
 <context>
     <name>NewDictWizard</name>
     <message>
-        <location filename="../app/src/qml/Commons/NewDictWizard.qml" line="84"/>
+        <location filename="../app/imports/Skribisto/NewDictWizard.qml" line="82"/>
         <source>Dictionary &quot;%1&quot; successfully installed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NewDictWizard.qml" line="44"/>
-        <location filename="../app/src/qml/Commons/NewDictWizard.qml" line="64"/>
+        <location filename="../app/imports/Skribisto/NewDictWizard.qml" line="42"/>
+        <location filename="../app/imports/Skribisto/NewDictWizard.qml" line="62"/>
         <source>Downloading from %1 (%2/%3)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NewDictWizard.qml" line="144"/>
+        <location filename="../app/imports/Skribisto/NewDictWizard.qml" line="142"/>
         <source>Downloading license from %1 for %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1466,27 +1652,27 @@
 <context>
     <name>NewDictWizardForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/NewDictWizardForm.ui.qml" line="44"/>
+        <location filename="../app/imports/Skribisto/NewDictWizardForm.ui.qml" line="42"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NewDictWizardForm.ui.qml" line="101"/>
+        <location filename="../app/imports/Skribisto/NewDictWizardForm.ui.qml" line="99"/>
         <source>Install</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NewDictWizardForm.ui.qml" line="88"/>
+        <location filename="../app/imports/Skribisto/NewDictWizardForm.ui.qml" line="86"/>
         <source>Please choose the dictionary to install:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NewDictWizardForm.ui.qml" line="66"/>
+        <location filename="../app/imports/Skribisto/NewDictWizardForm.ui.qml" line="64"/>
         <source>Install a new dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NewDictWizardForm.ui.qml" line="108"/>
+        <location filename="../app/imports/Skribisto/NewDictWizardForm.ui.qml" line="106"/>
         <source>View license</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1494,17 +1680,17 @@
 <context>
     <name>NewItemPopupForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/NewItemPopupForm.ui.qml" line="102"/>
+        <location filename="../app/imports/Skribisto/NewItemPopupForm.ui.qml" line="88"/>
         <source>Create</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NewItemPopupForm.ui.qml" line="70"/>
+        <location filename="../app/imports/Skribisto/NewItemPopupForm.ui.qml" line="62"/>
         <source>Quantity to create:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NewItemPopupForm.ui.qml" line="95"/>
+        <location filename="../app/imports/Skribisto/NewItemPopupForm.ui.qml" line="81"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1512,7 +1698,7 @@
 <context>
     <name>NewProjectPage</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPage.qml" line="120"/>
+        <location filename="../app/content/WelcomePage/NewProjectPage.qml" line="120"/>
         <source>Part %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1520,62 +1706,62 @@
 <context>
     <name>NewProjectPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="36"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="35"/>
         <source>&lt;h2&gt;New project&lt;/h2&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="60"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="59"/>
         <source>Project title :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="65"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="64"/>
         <source>project title</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="71"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="70"/>
         <source>Project file :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="82"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="81"/>
         <source>Project path :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="93"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="92"/>
         <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="100"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="99"/>
         <source>This project will be created as : </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="111"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="110"/>
         <source>Number of parts :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="143"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="142"/>
         <source>Create</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="129"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="128"/>
         <source>Dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="76"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="75"/>
         <source>Project file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/NewProjectPageForm.ui.qml" line="87"/>
+        <location filename="../app/content/WelcomePage/NewProjectPageForm.ui.qml" line="86"/>
         <source>Project path</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1583,74 +1769,74 @@
 <context>
     <name>NotePad</name>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="323"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="321"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="352"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="350"/>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="359"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="357"/>
         <source>Dissociate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="370"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="368"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="392"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="390"/>
         <source>Warning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="393"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="391"/>
         <source>Do you want to move the note &quot;%1&quot; to the trash ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="523"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="521"/>
         <source>note related to the current sheet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="696"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="694"/>
         <source>New note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="886"/>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="986"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="884"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="984"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="1007"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="1005"/>
         <source>Show outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="1040"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="1038"/>
         <source>Open current note in a new tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="1078"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="1076"/>
         <source>Add note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="1236"/>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="1576"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="1234"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="1574"/>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePad.qml" line="1469"/>
+        <location filename="../app/imports/Skribisto/NotePad.qml" line="1467"/>
         <source>Existing notes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1658,22 +1844,22 @@
 <context>
     <name>NotePadForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="73"/>
+        <location filename="../app/imports/Skribisto/NotePadForm.ui.qml" line="71"/>
         <source>Show outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="80"/>
+        <location filename="../app/imports/Skribisto/NotePadForm.ui.qml" line="78"/>
         <source>Open note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="140"/>
+        <location filename="../app/imports/Skribisto/NotePadForm.ui.qml" line="138"/>
         <source>Notes list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/NotePadForm.ui.qml" line="149"/>
+        <location filename="../app/imports/Skribisto/NotePadForm.ui.qml" line="147"/>
         <source>Type your note here …</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1681,12 +1867,12 @@
 <context>
     <name>OutlinePad</name>
     <message>
-        <location filename="../app/src/qml/Commons/OutlinePad.qml" line="38"/>
+        <location filename="../app/imports/Skribisto/OutlinePad.qml" line="38"/>
         <source>Open outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/OutlinePad.qml" line="53"/>
+        <location filename="../app/imports/Skribisto/OutlinePad.qml" line="53"/>
         <source>Add outline</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1694,12 +1880,12 @@
 <context>
     <name>OutlinePadForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="50"/>
+        <location filename="../app/imports/Skribisto/OutlinePadForm.ui.qml" line="47"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/OutlinePadForm.ui.qml" line="81"/>
+        <location filename="../app/imports/Skribisto/OutlinePadForm.ui.qml" line="75"/>
         <source>Type your outline here …</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1790,167 +1976,167 @@
 <context>
     <name>OverviewTree</name>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="132"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="128"/>
         <source>Level %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="139"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="135"/>
         <source>label: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="144"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="140"/>
         <source>has children</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="150"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="146"/>
         <source>navigation item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="735"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="721"/>
         <source>Enter label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="776"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="762"/>
         <source>Enter name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1109"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1089"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1302"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1285"/>
         <source>c: %1 / %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1306"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1289"/>
         <source>c: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1317"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1302"/>
         <source>all c: %1 / %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1321"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1306"/>
         <source>all c: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1340"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1327"/>
         <source>w: %1 / %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1344"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1331"/>
         <source>w: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1355"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1344"/>
         <source>all w: %1 / %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1359"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1348"/>
         <source>all w: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1409"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1398"/>
         <source>Item menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1850"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1801"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1872"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1823"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1891"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1842"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1914"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1865"/>
         <source>Unset focus</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1914"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1865"/>
         <source>Set focus</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1945"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1896"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1965"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1916"/>
         <source>Set label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1984"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1935"/>
         <source>Set goal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2007"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1956"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2026"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1975"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2046"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="1995"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2065"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2014"/>
         <source>Add before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2111"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2060"/>
         <source>Add after</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2156"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2105"/>
         <source>Add a sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2200"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2149"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2219"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2168"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2240"/>
+        <location filename="../plugins/overviewPage/OverviewTree.qml" line="2189"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1995,46 +2181,52 @@
         <comment>plugin description</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../plugins/treeNavigationProjectToolbox/plugin.h" line="45"/>
+        <source>Tree Navigation Project Toolbox</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PluginPage</name>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPage.qml" line="71"/>
+        <location filename="../app/imports/Skribisto/PluginPage.qml" line="71"/>
         <source>Page Toolboxes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPage.qml" line="74"/>
+        <location filename="../app/imports/Skribisto/PluginPage.qml" line="74"/>
         <source>Project Toolboxes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPage.qml" line="77"/>
+        <location filename="../app/imports/Skribisto/PluginPage.qml" line="77"/>
         <source>Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPage.qml" line="80"/>
+        <location filename="../app/imports/Skribisto/PluginPage.qml" line="80"/>
         <source>Project Pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPage.qml" line="83"/>
+        <location filename="../app/imports/Skribisto/PluginPage.qml" line="83"/>
         <source>Importers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPage.qml" line="86"/>
+        <location filename="../app/imports/Skribisto/PluginPage.qml" line="86"/>
         <source>Examples</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPage.qml" line="89"/>
+        <location filename="../app/imports/Skribisto/PluginPage.qml" line="89"/>
         <source>Templates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPage.qml" line="155"/>
+        <location filename="../app/imports/Skribisto/PluginPage.qml" line="155"/>
         <source>%1 (mandatory)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2042,48 +2234,48 @@
 <context>
     <name>PluginPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="30"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="26"/>
         <source>Plugins</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="42"/>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="69"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="43"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="86"/>
         <source>Writing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="47"/>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="116"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="63"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="133"/>
         <source>Personalized</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="43"/>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="78"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="47"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="95"/>
         <source>Notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="46"/>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="107"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="59"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="124"/>
         <source>Empty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="45"/>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="97"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="55"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="114"/>
         <source>All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="44"/>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="87"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="51"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="104"/>
         <source>Minimum</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PluginPageForm.ui.qml" line="127"/>
+        <location filename="../app/imports/Skribisto/PluginPageForm.ui.qml" line="144"/>
         <source>Description:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2243,7 +2435,8 @@
 <context>
     <name>ProjectToolbox</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/ProjectToolbox.qml" line="15"/>
+        <location filename="../plugins/navigationProjectToolbox/ProjectToolbox.qml" line="14"/>
+        <location filename="../plugins/treeNavigationProjectToolbox/ProjectToolbox.qml" line="15"/>
         <source>Show navigation toolbox</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2251,22 +2444,22 @@
 <context>
     <name>PropertyPadForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="33"/>
+        <location filename="../app/imports/Skribisto/PropertyPadForm.ui.qml" line="30"/>
         <source>Properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="45"/>
+        <location filename="../app/imports/Skribisto/PropertyPadForm.ui.qml" line="41"/>
         <source>Printable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="55"/>
+        <location filename="../app/imports/Skribisto/PropertyPadForm.ui.qml" line="51"/>
         <source>Modifiable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/PropertyPadForm.ui.qml" line="64"/>
+        <location filename="../app/imports/Skribisto/PropertyPadForm.ui.qml" line="60"/>
         <source>Favorite</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2274,33 +2467,33 @@
 <context>
     <name>RecentPage</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="44"/>
+        <location filename="../app/content/WelcomePage/RecentPage.qml" line="44"/>
         <source>Opened</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="47"/>
+        <location filename="../app/content/WelcomePage/RecentPage.qml" line="47"/>
         <source>last modified %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="54"/>
+        <location filename="../app/content/WelcomePage/RecentPage.qml" line="54"/>
         <source>recent projects list item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="239"/>
-        <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="268"/>
+        <location filename="../app/content/WelcomePage/RecentPage.qml" line="235"/>
+        <location filename="../app/content/WelcomePage/RecentPage.qml" line="264"/>
         <source>Close project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="286"/>
+        <location filename="../app/content/WelcomePage/RecentPage.qml" line="282"/>
         <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/RecentPage.qml" line="207"/>
+        <location filename="../app/content/WelcomePage/RecentPage.qml" line="204"/>
         <source>Project menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2308,7 +2501,7 @@
 <context>
     <name>RecentPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/RecentPageForm.ui.qml" line="18"/>
+        <location filename="../app/content/WelcomePage/RecentPageForm.ui.qml" line="17"/>
         <source>Recent projects</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2316,47 +2509,47 @@
 <context>
     <name>RelationshipPanel</name>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanel.qml" line="51"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanel.qml" line="49"/>
         <source>Note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanel.qml" line="249"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanel.qml" line="247"/>
         <source>Type your text here …</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanel.qml" line="731"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanel.qml" line="729"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanel.qml" line="752"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanel.qml" line="750"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanel.qml" line="772"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanel.qml" line="770"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanel.qml" line="792"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanel.qml" line="790"/>
         <source>Dissociate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanel.qml" line="815"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanel.qml" line="813"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanel.qml" line="837"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanel.qml" line="835"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanel.qml" line="871"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanel.qml" line="869"/>
         <source>Rename a linked item</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2364,42 +2557,42 @@
 <context>
     <name>RelationshipPanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanelForm.ui.qml" line="56"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanelForm.ui.qml" line="54"/>
         <source>All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanelForm.ui.qml" line="101"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanelForm.ui.qml" line="99"/>
         <source>Extend this panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanelForm.ui.qml" line="109"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanelForm.ui.qml" line="107"/>
         <source>Hide the sub panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanelForm.ui.qml" line="117"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanelForm.ui.qml" line="115"/>
         <source>Open item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanelForm.ui.qml" line="138"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanelForm.ui.qml" line="136"/>
         <source>Close this panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanelForm.ui.qml" line="40"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanelForm.ui.qml" line="38"/>
         <source>Proposed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanelForm.ui.qml" line="49"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanelForm.ui.qml" line="47"/>
         <source>Notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/RelationshipPanelForm.ui.qml" line="82"/>
+        <location filename="../app/imports/Skribisto/RelationshipPanelForm.ui.qml" line="80"/>
         <source>Relationship list</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2407,28 +2600,28 @@
 <context>
     <name>RestoreListView</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="99"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="93"/>
         <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="186"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="173"/>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="227"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="208"/>
         <source>Empty the trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="242"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="222"/>
         <source>Select none</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="242"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListView.qml" line="222"/>
         <source>Select all</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2436,27 +2629,27 @@
 <context>
     <name>RestoreListViewForm.ui</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="58"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="56"/>
         <source>Restore a document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="67"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="65"/>
         <source>Select all</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="76"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="74"/>
         <source>Trashed menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="86"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="84"/>
         <source>The checked documents are those which were trashed at the same time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="113"/>
+        <location filename="../plugins/navigationProjectToolbox/RestoreListViewForm.ui.qml" line="111"/>
         <source>List of trashed items to be restored</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2464,12 +2657,12 @@
 <context>
     <name>RightDockForm.ui</name>
     <message>
-        <location filename="../app/src/qml/RightDockForm.ui.qml" line="65"/>
+        <location filename="../app/content/RightDockForm.ui.qml" line="64"/>
         <source>Show the beginning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RightDockForm.ui.qml" line="102"/>
+        <location filename="../app/content/RightDockForm.ui.qml" line="97"/>
         <source>Show the end</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2477,47 +2670,47 @@
 <context>
     <name>RootPage</name>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="194"/>
+        <location filename="../app/content/RootPage.qml" line="185"/>
         <source>Ok</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="197"/>
+        <location filename="../app/content/RootPage.qml" line="188"/>
         <source>Warning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="200"/>
+        <location filename="../app/content/RootPage.qml" line="191"/>
         <source>Critical</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="203"/>
+        <location filename="../app/content/RootPage.qml" line="194"/>
         <source>Fatal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="596"/>
+        <location filename="../app/content/RootPage.qml" line="549"/>
         <source>Show the welcome page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="784"/>
+        <location filename="../app/content/RootPage.qml" line="718"/>
         <source>&amp;File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="834"/>
+        <location filename="../app/content/RootPage.qml" line="767"/>
         <source>&amp;Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="865"/>
+        <location filename="../app/content/RootPage.qml" line="795"/>
         <source>&amp;View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/RootPage.qml" line="901"/>
+        <location filename="../app/content/RootPage.qml" line="828"/>
         <source>&amp;Help</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2525,7 +2718,7 @@
 <context>
     <name>RootPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/RootPageForm.ui.qml" line="66"/>
+        <location filename="../app/content/RootPageForm.ui.qml" line="66"/>
         <source>Main menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2554,17 +2747,17 @@
 <context>
     <name>SKRExporter</name>
     <message>
-        <location filename="../app/src/skrexporter.cpp" line="279"/>
+        <location filename="../app/src/skrexporter.cpp" line="278"/>
         <source>Tags:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/skrexporter.cpp" line="310"/>
+        <location filename="../app/src/skrexporter.cpp" line="309"/>
         <source>Outline:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/skrexporter.cpp" line="339"/>
+        <location filename="../app/src/skrexporter.cpp" line="338"/>
         <source>Text:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2813,17 +3006,17 @@
 <context>
     <name>SavePanelForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/SavePanelForm.ui.qml" line="25"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/SavePanelForm.ui.qml" line="27"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/SavePanelForm.ui.qml" line="38"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/SavePanelForm.ui.qml" line="40"/>
         <source>Save every</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPanels/SavePanelForm.ui.qml" line="49"/>
+        <location filename="../app/content/WelcomePage/SettingsPanels/SavePanelForm.ui.qml" line="51"/>
         <source>minutes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2974,37 +3167,37 @@
 <context>
     <name>SettingsPage</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="250"/>
+        <location filename="../app/content/WelcomePage/SettingsPage.qml" line="218"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="270"/>
+        <location filename="../app/content/WelcomePage/SettingsPage.qml" line="237"/>
         <source>Please restart to apply changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="80"/>
+        <location filename="../app/content/WelcomePage/SettingsPage.qml" line="78"/>
         <source>Accessibility</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="87"/>
+        <location filename="../app/content/WelcomePage/SettingsPage.qml" line="84"/>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="95"/>
+        <location filename="../app/content/WelcomePage/SettingsPage.qml" line="91"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="104"/>
+        <location filename="../app/content/WelcomePage/SettingsPage.qml" line="98"/>
         <source>Backup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPage.qml" line="111"/>
+        <location filename="../app/content/WelcomePage/SettingsPage.qml" line="104"/>
         <source>E-Paper</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3012,72 +3205,72 @@
 <context>
     <name>SettingsPageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="71"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="70"/>
         <source>Behavior</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="79"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="78"/>
         <source>Create an empty project at start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="102"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="101"/>
         <source>Spell checking</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="110"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="109"/>
         <source>Check spelling</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="118"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="117"/>
         <source>Default dictionary :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="129"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="128"/>
         <source>Install new dictionaries</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="142"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="141"/>
         <source>Quick print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="155"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="154"/>
         <source>Include outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="160"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="159"/>
         <source>Add tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="171"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="170"/>
         <source>Text size :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="188"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="187"/>
         <source>Text indent :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="200"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="199"/>
         <source>Top margin :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="86"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="85"/>
         <source>Manage plugins</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/SettingsPageForm.ui.qml" line="91"/>
+        <location filename="../app/content/WelcomePage/SettingsPageForm.ui.qml" line="90"/>
         <source>Show the first steps dialog</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3085,12 +3278,12 @@
 <context>
     <name>SkrBasePage</name>
     <message>
-        <location filename="../app/src/qml/Items/SkrBasePage.qml" line="76"/>
+        <location filename="../app/imports/Skribisto/SkrBasePage.qml" line="66"/>
         <source>newIdenticalPageShortcut: Item not created</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Items/SkrBasePage.qml" line="135"/>
+        <location filename="../app/imports/Skribisto/SkrBasePage.qml" line="124"/>
         <source>Rename an item</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3098,7 +3291,7 @@
 <context>
     <name>SkrSettingsPanel</name>
     <message>
-        <location filename="../app/src/qml/Items/SkrSettingsPanel.qml" line="24"/>
+        <location filename="../app/imports/SkrControls/SkrSettingsPanel.qml" line="24"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3106,7 +3299,7 @@
 <context>
     <name>SkrTabButtonForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Items/SkrTabButtonForm.ui.qml" line="90"/>
+        <location filename="../app/imports/SkrControls/SkrTabButtonForm.ui.qml" line="90"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3114,123 +3307,148 @@
 <context>
     <name>SkrTheme</name>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="118"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="115"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="107"/>
         <source>Main text background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="119"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="116"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="108"/>
         <source>Main text foreground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="120"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="117"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="109"/>
         <source>Secondary text background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="121"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="118"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="110"/>
         <source>Secondary text foreground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="122"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="119"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="111"/>
         <source>Page background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="123"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="120"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="112"/>
         <source>Button background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="124"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="121"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="113"/>
         <source>Button foreground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="125"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="122"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="114"/>
         <source>Button icon</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="126"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="123"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="115"/>
         <source>Button icon (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="127"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="124"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="116"/>
         <source>Accent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="138"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="135"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="128"/>
         <source>ToolBar background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="139"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="136"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="129"/>
         <source>Page ToolBar background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="140"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="137"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="130"/>
         <source>Divider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="141"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="138"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="131"/>
         <source>Menu background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="142"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="139"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="132"/>
         <source>List item background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="128"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="125"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="117"/>
         <source>Spell check highlight</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="129"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="126"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="118"/>
         <source>Find highlight</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="130"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="127"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="119"/>
         <source>Other highlight 1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="131"/>
-        <location filename="../app/src/qml/SkrTheme.qml" line="132"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="128"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="129"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="120"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="121"/>
         <source>Other highlight 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="133"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="130"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="122"/>
         <source>Minimap&apos;s spell check highlight</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="134"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="131"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="124"/>
         <source>Minimap&apos;s find highlight</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="135"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="132"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="125"/>
         <source>Minimap&apos;s other highlight 1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="136"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="133"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="126"/>
         <source>Minimap&apos;s other highlight 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/SkrTheme.qml" line="137"/>
+        <location filename="../app/mockImports/theme/SkrTheme.qml" line="134"/>
+        <location filename="../app/realImports/theme/SkrTheme.qml" line="127"/>
         <source>Minimap&apos;s other highlight 3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3238,23 +3456,23 @@
 <context>
     <name>SkrViewButtons</name>
     <message>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="104"/>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="160"/>
+        <location filename="../app/imports/Skribisto/SkrViewButtons.qml" line="103"/>
+        <location filename="../app/imports/Skribisto/SkrViewButtons.qml" line="159"/>
         <source>Split</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="132"/>
+        <location filename="../app/imports/Skribisto/SkrViewButtons.qml" line="131"/>
         <source>Close view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="173"/>
+        <location filename="../app/imports/Skribisto/SkrViewButtons.qml" line="172"/>
         <source>Split vertically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/SkrViewButtons.qml" line="184"/>
+        <location filename="../app/imports/Skribisto/SkrViewButtons.qml" line="183"/>
         <source>Open in new window</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3262,53 +3480,53 @@
 <context>
     <name>TagPad</name>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="347"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="319"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="375"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="345"/>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="382"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="350"/>
         <source>Remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="408"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="376"/>
         <source>Warning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="409"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="377"/>
         <source>Do you want to delete the tag &quot;%1&quot; ?
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="530"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="493"/>
         <source>tag related to the current paper</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="644"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="614"/>
         <source>Add tag</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="752"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="705"/>
         <source>Tag name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="963"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="923"/>
         <source>Existing tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPad.qml" line="1031"/>
+        <location filename="../app/imports/Skribisto/TagPad.qml" line="982"/>
         <source>Note name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3316,12 +3534,12 @@
 <context>
     <name>TagPadForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/TagPadForm.ui.qml" line="52"/>
+        <location filename="../app/imports/Skribisto/TagPadForm.ui.qml" line="52"/>
         <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TagPadForm.ui.qml" line="111"/>
+        <location filename="../app/imports/Skribisto/TagPadForm.ui.qml" line="111"/>
         <source>Tags list</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3329,7 +3547,7 @@
 <context>
     <name>TextContextMenu</name>
     <message>
-        <location filename="../app/src/qml/Commons/TextContextMenu.qml" line="454"/>
+        <location filename="../app/imports/Skribisto/TextContextMenu.qml" line="453"/>
         <source>Learn &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3337,12 +3555,12 @@
 <context>
     <name>TextContextMenuForm.ui</name>
     <message>
-        <location filename="../app/src/qml/Commons/TextContextMenuForm.ui.qml" line="39"/>
+        <location filename="../app/imports/Skribisto/TextContextMenuForm.ui.qml" line="39"/>
         <source>Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/Commons/TextContextMenuForm.ui.qml" line="54"/>
+        <location filename="../app/imports/Skribisto/TextContextMenuForm.ui.qml" line="54"/>
         <source>Suggestions</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3434,7 +3652,7 @@
 <context>
     <name>TextPageForm.ui</name>
     <message>
-        <location filename="../plugins/textPage/TextPageForm.ui.qml" line="63"/>
+        <location filename="../plugins/textPage/TextPageForm.ui.qml" line="61"/>
         <source>Page menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3522,125 +3740,125 @@
 <context>
     <name>ThemePageForm.ui</name>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="96"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="90"/>
         <source>Themes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="382"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="366"/>
         <source>Color properties</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="414"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="397"/>
         <source>Colors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="433"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="415"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="440"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="422"/>
         <source>Reset theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="444"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="426"/>
         <source>Save theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="150"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="144"/>
         <source>Example</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="266"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="253"/>
         <source>Button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="271"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="257"/>
         <source>Button (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="278"/>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="283"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="263"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="268"/>
         <source>Tool Button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="289"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="274"/>
         <source>Tool Button (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="295"/>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="300"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="280"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="285"/>
         <source>Round button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="306"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="291"/>
         <source>Round button (disabled)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="311"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="297"/>
         <source>Switch (checked)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="318"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="303"/>
         <source>Switch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="341"/>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="365"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="325"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="349"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="366"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="350"/>
         <source>Secondary text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="192"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="179"/>
         <source>Tool bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="214"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="201"/>
         <source>Page tool bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="242"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="229"/>
         <source>List item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="165"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="158"/>
         <source>Light</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="171"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="163"/>
         <source>Dark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="177"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="168"/>
         <source>Distraction free</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="161"/>
+        <location filename="../plugins/themePage/ThemePageForm.ui.qml" line="154"/>
         <source>Force a color mode:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3669,23 +3887,23 @@
 <context>
     <name>TrashedListView</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/TrashedListView.qml" line="107"/>
+        <location filename="../plugins/navigationProjectToolbox/TrashedListView.qml" line="96"/>
         <source>Trash: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/TrashedListView.qml" line="218"/>
+        <location filename="../plugins/navigationProjectToolbox/TrashedListView.qml" line="200"/>
         <source>Do you want to delete definitively the following documents from the &quot;%1&quot; project ?
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/TrashedListView.qml" line="260"/>
+        <location filename="../plugins/navigationProjectToolbox/TrashedListView.qml" line="238"/>
         <source>Empty the trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/TrashedListView.qml" line="276"/>
+        <location filename="../plugins/navigationProjectToolbox/TrashedListView.qml" line="253"/>
         <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3693,12 +3911,12 @@
 <context>
     <name>TrashedListViewForm.ui</name>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/TrashedListViewForm.ui.qml" line="60"/>
+        <location filename="../plugins/navigationProjectToolbox/TrashedListViewForm.ui.qml" line="54"/>
         <source>Restore a document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../plugins/navigationProjectToolbox/TrashedListViewForm.ui.qml" line="69"/>
+        <location filename="../plugins/navigationProjectToolbox/TrashedListViewForm.ui.qml" line="63"/>
         <source>Trashed menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3729,7 +3947,7 @@
 <context>
     <name>WelcomePage</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePage.qml" line="223"/>
+        <location filename="../app/content/WelcomePage/WelcomePage.qml" line="223"/>
         <source>Skribisto %1 created by Cyril Jacquet</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3737,67 +3955,67 @@
 <context>
     <name>WelcomePageForm.ui</name>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="70"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="69"/>
         <source>Go Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="81"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="80"/>
         <source>New</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="93"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="92"/>
         <source>Recent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="141"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="140"/>
         <source>Examples</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="153"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="152"/>
         <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="165"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="164"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="178"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="176"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="199"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="197"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="276"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="270"/>
         <source>Go Back to the menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="194"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="192"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="312"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="305"/>
         <source>Skribisto website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="319"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="312"/>
         <source>Discord</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/src/qml/WelcomePage/WelcomePageForm.ui.qml" line="325"/>
+        <location filename="../app/content/WelcomePage/WelcomePageForm.ui.qml" line="318"/>
         <source>GitHub</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3820,155 +4038,8 @@
 <context>
     <name>WritingZone</name>
     <message>
-        <location filename="../app/src/qml/Commons/WritingZone.qml" line="988"/>
+        <location filename="../app/imports/Skribisto/WritingZone.qml" line="988"/>
         <source>Find</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>main</name>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="456"/>
-        <source>Themes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="505"/>
-        <source>&amp;FAQ</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="592"/>
-        <source>&amp;About</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="613"/>
-        <source>About &amp;Qt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="709"/>
-        <source>Open an existing project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="894"/>
-        <source>Save the &quot;%1&quot; project as …</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="932"/>
-        <location filename="../app/src/qml/main.qml" line="1001"/>
-        <source>This path is read-only, please choose another path.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="942"/>
-        <source>Save a Copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="962"/>
-        <source>Save a copy of the &quot;%1&quot; project as …</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1169"/>
-        <source>Back up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1183"/>
-        <source>Back up failed: The backup is not configured</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1200"/>
-        <source>Back up failed:  the project must be saved at least once</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1213"/>
-        <source>Back up failed: The backup path %1 can&apos;t be used</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1224"/>
-        <source>Back up failed: The backup path %1 is read only</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1287"/>
-        <source>&amp;Import</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1303"/>
-        <source>&amp;Export</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1346"/>
-        <location filename="../app/src/qml/main.qml" line="1552"/>
-        <source>The project %1 is not saved. Do you want to save it before quitting ?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1383"/>
-        <location filename="../app/src/qml/main.qml" line="1585"/>
-        <source>Save the %1 project as …</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1430"/>
-        <source>&amp;Close &quot;%1&quot; project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="129"/>
-        <source>First steps</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1228"/>
-        <source>Back up successful</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1000"/>
-        <source>Error</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1345"/>
-        <location filename="../app/src/qml/main.qml" line="1551"/>
-        <source>Warning</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="1095"/>
-        <source>Loading a project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="541"/>
-        <source>&amp;Discord</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="558"/>
-        <source>&amp;GitHub</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="522"/>
-        <source>&amp;Skribisto website</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/src/qml/main.qml" line="575"/>
-        <source>&amp;Donate</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

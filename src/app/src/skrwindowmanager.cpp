@@ -86,6 +86,34 @@ void SKRWindowManager::addEmptyWindow() {
 
 // -------------------------------------------------------------------------------------------
 
+void SKRWindowManager::addUniqueWindowForDevice()
+{
+    int nextFreeWindowId = m_windowList.count();
+//    QSettings settings;
+
+
+//    settings.endGroup();
+
+    QVariantMap propertiesMap = {
+      {"visibility", 5}
+    }
+;
+      QMapIterator<QString, QVariant>
+          i(m_additionalPropertiesMap);
+
+    while (i.hasNext()) {
+        i.next();
+        propertiesMap.insert(i.key(), i.value());
+    }
+    propertiesMap.insert("additionalPropertiesForViewManager", m_additionalPropertiesForViewManagerMap);
+
+    m_engine->setInitialProperties(propertiesMap);
+    m_engine->load(m_url);
+    m_additionalPropertiesMap.clear();
+    m_additionalPropertiesForViewManagerMap.clear();
+}
+// -------------------------------------------------------------------------------------------
+
 void SKRWindowManager::addWindow(int projectId, int treeItemId, const QString& pageType)
 {
     int nextFreeWindowId = m_windowList.count();

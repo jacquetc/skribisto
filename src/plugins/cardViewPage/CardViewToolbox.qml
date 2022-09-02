@@ -1,62 +1,59 @@
 import QtQuick
 import QtQml
 import QtQuick.Controls
-import '../../../..'
+import Skribisto
+import SkrControls
 
 CardViewToolboxForm {
 
     iconSource: "qrc:///icons/backup/configure.svg"
-    showButtonText: qsTr( "Show the card view toolbox")
+    showButtonText: qsTr("Show the card view toolbox")
     name: "cardView"
 
     property int projectId: -1
 
     property int minimumHeight: 500
 
-
     //-------------------------------------------------------------------------------
     //-----Display------------------------------------------------------------------
     //-------------------------------------------------------------------------------
 
-//    // textWidthSlider :
+    //    // textWidthSlider :
 
-//    treeItemDisplayModeSlider.value: SkrSettings.cardViewTreeSettings.treeItemDisplayMode
+    //    treeItemDisplayModeSlider.value: SkrSettings.cardViewTreeSettings.treeItemDisplayMode
 
-//    Binding {
-//        target: SkrSettings.cardViewTreeSettings
-//        property: "treeItemDisplayMode"
-//        value: treeItemDisplayModeSlider.value
-//        delayed: true
-//        restoreMode: Binding.RestoreBindingOrValue
-//    }
+    //    Binding {
+    //        target: SkrSettings.cardViewTreeSettings
+    //        property: "treeItemDisplayMode"
+    //        value: treeItemDisplayModeSlider.value
+    //        delayed: true
+    //        restoreMode: Binding.RestoreBindingOrValue
+    //    }
 
+    // card size :
+    cardSizeMultiplierSlider.value: SkrSettings.cardViewSettings.cardSizeMultiplier
 
-// card size :
-        cardSizeMultiplierSlider.value: SkrSettings.cardViewSettings.cardSizeMultiplier
+    Binding {
+        target: SkrSettings.cardViewSettings
+        property: "cardSizeMultiplier"
+        value: cardSizeMultiplierSlider.value
+        delayed: true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
 
-        Binding {
-            target: SkrSettings.cardViewSettings
-            property: "cardSizeMultiplier"
-            value: cardSizeMultiplierSlider.value
-            delayed: true
-            restoreMode: Binding.RestoreBindingOrValue
-        }
+    //    // textWidthSlider :
 
-//    // textWidthSlider :
+    //    treeIndentationSlider.value: SkrSettings.cardViewTreeSettings.treeIndentation
 
+    //    Binding {
+    //        target: SkrSettings.cardViewTreeSettings
+    //        property: "treeIndentation"
+    //        value: treeIndentationSlider.value
+    //        delayed: true
+    //        restoreMode: Binding.RestoreBindingOrValue
+    //    }
 
-//    treeIndentationSlider.value: SkrSettings.cardViewTreeSettings.treeIndentation
-
-//    Binding {
-//        target: SkrSettings.cardViewTreeSettings
-//        property: "treeIndentation"
-//        value: treeIndentationSlider.value
-//        delayed: true
-//        restoreMode: Binding.RestoreBindingOrValue
-//    }
-
-//    // showOutlineSwitch
-
+    //    // showOutlineSwitch
     showOutlineSwitch.checked: SkrSettings.cardViewSettings.outlineBoxVisible
 
     Binding {
@@ -67,21 +64,19 @@ CardViewToolboxForm {
         restoreMode: Binding.RestoreBindingOrValue
     }
 
+    //    // showNotePadSwitch
 
-//    // showNotePadSwitch
+    //    showNotePadSwitch.checked: SkrSettings.cardViewTreeSettings.noteBoxVisible
 
-//    showNotePadSwitch.checked: SkrSettings.cardViewTreeSettings.noteBoxVisible
+    //    Binding {
+    //        target: SkrSettings.cardViewTreeSettings
+    //        property: "noteBoxVisible"
+    //        value: showNotePadSwitch.checked
+    //        delayed: true
+    //        restoreMode: Binding.RestoreBindingOrValue
+    //    }
 
-//    Binding {
-//        target: SkrSettings.cardViewTreeSettings
-//        property: "noteBoxVisible"
-//        value: showNotePadSwitch.checked
-//        delayed: true
-//        restoreMode: Binding.RestoreBindingOrValue
-//    }
-
-//    // showTagPadSwitch
-
+    //    // showTagPadSwitch
     showTagPadSwitch.checked: SkrSettings.cardViewSettings.tagBoxVisible
 
     Binding {
@@ -92,30 +87,29 @@ CardViewToolboxForm {
         restoreMode: Binding.RestoreBindingOrValue
     }
 
-//    // showCharacterCountSwitch
+    //    // showCharacterCountSwitch
 
-//    showCharacterCountSwitch.checked: SkrSettings.cardViewTreeSettings.characterCountBoxVisible
+    //    showCharacterCountSwitch.checked: SkrSettings.cardViewTreeSettings.characterCountBoxVisible
 
-//    Binding {
-//        target: SkrSettings.cardViewTreeSettings
-//        property: "characterCountBoxVisible"
-//        value: showCharacterCountSwitch.checked
-//        delayed: true
-//        restoreMode: Binding.RestoreBindingOrValue
-//    }
+    //    Binding {
+    //        target: SkrSettings.cardViewTreeSettings
+    //        property: "characterCountBoxVisible"
+    //        value: showCharacterCountSwitch.checked
+    //        delayed: true
+    //        restoreMode: Binding.RestoreBindingOrValue
+    //    }
 
-//    // showWordCountSwitch
+    //    // showWordCountSwitch
 
-//    showWordCountSwitch.checked: SkrSettings.cardViewTreeSettings.wordCountBoxVisible
+    //    showWordCountSwitch.checked: SkrSettings.cardViewTreeSettings.wordCountBoxVisible
 
-//    Binding {
-//        target: SkrSettings.cardViewTreeSettings
-//        property: "wordCountBoxVisible"
-//        value: showWordCountSwitch.checked
-//        delayed: true
-//        restoreMode: Binding.RestoreBindingOrValue
-//    }
-
+    //    Binding {
+    //        target: SkrSettings.cardViewTreeSettings
+    //        property: "wordCountBoxVisible"
+    //        value: showWordCountSwitch.checked
+    //        delayed: true
+    //        restoreMode: Binding.RestoreBindingOrValue
+    //    }
 
     //focus
     onActiveFocusChanged: {

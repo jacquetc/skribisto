@@ -1,10 +1,10 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
-import QtQml.Models 2.15
-import "../../../.."
-import "../../../../Items"
-import "../../../../Commons"
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQml.Models
+import Skribisto
+import SkrControls
+import theme
 
 FocusScope {
     id: base
@@ -18,17 +18,14 @@ FocusScope {
     property alias touchTapHandler: touchTapHandler
     property alias titleTapHandler: titleTapHandler
 
-
     property int visualIndex: DelegateModel.itemsIndex
     DropArea {
         id: dropArea
         anchors.fill: parent
 
-
-
-        SkrListItemPane{
+        SkrListItemPane {
             id: draggableContent
-            borderColor: base.GridView.isCurrentItem ? SkrTheme.accent :SkrTheme.buttonForeground
+            borderColor: base.GridView.isCurrentItem ? SkrTheme.accent : SkrTheme.buttonForeground
             borderWidth: base.GridView.isCurrentItem ? 1 : 0
             anchors.top: parent.top
             anchors.bottom: parent.bottom
@@ -43,7 +40,9 @@ FocusScope {
             property bool dragging: false
 
             Drag.dragType: Drag.None
-            Drag.mimeData: { "application/skribisto-cardview-tree-item": model.index }
+            Drag.mimeData: {
+                "application/skribisto-cardview-tree-item": model.index
+            }
             Drag.active: draggableContent.dragging
             Drag.source: draggableContent
             Drag.hotSpot.x: width / 2
@@ -53,40 +52,30 @@ FocusScope {
 
             opacity: draggableContent.dragging ? 0.2 : 1.0
 
-
-
-            DragHandler{
+            DragHandler {
                 id: mouseDragHandler
                 acceptedDevices: PointerDevice.Mouse
                 target: draggableContent
                 cursorShape: Qt.ClosedHandCursor
-
             }
 
-            DragHandler{
+            DragHandler {
                 id: touchDragHandler
-                acceptedDevices: PointerDevice.TouchScreen
-                                 | PointerDevice.Stylus
+                acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
                 target: draggableContent
                 cursorShape: Qt.ClosedHandCursor
-
             }
 
-            contentItem: ColumnLayout{
+            contentItem: ColumnLayout {
                 anchors.fill: parent
-                RowLayout{
+                RowLayout {
                     id: header
                     Layout.alignment: Qt.AlignTop
 
-
                     TapHandler {
                         id: touchTapHandler
-                        acceptedDevices: PointerDevice.TouchScreen
-                                         | PointerDevice.Stylus
-
-
+                        acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
                     }
-
 
                     Image {
                         id: pageTypeIcon
@@ -106,21 +95,15 @@ FocusScope {
                         horizontalAlignment: Qt.AlignHCenter
                         verticalAlignment: Qt.AlignVCenter
 
-
-
                         TapHandler {
                             id: titleTapHandler
                             acceptedDevices: PointerDevice.TouchScreen
                                              | PointerDevice.Stylus | PointerDevice.Mouse
-
-
                         }
 
-                        HoverHandler{
+                        HoverHandler {
                             cursorShape: Qt.IBeamCursor
-
                         }
-
                     }
 
                     SkrToolButton {
@@ -130,7 +113,6 @@ FocusScope {
                         visible: model.canAddChildTreeItem & base.GridView.isCurrentItem
                     }
                 }
-
 
                 ColumnLayout {
 
@@ -191,12 +173,7 @@ FocusScope {
                         active: SkrSettings.cardViewSettings.outlineBoxVisible
                     }
                 }
-
-
             }
-
         }
-
     }
 }
-

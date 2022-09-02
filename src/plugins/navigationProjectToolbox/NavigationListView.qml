@@ -5,10 +5,10 @@ import QtQuick.Layouts
 import QtQml.Models
 import QtQuick.Controls.Material
 import eu.skribisto.searchtreelistproxymodel 1.0
-import "../../../../Commons"
-import "../../../../Items"
-import "../../../.."
 
+import Skribisto
+import SkrControls
+import theme
 
 Item {
     id: root
@@ -45,29 +45,19 @@ Item {
         p_section.parentTitle = qsTr("Projects")
         listView.section.delegate = sectionHeading
 
-
         if (projectId > 0 && treeItemId === 0 && parentId === -2) {
-            //list of project items
 
-            navigationProxyModel.setCurrentTreeItemId(projectId,
-                                                      treeItemId)
-        }
-        else if (treeItemId === -2 && parentId === -2) {
             //list of project items
-            navigationProxyModel.setParentFilter(projectId,
-                                                 parentId)
-        }
-        else if (projectId > 0 && parentId >= 0) {
-            navigationProxyModel.setParentFilter(projectId,
-                                                 parentId)
+            navigationProxyModel.setCurrentTreeItemId(projectId, treeItemId)
+        } else if (treeItemId === -2 && parentId === -2) {
+            //list of project items
+            navigationProxyModel.setParentFilter(projectId, parentId)
+        } else if (projectId > 0 && parentId >= 0) {
+            navigationProxyModel.setParentFilter(projectId, parentId)
             listView.currentIndex = 0
-
-        }
-        else if (projectId > 0 && treeItemId >= 0){
-            navigationProxyModel.setCurrentTreeItemId(
-                        projectId, treeItemId)
+        } else if (projectId > 0 && treeItemId >= 0) {
+            navigationProxyModel.setCurrentTreeItemId(projectId, treeItemId)
             parentId = navigationProxyModel.parentIdFilter
-
         }
         determineSectionTitle()
     }
@@ -87,21 +77,19 @@ Item {
         navigationProxyModel.setCurrentTreeItemId(projectId, treeItemId)
     }
 
-
     onActiveFocusChanged: {
         if (activeFocus) {
             listView.forceActiveFocus()
         }
     }
 
-    function checkAll(){
+    function checkAll() {
         navigationProxyModel.checkAll()
     }
 
-    function checkNone(){
+    function checkNone() {
         navigationProxyModel.checkNone()
     }
-
 
     NewItemPopup {
         id: newItemPopup
@@ -112,8 +100,7 @@ Item {
         var projectId = root.projectId
         var parentId = root.parentId
         if (parentId === 0 && projectId !== -2) {
-            var projectTitle = skrData.projectHub().getProjectName(
-                        projectId)
+            var projectTitle = skrData.projectHub().getProjectName(projectId)
 
             p_section.parentTitle = projectTitle
             listView.section.delegate = sectionHeading
@@ -212,55 +199,53 @@ Item {
                 > 0 ? listView.height - listView.contentHeight : 0
         z: 1
 
-
         keys: ["application/skribisto-tree-item"]
         onEntered: {
-            if(!model.canAddChildTreeItem){
+            if (!model.canAddChildTreeItem) {
                 drag.accepted = false
                 return
             }
 
-            if(skrData.treeHub().getAllAncestors(projectId, parentId).includes(drag.source.treeItemId)){
+            if (skrData.treeHub().getAllAncestors(projectId, parentId).includes(
+                        drag.source.treeItemId)) {
                 drag.accepted = false
                 return
             }
-
         }
         onExited: {
 
         }
-        onDropped: function(drop){
+        onDropped: function (drop) {
             if (drop.proposedAction === Qt.MoveAction) {
 
                 listView.interactive = true
                 priv.dragging = false
-                console.log("onDropped", drag.source.projectId, drag.source.treeItemId, projectId, parentId)
+                console.log("onDropped", drag.source.projectId,
+                            drag.source.treeItemId, projectId, parentId)
                 focusZoneMoveTreeItemAsChildOfTimer.sourceProjectId = drag.source.projectId
                 focusZoneMoveTreeItemAsChildOfTimer.sourceTreeItemId = drag.source.treeItemId
                 focusZoneMoveTreeItemAsChildOfTimer.start()
                 //skrData.treeHub().moveTreeItemAsChildOf(drag.source.projectId, drag.source.treeItemId, projectId, parentId)
             }
         }
-        Timer{
+        Timer {
             id: focusZoneMoveTreeItemAsChildOfTimer
 
             property int sourceProjectId: -1
             property int sourceTreeItemId: -1
             interval: 1000
             onTriggered: {
-                skrData.treeHub().moveTreeItemAsChildOf(sourceProjectId, sourceTreeItemId, projectId, parentId)
+                skrData.treeHub().moveTreeItemAsChildOf(sourceProjectId,
+                                                        sourceTreeItemId,
+                                                        projectId, parentId)
             }
         }
 
-
-
-
         TapHandler {
-            onSingleTapped: function(eventPoint) {
-                if(priv.renaming){
+            onSingleTapped: function (eventPoint) {
+                if (priv.renaming) {
                     return
                 }
-
 
                 listView.forceActiveFocus()
                 console.log("focusZone", "forceActiveFocus")
@@ -277,9 +262,6 @@ Item {
             }
             grabPermissions: PointerHandler.ApprovesTakeOverByAnything
         }
-
-
-
     }
 
     ScrollView {
@@ -324,8 +306,6 @@ Item {
             //-----------------------------------------------------------------------------
             property int popupId: root.popupId
             property alias proxyModel: navigationProxyModel
-
-
 
             Binding {
                 target: listView
@@ -377,21 +357,17 @@ Item {
             }
 
             //----------------------------------------------------------------------------
-
-
-            function enableSection(value){
-                if(value){
+            function enableSection(value) {
+                if (value) {
                     determineSectionTitle()
-                }
-                else{
+                } else {
                     listView.section.delegate = null
                 }
             }
 
             section.property: "indent"
             section.criteria: ViewSection.FullString
-            section.labelPositioning: ViewSection.CurrentLabelAtStart
-                                      | ViewSection.InlineLabels
+            section.labelPositioning: ViewSection.CurrentLabelAtStart | ViewSection.InlineLabels
             section.delegate: null
 
             // The delegate for each section header
@@ -419,7 +395,7 @@ Item {
             //----------------------------------------------------------------------
             //---  listview keys ------------------------------------------
             //----------------------------------------------------------------------
-            Keys.onShortcutOverride: function(event)  {
+            Keys.onShortcutOverride: function (event) {
                 if ((event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_N) {
                     event.accepted = true
@@ -429,7 +405,7 @@ Item {
                     event.accepted = true
                 }
             }
-            Keys.onPressed: function(event) {
+            Keys.onPressed: function (event) {
                 //                        if (event.key === Qt.Key_Up) {
                 //                            listView.currentItem.forceActiveFocus()
                 //                            event.accepted = false
@@ -443,8 +419,7 @@ Item {
                 // paste
                 if ((event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_V) {
-                    skrData.treeHub().paste(currentProjectId,
-                                            currentParentId)
+                    skrData.treeHub().paste(currentProjectId, currentParentId)
                     event.accepted = true
                 }
 
@@ -464,7 +439,7 @@ Item {
 
             function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
 
-                for(var i = 0; i < quantity ; i++){
+                for (var i = 0; i < quantity; i++) {
                     addItemAtCurrentParent(pageType)
                 }
             }
@@ -494,10 +469,8 @@ Item {
                     Accessible.description: qsTr("navigation item")
 
                     anchors {
-                        left: Qt.isQtObject(
-                                  parent) ? parent.left : undefined
-                        right: Qt.isQtObject(
-                                   parent) ? parent.right : undefined
+                        left: Qt.isQtObject(parent) ? parent.left : undefined
+                        right: Qt.isQtObject(parent) ? parent.right : undefined
                         rightMargin: 5
                     }
 
@@ -559,7 +532,7 @@ Item {
                         }
                     }
 
-                    function configureMenu(){
+                    function configureMenu() {
                         menu.index = model.index
                         menu.treeItemId = model.treeItemId
                         menu.projectId = model.projectId
@@ -576,7 +549,7 @@ Item {
 
                     Keys.priority: Keys.AfterItem
 
-                    Keys.onShortcutOverride: function(event)  {
+                    Keys.onShortcutOverride: function (event) {
                         if (event.key === Qt.Key_F2) {
                             event.accepted = true
                         }
@@ -609,7 +582,7 @@ Item {
                         }
                     }
 
-                    Keys.onPressed: function(event) {
+                    Keys.onPressed: function (event) {
                         if (event.key === Qt.Key_Right) {
                             console.log("Right key pressed")
                             goToChildAction.trigger()
@@ -629,8 +602,7 @@ Item {
                             openTreeItemInAnotherViewAction.trigger()
                             event.accepted = true
                         }
-                        if (model.isOpenable
-                                && event.key === Qt.Key_Return
+                        if (model.isOpenable && event.key === Qt.Key_Return
                                 && swipeDelegate.state !== "edit_name"
                                 && swipeDelegate.state !== "edit_label") {
                             console.log("Return key pressed")
@@ -750,8 +722,7 @@ Item {
                         }
 
                         // send to trash
-                        if (model.isTrashable
-                                && event.key === Qt.Key_Delete
+                        if (model.isTrashable && event.key === Qt.Key_Delete
                                 && swipeDelegate.state !== "edit_name"
                                 && swipeDelegate.state !== "edit_label") {
                             swipeDelegate.configureMenu()
@@ -824,7 +795,8 @@ Item {
 
                     HoverHandler {
                         id: itemHoverHandler
-                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad | PointerDevice.Stylus
+                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                                         | PointerDevice.Stylus
                         enabled: root.hoverEnabled
 
                         //grabPermissions:  PointerHandler.CanTakeOverFromItems | PointerHandler.CanTakeOverFromHandlersOfSameType | PointerHandler.ApprovesTakeOverByAnything
@@ -832,10 +804,8 @@ Item {
                             //console.log("item hovered", itemHoverHandler.hovered)
                             if (priv.dragging || priv.selecting) {
                                 hoveringTimer.stop()
-                                closeSideNavigationListPopupTimer.popupId
-                                        = root.popupId + 1
-                                closeSideNavigationListPopupTimer.start(
-                                            )
+                                closeSideNavigationListPopupTimer.popupId = root.popupId + 1
+                                closeSideNavigationListPopupTimer.start()
                             } else if (hovered && model.hasChildren) {
 
                                 if (!rootWindow.compactMode) {
@@ -846,15 +816,13 @@ Item {
                                 if (!addSideNavigationListPopupTimer.running) {
                                     hoveringTimer.stop()
                                     addSideNavigationListPopupTimer.stop()
-                                    closeSideNavigationListPopupTimer.popupId
-                                            = root.popupId + 1
+                                    closeSideNavigationListPopupTimer.popupId = root.popupId + 1
                                     closeSideNavigationListPopupTimer.start()
                                 }
                             } else if (!model.hasChildren) {
                                 if (!addSideNavigationListPopupTimer.running) {
                                     hoveringTimer.stop()
-                                    closeSideNavigationListPopupTimer.popupId
-                                            = root.popupId + 1
+                                    closeSideNavigationListPopupTimer.popupId = root.popupId + 1
                                     closeSideNavigationListPopupTimer.start()
                                 }
                             } else {
@@ -874,8 +842,7 @@ Item {
 
                             addSideNavigationListPopupTimer.projectId = model.projectId
                             addSideNavigationListPopupTimer.parentId = model.treeItemId
-                            addSideNavigationListPopupTimer.popupId
-                                    = root.popupId
+                            addSideNavigationListPopupTimer.popupId = root.popupId
                             addSideNavigationListPopupTimer.parentItem = swipeDelegate
                             addSideNavigationListPopupTimer.listView = listView
 
@@ -889,19 +856,19 @@ Item {
 
                         property int dropAreaSizeDivider: 4
 
-                        Rectangle{
+                        Rectangle {
                             id: topDropIndicator
                             z: 1
-
 
                             anchors.top: parent.top
                             anchors.left: parent.left
                             anchors.right: parent.right
                             height: parent.height / dropAreaHolder.dropAreaSizeDivider
-                            visible : false
+                            visible: false
                             onVisibleChanged: {
-                                var previousItem = swipeDelegate.ListView.view.itemAtIndex(model.index -1)
-                                if(previousItem){
+                                var previousItem = swipeDelegate.ListView.view.itemAtIndex(
+                                            model.index - 1)
+                                if (previousItem) {
                                     previousItem.bottomDropIndicator.visible = visible
                                 }
                             }
@@ -909,15 +876,14 @@ Item {
                             gradient: Gradient {
                                 orientation: Gradient.Vertical
                                 GradientStop {
-                                    position: 0.00;
-                                    color: SkrTheme.accent;
+                                    position: 0.00
+                                    color: SkrTheme.accent
                                 }
                                 GradientStop {
-                                    position: 1.00;
-                                    color: "transparent";
+                                    position: 1.00
+                                    color: "transparent"
                                 }
                             }
-
                         }
 
                         DropArea {
@@ -927,79 +893,74 @@ Item {
                             anchors.right: parent.right
                             height: parent.height / dropAreaHolder.dropAreaSizeDivider
 
+                            keys: ["application/skribisto-tree-item"]
+                            onEntered: function (drag) {
 
-                            keys:["application/skribisto-tree-item"]
-                            onEntered: function(drag) {
-
-                                if(!model.canAddSiblingTreeItem){
+                                if (!model.canAddSiblingTreeItem) {
                                     drag.accepted = false
                                     return
                                 }
 
-                                if(drag.source.treeItemId === model.treeItemId){
+                                if (drag.source.treeItemId === model.treeItemId) {
                                     drag.accepted = false
                                     return
                                 }
 
-                                if(skrData.treeHub().getAllAncestors(projectId, parentId).includes(drag.source.treeItemId)){
+                                if (skrData.treeHub().getAllAncestors(
+                                            projectId, parentId).includes(
+                                            drag.source.treeItemId)) {
                                     drag.accepted = false
                                     return
                                 }
-
 
                                 topOnEnteredTimer.start()
                             }
 
-                            Timer{
+                            Timer {
                                 id: topOnEnteredTimer
                                 property bool visible: false
                                 interval: 10
                                 onTriggered: {
 
-
                                     topDropIndicator.visible = true
-
                                 }
                             }
 
                             onExited: {
                                 topOnExitedTimer.start()
-
                             }
 
-                            Timer{
+                            Timer {
                                 id: topOnExitedTimer
                                 property bool visible: false
                                 interval: 10
                                 onTriggered: {
                                     topDropIndicator.visible = false
-
                                 }
                             }
 
-                            onDropped: function(drop){
+                            onDropped: function (drop) {
                                 topDropIndicator.visible = false
 
                                 topMoveTreeItemTimer.sourceTreeItemId = drag.source.treeItemId
                                 topMoveTreeItemTimer.targetTreeItemId = model.treeItemId
                                 topMoveTreeItemTimer.projectId = model.projectId
                                 topMoveTreeItemTimer.start()
-
                             }
 
-                            Timer{
+                            Timer {
                                 id: topMoveTreeItemTimer
                                 property int sourceTreeItemId: -1
                                 property int targetTreeItemId: -1
                                 property int projectId: -1
                                 interval: 600
                                 onTriggered: {
-                                    skrData.treeHub().moveTreeItem(projectId, sourceTreeItemId, targetTreeItemId, false)
-
+                                    skrData.treeHub().moveTreeItem(
+                                                projectId, sourceTreeItemId,
+                                                targetTreeItemId, false)
                                 }
                             }
                         }
-
 
                         DropArea {
                             id: middleDropArea
@@ -1009,53 +970,49 @@ Item {
 
                             keys: ["application/skribisto-tree-item"]
 
-
-                            onEntered: function(drag) {
+                            onEntered: function (drag) {
                                 console.log("entered", content.visualIndex)
 
-                                if(!model.canAddChildTreeItem){
+                                if (!model.canAddChildTreeItem) {
                                     middleDropArea.visible = false
                                     dropAreaHolder.dropAreaSizeDivider = 2
                                     drag.accepted = false
                                     return
                                 }
 
-                                if(drag.source.treeItemId === model.treeItemId){
+                                if (drag.source.treeItemId === model.treeItemId) {
                                     drag.accepted = false
                                     return
                                 }
 
-
-                                if(skrData.treeHub().getAllAncestors(projectId, parentId).includes(drag.source.treeItemId)){
+                                if (skrData.treeHub().getAllAncestors(
+                                            projectId, parentId).includes(
+                                            drag.source.treeItemId)) {
                                     drag.accepted = false
                                     return
                                 }
 
                                 middleDropIndicator.visible = true
-
                             }
                             onExited: {
                                 middleDropIndicator.visible = false
-
                             }
 
-                            onDropped: function(drop) {
+                            onDropped: function (drop) {
                                 middleDropIndicator.visible = false
-
-
 
                                 if (drop.proposedAction === Qt.MoveAction) {
 
                                     middleMoveTreeItemTimer.sourceProjectId = drag.source.projectId
-                                    middleMoveTreeItemTimer.sourceTreeItemId = drag.source.treeItemId
+                                    middleMoveTreeItemTimer.sourceTreeItemId
+                                            = drag.source.treeItemId
                                     middleMoveTreeItemTimer.targetProjectId = model.projectId
                                     middleMoveTreeItemTimer.targetTreeItemId = model.treeItemId
                                     middleMoveTreeItemTimer.start()
-
                                 }
                             }
 
-                            Timer{
+                            Timer {
                                 id: middleMoveTreeItemTimer
                                 property int sourceProjectId: -1
                                 property int sourceTreeItemId: -1
@@ -1063,44 +1020,43 @@ Item {
                                 property int targetTreeItemId: -1
                                 interval: 600
                                 onTriggered: {
-                                    skrData.treeHub().moveTreeItemAsChildOf(sourceProjectId, sourceTreeItemId, targetProjectId, targetTreeItemId)
-
+                                    skrData.treeHub().moveTreeItemAsChildOf(
+                                                sourceProjectId,
+                                                sourceTreeItemId,
+                                                targetProjectId,
+                                                targetTreeItemId)
                                 }
                             }
-
-
                         }
 
-                        Rectangle{
+                        Rectangle {
                             id: middleDropIndicator
                             z: 1
-
 
                             anchors.fill: parent
                             anchors.topMargin: topDropArea.height
                             anchors.bottomMargin: bottomDropArea.height
-                            visible : false
+                            visible: false
 
                             gradient: Gradient {
                                 orientation: Gradient.Vertical
                                 GradientStop {
-                                    position: 0.00;
-                                    color: "transparent";
+                                    position: 0.00
+                                    color: "transparent"
                                 }
                                 GradientStop {
-                                    position: 0.33;
-                                    color: SkrTheme.accent;
+                                    position: 0.33
+                                    color: SkrTheme.accent
                                 }
                                 GradientStop {
-                                    position: 0.66;
-                                    color: SkrTheme.accent;
+                                    position: 0.66
+                                    color: SkrTheme.accent
                                 }
                                 GradientStop {
-                                    position: 1.00;
-                                    color: "transparent";
+                                    position: 1.00
+                                    color: "transparent"
                                 }
                             }
-
                         }
                         DropArea {
                             id: bottomDropArea
@@ -1111,20 +1067,21 @@ Item {
                             height: parent.height / dropAreaHolder.dropAreaSizeDivider
 
                             keys: ["application/skribisto-tree-item"]
-                            onEntered: function(drag) {
+                            onEntered: function (drag) {
 
-                                if(!model.canAddSiblingTreeItem){
+                                if (!model.canAddSiblingTreeItem) {
                                     drag.accepted = false
                                     return
                                 }
 
-                                if(drag.source.treeItemId === model.treeItemId){
+                                if (drag.source.treeItemId === model.treeItemId) {
                                     drag.accepted = false
                                     return
                                 }
 
-
-                                if(skrData.treeHub().getAllAncestors(projectId, parentId).includes(drag.source.treeItemId)){
+                                if (skrData.treeHub().getAllAncestors(
+                                            projectId, parentId).includes(
+                                            drag.source.treeItemId)) {
                                     drag.accepted = false
                                     return
                                 }
@@ -1132,85 +1089,77 @@ Item {
                                 bottomOnEnteredTimer.start()
                             }
 
-
-                            Timer{
+                            Timer {
                                 id: bottomOnEnteredTimer
                                 property bool visible: false
                                 interval: 10
                                 onTriggered: {
                                     bottomDropIndicator.visible = true
-
                                 }
                             }
 
                             onExited: {
                                 bottomOnExitedTimer.start()
-
                             }
 
-                            Timer{
+                            Timer {
                                 id: bottomOnExitedTimer
                                 property bool visible: false
                                 interval: 10
                                 onTriggered: {
                                     bottomDropIndicator.visible = false
-
                                 }
                             }
-                            onDropped: function(drop){
+                            onDropped: function (drop) {
                                 bottomDropIndicator.visible = false
                                 bottomMoveTreeItemTimer.sourceTreeItemId = drag.source.treeItemId
                                 bottomMoveTreeItemTimer.targetTreeItemId = model.treeItemId
                                 bottomMoveTreeItemTimer.projectId = model.projectId
                                 bottomMoveTreeItemTimer.start()
-
                             }
 
-
-                            Timer{
+                            Timer {
                                 id: bottomMoveTreeItemTimer
                                 property int sourceTreeItemId: -1
                                 property int targetTreeItemId: -1
                                 property int projectId: -1
                                 interval: 600
                                 onTriggered: {
-                                    skrData.treeHub().moveTreeItem(projectId, sourceTreeItemId, targetTreeItemId, true)
-
+                                    skrData.treeHub().moveTreeItem(
+                                                projectId, sourceTreeItemId,
+                                                targetTreeItemId, true)
                                 }
                             }
-
                         }
 
-                        Rectangle{
+                        Rectangle {
                             id: bottomDropIndicator
                             z: 1
-
 
                             anchors.bottom: parent.bottom
                             anchors.left: parent.left
                             anchors.right: parent.right
                             height: parent.height / dropAreaHolder.dropAreaSizeDivider
-                            visible : false
+                            visible: false
                             onVisibleChanged: {
-                                var nextItem = swipeDelegate.ListView.view.itemAtIndex(model.index + 1)
-                                if(nextItem){
+                                var nextItem = swipeDelegate.ListView.view.itemAtIndex(
+                                            model.index + 1)
+                                if (nextItem) {
                                     nextItem.topDropIndicator.visible = visible
                                 }
                             }
                             gradient: Gradient {
                                 orientation: Gradient.Vertical
                                 GradientStop {
-                                    position: 0.00;
-                                    color: "transparent";
+                                    position: 0.00
+                                    color: "transparent"
                                 }
                                 GradientStop {
-                                    position: 1.00;
-                                    color: SkrTheme.accent;
+                                    position: 1.00
+                                    color: SkrTheme.accent
                                 }
                             }
-
                         }
-
 
                         SkrListItemPane {
                             id: content
@@ -1218,17 +1167,19 @@ Item {
                             property int sourceIndex: -2
                             property int projectId: model.projectId
                             property int treeItemId: model.treeItemId
-                            property point dragPoint: Qt.point(width / 2, height / 2)
+                            property point dragPoint: Qt.point(width / 2,
+                                                               height / 2)
 
-                            property bool isCurrent: model.index === listView.currentIndex ? true : false
+                            property bool isCurrent: model.index
+                                                     === listView.currentIndex ? true : false
 
                             anchors.fill: parent
                             opacity: model.cutCopy ? 0.2 : 1.0
 
                             Drag.active: mouseDragHandler.active | touchDragHandler.active
                             Drag.source: content
-                            Drag.hotSpot.x: dragPoint.x  / 1.5
-                            Drag.hotSpot.y: dragPoint.y  / 1.5
+                            Drag.hotSpot.x: dragPoint.x / 1.5
+                            Drag.hotSpot.y: dragPoint.y / 1.5
                             Drag.keys: ["application/skribisto-tree-item"]
 
                             Drag.supportedActions: Qt.MoveAction
@@ -1238,9 +1189,9 @@ Item {
                                 "application/skribisto-tree-item": "Copied text"
                             }
 
-
                             borderWidth: 2
-                            borderColor: mouseDragHandler.active | content.dragging ? SkrTheme.accent : "transparent"
+                            borderColor: mouseDragHandler.active
+                                         | content.dragging ? SkrTheme.accent : "transparent"
                             Behavior on borderColor {
                                 enabled: SkrSettings.ePaperSettings.animationEnabled
                                 ColorAnimation {
@@ -1258,16 +1209,14 @@ Item {
                                 //grabPermissions: PointerHandler.TakeOverForbidden
                                 onActiveChanged: {
                                     if (active) {
+
                                         //swipeDelegate.ListView.view.enableSection(false)
-
-
-                                        Globals.touchUsed  = false
+                                        Globals.touchUsed = false
                                         listView.interactive = false
                                         moveSourceInt = content.visualIndex
                                         moveSourceTreeItemId = content.treeItemId
                                         moveSourceProjectId = content.projectId
                                         priv.dragging = true
-
 
                                         //cancelDragTimer.stop()
                                     } else {
@@ -1278,7 +1227,6 @@ Item {
                                         content.Drag.drop()
                                         //swipeDelegate.ListView.view.enableSection(true)
                                     }
-
                                 }
                                 enabled: swipeDelegate.ListView.view.popupId === -1
 
@@ -1290,22 +1238,20 @@ Item {
                                 }
 
                                 grabPermissions: PointerHandler.CanTakeOverFromItems
-                                                 | PointerHandler.CanTakeOverFromAnything | PointerHandler.TakeOverForbidden
-
-
+                                                 | PointerHandler.CanTakeOverFromAnything
+                                                 | PointerHandler.TakeOverForbidden
                             }
 
                             DragHandler {
                                 id: touchDragHandler
-                                acceptedDevices: PointerDevice.TouchScreen
-                                                 | PointerDevice.Stylus
+                                acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
 
                                 //xAxis.enabled: false
                                 //grabPermissions: PointerHandler.TakeOverForbidden
                                 onActiveChanged: {
                                     if (active) {
                                         //swipeDelegate.ListView.view.enableSection(false)
-                                        Globals.touchUsed  = true
+                                        Globals.touchUsed = true
                                         listView.interactive = false
                                         moveSourceInt = content.visualIndex
                                         moveSourceTreeItemId = content.treeItemId
@@ -1321,7 +1267,8 @@ Item {
                                         //swipeDelegate.ListView.view.enableSection(true)
                                     }
                                 }
-                                enabled: content.dragging && swipeDelegate.ListView.view.popupId === -1
+                                enabled: content.dragging
+                                         && swipeDelegate.ListView.view.popupId === -1
 
                                 onCanceled: {
                                     //cancelDragTimer.stop()
@@ -1341,12 +1288,11 @@ Item {
                             //                                    content.dragging = false
                             //                                }
                             //                            }
-
                             TapHandler {
                                 id: tapHandler
                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
 
-                                onSingleTapped: function(eventPoint) {
+                                onSingleTapped: function (eventPoint) {
                                     priv.selecting = false
 
                                     if (content.dragging || priv.renaming) {
@@ -1354,30 +1300,27 @@ Item {
                                         return
                                     }
 
-                                    Globals.touchUsed  = false
+                                    Globals.touchUsed = false
                                     swipeDelegate.ListView.view.interactive = false
 
-
-                                    if (skrData.treePropertyHub(
-                                                ).getProperty(
+                                    if (skrData.treePropertyHub().getProperty(
                                                 model.projectId,
                                                 model.treeItemId,
                                                 "can_add_child_tree_item",
                                                 "true") === "true") {
 
-                                        if( root.popupId >= 0){
-                                            setCurrentTreeItemParentIdCalled(model.projectId , model.treeItemId)
-                                        }
-                                        else{
+                                        if (root.popupId >= 0) {
+                                            setCurrentTreeItemParentIdCalled(
+                                                        model.projectId,
+                                                        model.treeItemId)
+                                        } else {
                                             swipeDelegate.ListView.view.currentIndex = model.index
                                             goToChildTimer.start()
                                         }
-
                                     } else {
-                                        if( root.popupId >= 0){
+                                        if (root.popupId >= 0) {
                                             openDocumentTimer.start()
-                                        }
-                                        else {
+                                        } else {
                                             swipeDelegate.ListView.view.currentIndex = model.index
                                         }
                                     }
@@ -1386,7 +1329,7 @@ Item {
                                     eventPoint.accepted = true
                                 }
 
-                                onDoubleTapped: function(eventPoint) {
+                                onDoubleTapped: function (eventPoint) {
                                     openDocumentTimer.stop()
                                     goToChildTimer.stop()
                                     if (content.dragging || priv.renaming) {
@@ -1394,9 +1337,8 @@ Item {
                                         return
                                     }
 
-                                    Globals.touchUsed  = false
+                                    Globals.touchUsed = false
                                     swipeDelegate.ListView.view.interactive = false
-
 
                                     //console.log("double tapped")
                                     swipeDelegate.ListView.view.currentIndex = model.index
@@ -1406,14 +1348,15 @@ Item {
                                     eventPoint.accepted = true
                                 }
 
-                                onGrabChanged: function(transition, point) {
+                                onGrabChanged: function (transition, point) {
                                     point.accepted = false
                                 }
 
                                 onPressedChanged: {
-                                    content.grabToImage(function(result) {
+                                    content.grabToImage(function (result) {
                                         content.Drag.imageSource = result.url
-                                    }, Qt.size(content.width / 1.5, content.height / 1.5))
+                                    }, Qt.size(content.width / 1.5,
+                                               content.height / 1.5))
 
                                     content.dragPoint = point.pressPosition
                                 }
@@ -1425,8 +1368,7 @@ Item {
                                 id: touchTapHandler
                                 acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
 
-
-                                onSingleTapped: function(eventPoint) {
+                                onSingleTapped: function (eventPoint) {
                                     priv.selecting = false
 
                                     if (content.dragging || priv.renaming) {
@@ -1434,13 +1376,12 @@ Item {
                                         return
                                     }
 
-                                    Globals.touchUsed  = true
+                                    Globals.touchUsed = true
                                     swipeDelegate.ListView.view.interactive = true
 
                                     swipeDelegate.ListView.view.currentIndex = model.index
 
-                                    if (skrData.treePropertyHub(
-                                                ).getProperty(
+                                    if (skrData.treePropertyHub().getProperty(
                                                 model.projectId,
                                                 model.treeItemId,
                                                 "can_add_child_tree_item",
@@ -1454,7 +1395,7 @@ Item {
                                     eventPoint.accepted = true
                                 }
 
-                                onDoubleTapped: function(eventPoint) {
+                                onDoubleTapped: function (eventPoint) {
                                     openDocumentTimer.stop()
                                     goToChildTimer.stop()
                                     if (content.dragging || priv.renaming) {
@@ -1462,7 +1403,7 @@ Item {
                                         return
                                     }
 
-                                    Globals.touchUsed  = true
+                                    Globals.touchUsed = true
                                     swipeDelegate.ListView.view.interactive = true
 
                                     //console.log("double tapped")
@@ -1474,29 +1415,29 @@ Item {
                                 }
 
                                 onLongPressed: {
-                                    Globals.touchUsed  = true
+                                    Globals.touchUsed = true
 
                                     // needed to activate the grab handler
-
                                     content.dragging = true
                                     listView.interactive = false
                                     priv.selecting = false
                                 }
 
-                                onGrabChanged: function(transition, point) {
+                                onGrabChanged: function (transition, point) {
                                     point.accepted = true
                                 }
 
                                 onPressedChanged: {
 
-                                    content.grabToImage(function(result) {
+                                    content.grabToImage(function (result) {
                                         content.Drag.imageSource = result.url
-                                    }, Qt.size(content.width / 1.5, content.height / 1.5))
+                                    }, Qt.size(content.width / 1.5,
+                                               content.height / 1.5))
 
                                     content.dragPoint = point.pressPosition
                                 }
 
-                               // grabPermissions: PointerHandler.TakeOverForbidden
+                                // grabPermissions: PointerHandler.TakeOverForbidden
                             }
                             Timer {
                                 id: openDocumentTimer
@@ -1519,10 +1460,10 @@ Item {
                                 id: rightClickTapHandler
                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                                 acceptedButtons: Qt.RightButton
-                                onSingleTapped: function(eventPoint) {
+                                onSingleTapped: function (eventPoint) {
                                     listView.interactive = eventPoint.device.type
                                             === PointerDevice.Mouse
-                                    Globals.touchUsed  = false
+                                    Globals.touchUsed = false
 
                                     if (menu.visible) {
                                         menu.close()
@@ -1531,11 +1472,10 @@ Item {
 
                                     listView.currentIndex = model.index
 
-
-
                                     swipeDelegate.configureMenu()
 
-                                    menu.popup(swipeDelegate, 0, swipeDelegate.height)
+                                    menu.popup(swipeDelegate, 0,
+                                               swipeDelegate.height)
 
                                     eventPoint.accepted = true
                                 }
@@ -1547,10 +1487,10 @@ Item {
                                 id: middleClickTapHandler
                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                                 acceptedButtons: Qt.MiddleButton
-                                onSingleTapped: function(eventPoint) {
+                                onSingleTapped: function (eventPoint) {
                                     listView.interactive = eventPoint.device.type
                                             === PointerDevice.Mouse
-                                    Globals.touchUsed  = false
+                                    Globals.touchUsed = false
                                     listView.currentIndex = model.index
                                     swipeDelegate.configureMenu()
                                     openTreeItemInAnotherViewAction.trigger()
@@ -1563,19 +1503,14 @@ Item {
                             MouseArea {
                                 anchors.fill: parent
                                 acceptedButtons: Qt.NoButton
-                                onWheel: function(wheel) {
+                                onWheel: function (wheel) {
                                     listView.interactive = false
-                                    listView.flick(
-                                                0,
-                                                wheel.angleDelta.y * 50)
+                                    listView.flick(0, wheel.angleDelta.y * 50)
                                     wheel.accepted = true
                                 }
 
                                 enabled: listView.interactive === false
                             }
-
-
-
 
                             Action {
                                 id: goToChildAction
@@ -1589,11 +1524,9 @@ Item {
                                 onTriggered: {
                                     console.log("goToChildAction triggered")
 
-
-                                    root.setCurrentTreeItemParentIdCalled(model.projectId, model.treeItemId)
-
-
-
+                                    root.setCurrentTreeItemParentIdCalled(
+                                                model.projectId,
+                                                model.treeItemId)
                                 }
                             }
 
@@ -1613,13 +1546,11 @@ Item {
                                                 model.projectId,
                                                 treeItemIdToEdit)
                                     if (index !== -2) {
-                                        listView.itemAtIndex(
-                                                    index).editName()
+                                        listView.itemAtIndex(index).editName()
                                     }
                                     treeItemIdToEdit = -2
                                 }
                             }
-
 
                             contentItem: ColumnLayout {
                                 id: columnLayout3
@@ -1633,13 +1564,15 @@ Item {
 
                                     Rectangle {
                                         id: currentItemIndicator
-                                        color: listView.currentIndex === model.index ? "lightsteelblue" : "transparent"
+                                        color: listView.currentIndex
+                                               === model.index ? "lightsteelblue" : "transparent"
                                         Layout.fillHeight: true
                                         Layout.preferredWidth: 3
                                     }
                                     Rectangle {
                                         id: openedItemIndicator
-                                        color: model.projectId === rootWindow.viewManager.focusedPage.projectId
+                                        color: model.projectId
+                                               === rootWindow.viewManager.focusedPage.projectId
                                                && model.treeItemId === rootWindow.viewManager.focusedPage.treeItemId ? SkrTheme.accent : "transparent"
                                         Layout.fillHeight: true
                                         Layout.preferredWidth: 3
@@ -1738,10 +1671,7 @@ Item {
 
                                                 height: 30 * SkrSettings.interfaceSettings.zoom
                                                 width: 30 * SkrSettings.interfaceSettings.zoom
-                                                source: model.otherProperties ? getIconUrlFromPageType(
-                                                                                    model.type, model.projectId, model.treeItemId) : getIconUrlFromPageType(
-                                                                                    model.type, model.projectId, model.treeItemId)
-
+                                                source: model.otherProperties ? getIconUrlFromPageType(model.type, model.projectId, model.treeItemId) : getIconUrlFromPageType(model.type, model.projectId, model.treeItemId)
                                             }
 
                                             hoverEnabled: true
@@ -1757,17 +1687,17 @@ Item {
 
                                                 TapHandler {
 
-                                                    onSingleTapped: function(eventPoint) {
+                                                    onSingleTapped: function (eventPoint) {
                                                         tapHandler.singleTapped(
                                                                     eventPoint)
                                                     }
 
-                                                    onDoubleTapped: function(eventPoint) {
+                                                    onDoubleTapped: function (eventPoint) {
                                                         tapHandler.doubleTapped(
                                                                     eventPoint)
                                                     }
 
-                                                    onGrabChanged: function(transition, point) {
+                                                    onGrabChanged: function (transition, point) {
                                                         tapHandler.grabChanged(
                                                                     transition,
                                                                     point)
@@ -1775,20 +1705,21 @@ Item {
                                                 }
 
                                                 TapHandler {
-                                                    acceptedDevices: PointerDevice.Mouse| PointerDevice.Stylus
+                                                    acceptedDevices: PointerDevice.Mouse
+                                                                     | PointerDevice.Stylus
                                                     acceptedButtons: Qt.RightButton
 
-                                                    onSingleTapped: function(eventPoint) {
+                                                    onSingleTapped: function (eventPoint) {
                                                         rightClickTapHandler.singleTapped(
                                                                     eventPoint)
                                                     }
 
-                                                    onDoubleTapped: function(eventPoint) {
+                                                    onDoubleTapped: function (eventPoint) {
                                                         rightClickTapHandler.doubleTapped(
                                                                     eventPoint)
                                                     }
 
-                                                    onGrabChanged: function(transition, point) {
+                                                    onGrabChanged: function (transition, point) {
                                                         rightClickTapHandler.grabChanged(
                                                                     transition,
                                                                     point)
@@ -1796,20 +1727,21 @@ Item {
                                                 }
 
                                                 TapHandler {
-                                                    acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
+                                                    acceptedDevices: PointerDevice.Mouse
+                                                                     | PointerDevice.Stylus
                                                     acceptedButtons: Qt.MiddleButton
 
-                                                    onSingleTapped: function(eventPoint) {
+                                                    onSingleTapped: function (eventPoint) {
                                                         middleClickTapHandler.singleTapped(
                                                                     eventPoint)
                                                     }
 
-                                                    onDoubleTapped: function(eventPoint) {
+                                                    onDoubleTapped: function (eventPoint) {
                                                         middleClickTapHandler.doubleTapped(
                                                                     eventPoint)
                                                     }
 
-                                                    onGrabChanged: function(transition, point) {
+                                                    onGrabChanged: function (transition, point) {
                                                         middleClickTapHandler.grabChanged(
                                                                     transition,
                                                                     point)
@@ -1837,11 +1769,9 @@ Item {
                                                 Layout.fillWidth: true
                                                 Layout.topMargin: 2
                                                 Layout.leftMargin: 4
-                                                Layout.alignment: Qt.AlignLeft
-                                                                  | Qt.AlignVCenter
+                                                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                                 font.bold: model.projectIsActive
-                                                           && model.indent
-                                                           === -1 ? true : false
+                                                           && model.indent === -1 ? true : false
                                                 text: model.type === 'PROJECT' ? model.projectName : model.title
                                                 elide: Text.ElideRight
                                             }
@@ -1870,20 +1800,19 @@ Item {
                                                 }
 
                                                 //Keys.priority: Keys.AfterItem
-                                                Keys.onShortcutOverride: function(event) { event.accepted = (event.key === Qt.Key_Escape)}
-                                                Keys.onPressed: function(event) {
+                                                Keys.onShortcutOverride: function (event) {
+                                                    event.accepted = (event.key === Qt.Key_Escape)
+                                                }
+                                                Keys.onPressed: function (event) {
                                                     if (event.key === Qt.Key_Return) {
                                                         console.log("Return key pressed title")
-                                                        editingFinished(
-                                                                    )
+                                                        editingFinished()
                                                         event.accepted = true
                                                     }
                                                     if ((event.modifiers & Qt.CtrlModifier)
-                                                            && event.key
-                                                            === Qt.Key_Return) {
+                                                            && event.key === Qt.Key_Return) {
                                                         console.log("Ctrl Return key pressed title")
-                                                        editingFinished(
-                                                                    )
+                                                        editingFinished()
                                                         event.accepted = true
                                                     }
                                                     if (event.key === Qt.Key_Escape) {
@@ -1924,20 +1853,19 @@ Item {
                                                 }
 
                                                 //Keys.priority: Keys.AfterItem
-                                                Keys.onShortcutOverride: function(event) { event.accepted = (event.key === Qt.Key_Escape)}
-                                                Keys.onPressed: function(event) {
+                                                Keys.onShortcutOverride: function (event) {
+                                                    event.accepted = (event.key === Qt.Key_Escape)
+                                                }
+                                                Keys.onPressed: function (event) {
                                                     if (event.key === Qt.Key_Return) {
                                                         console.log("Return key pressed title")
-                                                        editingFinished(
-                                                                    )
+                                                        editingFinished()
                                                         event.accepted = true
                                                     }
                                                     if ((event.modifiers & Qt.CtrlModifier)
-                                                            && event.key
-                                                            === Qt.Key_Return) {
+                                                            && event.key === Qt.Key_Return) {
                                                         console.log("Ctrl Return key pressed title")
-                                                        editingFinished(
-                                                                    )
+                                                        editingFinished()
                                                         event.accepted = true
                                                     }
                                                     if (event.key === Qt.Key_Escape) {
@@ -1967,11 +1895,11 @@ Item {
                                                     activeFocusOnTab: false
                                                     text: model.label
                                                           === undefined ? "" : model.label
-                                                    visible: text.length
-                                                             === 0 ? false : true
+                                                    visible: text.length === 0 ? false : true
                                                     Layout.bottomMargin: 2
                                                     Layout.rightMargin: 4
-                                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                                    Layout.alignment: Qt.AlignRight
+                                                                      | Qt.AlignVCenter
                                                     elide: Text.ElideRight
                                                     font.italic: true
                                                     horizontalAlignment: Qt.AlignRight
@@ -2018,7 +1946,8 @@ Item {
 
                                             swipeDelegate.configureMenu()
 
-                                            menu.popup(menuButton, 0, menuButton.height)
+                                            menu.popup(menuButton, 0,
+                                                       menuButton.height)
                                         }
 
                                         visible: itemHoverHandler.hovered
@@ -2029,7 +1958,8 @@ Item {
                                         Layout.fillHeight: true
                                         Layout.preferredWidth: 2
 
-                                        color: model.indent === 0 ? Material.color(Material.Indigo) : (model.indent === 1 ? Material.color(Material.LightBlue) : (model.indent === 2 ? Material.color(Material.LightGreen) : (model.indent === 3 ? Material.color(Material.Amber) : (model.indent === 4 ? Material.color(Material.DeepOrange) : Material.color(Material.Teal)))))
+                                        color: model.indent === 0 ? Material.color(
+                                                                        Material.Indigo) : (model.indent === 1 ? Material.color(Material.LightBlue) : (model.indent === 2 ? Material.color(Material.LightGreen) : (model.indent === 3 ? Material.color(Material.Amber) : (model.indent === 4 ? Material.color(Material.DeepOrange) : Material.color(Material.Teal)))))
                                     }
                                 }
                                 Rectangle {
@@ -2092,7 +2022,6 @@ Item {
                         //                onActivated: addBeforeAction.trigger()
                         //                enabled: root.visible
                         //            }
-
 
                         //----------------------------------------------------------
 
@@ -2287,7 +2216,6 @@ Item {
         property bool isRenamable
         property bool isTrashable
 
-
         onOpened: {
 
         }
@@ -2309,18 +2237,15 @@ Item {
                 enabled: menu.isOpenable && listView.enabled
 
                 onTriggered: {
-                    console.log("open treeItem action",
-                                menu.projectId,
+                    console.log("open treeItem action", menu.projectId,
                                 menu.treeItemId)
-                    root.openDocument(menu.projectId,
-                                      menu.treeItemId)
+                    root.openDocument(menu.projectId, menu.treeItemId)
                 }
             }
         }
         SkrMenuItem {
-            height: ! menu.isOpenable
-                    ||  menu.treeItemId === -1 ? 0 : undefined
-            visible:  menu.isOpenable
+            height: !menu.isOpenable || menu.treeItemId === -1 ? 0 : undefined
+            visible: menu.isOpenable
 
             action: Action {
                 id: openTreeItemInAnotherViewAction
@@ -2332,18 +2257,16 @@ Item {
                 enabled: menu.isOpenable && listView.enabled
                 onTriggered: {
                     console.log("open treeItem in another view action",
-                                menu.projectId,
-                                menu.treeItemId)
-                    root.openDocumentInAnotherView(
-                                menu.projectId,
-                                menu.treeItemId)
+                                menu.projectId, menu.treeItemId)
+                    root.openDocumentInAnotherView(menu.projectId,
+                                                   menu.treeItemId)
                 }
             }
         }
 
         SkrMenuItem {
-            height: ! menu.isOpenable ? 0 : undefined
-            visible:  menu.isOpenable
+            height: !menu.isOpenable ? 0 : undefined
+            visible: menu.isOpenable
 
             action: Action {
                 id: openTreeItemInNewWindowAction
@@ -2355,47 +2278,38 @@ Item {
                 enabled: menu.isOpenable && listView.enabled
                 onTriggered: {
                     console.log("open treeItem in new window action",
-                                menu.projectId,
-                                menu.treeItemId)
+                                menu.projectId, menu.treeItemId)
 
-                    root.openDocumentInNewWindow(
-                                menu.projectId,
-                                menu.treeItemId)
+                    root.openDocumentInNewWindow(menu.projectId,
+                                                 menu.treeItemId)
                     //                                                setCurrentTreeItemId( menu.projectId,  menu.treeItemId)
                 }
-
-
-
             }
         }
 
         SkrMenuItem {
-            height:  menu.treeItemId === 0 ? undefined : 0
-            visible:  menu.treeItemId === 0
-            enabled:  menu.projectIsActive === false
-                      && listView.enabled
-                      &&  menu.treeItemId === 0
+            height: menu.treeItemId === 0 ? undefined : 0
+            visible: menu.treeItemId === 0
+            enabled: menu.projectIsActive === false && listView.enabled
+                     && menu.treeItemId === 0
             text: qsTr("Set as active project")
             icon {
                 source: "qrc:///icons/backup/tab-new.svg"
             }
             onTriggered: {
-                console.log("set active project",
-                            menu.projectId)
-                skrData.projectHub(
-                            ).setActiveProject(
-                            menu.projectId)
+                console.log("set active project", menu.projectId)
+                skrData.projectHub().setActiveProject(menu.projectId)
             }
         }
 
         MenuSeparator {
-            height:  menu.isRenamable ? undefined : 0
-            visible:  menu.isRenamable
+            height: menu.isRenamable ? undefined : 0
+            visible: menu.isRenamable
         }
 
         SkrMenuItem {
-            height:  menu.isRenamable ? undefined : 0
-            visible:  menu.isRenamable
+            height: menu.isRenamable ? undefined : 0
+            visible: menu.isRenamable
             action: Action {
                 id: renameAction
                 text: qsTr("Rename")
@@ -2405,8 +2319,7 @@ Item {
                 enabled: listView.enabled
 
                 onTriggered: {
-                    console.log("rename action",
-                                menu.projectId,
+                    console.log("rename action", menu.projectId,
                                 menu.treeItemId)
                     listView.currentItem.editName()
                 }
@@ -2414,8 +2327,8 @@ Item {
         }
 
         SkrMenuItem {
-            height: ! menu.isRenamable ? 0 : undefined
-            visible:  menu.isRenamable
+            height: !menu.isRenamable ? 0 : undefined
+            visible: menu.isRenamable
             action: Action {
                 id: setLabelAction
                 text: qsTr("Set label")
@@ -2425,26 +2338,22 @@ Item {
                 }
                 enabled: listView.enabled
                 onTriggered: {
-                    console.log("sel label",
-                                menu.projectId,
-                                menu.treeItemId)
+                    console.log("sel label", menu.projectId, menu.treeItemId)
                     listView.currentItem.editLabel()
                 }
             }
         }
 
         MenuSeparator {
-            height: ! menu.isMovable
-                    || ! menu.isCopyable
-                    || ! menu.canAddChildTreeItem ? 0 : undefined
-            visible:  menu.isMovable
-                      ||  menu.isCopyable
-                      ||  menu.canAddChildTreeItem
+            height: !menu.isMovable || !menu.isCopyable
+                    || !menu.canAddChildTreeItem ? 0 : undefined
+            visible: menu.isMovable || menu.isCopyable
+                     || menu.canAddChildTreeItem
         }
 
         SkrMenuItem {
-            height: ! menu.isMovable ? 0 : undefined
-            visible:  menu.isMovable
+            height: !menu.isMovable ? 0 : undefined
+            visible: menu.isMovable
             action: Action {
                 id: cutAction
                 text: qsTr("Cut")
@@ -2457,27 +2366,22 @@ Item {
                 onTriggered: {
 
                     if (priv.selectedTreeItemsIds.length > 0) {
-                        console.log("cut action",
-                                    menu.projectId,
+                        console.log("cut action", menu.projectId,
                                     priv.selectedTreeItemsIds)
-                        skrData.treeHub().cut(
-                                    menu.projectId,
-                                    priv.selectedTreeItemsIds)
+                        skrData.treeHub().cut(menu.projectId,
+                                              priv.selectedTreeItemsIds)
                     } else {
-                        console.log("cut action",
-                                    menu.projectId,
+                        console.log("cut action", menu.projectId,
                                     menu.treeItemId)
-                        skrData.treeHub().cut(
-                                    menu.projectId,
-                                    [ menu.treeItemId])
+                        skrData.treeHub().cut(menu.projectId, [menu.treeItemId])
                     }
                 }
             }
         }
 
         SkrMenuItem {
-            height: ! menu.isCopyable ? 0 : undefined
-            visible:  menu.isCopyable
+            height: !menu.isCopyable ? 0 : undefined
+            visible: menu.isCopyable
             action: Action {
 
                 id: copyAction
@@ -2490,27 +2394,23 @@ Item {
 
                 onTriggered: {
                     if (priv.selectedTreeItemsIds.length > 0) {
-                        console.log("copy action",
-                                    menu.projectId,
+                        console.log("copy action", menu.projectId,
                                     priv.selectedTreeItemsIds)
-                        skrData.treeHub().copy(
-                                    menu.projectId,
-                                    priv.selectedTreeItemsIds)
+                        skrData.treeHub().copy(menu.projectId,
+                                               priv.selectedTreeItemsIds)
                     } else {
-                        console.log("copy action",
-                                    menu.projectId,
+                        console.log("copy action", menu.projectId,
                                     menu.treeItemId)
-                        skrData.treeHub().copy(
-                                    menu.projectId,
-                                    [ menu.treeItemId])
+                        skrData.treeHub().copy(menu.projectId,
+                                               [menu.treeItemId])
                     }
                 }
             }
         }
 
         SkrMenuItem {
-            height: ! menu.canAddChildTreeItem ? 0 : undefined
-            visible:  menu.canAddChildTreeItem
+            height: !menu.canAddChildTreeItem ? 0 : undefined
+            visible: menu.canAddChildTreeItem
             action: Action {
 
                 id: pasteAction
@@ -2522,33 +2422,26 @@ Item {
                 enabled: listView.enabled
 
                 onTriggered: {
-                    console.log("paste action",
-                                menu.projectId,
-                                menu.treeItemId)
-                    var result = skrData.treeHub(
-                                ).paste(
-                                menu.projectId,
-                                menu.treeItemId,
-                                true)
+                    console.log("paste action", menu.projectId, menu.treeItemId)
+                    var result = skrData.treeHub().paste(menu.projectId,
+                                                         menu.treeItemId, true)
 
                     if (!result.success) {
-                        console.debug(
-                                    "paste action: error")
+                        console.debug("paste action: error")
                     }
                 }
             }
         }
 
         MenuSeparator {
-            height: !( menu.canAddSiblingTreeItem
-                      ||  menu.canAddChildTreeItem) ? 0 : undefined
-            visible: ( menu.canAddSiblingTreeItem
-                      ||  menu.canAddChildTreeItem)
+            height: !(menu.canAddSiblingTreeItem
+                      || menu.canAddChildTreeItem) ? 0 : undefined
+            visible: (menu.canAddSiblingTreeItem || menu.canAddChildTreeItem)
         }
 
         SkrMenuItem {
-            height: ! menu.canAddSiblingTreeItem ? 0 : undefined
-            visible:  menu.canAddSiblingTreeItem
+            height: !menu.canAddSiblingTreeItem ? 0 : undefined
+            visible: menu.canAddSiblingTreeItem
             action: Action {
                 id: addBeforeAction
                 text: qsTr("Add before")
@@ -2557,38 +2450,32 @@ Item {
                 }
                 enabled: listView.enabled
                 onTriggered: {
-                    console.log("add before action",
-                                menu.projectId,
+                    console.log("add before action", menu.projectId,
                                 menu.treeItemId)
 
                     var visualIndex = listView.currentIndex
 
-                    newItemPopup.projectId =  menu.projectId
-                    newItemPopup.treeItemId =  menu.treeItemId
+                    newItemPopup.projectId = menu.projectId
+                    newItemPopup.treeItemId = menu.treeItemId
                     newItemPopup.visualIndex = visualIndex
-                    newItemPopup.createFunction
-                            = afterNewItemTypeIsChosen
+                    newItemPopup.createFunction = afterNewItemTypeIsChosen
                     newItemPopup.open()
                 }
 
                 function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
 
-                    for(var i = 0; i < quantity ; i++){
-                        skrData.treeHub().addTreeItemAbove(
-                                    projectId,
-                                    treeItemId,
-                                    pageType)
-
+                    for (var i = 0; i < quantity; i++) {
+                        skrData.treeHub().addTreeItemAbove(projectId,
+                                                           treeItemId, pageType)
                     }
-                    listView.itemAtIndex(
-                                visualIndex).editName()
+                    listView.itemAtIndex(visualIndex).editName()
                 }
             }
         }
 
         SkrMenuItem {
-            height: ! menu.canAddSiblingTreeItem ? 0 : undefined
-            visible:  menu.canAddSiblingTreeItem
+            height: !menu.canAddSiblingTreeItem ? 0 : undefined
+            visible: menu.canAddSiblingTreeItem
             action: Action {
                 id: addAfterAction
                 text: qsTr("Add after")
@@ -2597,39 +2484,32 @@ Item {
                 }
                 enabled: listView.enabled
                 onTriggered: {
-                    console.log("add after action",
-                                menu.projectId,
+                    console.log("add after action", menu.projectId,
                                 menu.treeItemId)
 
                     var visualIndex = listView.currentIndex + 1
 
-                    newItemPopup.projectId =  menu.projectId
-                    newItemPopup.treeItemId =  menu.treeItemId
+                    newItemPopup.projectId = menu.projectId
+                    newItemPopup.treeItemId = menu.treeItemId
                     newItemPopup.visualIndex = visualIndex
-                    newItemPopup.createFunction
-                            = afterNewItemTypeIsChosen
+                    newItemPopup.createFunction = afterNewItemTypeIsChosen
                     newItemPopup.open()
                 }
 
                 function afterNewItemTypeIsChosen(projectId, treeItemId, visualIndex, pageType, quantity) {
 
-                    for(var i = 0; i < quantity ; i++){
-                        skrData.treeHub().addTreeItemBelow(
-                                    projectId,
-                                    treeItemId,
-                                    pageType)
-
+                    for (var i = 0; i < quantity; i++) {
+                        skrData.treeHub().addTreeItemBelow(projectId,
+                                                           treeItemId, pageType)
                     }
-                    listView.itemAtIndex(
-                                visualIndex).editName()
+                    listView.itemAtIndex(visualIndex).editName()
                 }
-
             }
         }
 
         SkrMenuItem {
-            height: ! menu.canAddChildTreeItem ? 0 : undefined
-            visible:  menu.canAddChildTreeItem
+            height: !menu.canAddChildTreeItem ? 0 : undefined
+            visible: menu.canAddChildTreeItem
             action: Action {
                 id: addChildAction
                 text: qsTr("Add a sub-item")
@@ -2638,17 +2518,14 @@ Item {
                 }
                 enabled: listView.enabled
                 onTriggered: {
-                    console.log("add child action",
-                                menu.projectId,
+                    console.log("add child action", menu.projectId,
                                 menu.treeItemId)
 
                     //save current ids:
-
-                    newItemPopup.projectId =  menu.projectId
-                    newItemPopup.treeItemId =  menu.treeItemId
+                    newItemPopup.projectId = menu.projectId
+                    newItemPopup.treeItemId = menu.treeItemId
                     newItemPopup.visualIndex = 0
-                    newItemPopup.createFunction
-                            = afterNewItemTypeIsChosen
+                    newItemPopup.createFunction = afterNewItemTypeIsChosen
                     newItemPopup.open()
                 }
 
@@ -2657,20 +2534,21 @@ Item {
                     // push new view
                     setCurrentTreeItemParentIdCalled(projectId, treeItemId)
 
-                    for(var i = 0; i < quantity ; i++){
-                        skrData.treeHub().addChildTreeItem(projectId, treeItemId, pageType)
+                    for (var i = 0; i < quantity; i++) {
+                        skrData.treeHub().addChildTreeItem(projectId,
+                                                           treeItemId, pageType)
                     }
                 }
             }
         }
         MenuSeparator {
-            height: ! menu.isMovable ? 0 : undefined
-            visible:  menu.isMovable
+            height: !menu.isMovable ? 0 : undefined
+            visible: menu.isMovable
         }
 
         SkrMenuItem {
-            height: ! menu.isMovable ? 0 : undefined
-            visible:  menu.isMovable
+            height: !menu.isMovable ? 0 : undefined
+            visible: menu.isMovable
             action: Action {
                 id: moveUpAction
                 text: qsTr("Move up")
@@ -2678,11 +2556,9 @@ Item {
                 icon {
                     source: "qrc:///icons/backup/object-order-raise.svg"
                 }
-                enabled: listView.enabled
-                         &&  menu.index !== 0
+                enabled: listView.enabled && menu.index !== 0
                 onTriggered: {
-                    console.log("move up action",
-                                menu.projectId,
+                    console.log("move up action", menu.projectId,
                                 menu.treeItemId)
 
                     if (temporarilyDisableMove) {
@@ -2691,18 +2567,16 @@ Item {
                     temporarilyDisableMove = true
                     temporarilyDisableMoveTimer.start()
 
-                    skrData.treeHub().moveTreeItemUp(
-                                menu.projectId,
-                                menu.treeItemId)
+                    skrData.treeHub().moveTreeItemUp(menu.projectId,
+                                                     menu.treeItemId)
                     listView.decrementCurrentIndex()
-
                 }
             }
         }
 
         SkrMenuItem {
-            height: ! menu.isMovable ? 0 : undefined
-            visible:  menu.isMovable
+            height: !menu.isMovable ? 0 : undefined
+            visible: menu.isMovable
             action: Action {
                 id: moveDownAction
                 text: qsTr("Move down")
@@ -2710,12 +2584,11 @@ Item {
                 icon {
                     source: "qrc:///icons/backup/object-order-lower.svg"
                 }
-                enabled:  menu.index !== visualModel.items.count - 1
-                          && listView.enabled
+                enabled: menu.index !== visualModel.items.count - 1
+                         && listView.enabled
 
                 onTriggered: {
-                    console.log("move down action",
-                                menu.projectId,
+                    console.log("move down action", menu.projectId,
                                 menu.treeItemId)
 
                     if (temporarilyDisableMove) {
@@ -2724,22 +2597,21 @@ Item {
                     temporarilyDisableMove = true
                     temporarilyDisableMoveTimer.start()
 
-                    skrData.treeHub().moveTreeItemDown(
-                                menu.projectId,
-                                menu.treeItemId)
+                    skrData.treeHub().moveTreeItemDown(menu.projectId,
+                                                       menu.treeItemId)
                     listView.incrementCurrentIndex()
                 }
             }
         }
 
         MenuSeparator {
-            height: ! menu.isTrashable ? 0 : undefined
-            visible:  menu.isTrashable
+            height: !menu.isTrashable ? 0 : undefined
+            visible: menu.isTrashable
         }
 
         SkrMenuItem {
-            height: ! menu.isTrashable ? 0 : undefined
-            visible:  menu.isTrashable
+            height: !menu.isTrashable ? 0 : undefined
+            visible: menu.isTrashable
             action: Action {
                 id: sendToTrashAction
                 text: qsTr("Send to trash")
@@ -2748,48 +2620,40 @@ Item {
                     source: "qrc:///icons/backup/edit-delete.svg"
                     color: "transparent"
                 }
-                enabled: listView.enabled
-                         &&  menu.indent !== -1
+                enabled: listView.enabled && menu.indent !== -1
                 onTriggered: {
-                    console.log("sent to trash action",
-                                menu.projectId,
+                    console.log("sent to trash action", menu.projectId,
                                 menu.treeItemId)
 
                     listView.currentItem.swipe.close()
                     listView.currentItem.removeTreeItemAnimation.start()
-                    skrData.treeHub().setTrashedWithChildren(
-                                menu.projectId,
-                                menu.treeItemId, true)
+                    skrData.treeHub().setTrashedWithChildren(menu.projectId,
+                                                             menu.treeItemId,
+                                                             true)
                 }
             }
         }
 
         MenuSeparator {
-            height:  menu.treeItemId !== 0 ? 0 : undefined
-            visible:  menu.treeItemId === 0
+            height: menu.treeItemId !== 0 ? 0 : undefined
+            visible: menu.treeItemId === 0
         }
 
         SkrMenuItem {
-            height:  menu.treeItemId === 0 ? undefined : 0
-            visible:  menu.treeItemId === 0
-            enabled: listView.enabled
-                     &&  menu.treeItemId === 0
+            height: menu.treeItemId === 0 ? undefined : 0
+            visible: menu.treeItemId === 0
+            enabled: listView.enabled && menu.treeItemId === 0
             text: qsTr("Close this project")
             icon {
                 source: "qrc:///icons/backup/document-close.svg"
                 color: "transparent"
             }
             onTriggered: {
-                console.log("close this project",
-                            menu.projectId)
+                console.log("close this project", menu.projectId)
 
                 sidePopupListModel.clear()
-                Globals.closeProjectCalled(
-                            menu.projectId)
+                Globals.closeProjectCalled(menu.projectId)
             }
         }
     }
-
-
 }
-

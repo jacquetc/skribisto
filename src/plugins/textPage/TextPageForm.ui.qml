@@ -2,9 +2,9 @@ import QtQuick
 import QtQml
 import QtQuick.Layouts
 
-import "../../../../Items"
-import "../../../../Commons"
-import "../../../.."
+import SkrControls
+import Skribisto
+import theme
 
 SkrBasePage {
     id: base
@@ -19,13 +19,11 @@ SkrBasePage {
     property alias pageMenuToolButton: pageMenuToolButton
     property alias titleLabel: titleLabel
 
-
     property alias countLabel: countLabel
     property alias relationshipPanel: relationshipPanel
     property int relationshipPanelPreferredHeight: 200
 
     property alias zoomWheelHandler: zoomWheelHandler
-
 
     clip: true
 
@@ -83,75 +81,60 @@ SkrBasePage {
             //-------------------------------------------------
             //-------------------------------------------------
             //-------------------------------------------------
+            Item {
+                id: middleBase
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                Layout.fillHeight: true
+                Layout.fillWidth: true
 
-
-                Item {
-                    id: middleBase
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-
-                    ColumnLayout {
-                        anchors.fill: parent
-
-                        Loader {
-                            id: loader_previousWritingZone
-
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: active ? 200 : 0
-                            sourceComponent: component_previousWritingZone
-                            active: false
-                        }
-
-                        WritingZone {
-                            id: writingZone
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
-                            textAreaStyleElevation: true
-                            minimalTextAreaWidth: 100
-                            textCenteringEnabled: SkrSettings.behaviorSettings.centerTextCursor
-
-                            textAreaStyleBackgroundColor: SkrTheme.mainTextAreaBackground
-                            textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
-                            textAreaStyleAccentColor: SkrTheme.accent
-                            paneStyleBackgroundColor: SkrTheme.pageBackground
-
-                            WheelHandler{
-                                id: zoomWheelHandler
-                                acceptedModifiers: Qt.ControlModifier
-                                target: SkrSettings.textSettings
-                                property: "textPointSize"
-                                grabPermissions: PointerHandler.CanTakeOverFromAnything
-                                rotationScale: 0.01
-                            }
-
-                        }
-                    }
-
+                ColumnLayout {
+                    anchors.fill: parent
 
                     Loader {
-                        id: minimapLoader
-                        asynchronous : true
+                        id: loader_previousWritingZone
 
-                        anchors.top: parent.top
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.bottomMargin: writingZone.findPanel.visible ? writingZone.findPanel.height : 0
-                        width: Qt.isQtObject(minimapLoader.item) ? minimapLoader.item.preferredWidth : -1
-
-
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: active ? 200 : 0
+                        sourceComponent: component_previousWritingZone
+                        active: false
                     }
 
+                    WritingZone {
+                        id: writingZone
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        textAreaStyleElevation: true
+                        minimalTextAreaWidth: 100
+                        textCenteringEnabled: SkrSettings.behaviorSettings.centerTextCursor
+
+                        textAreaStyleBackgroundColor: SkrTheme.mainTextAreaBackground
+                        textAreaStyleForegroundColor: SkrTheme.mainTextAreaForeground
+                        textAreaStyleAccentColor: SkrTheme.accent
+                        paneStyleBackgroundColor: SkrTheme.pageBackground
+
+                        WheelHandler {
+                            id: zoomWheelHandler
+                            acceptedModifiers: Qt.ControlModifier
+                            target: SkrSettings.textSettings
+                            property: "textPointSize"
+                            grabPermissions: PointerHandler.CanTakeOverFromAnything
+                            rotationScale: 0.01
+                        }
+                    }
                 }
 
+                Loader {
+                    id: minimapLoader
+                    asynchronous: true
 
-
-
-
-
-
-
-
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: writingZone.findPanel.visible ? writingZone.findPanel.height : 0
+                    width: Qt.isQtObject(
+                               minimapLoader.item) ? minimapLoader.item.preferredWidth : -1
+                }
+            }
         }
 
         RelationshipPanel {

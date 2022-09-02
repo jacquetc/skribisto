@@ -56,6 +56,7 @@ public:
     Q_INVOKABLE void insertAdditionalPropertyForViewManager(const QString & key,
                                                             const QVariant& value);
 
+    void addUniqueWindowForDevice();
 signals:
 
     void windowIdsChanged();

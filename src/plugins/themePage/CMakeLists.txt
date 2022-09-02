@@ -22,9 +22,14 @@ set(SRCS
     themepage.h
 )
 
-# Tell CMake to create the executable
-add_library(${PROJECT_NAME} SHARED ${SRCS})
 
+# Tell CMake to create the executable
+if(IOS)
+    message("static lib chosen")
+    add_library(${PROJECT_NAME} STATIC ${SRCS})
+else()
+    add_library(${PROJECT_NAME} SHARED ${SRCS})
+endif(IOS)
 
 qt_add_qml_module(${PROJECT_NAME}
     URI eu.skribisto.themePage
@@ -37,7 +42,9 @@ qt_add_qml_module(${PROJECT_NAME}
 )
 
 add_dependencies(${PROJECT_NAME} skribisto-data)
-add_dependencies(${PROJECT_NAME} skribisto)
+add_dependencies(${PROJECT_NAME} Skribistoplugin)
+add_dependencies(${PROJECT_NAME} SkrControlsplugin)
+add_dependencies(${PROJECT_NAME} themeplugin)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Svg Qt${QT_VERSION_MAJOR}::QuickControls2)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-data)

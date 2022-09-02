@@ -44,7 +44,8 @@ void SKRThemes::populate()
 
     for (const QString& path : qAsConst(paths)) {
         QString themePath = path + "/themes";
-
+//        qDebug() << "themePath :";
+//        qDebug() << themePath;
 
         QDir dir(themePath);
         QStringList nameFilters;
@@ -56,7 +57,8 @@ void SKRThemes::populate()
             QFileInfo fileInfo(entryInfo);
 
             QFile file(fileInfo.canonicalFilePath());
-
+//            qDebug() << "theme :";
+//            qDebug() << fileInfo.canonicalFilePath();
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 continue;
             }

@@ -4,9 +4,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import eu.skribisto.projecthub 1.0
 
-import "../../../../Items"
-import "../../../../Commons"
-import "../../../.."
+import Skribisto
+import SkrControls
 
 SkrToolbox {
     id: root
@@ -55,12 +54,7 @@ SkrToolbox {
         navigationView.restoreDocumentList.connect(root.restoreTreeItemList)
     }
 
-
-    function restoreTreeItemList(projectId, treeItemIdList) {
-
-
-
-        //console.log("restored: sheet:", sheetIdList)
+    function restoreTreeItemList(projectId, treeItemIdList) {//console.log("restored: sheet:", sheetIdList)
     }
 
     Connections {

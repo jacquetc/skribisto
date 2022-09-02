@@ -15,7 +15,6 @@
 #endif // SKR_PRINT_SUPPORT
 
 #include "skrdata.h"
-#include "skr.h"
 #include "skrexporterinterface.h"
 
 SKRExporter::SKRExporter(QObject *parent) : QObject(parent), m_projectId(-2), m_printEnabled(false),

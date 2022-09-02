@@ -1,11 +1,13 @@
-#include "iostream"
-#include <QSettings>
+
+#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <QtSvg>
-using namespace std;
 
-// for translator
+#include "app_environment.h"
+#include "import_qml_plugins.h"
+#include <QtQml/qqmlextensionplugin.h>
+#include "skrthemes.h"
+
 
 #include <QDebug>
 #include <QString>
@@ -32,7 +34,6 @@ using namespace std;
 #include "skrhighlighter.h"
 #include "skrspellchecker.h"
 #include "plmutils.h"
-#include "skrthemes.h"
 #include "skrexporter.h"
 #include "skrclipboard.h"
 #include "skr.h"
@@ -48,119 +49,22 @@ using namespace std;
 #include "skrrootitem.h"
 #include "skrtextbridge.h"
 #include "skrwindowmanager.h"
-#include "skrviewmanager.h"
 #include "skrtreemanager.h"
 #include "skrdownload.h"
 #include "skrshortcutmanager.h"
 #include "skrplugingetter.h"
 
-#if SKR_DEBUG
-# include <QQmlDebuggingEnabler>
-#endif // SKR_DEBUG
-// -------------------------------------------------------
-void startCore()
-{
-    // new PLMPluginLoader(qApp);
-
-    // Names for the QSettings
-    QCoreApplication::setOrganizationName("skribisto");
-    QCoreApplication::setOrganizationDomain("skribisto.eu");
-
-    QCoreApplication::setApplicationVersion(QString::number(
-                                                SKR_VERSION_MAJOR) + "." + QString::number(
-                                                SKR_VERSION_MINOR));
-    qDebug() << QCoreApplication::applicationVersion();
-    QString appName = "Skribisto";
-
-    QCoreApplication::setApplicationName(appName);
-    QSettings::setDefaultFormat(QSettings::IniFormat);
-}
-
-// -------------------------------------------------------
-
-void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg)
-{
-    QByteArray  localMsg = msg.toLocal8Bit();
-    const char *file     = context.file ? context.file : "";
-    const char *function = context.function ? context.function : "";
-
-    switch (type) {
-    case QtDebugMsg:
-        fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-        break;
-
-    case QtInfoMsg:
-        fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-        break;
-
-    case QtWarningMsg:
-        fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-        break;
-
-    case QtCriticalMsg:
-        fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-        break;
-
-    case QtFatalMsg:
-        fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-        break;
-    }
-}
-
-//// -------------------------------------------------------
-
-// void openProjectInArgument(SKRData *data)
-// {
-//    // open directly a project if *.skribisto path is the first argument :
-//    // TODO: add ignore --qml
-//    QStringList args = qApp->arguments();
-
-//    if (args.count() > 1) {
-//        QString argument;
-
-//        for (int i = 1; i <= args.count() - 1; ++i) {
-//            if (QFileInfo(args.at(i)).exists()) {
-//                argument = args.at(i);
-//                break;
-//            }
-//        }
-
-//        if (!argument.isEmpty()) {
-// # ifdef Q_OS_WIN32
-//            QTextCodec *codec =
-// QTextCodec::codecForUtfText(argument.toUtf8());
-//            argument = codec->toUnicode(argument.toUtf8());
-// # endif // ifdef Q_OS_WIN32
-//            argument = QDir::fromNativeSeparators(argument);
-
-//            data->projectHub()->loadProject(argument);
-//        }
-//    }
-// }
-
-
-// -------------------------------------------------------
-
-
-// -------------------------------------------------------
-
-// -------------------------------------------------------
-
 int main(int argc, char *argv[])
 {
-    QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
-     qInstallMessageHandler(myMessageOutput);
-#if SKR_DEBUG
-    QQmlDebuggingEnabler enabler;
 
 
-#endif // SKR_DEBUG
+Q_IMPORT_QML_PLUGIN(themePlugin)
+
+
+    set_qt_environment();
 
     // Allows qml styling
     qputenv("QT_STYLE_OVERRIDE", "");
-
-
-    // QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << ":icons");
 
     // TODO : add option for UI scale
 
@@ -174,40 +78,30 @@ int main(int argc, char *argv[])
 #endif // if QT_VERSION >= 0x051400
 
 
-    QApplication app(argc, argv);
+    QGuiApplication app(argc, argv);
 
-    // icons :
-    // qDebug() << "icon search paths :" << QIcon::themeSearchPaths();
+    // Names for the QSettings
+    QCoreApplication::setOrganizationName("skribisto");
+    QCoreApplication::setOrganizationDomain("skribisto.eu");
 
-    // if Gnome desktop :
-    //    if(qgetenv("XDG_CURRENT_DESKTOP") == "GNOME"){
+    QCoreApplication::setApplicationVersion(QString::number(
+                                                SKR_VERSION_MAJOR) + "." + QString::number(
+                                                SKR_VERSION_MINOR));
+    qDebug() << QCoreApplication::applicationVersion();
+    QString appName = "Skribisto";
 
-    //        QIcon::setThemeName("Adwaita");
-    //    }
-    //    else {
-
-    // BUG preventing the use of basic breeze theme
-    // https://bugreports.qt.io/browse/QTBUG-87583
-    // instead, I am picking "actions" and "animations" folders from Breeze
-    // QIcon::setThemeName(QStringLiteral("breeze"));
-
-    // QIcon::setThemeName(QStringLiteral("Adwaita"));
-
-    //    }
-
-    startCore();
+    QCoreApplication::setApplicationName(appName);
+    QSettings::setDefaultFormat(QSettings::IniFormat);
 
 
-    // QQuickStyle::setStyle("org.kde.desktop");
-
-    // -----------------------------------------------------------------------
-
-
-    // Language :
-
-    // install translation of plugins:
-    //    PLMPluginLoader::instance()->installPluginTranslations();
-
+/*    qmlRegisterSingletonType<SkrTools>(
+        "backend", 1, 0, "SkrTools",
+        [](QQmlEngine *, QJSEngine *) { return new SkrTools; });
+*/
+    qmlRegisterType<SKRThemes>("eu.skribisto.themes",
+                               1,
+                               0,
+                               "SKRThemes");
 
     // -----------------------------------------------------------------------
 
@@ -346,15 +240,15 @@ int main(int argc, char *argv[])
                                  0,
                                  "Download");
 
+    qmlRegisterType<SKRThemes>("eu.skribisto.themes",
+                                 1,
+                                 0,
+                                 "Themes");
+
     qmlRegisterType<SKRUserSettings>("eu.skribisto.usersettings",
                                      1,
                                      0,
                                      "SKRUserSettings");
-
-    qmlRegisterType<SKRThemes>("eu.skribisto.themes",
-                               1,
-                               0,
-                               "SKRThemes");
 
     qmlRegisterType<SKRExporter>("eu.skribisto.exporter",
                                  1,
@@ -366,13 +260,9 @@ int main(int argc, char *argv[])
                                   0,
                                   "SKRClipboard");
 
-    qmlRegisterType<SKRViewManager>("eu.skribisto.viewmanager",
-                                    1,
-                                    0,
-                                    "SKRViewManager");
 
 
-    const QUrl url(QStringLiteral("qrc:/eu.skribisto.skribisto/qml/main.qml"));
+    const QUrl url(u"qrc:Main/main.qml"_qs);
 
     SKRWindowManager *skrWindowManager = new SKRWindowManager(qApp, &engine, url);
 
@@ -389,13 +279,21 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("skrUserSettings", skrUserSettings);
     engine.rootContext()->setContextProperty("skrTreeManager", skrTreeManager);
 
+    engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml");
+    engine.addImportPath(":/");
+
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl& objUrl) {
         if (!obj && (url == objUrl)) QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
 
+#ifndef Q_OS_IOS
     skrWindowManager->restoreWindows();
+
+#else
+    skrWindowManager->addUniqueWindowForDevice();
+#endif
 
 
     //            QCoreApplication *app = qApp;
@@ -447,4 +345,6 @@ int main(int argc, char *argv[])
 #endif
 
     return returnCode;
+
 }
+

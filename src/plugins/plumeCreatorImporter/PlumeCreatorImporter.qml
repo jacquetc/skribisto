@@ -4,9 +4,9 @@ import QtQuick.Controls
 import Qt.labs.platform 1.1 as LabPlatform
 import eu.skribisto.plumecreatorimporter 1.0
 
-import "../../../../Items"
-import "../../../../Commons"
-import "../../../.."
+import SkrControls
+import Skribisto
+
 
 PlumeCreatorImporterForm {
     id: root

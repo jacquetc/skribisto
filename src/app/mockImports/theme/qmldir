@@ -1,0 +1,2 @@
+module theme
+singleton SkrTheme 1.0 SkrTheme.qml

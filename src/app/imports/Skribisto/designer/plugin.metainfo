@@ -1,0 +1,62 @@
+MetaInfo {
+    Type {
+        name: "Skribisto.SkrBasePage"
+        icon: ":/qtquickplugin/images/item-icon16.png"
+
+        Hints {
+            visibleInNavigator: true
+            canBeDroppedInNavigator: true
+            canBeDroppedInFormEditor: true
+            canBeDroppedInView3D: false
+        }
+
+        ItemLibraryEntry {
+            name: "SkrBasePage"
+            category: "Skribisto"
+            libraryIcon: ":/qtquickplugin/images/item-icon16.png"
+            version: "1.0"
+            requiredImport: "Skribisto"
+
+        }
+    }
+    Type {
+        name: "Skribisto.SkrViewButtons"
+        icon: ":/qtquickplugin/images/item-icon16.png"
+
+        Hints {
+            visibleInNavigator: true
+            canBeDroppedInNavigator: true
+            canBeDroppedInFormEditor: true
+            canBeDroppedInView3D: false
+        }
+
+        ItemLibraryEntry {
+            name: "SkrViewButtons"
+            category: "Skribisto"
+            libraryIcon: ":/qtquickplugin/images/item-icon16.png"
+            version: "1.0"
+            requiredImport: "Skribisto"
+
+        }
+    }
+    Type {
+        name: "Skribisto.WritingZone"
+        icon: ":/qtquickplugin/images/item-icon16.png"
+
+        Hints {
+            visibleInNavigator: true
+            canBeDroppedInNavigator: true
+            canBeDroppedInFormEditor: true
+            canBeDroppedInView3D: false
+        }
+
+        ItemLibraryEntry {
+            name: "WritingZone"
+            category: "Skribisto"
+            libraryIcon: ":/qtquickplugin/images/item-icon16.png"
+            version: "1.0"
+            requiredImport: "Skribisto"
+
+        }
+    }
+}

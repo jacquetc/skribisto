@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import "../../../.."
-import "../../../../Items"
+import Skribisto
+import SkrControls
 
 SkrToolbox {
     property alias displayGroupBox: displayGroupBox
@@ -22,7 +22,6 @@ SkrToolbox {
         id: pane
         anchors.fill: parent
         padding: 5
-
 
         ColumnLayout {
             id: columnLayout
@@ -109,7 +108,6 @@ SkrToolbox {
                     }
                 }
             }
-
         }
     }
 }

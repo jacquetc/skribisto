@@ -7,9 +7,9 @@ import Qt.labs.settings 1.1
 import eu.skribisto.projecthub 1.0
 import eu.skribisto.spellchecker 1.0
 import QtQuick.Controls.Material
-import "../../../.."
-import "../../../../Items"
-import "../../../../Commons"
+
+import SkrControls
+import Skribisto
 
 SettingsForm {
     property var skrSettingsGroup: SkrSettings.textSettings

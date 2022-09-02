@@ -4,9 +4,9 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import eu.skribisto.searchtreelistproxymodel 1.0
 
-import "../../../../Items"
-import "../../../../Commons"
-import "../../../.."
+import SkrControls
+import Skribisto
+
 
 SkrToolbox {
     id: base

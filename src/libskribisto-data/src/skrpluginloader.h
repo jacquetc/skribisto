@@ -75,6 +75,23 @@ public:
 
     template<typename T>void addPluginType()
     {
+        for (QStaticPlugin staticPlugin : QPluginLoader::staticPlugins()) {
+            QObject *obj = staticPlugin.instance();
+            //qDebug() << "static plugin" ;
+            T *instance = dynamic_cast<T *>(obj);
+            if (instance) {
+                SKRPlugin plugin(obj->property("shortname").toString(), obj->property(
+                                     "fileName").toString(), obj);
+
+                if (!m_pluginsListHash.contains(plugin.name)) {
+                    qDebug() << "static plugin found : " << plugin.name;
+                    m_pluginsListHash.insert(plugin.name, plugin);
+                }
+            }
+
+
+        }
+
         for (QObject *obj : QPluginLoader::staticInstances()) {
             T *instance = dynamic_cast<T *>(obj);
 
@@ -83,6 +100,7 @@ public:
                                      "fileName").toString(), obj);
 
                 if (!m_pluginsListHash.contains(plugin.name)) {
+                    qDebug() << "static plugin found : " << plugin.name;
                     m_pluginsListHash.insert(plugin.name, plugin);
                 }
             }

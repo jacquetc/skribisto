@@ -1,14 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../../Commons"
-import "../../../../Items"
-import "../../../.."
+import Skribisto
+import SkrControls
 
 Item {
     id: base
-
-
 
     property alias listView: listView
     property alias scrollView: scrollView
@@ -18,7 +15,6 @@ Item {
     property alias listMenuToolButton: listMenuToolButton
     property alias trashProjectComboBox: trashProjectComboBox
     property var toolBarPrimaryColor
-
 
     SkrPane {
         id: pane
@@ -40,19 +36,17 @@ Item {
                     spacing: 1
                     anchors.fill: parent
 
-
                     SkrToolButton {
                         id: goBackToolButton
                         flat: true
                         display: AbstractButton.IconOnly
                         Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
-                        Layout.preferredWidth: 30  * SkrSettings.interfaceSettings.zoom
+                        Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
 
                     SkrComboBox {
                         id: trashProjectComboBox
                         Layout.fillWidth: true
-
                     }
                     SkrToolButton {
                         id: restoreToolButton
@@ -73,7 +67,6 @@ Item {
                     }
                 }
             }
-
 
             ScrollView {
                 id: scrollView
@@ -96,13 +89,9 @@ Item {
                     copyActionEnabled: true
                     deleteActionEnabled: true
 
-
                     Accessible.name: "List of trashed items"
                     Accessible.role: Accessible.List
-
                 }
-
-
             }
         }
     }

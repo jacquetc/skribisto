@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../../Items"
-import "../../../.."
+import Skribisto
+import SkrControls
 
 FocusScope {
     id: base
@@ -88,7 +88,6 @@ FocusScope {
                 id: navigationListStackView
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-
             }
         }
     }

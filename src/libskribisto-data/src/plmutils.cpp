@@ -703,7 +703,6 @@ QStringList PLMUtils::Dir::addonsPathsList()
     dir.cdUp();
     dir.cdUp();
     dir.cdUp();
-    dir.cdUp();
 
     if (dir.cd("plugins")) {
         if (dir.isReadable()) {

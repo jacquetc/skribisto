@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<RCC>
-    <qresource prefix="/">
-        <file alias="qtquickcontrols2.conf">qtquickcontrols2.conf</file>
-        <file alias="qml/qmldir">qml/qmldir</file>
-    </qresource>
-</RCC>

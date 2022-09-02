@@ -4,9 +4,9 @@ import QtQuick.Layouts
 import QtQml.Models
 import eu.skribisto.projectdicthub 1.0
 import eu.skribisto.spellchecker 1.0
-import "../../../../Items"
-import "../../../../Commons"
-import "../../../.."
+import SkrControls
+import Skribisto
+
 
 UserDictPageForm {
     id: root

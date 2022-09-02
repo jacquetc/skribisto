@@ -223,7 +223,7 @@ void DocumentHandler::setItalic(bool italic)
 
         // for test purpose:
         //        QUrl uri ("mydata://skibisto.svg"  );
-        //        QImage image = QImageReader (":/pics/skribisto.svg").read();
+        //        QImage image = QImageReader (":/icons/skribisto.svg").read();
         //        m_textDoc->textDocument()->addResource(
         // QTextDocument::ImageResource, uri, QVariant ( image ) );
         //        QTextImageFormat imageFormat;

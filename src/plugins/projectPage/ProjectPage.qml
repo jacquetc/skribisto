@@ -5,9 +5,9 @@ import eu.skribisto.spellchecker 1.0
 import eu.skribisto.stathub 1.0
 import eu.skribisto.skr 1.0
 
-import "../../../../Items"
-import "../../../../Commons"
-import "../../../.."
+import SkrControls
+import Skribisto
+
 
 ProjectPageForm {
     id: root

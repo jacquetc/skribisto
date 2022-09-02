@@ -3,9 +3,9 @@ import QtQml
 import QtQuick.Controls
 import eu.skribisto.implementationantidote 1.0
 
-import "../../../../Items"
-import "../../../../Commons"
-import "../../../.."
+import SkrControls
+import Skribisto
+
 
 AntidotePageToolboxForm {
     id: root

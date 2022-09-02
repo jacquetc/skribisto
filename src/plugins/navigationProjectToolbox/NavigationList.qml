@@ -5,16 +5,11 @@ import QtQuick.Layouts
 import QtQml.Models
 import QtQuick.Controls.Material
 import eu.skribisto.searchtreelistproxymodel 1.0
-import "../../../../Commons"
-import "../../../../Items"
-import "../../../.."
+import Skribisto
+import SkrControls
 
 NavigationListForm {
     id: root
-
-
-
-
 
     signal openDocument(int projectId, int treeItemId)
     signal openDocumentInAnotherView(int projectId, int treeItemId)
@@ -34,7 +29,7 @@ NavigationListForm {
         property int currentProjectId: -2
         property int currentTreeItemId: -2
         property bool dragging: false
-        onDraggingChanged: if(dragging){
+        onDraggingChanged: if (dragging) {
                                sidePopupListModel.clear()
                            }
 
@@ -52,7 +47,6 @@ NavigationListForm {
         property int selectedProjectId: -2
 
         property bool devModeEnabled: SkrSettings.devSettings.devModeEnabled
-
     }
 
     onCurrentParentIdChanged: {
@@ -63,24 +57,20 @@ NavigationListForm {
 
     }
 
-
     Component.onCompleted: {
-        var newItem = navigationListStackView.push("NavigationListView.qml", priv.transitionOperation)
-        newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
+        var newItem = navigationListStackView.push("NavigationListView.qml",
+                                                   priv.transitionOperation)
+        newItem.setCurrentTreeItemParentIdCalled.connect(
+                    setCurrentTreeItemParentId)
         newItem.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
         newItem.openDocument.connect(openDocument)
         newItem.openDocumentInAnotherView.connect(openDocumentInAnotherView)
         newItem.openDocumentInNewWindow.connect(openDocumentInNewWindow)
-
     }
-
-
-
 
     function setCurrentTreeItemParentId(projectId, treeItemParentId) {
 
         sidePopupListModel.clear()
-
 
         //find parent id
         if (projectId > -1 & treeItemParentId > -1) {
@@ -93,8 +83,7 @@ NavigationListForm {
         //compare with current parent id
         if (projectId === root.currentProjectId & treeItemParentId === root.currentParentId) {
             console.log("nothing to do")
-        }
-        else if (projectId < 0 & treeItemParentId < 0) {
+        } else if (projectId < 0 & treeItemParentId < 0) {
 
             navigationListStackView.pop(null, priv.transitionOperation)
             //project item
@@ -103,25 +92,24 @@ NavigationListForm {
             navigationListStackView.get(0).treeItemId = -2
             navigationListStackView.get(0).init()
             navigationListStackView.get(0).setCurrent()
-        }
-        else if (projectId > 0 && treeItemParentId >= 0 && root.currentParentId === ancestorsList[0]) {
+        } else if (projectId > 0 && treeItemParentId >= 0
+                   && root.currentParentId === ancestorsList[0]) {
 
-            var newItem = navigationListStackView.push("NavigationListView.qml", {
-                                                           "projectId": projectId,
-                                                           "parentId": treeItemParentId
-                                                       },
-                                                       priv.transitionOperation)
+            var newItem = navigationListStackView.push(
+                        "NavigationListView.qml", {
+                            "projectId": projectId,
+                            "parentId": treeItemParentId
+                        }, priv.transitionOperation)
 
-
-            newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
+            newItem.setCurrentTreeItemParentIdCalled.connect(
+                        setCurrentTreeItemParentId)
             newItem.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
             newItem.openDocument.connect(openDocument)
             newItem.openDocumentInAnotherView.connect(openDocumentInAnotherView)
             newItem.openDocumentInNewWindow.connect(openDocumentInNewWindow)
             newItem.init()
             newItem.setCurrent()
-        }
-        else {
+        } else {
             navigationListStackView.pop(null, priv.transitionOperation)
             ancestorsList.reverse()
             ancestorsList.push(treeItemParentId)
@@ -134,35 +122,37 @@ NavigationListForm {
             navigationListStackView.get(0).setCurrent()
 
             for (var i = 1; i < ancestorsList.length; i++) {
-                var newItem = navigationListStackView.push("NavigationListView.qml", {
-                                                               "projectId": projectId,
-                                                               "treeItemId": ancestorsList[i]
-                                                           },
-                                                           StackView.Immediate)
+                var newItem = navigationListStackView.push(
+                            "NavigationListView.qml", {
+                                "projectId": projectId,
+                                "treeItemId": ancestorsList[i]
+                            }, StackView.Immediate)
 
-
-                newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
+                newItem.setCurrentTreeItemParentIdCalled.connect(
+                            setCurrentTreeItemParentId)
                 newItem.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
                 newItem.openDocument.connect(openDocument)
-                newItem.openDocumentInAnotherView.connect(openDocumentInAnotherView)
+                newItem.openDocumentInAnotherView.connect(
+                            openDocumentInAnotherView)
                 newItem.openDocumentInNewWindow.connect(openDocumentInNewWindow)
                 newItem.init()
                 newItem.setCurrent()
             }
 
-            var lastNewItem = navigationListStackView.push("NavigationListView.qml", {
-                                                               "projectId": projectId,
-                                                               "parentId": treeItemParentId
-                                                           },
-                                                           priv.transitionOperation)
-            lastNewItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
+            var lastNewItem = navigationListStackView.push(
+                        "NavigationListView.qml", {
+                            "projectId": projectId,
+                            "parentId": treeItemParentId
+                        }, priv.transitionOperation)
+            lastNewItem.setCurrentTreeItemParentIdCalled.connect(
+                        setCurrentTreeItemParentId)
             lastNewItem.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
             lastNewItem.openDocument.connect(openDocument)
-            lastNewItem.openDocumentInAnotherView.connect(openDocumentInAnotherView)
+            lastNewItem.openDocumentInAnotherView.connect(
+                        openDocumentInAnotherView)
             lastNewItem.openDocumentInNewWindow.connect(openDocumentInNewWindow)
             lastNewItem.init()
             lastNewItem.setCurrent()
-
         }
         rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
                     priv.currentProjectId, priv.currentParentId)
@@ -174,14 +164,15 @@ NavigationListForm {
         sidePopupListModel.clear()
 
         //find parent id
-        var ancestorsList = skrData.treeHub().getAllAncestors(
-                    projectId, treeItemId)
+        var ancestorsList = skrData.treeHub().getAllAncestors(projectId,
+                                                              treeItemId)
 
         var newParentId = ancestorsList[0]
 
         //compare with current parent id
         if (projectId === root.currentProjectId & newParentId === root.currentParentId) {
-            navigationListStackView.currentItem.setCurrentTreeItemId(projectId, treeItemId)
+            navigationListStackView.currentItem.setCurrentTreeItemId(projectId,
+                                                                     treeItemId)
         } //        else if(projectId === root.currentProjectId){
 
         //        }
@@ -198,26 +189,28 @@ NavigationListForm {
 
             for (var i = 1; i < ancestorsList.length; i++) {
                 var transition = StackView.Immediate
-                if(i === ancestorsList.length - 1){
+                if (i === ancestorsList.length - 1) {
                     transition = StackView.Transition
                 }
 
-                var newItem = navigationListStackView.push("NavigationListView.qml", {
-                                                               "projectId": projectId,
-                                                               "treeItemId": ancestorsList[i]
-                                                           },
-                                                           transition)
-                newItem.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
+                var newItem = navigationListStackView.push(
+                            "NavigationListView.qml", {
+                                "projectId": projectId,
+                                "treeItemId": ancestorsList[i]
+                            }, transition)
+                newItem.setCurrentTreeItemParentIdCalled.connect(
+                            setCurrentTreeItemParentId)
                 newItem.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
                 newItem.openDocument.connect(openDocument)
-                newItem.openDocumentInAnotherView.connect(openDocumentInAnotherView)
+                newItem.openDocumentInAnotherView.connect(
+                            openDocumentInAnotherView)
                 newItem.openDocumentInNewWindow.connect(openDocumentInNewWindow)
                 newItem.init()
                 newItem.setCurrent()
             }
         }
 
-        if(rootWindow.protectedSignals){
+        if (rootWindow.protectedSignals) {
             rootWindow.protectedSignals.setBreadcrumbCurrentTreeItemCalled(
                         priv.currentProjectId, priv.currentParentId)
         }
@@ -315,7 +308,7 @@ NavigationListForm {
             title: qsTr("Advanced")
             Action {
                 text: qsTr("Sort alphabetically")
-                icon.source: "qrc:///icons/backup/view-sort-ascending-name.svg"
+                icon.source: "qrc:///Skribisto/icons/3rdparty/backup/view-sort-ascending-name.svg"
                 enabled: currentParentId !== -2
 
                 onTriggered: {
@@ -343,19 +336,18 @@ NavigationListForm {
     //----------------------------------------------------------------------------
     Action {
         id: selectAllTreeItemsAction
-        text: selectAllTreeItemsAction.checked ? qsTr("Select none") : qsTr("Select all")
+        text: selectAllTreeItemsAction.checked ? qsTr("Select none") : qsTr(
+                                                     "Select all")
         enabled: root.enabled && currentParentId !== -2
         checkable: true
         icon {
             source: selectAllTreeItemsAction.checked ? "qrc:///icons/backup/edit-select-none.svg" : "qrc:///icons/backup/edit-select-all.svg"
         }
         onCheckedChanged: {
-            if(selectAllTreeItemsAction.checked){
+            if (selectAllTreeItemsAction.checked) {
                 navigationListStackView.currentItem.checkAll()
-            }
-            else{
+            } else {
                 navigationListStackView.currentItem.checkNone()
-
             }
         }
     }
@@ -402,15 +394,17 @@ NavigationListForm {
     function addItemAtCurrentParent(type) {
 
         //console.log(currentProjectId, currentParentId, navigationListStackView.currentItem.visualModel.items.count)
-
-        skrData.treeHub().addChildTreeItem(currentProjectId, currentParentId, type)
-        navigationListStackView.currentItem.listView.currentIndex = navigationListStackView.currentItem.listView.count - 1
+        skrData.treeHub().addChildTreeItem(currentProjectId,
+                                           currentParentId, type)
+        navigationListStackView.currentItem.listView.currentIndex
+                = navigationListStackView.currentItem.listView.count - 1
         navigationListStackView.currentItem.listView.positionViewAtEnd()
         navigationListStackView.currentItem.listView.currentItem.editName()
     }
 
     function getIconUrlFromPageType(type, projectId, treeItemId) {
-        return skrTreeManager.getIconUrlFromPageType(type, projectId, treeItemId)
+        return skrTreeManager.getIconUrlFromPageType(type, projectId,
+                                                     treeItemId)
     }
 
     function getPageTypeText(type) {
@@ -431,11 +425,12 @@ NavigationListForm {
                 property string type: modelData
                 icon.source: getIconUrlFromPageType(modelData, -1, -1)
                 onTriggered: {
-                    if(skrQMLTools.isURLValid(skrTreeManager.getCreationParametersQmlUrlFromPageType(type))){
+                    if (skrQMLTools.isURLValid(
+                                skrTreeManager.getCreationParametersQmlUrlFromPageType(
+                                    type))) {
                         creationParameterDialog.pageType = type
                         creationParameterDialog.open()
-                    }
-                    else{
+                    } else {
                         addItemAtCurrentParent(type)
                     }
                 }
@@ -444,19 +439,16 @@ NavigationListForm {
     }
 
     //----------------------------------------------------------------------------
-
-
-
     SimpleDialog {
         id: creationParameterDialog
         property string pageType: ""
         title: qsTr("New item's parameters")
 
-        contentItem: Loader{
+        contentItem: Loader {
             id: loader
-            source: skrTreeManager.getCreationParametersQmlUrlFromPageType(creationParameterDialog.pageType)
+            source: skrTreeManager.getCreationParametersQmlUrlFromPageType(
+                        creationParameterDialog.pageType)
         }
-
 
         standardButtons: Dialog.Ok | Dialog.Cancel
 
@@ -485,7 +477,6 @@ NavigationListForm {
             contentItem.forceActiveFocus()
         }
     }
-
 
     //----------------------------------------------------------------------------
 
@@ -517,10 +508,9 @@ NavigationListForm {
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
     //----------------------------------------------------------------------------
-
     navigationListStackView.popEnter: Transition {
         onRunningChanged: {
-            if(running)
+            if (running)
                 console.log("popEnter")
         }
         XAnimator {
@@ -532,7 +522,7 @@ NavigationListForm {
     }
     navigationListStackView.popExit: Transition {
         onRunningChanged: {
-            if(running)
+            if (running)
                 console.log("popExit")
         }
 
@@ -544,10 +534,9 @@ NavigationListForm {
         }
     }
 
-
     navigationListStackView.pushEnter: Transition {
         onRunningChanged: {
-            if(running)
+            if (running)
                 console.log("pushEnter")
         }
         XAnimator {
@@ -559,7 +548,7 @@ NavigationListForm {
     }
     navigationListStackView.pushExit: Transition {
         onRunningChanged: {
-            if(running)
+            if (running)
                 console.log("pushExit")
         }
         XAnimator {
@@ -569,7 +558,6 @@ NavigationListForm {
             easing.type: Easing.OutCubic
         }
     }
-
 
     //-------------------------------------------------------------------------------------
     //---------side Navigation Popup---------------------------------------------------------
@@ -622,11 +610,16 @@ NavigationListForm {
                 onStatusChanged: {
                     if (status === Loader.Ready) {
                         //sideNavigationLoader.item.hoverEnabled  = false
-                        sideNavigationLoader.item.openDocument.connect(openDocument)
-                        sideNavigationLoader.item.openDocumentInAnotherView.connect(openDocumentInAnotherView)
-                        sideNavigationLoader.item.openDocumentInNewWindow.connect(openDocumentInNewWindow)
-                        sideNavigationLoader.item.setCurrentTreeItemParentIdCalled.connect(setCurrentTreeItemParentId)
-                        sideNavigationLoader.item.setCurrentTreeItemIdCalled.connect(setCurrentTreeItemId)
+                        sideNavigationLoader.item.openDocument.connect(
+                                    openDocument)
+                        sideNavigationLoader.item.openDocumentInAnotherView.connect(
+                                    openDocumentInAnotherView)
+                        sideNavigationLoader.item.openDocumentInNewWindow.connect(
+                                    openDocumentInNewWindow)
+                        sideNavigationLoader.item.setCurrentTreeItemParentIdCalled.connect(
+                                    setCurrentTreeItemParentId)
+                        sideNavigationLoader.item.setCurrentTreeItemIdCalled.connect(
+                                    setCurrentTreeItemId)
                         sideNavigationLoader.item.projectId = sideNavigationPopup.projectId
                         sideNavigationLoader.item.parentId = sideNavigationPopup.parentId
                         sideNavigationLoader.item.popupId = sideNavigationPopup.popupId
@@ -778,7 +771,6 @@ NavigationListForm {
     //-------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------
-
 
     //-------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------

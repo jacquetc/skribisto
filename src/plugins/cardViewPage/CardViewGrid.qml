@@ -1,9 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQml.Models
-import "../../../../Commons"
-import "../../../../Items"
-import "../../../.."
+import Skribisto
+import SkrControls
 
 Item {
     id: root
@@ -13,21 +12,19 @@ Item {
 
     clip: true
 
-    DelegateModel{
+    DelegateModel {
         id: visualModel
-        delegate: Card{
+        delegate: Card {
             id: card
 
             height: cardViewGrid.cellHeight
             width: cardViewGrid.cellWidth
-
         }
     }
 
     readonly property int currentProjectId: cardViewGrid.currentProjectId
     property alias currentParentId: cardViewGrid.currentParentId
     readonly property int currentTreeItemId: cardViewGrid.currentTreeItemId
-
 
     ScrollView {
         id: scrollView
@@ -59,8 +56,8 @@ Item {
             property var visualModel: visualModel
             property int moveSourceIndex: -2
 
-
             onCurrentIndexChanged: {
+
                 //priv.currentProjectId = model.data(visualModel.modelIndex(cardViewGrid.currentIndex), SKRTreeItem.ProjectIdRole)
                 //priv.currentParentId = visualModel.modelIndex(cardViewGrid.currentIndex).
                 //priv.currentTreeItemId = model.data(visualModel.modelIndex(cardViewGrid.currentIndex), SKRTreeItem.TreeItemIdRole)
@@ -104,7 +101,6 @@ Item {
             }
         }
     }
-
 
     Item {
         id: topDraggingMover
@@ -184,7 +180,7 @@ Item {
         z: 1
 
         TapHandler {
-            onTapped: function(eventPoint){
+            onTapped: function (eventPoint) {
                 cardViewGrid.forceActiveFocus()
 
                 var index = cardViewGrid.currentIndex

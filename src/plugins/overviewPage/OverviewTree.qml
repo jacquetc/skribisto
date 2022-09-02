@@ -8,9 +8,9 @@ import eu.skribisto.projecthub 1.0
 import eu.skribisto.searchtaglistproxymodel 1.0
 import eu.skribisto.taghub 1.0
 import eu.skribisto.skr 1.0
-import "../../../../Commons"
-import "../../../../Items"
-import "../../../.."
+import Skribisto
+import SkrControls
+import theme
 
 OverviewTreeForm {
     id: root
@@ -62,7 +62,6 @@ OverviewTreeForm {
         property bool isMovable
         property bool isRenamable
         property bool isTrashable
-
     }
 
     //-----------------------------------------------------------------------------
@@ -90,13 +89,10 @@ OverviewTreeForm {
     property int moveSourceProjectId: -2
 
     //-----------------------------------------------------------------------------
-
-
-
     function getIconUrlFromPageType(type, projectId, treeItemId) {
-        return skrTreeManager.getIconUrlFromPageType(type, projectId, treeItemId)
+        return skrTreeManager.getIconUrlFromPageType(type, projectId,
+                                                     treeItemId)
     }
-
 
     //-----------------------------------------------------------------------------
 
@@ -213,7 +209,7 @@ OverviewTreeForm {
 
             Keys.priority: Keys.AfterItem
 
-            Keys.onShortcutOverride: function(event)  {
+            Keys.onShortcutOverride: function (event) {
 
                 if ((event.modifiers & Qt.ControlModifier)
                         && event.key === Qt.Key_C) {
@@ -240,7 +236,7 @@ OverviewTreeForm {
                 }
             }
 
-            Keys.onPressed: function(event) {
+            Keys.onPressed: function (event) {
 
                 if (event.key === Qt.Key_Right) {
                     console.log("Right key pressed")
@@ -463,7 +459,7 @@ OverviewTreeForm {
                     MouseArea {
                         anchors.fill: parent
                         acceptedButtons: Qt.NoButton
-                        onWheel: function(wheel) {
+                        onWheel: function (wheel) {
                             listView.interactive = false
                             listView.flick(0, wheel.angleDelta.y * 50)
                             wheel.accepted = true
@@ -505,7 +501,7 @@ OverviewTreeForm {
                         TapHandler {
                             id: tapHandler
 
-                            onSingleTapped: function(eventPoint) {
+                            onSingleTapped: function (eventPoint) {
                                 priv.selecting = false
 
                                 if (draggableContent.dragging) {
@@ -530,7 +526,7 @@ OverviewTreeForm {
                                 eventPoint.accepted = true
                             }
 
-                            onDoubleTapped: function(eventPoint){
+                            onDoubleTapped: function (eventPoint) {
 
                                 if (draggableContent.dragging) {
                                     eventPoint.accepted = false
@@ -563,7 +559,7 @@ OverviewTreeForm {
                             //                                    enabled = false
                             //                                }
                             //                            }
-                            onGrabChanged: function(point) {
+                            onGrabChanged: function (point) {
                                 point.accepted = false
                             }
                             grabPermissions: PointerHandler.TakeOverForbidden
@@ -573,7 +569,7 @@ OverviewTreeForm {
                             id: rightClickTapHandler
                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                             acceptedButtons: Qt.RightButton
-                            onSingleTapped: function(eventPoint) {
+                            onSingleTapped: function (eventPoint) {
                                 listView.interactive = eventPoint.device.type
                                         === PointerDevice.Mouse
 
@@ -582,9 +578,6 @@ OverviewTreeForm {
                                 if (menu.visible) {
                                     menu.close()
                                 }
-
-
-
 
                                 priv.currentTreeItemId = model.treeItemId
                                 priv.currentProjectId = model.projectId
@@ -597,11 +590,7 @@ OverviewTreeForm {
                                 priv.isRenamable = model.isRenamable
                                 priv.isTrashable = model.isTrashable
 
-
-
-
-                                menu.popup(content,
-                                           eventPoint.position.x,
+                                menu.popup(content, eventPoint.position.x,
                                            eventPoint.position.y)
                                 eventPoint.accepted = true
                             }
@@ -611,7 +600,7 @@ OverviewTreeForm {
                             id: middleClickTapHandler
                             acceptedDevices: PointerDevice.Mouse | PointerDevice.Stylus
                             acceptedButtons: Qt.MiddleButton
-                            onSingleTapped: function(eventPoint) {
+                            onSingleTapped: function (eventPoint) {
                                 Globals.touchUsed = false
                                 listView.interactive = eventPoint.device.type
                                         === PointerDevice.Mouse
@@ -628,7 +617,7 @@ OverviewTreeForm {
                         MouseArea {
                             anchors.fill: parent
                             acceptedButtons: Qt.NoButton
-                            onWheel: function(wheel) {
+                            onWheel: function (wheel) {
                                 Globals.touchUsed = false
                                 listView.interactive = false
                                 listView.flick(0, wheel.angleDelta.y * 50)
@@ -694,10 +683,7 @@ OverviewTreeForm {
 
                                             height: 30 * SkrSettings.interfaceSettings.zoom
                                             width: 30 * SkrSettings.interfaceSettings.zoom
-                                            source: model.otherProperties ? getIconUrlFromPageType(
-                                                                                model.type, model.projectId, model.treeItemId) : getIconUrlFromPageType(
-                                                                                model.type, model.projectId, model.treeItemId)
-
+                                            source: model.otherProperties ? getIconUrlFromPageType(model.type, model.projectId, model.treeItemId) : getIconUrlFromPageType(model.type, model.projectId, model.treeItemId)
                                         }
                                     }
 
@@ -741,10 +727,10 @@ OverviewTreeForm {
                                             }
 
                                             //Keys.priority: Keys.AfterItem
-                                            Keys.onShortcutOverride: function(event)  {
+                                            Keys.onShortcutOverride: function (event) {
                                                 event.accepted = (event.key === Qt.Key_Escape)
                                             }
-                                            Keys.onPressed: function(event) {
+                                            Keys.onPressed: function (event) {
                                                 if (event.key === Qt.Key_Return) {
                                                     console.log("Return key pressed title")
                                                     editingFinished()
@@ -789,10 +775,10 @@ OverviewTreeForm {
                                             }
 
                                             //Keys.priority: Keys.AfterItem
-                                            Keys.onShortcutOverride: function(event)  {
+                                            Keys.onShortcutOverride: function (event) {
                                                 event.accepted = (event.key === Qt.Key_Escape)
                                             }
-                                            Keys.onPressed: function(event) {
+                                            Keys.onPressed: function (event) {
                                                 if (event.key === Qt.Key_Return) {
                                                     console.log("Return key pressed title")
                                                     editingFinished()
@@ -858,10 +844,11 @@ OverviewTreeForm {
                                         //                                                cursorShape: Qt.PointingHandCursor
                                         //                                                hoverEnabled: true
                                         //                                                acceptedButtons: Qt.NoButton
-
                                         ColumnLayout {
                                             anchors.fill: parent
-                                            visible: moveHoverHandler.hovered | (Globals.touchUsed & draggableContent.isCurrent)
+                                            visible: moveHoverHandler.hovered
+                                                     | (Globals.touchUsed
+                                                        & draggableContent.isCurrent)
 
                                             Repeater {
 
@@ -875,14 +862,9 @@ OverviewTreeForm {
                                                     color: SkrTheme.buttonBackground
                                                 }
                                             }
-
-
                                         }
+
                                         //                                        }
-
-
-
-
                                         DragHandler {
                                             id: mouseDragHandler
                                             acceptedDevices: PointerDevice.Mouse
@@ -980,8 +962,6 @@ OverviewTreeForm {
 
                                     HoverHandler {
                                         id: moveHoverHandler
-
-
                                     }
                                 }
 
@@ -1122,22 +1102,26 @@ OverviewTreeForm {
                                             name: "overviewOutline"
 
                                             //-----Zoom------------------------------------------------------------
-
                                             Shortcut {
-                                                sequences: skrShortcutManager.shortcuts("plugin-overview-outline-text-zoom-in")
+                                                sequences: skrShortcutManager.shortcuts(
+                                                               "plugin-overview-outline-text-zoom-in")
                                                 context: Qt.WindowShortcut
                                                 enabled: writingZone.activeFocus
-                                                onActivated: {SkrSettings.overviewTreeOutlineSettings.textPointSize += 1}
+                                                onActivated: {
+                                                    SkrSettings.overviewTreeOutlineSettings.textPointSize += 1
+                                                }
                                             }
 
                                             Shortcut {
-                                                sequences: skrShortcutManager.shortcuts("plugin-overview-outline-text-zoom-out")
+                                                sequences: skrShortcutManager.shortcuts(
+                                                               "plugin-overview-outline-text-zoom-out")
                                                 context: Qt.WindowShortcut
                                                 enabled: writingZone.activeFocus
-                                                onActivated: {SkrSettings.overviewTreeOutlineSettings.textPointSize -= 1}
+                                                onActivated: {
+                                                    SkrSettings.overviewTreeOutlineSettings.textPointSize -= 1
+                                                }
                                             }
                                         }
-
                                     }
 
                                     Loader {
@@ -1270,9 +1254,7 @@ OverviewTreeForm {
                                         treeItemIdFilter: model.treeItemId
                                     }
                                     tagListModel: tagProxyModel
-
                                 }
-
                             }
 
                             //-----------------------------------------------------------
@@ -1299,13 +1281,15 @@ OverviewTreeForm {
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                        text: model.charCountGoal > 0 ? qsTr("c: %1 / %2").arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.charCount)).arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.charCountGoal)) : qsTr("c: %1").arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.charCount))
+                                        text: model.charCountGoal
+                                              > 0 ? qsTr("c: %1 / %2").arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.charCount)).arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.charCountGoal)) : qsTr(
+                                                        "c: %1").arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.charCount))
                                         verticalAlignment: Qt.AlignVCenter
                                     }
                                     SkrLabel {
@@ -1314,13 +1298,15 @@ OverviewTreeForm {
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                        text: model.charCountGoal > 0 ? qsTr("all c: %1 / %2").arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.charCountWithChildren)).arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.charCountGoal)) : qsTr("all c: %1").arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.charCountWithChildren))
+                                        text: model.charCountGoal
+                                              > 0 ? qsTr("all c: %1 / %2").arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.charCountWithChildren)).arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.charCountGoal)) : qsTr(
+                                                        "all c: %1").arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.charCountWithChildren))
                                         verticalAlignment: Qt.AlignVCenter
                                     }
                                 }
@@ -1337,13 +1323,15 @@ OverviewTreeForm {
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                        text: model.wordCountGoal > 0 ? qsTr("w: %1 / %2").arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.wordCount)).arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.wordCountGoal)) : qsTr("w: %1").arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.wordCount))
+                                        text: model.wordCountGoal
+                                              > 0 ? qsTr("w: %1 / %2").arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.wordCount)).arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.wordCountGoal)) : qsTr(
+                                                        "w: %1").arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.wordCount))
                                         verticalAlignment: Qt.AlignVCenter
                                     }
                                     SkrLabel {
@@ -1352,13 +1340,15 @@ OverviewTreeForm {
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-                                        text: model.wordCountGoal > 0 ? qsTr("all w: %1 / %2").arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.wordCountWithChildren)).arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.wordCountGoal)) : qsTr("all w: %1").arg(
-                                                                           skrRootItem.toLocaleIntString(
-                                                                               model.wordCountWithChildren))
+                                        text: model.wordCountGoal
+                                              > 0 ? qsTr("all w: %1 / %2").arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.wordCountWithChildren)).arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.wordCountGoal)) : qsTr(
+                                                        "all w: %1").arg(
+                                                        skrRootItem.toLocaleIntString(
+                                                            model.wordCountWithChildren))
                                         verticalAlignment: Qt.AlignVCenter
                                     }
                                 }
@@ -1367,7 +1357,6 @@ OverviewTreeForm {
                             //-----------------------------------------------------------
                             //---------------Counts :---------------------------------------------
                             //-----------------------------------------------------------
-
                             RowLayout {
                                 id: buttonsBox
                                 Layout.preferredWidth: 40
@@ -1413,13 +1402,9 @@ OverviewTreeForm {
                                         onClicked: {
                                             if (menu.visible) {
                                                 menu.close()
-
-
                                             }
 
-
                                             swipeDelegate.forceActiveFocus()
-
 
                                             priv.currentTreeItemId = model.treeItemId
                                             priv.currentProjectId = model.projectId
@@ -1432,19 +1417,13 @@ OverviewTreeForm {
                                             priv.isRenamable = model.isRenamable
                                             priv.isTrashable = model.isTrashable
 
-                                            menu.popup(
-                                                        menuButton,
-                                                        menuButton.x,
-                                                        menuButton.height)
-
-
+                                            menu.popup(menuButton,
+                                                       menuButton.x,
+                                                       menuButton.height)
                                         }
-
 
                                         //'visible: hoverHandler.hovered | draggableContent.isCurrent
                                     }
-
-
 
                                     SkrToolButton {
                                         id: focusOnBranchButton
@@ -1467,7 +1446,6 @@ OverviewTreeForm {
                                             swipeDelegate.forceActiveFocus()
 
                                             focusOnbranchAction.trigger()
-
                                         }
                                     }
                                 }
@@ -1517,13 +1495,10 @@ OverviewTreeForm {
                                 ScriptAction {
                                     script: {
                                         // shakes the writingZone to avoid blanks when resizing
-                                        if(noteWritingZoneLoader.status === Loader.Ready){
+                                        if (noteWritingZoneLoader.status === Loader.Ready) {
                                             outlineBox.writingZone.writingZone.flickable.contentY = 1
                                             outlineBox.writingZone.writingZone.flickable.contentY = 0
                                         }
-
-
-
                                     }
                                 }
                             }
@@ -1692,29 +1667,24 @@ OverviewTreeForm {
         }
 
         onClosed: {
+
             //loader_menu.active = false
         }
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isOpenable
-            height: currentTreeItemId !== -1
-                    && menu.isOpenable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isOpenable
+            height: currentTreeItemId !== -1 && menu.isOpenable ? undefined : 0
             action: openDocumentAction
         }
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isOpenable
-            height: currentTreeItemId !== -1
-                    && menu.isOpenable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isOpenable
+            height: currentTreeItemId !== -1 && menu.isOpenable ? undefined : 0
 
             action: openDocumentInAnotherViewAction
         }
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isOpenable
-            height: currentTreeItemId !== -1
-                    && menu.isOpenable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isOpenable
+            height: currentTreeItemId !== -1 && menu.isOpenable ? undefined : 0
 
             action: openPaperInNewWindowAction
         }
@@ -1725,8 +1695,7 @@ OverviewTreeForm {
         }
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.canAddChildTreeItem
+            visible: currentTreeItemId !== -1 && menu.canAddChildTreeItem
             height: currentTreeItemId !== -1
                     && menu.canAddChildTreeItem ? undefined : 0
 
@@ -1736,19 +1705,15 @@ OverviewTreeForm {
         MenuSeparator {}
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isRenamable
-            height: currentTreeItemId !== -1
-                    && menu.isRenamable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isRenamable
+            height: currentTreeItemId !== -1 && menu.isRenamable ? undefined : 0
 
             action: renameAction
         }
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isRenamable
-            height: currentTreeItemId !== -1
-                    && menu.isRenamable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isRenamable
+            height: currentTreeItemId !== -1 && menu.isRenamable ? undefined : 0
             action: setLabelAction
         }
 
@@ -1760,24 +1725,19 @@ OverviewTreeForm {
 
         MenuSeparator {}
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isMovable
-            height: currentTreeItemId !== -1
-                    && menu.isMovable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isMovable
+            height: currentTreeItemId !== -1 && menu.isMovable ? undefined : 0
             action: cutAction
         }
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isCopyable
-            height: currentTreeItemId !== -1
-                    && menu.isCopyable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isCopyable
+            height: currentTreeItemId !== -1 && menu.isCopyable ? undefined : 0
             action: copyAction
         }
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.canAddChildTreeItem
+            visible: currentTreeItemId !== -1 && menu.canAddChildTreeItem
             height: currentTreeItemId !== -1
                     && menu.canAddChildTreeItem ? undefined : 0
             action: pasteAction
@@ -1786,23 +1746,20 @@ OverviewTreeForm {
         MenuSeparator {}
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.canAddSiblingTreeItem
+            visible: currentTreeItemId !== -1 && menu.canAddSiblingTreeItem
             height: currentTreeItemId !== -1
                     && menu.canAddSiblingTreeItem ? undefined : 0
             action: addBeforeAction
         }
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.canAddSiblingTreeItem
+            visible: currentTreeItemId !== -1 && menu.canAddSiblingTreeItem
             height: currentTreeItemId !== -1
                     && menu.canAddSiblingTreeItem ? undefined : 0
             action: addAfterAction
         }
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.canAddChildTreeItem
+            visible: currentTreeItemId !== -1 && menu.canAddChildTreeItem
             height: currentTreeItemId !== -1
                     && menu.canAddChildTreeItem ? undefined : 0
 
@@ -1811,27 +1768,21 @@ OverviewTreeForm {
 
         MenuSeparator {}
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isMovable
-            height: currentTreeItemId !== -1
-                    && menu.isMovable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isMovable
+            height: currentTreeItemId !== -1 && menu.isMovable ? undefined : 0
             action: moveUpAction
         }
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isMovable
-            height: currentTreeItemId !== -1
-                    && menu.isMovable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isMovable
+            height: currentTreeItemId !== -1 && menu.isMovable ? undefined : 0
             action: moveDownAction
         }
         MenuSeparator {}
 
         SkrMenuItem {
-            visible: currentTreeItemId !== -1
-                     && menu.isTrashable
-            height: currentTreeItemId !== -1
-                    && menu.isTrashable ? undefined : 0
+            visible: currentTreeItemId !== -1 && menu.isTrashable
+            height: currentTreeItemId !== -1 && menu.isTrashable ? undefined : 0
             action: sendToTrashAction
         }
     }
@@ -1993,11 +1944,9 @@ OverviewTreeForm {
             itemWordGoalDialog.treeItemId = currentTreeItemId
             itemWordGoalDialog.open()
             console.log("set goal", currentProjectId, currentTreeItemId)
-
-
         }
     }
-    ItemWordGoalDialog{
+    ItemWordGoalDialog {
         id: itemWordGoalDialog
     }
 
@@ -2087,7 +2036,7 @@ OverviewTreeForm {
             newItemPopup.close()
             var result
 
-            for(var i = 0; i < quantity ; i++){
+            for (var i = 0; i < quantity; i++) {
                 result = skrData.treeHub().addTreeItemAbove(projectId,
                                                             treeItemId,
                                                             pageType)
@@ -2133,7 +2082,7 @@ OverviewTreeForm {
             newItemPopup.close()
 
             var result
-            for(var i = 0; i < quantity ; i++){
+            for (var i = 0; i < quantity; i++) {
                 result = skrData.treeHub().addTreeItemBelow(projectId,
                                                             treeItemId,
                                                             pageType)
@@ -2176,7 +2125,7 @@ OverviewTreeForm {
             newItemPopup.close()
 
             var result
-            for(var i = 0; i < quantity ; i++){
+            for (var i = 0; i < quantity; i++) {
                 result = skrData.treeHub().addChildTreeItem(projectId,
                                                             treeItemId,
                                                             pageType)

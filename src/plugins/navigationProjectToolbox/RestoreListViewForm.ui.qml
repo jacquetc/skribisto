@@ -1,9 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../../Commons"
-import "../../../../Items"
-import "../../../.."
+import Skribisto
+import SkrControls
 
 Item {
     id: base
@@ -40,7 +39,7 @@ Item {
                     SkrToolButton {
                         id: goBackToolButton
                         flat: true
-                        display: AbstractButton.IconOnly                
+                        display: AbstractButton.IconOnly
                         Layout.preferredHeight: 30 * SkrSettings.interfaceSettings.zoom
                         Layout.preferredWidth: 30 * SkrSettings.interfaceSettings.zoom
                     }
@@ -49,7 +48,6 @@ Item {
                         id: stretcher2
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-
                     }
 
                     SkrToolButton {
@@ -110,7 +108,8 @@ Item {
                     copyActionEnabled: true
                     deleteActionEnabled: true
 
-                    Accessible.name: qsTr("List of trashed items to be restored")
+                    Accessible.name: qsTr(
+                                         "List of trashed items to be restored")
                     Accessible.role: Accessible.List
                 }
             }
