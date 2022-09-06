@@ -1,0 +1,9 @@
+{
+    "type" :            "projectToolbox",
+    "shortname" :       "NavigationProjectToolbox",
+    "longname" :        "Navigation Project Toolbox",
+    "version" :         "1.0",
+    "mandatory" :    true,
+    "activatedByDefault" :    true,
+    "dependencies" :    []
+}

@@ -36,7 +36,7 @@
 #include "tasks/plmprojectmanager.h"
 
 #define skrdata SKRData::instance()
-#define plmpluginhub SKRData::instance()->pluginHub()
+#define skrpluginhub SKRData::instance()->pluginHub()
 
 
 class EXPORT SKRData : public QObject {
