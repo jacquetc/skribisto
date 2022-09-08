@@ -2,7 +2,10 @@
 #include <QApplication>
 #include <QSettings>
 #include <QStyleFactory>
+#include "projecttreecommands.h"
 #include <interfaces/projecttoolboxinterface.h>
+#include <interfaces/pageinterface.h>
+#include <interfaces/itemexporterinterface.h>
 #include "skrdata.h"
 #include "windowmanager.h"
 #include "projecttreemodel.h"
@@ -12,7 +15,7 @@ int main(int argc, char *argv[])
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 
-
+    QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << ":/icons/backup/");
 
     QApplication app(argc, argv);
     app.setStyle(QStyleFactory::create("Fusion"));
@@ -45,13 +48,17 @@ parser.process(app);
 
 const QStringList args = parser.positionalArguments();
 
+QUndoStack *undoStack = new QUndoStack;
 
-// load libraries :
-    new SKRData;
-    new ProjectTreeModel;
+// load singletons :
+    auto *skrData = new SKRData;
+    new ProjectTreeModel(skrData);
+    new ProjectTreeCommands(skrData, undoStack, projectTreeModel);
 
 // load plugins:
-skrpluginhub->addPluginType<ProjectToolboxInterface>();
+    skrpluginhub->addPluginType<ProjectToolboxInterface>();
+    skrpluginhub->addPluginType<PageInterface>();
+    skrpluginhub->addPluginType<ItemExporterInterface>();
 
 
 

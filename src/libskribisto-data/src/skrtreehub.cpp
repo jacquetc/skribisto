@@ -106,6 +106,23 @@ QList<int>SKRTreeHub::getAllIds(int projectId) const
 
 // ----------------------------------------------------------------------------------------
 
+SKRResult SKRTreeHub::setTreeItemId(int projectId, int treeItemId, int newId)
+{
+
+    SKRResult result = set(projectId, treeItemId, "l_tree_id", newId);
+
+    IFOK(result) {
+        emit treeItemIdChanged(projectId, treeItemId, newId);
+        emit projectModified(projectId);
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// ----------------------------------------------------------------------------------------
+
 SKRResult SKRTreeHub::setTitle(int projectId, int treeItemId, const QString& newTitle)
 {
     SKRResult result = set(projectId, treeItemId, "t_title", newTitle);
@@ -466,6 +483,18 @@ SKRResult SKRTreeHub::setUpdateDate(int projectId, int treeItemId, const QDateTi
 QDateTime SKRTreeHub::getUpdateDate(int projectId, int treeItemId) const
 {
     return get(projectId, treeItemId, "dt_updated").toDateTime();
+}
+
+// ----------------------------------------------------------------------------------------
+
+int SKRTreeHub::row(int projectId, int treeItemId) const
+{
+int sortOrder = this->getSortOrder(projectId, treeItemId);
+int parentId = this->getParentId(projectId, treeItemId);
+int parentSortOrder = this->getSortOrder(projectId, parentId);
+
+return (sortOrder - parentSortOrder) / 1000 - 1;
+
 }
 
 // ----------------------------------------------------------------------------------------
@@ -1095,7 +1124,7 @@ SKRResult SKRTreeHub::moveTreeItemAsChildOf(int  sourceProjectId,
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getParentId(int projectId, int treeItemId)
+int SKRTreeHub::getParentId(int projectId, int treeItemId) const
 {
     int parentId = -2;
 

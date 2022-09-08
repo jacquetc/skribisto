@@ -3,13 +3,18 @@
 
 #include "projecttreeitem.h"
 #include "skribisto_backend_global.h"
+#include "skrdata.h"
 
 #include <QAbstractItemModel>
+#include <QUndoCommand>
 #define projectTreeModel ProjectTreeModel::instance()
 
 class ProjectTreeModel : public QAbstractItemModel
 {
     Q_OBJECT
+    friend class AddItemAfterCommand;
+    friend class AddItemBeforeCommand;
+    friend class AddSubItemCommand;
 
 public:
     explicit ProjectTreeModel(QObject *parent = nullptr);
@@ -50,6 +55,9 @@ public:
     bool removeColumns(int column, int count, const QModelIndex &parent = QModelIndex()) override;
     QHash<int, QByteArray> roleNames() const override;
 
+public:
+
+
 protected:
 
 
@@ -68,11 +76,73 @@ private:
     SKRTreeHub *m_treeHub;
     SKRPropertyHub *m_propertyHub;
     ProjectTreeItem *m_rootItem;
-    QList<ProjectTreeItem *> m_itemList;
     QList<QMetaObject::Connection>m_dataConnectionsList;
+    QList<ProjectTreeItem *> m_itemList;
 
-    ProjectTreeItem *searchForExistingItem(int projectId, int treeItemId) const;
 
+    QModelIndex getModelIndex(int projectId, int treeItemId) const;
+    ProjectTreeItem *getProjectItem(int projectId, int treeItemId) const;
+    void removeProjectItem(int projectId, int treeItemId);
 };
+
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+
+class AddItemAfterCommand : public QUndoCommand
+{
+public:
+    AddItemAfterCommand(int projectId, int targetId, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
+    void undo();
+    void redo();
+private:
+    int m_projectId, m_targetId, m_newId;
+    QString m_type;
+    QVariantMap m_properties;
+    QList<int> m_propertyIds;
+    ProjectTreeModel *m_model;
+};
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+
+class AddItemBeforeCommand : public QUndoCommand
+{
+public:
+    AddItemBeforeCommand(int projectId, int targetId, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
+    void undo();
+    void redo();
+private:
+    int m_projectId, m_targetId, m_newId;
+    QString m_type;
+    QVariantMap m_properties;
+    QList<int> m_propertyIds;
+    ProjectTreeModel *m_model;
+};
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+class AddSubItemCommand : public QUndoCommand
+{
+public:
+    AddSubItemCommand(int projectId, int targetId, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
+    void undo();
+    void redo();
+private:
+    int m_projectId, m_targetId, m_newId;
+    QString m_type;
+    QVariantMap m_properties;
+    QList<int> m_propertyIds;
+    ProjectTreeModel *m_model;
+};
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 
 #endif // PROJECTTREEMODEL_H

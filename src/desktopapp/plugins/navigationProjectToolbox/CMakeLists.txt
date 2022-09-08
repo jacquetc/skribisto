@@ -33,6 +33,7 @@ add_dependencies(${PROJECT_NAME} skribisto-backend)
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Svg Qt6::Widgets)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-data)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-backend)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-common)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/desktopapp/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")

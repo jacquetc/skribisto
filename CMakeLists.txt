@@ -74,6 +74,8 @@ endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 if(IOS)
     add_subdirectory(src/mobileapp)
 endif()
+
+add_subdirectory(src/libskribisto-common/src)
 add_subdirectory(src/desktopapp)
 add_subdirectory(src/translations)
 

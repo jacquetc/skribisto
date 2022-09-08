@@ -23,13 +23,28 @@ Dock::Dock(QWidget *parent)
         m_stack = new QStackedWidget(this);
         this->setWidget(m_stack);
         m_stack->show();
+
+
+        QObject::connect(m_dockTitle->tabBar(), &QTabBar::currentChanged, m_stack, &QStackedWidget::setCurrentIndex);
     }
 
 void Dock::setToolboxes(QList<Toolbox *> toolboxes)
 {
+    // clear
+    int tabCount = m_dockTitle->tabBar()->count();
+    for(int i = 0 ; i > tabCount ; i++){
+        m_dockTitle->tabBar()->removeTab(i);
+    }
+    int stackCount = m_stack->count();
+    for(int i = 0 ; i > stackCount ; i++){
+        QWidget *widget = m_stack->widget(i);
+        m_stack->removeWidget(widget);
+        widget->deleteLater();
+    }
 
+    // add
     for(auto toolbox : toolboxes){
-
+        m_stack->addWidget(toolbox);
         m_dockTitle->tabBar()->addTab(toolbox->title());
 
     }
@@ -81,11 +96,6 @@ void DockTitle::init()
         m_layout->setDirection(QBoxLayout::RightToLeft);
     }
 
-
-    m_tabBar->addTab("afzef");
-   m_tabBar->addTab("afzef");
-   m_tabBar->addTab("afzef");
-  m_tabBar->addTab("afzef");
 }
 
 //------------------------------------------------------------------------------------

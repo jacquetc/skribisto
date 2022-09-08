@@ -1,6 +1,7 @@
 #include "windowmanager.h"
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "view.h"
 
 #include <QCloseEvent>
 #include <QSettings>
@@ -15,9 +16,8 @@ MainWindow::MainWindow(int newWindowId)
     this->setWindowId(newWindowId);
     this->setAttribute(Qt::WA_DeleteOnClose);
 
-
-
     this->setCorner(Qt::Corner::BottomLeftCorner, Qt::LeftDockWidgetArea);
+
 
 
     m_viewManager = new ViewManager(this, ui->centralwidget);
@@ -26,6 +26,9 @@ MainWindow::MainWindow(int newWindowId)
         ui->viewDock->setToolboxes(view->toolboxes());
     });
 
+    QObject::connect(m_viewManager, &ViewManager::aboutToRemoveView, this, [this](View *view){
+        ui->viewDock->setToolboxes(QList<Toolbox *>());
+    });
 
 
 

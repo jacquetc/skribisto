@@ -47,6 +47,8 @@
     <addaction name="actionAdd_Window"/>
     <addaction name="actionShow_Project_Dock"/>
     <addaction name="actionShow_View_Dock"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose_all_views"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -161,7 +163,8 @@
   </widget>
   <action name="actionNew_project">
    <property name="icon">
-    <iconset theme="applications-office"/>
+    <iconset theme="applications-office">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>New Project</string>
@@ -214,6 +217,11 @@
    </property>
    <property name="text">
     <string>Show Project Dock</string>
+   </property>
+  </action>
+  <action name="actionClose_all_views">
+   <property name="text">
+    <string>Remove All Splits</string>
    </property>
   </action>
  </widget>

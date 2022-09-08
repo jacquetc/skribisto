@@ -10,6 +10,12 @@
     <height>602</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>200</width>
+    <height>200</height>
+   </size>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
    <property name="spacing">
     <number>0</number>
@@ -60,12 +66,20 @@
           <property name="text">
            <string>Previous</string>
           </property>
+          <property name="icon">
+           <iconset resource="../../../3rdparty/icons.qrc">
+            <normaloff>:/icons/backup/go-previous-view.svg</normaloff>:/icons/backup/go-previous-view.svg</iconset>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="nextHistory">
           <property name="text">
            <string>Next</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../../3rdparty/icons.qrc">
+            <normaloff>:/icons/backup/go-next-view.svg</normaloff>:/icons/backup/go-next-view.svg</iconset>
           </property>
          </widget>
         </item>
@@ -135,12 +149,23 @@
           <property name="text">
            <string>view</string>
           </property>
+          <property name="icon">
+           <iconset resource="../../../3rdparty/icons.qrc">
+            <normaloff>:/icons/backup/view-split-left-right.svg</normaloff>:/icons/backup/view-split-left-right.svg</iconset>
+          </property>
+          <property name="popupMode">
+           <enum>QToolButton::InstantPopup</enum>
+          </property>
          </widget>
         </item>
         <item>
          <widget class="QToolButton" name="closeToolButton">
           <property name="text">
            <string>close</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../../3rdparty/icons.qrc">
+            <normaloff>:/icons/backup/view-close.svg</normaloff>:/icons/backup/view-close.svg</iconset>
           </property>
          </widget>
         </item>
@@ -154,6 +179,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../3rdparty/icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

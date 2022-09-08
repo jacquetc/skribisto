@@ -1,6 +1,5 @@
 project(desktopapp VERSION 0.1 LANGUAGES CXX)
 
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOUIC ON)
@@ -9,7 +8,6 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 
 if(${SKR_PRINT_SUPPORT})
     set(PRINTPACKAGE PrintSupport)
@@ -29,21 +27,13 @@ include(FeatureSummary)
 set(app_SRCS
     main.cpp
     windowmanager.h windowmanager.cpp
-    viewmanager.h viewmanager.cpp
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
-view.h view.cpp view.ui
-toolbox.h
-dock.h dock.cpp
-toptoolbar.h toptoolbar.cpp toptoolbar.ui
-statusbar.h statusbar.cpp statusbar.ui
-invoker.h
-projectdockbackend.h projectdockbackend.cpp
-
-)
-set(app_INTERFACES
-    interfaces/projecttoolboxinterface.h
+    dock.h dock.cpp
+    toptoolbar.h toptoolbar.cpp toptoolbar.ui
+    statusbar.h statusbar.cpp statusbar.ui
+    projectdockbackend.h projectdockbackend.cpp
 )
 
 set(QRC
@@ -56,7 +46,7 @@ set(QRC
 )
 
 message("------- executable is to be built ---------")
-add_executable(SkribistoDesktop ${GUI_TYPE} ${app_SRCS} ${app_INTERFACES} ${QRC} ${RESOURCE_FILES} ${VERSION_RC})
+add_executable(SkribistoDesktop ${GUI_TYPE} ${app_SRCS} ${QRC} ${RESOURCE_FILES} ${VERSION_RC})
 
 set_target_properties(SkribistoDesktop PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/resources/mac/Info.plist"
@@ -82,13 +72,14 @@ endif(${SKR_DEV})
 
 # ---------------------------------
 target_link_libraries(SkribistoDesktop
-    PRIVATE skribisto-data skribisto-backend Qt6::Gui Qt6::Core Qt6::Network Qt6::Widgets Qt6::Svg
+    PRIVATE skribisto-data skribisto-backend skribisto-common Qt6::Gui Qt6::Core Qt6::Network Qt6::Widgets Qt6::Svg
     Qt6::PrintSupport
 )
 
 # ---------------------------------
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-backend/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
 
 # ---------------------------------
 add_subdirectory(plugins)

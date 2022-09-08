@@ -201,6 +201,8 @@ SKRResult SKRPropertyHub::setProperty(int            projectId,
         if (triggerProjectModifiedSignal && !isSilent) {
             emit projectModified(projectId);
         }
+
+        result.addData("propertyId", propertyId);
     }
     IFKO(result) {
         emit errorSent(result);

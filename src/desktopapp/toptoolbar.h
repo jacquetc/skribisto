@@ -15,6 +15,9 @@ public:
     explicit TopToolBar(QWidget *parent = nullptr);
     ~TopToolBar();
 
+private slots:
+    void on_toolButton_triggered(QAction *arg1);
+
 private:
     Ui::TopToolBar *ui;
 };

@@ -1,0 +1,9 @@
+{
+    "type" :            "page",
+    "shortname" :       "SectionPage",
+    "longname" :        "Skribisto Section Page",
+    "version" :         "1.0",
+    "mandatory" :    true,
+    "activatedByDefault" :    true,
+    "dependencies" :    []
+}

@@ -35,8 +35,13 @@ NavigationProjectToolbox::~NavigationProjectToolbox()
 Toolbox *NavigationProjectToolbox::getToolbox() const
 {
 
-Navigation *navigation = new Navigation();
+Navigation *navigation = new Navigation;
 return navigation;
+}
+
+QIcon NavigationProjectToolbox::icon() const
+{
+    return QIcon(":/");
 }
 
 

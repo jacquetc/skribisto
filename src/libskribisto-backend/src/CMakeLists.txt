@@ -8,14 +8,16 @@ project(skribisto-backend LANGUAGES CXX VERSION ${VERSION})
 add_definitions(-DSKRIBISTO_BACKEND_LIBRARY)
 
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 COMPONENTS Core Gui CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Gui Widgets CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets CONFIG REQUIRED)
 
 set(backend_SRCS
 
     skribisto_backend_global.h
     projecttreemodel.h projecttreemodel.cpp
     projecttreeitem.h projecttreeitem.cpp
+projecttreecommands.h projecttreecommands.cpp
+projecttreeproxymodel.h projecttreeproxymodel.cpp
 )
 
 # Tell CMake to create the executable
@@ -26,9 +28,10 @@ else()
     add_library(skribisto-backend SHARED ${backend_SRCS})
 endif(IOS)
 
-target_link_libraries(skribisto-backend PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
+target_link_libraries(skribisto-backend PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
 
 # ---------------------------------
 if(IOS)

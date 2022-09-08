@@ -14,6 +14,19 @@ m_invalidatedRoles(), m_isRootItem(false), otherPropertiesIncrement(0)
     m_data.insert(Roles::SortOrderRole, 99999999);
 }
 
+ProjectTreeItem::ProjectTreeItem(int projectId, int treeItemId) :
+
+    m_invalidatedRoles(), m_isRootItem(false), otherPropertiesIncrement(0)
+{
+    m_treeHub     = skrdata->treeHub();
+    m_propertyHub = skrdata->treePropertyHub();
+
+    m_data.insert(Roles::ProjectIdRole,   projectId);
+    m_data.insert(Roles::TreeItemIdRole, treeItemId);
+
+    this->invalidateAllData();
+}
+
 ProjectTreeItem::ProjectTreeItem(int projectId,
                          int treeItemId,
                          int indent,

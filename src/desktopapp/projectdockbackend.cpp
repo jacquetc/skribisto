@@ -20,11 +20,11 @@ ProjectDockBackend::ProjectDockBackend(QObject *parent, Dock* dock)
     }
     );
 
+    QList<Toolbox*> toolboxes;
     for(auto *plugin : pluginList){
-        Toolbox *box = plugin->getToolbox();
-        dock->stack()->addWidget(box);
-
+        toolboxes.append(plugin->getToolbox());
     }
+    dock->setToolboxes(toolboxes);
 
     dock->stack()->setCurrentIndex(0);
 

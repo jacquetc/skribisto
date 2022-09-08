@@ -8,6 +8,8 @@
 class ProjectTreeItem : public QObject
 {
     Q_OBJECT
+
+
 public:
 
     enum Roles {
@@ -49,6 +51,8 @@ public:
     Q_ENUM(Roles)
 
     explicit ProjectTreeItem();
+    explicit ProjectTreeItem(int projectId,
+                             int treeItemId);
     explicit ProjectTreeItem(int projectId,
                          int treeItemId,
                          int indent,

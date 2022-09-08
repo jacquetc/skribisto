@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1170</width>
-    <height>22</height>
+    <height>24</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -54,9 +54,16 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QToolButton" name="toolButton_2">
+       <widget class="QToolButton" name="undoButton">
         <property name="text">
-         <string>...</string>
+         <string>Undo</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="redoButton">
+        <property name="text">
+         <string>Redo</string>
         </property>
        </widget>
       </item>

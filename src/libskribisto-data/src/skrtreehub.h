@@ -76,6 +76,10 @@ public:
     QHash<int, int>       getAllIndents(int projectId) const;
     Q_INVOKABLE QList<int>getAllIds(int projectId) const;
 
+    Q_INVOKABLE SKRResult setTreeItemId(int            projectId,
+                                   int            treeItemId,
+                                   int newId);
+
     Q_INVOKABLE SKRResult setTitle(int            projectId,
                                    int            treeItemId,
                                    const QString& newTitle);
@@ -156,6 +160,9 @@ public:
     QDateTime             getUpdateDate(int projectId,
                                         int treeItemId) const;
 
+    int row(int projectId,
+            int treeItemId) const;
+
 
     Q_INVOKABLE bool hasChildren(int  projectId,
                                  int  treeItemId,
@@ -208,7 +215,7 @@ public:
                                                 bool sendSignal      = true,
                                                 int  wantedSortOrder = -1);
     Q_INVOKABLE int getParentId(int projectId,
-                                int treeItemId);
+                                int treeItemId) const;
 
 
     SKRResult             renumberSortOrders(int projectId);
