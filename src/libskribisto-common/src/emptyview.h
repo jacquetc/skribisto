@@ -3,12 +3,13 @@
 
 #include <QWidget>
 #include "view.h"
+#include "skribisto_common_global.h"
 
 namespace Ui {
 class EmptyView;
 }
 
-class EmptyView : public View
+class SKRCOMMONEXPORT EmptyView : public View
 {
     Q_OBJECT
 

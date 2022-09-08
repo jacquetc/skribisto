@@ -70,6 +70,11 @@ Navigation::~Navigation()
     delete ui;
 }
 
+QIcon Navigation::icon() const
+{
+return QIcon(":/");
+}
+
 void Navigation::onCustomContextMenu(const QPoint &point)
 {
     QModelIndex index = ui->treeView->indexAt(point);

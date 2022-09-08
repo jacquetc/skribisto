@@ -2,10 +2,11 @@
 #define TOOLBOX_H
 
 #include <QWidget>
+#include "skribisto_common_global.h"
 
 
 
-class Toolbox : public QWidget
+class SKRCOMMONEXPORT Toolbox : public QWidget
 {
     Q_OBJECT
 

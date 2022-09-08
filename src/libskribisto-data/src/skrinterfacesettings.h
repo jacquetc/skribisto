@@ -24,9 +24,9 @@
 
 
 #include <QSettings>
-#include "skr.h"
+#include "skribisto_data_global.h"
 
-class SKRInterfaceSettings {
+class EXPORT SKRInterfaceSettings {
 public:
 
     virtual ~SKRInterfaceSettings() {}

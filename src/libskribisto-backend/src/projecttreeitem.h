@@ -3,9 +3,9 @@
 
 #include <QObject>
 #include "skrtreehub.h"
-#include "./skribisto_backend_global.h"
+#include "skribisto_backend_global.h"
 
-class ProjectTreeItem : public QObject
+class SKRBACKENDEXPORT ProjectTreeItem : public QObject
 {
     Q_OBJECT
 

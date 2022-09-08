@@ -699,7 +699,34 @@ QStringList PLMUtils::Dir::addonsPathsList()
 
     //MacOs devel with Qt Creator 7.0
     dir.setPath(QCoreApplication::applicationDirPath());
+
+    if (dir.cd("plugins")) {
+        if (dir.isReadable()) {
+            list.append(dir.path());
+
+            QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+            for (const QString& pluginDir : qAsConst(dirList)) {
+                list.append(dir.path() + "/" + pluginDir);
+            }
+        }
+    }
+
     dir.cdUp();
+
+
+    if (dir.cd("plugins")) {
+        if (dir.isReadable()) {
+            list.append(dir.path());
+
+            QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+            for (const QString& pluginDir : qAsConst(dirList)) {
+                list.append(dir.path() + "/" + pluginDir);
+            }
+        }
+    }
+
     dir.cdUp();
     dir.cdUp();
     dir.cdUp();
@@ -715,6 +742,20 @@ QStringList PLMUtils::Dir::addonsPathsList()
             }
         }
     }
+    dir.cdUp();
+
+    if (dir.cd("plugins")) {
+        if (dir.isReadable()) {
+            list.append(dir.path());
+
+            QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+            for (const QString& pluginDir : qAsConst(dirList)) {
+                list.append(dir.path() + "/" + pluginDir);
+            }
+        }
+    }
+
 //    qDebug() << "list";
 //    for (const QString& pluginDir : qAsConst(list)) {
 //        qDebug() << pluginDir;

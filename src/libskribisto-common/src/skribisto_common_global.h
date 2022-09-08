@@ -1,5 +1,3 @@
-#include <QVariant>
-
 /***************************************************************************
  *   Copyright (C) 2016 by Cyril Jacquet                                 *
  *   cyril.jacquet@skribisto.eu                                        *
@@ -21,15 +19,15 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef SKRIBISTO_BACKEND_GLOBAL_H
-#define SKRIBISTO_BACKEND_GLOBAL_H
+#ifndef SKRIBISTO_COMMON_GLOBAL_H
+#define SKRIBISTO_COMMON_GLOBAL_H
 
 #include <QtCore/QtGlobal>
 
-#if defined(SKRIBISTO_BACKEND_LIBRARY)
-#define EXPORT Q_DECL_EXPORT
-#else // if defined(SKRIBISTO_BACKEND_LIBRARY)
-#define EXPORT Q_DECL_IMPORT
-#endif // if defined(SKRIBISTO_BACKEND_LIBRARY)
+#if defined(SKRIBISTO_COMMON_LIBRARY)
+#define SKRCOMMONEXPORT Q_DECL_EXPORT
+#else // if defined(SKRIBISTO_COMMON_LIBRARY)
+#define SKRCOMMONEXPORT Q_DECL_IMPORT
+#endif // if defined(SKRIBISTO_COMMON_LIBRARY)
 
-#endif // SKRIBISTO_BACKEND_GLOBAL_H
+#endif // SKRIBISTO_COMMON_GLOBAL_H

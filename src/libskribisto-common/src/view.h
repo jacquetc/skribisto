@@ -7,12 +7,13 @@
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWidget>
+#include "skribisto_common_global.h"
 
 namespace Ui {
 class View;
 }
 
-class View : public QWidget
+class SKRCOMMONEXPORT View : public QWidget
 {
     Q_OBJECT
 

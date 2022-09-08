@@ -1,5 +1,3 @@
-#include <QVariant>
-
 /***************************************************************************
  *   Copyright (C) 2016 by Cyril Jacquet                                 *
  *   cyril.jacquet@skribisto.eu                                        *
@@ -27,9 +25,9 @@
 #include <QtCore/QtGlobal>
 
 #if defined(SKRIBISTO_BACKEND_LIBRARY)
-#define EXPORT Q_DECL_EXPORT
+#define SKRBACKENDEXPORT Q_DECL_EXPORT
 #else // if defined(SKRIBISTO_BACKEND_LIBRARY)
-#define EXPORT Q_DECL_IMPORT
+#define SKRBACKENDEXPORT Q_DECL_IMPORT
 #endif // if defined(SKRIBISTO_BACKEND_LIBRARY)
 
 #endif // SKRIBISTO_BACKEND_GLOBAL_H

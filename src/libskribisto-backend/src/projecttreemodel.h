@@ -9,7 +9,7 @@
 #include <QUndoCommand>
 #define projectTreeModel ProjectTreeModel::instance()
 
-class ProjectTreeModel : public QAbstractItemModel
+class SKRBACKENDEXPORT ProjectTreeModel : public QAbstractItemModel
 {
     Q_OBJECT
     friend class AddItemAfterCommand;

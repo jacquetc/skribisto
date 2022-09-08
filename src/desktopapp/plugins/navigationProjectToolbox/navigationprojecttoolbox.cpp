@@ -39,10 +39,6 @@ Navigation *navigation = new Navigation;
 return navigation;
 }
 
-QIcon NavigationProjectToolbox::icon() const
-{
-    return QIcon(":/");
-}
 
 
 // ---------------------------------------------------

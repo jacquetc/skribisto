@@ -1449,73 +1449,83 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="45"/>
+        <location filename="../desktopapp/mainwindow.ui" line="47"/>
         <source>View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="55"/>
+        <location filename="../desktopapp/mainwindow.ui" line="57"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="146"/>
+        <location filename="../desktopapp/mainwindow.ui" line="148"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="170"/>
+        <location filename="../desktopapp/mainwindow.ui" line="172"/>
         <source>New Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="175"/>
+        <location filename="../desktopapp/mainwindow.ui" line="177"/>
         <source>Preference</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="180"/>
+        <location filename="../desktopapp/mainwindow.ui" line="182"/>
         <source>Add Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="185"/>
+        <location filename="../desktopapp/mainwindow.ui" line="187"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="190"/>
+        <location filename="../desktopapp/mainwindow.ui" line="192"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="195"/>
+        <location filename="../desktopapp/mainwindow.ui" line="197"/>
         <source>About Qt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="200"/>
+        <location filename="../desktopapp/mainwindow.ui" line="202"/>
         <source>Disctraction Free</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="203"/>
+        <location filename="../desktopapp/mainwindow.ui" line="205"/>
         <source>Switch to disctraction free mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="211"/>
+        <location filename="../desktopapp/mainwindow.ui" line="213"/>
         <source>Show View Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="219"/>
+        <location filename="../desktopapp/mainwindow.ui" line="221"/>
         <source>Show Project Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="224"/>
+        <location filename="../desktopapp/mainwindow.ui" line="226"/>
         <source>Remove All Splits</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="231"/>
+        <source>Undo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="236"/>
+        <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

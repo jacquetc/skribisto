@@ -2,12 +2,13 @@
 #define VIEWMANAGER_H
 
 #include "view.h"
+#include "skribisto_common_global.h"
 
 #include <QObject>
 #include <QSplitter>
 
 class ViewSplitter;
-class ViewManager : public QObject
+class SKRCOMMONEXPORT ViewManager : public QObject
 {
     Q_OBJECT
 public:

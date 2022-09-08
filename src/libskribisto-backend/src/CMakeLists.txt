@@ -4,8 +4,9 @@ cmake_minimum_required(VERSION 3.16.0)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++11  -pedantic -Wno-deprecated-declarations -fstrict-aliasing -pedantic-errors -Wno-unused-variable")
 #
 # Populate a CMake variable with the sources
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 project(skribisto-backend LANGUAGES CXX VERSION ${VERSION})
-add_definitions(-DSKRIBISTO_BACKEND_LIBRARY)
 
 # Find the QtWidgets library
 find_package(QT NAMES Qt6 COMPONENTS Core Gui Widgets CONFIG REQUIRED)
@@ -27,6 +28,8 @@ if(IOS)
 else()
     add_library(skribisto-backend SHARED ${backend_SRCS})
 endif(IOS)
+
+target_compile_definitions(skribisto-backend PRIVATE SKRIBISTO_BACKEND_LIBRARY)
 
 target_link_libraries(skribisto-backend PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
 

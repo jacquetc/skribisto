@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16.0)
 #
 # Populate a CMake variable with the sources
 project(skribisto-common LANGUAGES CXX VERSION ${VERSION})
-add_definitions(-DSKRIBISTO_COMMON_LIBRARY)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Find the QtWidgets library
 find_package(QT NAMES Qt6 COMPONENTS Core Gui Widgets CONFIG REQUIRED)
@@ -35,6 +35,8 @@ if(IOS)
 else()
     add_library(skribisto-common SHARED ${common_SRCS} ${common_INTERFACES})
 endif(IOS)
+
+target_compile_definitions(skribisto-common PRIVATE SKRIBISTO_COMMON_LIBRARY)
 
 target_link_libraries(skribisto-common PRIVATE skribisto-backend skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
 

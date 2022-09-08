@@ -22,6 +22,7 @@ public:
     QString title() const {
         return tr("Navigation");
     }
+    QIcon icon() const;
 
 private slots:
     void onCustomContextMenu(const QPoint &point);

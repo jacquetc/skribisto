@@ -2,8 +2,9 @@
 #define TREEITEMCREATIONPARAMETERSWIDGET_H
 
 #include <QWidget>
+#include "skribisto_common_global.h"
 
-class TreeItemCreationParametersWidget : public QWidget
+class SKRCOMMONEXPORT TreeItemCreationParametersWidget : public QWidget
 {
     Q_OBJECT
 public:

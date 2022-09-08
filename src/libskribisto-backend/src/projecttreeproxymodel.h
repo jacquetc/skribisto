@@ -3,8 +3,9 @@
 
 #include <QIdentityProxyModel>
 #include "interfaces/pageinterface.h"
+#include "skribisto_backend_global.h"
 
-class ProjectTreeProxyModel : public QIdentityProxyModel
+class SKRBACKENDEXPORT ProjectTreeProxyModel : public QIdentityProxyModel
 {
     Q_OBJECT
 

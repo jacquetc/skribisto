@@ -2,6 +2,7 @@
 #define NEWTREEITEMDIALOG_H
 
 #include "treeitemcreationparameterswidget.h"
+#include "skribisto_common_global.h"
 
 #include <QDialog>
 #include <QHash>
@@ -11,7 +12,7 @@ namespace Ui {
 class NewTreeItemDialog;
 }
 
-class NewTreeItemDialog : public QDialog
+class SKRCOMMONEXPORT NewTreeItemDialog : public QDialog
 {
     Q_OBJECT
 

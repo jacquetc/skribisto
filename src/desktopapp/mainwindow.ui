@@ -23,7 +23,7 @@
      <x>0</x>
      <y>0</y>
      <width>1643</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuProject">
@@ -39,6 +39,8 @@
     <property name="title">
      <string>Edit</string>
     </property>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -67,7 +69,7 @@
    <property name="minimumSize">
     <size>
      <width>150</width>
-     <height>38</height>
+     <height>40</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -91,7 +93,7 @@
    <property name="minimumSize">
     <size>
      <width>150</width>
-     <height>38</height>
+     <height>40</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -222,6 +224,16 @@
   <action name="actionClose_all_views">
    <property name="text">
     <string>Remove All Splits</string>
+   </property>
+  </action>
+  <action name="actionUndo">
+   <property name="text">
+    <string>Undo</string>
+   </property>
+  </action>
+  <action name="actionRedo">
+   <property name="text">
+    <string>Redo</string>
    </property>
   </action>
  </widget>

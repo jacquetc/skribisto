@@ -5,9 +5,10 @@ cmake_minimum_required(VERSION 3.16.0)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++11  -pedantic -Wno-deprecated-declarations -fstrict-aliasing -pedantic-errors -Wno-unused-variable")
 #
 # Populate a CMake variable with the sources
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 project(skribisto-data LANGUAGES CXX VERSION ${VERSION} )
-add_definitions(-DSKRIBISTO_DATA_LIBRARY)
+
 # Find the QtWidgets library
 find_package(QT NAMES Qt6 COMPONENTS Core Gui Sql Xml CONFIG REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Sql Xml CONFIG REQUIRED)
@@ -108,6 +109,8 @@ if(IOS)
 else()
     add_library(skribisto-data SHARED ${data_SRCS} ${data_HDR} ${RESOURCES})
 endif(IOS)
+
+target_compile_definitions(skribisto-data PRIVATE SKRIBISTO_DATA_LIBRARY)
 
 target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
 

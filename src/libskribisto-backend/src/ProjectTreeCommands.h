@@ -2,11 +2,12 @@
 #define PROJECTTREECOMMANDS_H
 
 #include "projecttreemodel.h"
+#include "skribisto_backend_global.h"
 
 #include <QObject>
 #define projectTreeCommands ProjectTreeCommands::instance()
 
-class ProjectTreeCommands : public QObject
+class SKRBACKENDEXPORT ProjectTreeCommands : public QObject
 {
     Q_OBJECT
 public:

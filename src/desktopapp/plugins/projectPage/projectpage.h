@@ -81,9 +81,12 @@ public:
                                const QVariantMap &exportProperties,
                                SKRResult &result) const override;
 
+
 signals:
 
 private:
+
+  // PageInterface interface
 };
 
 #endif // PROJECTPAGE_H
