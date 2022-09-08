@@ -83,12 +83,15 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
     );
 
     for(auto *plugin : pluginList){
+        if(plugin->isConstructible()){
 
         QListWidgetItem *item = new QListWidgetItem(QIcon(plugin->pageTypeIconUrl(-1, -1)), plugin->visualText(), ui->listWidget);
         item->setData(Qt::UserRole, plugin->pageDetailText());
         item->setData(Qt::UserRole + 1, plugin->pageType());
 
         m_typeWithparameterWidgetHash.insert(plugin->pageType(), plugin->pageCreationParametersWidget());
+
+        }
     }
 
     ui->listWidget->setCurrentRow(0);

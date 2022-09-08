@@ -762,7 +762,7 @@
 <context>
     <name>DockTitle</name>
     <message>
-        <location filename="../desktopapp/dock.cpp" line="73"/>
+        <location filename="../desktopapp/dock.cpp" line="78"/>
         <source>Hide dock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2065,6 +2065,19 @@
     </message>
 </context>
 <context>
+    <name>OutlineToolbox</name>
+    <message>
+        <location filename="../libskribisto-common/src/toolboxes/outlinetoolbox.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-common/src/toolboxes/outlinetoolbox.h" line="22"/>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>OverviewPage</name>
     <message>
         <location filename="../mobileapp/plugins/overviewPage/overviewpage.h" line="69"/>
@@ -2651,7 +2664,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="39"/>
+        <location filename="../desktopapp/main.cpp" line="41"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3499,6 +3512,14 @@
     </message>
 </context>
 <context>
+    <name>SettingsPanel</name>
+    <message>
+        <location filename="../libskribisto-common/src/settingspanel.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SkrBasePage</name>
     <message>
         <location filename="../mobileapp/imports/Skribisto/SkrBasePage.qml" line="66"/>
@@ -3809,22 +3830,26 @@
 <context>
     <name>TextPage</name>
     <message>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="74"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="74"/>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="78"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="78"/>
         <source>Write here any text, be it a scene or a note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="49"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="49"/>
         <source>Text page</source>
         <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="112"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="115"/>
         <source>Text page</source>
         <translation type="unfinished"></translation>
@@ -3895,6 +3920,14 @@
     <message>
         <location filename="../mobileapp/plugins/textPage/TextPageForm.ui.qml" line="61"/>
         <source>Page menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TextView</name>
+    <message>
+        <location filename="../desktopapp/plugins/textPage/textview.ui" line="14"/>
+        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4211,22 +4244,22 @@
 <context>
     <name>View</name>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="67"/>
+        <location filename="../libskribisto-common/src/view.ui" line="64"/>
         <source>Previous</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="78"/>
+        <location filename="../libskribisto-common/src/view.ui" line="75"/>
         <source>Next</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="150"/>
+        <location filename="../libskribisto-common/src/view.ui" line="122"/>
         <source>view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="164"/>
+        <location filename="../libskribisto-common/src/view.ui" line="136"/>
         <source>close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4333,7 +4366,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="44"/>
+        <location filename="../desktopapp/main.cpp" line="46"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

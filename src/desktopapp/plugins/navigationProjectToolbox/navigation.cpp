@@ -77,6 +77,7 @@ return QIcon(":/");
 
 void Navigation::onCustomContextMenu(const QPoint &point)
 {
+
     QModelIndex index = ui->treeView->indexAt(point);
     if (index.isValid()) {
         m_projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();

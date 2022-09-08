@@ -18,14 +18,17 @@ set(common_SRCS
     view.h view.cpp view.ui
     toolbox.h
     invoker.h
-newtreeitemdialog.h newtreeitemdialog.cpp newtreeitemdialog.ui
-treeitemcreationparameterswidget.h treeitemcreationparameterswidget.cpp
+    newtreeitemdialog.h newtreeitemdialog.cpp newtreeitemdialog.ui
+    treeitemcreationparameterswidget.h treeitemcreationparameterswidget.cpp
+settingspanel.h settingspanel.cpp settingspanel.ui
+toolboxes/outlinetoolbox.h toolboxes/outlinetoolbox.cpp toolboxes/outlinetoolbox.ui
 )
 
 set(common_INTERFACES
     interfaces/projecttoolboxinterface.h
     interfaces/pageinterface.h
     interfaces/itemexporterinterface.h
+    interfaces/settingspanelinterface.h
 )
 
 # Tell CMake to create the executable

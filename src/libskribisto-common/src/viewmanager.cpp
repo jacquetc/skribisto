@@ -98,13 +98,13 @@ View* ViewManager::openViewAt(View *atView, const QString &type, int projectId, 
     if(view != nullptr){
 
 
-        ViewSplitter *parentSplitter = static_cast<ViewSplitter *>(atView->parentWidget());
+        ViewSplitter *parentSplitter = static_cast<ViewSplitter *>(atView->parent());
         int viewIndex = parentSplitter->indexOf(atView);
         m_viewList.append(view);
         parentSplitter->insertWidget(viewIndex, view);
         m_viewList.removeAll(atView);
-        atView->close();
-        delete atView;
+        atView->hide();
+        atView->deleteLater();
         view->setParameters(m_parameters);
         view->setIdentifiersAndInitialize(projectId, treeItemId);
         m_parameters.clear();
@@ -163,14 +163,14 @@ void ViewManager::removeSplit(View *view)
 
     if(parentSplitter == m_rootSplitter){
         m_viewList.removeAll(view);
-        view->close();
-        delete view;
+        view->hide();
 
-        if(m_rootSplitter->count() == 0){
+        if(m_rootSplitter->count() == 1){
             EmptyView *emptyView = new EmptyView;
             m_rootSplitter->addWidget(emptyView);
             m_viewList.append(emptyView);
         }
+        view->deleteLater();
 
     }
     else{
@@ -182,8 +182,8 @@ void ViewManager::removeSplit(View *view)
         if(parentSplitter && grandParentSplitter){
 
              m_viewList.removeAll(view);
-             view->close();
-             delete view;
+             view->hide();
+             view->deleteLater();
 
             // widget is splitter or view
             QWidget *widget = parentSplitter->widget(0);
@@ -194,8 +194,8 @@ void ViewManager::removeSplit(View *view)
             Q_ASSERT(parentSplitter->count() == 1);
 
             grandParentSplitter->insertWidget(parentSplitterIndex, widget);
-            parentSplitter->close();
-            delete parentSplitter;
+            parentSplitter->hide();
+            parentSplitter->deleteLater();
         }
     }
 
@@ -204,7 +204,7 @@ void ViewManager::removeSplit(View *view)
 
 View *ViewManager::currentView()
 {
-
+    this->determineCurrentView();
 
   return m_currentView;
 

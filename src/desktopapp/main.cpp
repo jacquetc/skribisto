@@ -10,15 +10,17 @@
 #include "windowmanager.h"
 #include "projecttreemodel.h"
 
+
 int main(int argc, char *argv[])
 {
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 
-    QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << ":/icons/backup/");
+    //QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() << ":/icons/backup/");
 
     QApplication app(argc, argv);
     app.setStyle(QStyleFactory::create("Fusion"));
+
     // Names for the QSettings
     QCoreApplication::setOrganizationName("skribisto");
     QCoreApplication::setOrganizationDomain("skribisto.eu");

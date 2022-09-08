@@ -43,9 +43,14 @@ void Dock::setToolboxes(QList<Toolbox *> toolboxes)
     }
 
     // add
+
+    int index = 0;
     for(auto toolbox : toolboxes){
         m_stack->addWidget(toolbox);
-        m_dockTitle->tabBar()->addTab(toolbox->title());
+        m_dockTitle->tabBar()->addTab(toolbox->icon(), "");
+        m_dockTitle->tabBar()->setTabToolTip(index, toolbox->title());
+
+        index++;
 
     }
 }

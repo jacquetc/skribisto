@@ -12,6 +12,29 @@ View::View(const QString &type, QWidget *parent) :
 {
     ui->setupUi(this);
 
+    QToolBar *historyToolbar = new QToolBar;
+    historyToolbar->setIconSize(QSize(16, 16));
+    historyToolbar->setContentsMargins(0, 0, 0, 0);
+
+    historyToolbar->addWidget(ui->previousHistory);
+    historyToolbar->addWidget(ui->nextHistory);
+    ui->toolBarLayout->insertWidget(0, historyToolbar);
+
+
+    QToolBar *viewControlsToolbar = new QToolBar;
+    viewControlsToolbar->setIconSize(QSize(16, 16));
+    viewControlsToolbar->setContentsMargins(0, 0, 0, 0);
+
+    viewControlsToolbar->addWidget(ui->splitToolButton);
+    viewControlsToolbar->addWidget(ui->closeToolButton);
+    ui->toolBarLayout->addWidget(viewControlsToolbar);
+
+    ui->viewControlsFrame->setParent(nullptr);
+    ui->viewControlsFrame->deleteLater();
+    ui->navigationFrame->setParent(nullptr);
+    ui->navigationFrame->deleteLater();
+    ui->toolBarLayout->setStretch(1, 1);
+
     QAction *splitHorizontalyAction = new QAction(QIcon(":/icons/backup/view-split-left-right.svg"), "Split", this);
     QObject::connect(splitHorizontalyAction, &QAction::triggered, this, [this](){
 
@@ -62,7 +85,8 @@ void View::setCentralWidget(QWidget *widget)
 
 void View::setToolBar(QToolBar *toolBar)
 {
-    ui->toolBarHolder->addWidget(toolBar);
+    ui->toolBarLayout->insertWidget(1, toolBar);
+    ui->toolBarPlaceHolder->deleteLater();
 }
 
 int View::treeItemId() const
