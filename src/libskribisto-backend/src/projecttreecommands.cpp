@@ -56,6 +56,26 @@ void ProjectTreeCommands::addSeveralSubItems(int projectId, int targetId, const 
     m_undoStack->endMacro();
 }
 
+//------------------------------------------------------------------------------------
+
+void ProjectTreeCommands::setItemProperties(int projectId, int targetId, const QVariantMap &properties, bool isSystem)
+{
+
+    m_undoStack->beginMacro("Set tree item properties");
+
+    QMapIterator<QString, QVariant> iter(properties);
+
+    while (iter.hasNext()){
+        iter.next();
+        m_undoStack->push(new SetItemPropertyCommand(projectId, targetId, iter.key(), iter.value(), isSystem));
+    }
+
+
+    m_undoStack->endMacro();
+
+
+}
+
 
 QUndoStack *ProjectTreeCommands::undoStack() const
 {

@@ -10,6 +10,8 @@ ProjectView::ProjectView(QWidget *parent) :
 
     setCentralWidget(centralWidget);
 
+
+
     this->setFocusProxy(centralWidgetUi->lineEdit);
 }
 

@@ -8,9 +8,11 @@
 #include <QTabBar>
 #include <QToolButton>
 #include <QStackedWidget>
+#include <QActionGroup>
 
 
 class DockTitle;
+class ToolbarSelector;
 class Dock : public QDockWidget
 {
     Q_OBJECT
@@ -34,6 +36,7 @@ private:
 
 };
 
+//---------------------------------------------------------------
 
 class DockTitle : public QWidget
 {
@@ -43,8 +46,9 @@ public:
 
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
-    QTabBar *tabBar() const;
 
+
+    ToolbarSelector *toolbarSelector() const;
 
 public slots:
 
@@ -57,8 +61,27 @@ private slots:
 
 private:
     QToolButton *m_hideButton;
-    QTabBar *m_tabBar;
+    ToolbarSelector *m_toolbarSelector;
 QHBoxLayout *m_layout;
 };
 
+//---------------------------------------------------------------
+
+class ToolbarSelector : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit ToolbarSelector(QWidget *parent = nullptr);
+    void add(const QIcon &icon, const QString &title);
+    void clear();
+
+signals:
+    void currentIndexChanged(int index);
+
+private:
+    QHBoxLayout *m_layout;
+    QActionGroup *m_actionGroup;
+
+
+};
 #endif // DOCK_H

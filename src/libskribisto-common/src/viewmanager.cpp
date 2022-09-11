@@ -14,7 +14,9 @@ ViewManager::ViewManager(QObject *parent, QWidget *viewWidget)
     this->setObjectName("viewManager");
 
     QVBoxLayout *layout = new QVBoxLayout(viewWidget);
+    layout->setContentsMargins(0,0,0,0);
     m_rootSplitter = new ViewSplitter(Qt::Horizontal, viewWidget);
+
     layout->addWidget(m_rootSplitter);
 
     EmptyView *emptyView = new EmptyView;
@@ -28,6 +30,22 @@ ViewManager::ViewManager(QObject *parent, QWidget *viewWidget)
     QObject::connect(m_focusDetectorTimer, &QTimer::timeout,  this, &ViewManager::determineCurrentView);
     m_focusDetectorTimer->start();
 
+    connect(skrdata->treeHub(), &SKRTreeHub::treeItemAboutToBeRemoved, this, [this](int projectId, int treeItemId){
+        for(auto *view : m_viewList){
+            if(projectId == view->projectId() && treeItemId == view->treeItemId()){
+                removeSplit(view);
+            }
+        }
+    });
+
+    connect(skrdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, [this](int projectId){
+        for(auto *view : m_viewList){
+            if(projectId == view->projectId()){
+                removeSplit(view);
+            }
+        }
+    });
+
     QTimer::singleShot(0, this, &ViewManager::init);
 }
 
@@ -40,6 +58,7 @@ void ViewManager::init(){
 
 void ViewManager::determineCurrentView()
 {
+    View* oldView = m_currentView;
 
         if(!m_viewList.contains(m_currentView)){
             m_currentView = nullptr;
@@ -58,7 +77,12 @@ void ViewManager::determineCurrentView()
        if(!m_currentView){
           m_currentView = m_viewList.at(0);
        }
-    }
+
+       if(oldView != m_currentView && m_currentView){
+           emit currentViewChanged(m_currentView);
+       }
+
+}
 
 
 //---------------------------------------
@@ -110,7 +134,7 @@ View* ViewManager::openViewAt(View *atView, const QString &type, int projectId, 
         m_parameters.clear();
 
         view->setFocus();
-        emit currentViewChanged(view);
+        this->determineCurrentView();
 
             //QObject::connect(view, &View::focuscha)
     }
@@ -150,6 +174,8 @@ View* ViewManager::split(View *view, Qt::Orientation orientation)
         parentSplitter->insertWidget(viewIndex, childSplitter);
         childSplitter->addWidget(view);
         childSplitter->addWidget(emptyView);
+
+
     }
 
     parentSplitter->restoreState(array);
@@ -159,6 +185,8 @@ View* ViewManager::split(View *view, Qt::Orientation orientation)
 
 void ViewManager::removeSplit(View *view)
 {
+    bool isCurrentView = view == this->currentView();
+
     ViewSplitter *parentSplitter = static_cast<ViewSplitter *>(view->parentWidget());
 
     if(parentSplitter == m_rootSplitter){
@@ -171,7 +199,6 @@ void ViewManager::removeSplit(View *view)
             m_viewList.append(emptyView);
         }
         view->deleteLater();
-
     }
     else{
         ViewSplitter *grandParentSplitter = static_cast<ViewSplitter *>(parentSplitter->parentWidget());
@@ -198,7 +225,9 @@ void ViewManager::removeSplit(View *view)
             parentSplitter->deleteLater();
         }
     }
-
+    if(isCurrentView){
+        emit currentViewChanged(m_currentView);
+    }
     determineCurrentView();
 }
 
@@ -257,6 +286,8 @@ void ViewManager::openSpecificView(const QString &pageType, int projectId, int t
 
 ViewSplitter::ViewSplitter(Qt::Orientation orientation, QWidget *parent) : QSplitter(orientation, parent)
 {
+    //TODO: make it collapsible, deleting cleanly the hidden splitter or view
+    this->setChildrenCollapsible(false);
 
 
 }
@@ -278,15 +309,16 @@ ViewSplitter *ViewSplitter::addChildSplitter(int index)
 
 bool ViewSplitter::isFirstSplitASplitter()
 {
-
+        return QString(this->widget(0)->metaObject()->className()) == "ViewSplitter";
 }
 
 ViewSplitter *ViewSplitter::getSplitter(int index)
 {
-
+    return static_cast<ViewSplitter *>(this->widget(1));
 }
 
 bool ViewSplitter::isSecondSplitASplitter()
 {
+    return QString(this->widget(1)->metaObject()->className()) == "ViewSplitter";
 
 }

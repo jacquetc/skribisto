@@ -11,32 +11,27 @@ Dock::Dock(QWidget *parent)
     m_dockTitle = new DockTitle(this);
     this->setTitleBarWidget(m_dockTitle);
 
-
-
     QTimer::singleShot(0, this, &Dock::init);
-    }
+}
 
     //---------------------------------------
 
-    void Dock::init(){
+void Dock::init(){
 
-        m_stack = new QStackedWidget(this);
-        this->setWidget(m_stack);
-        m_stack->show();
-
-
-        QObject::connect(m_dockTitle->tabBar(), &QTabBar::currentChanged, m_stack, &QStackedWidget::setCurrentIndex);
-    }
+    m_stack = new QStackedWidget(this);
+    this->setWidget(m_stack);
+    m_stack->show();
+    QObject::connect(m_dockTitle->toolbarSelector(), &ToolbarSelector::currentIndexChanged, m_stack, &QStackedWidget::setCurrentIndex);
+}
 
 void Dock::setToolboxes(QList<Toolbox *> toolboxes)
 {
     // clear
-    int tabCount = m_dockTitle->tabBar()->count();
-    for(int i = 0 ; i > tabCount ; i++){
-        m_dockTitle->tabBar()->removeTab(i);
-    }
+
+    m_dockTitle->toolbarSelector()->clear();
+
     int stackCount = m_stack->count();
-    for(int i = 0 ; i > stackCount ; i++){
+    for(int i = 0 ; i < stackCount ; i++){
         QWidget *widget = m_stack->widget(i);
         m_stack->removeWidget(widget);
         widget->deleteLater();
@@ -47,9 +42,7 @@ void Dock::setToolboxes(QList<Toolbox *> toolboxes)
     int index = 0;
     for(auto toolbox : toolboxes){
         m_stack->addWidget(toolbox);
-        m_dockTitle->tabBar()->addTab(toolbox->icon(), "");
-        m_dockTitle->tabBar()->setTabToolTip(index, toolbox->title());
-
+        m_dockTitle->toolbarSelector()->add(toolbox->icon(), toolbox->title());
         index++;
 
     }
@@ -68,24 +61,46 @@ QStackedWidget *Dock::stack() const
 DockTitle::DockTitle(QWidget *parent): QWidget(parent)
 
 {
+    this->setContentsMargins(0,0,0,0);
+
+
     QDockWidget *dockWidget = qobject_cast<QDockWidget*>(parentWidget());
 
-    m_layout = new QHBoxLayout(this);
+
+    QVBoxLayout *vLayout = new QVBoxLayout(this);
+    vLayout->setContentsMargins(0,0,0,0);
+    vLayout->setSpacing(0);
 
 
+    m_layout = new QHBoxLayout;
     m_layout->setContentsMargins(0,0,0,0);
+    m_layout->addStretch(2);
+
+    m_toolbarSelector = new ToolbarSelector;
+
+    m_layout->addWidget(m_toolbarSelector);
+    m_layout->setStretchFactor(m_toolbarSelector, 1);
+
+    m_layout->addStretch(2);
+
     m_hideButton = new QToolButton;
     m_hideButton->setText(tr("Hide dock"));
-    //hideButton->setIcon();
+    m_hideButton->setAutoRaise(true);
+    m_hideButton->setIcon(QIcon(":/icons/skribisto/dock-left-close.svg"));
+
     QObject::connect(m_hideButton, &QToolButton::clicked, dockWidget, &QDockWidget::hide);
 
-    m_tabBar = new QTabBar();
-    m_tabBar->setChangeCurrentOnDrag(true);
-    m_tabBar->setExpanding(false);
-    m_layout->addWidget(m_tabBar);
-    m_layout->setStretchFactor(m_tabBar, 1);
 
     m_layout->addWidget(m_hideButton);
+
+    vLayout->addLayout(m_layout);
+
+    auto *line = new QFrame();
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    line->setMaximumHeight(2);
+
+    vLayout->addWidget(line);
 
      QTimer::singleShot(0, this, &DockTitle::init);
 }
@@ -99,29 +114,102 @@ void DockTitle::init()
     QMainWindow *mainWindow = qobject_cast<QMainWindow*>(this->window());
     if(mainWindow->dockWidgetArea(dockWidget) == Qt::RightDockWidgetArea){
         m_layout->setDirection(QBoxLayout::RightToLeft);
+        m_hideButton->setIcon(QIcon(":/icons/skribisto/dock-right-close.svg"));
     }
 
 }
 
 //------------------------------------------------------------------------------------
 
+ToolbarSelector *DockTitle::toolbarSelector() const
+{
+    return m_toolbarSelector;
+}
+
+
+//------------------------------------------------------------------------------------
+
 QSize DockTitle::sizeHint() const
 {
- return QSize(1000, 40);
+ return QSize(1000, 26);
 }
 
 //------------------------------------------------------------------------------------
 
 QSize DockTitle::minimumSizeHint() const
 {
-    return QSize(150, 40);
+    return QSize(150, 26);
 
 }
 
 
-QTabBar *DockTitle::tabBar() const
+//------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------
+
+ToolbarSelector::ToolbarSelector(QWidget *parent)
 {
-    return m_tabBar;
+    this->setContentsMargins(0,0,0,0);
+    this->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
+ m_layout = new QHBoxLayout(this);
+ m_layout->setContentsMargins(0,0,0,0);
+ m_layout->setSpacing(3);
+
+ m_actionGroup = new QActionGroup(this);
+
 }
 
 //------------------------------------------------------------------------------------
+
+void ToolbarSelector::add(const QIcon &icon, const QString &title)
+{
+    auto *action = new QAction(icon, title, m_actionGroup);
+    action->setCheckable(true);
+
+    this->connect(action, &QAction::toggled,this, [this](bool toggled){
+
+        if(toggled){
+            auto *senderAction = static_cast<QAction *>(this->sender());
+
+            int index = 0;
+            for(auto *action : this->actions()){
+                if(action == senderAction){
+                    emit currentIndexChanged(index);
+                }
+                index++;
+            }
+        }
+    });
+
+
+    QToolButton *button = new QToolButton();
+    button->setAutoRaise(true);
+    button->setDefaultAction(action);
+    button->setMinimumSize(20, 20);
+
+    m_layout->addWidget(button);
+
+    if(m_layout->indexOf(button) == 0){
+        button->setChecked(true);
+    }
+}
+
+//------------------------------------------------------------------------------------
+
+void ToolbarSelector::clear()
+{
+    while(m_layout->count() > 0){
+
+    QWidget *widget = static_cast<QWidget *>(m_layout->takeAt(0)->widget());
+        widget->hide();
+        widget->deleteLater();
+    }
+
+
+    for(auto *action : m_actionGroup->actions()){
+        m_actionGroup->removeAction(action);
+        action->deleteLater();
+    }
+
+}

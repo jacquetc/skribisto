@@ -75,6 +75,8 @@ public:
     QHash<int, int>       getAllSortOrders(int projectId) const;
     QHash<int, int>       getAllIndents(int projectId) const;
     Q_INVOKABLE QList<int>getAllIds(int projectId) const;
+    Q_INVOKABLE QVariantMap saveId(int projectId, int treeItemId) const;
+    Q_INVOKABLE SKRResult restoreId(int projectId, int treeItemId, const QVariantMap &values);
 
     Q_INVOKABLE SKRResult setTreeItemId(int            projectId,
                                    int            treeItemId,
@@ -182,6 +184,7 @@ public:
                  int            treeItemId,
                  const QString& fieldName) const;
 
+
     Q_INVOKABLE int       getLastAddedId();
 
     SKRResult             addTreeItem(const QHash<QString, QVariant>& values,
@@ -278,6 +281,7 @@ public:
                                int treeItemId) const;
 
 private:
+    void commit(int projectId);
 
     SKRResult setTrashedDateToNow(int projectId,
                                   int treeItemId);
@@ -292,6 +296,7 @@ signals:
 
     void errorSent(const SKRResult& result) const;
     void projectModified(int projectId); // for save
+    void allValuesChanged(int projectId, int treeItemId);
     void treeItemIdChanged(int projectId,
                            int treeItemId,
                            int newId);
@@ -329,6 +334,8 @@ signals:
                        int treeItemId);
     void treeItemsAdded(int       projectId,
                         QList<int>treeItemIds);
+    void treeItemAboutToBeRemoved(int projectId,
+                         int treeItemId);
     void treeItemRemoved(int projectId,
                          int treeItemId);
     void treeItemMoved(int       sourceProjectId,

@@ -44,6 +44,7 @@ protected:
     virtual QVariantMap addOtherViewParametersBeforeSplit() {
         return QVariantMap();
     }
+    void paintEvent(QPaintEvent *event);
 
 
 signals:

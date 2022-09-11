@@ -5,6 +5,8 @@
 #include "projecttreecommands.h"
 #include "invoker.h"
 #include "viewmanager.h"
+#include "plmprojecthub.h"
+#include "itemdelegate.h"
 
 #include <QMenu>
 #include <newtreeitemdialog.h>
@@ -14,7 +16,14 @@ Navigation::Navigation(class QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->treeView->setModel(new ProjectTreeProxyModel(this));
+
+    QWidget *viewPort = new QWidget();
+
+    ui->treeView->setViewport(viewPort);
+
+
+    ProjectTreeProxyModel *model = new ProjectTreeProxyModel(this);
+    ui->treeView->setModel(model);
 
 
     ui->treeView->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -28,14 +37,29 @@ Navigation::Navigation(class QWidget *parent) :
 
     NewTreeItemDialog *dialog = new NewTreeItemDialog(this);
 
+    expandProjectItems();
+    QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &Navigation::expandProjectItems);
 
+
+    QObject::connect(ui->treeView, &QTreeView::clicked, this, [this](const QModelIndex &index){
+        if (index.isValid()) {
+            m_projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
+            m_targetTreeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+            m_currentModelIndex = index;
+
+            QString type = index.data(ProjectTreeItem::TypeRole).toString();
+
+            ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
+            viewManager->openViewAtCurrentView(type, m_projectId, m_targetTreeItemId);
+
+        }
+    });
 
 
     QObject::connect(m_addItemAfterAction, &QAction::triggered, this, [this, dialog](){
         dialog->setActionType(NewTreeItemDialog::AddAfter);
         dialog->setIdentifiers(m_projectId, m_targetTreeItemId);
         dialog->open();
-
     } );
 
 
@@ -61,7 +85,7 @@ Navigation::Navigation(class QWidget *parent) :
     } );
 
 
-
+    ui->treeView->setItemDelegate(new ItemDelegate);
 
 }
 
@@ -72,7 +96,7 @@ Navigation::~Navigation()
 
 QIcon Navigation::icon() const
 {
-return QIcon(":/");
+return QIcon(":/icons/backup/compass.svg");
 }
 
 void Navigation::onCustomContextMenu(const QPoint &point)
@@ -124,6 +148,16 @@ void Navigation::removeFromExpandPathes(const QModelIndex &modelIndex)
 
 }
 
+void Navigation::expandProjectItems()
+{
+    for(int projectId : skrdata->projectHub()->getProjectIdList()){
+        auto modelIndex = static_cast<ProjectTreeProxyModel *>(ui->treeView->model())->getModelIndex(projectId, 0);
+        if(modelIndex.isValid()){
+            ui->treeView->expand(modelIndex);
+        }
+    }
+}
+
 void Navigation::addToExpandPathes(const QModelIndex &modelIndex)
 {
     m_expandedPathes.append(this->pathFromIndex(modelIndex));
@@ -149,19 +183,3 @@ QModelIndex Navigation::pathToIndex(const Path &path){
   }
   return iter;
 }
-
-void Navigation::on_treeView_doubleClicked(const QModelIndex &index)
-{
-    if (index.isValid()) {
-        m_projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-        m_targetTreeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
-        m_currentModelIndex = index;
-
-        QString type = index.data(ProjectTreeItem::TypeRole).toString();
-
-        ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewAtCurrentView(type, m_projectId, m_targetTreeItemId);
-
-    }
-}
-

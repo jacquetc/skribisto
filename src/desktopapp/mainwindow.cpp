@@ -1,11 +1,15 @@
-#include "windowmanager.h"
+﻿#include "windowmanager.h"
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "view.h"
+#include "settingsdialog.h"
 
 #include <QCloseEvent>
+#include <QFileDialog>
 #include <QSettings>
 #include <QTimer>
+#include "projectcommands.h"
+#include <skrdata.h>
 
 MainWindow::MainWindow(int newWindowId)
     : QMainWindow()
@@ -18,7 +22,7 @@ MainWindow::MainWindow(int newWindowId)
 
     this->setCorner(Qt::Corner::BottomLeftCorner, Qt::LeftDockWidgetArea);
 
-
+    this->setUnifiedTitleAndToolBarOnMac(true);
 
     m_viewManager = new ViewManager(this, ui->centralwidget);
 
@@ -41,6 +45,26 @@ MainWindow::MainWindow(int newWindowId)
     m_statusBar = new StatusBar();
     ui->statusbar->setContentsMargins(0, 0, 0, 0);
     ui->statusbar->addPermanentWidget(m_statusBar, 1);
+
+
+    // menu
+    ui->actionClose_project->setEnabled(false);
+    ui->actionSave->setEnabled(false);
+    ui->actionSaveAs->setEnabled(false);
+    ui->actionBack_up->setEnabled(false);
+    ui->actionPrint->setEnabled(false);
+    ui->actionExport->setEnabled(false);
+
+    QObject::connect(skrdata->projectHub(), &PLMProjectHub::projectCountChanged, this, [this](int count){
+
+        bool enable = count > 0;
+        ui->actionClose_project->setEnabled(enable);
+        ui->actionSave->setEnabled(enable);
+        ui->actionSaveAs->setEnabled(enable);
+        ui->actionBack_up->setEnabled(enable);
+        ui->actionPrint->setEnabled(enable);
+        ui->actionExport->setEnabled(enable);
+    });
 
 QTimer::singleShot(0, this, &MainWindow::init);
 }
@@ -121,5 +145,52 @@ void MainWindow::on_actionShow_View_Dock_triggered(bool checked)
 void MainWindow::on_actionShow_Project_Dock_triggered(bool checked)
 {
     ui->projectDock->setVisible(checked);
+}
+
+
+void MainWindow::on_actionPreferences_triggered()
+{
+    SettingsDialog settings(this);
+    settings.exec();
+}
+
+
+void MainWindow::on_actionSaveAs_triggered()
+{
+    int activeProject = skrdata->projectHub()->getActiveProject();
+
+    QStringList schemes;
+    schemes << tr("Skribisto project (*.skrib)");
+    QUrl saveFileNameUrl = QFileDialog::getSaveFileUrl(this, tr("Save project"),
+                                                       skrdata->projectHub()->getPath(activeProject),
+                                                       "Skribisto project (*.skrib)", nullptr, QFileDialog::Options(),
+                                                       schemes);
+
+    projectCommands->saveAs(activeProject, saveFileNameUrl);
+}
+
+
+void MainWindow::on_actionLoad_Project_triggered()
+{
+    QUrl openFileNameUrl = QFileDialog::getOpenFileUrl(this, "Open a project", QUrl(), tr("Skribisto project (*.skrib)"));
+
+    projectCommands->loadProject(openFileNameUrl);
+
+}
+
+
+void MainWindow::on_actionSave_triggered()
+{
+    int activeProject = skrdata->projectHub()->getActiveProject();
+    projectCommands->save(activeProject);
+
+}
+
+
+void MainWindow::on_actionClose_project_triggered()
+{
+    int activeProject = skrdata->projectHub()->getActiveProject();
+    projectCommands->closeProject(activeProject);
+
 }
 

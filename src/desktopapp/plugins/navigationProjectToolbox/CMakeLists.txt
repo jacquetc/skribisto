@@ -17,6 +17,7 @@ set(SRCS
     navigationprojecttoolbox.cpp
     navigationprojecttoolbox.h
     navigation.h navigation.cpp navigation.ui
+itemdelegate.h itemdelegate.cpp
 )
 
 # Tell CMake to create the executable
@@ -29,6 +30,7 @@ endif(IOS)
 
 add_dependencies(${PROJECT_NAME} skribisto-data)
 add_dependencies(${PROJECT_NAME} skribisto-backend)
+add_dependencies(${PROJECT_NAME} skribisto-common)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Svg Qt6::Widgets)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-data)
@@ -38,6 +40,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-common)
 include_directories("${CMAKE_SOURCE_DIR}/src/desktopapp/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-backend/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/plugins/skribisto")

@@ -36,6 +36,7 @@ endif(IOS)
 
 add_dependencies(${PROJECT_NAME} skribisto-data)
 add_dependencies(${PROJECT_NAME} skribisto-backend)
+add_dependencies(${PROJECT_NAME} skribisto-common)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Svg Qt6::Widgets)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-data)

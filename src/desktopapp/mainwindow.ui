@@ -11,7 +11,14 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Skribisto</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../../resources/icons/skr_icons.qrc">
+    <normaloff>:/icons/skribisto/skribisto.svg</normaloff>:/icons/skribisto/skribisto.svg</iconset>
+  </property>
+  <property name="autoFillBackground">
+   <bool>true</bool>
   </property>
   <property name="unifiedTitleAndToolBarOnMac">
    <bool>true</bool>
@@ -23,16 +30,29 @@
      <x>0</x>
      <y>0</y>
      <width>1643</width>
-     <height>22</height>
+     <height>37</height>
     </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
    </property>
    <widget class="QMenu" name="menuProject">
     <property name="title">
      <string>Project</string>
     </property>
     <addaction name="actionNew_project"/>
-    <addaction name="actionPreference"/>
+    <addaction name="actionLoad_Project"/>
     <addaction name="separator"/>
+    <addaction name="actionPreferences"/>
+    <addaction name="separator"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSaveAs"/>
+    <addaction name="actionBack_up"/>
+    <addaction name="separator"/>
+    <addaction name="actionPrint"/>
+    <addaction name="actionExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose_project"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -64,7 +84,11 @@
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+  </widget>
   <widget class="Dock" name="projectDock">
    <property name="minimumSize">
     <size>
@@ -77,6 +101,9 @@
      <width>400</width>
      <height>524287</height>
     </size>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
    </property>
    <property name="features">
     <set>QDockWidget::DockWidgetClosable</set>
@@ -101,6 +128,9 @@
      <width>400</width>
      <height>524287</height>
     </size>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
    </property>
    <property name="features">
     <set>QDockWidget::DockWidgetClosable</set>
@@ -132,6 +162,9 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="bottomDock">
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetVerticalTitleBar</set>
    </property>
@@ -172,9 +205,9 @@
     <string>New Project</string>
    </property>
   </action>
-  <action name="actionPreference">
+  <action name="actionPreferences">
    <property name="text">
-    <string>Preference</string>
+    <string>Preferences</string>
    </property>
   </action>
   <action name="actionAdd_Window">
@@ -209,6 +242,10 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="../../resources/icons/skr_icons.qrc">
+     <normaloff>:/icons/skribisto/dock-right-close.svg</normaloff>:/icons/skribisto/dock-right-close.svg</iconset>
+   </property>
    <property name="text">
     <string>Show View Dock</string>
    </property>
@@ -216,6 +253,10 @@
   <action name="actionShow_Project_Dock">
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../resources/icons/skr_icons.qrc">
+     <normaloff>:/icons/skribisto/dock-left-close.svg</normaloff>:/icons/skribisto/dock-left-close.svg</iconset>
    </property>
    <property name="text">
     <string>Show Project Dock</string>
@@ -236,6 +277,41 @@
     <string>Redo</string>
    </property>
   </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="actionSaveAs">
+   <property name="text">
+    <string>SaveAs</string>
+   </property>
+  </action>
+  <action name="actionClose_project">
+   <property name="text">
+    <string>Close project</string>
+   </property>
+  </action>
+  <action name="actionBack_up">
+   <property name="text">
+    <string>Back up</string>
+   </property>
+  </action>
+  <action name="actionPrint">
+   <property name="text">
+    <string>Print</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
+  <action name="actionLoad_Project">
+   <property name="text">
+    <string>Open Project</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -245,6 +321,9 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../../resources/icons/skr_icons.qrc"/>
+  <include location="../../resources/icons/skr_icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

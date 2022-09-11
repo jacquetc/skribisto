@@ -56,10 +56,10 @@ QString SectionPage::pageTypeIconUrl(int projectId, int treeItemId) const {
 
 
     if (section_type == "book-beginning") {
-        return ":/icons/backup/skribisto-book-beginning.svg";
+        return ":/icons/skribisto/skribisto-book-beginning.svg";
     }
     else if (section_type == "book-end") {
-        return ":/icons/backup/skribisto-book-end.svg";
+        return ":/icons/skribisto/skribisto-book-end.svg";
     }
     else if (section_type == "chapter") {
         return ":/icons/backup/bookmark-new.svg";

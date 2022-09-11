@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "view.h"
+#include "toolboxes/outlinetoolbox.h"
 
 namespace Ui {
 class TextView;
@@ -17,11 +18,16 @@ public:
     ~TextView();
     QList<Toolbox *> toolboxes();
 
+public slots:
+    void saveContent();
+
 protected:
     void initialize();
 
 private:
     Ui::TextView *centralWidgetUi;
+    OutlineToolbox *m_outlineToolbox;
+    bool m_isSecondaryContent;
 };
 
 #endif // TEXTVIEW_H

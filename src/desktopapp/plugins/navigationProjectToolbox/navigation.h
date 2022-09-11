@@ -30,7 +30,7 @@ private slots:
     void restoreExpandStates();
     void addToExpandPathes(const QModelIndex &modelIndex);
     void removeFromExpandPathes(const QModelIndex &modelIndex);
-    void on_treeView_doubleClicked(const QModelIndex &index);
+    void expandProjectItems();
 
 private:
     Path pathFromIndex(const QModelIndex &index);
@@ -38,7 +38,6 @@ private:
 
 
     Ui::Navigation *ui;
-    QWidget * QWidget;
     QList<Path> m_expandedPathes;
     int m_targetTreeItemId, m_projectId;
     QModelIndex m_currentModelIndex;

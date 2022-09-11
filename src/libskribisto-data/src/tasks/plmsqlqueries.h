@@ -46,6 +46,8 @@ public:
                            const QString& tableName,
                            const QString& idName);
 
+    QStringList getAllFieldTitles() const;
+
     SKRResult get(int            id,
                   const QString& valueName,
                   QVariant     & out) const;

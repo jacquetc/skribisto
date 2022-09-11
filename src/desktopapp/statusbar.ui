@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="autoFillBackground">
+   <bool>true</bool>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="spacing">
     <number>0</number>
@@ -34,6 +37,13 @@
      <property name="text">
       <string>Show project dock</string>
      </property>
+     <property name="icon">
+      <iconset resource="../../resources/icons/skr_icons.qrc">
+       <normaloff>:/icons/skribisto/dock-left-close.svg</normaloff>:/icons/skribisto/dock-left-close.svg</iconset>
+     </property>
+     <property name="autoRaise">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item>
@@ -52,12 +62,22 @@
    <item>
     <widget class="QToolButton" name="showViewDockButton">
      <property name="text">
-      <string>...</string>
+      <string>Show project dock</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../../resources/icons/skr_icons.qrc">
+       <normaloff>:/icons/skribisto/dock-right-close.svg</normaloff>:/icons/skribisto/dock-right-close.svg</iconset>
+     </property>
+     <property name="autoRaise">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../resources/icons/skr_icons.qrc"/>
+  <include location="../../resources/icons/skr_icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

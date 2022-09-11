@@ -82,12 +82,15 @@ QVariant ProjectTreeItem::data(int role)
 
 
         switch (role) {
+        case Roles::AllRoles:
+            this->invalidateAllData();
+            break;
+
         case Roles::ProjectNameRole:
             m_data.insert(role, skrdata->projectHub()->getProjectName(projectId));
             break;
 
         case Roles::ProjectIdRole:
-
             // useless
             break;
 

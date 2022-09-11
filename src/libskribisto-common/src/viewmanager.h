@@ -25,6 +25,7 @@ public slots:
     View *openViewAt(View *atView, const QString &type, int projectId = -1, int treeItemId = -1);
 
     View *splitForSamePage(View *view, Qt::Orientation orientation);
+
 signals:
     void currentViewChanged(View *view);
     void aboutToRemoveView(View *view);

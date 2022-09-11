@@ -36,6 +36,16 @@ private slots:
     void on_actionShow_Project_Dock_triggered(bool checked);
 
     void init();
+    void on_actionPreferences_triggered();
+
+    void on_actionSaveAs_triggered();
+
+    void on_actionLoad_Project_triggered();
+
+    void on_actionSave_triggered();
+
+    void on_actionClose_project_triggered();
+
 private:
     Ui::MainWindow *ui;
     TopToolBar *m_topToolBar;

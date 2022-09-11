@@ -37,9 +37,6 @@ QVariant ProjectTreeProxyModel::data(const QModelIndex &index, int role) const
         }
         return QVariant();
     }
-    else if (role == Qt::DisplayRole) {
-        return item->data(ProjectTreeItem::Roles::TitleRole);
-    }
 
 
     return QIdentityProxyModel::data(index, role);
@@ -51,4 +48,30 @@ Qt::ItemFlags ProjectTreeProxyModel::flags(const QModelIndex &index) const
         return Qt::NoItemFlags;
 
     return QAbstractItemModel::flags(index);// | Qt::ItemIsEditable; // FIXME: Implement me!
+}
+
+
+QModelIndex ProjectTreeProxyModel::getModelIndex(int projectId, int treeItemId) const {
+    // search for index
+    QModelIndex index;
+    QModelIndexList list =  this->match(this->index(0, 0,
+                                                    QModelIndex()),
+                                        ProjectTreeItem::Roles::TreeItemIdRole,
+                                        treeItemId,
+                                        -1,
+                                        Qt::MatchFlag::MatchRecursive |
+                                        Qt::MatchFlag::MatchExactly |
+                                        Qt::MatchFlag::MatchWrap);
+
+    for (const QModelIndex& modelIndex : qAsConst(list)) {
+        ProjectTreeItem *t = static_cast<ProjectTreeItem *>(modelIndex.internalPointer());
+
+        if (t)
+            if (t->projectId() == projectId) index = modelIndex;
+    }
+
+    if (index.isValid())
+        return index;
+
+    return QModelIndex();
 }

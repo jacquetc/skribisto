@@ -16,7 +16,10 @@
     <height>200</height>
    </size>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
+  <property name="autoFillBackground">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1">
    <property name="spacing">
     <number>0</number>
    </property>
@@ -147,7 +150,14 @@
     </layout>
    </item>
    <item>
-    <layout class="QVBoxLayout" name="centralLayout" stretch=""/>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="centralLayout"/>
    </item>
   </layout>
  </widget>

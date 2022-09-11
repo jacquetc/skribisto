@@ -34,11 +34,15 @@ set(app_SRCS
     toptoolbar.h toptoolbar.cpp toptoolbar.ui
     statusbar.h statusbar.cpp statusbar.ui
     projectdockbackend.h projectdockbackend.cpp
+    skribistostyle.h skribistostyle.cpp
+settingsdialog.h settingsdialog.cpp settingsdialog.ui
+themewizard.h themewizard.cpp themewizard.ui
 )
 
 set(QRC
 
     themes.qrc
+    ${CMAKE_SOURCE_DIR}/resources/icons/skr_icons.qrc
     ${CMAKE_SOURCE_DIR}/3rdparty/icons.qrc
     ${CMAKE_SOURCE_DIR}/resources/examples/examples.qrc
     ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc

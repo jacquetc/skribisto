@@ -16,6 +16,7 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
+    QModelIndex getModelIndex(int projectId, int treeItemId) const;
 private:
         QHash<QString, PageInterface *> m_typeWithPlugin;
 };

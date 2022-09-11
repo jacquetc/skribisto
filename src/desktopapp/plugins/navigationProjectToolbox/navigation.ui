@@ -13,8 +13,8 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QTreeView::item { padding:  4px }</string>
+  <property name="autoFillBackground">
+   <bool>true</bool>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="leftMargin">
@@ -31,6 +31,15 @@
    </property>
    <item>
     <widget class="QTreeView" name="treeView">
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="lineWidth">
+      <number>0</number>
+     </property>
      <property name="dragEnabled">
       <bool>true</bool>
      </property>
@@ -46,8 +55,8 @@
      <property name="autoExpandDelay">
       <number>1000</number>
      </property>
-     <property name="indentation">
-      <number>30</number>
+     <property name="rootIsDecorated">
+      <bool>false</bool>
      </property>
      <property name="animated">
       <bool>true</bool>

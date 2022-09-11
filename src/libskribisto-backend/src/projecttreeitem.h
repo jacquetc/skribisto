@@ -46,7 +46,9 @@ public:
         IsCopyableRole            = Qt::UserRole + 27,
         OtherPropertiesRole       = Qt::UserRole + 28,
         CharCountGoalRole         = Qt::UserRole + 29,
-        WordCountGoalRole         = Qt::UserRole + 30
+        WordCountGoalRole         = Qt::UserRole + 30,
+        AllRoles                  = Qt::UserRole + 31
+
     };
     Q_ENUM(Roles)
 
@@ -76,7 +78,6 @@ public:
     int                 row();
 
     bool                isProjectItem();
-    void                setIsProjectItem(int projectId);
 
     bool                isRootItem() const;
     void                setIsRootItem();

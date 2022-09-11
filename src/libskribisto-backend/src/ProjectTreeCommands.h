@@ -28,6 +28,10 @@ public:
     void addSeveralSubItems(int projectId, int targetId, const QString &type, int count, const QVariantMap &properties);
     void addSeveralItemsAfter(int projectId, int targetId, const QString &type, int count, const QVariantMap &properties);
     void addSeveralItemsBefore(int projectId, int targetId, const QString &type, int count, const QVariantMap &properties);
+
+    void setItemProperties(int projectId, int targetId, const QVariantMap &properties, bool isSystem = true);
+
+
 signals:
 private:
     static ProjectTreeCommands *m_instance;

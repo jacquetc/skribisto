@@ -106,6 +106,53 @@ QList<int>SKRTreeHub::getAllIds(int projectId) const
 
 // ----------------------------------------------------------------------------------------
 
+QVariantMap SKRTreeHub::saveId(int projectId, int treeItemId) const
+{
+    SKRResult result(this);
+
+    PLMSqlQueries queries(projectId, m_tableName);
+    QStringList fieldNames = queries.getAllFieldTitles();
+
+    QVariantMap allFields;
+
+    for(const QString &fieldName : fieldNames) {
+        allFields.insert(fieldName, this->get(projectId, treeItemId, fieldName));
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return allFields;
+}
+
+// ----------------------------------------------------------------------------------------
+
+SKRResult SKRTreeHub::restoreId(int projectId, int treeItemId, const QVariantMap &values)
+{
+    SKRResult result(this);
+
+    QVariantMap::const_iterator i = values.constBegin();
+    while (i != values.constEnd()) {
+        result = set(projectId, treeItemId, i.key(), i.value(), false);
+        ++i;
+    }
+    this->commit(projectId);
+
+
+    IFOK(result) {
+        // do like if a tree item was added :
+        emit treeItemAdded(projectId, treeItemId);
+        emit projectModified(projectId);
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// ----------------------------------------------------------------------------------------
+
 SKRResult SKRTreeHub::setTreeItemId(int projectId, int treeItemId, int newId)
 {
 
@@ -652,6 +699,15 @@ QVariant SKRTreeHub::get(int projectId, int treeItemId, const QString& fieldName
 
 // ----------------------------------------------------------------------------------------
 
+void SKRTreeHub::commit(int projectId)
+{
+    PLMSqlQueries queries(projectId, m_tableName);
+    queries.commit();
+
+}
+
+// ----------------------------------------------------------------------------------------
+
 int SKRTreeHub::getLastAddedId()
 {
     return m_last_added_id;
@@ -837,6 +893,7 @@ SKRResult SKRTreeHub::addChildTreeItem(int projectId, int targetId, const QStrin
 SKRResult SKRTreeHub::removeTreeItem(int projectId, int targetId)
 {
     PLMSqlQueries queries(projectId, m_tableName);
+    emit treeItemAboutToBeRemoved(projectId, targetId);
 
     queries.beginTransaction();
     SKRResult result = queries.remove(targetId);

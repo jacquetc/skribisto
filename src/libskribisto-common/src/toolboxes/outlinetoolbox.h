@@ -2,13 +2,14 @@
 #define OUTLINETOOLBOX_H
 
 #include <QWidget>
-#include "../toolbox.h"
+#include "toolbox.h"
+#include "skribisto_common_global.h"
 
 namespace Ui {
 class OutlineToolbox;
 }
 
-class OutlineToolbox : public Toolbox
+class SKRCOMMONEXPORT OutlineToolbox : public Toolbox
 {
     Q_OBJECT
 

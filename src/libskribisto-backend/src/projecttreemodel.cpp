@@ -519,8 +519,15 @@ void ProjectTreeModel::exploitSignalFromSKRData(int                projectId,
             if (t->projectId() == projectId) index = modelIndex;
     }
 
+
     if (index.isValid()) {
-        emit dataChanged(index, index, QVector<int>() << role);
+        if(role == ProjectTreeItem::Roles::AllRoles){
+             emit dataChanged(index, index);
+        }
+        else {
+             emit dataChanged(index, index, QVector<int>() << role);
+        }
+
     }
 }
 
@@ -528,6 +535,13 @@ void ProjectTreeModel::exploitSignalFromSKRData(int                projectId,
 
 void ProjectTreeModel::connectToSKRDataSignals()
 {
+    m_dataConnectionsList << this->connect(m_treeHub,
+                                           &SKRTreeHub::allValuesChanged, this,
+                                           [this](int projectId, int treeItemId) {
+
+        this->exploitSignalFromSKRData(projectId, treeItemId, ProjectTreeItem::Roles::AllRoles);
+    });
+
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::titleChanged, this,
                                            [this](int projectId, int treeItemId,
@@ -766,12 +780,9 @@ void AddItemAfterCommand::undo(){
     QModelIndex parentIndex = m_model->getModelIndex(m_projectId, parentId);
 
     m_model->beginRemoveRows(parentIndex, row, row);
-
-
-
-
     m_model->disconnectFromSKRDataSignals();
 
+    m_savedItemValues = skrdata->treeHub()->saveId(m_projectId, m_newId);
 
     SKRResult result =  skrdata->treeHub()->removeTreeItem(m_projectId, m_newId);
     m_model->removeProjectItem(m_projectId, m_newId);
@@ -780,7 +791,6 @@ void AddItemAfterCommand::undo(){
     for(int propertyId : m_propertyIds){
         skrdata->treePropertyHub()->removeProperty(m_projectId, propertyId);
     }
-
 
 
     m_model->connectToSKRDataSignals();
@@ -814,6 +824,11 @@ void AddItemAfterCommand::redo(){
 
     m_model->m_itemList.append(new ProjectTreeItem(m_projectId, m_newId));
     m_model->connectToSKRDataSignals();
+
+    // if redoing an undo wich have content :
+    if(!m_savedItemValues.isEmpty()){
+        skrdata->treeHub()->restoreId(m_projectId, m_newId, m_savedItemValues);
+    }
 
     // properties are added here to benefit from updating by connectToSKRDataSignals
 
@@ -865,6 +880,7 @@ void AddItemBeforeCommand::undo()
     m_model->beginRemoveRows(parentIndex, row, row);
     m_model->disconnectFromSKRDataSignals();
 
+    m_savedItemValues = skrdata->treeHub()->saveId(m_projectId, m_newId);
 
     SKRResult result =  skrdata->treeHub()->removeTreeItem(m_projectId, m_newId);
     m_model->removeProjectItem(m_projectId, m_newId);
@@ -904,6 +920,11 @@ void AddItemBeforeCommand::redo()
     m_model->m_itemList.append(new ProjectTreeItem(m_projectId, m_newId));
     m_model->connectToSKRDataSignals();
 
+
+    // if redoing an undo wich have content :
+    if(!m_savedItemValues.isEmpty()){
+        skrdata->treeHub()->restoreId(m_projectId, m_newId, m_savedItemValues);
+    }
 
 
     // properties are added here to benefit from updating by connectToSKRDataSignals
@@ -954,6 +975,7 @@ void AddSubItemCommand::undo()
     m_model->beginRemoveRows(parentIndex, row, row);
     m_model->disconnectFromSKRDataSignals();
 
+    m_savedItemValues = skrdata->treeHub()->saveId(m_projectId, m_newId);
 
     SKRResult result =  skrdata->treeHub()->removeTreeItem(m_projectId, m_newId);
     m_model->removeProjectItem(m_projectId, m_newId);
@@ -998,6 +1020,11 @@ void AddSubItemCommand::redo()
 
     m_model->connectToSKRDataSignals();
 
+    // if redoing an undo wich have content :
+    if(!m_savedItemValues.isEmpty()){
+        skrdata->treeHub()->restoreId(m_projectId, m_newId, m_savedItemValues);
+    }
+
     // properties are added here to benefit from updating by connectToSKRDataSignals
 
     if(m_propertyIds.isEmpty()){
@@ -1030,3 +1057,46 @@ void AddSubItemCommand::redo()
 
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
+
+SetItemPropertyCommand::SetItemPropertyCommand(int projectId, int targetId, const QString &property, const QVariant &value, bool isSystem) :
+    m_projectId(projectId), m_targetId(targetId), m_property(property), m_newValue(value), m_isSystem(isSystem), m_newId(-1)
+{
+
+}
+
+void SetItemPropertyCommand::undo()
+{
+    if(m_oldValue.isValid()){
+
+        skrdata->treePropertyHub()->setProperty(m_projectId, m_targetId, m_property , m_oldValue.toString(), m_isSystem);
+
+    }
+    else{
+        skrdata->treePropertyHub()->removeProperty(m_projectId, m_newId);
+    }
+
+
+}
+
+void SetItemPropertyCommand::redo()
+{
+    QString propertyValue = skrdata->treePropertyHub()->getProperty(m_projectId, m_targetId, m_property, QString());
+
+    if(!propertyValue.isEmpty()){
+        m_oldValue = propertyValue;
+    }
+
+
+    if(m_newId == -1){
+        SKRResult result = skrdata->treePropertyHub()->setProperty(m_projectId, m_targetId, m_property , m_newValue.toString(), m_isSystem);
+        m_newId = result.getData("propertyId", -1).toInt();
+    }
+    else {
+        SKRResult result = skrdata->treePropertyHub()->setProperty(m_projectId, m_targetId, m_property , m_newValue.toString(), m_isSystem);
+        int temporaryId = result.getData("propertyId", -1).toInt();
+        skrdata->treePropertyHub()->setId(m_projectId, temporaryId, m_newId);
+
+    }
+
+
+}

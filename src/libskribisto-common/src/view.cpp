@@ -4,6 +4,9 @@
 #include "invoker.h"
 #include "viewmanager.h"
 
+#include <QPainter>
+
+
 #include <QMenu>
 
 View::View(const QString &type, QWidget *parent) :
@@ -34,6 +37,7 @@ View::View(const QString &type, QWidget *parent) :
     ui->navigationFrame->setParent(nullptr);
     ui->navigationFrame->deleteLater();
     ui->toolBarLayout->setStretch(1, 1);
+    ui->toolBarLayout->setContentsMargins(0,0,0,0);
 
     QAction *splitHorizontalyAction = new QAction(QIcon(":/icons/backup/view-split-left-right.svg"), "Split", this);
     QObject::connect(splitHorizontalyAction, &QAction::triggered, this, [this](){
@@ -85,7 +89,9 @@ void View::setCentralWidget(QWidget *widget)
 
 void View::setToolBar(QToolBar *toolBar)
 {
+    toolBar->setContentsMargins(0,0,0,0);
     ui->toolBarLayout->insertWidget(1, toolBar);
+    ui->toolBarLayout->setStretchFactor(toolBar, 1);
     ui->toolBarPlaceHolder->deleteLater();
 }
 
@@ -121,3 +127,10 @@ void View::setParameters(const QVariantMap &newParameters)
     m_parameters = newParameters;
 }
 
+void View::paintEvent(QPaintEvent *event)
+ {
+     QPainter painter(this);
+
+     painter.fillRect(0, 0, this->width(), this->height(),palette().color(QPalette::Base));
+
+ }

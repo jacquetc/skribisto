@@ -105,6 +105,7 @@ private:
     QVariantMap m_properties;
     QList<int> m_propertyIds;
     ProjectTreeModel *m_model;
+    QVariantMap m_savedItemValues;
 };
 
 //------------------------------------------------------------------------------------------------------------
@@ -123,6 +124,7 @@ private:
     QVariantMap m_properties;
     QList<int> m_propertyIds;
     ProjectTreeModel *m_model;
+    QVariantMap m_savedItemValues;
 };
 
 //------------------------------------------------------------------------------------------------------------
@@ -140,6 +142,24 @@ private:
     QVariantMap m_properties;
     QList<int> m_propertyIds;
     ProjectTreeModel *m_model;
+    QVariantMap m_savedItemValues;
+};
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+class SetItemPropertyCommand : public QUndoCommand
+{
+public:
+    SetItemPropertyCommand(int projectId, int targetId, const QString &property, const QVariant &value, bool isSystem);
+    void undo();
+    void redo();
+private:
+    int m_projectId, m_targetId, m_newId;
+    QString m_property;
+    QVariant m_newValue;
+    QVariant m_oldValue;
+    bool m_isSystem;
 };
 
 //------------------------------------------------------------------------------------------------------------

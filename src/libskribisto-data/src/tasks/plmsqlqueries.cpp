@@ -54,6 +54,23 @@ PLMSqlQueries::PLMSqlQueries(QSqlDatabase   sqlDB,
     qRegisterMetaType<DBType>("DBType");
 }
 
+QStringList PLMSqlQueries::getAllFieldTitles() const
+{
+
+    QSqlRecord record =  m_sqlDB.driver()->record(m_tableName);
+    QStringList list;
+
+    for (int i = 0; i < record.count(); ++i) {
+        QString field(record.field(i).name());
+
+        if (!field.endsWith("_id")) {
+            list.append(field);
+        }
+    }
+
+    return list;
+}
+
 void PLMSqlQueries::beginTransaction()
 {
     m_sqlDB.transaction();

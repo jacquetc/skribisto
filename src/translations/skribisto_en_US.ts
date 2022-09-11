@@ -762,7 +762,7 @@
 <context>
     <name>DockTitle</name>
     <message>
-        <location filename="../desktopapp/dock.cpp" line="78"/>
+        <location filename="../desktopapp/dock.cpp" line="87"/>
         <source>Hide dock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1324,16 +1324,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="72"/>
         <location filename="../mobileapp/plugins/folderPage/folderpage.h" line="71"/>
         <source>Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="76"/>
         <location filename="../mobileapp/plugins/folderPage/folderpage.h" line="75"/>
         <source>Group your items in folders.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="47"/>
         <location filename="../mobileapp/plugins/folderPage/folderpage.h" line="46"/>
         <source>Folder page</source>
         <comment>plugin name</comment>
@@ -1345,6 +1348,14 @@
     <message>
         <location filename="../mobileapp/plugins/folderPage/FolderPageForm.ui.qml" line="56"/>
         <source>Page menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FolderView</name>
+    <message>
+        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="16"/>
+        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1384,6 +1395,14 @@
     <message>
         <location filename="../mobileapp/content/WelcomePage/ImporterPageForm.ui.qml" line="29"/>
         <source>&lt;h2&gt;Import&lt;/h2&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>InstallNewDictWizard</name>
+    <message>
+        <location filename="../libskribisto-common/src/installnewdictwizard.ui" line="14"/>
+        <source>Wizard</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1435,97 +1454,143 @@
     <name>MainWindow</name>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="14"/>
-        <source>MainWindow</source>
+        <source>Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="31"/>
+        <location filename="../desktopapp/mainwindow.ui" line="41"/>
         <source>Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="40"/>
+        <location filename="../desktopapp/mainwindow.ui" line="60"/>
         <source>Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="47"/>
+        <location filename="../desktopapp/mainwindow.ui" line="67"/>
         <source>View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="57"/>
+        <location filename="../desktopapp/mainwindow.ui" line="77"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="148"/>
+        <location filename="../desktopapp/mainwindow.ui" line="181"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="172"/>
+        <location filename="../desktopapp/mainwindow.ui" line="205"/>
         <source>New Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="177"/>
-        <source>Preference</source>
+        <location filename="../desktopapp/mainwindow.ui" line="210"/>
+        <source>Preferences</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="182"/>
+        <location filename="../desktopapp/mainwindow.ui" line="215"/>
         <source>Add Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="187"/>
+        <location filename="../desktopapp/mainwindow.ui" line="220"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="192"/>
+        <location filename="../desktopapp/mainwindow.ui" line="225"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="197"/>
+        <location filename="../desktopapp/mainwindow.ui" line="230"/>
         <source>About Qt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="202"/>
+        <location filename="../desktopapp/mainwindow.ui" line="235"/>
         <source>Disctraction Free</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="205"/>
+        <location filename="../desktopapp/mainwindow.ui" line="238"/>
         <source>Switch to disctraction free mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="213"/>
+        <location filename="../desktopapp/mainwindow.ui" line="250"/>
         <source>Show View Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="221"/>
+        <location filename="../desktopapp/mainwindow.ui" line="262"/>
         <source>Show Project Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="226"/>
+        <location filename="../desktopapp/mainwindow.ui" line="267"/>
         <source>Remove All Splits</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="231"/>
+        <location filename="../desktopapp/mainwindow.ui" line="272"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="236"/>
+        <location filename="../desktopapp/mainwindow.ui" line="277"/>
         <source>Redo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="282"/>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="287"/>
+        <source>SaveAs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="292"/>
+        <source>Close project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="297"/>
+        <source>Back up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="302"/>
+        <source>Print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="307"/>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="312"/>
+        <source>Open Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.cpp" line="163"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="175"/>
+        <source>Skribisto project (*.skrib)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.cpp" line="164"/>
+        <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2072,7 +2137,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/toolboxes/outlinetoolbox.h" line="22"/>
+        <location filename="../libskribisto-common/src/toolboxes/outlinetoolbox.h" line="23"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2637,6 +2702,31 @@
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="87"/>
+        <source>**General**</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="102"/>
+        <source>Project name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="112"/>
+        <source>Author</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="150"/>
+        <source>**Language**</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="165"/>
+        <source>Dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PropertyPadForm.ui</name>
@@ -2664,7 +2754,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="41"/>
+        <location filename="../desktopapp/main.cpp" line="48"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3327,23 +3417,66 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="33"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="37"/>
         <source>Beginning of a book</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="34"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="38"/>
         <source>Chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="35"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="39"/>
         <source>Separator</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="36"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="40"/>
         <source>End of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SettingsDialog</name>
+    <message>
+        <location filename="../desktopapp/settingsdialog.ui" line="14"/>
+        <source>Preferences</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settingsdialog.ui" line="22"/>
+        <source>Go back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settingsdialog.ui" line="35"/>
+        <source>TextLabel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settingsdialog.ui" line="59"/>
+        <source>Appearance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settingsdialog.ui" line="99"/>
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settingsdialog.ui" line="111"/>
+        <source>Day theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settingsdialog.ui" line="121"/>
+        <source>Night theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settingsdialog.ui" line="131"/>
+        <source>Modify theme</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3729,13 +3862,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/statusbar.ui" line="35"/>
+        <location filename="../desktopapp/statusbar.ui" line="38"/>
+        <location filename="../desktopapp/statusbar.ui" line="65"/>
         <source>Show project dock</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../desktopapp/statusbar.ui" line="55"/>
-        <source>...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3920,14 +4049,6 @@
     <message>
         <location filename="../mobileapp/plugins/textPage/TextPageForm.ui.qml" line="61"/>
         <source>Page menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>TextView</name>
-    <message>
-        <location filename="../desktopapp/plugins/textPage/textview.ui" line="14"/>
-        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4138,6 +4259,14 @@
     </message>
 </context>
 <context>
+    <name>ThemeWizard</name>
+    <message>
+        <location filename="../desktopapp/themewizard.ui" line="13"/>
+        <source>Wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Toolbox</name>
     <message>
         <location filename="../mobileapp/plugins/favoritesProjectToolbox/Toolbox.qml" line="15"/>
@@ -4166,17 +4295,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/toptoolbar.ui" line="59"/>
+        <location filename="../desktopapp/toptoolbar.ui" line="38"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/toptoolbar.ui" line="66"/>
+        <location filename="../desktopapp/toptoolbar.ui" line="48"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/toptoolbar.ui" line="86"/>
+        <location filename="../desktopapp/toptoolbar.ui" line="71"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4244,22 +4373,22 @@
 <context>
     <name>View</name>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="64"/>
+        <location filename="../libskribisto-common/src/view.ui" line="67"/>
         <source>Previous</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="75"/>
+        <location filename="../libskribisto-common/src/view.ui" line="78"/>
         <source>Next</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="122"/>
+        <location filename="../libskribisto-common/src/view.ui" line="125"/>
         <source>view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="136"/>
+        <location filename="../libskribisto-common/src/view.ui" line="139"/>
         <source>close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4366,7 +4495,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="46"/>
+        <location filename="../desktopapp/main.cpp" line="53"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

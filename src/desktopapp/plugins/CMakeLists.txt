@@ -4,7 +4,7 @@ endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 add_subdirectory(textPage)
 
-# add_subdirectory(folderPage)
+add_subdirectory(folderPage)
 add_subdirectory(sectionPage)
 add_subdirectory(projectPage)
 

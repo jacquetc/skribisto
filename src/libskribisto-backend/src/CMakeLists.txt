@@ -19,6 +19,7 @@ set(backend_SRCS
     projecttreeitem.h projecttreeitem.cpp
 projecttreecommands.h projecttreecommands.cpp
 projecttreeproxymodel.h projecttreeproxymodel.cpp
+projectcommands.h projectcommands.cpp
 )
 
 # Tell CMake to create the executable
