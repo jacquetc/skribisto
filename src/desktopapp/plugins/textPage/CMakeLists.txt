@@ -17,6 +17,7 @@ set(SRCS
     textpage.cpp
     textpage.h
     textview.h textview.cpp textview.ui
+    textpagesettings.h textpagesettings.cpp textpagesettings.ui
 )
 
 # Tell CMake to create the executable

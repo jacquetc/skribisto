@@ -26,6 +26,7 @@ viewbasecoloredwidget.cpp viewbasecoloredwidget.h
 viewscrollarea.h viewscrollarea.cpp
 installnewdictwizard.h installnewdictwizard.cpp installnewdictwizard.ui
 text/textedit.h text/textedit.cpp
+settingspage.h settingspage.cpp settingspage.ui
 )
 
 set(common_INTERFACES

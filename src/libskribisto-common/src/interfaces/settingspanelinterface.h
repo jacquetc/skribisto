@@ -32,7 +32,8 @@ public:
   virtual ~SettingsPanelInterface() {}
 
   virtual QString name() const = 0;
-  virtual SettingsPanel *settingsPanel() const = 0;
+    virtual SettingsPanel *settingsPanel() const = 0;
+    virtual QString settingsGroup() const = 0;
   virtual QString settingsPanelButtonText() const = 0;
   virtual QString settingsPanelIconSource() const = 0;
   virtual int settingsPanelWeight() const { return 500; }

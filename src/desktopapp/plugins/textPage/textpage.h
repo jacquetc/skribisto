@@ -112,6 +112,10 @@ public:
         return tr("Text page");
     }
 
+    QString settingsGroup() const override {
+        return "pages";
+    }
+
     QString settingsPanelIconSource() const override {
         return ":/icons/backup/document-edit-sign.svg";
     }

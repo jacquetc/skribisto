@@ -21,6 +21,8 @@ private slots:
 
     void on_appearanceToolButton_clicked();
 
+    void on_pagesToolButton_clicked();
+
 private:
     Ui::SettingsDialog *ui;
 };

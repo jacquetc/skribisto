@@ -6,6 +6,7 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
     ui(new Ui::ThemeWizard)
 {
     ui->setupUi(this);
+
 }
 
 ThemeWizard::~ThemeWizard()
