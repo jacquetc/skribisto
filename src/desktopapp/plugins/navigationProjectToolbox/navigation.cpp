@@ -35,7 +35,6 @@ Navigation::Navigation(class QWidget *parent) :
 
     m_addItemAfterAction = new QAction("Add below", this);
 
-    NewTreeItemDialog *dialog = new NewTreeItemDialog(this);
 
     expandProjectItems();
     QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &Navigation::expandProjectItems);
@@ -55,6 +54,7 @@ Navigation::Navigation(class QWidget *parent) :
         }
     });
 
+    NewTreeItemDialog *dialog = new NewTreeItemDialog(this);
 
     QObject::connect(m_addItemAfterAction, &QAction::triggered, this, [this, dialog](){
         dialog->setActionType(NewTreeItemDialog::AddAfter);

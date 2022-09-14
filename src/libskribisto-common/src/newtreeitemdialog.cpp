@@ -36,7 +36,7 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
             if(result == 1){
                 if(this->actionType() == NewTreeItemDialog::AddBefore){
                 if(numberToCreate == 1){
-                    projectTreeCommands->addItemBefore(m_projectId, m_treeItemId, m_type);
+                    projectTreeCommands->addItemBefore(m_projectId, m_treeItemId, m_type, creationProperties);
                 }
                 else {
                     projectTreeCommands->addSeveralItemsBefore(m_projectId, m_treeItemId, m_type, numberToCreate, creationProperties);
@@ -44,7 +44,7 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
                 }
                 if(this->actionType() == NewTreeItemDialog::AddAfter){
                     if(numberToCreate == 1){
-                        projectTreeCommands->addItemAfter(m_projectId, m_treeItemId, m_type);
+                        projectTreeCommands->addItemAfter(m_projectId, m_treeItemId, m_type, creationProperties);
                     }
                     else {
                         projectTreeCommands->addSeveralItemsAfter(m_projectId, m_treeItemId, m_type, numberToCreate, creationProperties);
@@ -53,7 +53,7 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
                 if(this->actionType() == NewTreeItemDialog::AddSubItem){
 
                     if(numberToCreate == 1){
-                        projectTreeCommands->addSubItem(m_projectId, m_treeItemId, m_type);
+                        projectTreeCommands->addSubItem(m_projectId, m_treeItemId, m_type, creationProperties);
                     }
                     else {
                         projectTreeCommands->addSeveralSubItems(m_projectId, m_treeItemId, m_type, numberToCreate, creationProperties);
@@ -85,17 +85,22 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
     for(auto *plugin : pluginList){
         if(plugin->isConstructible()){
 
-        QListWidgetItem *item = new QListWidgetItem(QIcon(plugin->pageTypeIconUrl(-1, -1)), plugin->visualText(), ui->listWidget);
-        item->setData(Qt::UserRole, plugin->pageDetailText());
-        item->setData(Qt::UserRole + 1, plugin->pageType());
+            QListWidgetItem *item = new QListWidgetItem(QIcon(plugin->pageTypeIconUrl(-1, -1)), plugin->visualText(), ui->listWidget);
+            item->setData(Qt::UserRole, plugin->pageDetailText());
+            item->setData(Qt::UserRole + 1, plugin->pageType());
 
-        m_typeWithparameterWidgetHash.insert(plugin->pageType(), plugin->pageCreationParametersWidget());
-
+            auto *pageCreationParametersWidget = plugin->pageCreationParametersWidget();
+            if(pageCreationParametersWidget){
+                m_typeWithparameterWidgetHash.insert(plugin->pageType(), pageCreationParametersWidget);
         }
+
+        else {
+            m_typeWithparameterWidgetHash.insert(plugin->pageType(), new EmptyCreationParametersWidget());
+        }
+    }
     }
 
     ui->listWidget->setCurrentRow(0);
-
 
 }
 
@@ -108,11 +113,13 @@ void NewTreeItemDialog::setIdentifiers(int projectId, int treeItemId)
 {
     m_projectId = projectId;
     m_treeItemId = treeItemId;
+    ui->listWidget->setCurrentRow(0);
 }
 
 NewTreeItemDialog::ActionType NewTreeItemDialog::actionType() const
 {
     return m_actionType;
+    ui->listWidget->setCurrentRow(0);
 }
 
 void NewTreeItemDialog::setActionType(ActionType newActionType)
@@ -133,12 +140,14 @@ void NewTreeItemDialog::setCustomPropertiesWidget(TreeItemCreationParametersWidg
         ui->contentLayout->removeWidget(m_customPropertiesWidget);
         m_customPropertiesWidget->hide();
     }
+
     ui->contentLayout->insertWidget(2, widget);
     m_customPropertiesWidget = widget;
     m_customPropertiesWidget->show();
+    m_customPropertiesWidget->reset();
 }
 
-void NewTreeItemDialog::removeCustomPropetiesWidget()
+void NewTreeItemDialog::removeCustomPropertiesWidget()
 {
     ui->contentLayout->removeWidget(m_customPropertiesWidget);
     m_customPropertiesWidget = nullptr;

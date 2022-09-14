@@ -27,7 +27,6 @@
 #include "treeitemcreationparameterswidget.h"
 #include "view.h"
 #include "skrcoreinterface.h"
-#include "skribisto_common_global.h"
 
 
 class PageInterface : public SKRCoreInterface {
@@ -41,7 +40,7 @@ public:
     virtual QString pageDetailText() const = 0;
     virtual View* getView() const        = 0;
     virtual TreeItemCreationParametersWidget * pageCreationParametersWidget() const {
-        return new TreeItemCreationParametersWidget;
+        return nullptr;
     }
     virtual bool      isConstructible() const = 0;
     virtual QString   pageTypeIconUrl(int projectId,

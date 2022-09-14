@@ -26,7 +26,6 @@
 #include <QTextDocument>
 #include <QTextCharFormat>
 #include "skrresult.h"
-#include "skribisto_common_global.h"
 
 
 class ItemExporterInterface  {

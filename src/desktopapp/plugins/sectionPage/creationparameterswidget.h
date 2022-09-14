@@ -16,6 +16,7 @@ public:
     explicit CreationParametersWidget(QWidget *parent = nullptr);
     ~CreationParametersWidget();
     QVariantMap getItemCreationProperties() const override;
+    void reset();
 
 private:
     Ui::CreationParametersWidget *ui;

@@ -14,6 +14,8 @@ public:
         return QVariantMap();
     }
 
+    virtual void reset() = 0;
+
 signals:
 
 };

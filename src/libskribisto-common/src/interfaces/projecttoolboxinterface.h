@@ -26,7 +26,6 @@
 #include "skrcoreinterface.h"
 #include <QString>
 #include <toolbox.h>
-#include "skribisto_common_global.h"
 
 class ProjectToolboxInterface : public SKRCoreInterface {
 public:

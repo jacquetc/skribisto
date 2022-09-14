@@ -933,8 +933,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/emptyview.ui" line="20"/>
-        <source>TextLabel</source>
+        <location filename="../libskribisto-common/src/emptyview.ui" line="36"/>
+        <source>**Open a document**</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-common/src/emptyview.ui" line="95"/>
+        <source>- Click on a page in Navigation
+- Drag and drop a page here</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

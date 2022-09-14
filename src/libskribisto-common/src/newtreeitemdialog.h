@@ -34,7 +34,7 @@ public:
 
     TreeItemCreationParametersWidget *getCustomPropertiesWidget() const;
     void setCustomPropertiesWidget(TreeItemCreationParametersWidget *widget);
-    void removeCustomPropetiesWidget();
+    void removeCustomPropertiesWidget();
     void reset();
 
 private slots:
@@ -49,6 +49,18 @@ private:
     int m_projectId;
     int m_treeItemId;
     int m_numberToCreate;
+};
+
+class EmptyCreationParametersWidget : public TreeItemCreationParametersWidget
+{
+    Q_OBJECT
+
+public:
+    EmptyCreationParametersWidget(QWidget *parent = nullptr) : TreeItemCreationParametersWidget(parent) {}
+
+    void reset(){
+
+    }
 };
 
 #endif // NEWTREEITEMDIALOG_H
