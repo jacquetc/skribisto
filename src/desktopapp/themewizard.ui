@@ -31,10 +31,15 @@
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
-     <widget class="QListWidget" name="themeListWidget">
+     <widget class="QTreeWidget" name="themeTreeWidget">
       <property name="sizeAdjustPolicy">
        <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
       </property>
+      <column>
+       <property name="text">
+        <string notr="true">1</string>
+       </property>
+      </column>
      </widget>
     </item>
     <item>
@@ -46,7 +51,7 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_5">
          <item>
-          <widget class="QLabel" name="label_2">
+          <widget class="QLabel" name="themeNameLabel">
            <property name="text">
             <string>TextLabel</string>
            </property>
@@ -85,7 +90,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="radioButton_2">
+          <widget class="QRadioButton" name="duplicateAndModifyRadioButton">
            <property name="text">
             <string>Duplicate and modify</string>
            </property>
@@ -148,7 +153,35 @@
        </widget>
       </item>
       <item>
-       <widget class="QTableWidget" name="tableWidget"/>
+       <widget class="QTableWidget" name="colorTableWidget">
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::SingleSelection</enum>
+        </property>
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
+        <attribute name="horizontalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
+        <attribute name="horizontalHeaderCascadingSectionResizes">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="horizontalHeaderMinimumSectionSize">
+         <number>100</number>
+        </attribute>
+        <attribute name="horizontalHeaderDefaultSectionSize">
+         <number>150</number>
+        </attribute>
+        <attribute name="horizontalHeaderStretchLastSection">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="verticalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
+       </widget>
       </item>
      </layout>
     </item>
@@ -160,11 +193,21 @@
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QWidget" name="themeExampleWidget" native="true">
+         <property name="autoFillBackground">
+          <bool>true</bool>
+         </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
            <widget class="QLineEdit" name="lineEdit">
             <property name="text">
              <string>Example</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_2">
+            <property name="placeholderText">
+             <string>This is a placeholder text</string>
             </property>
            </widget>
           </item>
@@ -182,6 +225,9 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton">
+              <property name="toolTip">
+               <string>Example</string>
+              </property>
               <property name="text">
                <string>...</string>
               </property>
@@ -198,8 +244,15 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButton">
+            <property name="toolTip">
+             <string>Example</string>
+            </property>
             <property name="text">
              <string>Example</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../3rdparty/icons.qrc">
+              <normaloff>:/icons/backup/accessibility.svg</normaloff>:/icons/backup/accessibility.svg</iconset>
             </property>
            </widget>
           </item>
@@ -223,7 +276,20 @@
            </widget>
           </item>
           <item>
+           <widget class="Line" name="line">
+            <property name="frameShadow">
+             <enum>QFrame::Plain</enum>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="label_3">
+            <property name="toolTip">
+             <string>Example</string>
+            </property>
             <property name="text">
              <string>Example</string>
             </property>

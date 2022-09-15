@@ -30,6 +30,11 @@ public:
     int pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const override;
 
 
+
+
+    // QStyle interface
+public:
+    QPixmap generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap, const QStyleOption *opt) const;
 };
 
 #endif // SKRIBISTOSTYLE_H

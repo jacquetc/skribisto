@@ -6,7 +6,7 @@
 #include "invoker.h"
 #include "viewmanager.h"
 #include "plmprojecthub.h"
-#include "itemdelegate.h"
+#include "projectitemdelegate.h"
 
 #include <QMenu>
 #include <newtreeitemdialog.h>
@@ -85,7 +85,7 @@ Navigation::Navigation(class QWidget *parent) :
     } );
 
 
-    ui->treeView->setItemDelegate(new ItemDelegate);
+    ui->treeView->setItemDelegate(new ProjectItemDelegate);
 
 }
 

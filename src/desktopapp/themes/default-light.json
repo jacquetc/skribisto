@@ -1,0 +1,26 @@
+{
+    "themeName": "Default Light",
+    "themeType": "light",
+    "isForDesktop": true,
+    "isEditable": false,
+    "colors": {
+        "window": "#ececec",
+        "windowText": "#000000",
+        "base": "#FFFFFF",
+        "text": "#000000",
+        "brightText": "#000000",
+        "highlight": "#b56c17",
+        "highlightedText": "#000000",
+        "button": "#D6D7D7",
+        "buttonText": "#000000",
+        "toolTipBase": "#EDEDED",
+        "toolTipText": "#000000",
+        "placeholderText": "#19000000",
+        "light": "#ffffff",
+        "mid": "#a9a9a9",
+        "dark": "#bfbfbf",
+        "link": "#a5cdff",
+        "visitedLink": "#ff00ff",
+        "shadow": "#cc000000"
+    }
+}

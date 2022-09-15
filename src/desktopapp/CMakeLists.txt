@@ -37,6 +37,7 @@ set(app_SRCS
     skribistostyle.h skribistostyle.cpp
 settingsdialog.h settingsdialog.cpp settingsdialog.ui
 themewizard.h themewizard.cpp themewizard.ui
+thememanager.h thememanager.cpp
 )
 
 set(QRC

@@ -17,7 +17,7 @@ set(SRCS
     navigationprojecttoolbox.cpp
     navigationprojecttoolbox.h
     navigation.h navigation.cpp navigation.ui
-itemdelegate.h itemdelegate.cpp
+    projectitemdelegate.h projectitemdelegate.cpp
 )
 
 # Tell CMake to create the executable

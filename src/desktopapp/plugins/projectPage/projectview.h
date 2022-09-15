@@ -20,13 +20,11 @@ public:
 protected:
     void initialize();
 
+private slots:
+
 private:
     Ui::ProjectView *centralWidgetUi;
 
-    // View interface
-
-
-    // View interface
 };
 
 #endif // PROJECTVIEW_H

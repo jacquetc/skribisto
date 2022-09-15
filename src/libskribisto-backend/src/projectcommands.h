@@ -23,6 +23,7 @@ public:
     void saveAs(int projectId, const QUrl &url);
 
     void setProjectName(int projectId, const QString &name);
+    void setAuthor(int projectId, const QString &author);
     void setLanguageCode(int projectId, const QString &newLanguage);
 
     QUndoStack *undoStack() const;
@@ -42,6 +43,20 @@ class SetProjectNameCommand : public QUndoCommand
 {
 public:
     SetProjectNameCommand(int projectId, const QString &name);
+    void undo();
+    void redo();
+private:
+    QString m_newName, m_oldName;
+    int m_projectId;
+};
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+class SetAuthorCommand : public QUndoCommand
+{
+public:
+    SetAuthorCommand(int projectId, const QString &author);
     void undo();
     void redo();
 private:

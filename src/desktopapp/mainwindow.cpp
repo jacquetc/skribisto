@@ -1,4 +1,5 @@
-﻿#include "windowmanager.h"
+﻿#include "thememanager.h"
+#include "windowmanager.h"
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "view.h"
@@ -66,6 +67,7 @@ MainWindow::MainWindow(int newWindowId)
         ui->actionExport->setEnabled(enable);
     });
 
+
 QTimer::singleShot(0, this, &MainWindow::init);
 }
 
@@ -81,6 +83,8 @@ void MainWindow::init(){
     connect(ui->viewDock, &QDockWidget::visibilityChanged, ui->actionShow_View_Dock, &QAction::setChecked);
 
     m_projectDockBackend = new ProjectDockBackend(this, ui->projectDock);
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
 }
 //---------------------------------------
 

@@ -9,6 +9,8 @@ StatusBar::StatusBar(QWidget *parent) :
 {
     ui->setupUi(this);    
 
+
+
     QTimer::singleShot(0, this, &StatusBar::init);
 
 }
@@ -25,6 +27,4 @@ void StatusBar::init()
 
     auto actionShow_Project_Dock = invoke<QAction>(this, "actionShow_Project_Dock");
     ui->showProjectDockButton->setDefaultAction(actionShow_Project_Dock);
-
-
 }

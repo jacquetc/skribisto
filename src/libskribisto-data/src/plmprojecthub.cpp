@@ -633,6 +633,28 @@ SKRResult PLMProjectHub::setProjectName(int projectId, const QString& projectNam
 
 // ----------------------------------------------------------------------------
 
+QString PLMProjectHub::getAuthor(int projectId) const
+{
+    return get(projectId, "t_author").toString();
+}
+
+SKRResult PLMProjectHub::setAuthor(int projectId, const QString &author)
+{
+    SKRResult result = this->set(projectId, "t_author", author, true);
+
+    IFOK(result) {
+        emit authorChanged(projectId, author);
+
+        this->setProjectNotSavedAnymore(projectId);
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// ----------------------------------------------------------------------------
+
 QString PLMProjectHub::getLangCode(int projectId) const {
     return get(projectId, "t_spell_check_lang").toString();
 }

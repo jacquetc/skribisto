@@ -83,6 +83,10 @@ public:
     Q_INVOKABLE SKRResult setProjectName(int            projectId,
                                          const QString& projectName);
 
+    Q_INVOKABLE QString   getAuthor(int projectId) const;
+    Q_INVOKABLE SKRResult setAuthor(int            projectId,
+                                         const QString& author);
+
     Q_INVOKABLE QString   getLangCode(int projectId) const;
     Q_INVOKABLE SKRResult setLangCode(int            projectId,
                                       const QString& langCode);
@@ -124,6 +128,8 @@ signals:
                             const QUrl& newUrlPath);
     void projectNameChanged(int            projectId,
                             const QString& newProjectName);
+    void authorChanged(int            projectId,
+                            const QString& author);
     void langCodeChanged(int            projectId,
                          const QString& newLang);
     void projectSaved(int projectId);

@@ -1,4 +1,5 @@
 #include "settingsdialog.h"
+#include "thememanager.h"
 #include "themewizard.h"
 #include "ui_settingsdialog.h"
 
@@ -14,6 +15,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
         wizard.exec();
     });
 
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
     ui->appearancePage->setFocus();
 }
 

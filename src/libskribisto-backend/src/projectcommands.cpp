@@ -28,6 +28,7 @@ void ProjectCommands::saveAs(int projectId, const QUrl &url)
 
 void ProjectCommands::loadProject(const QUrl &url)
 {
+    m_undoStack->clear();
     SKRResult result = skrdata->projectHub()->loadProject(url);
 
     if(result.isSuccess()){
@@ -40,6 +41,12 @@ void ProjectCommands::setProjectName(int projectId, const QString &name)
     m_undoStack->push(new SetProjectNameCommand(projectId, name));
 
 }
+
+void ProjectCommands::setAuthor(int projectId, const QString &author)
+{
+    m_undoStack->push(new SetAuthorCommand(projectId, author));
+}
+
 void ProjectCommands::setLanguageCode(int projectId, const QString &newLanguage)
 {
     m_undoStack->push(new SetLanguageCodeCommand(projectId, newLanguage));
@@ -65,6 +72,26 @@ void SetProjectNameCommand::redo()
 {
     m_oldName = skrdata->projectHub()->getProjectName(m_projectId);
     skrdata->projectHub()->setProjectName(m_projectId, m_newName);
+}
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+SetAuthorCommand::SetAuthorCommand(int projectId, const QString &author) :
+    m_newName(author), m_projectId(projectId)
+{
+
+}
+
+void SetAuthorCommand::undo()
+{
+    skrdata->projectHub()->setAuthor(m_projectId, m_oldName);
+}
+
+void SetAuthorCommand::redo()
+{
+    m_oldName = skrdata->projectHub()->getAuthor(m_projectId);
+    skrdata->projectHub()->setAuthor(m_projectId, m_newName);
 }
 
 //------------------------------------------------------------------------------------------------------------

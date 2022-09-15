@@ -52,7 +52,7 @@
         <x>118</x>
         <y>0</y>
         <width>400</width>
-        <height>242</height>
+        <height>246</height>
        </rect>
       </property>
       <property name="sizePolicy">
@@ -101,20 +101,37 @@
            <property name="text">
             <string>Project name</string>
            </property>
+           <property name="buddy">
+            <cstring>projectNameLineEdit</cstring>
+           </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QLineEdit" name="lineEdit"/>
+          <widget class="QLineEdit" name="projectNameLineEdit">
+           <property name="maxLength">
+            <number>200</number>
+           </property>
+          </widget>
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="authorLabel">
            <property name="text">
             <string>Author</string>
            </property>
+           <property name="buddy">
+            <cstring>authorLineEdit</cstring>
+           </property>
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QLineEdit" name="authorLineEdit"/>
+          <widget class="QLineEdit" name="authorLineEdit">
+           <property name="maxLength">
+            <number>200</number>
+           </property>
+           <property name="clearButtonEnabled">
+            <bool>true</bool>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -163,6 +180,9 @@
           <widget class="QLabel" name="dictionaryLabel">
            <property name="text">
             <string>Dictionary</string>
+           </property>
+           <property name="buddy">
+            <cstring>dictionaryComboBox</cstring>
            </property>
           </widget>
          </item>
