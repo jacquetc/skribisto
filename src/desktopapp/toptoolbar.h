@@ -1,6 +1,7 @@
 #ifndef TOPTOOLBAR_H
 #define TOPTOOLBAR_H
 
+#include <QToolBar>
 #include <QWidget>
 
 namespace Ui {
@@ -16,10 +17,12 @@ public:
     ~TopToolBar();
 
 private slots:
-    void on_toolButton_triggered(QAction *arg1);
 
+    void init();
 private:
     Ui::TopToolBar *ui;
+    QToolBar *m_middleToolBar;
+    QToolBar *m_rightToolBar;
 };
 
 #endif // TOPTOOLBAR_H

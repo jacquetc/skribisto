@@ -46,7 +46,7 @@ int SkribistoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, 
         val = 1;
         break;
     case PixelMetric::PM_DockWidgetHandleExtent:
-        val = 1;
+        val = 0;
         break;
     case PixelMetric::PM_DockWidgetFrameWidth:
         val = 0;

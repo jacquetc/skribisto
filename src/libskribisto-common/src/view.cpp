@@ -8,6 +8,7 @@
 
 
 #include <QMenu>
+#include "thememanager.h"
 
 View::View(const QString &type, QWidget *parent) :
     QWidget(parent),
@@ -85,6 +86,8 @@ void View::setIdentifiersAndInitialize(int projectId, int treeItemId)
 void View::setCentralWidget(QWidget *widget)
 {
     ui->centralLayout->addWidget(widget);
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
 }
 
 void View::setToolBar(QToolBar *toolBar)
@@ -93,6 +96,8 @@ void View::setToolBar(QToolBar *toolBar)
     ui->toolBarLayout->insertWidget(1, toolBar);
     ui->toolBarLayout->setStretchFactor(toolBar, 1);
     ui->toolBarPlaceHolder->deleteLater();
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
 }
 
 int View::treeItemId() const

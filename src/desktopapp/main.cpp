@@ -22,7 +22,6 @@ int main(int argc, char *argv[]) {
   QApplication::setStyle(new SkribistoStyle);
 
   QApplication app(argc, argv);
-  qDebug() << QStyleFactory::keys();
 
   //    QPalette palette = app.palette();
   //    palette.setColor(QPalette::All, QPalette::Window, QColor(Qt::white));
@@ -64,8 +63,6 @@ int main(int argc, char *argv[]) {
   new ProjectCommands(skrData, undoStack);
   new ProjectTreeCommands(skrData, undoStack, projectTreeModel);
   ThemeManager::instance();
-  themeManager->setCurrentThemeType(ThemeManager::Dark);
-  themeManager->setDarkTheme("The Answer to Snowblind"/*themeManager->defaultLightTheme()*/);
 
   // load plugins:
   skrpluginhub->addPluginType<ProjectToolboxInterface>();

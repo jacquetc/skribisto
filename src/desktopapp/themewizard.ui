@@ -20,7 +20,7 @@
    <bool>true</bool>
   </property>
   <property name="wizardStyle">
-   <enum>QWizard::NStyles</enum>
+   <enum>QWizard::ModernStyle</enum>
   </property>
   <property name="options">
    <set>QWizard::NoCancelButton|QWizard::NoDefaultButton</set>

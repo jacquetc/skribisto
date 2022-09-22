@@ -71,6 +71,8 @@
     <addaction name="actionShow_View_Dock"/>
     <addaction name="separator"/>
     <addaction name="actionClose_all_views"/>
+    <addaction name="separator"/>
+    <addaction name="actionSwitch_theme"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -204,6 +206,9 @@
    <property name="text">
     <string>New Project</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+N</string>
+   </property>
   </action>
   <action name="actionPreferences">
    <property name="text">
@@ -312,6 +317,21 @@
     <string>Open Project</string>
    </property>
   </action>
+  <action name="actionSwitch_theme">
+   <property name="icon">
+    <iconset resource="../../3rdparty/icons.qrc">
+     <normaloff>:/icons/backup/whitebalance.svg</normaloff>:/icons/backup/whitebalance.svg</iconset>
+   </property>
+   <property name="text">
+    <string notr="true">Switch to light theme</string>
+   </property>
+   <property name="iconText">
+    <string notr="true">Switch to light theme</string>
+   </property>
+   <property name="toolTip">
+    <string notr="true">Switch to light theme</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -322,6 +342,7 @@
   </customwidget>
  </customwidgets>
  <resources>
+  <include location="../../3rdparty/icons.qrc"/>
   <include location="../../resources/icons/skr_icons.qrc"/>
   <include location="../../resources/icons/skr_icons.qrc"/>
  </resources>

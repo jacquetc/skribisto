@@ -31,6 +31,7 @@ private slots:
     void addToExpandPathes(const QModelIndex &modelIndex);
     void removeFromExpandPathes(const QModelIndex &modelIndex);
     void expandProjectItems();
+    void setCurrentIndex(const QModelIndex &index);
 
 private:
     Path pathFromIndex(const QModelIndex &index);
@@ -41,7 +42,13 @@ private:
     QList<Path> m_expandedPathes;
     int m_targetTreeItemId, m_projectId;
     QModelIndex m_currentModelIndex;
-    QAction *m_addItemAfterAction, *m_addItemBeforeAction, *m_addSubItemAction;
+    QAction *m_addItemAfterAction, *m_addItemBeforeAction, *m_addSubItemAction,
+    *m_openItemAction, *m_openItemInAnotherViewAction, *m_openItemInANewWindowAction;
+
+    // QWidget interface
+    void open(const QModelIndex &index);
+    void openInAnotherView(const QModelIndex &index);
+protected:
 };
 
 #endif // NAVIGATION_H

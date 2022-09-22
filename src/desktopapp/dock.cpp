@@ -1,7 +1,10 @@
 #include "dock.h"
+#include "thememanager.h"
 
 #include <QHBoxLayout>
 #include <QMainWindow>
+#include <QPaintEvent>
+#include <QPainter>
 #include <QPushButton>
 #include <QTimer>
 
@@ -46,6 +49,20 @@ void Dock::setToolboxes(QList<Toolbox *> toolboxes)
         index++;
 
     }
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+}
+
+void Dock::paintEvent(QPaintEvent *event)
+{
+//    QPainter painter(this);
+//    painter.setRenderHint(QPainter::Antialiasing);
+
+//    painter.save();
+//    painter.fillRect(event->rect(), this->palette().window());
+
+//    painter.restore();
+
 }
 
 QStackedWidget *Dock::stack() const
@@ -97,8 +114,10 @@ DockTitle::DockTitle(QWidget *parent): QWidget(parent)
 
     auto *line = new QFrame();
     line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
+    line->setFrameShadow(QFrame::Plain);
+    line->setEnabled(false);
     line->setMaximumHeight(2);
+    line->setLineWidth(0);
 
     vLayout->addWidget(line);
 

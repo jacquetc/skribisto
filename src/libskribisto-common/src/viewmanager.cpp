@@ -97,6 +97,15 @@ void ViewManager::openViewAtCurrentView(const QString &type, int projectId, int 
 
 //---------------------------------------
 
+void ViewManager::openViewInAnotherView(const QString &type, int projectId, int treeItemId)
+{
+    View* nextView = this->nextView(this->currentView());
+    this->openViewAt(nextView, type, projectId, treeItemId);
+
+}
+
+//---------------------------------------
+
 View* ViewManager::openViewAt(View *atView, const QString &type, int projectId, int treeItemId)
 {
 
@@ -239,6 +248,33 @@ View *ViewManager::currentView()
 
 
 }
+
+//----------------------------------------------
+
+View *ViewManager::nextView(View *view)
+{
+    View* nextView = nullptr;
+
+        if(!m_viewList.contains(view) ){
+            nextView = m_viewList.at(0);
+        }
+        else if(m_viewList.last() == view){
+            // create new split
+
+            return this->split(view, Qt::Horizontal);
+        }
+        else if(view){
+            nextView = m_viewList.at(m_viewList.indexOf(view) + 1);
+        }
+        else{
+            nextView = m_viewList.at(0);
+        }
+
+
+       return nextView;
+}
+
+//----------------------------------------------
 
 void ViewManager::addViewParametersBeforeCreation(const QVariantMap &parameters)
 {

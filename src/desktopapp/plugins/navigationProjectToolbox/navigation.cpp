@@ -8,6 +8,7 @@
 #include "plmprojecthub.h"
 #include "projectitemdelegate.h"
 
+#include <QKeyEvent>
 #include <QMenu>
 #include <newtreeitemdialog.h>
 
@@ -33,45 +34,71 @@ Navigation::Navigation(class QWidget *parent) :
     connect(ui->treeView, &QTreeView::expanded, this, &Navigation::addToExpandPathes);
     connect(ui->treeView, &QTreeView::collapsed, this, &Navigation::removeFromExpandPathes);
 
-    m_addItemAfterAction = new QAction("Add below", this);
 
 
     expandProjectItems();
     QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &Navigation::expandProjectItems);
 
 
-    QObject::connect(ui->treeView, &QTreeView::clicked, this, [this](const QModelIndex &index){
-        if (index.isValid()) {
-            m_projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-            m_targetTreeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
-            m_currentModelIndex = index;
-
-            QString type = index.data(ProjectTreeItem::TypeRole).toString();
-
-            ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-            viewManager->openViewAtCurrentView(type, m_projectId, m_targetTreeItemId);
-
-        }
+    //QObject::connect(ui->treeView, &QTreeView::clicked, this, &Navigation::setCurrentIndex);
+    QObject::connect(ui->treeView, &QTreeView::activated, this, [this](const QModelIndex &index){
+        this->setCurrentIndex(index);
+        this->open(index);
     });
+
+//    m_openItemAction = new QAction(tr("Open"), ui->treeView);
+//    m_openItemAction->setShortcut(QKeySequence(Qt::Key_Return));
+//    m_openItemAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+//    QObject::connect(m_openItemAction, &QAction::triggered, this, [this](){
+//        QModelIndex index = ui->treeView->selectionModel()->currentIndex();
+//            this->setCurrentIndex(index);
+//    } );
+    m_openItemInAnotherViewAction = new QAction(tr("Open in another view"), ui->treeView);
+    ui->treeView->addAction(m_openItemInAnotherViewAction);
+    m_openItemInAnotherViewAction->setShortcut(QKeySequence("Ctrl+Return"));
+    m_openItemInAnotherViewAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        QObject::connect(m_openItemInAnotherViewAction, &QAction::triggered, this, [this](){
+            QModelIndex index = ui->treeView->selectionModel()->currentIndex();
+            this->setCurrentIndex(index);
+            this->openInAnotherView(index);
+        } );
+
+   m_openItemInANewWindowAction = new QAction(tr("Open in a new window"), this);
+
+
 
     NewTreeItemDialog *dialog = new NewTreeItemDialog(this);
 
+    m_addItemAfterAction = new QAction(tr("Add below"), ui->treeView);
+    ui->treeView->addAction(m_addItemAfterAction);
+    m_addItemAfterAction->setShortcut(QKeySequence("Ctrl+N"));
+    m_addItemAfterAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_addItemAfterAction, &QAction::triggered, this, [this, dialog](){
+        this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
         dialog->setActionType(NewTreeItemDialog::AddAfter);
         dialog->setIdentifiers(m_projectId, m_targetTreeItemId);
         dialog->open();
     } );
 
 
-    m_addItemBeforeAction = new QAction("Add above", this);
+    m_addItemBeforeAction = new QAction(tr("Add above"), ui->treeView);
+    ui->treeView->addAction(m_addItemBeforeAction);
+    m_addItemBeforeAction->setShortcut(QKeySequence("Ctrl+H"));
+    m_addItemBeforeAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_addItemBeforeAction, &QAction::triggered, this, [this, dialog](){
+        this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
         dialog->setActionType(NewTreeItemDialog::AddBefore);
         dialog->setIdentifiers(m_projectId, m_targetTreeItemId);
         dialog->open();
     } );
 
-    m_addSubItemAction = new QAction("Add sub-item", this);
+    m_addSubItemAction = new QAction(tr("Add sub-item"), this);
+    ui->treeView->addAction(m_addSubItemAction);
+    m_addSubItemAction->setShortcut(QKeySequence("Ctrl+J"));
+    m_addSubItemAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_addSubItemAction, &QAction::triggered, this, [this, dialog](){
+        this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
+
         dialog->setActionType(NewTreeItemDialog::AddSubItem);
         dialog->setIdentifiers(m_projectId, m_targetTreeItemId);
         dialog->open();
@@ -102,17 +129,15 @@ return QIcon(":/icons/backup/compass.svg");
 void Navigation::onCustomContextMenu(const QPoint &point)
 {
 
+
     QModelIndex index = ui->treeView->indexAt(point);
     if (index.isValid()) {
-        m_projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-        m_targetTreeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
-        m_currentModelIndex = index;
-
+        this->setCurrentIndex(index);
 
         QMenu *contextMenu = new QMenu("Context menu", ui->treeView);
         contextMenu->setMinimumSize(100, 50);
-
-
+        contextMenu->addAction(m_openItemInAnotherViewAction);
+        contextMenu->addSeparator();
         contextMenu->addAction(m_addItemBeforeAction);
         contextMenu->addAction(m_addItemAfterAction);
         contextMenu->addAction(m_addSubItemAction);
@@ -182,4 +207,41 @@ QModelIndex Navigation::pathToIndex(const Path &path){
                                   path[i].second, iter);
   }
   return iter;
+}
+
+
+//--------------------------------------------------------------
+
+void Navigation::setCurrentIndex(const QModelIndex &index)
+{
+    if (index.isValid()) {
+        m_projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
+        m_targetTreeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+        m_currentModelIndex = index;
+    }
+}
+
+//--------------------------------------------------------------
+
+void Navigation::open(const QModelIndex &index)
+{
+    if (index.isValid()) {
+        QString type = index.data(ProjectTreeItem::TypeRole).toString();
+
+        ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
+        viewManager->openViewAtCurrentView(type, m_projectId, m_targetTreeItemId);
+
+    }
+}
+//--------------------------------------------------------------
+
+void Navigation::openInAnotherView(const QModelIndex &index)
+{
+    if (index.isValid()) {
+        QString type = index.data(ProjectTreeItem::TypeRole).toString();
+
+        ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
+        viewManager->openViewInAnotherView(type, m_projectId, m_targetTreeItemId);
+
+    }
 }

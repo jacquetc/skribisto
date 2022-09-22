@@ -25,6 +25,9 @@ public:
 public slots:
     void setToolboxes(QList<Toolbox *> toolboxes);
 
+protected:
+    void paintEvent(QPaintEvent *event);
+
 signals:
 
 

@@ -71,7 +71,7 @@ void ThemeManager::setCurrentThemeType(
     }
 
 
-    emit currentThemeChanged(newCurrentThemeType);
+    emit currentThemeTypeChanged(newCurrentThemeType);
   }
 }
 //----------------------------------------------
@@ -298,6 +298,21 @@ QIcon ThemeManager::adaptIcon(const QIcon &icon) const
 
     return QIcon(pix);
 
+}
+
+//----------------------------------------------
+
+
+ThemeManager::ThemeType ThemeManager::switchThemeType()
+{
+    if(this->currentThemeType() == ThemeManager::Light){
+        this->setCurrentThemeType(ThemeManager::Dark);
+    }
+    else{
+        this->setCurrentThemeType(ThemeManager::Light);
+    }
+
+    return this->currentThemeType();
 }
 
 //----------------------------------------------

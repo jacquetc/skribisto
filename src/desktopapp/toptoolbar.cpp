@@ -1,7 +1,10 @@
 #include "toptoolbar.h"
+#include "invoker.h"
 #include "ui_toptoolbar.h"
 
 #include "projecttreecommands.h"
+
+#include <QToolBar>
 
 TopToolBar::TopToolBar(QWidget *parent) :
     QWidget(parent),
@@ -9,11 +12,25 @@ TopToolBar::TopToolBar(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    m_middleToolBar = new QToolBar;
+    ui->horizontalLayout->addWidget(m_middleToolBar);
+    ui->horizontalLayout->setStretchFactor(m_middleToolBar, 1);
+    ui->horizontalLayout->setAlignment(m_middleToolBar, Qt::AlignHCenter);
 
-    // undo stack
-    ui->undoButton->setDefaultAction(projectTreeCommands->undoStack()->createUndoAction(this));
-    ui->redoButton->setDefaultAction(projectTreeCommands->undoStack()->createRedoAction(this));
+    m_rightToolBar = new QToolBar;
+    ui->horizontalLayout->addWidget(m_rightToolBar);
 
+
+    QTimer::singleShot(0, this, &TopToolBar::init);
+
+}
+
+    //---------------------------------------
+
+void TopToolBar::init(){
+
+    auto actionSwitch_theme = invoke<QAction>(this, "actionSwitch_theme");
+    m_rightToolBar->addAction(actionSwitch_theme);
 }
 
 TopToolBar::~TopToolBar()
@@ -21,7 +38,4 @@ TopToolBar::~TopToolBar()
     delete ui;
 }
 
-void TopToolBar::on_toolButton_triggered(QAction *arg1)
-{
-}
 

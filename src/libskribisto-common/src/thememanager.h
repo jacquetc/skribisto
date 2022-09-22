@@ -62,12 +62,14 @@ public:
 
     void scanChildrenAndAddWidgetsHoldingIcons(QWidget *widgetWithIcon);
     QIcon adaptIcon(const QIcon &icon) const;
+
+    ThemeManager::ThemeType switchThemeType();
 public slots:
 
     void updateAllIconColors();
 
 signals:
-    void currentThemeChanged(ThemeManager::ThemeType currentTheme);
+    void currentThemeTypeChanged(ThemeManager::ThemeType currentTheme);
     void lightThemeChanged(QString name);
     void darkThemeChanged(QString name);
 

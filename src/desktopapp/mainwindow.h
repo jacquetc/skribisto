@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <ThemeManager.h>
 #include "viewmanager.h"
 #include "toptoolbar.h"
 #include "statusbar.h"
@@ -46,11 +47,16 @@ private slots:
 
     void on_actionClose_project_triggered();
 
+    void on_actionNew_project_triggered();
+
+    void on_actionSwitch_theme_triggered();
+
 private:
     Ui::MainWindow *ui;
     TopToolBar *m_topToolBar;
     ViewManager *m_viewManager;
     StatusBar *m_statusBar;
     ProjectDockBackend *m_projectDockBackend;
+    void changeSwitchThemeActionText(ThemeManager::ThemeType type);
 };
 #endif // MAINWINDOW_H

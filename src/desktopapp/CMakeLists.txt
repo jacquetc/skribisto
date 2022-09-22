@@ -35,9 +35,9 @@ set(app_SRCS
     statusbar.h statusbar.cpp statusbar.ui
     projectdockbackend.h projectdockbackend.cpp
     skribistostyle.h skribistostyle.cpp
-settingsdialog.h settingsdialog.cpp settingsdialog.ui
-themewizard.h themewizard.cpp themewizard.ui
-thememanager.h thememanager.cpp
+    settingsdialog.h settingsdialog.cpp settingsdialog.ui
+    themewizard.h themewizard.cpp themewizard.ui
+    newprojectwizard.h newprojectwizard.cpp newprojectwizard.ui
 )
 
 set(QRC

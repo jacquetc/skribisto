@@ -1,9 +1,11 @@
-﻿#include "thememanager.h"
+﻿#include "projecttreecommands.h"
+#include "thememanager.h"
 #include "windowmanager.h"
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "view.h"
 #include "settingsdialog.h"
+#include "newprojectwizard.h"
 
 #include <QCloseEvent>
 #include <QFileDialog>
@@ -36,7 +38,6 @@ MainWindow::MainWindow(int newWindowId)
     });
 
 
-
     // tool bar
     m_topToolBar = new TopToolBar();
     ui->toolBar->setContentsMargins(0, 0, 0, 0);
@@ -67,8 +68,15 @@ MainWindow::MainWindow(int newWindowId)
         ui->actionExport->setEnabled(enable);
     });
 
+    ui->menuEdit->insertAction(ui->actionUndo, projectTreeCommands->undoStack()->createUndoAction(this));
+    ui->menuEdit->insertAction(ui->actionRedo, projectTreeCommands->undoStack()->createRedoAction(this));
+    ui->actionUndo->deleteLater();
+    ui->actionRedo->deleteLater();
 
-QTimer::singleShot(0, this, &MainWindow::init);
+
+    changeSwitchThemeActionText(themeManager->currentThemeType());
+
+    QTimer::singleShot(0, this, &MainWindow::init);
 }
 
 //---------------------------------------
@@ -196,5 +204,28 @@ void MainWindow::on_actionClose_project_triggered()
     int activeProject = skrdata->projectHub()->getActiveProject();
     projectCommands->closeProject(activeProject);
 
+}
+
+
+void MainWindow::on_actionNew_project_triggered()
+{
+    NewProjectWizard newWizard(this);
+    newWizard.exec();
+}
+
+
+void MainWindow::on_actionSwitch_theme_triggered()
+{
+    changeSwitchThemeActionText(themeManager->switchThemeType());
+}
+
+void MainWindow::changeSwitchThemeActionText(ThemeManager::ThemeType type){
+    if(type == ThemeManager::Light){
+        ui->actionSwitch_theme->setText(tr("Switch to dark theme"));
+    }
+    else {
+        ui->actionSwitch_theme->setText(tr("Switch to light theme"));
+
+    }
 }
 

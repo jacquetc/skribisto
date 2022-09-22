@@ -18,10 +18,12 @@ public:
     View *split(View *view, Qt::Orientation orientation = Qt::Horizontal);
     void removeSplit(View *view);
     View *currentView();
+    View *nextView(View *view);
     void addViewParametersBeforeCreation(const QVariantMap &parameters);
 
 public slots:
     void openViewAtCurrentView(const QString &type, int projectId = -1, int treeItemId = -1);
+    void openViewInAnotherView(const QString &type, int projectId = -1, int treeItemId = -1);
     View *openViewAt(View *atView, const QString &type, int projectId = -1, int treeItemId = -1);
 
     View *splitForSamePage(View *view, Qt::Orientation orientation);
