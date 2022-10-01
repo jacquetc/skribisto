@@ -64,6 +64,7 @@ public:
     QIcon adaptIcon(const QIcon &icon) const;
 
     ThemeManager::ThemeType switchThemeType();
+    void reapplyCurrentTheme();
 public slots:
 
     void updateAllIconColors();
@@ -78,6 +79,7 @@ private:
     static ThemeManager *m_instance;
 
     ThemeManager::ThemeType m_currentThemeType;
+    QString m_currentThemeName;
     QString m_lightTheme, m_darkTheme;
     QPalette m_currentPalette;
     QMap<QString, QString> m_lightThemeWithLocationMap;
@@ -87,6 +89,8 @@ private:
 
     void applyTheme(const QString &themeName);
 
+    QPalette createSidePalette(const QPalette &palette) const;
+    QPalette createMiddlePalette(const QPalette &palette) const;
 };
 
 #endif // THEMEMANAGER_H

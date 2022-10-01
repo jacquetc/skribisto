@@ -1,4 +1,5 @@
 #include "emptyview.h"
+#include "thememanager.h"
 #include "ui_emptyview.h"
 
 EmptyView::EmptyView(QWidget *parent) :
@@ -9,6 +10,10 @@ EmptyView::EmptyView(QWidget *parent) :
     centralWidgetUi->setupUi(centralWidget);
 
     setCentralWidget(centralWidget);
+
+    connect(themeManager, &ThemeManager::currentThemeTypeChanged, this, [&](){
+
+    }, Qt::QueuedConnection);
 }
 
 EmptyView::~EmptyView()

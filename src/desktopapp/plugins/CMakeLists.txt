@@ -8,7 +8,7 @@ add_subdirectory(folderPage)
 add_subdirectory(sectionPage)
 add_subdirectory(projectPage)
 
-# add_subdirectory(overviewPage)
+add_subdirectory(overviewPage)
 # add_subdirectory(cardViewPage)
 # add_subdirectory(themePage)
 # add_subdirectory(writingGamesPageToolbox)

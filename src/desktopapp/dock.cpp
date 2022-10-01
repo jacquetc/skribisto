@@ -50,7 +50,10 @@ void Dock::setToolboxes(QList<Toolbox *> toolboxes)
 
     }
 
+    this->setProperty("themeZone", "sideZone");
+    themeManager->reapplyCurrentTheme();
     themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+
 }
 
 void Dock::paintEvent(QPaintEvent *event)

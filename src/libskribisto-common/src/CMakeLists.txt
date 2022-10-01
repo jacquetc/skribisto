@@ -33,6 +33,7 @@ set(common_SRCS
 set(common_INTERFACES
     interfaces/projecttoolboxinterface.h
     interfaces/pageinterface.h
+    interfaces/projectpageinterface.h
     interfaces/itemexporterinterface.h
     interfaces/settingspanelinterface.h
 )

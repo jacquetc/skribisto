@@ -762,7 +762,7 @@
 <context>
     <name>DockTitle</name>
     <message>
-        <location filename="../desktopapp/dock.cpp" line="104"/>
+        <location filename="../desktopapp/dock.cpp" line="107"/>
         <source>Hide dock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -941,6 +941,14 @@
         <location filename="../libskribisto-common/src/emptyview.ui" line="98"/>
         <source>- Click on a page in Navigation
 - Drag and drop a page here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-common/src/emptyview.ui" line="113"/>
+        <location filename="../libskribisto-common/src/emptyview.ui" line="118"/>
+        <location filename="../libskribisto-common/src/emptyview.ui" line="123"/>
+        <location filename="../libskribisto-common/src/emptyview.ui" line="128"/>
+        <source>Nouvel élément</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1360,8 +1368,16 @@
 <context>
     <name>FolderView</name>
     <message>
-        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="16"/>
+        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="14"/>
         <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="30"/>
+        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="35"/>
+        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="40"/>
+        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="45"/>
+        <source>Nouvel élément</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2199,11 +2215,13 @@
 <context>
     <name>OverviewPage</name>
     <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewpage.h" line="70"/>
         <location filename="../mobileapp/plugins/overviewPage/overviewpage.h" line="69"/>
         <source>Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewpage.h" line="87"/>
         <location filename="../mobileapp/plugins/overviewPage/overviewpage.h" line="87"/>
         <source>Show the overview</source>
         <translation type="unfinished"></translation>
@@ -2224,6 +2242,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewpage.h" line="45"/>
         <location filename="../mobileapp/plugins/overviewPage/overviewpage.h" line="44"/>
         <source>Overview page</source>
         <comment>plugin name</comment>
@@ -2444,6 +2463,14 @@
     <message>
         <location filename="../mobileapp/plugins/overviewPage/OverviewTree.qml" line="2189"/>
         <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OverviewView</name>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.ui" line="14"/>
+        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2808,7 +2835,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="48"/>
+        <location filename="../desktopapp/main.cpp" line="44"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4753,7 +4780,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="53"/>
+        <location filename="../desktopapp/main.cpp" line="49"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

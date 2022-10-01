@@ -19,13 +19,9 @@ int main(int argc, char *argv[]) {
 
   // QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() <<
   // ":/icons/backup/");
+  QApplication app(argc, argv);
   QApplication::setStyle(new SkribistoStyle);
 
-  QApplication app(argc, argv);
-
-  //    QPalette palette = app.palette();
-  //    palette.setColor(QPalette::All, QPalette::Window, QColor(Qt::white));
-  // app.setPalette(palette);
 
   // Names for the QSettings
   QCoreApplication::setOrganizationName("skribisto");

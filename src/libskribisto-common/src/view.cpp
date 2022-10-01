@@ -5,6 +5,7 @@
 #include "viewmanager.h"
 
 #include <QPainter>
+#include <QTimer>
 
 
 #include <QMenu>
@@ -15,6 +16,7 @@ View::View(const QString &type, QWidget *parent) :
     ui(new Ui::View), m_type(type), m_projectId(-1), m_treeItemId(-1)
 {
     ui->setupUi(this);
+
 
     QToolBar *historyToolbar = new QToolBar;
     historyToolbar->setIconSize(QSize(16, 16));
@@ -67,6 +69,18 @@ View::View(const QString &type, QWidget *parent) :
     splitMenu->addAction(openInNewWindowAction);
 
     ui->splitToolButton->setMenu(splitMenu);
+
+
+
+    QTimer::singleShot(0, this, &View::init);
+}
+
+//---------------------------------------
+
+void View::init(){
+
+    this->setProperty("themeZone", "middleZone");
+    themeManager->reapplyCurrentTheme();
 
 }
 
@@ -132,10 +146,10 @@ void View::setParameters(const QVariantMap &newParameters)
     m_parameters = newParameters;
 }
 
-void View::paintEvent(QPaintEvent *event)
- {
-     QPainter painter(this);
+//void View::paintEvent(QPaintEvent *event)
+// {
+//     QPainter painter(this);
 
-     painter.fillRect(0, 0, this->width(), this->height(),palette().color(QPalette::Base));
+//     painter.fillRect(0, 0, this->width(), this->height(),palette().color(QPalette::Base));
 
- }
+// }

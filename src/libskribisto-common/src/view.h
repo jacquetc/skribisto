@@ -44,7 +44,7 @@ protected:
     virtual QVariantMap addOtherViewParametersBeforeSplit() {
         return QVariantMap();
     }
-    void paintEvent(QPaintEvent *event);
+//    void paintEvent(QPaintEvent *event);
 
 
 signals:
@@ -52,6 +52,7 @@ signals:
 private slots:
     void on_closeToolButton_clicked();
 
+    void init();
 private:
     Ui::View *ui;
     QString m_type;

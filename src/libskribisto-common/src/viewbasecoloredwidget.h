@@ -12,7 +12,7 @@ public:
 signals:
 
 protected:
-    void paintEvent(QPaintEvent *event);
+//    void paintEvent(QPaintEvent *event);
 
 };
 

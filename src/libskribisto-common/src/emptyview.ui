@@ -104,6 +104,33 @@
     </widget>
    </item>
    <item>
+    <widget class="QComboBox" name="comboBox">
+     <property name="editable">
+      <bool>false</bool>
+     </property>
+     <item>
+      <property name="text">
+       <string>Nouvel élément</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Nouvel élément</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Nouvel élément</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Nouvel élément</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer_2">
      <property name="orientation">
       <enum>Qt::Vertical</enum>

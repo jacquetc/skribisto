@@ -8,10 +8,10 @@ ViewBaseColoredWidget::ViewBaseColoredWidget(QWidget *parent)
 
 }
 
-void ViewBaseColoredWidget::paintEvent(QPaintEvent *event)
-{
+//void ViewBaseColoredWidget::paintEvent(QPaintEvent *event)
+//{
 
-    QPainter painter(this);
+//    QPainter painter(this);
 
-    painter.fillRect(0, 0, this->width(), this->height(),palette().color(QPalette::Base));
-}
+//    painter.fillRect(0, 0, this->width(), this->height(),palette().color(QPalette::Base));
+//}

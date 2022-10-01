@@ -1,4 +1,5 @@
 #include "thememanager.h"
+#include "QtWidgets/qcombobox.h"
 #include "plmutils.h"
 
 #include <QFileInfoList>
@@ -10,6 +11,9 @@
 #include <QSettings>
 #include <QToolButton>
 #include <QPointer>
+#include <QTimer>
+#include <QLayout>
+#include <QMainWindow>
 
 ThemeManager::ThemeManager(QObject *parent) : QObject{parent}, m_currentThemeType(ThemeManager::Light) {
     reloadThemes();
@@ -227,7 +231,6 @@ QMap<QString, QString> ThemeManager::getColorMap(const QString &themeName) const
     QJsonObject normalObject = rootJsonObject.value("colors").toObject();
 
     QMap<QString, QString> colorMap;
-    QPalette palette;
 
     colorMap.insert("window", normalObject.value("window").toString("").toLower());
     colorMap.insert("windowText", normalObject.value("windowText").toString("").toLower());
@@ -446,14 +449,62 @@ void ThemeManager::reloadThemes() {
 
 //----------------------------------------------
 
+void ThemeManager::reapplyCurrentTheme()
+{
+    this->applyTheme(m_currentThemeName);
+}
+
+//----------------------------------------------
+
 void ThemeManager::applyTheme(const QString &themeName)
 {
         auto colorMap = this->getColorMap(themeName);
         if(!colorMap.isEmpty()){
             m_currentPalette = this->toPalette(colorMap);
+            m_currentThemeName = themeName;
             qApp->setPalette(m_currentPalette);
             updateAllIconColors();
-        }
+
+            for(QWidget *widget : qApp->allWidgets()){
+                if(nullptr == widget){
+                    continue;
+                }
+
+                if(widget->property("themeZone") == "middleZone"){
+                    widget->setPalette(createMiddlePalette(m_currentPalette));
+                }
+
+                if(widget->property("themeZone") == "sideZone"){
+                    widget->setPalette(createSidePalette(m_currentPalette));
+                }
+            }
+            }
+
+
+
+}
+
+
+//----------------------------------------------
+
+QPalette ThemeManager::createSidePalette(const QPalette &palette) const
+{
+    QPalette sidePalette;
+    sidePalette.setBrush(QPalette::ColorRole::Base, palette.window());
+
+    return sidePalette.resolve(palette);
+}
+
+//----------------------------------------------
+
+QPalette ThemeManager::createMiddlePalette(const QPalette &palette) const
+{
+    QPalette middlePalette;
+    middlePalette.setBrush(QPalette::ColorGroup::All, QPalette::ColorRole::Button, palette.base());
+    middlePalette.setBrush(QPalette::ColorGroup::All, QPalette::ColorRole::Window, palette.base());
+    middlePalette.setBrush(QPalette::ColorGroup::All, QPalette::ColorRole::AlternateBase, palette.base());
+
+    return middlePalette.resolve(palette);
 }
 
 

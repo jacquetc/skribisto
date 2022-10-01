@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>637</width>
-    <height>412</height>
+    <width>616</width>
+    <height>715</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -49,7 +49,7 @@
      <widget class="ViewBaseColoredWidget" name="scrollAreaWidgetContents">
       <property name="geometry">
        <rect>
-        <x>118</x>
+        <x>108</x>
         <y>0</y>
         <width>400</width>
         <height>246</height>
