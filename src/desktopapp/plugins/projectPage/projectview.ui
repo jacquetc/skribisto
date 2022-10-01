@@ -27,7 +27,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="ViewScrollArea" name="scrollArea">
+    <widget class="QScrollArea" name="scrollArea">
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>
      </property>
@@ -46,7 +46,7 @@
      <property name="alignment">
       <set>Qt::AlignHCenter|Qt::AlignTop</set>
      </property>
-     <widget class="ViewBaseColoredWidget" name="scrollAreaWidgetContents">
+     <widget class="QWidget" name="scrollAreaWidgetContents">
       <property name="geometry">
        <rect>
         <x>108</x>
@@ -197,20 +197,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>ViewBaseColoredWidget</class>
-   <extends>QWidget</extends>
-   <header location="global">viewbasecoloredwidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ViewScrollArea</class>
-   <extends>QScrollArea</extends>
-   <header location="global">viewscrollarea.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
