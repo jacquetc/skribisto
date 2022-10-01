@@ -2,12 +2,13 @@
 #define SETTINGSPAGE_H
 
 #include <QWidget>
+#include "skribisto_common_global.h"
 
 namespace Ui {
 class SettingsPage;
 }
 
-class SettingsPage : public QWidget
+class SKRCOMMONEXPORT SettingsPage : public QWidget
 {
     Q_OBJECT
 

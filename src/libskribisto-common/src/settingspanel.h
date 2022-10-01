@@ -2,12 +2,13 @@
 #define SETTINGSPANEL_H
 
 #include <QWidget>
+#include "skribisto_common_global.h"
 
 namespace Ui {
 class SettingsPanel;
 }
 
-class SettingsPanel : public QWidget
+class SKRCOMMONEXPORT SettingsPanel : public QWidget
 {
     Q_OBJECT
 

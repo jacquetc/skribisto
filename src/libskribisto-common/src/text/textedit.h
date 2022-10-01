@@ -2,8 +2,9 @@
 #define TEXTEDIT_H
 
 #include <QTextEdit>
+#include "skribisto_common_global.h"
 
-class TextEdit : public QTextEdit
+class SKRCOMMONEXPORT TextEdit : public QTextEdit
 {
 public:
     TextEdit(QWidget *parent = nullptr);

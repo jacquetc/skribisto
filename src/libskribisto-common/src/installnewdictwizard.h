@@ -2,12 +2,13 @@
 #define INSTALLNEWDICTWIZARD_H
 
 #include <QWizard>
+#include "skribisto_common_global.h"
 
 namespace Ui {
 class InstallNewDictWizard;
 }
 
-class InstallNewDictWizard : public QWizard
+class SKRCOMMONEXPORT InstallNewDictWizard : public QWizard
 {
     Q_OBJECT
 

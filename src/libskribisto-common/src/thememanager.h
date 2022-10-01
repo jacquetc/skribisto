@@ -1,13 +1,14 @@
 #ifndef THEMEMANAGER_H
 #define THEMEMANAGER_H
 
+#include "skribisto_common_global.h"
 #include <QObject>
 #include <QApplication>
 #include <QPalette>
 #include <QWidget>
 #define themeManager ThemeManager::instance()
 
-class ThemeManager : public QObject
+class  SKRCOMMONEXPORT ThemeManager : public QObject
 {
     Q_OBJECT
 public:
