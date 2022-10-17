@@ -22,12 +22,20 @@ TextView::TextView(QWidget *parent) :
 
     // link scrollbar to textedit
     centralWidgetUi->textEdit->setVerticalScrollBar(centralWidgetUi->verticalScrollBar);
-    //centralWidgetUi->horizontalLayout->addWidget(centralWidgetUi->verticalScrollBar);
+    centralWidgetUi->horizontalLayout->addWidget(centralWidgetUi->verticalScrollBar);
+    centralWidgetUi->verticalScrollBar->hide();
+    connect(centralWidgetUi->verticalScrollBar, &QScrollBar::rangeChanged, this, [&](int min, int max){
+        centralWidgetUi->verticalScrollBar->setVisible(min < max);
+    });
     //centralWidgetUi->horizontalLayout->set  (centralWidgetUi->verticalScrollBar);
     //connect(centralWidgetUi->textEdit.)
+
+
     centralWidgetUi->horizontalLayout->setStretchFactor(centralWidgetUi->horizontalLayout_2, 1);
 
     this->setFocusProxy(centralWidgetUi->textEdit);
+    centralWidget->setFocusProxy(centralWidgetUi->textEdit);
+    centralWidgetUi->widget->setFocusProxy(centralWidgetUi->textEdit);
 
 }
 
@@ -87,4 +95,17 @@ void TextView::saveContent()
     else {
         skrdata->treeHub()->setPrimaryContent(this->projectId(), this->treeItemId(), centralWidgetUi->textEdit->toHtml());
     }
+}
+
+
+void TextView::mousePressEvent(QMouseEvent *event)
+{
+
+    centralWidgetUi->textEdit->setFocus();
+    centralWidgetUi->textEdit->ensureCursorVisible();
+}
+
+void TextView::wheelEvent(QWheelEvent *event)
+{
+    centralWidgetUi->textEdit->wheelEvent(event);
 }

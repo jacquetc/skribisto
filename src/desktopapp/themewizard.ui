@@ -243,6 +243,20 @@
            </layout>
           </item>
           <item>
+           <widget class="QComboBox" name="comboBox">
+            <item>
+             <property name="text">
+              <string>test</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>test 2</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton">
             <property name="toolTip">
              <string>Example</string>

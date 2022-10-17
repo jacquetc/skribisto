@@ -13,6 +13,12 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="autoFillBackground">
+   <bool>true</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <spacer name="verticalSpacer">
@@ -101,33 +107,6 @@
      <property name="textFormat">
       <enum>Qt::MarkdownText</enum>
      </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QComboBox" name="comboBox">
-     <property name="editable">
-      <bool>false</bool>
-     </property>
-     <item>
-      <property name="text">
-       <string>Nouvel élément</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Nouvel élément</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Nouvel élément</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Nouvel élément</string>
-      </property>
-     </item>
     </widget>
    </item>
    <item>

@@ -928,27 +928,19 @@
 <context>
     <name>EmptyView</name>
     <message>
-        <location filename="../libskribisto-common/src/emptyview.ui" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="14"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/emptyview.ui" line="36"/>
+        <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="42"/>
         <source>**Open a document**</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/emptyview.ui" line="98"/>
+        <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="104"/>
         <source>- Click on a page in Navigation
 - Drag and drop a page here</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../libskribisto-common/src/emptyview.ui" line="113"/>
-        <location filename="../libskribisto-common/src/emptyview.ui" line="118"/>
-        <location filename="../libskribisto-common/src/emptyview.ui" line="123"/>
-        <location filename="../libskribisto-common/src/emptyview.ui" line="128"/>
-        <source>Nouvel élément</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1372,14 +1364,6 @@
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="30"/>
-        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="35"/>
-        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="40"/>
-        <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="45"/>
-        <source>Nouvel élément</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>HelpContentsForm.ui</name>
@@ -1423,7 +1407,7 @@
 <context>
     <name>InstallNewDictWizard</name>
     <message>
-        <location filename="../libskribisto-common/src/installnewdictwizard.ui" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/installnewdictwizard.ui" line="14"/>
         <source>Wizard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2065,12 +2049,12 @@
 <context>
     <name>NewTreeItemDialog</name>
     <message>
-        <location filename="../libskribisto-common/src/newtreeitemdialog.ui" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/newtreeitemdialog.ui" line="14"/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/newtreeitemdialog.ui" line="50"/>
+        <location filename="../libskribisto-desktop-common/src/newtreeitemdialog.ui" line="50"/>
         <source>Number to create:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2202,12 +2186,12 @@
 <context>
     <name>OutlineToolbox</name>
     <message>
-        <location filename="../libskribisto-common/src/toolboxes/outlinetoolbox.ui" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/outlinetoolbox.ui" line="14"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/toolboxes/outlinetoolbox.h" line="23"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/outlinetoolbox.h" line="23"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2835,7 +2819,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="44"/>
+        <location filename="../desktopapp/main.cpp" line="45"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3668,7 +3652,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/settingspage.ui" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/settingspage.ui" line="14"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3749,7 +3733,7 @@
 <context>
     <name>SettingsPanel</name>
     <message>
-        <location filename="../libskribisto-common/src/settingspanel.ui" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/settingspanel.ui" line="14"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4425,11 +4409,11 @@
         <location filename="../desktopapp/themewizard.ui" line="191"/>
         <location filename="../desktopapp/themewizard.ui" line="203"/>
         <location filename="../desktopapp/themewizard.ui" line="229"/>
-        <location filename="../desktopapp/themewizard.ui" line="248"/>
-        <location filename="../desktopapp/themewizard.ui" line="251"/>
-        <location filename="../desktopapp/themewizard.ui" line="263"/>
-        <location filename="../desktopapp/themewizard.ui" line="291"/>
-        <location filename="../desktopapp/themewizard.ui" line="294"/>
+        <location filename="../desktopapp/themewizard.ui" line="262"/>
+        <location filename="../desktopapp/themewizard.ui" line="265"/>
+        <location filename="../desktopapp/themewizard.ui" line="277"/>
+        <location filename="../desktopapp/themewizard.ui" line="305"/>
+        <location filename="../desktopapp/themewizard.ui" line="308"/>
         <source>Example</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4449,12 +4433,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="268"/>
+        <location filename="../desktopapp/themewizard.ui" line="249"/>
+        <source>test</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.ui" line="254"/>
+        <source>test 2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.ui" line="282"/>
         <source>Example 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="273"/>
+        <location filename="../desktopapp/themewizard.ui" line="287"/>
         <source>Example 3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4658,22 +4652,22 @@
 <context>
     <name>View</name>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="67"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="67"/>
         <source>Previous</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="78"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="78"/>
         <source>Next</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="125"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="125"/>
         <source>view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-common/src/view.ui" line="139"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="139"/>
         <source>close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4780,7 +4774,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="49"/>
+        <location filename="../desktopapp/main.cpp" line="50"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

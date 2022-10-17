@@ -14,3 +14,8 @@ TextPageSettings::~TextPageSettings()
 {
     delete centralWidgetUi;
 }
+
+
+void TextPageSettings::accept()
+{
+}

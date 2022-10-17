@@ -21,6 +21,7 @@
 #include "textpage.h"
 #include "skrdata.h"
 #include "textview.h"
+#include "textpagesettings.h"
 
 TextPage::TextPage(QObject *parent) : QObject(parent)
 {
@@ -81,5 +82,5 @@ QTextDocumentFragment TextPage::generateExporterTextFragment(int                
 
 SettingsPanel *TextPage::settingsPanel() const
 {
-
+    return new TextPageSettings();
 }

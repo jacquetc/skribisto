@@ -28,6 +28,11 @@ private:
     Ui::TextView *centralWidgetUi;
     OutlineToolbox *m_outlineToolbox;
     bool m_isSecondaryContent;
+
+    // QWidget interface
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 };
 
 #endif // TEXTVIEW_H

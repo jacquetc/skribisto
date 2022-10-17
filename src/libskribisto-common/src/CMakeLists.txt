@@ -8,34 +8,16 @@ project(skribisto-common LANGUAGES CXX VERSION ${VERSION})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 COMPONENTS Core Gui Widgets CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Gui CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui CONFIG REQUIRED)
 
 set(common_SRCS
-    emptyview.h emptyview.cpp emptyview.ui
-    viewmanager.h viewmanager.cpp
     skribisto_common_global.h
-    view.h view.cpp view.ui
-    toolbox.h
-    invoker.h
-    newtreeitemdialog.h newtreeitemdialog.cpp newtreeitemdialog.ui
-    treeitemcreationparameterswidget.h treeitemcreationparameterswidget.cpp
-    settingspanel.h settingspanel.cpp settingspanel.ui
-    toolboxes/outlinetoolbox.h toolboxes/outlinetoolbox.cpp toolboxes/outlinetoolbox.ui
-    viewbasecoloredwidget.cpp viewbasecoloredwidget.h
-    viewscrollarea.h viewscrollarea.cpp
-    installnewdictwizard.h installnewdictwizard.cpp installnewdictwizard.ui
-    text/textedit.h text/textedit.cpp
-    settingspage.h settingspage.cpp settingspage.ui
-    thememanager.h thememanager.cpp
+    command.h command.cpp
 )
 
 set(common_INTERFACES
-    interfaces/projecttoolboxinterface.h
-    interfaces/pageinterface.h
-    interfaces/projectpageinterface.h
-    interfaces/itemexporterinterface.h
-    interfaces/settingspanelinterface.h
+    interfaces/invokablecommandgroupinterface.h
 )
 
 # Tell CMake to create the executable
@@ -48,10 +30,7 @@ endif(IOS)
 
 target_compile_definitions(skribisto-common PRIVATE SKRIBISTO_COMMON_LIBRARY)
 
-target_link_libraries(skribisto-common PRIVATE skribisto-backend skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
-
-include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
-include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-backend/src/")
+target_link_libraries(skribisto-common PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
 
 # ---------------------------------
 if(IOS)

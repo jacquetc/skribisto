@@ -67,7 +67,7 @@
         <height>16777215</height>
        </size>
       </property>
-      <widget class="QComboBox" name="comboBox">
+      <widget class="ComboBox" name="comboBox">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -82,6 +82,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ComboBox</class>
+   <extends>QComboBox</extends>
+   <header>combobox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

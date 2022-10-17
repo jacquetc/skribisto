@@ -36,6 +36,8 @@ void ProjectCommands::loadProject(const QUrl &url)
     }
 }
 
+
+
 void ProjectCommands::setProjectName(int projectId, const QString &name)
 {
     m_undoStack->push(new SetProjectNameCommand(projectId, name));
@@ -54,10 +56,21 @@ void ProjectCommands::setLanguageCode(int projectId, const QString &newLanguage)
 
 ProjectCommands *ProjectCommands::m_instance = nullptr;
 
+
+Command *ProjectCommands::getCommand(const QString &action, const QVariantMap &parameters)
+{
+    if(action == "set_project_name"){
+        return new SetProjectNameCommand(parameters.value("projectId").toInt(), parameters.value("name").toString());
+    }
+
+}
+
+
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 
 SetProjectNameCommand::SetProjectNameCommand(int projectId, const QString &name) :
+    Command("Set project name to " + name),
     m_newName(name), m_projectId(projectId)
 {
 
@@ -78,6 +91,7 @@ void SetProjectNameCommand::redo()
 //------------------------------------------------------------------------------------------------------------
 
 SetAuthorCommand::SetAuthorCommand(int projectId, const QString &author) :
+    Command("Set author to " + author),
     m_newName(author), m_projectId(projectId)
 {
 
@@ -98,6 +112,7 @@ void SetAuthorCommand::redo()
 //------------------------------------------------------------------------------------------------------------
 
 SetLanguageCodeCommand::SetLanguageCodeCommand(int projectId, const QString &languageCode) :
+    Command("Set project language to " + languageCode),
     m_newLanguageCode(languageCode), m_projectId(projectId)
 {
 
@@ -113,3 +128,4 @@ void SetLanguageCodeCommand::redo()
     m_oldLanguageCode = skrdata->projectHub()->getLangCode(m_projectId);
     skrdata->projectHub()->setLangCode(m_projectId, m_newLanguageCode);
 }
+

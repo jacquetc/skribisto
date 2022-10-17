@@ -18,6 +18,10 @@ public:
 
 private:
     Ui::TextPageSettings *centralWidgetUi;
+
+    // SettingsPanel interface
+public slots:
+    void accept() override;
 };
 
 #endif // TEXTPAGESETTINGS_H

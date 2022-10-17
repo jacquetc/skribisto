@@ -1,3 +1,4 @@
+#include "commands.h"
 #include "projectcommands.h"
 #include "projecttreecommands.h"
 #include "projecttreemodel.h"
@@ -56,6 +57,7 @@ int main(int argc, char *argv[]) {
   // load singletons :
   auto *skrData = new SKRData(qApp);
   new ProjectTreeModel(skrData);
+  new Commands(skrData, undoStack);
   new ProjectCommands(skrData, undoStack);
   new ProjectTreeCommands(skrData, undoStack, projectTreeModel);
   ThemeManager::instance();

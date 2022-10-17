@@ -76,6 +76,7 @@ if(IOS)
 endif()
 
 add_subdirectory(src/libskribisto-common/src)
+add_subdirectory(src/libskribisto-desktop-common/src)
 add_subdirectory(src/desktopapp)
 add_subdirectory(src/translations)
 

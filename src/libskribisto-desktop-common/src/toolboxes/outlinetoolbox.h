@@ -3,13 +3,13 @@
 
 #include <QWidget>
 #include "toolbox.h"
-#include "skribisto_common_global.h"
+#include "skribisto_desktop_common_global.h"
 
 namespace Ui {
 class OutlineToolbox;
 }
 
-class SKRCOMMONEXPORT OutlineToolbox : public Toolbox
+class SKRDESKTOPCOMMONEXPORT OutlineToolbox : public Toolbox
 {
     Q_OBJECT
 

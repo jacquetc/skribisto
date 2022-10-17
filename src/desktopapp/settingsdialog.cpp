@@ -17,6 +17,16 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
 
     themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
     ui->appearancePage->setFocus();
+
+
+    // themes
+    themeManager->reloadThemes();
+
+    ui->dayThemeComboBox->addItems(themeManager->lightThemeWithLocationMap().keys());
+    ui->dayThemeComboBox->setCurrentText(themeManager->lightTheme());
+    ui->nightThemeComboBox->addItems(themeManager->darkThemeWithLocationMap().keys());
+    ui->nightThemeComboBox->setCurrentText(themeManager->darkTheme());
+
 }
 
 SettingsDialog::~SettingsDialog()
@@ -51,5 +61,14 @@ void SettingsDialog::on_pagesToolButton_clicked()
     ui->pageTitle->setText("**" + ui->pagesToolButton->text() + "**");
     ui->pageTitle->show();
     ui->backToolButton->show();
+}
+
+
+void SettingsDialog::on_buttonBox_accepted()
+{
+    themeManager->setLightTheme(ui->dayThemeComboBox->currentText());
+    themeManager->setDarkTheme(ui->nightThemeComboBox->currentText());
+
+    ui->pagesPage->accept();
 }
 

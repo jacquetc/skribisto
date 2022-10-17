@@ -17,9 +17,10 @@ set(backend_SRCS
     skribisto_backend_global.h
     projecttreemodel.h projecttreemodel.cpp
     projecttreeitem.h projecttreeitem.cpp
-projecttreecommands.h projecttreecommands.cpp
-projecttreeproxymodel.h projecttreeproxymodel.cpp
-projectcommands.h projectcommands.cpp
+    projecttreecommands.h projecttreecommands.cpp
+    projecttreeproxymodel.h projecttreeproxymodel.cpp
+    projectcommands.h projectcommands.cpp
+    commands.h commands.cpp
 )
 
 # Tell CMake to create the executable
@@ -32,10 +33,11 @@ endif(IOS)
 
 target_compile_definitions(skribisto-backend PRIVATE SKRIBISTO_BACKEND_LIBRARY)
 
-target_link_libraries(skribisto-backend PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(skribisto-backend PRIVATE skribisto-data skribisto-common Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-desktop-common/src/")
 
 # ---------------------------------
 if(IOS)

@@ -77,7 +77,7 @@ endif(${SKR_DEV})
 
 # ---------------------------------
 target_link_libraries(SkribistoDesktop
-    PRIVATE skribisto-data skribisto-backend skribisto-common Qt6::Gui Qt6::Core Qt6::Network Qt6::Widgets Qt6::Svg
+    PRIVATE skribisto-data skribisto-backend skribisto-common skribisto-desktop-common Qt6::Gui Qt6::Core Qt6::Network Qt6::Widgets Qt6::Svg
     Qt6::PrintSupport
 )
 
@@ -85,6 +85,7 @@ target_link_libraries(SkribistoDesktop
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-backend/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-desktop-common/src/")
 
 # ---------------------------------
 add_subdirectory(plugins)

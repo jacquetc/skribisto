@@ -471,11 +471,24 @@ void ThemeManager::applyTheme(const QString &themeName)
                 }
 
                 if(widget->property("themeZone") == "middleZone"){
-                    widget->setPalette(createMiddlePalette(m_currentPalette));
+                    QPalette palette = createMiddlePalette(m_currentPalette);
+                    widget->setPalette(palette);
+
+                    QList<QComboBox *> comboBoxList = widget->findChildren<QComboBox *>();
+                    for(QComboBox *comboBox :comboBoxList){
+                        comboBox->setPalette(palette);
+                    }
+
                 }
 
                 if(widget->property("themeZone") == "sideZone"){
-                    widget->setPalette(createSidePalette(m_currentPalette));
+                    QPalette palette = createSidePalette(m_currentPalette);
+                    widget->setPalette(palette);
+
+                    QList<QComboBox *> comboBoxList = widget->findChildren<QComboBox *>();
+                    for(QComboBox *comboBox :comboBoxList){
+                        comboBox->setPalette(palette);
+                    }
                 }
             }
             }

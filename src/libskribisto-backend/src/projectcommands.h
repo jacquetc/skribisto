@@ -4,10 +4,11 @@
 #include <QObject>
 #include <QUndoCommand>
 #include "skribisto_backend_global.h"
+#include "interfaces/invokablecommandgroupinterface.h"
 
 #define projectCommands ProjectCommands::instance()
 
-class SKRBACKENDEXPORT ProjectCommands : public QObject
+class SKRBACKENDEXPORT ProjectCommands : public QObject, public InvokableCommandGroupInterface
 {
     Q_OBJECT
 public:
@@ -26,20 +27,29 @@ public:
     void setAuthor(int projectId, const QString &author);
     void setLanguageCode(int projectId, const QString &newLanguage);
 
-    QUndoStack *undoStack() const;
-
     void loadProject(const QUrl &url);
 signals:
 
 private:
     static ProjectCommands *m_instance;
     QUndoStack *m_undoStack;
+
+    // InvokableCommandGroupInterface interface
+public:
+    QString address() const override
+    {
+        return "project";
+    }
+
+    // InvokableCommandGroupInterface interface
+public:
+    Command *getCommand(const QString &action, const QVariantMap &parameters) override;
 };
 
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 
-class SetProjectNameCommand : public QUndoCommand
+class SetProjectNameCommand : public Command
 {
 public:
     SetProjectNameCommand(int projectId, const QString &name);
@@ -53,7 +63,7 @@ private:
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 
-class SetAuthorCommand : public QUndoCommand
+class SetAuthorCommand : public Command
 {
 public:
     SetAuthorCommand(int projectId, const QString &author);
@@ -67,7 +77,7 @@ private:
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 
-class SetLanguageCodeCommand : public QUndoCommand
+class SetLanguageCodeCommand : public Command
 {
 public:
     SetLanguageCodeCommand(int projectId, const QString &newLanguage);

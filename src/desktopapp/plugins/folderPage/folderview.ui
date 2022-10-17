@@ -22,32 +22,7 @@
        <height>16777215</height>
       </size>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QComboBox" name="comboBox">
-        <item>
-         <property name="text">
-          <string>Nouvel élément</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Nouvel élément</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Nouvel élément</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Nouvel élément</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-     </layout>
+     <layout class="QVBoxLayout" name="verticalLayout"/>
     </widget>
    </item>
   </layout>

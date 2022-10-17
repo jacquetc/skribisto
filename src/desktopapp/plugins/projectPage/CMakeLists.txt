@@ -35,11 +35,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Svg Qt6::W
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-data)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-backend)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-common)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-desktop-common)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/desktopapp/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-backend/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-desktop-common/src/")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/plugins/skribisto")
