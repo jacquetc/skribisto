@@ -13,6 +13,7 @@
 #include <interfaces/itemexporterinterface.h>
 #include <interfaces/pageinterface.h>
 #include <interfaces/projecttoolboxinterface.h>
+#include <text/textbridge.h>
 
 int main(int argc, char *argv[]) {
   QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
@@ -61,6 +62,7 @@ int main(int argc, char *argv[]) {
   new ProjectCommands(skrData, undoStack);
   new ProjectTreeCommands(skrData, undoStack, projectTreeModel);
   ThemeManager::instance();
+  TextBridge::instance();
 
   // load plugins:
   skrpluginhub->addPluginType<ProjectToolboxInterface>();

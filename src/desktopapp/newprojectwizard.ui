@@ -6,18 +6,141 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>662</width>
+    <height>467</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Wizard</string>
+   <string>Create a new project</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
   </property>
   <property name="wizardStyle">
    <enum>QWizard::ModernStyle</enum>
   </property>
-  <widget class="QWizardPage" name="wizardPage1"/>
-  <widget class="QWizardPage" name="wizardPage2"/>
+  <widget class="QWizardPage" name="wizardPage1">
+   <property name="title">
+    <string>Informations</string>
+   </property>
+   <property name="subTitle">
+    <string>Please fill the fields</string>
+   </property>
+   <layout class="QFormLayout" name="formLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="projectNameLabel">
+      <property name="text">
+       <string>Project name</string>
+      </property>
+      <property name="buddy">
+       <cstring>projectNameLineEdit</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLineEdit" name="projectNameLineEdit"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="authorLabel">
+      <property name="text">
+       <string>Author</string>
+      </property>
+      <property name="buddy">
+       <cstring>authorLineEdit</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="authorLineEdit"/>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="pathLabel">
+      <property name="text">
+       <string>Path</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLineEdit" name="pathLineEdit"/>
+    </item>
+    <item row="4" column="1">
+     <widget class="QPushButton" name="selectPathButton">
+      <property name="text">
+       <string>Select path</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="1">
+     <spacer name="verticalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage">
+   <property name="title">
+    <string>Format</string>
+   </property>
+   <property name="subTitle">
+    <string>Choose the way your project will be saved</string>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_2"/>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage2">
+   <property name="title">
+    <string>Template</string>
+   </property>
+   <property name="subTitle">
+    <string>Choose a template for your project</string>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QListWidget" name="listWidget">
+      <item>
+       <property name="text">
+        <string>None</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item>
+     <widget class="QStackedWidget" name="stackedWidget">
+      <widget class="QWidget" name="nonePage">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Create an empty project.</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
  </widget>
  <resources/>
  <connections/>

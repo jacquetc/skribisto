@@ -1594,23 +1594,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="227"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="244"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="175"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="187"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="192"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="204"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="176"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="193"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="224"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="241"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2042,7 +2042,67 @@
     <name>NewProjectWizard</name>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="14"/>
-        <source>Wizard</source>
+        <source>Create a new project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="24"/>
+        <source>Informations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="27"/>
+        <source>Please fill the fields</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="33"/>
+        <source>Project name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="46"/>
+        <source>Author</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="59"/>
+        <source>Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="69"/>
+        <source>Select path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="90"/>
+        <source>Format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="93"/>
+        <source>Choose the way your project will be saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="99"/>
+        <source>Template</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="102"/>
+        <source>Choose a template for your project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="109"/>
+        <source>None</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="121"/>
+        <source>Create an empty project.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2819,7 +2879,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="45"/>
+        <location filename="../desktopapp/main.cpp" line="46"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4774,7 +4834,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="50"/>
+        <location filename="../desktopapp/main.cpp" line="51"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

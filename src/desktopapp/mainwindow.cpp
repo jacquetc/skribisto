@@ -126,6 +126,23 @@ ViewManager *MainWindow::viewManager() const
     return m_viewManager;
 }
 
+void MainWindow::addWindowForItemId(int projectId, int treeItemId)
+{
+    windowManager->addWindowForItemId(projectId, treeItemId);
+}
+
+void MainWindow::addWindowForProjectIndependantPageType(const QString &pageType)
+{
+    windowManager->addWindowForProjectIndependantPageType(pageType);
+
+}
+
+void MainWindow::addWindowForProjectDependantPageType(int projectId, const QString &pageType)
+{
+    windowManager->addWindowForProjectDependantPageType(projectId, pageType);
+
+}
+
 //---------------------------------------
 
 int MainWindow::windowId() const

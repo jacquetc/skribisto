@@ -22,13 +22,12 @@ set(common_SRCS
     treeitemcreationparameterswidget.h treeitemcreationparameterswidget.cpp
     settingspanel.h settingspanel.cpp settingspanel.ui
     toolboxes/outlinetoolbox.h toolboxes/outlinetoolbox.cpp toolboxes/outlinetoolbox.ui
-    viewbasecoloredwidget.cpp viewbasecoloredwidget.h
-    viewscrollarea.h viewscrollarea.cpp
     installnewdictwizard.h installnewdictwizard.cpp installnewdictwizard.ui
     text/textedit.h text/textedit.cpp
     settingspage.h settingspage.cpp settingspage.ui
     thememanager.h thememanager.cpp
     combobox.h combobox.cpp
+    text/textbridge.h text/textbridge.cpp
 )
 
 set(common_INTERFACES

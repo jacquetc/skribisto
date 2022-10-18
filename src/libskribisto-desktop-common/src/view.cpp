@@ -1,4 +1,5 @@
 #include "view.h"
+#include "QtCore/qobjectdefs.h"
 #include "ui_view.h"
 
 #include "invoker.h"
@@ -10,6 +11,7 @@
 
 #include <QMenu>
 #include "thememanager.h"
+#include <QMetaObject>
 
 View::View(const QString &type, QWidget *parent) :
     QWidget(parent),
@@ -62,6 +64,28 @@ View::View(const QString &type, QWidget *parent) :
     });
 
     QAction *openInNewWindowAction = new QAction(QIcon(":/icons/backup/window-new.svg"), "Open in a new window", this);
+    QObject::connect(openInNewWindowAction, &QAction::triggered, this, [this](){
+
+        if(m_treeItemId == -1 && m_projectId == -1){
+            QMetaObject::invokeMethod(this->window(), "addWindowForProjectIndependantPageType", Qt::QueuedConnection, Q_ARG(QString, m_type));
+        }
+        else if(m_treeItemId == -1){
+            QMetaObject::invokeMethod(this->window(), "addWindowForProjectDependantPageType", Qt::QueuedConnection
+                                      , Q_ARG(int, m_projectId)
+                                      , Q_ARG(QString, m_type)
+                                      );
+        }
+        else {
+            QMetaObject::invokeMethod(this->window(), "addWindowForItemId", Qt::QueuedConnection
+                                      , Q_ARG(int, m_projectId)
+                                      , Q_ARG(int, m_treeItemId)
+                                      );
+        }
+
+
+
+
+    });
 
     QMenu *splitMenu = new QMenu;
     splitMenu->addAction(splitHorizontalyAction);

@@ -73,6 +73,11 @@ void ViewManager::determineCurrentView()
                }
            }
        }
+       if(m_viewList.isEmpty()){
+           EmptyView *emptyView = new EmptyView;
+           m_rootSplitter->addWidget(emptyView);
+           m_viewList.append(emptyView);
+       }
 
        if(!m_currentView){
           m_currentView = m_viewList.at(0);
@@ -301,18 +306,20 @@ QByteArray ViewManager::saveSplitterStructure() const
 /// Open only one view for this window.
 void ViewManager::openSpecificView(const QString &pageType, int projectId, int treeItemId)
 {
-    m_rootSplitter->close();
-    delete m_rootSplitter;
 
+        m_rootSplitter->close();
+        delete m_rootSplitter;
 
-    QVBoxLayout *layout = new QVBoxLayout(m_viewWidget);
-    m_rootSplitter = new ViewSplitter(Qt::Horizontal, m_viewWidget);
-    layout->addWidget(m_rootSplitter);
+        m_rootSplitter = new ViewSplitter(Qt::Horizontal, m_viewWidget);
+        m_viewWidget->layout()->addWidget(m_rootSplitter);
 
-    m_viewList.clear();
-    EmptyView *emptyView = new EmptyView;
-    m_rootSplitter->addWidget(emptyView);
-    m_viewList.append(emptyView);
+        m_viewList.clear();
+
+        QTimer::singleShot(20, this, [this, pageType, projectId, treeItemId](){
+
+        openViewAtCurrentView(pageType, projectId, treeItemId);
+
+        });
 }
 
 

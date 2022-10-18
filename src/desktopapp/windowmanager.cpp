@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "skrdata.h"
 #include "windowmanager.h"
 
 #include <QSettings>
@@ -114,7 +115,10 @@ addWindow();
 
 void WindowManager::addWindowForItemId(int projectId, int treeItemId)
 {
-    addWindow("", projectId, treeItemId);
+
+    QString type = skrdata->treeHub()->getType(projectId, treeItemId);
+
+    addWindow(type, projectId, treeItemId);
 }
 //----------------------------------------------
 
@@ -167,6 +171,7 @@ void WindowManager::addWindow(const QString &pageType, int projectId, int treeIt
     window->setWindowState(visibility);
 
 window->restoreState(dockState);
+
 
     if(!pageType.isEmpty() || projectId >=0 || treeItemId >= 0)
         window->viewManager()->openSpecificView(pageType, projectId, treeItemId);

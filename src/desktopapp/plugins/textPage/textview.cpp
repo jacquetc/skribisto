@@ -1,4 +1,5 @@
 #include "textview.h"
+#include "text/textbridge.h"
 #include "ui_textview.h"
 
 #include <skrdata.h>
@@ -71,6 +72,13 @@ void TextView::initialize()
     }
 
     centralWidgetUi->textEdit->setDocument(document);
+
+    QString uniqueDocumentReference = QString("%1_%2_%3").arg(this->projectId()).arg(this->treeItemId()).arg(m_isSecondaryContent ? "secondary" : "primary");
+    textBridge->subscribeTextDocument(
+                uniqueDocumentReference,
+                centralWidgetUi->textEdit->uuid(),
+                document);
+
 
     QTimer *saveTimer = new QTimer(this);
     saveTimer->setSingleShot(true);

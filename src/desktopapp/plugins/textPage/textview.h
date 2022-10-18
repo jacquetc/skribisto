@@ -16,13 +16,13 @@ class TextView : public View
 public:
     explicit TextView(QWidget *parent = nullptr);
     ~TextView();
-    QList<Toolbox *> toolboxes();
+    QList<Toolbox *> toolboxes() override;
 
 public slots:
     void saveContent();
 
 protected:
-    void initialize();
+    void initialize() override;
 
 private:
     Ui::TextView *centralWidgetUi;
