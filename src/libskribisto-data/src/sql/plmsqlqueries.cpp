@@ -19,7 +19,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "plmsqlqueries.h"
-#include "plmprojectmanager.h"
+#include "../project/plmprojectmanager.h"
 #include <QDebug>
 #include <QSqlError>
 #include <QSqlDriver>

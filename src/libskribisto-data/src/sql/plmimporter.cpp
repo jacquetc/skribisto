@@ -21,9 +21,10 @@
 
 #include "plmimporter.h"
 #include "plmupgrader.h"
-#include "tasks/plmsqlqueries.h"
-#include "skrdata.h"
+#include "plmsqlqueries.h"
 #include "skrsqltools.h"
+#include <QRandomGenerator>
+#include <QTemporaryFile>
 
 
 PLMImporter::PLMImporter(QObject *parent) :

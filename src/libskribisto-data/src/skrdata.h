@@ -33,7 +33,7 @@
 #include "skrprojectdicthub.h"
 #include "skribisto_data_global.h"
 #include "skrstathub.h"
-#include "tasks/plmprojectmanager.h"
+#include "project/plmprojectmanager.h"
 
 #define skrdata SKRData::instance()
 #define skrpluginhub SKRData::instance()->pluginHub()

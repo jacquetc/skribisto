@@ -24,7 +24,7 @@
 PLMExporter::PLMExporter(QObject *parent) : QObject(parent)
 {}
 
-SKRResult PLMExporter::exportWholeSQLiteDbTo(PLMProject    *db,
+SKRResult PLMExporter::exportWholeSQLiteDbTo(PLMProject    *project,
                                              const QString& type,
                                              const QUrl   & fileName)
 {
@@ -37,13 +37,13 @@ SKRResult PLMExporter::exportWholeSQLiteDbTo(PLMProject    *db,
 
     if (finalType == "SQLITE") {
         // shrink the database
-        db->getSqlDb().transaction();
+        project->getSqlDb().transaction();
         QString   queryStr("VACUUM");
-        QSqlQuery query(db->getSqlDb());
+        QSqlQuery query(project->getSqlDb());
         query.prepare(queryStr);
         query.exec();
-        db->getSqlDb().commit();
-        QString databaseTempFileName =  db->getTempFileName();
+        project->getSqlDb().commit();
+        QString databaseTempFileName =  project->getTempFileName();
 
         // copy db temp to file
         QFile tempFile(databaseTempFileName);

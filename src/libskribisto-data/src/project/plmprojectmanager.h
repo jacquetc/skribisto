@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include "sql/plmproject.h"
+#include "plmproject.h"
 #include "skrresult.h"
 #include "skribisto_data_global.h"
 

@@ -20,7 +20,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "skrpluginhub.h"
-#include "tasks/plmsqlqueries.h"
+#include "sql/plmsqlqueries.h"
 
 SKRPluginHub::SKRPluginHub(QObject *parent) : SKRPluginLoader(parent)
 {

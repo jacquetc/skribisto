@@ -1,5 +1,5 @@
 #include "plmprojectmanager.h"
-#include "sql/plmexporter.h"
+#include "../sql/plmexporter.h"
 
 #include <QCoreApplication>
 #include <QDebug>

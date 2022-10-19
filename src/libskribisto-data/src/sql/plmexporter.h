@@ -21,7 +21,7 @@
 #ifndef PLMEXPORTER_H
 #define PLMEXPORTER_H
 
-#include "plmproject.h"
+#include "../project/plmproject.h"
 #include <QObject>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
@@ -39,7 +39,7 @@ class PLMExporter : public QObject {
 public:
 
     explicit PLMExporter(QObject *parent = 0);
-    SKRResult exportWholeSQLiteDbTo(PLMProject    *db,
+    SKRResult exportWholeSQLiteDbTo(PLMProject    *project,
                                     const QString& type,
                                     const QUrl   & fileName);
 

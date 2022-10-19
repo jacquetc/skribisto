@@ -1,6 +1,5 @@
 #include "skrprojectdicthub.h"
-#include "tasks/plmsqlqueries.h"
-#include "tasks/plmprojectmanager.h"
+#include "sql/plmsqlqueries.h"
 #include "tools.h"
 #include <QDebug>
 

@@ -21,7 +21,7 @@
 ***************************************************************************/
 #include "skrpropertyhub.h"
 #include "tools.h"
-#include "tasks/plmsqlqueries.h"
+#include "sql/plmsqlqueries.h"
 
 SKRPropertyHub::SKRPropertyHub(QObject       *parent,
                                const QString& tableName,

@@ -19,9 +19,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "skrtreehub.h"
-#include "tasks/plmsqlqueries.h"
+#include "sql/plmsqlqueries.h"
 #include "tools.h"
-#include "tasks/plmprojectmanager.h"
 #include "skrdata.h"
 
 #include <QCollator>

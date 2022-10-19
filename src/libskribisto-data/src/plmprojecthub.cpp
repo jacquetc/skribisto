@@ -6,9 +6,8 @@
 #include <QRegularExpression>
 #include <QUrl>
 #include <QVariant>
-#include "tasks/plmprojectmanager.h"
-#include "tasks/plmsqlqueries.h"
-#include <tasks/sql/plmimporter.h>
+#include "project/plmprojectmanager.h"
+#include "sql/plmsqlqueries.h"
 #include "skrdata.h"
 
 PLMProjectHub::PLMProjectHub(QObject *parent) : QObject(parent),

@@ -19,7 +19,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "skrtaghub.h"
-#include "tasks/plmsqlqueries.h"
+#include "sql/plmsqlqueries.h"
 #include "tools.h"
 #include <QDateTime>
 

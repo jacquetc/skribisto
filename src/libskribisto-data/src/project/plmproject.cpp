@@ -20,9 +20,9 @@
 ***************************************************************************/
 
 #include "plmproject.h"
-#include "plmimporter.h"
-#include "plmexporter.h"
-#include "skrsqltools.h"
+#include "../sql/plmimporter.h"
+#include "../sql/plmexporter.h"
+#include "../sql/skrsqltools.h"
 #include <QtSql/QSqlError>
 #include <QDebug>
 #include <QString>
