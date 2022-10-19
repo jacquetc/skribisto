@@ -44,7 +44,7 @@ void SKRWordMeterWorker::countCharacters()
     textDocument.setHtml(m_text);
     QString plainText = textDocument.toPlainText();
 
-    int charCount = plainText.count();
+    int charCount = plainText.size();
 
     emit characterCountCalculated(m_projectId, m_treeItemId, charCount,  m_triggerProjectModifiedSignal);
 }

@@ -34,7 +34,7 @@ public:
 
     // QStyle interface
 public:
-    QPixmap generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap, const QStyleOption *opt) const;
+    QPixmap generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap, const QStyleOption *opt) const override;
 };
 
 #endif // SKRIBISTOSTYLE_H

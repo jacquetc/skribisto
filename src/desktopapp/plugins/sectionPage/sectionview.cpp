@@ -3,7 +3,7 @@
 
 #include "skrdata.h"
 
-#include "projectTreeCommands.h"
+#include "projecttreecommands.h"
 
 SectionView::SectionView(QWidget *parent) :
     View("SECTION",parent),

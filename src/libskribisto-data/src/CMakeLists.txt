@@ -59,7 +59,6 @@ set(data_HDR
     skrpluginloader.h
     plmprojecthub.h
     skrtaghub.h
-    plmsignalhub.h
     skrstathub.h
     plmutils.h
     skribisto_data_global.h
@@ -94,7 +93,7 @@ set(data_HDR
 )
 
 set(QRC
-    tasks/sql/sql.qrc
+    sql/sql.qrc
 )
 
 qt_add_resources(RESOURCES ${QRC})

@@ -26,7 +26,7 @@
 #include <QSqlRecord>
 #include <QSqlField>
 #include <QRegularExpression>
-#include "sql/skrsqltools.h"
+#include "skrsqltools.h"
 
 PLMSqlQueries::PLMSqlQueries(int            projectId,
                              const QString& tableName) : m_projectId(projectId),

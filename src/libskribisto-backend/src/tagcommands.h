@@ -25,7 +25,7 @@ public:
 
     int addTag(int projectId, const QString &name, const QColor &tagColor, const QColor &textColor);
     int addTag(int projectId, const QString &name);
-    int modifyTag(int projectId, int tagId, const QString &name, const QColor &tagColor, const QColor &textColor);
+    void modifyTag(int projectId, int tagId, const QString &name, const QColor &tagColor, const QColor &textColor);
     QList<int> addSeveralTags(int projectId, QList<QString> nameList);
     void setTagName(int projectId, int tagId, const QString &name);
     void setTagColor(int projectId, int tagId, const QColor &color);

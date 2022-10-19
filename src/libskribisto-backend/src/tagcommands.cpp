@@ -46,7 +46,7 @@ int TagCommands::addTag(int projectId, const QString &name)
 //---------------------------------------------------------------------------
 
 
-int TagCommands::modifyTag(int projectId, int tagId, const QString &name, const QColor &tagColor, const QColor &textColor)
+void TagCommands::modifyTag(int projectId, int tagId, const QString &name, const QColor &tagColor, const QColor &textColor)
 {
     m_undoStack->beginMacro("Modify tag " + name);
 

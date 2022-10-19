@@ -6,7 +6,6 @@ SKRData::SKRData(QObject *parent) : QObject(parent)
 {
     m_instance = this;
 
-    m_signalHub      = new PLMSignalHub(this);
     m_errorHub       = new SKRErrorHub(this);
     m_projectManager = new PLMProjectManager(this);
     m_projectHub     = new PLMProjectHub(this);
@@ -58,13 +57,6 @@ SKRData::SKRData(QObject *parent) : QObject(parent)
 
 SKRData::~SKRData()
 {}
-
-// -----------------------------------------------------------------------------
-
-PLMSignalHub * SKRData::signalHub()
-{
-    return m_signalHub;
-}
 
 // -----------------------------------------------------------------------------
 

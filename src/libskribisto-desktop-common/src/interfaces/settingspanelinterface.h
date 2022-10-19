@@ -24,7 +24,7 @@
 #define SETTINGSPANELINTERFACE_H
 
 #include "skrresult.h"
-#include "settingsPanel.h"
+#include "settingspanel.h"
 #include <QString>
 
 class SettingsPanelInterface {

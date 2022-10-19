@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <ThemeManager.h>
+#include "thememanager.h"
 #include "viewmanager.h"
 #include "toptoolbar.h"
 #include "statusbar.h"
