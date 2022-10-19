@@ -31,6 +31,9 @@ public:
 
     void setItemProperties(int projectId, int targetId, const QVariantMap &properties, bool isSystem = true);
 
+    void moveItemsAboveCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
+    void moveItemsBelowCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
+    void moveItemsAsChildOfCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
 
 signals:
 private:

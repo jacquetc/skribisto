@@ -62,9 +62,8 @@ QStringList PLMSqlQueries::getAllFieldTitles() const
     for (int i = 0; i < record.count(); ++i) {
         QString field(record.field(i).name());
 
-        if (!field.endsWith("_id")) {
             list.append(field);
-        }
+
     }
 
     return list;

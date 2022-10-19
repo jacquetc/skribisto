@@ -73,8 +73,40 @@ void ProjectTreeCommands::setItemProperties(int projectId, int targetId, const Q
 
     m_undoStack->endMacro();
 
+    
+}
+
+//------------------------------------------------------------------------------------
+
+
+void ProjectTreeCommands::moveItemsAboveCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId)
+{
+
+    m_undoStack->push(new MoveItemsCommand(sourceProjectId, sourceIds, targetProjectId, targetId, MoveItemsCommand::Above));
+
+
 
 }
+
+//------------------------------------------------------------------------------------
+
+void ProjectTreeCommands::moveItemsBelowCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId)
+{
+
+    m_undoStack->push(new MoveItemsCommand(sourceProjectId, sourceIds, targetProjectId, targetId, MoveItemsCommand::Below));
+
+}
+
+//------------------------------------------------------------------------------------
+
+void ProjectTreeCommands::moveItemsAsChildOfCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId)
+{
+
+    m_undoStack->push(new MoveItemsCommand(sourceProjectId, sourceIds, targetProjectId, targetId, MoveItemsCommand::AsChildOf));
+
+}
+
+//------------------------------------------------------------------------------------
 
 
 QUndoStack *ProjectTreeCommands::undoStack() const

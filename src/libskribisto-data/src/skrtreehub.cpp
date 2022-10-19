@@ -142,7 +142,6 @@ SKRResult SKRTreeHub::restoreTree(int projectId, QList<QVariantMap> allValues)
 
     result = queries.injectDirectSql("PRAGMA foreign_keys = 0");
     result = queries.injectDirectSql("DELETE FROM tbl_tree");
-    result = queries.injectDirectSql("PRAGMA foreign_keys = 1");
 
     for(const QVariantMap &values : allValues){
 
@@ -156,6 +155,7 @@ SKRResult SKRTreeHub::restoreTree(int projectId, QList<QVariantMap> allValues)
         queries.add(hash, newId);
 
     }
+    result = queries.injectDirectSql("PRAGMA foreign_keys = 1");
     this->commit(projectId);
 
     IFOK(result) {
@@ -322,7 +322,14 @@ QString SKRTreeHub::getInternalTitle(int projectId, int treeItemId) const
 
 SKRResult SKRTreeHub::setIndent(int projectId, int treeItemId, int newIndent)
 {
-    SKRResult result = set(projectId, treeItemId, "l_indent", newIndent);
+     return this->setIndent(projectId, treeItemId, newIndent, true, true);
+}
+
+// ----------------------------------------------------------------------------------------
+
+SKRResult SKRTreeHub::setIndent(int projectId, int treeItemId, int newIndent, bool setCurrentdate, bool commit)
+{
+    SKRResult result = set(projectId, treeItemId, "l_indent", newIndent, setCurrentdate, commit);
 
     IFOK(result) {
         emit indentChanged(projectId, treeItemId, newIndent);
@@ -705,6 +712,27 @@ int SKRTreeHub::getTopTreeItemId(int projectId) const
 
 // ----------------------------------------------------------------------------------------
 
+QList<int> SKRTreeHub::filterOutChildren(int projectId, QList<int> treeItemIds) const
+{
+    QList<int> finalList;
+
+    QSet<int> childrenSet;
+
+    for(int id : treeItemIds){
+        for(int child : this->getAllChildren(projectId, id)){
+            childrenSet.insert(child);
+        }
+    }
+    for(int id : treeItemIds){
+        if(!childrenSet.contains(id)){
+            finalList.append(id);
+        }
+    }
+    return finalList;
+}
+
+// ----------------------------------------------------------------------------------------
+
 SKRResult SKRTreeHub::getError()
 {
     return m_error;
@@ -985,12 +1013,13 @@ SKRResult SKRTreeHub::removeTreeItem(int projectId, int targetId)
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId, int targetTreeItemId, bool after)
+SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId,
+                                   int  targetProjectId, int targetTreeItemId, bool after)
 {
     SKRResult result(this);
 
     // TODO: adapt to multiple projects
-    int targetProjectId = sourceProjectId;
+
 
     QList<int> childrenList = this->getAllChildren(sourceProjectId, sourceTreeItemId);
 
@@ -1004,6 +1033,9 @@ SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId, in
 
 
     int targetSortOrder = this->getSortOrder(targetProjectId, targetTreeItemId);
+    int targetIndent = this->getIndent(targetProjectId, targetTreeItemId);
+    int sourceIndent = this->getIndent(sourceProjectId, sourceTreeItemId);
+    int indentDelta = targetIndent - sourceIndent;
 
 
     if (after && this->hasChildren(targetProjectId, targetTreeItemId, true, true)) {
@@ -1013,12 +1045,16 @@ SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId, in
         targetSortOrder  = this->getSortOrder(targetProjectId, lastChildrenId);
     }
 
-    targetSortOrder = targetSortOrder + (after ? 1 : -(childrenList.count() + 1));
+    targetSortOrder = targetSortOrder + (after ? 1 : -999);
     result          = setSortOrder(sourceProjectId, sourceTreeItemId, targetSortOrder, true, false);
+    result           = setIndent(sourceProjectId, sourceTreeItemId, sourceIndent + indentDelta);
 
     for (int childId : qAsConst(childrenList)) {
         targetSortOrder += 1;
         result           = setSortOrder(sourceProjectId, childId, targetSortOrder, true, false);
+
+        int childIndent = this->getIndent(sourceProjectId, childId);
+        result           = setIndent(sourceProjectId, childId, childIndent + indentDelta);
     }
 
     childrenList.prepend(sourceTreeItemId);
@@ -1099,7 +1135,7 @@ SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
             }
         }
     }
-    IFOKDO(result, this->moveTreeItem(projectId, treeItemId, targetTreeItemId))
+    IFOKDO(result, this->moveTreeItem(projectId, treeItemId, projectId, targetTreeItemId))
 
 
             IFKO(result) {
@@ -1163,7 +1199,7 @@ SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
             }
         }
     }
-    IFOKDO(result, this->moveTreeItem(projectId, treeItemId, targetTreeItemId, true))
+    IFOKDO(result, this->moveTreeItem(projectId, treeItemId, projectId, targetTreeItemId, true))
 
 
             IFKO(result) {
@@ -1199,17 +1235,17 @@ SKRResult SKRTreeHub::moveTreeItemAsChildOf(int  sourceProjectId,
             result = SKRResult(SKRResult::Critical, this, "wantedSortOrder_is_outside_scope_of_parent");
         }
         IFOK(result) {
-            result = this->setSortOrder(sourceProjectId, sourceTreeItemId, wantedSortOrder - childrenList.count() - 1);
+            result = this->setSortOrder(sourceProjectId, sourceTreeItemId, wantedSortOrder);
         }
         IFOK(result) {
             int parentIndent = this->getIndent(targetProjectId, targetParentId);
 
             result = this->setIndent(sourceProjectId, sourceTreeItemId, parentIndent + 1);
 
-            int i = 1;
+            int i = 0;
 
             for (int childId : qAsConst(childrenList)) {
-                result = this->setSortOrder(sourceProjectId, childId, wantedSortOrder - childrenList.count() - 1 + i);
+                result = this->setSortOrder(sourceProjectId, childId, wantedSortOrder + i);
                 i++;
 
                 int orignalSourceChildIndent = this->getIndent(sourceProjectId, childId);
@@ -1340,11 +1376,11 @@ int SKRTreeHub::getValidSortOrderAfterTree(int projectId, int treeItemId) const
             ++i;
         }
 
-        finalSortOrder = lowestSort - 1;
+        finalSortOrder = lowestSort - 999;
 
         // if tree is empty
-        if (finalSortOrder == -1) {
-            finalSortOrder = 0;
+        if (finalSortOrder == -999) {
+            finalSortOrder = 1;
         }
     }
 
@@ -1463,7 +1499,7 @@ SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getAllChildren(int projectId, int treeItemId)
+QList<int>SKRTreeHub::getAllChildren(int projectId, int treeItemId) const
 {
     QList<int> childrenList;
 
@@ -1504,7 +1540,7 @@ QList<int>SKRTreeHub::getAllChildren(int projectId, int treeItemId)
 QList<int>SKRTreeHub::getAllDirectChildren(int  projectId,
                                            int  treeItemId,
                                            bool trashedAreIncluded,
-                                           bool notTrashedAreIncluded)
+                                           bool notTrashedAreIncluded) const
 {
     QList<int> childrenList;
 
@@ -1550,7 +1586,7 @@ QList<int>SKRTreeHub::getAllDirectChildren(int  projectId,
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getAllAncestors(int projectId, int treeItemId)
+QList<int>SKRTreeHub::getAllAncestors(int projectId, int treeItemId) const
 {
     QList<int> ancestorsList;
 
@@ -1853,7 +1889,7 @@ SKRResult SKRTreeHub::addQuickNote(int projectId, int receiverTreeItemId, const 
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getPreviousTreeItemIdOfTheSameType(int projectId, int treeItemId)
+int SKRTreeHub::getPreviousTreeItemIdOfTheSameType(int projectId, int treeItemId) const
 {
     SKRResult result(this);
     int previousTreeItemId = -1;
@@ -1902,11 +1938,6 @@ SKRResult SKRTreeHub::duplicateTreeItem(int projectId, int treeItemId, bool dupl
     QHash<QString, QVariant> values;
 
     int validSortOrder = getValidSortOrderAfterTree(projectId, treeItemId);
-
-    if(duplicateChildren && getAllChildren(projectId, treeItemId).count() > 0){
-        validSortOrder -= getAllChildren(projectId, treeItemId).count();
-    }
-
 
     values.insert("t_title",             getTitle(projectId, treeItemId));
     values.insert("l_indent",            getIndent(projectId, treeItemId));

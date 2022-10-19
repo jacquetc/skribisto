@@ -1,3 +1,4 @@
+#include "projecttreecommands.h"
 #include "projecttreeitem.h"
 #include "projecttreemodel.h"
 #include "projecttreeproxymodel.h"
@@ -48,15 +49,16 @@ Qt::ItemFlags ProjectTreeProxyModel::flags(const QModelIndex &index) const
 {
     Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
 
+
+    if (!index.isValid())
+        return Qt::NoItemFlags;
+
     if(index.data(ProjectTreeItem::TreeItemIdRole).toInt() > 0){
         defaultFlags |= Qt::ItemIsDragEnabled;
     }
     if(index.data(ProjectTreeItem::CanAddChildTreeItemRole).toBool()){
         defaultFlags.setFlag(Qt::ItemIsDropEnabled);
     }
-
-    if (!index.isValid())
-        return Qt::NoItemFlags;
 
     return defaultFlags;
 
@@ -99,6 +101,9 @@ QStringList ProjectTreeProxyModel::mimeTypes() const
 
 QMimeData *ProjectTreeProxyModel::mimeData(const QModelIndexList &indexes) const
 {
+
+    // only keep toppest parents
+
     QList< QPair<int, int> > pairList;
     for(const QModelIndex &index : indexes){
         QPair<int, int> pair;
@@ -107,6 +112,27 @@ QMimeData *ProjectTreeProxyModel::mimeData(const QModelIndexList &indexes) const
 
         pairList.append(pair);
     }
+
+    int projectId = pairList.first().first;
+
+    QList<int> keptList;
+    // forbid multiple projects
+    for(const QPair<int, int> &pair : pairList) {
+        if(projectId == pair.first){
+            keptList.append(pair.second);
+        }
+    }
+
+    keptList = skrdata->treeHub()->filterOutChildren(projectId, keptList);
+
+    pairList.clear();
+    for(int id : keptList) {
+        QPair<int, int> pair;
+        pair.first = projectId;
+        pair.second = id;
+        pairList.append(pair);
+    }
+
 
     QByteArray byteArray;
     QDataStream stream(&byteArray, QIODevice::WriteOnly);
@@ -123,12 +149,94 @@ bool ProjectTreeProxyModel::canDropMimeData(const QMimeData *data, Qt::DropActio
     if(!parent.isValid()){
         return false;
     }
+
+    QList< QPair<int, int> > pairList;
+    QByteArray byteArray = data->data("application/x-navigationtreeitem-list");
+    QDataStream stream(&byteArray, QIODevice::ReadOnly);
+    stream >> pairList;
+
+    int sourceProjectId = pairList.first().first;
+
+    // forbid multiple projects
+    for(const QPair<int, int> &pair : pairList) {
+        if(sourceProjectId != pair.first){
+            return false;
+        }
+    }
+
+    // forbid drag drop on other project for now
+    if(parent.data(ProjectTreeItem::ProjectIdRole).toInt() != sourceProjectId){
+        return false;
+    }
+
+
     return true;
 }
 
 bool ProjectTreeProxyModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
 {
-    return true;
+    if(data->hasFormat("application/x-navigationtreeitem-list")){
+
+        QList< QPair<int, int> > pairList;
+        QByteArray byteArray = data->data("application/x-navigationtreeitem-list");
+        QDataStream stream(&byteArray, QIODevice::ReadOnly);
+        stream >> pairList;
+
+        int sourceProjectId = pairList.first().first;
+        int sourceTreeItemId = pairList.first().second;
+
+        // forbid multiple projects
+        for(const QPair<int, int> &pair : pairList) {
+            if(sourceProjectId != pair.first){
+                return false;
+            }
+        }
+
+        QList<int> sourceTreeItemIds;
+
+        for(const QPair<int, int> &pair : pairList) {
+            sourceTreeItemIds.append(pair.second);
+        }
+
+
+
+        int targetProjectId = parent.data(ProjectTreeItem::ProjectIdRole).toInt();
+        int targetParentTreeItemId = parent.data(ProjectTreeItem::TreeItemIdRole).toInt();
+        // as sub item
+        if(row == -1 && column == -1){
+            projectTreeCommands->moveItemsAsChildOfCommand(sourceProjectId, sourceTreeItemIds, targetProjectId, targetParentTreeItemId);
+        }
+        //add below
+        else if(row == skrdata->treeHub()->getAllDirectChildren(targetProjectId, targetParentTreeItemId, true, true).count()) {
+
+            QModelIndex childIndex = this->index(row - 1, column, parent);
+
+            if(!childIndex.isValid()){
+                return false;
+            }
+
+            int targetTreeItemId = childIndex.data(ProjectTreeItem::TreeItemIdRole).toInt();
+            projectTreeCommands->moveItemsBelowCommand(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId);
+
+        }
+        //add before
+        else {
+            QModelIndex childIndex = this->index(row, column, parent);
+
+            if(!childIndex.isValid()){
+                return false;
+            }
+
+            int targetTreeItemId = childIndex.data(ProjectTreeItem::TreeItemIdRole).toInt();
+            projectTreeCommands->moveItemsAboveCommand(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId);
+        }
+
+
+        return true;
+    }
+
+
+    return false;
 }
 
 Qt::DropActions ProjectTreeProxyModel::supportedDropActions() const

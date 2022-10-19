@@ -7,6 +7,7 @@
 
 #include <QAbstractItemModel>
 #include <QUndoCommand>
+#include <command.h>
 #define projectTreeModel ProjectTreeModel::instance()
 
 class SKRBACKENDEXPORT ProjectTreeModel : public QAbstractItemModel
@@ -165,18 +166,29 @@ private:
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 
-class MoveItemsCommand : public QUndoCommand
+class MoveItemsCommand : public Command
 {
+    Q_GADGET
 public:
-    MoveItemsCommand(int projectId, QList<int> itemIdToMove, int targetId);
+
+    enum Move {
+        Above,
+        Below,
+        AsChildOf
+    };
+    Q_ENUM(Move)
+
+
+
+    MoveItemsCommand(int sourceProjectId, QList<int>  sourceIds, int targetProjectId, int targetId, Move move);
     void undo();
     void redo();
 private:
-    int m_projectId, m_targetId, m_newId;
-    QString m_property;
-    QVariant m_newValue;
-    QVariant m_oldValue;
-    bool m_isSystem;
+    int m_sourceProjectId, m_targetProjectId, m_targetId;
+    QList<int> m_sourceIds;
+    QList<QVariantMap> m_newTree;
+    QList<QVariantMap> m_oldTree;
+    Move m_move;
 };
 
 

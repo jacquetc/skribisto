@@ -105,6 +105,9 @@ public:
     SKRResult             setIndent(int projectId,
                                     int treeItemId,
                                     int newIndent);
+    SKRResult             setIndent(int projectId,
+                                    int treeItemId,
+                                    int newIndent, bool setCurrentdate, bool commit);
     Q_INVOKABLE int       getIndent(int projectId,
                                     int treeItemId) const;
     SKRResult             setSortOrder(int projectId,
@@ -175,6 +178,8 @@ public:
 
     Q_INVOKABLE int getTopTreeItemId(int projectId) const;
 
+    QList<int> filterOutChildren(int projectId, QList<int> treeItemIds) const;
+
     SKRResult       getError();
     SKRResult       set(int             projectId,
                         int             treeItemId,
@@ -206,6 +211,7 @@ public:
 
     Q_INVOKABLE SKRResult moveTreeItem(int  sourceProjectId,
                                        int  sourceTreeItemId,
+                                       int  targetProjectId,
                                        int  targetTreeItemId,
                                        bool after = false);
 
@@ -234,14 +240,14 @@ public:
 
 
     Q_INVOKABLE QList<int>getAllChildren(int projectId,
-                                         int treeItemId);
+                                         int treeItemId) const;
 
     Q_INVOKABLE QList<int>getAllDirectChildren(int  projectId,
                                                int  treeItemId,
                                                bool trashedAreIncluded    = false,
-                                               bool notTrashedAreIncluded = true);
+                                               bool notTrashedAreIncluded = true) const;
     Q_INVOKABLE QList<int>getAllAncestors(int projectId,
-                                          int treeItemId);
+                                          int treeItemId) const;
     QList<int>            getAllSiblings(int  projectId,
                                          int  treeItemId,
                                          bool treetemIncluded = false);
@@ -261,7 +267,7 @@ public:
                                                  int receiverTreeItemId);
 
     Q_INVOKABLE int       getPreviousTreeItemIdOfTheSameType(int projectId,
-                                                             int treeItemId);
+                                                             int treeItemId) const;
 
     Q_INVOKABLE SKRResult duplicateTreeItem(int projectId,
                                             int treeItemId,

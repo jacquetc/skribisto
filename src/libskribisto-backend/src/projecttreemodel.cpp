@@ -25,6 +25,10 @@ ProjectTreeModel::ProjectTreeModel(QObject *parent)
              &SKRTreeHub::treeReset,
              this,
              &ProjectTreeModel::populate);
+     connect(skrdata->treeHub(),
+             &SKRTreeHub::treeItemMoved,
+             this,
+             &ProjectTreeModel::populate);
 
      this->connectToSKRDataSignals();
 }
@@ -749,8 +753,8 @@ ProjectTreeItem *ProjectTreeModel::getProjectItem(int projectId, int treeItemId)
         }
     }
 
-    if (!result_item) {
-        //    qDebug() << "result_item is null";
+    if (!result_item && treeItemId != -1) {
+            qDebug() << "result_item is null";
     }
 
     return result_item;
@@ -1104,3 +1108,73 @@ void SetItemPropertyCommand::redo()
 
 
 }
+
+MoveItemsCommand::MoveItemsCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId, Move move) : Command("Move items"),
+    m_sourceProjectId(sourceProjectId),
+    m_targetProjectId(targetProjectId),
+    m_targetId(targetId),
+    m_sourceIds(sourceIds),
+    m_move(move)
+{
+
+}
+
+void MoveItemsCommand::undo()
+{
+    skrdata->treeHub()->restoreTree(m_targetProjectId, m_oldTree);
+
+}
+
+void MoveItemsCommand::redo()
+{
+    if(m_newTree.isEmpty()){
+        m_oldTree = skrdata->treeHub()->saveTree(m_targetProjectId);
+    }
+    else {
+        skrdata->treeHub()->restoreTree(m_targetProjectId, m_newTree);
+        return;
+    }
+
+    if(m_move == Move::AsChildOf){
+
+        for(int i = 0; i < m_sourceIds.count() ; i++){
+            if(i == 0){
+                skrdata->treeHub()->moveTreeItemAsChildOf(m_sourceProjectId, m_sourceIds.at(i), m_targetProjectId, m_targetId);
+            }
+            else {
+                skrdata->treeHub()->moveTreeItem(m_sourceProjectId, m_sourceIds.at(i), m_targetProjectId, m_sourceIds.at(i - 1), true);
+            }
+        }
+
+    }
+
+    else if(m_move == Move::Above){
+
+        for(int i = 0; i < m_sourceIds.count() ; i++){
+            if(i == 0){
+                skrdata->treeHub()->moveTreeItem(m_sourceProjectId, m_sourceIds.at(i), m_targetProjectId, m_targetId, false);
+            }
+            else {
+                skrdata->treeHub()->moveTreeItem(m_sourceProjectId, m_sourceIds.at(i), m_targetProjectId, m_sourceIds.at(i - 1), true);
+            }
+        }
+
+    }
+
+    else if(m_move == Move::Below){
+
+        for(int i = 0; i < m_sourceIds.count() ; i++){
+            if(i == 0){
+                skrdata->treeHub()->moveTreeItem(m_sourceProjectId, m_sourceIds.at(i), m_targetProjectId, m_targetId, true);
+            }
+            else {
+                skrdata->treeHub()->moveTreeItem(m_sourceProjectId, m_sourceIds.at(i), m_targetProjectId, m_sourceIds.at(i - 1), true);
+            }
+        }
+    }
+
+
+    m_newTree = skrdata->treeHub()->saveTree(m_targetProjectId);
+
+}
+
