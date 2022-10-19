@@ -28,6 +28,7 @@ set(common_SRCS
     thememanager.h thememanager.cpp
     combobox.h combobox.cpp
     text/textbridge.h text/textbridge.cpp
+tagdialog.h tagdialog.cpp tagdialog.ui
 )
 
 set(common_INTERFACES
@@ -46,12 +47,18 @@ else()
     add_library(skribisto-desktop-common SHARED ${common_SRCS} ${common_INTERFACES})
 endif(IOS)
 
+add_dependencies(${PROJECT_NAME} skribisto-data)
+add_dependencies(${PROJECT_NAME} skribisto-backend)
+add_dependencies(${PROJECT_NAME} skribisto-common)
+
 target_compile_definitions(skribisto-desktop-common PRIVATE SKRIBISTO_DESKTOP_COMMON_LIBRARY)
 
 target_link_libraries(skribisto-desktop-common PRIVATE skribisto-backend skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-common)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-backend/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
 
 # ---------------------------------
 if(IOS)

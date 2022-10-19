@@ -37,8 +37,6 @@ class PLMSqlQueries : public QObject {
 
 public:
 
-    enum DBType { ProjectDB, UserDB };
-    Q_ENUM(DBType)
 
     explicit PLMSqlQueries(int            projectId,
                            const QString& tableName);

@@ -32,7 +32,6 @@ PLMSqlQueries::PLMSqlQueries(int            projectId,
                              const QString& tableName) : m_projectId(projectId),
     m_tableName(tableName)
 {
-    qRegisterMetaType<DBType>("DBType");
 
     PLMProject *project = plmProjectManager->project(m_projectId);
 
@@ -51,7 +50,7 @@ PLMSqlQueries::PLMSqlQueries(QSqlDatabase   sqlDB,
                              const QString& idName) :
     m_sqlDB(sqlDB), m_tableName(tableName), m_idName(idName)
 {
-    qRegisterMetaType<DBType>("DBType");
+
 }
 
 QStringList PLMSqlQueries::getAllFieldTitles() const
@@ -471,7 +470,7 @@ SKRResult PLMSqlQueries::removeAll() const
 
     {
         QSqlQuery query(m_sqlDB);
-        QString   queryStr = "DELETE * FROM " + m_tableName;
+        QString   queryStr = "DELETE FROM " + m_tableName;
         query.prepare(queryStr);
         query.exec();
 

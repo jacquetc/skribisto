@@ -64,7 +64,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(SKR_DEBUG true)
     add_compile_definitions(SKR_DEBUG=true)
 
-# add_subdirectory(src/libskribisto-data/tests)
+    add_subdirectory(src/libskribisto-data/tests)
 # add_subdirectory(src/mobileapp/tests)
 else()
     set(SKR_DEBUG false)

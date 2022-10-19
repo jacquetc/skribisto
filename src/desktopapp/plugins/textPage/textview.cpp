@@ -2,6 +2,7 @@
 #include "text/textbridge.h"
 #include "ui_textview.h"
 
+#include <QWheelEvent>
 #include <skrdata.h>
 
 TextView::TextView(QWidget *parent) :
@@ -38,6 +39,16 @@ TextView::TextView(QWidget *parent) :
     centralWidget->setFocusProxy(centralWidgetUi->textEdit);
     centralWidgetUi->widget->setFocusProxy(centralWidgetUi->textEdit);
 
+
+    connect(centralWidgetUi->sizeHandle, &SizeHandle::moved, this, [this](int deltaX){
+        centralWidgetUi->textEditHolder->setMaximumWidth(centralWidgetUi->textEditHolder->maximumWidth() + deltaX);
+
+        QSettings settings;
+        settings.setValue("textPage/textWidth", centralWidgetUi->textEditHolder->maximumWidth());
+    });
+
+    QSettings settings;
+    centralWidgetUi->textEditHolder->setMaximumWidth(settings.value("textPage/textWidth", 450).toInt());
 }
 
 TextView::~TextView()
@@ -63,11 +74,11 @@ void TextView::initialize()
 
     m_isSecondaryContent = parameters().value("is_secondary_content", false).toBool();
     if(m_isSecondaryContent){
-        document->setHtml(skrdata->treeHub()->getSecondaryContent(this->projectId(), this->treeItemId()));
+        document->setMarkdown(skrdata->treeHub()->getSecondaryContent(this->projectId(), this->treeItemId()));
 
     }
     else {
-        document->setHtml(skrdata->treeHub()->getPrimaryContent(this->projectId(), this->treeItemId()));
+        document->setMarkdown(skrdata->treeHub()->getPrimaryContent(this->projectId(), this->treeItemId()));
 
     }
 
@@ -98,10 +109,10 @@ void TextView::initialize()
 void TextView::saveContent()
 {
     if(m_isSecondaryContent){
-        skrdata->treeHub()->setSecondaryContent(this->projectId(), this->treeItemId(), centralWidgetUi->textEdit->toHtml());
+        skrdata->treeHub()->setSecondaryContent(this->projectId(), this->treeItemId(), centralWidgetUi->textEdit->toMarkdown());
     }
     else {
-        skrdata->treeHub()->setPrimaryContent(this->projectId(), this->treeItemId(), centralWidgetUi->textEdit->toHtml());
+        skrdata->treeHub()->setPrimaryContent(this->projectId(), this->treeItemId(), centralWidgetUi->textEdit->toMarkdown());
     }
 }
 
@@ -115,5 +126,31 @@ void TextView::mousePressEvent(QMouseEvent *event)
 
 void TextView::wheelEvent(QWheelEvent *event)
 {
-    centralWidgetUi->textEdit->wheelEvent(event);
+    if(event->modifiers() == Qt::ShiftModifier) {
+
+        QPoint numPixels = event->pixelDelta();
+        QPoint numDegrees = event->angleDelta() / 8;
+
+
+        if (!numPixels.isNull()) {
+            if(numPixels.x() > 0) {
+                centralWidgetUi->textEdit->zoomOut();
+            }
+            else{
+                centralWidgetUi->textEdit->zoomIn();
+            }
+        } else if (!numDegrees.isNull()) {
+            QPoint numSteps = numDegrees / 15;
+            if(numSteps.x() > 0) {
+                centralWidgetUi->textEdit->zoomOut();
+            }
+            else{
+                centralWidgetUi->textEdit->zoomIn();
+            }
+        }
+
+    }
+    else {
+            centralWidgetUi->textEdit->wheelEvent(event);
+    }
 }

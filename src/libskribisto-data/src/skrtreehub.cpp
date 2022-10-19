@@ -25,6 +25,7 @@
 #include "skrdata.h"
 
 #include <QCollator>
+#include <QHash>
 
 SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree"), m_last_added_id(-1), m_cutCopy(
                                                                                                              CutCopy())
@@ -104,6 +105,70 @@ QList<int>SKRTreeHub::getAllIds(int projectId) const
     return list;
 }
 
+QList<QVariantMap> SKRTreeHub::saveTree(int projectId) const
+{
+    SKRResult result(this);
+
+    PLMSqlQueries queries(projectId, m_tableName);
+    QStringList fieldNames = queries.getAllFieldTitles();
+
+    QVariantMap allFields;
+    QList<QVariantMap> list;
+
+    for(int treeItemId : this->getAllIds(projectId)){
+
+        for(const QString &fieldName : fieldNames) {
+            allFields.insert(fieldName, this->get(projectId, treeItemId, fieldName));
+        }
+
+        list.append(allFields);
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return list;
+
+}
+
+// ----------------------------------------------------------------------------------------
+
+SKRResult SKRTreeHub::restoreTree(int projectId, QList<QVariantMap> allValues)
+{
+    SKRResult result(this);
+
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    result = queries.injectDirectSql("PRAGMA foreign_keys = 0");
+    result = queries.injectDirectSql("DELETE FROM tbl_tree");
+    result = queries.injectDirectSql("PRAGMA foreign_keys = 1");
+
+    for(const QVariantMap &values : allValues){
+
+        QHash<QString, QVariant> hash;
+        QVariantMap::const_iterator i = values.constBegin();
+        while (i != values.constEnd()) {
+            hash.insert(i.key(), i.value());
+            ++i;
+        }
+        int newId;
+        queries.add(hash, newId);
+
+    }
+    this->commit(projectId);
+
+    IFOK(result) {
+        emit treeReset(projectId);
+        emit projectModified(projectId);
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+
+}
+
 // ----------------------------------------------------------------------------------------
 
 QVariantMap SKRTreeHub::saveId(int projectId, int treeItemId) const
@@ -134,7 +199,7 @@ SKRResult SKRTreeHub::restoreId(int projectId, int treeItemId, const QVariantMap
 
     QVariantMap::const_iterator i = values.constBegin();
     while (i != values.constEnd()) {
-        result = set(projectId, treeItemId, i.key(), i.value(), false);
+        result = set(projectId, treeItemId, i.key(), i.value(), false, false);
         ++i;
     }
     this->commit(projectId);
@@ -536,11 +601,11 @@ QDateTime SKRTreeHub::getUpdateDate(int projectId, int treeItemId) const
 
 int SKRTreeHub::row(int projectId, int treeItemId) const
 {
-int sortOrder = this->getSortOrder(projectId, treeItemId);
-int parentId = this->getParentId(projectId, treeItemId);
-int parentSortOrder = this->getSortOrder(projectId, parentId);
+    int sortOrder = this->getSortOrder(projectId, treeItemId);
+    int parentId = this->getParentId(projectId, treeItemId);
+    int parentSortOrder = this->getSortOrder(projectId, parentId);
 
-return (sortOrder - parentSortOrder) / 1000 - 1;
+    return (sortOrder - parentSortOrder) / 1000 - 1;
 
 }
 

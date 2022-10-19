@@ -17,6 +17,7 @@ set(SRCS
     projectpage.cpp
     projectpage.h
     projectview.h projectview.cpp projectview.ui
+    tagmanagertoolbox.h tagmanagertoolbox.cpp tagmanagertoolbox.ui
 )
 
 # Tell CMake to create the executable

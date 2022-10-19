@@ -31,6 +31,9 @@
    </property>
    <item>
     <widget class="QTreeView" name="treeView">
+     <property name="acceptDrops">
+      <bool>true</bool>
+     </property>
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>
      </property>
@@ -44,13 +47,13 @@
       <bool>true</bool>
      </property>
      <property name="dragDropMode">
-      <enum>QAbstractItemView::InternalMove</enum>
+      <enum>QAbstractItemView::DragDrop</enum>
      </property>
      <property name="defaultDropAction">
       <enum>Qt::MoveAction</enum>
      </property>
      <property name="selectionMode">
-      <enum>QAbstractItemView::SingleSelection</enum>
+      <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>
      <property name="autoExpandDelay">
       <number>1000</number>

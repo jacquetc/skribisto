@@ -19,6 +19,15 @@ public:
     QModelIndex getModelIndex(int projectId, int treeItemId) const;
 private:
         QHash<QString, PageInterface *> m_typeWithPlugin;
+
+        // QAbstractItemModel interface
+public:
+        QStringList mimeTypes() const override;
+        QMimeData *mimeData(const QModelIndexList &indexes) const override;
+        bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;
+        bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;
+        Qt::DropActions supportedDropActions() const override;
+        Qt::DropActions supportedDragActions() const override;
 };
 
 #endif // PROJECTTREEPROXYMODEL_H

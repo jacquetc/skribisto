@@ -1,4 +1,5 @@
 #include "navigation.h"
+#include "skrusersettings.h"
 #include "ui_navigation.h"
 #include "projecttreeproxymodel.h"
 #include "projecttreeitem.h"
@@ -17,12 +18,6 @@ Navigation::Navigation(class QWidget *parent) :
 {
     ui->setupUi(this);
 
-
-    QWidget *viewPort = new QWidget();
-
-    ui->treeView->setViewport(viewPort);
-
-
     ProjectTreeProxyModel *model = new ProjectTreeProxyModel(this);
     ui->treeView->setModel(model);
 
@@ -31,14 +26,14 @@ Navigation::Navigation(class QWidget *parent) :
     connect(ui->treeView, &QTreeView::customContextMenuRequested, this, &Navigation::onCustomContextMenu);
 
     //expand management
-    connect(ui->treeView, &QTreeView::expanded, this, &Navigation::addToExpandPathes);
-    connect(ui->treeView, &QTreeView::collapsed, this, &Navigation::removeFromExpandPathes);
-
-
 
     expandProjectItems();
     QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &Navigation::expandProjectItems);
 
+    restoreExpandStates();
+    QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &Navigation::restoreExpandStates);
+
+    QObject::connect(skrdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &Navigation::saveExpandStates);
 
     //QObject::connect(ui->treeView, &QTreeView::clicked, this, &Navigation::setCurrentIndex);
     QObject::connect(ui->treeView, &QTreeView::activated, this, [this](const QModelIndex &index){
@@ -148,11 +143,30 @@ void Navigation::onCustomContextMenu(const QPoint &point)
 
 void Navigation::saveExpandStates()
 {
+    ui->treeView->selectAll();
+    m_expandedPathes.clear();
+    for (const QModelIndex &index : ui->treeView->selectionModel()->selection().indexes()){
+        if(ui->treeView->isExpanded(index)){
+            addToExpandPathes(index);
+        }
+    }
+    ui->treeView->clearSelection();
 
+    QByteArray byteArray;
+    QDataStream stream(&byteArray, QIODevice::WriteOnly);
+    stream << m_expandedPathes;
+
+    SKRUserSettings::setProjectSetting(skrdata->projectHub()->getActiveProject(), "navigationTreeExpandState", byteArray);
 }
 
 void Navigation::restoreExpandStates()
 {
+
+    QByteArray byteArray = SKRUserSettings::getProjectSetting(skrdata->projectHub()->getActiveProject(), "navigationTreeExpandState", 0).toByteArray();
+    QDataStream stream(&byteArray, QIODevice::ReadOnly);
+    stream >> m_expandedPathes;
+
+
     ui->treeView->setAnimated(false);
 
     for(const auto &path : m_expandedPathes){
@@ -167,11 +181,6 @@ void Navigation::restoreExpandStates()
 
 }
 
-void Navigation::removeFromExpandPathes(const QModelIndex &modelIndex)
-{
-    m_expandedPathes.removeAll(this->pathFromIndex(modelIndex));
-
-}
 
 void Navigation::expandProjectItems()
 {
@@ -203,7 +212,7 @@ Path Navigation::pathFromIndex(const QModelIndex &index){
 QModelIndex Navigation::pathToIndex(const Path &path){
   QModelIndex iter;
   for(int i=0;i<path.size();i++){
-              iter = projectTreeModel->index(path[i].first,
+              iter = ui->treeView->model()->index(path[i].first,
                                   path[i].second, iter);
   }
   return iter;

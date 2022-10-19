@@ -125,6 +125,6 @@ void SettingsCase::userDBLoaded()
 // PLMPaperHub::Visible).toBool();
 //    QCOMPARE(value, true);
 // }
-QTEST_GUILESS_MAIN(SettingsCase)
+QTEST_MAIN(SettingsCase)
 
 #include "tst_settingscase.moc"

@@ -2,6 +2,7 @@
 #include "projectcommands.h"
 #include "ui_projectview.h"
 #include "skrdata.h"
+#include "tagmanagertoolbox.h"
 
 ProjectView::ProjectView(QWidget *parent) :
     View("PROJECT", parent),
@@ -15,10 +16,14 @@ ProjectView::ProjectView(QWidget *parent) :
 
 
     connect(centralWidgetUi->projectNameLineEdit, &QLineEdit::editingFinished, this, [this](){
-        projectCommands->setProjectName(this->projectId(), centralWidgetUi->projectNameLineEdit->text());
+        if(skrdata->projectHub()->getProjectName(this->projectId()) != centralWidgetUi->projectNameLineEdit->text()){
+            projectCommands->setProjectName(this->projectId(), centralWidgetUi->projectNameLineEdit->text());
+        }
     });
     connect(centralWidgetUi->authorLineEdit, &QLineEdit::editingFinished, this, [this](){
-        projectCommands->setAuthor(this->projectId(), centralWidgetUi->authorLineEdit->text());
+        if(skrdata->projectHub()->getAuthor(this->projectId()) != centralWidgetUi->authorLineEdit->text()){
+            projectCommands->setAuthor(this->projectId(), centralWidgetUi->authorLineEdit->text());
+        }
     });
 }
 
@@ -31,6 +36,7 @@ QList<Toolbox *> ProjectView::toolboxes()
 {
     QList<Toolbox *> toolboxes;
 
+    toolboxes.append(new TagManagerToolbox(nullptr, this->projectId()));
 
     return toolboxes;
 

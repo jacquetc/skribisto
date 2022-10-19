@@ -29,6 +29,54 @@ SKRTagHub::SKRTagHub(QObject *parent) : QObject(parent), m_last_added_id(-1)
 // --------------------------------------------------------------------------------
 
 
+QVariantMap SKRTagHub::saveId(int projectId, int tagId) const
+{
+    SKRResult result(this);
+
+    PLMSqlQueries queries(projectId, "tbl_tag");
+    QStringList fieldNames = queries.getAllFieldTitles();
+
+    QVariantMap allFields;
+
+    for(const QString &fieldName : fieldNames) {
+        allFields.insert(fieldName, this->get(projectId, tagId, fieldName));
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return allFields;
+}
+
+// --------------------------------------------------------------------------------
+
+SKRResult SKRTagHub::restoreId(int projectId, int tagId, const QVariantMap &values)
+{
+    SKRResult result(this);
+
+    QVariantMap::const_iterator i = values.constBegin();
+    while (i != values.constEnd()) {
+        result = set(projectId, tagId, i.key(), i.value(), false, false);
+        ++i;
+    }
+    this->commit(projectId);
+
+
+    IFOK(result) {
+        // do like if a tag was added :
+        emit tagAdded(projectId, tagId);
+        emit projectModified(projectId);
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return result;
+}
+
+// --------------------------------------------------------------------------------
+
+
 QList<int>SKRTagHub::getAllTagIds(int projectId) const
 {
     SKRResult result(this);
@@ -58,6 +106,38 @@ SKRResult SKRTagHub::addTag(int projectId, const QString& tagName)
     QHash<QString, QVariant> values;
 
     values.insert("t_name", tagName);
+
+    PLMSqlQueries queries(projectId, "tbl_tag");
+
+    result = queries.add(values, newId);
+    IFKO(result) {
+        queries.rollback();
+    }
+    IFOK(result) {
+        queries.commit();
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    IFOK(result) {
+        m_last_added_id = newId;
+        result.addData("tagId", newId);
+        emit tagAdded(projectId, newId);
+        emit projectModified(projectId);
+    }
+
+    return result;
+}
+// --------------------------------------------------------------------------------
+
+
+SKRResult SKRTagHub::addTag(int projectId)
+{
+    SKRResult result(this);
+
+    int newId = -2;
+    QHash<QString, QVariant> values;
 
     PLMSqlQueries queries(projectId, "tbl_tag");
 
@@ -171,6 +251,27 @@ SKRResult SKRTagHub::setTagName(int projectId, int tagId, const QString& tagName
 
     return result;
 }
+// --------------------------------------------------------------------------------
+
+
+
+SKRResult SKRTagHub::setTagId(int projectId, int tagId, int newTagId)
+{
+    SKRResult result(this);
+
+    IFOKDO(result, set(projectId, tagId, "l_tag_id", newTagId));
+
+    IFOK(result) {
+        emit tagIdChanged(projectId, tagId, newTagId);
+        emit projectModified(projectId);
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return result;
+}
 
 // --------------------------------------------------------------------------------
 
@@ -250,8 +351,35 @@ SKRResult SKRTagHub::setTagTextColor(int projectId, int tagId, const QString& co
 
 SKRResult SKRTagHub::setTagRandomColors(int projectId, int tagId)
 {
+    QPair<QString, QString> pair = getTagRandomColors();
+
+
+    SKRResult result = setTagColor(projectId, tagId, pair.first);
+
+    result = setTagTextColor(projectId, tagId, pair.second);
+
+    return result;
+}
+
+// ------------------------------------------------------------
+
+QPair<QString, QString> SKRTagHub::getTagRandomColors()
+{
     int randColorIndex = QRandomGenerator::global()->bounded(27);
 
+    QMap<QString, QString> colorMap = getTagPresetColors();
+
+    QPair<QString, QString> pair;
+    pair.first = colorMap.keys().at(randColorIndex);
+    pair.second = colorMap.values().at(randColorIndex);
+
+    return pair;
+}
+
+// ------------------------------------------------------------
+
+QMap<QString, QString> SKRTagHub::getTagPresetColors()
+{
     QMap<QString, QString> colorMap;
 
     colorMap.insert("#FFFFFF", "#000000");
@@ -283,13 +411,16 @@ SKRResult SKRTagHub::setTagRandomColors(int projectId, int tagId)
     colorMap.insert("#808080", "#FFFFFF");
     colorMap.insert("#A9A9A9", "#FFFFFF");
 
+    return colorMap;
+}
 
-    SKRResult result = setTagColor(projectId, tagId, colorMap.keys().at(randColorIndex));
+// ------------------------------------------------------------
 
-    result = setTagTextColor(projectId, tagId, colorMap.values().at(randColorIndex));
+void SKRTagHub::commit(int projectId)
+{
+    PLMSqlQueries queries(projectId, "tbl_tag");
+    queries.commit();
 
-
-    return result;
 }
 
 // ------------------------------------------------------------
@@ -351,7 +482,7 @@ SKRResult SKRTagHub::set(int             projectId,
                          int             tagId,
                          const QString & fieldName,
                          const QVariant& value,
-                         bool            setCurrentDateBool)
+                         bool            setCurrentDateBool, bool commit)
 {
     SKRResult result(this);
     PLMSqlQueries queries(projectId,  "tbl_tag");
@@ -367,7 +498,9 @@ SKRResult SKRTagHub::set(int             projectId,
         queries.rollback();
     }
     IFOK(result) {
-        queries.commit();
+        if (commit) {
+            queries.commit();
+        }
     }
     IFKO(result) {
         emit errorSent(result);

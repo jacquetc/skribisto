@@ -214,6 +214,6 @@ void OpenProjectCase::testCase1()
     QVERIFY2(true, "Failure");
 }
 
-QTEST_GUILESS_MAIN(OpenProjectCase)
+QTEST_MAIN(OpenProjectCase)
 
 #include "tst_openprojectcase.moc"

@@ -1628,27 +1628,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="56"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="51"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="66"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="61"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="72"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="67"/>
         <source>Add below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="84"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="79"/>
         <source>Add above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="95"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="90"/>
         <source>Add sub-item</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2879,7 +2879,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="46"/>
+        <location filename="../desktopapp/main.cpp" line="47"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4015,6 +4015,69 @@
     </message>
 </context>
 <context>
+    <name>TagDialog</name>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="14"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="23"/>
+        <source>Tag name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="33"/>
+        <source>Color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="53"/>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="86"/>
+        <source>Change</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="63"/>
+        <source>Text color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="148"/>
+        <source>Presets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.cpp" line="16"/>
+        <source>Tag creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.cpp" line="16"/>
+        <source>Tag modification</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TagManagerToolbox</name>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="66"/>
+        <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="80"/>
+        <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.h" line="30"/>
+        <source>Tag manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TagPad</name>
     <message>
         <location filename="../mobileapp/imports/Skribisto/TagPad.qml" line="319"/>
@@ -4834,7 +4897,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="51"/>
+        <location filename="../desktopapp/main.cpp" line="52"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

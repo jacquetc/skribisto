@@ -165,4 +165,22 @@ private:
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 
+class MoveItemsCommand : public QUndoCommand
+{
+public:
+    MoveItemsCommand(int projectId, QList<int> itemIdToMove, int targetId);
+    void undo();
+    void redo();
+private:
+    int m_projectId, m_targetId, m_newId;
+    QString m_property;
+    QVariant m_newValue;
+    QVariant m_oldValue;
+    bool m_isSystem;
+};
+
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
 #endif // PROJECTTREEMODEL_H

@@ -21,6 +21,10 @@ ProjectTreeModel::ProjectTreeModel(QObject *parent)
              &PLMProjectHub::projectClosed,
              this,
              &ProjectTreeModel::populate);
+     connect(skrdata->treeHub(),
+             &SKRTreeHub::treeReset,
+             this,
+             &ProjectTreeModel::populate);
 
      this->connectToSKRDataSignals();
 }

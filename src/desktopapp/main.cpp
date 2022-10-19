@@ -1,5 +1,6 @@
 #include "commands.h"
 #include "projectcommands.h"
+#include "tagcommands.h"
 #include "projecttreecommands.h"
 #include "projecttreemodel.h"
 #include "skrdata.h"
@@ -61,6 +62,7 @@ int main(int argc, char *argv[]) {
   new Commands(skrData, undoStack);
   new ProjectCommands(skrData, undoStack);
   new ProjectTreeCommands(skrData, undoStack, projectTreeModel);
+  new TagCommands(skrData, undoStack);
   ThemeManager::instance();
   TextBridge::instance();
 

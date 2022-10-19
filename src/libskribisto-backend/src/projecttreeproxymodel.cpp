@@ -3,6 +3,8 @@
 #include "projecttreeproxymodel.h"
 #include "skrdata.h"
 
+#include <QMimeData>
+
 
 ProjectTreeProxyModel::ProjectTreeProxyModel(QObject *parent)
     : QIdentityProxyModel(parent)
@@ -44,10 +46,20 @@ QVariant ProjectTreeProxyModel::data(const QModelIndex &index, int role) const
 
 Qt::ItemFlags ProjectTreeProxyModel::flags(const QModelIndex &index) const
 {
+    Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
+
+    if(index.data(ProjectTreeItem::TreeItemIdRole).toInt() > 0){
+        defaultFlags |= Qt::ItemIsDragEnabled;
+    }
+    if(index.data(ProjectTreeItem::CanAddChildTreeItemRole).toBool()){
+        defaultFlags.setFlag(Qt::ItemIsDropEnabled);
+    }
+
     if (!index.isValid())
         return Qt::NoItemFlags;
 
-    return QAbstractItemModel::flags(index);// | Qt::ItemIsEditable; // FIXME: Implement me!
+    return defaultFlags;
+
 }
 
 
@@ -74,4 +86,58 @@ QModelIndex ProjectTreeProxyModel::getModelIndex(int projectId, int treeItemId) 
         return index;
 
     return QModelIndex();
+}
+
+
+QStringList ProjectTreeProxyModel::mimeTypes() const
+{
+    QStringList list;
+    list << "application/x-navigationtreeitem-list";
+
+    return list;
+}
+
+QMimeData *ProjectTreeProxyModel::mimeData(const QModelIndexList &indexes) const
+{
+    QList< QPair<int, int> > pairList;
+    for(const QModelIndex &index : indexes){
+        QPair<int, int> pair;
+        pair.first = index.data(ProjectTreeItem::ProjectIdRole).toInt();
+        pair.second = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+
+        pairList.append(pair);
+    }
+
+    QByteArray byteArray;
+    QDataStream stream(&byteArray, QIODevice::WriteOnly);
+    stream << pairList;
+
+    QMimeData *mimeData = new QMimeData;
+    mimeData->setData("application/x-navigationtreeitem-list", byteArray);
+
+    return mimeData;
+}
+
+bool ProjectTreeProxyModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
+{
+    if(!parent.isValid()){
+        return false;
+    }
+    return true;
+}
+
+bool ProjectTreeProxyModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
+{
+    return true;
+}
+
+Qt::DropActions ProjectTreeProxyModel::supportedDropActions() const
+{
+    return Qt::MoveAction;
+}
+
+Qt::DropActions ProjectTreeProxyModel::supportedDragActions() const
+{
+    return Qt::MoveAction;
+
 }

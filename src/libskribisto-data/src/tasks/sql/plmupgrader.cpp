@@ -881,6 +881,235 @@ SKRResult PLMUpgrader::upgradeSQLite(QSqlDatabase sqlDb)
         double newDbVersion = 2.0;
 
 
+        QString queryStr =
+            R""""(PRAGMA foreign_keys = 0;
+
+                    CREATE TABLE sqlitestudio_temp_table AS SELECT *
+                                                              FROM tbl_tag_relationship;
+
+                    DROP TABLE tbl_tag_relationship;
+
+                    CREATE TABLE tbl_tag_relationship (
+                        l_tag_relationship_id INTEGER  PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT
+                                                       NOT NULL ON CONFLICT ROLLBACK,
+                        l_tree_code           INTEGER  REFERENCES tbl_tree (l_tree_id) ON DELETE CASCADE
+                                                                                       ON UPDATE CASCADE,
+                        l_tag_code            INTEGER  REFERENCES tbl_tag (l_tag_id) ON DELETE CASCADE
+                                                                                     ON UPDATE CASCADE,
+                        dt_created            DATETIME NOT NULL ON CONFLICT ROLLBACK
+                                                       DEFAULT (CURRENT_TIMESTAMP)
+                    );
+
+                    INSERT INTO tbl_tag_relationship (
+                                                         l_tag_relationship_id,
+                                                         l_tree_code,
+                                                         l_tag_code,
+                                                         dt_created
+                                                     )
+                                                     SELECT l_tag_relationship_id,
+                                                            l_tree_code,
+                                                            l_tag_code,
+                                                            dt_created
+                                                       FROM sqlitestudio_temp_table;
+
+                    DROP TABLE sqlitestudio_temp_table;
+
+
+
+                    CREATE TABLE sqlitestudio_temp_table AS SELECT *
+                                                              FROM tbl_tag;
+
+                    DROP TABLE tbl_tag;
+
+                    CREATE TABLE tbl_tag (
+                        l_tag_id     INTEGER  PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT
+                                              UNIQUE ON CONFLICT ROLLBACK
+                                              NOT NULL ON CONFLICT ROLLBACK,
+                        t_name       TEXT     UNIQUE ON CONFLICT ROLLBACK,
+                        t_color      TEXT,
+                        t_text_color TEXT,
+                        dt_created   DATETIME NOT NULL ON CONFLICT ROLLBACK
+                                              DEFAULT (CURRENT_TIMESTAMP),
+                        dt_updated   DATETIME NOT NULL ON CONFLICT ROLLBACK
+                                              DEFAULT (CURRENT_TIMESTAMP)
+                    );
+
+                    INSERT INTO tbl_tag (
+                                            l_tag_id,
+                                            t_name,
+                                            t_color,
+                                            t_text_color,
+                                            dt_created,
+                                            dt_updated
+                                        )
+                                        SELECT l_tag_id,
+                                               t_name,
+                                               t_color,
+                                               t_text_color,
+                                               dt_created,
+                                               dt_updated
+                                          FROM sqlitestudio_temp_table;
+
+                    DROP TABLE sqlitestudio_temp_table;
+
+                    PRAGMA foreign_keys = 1;
+
+        )"""";
+
+
+        IFOKDO(result, SKRSqlTools::executeSQLString(queryStr, sqlDb));
+
+
+
+
+        // fetch all TEXT items
+        queryStr = "SELECT l_tree_id FROM tbl_tree WHERE t_type = 'TEXT';";
+
+        QSqlQuery query(sqlDb);
+
+        query.prepare(queryStr);
+        query.exec();
+
+        if (query.lastError().isValid()) {
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+            result.addData("SQLError",   query.lastError().text());
+            result.addData("SQL string", queryStr);
+            return result;
+        }
+
+        QList<int> textIdList;
+
+        while (query.next()) {
+            textIdList.append(query.value(0).toInt());
+        }
+
+
+        QTextDocument *textDocument = new QTextDocument();
+
+        for (int treeItemId : qAsConst(textIdList)) {
+            // convert TEXT HTML content into markdown
+
+            queryStr = "SELECT m_primary_content FROM tbl_tree WHERE l_tree_id=:treeItemId";
+            query.prepare(queryStr);
+            query.bindValue(":treeItemId", treeItemId);
+            query.exec();
+
+            if (query.lastError().isValid()) {
+                result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+                result.addData("SQLError",   query.lastError().text());
+                result.addData("SQL string", queryStr);
+                return result;
+            }
+
+            QString content;
+
+            while (query.next()) {
+                content = query.value(0).toString();
+            }
+
+            textDocument->setHtml(content);
+            QString markdown = textDocument->toMarkdown();
+
+            queryStr = "UPDATE tbl_tree SET m_primary_content=:markdown WHERE l_tree_id=:treeItemId";
+            query.prepare(queryStr);
+            query.bindValue(":treeItemId", treeItemId);
+            query.bindValue(":markdown",       markdown);
+            query.exec();
+
+            if (query.lastError().isValid()) {
+                result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+                result.addData("SQLError",   query.lastError().text());
+                result.addData("SQL string", queryStr);
+                return result;
+            }
+        }
+        textDocument->deleteLater();
+
+        {
+
+        // fetch all secondary contents
+        queryStr = "SELECT l_tree_id FROM tbl_tree;";
+
+        QSqlQuery query(sqlDb);
+
+        query.prepare(queryStr);
+        query.exec();
+
+        if (query.lastError().isValid()) {
+            result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+            result.addData("SQLError",   query.lastError().text());
+            result.addData("SQL string", queryStr);
+            return result;
+        }
+
+        QList<int> textIdList;
+
+        while (query.next()) {
+            textIdList.append(query.value(0).toInt());
+        }
+
+
+        QTextDocument *textDocument = new QTextDocument();
+
+        for (int treeItemId : qAsConst(textIdList)) {
+            // convert TEXT HTML content into markdown
+
+            queryStr = "SELECT m_secondary_content FROM tbl_tree WHERE l_tree_id=:treeItemId";
+            query.prepare(queryStr);
+            query.bindValue(":treeItemId", treeItemId);
+            query.exec();
+
+            if (query.lastError().isValid()) {
+                result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+                result.addData("SQLError",   query.lastError().text());
+                result.addData("SQL string", queryStr);
+                return result;
+            }
+
+            QString content;
+
+            while (query.next()) {
+                content = query.value(0).toString();
+            }
+
+            textDocument->setHtml(content);
+            QString markdown = textDocument->toMarkdown();
+
+            queryStr = "UPDATE tbl_tree SET m_secondary_content=:markdown WHERE l_tree_id=:treeItemId";
+            query.prepare(queryStr);
+            query.bindValue(":treeItemId", treeItemId);
+            query.bindValue(":markdown",       markdown);
+            query.exec();
+
+            if (query.lastError().isValid()) {
+                result = SKRResult(SKRResult::Critical, "PLMUpgrader::upgradeSQLite", "sql_error");
+                result.addData("SQLError",   query.lastError().text());
+                result.addData("SQL string", queryStr);
+                return result;
+            }
+        }
+        textDocument->deleteLater();
+        }
+
+        IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));
+
+        IFOK(result) {
+            dbVersion = newDbVersion;
+        }
+
+
+    }
+    IFKO(result) {
+        return result;
+    }
+
+    // ---------------------------------
+
+    // from 2.0 to 2.1
+    if (dbVersion == 2.0) {
+        double newDbVersion = 2.1;
+
+
         // fill here
 
         //IFOKDO(result, result = PLMUpgrader::setDbVersion(sqlDb, newDbVersion));

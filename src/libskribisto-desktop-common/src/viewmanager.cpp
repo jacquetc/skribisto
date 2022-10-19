@@ -182,17 +182,14 @@ View* ViewManager::split(View *view, Qt::Orientation orientation)
         m_rootSplitter->addWidget(emptyView);
     }
     else{
-
         ViewSplitter *childSplitter = new ViewSplitter(orientation);
         int viewIndex = parentSplitter->indexOf(view);
         parentSplitter->insertWidget(viewIndex, childSplitter);
         childSplitter->addWidget(view);
         childSplitter->addWidget(emptyView);
-
-
+        parentSplitter->restoreState(array);
     }
 
-    parentSplitter->restoreState(array);
 
     return emptyView;
 }
@@ -224,7 +221,8 @@ void ViewManager::removeSplit(View *view)
 
              m_viewList.removeAll(view);
              view->hide();
-             view->deleteLater();
+             delete view;
+             //view->deleteLater();
 
             // widget is splitter or view
             QWidget *widget = parentSplitter->widget(0);
@@ -239,10 +237,10 @@ void ViewManager::removeSplit(View *view)
             parentSplitter->deleteLater();
         }
     }
+    determineCurrentView();
     if(isCurrentView){
         emit currentViewChanged(m_currentView);
     }
-    determineCurrentView();
 }
 
 View *ViewManager::currentView()

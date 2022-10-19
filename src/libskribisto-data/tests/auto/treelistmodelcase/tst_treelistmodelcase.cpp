@@ -91,6 +91,6 @@ void TreeListModelCase::sortAlphabetically() {
     skrdata->treeHub()->sortAlphabetically(m_currentProjectId, 0);
 }
 
-QTEST_GUILESS_MAIN(TreeListModelCase)
+QTEST_MAIN(TreeListModelCase)
 
 #include "tst_treelistmodelcase.moc"

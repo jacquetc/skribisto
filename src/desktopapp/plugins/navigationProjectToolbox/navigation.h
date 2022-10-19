@@ -29,7 +29,6 @@ private slots:
     void saveExpandStates();
     void restoreExpandStates();
     void addToExpandPathes(const QModelIndex &modelIndex);
-    void removeFromExpandPathes(const QModelIndex &modelIndex);
     void expandProjectItems();
     void setCurrentIndex(const QModelIndex &index);
 

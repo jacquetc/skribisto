@@ -63,6 +63,7 @@ Command *ProjectCommands::getCommand(const QString &action, const QVariantMap &p
         return new SetProjectNameCommand(parameters.value("projectId").toInt(), parameters.value("name").toString());
     }
 
+    return nullptr;
 }
 
 

@@ -6,13 +6,11 @@
 #include <QTime>
 #include <QDate>
 #include <QDebug>
-
 #include <QtGui/QTextDocument>
 
 
 #include "skrdata.h"
 #include "skrresult.h"
-#include "models/skrtreelistmodel.h"
 
 class TreeHubCase : public QObject {
     Q_OBJECT
@@ -52,6 +50,7 @@ private Q_SLOTS:
 
     void getParentId();
 
+    void saveTree();
 
     void queue();
     void missingProjectError();
@@ -331,7 +330,7 @@ void TreeHubCase::getPrimaryContent()
     QTextDocument doc;
 
     doc.setHtml(value);
-    QCOMPARE(doc.toPlainText(), QString("second content test_project_dict_word badword"));
+    QCOMPARE(doc.toPlainText(), QString("second content test_project_dict_word badword "));
 
     // lorem ipsum :
     value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 14);
@@ -414,6 +413,17 @@ void TreeHubCase::getParentId()
     int nullParentId = skrdata->treeHub()->getParentId(m_currentProjectId, 0);
 
     QCOMPARE(nullParentId, -1);
+}
+
+// ------------------------------------------------------------------------------------
+
+void TreeHubCase::saveTree()
+{
+    auto save = skrdata->treeHub()->saveTree(m_currentProjectId);
+    QCOMPARE(save.count(), 24);
+
+    skrdata->treeHub()->restoreTree(m_currentProjectId, save);
+    QCOMPARE(skrdata->treeHub()->getAllIds(m_currentProjectId).count(), 24);
 }
 
 // ------------------------------------------------------------------------------------
@@ -805,6 +815,6 @@ void TreeHubCase::moveIntoFolder() {
 }
 
 
-QTEST_GUILESS_MAIN(TreeHubCase)
+QTEST_MAIN(TreeHubCase)
 
 #include "tst_treehubcase.moc"
