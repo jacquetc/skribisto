@@ -37,22 +37,12 @@ class EXPORT PLMProjectHub : public QObject {
 public:
 
     explicit PLMProjectHub(QObject *parent);
-    Q_INVOKABLE SKRResult loadProject(const QUrl& urlFilePath,
-                                      bool        hidden = false);
-    Q_INVOKABLE SKRResult createNewEmptyProject(const QUrl& path,
-                                                bool        hidden = false);
-    SKRResult             createSilentlyNewSpecificEmptyProject(const QUrl   & path,
-                                                                const QString& sqlFile);
-    Q_INVOKABLE SKRResult saveProject(int projectId);
-    Q_INVOKABLE SKRResult saveProjectAs(int            projectId,
-                                        const QString& type,
-                                        const QUrl   & path);
-    Q_INVOKABLE SKRResult saveAProjectCopy(int            projectId,
-                                           const QString& type,
-                                           const QUrl   & path);
-    Q_INVOKABLE SKRResult backupAProject(int            projectId,
-                                         const QString& type,
-                                         const QUrl   & folderPath);
+//    SKRResult             createSilentlyNewSpecificEmptyProject(const QUrl   & path,
+//                                                                const QString& sqlFile);
+//    Q_INVOKABLE SKRResult saveAProjectCopy(int            projectId,
+//                                           const QString& type,
+//                                           const QUrl   & path);
+
     Q_INVOKABLE bool      doesBackupOfTheDayExistAtPath(int         projectId,
                                                         const QUrl& folderPath);
     Q_INVOKABLE SKRResult closeProject(int projectId);
@@ -103,14 +93,12 @@ public:
     QVariant get(int            projectId,
                  const QString& fieldName) const;
 
+    void setProjectSaved(int projectId);
+    void setProjectLoaded(int projectId);
 signals:
 
     void errorSent(const SKRResult& result) const;
 
-    ///
-    /// \brief projectToBeLoaded
-    /// To be used with a direct connection
-    void projectToBeLoaded();
     void projectLoaded(int projectId);
 
     ///

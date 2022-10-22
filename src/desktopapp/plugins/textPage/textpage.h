@@ -25,17 +25,19 @@
 #include "interfaces/itemexporterinterface.h"
 #include "interfaces/pageinterface.h"
 #include "interfaces/settingspanelinterface.h"
+#include "interfaces/pagetypeiconinterface.h"
 #include "skrwordmeter.h"
 
 class TextPage : public QObject,
                  public PageInterface,
+                public PageTypeIconInterface,
                  public ItemExporterInterface,
                  public SettingsPanelInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.TextPagePlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(PageInterface ItemExporterInterface SettingsPanelInterface)
+    Q_INTERFACES(PageInterface PageTypeIconInterface ItemExporterInterface SettingsPanelInterface)
 
 public:
 

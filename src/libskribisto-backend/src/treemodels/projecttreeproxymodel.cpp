@@ -12,16 +12,6 @@ ProjectTreeProxyModel::ProjectTreeProxyModel(QObject *parent)
 {
     this->setSourceModel(ProjectTreeModel::instance());
 
-
-    QList<PageInterface *> pluginList =
-            skrpluginhub->pluginsByType<PageInterface>();
-
-
-
-
-    for(auto *plugin : pluginList){
-        m_typeWithPlugin.insert(plugin->pageType(), plugin);
-    }
 }
 
 
@@ -32,14 +22,6 @@ QVariant ProjectTreeProxyModel::data(const QModelIndex &index, int role) const
 
     ProjectTreeItem *item = static_cast<ProjectTreeItem *>(index.internalPointer());
 
-
-    if (role == Qt::DecorationRole) {
-        auto *plugin = m_typeWithPlugin.value(item->data(ProjectTreeItem::Roles::TypeRole).toString(), nullptr);
-        if(plugin){
-            return QIcon(plugin->pageTypeIconUrl(item->data(ProjectTreeItem::Roles::ProjectIdRole).toInt(), item->data(ProjectTreeItem::Roles::TreeItemIdRole).toInt()));
-        }
-        return QVariant();
-    }
 
 
     return QIdentityProxyModel::data(index, role);
@@ -204,7 +186,7 @@ bool ProjectTreeProxyModel::dropMimeData(const QMimeData *data, Qt::DropAction a
         int targetParentTreeItemId = parent.data(ProjectTreeItem::TreeItemIdRole).toInt();
         // as sub item
         if(row == -1 && column == -1){
-            projectTreeCommands->moveItemsAsChildOfCommand(sourceProjectId, sourceTreeItemIds, targetProjectId, targetParentTreeItemId);
+            projectTreeCommands->moveItemsAsChildOf(sourceProjectId, sourceTreeItemIds, targetProjectId, targetParentTreeItemId);
         }
         //add below
         else if(row == skrdata->treeHub()->getAllDirectChildren(targetProjectId, targetParentTreeItemId, true, true).count()) {
@@ -216,7 +198,7 @@ bool ProjectTreeProxyModel::dropMimeData(const QMimeData *data, Qt::DropAction a
             }
 
             int targetTreeItemId = childIndex.data(ProjectTreeItem::TreeItemIdRole).toInt();
-            projectTreeCommands->moveItemsBelowCommand(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId);
+            projectTreeCommands->moveItemsBelow(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId);
 
         }
         //add before
@@ -228,7 +210,7 @@ bool ProjectTreeProxyModel::dropMimeData(const QMimeData *data, Qt::DropAction a
             }
 
             int targetTreeItemId = childIndex.data(ProjectTreeItem::TreeItemIdRole).toInt();
-            projectTreeCommands->moveItemsAboveCommand(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId);
+            projectTreeCommands->moveItemsAbove(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId);
         }
 
 

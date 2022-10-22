@@ -20,6 +20,7 @@ set(common_SRCS
 
 set(common_INTERFACES
     interfaces/invokablecommandgroupinterface.h
+    interfaces/pagetypeiconinterface.h
 )
 
 # Tell CMake to create the executable
@@ -34,7 +35,7 @@ add_dependencies(${PROJECT_NAME} skribisto-data)
 
 target_compile_definitions(skribisto-common PRIVATE SKRIBISTO_COMMON_LIBRARY)
 
-target_link_libraries(skribisto-common PRIVATE skribisto-data  Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
+target_link_libraries(skribisto-common PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 

@@ -30,7 +30,7 @@
      <x>0</x>
      <y>0</y>
      <width>1643</width>
-     <height>37</height>
+     <height>24</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -289,7 +289,7 @@
   </action>
   <action name="actionSaveAs">
    <property name="text">
-    <string>SaveAs</string>
+    <string>Save As</string>
    </property>
   </action>
   <action name="actionClose_project">

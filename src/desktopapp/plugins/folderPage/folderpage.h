@@ -24,16 +24,18 @@
 #include <QObject>
 #include "interfaces/itemexporterinterface.h"
 #include "interfaces/pageinterface.h"
+#include "interfaces/pagetypeiconinterface.h"
 #include <view.h>
 
 class FolderPage : public QObject,
-                   public PageInterface,
-                   public ItemExporterInterface {
+        public PageInterface,
+        public PageTypeIconInterface,
+        public ItemExporterInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
-        IID "eu.skribisto.FolderPagePlugin/1.0" FILE
-        "plugin_info.json")
-    Q_INTERFACES(PageInterface ItemExporterInterface)
+            IID "eu.skribisto.FolderPagePlugin/1.0" FILE
+            "plugin_info.json")
+    Q_INTERFACES(PageInterface PageTypeIconInterface ItemExporterInterface)
 
 public:
 

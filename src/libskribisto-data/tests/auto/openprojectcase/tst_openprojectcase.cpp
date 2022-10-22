@@ -32,8 +32,8 @@ private Q_SLOTS:
 
     void getProjectIdList();
     void getLastLoaded();
-    void saveOneProject();
-    void saveTwoProjects();
+//    void saveOneProject();
+//    void saveTwoProjects();
     void openEmptyProject();
 
 private:
@@ -169,30 +169,30 @@ void OpenProjectCase::getLastLoaded()
     QVERIFY(id > 0);
 }
 
-void OpenProjectCase::saveOneProject()
-{
-    openOneProject();
-    QSignalSpy spy1(skrdata->projectHub(), SIGNAL(projectSaved(int)));
+//void OpenProjectCase::saveOneProject()
+//{
+//    openOneProject();
+//    QSignalSpy spy1(skrdata->projectHub(), SIGNAL(projectSaved(int)));
 
-    skrdata->projectHub()->saveProjectAs(1, "SQLITE",
-                                         QUrl::fromLocalFile(m_tempFile1->fileName()));
-    QCOMPARE(spy1.count(), 1);
-}
+//    skrdata->projectHub()->saveProjectAs(1, "SQLITE",
+//                                         QUrl::fromLocalFile(m_tempFile1->fileName()));
+//    QCOMPARE(spy1.count(), 1);
+//}
 
-void OpenProjectCase::saveTwoProjects()
-{
-    openTwoProjects();
-    QSignalSpy spy1(skrdata->projectHub(), SIGNAL(projectSaved(int)));
+//void OpenProjectCase::saveTwoProjects()
+//{
+//    openTwoProjects();
+//    QSignalSpy spy1(skrdata->projectHub(), SIGNAL(projectSaved(int)));
 
-    skrdata->projectHub()->saveProjectAs(1, "SQLITE",
-                                         QUrl::fromLocalFile(m_tempFile1->fileName()));
-    QCOMPARE(spy1.count(), 1);
-    QSignalSpy spy2(skrdata->projectHub(), SIGNAL(projectSaved(int)));
+//    skrdata->projectHub()->saveProjectAs(1, "SQLITE",
+//                                         QUrl::fromLocalFile(m_tempFile1->fileName()));
+//    QCOMPARE(spy1.count(), 1);
+//    QSignalSpy spy2(skrdata->projectHub(), SIGNAL(projectSaved(int)));
 
-    skrdata->projectHub()->saveProjectAs(2, "SQLITE",
-                                         QUrl::fromLocalFile(m_tempFile2->fileName()));
-    QCOMPARE(spy2.count(), 1);
-}
+//    skrdata->projectHub()->saveProjectAs(2, "SQLITE",
+//                                         QUrl::fromLocalFile(m_tempFile2->fileName()));
+//    QCOMPARE(spy2.count(), 1);
+//}
 
 void OpenProjectCase::openEmptyProject()
 {

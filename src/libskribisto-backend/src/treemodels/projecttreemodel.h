@@ -3,11 +3,13 @@
 
 #include "projecttreeitem.h"
 #include "skribisto_backend_global.h"
+#include "interfaces/pagetypeiconinterface.h"
 #include "skrdata.h"
+#include "command.h"
 
 #include <QAbstractItemModel>
 #include <QUndoCommand>
-#include <command.h>
+
 #define projectTreeModel ProjectTreeModel::instance()
 
 class SKRBACKENDEXPORT ProjectTreeModel : public QAbstractItemModel
@@ -16,6 +18,7 @@ class SKRBACKENDEXPORT ProjectTreeModel : public QAbstractItemModel
     friend class AddItemAfterCommand;
     friend class AddItemBeforeCommand;
     friend class AddSubItemCommand;
+    friend class TrashItemCommand;
 
 public:
     explicit ProjectTreeModel(QObject *parent = nullptr);
@@ -79,10 +82,11 @@ private:
     ProjectTreeItem *m_rootItem;
     QList<QMetaObject::Connection>m_dataConnectionsList;
     QList<ProjectTreeItem *> m_itemList;
+    QHash<QString, PageTypeIconInterface *> m_typeWithPlugin;
 
 
     QModelIndex getModelIndex(int projectId, int treeItemId) const;
-    ProjectTreeItem *getProjectItem(int projectId, int treeItemId) const;
+    ProjectTreeItem *getTreeItem(int projectId, int treeItemId) const;
     void removeProjectItem(int projectId, int treeItemId);
 };
 
@@ -100,6 +104,8 @@ public:
     AddItemAfterCommand(int projectId, int targetId, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
     void undo();
     void redo();
+    int result();
+
 private:
     int m_projectId, m_targetId, m_newId;
     QString m_type;
@@ -119,6 +125,7 @@ public:
     AddItemBeforeCommand(int projectId, int targetId, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
     void undo();
     void redo();
+    int result();
 private:
     int m_projectId, m_targetId, m_newId;
     QString m_type;
@@ -137,6 +144,7 @@ public:
     AddSubItemCommand(int projectId, int targetId, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
     void undo();
     void redo();
+    int result();
 private:
     int m_projectId, m_targetId, m_newId;
     QString m_type;
@@ -191,6 +199,42 @@ private:
     Move m_move;
 };
 
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+class RenameItemCommand : public Command
+{
+public:
+
+
+    RenameItemCommand(int projectId, int treeItemId, const QString &newName);
+    void undo();
+    void redo();
+private:
+    int m_projectId, m_treeItemId;
+    QString m_oldName, m_newName;
+
+};
+
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+class TrashItemCommand : public Command
+{
+public:
+    TrashItemCommand(int projectId, int treeItemId, bool newTrashState, int forcedOriginalParentId = -1, int forcedOriginalRow = -1);
+    void undo();
+    void redo();
+    SKRResult result();
+private:
+    int m_projectId, m_treeItemId, m_originalParentId, m_originalRow, m_forcedOriginalParentId, m_forcedOriginalRow;
+    bool m_oldTrashState, m_newTrashState;
+    QList<QVariantMap> m_newTree, m_newPropertyTable;
+    QList<QVariantMap> m_oldTree, m_oldPropertyTable;
+    SKRResult m_result;
+
+};
 
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------

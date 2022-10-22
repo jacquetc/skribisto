@@ -9,11 +9,13 @@ add_subdirectory(sectionPage)
 add_subdirectory(projectPage)
 
 add_subdirectory(overviewPage)
+
 # add_subdirectory(cardViewPage)
 # add_subdirectory(themePage)
 # add_subdirectory(writingGamesPageToolbox)
 # add_subdirectory(favoritesProjectToolbox)
 add_subdirectory(navigationProjectToolbox)
+add_subdirectory(trashProjectToolbox)
 
 # add_subdirectory(treeNavigationProjectToolbox)
 # add_subdirectory(plumeCreatorImporter)

@@ -2,7 +2,7 @@
 #define PROJECTTREEPROXYMODEL_H
 
 #include <QIdentityProxyModel>
-#include "interfaces/pageinterface.h"
+#include "interfaces/pagetypeiconinterface.h"
 #include "skribisto_backend_global.h"
 
 class SKRBACKENDEXPORT ProjectTreeProxyModel : public QIdentityProxyModel
@@ -18,7 +18,7 @@ public:
 
     QModelIndex getModelIndex(int projectId, int treeItemId) const;
 private:
-        QHash<QString, PageInterface *> m_typeWithPlugin;
+        QHash<QString, PageTypeIconInterface *> m_typeWithPlugin;
 
         // QAbstractItemModel interface
 public:

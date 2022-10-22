@@ -41,6 +41,7 @@ void ThemeManager::setDarkTheme(const QString &newDarkTheme) {
     emit darkThemeChanged(newDarkTheme);
   }
 }
+
 //----------------------------------------------
 
 const QString &ThemeManager::lightTheme() const { return m_lightTheme; }
@@ -189,7 +190,7 @@ QPalette ThemeManager::toPalette(const QMap<QString, QString> colorMap) const
 }
 //----------------------------------------------
 
-QMap<QString, QString> ThemeManager::getColorMap(const QString &themeName) const
+QJsonDocument ThemeManager::loadThemeJson(const QString &themeName) const
 {
     QString theme = themeName;
 
@@ -208,7 +209,7 @@ QMap<QString, QString> ThemeManager::getColorMap(const QString &themeName) const
     QFile file(themeMap.value(theme));
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        return QMap<QString, QString>();
+        return QJsonDocument();
     }
 
     QByteArray line = file.readAll();
@@ -223,7 +224,20 @@ QMap<QString, QString> ThemeManager::getColorMap(const QString &themeName) const
 
     if (jsonDoc.isNull()) {
         qDebug() << "jsonDoc.isNull";
-        return QMap<QString, QString>();
+        return QJsonDocument();
+    }
+    return jsonDoc;
+}
+
+
+//----------------------------------------------
+
+QMap<QString, QString> ThemeManager::getColorMap(const QString &themeName) const
+{
+    QJsonDocument jsonDoc = this->loadThemeJson(themeName);
+
+    if(jsonDoc.isNull()){
+        return  QMap<QString, QString>();
     }
 
     QJsonObject rootJsonObject = jsonDoc.object();
@@ -251,6 +265,22 @@ QMap<QString, QString> ThemeManager::getColorMap(const QString &themeName) const
 
 
     return colorMap;
+}
+
+//----------------------------------------------
+
+QString ThemeManager::themeInfo(const QString &themeName) const
+{
+
+    QJsonDocument jsonDoc = this->loadThemeJson(themeName);
+
+    if(jsonDoc.isNull()){
+        return  "";
+    }
+
+
+    QJsonObject rootJsonObject = jsonDoc.object();
+    return rootJsonObject.value("info").toString("");
 }
 
 //----------------------------------------------

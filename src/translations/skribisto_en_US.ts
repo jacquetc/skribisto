@@ -1330,19 +1330,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="72"/>
+        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="74"/>
         <location filename="../mobileapp/plugins/folderPage/folderpage.h" line="71"/>
         <source>Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="76"/>
+        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="78"/>
         <location filename="../mobileapp/plugins/folderPage/folderpage.h" line="75"/>
         <source>Group your items in folders.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="47"/>
+        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="49"/>
         <location filename="../mobileapp/plugins/folderPage/folderpage.h" line="46"/>
         <source>Folder page</source>
         <comment>plugin name</comment>
@@ -1565,7 +1565,7 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="292"/>
-        <source>SaveAs</source>
+        <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1594,23 +1594,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="244"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="245"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.cpp" line="192"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="204"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="205"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="193"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="194"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="241"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="242"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1620,6 +1620,11 @@
     <message>
         <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.ui" line="14"/>
         <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.ui" line="69"/>
+        <source>Navigation menu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1633,23 +1638,39 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="61"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="62"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="67"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="81"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="88"/>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="88"/>
+        <source>Enter a new title for the item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="97"/>
         <source>Add below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="79"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="109"/>
         <source>Add above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="90"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="120"/>
         <source>Add sub-item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="141"/>
+        <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2116,6 +2137,11 @@
     <message>
         <location filename="../libskribisto-desktop-common/src/newtreeitemdialog.ui" line="50"/>
         <source>Number to create:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/newtreeitemdialog.ui" line="64"/>
+        <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2725,13 +2751,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/projectPage/projectpage.h" line="57"/>
+        <location filename="../desktopapp/plugins/projectPage/projectpage.h" line="59"/>
         <location filename="../mobileapp/plugins/projectPage/projectpage.h" line="71"/>
         <source>Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/projectPage/projectpage.h" line="43"/>
+        <location filename="../desktopapp/plugins/projectPage/projectpage.h" line="45"/>
         <location filename="../mobileapp/plugins/projectPage/projectpage.h" line="46"/>
         <source>Project page</source>
         <comment>plugin name</comment>
@@ -2879,7 +2905,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="47"/>
+        <location filename="../desktopapp/main.cpp" line="48"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3014,6 +3040,30 @@
     <message>
         <location filename="../mobileapp/imports/Skribisto/RelationshipPanelForm.ui.qml" line="80"/>
         <source>Relationship list</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RestorationDialog</name>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/restorationdialog.ui" line="14"/>
+        <source>Restoration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/restorationdialog.ui" line="38"/>
+        <source>These items couldn&apos;t be restored on their own.
+Please select the destination folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/restorationdialog.ui" line="46"/>
+        <source>Next item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/restorationdialog.ui" line="53"/>
+        <source>Apply to all items</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3477,20 +3527,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="46"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="48"/>
         <location filename="../mobileapp/plugins/sectionPage/sectionpage.h" line="46"/>
         <source>Section page</source>
         <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="71"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="73"/>
         <location filename="../mobileapp/plugins/sectionPage/sectionpage.h" line="71"/>
         <source>Section</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="75"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="77"/>
         <location filename="../mobileapp/plugins/sectionPage/sectionpage.h" line="75"/>
         <source>Create a logical separation between items.</source>
         <translation type="unfinished"></translation>
@@ -3808,6 +3858,32 @@
     <message>
         <location filename="../mobileapp/imports/Skribisto/SkrBasePage.qml" line="124"/>
         <source>Rename an item</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SkrExporter</name>
+    <message>
+        <location filename="../libskribisto-exporter/src/plugins/skrExporter/skrexporter.h" line="50"/>
+        <source>Skribisto project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-exporter/src/plugins/skrExporter/skrexporter.h" line="66"/>
+        <source>.skr exporter</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SkrImporter</name>
+    <message>
+        <location filename="../libskribisto-importer/src/plugins/skrImporter/skrimporter.h" line="50"/>
+        <source>.skr importer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-importer/src/plugins/skrImporter/skrimporter.h" line="74"/>
+        <source>Skribisto project</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4168,26 +4244,26 @@
 <context>
     <name>TextPage</name>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="74"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="76"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="74"/>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="78"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="80"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="78"/>
         <source>Write here any text, be it a scene or a note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="49"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="51"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="49"/>
         <source>Text page</source>
         <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="112"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="114"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="115"/>
         <source>Text page</source>
         <translation type="unfinished"></translation>
@@ -4493,85 +4569,85 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="56"/>
-        <source>TextLabel</source>
+        <location filename="../desktopapp/themewizard.ui" line="66"/>
+        <source>Info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="82"/>
+        <location filename="../desktopapp/themewizard.ui" line="107"/>
         <source>Action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="88"/>
-        <location filename="../desktopapp/themewizard.ui" line="121"/>
+        <location filename="../desktopapp/themewizard.ui" line="113"/>
+        <location filename="../desktopapp/themewizard.ui" line="146"/>
         <source>Modify</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="95"/>
+        <location filename="../desktopapp/themewizard.ui" line="120"/>
         <source>Duplicate and modify</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="129"/>
+        <location filename="../desktopapp/themewizard.ui" line="154"/>
         <source>Theme settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="135"/>
+        <location filename="../desktopapp/themewizard.ui" line="160"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="145"/>
+        <location filename="../desktopapp/themewizard.ui" line="170"/>
         <source>Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="191"/>
-        <location filename="../desktopapp/themewizard.ui" line="203"/>
-        <location filename="../desktopapp/themewizard.ui" line="229"/>
-        <location filename="../desktopapp/themewizard.ui" line="262"/>
-        <location filename="../desktopapp/themewizard.ui" line="265"/>
-        <location filename="../desktopapp/themewizard.ui" line="277"/>
-        <location filename="../desktopapp/themewizard.ui" line="305"/>
-        <location filename="../desktopapp/themewizard.ui" line="308"/>
+        <location filename="../desktopapp/themewizard.ui" line="216"/>
+        <location filename="../desktopapp/themewizard.ui" line="228"/>
+        <location filename="../desktopapp/themewizard.ui" line="254"/>
+        <location filename="../desktopapp/themewizard.ui" line="287"/>
+        <location filename="../desktopapp/themewizard.ui" line="290"/>
+        <location filename="../desktopapp/themewizard.ui" line="302"/>
+        <location filename="../desktopapp/themewizard.ui" line="330"/>
+        <location filename="../desktopapp/themewizard.ui" line="333"/>
         <source>Example</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="210"/>
+        <location filename="../desktopapp/themewizard.ui" line="235"/>
         <source>This is a placeholder text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="219"/>
+        <location filename="../desktopapp/themewizard.ui" line="244"/>
         <source>CheckBox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="232"/>
+        <location filename="../desktopapp/themewizard.ui" line="257"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="249"/>
+        <location filename="../desktopapp/themewizard.ui" line="274"/>
         <source>test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="254"/>
+        <location filename="../desktopapp/themewizard.ui" line="279"/>
         <source>test 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="282"/>
+        <location filename="../desktopapp/themewizard.ui" line="307"/>
         <source>Example 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="287"/>
+        <location filename="../desktopapp/themewizard.ui" line="312"/>
         <source>Example 3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4582,103 +4658,103 @@
     </message>
     <message>
         <location filename="../desktopapp/themewizard.cpp" line="15"/>
-        <location filename="../desktopapp/themewizard.cpp" line="83"/>
+        <location filename="../desktopapp/themewizard.cpp" line="93"/>
         <source>Light</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.cpp" line="16"/>
-        <location filename="../desktopapp/themewizard.cpp" line="102"/>
+        <location filename="../desktopapp/themewizard.cpp" line="112"/>
         <source>Dark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="38"/>
+        <location filename="../desktopapp/themewizard.cpp" line="39"/>
         <source>(Copy)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="62"/>
+        <location filename="../desktopapp/themewizard.cpp" line="68"/>
         <source>Select Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="153"/>
+        <location filename="../desktopapp/themewizard.cpp" line="163"/>
         <source>Window background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="156"/>
+        <location filename="../desktopapp/themewizard.cpp" line="166"/>
         <source>Window text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="159"/>
+        <location filename="../desktopapp/themewizard.cpp" line="169"/>
         <source>Base background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="162"/>
+        <location filename="../desktopapp/themewizard.cpp" line="172"/>
         <source>Base text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="165"/>
+        <location filename="../desktopapp/themewizard.cpp" line="175"/>
         <source>Bright text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="168"/>
+        <location filename="../desktopapp/themewizard.cpp" line="178"/>
         <source>Highlight</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="171"/>
+        <location filename="../desktopapp/themewizard.cpp" line="181"/>
         <source>Highlighted text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="174"/>
+        <location filename="../desktopapp/themewizard.cpp" line="184"/>
         <source>Button background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="177"/>
+        <location filename="../desktopapp/themewizard.cpp" line="187"/>
         <source>Button text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="180"/>
+        <location filename="../desktopapp/themewizard.cpp" line="190"/>
         <source>Light hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="183"/>
+        <location filename="../desktopapp/themewizard.cpp" line="193"/>
         <source>Midlight hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="186"/>
+        <location filename="../desktopapp/themewizard.cpp" line="196"/>
         <source>Dark hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="189"/>
+        <location filename="../desktopapp/themewizard.cpp" line="199"/>
         <source>Placeholder text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="192"/>
+        <location filename="../desktopapp/themewizard.cpp" line="202"/>
         <source>Tip text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="195"/>
+        <location filename="../desktopapp/themewizard.cpp" line="205"/>
         <source>Tip background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="198"/>
+        <location filename="../desktopapp/themewizard.cpp" line="208"/>
         <source>Shadow</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4709,6 +4785,59 @@
     <message>
         <location filename="../desktopapp/toptoolbar.ui" line="14"/>
         <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Trash</name>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.ui" line="69"/>
+        <source>Trash menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="53"/>
+        <source>Open in another view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="64"/>
+        <source>Open in a new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="83"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="90"/>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="90"/>
+        <source>Enter a new title for the item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="98"/>
+        <source>Restore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.h" line="23"/>
+        <source>Trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TrashProjectToolbox</name>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trashprojecttoolbox.h" line="45"/>
+        <source>Trash Project Toolbox</source>
+        <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4897,7 +5026,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="52"/>
+        <location filename="../desktopapp/main.cpp" line="53"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

@@ -15,30 +15,41 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets CONFIG REQUIRED)
 set(backend_SRCS
 
     skribisto_backend_global.h
-    projecttreemodel.h projecttreemodel.cpp
-    projecttreeitem.h projecttreeitem.cpp
     projecttreecommands.h projecttreecommands.cpp
-    projecttreeproxymodel.h projecttreeproxymodel.cpp
     projectcommands.h projectcommands.cpp
     commands.h commands.cpp
     tagcommands.h tagcommands.cpp
 )
 
+set(backend_MODELS
+
+    treemodels/projecttreemodel.h treemodels/projecttreemodel.cpp
+    treemodels/projecttreeitem.h treemodels/projecttreeitem.cpp
+    treemodels/projecttreeproxymodel.h treemodels/projecttreeproxymodel.cpp
+    treemodels/projecttrashedtreemodel.h treemodels/projecttrashedtreemodel.cpp
+)
+
 # Tell CMake to create the executable
 if(IOS)
     message("static lib chosen")
-    add_library(skribisto-backend STATIC ${backend_SRCS})
+    add_library(skribisto-backend STATIC ${backend_SRCS} ${backend_MODELS})
 else()
-    add_library(skribisto-backend SHARED ${backend_SRCS})
+    add_library(skribisto-backend SHARED ${backend_SRCS} ${backend_MODELS})
 endif(IOS)
+
+add_dependencies(${PROJECT_NAME} skribisto-data)
+add_dependencies(${PROJECT_NAME} skribisto-common)
+add_dependencies(${PROJECT_NAME} skribisto-exporter)
+add_dependencies(${PROJECT_NAME} skribisto-importer)
 
 target_compile_definitions(skribisto-backend PRIVATE SKRIBISTO_BACKEND_LIBRARY)
 
-target_link_libraries(skribisto-backend PRIVATE skribisto-data skribisto-common Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(skribisto-backend PRIVATE skribisto-data skribisto-common skribisto-exporter skribisto-importer Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
-include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-desktop-common/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-exporter/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-importer/src/")
 
 # ---------------------------------
 if(IOS)

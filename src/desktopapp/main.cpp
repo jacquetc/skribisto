@@ -1,8 +1,9 @@
 #include "commands.h"
+#include "interfaces/pagetypeiconinterface.h"
 #include "projectcommands.h"
 #include "tagcommands.h"
 #include "projecttreecommands.h"
-#include "projecttreemodel.h"
+#include "treemodels/projecttreemodel.h"
 #include "skrdata.h"
 #include "skribistostyle.h"
 #include "thememanager.h"
@@ -56,8 +57,16 @@ int main(int argc, char *argv[]) {
 
   QUndoStack *undoStack = new QUndoStack;
 
-  // load singletons :
   auto *skrData = new SKRData(qApp);
+
+
+  // load plugins:
+  skrpluginhub->addPluginType<ProjectToolboxInterface>();
+  skrpluginhub->addPluginType<PageInterface>();
+  skrpluginhub->addPluginType<PageTypeIconInterface>();
+  skrpluginhub->addPluginType<ItemExporterInterface>();
+
+  // load singletons :
   new ProjectTreeModel(skrData);
   new Commands(skrData, undoStack);
   new ProjectCommands(skrData, undoStack);
@@ -66,15 +75,11 @@ int main(int argc, char *argv[]) {
   ThemeManager::instance();
   TextBridge::instance();
 
-  // load plugins:
-  skrpluginhub->addPluginType<ProjectToolboxInterface>();
-  skrpluginhub->addPluginType<PageInterface>();
-  skrpluginhub->addPluginType<ItemExporterInterface>();
 
   windowManager->restoreWindows();
 
   if (parser.isSet("testProject")) {
-    skrdata->projectHub()->loadProject(
+    projectCommands->loadProject(
         QUrl("qrc:/testfiles/skribisto_test_project.skrib"));
   }
 

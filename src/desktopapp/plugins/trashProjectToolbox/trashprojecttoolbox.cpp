@@ -1,8 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2017 by Cyril Jacquet                                 *
+*   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: upgrader.h                                                   *
+*  Filename: trashprojecttoolbox.cpp
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,36 +19,25 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMUPGRADER_H
-#define PLMUPGRADER_H
+#include "trashprojecttoolbox.h"
+#include "skrdata.h"
+#include "trash.h"
 
-#include <QObject>
-#include <QSqlDatabase>
+TrashProjectToolbox::TrashProjectToolbox(QObject *parent) : QObject(parent)
+{}
 
-#include "skrresult.h"
+// ---------------------------------------------------
 
-class PLMUpgrader : public QObject {
-    Q_OBJECT
+TrashProjectToolbox::~TrashProjectToolbox()
+{}
 
-public:
+Toolbox *TrashProjectToolbox::getToolbox() const
+{
 
-    explicit PLMUpgrader(QObject *parent = nullptr);
-    static SKRResult upgradeSQLite(QSqlDatabase sqlDb);
+Trash *trash = new Trash;
+return trash;
+}
 
-    static SKRResult setDbVersion(QSqlDatabase sqlDb,
-                                  double       newVersion);
 
-signals:
 
-public slots:
-
-private:
-
-    static SKRResult movePaperToTree_1_5(QSqlDatabase   sqlDb,
-                                         const QString& tableName);
-    static SKRResult transformParentsToFolder_1_5(QSqlDatabase sqlDb);
-    static SKRResult dropDeprecatedTables_1_5(QSqlDatabase sqlDb);
-    static SKRResult moveSynopsisToSecondaryContent_1_6(QSqlDatabase sqlDb);
-};
-
-#endif // PLMUPGRADER_H
+// ---------------------------------------------------

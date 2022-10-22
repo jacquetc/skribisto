@@ -11,6 +11,7 @@
 #include "skrdata.h"
 #include "skrresult.h"
 #include "models/skrtreelistmodel.h"
+#include "importer.h"
 
 class TreeListModelCase : public QObject {
     Q_OBJECT
@@ -50,6 +51,7 @@ void TreeListModelCase::initTestCase()
     m_data            = new SKRData(this);
     m_treeListModel   = new SKRTreeListModel(this);
     m_testProjectPath = "qrc:/testfiles/skribisto_test_project.skrib";
+    Importer::init();
 }
 
 void TreeListModelCase::cleanupTestCase()
@@ -57,10 +59,12 @@ void TreeListModelCase::cleanupTestCase()
 
 void TreeListModelCase::init() {
     m_tester = new QAbstractItemModelTester(m_treeListModel);
-    QSignalSpy spy(skrdata->projectHub(), SIGNAL(projectLoaded(int)));
 
-    skrdata->projectHub()->loadProject(m_testProjectPath);
-    QCOMPARE(spy.count(), 1);
+
+
+    SKRResult result(this);
+    int projectId = Importer::importProject(m_testProjectPath, "skrib", QVariantMap(), result);
+
     QList<int> idList = skrdata->projectHub()->getProjectIdList();
 
     if (idList.isEmpty()) {

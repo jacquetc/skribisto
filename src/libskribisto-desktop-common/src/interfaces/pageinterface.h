@@ -43,8 +43,6 @@ public:
         return nullptr;
     }
     virtual bool      isConstructible() const = 0;
-    virtual QString   pageTypeIconUrl(int projectId,
-                                      int treeItemId) const = 0;
 
     virtual QVariantMap propertiesForCreationOfTreeItem(const QVariantMap &customProperties = QVariantMap()) const = 0;
 

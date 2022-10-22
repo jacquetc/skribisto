@@ -53,7 +53,32 @@
          <item>
           <widget class="QLabel" name="themeNameLabel">
            <property name="text">
-            <string>TextLabel</string>
+            <string notr="true">TextLabel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox_5">
+        <property name="title">
+         <string>Info</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_7">
+         <item>
+          <widget class="QLabel" name="infoLabel">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string notr="true">Info</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+           <property name="openExternalLinks">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -147,7 +172,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QComboBox" name="typeComboBox"/>
+          <widget class="ComboBox" name="typeComboBox"/>
          </item>
         </layout>
        </widget>
@@ -243,7 +268,7 @@
            </layout>
           </item>
           <item>
-           <widget class="QComboBox" name="comboBox">
+           <widget class="ComboBox" name="comboBoxExample">
             <item>
              <property name="text">
               <string>test</string>
@@ -318,6 +343,13 @@
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ComboBox</class>
+   <extends>QComboBox</extends>
+   <header location="global">combobox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../3rdparty/icons.qrc"/>
  </resources>

@@ -195,7 +195,7 @@ void ToolbarSelector::add(const QIcon &icon, const QString &title)
             auto *senderAction = static_cast<QAction *>(this->sender());
 
             int index = 0;
-            for(auto *action : this->actions()){
+            for(auto *action : m_actionGroup->actions()){
                 if(action == senderAction){
                     emit currentIndexChanged(index);
                 }

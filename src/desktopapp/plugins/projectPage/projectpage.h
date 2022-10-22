@@ -23,16 +23,18 @@
 
 #include "interfaces/itemexporterinterface.h"
 #include "interfaces/pageinterface.h"
+#include "interfaces/pagetypeiconinterface.h"
 #include <QObject>
 #include <view.h>
 
 class ProjectPage : public QObject,
                     public PageInterface,
+                   public PageTypeIconInterface,
                     public ItemExporterInterface {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "eu.skribisto.ProjectPagePlugin/1.0" FILE
                         "plugin_info.json")
-  Q_INTERFACES(PageInterface ItemExporterInterface)
+  Q_INTERFACES(PageInterface PageTypeIconInterface ItemExporterInterface)
 
 public:
   explicit ProjectPage(QObject *parent = nullptr);

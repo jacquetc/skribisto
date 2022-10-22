@@ -1,8 +1,7 @@
 #include "navigation.h"
 #include "skrusersettings.h"
 #include "ui_navigation.h"
-#include "projecttreeproxymodel.h"
-#include "projecttreeitem.h"
+#include "treemodels/projecttreeproxymodel.h"
 #include "projecttreecommands.h"
 #include "invoker.h"
 #include "viewmanager.h"
@@ -11,6 +10,7 @@
 
 #include <QKeyEvent>
 #include <QMenu>
+#include <QInputDialog>
 #include <newtreeitemdialog.h>
 
 Navigation::Navigation(class QWidget *parent) :
@@ -52,27 +52,57 @@ Navigation::Navigation(class QWidget *parent) :
     ui->treeView->addAction(m_openItemInAnotherViewAction);
     m_openItemInAnotherViewAction->setShortcut(QKeySequence("Ctrl+Return"));
     m_openItemInAnotherViewAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        QObject::connect(m_openItemInAnotherViewAction, &QAction::triggered, this, [this](){
-            QModelIndex index = ui->treeView->selectionModel()->currentIndex();
-            this->setCurrentIndex(index);
-            this->openInAnotherView(index);
-        } );
-
-   m_openItemInANewWindowAction = new QAction(tr("Open in a new window"), this);
+    QObject::connect(m_openItemInAnotherViewAction, &QAction::triggered, this, [this](){
+        QModelIndex index = ui->treeView->selectionModel()->currentIndex();
+        this->setCurrentIndex(index);
+        this->openInAnotherView(index);
+    } );
 
 
+    m_openItemInANewWindowAction = new QAction(tr("Open in a new window"), ui->treeView);
+    ui->treeView->addAction(m_openItemInANewWindowAction);
+    m_openItemInANewWindowAction->setShortcut(QKeySequence("Ctrl+Shift+Return"));
+    m_openItemInANewWindowAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    QObject::connect(m_openItemInANewWindowAction, &QAction::triggered, this, [this](){
+        QModelIndex index = ui->treeView->selectionModel()->currentIndex();
+        this->setCurrentIndex(index);
 
-    NewTreeItemDialog *dialog = new NewTreeItemDialog(this);
+
+        QMetaObject::invokeMethod(this->window(), "addWindowForItemId", Qt::QueuedConnection
+                                  , Q_ARG(int, m_projectId)
+                                  , Q_ARG(int, m_targetTreeItemId)
+                                  );
+
+
+    } );
+
+
+
+    m_renameAction = new QAction(tr("Rename"), ui->treeView);
+    ui->treeView->addAction(m_renameAction);
+    m_renameAction->setShortcut(QKeySequence("F2"));
+    m_renameAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    QObject::connect(m_renameAction, &QAction::triggered, this, [this](){
+        this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
+
+        QString newName = QInputDialog::getText(ui->treeView, tr("Rename"), tr("Enter a new title for the item"), QLineEdit::Normal,
+                                                skrdata->treeHub()->getTitle(m_projectId, m_targetTreeItemId));
+        projectTreeCommands->renameItem(m_projectId, m_targetTreeItemId, newName);
+
+    } );
+
+
+    NewTreeItemDialog *addItemDialog = new NewTreeItemDialog(this);
 
     m_addItemAfterAction = new QAction(tr("Add below"), ui->treeView);
     ui->treeView->addAction(m_addItemAfterAction);
     m_addItemAfterAction->setShortcut(QKeySequence("Ctrl+N"));
     m_addItemAfterAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-    QObject::connect(m_addItemAfterAction, &QAction::triggered, this, [this, dialog](){
+    QObject::connect(m_addItemAfterAction, &QAction::triggered, this, [this, addItemDialog](){
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
-        dialog->setActionType(NewTreeItemDialog::AddAfter);
-        dialog->setIdentifiers(m_projectId, m_targetTreeItemId);
-        dialog->open();
+        addItemDialog->setActionType(NewTreeItemDialog::AddAfter);
+        addItemDialog->setIdentifiers(m_projectId, m_targetTreeItemId);
+        addItemDialog->open();
     } );
 
 
@@ -80,25 +110,25 @@ Navigation::Navigation(class QWidget *parent) :
     ui->treeView->addAction(m_addItemBeforeAction);
     m_addItemBeforeAction->setShortcut(QKeySequence("Ctrl+H"));
     m_addItemBeforeAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-    QObject::connect(m_addItemBeforeAction, &QAction::triggered, this, [this, dialog](){
+    QObject::connect(m_addItemBeforeAction, &QAction::triggered, this, [this, addItemDialog](){
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
-        dialog->setActionType(NewTreeItemDialog::AddBefore);
-        dialog->setIdentifiers(m_projectId, m_targetTreeItemId);
-        dialog->open();
+        addItemDialog->setActionType(NewTreeItemDialog::AddBefore);
+        addItemDialog->setIdentifiers(m_projectId, m_targetTreeItemId);
+        addItemDialog->open();
     } );
 
     m_addSubItemAction = new QAction(tr("Add sub-item"), this);
     ui->treeView->addAction(m_addSubItemAction);
     m_addSubItemAction->setShortcut(QKeySequence("Ctrl+J"));
     m_addSubItemAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-    QObject::connect(m_addSubItemAction, &QAction::triggered, this, [this, dialog](){
+    QObject::connect(m_addSubItemAction, &QAction::triggered, this, [this, addItemDialog](){
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
 
-        dialog->setActionType(NewTreeItemDialog::AddSubItem);
-        dialog->setIdentifiers(m_projectId, m_targetTreeItemId);
-        dialog->open();
+        addItemDialog->setActionType(NewTreeItemDialog::AddSubItem);
+        addItemDialog->setIdentifiers(m_projectId, m_targetTreeItemId);
+        addItemDialog->open();
 
-        QObject::connect(dialog, &QDialog::finished, this, [this](int result){
+        QObject::connect(addItemDialog, &QDialog::finished, this, [this](int result){
             if(result == QDialog::Accepted){
                 ui->treeView->expand(m_currentModelIndex);
             }
@@ -107,8 +137,78 @@ Navigation::Navigation(class QWidget *parent) :
     } );
 
 
+
+    m_sendToTrashAction = new QAction(tr("Send to trash"), ui->treeView);
+    ui->treeView->addAction(m_sendToTrashAction);
+    m_sendToTrashAction->setShortcut(QKeySequence("Del"));
+    m_sendToTrashAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    QObject::connect(m_sendToTrashAction, &QAction::triggered, this, [this](){
+        this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
+        QModelIndexList indexList = ui->treeView->selectionModel()->selectedIndexes();
+
+        if(indexList.size() == 1){
+            projectTreeCommands->sendItemToTrash(m_projectId, m_targetTreeItemId);
+
+        }
+        else{
+            //TODO: forbid selection accross multiple projects
+
+            QList<int> targetIds;
+            for(const QModelIndex &index : indexList){
+                targetIds.append(index.data(ProjectTreeItem::TreeItemIdRole).toInt());
+            }
+
+            projectTreeCommands->sendSeveralItemsToTrash(m_projectId, targetIds);
+        }
+
+
+    } );
+
+
+
+//    m_copyItemsAction = new QAction(tr("Copy"), this);
+//    ui->treeView->addAction(m_copyItemsAction);
+//    m_copyItemsAction->setShortcut(QKeySequence("Ctrl+C"));
+//    m_copyItemsAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+//    QObject::connect(m_copyItemsAction, &QAction::triggered, this, [this, addItemDialog](){
+
+
+//        for(auto index : ui->treeView->selectionModel()->selection().indexes()){
+//            copyCutIndex
+//        }
+
+//    } );
+
+
+    connect(ui->treeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, [this](){
+
+        if(ui->treeView->selectionModel()->selectedIndexes().count() > 1){
+          QModelIndexList indexList = ui->treeView->selectionModel()->selectedIndexes();
+
+          int firstIndexProjectId = indexList.first().data(ProjectTreeItem::ProjectIdRole).toInt();
+
+          for(const QModelIndex &index : indexList){
+              // forbid selection accross multiple projects
+              if(index.data(ProjectTreeItem::ProjectIdRole).toInt() != firstIndexProjectId){
+                  ui->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
+              }
+              // deselect project item
+              if(index.data(ProjectTreeItem::TreeItemIdRole).toInt() == 0){
+                  ui->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
+              }
+          }
+        }
+
+
+    });
+
     ui->treeView->setItemDelegate(new ProjectItemDelegate);
 
+
+    QMenu *navigationMenu = new QMenu;
+    //navigationMenu->addAction(splitHorizontalyAction);
+
+    ui->navigationMenuToolButton->setMenu(navigationMenu);
 }
 
 Navigation::~Navigation()
@@ -132,10 +232,15 @@ void Navigation::onCustomContextMenu(const QPoint &point)
         QMenu *contextMenu = new QMenu("Context menu", ui->treeView);
         contextMenu->setMinimumSize(100, 50);
         contextMenu->addAction(m_openItemInAnotherViewAction);
+        contextMenu->addAction(m_openItemInANewWindowAction);
+        contextMenu->addSeparator();
+        contextMenu->addAction(m_renameAction);
         contextMenu->addSeparator();
         contextMenu->addAction(m_addItemBeforeAction);
         contextMenu->addAction(m_addItemAfterAction);
         contextMenu->addAction(m_addSubItemAction);
+        contextMenu->addSeparator();
+        contextMenu->addAction(m_sendToTrashAction);
 
         contextMenu->exec(ui->treeView->viewport()->mapToGlobal(point));
     }
@@ -224,9 +329,21 @@ QModelIndex Navigation::pathToIndex(const Path &path){
 void Navigation::setCurrentIndex(const QModelIndex &index)
 {
     if (index.isValid()) {
+
         m_projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
         m_targetTreeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
         m_currentModelIndex = index;
+
+        m_addItemAfterAction->setEnabled(index.data(ProjectTreeItem::CanAddSiblingTreeItemRole).toBool());
+        m_addItemBeforeAction->setEnabled(index.data(ProjectTreeItem::CanAddSiblingTreeItemRole).toBool());
+        m_addSubItemAction->setEnabled(index.data(ProjectTreeItem::CanAddChildTreeItemRole).toBool());
+        m_sendToTrashAction->setEnabled(index.data(ProjectTreeItem::IsTrashableRole).toBool());
+
+        //project item
+        if(m_targetTreeItemId == 0){
+
+        }
+
     }
 }
 

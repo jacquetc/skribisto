@@ -65,6 +65,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(SKR_DEBUG=true)
 
     add_subdirectory(src/libskribisto-data/tests)
+
 # add_subdirectory(src/mobileapp/tests)
 else()
     set(SKR_DEBUG false)
@@ -76,6 +77,8 @@ if(IOS)
 endif()
 
 add_subdirectory(src/libskribisto-common/src)
+add_subdirectory(src/libskribisto-exporter/src)
+add_subdirectory(src/libskribisto-importer/src)
 add_subdirectory(src/libskribisto-desktop-common/src)
 add_subdirectory(src/desktopapp)
 add_subdirectory(src/translations)

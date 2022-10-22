@@ -5,6 +5,7 @@
 #include <QUndoCommand>
 #include "skribisto_backend_global.h"
 #include "interfaces/invokablecommandgroupinterface.h"
+#include "skrresult.h"
 
 #define projectCommands ProjectCommands::instance()
 
@@ -18,10 +19,13 @@ public:
     {
         return m_instance;
     }
+    int createNewEmptyProject();
 
-    void save(int projectId);
+    SKRResult save(int projectId);
+    SKRResult backupAProject(int projectId, const QString &type, const QUrl &folderPath);
+    SKRResult saveAProjectCopy(int projectId, const QString &extension, const QUrl &path);
     void closeProject(int projectId);
-    void saveAs(int projectId, const QUrl &url);
+    SKRResult saveAs(int projectId, const QUrl &url, const QString &extension);
 
     void setProjectName(int projectId, const QString &name);
     void setAuthor(int projectId, const QString &author);

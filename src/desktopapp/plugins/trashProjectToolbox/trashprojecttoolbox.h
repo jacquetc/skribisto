@@ -1,8 +1,9 @@
 /***************************************************************************
-*   Copyright (C) 2016 by Cyril Jacquet                                 *
+*   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plmexporter.h                                                   *
+*  Filename: trashprojecttoolbox.h
+*                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,34 +19,53 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMEXPORTER_H
-#define PLMEXPORTER_H
+#ifndef TRASHPROJECTTOOLBOX_H
+#define TRASHPROJECTTOOLBOX_H
 
-#include "../project/plmproject.h"
 #include <QObject>
-#include <QtSql/QSqlDatabase>
-#include <QtSql/QSqlQuery>
-#include <QtSql/QSqlRecord>
-#include <QVariant>
-#include <QTemporaryFile>
-#include <QDebug>
-#include <QDir>
-#include <QProcess>
-#include <QByteArray>
+#include "interfaces/projecttoolboxinterface.h"
 
-class PLMExporter : public QObject {
+class TrashProjectToolbox : public QObject,
+                                 public ProjectToolboxInterface {
     Q_OBJECT
+    Q_PLUGIN_METADATA(
+        IID "eu.skribisto.TrashProjectToolboxPlugin/1.0" FILE
+        "plugin_info.json")
+    Q_INTERFACES(ProjectToolboxInterface)
 
 public:
 
-    explicit PLMExporter(QObject *parent = 0);
-    SKRResult exportWholeSQLiteDbTo(PLMProject    *project,
-                                    const QString& type,
-                                    const QUrl   & fileName);
+    explicit TrashProjectToolbox(QObject *parent = nullptr);
+    ~TrashProjectToolbox();
+    QString name() const override {
+        return "TrashProjectToolbox";
+    }
+
+    QString displayedName() const override {
+        return tr("Trash Project Toolbox", "plugin name");
+    }
+
+    QString use() const override {
+        return "Display a toolbox offering access to project trash";
+    }
+
+    QString pluginGroup() const override {
+        return "ProjectToolbox";
+    }
+
+    QString pluginSelectionGroup() const override {
+        return "Mandatory";
+    }
+
+    Toolbox *getToolbox() const override;
+
+    int weight() const override {
+        return 200;
+    }
 
 signals:
 
-public slots:
+private:
 };
 
-#endif // PLMEXPORTER_H
+#endif // TRASHPROJECTTOOLBOX_H

@@ -170,7 +170,6 @@ void WindowManager::addWindow(const QString &pageType, int projectId, int treeIt
 
     window->setWindowState(visibility);
 
-window->restoreState(dockState);
 
 
     if(!pageType.isEmpty() || projectId >=0 || treeItemId >= 0)
@@ -178,4 +177,5 @@ window->restoreState(dockState);
 
     window->show();
     window->raise();
+    window->restoreState(dockState);
 }

@@ -25,7 +25,8 @@ add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp ${RESOURCES})
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
 
 
-target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Test Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
+target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-data skribisto-importer Qt${QT_VERSION_MAJOR}::Test Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-importer/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 

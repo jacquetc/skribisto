@@ -167,10 +167,10 @@ QString SKRSqlTools::getProjectTemplateDBVersion(SKRResult *result) {
 
 // ------------------------------------------------------------------
 
-double SKRSqlTools::getProjectDBVersion(SKRResult *result, QSqlDatabase& sqlDb) {
+double SKRSqlTools::getProjectDBVersion(SKRResult *result, const QString& sqlDbConnectionName) {
     double dbVersion = -1;
 
-    QSqlQuery query(sqlDb);
+    QSqlQuery query(QSqlDatabase::database(sqlDbConnectionName));
     QString   queryStr = "SELECT dbl_database_version FROM tbl_project";
 
 

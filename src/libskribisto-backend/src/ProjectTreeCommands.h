@@ -1,7 +1,7 @@
 #ifndef PROJECTTREECOMMANDS_H
 #define PROJECTTREECOMMANDS_H
 
-#include "projecttreemodel.h"
+#include "treemodels/projecttreemodel.h"
 #include "skribisto_backend_global.h"
 
 #include <QObject>
@@ -20,20 +20,36 @@ public:
 
     QUndoStack *undoStack() const;
 
-    void addItemAfter(int projectId, int targetId, const QString &type, const QVariantMap &properties = QVariantMap());
-    void addItemBefore(int projectId, int targetId, const QString &type, const QVariantMap &properties = QVariantMap());
-    void addSubItem(int projectId, int targetId, const QString &type, const QVariantMap &properties = QVariantMap());
+    void renameItem(int projectId, int targetId,  const QString &newName);
+
+    int addItemAfter(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
+    int addItemBefore(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
+    int addSubItem(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
 
 
-    void addSeveralSubItems(int projectId, int targetId, const QString &type, int count, const QVariantMap &properties);
-    void addSeveralItemsAfter(int projectId, int targetId, const QString &type, int count, const QVariantMap &properties);
-    void addSeveralItemsBefore(int projectId, int targetId, const QString &type, int count, const QVariantMap &properties);
+    QList<int> addSeveralSubItems(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
+    QList<int> addSeveralItemsAfter(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
+    QList<int> addSeveralItemsBefore(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
 
     void setItemProperties(int projectId, int targetId, const QVariantMap &properties, bool isSystem = true);
 
-    void moveItemsAboveCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
-    void moveItemsBelowCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
-    void moveItemsAsChildOfCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
+    void moveItemsAbove(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
+    void moveItemsBelow(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
+    void moveItemsAsChildOf(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
+
+    void sendItemToTrash(int projectId, int targetId);
+    void sendSeveralItemsToTrash(int projectId, QList<int> targetIds);
+
+    ///
+    /// \brief restoreItemFromTrash
+    /// \param projectId
+    /// \param targetId
+    /// \param forcedOriginalParentId
+    /// \param forcedOriginalRow
+    /// \return 0 if ok, or the targetId if can't restore by lack of valid orignal parent and/or row
+    ///
+    int restoreItemFromTrash(int projectId, int targetId, int forcedOriginalParentId = -1, int forcedOriginalRow = -1);
+    QList<int> restoreSeveralItemsFromTrash(int projectId, QList<int> targetIds);
 
 signals:
 private:

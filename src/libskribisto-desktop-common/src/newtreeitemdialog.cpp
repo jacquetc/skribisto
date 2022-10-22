@@ -4,6 +4,8 @@
 
 #include "interfaces/pageinterface.h"
 
+#include "interfaces/pagetypeiconinterface.h"
+
 NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::NewTreeItemDialog), m_customPropertiesWidget(nullptr)
@@ -33,30 +35,43 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
                 }
             }
 
+            //titles
+
+            QString titleTemplate = ui->nameLineEdit->text();
+            QStringList titles;
+            QString title = titleTemplate;
+            titles << title.replace("#", "").trimmed();
+
+            for(int i = 2; i <= numberToCreate; i++){
+                title = titleTemplate;
+                titles << title.replace("#", QString::number(i)).trimmed();
+            }
+
+
             if(result == 1){
                 if(this->actionType() == NewTreeItemDialog::AddBefore){
                 if(numberToCreate == 1){
-                    projectTreeCommands->addItemBefore(m_projectId, m_treeItemId, m_type, creationProperties);
+                    projectTreeCommands->addItemBefore(m_projectId, m_treeItemId, m_type, titles.first(), creationProperties);
                 }
                 else {
-                    projectTreeCommands->addSeveralItemsBefore(m_projectId, m_treeItemId, m_type, numberToCreate, creationProperties);
+                    projectTreeCommands->addSeveralItemsBefore(m_projectId, m_treeItemId, m_type, numberToCreate, titles, creationProperties);
                 }
                 }
                 if(this->actionType() == NewTreeItemDialog::AddAfter){
                     if(numberToCreate == 1){
-                        projectTreeCommands->addItemAfter(m_projectId, m_treeItemId, m_type, creationProperties);
+                        projectTreeCommands->addItemAfter(m_projectId, m_treeItemId, m_type, titles.first(), creationProperties);
                     }
                     else {
-                        projectTreeCommands->addSeveralItemsAfter(m_projectId, m_treeItemId, m_type, numberToCreate, creationProperties);
+                        projectTreeCommands->addSeveralItemsAfter(m_projectId, m_treeItemId, m_type, numberToCreate, titles, creationProperties);
                     }
                 }
                 if(this->actionType() == NewTreeItemDialog::AddSubItem){
 
                     if(numberToCreate == 1){
-                        projectTreeCommands->addSubItem(m_projectId, m_treeItemId, m_type, creationProperties);
+                        projectTreeCommands->addSubItem(m_projectId, m_treeItemId, m_type, titles.first(), creationProperties);
                     }
                     else {
-                        projectTreeCommands->addSeveralSubItems(m_projectId, m_treeItemId, m_type, numberToCreate, creationProperties);
+                        projectTreeCommands->addSeveralSubItems(m_projectId, m_treeItemId, m_type, numberToCreate, titles, creationProperties);
                     }
                 }
             }
@@ -67,6 +82,17 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
 
     });
 
+
+
+
+    QList<PageTypeIconInterface *> pageTypeIconPluginList =
+            skrpluginhub->pluginsByType<PageTypeIconInterface>();
+
+    QHash<QString, QString> pageTypeByIconUrl;
+
+    for(auto *plugin : pageTypeIconPluginList){
+        pageTypeByIconUrl.insert(plugin->pageType(), plugin->pageTypeIconUrl(-1, -1));
+    }
 
 
 
@@ -85,7 +111,9 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
     for(auto *plugin : pluginList){
         if(plugin->isConstructible()){
 
-            QListWidgetItem *item = new QListWidgetItem(QIcon(plugin->pageTypeIconUrl(-1, -1)), plugin->visualText(), ui->listWidget);
+            QIcon icon = QIcon(pageTypeByIconUrl.value(plugin->pageType()));
+
+            QListWidgetItem *item = new QListWidgetItem(icon, plugin->visualText(), ui->listWidget);
             item->setData(Qt::UserRole, plugin->pageDetailText());
             item->setData(Qt::UserRole + 1, plugin->pageType());
 
@@ -169,8 +197,9 @@ void NewTreeItemDialog::on_listWidget_currentItemChanged(QListWidgetItem *curren
 {
     ui->titleLabel->setText(current->text());
     ui->detailsLabel->setText(current->data(Qt::UserRole).toString());
-    m_type = current->data(Qt::UserRole + 1).toString();
+    ui->nameLineEdit->setText(current->text() + " #");
 
+    m_type = current->data(Qt::UserRole + 1).toString();
     this->setCustomPropertiesWidget(m_typeWithparameterWidgetHash.value(m_type));
 
 

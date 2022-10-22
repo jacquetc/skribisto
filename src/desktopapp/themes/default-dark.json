@@ -3,6 +3,7 @@
     "isEditable": false,
     "themeType": "dark",
     "isForDesktop": true,
+    "info": "",
     "colors": {
         "window": "#636363",
         "windowText": "#EEEEEE",

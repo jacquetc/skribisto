@@ -780,6 +780,47 @@ QStringList PLMUtils::Dir::addonsPathsList()
         }
     }
 
+
+    dir.setPath(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    dir.cdUp();
+    dir.cdUp();
+    dir.cdUp();
+
+    QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString& subDir : qAsConst(dirList)) {
+
+        if (dir.cd(subDir + "/plugins")) {
+            if (dir.isReadable()) {
+                list.append(dir.path());
+
+                QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+                for (const QString& pluginDir : qAsConst(dirList)) {
+                    list.append(dir.path() + "/" + pluginDir);
+                }
+            }
+            dir.cdUp();
+            dir.cdUp();
+        }
+
+        if (dir.cd(subDir + "/src/plugins")) {
+            if (dir.isReadable()) {
+                list.append(dir.path());
+
+                QStringList dirList = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+                for (const QString& pluginDir : qAsConst(dirList)) {
+                    list.append(dir.path() + "/" + pluginDir);
+                }
+                dir.cdUp();
+                dir.cdUp();
+                dir.cdUp();
+            }
+        }
+    }
+
+
     // translations while in dev
     dir.setPath(QCoreApplication::applicationDirPath());
     dir.cdUp();

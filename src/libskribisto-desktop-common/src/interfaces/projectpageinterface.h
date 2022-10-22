@@ -42,13 +42,6 @@ public:
         return false;
     }
 
-    QString pageTypeIconUrl(int projectId, int treeItemId) const override {
-        Q_UNUSED(projectId)
-        Q_UNUSED(treeItemId)
-
-        return "";
-    }
-
     void updateCharAndWordCount(int  projectId,
                                 int  treeItemId,
                                 bool sameThread = false) override {}

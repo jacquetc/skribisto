@@ -27,14 +27,14 @@ CREATE TABLE tbl_tag_relationship (l_tag_relationship_id INTEGER PRIMARY KEY ON 
 CREATE TABLE tbl_tree (l_tree_id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT UNIQUE ON CONFLICT ROLLBACK NOT NULL ON CONFLICT ROLLBACK, t_title TEXT, t_internal_title TEXT, l_sort_order INTEGER NOT NULL ON CONFLICT ROLLBACK DEFAULT (9999999999), l_indent INTEGER NOT NULL ON CONFLICT ROLLBACK DEFAULT (0), t_type TEXT, m_primary_content BLOB, m_secondary_content BLOB, dt_created DATETIME NOT NULL ON CONFLICT ROLLBACK DEFAULT (CURRENT_TIMESTAMP), dt_updated DATETIME NOT NULL ON CONFLICT ROLLBACK DEFAULT (CURRENT_TIMESTAMP), dt_trashed DATETIME, b_trashed BOOLEAN NOT NULL ON CONFLICT ROLLBACK DEFAULT (0));
 
 -- Table: tbl_tree_property
-CREATE TABLE tbl_tree_property (l_tree_property_id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT UNIQUE ON CONFLICT ROLLBACK NOT NULL ON CONFLICT ROLLBACK, l_tree_code INTEGER REFERENCES tbl_tree (l_tree_id), t_name TEXT, t_value_type TEXT NOT NULL ON CONFLICT ROLLBACK DEFAULT STRING, m_value BLOB, dt_created DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP), dt_updated DATETIME NOT NULL ON CONFLICT ROLLBACK DEFAULT (CURRENT_TIMESTAMP), b_system BOOLEAN DEFAULT (0) NOT NULL ON CONFLICT ROLLBACK, b_silent BOOLEAN DEFAULT (0) NOT NULL ON CONFLICT ROLLBACK);
+CREATE TABLE tbl_tree_property (l_tree_property_id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT UNIQUE ON CONFLICT ROLLBACK NOT NULL ON CONFLICT ROLLBACK, l_tree_code INTEGER REFERENCES tbl_tree (l_tree_id) ON DELETE CASCADE ON UPDATE CASCADE, t_name TEXT, t_value_type TEXT NOT NULL ON CONFLICT ROLLBACK DEFAULT STRING, m_value BLOB, dt_created DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP), dt_updated DATETIME NOT NULL ON CONFLICT ROLLBACK DEFAULT (CURRENT_TIMESTAMP), b_system BOOLEAN DEFAULT (0) NOT NULL ON CONFLICT ROLLBACK, b_silent BOOLEAN DEFAULT (0) NOT NULL ON CONFLICT ROLLBACK);
 
 -- Table: tbl_tree_relationship
 CREATE TABLE tbl_tree_relationship (l_tree_relationship_id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT UNIQUE ON CONFLICT ROLLBACK NOT NULL ON CONFLICT ROLLBACK, l_tree_source_code INTEGER REFERENCES tbl_tree (l_tree_id) NOT NULL ON CONFLICT ROLLBACK, l_tree_receiver_code   INTEGER REFERENCES tbl_tree (l_tree_id) NOT NULL ON CONFLICT ROLLBACK);
 
 
 -- project item
-INSERT INTO tbl_tree (l_tree_id, l_sort_order, l_indent, t_type) VALUES (0, -1, 0, 'PROJECT');
+INSERT INTO tbl_tree (l_tree_id, l_sort_order, l_indent, t_type) VALUES (0, 0, 0, 'PROJECT');
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_renamable', 'BOOL', 'true');
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_movable', 'BOOL', 'false');
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_sibling_tree_item', 'BOOL', 'false');
@@ -43,6 +43,15 @@ INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUE
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_openable', 'BOOL', 'true');
 INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_copyable', 'BOOL', 'false');
 
+-- trash folder
+INSERT INTO tbl_tree (l_tree_id, l_sort_order, l_indent, t_type, t_title, t_internal_title) VALUES (1, 1000, 1, 'FOLDER', "Trash", "trash_folder");
+INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_renamable', 'BOOL', 'false');
+INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_movable', 'BOOL', 'false');
+INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_sibling_tree_item', 'BOOL', 'false');
+INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'can_add_child_tree_item', 'BOOL', 'false');
+INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_trashable', 'BOOL', 'false');
+INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_openable', 'BOOL', 'false');
+INSERT INTO tbl_tree_property (l_tree_code, t_name, t_value_type, m_value) VALUES (0, 'is_copyable', 'BOOL', 'false');
 
 
 

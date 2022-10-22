@@ -26,6 +26,7 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
             m_selectedLocation = current->data(0, Qt::UserRole).toString();
 
             ui->themeNameLabel->setText(m_selectedTheme);
+            ui->infoLabel->setText(themeManager->themeInfo(m_selectedTheme));
 
             bool isEditable = themeManager->themeWithEditableHash().value(m_selectedTheme, false);
 
@@ -53,6 +54,11 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
             this->setColorTableColors(colorMap);
 
             ui->themeExampleWidget->setPalette(themeManager->toPalette(colorMap));
+            ui->comboBoxExample->setPalette(themeManager->toPalette(colorMap));
+            QTimer::singleShot(0, this, [this](){
+                ui->comboBoxExample->shakePalette();
+            });
+
         }
 
     });
@@ -65,6 +71,10 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
 
         auto colorMap = getColorMapFromTable();
         ui->themeExampleWidget->setPalette(themeManager->toPalette(colorMap));
+        ui->comboBoxExample->setPalette(themeManager->toPalette(colorMap));
+
+        qDebug() << ui->comboBoxExample->palette().button().color().name();
+        QTimer::singleShot(0, this, [this](){ ui->comboBoxExample->shakePalette();});
     });
 
 }

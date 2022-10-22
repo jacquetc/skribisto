@@ -21,7 +21,6 @@
 ***************************************************************************/
 #include "navigationprojecttoolbox.h"
 #include "skrdata.h"
-#include "projecttreemodel.h"
 #include "navigation.h"
 
 NavigationProjectToolbox::NavigationProjectToolbox(QObject *parent) : QObject(parent)

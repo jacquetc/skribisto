@@ -292,7 +292,7 @@ private:
     void commit(int projectId);
 
     SKRResult setTrashedDateToNow(int projectId,
-                                  int treeItemId);
+                                  int treeItemId, const QDateTime &forcedDate = QDateTime());
     SKRResult setTrashedDateToNull(int projectId,
                                    int treeItemId);
 

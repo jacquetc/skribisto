@@ -1,0 +1,9 @@
+{
+    "type": "exporter",
+    "shortname": "SkrExporter",
+    "longname": "Skribisto .skr exporter",
+    "version": "1.0",
+    "mandatory": true,
+    "activatedByDefault": true,
+    "dependencies": []
+}

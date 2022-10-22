@@ -190,12 +190,13 @@ void MainWindow::on_actionSaveAs_triggered()
 
     QStringList schemes;
     schemes << tr("Skribisto project (*.skrib)");
+    QString selectedFilter;
     QUrl saveFileNameUrl = QFileDialog::getSaveFileUrl(this, tr("Save project"),
                                                        skrdata->projectHub()->getPath(activeProject),
-                                                       "Skribisto project (*.skrib)", nullptr, QFileDialog::Options(),
+                                                       "Skribisto project (*.skrib);;Skribisto flat project (*.skrif)", &selectedFilter, QFileDialog::Options(),
                                                        schemes);
 
-    projectCommands->saveAs(activeProject, saveFileNameUrl);
+    projectCommands->saveAs(activeProject, saveFileNameUrl, QFileInfo(saveFileNameUrl.toLocalFile()).suffix());
 }
 
 

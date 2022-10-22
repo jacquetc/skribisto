@@ -155,13 +155,14 @@ SKRResult SKRTreeHub::restoreTree(int projectId, QList<QVariantMap> allValues)
 
     }
     result = queries.injectDirectSql("PRAGMA foreign_keys = 1");
-    this->commit(projectId);
 
     IFOK(result) {
+        queries.commit();
         emit treeReset(projectId);
         emit projectModified(projectId);
     }
     IFKO(result) {
+        queries.rollback();
         emit errorSent(result);
     }
     return result;
@@ -486,7 +487,10 @@ SKRResult SKRTreeHub::setTrashedWithChildren(int projectId, int treeItemId, bool
 {
     SKRResult result(this);
 
+    QDateTime parenTrashDate = this->getTrashedDate(projectId, treeItemId);
     QList<int> childrenIdList = this->getAllChildren(projectId, treeItemId);
+
+    QDateTime now = QDateTime::currentDateTime();
 
 
     // children deletion (or recovery)
@@ -495,17 +499,16 @@ SKRResult SKRTreeHub::setTrashedWithChildren(int projectId, int treeItemId, bool
 
         // set date but those already deleted
         if (newTrashedState && this->getTrashedDate(projectId, _id).isNull()) {
-            result = this->setTrashedDateToNow(projectId, _id);
+            result = this->setTrashedDateToNow(projectId, _id, now);
             emit trashedChanged(projectId, _id, newTrashedState);
         }
 
-        // restore
-        else if (!newTrashedState) {
+        // restore those deleted at the same time
+        else if (!newTrashedState && this->getTrashedDate(projectId, _id) == parenTrashDate) {
             result = this->setTrashedDateToNull(projectId, _id);
             emit trashedChanged(projectId, _id, newTrashedState);
         }
 
-        // else ignore those already trashed
     }
 
 
@@ -515,7 +518,7 @@ SKRResult SKRTreeHub::setTrashedWithChildren(int projectId, int treeItemId, bool
 
         // set date but those already deleted
         if (newTrashedState && this->getTrashedDate(projectId, treeItemId).isNull()) {
-            result = this->setTrashedDateToNow(projectId, treeItemId);
+            result = this->setTrashedDateToNow(projectId, treeItemId, now);
         }
 
         // restore
@@ -523,6 +526,7 @@ SKRResult SKRTreeHub::setTrashedWithChildren(int projectId, int treeItemId, bool
             result = this->setTrashedDateToNull(projectId, treeItemId);
         }
     }
+
     IFOK(result) {
         emit trashedChanged(projectId, treeItemId, newTrashedState);
         emit projectModified(projectId);
@@ -2128,9 +2132,17 @@ bool SKRTreeHub::isCutCopy(int projectId, int treeItemId) const {
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setTrashedDateToNow(int projectId, int treeItemId)
+SKRResult SKRTreeHub::setTrashedDateToNow(int projectId, int treeItemId, const QDateTime &forcedDate)
 {
-    return set(projectId, treeItemId, "dt_trashed", QDateTime::currentDateTime());
+    QDateTime date;
+    if(forcedDate.isValid()){
+        date = forcedDate;
+    }
+    else {
+        date = QDateTime::currentDateTime();
+    }
+
+    return set(projectId, treeItemId, "dt_trashed", date);
 }
 
 // ----------------------------------------------------------------------------------------

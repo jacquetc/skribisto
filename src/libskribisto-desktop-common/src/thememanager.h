@@ -32,6 +32,8 @@ public:
   void setDarkTheme(const QString &newDarkTheme);
   QString defaultDarkTheme() const { return "Default Dark"; }
 
+  QString themeInfo(const QString &themeName) const;
+
   const QMap<QString, QString> &lightThemeWithLocationMap() const;
 
   const QMap<QString, QString> &darkThemeWithLocationMap() const;
@@ -84,6 +86,7 @@ private:
 
   QPalette createSidePalette(const QPalette &palette) const;
   QPalette createMiddlePalette(const QPalette &palette) const;
+  QJsonDocument loadThemeJson(const QString &themeName) const;
 };
 
 #endif // THEMEMANAGER_H

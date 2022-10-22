@@ -27,12 +27,10 @@ set(data_SRCS
     skrpropertyhub.cpp
     project/plmprojectmanager.cpp
     project/plmproject.cpp
+    project/upgrader.cpp
     sql/plmsqlqueries.cpp
     skrwordmeter.cpp
     sql/skrsqltools.cpp
-    sql/plmexporter.cpp
-    sql/plmimporter.cpp
-    sql/plmupgrader.cpp
     models/skrtreemodel.cpp
     models/skrtreeproxymodel.cpp
     models/plmprojectlistmodel.cpp
@@ -69,12 +67,10 @@ set(data_HDR
     skrpropertyhub.h
     project/plmprojectmanager.h
     project/plmproject.h
+    project/upgrader.h
     sql/plmsqlqueries.h
     skrwordmeter.h
     sql/skrsqltools.h
-    sql/plmexporter.h
-    sql/plmimporter.h
-    sql/plmupgrader.h
     models/skrtreemodel.h
     models/skrtreeproxymodel.h
     models/plmprojectlistmodel.h
@@ -90,6 +86,9 @@ set(data_HDR
     models/skrtagitem.h
     models/skrtaglistmodel.h
     models/skrsearchtaglistproxymodel.h
+)
+
+set(data_INTERFACES
 )
 
 set(QRC
@@ -110,7 +109,6 @@ target_compile_definitions(skribisto-data PRIVATE SKRIBISTO_DATA_LIBRARY)
 
 target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
 
-# ---------------------------------
 if(IOS)
     install(TARGETS skribisto-data LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif(IOS)

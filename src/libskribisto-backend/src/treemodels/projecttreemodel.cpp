@@ -1,36 +1,44 @@
 #include "projecttreemodel.h"
 
-#include <skrdata.h>
+#include <QIcon>
 
 ProjectTreeModel::ProjectTreeModel(QObject *parent)
     : QAbstractItemModel(parent)
 {
     m_instance = this;
 
+
+
+    QList<PageTypeIconInterface *> pluginList =
+            skrpluginhub->pluginsByType<PageTypeIconInterface>();
+    for(auto *plugin : pluginList){
+        m_typeWithPlugin.insert(plugin->pageType(), plugin);
+    }
+
     m_treeHub     = skrdata->treeHub();
-     m_propertyHub = skrdata->treePropertyHub();
+    m_propertyHub = skrdata->treePropertyHub();
 
     m_rootItem = new ProjectTreeItem();
     m_rootItem->setIsRootItem();
 
-     connect(skrdata->projectHub(),
-             &PLMProjectHub::projectLoaded,
-             this,
-             &ProjectTreeModel::populate);
-     connect(skrdata->projectHub(),
-             &PLMProjectHub::projectClosed,
-             this,
-             &ProjectTreeModel::populate);
-     connect(skrdata->treeHub(),
-             &SKRTreeHub::treeReset,
-             this,
-             &ProjectTreeModel::populate);
-     connect(skrdata->treeHub(),
-             &SKRTreeHub::treeItemMoved,
-             this,
-             &ProjectTreeModel::populate);
+    connect(skrdata->projectHub(),
+            &PLMProjectHub::projectLoaded,
+            this,
+            &ProjectTreeModel::populate);
+    connect(skrdata->projectHub(),
+            &PLMProjectHub::projectClosed,
+            this,
+            &ProjectTreeModel::populate);
+    connect(skrdata->treeHub(),
+            &SKRTreeHub::treeReset,
+            this,
+            &ProjectTreeModel::populate);
+    connect(skrdata->treeHub(),
+            &SKRTreeHub::treeItemMoved,
+            this,
+            &ProjectTreeModel::populate);
 
-     this->connectToSKRDataSignals();
+    this->connectToSKRDataSignals();
 }
 
 ProjectTreeModel *ProjectTreeModel::m_instance = nullptr;
@@ -38,8 +46,8 @@ ProjectTreeModel *ProjectTreeModel::m_instance = nullptr;
 QVariant ProjectTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     Q_UNUSED(section)
-            Q_UNUSED(orientation)
-            Q_UNUSED(role)
+    Q_UNUSED(orientation)
+    Q_UNUSED(role)
 
     return QVariant();
 }
@@ -66,19 +74,23 @@ QModelIndex ProjectTreeModel::index(int row, int column, const QModelIndex &pare
 
     if(parentItem->isRootItem()){
         int projectId = skrdata->projectHub()->getProjectIdList().at(row);
-        auto *projectItem = this->getProjectItem(projectId, 0);
+        auto *projectItem = this->getTreeItem(projectId, 0);
 
         return createIndex(row, column, projectItem);
     }
 
 
 
-    QList<int> directChildren = skrdata->treeHub()->getAllDirectChildren(parentItem->projectId(), parentItem->treeItemId(), true, true);
+    QList<int> directChildren = skrdata->treeHub()->getAllDirectChildren(parentItem->projectId(), parentItem->treeItemId(), false, true);
     int projectId = parentItem->projectId();
     int treeItemId = directChildren.at(row);
 
+    if(skrdata->treeHub()->getInternalTitle(projectId, treeItemId) == "trash_folder"){
+        return QModelIndex();
+    }
 
-    ProjectTreeItem *childItem = getProjectItem(projectId, treeItemId);
+
+    ProjectTreeItem *childItem = getTreeItem(projectId, treeItemId);
 
 
     return createIndex(row, column, childItem);
@@ -96,7 +108,7 @@ QModelIndex ProjectTreeModel::parent(const QModelIndex &index) const
         return QModelIndex();
     }
 
-    ProjectTreeItem *parentItem = getProjectItem(childItem->projectId(), parentId);
+    ProjectTreeItem *parentItem = getTreeItem(childItem->projectId(), parentId);
 
     QModelIndex parentIndex = createIndex(parentItem->row(), 0, parentItem);
     return parentIndex;
@@ -112,13 +124,15 @@ int ProjectTreeModel::rowCount(const QModelIndex &parent) const
     }
 
     ProjectTreeItem *parentItem = static_cast<ProjectTreeItem *>(parent.internalPointer());
-    return skrdata->treeHub()->getAllDirectChildren(parentItem->projectId(), parentItem->treeItemId(), true, true).count();
+
+    QList<int> ids = skrdata->treeHub()->getAllDirectChildren(parentItem->projectId(), parentItem->treeItemId(), false, true);
+    return ids.count();
 }
 
 int ProjectTreeModel::columnCount(const QModelIndex &parent) const
 {
-//    if (!parent.isValid())
-//        return 0;
+    //    if (!parent.isValid())
+    //        return 0;
 
     return 1;
 }
@@ -264,6 +278,14 @@ QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
 
     if (role == ProjectTreeItem::Roles::CutCopyRole) {
         return item->data(role);
+    }
+
+    if (role == Qt::DecorationRole) {
+        auto *plugin = m_typeWithPlugin.value(item->data(ProjectTreeItem::Roles::TypeRole).toString(), nullptr);
+        if(plugin){
+            return QIcon(plugin->pageTypeIconUrl(item->data(ProjectTreeItem::Roles::ProjectIdRole).toInt(), item->data(ProjectTreeItem::Roles::TreeItemIdRole).toInt()));
+        }
+        return QVariant();
     }
 
     return QVariant();
@@ -472,12 +494,28 @@ void ProjectTreeModel::populate()
     m_itemList.clear();
 
 
+
+
     for (int projectId : skrdata->projectHub()->getProjectIdList()) {
+
+        QList<int> trashFolderIds = skrdata->treeHub()->getIdsWithInternalTitle(projectId, "trash_folder");
+        QList<int> trashedList;
+        if(!trashFolderIds.isEmpty()){
+            trashedList  = skrdata->treeHub()->getAllChildren(projectId, trashFolderIds.first());
+        }
+
+
+
         auto idList         = skrdata->treeHub()->getAllIds(projectId);
         auto sortOrdersHash = skrdata->treeHub()->getAllSortOrders(projectId);
         auto indentsHash    = skrdata->treeHub()->getAllIndents(projectId);
 
         for (int treeItemId : qAsConst(idList)) {
+            // avoid trashed items
+            if(trashedList.contains(treeItemId) || trashFolderIds.contains(treeItemId)){
+                continue;
+            }
+
             m_itemList.append(new ProjectTreeItem(projectId, treeItemId,
                                                   indentsHash.value(treeItemId),
                                                   sortOrdersHash.value(treeItemId)));
@@ -501,7 +539,7 @@ void ProjectTreeModel::exploitSignalFromSKRData(int                projectId,
                                                 int                treeItemId,
                                                 ProjectTreeItem::Roles role)
 {
-    ProjectTreeItem *item = this->getProjectItem(projectId, treeItemId);
+    ProjectTreeItem *item = this->getTreeItem(projectId, treeItemId);
 
     if (!item) {
         return;
@@ -530,10 +568,10 @@ void ProjectTreeModel::exploitSignalFromSKRData(int                projectId,
 
     if (index.isValid()) {
         if(role == ProjectTreeItem::Roles::AllRoles){
-             emit dataChanged(index, index);
+            emit dataChanged(index, index);
         }
         else {
-             emit dataChanged(index, index, QVector<int>() << role);
+            emit dataChanged(index, index, QVector<int>() << role);
         }
 
     }
@@ -629,8 +667,8 @@ void ProjectTreeModel::connectToSKRDataSignals()
                                            &SKRTreeHub::cutCopyChanged, this,
                                            [this](int projectId, int treeItemId, bool value) {
         Q_UNUSED(value)
-       this->exploitSignalFromSKRData(projectId, treeItemId,
-                                           ProjectTreeItem::Roles::CutCopyRole);
+        this->exploitSignalFromSKRData(projectId, treeItemId,
+                                       ProjectTreeItem::Roles::CutCopyRole);
 
     });
 
@@ -656,12 +694,12 @@ void ProjectTreeModel::connectToSKRDataSignals()
                                                                  WordCountRole);
 
         if (name == "char_count_goal") this->exploitSignalFromSKRData(projectId, treeItemCode,
-                                                                 ProjectTreeItem::Roles::
-                                                                 CharCountGoalRole);
+                                                                      ProjectTreeItem::Roles::
+                                                                      CharCountGoalRole);
 
         if (name == "word_count_goal") this->exploitSignalFromSKRData(projectId, treeItemCode,
-                                                                 ProjectTreeItem::Roles::
-                                                                 WordCountGoalRole);
+                                                                      ProjectTreeItem::Roles::
+                                                                      WordCountGoalRole);
 
         if (name == "char_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
                                                                                ProjectTreeItem::Roles::
@@ -742,7 +780,7 @@ QModelIndex ProjectTreeModel::getModelIndex(int projectId, int treeItemId) const
     return QModelIndex();
 }
 
-ProjectTreeItem *ProjectTreeModel::getProjectItem(int projectId, int treeItemId) const
+ProjectTreeItem *ProjectTreeModel::getTreeItem(int projectId, int treeItemId) const
 {
     ProjectTreeItem *result_item = nullptr;
 
@@ -754,7 +792,7 @@ ProjectTreeItem *ProjectTreeModel::getProjectItem(int projectId, int treeItemId)
     }
 
     if (!result_item && treeItemId != -1) {
-            qDebug() << "result_item is null";
+        //        qDebug() << "result_item is null";
     }
 
     return result_item;
@@ -765,9 +803,9 @@ void ProjectTreeModel::removeProjectItem(int projectId, int treeItemId)
     QMutableListIterator<ProjectTreeItem *> iter(m_itemList);
     while (iter.hasNext()) {
         ProjectTreeItem *item = iter.next();
-         if ((item->projectId() == projectId) && (item->treeItemId() == treeItemId))  {
-             iter.remove();
-         }
+        if ((item->projectId() == projectId) && (item->treeItemId() == treeItemId))  {
+            iter.remove();
+        }
     }
 }
 
@@ -870,6 +908,12 @@ void AddItemAfterCommand::redo(){
 
 }
 
+int AddItemAfterCommand::result()
+{
+    return m_newId;
+
+}
+
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 
@@ -963,6 +1007,12 @@ void AddItemBeforeCommand::redo()
 
 
     m_model->endInsertRows();
+}
+
+int AddItemBeforeCommand::result()
+{
+    return m_newId;
+
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -1063,6 +1113,11 @@ void AddSubItemCommand::redo()
     m_model->endInsertRows();
 }
 
+int AddSubItemCommand::result()
+{
+    return m_newId;
+}
+
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 
@@ -1108,6 +1163,9 @@ void SetItemPropertyCommand::redo()
 
 
 }
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 
 MoveItemsCommand::MoveItemsCommand(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId, Move move) : Command("Move items"),
     m_sourceProjectId(sourceProjectId),
@@ -1178,3 +1236,152 @@ void MoveItemsCommand::redo()
 
 }
 
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+RenameItemCommand::RenameItemCommand(int projectId, int treeItemId, const QString &newName) : Command("Rename item"),
+    m_projectId(projectId),
+    m_treeItemId(treeItemId),
+    m_newName(newName)
+{}
+
+void RenameItemCommand::undo()
+{
+    skrdata->treeHub()->setTitle(m_projectId, m_treeItemId, m_oldName);
+
+}
+
+void RenameItemCommand::redo()
+{
+    m_oldName = skrdata->treeHub()->getTitle(m_projectId, m_treeItemId);
+    skrdata->treeHub()->setTitle(m_projectId, m_treeItemId, m_newName);
+}
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+
+TrashItemCommand::TrashItemCommand(int projectId, int treeItemId, bool newTrashState, int forcedOriginalParentId, int forcedOriginalRow) : Command(newTrashState ? "Trash item" : "Restore item"),
+    m_projectId(projectId),
+    m_treeItemId(treeItemId),
+    m_newTrashState(newTrashState),
+    m_originalParentId(-1),
+    m_originalRow(-1),
+    m_forcedOriginalParentId(forcedOriginalParentId),
+    m_forcedOriginalRow(forcedOriginalRow)
+{
+
+}
+
+void TrashItemCommand::undo()
+{
+    skrdata->treePropertyHub()->restore(m_projectId, m_oldPropertyTable);
+    skrdata->treeHub()->restoreTree(m_projectId, m_oldTree);
+}
+
+void TrashItemCommand::redo()
+{
+    if(m_newTree.isEmpty()){
+        m_oldPropertyTable = skrdata->treePropertyHub()->save(m_projectId);
+        m_oldTree = skrdata->treeHub()->saveTree(m_projectId);
+    }
+    else {
+        skrdata->treePropertyHub()->restore(m_projectId, m_newPropertyTable);
+        skrdata->treeHub()->restoreTree(m_projectId, m_newTree);
+        return;
+    }
+
+
+    m_oldTrashState = skrdata->treeHub()->getTrashed(m_projectId, m_treeItemId);
+
+    if(m_oldTrashState == m_newTrashState){
+        this->setObsolete(true);
+        return;
+    }
+
+    QList<int> trashFolderList = skrdata->treeHub()->getIdsWithInternalTitle(m_projectId, "trash_folder");
+
+    if(trashFolderList.isEmpty()){
+        return;
+    }
+
+    int trashFolderId = trashFolderList.first();
+
+
+    if(m_newTrashState){ //trash
+
+            int parentId = skrdata->treeHub()->getParentId(m_projectId, m_treeItemId);
+            int row = skrdata->treeHub()->row(m_projectId, m_treeItemId);
+            m_originalParentId = parentId;
+            m_originalRow = row;
+
+            skrdata->treePropertyHub()->setProperty(m_projectId, m_treeItemId, "parent_id_before_trashed", QString::number(m_originalParentId));
+            skrdata->treePropertyHub()->setProperty(m_projectId, m_treeItemId, "row_before_trashed", QString::number(m_originalRow));
+
+            skrdata->treeHub()->moveTreeItemAsChildOf(m_projectId, m_treeItemId, m_projectId, trashFolderId, true);
+
+    } // restore
+    else {
+        if(m_forcedOriginalParentId == -1 && m_forcedOriginalRow == -1){
+
+            // get from properties:
+            m_originalParentId = skrdata->treePropertyHub()->getProperty(m_projectId, m_treeItemId, "parent_id_before_trashed", "-1").toInt();
+            m_originalRow = skrdata->treePropertyHub()->getProperty(m_projectId, m_treeItemId, "row_before_trashed", "-1").toInt();
+
+            // no original parent found
+            if(m_originalParentId == -1 || m_originalRow == -1){
+                this->setObsolete(true);
+                m_result = SKRResult(SKRResult::Warning, "TrashItemCommand", "no_valid_original_parent");
+                return;
+            }
+            // no valid original parent found
+            if(m_originalParentId != -1 && m_originalRow != -1){
+                if(!skrdata->treeHub()->getTrashed(m_projectId, m_originalParentId)) {
+                    if(!skrdata->treeHub()->getAllIds(m_projectId).contains(m_originalParentId)){
+                        this->setObsolete(true);
+                        m_result = SKRResult(SKRResult::Warning, "TrashItemCommand", "no_valid_original_parent");
+                        return;
+
+                    }
+                }
+
+            }
+            QList<int> directChildren = skrdata->treeHub()->getAllDirectChildren(m_projectId, m_originalParentId, false, true);
+            if(directChildren.size() <= m_originalRow){
+                skrdata->treeHub()->moveTreeItemAsChildOf(m_projectId, m_treeItemId, m_projectId, m_originalParentId, true);
+            }
+            else {
+                skrdata->treeHub()->moveTreeItem(m_projectId, m_treeItemId, m_projectId, directChildren.at(m_originalRow), false);
+            }
+
+
+        }
+        else {
+
+            // restore with forced original parent and row
+
+            QList<int> directChildren = skrdata->treeHub()->getAllDirectChildren(m_projectId, m_forcedOriginalParentId, false, true);
+            if(m_forcedOriginalRow == -1){
+                skrdata->treeHub()->moveTreeItemAsChildOf(m_projectId, m_treeItemId, m_projectId, m_forcedOriginalParentId, true);
+            }
+            else if(directChildren.size() <= m_forcedOriginalRow){
+                skrdata->treeHub()->moveTreeItemAsChildOf(m_projectId, m_treeItemId, m_projectId, m_forcedOriginalParentId, true);
+            }
+            else {
+                skrdata->treeHub()->moveTreeItem(m_projectId, m_treeItemId, m_projectId, directChildren.at(m_forcedOriginalRow), false);
+            }
+        }
+
+    }
+    skrdata->treeHub()->setTrashedWithChildren(m_projectId, m_treeItemId, m_newTrashState);
+
+    m_newPropertyTable = skrdata->treePropertyHub()->save(m_projectId);
+    m_newTree = skrdata->treeHub()->saveTree(m_projectId);
+
+}
+
+SKRResult TrashItemCommand::result()
+{
+    return m_result;
+}

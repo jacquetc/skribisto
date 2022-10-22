@@ -1,18 +1,156 @@
 #include "projectcommands.h"
 #include "skrdata.h"
+#include "project/plmprojectmanager.h"
+#include "project/plmproject.h"
+#include "exporter.h"
+#include "importer.h"
 
 ProjectCommands::ProjectCommands(QObject *parent, QUndoStack *undoStack)
     : QObject{parent}, m_undoStack(undoStack)
 {
     m_instance = this;
 
+    Exporter::init();
+    Importer::init();
 }
 
-void ProjectCommands::save(int projectId)
+int ProjectCommands::createNewEmptyProject()
 {
-    m_undoStack->clear();
-    skrdata->projectHub()->saveProject(projectId);
+    SKRResult result(this);
+    PLMProject *project = new PLMProject(plmProjectManager, &result);
+
+    plmProjectManager->loadProject(project);
+
+    skrdata->projectHub()->setProjectLoaded(project->id());
+
+    return project->id();
 }
+
+
+// ----------------------------------------------------------------------------
+
+SKRResult ProjectCommands::save(int projectId)
+{
+    PLMProject * project = plmProjectManager->project(projectId);
+    SKRResult result = Exporter::exportProject(projectId, project->getFileName(), project->getType(), QVariantMap());
+    skrdata->projectHub()->setProjectSaved(projectId);
+
+    return result;
+}
+
+// ----------------------------------------------------------------------------
+
+SKRResult ProjectCommands::saveAProjectCopy(int            projectId,
+                                          const QString& extension,
+                                          const QUrl   & path)
+{
+    SKRResult result(this);
+
+    // firstly, save the project
+    result = this->save(projectId);
+
+    // then create a copy
+    IFOK(result) {
+        result =  Exporter::exportProject(projectId, path, extension, QVariantMap());
+    }
+
+
+
+//    IFKO(result) {
+//        emit errorSent(result);
+//    }
+
+    return result;
+}
+
+
+
+// ----------------------------------------------------------------------------
+
+SKRResult ProjectCommands::backupAProject(int            projectId,
+                                        const QString& type,
+                                        const QUrl   & folderPath)
+{
+    SKRResult result(this);
+
+    PLMProject * project = plmProjectManager->project(projectId);
+    QUrl projectPath = project->getFileName();
+
+    if (projectPath.isEmpty()) {
+        result = SKRResult(SKRResult::Warning, this, "no_path");
+        result.addData("projectId", projectId);
+    }
+
+//    if (projectPath.scheme() == "qrc") {
+//        result = SKRResult(SKRResult::Warning, this, "qrc_projects_cant_back_up");
+//        result.addData("projectId", projectId);
+//    }
+
+
+    IFOK(result) {
+        // verify backup path
+        QFileInfo folderInfo(folderPath.toLocalFile());
+
+        if (!folderInfo.exists()) {
+            result = SKRResult(SKRResult::Critical, this, "path_dont_exist");
+            result.addData("projectId", projectId);
+        }
+
+        if (!folderInfo.isDir()) {
+            result = SKRResult(SKRResult::Critical, this, "path_not_a_directory");
+            result.addData("projectId", projectId);
+        }
+
+        if (!folderInfo.isWritable()) {
+            result = SKRResult(SKRResult::Critical, this, "path_not_writable");
+            result.addData("projectId", projectId);
+        }
+    }
+
+
+    // determine file base
+    QFileInfo info(projectPath.toLocalFile());
+    QFileInfo backupFolderInfo(folderPath.toLocalFile());
+
+    QString   backupFile;
+    if(projectPath.scheme() == "qrc"){
+        backupFile = backupFolderInfo.filePath() + "/" + projectPath.path().split("/").last();
+        backupFile.remove(".skrib");
+    }
+    else{
+        backupFile = backupFolderInfo.filePath() + "/" + info.completeBaseName();
+    }
+
+    // add date and time :
+    QDateTime now     = QDateTime::currentDateTime();
+    QString   nowText = now.toString("_yyyy-MM-dd-HHmmss");
+
+    backupFile = backupFile + nowText;
+
+    // add suffix :
+    backupFile = backupFile + "." + type;
+
+    // firstly, save the project
+    if(projectPath.scheme() != "qrc"){
+        IFOKDO(result, this->save(projectId));
+    }
+
+    // then create a copy
+    IFOK(result) {
+        result = this->saveAProjectCopy(projectId,
+                                             type,
+                                             QUrl::fromLocalFile(backupFile));
+    }
+
+//    IFKO(result) {
+//        emit errorSent(result);
+//    }
+
+    return result;
+}
+
+// ----------------------------------------------------------------------------
+
 
 void ProjectCommands::closeProject(int projectId)
 {
@@ -20,22 +158,41 @@ void ProjectCommands::closeProject(int projectId)
     skrdata->projectHub()->closeProject(projectId);
 }
 
-void ProjectCommands::saveAs(int projectId, const QUrl &url)
+
+// ----------------------------------------------------------------------------
+
+SKRResult ProjectCommands::saveAs(int projectId, const QUrl &url, const QString &extension)
 {
-    m_undoStack->clear();
-    skrdata->projectHub()->saveProjectAs(projectId, "skrib", url);
+    SKRResult result(this);
+
+    result = Exporter::exportProject(projectId, url, extension, QVariantMap());
+    skrdata->projectHub()->setProjectSaved(projectId);
+    plmProjectManager->project(projectId)->setPath(url);
+
+    return result;
 }
+
+
+// ----------------------------------------------------------------------------
 
 void ProjectCommands::loadProject(const QUrl &url)
 {
     m_undoStack->clear();
-    SKRResult result = skrdata->projectHub()->loadProject(url);
 
-    if(result.isSuccess()){
-        skrdata->projectHub()->setActiveProject(result.getData("projectId", -1).toInt());
-    }
+    SKRResult result(this);
+
+
+    QString suffix = url.toString().split(".").last();
+
+    int projectId = Importer::importProject(url, suffix, QVariantMap(), result);
+
+    skrdata->projectHub()->setProjectLoaded(projectId);
+
 }
 
+
+
+// ----------------------------------------------------------------------------
 
 
 void ProjectCommands::setProjectName(int projectId, const QString &name)
@@ -44,10 +201,16 @@ void ProjectCommands::setProjectName(int projectId, const QString &name)
 
 }
 
+
+// ----------------------------------------------------------------------------
+
 void ProjectCommands::setAuthor(int projectId, const QString &author)
 {
     m_undoStack->push(new SetAuthorCommand(projectId, author));
 }
+
+
+// ----------------------------------------------------------------------------
 
 void ProjectCommands::setLanguageCode(int projectId, const QString &newLanguage)
 {
@@ -56,6 +219,9 @@ void ProjectCommands::setLanguageCode(int projectId, const QString &newLanguage)
 
 ProjectCommands *ProjectCommands::m_instance = nullptr;
 
+
+
+// ----------------------------------------------------------------------------
 
 Command *ProjectCommands::getCommand(const QString &action, const QVariantMap &parameters)
 {

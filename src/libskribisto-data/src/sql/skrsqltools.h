@@ -20,7 +20,7 @@ public:
 
     static QString   getProjectTemplateDBVersion(SKRResult *result);
     static double    getProjectDBVersion(SKRResult    *result,
-                                         QSqlDatabase& sqlDb);
+                                         const QString &sqlDbConnectionName);
     static SKRResult renumberTreeSortOrder(QSqlDatabase& sqlDb);
     static SKRResult addStringTreeProperty(QSqlDatabase & sqlDb,
                                            int            tree_id,
