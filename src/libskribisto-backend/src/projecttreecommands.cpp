@@ -274,6 +274,21 @@ QList<int> ProjectTreeCommands::restoreSeveralItemsFromTrash(int projectId, QLis
 //------------------------------------------------------------------------------------
 
 
+void ProjectTreeCommands::emptyTrash(int projectId)
+{
+    m_undoStack->clear();
+
+    QList<int> idList = skrdata->treeHub()->getAllTrashedIds(projectId);
+
+    for(int id : idList){
+        skrdata->treeHub()->removeTreeItem(projectId, id);
+    }
+
+}
+
+//------------------------------------------------------------------------------------
+
+
 QUndoStack *ProjectTreeCommands::undoStack() const
 {
     return m_undoStack;

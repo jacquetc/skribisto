@@ -12,9 +12,10 @@
 #include <QKeyEvent>
 #include <QMenu>
 #include <QInputDialog>
+#include <QMessageBox>
 
 Trash::Trash(class QWidget *parent) :
-    ui(new Ui::Trash)
+    ui(new Ui::Trash), m_projectId(skrdata->projectHub()->getActiveProject())
 {
     ui->setupUi(this);
 
@@ -25,7 +26,13 @@ Trash::Trash(class QWidget *parent) :
     ui->treeView->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->treeView, &QTreeView::customContextMenuRequested, this, &Trash::onCustomContextMenu);
 
-    model->setProjectId(skrdata->projectHub()->getActiveProject());
+    model->setProjectId(m_projectId);
+
+    QObject::connect(skrdata->projectHub(), &PLMProjectHub::activeProjectChanged, this, [this, model](int projectId){
+        m_projectId = projectId;
+        model->setProjectId(projectId);
+    });
+
 
     //expand management
 
@@ -137,28 +144,38 @@ Trash::Trash(class QWidget *parent) :
     } );
 
 
-
-//    m_copyItemsAction = new QAction(tr("Copy"), this);
-//    ui->treeView->addAction(m_copyItemsAction);
-//    m_copyItemsAction->setShortcut(QKeySequence("Ctrl+C"));
-//    m_copyItemsAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-//    QObject::connect(m_copyItemsAction, &QAction::triggered, this, [this, addItemDialog](){
-
-
-//        for(auto index : ui->treeView->selectionModel()->selection().indexes()){
-//            copyCutIndex
-//        }
-
-//    } );
+    m_empyTrashAction = new QAction(tr("Empty trash"), this);
+    m_empyTrashAction->setIcon(QIcon(":/icons/backup/edit-delete.svg"));
+    m_empyTrashAction->setShortcut(QKeySequence("Ctrl+Shift+Del"));
+    m_empyTrashAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    QObject::connect(m_empyTrashAction, &QAction::triggered, this, [this](){
 
 
+        int ret = QMessageBox::warning(this, tr("Empty trash"), tr("All trashed items will be deleted deinitively.\nThis action isn't recoverable."),
+                             QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
+        switch (ret) {
+          case QMessageBox::Ok:
+              // Ok was clicked
+                projectTreeCommands->emptyTrash(m_projectId);
+
+              break;
+          case QMessageBox::Cancel:
+              // Cancel was clicked
+              break;
+          default:
+              // should never be reached
+              break;
+        }
+
+
+    });
 
 
     ui->treeView->setItemDelegate(new ProjectItemDelegate);
 
 
     QMenu *trashMenu = new QMenu;
-    //trashMenu->addAction(splitHorizontalyAction);
+    trashMenu->addAction(m_empyTrashAction);
 
     ui->trashMenuToolButton->setMenu(trashMenu);
 }
@@ -168,10 +185,7 @@ Trash::~Trash()
     delete ui;
 }
 
-QIcon Trash::icon() const
-{
-return QIcon(":/icons/backup/edit-delete.svg");
-}
+
 
 void Trash::onCustomContextMenu(const QPoint &point)
 {

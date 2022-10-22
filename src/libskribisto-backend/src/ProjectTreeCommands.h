@@ -51,6 +51,8 @@ public:
     int restoreItemFromTrash(int projectId, int targetId, int forcedOriginalParentId = -1, int forcedOriginalRow = -1);
     QList<int> restoreSeveralItemsFromTrash(int projectId, QList<int> targetIds);
 
+    void emptyTrash(int projectId);
+
 signals:
 private:
     static ProjectTreeCommands *m_instance;

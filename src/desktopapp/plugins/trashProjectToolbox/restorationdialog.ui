@@ -59,6 +59,9 @@ Please select the destination folder.</string>
      </item>
      <item>
       <widget class="QTreeView" name="treeView">
+       <attribute name="headerVisible">
+        <bool>false</bool>
+       </attribute>
        <attribute name="headerDefaultSectionSize">
         <number>21</number>
        </attribute>

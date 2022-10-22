@@ -29,16 +29,16 @@ ProjectTrashedTreeModel::ProjectTrashedTreeModel(QObject *parent)
              &PLMProjectHub::projectClosed,
              this,
              &ProjectTrashedTreeModel::populate);
-     connect(skrdata->projectHub(),
-             &PLMProjectHub::activeProjectChanged,
-             this,
-             &ProjectTrashedTreeModel::populate);
      connect(skrdata->treeHub(),
              &SKRTreeHub::treeReset,
              this,
              &ProjectTrashedTreeModel::populate);
      connect(skrdata->treeHub(),
              &SKRTreeHub::trashedChanged,
+             this,
+             &ProjectTrashedTreeModel::populate);
+     connect(skrdata->treeHub(),
+             &SKRTreeHub::treeItemRemoved,
              this,
              &ProjectTrashedTreeModel::populate);
      this->connectToSKRDataSignals();

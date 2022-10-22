@@ -22,7 +22,10 @@ public:
     QString title() const {
         return tr("Trash");
     }
-    QIcon icon() const;
+    QIcon icon() const
+    {
+        return QIcon(":/icons/backup/edit-delete.svg");
+    }
 
 private slots:
     void onCustomContextMenu(const QPoint &point);
@@ -41,7 +44,8 @@ private:
     QList<Path> m_expandedPathes;
     int m_targetTreeItemId, m_projectId;
     QModelIndex m_currentModelIndex;
-    QAction *m_openItemAction, *m_openItemInAnotherViewAction, *m_openItemInANewWindowAction, *m_renameAction, *m_restoreAction;
+    QAction *m_openItemAction, *m_openItemInAnotherViewAction, *m_openItemInANewWindowAction, *m_renameAction, *m_restoreAction,
+    *m_empyTrashAction;
 
     QList< QPair<int, int>> copyCutList;
 

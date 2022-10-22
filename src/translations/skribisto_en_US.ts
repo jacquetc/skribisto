@@ -4801,29 +4801,41 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="53"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="60"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="64"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="71"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="83"/>
         <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="90"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="97"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="90"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="97"/>
         <source>Enter a new title for the item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="98"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="105"/>
         <source>Restore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="147"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="154"/>
+        <source>Empty trash</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="154"/>
+        <source>All trashed items will be deleted deinitively.
+This action isn&apos;t recoverable.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

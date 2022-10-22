@@ -72,9 +72,10 @@ class EXPORT SKRTreeHub : public QObject {
 public:
 
     explicit SKRTreeHub(QObject *parent = nullptr);
-    QHash<int, int>       getAllSortOrders(int projectId) const;
-    QHash<int, int>       getAllIndents(int projectId) const;
+    QHash<int, int> getAllSortOrders(int projectId) const;
+    QHash<int, int> getAllIndents(int projectId) const;
     Q_INVOKABLE QList<int>getAllIds(int projectId) const;
+    Q_INVOKABLE QList<int>getAllTrashedIds(int projectId) const;
     QList<QVariantMap> saveTree(int projectId) const;
     SKRResult restoreTree(int projectId, QList<QVariantMap> allValues);
     Q_INVOKABLE QVariantMap saveId(int projectId, int treeItemId) const;

@@ -104,6 +104,39 @@ QList<int>SKRTreeHub::getAllIds(int projectId) const
     return list;
 }
 
+//-------------------------------------------------------
+
+QList<int> SKRTreeHub::getAllTrashedIds(int projectId) const
+{
+
+    SKRResult result(this);
+
+    QList<int> list;
+
+
+    QHash<int, QVariant> out;
+    QHash<int, int> hash;
+    QHash<QString, QVariant> where;
+
+    where.insert("b_trashed =", 1);
+
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    result = queries.getValueByIdsWhere("l_tree_id", out, where);
+
+    hash = HashIntQVariantConverter::convertToIntInt(out);
+
+    IFOK(result) {
+        list = hash.values();
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return list;
+}
+
+//-------------------------------------------------------
+
 QList<QVariantMap> SKRTreeHub::saveTree(int projectId) const
 {
     SKRResult result(this);
