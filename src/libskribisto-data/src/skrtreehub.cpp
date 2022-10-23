@@ -844,6 +844,21 @@ int SKRTreeHub::getLastAddedId()
 
 // ----------------------------------------------------------------------------------------
 
+SKRResult SKRTreeHub::addTreeItem(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle, bool renumber)
+{
+    QHash<QString, QVariant> hash;
+    hash.insert("l_sort_order", sortOrder);
+    hash.insert("l_indent", indent);
+    hash.insert("t_type", type);
+    hash.insert("t_title", title);
+    hash.insert("t_internal_title", internalTitle);
+
+    return addTreeItem(hash, projectId, renumber);
+
+}
+
+// ----------------------------------------------------------------------------------------
+
 SKRResult SKRTreeHub::addTreeItem(const QHash<QString, QVariant>& values, int projectId, bool renumber)
 {
     PLMSqlQueries queries(projectId, m_tableName);

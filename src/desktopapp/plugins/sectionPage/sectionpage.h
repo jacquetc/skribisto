@@ -24,17 +24,19 @@
 #include <QObject>
 #include "interfaces/itemexporterinterface.h"
 #include "interfaces/pageinterface.h"
+#include "interfaces/pagedesktopinterface.h"
 #include "interfaces/pagetypeiconinterface.h"
 
 class SectionPage : public QObject,
                     public PageInterface,
-        public PageTypeIconInterface,
+                    public PageDesktopInterface,
+                    public PageTypeIconInterface,
                     public ItemExporterInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.SectionPagePlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(PageInterface PageTypeIconInterface ItemExporterInterface)
+    Q_INTERFACES(PageInterface PageDesktopInterface PageTypeIconInterface ItemExporterInterface)
 
 public:
 

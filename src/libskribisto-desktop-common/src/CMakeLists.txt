@@ -28,15 +28,15 @@ set(common_SRCS
     thememanager.h thememanager.cpp
     combobox.h combobox.cpp
     text/textbridge.h text/textbridge.cpp
-tagdialog.h tagdialog.cpp tagdialog.ui
+    tagdialog.h tagdialog.cpp tagdialog.ui
 )
 
 set(common_INTERFACES
     interfaces/projecttoolboxinterface.h
-    interfaces/pageinterface.h
+    interfaces/pagedesktopinterface.h
     interfaces/projectpageinterface.h
-    interfaces/itemexporterinterface.h
     interfaces/settingspanelinterface.h
+    interfaces/newprojectformatinterface.h
 )
 
 # Tell CMake to create the executable

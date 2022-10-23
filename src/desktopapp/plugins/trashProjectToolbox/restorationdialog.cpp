@@ -159,7 +159,8 @@ void RestorationDialog::reset()
 
 void RestorationDialog::reject()
 {
-    this->hide();
+
+    QDialog::reject();
 }
 
 //----------------------------------------------------------
@@ -187,7 +188,7 @@ void RestorationDialog::accept()
         projectTreeCommands->restoreItemFromTrash(m_projectId, notRestorableIdForTargetFolder.first, notRestorableIdForTargetFolder.second);
 
     }
-    this->hide();
+    QDialog::accept();
 }
 
 //----------------------------------------------------------

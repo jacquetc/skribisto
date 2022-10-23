@@ -23,15 +23,17 @@
 
 #include <QObject>
 #include "interfaces/projectpageinterface.h"
+#include "interfaces/pagedesktopinterface.h"
 #include <view.h>
 
 class OverviewPage : public QObject,
+                    public PageDesktopInterface,
                      public ProjectPageInterface {
     Q_OBJECT
     Q_PLUGIN_METADATA(
         IID "eu.skribisto.OverviewPagePlugin/1.0" FILE
         "plugin_info.json")
-    Q_INTERFACES(ProjectPageInterface)
+    Q_INTERFACES(ProjectPageInterface PageDesktopInterface)
 
 public:
 

@@ -4,7 +4,7 @@
 #include <QVBoxLayout>
 #include <QTextEdit>
 
-#include "interfaces/pageinterface.h"
+#include "interfaces/pagedesktopinterface.h"
 #include "skrdata.h"
 #include "emptyview.h"
 
@@ -115,8 +115,8 @@ View* ViewManager::openViewAt(View *atView, const QString &type, int projectId, 
 {
 
 
-    QList<PageInterface *> pluginList =
-            skrpluginhub->pluginsByType<PageInterface>();
+    QList<PageDesktopInterface *> pluginList =
+            skrpluginhub->pluginsByType<PageDesktopInterface>();
 
 
     View *view = nullptr;

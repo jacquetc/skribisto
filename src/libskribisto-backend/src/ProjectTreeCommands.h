@@ -9,6 +9,7 @@
 
 class SKRBACKENDEXPORT ProjectTreeCommands : public QObject
 {
+
     Q_OBJECT
 public:
     explicit ProjectTreeCommands(QObject *parent, QUndoStack *undoStack, ProjectTreeModel *treeModel);
@@ -25,6 +26,7 @@ public:
     int addItemAfter(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
     int addItemBefore(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
     int addSubItem(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
+    int addTreeItemInTemplate(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle = QString(),  const QVariantMap &custom_properties = QVariantMap(), bool renumber = false);
 
 
     QList<int> addSeveralSubItems(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
@@ -58,6 +60,7 @@ private:
     static ProjectTreeCommands *m_instance;
 QUndoStack *m_undoStack;
 ProjectTreeModel *m_treeModel;
+
 };
 
 #endif // PROJECTTREECOMMANDS_H

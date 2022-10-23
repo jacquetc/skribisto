@@ -10,6 +10,8 @@ add_subdirectory(projectPage)
 
 add_subdirectory(overviewPage)
 
+add_subdirectory(skribNewProjectFormat)
+
 # add_subdirectory(cardViewPage)
 # add_subdirectory(themePage)
 # add_subdirectory(writingGamesPageToolbox)

@@ -23,7 +23,7 @@
 #define PROJECTPAGEINTERFACE_H
 
 #include <QString>
-#include "pageinterface.h"
+#include "interfaces/pageinterface.h"
 
 class ProjectPageInterface : public PageInterface {
 public:

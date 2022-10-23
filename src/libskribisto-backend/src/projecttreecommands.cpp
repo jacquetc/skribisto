@@ -1,9 +1,12 @@
 #include "projecttreecommands.h"
+#include "interfaces/newprojecttemplateinterface.h"
+#include "interfaces/pageinterface.h"
 
 ProjectTreeCommands::ProjectTreeCommands(QObject *parent, QUndoStack *undoStack, ProjectTreeModel *treeModel)
     : QObject{parent}, m_undoStack(undoStack), m_treeModel(treeModel)
 {
     m_instance = this;
+    skrpluginhub->addPluginType<NewProjectTemplateInterface>();
 
 }
 ProjectTreeCommands *ProjectTreeCommands::m_instance = nullptr;
@@ -284,6 +287,39 @@ void ProjectTreeCommands::emptyTrash(int projectId)
         skrdata->treeHub()->removeTreeItem(projectId, id);
     }
 
+}
+
+//------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------
+
+
+int ProjectTreeCommands::addTreeItemInTemplate(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle,  const QVariantMap &custom_properties, bool renumber)
+{
+
+
+    QList<PageInterface *> pluginList =
+            skrpluginhub->pluginsByType<PageInterface>();
+
+
+    SKRResult result = skrdata->treeHub()->addTreeItem(projectId, sortOrder, indent, type, title, internalTitle, renumber);
+    int newTreeItemId = result.getData("treeItemId", -1).toInt();
+
+    for(auto *plugin : pluginList){
+        if(plugin->pageType() == type){
+            QVariantMap properties = plugin->propertiesForCreationOfTreeItem(custom_properties);
+
+            QVariantMap::const_iterator i = properties.constBegin();
+            while (i != properties.constEnd()) {
+                SKRResult result = skrdata->treePropertyHub()->setProperty(projectId, newTreeItemId, i.key() , i.value().toString(), true );
+                ++i;
+            }
+
+            break;
+        }
+    }
+    emit skrdata->treeHub()->treeReset(projectId);
+
+    return newTreeItemId;
 }
 
 //------------------------------------------------------------------------------------

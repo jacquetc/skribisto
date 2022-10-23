@@ -3,6 +3,7 @@
 #include "projecttreecommands.h"
 
 #include "interfaces/pageinterface.h"
+#include "interfaces/pagedesktopinterface.h"
 
 #include "interfaces/pagetypeiconinterface.h"
 
@@ -99,6 +100,11 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
     QList<PageInterface *> pluginList =
             skrpluginhub->pluginsByType<PageInterface>();
 
+
+    QList<PageDesktopInterface *> pageDesktopPluginList =
+            skrpluginhub->pluginsByType<PageDesktopInterface>();
+
+
     // reorder by weight, lightest is top, heavier is last
 
     std::sort(pluginList.begin(), pluginList.end(),
@@ -117,16 +123,21 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
             item->setData(Qt::UserRole, plugin->pageDetailText());
             item->setData(Qt::UserRole + 1, plugin->pageType());
 
-            auto *pageCreationParametersWidget = plugin->pageCreationParametersWidget();
-            if(pageCreationParametersWidget){
-                m_typeWithparameterWidgetHash.insert(plugin->pageType(), pageCreationParametersWidget);
+            for(auto *pageDesktopPlugin : pageDesktopPluginList){
+                if(pageDesktopPlugin->pageType() == plugin->pageType()){
+                    TreeItemCreationParametersWidget *pageCreationParametersWidget = pageDesktopPlugin->pageCreationParametersWidget();
+                    if(nullptr != pageCreationParametersWidget){
+                        m_typeWithparameterWidgetHash.insert(pageDesktopPlugin->pageType(), pageCreationParametersWidget);
+                    }
+                }
+            }
         }
 
         else {
             m_typeWithparameterWidgetHash.insert(plugin->pageType(), new EmptyCreationParametersWidget());
         }
     }
-    }
+
 
     ui->listWidget->setCurrentRow(0);
 
@@ -169,10 +180,12 @@ void NewTreeItemDialog::setCustomPropertiesWidget(TreeItemCreationParametersWidg
         m_customPropertiesWidget->hide();
     }
 
-    ui->contentLayout->insertWidget(2, widget);
-    m_customPropertiesWidget = widget;
-    m_customPropertiesWidget->show();
-    m_customPropertiesWidget->reset();
+    if(widget){
+        ui->contentLayout->insertWidget(2, widget);
+        m_customPropertiesWidget = widget;
+        m_customPropertiesWidget->show();
+        m_customPropertiesWidget->reset();
+    }
 }
 
 void NewTreeItemDialog::removeCustomPropertiesWidget()

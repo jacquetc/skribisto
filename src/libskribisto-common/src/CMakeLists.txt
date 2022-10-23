@@ -19,6 +19,8 @@ set(common_SRCS
 )
 
 set(common_INTERFACES
+    interfaces/pageinterface.h
+    interfaces/itemexporterinterface.h
     interfaces/invokablecommandgroupinterface.h
     interfaces/pagetypeiconinterface.h
 )

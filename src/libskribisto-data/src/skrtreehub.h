@@ -195,6 +195,7 @@ public:
 
     Q_INVOKABLE int       getLastAddedId();
 
+    SKRResult             addTreeItem(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle, bool renumber = true);
     SKRResult             addTreeItem(const QHash<QString, QVariant>& values,
                                       int                             projectId, bool renumber= true);
     Q_INVOKABLE SKRResult addTreeItemAbove(int            projectId,

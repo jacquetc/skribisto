@@ -24,8 +24,6 @@
 
 #include <QString>
 #include <QVariantMap>
-#include "treeitemcreationparameterswidget.h"
-#include "view.h"
 #include "skrcoreinterface.h"
 
 
@@ -38,10 +36,6 @@ public:
     virtual int     weight() const         = 0;
     virtual QString visualText() const     = 0;
     virtual QString pageDetailText() const = 0;
-    virtual View* getView() const        = 0;
-    virtual TreeItemCreationParametersWidget * pageCreationParametersWidget() const {
-        return nullptr;
-    }
     virtual bool      isConstructible() const = 0;
 
     virtual QVariantMap propertiesForCreationOfTreeItem(const QVariantMap &customProperties = QVariantMap()) const = 0;

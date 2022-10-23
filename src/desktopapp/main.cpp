@@ -1,4 +1,5 @@
 #include "commands.h"
+#include "interfaces/newprojectformatinterface.h"
 #include "interfaces/pagetypeiconinterface.h"
 #include "projectcommands.h"
 #include "tagcommands.h"
@@ -14,6 +15,7 @@
 #include <QStyleFactory>
 #include <interfaces/itemexporterinterface.h>
 #include <interfaces/pageinterface.h>
+#include <interfaces/pagedesktopinterface.h>
 #include <interfaces/projecttoolboxinterface.h>
 #include <text/textbridge.h>
 
@@ -63,8 +65,10 @@ int main(int argc, char *argv[]) {
   // load plugins:
   skrpluginhub->addPluginType<ProjectToolboxInterface>();
   skrpluginhub->addPluginType<PageInterface>();
+  skrpluginhub->addPluginType<PageDesktopInterface>();
   skrpluginhub->addPluginType<PageTypeIconInterface>();
   skrpluginhub->addPluginType<ItemExporterInterface>();
+  skrpluginhub->addPluginType<NewProjectFormatInterface>();
 
   // load singletons :
   new ProjectTreeModel(skrData);

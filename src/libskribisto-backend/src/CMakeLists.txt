@@ -9,8 +9,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 project(skribisto-backend LANGUAGES CXX VERSION ${VERSION})
 
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 COMPONENTS Core Gui Widgets CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Gui CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui CONFIG REQUIRED)
 
 set(backend_SRCS
 
@@ -29,12 +29,16 @@ set(backend_MODELS
     treemodels/projecttrashedtreemodel.h treemodels/projecttrashedtreemodel.cpp
 )
 
+set(backend_INTERFACES
+    interfaces/newprojecttemplateinterface.h
+)
+
 # Tell CMake to create the executable
 if(IOS)
     message("static lib chosen")
-    add_library(skribisto-backend STATIC ${backend_SRCS} ${backend_MODELS})
+    add_library(skribisto-backend STATIC ${backend_SRCS} ${backend_MODELS} ${backend_INTERFACES})
 else()
-    add_library(skribisto-backend SHARED ${backend_SRCS} ${backend_MODELS})
+    add_library(skribisto-backend SHARED ${backend_SRCS} ${backend_MODELS} ${backend_INTERFACES})
 endif(IOS)
 
 add_dependencies(${PROJECT_NAME} skribisto-data)
@@ -44,12 +48,15 @@ add_dependencies(${PROJECT_NAME} skribisto-importer)
 
 target_compile_definitions(skribisto-backend PRIVATE SKRIBISTO_BACKEND_LIBRARY)
 
-target_link_libraries(skribisto-backend PRIVATE skribisto-data skribisto-common skribisto-exporter skribisto-importer Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(skribisto-backend PRIVATE skribisto-data skribisto-common skribisto-exporter skribisto-importer Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-exporter/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-importer/src/")
+
+# ---------------------------------
+add_subdirectory(plugins)
 
 # ---------------------------------
 if(IOS)

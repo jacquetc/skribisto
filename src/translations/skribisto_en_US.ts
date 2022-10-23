@@ -1330,19 +1330,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="74"/>
+        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="76"/>
         <location filename="../mobileapp/plugins/folderPage/folderpage.h" line="71"/>
         <source>Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="78"/>
+        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="80"/>
         <location filename="../mobileapp/plugins/folderPage/folderpage.h" line="75"/>
         <source>Group your items in folders.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="49"/>
+        <location filename="../desktopapp/plugins/folderPage/folderpage.h" line="51"/>
         <location filename="../mobileapp/plugins/folderPage/folderpage.h" line="46"/>
         <source>Folder page</source>
         <comment>plugin name</comment>
@@ -2088,41 +2088,61 @@
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="59"/>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="92"/>
+        <source>Choose a format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="138"/>
         <source>Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/newprojectwizard.ui" line="69"/>
+        <location filename="../desktopapp/newprojectwizard.ui" line="163"/>
         <source>Select path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/newprojectwizard.ui" line="90"/>
+        <location filename="../desktopapp/newprojectwizard.ui" line="224"/>
+        <source>TextLabel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="83"/>
         <source>Format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/newprojectwizard.ui" line="93"/>
+        <location filename="../desktopapp/newprojectwizard.ui" line="86"/>
         <source>Choose the way your project will be saved</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/newprojectwizard.ui" line="99"/>
+        <location filename="../desktopapp/newprojectwizard.ui" line="173"/>
+        <source>Created file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/newprojectwizard.ui" line="190"/>
         <source>Template</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/newprojectwizard.ui" line="102"/>
+        <location filename="../desktopapp/newprojectwizard.ui" line="193"/>
         <source>Choose a template for your project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/newprojectwizard.ui" line="109"/>
+        <location filename="../desktopapp/newprojectwizard.cpp" line="163"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/newprojectwizard.ui" line="121"/>
+        <location filename="../desktopapp/newprojectwizard.cpp" line="165"/>
         <source>Create an empty project.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2244,6 +2264,46 @@
     </message>
 </context>
 <context>
+    <name>NovelTemplates</name>
+    <message>
+        <location filename="../libskribisto-backend/src/plugins/novelNewProjectTemplates/noveltemplates.cpp" line="40"/>
+        <source>Create a skeleton project for light novels.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-backend/src/plugins/novelNewProjectTemplates/noveltemplates.cpp" line="41"/>
+        <source>Create a skeleton project for novels.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-backend/src/plugins/novelNewProjectTemplates/noveltemplates.cpp" line="57"/>
+        <location filename="../libskribisto-backend/src/plugins/novelNewProjectTemplates/noveltemplates.cpp" line="86"/>
+        <source>Writings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-backend/src/plugins/novelNewProjectTemplates/noveltemplates.cpp" line="79"/>
+        <location filename="../libskribisto-backend/src/plugins/novelNewProjectTemplates/noveltemplates.cpp" line="108"/>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-backend/src/plugins/novelNewProjectTemplates/noveltemplates.h" line="42"/>
+        <source>Novel templates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-backend/src/plugins/novelNewProjectTemplates/noveltemplates.h" line="59"/>
+        <source>Light novel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-backend/src/plugins/novelNewProjectTemplates/noveltemplates.h" line="59"/>
+        <source>Novel</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>OutlinePad</name>
     <message>
         <location filename="../mobileapp/imports/Skribisto/OutlinePad.qml" line="38"/>
@@ -2285,13 +2345,13 @@
 <context>
     <name>OverviewPage</name>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewpage.h" line="70"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewpage.h" line="72"/>
         <location filename="../mobileapp/plugins/overviewPage/overviewpage.h" line="69"/>
         <source>Overview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewpage.h" line="87"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewpage.h" line="89"/>
         <location filename="../mobileapp/plugins/overviewPage/overviewpage.h" line="87"/>
         <source>Show the overview</source>
         <translation type="unfinished"></translation>
@@ -2312,7 +2372,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewpage.h" line="45"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewpage.h" line="47"/>
         <location filename="../mobileapp/plugins/overviewPage/overviewpage.h" line="44"/>
         <source>Overview page</source>
         <comment>plugin name</comment>
@@ -2751,13 +2811,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/projectPage/projectpage.h" line="59"/>
+        <location filename="../desktopapp/plugins/projectPage/projectpage.h" line="61"/>
         <location filename="../mobileapp/plugins/projectPage/projectpage.h" line="71"/>
         <source>Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/projectPage/projectpage.h" line="45"/>
+        <location filename="../desktopapp/plugins/projectPage/projectpage.h" line="47"/>
         <location filename="../mobileapp/plugins/projectPage/projectpage.h" line="46"/>
         <source>Project page</source>
         <comment>plugin name</comment>
@@ -2905,7 +2965,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="48"/>
+        <location filename="../desktopapp/main.cpp" line="50"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3527,20 +3587,20 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="48"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="50"/>
         <location filename="../mobileapp/plugins/sectionPage/sectionpage.h" line="46"/>
         <source>Section page</source>
         <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="73"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="75"/>
         <location filename="../mobileapp/plugins/sectionPage/sectionpage.h" line="71"/>
         <source>Section</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="77"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionpage.h" line="79"/>
         <location filename="../mobileapp/plugins/sectionPage/sectionpage.h" line="75"/>
         <source>Create a logical separation between items.</source>
         <translation type="unfinished"></translation>
@@ -4077,6 +4137,20 @@ Please select the destination folder.</source>
     </message>
 </context>
 <context>
+    <name>SkribFormat</name>
+    <message>
+        <location filename="../desktopapp/plugins/skribNewProjectFormat/skribformat.cpp" line="32"/>
+        <source>Using the .skrib format, the project will be saved in one unique file. Behind the hood, this file is classic SQLite, an open and free database format.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/skribNewProjectFormat/skribformat.h" line="40"/>
+        <source>.skrib format for new project</source>
+        <comment>plugin name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>StatusBar</name>
     <message>
         <location filename="../desktopapp/statusbar.ui" line="14"/>
@@ -4244,26 +4318,26 @@ Please select the destination folder.</source>
 <context>
     <name>TextPage</name>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="76"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="78"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="74"/>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="80"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="82"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="78"/>
         <source>Write here any text, be it a scene or a note</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="51"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="53"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="49"/>
         <source>Text page</source>
         <comment>plugin name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="114"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="116"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="115"/>
         <source>Text page</source>
         <translation type="unfinished"></translation>
@@ -5038,7 +5112,7 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="53"/>
+        <location filename="../desktopapp/main.cpp" line="55"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>
