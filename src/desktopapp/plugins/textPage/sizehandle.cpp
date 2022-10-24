@@ -4,6 +4,10 @@ SizeHandle::SizeHandle(QWidget *parent)
     : QWidget{parent}
 {
 
+    this->setMouseTracking(true);
+    this->setAutoFillBackground(true);
+    this->setBackgroundRole(QPalette::Button);
+
 }
 
 
@@ -28,4 +32,15 @@ void SizeHandle::mouseMoveEvent(QMouseEvent *event)
 void SizeHandle::mousePressEvent(QMouseEvent *event)
 {
     m_oldPoint = event->pos();
+}
+
+
+void SizeHandle::enterEvent(QEnterEvent *event)
+{
+    this->setBackgroundRole(QPalette::ButtonText);
+}
+
+void SizeHandle::leaveEvent(QEvent *event)
+{
+    this->setBackgroundRole(QPalette::Window);
 }

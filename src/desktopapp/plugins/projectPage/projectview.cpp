@@ -1,5 +1,6 @@
 #include "projectview.h"
 #include "projectcommands.h"
+#include "toolboxes/outlinetoolbox.h"
 #include "ui_projectview.h"
 #include "skrdata.h"
 #include "tagmanagertoolbox.h"
@@ -38,7 +39,13 @@ QList<Toolbox *> ProjectView::toolboxes()
 
     toolboxes.append(new TagManagerToolbox(nullptr, this->projectId()));
 
+
+    OutlineToolbox *outlineToolbox = new OutlineToolbox;    toolboxes.append(outlineToolbox);
+    connect(this, &View::initialized, outlineToolbox, &Toolbox::setIdentifiersAndInitialize);
+    outlineToolbox->setIdentifiersAndInitialize(this->projectId(), this->treeItemId());
+
     return toolboxes;
+
 
 }
 

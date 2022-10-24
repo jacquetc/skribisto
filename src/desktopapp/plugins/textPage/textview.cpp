@@ -1,6 +1,7 @@
 #include "textview.h"
 #include "text/textbridge.h"
 #include "ui_textview.h"
+#include "toolboxes/outlinetoolbox.h"
 
 #include <QWheelEvent>
 #include <skrdata.h>
@@ -62,8 +63,13 @@ QList<Toolbox *> TextView::toolboxes()
     QList<Toolbox *> toolboxes;
 
 
-    m_outlineToolbox = new OutlineToolbox;
-    toolboxes.append(m_outlineToolbox);
+    OutlineToolbox *outlineToolbox = new OutlineToolbox;
+    toolboxes.append(outlineToolbox);
+
+    connect(this, &TextView::initialized, outlineToolbox, &OutlineToolbox::setIdentifiersAndInitialize);
+    outlineToolbox->setIdentifiersAndInitialize(this->projectId(), this->treeItemId());
+
+
     return toolboxes;
 
 }

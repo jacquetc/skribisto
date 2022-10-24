@@ -119,6 +119,8 @@ void View::setIdentifiersAndInitialize(int projectId, int treeItemId)
     m_treeItemId = treeItemId;
 
     this->initialize();
+
+    emit initialized(projectId, treeItemId);
 }
 
 void View::setCentralWidget(QWidget *widget)

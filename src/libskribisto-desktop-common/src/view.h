@@ -44,7 +44,9 @@ protected:
   }
   //    void paintEvent(QPaintEvent *event);
 
+
 signals:
+    void initialized(int projectId, int treeItemId);
 
 private slots:
   void on_closeToolButton_clicked();

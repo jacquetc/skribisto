@@ -3652,22 +3652,22 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="37"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="43"/>
         <source>Beginning of a book</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="38"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="44"/>
         <source>Chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="39"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="45"/>
         <source>Separator</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="40"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="46"/>
         <source>End of a book</source>
         <translation type="unfinished"></translation>
     </message>

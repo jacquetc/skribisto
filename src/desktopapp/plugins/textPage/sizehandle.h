@@ -24,6 +24,11 @@ signals:
 private:
     QPoint m_oldPoint;
 
+
+    // QWidget interface
+protected:
+    void enterEvent(QEnterEvent *event) override;
+    void leaveEvent(QEvent *event) override;
 };
 
 #endif // SIZEHANDLE_H

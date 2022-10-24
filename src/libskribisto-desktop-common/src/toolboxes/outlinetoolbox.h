@@ -25,6 +25,10 @@ public:
     QIcon icon() const {
         return QIcon(":/icons/backup/story-editor.svg");
     }
+    void initialize();
+
+public slots:
+    void saveContent();
 
 private:
     Ui::OutlineToolbox *ui;

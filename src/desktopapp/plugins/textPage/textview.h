@@ -3,7 +3,6 @@
 
 #include <QWidget>
 #include "view.h"
-#include "toolboxes/outlinetoolbox.h"
 
 namespace Ui {
 class TextView;
@@ -26,7 +25,6 @@ protected:
 
 private:
     Ui::TextView *centralWidgetUi;
-    OutlineToolbox *m_outlineToolbox;
     bool m_isSecondaryContent;
 
     // QWidget interface

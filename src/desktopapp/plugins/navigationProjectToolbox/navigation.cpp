@@ -371,3 +371,8 @@ void Navigation::openInAnotherView(const QModelIndex &index)
 
     }
 }
+
+
+void Navigation::initialize()
+{
+}

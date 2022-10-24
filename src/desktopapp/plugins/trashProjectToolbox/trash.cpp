@@ -328,3 +328,8 @@ void Trash::openInAnotherView(const QModelIndex &index)
 
     }
 }
+
+
+void Trash::initialize()
+{
+}

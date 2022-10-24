@@ -34,6 +34,10 @@ public:
         return QIcon(":/icons/backup/tag.svg");
     }
 
+
+    // Toolbox interface
+public:
+    void initialize() override;
 };
 
 

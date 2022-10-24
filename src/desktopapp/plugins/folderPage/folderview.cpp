@@ -1,4 +1,5 @@
 #include "folderview.h"
+#include "toolboxes/outlinetoolbox.h"
 #include "ui_folderview.h"
 
 FolderView::FolderView(QWidget *parent) :
@@ -19,10 +20,15 @@ FolderView::~FolderView()
 
 QList<Toolbox *> FolderView::toolboxes()
 {
+
     QList<Toolbox *> toolboxes;
 
+    OutlineToolbox *outlineToolbox = new OutlineToolbox;    toolboxes.append(outlineToolbox);
+    connect(this, &View::initialized, outlineToolbox, &Toolbox::setIdentifiersAndInitialize);
+    outlineToolbox->setIdentifiersAndInitialize(this->projectId(), this->treeItemId());
 
     return toolboxes;
+
 
 }
 

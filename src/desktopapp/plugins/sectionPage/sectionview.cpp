@@ -1,5 +1,6 @@
 #include "sectionview.h"
 #include "ui_sectionview.h"
+#include "toolboxes/outlinetoolbox.h"
 
 #include "skrdata.h"
 
@@ -24,10 +25,15 @@ SectionView::~SectionView()
 
 QList<Toolbox *> SectionView::toolboxes()
 {
+
     QList<Toolbox *> toolboxes;
 
+    OutlineToolbox *outlineToolbox = new OutlineToolbox;    toolboxes.append(outlineToolbox);
+    connect(this, &View::initialized, outlineToolbox, &Toolbox::setIdentifiersAndInitialize);
+    outlineToolbox->setIdentifiersAndInitialize(this->projectId(), this->treeItemId());
 
     return toolboxes;
+
 
 }
 

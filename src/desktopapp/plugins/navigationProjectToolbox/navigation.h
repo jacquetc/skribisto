@@ -49,6 +49,10 @@ private:
     void open(const QModelIndex &index);
     void openInAnotherView(const QModelIndex &index);
 protected:
+
+    // Toolbox interface
+public:
+    void initialize() override;
 };
 
 #endif // NAVIGATION_H

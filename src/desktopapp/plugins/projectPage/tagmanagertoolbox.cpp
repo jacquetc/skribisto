@@ -72,3 +72,8 @@ void TagManagerToolbox::reloadTags()
 
 
 
+
+
+void TagManagerToolbox::initialize()
+{
+}
