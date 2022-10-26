@@ -2,19 +2,26 @@
 #include "skrdata.h"
 #include "text/textbridge.h"
 #include "ui_outlinetoolbox.h"
+#include "skrusersettings.h"
+#include "projecttreecommands.h"
 
 #include <QTimer>
 
 
 OutlineToolbox::OutlineToolbox(QWidget *parent) :
     Toolbox(parent),
-    ui(new Ui::OutlineToolbox)
+    ui(new Ui::OutlineToolbox), m_wasModified(false)
 {
     ui->setupUi(this);
 }
 
 OutlineToolbox::~OutlineToolbox()
 {
+    if(m_wasModified){
+        saveContent();
+    }
+
+    saveTextState();
     delete ui;
 }
 
@@ -36,24 +43,116 @@ void OutlineToolbox::initialize()
                 document);
 
 
-    QTimer *saveTimer = new QTimer(this);
-    saveTimer->setSingleShot(true);
-    saveTimer->setInterval(100);
+
+    // create save timer
+
+    m_saveTimer = new QTimer(this);
+    m_saveTimer->setSingleShot(true);
+    m_saveTimer->setInterval(200);
+    connect(m_saveTimer, &QTimer::timeout, this, &OutlineToolbox::saveContent);
+    QTimer::singleShot(0, this, [this](){ connectSaveConnection();});
 
 
-    connect(ui->textEdit, &QTextEdit::textChanged, this, [saveTimer](){
-        if(saveTimer->isActive()){
-            saveTimer->stop();
-        }
-        saveTimer->start();
-    });
-    connect(saveTimer, &QTimer::timeout, this, &OutlineToolbox::saveContent);
+    QSettings settings;
+
+    // restore font size:
+
+    float textFontPointSize = settings.value("outlineToolbox/textFontPointSize", -1).toFloat();
+
+    if(textFontPointSize != -1){
+        QFont font = ui->textEdit->font();
+        float newSize = textFontPointSize;
+        if (newSize <= 8)
+            newSize = 8;
+        font.setPointSizeF(newSize);
+        ui->textEdit->setFont(font);
+    }
+
+
+    // restore cursor position
+
+    int cursorPosition = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "outlineTextCursorPosition", QString::number(this->treeItemId()), 0).toInt();
+
+    QTextCursor cursor(ui->textEdit->document());
+    cursor.setPosition(cursorPosition);
+    ui->textEdit->setTextCursor(cursor);
+    ui->textEdit->ensureCursorVisible();
 }
 
 
 void OutlineToolbox::saveContent()
 {
-        skrdata->treeHub()->setSecondaryContent(this->projectId(), this->treeItemId(), ui->textEdit->toMarkdown());
+    QString markdown = ui->textEdit->toMarkdown();
+
+    projectTreeCommands->setContent(this->projectId(), this->treeItemId(), markdown, true);
+
+    m_wasModified = false;
+}
+
+
+void OutlineToolbox::saveTextState()
+{
+    SKRUserSettings::insertInProjectSettingHash(this->projectId(), "outlineTextCursorPosition", QString::number(this->treeItemId()),
+                                                                     ui->textEdit->textCursor().position());
 
 }
 
+
+void OutlineToolbox::connectSaveConnection()
+{
+
+
+    m_saveConnection = connect(ui->textEdit, &QTextEdit::textChanged, this, [this](){
+        m_wasModified = true;
+
+        if(m_saveTimer->isActive()){
+            m_saveTimer->stop();
+        }
+        m_saveTimer->start();
+    });
+
+}
+
+
+void OutlineToolbox::wheelEvent(QWheelEvent *event)
+{
+    if(event->modifiers() == Qt::ControlModifier) {
+
+        QPoint numPixels = event->pixelDelta();
+        QPoint numDegrees = event->angleDelta() / 8;
+
+        if(ui->textEdit->font().pointSize() < 8){
+            event->accept();
+            return;
+        }
+
+        QObject::disconnect(m_saveConnection);
+
+        if (!numPixels.isNull()) {
+            if(numPixels.y() > 0) {
+                ui->textEdit->zoomOut();
+            }
+            else{
+                ui->textEdit->zoomIn();
+            }
+        } else if (!numDegrees.isNull()) {
+            QPoint numSteps = numDegrees / 15;
+            if(numSteps.y() > 0) {
+                ui->textEdit->zoomOut();
+            }
+            else{
+                ui->textEdit->zoomIn();
+            }
+        }
+
+        connectSaveConnection();
+
+        QSettings settings;
+        settings.setValue("outlineToolbox/textFontPointSize", ui->textEdit->font().pointSizeF());
+
+        event->accept();
+    }
+    else {
+            ui->textEdit->wheelEvent(event);
+    }
+}

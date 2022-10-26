@@ -53,6 +53,8 @@ public:
     int restoreItemFromTrash(int projectId, int targetId, int forcedOriginalParentId = -1, int forcedOriginalRow = -1);
     QList<int> restoreSeveralItemsFromTrash(int projectId, QList<int> targetIds);
 
+    void setContent(int projectId, int targetId, const QString &content, bool isSecondary = false);
+
     void emptyTrash(int projectId);
 
 signals:

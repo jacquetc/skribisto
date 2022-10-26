@@ -26,9 +26,13 @@ protected:
 private:
     Ui::TextView *centralWidgetUi;
     bool m_isSecondaryContent;
+    QMetaObject::Connection m_saveConnection;
+    QTimer *m_saveTimer;
+    bool m_wasModified;
 
-    // QWidget interface
     void saveTextState();
+    void connectSaveConnection();
+
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;

@@ -276,6 +276,19 @@ QList<int> ProjectTreeCommands::restoreSeveralItemsFromTrash(int projectId, QLis
 
 //------------------------------------------------------------------------------------
 
+void ProjectTreeCommands::setContent(int projectId, int targetId, const QString &content, bool isSecondary)
+{
+
+    if(isSecondary){
+        skrdata->treeHub()->setSecondaryContent(projectId, targetId, content);
+    }
+    else {
+        skrdata->treeHub()->setPrimaryContent(projectId, targetId, content);
+    }
+}
+
+//------------------------------------------------------------------------------------
+
 
 void ProjectTreeCommands::emptyTrash(int projectId)
 {

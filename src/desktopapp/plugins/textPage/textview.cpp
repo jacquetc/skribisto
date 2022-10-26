@@ -1,4 +1,5 @@
 #include "textview.h"
+#include "projecttreecommands.h"
 #include "skrusersettings.h"
 #include "text/textbridge.h"
 #include "ui_textview.h"
@@ -9,7 +10,7 @@
 
 TextView::TextView(QWidget *parent) :
     View("TEXT",parent),
-    centralWidgetUi(new Ui::TextView), m_isSecondaryContent(false)
+    centralWidgetUi(new Ui::TextView), m_isSecondaryContent(false), m_wasModified(false)
 {
 
     //central ui
@@ -53,7 +54,10 @@ TextView::TextView(QWidget *parent) :
 
 TextView::~TextView()
 {
-    saveContent();
+    if(m_wasModified){
+        saveContent();
+    }
+
     saveTextState();
     delete centralWidgetUi;
 }
@@ -97,18 +101,16 @@ void TextView::initialize()
                 document);
 
 
-    QTimer *saveTimer = new QTimer(this);
-    saveTimer->setSingleShot(true);
-    saveTimer->setInterval(2000);
+
+    // create save timer
+
+    m_saveTimer = new QTimer(this);
+    m_saveTimer->setSingleShot(true);
+    m_saveTimer->setInterval(200);
+    connect(m_saveTimer, &QTimer::timeout, this, &TextView::saveContent);
+    QTimer::singleShot(0, this, [this](){ connectSaveConnection();});
 
 
-    connect(centralWidgetUi->textEdit, &QTextEdit::textChanged, this, [saveTimer](){
-        if(saveTimer->isActive()){
-            saveTimer->stop();
-        }
-        saveTimer->start();
-    });
-    connect(saveTimer, &QTimer::timeout, this, &TextView::saveContent);
 
 
 
@@ -145,18 +147,34 @@ void TextView::initialize()
 
 void TextView::saveContent()
 {
-    if(m_isSecondaryContent){
-        skrdata->treeHub()->setSecondaryContent(this->projectId(), this->treeItemId(), centralWidgetUi->textEdit->toMarkdown());
-    }
-    else {
-        skrdata->treeHub()->setPrimaryContent(this->projectId(), this->treeItemId(), centralWidgetUi->textEdit->toMarkdown());
-    }
+
+    QString markdown = centralWidgetUi->textEdit->toMarkdown();
+
+    projectTreeCommands->setContent(this->projectId(), this->treeItemId(), markdown, m_isSecondaryContent);
+
+    m_wasModified = false;
+
 }
 
 void TextView::saveTextState()
 {
     SKRUserSettings::insertInProjectSettingHash(this->projectId(), "textCursorPosition", QString::number(this->treeItemId()),
                                                                      centralWidgetUi->textEdit->textCursor().position());
+
+}
+
+void TextView::connectSaveConnection()
+{
+
+
+    m_saveConnection = connect(centralWidgetUi->textEdit, &QTextEdit::textChanged, this, [this](){
+        m_wasModified = true;
+
+        if(m_saveTimer->isActive()){
+            m_saveTimer->stop();
+        }
+        m_saveTimer->start();
+    });
 
 }
 
@@ -178,6 +196,9 @@ void TextView::wheelEvent(QWheelEvent *event)
             event->accept();
             return;
         }
+
+        QObject::disconnect(m_saveConnection);
+
         if (!numPixels.isNull()) {
             if(numPixels.y() > 0) {
                 centralWidgetUi->textEdit->zoomOut();
@@ -194,6 +215,8 @@ void TextView::wheelEvent(QWheelEvent *event)
                 centralWidgetUi->textEdit->zoomIn();
             }
         }
+
+        connectSaveConnection();
 
 
         QSettings settings;
