@@ -28,6 +28,7 @@ private:
     bool m_isSecondaryContent;
 
     // QWidget interface
+    void saveTextState();
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;

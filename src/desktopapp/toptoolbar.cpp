@@ -23,6 +23,7 @@ TopToolBar::TopToolBar(QWidget *parent) :
     m_rightToolBar = new QToolBar;
     ui->horizontalLayout->addWidget(m_rightToolBar);
 
+    setBackgroundRole(QPalette::Window);
 
     QTimer::singleShot(0, this, &TopToolBar::init);
 

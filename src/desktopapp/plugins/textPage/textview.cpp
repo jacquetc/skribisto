@@ -1,4 +1,5 @@
 #include "textview.h"
+#include "skrusersettings.h"
 #include "text/textbridge.h"
 #include "ui_textview.h"
 #include "toolboxes/outlinetoolbox.h"
@@ -32,7 +33,7 @@ TextView::TextView(QWidget *parent) :
     });
     //centralWidgetUi->horizontalLayout->set  (centralWidgetUi->verticalScrollBar);
     //connect(centralWidgetUi->textEdit.)
-
+    centralWidgetUi->textEdit->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
 
     centralWidgetUi->horizontalLayout->setStretchFactor(centralWidgetUi->horizontalLayout_2, 1);
 
@@ -48,13 +49,12 @@ TextView::TextView(QWidget *parent) :
         settings.setValue("textPage/textWidth", centralWidgetUi->textEditHolder->maximumWidth());
     });
 
-    QSettings settings;
-    centralWidgetUi->textEditHolder->setMaximumWidth(settings.value("textPage/textWidth", 450).toInt());
 }
 
 TextView::~TextView()
 {
     saveContent();
+    saveTextState();
     delete centralWidgetUi;
 }
 
@@ -110,6 +110,37 @@ void TextView::initialize()
     });
     connect(saveTimer, &QTimer::timeout, this, &TextView::saveContent);
 
+
+
+    QSettings settings;
+
+    // restore font size:
+
+    float textFontPointSize = settings.value("textPage/textFontPointSize", -1).toFloat();
+
+    if(textFontPointSize != -1){
+        QFont font = centralWidgetUi->textEdit->font();
+        float newSize = textFontPointSize;
+        if (newSize <= 8)
+            newSize = 8;
+        font.setPointSizeF(newSize);
+        centralWidgetUi->textEdit->setFont(font);
+    }
+
+    // restore textWidth:
+
+    int textWidth = settings.value("textPage/textWidth", 600).toInt();
+    centralWidgetUi->textEditHolder->setMaximumWidth(textWidth);
+
+    // restore cursor position
+
+    int cursorPosition = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textCursorPosition", QString::number(this->treeItemId()), 0).toInt();
+
+    QTextCursor cursor(centralWidgetUi->textEdit->document());
+    cursor.setPosition(cursorPosition);
+    centralWidgetUi->textEdit->setTextCursor(cursor);
+    centralWidgetUi->textEdit->ensureCursorVisible();
+
 }
 
 void TextView::saveContent()
@@ -122,6 +153,12 @@ void TextView::saveContent()
     }
 }
 
+void TextView::saveTextState()
+{
+    SKRUserSettings::insertInProjectSettingHash(this->projectId(), "textCursorPosition", QString::number(this->treeItemId()),
+                                                                     centralWidgetUi->textEdit->textCursor().position());
+
+}
 
 void TextView::mousePressEvent(QMouseEvent *event)
 {
@@ -132,14 +169,17 @@ void TextView::mousePressEvent(QMouseEvent *event)
 
 void TextView::wheelEvent(QWheelEvent *event)
 {
-    if(event->modifiers() == Qt::ShiftModifier) {
+    if(event->modifiers() == Qt::ControlModifier) {
 
         QPoint numPixels = event->pixelDelta();
         QPoint numDegrees = event->angleDelta() / 8;
 
-
+        if(centralWidgetUi->textEdit->font().pointSize() < 8){
+            event->accept();
+            return;
+        }
         if (!numPixels.isNull()) {
-            if(numPixels.x() > 0) {
+            if(numPixels.y() > 0) {
                 centralWidgetUi->textEdit->zoomOut();
             }
             else{
@@ -147,7 +187,7 @@ void TextView::wheelEvent(QWheelEvent *event)
             }
         } else if (!numDegrees.isNull()) {
             QPoint numSteps = numDegrees / 15;
-            if(numSteps.x() > 0) {
+            if(numSteps.y() > 0) {
                 centralWidgetUi->textEdit->zoomOut();
             }
             else{
@@ -155,6 +195,11 @@ void TextView::wheelEvent(QWheelEvent *event)
             }
         }
 
+
+        QSettings settings;
+        settings.setValue("textPage/textFontPointSize", centralWidgetUi->textEdit->font().pointSizeF());
+
+        event->accept();
     }
     else {
             centralWidgetUi->textEdit->wheelEvent(event);
