@@ -1594,23 +1594,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="245"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="246"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="192"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="205"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="193"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="206"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="194"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="195"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="242"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="243"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>

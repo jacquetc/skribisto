@@ -39,6 +39,7 @@ MainWindow::MainWindow(int newWindowId)
 
 
     // tool bar
+
     m_topToolBar = new TopToolBar();
     ui->toolBar->setContentsMargins(0, 0, 0, 0);
     ui->toolBar->addWidget(m_topToolBar);
