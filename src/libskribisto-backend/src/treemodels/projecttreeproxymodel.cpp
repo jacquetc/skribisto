@@ -128,9 +128,9 @@ QMimeData *ProjectTreeProxyModel::mimeData(const QModelIndexList &indexes) const
 
 bool ProjectTreeProxyModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
 {
-    if(!parent.isValid()){
-        return false;
-    }
+//    if(!parent.isValid()){
+//        return false;
+//    }
 
     QList< QPair<int, int> > pairList;
     QByteArray byteArray = data->data("application/x-navigationtreeitem-list");

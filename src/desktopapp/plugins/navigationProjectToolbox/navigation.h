@@ -44,7 +44,7 @@ private:
     QAction *m_addItemAfterAction, *m_addItemBeforeAction, *m_addSubItemAction,
     *m_openItemAction, *m_openItemInAnotherViewAction, *m_openItemInANewWindowAction, *m_renameAction, *m_sendToTrashAction, *m_copyItemsAction, *m_cutItemsAction, *m_pasteItemsAction;
 
-    QList< QPair<int, int>> copyCutList;
+    //QList< QPair<int, int>> copyCutList;
 
     void open(const QModelIndex &index);
     void openInAnotherView(const QModelIndex &index);

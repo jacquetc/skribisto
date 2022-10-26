@@ -28,6 +28,8 @@ Navigation::Navigation(class QWidget *parent) :
     //expand management
 
     expandProjectItems();
+    QObject::connect(ui->treeView, &QTreeView::expanded, this, &Navigation::saveExpandStates);
+    QObject::connect(ui->treeView, &QTreeView::collapsed, this, &Navigation::saveExpandStates);
     QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &Navigation::expandProjectItems);
 
     restoreExpandStates();

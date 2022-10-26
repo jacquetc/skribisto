@@ -47,6 +47,7 @@ protected:
 
 signals:
     void initialized(int projectId, int treeItemId);
+    void aboutToBeDestroyed();
 
 private slots:
   void on_closeToolButton_clicked();

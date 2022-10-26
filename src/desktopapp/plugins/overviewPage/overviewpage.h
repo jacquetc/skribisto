@@ -82,7 +82,7 @@ public:
     // ---------- project page :
 
     QString iconSource() const override {
-        return "qrc:///icons/backup/object-rows.svg";
+        return ":/icons/backup/object-rows.svg";
     }
 
     QString showButtonText() const override {

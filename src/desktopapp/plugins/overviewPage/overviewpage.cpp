@@ -20,6 +20,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "overviewpage.h"
+#include "overviewview.h"
 #include "skrdata.h"
 
 OverviewPage::OverviewPage(QObject *parent) : QObject(parent)
@@ -35,6 +36,8 @@ OverviewPage::~OverviewPage()
 View *OverviewPage::getView() const
 {
 
+    OverviewView* view = new OverviewView;
+    return view;
 }
 
 // ---------------------------------------------------

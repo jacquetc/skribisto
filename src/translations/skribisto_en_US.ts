@@ -1633,43 +1633,43 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="51"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="53"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="62"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="64"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="81"/>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="88"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="83"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="90"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="88"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="90"/>
         <source>Enter a new title for the item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="97"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="99"/>
         <source>Add below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="109"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="111"/>
         <source>Add above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="120"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="122"/>
         <source>Add sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="141"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="143"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2603,6 +2603,47 @@
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="59"/>
+        <source>Open in another view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="70"/>
+        <source>Open in a new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="89"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="96"/>
+        <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="96"/>
+        <source>Enter a new title for the item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="105"/>
+        <source>Add below</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="117"/>
+        <source>Add above</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="128"/>
+        <source>Add sub-item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="149"/>
+        <source>Send to trash</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PageToolbox</name>
@@ -2965,7 +3006,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="50"/>
+        <location filename="../desktopapp/main.cpp" line="51"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5112,7 +5153,7 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="55"/>
+        <location filename="../desktopapp/main.cpp" line="56"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

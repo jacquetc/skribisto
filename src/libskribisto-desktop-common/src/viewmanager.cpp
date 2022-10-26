@@ -141,6 +141,7 @@ View* ViewManager::openViewAt(View *atView, const QString &type, int projectId, 
         m_viewList.append(view);
         parentSplitter->insertWidget(viewIndex, view);
         m_viewList.removeAll(atView);
+        emit atView->aboutToBeDestroyed();
         atView->hide();
         atView->deleteLater();
         view->setParameters(m_parameters);
@@ -201,6 +202,7 @@ void ViewManager::removeSplit(View *view)
     ViewSplitter *parentSplitter = static_cast<ViewSplitter *>(view->parentWidget());
 
     if(parentSplitter == m_rootSplitter){
+        emit view->aboutToBeDestroyed();
         m_viewList.removeAll(view);
         view->hide();
 
@@ -220,6 +222,7 @@ void ViewManager::removeSplit(View *view)
         if(parentSplitter && grandParentSplitter){
 
              m_viewList.removeAll(view);
+             emit view->aboutToBeDestroyed();
              view->hide();
              delete view;
              //view->deleteLater();

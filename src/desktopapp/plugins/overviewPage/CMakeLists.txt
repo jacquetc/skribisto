@@ -17,6 +17,7 @@ set(SRCS
     overviewpage.cpp
     overviewpage.h
     overviewview.h overviewview.cpp overviewview.ui
+    overviewproxymodel.h overviewproxymodel.cpp
 )
 
 # Tell CMake to create the executable

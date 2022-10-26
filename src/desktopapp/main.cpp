@@ -17,6 +17,7 @@
 #include <interfaces/pageinterface.h>
 #include <interfaces/pagedesktopinterface.h>
 #include <interfaces/projecttoolboxinterface.h>
+#include "interfaces/projectpageinterface.h"
 #include <text/textbridge.h>
 
 int main(int argc, char *argv[]) {
@@ -69,6 +70,7 @@ int main(int argc, char *argv[]) {
   skrpluginhub->addPluginType<PageTypeIconInterface>();
   skrpluginhub->addPluginType<ItemExporterInterface>();
   skrpluginhub->addPluginType<NewProjectFormatInterface>();
+  skrpluginhub->addPluginType<ProjectPageInterface>();
 
   // load singletons :
   new ProjectTreeModel(skrData);

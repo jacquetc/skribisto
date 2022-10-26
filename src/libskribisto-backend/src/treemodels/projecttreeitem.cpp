@@ -275,6 +275,7 @@ void ProjectTreeItem::setIsRootItem()
 
     m_data.clear();
     m_invalidatedRoles.clear();
+    m_data.insert(Roles::ProjectIdRole,       -2);
     m_data.insert(Roles::TreeItemIdRole,       -2);
     m_data.insert(Roles::IndentRole,           -2);
     m_data.insert(Roles::SortOrderRole, -90000000);
