@@ -24,7 +24,7 @@ public:
     void unSubscribeWindow(QObject *windowObject);
     int  getWindowId(MainWindow *windowObject);
     int  getNumberOfWindows();
-    void addEmptyWindow();
+    MainWindow *addEmptyWindow();
      void addWindowForItemId(int projectId,
                                         int treeItemId);
      void addWindowForProjectIndependantPageType(const QString& pageType);
@@ -35,8 +35,8 @@ public:
      void insertAdditionalPropertyForViewManager(const QString & key,
                                                             const QVariant& value);
 
-     void addWindow(const QString& pageType = "", int projectId = -1,int treeItemId = -1);
-     void restoreWindows();
+     MainWindow *addWindow(const QString& pageType = "", int projectId = -1,int treeItemId = -1);
+     MainWindow *restoreWindows();
 
      void closeAllWindows();
      void closeWindow(MainWindow *window);

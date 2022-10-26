@@ -294,7 +294,7 @@ void TextBridge::useTextBridge(int position, int charsRemoved, int charsAdded) {
 
     if (otherDocSelectionCursor.block().text().size() !=
         selectionCursor.block().text().size()) {
-      otherTextDocument->setHtml(textDocument->toHtml());
+      otherTextDocument->setMarkdown(textDocument->toMarkdown());
       qDebug() << "failsafe used for "
                << senderSyncDoc.uniqueDocumentReference();
     }

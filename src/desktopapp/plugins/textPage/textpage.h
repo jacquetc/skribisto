@@ -110,7 +110,7 @@ public:
 
     // settings:
 
-    SettingsPanel *settingsPanel() const override;
+    SettingsSubPanel *settingsPanel() const override;
 
     QString settingsPanelButtonText() const override      {
         return tr("Text page");

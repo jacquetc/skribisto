@@ -35,7 +35,7 @@ void SettingsPage::setSettingsGroup(const QString &newSettingsGroup)
     for(auto *plugin : pluginList){
         if(plugin->settingsGroup() == m_settingsGroup){
             auto *panel = plugin->settingsPanel();
-            connect(this, &SettingsPage::accepted, panel, &SettingsPanel::accept);
+            connect(this, &SettingsPage::accepted, panel, &SettingsSubPanel::accept);
             ui->stackedWidget->addWidget(panel);
             new QListWidgetItem(QIcon(plugin->settingsPanelIconSource()), plugin->settingsPanelButtonText(), ui->listWidget);
         }

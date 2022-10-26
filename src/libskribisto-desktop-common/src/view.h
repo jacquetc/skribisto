@@ -38,6 +38,8 @@ protected:
 
   void setCentralWidget(QWidget *widget);
   void setToolBar(QToolBar *toolBar);
+  void setSecondToolBar(QToolBar *toolBar);
+  void setSecondToolBarVisible(bool visible);
 
   virtual QVariantMap addOtherViewParametersBeforeSplit() {
     return QVariantMap();

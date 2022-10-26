@@ -21,9 +21,32 @@ TextView::TextView(QWidget *parent) :
     //toolbar
 
     QToolBar *toolBar = new QToolBar;
-    //toolBar->addWidget(toolBar);
+    QAction *showFontToolBar = new QAction(QIcon(":/icons/backup/format-text-italic.svg"), "Show font toolbar",this);
+    showFontToolBar->setCheckable(true);
+    toolBar->addAction(showFontToolBar);
+
+    QToolBar *fontToolBar = new QToolBar(this);
+    fontToolBar->hide();
+
+    fontToolBar->addAction(centralWidgetUi->textEdit->italicAction());
+    fontToolBar->addAction(centralWidgetUi->textEdit->boldAction());
+    fontToolBar->addAction(centralWidgetUi->textEdit->underlineAction());
+    fontToolBar->addAction(centralWidgetUi->textEdit->strikeAction());
+
+
+
+    QObject::connect(showFontToolBar, &QAction::triggered, this, [this, fontToolBar](bool checked){
+        if(checked){
+            this->setSecondToolBar(fontToolBar);
+        }
+        this->setSecondToolBarVisible(checked);
+    });
+
 
     setToolBar(toolBar);
+
+
+
 
     // link scrollbar to textedit
     centralWidgetUi->textEdit->setVerticalScrollBar(centralWidgetUi->verticalScrollBar);
@@ -192,10 +215,6 @@ void TextView::wheelEvent(QWheelEvent *event)
         QPoint numPixels = event->pixelDelta();
         QPoint numDegrees = event->angleDelta() / 8;
 
-        if(centralWidgetUi->textEdit->font().pointSize() < 8){
-            event->accept();
-            return;
-        }
 
         QObject::disconnect(m_saveConnection);
 
@@ -214,6 +233,15 @@ void TextView::wheelEvent(QWheelEvent *event)
             else{
                 centralWidgetUi->textEdit->zoomIn();
             }
+        }
+
+        if(centralWidgetUi->textEdit->font().pointSize() < 8){
+
+            QFont font = centralWidgetUi->textEdit->font();
+            font.setPointSizeF(8);
+            centralWidgetUi->textEdit->setFont(font);
+
+            event->accept();
         }
 
         connectSaveConnection();

@@ -3006,7 +3006,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="51"/>
+        <location filename="../desktopapp/main.cpp" line="57"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3942,9 +3942,9 @@ Please select the destination folder.</source>
     </message>
 </context>
 <context>
-    <name>SettingsPanel</name>
+    <name>SettingsSubPanel</name>
     <message>
-        <location filename="../libskribisto-desktop-common/src/settingspanel.ui" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/settingssubpanel.ui" line="14"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4353,6 +4353,49 @@ Please select the destination folder.</source>
     <message>
         <location filename="../mobileapp/imports/Skribisto/TextContextMenuForm.ui.qml" line="54"/>
         <source>Suggestions</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TextEdit</name>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="11"/>
+        <source>Italic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="13"/>
+        <source>Ctrl+I</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="16"/>
+        <source>Bold</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="18"/>
+        <source>Ctrl+B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="21"/>
+        <source>Strikethrough</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="23"/>
+        <source>Ctrl+T</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="27"/>
+        <source>Underline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="29"/>
+        <source>Ctrl+U</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5031,22 +5074,22 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>View</name>
     <message>
-        <location filename="../libskribisto-desktop-common/src/view.ui" line="67"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="72"/>
         <source>Previous</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/view.ui" line="78"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="83"/>
         <source>Next</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/view.ui" line="125"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="130"/>
         <source>view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/view.ui" line="139"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="144"/>
         <source>close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5153,7 +5196,7 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="56"/>
+        <location filename="../desktopapp/main.cpp" line="62"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

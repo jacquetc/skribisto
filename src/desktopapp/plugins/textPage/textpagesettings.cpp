@@ -2,7 +2,7 @@
 #include "ui_textpagesettings.h"
 
 TextPageSettings::TextPageSettings(QWidget *parent) :
-    SettingsPanel(parent),
+    SettingsSubPanel(parent),
     centralWidgetUi(new Ui::TextPageSettings)
 {
     QWidget *widget = new QWidget;

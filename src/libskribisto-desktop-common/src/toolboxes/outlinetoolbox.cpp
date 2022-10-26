@@ -101,16 +101,15 @@ void OutlineToolbox::saveTextState()
 void OutlineToolbox::connectSaveConnection()
 {
 
-
-    m_saveConnection = connect(ui->textEdit, &QTextEdit::textChanged, this, [this](){
+  m_saveConnection =
+      connect(ui->textEdit, &QTextEdit::textChanged, this, [this]() {
         m_wasModified = true;
 
         if(m_saveTimer->isActive()){
-            m_saveTimer->stop();
+          m_saveTimer->stop();
         }
         m_saveTimer->start();
-    });
-
+      });
 }
 
 
@@ -121,10 +120,7 @@ void OutlineToolbox::wheelEvent(QWheelEvent *event)
         QPoint numPixels = event->pixelDelta();
         QPoint numDegrees = event->angleDelta() / 8;
 
-        if(ui->textEdit->font().pointSize() < 8){
-            event->accept();
-            return;
-        }
+
 
         QObject::disconnect(m_saveConnection);
 
@@ -143,6 +139,15 @@ void OutlineToolbox::wheelEvent(QWheelEvent *event)
             else{
                 ui->textEdit->zoomIn();
             }
+        }
+
+        if(ui->textEdit->font().pointSize() < 8){
+
+            QFont font = ui->textEdit->font();
+            font.setPointSizeF(8);
+            ui->textEdit->setFont(font);
+
+            event->accept();
         }
 
         connectSaveConnection();

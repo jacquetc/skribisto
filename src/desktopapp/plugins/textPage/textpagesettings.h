@@ -2,13 +2,13 @@
 #define TEXTPAGESETTINGS_H
 
 #include <QWidget>
-#include <settingspanel.h>
+#include "settingssubpanel.h"
 
 namespace Ui {
 class TextPageSettings;
 }
 
-class TextPageSettings : public SettingsPanel
+class TextPageSettings : public SettingsSubPanel
 {
     Q_OBJECT
 

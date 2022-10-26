@@ -24,7 +24,7 @@
 #define SETTINGSPANELINTERFACE_H
 
 #include "skrresult.h"
-#include "settingspanel.h"
+#include "settingssubpanel.h"
 #include <QString>
 
 class SettingsPanelInterface {
@@ -32,7 +32,7 @@ public:
   virtual ~SettingsPanelInterface() {}
 
   virtual QString name() const = 0;
-    virtual SettingsPanel *settingsPanel() const = 0;
+    virtual SettingsSubPanel *settingsPanel() const = 0;
     virtual QString settingsGroup() const = 0;
   virtual QString settingsPanelButtonText() const = 0;
   virtual QString settingsPanelIconSource() const = 0;

@@ -344,7 +344,7 @@ void TreeHubCase::getPrimaryContent()
     QString value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 16);
     QTextDocument doc;
 
-    doc.setHtml(value);
+    doc.setMarkdown(value);
     QCOMPARE(doc.toPlainText(), QString("second content test_project_dict_word badword "));
 
     // lorem ipsum :

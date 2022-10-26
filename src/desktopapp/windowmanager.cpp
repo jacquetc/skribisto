@@ -44,14 +44,18 @@ void WindowManager::unSubscribeWindow(QObject *windowObject)
 }
 //----------------------------------------------
 
-void WindowManager::restoreWindows()
+MainWindow *WindowManager::restoreWindows()
 {
+    MainWindow *window = nullptr;
+
     QSettings settings;
     int numberOfWindows = settings.value("window/numberOfWindows", 1).toInt();
 
     for (int i = 0; i < numberOfWindows; i++) {
-        addEmptyWindow();
+        window = addEmptyWindow();
     }
+
+    return window;
 }
 
 //----------------------------------------------
@@ -106,9 +110,9 @@ void WindowManager::closeWindow(MainWindow *window){
 
 //----------------------------------------------
 
-void WindowManager::addEmptyWindow()
+MainWindow *WindowManager::addEmptyWindow()
 {
-addWindow();
+ return addWindow();
 }
 
 //----------------------------------------------
@@ -146,7 +150,7 @@ void WindowManager::insertAdditionalPropertyForViewManager(const QString &key, c
 
 }
 
-void WindowManager::addWindow(const QString &pageType, int projectId, int treeItemId)
+MainWindow * WindowManager::addWindow(const QString &pageType, int projectId, int treeItemId)
 {
 
     int nextFreeWindowId = m_windowList.count();
@@ -178,4 +182,6 @@ void WindowManager::addWindow(const QString &pageType, int projectId, int treeIt
     window->show();
     window->raise();
     window->restoreState(dockState);
+
+    return window;
 }

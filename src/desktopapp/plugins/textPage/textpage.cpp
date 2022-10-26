@@ -80,7 +80,7 @@ QTextDocumentFragment TextPage::generateExporterTextFragment(int                
     return QTextDocumentFragment(document);
 }
 
-SettingsPanel *TextPage::settingsPanel() const
+SettingsSubPanel *TextPage::settingsPanel() const
 {
     return new TextPageSettings();
 }

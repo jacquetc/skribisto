@@ -36,116 +36,123 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="toolBarLayout" stretch="0,0,0">
+    <layout class="QVBoxLayout" name="toolBarSystemLayout">
      <property name="spacing">
       <number>0</number>
      </property>
      <item>
-      <widget class="QFrame" name="navigationFrame">
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
+      <layout class="QHBoxLayout" name="toolBarLayout" stretch="0,0,0">
+       <property name="spacing">
+        <number>0</number>
        </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QToolButton" name="previousHistory">
-          <property name="text">
-           <string>Previous</string>
+       <item>
+        <widget class="QFrame" name="navigationFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="leftMargin">
+           <number>0</number>
           </property>
-          <property name="icon">
-           <iconset resource="../../../3rdparty/icons.qrc">
-            <normaloff>:/icons/backup/go-previous-view.svg</normaloff>:/icons/backup/go-previous-view.svg</iconset>
+          <property name="topMargin">
+           <number>0</number>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="nextHistory">
-          <property name="text">
-           <string>Next</string>
+          <property name="rightMargin">
+           <number>0</number>
           </property>
-          <property name="icon">
-           <iconset resource="../../../3rdparty/icons.qrc">
-            <normaloff>:/icons/backup/go-next-view.svg</normaloff>:/icons/backup/go-next-view.svg</iconset>
+          <property name="bottomMargin">
+           <number>0</number>
           </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QWidget" name="toolBarPlaceHolder" native="true">
-       <layout class="QHBoxLayout" name="toolBarHolder">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QFrame" name="viewControlsFrame">
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QToolButton" name="splitToolButton">
-          <property name="text">
-           <string>view</string>
+          <item>
+           <widget class="QToolButton" name="previousHistory">
+            <property name="text">
+             <string>Previous</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../../3rdparty/icons.qrc">
+              <normaloff>:/icons/backup/go-previous-view.svg</normaloff>:/icons/backup/go-previous-view.svg</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="nextHistory">
+            <property name="text">
+             <string>Next</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../../3rdparty/icons.qrc">
+              <normaloff>:/icons/backup/go-next-view.svg</normaloff>:/icons/backup/go-next-view.svg</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="toolBarPlaceHolder" native="true">
+         <layout class="QHBoxLayout" name="toolBarHolder">
+          <property name="spacing">
+           <number>0</number>
           </property>
-          <property name="icon">
-           <iconset resource="../../../3rdparty/icons.qrc">
-            <normaloff>:/icons/backup/view-split-left-right.svg</normaloff>:/icons/backup/view-split-left-right.svg</iconset>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="viewControlsFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <property name="spacing">
+           <number>0</number>
           </property>
-          <property name="popupMode">
-           <enum>QToolButton::InstantPopup</enum>
+          <property name="leftMargin">
+           <number>0</number>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="closeToolButton">
-          <property name="text">
-           <string>close</string>
+          <property name="topMargin">
+           <number>0</number>
           </property>
-          <property name="icon">
-           <iconset resource="../../../3rdparty/icons.qrc">
-            <normaloff>:/icons/backup/view-close.svg</normaloff>:/icons/backup/view-close.svg</iconset>
+          <property name="rightMargin">
+           <number>0</number>
           </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QToolButton" name="splitToolButton">
+            <property name="text">
+             <string>view</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../../3rdparty/icons.qrc">
+              <normaloff>:/icons/backup/view-split-left-right.svg</normaloff>:/icons/backup/view-split-left-right.svg</iconset>
+            </property>
+            <property name="popupMode">
+             <enum>QToolButton::InstantPopup</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="closeToolButton">
+            <property name="text">
+             <string>close</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../../3rdparty/icons.qrc">
+              <normaloff>:/icons/backup/view-close.svg</normaloff>:/icons/backup/view-close.svg</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>

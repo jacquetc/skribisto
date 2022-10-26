@@ -20,7 +20,7 @@ set(common_SRCS
     invoker.h
     newtreeitemdialog.h newtreeitemdialog.cpp newtreeitemdialog.ui
     treeitemcreationparameterswidget.h treeitemcreationparameterswidget.cpp
-    settingspanel.h settingspanel.cpp settingspanel.ui
+    settingssubpanel.h settingssubpanel.cpp settingssubpanel.ui
     toolboxes/outlinetoolbox.h toolboxes/outlinetoolbox.cpp toolboxes/outlinetoolbox.ui
     installnewdictwizard.h installnewdictwizard.cpp installnewdictwizard.ui
     text/textedit.h text/textedit.cpp

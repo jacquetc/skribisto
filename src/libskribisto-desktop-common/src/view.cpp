@@ -132,12 +132,34 @@ void View::setCentralWidget(QWidget *widget)
 
 void View::setToolBar(QToolBar *toolBar)
 {
+    toolBar->setIconSize(QSize(16,16));
     toolBar->setContentsMargins(0,0,0,0);
     ui->toolBarLayout->insertWidget(1, toolBar);
     ui->toolBarLayout->setStretchFactor(toolBar, 1);
     ui->toolBarPlaceHolder->deleteLater();
 
     themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+}
+
+void View::setSecondToolBar(QToolBar *toolBar)
+{
+    toolBar->hide();
+    toolBar->setIconSize(QSize(16,16));
+    toolBar->setContentsMargins(0,0,0,0);
+    if(ui->toolBarSystemLayout->count() == 2){
+        ui->toolBarSystemLayout->removeItem(ui->toolBarSystemLayout->itemAt(1));
+    }
+
+    ui->toolBarSystemLayout->insertWidget(1, toolBar);
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+
+
+}
+
+void View::setSecondToolBarVisible(bool visible)
+{
+    ui->toolBarSystemLayout->itemAt(1)->widget()->setVisible(visible);
 }
 
 int View::treeItemId() const

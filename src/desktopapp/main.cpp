@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QSettings>
+#include <QSplashScreen>
 #include <QStyleFactory>
 #include <interfaces/itemexporterinterface.h>
 #include <interfaces/pageinterface.h>
@@ -28,6 +29,11 @@ int main(int argc, char *argv[]) {
   // ":/icons/backup/");
   QApplication app(argc, argv);
   QApplication::setStyle(new SkribistoStyle);
+
+  QPixmap pixmap(":/icons/skribisto/skribisto.png");
+  QSplashScreen splash(pixmap, Qt::WindowStaysOnTopHint);
+  splash.show();
+  app.processEvents();
 
 
   // Names for the QSettings
@@ -82,12 +88,14 @@ int main(int argc, char *argv[]) {
   TextBridge::instance();
 
 
-  windowManager->restoreWindows();
+  QMainWindow *window = windowManager->restoreWindows();
+
 
   if (parser.isSet("testProject")) {
     projectCommands->loadProject(
         QUrl("qrc:/testfiles/skribisto_test_project.skrib"));
   }
+  splash.finish(window);
 
   return app.exec();
 }
