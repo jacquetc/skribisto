@@ -48,8 +48,8 @@ public:
     };
     Q_ENUM(Roles)
 
-    explicit SKRTreeItem();
-    explicit SKRTreeItem(int projectId,
+    Q_DECL_DEPRECATED explicit SKRTreeItem();
+    Q_DECL_DEPRECATED explicit SKRTreeItem(int projectId,
                          int treeItemId,
                          int indent,
                          int sortOrder);

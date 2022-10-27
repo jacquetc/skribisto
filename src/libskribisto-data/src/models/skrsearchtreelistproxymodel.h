@@ -38,7 +38,7 @@ class EXPORT SKRSearchTreeListProxyModel : public QSortFilterProxyModel {
 
 public:
 
-    explicit SKRSearchTreeListProxyModel();
+    Q_DECL_DEPRECATED explicit SKRSearchTreeListProxyModel();
 
     Q_INVOKABLE SKRSearchTreeListProxyModel* clone();
 

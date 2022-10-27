@@ -43,8 +43,8 @@ public:
     Q_ENUM(Roles)
 
 
-    explicit SKRTagItem();
-    explicit SKRTagItem(int projectId,
+    Q_DECL_DEPRECATED explicit SKRTagItem();
+    Q_DECL_DEPRECATED explicit SKRTagItem(int projectId,
                         int tagId);
 
     ~SKRTagItem();

@@ -31,7 +31,7 @@ class EXPORT PLMDocumentListProxyModel : public QSortFilterProxyModel {
 
 public:
 
-    explicit PLMDocumentListProxyModel(QObject *parent = nullptr);
+    Q_DECL_DEPRECATED explicit PLMDocumentListProxyModel(QObject *parent = nullptr);
     void             setSubWindowId(int subWindowId);
 
 

@@ -67,7 +67,7 @@ public:
         LasFocusedDateRole = Qt::UserRole + 10
     };
 
-    explicit PLMDocumentListModel(QObject       *parent,
+    Q_DECL_DEPRECATED explicit PLMDocumentListModel(QObject       *parent,
                                   const QString& tableName);
 
     // Header:
