@@ -1,4 +1,5 @@
 #include "textview.h"
+#include "markdowntextdocument.h"
 #include "projecttreecommands.h"
 #include "skrusersettings.h"
 #include "text/textbridge.h"
@@ -33,7 +34,8 @@ TextView::TextView(QWidget *parent) :
     fontToolBar->addAction(centralWidgetUi->textEdit->underlineAction());
     fontToolBar->addAction(centralWidgetUi->textEdit->strikeAction());
 
-
+    fontToolBar->addSeparator();
+    fontToolBar->addAction(centralWidgetUi->textEdit->bulletListAction());
 
     QObject::connect(showFontToolBar, &QAction::triggered, this, [this, fontToolBar](bool checked){
         if(checked){
@@ -103,15 +105,15 @@ QList<Toolbox *> TextView::toolboxes()
 
 void TextView::initialize()
 {
-    QTextDocument *document = new QTextDocument(this);
+    MarkdownTextDocument *document = new MarkdownTextDocument(this);
 
     m_isSecondaryContent = parameters().value("is_secondary_content", false).toBool();
     if(m_isSecondaryContent){
-        document->setMarkdown(skrdata->treeHub()->getSecondaryContent(this->projectId(), this->treeItemId()));
+        document->setSkribistoMarkdown(skrdata->treeHub()->getSecondaryContent(this->projectId(), this->treeItemId()));
 
     }
     else {
-        document->setMarkdown(skrdata->treeHub()->getPrimaryContent(this->projectId(), this->treeItemId()));
+        document->setSkribistoMarkdown(skrdata->treeHub()->getPrimaryContent(this->projectId(), this->treeItemId()));
 
     }
 
@@ -171,7 +173,7 @@ void TextView::initialize()
 void TextView::saveContent()
 {
 
-    QString markdown = centralWidgetUi->textEdit->toMarkdown();
+    QString markdown = static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document())->toSkribistoMarkdown();
 
     projectTreeCommands->setContent(this->projectId(), this->treeItemId(), markdown, m_isSecondaryContent);
 

@@ -1,4 +1,5 @@
 #include "outlinetoolbox.h"
+#include "markdowntextdocument.h"
 #include "skrdata.h"
 #include "text/textbridge.h"
 #include "ui_outlinetoolbox.h"
@@ -28,10 +29,10 @@ OutlineToolbox::~OutlineToolbox()
 void OutlineToolbox::initialize()
 {
 
-    QTextDocument *document = new QTextDocument(this);
+    MarkdownTextDocument *document = new MarkdownTextDocument(this);
 
 
-   document->setMarkdown(skrdata->treeHub()->getSecondaryContent(this->projectId(), this->treeItemId()));
+   document->setSkribistoMarkdown(skrdata->treeHub()->getSecondaryContent(this->projectId(), this->treeItemId()));
 
 
     ui->textEdit->setDocument(document);
@@ -82,7 +83,7 @@ void OutlineToolbox::initialize()
 
 void OutlineToolbox::saveContent()
 {
-    QString markdown = ui->textEdit->toMarkdown();
+    QString markdown = static_cast<MarkdownTextDocument *>(ui->textEdit->document())->toSkribistoMarkdown();
 
     projectTreeCommands->setContent(this->projectId(), this->treeItemId(), markdown, true);
 

@@ -23,7 +23,7 @@
 #ifndef PROJECTTOOLBOXINTERFACE_H
 #define PROJECTTOOLBOXINTERFACE_H
 
-#include "skrcoreinterface.h"
+#include "interfaces/skrcoreinterface.h"
 #include <QString>
 #include <toolbox.h>
 

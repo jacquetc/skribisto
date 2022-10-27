@@ -6,8 +6,9 @@
 #include <QString>
 #include <QVariant>
 #include <QHash>
+#include "skribisto_backend_global.h"
 
-class SKRUserSettings : public QObject {
+class SKRBACKENDEXPORT SKRUserSettings : public QObject {
     Q_OBJECT
 
 public:

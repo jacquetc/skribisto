@@ -22,7 +22,7 @@
 #ifndef PAGEDESKTOPINTERFACE_H
 #define PAGEDESKTOPINTERFACE_H
 
-#include "skrcoreinterface.h"
+#include "interfaces/skrcoreinterface.h"
 #include "treeitemcreationparameterswidget.h"
 #include "view.h"
 #include <QString>

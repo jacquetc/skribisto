@@ -1,8 +1,8 @@
 /***************************************************************************
-*   Copyright (C) 2019 by Cyril Jacquet                                 *
+*   Copyright (C) 2017 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: plminterfacesettings.h
+*  Filename: skrcoreinterface.h
 *                                                  *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
@@ -19,44 +19,22 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRINTERFACESETTINGS_H
-#define SKRINTERFACESETTINGS_H
+#ifndef SKRCOREINTERFACE_H
+#define SKRCOREINTERFACE_H
 
 
-#include <QSettings>
-#include "skribisto_data_global.h"
+#include <QString>
+#include "skrinterfacesettings.h"
 
-class EXPORT SKRInterfaceSettings {
+class SKRCoreInterface : public SKRInterfaceSettings {
 public:
 
-    virtual ~SKRInterfaceSettings() {}
-
-    virtual QString name() const                 = 0;
-    virtual QString displayedName() const        = 0;
-    virtual QString use() const                  = 0;
-    virtual QString pluginGroup() const          = 0;
-    virtual QString pluginSelectionGroup() const = 0;
-
-    bool            isPluginEnabledSettingExisting() const
-    {
-        QSettings settings;
-
-        return settings.value("plugins/" + this->name() + "-enabled", QVariant()) == QVariant() ? false : true;
-    }
-
-    bool pluginEnabled() const
-    {
-        QSettings settings;
-
-        return settings.value("plugins/" + this->name() + "-enabled", true).toBool();
-    }
-
-    void setPluginEnabled(bool pluginEnabled)
-    {
-        QSettings settings;
-
-        return settings.setValue("plugins/" + this->name() + "-enabled", pluginEnabled);
-    }
+    virtual ~SKRCoreInterface() {}
 };
 
-#endif // SKRINTERFACESETTINGS_H
+#define SKRCoreInterface_iid "com.skribisto.CoreInterface/1.0"
+
+
+Q_DECLARE_INTERFACE(SKRCoreInterface, SKRCoreInterface_iid)
+
+#endif // SKRCOREINTERFACE_H

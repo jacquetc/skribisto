@@ -9,6 +9,7 @@
 #include <QtGui/QTextDocument>
 
 
+#include "markdowntextdocument.h"
 #include "skrdata.h"
 #include "skrresult.h"
 #include "importer.h"
@@ -342,10 +343,10 @@ void TreeHubCase::setPrimaryContent()
 void TreeHubCase::getPrimaryContent()
 {
     QString value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 16);
-    QTextDocument doc;
+    MarkdownTextDocument doc;
 
-    doc.setMarkdown(value);
-    QCOMPARE(doc.toPlainText(), QString("second content test_project_dict_word badword "));
+    doc.setSkribistoMarkdown(value);
+    QCOMPARE(doc.toPlainText(), QString("second content test_project_dict_word badword"));
 
     // lorem ipsum :
     value = skrdata->treeHub()->getPrimaryContent(m_currentProjectId, 14);

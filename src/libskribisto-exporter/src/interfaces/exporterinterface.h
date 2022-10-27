@@ -4,7 +4,7 @@
 #include "skrresult.h"
 #include <QString>
 #include <QObject>
-#include <skrcoreinterface.h>
+#include "interfaces/skrcoreinterface.h"
 
 
 

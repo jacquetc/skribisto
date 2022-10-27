@@ -19,6 +19,8 @@ set(backend_SRCS
     projectcommands.h projectcommands.cpp
     commands.h commands.cpp
     tagcommands.h tagcommands.cpp
+    skrusersettings.h
+    skrusersettings.cpp
 )
 
 set(backend_MODELS

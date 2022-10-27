@@ -24,7 +24,7 @@
 #include <QObject>
 #include <QString>
 #include <QVariantList>
-#include "skribisto_data_global.h"
+#include "skribisto_common_global.h"
 
 /**
  * To facilitate the result management
@@ -46,7 +46,7 @@
         RESULT = ACTION;       \
     }
 
-struct EXPORT SKRResult
+struct SKRCOMMONEXPORT SKRResult
 {
     Q_GADGET
     Q_PROPERTY(bool success READ isSuccess)

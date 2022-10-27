@@ -1,5 +1,8 @@
 #include "textedit.h"
 
+#include <QTextBlock>
+#include <QTextCursor>
+#include <QTextList>
 #include <QUuid>
 
 TextEdit::TextEdit(QWidget *parent)
@@ -28,6 +31,11 @@ TextEdit::TextEdit(QWidget *parent)
     m_underlineAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     m_underlineAction->setShortcut(QKeySequence(tr("Ctrl+U")));
     m_underlineAction->setCheckable(true);
+
+    m_bulletListAction = new QAction(QIcon(":/icons/backup/format-text-underline.svg"), tr("List"), this);
+    m_bulletListAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    m_bulletListAction->setShortcut(QKeySequence(tr("")));
+    m_bulletListAction->setCheckable(true);
 
 }
 
@@ -77,6 +85,57 @@ void TextEdit::connectActions()
             this->mergeCurrentCharFormat(format);
     });
 
+    m_actionConnectionsList << QObject::connect(m_bulletListAction, &QAction::toggled, this, [this](bool checked){
+            QTextCursor cursor(this->document());
+            cursor.setPosition(this->textCursor().position());
+            cursor.setPosition(this->textCursor().anchor(), QTextCursor::KeepAnchor);
+
+            QTextBlock block = cursor.block();
+            QTextList *currentList = cursor.currentList();
+            const QTextBlock previousBlock = block.previous();
+
+            QTextCursor previousBlockCursor(this->document());
+            previousBlockCursor.setPosition(previousBlock.position());
+            QTextList *previousList = previousBlockCursor.currentList();
+
+            // add to previous list if there is one
+            if(previousBlock.isValid() && previousList){
+
+                previousList->add(block);
+
+            }
+            // remove list if there is one
+            else if(currentList){
+                QList<QTextBlock> blockList;
+
+                int start = cursor.position();
+                int end = cursor.anchor();
+
+                for(int i = start; i <= end; i++){
+                    QTextBlock thisBlock = this->document()->findBlock(i);
+                    if(!blockList.contains(thisBlock)){
+                        blockList.append(thisBlock);
+                    }
+
+                }
+
+                for(const QTextBlock &blockInSet : blockList){
+                    currentList->remove(blockInSet);
+                    QTextBlockFormat format;
+                    format.setIndent(0);
+                    cursor.mergeBlockFormat(format);
+                }
+
+
+
+            }
+            else { // create a new list
+                QTextListFormat listFormat;
+                listFormat.setStyle(QTextListFormat::ListDisc);
+                cursor.createList(listFormat);
+            }
+
+    });
 }
 
 
@@ -101,13 +160,21 @@ void TextEdit::updateFontActions()
     this->disconnectActions();
 
     const QFont font = this->currentFont();
+    QTextCursor cursor(this->document());
+    cursor.setPosition(this->textCursor().position());
 
     m_italicAction->setChecked(font.italic());
     m_boldAction->setChecked(font.bold());
     m_underlineAction->setChecked(font.underline());
     m_strikeAction->setChecked(font.strikeOut());
+    m_bulletListAction->setChecked(cursor.currentList() ? true : false);
 
     this->connectActions();
+}
+
+QAction *TextEdit::bulletListAction() const
+{
+    return m_bulletListAction;
 }
 
 QAction *TextEdit::underlineAction() const

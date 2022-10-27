@@ -29,7 +29,7 @@
 #include <QHash>
 #include <QSqlQuery>
 #include <QtSql/QSqlDatabase>
-#include "../skrresult.h"
+#include "skrresult.h"
 
 
 class PLMSqlQueries : public QObject {

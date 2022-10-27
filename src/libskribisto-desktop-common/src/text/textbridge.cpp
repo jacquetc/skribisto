@@ -1,4 +1,5 @@
 #include "textbridge.h"
+#include "markdowntextdocument.h"
 
 #include <QTextCursor>
 #include <QTextDocumentFragment>
@@ -11,7 +12,7 @@ SyncDocument::SyncDocument()
 
 SyncDocument::SyncDocument(const QString &uniqueDocumentReference,
                            const QString &skrTextAreaUniqueObjectName,
-                           QTextDocument *textDocument) {
+                           MarkdownTextDocument *textDocument) {
   m_uniqueDocumentReference = uniqueDocumentReference;
   m_skrTextAreaUniqueObjectName = skrTextAreaUniqueObjectName;
   m_textDocumentPtr = textDocument;
@@ -75,14 +76,14 @@ void SyncDocument::setSkrTextAreaUniqueObjectName(
 
 // --------------------------------------------------------------------------------------
 
-QTextDocument *SyncDocument::textDocument() const {
+MarkdownTextDocument *SyncDocument::textDocument() const {
   return m_textDocumentPtr.data();
 }
 
 // --------------------------------------------------------------------------------------
 
 void SyncDocument::setTextDocument(
-    QTextDocument *textDocument) {
+    MarkdownTextDocument *textDocument) {
   m_textDocumentPtr.clear();
 
   m_textDocumentPtr = textDocument;
@@ -116,7 +117,7 @@ TextBridge *TextBridge::m_instance = nullptr;
 void TextBridge::subscribeTextDocument(
     const QString &uniqueDocumentReference,
     const QString &skrTextAreaUniqueObjectName,
-    QTextDocument *textDocument) {
+    MarkdownTextDocument *textDocument) {
   SyncDocument syncDoc = SyncDocument(
       uniqueDocumentReference, skrTextAreaUniqueObjectName, textDocument);
 
@@ -137,7 +138,7 @@ void TextBridge::subscribeTextDocument(
 void TextBridge::unsubscribeTextDocument(
     const QString &uniqueDocumentReference,
     const QString &skrTextAreaUniqueObjectName,
-    QTextDocument *textDocument) {
+    MarkdownTextDocument *textDocument) {
   SyncDocument syncDoc = SyncDocument(
       uniqueDocumentReference, skrTextAreaUniqueObjectName, textDocument);
 
@@ -221,7 +222,7 @@ void TextBridge::useTextBridge(int position, int charsRemoved, int charsAdded) {
   }
 
   // find SyncDocument
-  QTextDocument *textDocument = static_cast<QTextDocument *>(this->sender());
+  MarkdownTextDocument *textDocument = static_cast<MarkdownTextDocument *>(this->sender());
   QString skrTextAreaUniqueObjectName =
       textDocument->property("skrTextAreaUniqueObjectName").toString();
 
@@ -272,7 +273,7 @@ void TextBridge::useTextBridge(int position, int charsRemoved, int charsAdded) {
 
     this->disconnectContentsChangeSignal(syncDoc);
 
-    QTextDocument *otherTextDocument =
+    MarkdownTextDocument *otherTextDocument =
         syncDoc.textDocument();
 
     QTextCursor otherDocSelectionCursor =
@@ -294,7 +295,7 @@ void TextBridge::useTextBridge(int position, int charsRemoved, int charsAdded) {
 
     if (otherDocSelectionCursor.block().text().size() !=
         selectionCursor.block().text().size()) {
-      otherTextDocument->setMarkdown(textDocument->toMarkdown());
+      otherTextDocument->setSkribistoMarkdown(textDocument->toSkribistoMarkdown());
       qDebug() << "failsafe used for "
                << senderSyncDoc.uniqueDocumentReference();
     }

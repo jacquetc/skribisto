@@ -29,12 +29,15 @@ else()
 endif(IOS)
 
 add_dependencies(${PROJECT_NAME} skribisto-data)
+add_dependencies(${PROJECT_NAME} skribisto-common)
 
 target_compile_definitions(skribisto-exporter PRIVATE SKRIBISTO_EXPORTER_LIBRARY)
 
 target_link_libraries(skribisto-exporter PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-common)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
 
 # ---------------------------------
 add_subdirectory(plugins)

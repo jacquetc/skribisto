@@ -22,7 +22,7 @@
 #ifndef NEWPROJECTFORMATINTERFACE_H
 #define NEWPROJECTFORMATINTERFACE_H
 
-#include "skrcoreinterface.h"
+#include "interfaces/skrcoreinterface.h"
 #include <QString>
 #include <QVariantMap>
 

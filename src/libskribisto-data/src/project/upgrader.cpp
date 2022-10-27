@@ -20,6 +20,7 @@
  ***************************************************************************/
 #include "upgrader.h"
 #include "sql/skrsqltools.h"
+#include "markdowntextdocument.h"
 
 #include <QDebug>
 #include <QSqlError>
@@ -971,7 +972,7 @@ SKRResult Upgrader::upgradeSQLite(const QString &sqlDbConnectionName) {
 
 
 
-    // fetch all TEXT items to convert them to markdown
+    // fetch all TEXT items to convert them to pseudo markdown
 
 
 
@@ -996,7 +997,7 @@ SKRResult Upgrader::upgradeSQLite(const QString &sqlDbConnectionName) {
       textIdList.append(query.value(0).toInt());
     }
 
-    QTextDocument *textDocument = new QTextDocument();
+    MarkdownTextDocument *textDocument = new MarkdownTextDocument();
 
     for (int treeItemId : qAsConst(textIdList)) {
       // convert TEXT HTML content into markdown
@@ -1022,7 +1023,7 @@ SKRResult Upgrader::upgradeSQLite(const QString &sqlDbConnectionName) {
       }
 
       textDocument->setHtml(content);
-      QString markdown = textDocument->toMarkdown();
+      QString markdown = textDocument->toSkribistoMarkdown();
 
       queryStr = "UPDATE tbl_tree SET m_primary_content=:markdown WHERE "
                  "l_tree_id=:treeItemId";
@@ -1065,7 +1066,7 @@ SKRResult Upgrader::upgradeSQLite(const QString &sqlDbConnectionName) {
         textIdList.append(query.value(0).toInt());
       }
 
-      QTextDocument *textDocument = new QTextDocument;
+      MarkdownTextDocument *textDocument = new MarkdownTextDocument();
 
       for (int treeItemId : qAsConst(textIdList)) {
         // convert TEXT HTML content into markdown
@@ -1091,7 +1092,7 @@ SKRResult Upgrader::upgradeSQLite(const QString &sqlDbConnectionName) {
         }
 
         textDocument->setHtml(content);
-        QString markdown = textDocument->toMarkdown();
+        QString markdown = textDocument->toSkribistoMarkdown();
 
         queryStr = "UPDATE tbl_tree SET m_secondary_content=:markdown WHERE "
                    "l_tree_id=:treeItemId";

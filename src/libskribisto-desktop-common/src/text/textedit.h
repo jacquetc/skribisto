@@ -18,13 +18,14 @@ public:
   QAction *italicAction() const;
   QAction *strikeAction() const;
   QAction *underlineAction() const;
+  QAction *bulletListAction() const;
 
 private slots:
   void updateFontActions();
 
 private:
   QString m_uuid;
-  QAction *m_boldAction, *m_italicAction, *m_strikeAction, *m_underlineAction;
+  QAction *m_boldAction, *m_italicAction, *m_strikeAction, *m_underlineAction, *m_bulletListAction;
   QList<QMetaObject::Connection> m_actionConnectionsList;
 
   void connectActions();

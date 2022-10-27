@@ -14,8 +14,8 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui CONFIG REQUIRED)
 set(common_SRCS
     skribisto_common_global.h
     command.h command.cpp
-    skrusersettings.h
-    skrusersettings.cpp
+    markdowntextdocument.h markdowntextdocument.cpp
+    skrresult.h skrresult.cpp
 )
 
 set(common_INTERFACES
@@ -23,6 +23,8 @@ set(common_INTERFACES
     interfaces/itemexporterinterface.h
     interfaces/invokablecommandgroupinterface.h
     interfaces/pagetypeiconinterface.h
+    interfaces/skrcoreinterface.h
+    interfaces/skrinterfacesettings.h
 )
 
 # Tell CMake to create the executable
@@ -33,13 +35,9 @@ else()
     add_library(skribisto-common SHARED ${common_SRCS} ${common_INTERFACES})
 endif(IOS)
 
-add_dependencies(${PROJECT_NAME} skribisto-data)
-
 target_compile_definitions(skribisto-common PRIVATE SKRIBISTO_COMMON_LIBRARY)
 
-target_link_libraries(skribisto-common PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
-
-include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+target_link_libraries(skribisto-common PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
 
 # ---------------------------------
 if(IOS)

@@ -14,7 +14,6 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Sql Xml CONFIG REQUIRED)
 
 set(data_SRCS
     skrdata.cpp
-    skrresult.cpp
     skrerrorhub.cpp
     skrpluginhub.cpp
     skrpluginloader.cpp
@@ -48,10 +47,7 @@ set(data_SRCS
     models/skrsearchtaglistproxymodel.cpp
 )
 set(data_HDR
-    skrcoreinterface.h
-    skrinterfacesettings.h
     skrdata.h
-    skrresult.h
     skrerrorhub.h
     skrpluginhub.h
     skrpluginloader.h
@@ -107,7 +103,11 @@ endif(IOS)
 
 target_compile_definitions(skribisto-data PRIVATE SKRIBISTO_DATA_LIBRARY)
 
-target_link_libraries(skribisto-data PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
+add_dependencies(${PROJECT_NAME} skribisto-common)
+
+target_link_libraries(skribisto-data PRIVATE  skribisto-common Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml)
+
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
 
 if(IOS)
     install(TARGETS skribisto-data LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})

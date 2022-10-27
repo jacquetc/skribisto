@@ -2,6 +2,7 @@
 #define TEXTBRIDGE_H
 
 #include "QtWidgets/qapplication.h"
+#include "markdowntextdocument.h"
 #include <QObject>
 #include <QPointer>
 #include <QTextDocument>
@@ -18,7 +19,7 @@ public:
   explicit SyncDocument();
   SyncDocument(const QString &uniqueReference,
                const QString &skrTextAreaUniqueObjectName,
-               QTextDocument *textDocument);
+               MarkdownTextDocument *textDocument);
   SyncDocument(const SyncDocument &syncDocument);
 
   bool operator!() const;
@@ -30,8 +31,8 @@ public:
   void
   setSkrTextAreaUniqueObjectName(const QString &skrTextAreaUniqueObjectName);
 
-  QTextDocument *textDocument() const;
-  void setTextDocument(QTextDocument *textDocument);
+  MarkdownTextDocument *textDocument() const;
+  void setTextDocument(MarkdownTextDocument *textDocument);
 
   QString uniqueDocumentReference() const;
   void setUniqueDocumentReference(const QString &uniqueDocumentReference);
@@ -39,7 +40,7 @@ public:
 private:
   QString m_uniqueDocumentReference;
   QString m_skrTextAreaUniqueObjectName;
-  QPointer<QTextDocument> m_textDocumentPtr;
+  QPointer<MarkdownTextDocument> m_textDocumentPtr;
 };
 Q_DECLARE_METATYPE(SyncDocument)
 
@@ -59,11 +60,11 @@ public:
   Q_INVOKABLE void
   subscribeTextDocument(const QString &uniqueDocumentReference,
                         const QString &skrTextAreaUniqueObjectName,
-                        QTextDocument *textDocument);
+                        MarkdownTextDocument *textDocument);
   Q_INVOKABLE void
   unsubscribeTextDocument(const QString &uniqueDocumentReference,
                           const QString &skrTextAreaUniqueObjectName,
-                          QTextDocument *textDocument);
+                          MarkdownTextDocument *textDocument);
 
 signals:
 

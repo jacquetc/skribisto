@@ -11,7 +11,7 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include "skribisto_data_global.h"
-#include "skrcoreinterface.h"
+#include "interfaces/skrcoreinterface.h"
 #include "skr.h"
 
 // #include <string>
