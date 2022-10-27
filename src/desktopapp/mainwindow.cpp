@@ -13,6 +13,7 @@
 #include <QTimer>
 #include "projectcommands.h"
 #include <skrdata.h>
+#include <QMessageBox>
 
 MainWindow::MainWindow(int newWindowId)
     : QMainWindow()
@@ -162,8 +163,73 @@ void MainWindow::setWindowId(int newWindowId)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    windowManager->closeWindow(this);
-    event->accept();
+    QList<int> projectList = skrdata->projectHub()->getProjectIdList();
+    QList<int> notSavedProjectList;
+
+    for(int projectId : projectList){
+        if(!skrdata->projectHub()->isProjectSaved(projectId)){
+            notSavedProjectList.append(projectId);
+        }
+    }
+
+
+    if(windowManager->getNumberOfWindows() > 1){
+        windowManager->closeWindow(this);
+    }
+    else if(!notSavedProjectList.isEmpty()){
+
+        SKRResult result;
+
+        for(int projectId : notSavedProjectList){
+                   QMessageBox::StandardButton toggledButton = QMessageBox::question(this, tr("Save"),
+                                                                                     tr("Do you want save changes to %1?").arg(skrdata->projectHub()->getProjectName(projectId)),
+                                                                                     QMessageBox::Cancel | QMessageBox::Discard | QMessageBox::Save);
+
+                   switch (toggledButton) {
+                   case QMessageBox::Cancel:
+
+                       event->ignore();
+                       return;
+
+                       break;
+                   case QMessageBox::Save:
+                       result.clear();
+                       result = projectCommands->save(projectId);
+                       if(!result.isSuccess() && result.containsErrorCode("no_path")){
+                            this->openSaveAsDialog(projectId);
+                       }
+
+                       break;
+                   case QMessageBox::Discard:
+                       break;
+                   default:
+                       break;
+                   }
+
+        }
+
+        return;
+
+    }
+    else{
+        QMessageBox::StandardButton toggledButton = QMessageBox::question(this, tr("Quit"),tr("Do you really want to quit?"));
+        switch (toggledButton) {
+        case QMessageBox::No:
+            event->ignore();
+            return;
+            break;
+        case QMessageBox::Yes:
+            event->accept();
+            return;
+            break;
+        default:
+            break;
+        }
+    }
+
+
+
+    event->ignore();
 
 }
 
@@ -189,15 +255,22 @@ void MainWindow::on_actionSaveAs_triggered()
 {
     int activeProject = skrdata->projectHub()->getActiveProject();
 
-    QStringList schemes;
-    schemes << tr("Skribisto project (*.skrib)");
+    this->openSaveAsDialog(activeProject);
+}
+
+void MainWindow::openSaveAsDialog(int projectId){
+
+    QString filter = projectCommands->getSaveFilter();
+
+
     QString selectedFilter;
     QUrl saveFileNameUrl = QFileDialog::getSaveFileUrl(this, tr("Save project"),
-                                                       skrdata->projectHub()->getPath(activeProject),
-                                                       "Skribisto project (*.skrib);;Skribisto flat project (*.skrif)", &selectedFilter, QFileDialog::Options(),
-                                                       schemes);
+                                                       skrdata->projectHub()->getPath(projectId),
+                                                       filter, &selectedFilter, QFileDialog::Options()
+                                                       );
 
-    projectCommands->saveAs(activeProject, saveFileNameUrl, QFileInfo(saveFileNameUrl.toLocalFile()).suffix());
+    projectCommands->saveAs(projectId, saveFileNameUrl, QFileInfo(saveFileNameUrl.toLocalFile()).suffix());
+
 }
 
 

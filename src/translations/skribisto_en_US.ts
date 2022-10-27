@@ -1510,6 +1510,7 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="225"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="215"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1560,6 +1561,7 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="287"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="184"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1594,23 +1596,32 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="246"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="319"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="193"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="206"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="279"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="195"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="185"/>
+        <source>Do you want save changes to %1?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.cpp" line="215"/>
+        <source>Do you really want to quit?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.cpp" line="267"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="243"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="316"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3965,12 +3976,12 @@ Please select the destination folder.</source>
 <context>
     <name>SkrExporter</name>
     <message>
-        <location filename="../libskribisto-exporter/src/plugins/skrExporter/skrexporter.h" line="50"/>
+        <location filename="../libskribisto-exporter/src/plugins/skrExporter/skrexporter.h" line="54"/>
         <source>Skribisto project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-exporter/src/plugins/skrExporter/skrexporter.h" line="66"/>
+        <location filename="../libskribisto-exporter/src/plugins/skrExporter/skrexporter.h" line="70"/>
         <source>.skr exporter</source>
         <translation type="unfinished"></translation>
     </message>

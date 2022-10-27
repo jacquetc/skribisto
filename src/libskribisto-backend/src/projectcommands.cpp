@@ -172,6 +172,13 @@ SKRResult ProjectCommands::saveAs(int projectId, const QUrl &url, const QString 
     return result;
 }
 
+// ----------------------------------------------------------------------------
+
+QString ProjectCommands::getSaveFilter() const
+{
+
+    return Exporter::getSaveFilter();
+}
 
 // ----------------------------------------------------------------------------
 

@@ -15,6 +15,7 @@ public:
 
     static SKRResult exportProject(int projectId, const QUrl &url, const QString &exportType, const QVariantMap &parameters, QList<int> treeItemIds = QList<int>());
 
+    static QString getSaveFilter();
 signals:
 
 };

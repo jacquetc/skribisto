@@ -44,3 +44,29 @@ SKRResult Exporter::exportProject(int projectId, const QUrl &url, const QString 
 
     return result;
 }
+
+QString Exporter::getSaveFilter()
+{
+
+    QStringList filters;
+
+
+    QList<ExporterInterface *> pluginList =
+            skrpluginhub->pluginsByType<ExporterInterface>();
+
+    // reorder by weight, lightest is top, heavier is last
+
+    std::sort(pluginList.begin(), pluginList.end(),
+              [](ExporterInterface *plugin1, ExporterInterface
+              *plugin2) -> bool {
+        return plugin1->weight() < plugin2->weight();
+    }
+    );
+
+    for(auto *plugin : pluginList){
+            filters << QString("%1 (*.%2)").arg(plugin->extensionHumanName(), plugin->extension());
+    }
+
+
+    return filters.join(";;");
+}

@@ -26,6 +26,7 @@ public:
     SKRResult saveAProjectCopy(int projectId, const QString &extension, const QUrl &path);
     void closeProject(int projectId);
     SKRResult saveAs(int projectId, const QUrl &url, const QString &extension);
+    QString getSaveFilter() const;
 
     void setProjectName(int projectId, const QString &name);
     void setAuthor(int projectId, const QString &author);

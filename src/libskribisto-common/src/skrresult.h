@@ -86,6 +86,7 @@ public:
     Q_INVOKABLE bool                            containsErrorCodeDetail(const QString& value) const;
     Q_INVOKABLE QString                         getLastErrorCode() const;
     Q_INVOKABLE QStringList                     getErrorCodeList() const;
+    Q_INVOKABLE void                            clear();
 
     Q_INVOKABLE QList<QHash<QString, QVariant> >getDataHashList() const;
     void                                        addData(const QString & key,

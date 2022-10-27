@@ -65,5 +65,6 @@ private:
     StatusBar *m_statusBar;
     ProjectDockBackend *m_projectDockBackend;
     void changeSwitchThemeActionText(ThemeManager::ThemeType type);
+    void openSaveAsDialog(int projectId);
 };
 #endif // MAINWINDOW_H

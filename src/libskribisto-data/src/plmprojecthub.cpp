@@ -64,7 +64,6 @@ void PLMProjectHub::setProjectLoaded(int projectId)
     emit isThereAnyLoadedProjectChanged(true);
 
     this->setActiveProject(projectId);
-    this->setProjectNotSavedAnymore(projectId);
 
 }
 

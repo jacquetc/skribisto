@@ -41,6 +41,10 @@ private:
 
     // ExporterInterface interface
 public:
+    int weight() const override
+    {
+        return 200;
+    }
     QString extension() const override
     {
         return "skrib";
@@ -77,6 +81,7 @@ public:
     {
         return "Mandatory";
     }
+
 };
 
 #endif // SKREXPORTER_H

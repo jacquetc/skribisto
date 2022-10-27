@@ -6,6 +6,7 @@
 #include "ui_textview.h"
 #include "toolboxes/outlinetoolbox.h"
 
+#include <QTimer>
 #include <QWheelEvent>
 #include <skrdata.h>
 
@@ -75,15 +76,19 @@ TextView::TextView(QWidget *parent) :
         settings.setValue("textPage/textWidth", centralWidgetUi->textEditHolder->maximumWidth());
     });
 
+    connect(this, &TextView::aboutToBeDestroyed, this, [this](){
+        saveTextState();
+    });
+
 }
 
 TextView::~TextView()
 {
+
     if(m_wasModified){
         saveContent();
     }
 
-    saveTextState();
     delete centralWidgetUi;
 }
 
@@ -159,6 +164,15 @@ void TextView::initialize()
     int textWidth = settings.value("textPage/textWidth", 600).toInt();
     centralWidgetUi->textEditHolder->setMaximumWidth(textWidth);
 
+    // restore y position
+
+
+    QTimer::singleShot(0, this, [this](){
+        int scrollBarValue = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textScrollBarValue", QString::number(this->treeItemId()), 0).toInt();
+        centralWidgetUi->verticalScrollBar->setValue(scrollBarValue);
+        qDebug() << "init" << scrollBarValue;
+    });
+
     // restore cursor position
 
     int cursorPosition = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textCursorPosition", QString::number(this->treeItemId()), 0).toInt();
@@ -166,7 +180,7 @@ void TextView::initialize()
     QTextCursor cursor(centralWidgetUi->textEdit->document());
     cursor.setPosition(cursorPosition);
     centralWidgetUi->textEdit->setTextCursor(cursor);
-    centralWidgetUi->textEdit->ensureCursorVisible();
+    //centralWidgetUi->textEdit->ensureCursorVisible();
 
 }
 
@@ -185,6 +199,9 @@ void TextView::saveTextState()
 {
     SKRUserSettings::insertInProjectSettingHash(this->projectId(), "textCursorPosition", QString::number(this->treeItemId()),
                                                                      centralWidgetUi->textEdit->textCursor().position());
+    SKRUserSettings::insertInProjectSettingHash(this->projectId(), "textScrollBarValue", QString::number(this->treeItemId()),
+                                                                     centralWidgetUi->verticalScrollBar->value());
+    qDebug() << "saveTextState" << centralWidgetUi->verticalScrollBar->value();
 
 }
 

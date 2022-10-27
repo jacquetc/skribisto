@@ -154,6 +154,14 @@ QStringList SKRResult::getErrorCodeList() const
     return m_errorCodeList;
 }
 
+void SKRResult::clear()
+{
+    m_dataHashList.clear();
+    m_errorCodeList.clear();
+    m_status = SKRResult::OK;
+
+}
+
 void SKRResult::setErrorCodeList(const QStringList& value)
 {
     m_errorCodeList = value;

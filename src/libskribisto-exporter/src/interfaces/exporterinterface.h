@@ -14,6 +14,8 @@ public:
 
     virtual ~ExporterInterface() {}
 
+    virtual int weight() const = 0;
+
     virtual QString extension() const = 0;
     virtual QString extensionHumanName() const = 0;
     virtual QString extensionShortName() const = 0;
