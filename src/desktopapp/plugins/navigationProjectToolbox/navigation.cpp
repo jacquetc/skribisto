@@ -1,4 +1,5 @@
 #include "navigation.h"
+#include "projectcommands.h"
 #include "skrusersettings.h"
 #include "ui_navigation.h"
 #include "treemodels/projecttreeproxymodel.h"
@@ -167,12 +168,22 @@ Navigation::Navigation(class QWidget *parent) :
     } );
 
 
+        m_setActiveProjectAction = new QAction(tr("Set as the active project"), this);
+        ui->treeView->addAction(m_setActiveProjectAction);
+        m_setActiveProjectAction->setShortcut(QKeySequence("Ctrl+A"));
+        m_setActiveProjectAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        QObject::connect(m_setActiveProjectAction, &QAction::triggered, this, [this](){
+            this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
+
+            projectCommands->setActiveProject(m_projectId);
+
+        } );
 
 //    m_copyItemsAction = new QAction(tr("Copy"), this);
 //    ui->treeView->addAction(m_copyItemsAction);
 //    m_copyItemsAction->setShortcut(QKeySequence("Ctrl+C"));
 //    m_copyItemsAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-//    QObject::connect(m_copyItemsAction, &QAction::triggered, this, [this, addItemDialog](){
+//    QObject::connect(m_copyItemsAction, &QAction::triggered, this, [this](){
 
 
 //        for(auto index : ui->treeView->selectionModel()->selection().indexes()){
@@ -241,8 +252,16 @@ void Navigation::onCustomContextMenu(const QPoint &point)
         contextMenu->addAction(m_addItemBeforeAction);
         contextMenu->addAction(m_addItemAfterAction);
         contextMenu->addAction(m_addSubItemAction);
-        contextMenu->addSeparator();
-        contextMenu->addAction(m_sendToTrashAction);
+        if(m_targetTreeItemId > 0){
+            contextMenu->addSeparator();
+            contextMenu->addAction(m_sendToTrashAction);
+        }
+        if(m_targetTreeItemId == 0){
+
+            contextMenu->addSeparator();
+            contextMenu->addAction(m_setActiveProjectAction);
+        }
+
 
         contextMenu->exec(ui->treeView->viewport()->mapToGlobal(point));
     }
@@ -341,10 +360,7 @@ void Navigation::setCurrentIndex(const QModelIndex &index)
         m_addSubItemAction->setEnabled(index.data(ProjectTreeItem::CanAddChildTreeItemRole).toBool());
         m_sendToTrashAction->setEnabled(index.data(ProjectTreeItem::IsTrashableRole).toBool());
 
-        //project item
-        if(m_targetTreeItemId == 0){
-
-        }
+        m_setActiveProjectAction->setEnabled(m_projectId != skrdata->projectHub()->getActiveProject());
 
     }
 }

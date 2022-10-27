@@ -70,10 +70,82 @@ MainWindow::MainWindow(int newWindowId)
         ui->actionExport->setEnabled(enable);
     });
 
-    ui->menuEdit->insertAction(ui->actionUndo, projectTreeCommands->undoStack()->createUndoAction(this));
-    ui->menuEdit->insertAction(ui->actionRedo, projectTreeCommands->undoStack()->createRedoAction(this));
+    QAction *undoAction = projectTreeCommands->undoStack()->createUndoAction(this);
+    undoAction->setShortcut(QKeySequence::Undo);
+    undoAction->setShortcutContext(Qt::WindowShortcut);
+
+    QAction *redoAction = projectTreeCommands->undoStack()->createUndoAction(this);
+    undoAction->setShortcut(QKeySequence::Redo);
+    undoAction->setShortcutContext(Qt::WindowShortcut);
+
+    ui->menuEdit->insertAction(ui->actionUndo, undoAction);
+    ui->menuEdit->insertAction(ui->actionRedo, redoAction);
     ui->actionUndo->deleteLater();
     ui->actionRedo->deleteLater();
+
+
+    // recent projects:
+
+    QMenu *menu = new QMenu(this);
+    ui->actionRecent_projects->setMenu(menu);
+
+    this->populateRecentProjectsMenu();
+    connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this, &MainWindow::populateRecentProjectsMenu);
+
+    // insert in recent projects
+    connect(skrdata->projectHub(), &PLMProjectHub::projectLoaded, this, [](int projectId){
+
+
+        QString projectName = skrdata->projectHub()->getProjectName(projectId);
+        QUrl    projectPath = skrdata->projectHub()->getPath(projectId);
+
+        bool alreadyHere      = false;
+        int  alreadyHereIndex = -1;
+
+        QSettings settings;
+
+        settings.beginGroup("welcome");
+        int size = settings.beginReadArray("recentProjects");
+
+
+        for (int i = 0; i < size; ++i) {
+            settings.setArrayIndex(i);
+
+            QUrl settingFileName = settings.value("fileNameUrl").toUrl();
+
+            if (settingFileName == projectPath) {
+                alreadyHere      = true;
+                alreadyHereIndex = i;
+            }
+        }
+        settings.endArray();
+
+
+        if (alreadyHere) {
+            // write again the title in case it was changed
+            settings.beginWriteArray("recentProjects", size);
+            settings.setArrayIndex(alreadyHereIndex);
+            settings.setValue("title", projectName);
+        }
+        else {
+            // add a new recent project
+            settings.beginWriteArray("recentProjects", size + 1);
+            settings.setArrayIndex(size);
+            settings.setValue("title",       projectName);
+            settings.setValue("fileNameUrl", projectPath);
+        }
+
+
+        settings.endArray();
+
+        settings.endGroup();
+
+        settings.sync();
+
+    });
+
+
+
 
 
     changeSwitchThemeActionText(themeManager->currentThemeType());
@@ -181,30 +253,30 @@ void MainWindow::closeEvent(QCloseEvent *event)
         SKRResult result;
 
         for(int projectId : notSavedProjectList){
-                   QMessageBox::StandardButton toggledButton = QMessageBox::question(this, tr("Save"),
-                                                                                     tr("Do you want save changes to %1?").arg(skrdata->projectHub()->getProjectName(projectId)),
-                                                                                     QMessageBox::Cancel | QMessageBox::Discard | QMessageBox::Save);
+            QMessageBox::StandardButton toggledButton = QMessageBox::question(this, tr("Save"),
+                                                                              tr("Do you want to save changes to %1?").arg(skrdata->projectHub()->getProjectName(projectId)),
+                                                                              QMessageBox::Cancel | QMessageBox::Discard | QMessageBox::Save);
 
-                   switch (toggledButton) {
-                   case QMessageBox::Cancel:
+            switch (toggledButton) {
+            case QMessageBox::Cancel:
 
-                       event->ignore();
-                       return;
+                event->ignore();
+                return;
 
-                       break;
-                   case QMessageBox::Save:
-                       result.clear();
-                       result = projectCommands->save(projectId);
-                       if(!result.isSuccess() && result.containsErrorCode("no_path")){
-                            this->openSaveAsDialog(projectId);
-                       }
+                break;
+            case QMessageBox::Save:
+                result.clear();
+                result = projectCommands->save(projectId);
+                if(!result.isSuccess() && result.containsErrorCode("no_path")){
+                    this->openSaveAsDialog(projectId);
+                }
 
-                       break;
-                   case QMessageBox::Discard:
-                       break;
-                   default:
-                       break;
-                   }
+                break;
+            case QMessageBox::Discard:
+                break;
+            default:
+                break;
+            }
 
         }
 
@@ -294,7 +366,60 @@ void MainWindow::on_actionSave_triggered()
 void MainWindow::on_actionClose_project_triggered()
 {
     int activeProject = skrdata->projectHub()->getActiveProject();
-    projectCommands->closeProject(activeProject);
+
+
+    if(!skrdata->projectHub()->isProjectSaved(activeProject)){
+
+        SKRResult result;
+
+        QMessageBox::StandardButton toggledButton = QMessageBox::question(this, tr("Save"),
+                                                                          tr("Do you want to save changes to %1?").arg(skrdata->projectHub()->getProjectName(activeProject)),
+                                                                          QMessageBox::Cancel | QMessageBox::Discard | QMessageBox::Save);
+
+        switch (toggledButton) {
+        case QMessageBox::Cancel:
+            return;
+
+            break;
+        case QMessageBox::Save:
+            result.clear();
+            result = projectCommands->save(activeProject);
+            if(!result.isSuccess() && result.containsErrorCode("no_path")){
+                this->openSaveAsDialog(activeProject);
+            }
+
+            break;
+        case QMessageBox::Discard:
+            break;
+        default:
+            break;
+        }
+
+
+        projectCommands->closeProject(activeProject);
+        return;
+
+    }
+    else{
+        QMessageBox::StandardButton toggledButton = QMessageBox::question(this,
+                                                                          tr("Quit"),
+                                                                          tr("Do you really want to close %1?").arg(skrdata->projectHub()->getProjectName(activeProject)));
+        switch (toggledButton) {
+        case QMessageBox::No:
+
+            return;
+            break;
+        case QMessageBox::Yes:
+            projectCommands->closeProject(activeProject);
+            return;
+            break;
+        default:
+            break;
+        }
+    }
+
+
+
 
 }
 
@@ -309,6 +434,67 @@ void MainWindow::on_actionNew_project_triggered()
 void MainWindow::on_actionSwitch_theme_triggered()
 {
     changeSwitchThemeActionText(themeManager->switchThemeType());
+}
+
+void MainWindow::populateRecentProjectsMenu()
+{
+    qDeleteAll(ui->actionRecent_projects->menu()->actions());
+
+    QList<QAction *> allRecentProjects;
+
+    QSettings settings;
+
+    settings.beginGroup("welcome");
+    int size = settings.beginReadArray("recentProjects");
+
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+
+        QUrl fileName = settings.value("fileNameUrl").toUrl();
+
+
+        // exists ?
+        QFileInfo info(fileName.toLocalFile());
+        if(!info.exists() || !info.isWritable()){
+            continue;
+        }
+
+
+        QAction *action = new QAction(settings.value("title").toString(), this);
+        action->setProperty("fileName", fileName);
+
+        connect(action, &QAction::triggered, this, [this](){
+            QAction *action = static_cast<QAction *>(this->sender());
+            projectCommands->loadProject(action->property("fileName").toUrl());
+        });
+
+
+        // is project opened ?
+        allRecentProjects.append(action);
+
+        for (int projectId : skrdata->projectHub()->getProjectIdList()) {
+            QString projectName = skrdata->projectHub()->getProjectName(projectId);
+            QUrl    projectPath = skrdata->projectHub()->getPath(projectId);
+
+            if ((projectName == action->text()) &&
+                (projectPath == action->property("fileName").toUrl())) {
+
+
+                allRecentProjects.removeLast();
+                allRecentProjects.prepend(action);
+            }
+        }
+    }
+
+
+    settings.endArray();
+    settings.endGroup();
+
+    for(QAction *action : allRecentProjects){
+        ui->actionRecent_projects->menu()->addAction(action);
+    }
+
+
 }
 
 void MainWindow::changeSwitchThemeActionText(ThemeManager::ThemeType type){

@@ -30,7 +30,7 @@
      <x>0</x>
      <y>0</y>
      <width>1643</width>
-     <height>24</height>
+     <height>37</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -42,6 +42,7 @@
     </property>
     <addaction name="actionNew_project"/>
     <addaction name="actionLoad_Project"/>
+    <addaction name="actionRecent_projects"/>
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
     <addaction name="separator"/>
@@ -330,6 +331,11 @@
    </property>
    <property name="toolTip">
     <string notr="true">Switch to light theme</string>
+   </property>
+  </action>
+  <action name="actionRecent_projects">
+   <property name="text">
+    <string>Recent projects</string>
    </property>
   </action>
  </widget>

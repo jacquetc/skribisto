@@ -29,6 +29,7 @@ QString MarkdownTextDocument::toSkribistoMarkdown() const
 
 void MarkdownTextDocument::setSkribistoMarkdown(const QString &markdownText)
 {
+    this->setUndoRedoEnabled(false);
     this->clear();
 
 
@@ -39,6 +40,8 @@ void MarkdownTextDocument::setSkribistoMarkdown(const QString &markdownText)
         this->formatBlock(block);
         this->formatCharsInBlock(block);
     }
+
+    this->setUndoRedoEnabled(true);
 }
 
 //----------------------------------------------------------------------------------

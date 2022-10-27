@@ -224,6 +224,15 @@ void ProjectCommands::setLanguageCode(int projectId, const QString &newLanguage)
     m_undoStack->push(new SetLanguageCodeCommand(projectId, newLanguage));
 }
 
+// ----------------------------------------------------------------------------
+
+void ProjectCommands::setActiveProject(int projectId)
+{
+    skrdata->projectHub()->setActiveProject(projectId);
+}
+// ----------------------------------------------------------------------------
+
+
 ProjectCommands *ProjectCommands::m_instance = nullptr;
 
 

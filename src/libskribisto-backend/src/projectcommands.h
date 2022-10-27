@@ -31,6 +31,7 @@ public:
     void setProjectName(int projectId, const QString &name);
     void setAuthor(int projectId, const QString &author);
     void setLanguageCode(int projectId, const QString &newLanguage);
+    void setActiveProject(int projectId);
 
     void loadProject(const QUrl &url);
 signals:

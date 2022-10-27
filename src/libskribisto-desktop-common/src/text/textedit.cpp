@@ -53,6 +53,13 @@ return m_uuid;
 void TextEdit::wheelEvent(QWheelEvent *event)
 {
 
+    // disable Ctrl+Wheel from QTextEdit which scrolls
+    if(event->modifiers() == Qt::ControlModifier) {
+        event->ignore();
+        return;
+    }
+
+
     QTextEdit::wheelEvent(event);
 }
 

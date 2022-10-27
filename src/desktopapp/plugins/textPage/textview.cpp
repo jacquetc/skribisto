@@ -263,6 +263,8 @@ void TextView::wheelEvent(QWheelEvent *event)
             event->accept();
         }
 
+        centralWidgetUi->textEdit->ensureCursorVisible();
+
         connectSaveConnection();
 
 

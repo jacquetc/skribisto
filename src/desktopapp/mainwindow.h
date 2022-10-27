@@ -58,6 +58,8 @@ private slots:
 
     void on_actionSwitch_theme_triggered();
 
+    void populateRecentProjectsMenu();
+
 private:
     Ui::MainWindow *ui;
     TopToolBar *m_topToolBar;
