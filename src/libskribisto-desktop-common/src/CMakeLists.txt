@@ -24,7 +24,7 @@ set(common_SRCS
     toolboxes/outlinetoolbox.h toolboxes/outlinetoolbox.cpp toolboxes/outlinetoolbox.ui
     installnewdictwizard.h installnewdictwizard.cpp installnewdictwizard.ui
     text/textedit.h text/textedit.cpp
-    settingspage.h settingspage.cpp settingspage.ui
+    settingspanel.h settingspanel.cpp settingspanel.ui
     thememanager.h thememanager.cpp
     combobox.h combobox.cpp
     text/textbridge.h text/textbridge.cpp

@@ -1510,8 +1510,8 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="226"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="287"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="405"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="275"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="363"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1562,8 +1562,8 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="288"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="256"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="375"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="244"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="333"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1603,38 +1603,38 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="505"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="532"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="351"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="385"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="257"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="376"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="245"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="334"/>
         <source>Do you want to save changes to %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="287"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="275"/>
         <source>Do you really want to quit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="339"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="303"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="406"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="364"/>
         <source>Do you really want to close %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="502"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="529"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1699,6 +1699,11 @@
     </message>
     <message>
         <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="171"/>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="183"/>
         <source>Set as the active project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3891,11 +3896,6 @@ Please select the destination folder.</source>
         <source>E-Paper</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <location filename="../libskribisto-desktop-common/src/settingspage.ui" line="14"/>
-        <source>Form</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>SettingsPageForm.ui</name>
@@ -3971,6 +3971,14 @@ Please select the destination folder.</source>
     </message>
 </context>
 <context>
+    <name>SettingsPanel</name>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/settingspanel.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SettingsSubPanel</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/settingssubpanel.ui" line="14"/>
@@ -3988,19 +3996,6 @@ Please select the destination folder.</source>
     <message>
         <location filename="../mobileapp/imports/Skribisto/SkrBasePage.qml" line="124"/>
         <source>Rename an item</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>SkrExporter</name>
-    <message>
-        <location filename="../libskribisto-exporter/src/plugins/skrExporter/skrexporter.h" line="54"/>
-        <source>Skribisto project</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../libskribisto-exporter/src/plugins/skrExporter/skrexporter.h" line="70"/>
-        <source>.skr exporter</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4203,6 +4198,19 @@ Please select the destination folder.</source>
     <message>
         <location filename="../mobileapp/imports/Skribisto/SkrViewButtons.qml" line="183"/>
         <source>Open in new window</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SkribExporter</name>
+    <message>
+        <location filename="../libskribisto-exporter/src/plugins/skribExporter/skribexporter.h" line="54"/>
+        <source>Skribisto project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-exporter/src/plugins/skribExporter/skribexporter.h" line="74"/>
+        <source>.skrib exporter</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

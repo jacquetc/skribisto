@@ -6,15 +6,15 @@
 #include <QWidget>
 
 namespace Ui {
-class SettingsPage;
+class SettingsPanel;
 }
 
-class SKRDESKTOPCOMMONEXPORT SettingsPage : public QWidget {
+class SKRDESKTOPCOMMONEXPORT SettingsPanel : public QWidget {
   Q_OBJECT
 
 public:
-  explicit SettingsPage(QWidget *parent = nullptr);
-  ~SettingsPage();
+  explicit SettingsPanel(QWidget *parent = nullptr);
+  ~SettingsPanel();
 
   const QString &settingsGroup() const;
   void setSettingsGroup(const QString &newSettingsGroup);
@@ -28,7 +28,7 @@ private slots:
   void on_listWidget_itemActivated(QListWidgetItem *item);
 
 private:
-  Ui::SettingsPage *ui;
+  Ui::SettingsPanel *ui;
   QString m_settingsGroup;
   Q_PROPERTY(QString settingsGroup READ settingsGroup WRITE setSettingsGroup
                  NOTIFY settingsGroupChanged)

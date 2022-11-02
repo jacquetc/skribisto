@@ -28,6 +28,8 @@ MainWindow::MainWindow(int newWindowId)
 
     this->setUnifiedTitleAndToolBarOnMac(true);
 
+    // view manager
+
     m_viewManager = new ViewManager(this, ui->centralwidget);
 
     QObject::connect(m_viewManager, &ViewManager::currentViewChanged, this, [this](View *view){
@@ -37,6 +39,9 @@ MainWindow::MainWindow(int newWindowId)
     QObject::connect(m_viewManager, &ViewManager::aboutToRemoveView, this, [this](View *view){
         ui->viewDock->setToolboxes(QList<Toolbox *>());
     });
+
+    this->setupMenuActions();
+
 
 
     // tool bar
@@ -178,23 +183,6 @@ MainWindow::~MainWindow()
 
 //---------------------------------------
 
-
-void MainWindow::on_actionAdd_Window_triggered()
-{
-windowManager->addEmptyWindow();
-}
-
-//---------------------------------------
-
-
-void MainWindow::on_actionQuit_triggered()
-{
-    // accepted
-    windowManager->closeAllWindows();
-}
-
-//---------------------------------------
-
 ViewManager *MainWindow::viewManager() const
 {
     return m_viewManager;
@@ -305,30 +293,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 }
 
-void MainWindow::on_actionShow_View_Dock_triggered(bool checked)
-{
-    ui->viewDock->setVisible(checked);
-}
-
-void MainWindow::on_actionShow_Project_Dock_triggered(bool checked)
-{
-    ui->projectDock->setVisible(checked);
-}
-
-
-void MainWindow::on_actionPreferences_triggered()
-{
-    SettingsDialog settings(this);
-    settings.exec();
-}
-
-
-void MainWindow::on_actionSaveAs_triggered()
-{
-    int activeProject = skrdata->projectHub()->getActiveProject();
-
-    this->openSaveAsDialog(activeProject);
-}
 
 void MainWindow::openSaveAsDialog(int projectId){
 
@@ -345,96 +309,159 @@ void MainWindow::openSaveAsDialog(int projectId){
 
 }
 
+//------------------------------------------------------------------------------
 
-void MainWindow::on_actionLoad_Project_triggered()
+void MainWindow::setupMenuActions()
 {
-    QUrl openFileNameUrl = QFileDialog::getOpenFileUrl(this, "Open a project", QUrl(), tr("Skribisto project (*.skrib)"));
+    ui->actionNew_project->setShortcuts(QKeySequence::New);
+    connect(ui->actionNew_project, &QAction::triggered, this, [this](){
+        NewProjectWizard newWizard(this);
+        newWizard.exec();
+    });
 
-    projectCommands->loadProject(openFileNameUrl);
+    //-------------------
 
-}
-
-
-void MainWindow::on_actionSave_triggered()
-{
-    int activeProject = skrdata->projectHub()->getActiveProject();
-    projectCommands->save(activeProject);
-
-}
+    ui->actionClose_project->setShortcuts(QKeySequence::Close);
+    connect(ui->actionClose_project, &QAction::triggered, this, [this](){
+        int activeProject = skrdata->projectHub()->getActiveProject();
 
 
-void MainWindow::on_actionClose_project_triggered()
-{
-    int activeProject = skrdata->projectHub()->getActiveProject();
+        if(!skrdata->projectHub()->isProjectSaved(activeProject)){
 
+            SKRResult result;
 
-    if(!skrdata->projectHub()->isProjectSaved(activeProject)){
+            QMessageBox::StandardButton toggledButton = QMessageBox::question(this, tr("Save"),
+                                                                              tr("Do you want to save changes to %1?").arg(skrdata->projectHub()->getProjectName(activeProject)),
+                                                                              QMessageBox::Cancel | QMessageBox::Discard | QMessageBox::Save);
 
-        SKRResult result;
+            switch (toggledButton) {
+            case QMessageBox::Cancel:
+                return;
 
-        QMessageBox::StandardButton toggledButton = QMessageBox::question(this, tr("Save"),
-                                                                          tr("Do you want to save changes to %1?").arg(skrdata->projectHub()->getProjectName(activeProject)),
-                                                                          QMessageBox::Cancel | QMessageBox::Discard | QMessageBox::Save);
+                break;
+            case QMessageBox::Save:
+                result.clear();
+                result = projectCommands->save(activeProject);
+                if(!result.isSuccess() && result.containsErrorCode("no_path")){
+                    this->openSaveAsDialog(activeProject);
+                }
 
-        switch (toggledButton) {
-        case QMessageBox::Cancel:
-            return;
-
-            break;
-        case QMessageBox::Save:
-            result.clear();
-            result = projectCommands->save(activeProject);
-            if(!result.isSuccess() && result.containsErrorCode("no_path")){
-                this->openSaveAsDialog(activeProject);
+                break;
+            case QMessageBox::Discard:
+                break;
+            default:
+                break;
             }
 
-            break;
-        case QMessageBox::Discard:
-            break;
-        default:
-            break;
-        }
 
-
-        projectCommands->closeProject(activeProject);
-        return;
-
-    }
-    else{
-        QMessageBox::StandardButton toggledButton = QMessageBox::question(this,
-                                                                          tr("Quit"),
-                                                                          tr("Do you really want to close %1?").arg(skrdata->projectHub()->getProjectName(activeProject)));
-        switch (toggledButton) {
-        case QMessageBox::No:
-
-            return;
-            break;
-        case QMessageBox::Yes:
             projectCommands->closeProject(activeProject);
             return;
-            break;
-        default:
-            break;
+
         }
-    }
+        else{
+            QMessageBox::StandardButton toggledButton = QMessageBox::question(this,
+                                                                              tr("Quit"),
+                                                                              tr("Do you really want to close %1?").arg(skrdata->projectHub()->getProjectName(activeProject)));
+            switch (toggledButton) {
+            case QMessageBox::No:
+
+                return;
+                break;
+            case QMessageBox::Yes:
+                projectCommands->closeProject(activeProject);
+                return;
+                break;
+            default:
+                break;
+            }
+        }
 
 
+    });
+    //-------------------
 
+    ui->actionLoad_Project->setShortcuts(QKeySequence::Open);
+    connect(ui->actionLoad_Project, &QAction::triggered, this, [this](){
+        QUrl openFileNameUrl = QFileDialog::getOpenFileUrl(this, "Open a project", QUrl(), tr("Skribisto project (*.skrib)"));
+
+        projectCommands->loadProject(openFileNameUrl);
+    });
+    //-------------------
+
+    ui->actionSave->setShortcuts(QKeySequence::Save);
+    connect(ui->actionSave, &QAction::triggered, this, [](){
+        int activeProject = skrdata->projectHub()->getActiveProject();
+        projectCommands->save(activeProject);
+    });
+    //-------------------
+
+    ui->actionSaveAs->setShortcuts(QKeySequence::SaveAs);
+    connect(ui->actionSaveAs, &QAction::triggered, this, [this](){
+        int activeProject = skrdata->projectHub()->getActiveProject();
+
+        this->openSaveAsDialog(activeProject);
+    });
+    //-------------------
+
+    ui->actionPreferences->setShortcuts(QKeySequence::Preferences);
+    connect(ui->actionPreferences, &QAction::triggered, this, [this](){
+        SettingsDialog settings(this);
+        settings.exec();
+    });
+    //-------------------
+
+    ui->actionPrint->setShortcuts(QKeySequence::Print);
+    connect(ui->actionPrint, &QAction::triggered, this, [](){
+
+    });
+
+    //-------------------
+
+    ui->actionExport->setShortcut(QKeySequence("Ctrl+E"));
+    connect(ui->actionExport, &QAction::triggered, this, [](){
+
+    });
+    //-------------------
+
+    ui->actionQuit->setShortcuts(QKeySequence::Quit);
+    connect(ui->actionQuit, &QAction::triggered, this, [](){
+        // accepted
+        windowManager->closeAllWindows();
+    });
+    //-------------------
+
+    connect(ui->actionAdd_Window, &QAction::triggered, this, [](){
+        windowManager->addEmptyWindow();
+
+    });
+    //-------------------
+
+    connect(ui->actionSwitch_theme, &QAction::triggered, this, [this](){
+        changeSwitchThemeActionText(themeManager->switchThemeType());
+
+    });
+
+    //-------------------
+
+    connect(ui->actionShow_View_Dock, &QAction::triggered, this, [this](bool checked){
+        ui->viewDock->setVisible(checked);
+
+    });
+
+    //-------------------
+
+    connect(ui->actionShow_Project_Dock, &QAction::triggered, this, [this](bool checked){
+        ui->projectDock->setVisible(checked);
+
+    });
+
+    //-------------------
 
 }
 
 
-void MainWindow::on_actionNew_project_triggered()
-{
-    NewProjectWizard newWizard(this);
-    newWizard.exec();
-}
+//------------------------------------------------------------------------------
 
-
-void MainWindow::on_actionSwitch_theme_triggered()
-{
-    changeSwitchThemeActionText(themeManager->switchThemeType());
-}
 
 void MainWindow::populateRecentProjectsMenu()
 {
@@ -477,7 +504,7 @@ void MainWindow::populateRecentProjectsMenu()
             QUrl    projectPath = skrdata->projectHub()->getPath(projectId);
 
             if ((projectName == action->text()) &&
-                (projectPath == action->property("fileName").toUrl())) {
+                    (projectPath == action->property("fileName").toUrl())) {
 
 
                 allRecentProjects.removeLast();

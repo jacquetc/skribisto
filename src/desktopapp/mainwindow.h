@@ -36,27 +36,9 @@ protected:
     void closeEvent(QCloseEvent *event);
 
 private slots:
-    void on_actionAdd_Window_triggered();
-
-    void on_actionQuit_triggered();
-
-    void on_actionShow_View_Dock_triggered(bool checked);
-    void on_actionShow_Project_Dock_triggered(bool checked);
 
     void init();
-    void on_actionPreferences_triggered();
 
-    void on_actionSaveAs_triggered();
-
-    void on_actionLoad_Project_triggered();
-
-    void on_actionSave_triggered();
-
-    void on_actionClose_project_triggered();
-
-    void on_actionNew_project_triggered();
-
-    void on_actionSwitch_theme_triggered();
 
     void populateRecentProjectsMenu();
 
@@ -68,5 +50,6 @@ private:
     ProjectDockBackend *m_projectDockBackend;
     void changeSwitchThemeActionText(ThemeManager::ThemeType type);
     void openSaveAsDialog(int projectId);
+    void setupMenuActions();
 };
 #endif // MAINWINDOW_H

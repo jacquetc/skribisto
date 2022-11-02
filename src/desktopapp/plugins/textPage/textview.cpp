@@ -170,7 +170,8 @@ void TextView::initialize()
     QTimer::singleShot(0, this, [this](){
         int scrollBarValue = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textScrollBarValue", QString::number(this->treeItemId()), 0).toInt();
         centralWidgetUi->verticalScrollBar->setValue(scrollBarValue);
-        qDebug() << "init" << scrollBarValue;
+       // centralWidgetUi->textEdit->ensureCursorVisible();
+
     });
 
     // restore cursor position
@@ -180,7 +181,6 @@ void TextView::initialize()
     QTextCursor cursor(centralWidgetUi->textEdit->document());
     cursor.setPosition(cursorPosition);
     centralWidgetUi->textEdit->setTextCursor(cursor);
-    //centralWidgetUi->textEdit->ensureCursorVisible();
 
 }
 
@@ -201,7 +201,7 @@ void TextView::saveTextState()
                                                                      centralWidgetUi->textEdit->textCursor().position());
     SKRUserSettings::insertInProjectSettingHash(this->projectId(), "textScrollBarValue", QString::number(this->treeItemId()),
                                                                      centralWidgetUi->verticalScrollBar->value());
-    qDebug() << "saveTextState" << centralWidgetUi->verticalScrollBar->value();
+    //qDebug() << "saveTextState" << centralWidgetUi->verticalScrollBar->value();
 
 }
 

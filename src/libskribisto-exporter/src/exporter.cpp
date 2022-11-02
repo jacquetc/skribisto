@@ -36,10 +36,20 @@ SKRResult Exporter::exportProject(int projectId, const QUrl &url, const QString 
     QList<ExporterInterface *> pluginList =
             skrpluginhub->pluginsByType<ExporterInterface>();
 
+    bool havePlugin = false;
     for(auto *plugin : pluginList){
-        if(plugin->extension() == extension){
-            result = plugin->run(projectId, url, parameters, treeItemIds);
+        if(plugin->extensions().contains(extension)){
+            result = plugin->run(projectId, url, extension, parameters, treeItemIds);
+            havePlugin = true;
+            break;
         }
+    }
+
+    if(!havePlugin){
+        result = SKRResult(SKRResult::Critical, "Exporter" , "no_plugin_found");
+        result.addData("projectId", projectId);
+        result.addData("extension", extension);
+        return result;
     }
 
     return result;
@@ -64,7 +74,13 @@ QString Exporter::getSaveFilter()
     );
 
     for(auto *plugin : pluginList){
-            filters << QString("%1 (*.%2)").arg(plugin->extensionHumanName(), plugin->extension());
+        if(plugin->canSave()){
+            for(int i = 0; i <  plugin->extensions().count() ; i++){
+
+                const QString &extension = plugin->extensions().at(i);
+                filters << QString("%1 (*.%2)").arg(plugin->extensionHumanNames().at(i), extension);
+            }
+        }
     }
 
 

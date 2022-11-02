@@ -1,7 +1,7 @@
 {
     "type": "exporter",
     "shortname": "SkrExporter",
-    "longname": "Skribisto .skr exporter",
+    "longname": "Skribisto .skrib exporter",
     "version": "1.0",
     "mandatory": true,
     "activatedByDefault": true,

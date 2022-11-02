@@ -28,6 +28,10 @@ public:
     SKRResult saveAs(int projectId, const QUrl &url, const QString &extension);
     QString getSaveFilter() const;
 
+    //export
+    SKRResult exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds);
+
+    // project settings
     void setProjectName(int projectId, const QString &name);
     void setAuthor(int projectId, const QString &author);
     void setLanguageCode(int projectId, const QString &newLanguage);

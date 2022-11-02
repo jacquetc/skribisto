@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.5.0)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++11  -pedantic -Wno-deprecated-declarations -fstrict-aliasing -pedantic-errors -Wno-unused-variable")
 #
 # Populate a CMake variable with the sources
-set(PROJECT_NAME "skribistoExporterPluginSkrExporter")
+set(PROJECT_NAME "skribistoExporterPluginSkribExporter")
 
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION})
 add_definitions(-DSKRIBISTO_PLUGIN_LIBRARY)
@@ -15,8 +15,8 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Sql CONFIG REQUIRED)
 
 set(SRCS
     plugin_info.json
-    skrexporter.cpp
-    skrexporter.h
+    skribexporter.cpp
+    skribexporter.h
 )
 
 # Tell CMake to create the executable

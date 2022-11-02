@@ -143,7 +143,7 @@ Navigation::Navigation(class QWidget *parent) :
 
     m_sendToTrashAction = new QAction(tr("Send to trash"), ui->treeView);
     ui->treeView->addAction(m_sendToTrashAction);
-    m_sendToTrashAction->setShortcut(QKeySequence("Del"));
+    m_sendToTrashAction->setShortcut(QKeySequence::Delete);
     m_sendToTrashAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_sendToTrashAction, &QAction::triggered, this, [this](){
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
@@ -163,6 +163,18 @@ Navigation::Navigation(class QWidget *parent) :
 
             projectTreeCommands->sendSeveralItemsToTrash(m_projectId, targetIds);
         }
+
+
+    } );
+
+
+    m_exportAction = new QAction(tr("Export"), this);
+    ui->treeView->addAction(m_exportAction);
+    m_exportAction->setShortcut(QKeySequence("Ctrl+E"));
+    m_exportAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    QObject::connect(m_exportAction, &QAction::triggered, this, [this](){
+        this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
+
 
 
     } );

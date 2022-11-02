@@ -2,7 +2,7 @@
 *   Copyright (C) 2021 by Cyril Jacquet                                 *
 *   cyril.jacquet@skribisto.eu                                        *
 *                                                                         *
-*  Filename: skrexporter.cpp                                                   *
+*  Filename: skribexporter.cpp                                                   *
 *  This file is part of Skribisto.                                    *
 *                                                                         *
 *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,24 +18,26 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#include "skrexporter.h"
+#include "skribexporter.h"
 #include "project/plmprojectmanager.h"
 
 #include <QFile>
 #include <QSqlQuery>
 
-SkrExporter::SkrExporter(QObject *parent) : QObject(parent)
+SkribExporter::SkribExporter(QObject *parent) : QObject(parent)
 {
 
 }
 
 // ---------------------------------------------------
 
-SkrExporter::~SkrExporter()
+SkribExporter::~SkribExporter()
 {}
 
-SKRResult SkrExporter::run(int projectId, const QUrl &url, const QVariantMap &parameters, QList<int> treeItemIds) const
+SKRResult SkribExporter::run(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds) const
 {
+    Q_UNUSED(extension)
+
     PLMProject *project = plmProjectManager->project(projectId);
 
     QUrl fileName = url;

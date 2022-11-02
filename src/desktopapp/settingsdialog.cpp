@@ -57,7 +57,7 @@ void SettingsDialog::on_appearanceToolButton_clicked()
 
 void SettingsDialog::on_pagesToolButton_clicked()
 {
-    ui->stackedWidget->setCurrentWidget(ui->pagesPage);
+    ui->stackedWidget->setCurrentWidget(ui->pagesPanel);
     ui->pageTitle->setText("**" + ui->pagesToolButton->text() + "**");
     ui->pageTitle->show();
     ui->backToolButton->show();
@@ -69,6 +69,6 @@ void SettingsDialog::on_buttonBox_accepted()
     themeManager->setLightTheme(ui->dayThemeComboBox->currentText());
     themeManager->setDarkTheme(ui->nightThemeComboBox->currentText());
 
-    ui->pagesPage->accept();
+    ui->pagesPanel->accept();
 }
 

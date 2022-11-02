@@ -176,8 +176,15 @@ SKRResult ProjectCommands::saveAs(int projectId, const QUrl &url, const QString 
 
 QString ProjectCommands::getSaveFilter() const
 {
-
     return Exporter::getSaveFilter();
+}
+
+
+// ----------------------------------------------------------------------------
+
+SKRResult ProjectCommands::exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds)
+{
+    return Exporter::exportProject(projectId, url, extension, parameters, treeItemIds);
 }
 
 // ----------------------------------------------------------------------------

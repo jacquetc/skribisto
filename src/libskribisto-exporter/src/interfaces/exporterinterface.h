@@ -16,11 +16,14 @@ public:
 
     virtual int weight() const = 0;
 
-    virtual QString extension() const = 0;
-    virtual QString extensionHumanName() const = 0;
-    virtual QString extensionShortName() const = 0;
+    virtual QStringList extensions() const = 0;
+    virtual QStringList  extensionHumanNames() const = 0;
+    virtual QStringList  extensionShortNames() const = 0;
 
-    virtual SKRResult run(int projectId, const QUrl &url, const QVariantMap &parameters, QList<int> treeItemIds) const = 0;
+
+    virtual bool canSave() = 0;
+
+    virtual SKRResult run(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds) const = 0;
 
 
 };

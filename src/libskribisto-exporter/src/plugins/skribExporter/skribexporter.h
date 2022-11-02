@@ -2,7 +2,7 @@
  *   Copyright (C) 2022 by Cyril Jacquet                                 *
  *   cyril.jacquet@skribisto.eu                                        *
  *                                                                         *
- *  Filename: skrexporter.h                                                   *
+ *  Filename: skribexporter.h                                                   *
  *  This file is part of Skribisto.                                    *
  *                                                                         *
  *  Skribisto is free software: you can redistribute it and/or modify  *
@@ -18,21 +18,21 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef SKREXPORTER_H
-#define SKREXPORTER_H
+#ifndef SKRIBEXPORTER_H
+#define SKRIBEXPORTER_H
 
 #include "interfaces/exporterinterface.h"
 #include <QObject>
 
-class SkrExporter : public QObject, public ExporterInterface {
+class SkribExporter : public QObject, public ExporterInterface {
   Q_OBJECT
-  Q_PLUGIN_METADATA(IID "eu.skribisto.SkrExporterPlugin/1.0" FILE
+  Q_PLUGIN_METADATA(IID "eu.skribisto.SkribExporterPlugin/1.0" FILE
                         "plugin_info.json")
   Q_INTERFACES(ExporterInterface)
 
 public:
-  explicit SkrExporter(QObject *parent = nullptr);
-  ~SkrExporter();
+  explicit SkribExporter(QObject *parent = nullptr);
+  ~SkribExporter();
 
 signals:
 
@@ -45,33 +45,37 @@ public:
     {
         return 200;
     }
-    QString extension() const override
+    QStringList extensions() const override
     {
-        return "skrib";
+        return  QStringList() << "skrib";
     }
-    QString extensionHumanName() const override
+    QStringList extensionHumanNames() const override
     {
-        return tr("Skribisto project");
+        return  QStringList() << tr("Skribisto project");
     }
-    QString extensionShortName() const override
+    QStringList extensionShortNames() const override
     {
-        return "skrib";
+        return QStringList() << "skrib";
     }
-    SKRResult run(int projectId, const QUrl &url, const QVariantMap &parameters, QList<int> treeItemIds) const override;
+    bool canSave() override
+    {
+        return true;
+    }
+    SKRResult run(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds) const override;
 
     // SKRInterfaceSettings interface
 public:
     QString name() const override
     {
-        return "SkrExporter";
+        return "SkribExporter";
     }
     QString displayedName() const override
     {
-        return tr(".skr exporter");
+        return tr(".skrib exporter");
     }
     QString use() const override
     {
-        return "Export to .skr";
+        return "Export to .skrib";
     }
     QString pluginGroup() const override
     {
@@ -84,4 +88,4 @@ public:
 
 };
 
-#endif // SKREXPORTER_H
+#endif // SKRIBEXPORTER_H
