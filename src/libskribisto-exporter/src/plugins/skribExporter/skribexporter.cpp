@@ -82,9 +82,6 @@ SKRResult SkribExporter::run(int projectId, const QUrl &url, const QString &exte
     file.close();
     return result;
 
-
-    return result;
-
 }
 
 

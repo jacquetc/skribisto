@@ -179,12 +179,34 @@ QString ProjectCommands::getSaveFilter() const
     return Exporter::getSaveFilter();
 }
 
+QList<QPair<QString, QString> > ProjectCommands::getExportExtensions() const
+{
+    return Exporter::getExportExtensions();
+}
+
+QStringList ProjectCommands::getExportExtensionHumanNames() const
+{
+    return Exporter::getExportExtensionHumanNames();
+}
+
 
 // ----------------------------------------------------------------------------
 
 SKRResult ProjectCommands::exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds)
 {
     return Exporter::exportProject(projectId, url, extension, parameters, treeItemIds);
+}
+
+// ----------------------------------------------------------------------------
+
+QTextDocument *ProjectCommands::getPrintTextDocument(int projectId, const QVariantMap &parameters, QList<int> treeItemIds) const
+{
+    SKRResult result(this);
+    QTextDocument *textDocument = Exporter::getPrintTextDocument(projectId, parameters, treeItemIds, &result);
+
+
+
+    return textDocument;
 }
 
 // ----------------------------------------------------------------------------

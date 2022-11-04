@@ -1,4 +1,5 @@
-﻿#include "projecttreecommands.h"
+﻿#include "export/exportdialog.h"
+#include "projecttreecommands.h"
 #include "thememanager.h"
 #include "windowmanager.h"
 #include "mainwindow.h"
@@ -79,7 +80,7 @@ MainWindow::MainWindow(int newWindowId)
     undoAction->setShortcut(QKeySequence::Undo);
     undoAction->setShortcutContext(Qt::WindowShortcut);
 
-    QAction *redoAction = projectTreeCommands->undoStack()->createUndoAction(this);
+    QAction *redoAction = projectTreeCommands->undoStack()->createRedoAction(this);
     undoAction->setShortcut(QKeySequence::Redo);
     undoAction->setShortcutContext(Qt::WindowShortcut);
 
@@ -411,14 +412,18 @@ void MainWindow::setupMenuActions()
     //-------------------
 
     ui->actionPrint->setShortcuts(QKeySequence::Print);
-    connect(ui->actionPrint, &QAction::triggered, this, [](){
+    connect(ui->actionPrint, &QAction::triggered, this, [this](){
+        ExportDialog dialog(this, true);
+        dialog.exec();
 
     });
 
     //-------------------
 
-    ui->actionExport->setShortcut(QKeySequence("Ctrl+E"));
-    connect(ui->actionExport, &QAction::triggered, this, [](){
+    ui->actionExport->setShortcut(QKeySequence(tr("Ctrl+E", "export shortcut")));
+    connect(ui->actionExport, &QAction::triggered, this, [this](){
+        ExportDialog dialog(this, false);
+        dialog.exec();
 
     });
     //-------------------

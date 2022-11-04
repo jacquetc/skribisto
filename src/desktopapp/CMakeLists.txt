@@ -38,6 +38,9 @@ set(app_SRCS
     settingsdialog.h settingsdialog.cpp settingsdialog.ui
     themewizard.h themewizard.cpp themewizard.ui
     newprojectwizard.h newprojectwizard.cpp newprojectwizard.ui
+    export/selectionexportwizard.h export/selectionexportwizard.cpp export/selectionexportwizard.ui
+    export/exportdialog.h export/exportdialog.cpp export/exportdialog.ui
+    export/bookexportwizard.h export/bookexportwizard.cpp export/bookexportwizard.ui
 )
 
 set(QRC

@@ -2,6 +2,7 @@
 #define PROJECTCOMMANDS_H
 
 #include <QObject>
+#include <QTextDocument>
 #include <QUndoCommand>
 #include "skribisto_backend_global.h"
 #include "interfaces/invokablecommandgroupinterface.h"
@@ -26,10 +27,13 @@ public:
     SKRResult saveAProjectCopy(int projectId, const QString &extension, const QUrl &path);
     void closeProject(int projectId);
     SKRResult saveAs(int projectId, const QUrl &url, const QString &extension);
-    QString getSaveFilter() const;
 
     //export
+    QString getSaveFilter() const;
+    QList< QPair<QString, QString>> getExportExtensions() const;
+    QStringList getExportExtensionHumanNames() const;
     SKRResult exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds);
+    QTextDocument *getPrintTextDocument(int projectId, const QVariantMap &parameters, QList<int> treeItemIds) const;
 
     // project settings
     void setProjectName(int projectId, const QString &name);

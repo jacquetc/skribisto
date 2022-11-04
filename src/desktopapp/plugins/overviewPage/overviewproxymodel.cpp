@@ -75,3 +75,8 @@ QModelIndex OverviewProxyModel::getModelIndex(int projectId, int treeItemId) con
 
     return QModelIndex();
 }
+
+
+int OverviewProxyModel::columnCount(const QModelIndex &parent) const
+{
+}

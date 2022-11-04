@@ -312,6 +312,122 @@
     </message>
 </context>
 <context>
+    <name>BasicFormatsExporter</name>
+    <message>
+        <location filename="../libskribisto-exporter/src/plugins/basicFormatsExporter/basicformatsexporter.h" line="47"/>
+        <source>Open Document Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-exporter/src/plugins/basicFormatsExporter/basicformatsexporter.h" line="47"/>
+        <source>HTML</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-exporter/src/plugins/basicFormatsExporter/basicformatsexporter.h" line="48"/>
+        <source>Plain text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-exporter/src/plugins/basicFormatsExporter/basicformatsexporter.h" line="63"/>
+        <source>.skrib exporter</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>BookExportWizard</name>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="14"/>
+        <source>Wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="24"/>
+        <source>Book selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="27"/>
+        <source>Select a book or a chapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="33"/>
+        <source>Books</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="54"/>
+        <source>Chapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="93"/>
+        <source>Choose an extension</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="104"/>
+        <source>Destination:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="114"/>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="133"/>
+        <source>Font size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="153"/>
+        <source>Font family:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="169"/>
+        <source>Paragraph top margin:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="179"/>
+        <source>Paragraph&apos;s first line indent:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="189"/>
+        <source>Space between lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.ui" line="196"/>
+        <source>%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.cpp" line="33"/>
+        <source>Print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.cpp" line="35"/>
+        <source>Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.cpp" line="78"/>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/bookexportwizard.cpp" line="249"/>
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Breadcrumb</name>
     <message>
         <location filename="../mobileapp/content/Breadcrumb.qml" line="112"/>
@@ -953,6 +1069,54 @@
     </message>
 </context>
 <context>
+    <name>ExportDialog</name>
+    <message>
+        <location filename="../desktopapp/export/exportdialog.ui" line="14"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/exportdialog.ui" line="20"/>
+        <source>Choose the way to export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/exportdialog.ui" line="29"/>
+        <source>Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/exportdialog.ui" line="46"/>
+        <source>Book</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/exportdialog.ui" line="57"/>
+        <source>Export a book or a chapter using &quot;Section&quot; items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/exportdialog.ui" line="67"/>
+        <source>Select the items to export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/exportdialog.cpp" line="15"/>
+        <source>Choose the way of printing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/exportdialog.cpp" line="16"/>
+        <source>Print a book or a chapter using &quot;Section&quot; items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/exportdialog.cpp" line="17"/>
+        <source>Select the items to print</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ExporterPage</name>
     <message>
         <location filename="../mobileapp/content/WelcomePage/ExporterPage.qml" line="73"/>
@@ -1510,8 +1674,8 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="226"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="275"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="363"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="276"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="364"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1562,8 +1726,8 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="288"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="244"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="333"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="245"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="334"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1603,38 +1767,44 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="532"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="537"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="385"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="386"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="245"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="334"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="246"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="335"/>
         <source>Do you want to save changes to %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="275"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="276"/>
         <source>Do you really want to quit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="303"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="304"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="364"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="365"/>
         <source>Do you really want to close %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="529"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="423"/>
+        <source>Ctrl+E</source>
+        <comment>export shortcut</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.cpp" line="534"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3744,6 +3914,99 @@ Please select the destination folder.</source>
     <message>
         <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="46"/>
         <source>End of a book</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SelectionExportWizard</name>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="14"/>
+        <source>Wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="24"/>
+        <source>Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="27"/>
+        <source>Select a book or items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="33"/>
+        <source>Project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="65"/>
+        <source>Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="68"/>
+        <source>Select options and the destination</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="74"/>
+        <source>Choose an extension</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="85"/>
+        <source>Destination:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="95"/>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="114"/>
+        <source>Font size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="134"/>
+        <source>Font family:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="150"/>
+        <source>Paragraph top margin:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="160"/>
+        <source>Paragraph&apos;s first line indent:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="170"/>
+        <source>Space between lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.ui" line="177"/>
+        <source>%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.cpp" line="29"/>
+        <source>Print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.cpp" line="31"/>
+        <source>Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/export/selectionexportwizard.cpp" line="74"/>
+        <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -8,8 +8,8 @@ project(skribisto-exporter LANGUAGES CXX VERSION ${VERSION})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Find the QtWidgets library
-find_package(QT NAMES Qt6 COMPONENTS Core CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Gui CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui CONFIG REQUIRED)
 
 set(exporter_SRCS
     skribisto_exporter_global.h
@@ -33,7 +33,7 @@ add_dependencies(${PROJECT_NAME} skribisto-common)
 
 target_compile_definitions(skribisto-exporter PRIVATE SKRIBISTO_EXPORTER_LIBRARY)
 
-target_link_libraries(skribisto-exporter PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core)
+target_link_libraries(skribisto-exporter PRIVATE skribisto-data Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-common)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")

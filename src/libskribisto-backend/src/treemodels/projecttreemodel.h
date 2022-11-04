@@ -58,6 +58,7 @@ public:
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
     bool removeColumns(int column, int count, const QModelIndex &parent = QModelIndex()) override;
     QHash<int, QByteArray> roleNames() const override;
+    QModelIndex getModelIndex(int projectId, int treeItemId) const;
 
 public:
 
@@ -85,7 +86,6 @@ private:
     QHash<QString, PageTypeIconInterface *> m_typeWithPlugin;
 
 
-    QModelIndex getModelIndex(int projectId, int treeItemId) const;
     ProjectTreeItem *getTreeItem(int projectId, int treeItemId) const;
     void removeProjectItem(int projectId, int treeItemId);
 };

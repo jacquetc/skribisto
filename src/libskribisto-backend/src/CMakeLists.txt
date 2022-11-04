@@ -29,6 +29,7 @@ set(backend_MODELS
     treemodels/projecttreeitem.h treemodels/projecttreeitem.cpp
     treemodels/projecttreeproxymodel.h treemodels/projecttreeproxymodel.cpp
     treemodels/projecttrashedtreemodel.h treemodels/projecttrashedtreemodel.cpp
+    treemodels/projecttreeselectproxymodel.h treemodels/projecttreeselectproxymodel.cpp
 )
 
 set(backend_INTERFACES

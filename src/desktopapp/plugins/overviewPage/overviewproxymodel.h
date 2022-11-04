@@ -28,6 +28,10 @@ protected:
 
 private:
     int m_projectId;
+
+    // QAbstractItemModel interface
+public:
+    int columnCount(const QModelIndex &parent) const override;
 };
 
 #endif // OVERVIEWPROXYMODEL_H

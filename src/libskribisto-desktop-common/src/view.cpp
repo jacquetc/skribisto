@@ -29,6 +29,9 @@ View::View(const QString &type, QWidget *parent) :
     ui->toolBarLayout->insertWidget(0, historyToolbar);
 
 
+    //TODO: implement it
+    historyToolbar->hide();
+
     QToolBar *viewControlsToolbar = new QToolBar;
     viewControlsToolbar->setIconSize(QSize(16, 16));
     viewControlsToolbar->setContentsMargins(0, 0, 0, 0);

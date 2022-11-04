@@ -19,9 +19,12 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "textpage.h"
+#include "markdowntextdocument.h"
 #include "skrdata.h"
 #include "textview.h"
 #include "textpagesettings.h"
+
+#include <QTextCursor>
 
 TextPage::TextPage(QObject *parent) : QObject(parent)
 {
@@ -74,10 +77,32 @@ QTextDocumentFragment TextPage::generateExporterTextFragment(int                
                                                              const QVariantMap& exportProperties,
                                                              SKRResult        & result) const
 {
-    QTextDocument *document = nullptr;
+    MarkdownTextDocument document;
 
 
-    return QTextDocumentFragment(document);
+    QFont font;
+    font.setFamily(exportProperties.value("font_family", "Times New Roman").toString());
+    font.setPointSize(exportProperties.value("font_size", 12).toInt());
+
+    QTextCharFormat charFormat;
+    charFormat.setFont(font, QTextCharFormat::FontPropertiesSpecifiedOnly);
+
+    QTextBlockFormat blockFormat;
+    blockFormat.setTextIndent(exportProperties.value("text_block_indent", 0).toInt());
+    blockFormat.setTopMargin(exportProperties.value("text_block_top_margin", 0).toInt());
+    blockFormat.setLineHeight(exportProperties.value("text_space_between_line", 100).toInt(), QTextBlockFormat::ProportionalHeight);
+
+    QString primaryContent = skrdata->treeHub()->getPrimaryContent(projectId, treeItemId);
+
+    document.setSkribistoMarkdown(primaryContent);
+
+    QTextCursor cursor(&document);
+    cursor.select(QTextCursor::SelectionType::Document);
+    cursor.mergeBlockCharFormat(charFormat);
+    cursor.mergeCharFormat(charFormat);
+    cursor.mergeBlockFormat(blockFormat);
+
+    return QTextDocumentFragment(&document);
 }
 
 SettingsSubPanel *TextPage::settingsPanel() const
