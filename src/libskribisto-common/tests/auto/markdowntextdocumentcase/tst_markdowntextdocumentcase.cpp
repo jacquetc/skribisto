@@ -28,6 +28,7 @@ private Q_SLOTS:
     void formatBlock();
 
     void setAndFromMarkdown();
+    void setAndFromMarkdown_multipleEmptyLines();
 
 private:
 
@@ -184,13 +185,31 @@ void MarkdownTextDocumentCase::setAndFromMarkdown()
     QString originalString = "* list\n\n* list *2*";
     doc.setSkribistoMarkdown(originalString);
 
-    QCOMPARE(originalString, doc.toSkribistoMarkdown());
+    QCOMPARE(doc.toSkribistoMarkdown(), originalString);
 
 
     originalString = "* **__l__**is*__~~t~~__*\n\n* list *2*";
         doc.setSkribistoMarkdown(originalString);
 
-        QCOMPARE(originalString, doc.toSkribistoMarkdown());
+        QCOMPARE(doc.toSkribistoMarkdown(), originalString);
+}
+//------------------------------------------
+
+
+void MarkdownTextDocumentCase::setAndFromMarkdown_multipleEmptyLines()
+{
+
+    MarkdownTextDocumentProxy doc;
+    QString originalString = "word\n\n\n\nword";
+    doc.setSkribistoMarkdown(originalString);
+
+    QCOMPARE(doc.toSkribistoMarkdown(), originalString);
+
+    originalString = "word1\n\ntabcdefghij\n\nword";
+    doc.setSkribistoMarkdown(originalString);
+
+    QCOMPARE(doc.toSkribistoMarkdown(), originalString);
+
 }
 QTEST_MAIN(MarkdownTextDocumentCase)
 

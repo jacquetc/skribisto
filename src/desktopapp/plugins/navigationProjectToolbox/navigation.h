@@ -3,6 +3,7 @@
 
 #include "toolbox.h"
 #include <QModelIndex>
+#include <QSortFilterProxyModel>
 #include <QWidget>
 
 namespace Ui {
@@ -11,6 +12,8 @@ class Navigation;
 
 typedef QPair<int, int> PathItem;
 typedef QList<PathItem> Path;
+
+class FilterModel;
 
 class Navigation : public Toolbox
 {
@@ -56,5 +59,24 @@ protected:
 public:
     void initialize() override;
 };
+
+//----------------------------------------
+
+class FilterModel : public QSortFilterProxyModel
+{
+
+public:
+    FilterModel(QObject *parent = nullptr);
+
+    QModelIndex getModelIndex(int projectId, int treeItemId) const;
+protected:
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
+
+
+    // QAbstractItemModel interface
+public:
+    int columnCount(const QModelIndex &parent) const override;
+};
+
 
 #endif // NAVIGATION_H

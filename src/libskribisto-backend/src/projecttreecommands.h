@@ -57,6 +57,8 @@ public:
 
     void emptyTrash(int projectId);
 
+    void updateCharAndWordCount(int projectId, int treeItemId, const QString& pageType, bool sameThread);
+
 signals:
 private:
     static ProjectTreeCommands *m_instance;

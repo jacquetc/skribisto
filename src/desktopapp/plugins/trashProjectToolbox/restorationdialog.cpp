@@ -25,7 +25,7 @@ RestorationDialog::RestorationDialog(QWidget *parent) :
 
 
         // select next row
-        if(ui->itemListWidget->currentRow() < ui->itemListWidget->count()){
+        if(ui->itemListWidget->currentRow() < ui->itemListWidget->count() - 1){
             ui->itemListWidget->setCurrentRow(ui->itemListWidget->currentRow() + 1);
         }
 
@@ -68,6 +68,10 @@ RestorationDialog::RestorationDialog(QWidget *parent) :
     });
 
     connect(ui->itemListWidget, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *current, QListWidgetItem *previous){
+        if(!current){
+            return;
+        }
+
         bool ok;
         int targetFolderId = current->data(Qt::UserRole + 1).toInt(&ok);
         if(ok){
@@ -124,6 +128,7 @@ void RestorationDialog::setProjectId(int newProjectId)
 void RestorationDialog::reset()
 {
     ui->applyToAllButton->setEnabled(false);
+    ui->itemListWidget->clear();
 
     // item list:
 
@@ -281,4 +286,10 @@ QModelIndex FilterModel::getModelIndex(int projectId, int treeItemId) const {
         return index;
 
     return QModelIndex();
+}
+
+
+int FilterModel::columnCount(const QModelIndex &parent) const
+{
+    return 1;
 }

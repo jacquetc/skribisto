@@ -6,6 +6,7 @@
 #include "interfaces/pagetypeiconinterface.h"
 #include "skrdata.h"
 #include "command.h"
+#include "skrresult.h"
 
 #include <QAbstractItemModel>
 #include <QUndoCommand>
@@ -226,13 +227,13 @@ public:
     TrashItemCommand(int projectId, int treeItemId, bool newTrashState, int forcedOriginalParentId = -1, int forcedOriginalRow = -1);
     void undo();
     void redo();
-    SKRResult result();
+    bool result() const;
 private:
     int m_projectId, m_treeItemId, m_originalParentId, m_originalRow, m_forcedOriginalParentId, m_forcedOriginalRow;
     bool m_oldTrashState, m_newTrashState;
     QList<QVariantMap> m_newTree, m_newPropertyTable;
     QList<QVariantMap> m_oldTree, m_oldPropertyTable;
-    SKRResult m_result;
+    bool m_result;
 
 };
 

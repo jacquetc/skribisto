@@ -2,6 +2,7 @@
 #include "export/bookexportwizard.h"
 #include "export/selectionexportwizard.h"
 #include "skrdata.h"
+#include "thememanager.h"
 #include "ui_exportdialog.h"
 
 ExportDialog::ExportDialog(QWidget *parent, bool enablePrint) :
@@ -29,6 +30,9 @@ ExportDialog::ExportDialog(QWidget *parent, bool enablePrint) :
         this->close();
         wizard.exec();
     });
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+
 }
 
 ExportDialog::~ExportDialog()

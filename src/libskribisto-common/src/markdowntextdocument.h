@@ -6,6 +6,8 @@
 
 class SKRCOMMONEXPORT MarkdownTextDocument : public QTextDocument
 {
+    Q_OBJECT
+
 public:
     enum CharFormat {
              Italic = 0x0,

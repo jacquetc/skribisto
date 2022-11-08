@@ -3,6 +3,7 @@
 #include "projecttreecommands.h"
 #include "skrdata.h"
 #include "treemodels/projecttreeproxymodel.h"
+#include "outlineitemdelegate.h"
 #include "ui_overviewview.h"
 #include "viewmanager.h"
 
@@ -34,9 +35,17 @@ OverviewView::OverviewView(QWidget *parent) :
 
     centralWidgetUi->treeView->setModel(m_overviewProxyModel);
 
+    OutlineItemDelegate *outlineItemDelegate = new OutlineItemDelegate(this);
+    centralWidgetUi->treeView->setItemDelegateForColumn(1, outlineItemDelegate);
+
+    connect(outlineItemDelegate, &OutlineItemDelegate::editFinished,  this, [this](const QModelIndex &index){
+        centralWidgetUi->treeView->dataChanged(index, index, QList<int>() << Qt::ItemDataRole::SizeHintRole);
+    });
+
 
     centralWidgetUi->treeView->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(centralWidgetUi->treeView, &QTreeView::customContextMenuRequested, this, &OverviewView::onCustomContextMenu);
+
 
     //expand management
 
@@ -51,7 +60,10 @@ OverviewView::OverviewView(QWidget *parent) :
     //QObject::connect(centralWidgetUi->treeView, &QTreeView::clicked, this, &Navigation::setCurrentIndex);
     QObject::connect(centralWidgetUi->treeView, &QTreeView::activated, this, [this](const QModelIndex &index){
         this->setCurrentIndex(index);
-        this->open(index);
+
+
+            centralWidgetUi->treeView->edit(index);
+
     });
 
 
@@ -92,10 +104,13 @@ OverviewView::OverviewView(QWidget *parent) :
     m_renameAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_renameAction, &QAction::triggered, this, [this](){
         this->setCurrentIndex(centralWidgetUi->treeView->selectionModel()->currentIndex());
+        bool ok;
 
         QString newName = QInputDialog::getText(centralWidgetUi->treeView, tr("Rename"), tr("Enter a new title for the item"), QLineEdit::Normal,
-                                                skrdata->treeHub()->getTitle(this->projectId(), m_targetTreeItemId));
-        projectTreeCommands->renameItem(this->projectId(), m_targetTreeItemId, newName);
+                                                skrdata->treeHub()->getTitle(this->projectId(), m_targetTreeItemId), &ok);
+        if(ok){
+            projectTreeCommands->renameItem(this->projectId(), m_targetTreeItemId, newName);
+        }
 
     } );
 

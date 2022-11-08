@@ -24,7 +24,29 @@ QString MarkdownTextDocument::toSkribistoMarkdown() const
 
     stringList = this->breakStrings(stringList);
 
-    return stringList.join("\n\n");
+    QString finalPseudoMarkdownString;
+
+    for(int i = 0 ; i < stringList.count(); i++){
+
+            const QString &string = stringList.at(i);
+
+            finalPseudoMarkdownString.append(string);
+
+            if(i != stringList.count() - 1){
+                if(string.isEmpty()){
+                    finalPseudoMarkdownString.append("\n");
+                }
+                else {
+                    finalPseudoMarkdownString.append("\n\n");
+                }
+            }
+
+
+
+
+         }
+
+    return finalPseudoMarkdownString;
 }
 
 void MarkdownTextDocument::setSkribistoMarkdown(const QString &markdownText)
@@ -63,18 +85,28 @@ QStringList MarkdownTextDocument::createBlockListFromMarkdown(const QString &mar
     QStringList blockList;
     const QStringList lineList = markdownText.split("\n");
 
-
-    QString block;
+    bool hadLastLineEmpty = false;
+    QString block = "";
     for(int i = 0; i < lineList.count() ; i++){
         const QString &line = lineList.at(i);
 
-        block += line;
-
-        if(line.isEmpty()){
-            blockList << block;
+        if(line.isEmpty() && hadLastLineEmpty){
             block.clear();
+            blockList << block;
+            hadLastLineEmpty = true;
+            continue;
+        }
+        else if (!hadLastLineEmpty){ // line is not empty
+            hadLastLineEmpty = false;
         }
 
+        block += line;
+
+        if(line.isEmpty() && !hadLastLineEmpty){
+            blockList << block;
+            block.clear();
+            hadLastLineEmpty = true;
+        }
         if(i == lineList.count() - 1){
             blockList << block;
         }
@@ -125,7 +157,7 @@ void MarkdownTextDocument::formatBlock(const QTextBlock &block)
 
     //TODO: implement indent
 
-    if(blockText.first(2) == "* "){
+    if(blockText.length() >= 2 && blockText.first(2) == "* "){
 
         const QTextBlock previousBlock = block.previous();
 
@@ -395,6 +427,8 @@ QStringList MarkdownTextDocument::breakStrings(const QStringList &blockStringLis
 
     const int length = 80;
 
+    bool hadPreviousStringEmpty = false;
+
     for(const QString &string : blockStringList) {
 
         int startSlice = 0;
@@ -410,6 +444,10 @@ QStringList MarkdownTextDocument::breakStrings(const QStringList &blockStringLis
 
         if(haveLeftover){
             finalList << string.sliced(startSlice);
+        }
+
+        if(string.isEmpty()){
+            finalList << string;
         }
 
 

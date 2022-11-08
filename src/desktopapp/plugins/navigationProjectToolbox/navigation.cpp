@@ -20,7 +20,12 @@ Navigation::Navigation(class QWidget *parent) :
     ui->setupUi(this);
 
     ProjectTreeProxyModel *model = new ProjectTreeProxyModel(this);
+    FilterModel *filterModel = new FilterModel(this);
+    filterModel->setSourceModel(model);
     ui->treeView->setModel(model);
+    ui->treeView->setColumnHidden(1, true);
+    ui->treeView->setColumnHidden(2, true);
+    ui->treeView->setColumnHidden(3, true);
 
 
     ui->treeView->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -88,9 +93,13 @@ Navigation::Navigation(class QWidget *parent) :
     QObject::connect(m_renameAction, &QAction::triggered, this, [this](){
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
 
+        bool ok;
         QString newName = QInputDialog::getText(ui->treeView, tr("Rename"), tr("Enter a new title for the item"), QLineEdit::Normal,
-                                                skrdata->treeHub()->getTitle(m_projectId, m_targetTreeItemId));
-        projectTreeCommands->renameItem(m_projectId, m_targetTreeItemId, newName);
+                                                skrdata->treeHub()->getTitle(m_projectId, m_targetTreeItemId), &ok);
+
+        if(ok){
+            projectTreeCommands->renameItem(m_projectId, m_targetTreeItemId, newName);
+        }
 
     } );
 
@@ -133,7 +142,8 @@ Navigation::Navigation(class QWidget *parent) :
 
         QObject::connect(addItemDialog, &QDialog::finished, this, [this](int result){
             if(result == QDialog::Accepted){
-                ui->treeView->expand(m_currentModelIndex);
+            //auto modelIndex = static_cast<FilterModel *>(ui->treeView->model())->getModelIndex(m_projectId, m_targetTreeItemId);
+            ui->treeView->expand(m_currentModelIndex);
             }
         });
 
@@ -405,4 +415,77 @@ void Navigation::openInAnotherView(const QModelIndex &index)
 
 void Navigation::initialize()
 {
+}
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+
+
+FilterModel::FilterModel(QObject *parent) : QSortFilterProxyModel(parent)
+{
+
+}
+
+//----------------------------------------------------------
+
+bool FilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
+{
+
+   const QModelIndex index = this->sourceModel()->index(source_row, 0, source_parent);
+
+   if(!index.isValid()){
+       return false;
+   }
+
+//    bool trashed = index.data(ProjectTreeItem::TrashedRole).toBool();
+//    QString internalTitle = index.data(ProjectTreeItem::InternalTitleRole).toString();
+//    QString type = index.data(ProjectTreeItem::TypeRole).toString();
+//    int projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
+
+//    if(trashed){
+//       return false;
+//    }
+
+
+//    if(type != "PROJECT" && type != "FOLDER"){
+//       return false;
+//    }
+
+//    if(internalTitle == "trash_folder"){
+//       return false;
+//    }
+
+    return true;
+
+}
+
+
+QModelIndex FilterModel::getModelIndex(int projectId, int treeItemId) const {
+    // search for index
+    QModelIndex index;
+    QModelIndexList list =  this->match(this->index(0, 0,
+                                                    QModelIndex()),
+                                        ProjectTreeItem::Roles::TreeItemIdRole,
+                                        treeItemId,
+                                        -1,
+                                        Qt::MatchFlag::MatchRecursive |
+                                        Qt::MatchFlag::MatchExactly |
+                                        Qt::MatchFlag::MatchWrap);
+
+    for (const QModelIndex& modelIndex : qAsConst(list)) {
+        index = modelIndex;
+    }
+
+    if (index.isValid())
+        return index;
+
+    return QModelIndex();
+}
+
+
+
+int FilterModel::columnCount(const QModelIndex &parent) const
+{
+    return 1;
 }

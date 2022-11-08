@@ -37,6 +37,9 @@
      <property name="selectionMode">
       <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
      <property name="autoExpandDelay">
       <number>1000</number>
      </property>
@@ -46,11 +49,26 @@
      <property name="animated">
       <bool>true</bool>
      </property>
+     <property name="allColumnsShowFocus">
+      <bool>true</bool>
+     </property>
+     <property name="headerHidden">
+      <bool>false</bool>
+     </property>
      <property name="expandsOnDoubleClick">
       <bool>false</bool>
      </property>
      <attribute name="headerVisible">
-      <bool>false</bool>
+      <bool>true</bool>
+     </attribute>
+     <attribute name="headerCascadingSectionResizes">
+      <bool>true</bool>
+     </attribute>
+     <attribute name="headerMinimumSectionSize">
+      <number>50</number>
+     </attribute>
+     <attribute name="headerDefaultSectionSize">
+      <number>150</number>
      </attribute>
     </widget>
    </item>

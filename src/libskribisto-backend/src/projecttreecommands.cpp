@@ -232,21 +232,22 @@ void ProjectTreeCommands::sendSeveralItemsToTrash(int projectId, QList<int> targ
         m_undoStack->push(new TrashItemCommand(projectId, targetId, true));
     }
 
-   m_undoStack->endMacro();
+    m_undoStack->endMacro();
 
 }
 
 //------------------------------------------------------------------------------------
 
 int ProjectTreeCommands::restoreItemFromTrash(int projectId, int targetId, int forcedOriginalParentId, int forcedOriginalRow)
-{     auto *command = new TrashItemCommand(projectId, targetId, false, forcedOriginalParentId, forcedOriginalRow);
+{
+    auto *command = new TrashItemCommand(projectId, targetId, false, forcedOriginalParentId, forcedOriginalRow);
 
-      m_undoStack->push(command);
-        IFKO(command->result()){
+    m_undoStack->push(command);
+    if(!command->result()){
         return targetId;
-        }
+    }
 
-          return 0;
+    return 0;
 }
 
 //------------------------------------------------------------------------------------
@@ -264,14 +265,14 @@ QList<int> ProjectTreeCommands::restoreSeveralItemsFromTrash(int projectId, QLis
         auto *command = new TrashItemCommand(projectId, targetId, false);
         m_undoStack->push(command);
 
-        IFKO(command->result()){
+        if(!command->result()){
             results.prepend(targetId);
         }
     }
 
-   m_undoStack->endMacro();
+    m_undoStack->endMacro();
 
-   return results;
+    return results;
 }
 
 //------------------------------------------------------------------------------------
@@ -300,6 +301,21 @@ void ProjectTreeCommands::emptyTrash(int projectId)
         skrdata->treeHub()->removeTreeItem(projectId, id);
     }
 
+}
+
+//------------------------------------------------------------------------------------
+
+void ProjectTreeCommands::updateCharAndWordCount(int projectId, int treeItemId, const QString &pageType, bool sameThread)
+{
+
+    QList<PageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<PageInterface>();
+
+    for (PageInterface *plugin: qAsConst(pluginList)) {
+        if (pageType == plugin->pageType()) {
+            plugin->updateCharAndWordCount(projectId, treeItemId, sameThread);
+            break;
+        }
+    }
 }
 
 //------------------------------------------------------------------------------------

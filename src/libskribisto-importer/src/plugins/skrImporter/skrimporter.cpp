@@ -26,6 +26,7 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTemporaryFile>
+#include <QUrl>
 
 SkrImporter::SkrImporter(QObject *parent) : QObject(parent)
 {

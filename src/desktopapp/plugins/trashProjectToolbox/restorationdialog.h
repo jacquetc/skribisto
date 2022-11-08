@@ -68,6 +68,10 @@ protected:
 
 private:
     int m_projectId;
+
+    // QAbstractItemModel interface
+public:
+    int columnCount(const QModelIndex &parent) const override;
 };
 
 #endif // RESTORATIONDIALOG_H

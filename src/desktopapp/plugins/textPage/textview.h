@@ -18,7 +18,7 @@ public:
     QList<Toolbox *> toolboxes() override;
 
 public slots:
-    void saveContent();
+    void saveContent(bool sameThread = false);
 
 protected:
     void initialize() override;

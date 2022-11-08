@@ -1,5 +1,6 @@
 #include "selectionexportwizard.h"
 #include "projectcommands.h"
+#include "thememanager.h"
 #include "treemodels/projecttreeselectproxymodel.h"
 #include "ui_selectionexportwizard.h"
 #include "skrdata.h"
@@ -24,6 +25,9 @@ SelectionExportWizard::SelectionExportWizard(QWidget *parent, int projectId, boo
 
     ui->treeView->setModel(selectProxyModel);
     ui->treeView->expandAll();
+    ui->treeView->setColumnHidden(1, true);
+    ui->treeView->setColumnHidden(2, true);
+    ui->treeView->setColumnHidden(3, true);
 
     if(m_enablePrint){
         this->setButtonText(WizardButton::FinishButton, tr("Print"));
@@ -75,6 +79,9 @@ SelectionExportWizard::SelectionExportWizard(QWidget *parent, int projectId, boo
     }
 
     setupOptionPage();
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+
 }
 
 SelectionExportWizard::~SelectionExportWizard()

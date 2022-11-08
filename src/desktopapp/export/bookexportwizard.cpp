@@ -1,5 +1,6 @@
 #include "bookexportwizard.h"
 #include "skrdata.h"
+#include "thememanager.h"
 #include "ui_bookexportwizard.h"
 #include "projectcommands.h"
 
@@ -144,6 +145,9 @@ BookExportWizard::BookExportWizard(QWidget *parent, int projectId, bool enablePr
 
 
     setupOptionPage();
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+
 }
 
 BookExportWizard::~BookExportWizard()

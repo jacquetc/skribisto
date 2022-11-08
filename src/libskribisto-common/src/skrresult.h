@@ -30,13 +30,13 @@
  * To facilitate the result management
  */
 #define IFKO(RESULT) \
-    if (Q_UNLIKELY(RESULT))
+    if (Q_UNLIKELY(!RESULT))
 
 /**
  * To facilitate the result management
  */
 #define IFOK(RESULT) \
-    if (Q_LIKELY(!RESULT))
+    if (Q_LIKELY(RESULT))
 
 /**
  * To facilitate the result management

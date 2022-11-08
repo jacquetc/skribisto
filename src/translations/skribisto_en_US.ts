@@ -407,22 +407,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/bookexportwizard.cpp" line="33"/>
+        <location filename="../desktopapp/export/bookexportwizard.cpp" line="34"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/bookexportwizard.cpp" line="35"/>
+        <location filename="../desktopapp/export/bookexportwizard.cpp" line="36"/>
         <source>Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/bookexportwizard.cpp" line="78"/>
+        <location filename="../desktopapp/export/bookexportwizard.cpp" line="79"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/bookexportwizard.cpp" line="249"/>
+        <location filename="../desktopapp/export/bookexportwizard.cpp" line="253"/>
         <source>All</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1101,17 +1101,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/exportdialog.cpp" line="15"/>
+        <location filename="../desktopapp/export/exportdialog.cpp" line="16"/>
         <source>Choose the way of printing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/exportdialog.cpp" line="16"/>
+        <location filename="../desktopapp/export/exportdialog.cpp" line="17"/>
         <source>Print a book or a chapter using &quot;Section&quot; items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/exportdialog.cpp" line="17"/>
+        <location filename="../desktopapp/export/exportdialog.cpp" line="18"/>
         <source>Select the items to print</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1822,58 +1822,58 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.h" line="23"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.h" line="26"/>
         <source>Navigation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="54"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="59"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="65"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="70"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="84"/>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="91"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="89"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="97"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="91"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="97"/>
         <source>Enter a new title for the item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="100"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="109"/>
         <source>Add below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="112"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="121"/>
         <source>Add above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="123"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="132"/>
         <source>Add sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="144"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="154"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="171"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="181"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="183"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="193"/>
         <source>Set as the active project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2808,43 +2808,43 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="59"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="71"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="70"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="82"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="89"/>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="96"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="101"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="109"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="96"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="109"/>
         <source>Enter a new title for the item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="105"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="120"/>
         <source>Add below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="117"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="132"/>
         <source>Add above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="128"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="143"/>
         <source>Add sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="149"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="164"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3995,17 +3995,17 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/selectionexportwizard.cpp" line="29"/>
+        <location filename="../desktopapp/export/selectionexportwizard.cpp" line="33"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/selectionexportwizard.cpp" line="31"/>
+        <location filename="../desktopapp/export/selectionexportwizard.cpp" line="35"/>
         <source>Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/selectionexportwizard.cpp" line="74"/>
+        <location filename="../desktopapp/export/selectionexportwizard.cpp" line="78"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>

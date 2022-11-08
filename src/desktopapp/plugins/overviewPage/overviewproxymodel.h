@@ -17,6 +17,8 @@ public:
 
     int projectId() const;
     void setProjectId(int newProjectId);
+    int columnCount(const QModelIndex &parent) const override;
+    Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     QModelIndex getModelIndex(int projectId, int treeItemId) const;
 private:
@@ -29,9 +31,7 @@ protected:
 private:
     int m_projectId;
 
-    // QAbstractItemModel interface
-public:
-    int columnCount(const QModelIndex &parent) const override;
+
 };
 
 #endif // OVERVIEWPROXYMODEL_H

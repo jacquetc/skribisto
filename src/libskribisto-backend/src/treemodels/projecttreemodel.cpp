@@ -66,7 +66,7 @@ QModelIndex ProjectTreeModel::index(int row, int column, const QModelIndex &pare
 {
     if (!hasIndex(row, column, parent)) return QModelIndex();
 
-    if (column != 0) return QModelIndex();
+    //if (column != 0) return QModelIndex();
 
     ProjectTreeItem *parentItem;
     if (!parent.isValid()) parentItem = m_rootItem;
@@ -134,7 +134,7 @@ int ProjectTreeModel::columnCount(const QModelIndex &parent) const
     //    if (!parent.isValid())
     //        return 0;
 
-    return 1;
+    return 4;
 }
 
 QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
@@ -152,10 +152,10 @@ QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
     ProjectTreeItem *item = static_cast<ProjectTreeItem *>(index.internalPointer());
 
 
-    if ((role == Qt::DisplayRole) && item->isProjectItem()) {
+    if ((role == Qt::DisplayRole) && item->isProjectItem() && index.column() == 0) {
         return item->data(ProjectTreeItem::Roles::ProjectNameRole);
     }
-    else if (role == Qt::DisplayRole) {
+    else if (role == Qt::DisplayRole && index.column() == 0) {
         return item->data(ProjectTreeItem::Roles::TitleRole);
     }
 
@@ -280,7 +280,7 @@ QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
         return item->data(role);
     }
 
-    if (role == Qt::DecorationRole) {
+    if (role == Qt::DecorationRole && index.column() == 0) {
         auto *plugin = m_typeWithPlugin.value(item->data(ProjectTreeItem::Roles::TypeRole).toString(), nullptr);
         if(plugin){
             return QIcon(plugin->pageTypeIconUrl(item->data(ProjectTreeItem::Roles::ProjectIdRole).toInt(), item->data(ProjectTreeItem::Roles::TreeItemIdRole).toInt()));
@@ -1269,7 +1269,8 @@ TrashItemCommand::TrashItemCommand(int projectId, int treeItemId, bool newTrashS
     m_originalParentId(-1),
     m_originalRow(-1),
     m_forcedOriginalParentId(forcedOriginalParentId),
-    m_forcedOriginalRow(forcedOriginalRow)
+    m_forcedOriginalRow(forcedOriginalRow),
+    m_result(true)
 {
 
 }
@@ -1381,7 +1382,7 @@ void TrashItemCommand::redo()
 
 }
 
-SKRResult TrashItemCommand::result()
+bool TrashItemCommand::result() const
 {
     return m_result;
 }

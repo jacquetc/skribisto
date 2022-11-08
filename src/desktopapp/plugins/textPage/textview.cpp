@@ -86,7 +86,7 @@ TextView::~TextView()
 {
 
     if(m_wasModified){
-        saveContent();
+        saveContent(true);
     }
 
     delete centralWidgetUi;
@@ -137,7 +137,7 @@ void TextView::initialize()
     m_saveTimer = new QTimer(this);
     m_saveTimer->setSingleShot(true);
     m_saveTimer->setInterval(200);
-    connect(m_saveTimer, &QTimer::timeout, this, &TextView::saveContent);
+    connect(m_saveTimer, &QTimer::timeout, this, [this](){ saveContent();});
     QTimer::singleShot(0, this, [this](){ connectSaveConnection();});
 
 
@@ -184,12 +184,16 @@ void TextView::initialize()
 
 }
 
-void TextView::saveContent()
+void TextView::saveContent(bool sameThread)
 {
 
     QString markdown = static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document())->toSkribistoMarkdown();
 
     projectTreeCommands->setContent(this->projectId(), this->treeItemId(), markdown, m_isSecondaryContent);
+
+    if(!m_isSecondaryContent){
+        projectTreeCommands->updateCharAndWordCount(this->projectId(), this->treeItemId(), "TEXT", sameThread);
+    }
 
     m_wasModified = false;
 

@@ -86,12 +86,12 @@ SKRResult::SKRResult(SKRResult::Status status, const QString& className, const Q
 
 bool SKRResult::operator!() const
 {
-    return isSuccess();
+    return !isSuccess();
 }
 
 SKRResult::operator bool() const
 {
-    return !isSuccess();
+    return isSuccess();
 }
 
 SKRResult& SKRResult::operator=(const SKRResult& iResult)
