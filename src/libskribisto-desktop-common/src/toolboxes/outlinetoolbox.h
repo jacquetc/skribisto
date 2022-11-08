@@ -3,6 +3,7 @@
 
 #include <QWheelEvent>
 #include <QWidget>
+#include <QIcon>
 #include "toolbox.h"
 #include "skribisto_desktop_common_global.h"
 

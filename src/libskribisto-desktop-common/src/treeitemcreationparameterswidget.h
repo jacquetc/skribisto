@@ -3,6 +3,7 @@
 
 #include "skribisto_desktop_common_global.h"
 #include <QWidget>
+#include <QVariantMap>
 
 class SKRDESKTOPCOMMONEXPORT TreeItemCreationParametersWidget : public QWidget {
   Q_OBJECT

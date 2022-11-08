@@ -30,9 +30,10 @@
 #include <QSqlQuery>
 #include <QtSql/QSqlDatabase>
 #include "skrresult.h"
+#include "skribisto_data_global.h"
 
 
-class PLMSqlQueries : public QObject {
+class EXPORT PLMSqlQueries : public QObject {
     Q_OBJECT
 
 public:

@@ -7,6 +7,7 @@
 #include <QPointer>
 #include <QTextDocument>
 #include <QString>
+#include "skribisto_desktop_common_global.h"
 #define textBridge TextBridge::instance()
 
 class TextBridge;
@@ -46,7 +47,7 @@ Q_DECLARE_METATYPE(SyncDocument)
 
 
 
-class TextBridge : public QObject {
+class SKRDESKTOPCOMMONEXPORT TextBridge : public QObject {
   Q_OBJECT
 
 public:

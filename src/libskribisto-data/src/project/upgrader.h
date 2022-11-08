@@ -25,8 +25,9 @@
 #include <QSqlDatabase>
 
 #include "skrresult.h"
+#include "skribisto_data_global.h"
 
-class Upgrader : public QObject {
+class EXPORT Upgrader : public QObject {
   Q_OBJECT
 
 public:

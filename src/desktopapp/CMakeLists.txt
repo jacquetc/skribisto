@@ -80,10 +80,16 @@ endif(${SKR_DEV})
 
 # ---------------------------------
 target_link_libraries(SkribistoDesktop
-    PRIVATE skribisto-data skribisto-backend skribisto-common skribisto-desktop-common Qt6::Gui Qt6::Core Qt6::Network Qt6::Widgets Qt6::Svg
+    PRIVATE skribisto-data skribisto-backend skribisto-common skribisto-desktop-common
+    skribisto-exporter skribisto-importer
+    Qt6::Gui Qt6::Core Qt6::Network Qt6::Widgets Qt6::Svg
     Qt6::PrintSupport
 )
 
+add_dependencies(SkribistoDesktop skribisto-data)
+add_dependencies(SkribistoDesktop skribisto-common)
+add_dependencies(SkribistoDesktop skribisto-desktop-common)
+add_dependencies(SkribistoDesktop skribisto-backend)
 # ---------------------------------
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-backend/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")

@@ -2,12 +2,13 @@
 #define TAGDIALOG_H
 
 #include <QDialog>
+#include "skribisto_desktop_common_global.h"
 
 namespace Ui {
 class TagDialog;
 }
 
-class TagDialog : public QDialog
+class SKRDESKTOPCOMMONEXPORT TagDialog : public QDialog
 {
     Q_OBJECT
 

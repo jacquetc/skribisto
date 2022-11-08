@@ -2541,7 +2541,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/toolboxes/outlinetoolbox.h" line="24"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/outlinetoolbox.h" line="25"/>
         <source>Outline</source>
         <translation type="unfinished"></translation>
     </message>

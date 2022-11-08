@@ -2,8 +2,9 @@
 #define PROJECTTREESELECTPROXYMODEL_H
 
 #include <QSortFilterProxyModel>
+#include "skribisto_backend_global.h"
 
-class ProjectTreeSelectProxyModel : public QSortFilterProxyModel
+class SKRBACKENDEXPORT ProjectTreeSelectProxyModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
