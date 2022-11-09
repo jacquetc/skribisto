@@ -96,7 +96,7 @@ QStringList MarkdownTextDocument::createBlockListFromMarkdown(const QString &mar
             hadLastLineEmpty = true;
             continue;
         }
-        else if (!hadLastLineEmpty){ // line is not empty
+        else if (!line.isEmpty() && hadLastLineEmpty){ // line is not empty
             hadLastLineEmpty = false;
         }
 

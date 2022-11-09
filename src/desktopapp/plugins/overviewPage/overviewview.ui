@@ -40,6 +40,9 @@
      <property name="selectionBehavior">
       <enum>QAbstractItemView::SelectRows</enum>
      </property>
+     <property name="verticalScrollMode">
+      <enum>QAbstractItemView::ScrollPerPixel</enum>
+     </property>
      <property name="autoExpandDelay">
       <number>1000</number>
      </property>
@@ -62,13 +65,16 @@
       <bool>true</bool>
      </attribute>
      <attribute name="headerCascadingSectionResizes">
-      <bool>true</bool>
+      <bool>false</bool>
      </attribute>
      <attribute name="headerMinimumSectionSize">
       <number>50</number>
      </attribute>
      <attribute name="headerDefaultSectionSize">
       <number>150</number>
+     </attribute>
+     <attribute name="headerStretchLastSection">
+      <bool>true</bool>
      </attribute>
     </widget>
    </item>

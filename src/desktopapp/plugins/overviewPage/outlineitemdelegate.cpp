@@ -19,9 +19,14 @@ void OutlineItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
 
     int projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
     int treeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+    QString content = skrdata->treeHub()->getSecondaryContent(projectId, treeItemId);
+
+    if(content.isEmpty()){
+        return QStyledItemDelegate::paint(painter, option, index);
+    }
 
     MarkdownTextDocument document;
-    document.setSkribistoMarkdown(skrdata->treeHub()->getSecondaryContent(projectId, treeItemId));
+    document.setSkribistoMarkdown(content);
     TextEdit textEdit;
     textEdit.setDocument(&document);
     textEdit.document()->setDocumentMargin(0);
@@ -51,13 +56,18 @@ void OutlineItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
 
 QSize OutlineItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    //qDebug() << "ee" << option.rect;
+    int projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
+    int treeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
 
-        int projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-        int treeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+
+        QString content = skrdata->treeHub()->getSecondaryContent(projectId, treeItemId);
+
+        if(content.isEmpty()){
+            return QStyledItemDelegate::sizeHint(option,index);
+        }
 
         MarkdownTextDocument document;
-        document.setSkribistoMarkdown(skrdata->treeHub()->getSecondaryContent(projectId, treeItemId));
+        document.setSkribistoMarkdown(content);
         TextEdit textEdit;
         textEdit.setDocument(&document);
         textEdit.document()->setDocumentMargin(0);
@@ -68,7 +78,6 @@ QSize OutlineItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QM
 
         return document.size().toSize();
 
-    return QStyledItemDelegate::sizeHint(option,index);
 }
 
 //---------------------------------------------------------------------------
