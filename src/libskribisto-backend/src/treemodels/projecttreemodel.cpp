@@ -160,15 +160,15 @@ QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
     }
 
 
-    if (role == ProjectTreeItem::Roles::ProjectNameRole) {
+    if (role == ProjectTreeItem::Roles::ProjectNameRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::TitleRole) {
+    if (role == ProjectTreeItem::Roles::TitleRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::InternalTitleRole) {
+    if (role == ProjectTreeItem::Roles::InternalTitleRole && index.column() == 0) {
         return item->data(role);
     }
 
@@ -180,75 +180,75 @@ QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::LabelRole) {
+    if (role == ProjectTreeItem::Roles::LabelRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::IndentRole) {
+    if (role == ProjectTreeItem::Roles::IndentRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::SortOrderRole) {
+    if (role == ProjectTreeItem::Roles::SortOrderRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::TypeRole) {
+    if (role == ProjectTreeItem::Roles::TypeRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::CreationDateRole) {
+    if (role == ProjectTreeItem::Roles::CreationDateRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::UpdateDateRole) {
+    if (role == ProjectTreeItem::Roles::UpdateDateRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::ContentDateRole) {
+    if (role == ProjectTreeItem::Roles::ContentDateRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::CharCountRole) {
+    if (role == ProjectTreeItem::Roles::CharCountRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::WordCountRole) {
+    if (role == ProjectTreeItem::Roles::WordCountRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::CharCountGoalRole) {
+    if (role == ProjectTreeItem::Roles::CharCountGoalRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::WordCountGoalRole) {
+    if (role == ProjectTreeItem::Roles::WordCountGoalRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::CharCountWithChildrenRole) {
+    if (role == ProjectTreeItem::Roles::CharCountWithChildrenRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::WordCountWithChildrenRole) {
+    if (role == ProjectTreeItem::Roles::WordCountWithChildrenRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::TrashedRole) {
+    if (role == ProjectTreeItem::Roles::TrashedRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::ProjectIsBackupRole) {
+    if (role == ProjectTreeItem::Roles::ProjectIsBackupRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::ProjectIsActiveRole) {
+    if (role == ProjectTreeItem::Roles::ProjectIsActiveRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::IsRenamableRole) {
+    if (role == ProjectTreeItem::Roles::IsRenamableRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::IsMovableRole) {
+    if (role == ProjectTreeItem::Roles::IsMovableRole && index.column() == 0) {
         return item->data(role);
     }
 
@@ -260,15 +260,15 @@ QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::IsTrashableRole) {
+    if (role == ProjectTreeItem::Roles::IsTrashableRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::IsOpenableRole) {
+    if (role == ProjectTreeItem::Roles::IsOpenableRole && index.column() == 0) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::IsCopyableRole) {
+    if (role == ProjectTreeItem::Roles::IsCopyableRole && index.column() == 0) {
         return item->data(role);
     }
 
@@ -276,7 +276,7 @@ QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::CutCopyRole) {
+    if (role == ProjectTreeItem::Roles::CutCopyRole && index.column() == 0) {
         return item->data(role);
     }
 

@@ -9,7 +9,7 @@ OverviewProxyModel::OverviewProxyModel(QObject *parent)
 int OverviewProxyModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 2;
+    return 3;
 }
 
 QVariant OverviewProxyModel::data(const QModelIndex &index, int role) const
