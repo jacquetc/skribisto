@@ -21,7 +21,6 @@
 ***************************************************************************/
 #include "overviewpage.h"
 #include "overviewview.h"
-#include "skrdata.h"
 
 OverviewPage::OverviewPage(QObject *parent) : QObject(parent)
 {}

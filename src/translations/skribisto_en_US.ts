@@ -2592,6 +2592,24 @@
     </message>
 </context>
 <context>
+    <name>OverviewProxyModel</name>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewproxymodel.cpp" line="21"/>
+        <source>Title</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewproxymodel.cpp" line="24"/>
+        <source>Outline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/overviewPage/overviewproxymodel.cpp" line="27"/>
+        <source>Word count</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>OverviewToolbox</name>
     <message>
         <location filename="../mobileapp/plugins/overviewPage/OverviewToolbox.qml" line="9"/>

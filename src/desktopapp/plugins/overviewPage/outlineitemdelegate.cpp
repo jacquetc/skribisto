@@ -5,6 +5,8 @@
 #include "text/textbridge.h"
 
 #include <QPainter>
+#include <QTreeView>
+#include <QHeaderView>
 #include <skrdata.h>
 
 OutlineItemDelegate::OutlineItemDelegate(QObject *parent)
@@ -16,19 +18,29 @@ OutlineItemDelegate::OutlineItemDelegate(QObject *parent)
 
 void OutlineItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+    //return QStyledItemDelegate::paint(painter, option, index);
+//    QElapsedTimer timer;
+//    timer.start();
+//    qDebug() << "!" << timer.elapsed();
 
-    int projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-    int treeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
-    QString content = skrdata->treeHub()->getSecondaryContent(projectId, treeItemId);
+
+    //QString content = skrdata->treeHub()->getSecondaryContent(projectId, treeItemId);
+//    qDebug() << "(!)(" << timer.elapsed();
+    QString content = index.data(ProjectTreeItem::SecondaryContentRole).toString();
+//    qDebug() << "(!)((" << timer.elapsed();
 
     if(content.isEmpty()){
         return QStyledItemDelegate::paint(painter, option, index);
     }
+//    qDebug() << "a" << timer.elapsed();
 
     MarkdownTextDocument document;
     document.setSkribistoMarkdown(content);
+//    qDebug() << "b" <<timer.elapsed();
+
     TextEdit textEdit;
     textEdit.setDocument(&document);
+//    qDebug() << "bb" <<timer.elapsed();
     textEdit.document()->setDocumentMargin(0);
     textEdit.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     textEdit.setFrameShape(QFrame::Shape::NoFrame);
@@ -36,18 +48,19 @@ void OutlineItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
     textEdit.setLineWidth(0);
     //initStyleOption(&option, index);
 
+//    qDebug() << "c" <<timer.elapsed();
 
     painter->save();
     //qDebug() << option.rect;
 
     option.widget->style()->drawControl(QStyle::CE_ItemViewItem, &option, painter);
     textEdit.setGeometry(option.rect);
-
     painter->translate(option.rect.x(), option.rect.y());
     textEdit.render(painter);
     painter->restore();
     //QStyledItemDelegate::paint(painter, option, index);
 
+//    qDebug() << "d" <<timer.elapsed();
 
 
 }
@@ -56,27 +69,30 @@ void OutlineItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
 
 QSize OutlineItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    int projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-    int treeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+//    return QStyledItemDelegate::sizeHint(option,index);
 
 
-        QString content = skrdata->treeHub()->getSecondaryContent(projectId, treeItemId);
+    QString content = index.data(ProjectTreeItem::SecondaryContentRole).toString();
 
-        if(content.isEmpty()){
-            return QStyledItemDelegate::sizeHint(option,index);
-        }
+    if(content.isEmpty()){
+        return QStyledItemDelegate::sizeHint(option,index);
+    }
 
-        MarkdownTextDocument document;
-        document.setSkribistoMarkdown(content);
-        TextEdit textEdit;
-        textEdit.setDocument(&document);
-        textEdit.document()->setDocumentMargin(0);
-        textEdit.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        textEdit.setFrameShape(QFrame::Shape::NoFrame);
-        textEdit.setFrameShadow(QFrame::Shadow::Plain);
-        textEdit.setLineWidth(0);
+    QTreeView *treeView = static_cast<QTreeView *>(this->parent());
+    int sectionWidth = treeView->header()->sectionSize(1);
 
-        return document.size().toSize();
+    MarkdownTextDocument document;
+    document.setSkribistoMarkdown(content);
+    TextEdit textEdit;
+    textEdit.setFixedWidth(sectionWidth);
+    textEdit.setDocument(&document);
+    textEdit.document()->setDocumentMargin(0);
+    textEdit.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    textEdit.setFrameShape(QFrame::Shape::NoFrame);
+    textEdit.setFrameShadow(QFrame::Shadow::Plain);
+    textEdit.setLineWidth(0);
+
+    return document.size().toSize();
 
 }
 
@@ -107,7 +123,7 @@ void OutlineItemDelegate::setEditorData(QWidget *editor, const QModelIndex &inde
     TextEdit * textEdit = qobject_cast<TextEdit*>(editor);
 
     MarkdownTextDocument *document = new MarkdownTextDocument(editor);
-    document->setSkribistoMarkdown(skrdata->treeHub()->getSecondaryContent(projectId, treeItemId));
+    document->setSkribistoMarkdown(index.data(ProjectTreeItem::SecondaryContentRole).toString());
     textEdit->setDocument(document);
     textEdit->document()->setDocumentMargin(0);
 

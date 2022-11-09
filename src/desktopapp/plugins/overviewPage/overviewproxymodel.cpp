@@ -12,6 +12,33 @@ int OverviewProxyModel::columnCount(const QModelIndex &parent) const
     return 3;
 }
 
+
+QVariant OverviewProxyModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if(role == Qt::ItemDataRole::DisplayRole && orientation == Qt::Orientation::Horizontal){
+    switch(section){
+    case 0:
+        return tr("Title");
+        break;
+    case 1:
+        return tr("Outline");
+        break;
+    case 2:
+        return tr("Word count");
+        break;
+//    case 3:
+//        return tr("Title");
+//        break;
+    default:
+        return QVariant();
+        break;
+    }
+}
+
+    return QVariant();
+
+}
+
 QVariant OverviewProxyModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
@@ -26,8 +53,24 @@ QVariant OverviewProxyModel::data(const QModelIndex &index, int role) const
 
 
 
-    if (role == Qt::DisplayRole && col == 2) {
-        return item->data(ProjectTreeItem::Roles::WordCountRole);
+    if (role == ProjectTreeItem::Roles::SecondaryContentRole && col == 1) {
+        return item->data(role);
+    }
+
+    if(col == 2){
+        if (role == Qt::DisplayRole) {
+            if(item->data(ProjectTreeItem::Roles::CanAddChildTreeItemRole).toBool()){
+                return item->data(ProjectTreeItem::Roles::WordCountWithChildrenRole);
+            }
+            else {
+                return item->data(ProjectTreeItem::Roles::WordCountRole);
+            }
+        }
+
+        if (role == Qt::ItemDataRole::TextAlignmentRole) {
+            return Qt::AlignmentFlag::AlignCenter;
+        }
+
     }
 
 
@@ -116,3 +159,5 @@ Qt::ItemFlags OverviewProxyModel::flags(const QModelIndex &index) const
 
     return defaultFlags;
 }
+
+

@@ -125,6 +125,10 @@ QVariant ProjectTreeItem::data(int role)
             m_data.insert(role, m_treeHub->getSortOrder(projectId, treeItemId));
             break;
 
+        case Roles::SecondaryContentRole:
+            m_data.insert(role, m_treeHub->getSecondaryContent(projectId, treeItemId));
+            break;
+
         case Roles::TrashedRole:
             m_data.insert(role, m_treeHub->getTrashed(projectId, treeItemId));
             break;

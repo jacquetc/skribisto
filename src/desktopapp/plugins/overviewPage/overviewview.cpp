@@ -35,7 +35,7 @@ OverviewView::OverviewView(QWidget *parent) :
 
     centralWidgetUi->treeView->setModel(m_overviewProxyModel);
 
-    OutlineItemDelegate *outlineItemDelegate = new OutlineItemDelegate(this);
+    OutlineItemDelegate *outlineItemDelegate = new OutlineItemDelegate(centralWidgetUi->treeView);
     centralWidgetUi->treeView->setItemDelegateForColumn(1, outlineItemDelegate);
 
     connect(outlineItemDelegate, &OutlineItemDelegate::editFinished,  this, [this](const QModelIndex &index){
@@ -49,8 +49,8 @@ OverviewView::OverviewView(QWidget *parent) :
 
     //expand management
 
-    QObject::connect(centralWidgetUi->treeView, &QTreeView::expanded, this, &OverviewView::saveExpandStates);
-    QObject::connect(centralWidgetUi->treeView, &QTreeView::collapsed, this, &OverviewView::saveExpandStates);
+    //QObject::connect(centralWidgetUi->treeView, &QTreeView::expanded, this, &OverviewView::saveExpandStates, Qt::QueuedConnection);
+    //QObject::connect(centralWidgetUi->treeView, &QTreeView::collapsed, this, &OverviewView::saveExpandStates, Qt::QueuedConnection);
     QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &OverviewView::expandProjectItems);
 
     QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &OverviewView::restoreExpandStates);
@@ -235,7 +235,7 @@ OverviewView::OverviewView(QWidget *parent) :
 }
 
 OverviewView::~OverviewView()
-{
+{    
     delete centralWidgetUi;
 }
 

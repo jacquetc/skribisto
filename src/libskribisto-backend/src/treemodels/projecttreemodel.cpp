@@ -346,6 +346,10 @@ bool ProjectTreeModel::setData(const QModelIndex &index, const QVariant &value, 
 
             break;
 
+        case ProjectTreeItem::Roles::SecondaryContentRole:
+            result = m_treeHub->setSecondaryContent(projectId, treeItemId, value.toString());
+            break;
+
         case ProjectTreeItem::Roles::TrashedRole:
             result = m_treeHub->setTrashedWithChildren(projectId,
                                                        treeItemId,
@@ -462,6 +466,7 @@ QHash<int, QByteArray>ProjectTreeModel::roleNames() const {
     roles[ProjectTreeItem::Roles::IndentRole]                = "indent";
     roles[ProjectTreeItem::Roles::SortOrderRole]             = "sortOrder";
     roles[ProjectTreeItem::Roles::TypeRole]                  = "type";
+    roles[ProjectTreeItem::Roles::SecondaryContentRole]      = "secondaryContent";
     roles[ProjectTreeItem::Roles::CreationDateRole]          = "creationDate";
     roles[ProjectTreeItem::Roles::UpdateDateRole]            = "updateDate";
     roles[ProjectTreeItem::Roles::ContentDateRole]           = "contentDate";
@@ -641,6 +646,15 @@ void ProjectTreeModel::connectToSKRDataSignals()
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
                                        ProjectTreeItem::Roles::UpdateDateRole);
+    });
+
+    m_dataConnectionsList << this->connect(m_treeHub,
+                                           &SKRTreeHub::secondaryContentChanged, this,
+                                           [this](int projectId, int treeItemId,
+                                           const QString &newContent) {
+        Q_UNUSED(newContent)
+        this->exploitSignalFromSKRData(projectId, treeItemId,
+                                       ProjectTreeItem::Roles::SecondaryContentRole);
     });
 
     m_dataConnectionsList << this->connect(m_treeHub,
