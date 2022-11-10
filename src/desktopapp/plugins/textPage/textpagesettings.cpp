@@ -73,6 +73,10 @@ void TextPageSettings::accept()
     settings.setValue("textPage/paragraphFirstLineIndent", paragraphFirstLineIndent);
     newValuesHash.insert("textPage/paragraphFirstLineIndent", paragraphFirstLineIndent);
 
+    bool alwaysCenterTheCursor = centralWidgetUi->alwaysCenterTheCursorCheckBox->isChecked();
+    settings.setValue("textPage/alwaysCenterTheCursor", alwaysCenterTheCursor);
+    newValuesHash.insert("textPage/alwaysCenterTheCursor", alwaysCenterTheCursor);
+
 
     QHash<QString, QVariant> changedValuesHash;
     QHash<QString, QVariant>::const_iterator i = newValuesHash.constBegin();
@@ -116,6 +120,10 @@ void TextPageSettings::reset()
     int paragraphFirstLineIndent = settings.value("textPage/paragraphFirstLineIndent",  12).toInt();
     centralWidgetUi->firstLineIndentSpinBox->setValue(paragraphFirstLineIndent);
     m_defaultValuesHash.insert("textPage/paragraphFirstLineIndent", paragraphFirstLineIndent);
+
+    bool alwaysCenterTheCursor = settings.value("textPage/alwaysCenterTheCursor", false).toBool();
+    centralWidgetUi->alwaysCenterTheCursorCheckBox->setChecked(alwaysCenterTheCursor);
+    m_defaultValuesHash.insert("textPage/alwaysCenterTheCursor", alwaysCenterTheCursor);
 
     updateSampleTextFormat();
 }

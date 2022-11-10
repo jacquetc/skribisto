@@ -4677,48 +4677,58 @@ Please select the destination folder.</source>
 <context>
     <name>TextEdit</name>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="19"/>
         <source>Italic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="16"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="21"/>
         <source>Ctrl+I</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="19"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="24"/>
         <source>Bold</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="21"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="26"/>
         <source>Ctrl+B</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="24"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="29"/>
         <source>Strikethrough</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="26"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="31"/>
         <source>Ctrl+T</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="30"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="35"/>
         <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="32"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="37"/>
         <source>Ctrl+U</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="35"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="40"/>
         <source>List</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="46"/>
+        <source>Center the cursor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="48"/>
+        <source>Ctrl+Shift+C</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4843,6 +4853,11 @@ Please select the destination folder.</source>
     <message>
         <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="54"/>
         <source>Paragraph top margin:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="82"/>
+        <source>Always center the cursor:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

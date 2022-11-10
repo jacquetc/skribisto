@@ -3,10 +3,15 @@
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTextList>
+#include <QScrollBar>
 #include <QUuid>
 
-TextEdit::TextEdit(QWidget *parent)
+TextEdit::TextEdit(QWidget *parent) :
+    m_mouse_button_down(false),
+    m_always_center_cursor(false)
 {
+    this->setMouseTracking(true);
+
     m_uuid = QUuid::createUuid().toString();
 
     connect(this, &QTextEdit::cursorPositionChanged, this, &TextEdit::updateFontActions);
@@ -37,6 +42,21 @@ TextEdit::TextEdit(QWidget *parent)
     m_bulletListAction->setShortcut(QKeySequence(tr("")));
     m_bulletListAction->setCheckable(true);
 
+
+    m_centerCursorAction = new QAction(QIcon(":/icons/backup/format-align-vertical-center.svg"), tr("Center the cursor"), this);
+    m_centerCursorAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    m_centerCursorAction->setShortcut(QKeySequence(tr("Ctrl+Shift+C")));
+    m_centerCursorAction->setCheckable(true);
+
+        // center cursor:
+
+    connect(this, &TextEdit::cursorPositionChanged, this, [this](){
+        if (!m_mouse_button_down) {
+            this->centerCursor();
+        }
+    });
+
+    connect(this->verticalScrollBar(), &QScrollBar::rangeChanged, this, &TextEdit::adaptScollBarRange);
 }
 
 QString TextEdit::uuid()
@@ -143,6 +163,15 @@ void TextEdit::connectActions()
             }
 
     });
+
+
+
+    m_actionConnectionsList << QObject::connect(m_centerCursorAction, &QAction::toggled, this, [this](bool checked){
+        m_always_center_cursor = checked;
+        centerCursor();
+        adaptScollBarRange(this->verticalScrollBar()->minimum(), this->verticalScrollBar()->maximum());
+
+    });
 }
 
 
@@ -197,4 +226,62 @@ QAction *TextEdit::strikeAction() const
 QAction *TextEdit::italicAction() const
 {
     return m_italicAction;
+}
+
+QAction *TextEdit::centerCursorAction() const
+{
+    return m_centerCursorAction;
+}
+
+
+//---------------------------------------------------------
+
+void TextEdit::centerCursor(bool force)
+{
+    const QRect cursor = this->cursorRect();
+    const QRect viewport = this->viewport()->rect();
+    if (force || m_always_center_cursor || (cursor.bottom() >= viewport.bottom()) || (cursor.top() <= viewport.top())) {
+        const QPoint offset = viewport.center() - cursor.center();
+        QScrollBar* scrollbar = this->verticalScrollBar();
+        this->verticalScrollBar()->setValue(scrollbar->value() - offset.y());
+    }
+}
+
+//---------------------------------------------------------
+
+
+void TextEdit::adaptScollBarRange(int min, int max)
+{
+
+    this->verticalScrollBar()->blockSignals(true);
+    this->verticalScrollBar()->setMaximum(m_always_center_cursor? max + this->viewport()->height() : max);
+    this->verticalScrollBar()->blockSignals(false);
+}
+
+//---------------------------------------------------------
+
+
+
+void TextEdit::mousePressEvent(QMouseEvent *event)
+{
+    m_mouse_button_down = true;
+    QTextEdit::mousePressEvent(event);
+}
+
+void TextEdit::mouseReleaseEvent(QMouseEvent *event)
+{
+    m_mouse_button_down = false;
+    QTextEdit::mouseReleaseEvent(event);
+}
+
+void TextEdit::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    m_mouse_button_down = true;
+    QTextEdit::mouseDoubleClickEvent(event);
+}
+
+void TextEdit::focusOutEvent(QFocusEvent *event)
+{
+    m_mouse_button_down = false;
+    QTextEdit::focusOutEvent(event);
 }

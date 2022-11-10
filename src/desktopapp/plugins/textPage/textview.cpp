@@ -1,4 +1,5 @@
 #include "textview.h"
+#include "desktopapplication.h"
 #include "markdowntextdocument.h"
 #include "projecttreecommands.h"
 #include "skrusersettings.h"
@@ -26,6 +27,7 @@ TextView::TextView(QWidget *parent) :
     QAction *showFontToolBar = new QAction(QIcon(":/icons/backup/format-text-italic.svg"), "Show font toolbar",this);
     showFontToolBar->setCheckable(true);
     toolBar->addAction(showFontToolBar);
+    toolBar->addAction(centralWidgetUi->textEdit->centerCursorAction());
 
     QToolBar *fontToolBar = new QToolBar(this);
     fontToolBar->hide();
@@ -52,14 +54,18 @@ TextView::TextView(QWidget *parent) :
 
 
     // link scrollbar to textedit
-    centralWidgetUi->textEdit->setVerticalScrollBar(centralWidgetUi->verticalScrollBar);
-    centralWidgetUi->horizontalLayout->addWidget(centralWidgetUi->verticalScrollBar);
+
+    centralWidgetUi->horizontalLayout->addWidget(centralWidgetUi->textEdit->verticalScrollBar());
+    delete centralWidgetUi->verticalScrollBar;
+    centralWidgetUi->verticalScrollBar = centralWidgetUi->textEdit->verticalScrollBar();
     centralWidgetUi->verticalScrollBar->hide();
+
     connect(centralWidgetUi->verticalScrollBar, &QScrollBar::rangeChanged, this, [&](int min, int max){
-        centralWidgetUi->verticalScrollBar->setVisible(min < max);
+        centralWidgetUi->verticalScrollBar->setVisible(min < max + centralWidgetUi->textEdit->viewport()->height() / 2);
     });
-    //centralWidgetUi->horizontalLayout->set  (centralWidgetUi->verticalScrollBar);
-    //connect(centralWidgetUi->textEdit.)
+
+    //
+
     centralWidgetUi->textEdit->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
 
     centralWidgetUi->horizontalLayout->setStretchFactor(centralWidgetUi->horizontalLayout_2, 1);
@@ -131,6 +137,7 @@ void TextView::initialize()
                 document);
 
 
+    //centralWidgetUi->textEdit->adaptScollBarRange(centralWidgetUi->verticalScrollBar->minimum(), centralWidgetUi->verticalScrollBar->maximum());
 
     // create save timer
 
@@ -176,19 +183,36 @@ void TextView::initialize()
 
 
     QTimer::singleShot(0, this, [this](){
+
+        QSettings settings;
+        // restore cursor always centered:
+        bool textCursorCentered = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textCursorAlwaysCentered", QString::number(this->treeItemId()), 0).toBool();
+        bool textCursorAlwaysCentered = settings.value("textPage/alwaysCenterTheCursor", false).toBool();
+        if(textCursorCentered || textCursorAlwaysCentered){
+            centralWidgetUi->textEdit->centerCursorAction()->setChecked(true);
+        }
+
+        this->connect(centralWidgetUi->textEdit->centerCursorAction(), &QAction::triggered, this, [this](bool checked){
+            QSettings settings;
+            settings.setValue("textPage/textCursorAlwaysCentered", checked);
+        });
+
+
         int scrollBarValue = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textScrollBarValue", QString::number(this->treeItemId()), 0).toInt();
         centralWidgetUi->verticalScrollBar->setValue(scrollBarValue);
        // centralWidgetUi->textEdit->ensureCursorVisible();
 
+        // restore cursor position
+
+        int cursorPosition = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textCursorPosition", QString::number(this->treeItemId()), 0).toInt();
+
+        QTextCursor cursor(centralWidgetUi->textEdit->document());
+        cursor.setPosition(cursorPosition);
+        centralWidgetUi->textEdit->setTextCursor(cursor);
+
     });
 
-    // restore cursor position
 
-    int cursorPosition = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textCursorPosition", QString::number(this->treeItemId()), 0).toInt();
-
-    QTextCursor cursor(centralWidgetUi->textEdit->document());
-    cursor.setPosition(cursorPosition);
-    centralWidgetUi->textEdit->setTextCursor(cursor);
 
 }
 
@@ -283,7 +307,9 @@ void TextView::wheelEvent(QWheelEvent *event)
         QSettings settings;
         settings.setValue("textPage/textFontPointSize", centralWidgetUi->textEdit->font().pointSize());
 
-
+        QHash<QString, QVariant> newSettings;
+        newSettings.insert("textPage/textFontPointSize", centralWidgetUi->textEdit->font().pointSize());
+        emit static_cast<DesktopApplication *>(qApp)->settingsChanged(newSettings);
 
         event->accept();
     }
@@ -327,4 +353,9 @@ void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
         textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
         textCursor.mergeBlockFormat(blockFormat);
     }
+
+    if(newSettings.contains("textPage/alwaysCenterTheCursor")){
+        centralWidgetUi->textEdit->centerCursorAction()->setChecked(newSettings.value("textPage/alwaysCenterTheCursor").toBool());
+    }
+
 }
