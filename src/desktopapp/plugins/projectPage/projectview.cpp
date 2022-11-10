@@ -1,5 +1,6 @@
 #include "projectview.h"
 #include "projectcommands.h"
+#include "text/spellchecker.h"
 #include "toolboxes/outlinetoolbox.h"
 #include "ui_projectview.h"
 #include "skrdata.h"
@@ -24,6 +25,11 @@ ProjectView::ProjectView(QWidget *parent) :
     connect(centralWidgetUi->authorLineEdit, &QLineEdit::editingFinished, this, [this](){
         if(skrdata->projectHub()->getAuthor(this->projectId()) != centralWidgetUi->authorLineEdit->text()){
             projectCommands->setAuthor(this->projectId(), centralWidgetUi->authorLineEdit->text());
+        }
+    });
+    connect(centralWidgetUi->dictionaryComboBox, &QComboBox::activated, this, [this](int index){
+        if(skrdata->projectHub()->getLangCode(this->projectId()) != centralWidgetUi->dictionaryComboBox->currentData().toString()){
+            projectCommands->setLanguageCode(this->projectId(), centralWidgetUi->dictionaryComboBox->currentData().toString());
         }
     });
 }
@@ -55,6 +61,18 @@ void ProjectView::initialize()
     centralWidgetUi->projectNameLineEdit->setText(skrdata->projectHub()->getProjectName(this->projectId()));
     centralWidgetUi->authorLineEdit->setText(skrdata->projectHub()->getAuthor(this->projectId()));
 
+    // dictionaries:
+
+    QMap<QString, QString> dictAndPathMap = SpellChecker::dictAndPathMap();
+    QMap<QString, QString>::const_iterator i = dictAndPathMap.constBegin();
+     while (i != dictAndPathMap.constEnd()) {
+         QLocale locale(i.key());
+        centralWidgetUi->dictionaryComboBox->addItem(QString("%1 (%2)").arg(locale.nativeLanguageName(),i.key()), i.key());
+         ++i;
+     }
+
+    centralWidgetUi->dictionaryComboBox->setCurrentIndex(centralWidgetUi->dictionaryComboBox->findData(
+                                                             skrdata->projectHub()->getLangCode(this->projectId())));
 }
 
 

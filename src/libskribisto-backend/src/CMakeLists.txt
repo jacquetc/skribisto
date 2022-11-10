@@ -21,6 +21,9 @@ set(backend_SRCS
     tagcommands.h tagcommands.cpp
     skrusersettings.h
     skrusersettings.cpp
+
+    text/highlighter.h text/highlighter.cpp
+    text/spellchecker.h text/spellchecker.cpp
 )
 
 set(backend_MODELS
@@ -57,6 +60,24 @@ include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-exporter/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-importer/src/")
+
+
+
+# --------------HUNSPELL --------------------
+if(${SKR_DEV})
+    set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
+    set(PKG_HUNSPELL_LIBRARY_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/lib)
+    set(PKG_HUNSPELL_INCLUDE_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/include)
+endif(${SKR_DEV})
+
+if(IOS)
+else()
+    find_package(hunspell REQUIRED)
+    target_include_directories(skribisto-backend SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
+
+    target_link_libraries(skribisto-backend PRIVATE ${HUNSPELL_LIBRARY})
+endif(IOS)
+
 
 # ---------------------------------
 add_subdirectory(plugins)

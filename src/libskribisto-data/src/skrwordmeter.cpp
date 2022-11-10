@@ -1,5 +1,5 @@
 #include "skrwordmeter.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 
 #include <QTextDocument>
 

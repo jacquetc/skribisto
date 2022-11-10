@@ -20,7 +20,7 @@
  ***************************************************************************/
 #include "upgrader.h"
 #include "sql/skrsqltools.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 
 #include <QDebug>
 #include <QSqlError>

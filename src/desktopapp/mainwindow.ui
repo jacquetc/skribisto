@@ -82,9 +82,16 @@
     <addaction name="actionAbout"/>
     <addaction name="actionAbout_Qt"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionSpell_checking"/>
+   </widget>
    <addaction name="menuProject"/>
    <addaction name="menuEdit"/>
    <addaction name="menuView"/>
+   <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar">
@@ -336,6 +343,21 @@
   <action name="actionRecent_projects">
    <property name="text">
     <string>Recent projects</string>
+   </property>
+  </action>
+  <action name="actionSpell_checking">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../3rdparty/icons.qrc">
+     <normaloff>:/icons/backup/tools-check-spelling.svg</normaloff>:/icons/backup/tools-check-spelling.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Spell checking</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+F7</string>
    </property>
   </action>
  </widget>

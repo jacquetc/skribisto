@@ -1,6 +1,6 @@
 #include "textview.h"
 #include "desktopapplication.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 #include "projecttreecommands.h"
 #include "skrusersettings.h"
 #include "text/textbridge.h"
@@ -147,11 +147,14 @@ void TextView::initialize()
     connect(m_saveTimer, &QTimer::timeout, this, [this](){ saveContent();});
     QTimer::singleShot(0, this, [this](){ connectSaveConnection();});
 
-
-
-
-
     QSettings settings;
+
+    m_highlighter = new Highlighter(document);
+    m_highlighter->setProjectId(this->projectId());
+    m_highlighter->getSpellChecker()->setLangCode(skrdata->projectHub()->getLangCode(this->projectId()));
+    m_highlighter->setSpellCheckHighlightColor("#FF0000");
+    m_highlighter->getSpellChecker()->activate(settings.value("common/spellChecker", true).toBool());
+
 
     // restore font size and family:
 
@@ -358,4 +361,7 @@ void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
         centralWidgetUi->textEdit->centerCursorAction()->setChecked(newSettings.value("textPage/alwaysCenterTheCursor").toBool());
     }
 
+    if(newSettings.contains("common/spellChecker")){
+        m_highlighter->getSpellChecker()->activate(newSettings.value("common/spellChecker").toBool());
+    }
 }

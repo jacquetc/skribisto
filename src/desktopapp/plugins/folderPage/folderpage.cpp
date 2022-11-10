@@ -20,7 +20,7 @@
 ***************************************************************************/
 #include "folderpage.h"
 #include "folderview.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 #include "skrdata.h"
 
 #include <QTextCursor>

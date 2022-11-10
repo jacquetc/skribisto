@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "view.h"
+#include "text/highlighter.h"
 
 namespace Ui {
 class TextView;
@@ -29,6 +30,7 @@ private:
     QMetaObject::Connection m_saveConnection;
     QTimer *m_saveTimer;
     bool m_wasModified;
+    Highlighter *m_highlighter;
 
     void saveTextState();
     void connectSaveConnection();

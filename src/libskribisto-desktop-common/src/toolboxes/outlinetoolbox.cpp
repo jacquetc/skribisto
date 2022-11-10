@@ -1,5 +1,5 @@
 #include "outlinetoolbox.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 #include "skrdata.h"
 #include "text/textbridge.h"
 #include "ui_outlinetoolbox.h"

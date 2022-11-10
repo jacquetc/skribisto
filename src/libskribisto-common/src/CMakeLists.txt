@@ -14,8 +14,10 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui CONFIG REQUIRED)
 set(common_SRCS
     skribisto_common_global.h
     command.h command.cpp
-    markdowntextdocument.h markdowntextdocument.cpp
+
     skrresult.h skrresult.cpp
+
+    text/markdowntextdocument.h text/markdowntextdocument.cpp
 )
 
 set(common_INTERFACES

@@ -3,6 +3,7 @@
 #include "projectcommands.h"
 #include "skrdata.h"
 #include "ui_newprojectwizard.h"
+#include "text/spellchecker.h"
 
 #include <QActionGroup>
 #include <QButtonGroup>
@@ -75,6 +76,15 @@ void NewProjectWizard::setupInfoPage()
 
     // languages :
 
+    // dictionaries:
+
+    QMap<QString, QString> dictAndPathMap = SpellChecker::dictAndPathMap();
+    QMap<QString, QString>::const_iterator i = dictAndPathMap.constBegin();
+     while (i != dictAndPathMap.constEnd()) {
+         QLocale locale(i.key());
+        ui->languageComboBox->addItem(QString("%1 (%2)").arg(locale.nativeLanguageName(),i.key()), i.key());
+         ++i;
+     }
 
 
 }

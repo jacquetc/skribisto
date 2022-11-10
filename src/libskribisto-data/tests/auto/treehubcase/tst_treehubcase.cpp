@@ -9,7 +9,7 @@
 #include <QtGui/QTextDocument>
 
 
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 #include "skrdata.h"
 #include "skrresult.h"
 #include "importer.h"

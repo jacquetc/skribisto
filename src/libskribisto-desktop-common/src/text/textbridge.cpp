@@ -1,5 +1,5 @@
 #include "textbridge.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 
 #include <QTextCursor>
 #include <QTextDocumentFragment>

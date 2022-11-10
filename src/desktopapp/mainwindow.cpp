@@ -1,4 +1,5 @@
-﻿#include "export/exportdialog.h"
+﻿#include "desktopapplication.h"
+#include "export/exportdialog.h"
 #include "projecttreecommands.h"
 #include "thememanager.h"
 #include "windowmanager.h"
@@ -462,6 +463,25 @@ void MainWindow::setupMenuActions()
 
     //-------------------
 
+    connect(ui->actionSpell_checking, &QAction::triggered, this, [this](bool checked){
+
+        QSettings settings;
+        settings.setValue("common/spellChecker", checked);
+        QVariantHash newSettings;
+        newSettings.insert("common/spellChecker", checked);
+        emit static_cast<DesktopApplication *>(qApp)->settingsChanged(newSettings);
+
+
+    });
+
+    QSettings settings;
+    bool spellChecking = settings.value("common/spellChecker", true).toBool();
+    ui->actionSpell_checking->setChecked(spellChecking);
+
+    QVariantHash newSettings;
+    newSettings.insert("common/spellChecker", spellChecking);
+    emit static_cast<DesktopApplication *>(qApp)->settingsChanged(newSettings);
+    //-------------------
 }
 
 

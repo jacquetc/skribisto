@@ -2,7 +2,7 @@
 #define TEXTBRIDGE_H
 
 #include "QtWidgets/qapplication.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 #include <QObject>
 #include <QPointer>
 #include <QTextDocument>

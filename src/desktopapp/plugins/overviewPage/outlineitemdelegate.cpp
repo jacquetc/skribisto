@@ -1,5 +1,5 @@
 #include "outlineitemdelegate.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 #include "text/textedit.h"
 #include "treemodels/projecttreeitem.h"
 #include "text/textbridge.h"

@@ -1,7 +1,7 @@
 #ifndef MARKDOWNTEXTDOCUMENTPROXY_H
 #define MARKDOWNTEXTDOCUMENTPROXY_H
 
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 
 class MarkdownTextDocumentProxy : public MarkdownTextDocument {
 

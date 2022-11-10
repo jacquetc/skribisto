@@ -19,7 +19,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "textpage.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 #include "skrdata.h"
 #include "textview.h"
 #include "textpagesettings.h"

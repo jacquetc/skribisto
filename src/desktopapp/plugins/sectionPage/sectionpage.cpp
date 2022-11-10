@@ -19,7 +19,7 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 #include "sectionpage.h"
-#include "markdowntextdocument.h"
+#include "text/markdowntextdocument.h"
 #include "skrdata.h"
 #include "creationparameterswidget.h"
 #include "sectionview.h"
