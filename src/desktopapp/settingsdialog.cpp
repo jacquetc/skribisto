@@ -7,6 +7,8 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingsDialog)
 {
+    //TODO: move in another classe Appareance
+
     ui->setupUi(this);
     on_backToolButton_clicked();
 
@@ -27,6 +29,28 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->nightThemeComboBox->addItems(themeManager->darkThemeWithLocationMap().keys());
     ui->nightThemeComboBox->setCurrentText(themeManager->darkTheme());
 
+
+    connect(ui->buttonBox, &QDialogButtonBox::clicked, this, [this](QAbstractButton *button){
+
+        if(ui->buttonBox->buttonRole(button) == QDialogButtonBox::ResetRole){
+            ui->pagesPanel->reset();
+        }
+        if(ui->buttonBox->buttonRole(button) == QDialogButtonBox::AcceptRole){
+            themeManager->setLightTheme(ui->dayThemeComboBox->currentText());
+            themeManager->setDarkTheme(ui->nightThemeComboBox->currentText());
+
+            ui->pagesPanel->accept();
+
+            this->close();
+        }
+        if(ui->buttonBox->buttonRole(button) == QDialogButtonBox::ApplyRole){
+            themeManager->setLightTheme(ui->dayThemeComboBox->currentText());
+            themeManager->setDarkTheme(ui->nightThemeComboBox->currentText());
+
+            ui->pagesPanel->accept();
+
+        }
+    });
 }
 
 SettingsDialog::~SettingsDialog()
@@ -61,14 +85,5 @@ void SettingsDialog::on_pagesToolButton_clicked()
     ui->pageTitle->setText("**" + ui->pagesToolButton->text() + "**");
     ui->pageTitle->show();
     ui->backToolButton->show();
-}
-
-
-void SettingsDialog::on_buttonBox_accepted()
-{
-    themeManager->setLightTheme(ui->dayThemeComboBox->currentText());
-    themeManager->setDarkTheme(ui->nightThemeComboBox->currentText());
-
-    ui->pagesPanel->accept();
 }
 

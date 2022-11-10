@@ -29,6 +29,7 @@ set(common_SRCS
     combobox.h combobox.cpp
     text/textbridge.h text/textbridge.cpp
     tagdialog.h tagdialog.cpp tagdialog.ui
+    desktopapplication.h desktopapplication.cpp
 )
 
 set(common_INTERFACES

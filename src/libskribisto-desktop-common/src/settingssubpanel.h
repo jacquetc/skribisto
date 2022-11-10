@@ -16,7 +16,8 @@ public:
   ~SettingsSubPanel();
 
 public slots:
-   virtual void accept() = 0;
+    virtual void accept() = 0;
+    virtual void reset() = 0;
 
 protected:
   void setCentralWidget(QWidget *widget);

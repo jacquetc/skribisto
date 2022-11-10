@@ -3228,7 +3228,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="57"/>
+        <location filename="../desktopapp/main.cpp" line="58"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4825,6 +4825,26 @@ Please select the destination folder.</source>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="20"/>
+        <source>Font family:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="30"/>
+        <source>First line indent:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="40"/>
+        <source>Font point size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="54"/>
+        <source>Paragraph top margin:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ThemePage</name>
@@ -5519,7 +5539,7 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="62"/>
+        <location filename="../desktopapp/main.cpp" line="63"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

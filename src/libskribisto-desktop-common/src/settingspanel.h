@@ -19,10 +19,12 @@ public:
   const QString &settingsGroup() const;
   void setSettingsGroup(const QString &newSettingsGroup);
   void accept();
+  void reset();
 
 signals:
   void settingsGroupChanged();
   void accepted();
+  void reseted();
 
 private slots:
   void on_listWidget_itemActivated(QListWidgetItem *item);

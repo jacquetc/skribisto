@@ -18,10 +18,16 @@ public:
 
 private:
     Ui::TextPageSettings *centralWidgetUi;
+    QHash<QString, QVariant> m_defaultValuesHash;
+
+private slots:
+    void updateSampleTextFormat();
 
     // SettingsPanel interface
 public slots:
     void accept() override;
+    void reset() override;
+
 };
 
 #endif // TEXTPAGESETTINGS_H

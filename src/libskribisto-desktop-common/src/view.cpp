@@ -1,5 +1,6 @@
 #include "view.h"
 #include "QtCore/qobjectdefs.h"
+#include "desktopapplication.h"
 #include "ui_view.h"
 
 #include "invoker.h"
@@ -97,6 +98,9 @@ View::View(const QString &type, QWidget *parent) :
 
     ui->splitToolButton->setMenu(splitMenu);
 
+    // settings:
+
+    connect(static_cast<DesktopApplication *>(qApp), &DesktopApplication::settingsChanged, this, &View::settingsChanged);
 
 
     QTimer::singleShot(0, this, &View::init);

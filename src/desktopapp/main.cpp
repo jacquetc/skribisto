@@ -1,4 +1,5 @@
 #include "commands.h"
+#include "desktopapplication.h"
 #include "interfaces/newprojectformatinterface.h"
 #include "interfaces/pagetypeiconinterface.h"
 #include "projectcommands.h"
@@ -27,7 +28,7 @@ int main(int argc, char *argv[]) {
 
   // QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() <<
   // ":/icons/backup/");
-  QApplication app(argc, argv);
+  DesktopApplication app(argc, argv);
   QApplication::setStyle(new SkribistoStyle);
 
   QPixmap pixmap(":/icons/skribisto/skribisto.png");

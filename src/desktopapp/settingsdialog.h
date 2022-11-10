@@ -23,8 +23,6 @@ private slots:
 
     void on_pagesToolButton_clicked();
 
-    void on_buttonBox_accepted();
-
 private:
     Ui::SettingsDialog *ui;
 };

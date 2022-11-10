@@ -58,16 +58,11 @@ void OutlineToolbox::initialize()
 
     // restore font size:
 
-    float textFontPointSize = settings.value("outlineToolbox/textFontPointSize", -1).toFloat();
+    int textFontPointSize = settings.value("outlineToolbox/textFontPointSize", qApp->font().pointSize()).toInt();
 
-    if(textFontPointSize != -1){
-        QFont font = ui->textEdit->font();
-        float newSize = textFontPointSize;
-        if (newSize <= 8)
-            newSize = 8;
-        font.setPointSizeF(newSize);
-        ui->textEdit->setFont(font);
-    }
+    QFont font = ui->textEdit->font();
+    font.setPointSize(textFontPointSize);
+    ui->textEdit->setFont(font);
 
 
     // restore cursor position
@@ -145,7 +140,7 @@ void OutlineToolbox::wheelEvent(QWheelEvent *event)
         if(ui->textEdit->font().pointSize() < 8){
 
             QFont font = ui->textEdit->font();
-            font.setPointSizeF(8);
+            font.setPointSize(8);
             ui->textEdit->setFont(font);
 
             event->accept();
@@ -154,7 +149,7 @@ void OutlineToolbox::wheelEvent(QWheelEvent *event)
         connectSaveConnection();
 
         QSettings settings;
-        settings.setValue("outlineToolbox/textFontPointSize", ui->textEdit->font().pointSizeF());
+        settings.setValue("outlineToolbox/textFontPointSize", ui->textEdit->font().pointSize());
 
         event->accept();
     }

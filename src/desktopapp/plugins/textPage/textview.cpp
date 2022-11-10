@@ -146,18 +146,26 @@ void TextView::initialize()
 
     QSettings settings;
 
-    // restore font size:
+    // restore font size and family:
 
-    float textFontPointSize = settings.value("textPage/textFontPointSize", -1).toFloat();
+    int textFontPointSize = settings.value("textPage/textFontPointSize", qApp->font().pointSize()).toInt();
+    QString textFontFamily = settings.value("textPage/textFontFamily", qApp->font().family()).toString();
 
-    if(textFontPointSize != -1){
-        QFont font = centralWidgetUi->textEdit->font();
-        float newSize = textFontPointSize;
-        if (newSize <= 8)
-            newSize = 8;
-        font.setPointSizeF(newSize);
-        centralWidgetUi->textEdit->setFont(font);
-    }
+    QFont font = centralWidgetUi->textEdit->font();
+    font.setPointSize(textFontPointSize);
+    font.setFamily(textFontFamily);
+    centralWidgetUi->textEdit->setFont(font);
+
+    // restore font block format:
+
+    QTextBlockFormat blockFormat;
+    blockFormat.setTopMargin(settings.value("textPage/paragraphTopMargin", 12).toInt());
+    blockFormat.setTextIndent(settings.value("textPage/paragraphFirstLineIndent", 12).toInt());
+
+    QTextCursor textCursor = centralWidgetUi->textEdit->textCursor();
+    textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
+    textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+    textCursor.mergeBlockFormat(blockFormat);
 
     // restore textWidth:
 
@@ -261,7 +269,7 @@ void TextView::wheelEvent(QWheelEvent *event)
         if(centralWidgetUi->textEdit->font().pointSize() < 8){
 
             QFont font = centralWidgetUi->textEdit->font();
-            font.setPointSizeF(8);
+            font.setPointSize(8);
             centralWidgetUi->textEdit->setFont(font);
 
             event->accept();
@@ -273,11 +281,50 @@ void TextView::wheelEvent(QWheelEvent *event)
 
 
         QSettings settings;
-        settings.setValue("textPage/textFontPointSize", centralWidgetUi->textEdit->font().pointSizeF());
+        settings.setValue("textPage/textFontPointSize", centralWidgetUi->textEdit->font().pointSize());
+
+
 
         event->accept();
     }
     else {
             centralWidgetUi->textEdit->wheelEvent(event);
+    }
+}
+
+
+void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
+{
+    if(newSettings.contains("textPage/textFontFamily")){
+        QString textFontFamily = newSettings.value("textPage/textFontFamily").toString();
+        QFont font = centralWidgetUi->textEdit->font();
+        font.setFamily(textFontFamily);
+        centralWidgetUi->textEdit->setFont(font);
+    }
+    if(newSettings.contains("textPage/textFontPointSize")){
+        int textFontPointSize = newSettings.value("textPage/textFontPointSize").toInt();
+        QFont font = centralWidgetUi->textEdit->font();
+        font.setPointSize(textFontPointSize);
+        centralWidgetUi->textEdit->setFont(font);
+
+    }
+    if(newSettings.contains("textPage/paragraphTopMargin")){
+        QTextBlockFormat blockFormat;
+        blockFormat.setTopMargin(newSettings.value("textPage/paragraphTopMargin").toInt());
+
+        QTextCursor textCursor = centralWidgetUi->textEdit->textCursor();
+        textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
+        textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+        textCursor.mergeBlockFormat(blockFormat);
+    }
+    if(newSettings.contains("textPage/paragraphFirstLineIndent")){
+
+        QTextBlockFormat blockFormat;
+        blockFormat.setTextIndent(newSettings.value("textPage/paragraphFirstLineIndent").toInt());
+
+        QTextCursor textCursor = centralWidgetUi->textEdit->textCursor();
+        textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
+        textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+        textCursor.mergeBlockFormat(blockFormat);
     }
 }

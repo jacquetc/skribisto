@@ -36,6 +36,9 @@ private:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
+    void settingsChanged(const QHash<QString, QVariant> &newSettings) override;
+
+
 };
 
 #endif // TEXTVIEW_H
