@@ -33,12 +33,10 @@ void Dock::setToolboxes(QList<Toolbox *> toolboxes)
 
     m_dockTitle->toolbarSelector()->clear();
 
-    int stackCount = m_stack->count();
-    for(int i = 0 ; i < stackCount ; i++){
-        QWidget *widget = m_stack->widget(i);
-        m_stack->removeWidget(widget);
-        widget->deleteLater();
-    }
+    m_stack->deleteLater();
+    m_stack = new QStackedWidget(this);
+    this->setWidget(m_stack);
+
 
     // add
 

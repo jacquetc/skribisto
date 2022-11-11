@@ -878,7 +878,7 @@
 <context>
     <name>DockTitle</name>
     <message>
-        <location filename="../desktopapp/dock.cpp" line="107"/>
+        <location filename="../desktopapp/dock.cpp" line="114"/>
         <source>Hide dock</source>
         <translation type="unfinished"></translation>
     </message>
