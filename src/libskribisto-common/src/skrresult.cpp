@@ -102,6 +102,10 @@ SKRResult& SKRResult::operator=(const SKRResult& iResult)
         m_dataHashList.append(iResult.getDataHashList());
     }
 
+    if(iResult.getStatus() == SKRResult::Critical || iResult.getStatus() == SKRResult::Fatal){
+        qFatal("");
+    }
+
     return *this;
 }
 

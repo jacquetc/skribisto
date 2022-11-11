@@ -34,12 +34,10 @@ Navigation::Navigation(class QWidget *parent) :
     //expand management
 
     expandProjectItems();
-    QObject::connect(ui->treeView, &QTreeView::expanded, this, &Navigation::saveExpandStates);
-    QObject::connect(ui->treeView, &QTreeView::collapsed, this, &Navigation::saveExpandStates);
-    QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &Navigation::expandProjectItems);
 
     restoreExpandStates();
     QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &Navigation::restoreExpandStates);
+    QObject::connect(model, &ProjectTreeProxyModel::modelReset, this, &Navigation::expandProjectItems);
 
     QObject::connect(skrdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, &Navigation::saveExpandStates);
 
@@ -309,6 +307,10 @@ void Navigation::saveExpandStates()
 
 void Navigation::restoreExpandStates()
 {
+
+    if( skrdata->projectHub()->getProjectCount() == 0){
+        return;
+    }
 
     QByteArray byteArray = SKRUserSettings::getProjectSetting(skrdata->projectHub()->getActiveProject(), "navigationTreeExpandState", 0).toByteArray();
     QDataStream stream(&byteArray, QIODevice::ReadOnly);

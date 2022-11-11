@@ -487,7 +487,7 @@ void ProjectTrashedTreeModel::populate()
     qDeleteAll(m_itemList);
     m_itemList.clear();
 
-    if(m_projectId == -1){
+    if(m_projectId == -1 || skrdata->projectHub()->getProjectCount() == 0){
         this->endResetModel();
         return;
     }

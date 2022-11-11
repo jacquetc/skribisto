@@ -52,6 +52,8 @@ QVariant ProjectTreeModel::headerData(int section, Qt::Orientation orientation, 
     return QVariant();
 }
 
+//-----------------------------------------------------------------------
+
 bool ProjectTreeModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
 {
     if (value != headerData(section, orientation, role)) {
@@ -61,6 +63,9 @@ bool ProjectTreeModel::setHeaderData(int section, Qt::Orientation orientation, c
     }
     return false;
 }
+
+//-----------------------------------------------------------------------
+
 
 QModelIndex ProjectTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
@@ -97,6 +102,9 @@ QModelIndex ProjectTreeModel::index(int row, int column, const QModelIndex &pare
 
 }
 
+//-----------------------------------------------------------------------
+
+
 QModelIndex ProjectTreeModel::parent(const QModelIndex &index) const
 {
     if (!index.isValid()) return QModelIndex();
@@ -115,6 +123,9 @@ QModelIndex ProjectTreeModel::parent(const QModelIndex &index) const
 
 }
 
+//-----------------------------------------------------------------------
+
+
 int ProjectTreeModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.column() > 0) return 0;
@@ -129,6 +140,9 @@ int ProjectTreeModel::rowCount(const QModelIndex &parent) const
     return ids.count();
 }
 
+//-----------------------------------------------------------------------
+
+
 int ProjectTreeModel::columnCount(const QModelIndex &parent) const
 {
     //    if (!parent.isValid())
@@ -136,6 +150,9 @@ int ProjectTreeModel::columnCount(const QModelIndex &parent) const
 
     return 4;
 }
+
+//-----------------------------------------------------------------------
+
 
 QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
 {
@@ -291,6 +308,9 @@ QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
+//-----------------------------------------------------------------------
+
+
 bool ProjectTreeModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (data(index, role) != value) {
@@ -410,6 +430,9 @@ bool ProjectTreeModel::setData(const QModelIndex &index, const QVariant &value, 
     return false;
 }
 
+//-----------------------------------------------------------------------
+
+
 Qt::ItemFlags ProjectTreeModel::flags(const QModelIndex &index) const
 {
 
@@ -420,6 +443,9 @@ Qt::ItemFlags ProjectTreeModel::flags(const QModelIndex &index) const
     return defaultFlags;
 
 }
+
+//-----------------------------------------------------------------------
+
 
 bool ProjectTreeModel::insertRows(int row, int count, const QModelIndex &parent)
 {
@@ -453,6 +479,9 @@ bool ProjectTreeModel::removeColumns(int column, int count, const QModelIndex &p
     return true;
 }
 
+
+
+//-----------------------------------------------------------------------
 
 QHash<int, QByteArray>ProjectTreeModel::roleNames() const {
     QHash<int, QByteArray> roles;
@@ -492,6 +521,9 @@ QHash<int, QByteArray>ProjectTreeModel::roleNames() const {
     return roles;
 }
 
+
+//-----------------------------------------------------------------------
+
 void ProjectTreeModel::populate()
 {
     this->beginResetModel();
@@ -529,6 +561,9 @@ void ProjectTreeModel::populate()
 
     this->endResetModel();
 }
+
+//-----------------------------------------------------------------------
+
 
 void ProjectTreeModel::clear()
 {

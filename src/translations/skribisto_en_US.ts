@@ -878,7 +878,7 @@
 <context>
     <name>DockTitle</name>
     <message>
-        <location filename="../desktopapp/dock.cpp" line="114"/>
+        <location filename="../desktopapp/dock.cpp" line="105"/>
         <source>Hide dock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1679,8 +1679,8 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="233"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="277"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="365"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="284"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="375"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1732,7 +1732,7 @@
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="295"/>
         <location filename="../desktopapp/mainwindow.cpp" line="246"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="335"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="345"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1782,44 +1782,44 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="557"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="567"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="387"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="397"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.cpp" line="247"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="336"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="346"/>
         <source>Do you want to save changes to %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="277"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="284"/>
         <source>Do you really want to quit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="305"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="315"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="366"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="376"/>
         <source>Do you really want to close %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="424"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="434"/>
         <source>Ctrl+E</source>
         <comment>export shortcut</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="554"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="564"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1842,53 +1842,53 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="59"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="57"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="70"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="68"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="89"/>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="97"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="87"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="95"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="97"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="95"/>
         <source>Enter a new title for the item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="109"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="107"/>
         <source>Add below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="121"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="119"/>
         <source>Add above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="132"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="130"/>
         <source>Add sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="154"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="152"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="181"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="179"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="193"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="191"/>
         <source>Set as the active project</source>
         <translation type="unfinished"></translation>
     </message>

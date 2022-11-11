@@ -260,14 +260,21 @@ void MainWindow::closeEvent(QCloseEvent *event)
                 if(!result.isSuccess() && result.containsErrorCode("no_path")){
                     this->openSaveAsDialog(projectId);
                 }
+                projectCommands->closeProject(projectId);
 
                 break;
             case QMessageBox::Discard:
+                projectCommands->closeProject(projectId);
                 break;
             default:
                 break;
             }
 
+        }
+
+        // close the already saved projects:
+        for(int projectId : projectList){
+            projectCommands->closeProject(projectId);
         }
 
         return;
@@ -281,6 +288,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
             return;
             break;
         case QMessageBox::Yes:
+            for(int projectId : projectList){
+               projectCommands->closeProject(projectId);
+            }
             event->accept();
             return;
             break;

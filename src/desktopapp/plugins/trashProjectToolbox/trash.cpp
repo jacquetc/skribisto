@@ -229,6 +229,10 @@ void Trash::saveExpandStates()
 void Trash::restoreExpandStates()
 {
 
+    if( skrdata->projectHub()->getProjectCount() == 0){
+        return;
+    }
+
     QByteArray byteArray = SKRUserSettings::getProjectSetting(skrdata->projectHub()->getActiveProject(), "trashTreeExpandState", 0).toByteArray();
     QDataStream stream(&byteArray, QIODevice::ReadOnly);
     stream >> m_expandedPathes;
