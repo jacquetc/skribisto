@@ -296,3 +296,18 @@ void TextEdit::focusOutEvent(QFocusEvent *event)
     m_mouse_button_down = false;
     QTextEdit::focusOutEvent(event);
 }
+
+
+void TextEdit::keyPressEvent(QKeyEvent *event)
+{
+
+    // Keep formatting in new paragraphs
+    if (event->matches(QKeySequence::InsertParagraphSeparator)) {
+        textCursor().insertBlock();
+        event->accept();
+        ensureCursorVisible();
+        return;
+    }
+
+    QTextEdit::keyPressEvent(event);
+}
