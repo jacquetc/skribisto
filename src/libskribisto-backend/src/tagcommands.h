@@ -32,6 +32,10 @@ public:
     void setTagTextColor(int projectId, int tagId, const QColor &color);
     void removeTag(int projectId, int tagId);
     void removeSeveralTags(int projectId, QList<int> tagIds);
+    void setTagRelationship(int projectId, int treeItemId, int tagId);
+    void removeTagRelationship(int projectId, int treeItemId, int tagId);
+    void setSeveralTagsRelationship(int projectId, int treeItemId, QList<int> tagIds);
+    void removeSeveralTagsRelationship(int projectId, int treeItemId, QList<int> tagIds);
 
 signals:
 
@@ -121,5 +125,33 @@ private:
 
 };
 
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+class SetTagRelationshipCommand : public Command
+{
+public:
+    SetTagRelationshipCommand(int projectId, int treeItemId, int tagId);
+    void undo();
+    void redo();
+private:
+    int tagId;
+    int m_projectId, m_treeItemId, m_tagId;
+};
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+class RemoveTagRelationshipCommand : public Command
+{
+public:
+    RemoveTagRelationshipCommand(int projectId, int treeItemId, int tagId);
+    void undo();
+    void redo();
+private:
+    int tagId;
+    int m_projectId, m_treeItemId, m_tagId;
+};
 
 #endif // TAGCOMMANDS_H

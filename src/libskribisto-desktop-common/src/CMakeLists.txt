@@ -31,6 +31,8 @@ set(common_SRCS
     tagdialog.h tagdialog.cpp tagdialog.ui
     desktopapplication.h desktopapplication.cpp
     viewholder.h viewholder.cpp viewholder.ui
+    toolboxes/tagtoolbox.h toolboxes/tagtoolbox.cpp toolboxes/tagtoolbox.ui
+    toolboxes/tagchooserdialog.h toolboxes/tagchooserdialog.cpp toolboxes/tagchooserdialog.ui
 )
 
 set(common_INTERFACES

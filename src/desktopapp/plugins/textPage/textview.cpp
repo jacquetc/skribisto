@@ -5,6 +5,7 @@
 #include "skrusersettings.h"
 #include "text/textbridge.h"
 #include "text/textedit.h"
+#include "toolboxes/tagtoolbox.h"
 #include "ui_textview.h"
 #include "toolboxes/outlinetoolbox.h"
 
@@ -110,6 +111,9 @@ QList<Toolbox *> TextView::toolboxes()
 
     connect(this, &TextView::initialized, outlineToolbox, &OutlineToolbox::setIdentifiersAndInitialize);
     outlineToolbox->setIdentifiersAndInitialize(this->projectId(), this->treeItemId());
+
+    TagToolbox *tagToolbox = new TagToolbox(nullptr, this->projectId(), this->treeItemId());
+    toolboxes.append(tagToolbox);
 
 
     return toolboxes;

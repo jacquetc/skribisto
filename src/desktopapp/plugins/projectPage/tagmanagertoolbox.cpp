@@ -19,14 +19,13 @@ TagManagerToolbox::TagManagerToolbox(QWidget *parent, int projectId) :
 
     connect(ui->removeTagButton, &QAbstractButton::clicked, this, [this](){
         QList<int> tagIdsToBeRemoved;
-            for(auto *item : ui->listWidget->selectedItems()){
-                tagIdsToBeRemoved.append(item->data(Qt::UserRole).toInt());
+        for(auto *item : ui->listWidget->selectedItems()){
+            tagIdsToBeRemoved.append(item->data(Qt::UserRole).toInt());
+        }
 
-            }
-
-            if(!tagIdsToBeRemoved.isEmpty()){
-                tagCommands->removeSeveralTags(m_projectId, tagIdsToBeRemoved);
-            }
+        if(!tagIdsToBeRemoved.isEmpty()){
+            tagCommands->removeSeveralTags(m_projectId, tagIdsToBeRemoved);
+        }
 
     });
 

@@ -8,6 +8,7 @@ TagDialog::TagDialog(QWidget *parent, int projectId, int tagId, bool creating) :
     m_creating(creating),
     m_projectId(projectId),
     m_tagId(tagId),
+    m_newTagId(-1),
     ui(new Ui::TagDialog)
 {
     ui->setupUi(this);
@@ -49,7 +50,7 @@ TagDialog::TagDialog(QWidget *parent, int projectId, int tagId, bool creating) :
 
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, [this](){
         if(m_creating){
-            tagCommands->addTag(m_projectId, ui->tagNameLineEdit->text(), m_color, m_textColor);
+            m_newTagId = tagCommands->addTag(m_projectId, ui->tagNameLineEdit->text(), m_color, m_textColor);
         }
         else {
             tagCommands->modifyTag(m_projectId, m_tagId, ui->tagNameLineEdit->text(), m_color, m_textColor);
@@ -80,6 +81,11 @@ TagDialog::TagDialog(QWidget *parent, int projectId, int tagId, bool creating) :
 TagDialog::~TagDialog()
 {
     delete ui;
+}
+
+int TagDialog::newTagId() const
+{
+    return m_newTagId;
 }
 
 //----------------------------------------------------------------------

@@ -3939,22 +3939,22 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="43"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="47"/>
         <source>Beginning of a book</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="44"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="48"/>
         <source>Chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="45"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="49"/>
         <source>Separator</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="46"/>
+        <location filename="../desktopapp/plugins/sectionPage/sectionview.cpp" line="50"/>
         <source>End of a book</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4548,6 +4548,50 @@ Please select the destination folder.</source>
     </message>
 </context>
 <context>
+    <name>TagChooserDialog</name>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="14"/>
+        <source>Choose tags for this item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="22"/>
+        <source>Available tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="33"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="60"/>
+        <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="107"/>
+        <source>Add selected tags to item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="117"/>
+        <source>Remove selected tags from item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="120"/>
+        <source>&lt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="127"/>
+        <source>Remove all tags from item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="130"/>
+        <source>&lt;&lt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TagDialog</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="14"/>
@@ -4581,12 +4625,12 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/tagdialog.cpp" line="16"/>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.cpp" line="17"/>
         <source>Tag creation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/tagdialog.cpp" line="16"/>
+        <location filename="../libskribisto-desktop-common/src/tagdialog.cpp" line="17"/>
         <source>Tag modification</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4674,6 +4718,25 @@ Please select the destination folder.</source>
     <message>
         <location filename="../mobileapp/imports/Skribisto/TagPadForm.ui.qml" line="111"/>
         <source>Tags list</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TagToolbox</name>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.ui" line="66"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.ui" line="80"/>
+        <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.h" line="28"/>
+        <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

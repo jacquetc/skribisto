@@ -95,11 +95,17 @@ void TagCommands::setTagColor(int projectId, int tagId, const QColor &color)
 
 }
 
+//-------------------------------------------------------------
+
+
 void TagCommands::setTagTextColor(int projectId, int tagId, const QColor &color)
 {
     m_undoStack->push(new SetTagTextColorCommand(projectId, tagId, color));
 
 }
+
+//-------------------------------------------------------------
+
 
 void TagCommands::removeTag(int projectId, int tagId)
 {
@@ -107,12 +113,59 @@ void TagCommands::removeTag(int projectId, int tagId)
 
 }
 
+//-------------------------------------------------------------
+
+
 void TagCommands::removeSeveralTags(int projectId, QList<int> tagIds)
 {
     m_undoStack->beginMacro("Remove several tags");
 
     for(int tagId : tagIds){
         m_undoStack->push(new RemoveTagCommand(projectId, tagId));
+
+    }
+
+    m_undoStack->endMacro();
+
+}
+
+//-------------------------------------------------------------
+
+void TagCommands::setTagRelationship(int projectId, int treeItemId, int tagId)
+{
+    m_undoStack->push(new SetTagRelationshipCommand(projectId, treeItemId, tagId));
+
+}
+
+//-------------------------------------------------------------
+
+void TagCommands::setSeveralTagsRelationship(int projectId, int treeItemId, QList<int> tagIds)
+{
+
+    m_undoStack->beginMacro("Set several tag relationships");
+
+    for(int tagId : tagIds){
+        m_undoStack->push(new SetTagRelationshipCommand(projectId, treeItemId, tagId));
+
+    }
+
+    m_undoStack->endMacro();
+}
+//-------------------------------------------------------------
+
+void TagCommands::removeTagRelationship(int projectId, int treeItemId, int tagId)
+{
+    m_undoStack->push(new RemoveTagRelationshipCommand(projectId, treeItemId, tagId));
+}
+
+//-------------------------------------------------------------
+
+void TagCommands::removeSeveralTagsRelationship(int projectId, int treeItemId, QList<int> tagIds)
+{
+    m_undoStack->beginMacro("Remove several tag relationships");
+
+    for(int tagId : tagIds){
+        m_undoStack->push(new RemoveTagRelationshipCommand(projectId, treeItemId, tagId));
 
     }
 
@@ -262,6 +315,49 @@ void RemoveTagCommand::redo()
 
 }
 
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+
+SetTagRelationshipCommand::SetTagRelationshipCommand(int projectId, int treeItemId, int tagId) : Command("Set tag relationship"),
+    m_projectId(projectId), m_treeItemId(treeItemId), m_tagId(tagId)
+{
+
+}
+
+void SetTagRelationshipCommand::undo()
+{
+    skrdata->tagHub()->removeTagRelationship(m_projectId,m_treeItemId, m_tagId);
+}
+
+void SetTagRelationshipCommand::redo()
+{
+    skrdata->tagHub()->setTagRelationship(m_projectId,m_treeItemId, m_tagId);
+}
+
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+
+RemoveTagRelationshipCommand::RemoveTagRelationshipCommand(int projectId, int treeItemId, int tagId) : Command("Remove tag relationship"),
+    m_projectId(projectId), m_treeItemId(treeItemId), m_tagId(tagId)
+{
+
+}
+
+void RemoveTagRelationshipCommand::undo()
+{
+    skrdata->tagHub()->setTagRelationship(m_projectId,m_treeItemId, m_tagId);
+}
+
+void RemoveTagRelationshipCommand::redo()
+{
+    skrdata->tagHub()->removeTagRelationship(m_projectId,m_treeItemId, m_tagId);
+}
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+
 
 QString TagCommands::address() const
 {
@@ -271,9 +367,11 @@ QString TagCommands::address() const
 
 Command *TagCommands::getCommand(const QString &action, const QVariantMap &parameters)
 {
-    if(action == "set_project_name"){
+    if(action == "set_tag_name"){
         return new SetTagNameCommand(parameters.value("projectId").toInt(), parameters.value("tagId").toInt(), parameters.value("name").toString());
     }
+
+    //TODO: fill with other commands
 
     return nullptr;
 }

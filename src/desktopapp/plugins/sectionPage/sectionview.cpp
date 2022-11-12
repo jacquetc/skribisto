@@ -1,4 +1,5 @@
 #include "sectionview.h"
+#include "toolboxes/tagtoolbox.h"
 #include "ui_sectionview.h"
 #include "toolboxes/outlinetoolbox.h"
 
@@ -31,6 +32,9 @@ QList<Toolbox *> SectionView::toolboxes()
     OutlineToolbox *outlineToolbox = new OutlineToolbox;    toolboxes.append(outlineToolbox);
     connect(this, &View::initialized, outlineToolbox, &Toolbox::setIdentifiersAndInitialize);
     outlineToolbox->setIdentifiersAndInitialize(this->projectId(), this->treeItemId());
+
+    TagToolbox *tagToolbox = new TagToolbox(nullptr, this->projectId(), this->treeItemId());
+    toolboxes.append(tagToolbox);
 
     return toolboxes;
 
