@@ -35,4 +35,6 @@ QList<Toolbox *> FolderView::toolboxes()
 void FolderView::initialize()
 {
 
+    // history
+    emit this->addToHistoryCalled(this, QVariantMap());
 }

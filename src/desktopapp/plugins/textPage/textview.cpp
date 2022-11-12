@@ -4,6 +4,7 @@
 #include "projecttreecommands.h"
 #include "skrusersettings.h"
 #include "text/textbridge.h"
+#include "text/textedit.h"
 #include "ui_textview.h"
 #include "toolboxes/outlinetoolbox.h"
 
@@ -13,7 +14,7 @@
 
 TextView::TextView(QWidget *parent) :
     View("TEXT",parent),
-    centralWidgetUi(new Ui::TextView), m_isSecondaryContent(false), m_wasModified(false)
+    centralWidgetUi(new Ui::TextView), m_isSecondaryContent(false), m_wasModified(false), m_oldCursorPosition(-1)
 {
 
     //central ui
@@ -86,6 +87,7 @@ TextView::TextView(QWidget *parent) :
         saveTextState();
     });
 
+
 }
 
 TextView::~TextView()
@@ -146,6 +148,35 @@ void TextView::initialize()
     m_saveTimer->setInterval(200);
     connect(m_saveTimer, &QTimer::timeout, this, [this](){ saveContent();});
     QTimer::singleShot(0, this, [this](){ connectSaveConnection();});
+
+
+
+    //history
+    m_historyTimer = new QTimer(this);
+    m_historyTimer->setSingleShot(true);
+    m_historyTimer->setInterval(2000);
+    connect(m_saveTimer, &QTimer::timeout, this, [this](){ addPositionToHistory();});
+    connect(centralWidgetUi->textEdit, &TextEdit::cursorPositionChanged, this, [this](){
+
+        int newPosition =  centralWidgetUi->textEdit->textCursor().position();
+
+        if(m_oldCursorPosition != -1){
+            m_historyTimer->stop();
+            m_historyTimer->start();
+
+            // handle the case where the new position is far from the old position
+            if(qAbs(m_oldCursorPosition - newPosition) > 30){
+                    addPositionToHistory();
+            }
+
+        }
+
+        m_oldCursorPosition = centralWidgetUi->textEdit->textCursor().position();
+
+    });
+
+
+    //---------------------------------
 
     QSettings settings;
 
@@ -213,8 +244,8 @@ void TextView::initialize()
         cursor.setPosition(cursorPosition);
         centralWidgetUi->textEdit->setTextCursor(cursor);
 
-    });
 
+    });
 
 
 }
@@ -258,6 +289,20 @@ void TextView::connectSaveConnection()
     });
 
 }
+
+//---------------------------------------------
+
+void TextView::addPositionToHistory()
+{
+    QVariantMap parameters;
+    parameters.insert("comparedParameterKey", "textCursorPosition");
+    parameters.insert("textScrollBarValue", centralWidgetUi->verticalScrollBar->value());
+    parameters.insert("textCursorPosition", centralWidgetUi->textEdit->textCursor().position());
+
+    emit this->addToHistoryCalled(this, parameters);
+}
+
+//---------------------------------------------
 
 void TextView::mousePressEvent(QMouseEvent *event)
 {
@@ -389,6 +434,8 @@ void TextView::applyParameters()
         cursor.setPosition(cursorPosition);
         centralWidgetUi->textEdit->setTextCursor(cursor);
 
+        addPositionToHistory();
+
     });
 
 }
@@ -404,4 +451,23 @@ QVariantMap TextView::addOtherViewParametersBeforeSplit()
     parameters.insert("textCursorPosition", centralWidgetUi->textEdit->textCursor().position());
 
     return parameters;
+}
+
+
+void TextView::applyHistoryParameters(const QVariantMap &parameters)
+{
+
+    int scrollBarValue = parameters.value("textScrollBarValue").toInt();
+    centralWidgetUi->verticalScrollBar->setValue(scrollBarValue);
+
+    // restore cursor position
+
+    int cursorPosition = parameters.value("textCursorPosition").toInt();
+
+    QTextCursor cursor(centralWidgetUi->textEdit->document());
+    cursor.setPosition(cursorPosition);
+    centralWidgetUi->textEdit->setTextCursor(cursor);
+
+    centralWidgetUi->textEdit->ensureCursorVisible();
+
 }

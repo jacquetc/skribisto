@@ -67,9 +67,9 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QToolButton" name="previousHistory">
+           <widget class="QToolButton" name="backHistoryButton">
             <property name="text">
-             <string>Previous</string>
+             <string notr="true">Back</string>
             </property>
             <property name="icon">
              <iconset resource="../../../3rdparty/icons.qrc">
@@ -78,9 +78,9 @@
            </widget>
           </item>
           <item>
-           <widget class="QToolButton" name="nextHistory">
+           <widget class="QToolButton" name="forwardHistoryButton">
             <property name="text">
-             <string>Next</string>
+             <string notr="true">Forward</string>
             </property>
             <property name="icon">
              <iconset resource="../../../3rdparty/icons.qrc">

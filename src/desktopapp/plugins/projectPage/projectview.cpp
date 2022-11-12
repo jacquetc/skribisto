@@ -73,6 +73,11 @@ void ProjectView::initialize()
 
     centralWidgetUi->dictionaryComboBox->setCurrentIndex(centralWidgetUi->dictionaryComboBox->findData(
                                                              skrdata->projectHub()->getLangCode(this->projectId())));
+
+
+    // history
+    emit this->addToHistoryCalled(this, QVariantMap());
+
 }
 
 

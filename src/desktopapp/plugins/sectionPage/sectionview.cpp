@@ -70,4 +70,6 @@ void SectionView::initialize()
 
     });
 
+    // history
+    emit this->addToHistoryCalled(this, QVariantMap());
 }

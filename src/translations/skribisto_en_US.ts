@@ -5456,16 +5456,6 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>View</name>
     <message>
-        <location filename="../libskribisto-desktop-common/src/view.ui" line="72"/>
-        <source>Previous</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../libskribisto-desktop-common/src/view.ui" line="83"/>
-        <source>Next</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../libskribisto-desktop-common/src/view.ui" line="130"/>
         <source>view</source>
         <translation type="unfinished"></translation>
@@ -5481,6 +5471,16 @@ This action isn&apos;t recoverable.</source>
     <message>
         <location filename="../libskribisto-desktop-common/src/viewholder.ui" line="14"/>
         <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/viewholder.cpp" line="12"/>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/viewholder.cpp" line="17"/>
+        <source>Forward</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

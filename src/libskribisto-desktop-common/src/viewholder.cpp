@@ -3,19 +3,28 @@
 
 ViewHolder::ViewHolder(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::ViewHolder), m_uuid(QUuid::createUuid())
+    ui(new Ui::ViewHolder), m_uuid(QUuid::createUuid()), m_currentHistoryItem(nullptr)
 
 {
     ui->setupUi(this);
 
+// history:
+    m_goBackAction = new QAction(QIcon(":/icons/backup/go-previous-view.svg"), tr("Back"), this);
+    m_goBackAction->setShortcutContext(Qt::ShortcutContext::WidgetWithChildrenShortcut);
+    m_goBackAction->setShortcut(QKeySequence(QKeySequence::Back));
+    connect(m_goBackAction, &QAction::triggered, this, &ViewHolder::goBackInHistory);
 
-
+    m_goForwardAction = new QAction(QIcon(":/icons/backup/go-next-view.svg"), tr("Forward"), this);
+    m_goForwardAction->setShortcutContext(Qt::ShortcutContext::WidgetWithChildrenShortcut);
+    m_goForwardAction->setShortcut(QKeySequence(QKeySequence::Forward));
+    connect(m_goForwardAction, &QAction::triggered, this, &ViewHolder::goForwardInHistory);
 }
 
 //--------------------------------------------------------------
 
 ViewHolder::~ViewHolder()
 {
+    qDeleteAll(m_historyItemList);
     delete ui;
 }
 
@@ -34,6 +43,10 @@ void ViewHolder::addView(View *view)
 
     ui->stackedWidget->addWidget(view);
     m_viewList.append(view);
+
+    // history
+    view->setHistoryActions(m_goBackAction, m_goForwardAction);
+    connect(view, &View::addToHistoryCalled, this, &ViewHolder::addToHistory);
 
     ui->stackedWidget->setCurrentWidget(view);
 
@@ -134,4 +147,187 @@ void ViewHolder::setUuid(const QUuid &newUuid)
     emit uuidChanged();
 }
 
+//--------------------------------------------------
+
+QAction *ViewHolder::goBackAction() const
+{
+    return m_goBackAction;
+}
+
+//--------------------------------------------------
+
+QAction *ViewHolder::goForwardAction() const
+{
+    return m_goForwardAction;
+}
+
+//--------------------------------------------------
+
+void ViewHolder::addToHistory(View *view, const QVariantMap &parameters)
+{
+    HistoryItem *historyItem = new HistoryItem(view, parameters);
+
+
+    if(!m_currentHistoryItem && m_historyItemList.isEmpty()){
+        m_historyItemList << historyItem;
+
+        m_goBackAction->setEnabled(false);
+        m_goForwardAction->setEnabled(false);
+    }
+
+    else if(!m_historyItemList.isEmpty() && m_currentHistoryItem == m_historyItemList.last()){
+        QString comparedParameterKey = m_currentHistoryItem->parameters().value("comparedParameterKey", QString()).toString();
+        if(m_currentHistoryItem->parameters().value(comparedParameterKey, QString()) == parameters.value(comparedParameterKey, QString()) && m_currentHistoryItem->view() == view){
+            delete historyItem;
+            return;
+        }
+
+        m_historyItemList << historyItem;
+
+        m_goBackAction->setEnabled(true);
+        m_goForwardAction->setEnabled(false);
+    }
+    else if(!m_historyItemList.isEmpty() && m_currentHistoryItem != m_historyItemList.last()){
+        QString comparedParameterKey = m_currentHistoryItem->parameters().value("comparedParameterKey", QString()).toString();
+        if(m_currentHistoryItem->parameters().value(comparedParameterKey, QString()) == parameters.value(comparedParameterKey, QString()) && m_currentHistoryItem->view() == view){
+            delete historyItem;
+            return;
+        }
+
+        int index = m_historyItemList.indexOf(m_currentHistoryItem);
+        m_historyItemList.insert(index + 1, historyItem);
+
+        m_goBackAction->setEnabled(true);
+        m_goForwardAction->setEnabled(true);
+    }
+
+    m_currentHistoryItem = historyItem;
+
+
+}
+
 //--------------------------------------------------------------
+
+void ViewHolder::clearHistoryOfView(View *view)
+{
+    QList<HistoryItem *> listToKeep;
+    QList<HistoryItem *> listToRemove;
+
+    for(HistoryItem *historyItem  : m_historyItemList){
+        if(historyItem->view() == view){
+            listToRemove.append(historyItem);
+        }
+        else {
+            listToKeep.append(historyItem);
+        }
+    }
+
+    m_historyItemList = listToKeep;
+    qDeleteAll(listToRemove);
+
+    if(m_historyItemList.isEmpty()){
+        m_currentHistoryItem = nullptr;
+
+        m_goBackAction->setEnabled(false);
+        m_goForwardAction->setEnabled(false);
+    }
+    else{
+        m_currentHistoryItem = m_historyItemList.last();
+
+        m_goBackAction->setEnabled(m_historyItemList.count() > 1);
+        m_goForwardAction->setEnabled(false);
+    }
+
+
+}
+
+//--------------------------------------------------------------
+
+void ViewHolder::goBackInHistory()
+{
+    int index = m_historyItemList.indexOf(m_currentHistoryItem);
+
+    if(index == 1){
+        m_currentHistoryItem = m_historyItemList.at(index - 1);
+        this->setCurrentView(m_currentHistoryItem->view());
+        m_currentHistoryItem->view()->applyHistoryParameters(m_currentHistoryItem->parameters());
+        m_goBackAction->setEnabled(false);
+        m_goForwardAction->setEnabled(true);
+    }
+    else if(index == 0){
+        qFatal("goBackInHistory index == 0");
+    }
+    else {
+        m_currentHistoryItem = m_historyItemList.at(index - 1);
+        this->setCurrentView(m_currentHistoryItem->view());
+        m_currentHistoryItem->view()->applyHistoryParameters(m_currentHistoryItem->parameters());
+        m_goBackAction->setEnabled(true);
+        m_goForwardAction->setEnabled(true);
+    }
+
+}
+
+//--------------------------------------------------------------
+
+void ViewHolder::goForwardInHistory()
+{
+    int index = m_historyItemList.indexOf(m_currentHistoryItem);
+
+    if(index == m_historyItemList.count() - 2){
+        m_currentHistoryItem = m_historyItemList.at(index + 1);
+        this->setCurrentView(m_currentHistoryItem->view());
+        m_currentHistoryItem->view()->applyHistoryParameters(m_currentHistoryItem->parameters());
+        m_goBackAction->setEnabled(true);
+        m_goForwardAction->setEnabled(false);
+    }
+    else if(index == m_historyItemList.count() - 1){
+        qFatal("goForwardInHistory index == last");
+    }
+    else {
+        m_currentHistoryItem = m_historyItemList.at(index + 1);
+        this->setCurrentView(m_currentHistoryItem->view());
+        m_currentHistoryItem->view()->applyHistoryParameters(m_currentHistoryItem->parameters());
+        m_goBackAction->setEnabled(true);
+        m_goForwardAction->setEnabled(true);
+    }
+}
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+
+HistoryItem::HistoryItem(View *view, const QVariantMap &parameters):
+    m_uuid(QUuid::createUuid()),
+    m_date(QDateTime::currentDateTime()),
+    m_view(view),
+    m_parameters(parameters)
+{
+
+}
+//--------------------------------------------------------------
+
+QDateTime HistoryItem::date() const
+{
+    return m_date;
+}
+
+//--------------------------------------------------------------
+
+View *HistoryItem::view() const
+{
+    return m_view;
+}
+
+//--------------------------------------------------------------
+
+QVariantMap HistoryItem::parameters() const
+{
+    return m_parameters;
+}
+
+//--------------------------------------------------------------
+
+bool HistoryItem::operator==(const HistoryItem &otherHistoryItem) const
+{
+    return this->m_uuid == otherHistoryItem.m_uuid;
+}

@@ -24,13 +24,10 @@ View::View(const QString &type, QWidget *parent) :
     historyToolbar->setIconSize(QSize(16, 16));
     historyToolbar->setContentsMargins(0, 0, 0, 0);
 
-    historyToolbar->addWidget(ui->previousHistory);
-    historyToolbar->addWidget(ui->nextHistory);
+
+    historyToolbar->addWidget(ui->backHistoryButton);
+    historyToolbar->addWidget(ui->forwardHistoryButton);
     ui->toolBarLayout->insertWidget(0, historyToolbar);
-
-
-    //TODO: implement it
-    historyToolbar->hide();
 
     QToolBar *viewControlsToolbar = new QToolBar;
     viewControlsToolbar->setIconSize(QSize(16, 16));
@@ -133,6 +130,14 @@ void View::setUuid(const QUuid &newUuid)
         return;
     m_uuid = newUuid;
     emit uuidChanged();
+}
+
+void View::setHistoryActions(QAction *goBackAction, QAction *goForwardAction)
+{
+    m_goBackAction = goBackAction;
+    m_goForwardAction = goForwardAction;
+    ui->backHistoryButton->setDefaultAction(goBackAction);
+    ui->forwardHistoryButton->setDefaultAction(goForwardAction);
 }
 
 //---------------------------------------
@@ -251,3 +256,20 @@ void View::setParameters(const QVariantMap &newParameters)
 //     painter.fillRect(0, 0, this->width(), this->height(),palette().color(QPalette::Base));
 
 // }
+
+
+void View::mouseReleaseEvent(QMouseEvent *event)
+{
+
+    if(event->button() == Qt::BackButton){
+        m_goBackAction->trigger();
+        event->accept();
+    }
+    if(event->button() == Qt::ForwardButton){
+        m_goForwardAction->trigger();
+        event->accept();
+    }
+
+    QWidget::mouseReleaseEvent(event);
+
+}

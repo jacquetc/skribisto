@@ -5,6 +5,7 @@
 
 #include "skribisto_desktop_common_global.h"
 #include <QList>
+#include <QMouseEvent>
 #include <QToolBar>
 #include <QUuid>
 #include <QVBoxLayout>
@@ -16,6 +17,7 @@ class View;
 
 class SKRDESKTOPCOMMONEXPORT View : public QWidget {
   Q_OBJECT
+    Q_PROPERTY(QUuid uuid READ uuid WRITE setUuid NOTIFY uuidChanged)
 
 public:
   explicit View(const QString &type, QWidget *parent = nullptr);
@@ -39,6 +41,9 @@ public:
   QUuid uuid() const;
   void setUuid(const QUuid &newUuid);
 
+  void setHistoryActions(QAction *goBackAction, QAction *goForwardAction);
+  virtual void applyHistoryParameters(const QVariantMap &newParameters) {};
+
 protected:
   virtual void initialize() = 0;
 
@@ -58,9 +63,8 @@ protected slots:
 signals:
     void initialized(int projectId, int treeItemId);
     void aboutToBeDestroyed();
-
-
     void uuidChanged();
+    void addToHistoryCalled(View* view, QVariantMap parameters);
 
 private slots:
   void on_closeToolButton_clicked();
@@ -74,7 +78,11 @@ private:
   int m_projectId;
   int m_treeItemId;
   QVariantMap m_parameters;
-  Q_PROPERTY(QUuid uuid READ uuid WRITE setUuid NOTIFY uuidChanged)
+  QAction *m_goBackAction, *m_goForwardAction;
+
+  // QWidget interface
+protected:
+  void mouseReleaseEvent(QMouseEvent *event) override;
 };
 
 #endif // VIEW_H

@@ -270,6 +270,17 @@ void TextEdit::mousePressEvent(QMouseEvent *event)
 
 void TextEdit::mouseReleaseEvent(QMouseEvent *event)
 {
+
+
+    if(event->button() == Qt::BackButton){
+        event->ignore();
+        return;
+    }
+    if(event->button() == Qt::ForwardButton){
+        event->ignore();
+        return;
+    }
+
     m_mouse_button_down = false;
     QTextEdit::mouseReleaseEvent(event);
 }

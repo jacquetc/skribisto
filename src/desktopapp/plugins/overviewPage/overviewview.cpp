@@ -62,7 +62,7 @@ OverviewView::OverviewView(QWidget *parent) :
         this->setCurrentIndex(index);
 
 
-            centralWidgetUi->treeView->edit(index);
+        centralWidgetUi->treeView->edit(index);
 
     });
 
@@ -189,37 +189,37 @@ OverviewView::OverviewView(QWidget *parent) :
 
 
 
-//    m_copyItemsAction = new QAction(tr("Copy"), this);
-//    centralWidgetUi->treeView->addAction(m_copyItemsAction);
-//    m_copyItemsAction->setShortcut(QKeySequence("Ctrl+C"));
-//    m_copyItemsAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-//    QObject::connect(m_copyItemsAction, &QAction::triggered, this, [this, addItemDialog](){
+    //    m_copyItemsAction = new QAction(tr("Copy"), this);
+    //    centralWidgetUi->treeView->addAction(m_copyItemsAction);
+    //    m_copyItemsAction->setShortcut(QKeySequence("Ctrl+C"));
+    //    m_copyItemsAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    //    QObject::connect(m_copyItemsAction, &QAction::triggered, this, [this, addItemDialog](){
 
 
-//        for(auto index : centralWidgetUi->treeView->selectionModel()->selection().indexes()){
-//            copyCutIndex
-//        }
+    //        for(auto index : centralWidgetUi->treeView->selectionModel()->selection().indexes()){
+    //            copyCutIndex
+    //        }
 
-//    } );
+    //    } );
 
 
     connect(centralWidgetUi->treeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, [this](){
 
         if(centralWidgetUi->treeView->selectionModel()->selectedIndexes().count() > 1){
-          QModelIndexList indexList = centralWidgetUi->treeView->selectionModel()->selectedIndexes();
+            QModelIndexList indexList = centralWidgetUi->treeView->selectionModel()->selectedIndexes();
 
-          int firstIndexProjectId = indexList.first().data(ProjectTreeItem::ProjectIdRole).toInt();
+            int firstIndexProjectId = indexList.first().data(ProjectTreeItem::ProjectIdRole).toInt();
 
-          for(const QModelIndex &index : indexList){
-              // forbid selection accross multiple projects
-              if(index.data(ProjectTreeItem::ProjectIdRole).toInt() != firstIndexProjectId){
-                  centralWidgetUi->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
-              }
-              // deselect project item
-              if(index.data(ProjectTreeItem::TreeItemIdRole).toInt() == 0){
-                  centralWidgetUi->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
-              }
-          }
+            for(const QModelIndex &index : indexList){
+                // forbid selection accross multiple projects
+                if(index.data(ProjectTreeItem::ProjectIdRole).toInt() != firstIndexProjectId){
+                    centralWidgetUi->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
+                }
+                // deselect project item
+                if(index.data(ProjectTreeItem::TreeItemIdRole).toInt() == 0){
+                    centralWidgetUi->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
+                }
+            }
         }
 
 
@@ -252,9 +252,11 @@ void OverviewView::initialize()
 {
     m_overviewProxyModel->setProjectId(this->projectId());
 
-        expandProjectItems();
-        restoreExpandStates();
+    expandProjectItems();
+    restoreExpandStates();
 
+    // history
+    emit this->addToHistoryCalled(this, QVariantMap());
 
 }
 
@@ -329,33 +331,33 @@ void OverviewView::expandProjectItems()
     centralWidgetUi->treeView->setAnimated(false);
 
     auto modelIndex = centralWidgetUi->treeView->indexAt(QPoint(1,1));
-        //auto modelIndex = m_overviewProxyModel->getModelIndex(this->projectId(), 0);
-        if(modelIndex.isValid()){
-            centralWidgetUi->treeView->expand(modelIndex);
-        }
+    //auto modelIndex = m_overviewProxyModel->getModelIndex(this->projectId(), 0);
+    if(modelIndex.isValid()){
+        centralWidgetUi->treeView->expand(modelIndex);
+    }
 
-        centralWidgetUi->treeView->setAnimated(true);
+    centralWidgetUi->treeView->setAnimated(true);
 }
 
 //TODO: redo the expand save/restore system
 
 Path OverviewView::pathFromIndex(const QModelIndex &index){
-  QModelIndex iter = index;
-  Path path;
-  while(iter.isValid()){
-    path.prepend(PathItem(iter.row(), iter.column()));
-    iter = iter.parent();
-  }
-  return path;
+    QModelIndex iter = index;
+    Path path;
+    while(iter.isValid()){
+        path.prepend(PathItem(iter.row(), iter.column()));
+        iter = iter.parent();
+    }
+    return path;
 }
 
 QModelIndex OverviewView::pathToIndex(const Path &path){
-  QModelIndex iter;
-  for(int i=0;i<path.size();i++){
-              iter = centralWidgetUi->treeView->model()->index(path[i].first,
-                                  path[i].second, iter);
-  }
-  return iter;
+    QModelIndex iter;
+    for(int i=0;i<path.size();i++){
+        iter = centralWidgetUi->treeView->model()->index(path[i].first,
+                                                         path[i].second, iter);
+    }
+    return iter;
 }
 
 //--------------------------------------------------------------
