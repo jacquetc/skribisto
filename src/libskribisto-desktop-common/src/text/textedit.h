@@ -10,7 +10,7 @@ class SKRDESKTOPCOMMONEXPORT TextEdit : public QTextEdit
     Q_OBJECT
 public:
     TextEdit(QWidget *parent = nullptr);
-    QString uuid();
+    QString uuid() const;
     //    QSize sizeHint() const override;
 
     // QWidget interface

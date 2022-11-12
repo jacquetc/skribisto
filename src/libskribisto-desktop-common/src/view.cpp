@@ -13,6 +13,7 @@
 #include <QMenu>
 #include "thememanager.h"
 #include <QMetaObject>
+#include <QUuid>
 
 View::View(const QString &type, QWidget *parent) :
     QWidget(parent),
@@ -20,6 +21,7 @@ View::View(const QString &type, QWidget *parent) :
 {
     ui->setupUi(this);
 
+    m_uuid = QUuid::createUuid().toString();
 
     QToolBar *historyToolbar = new QToolBar;
     historyToolbar->setIconSize(QSize(16, 16));
@@ -115,10 +117,28 @@ void View::init(){
 
 }
 
+//---------------------------------------
+
+void View::setUuid(const QString &newUuid)
+{
+    m_uuid = newUuid;
+}
+
+//---------------------------------------
+
+QString View::uuid() const
+{
+    return m_uuid;
+}
+
+//---------------------------------------
+
 View::~View()
 {
     delete ui;
 }
+
+//---------------------------------------
 
 void View::setIdentifiersAndInitialize(int projectId, int treeItemId)
 {

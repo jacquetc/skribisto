@@ -878,7 +878,7 @@
 <context>
     <name>DockTitle</name>
     <message>
-        <location filename="../desktopapp/dock.cpp" line="105"/>
+        <location filename="../desktopapp/dock.cpp" line="106"/>
         <source>Hide dock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1679,8 +1679,9 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="233"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="284"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="375"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="287"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="379"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="503"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1716,110 +1717,118 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="280"/>
-        <source>Remove All Splits</source>
+        <source>Close All Views</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="285"/>
+        <location filename="../desktopapp/mainwindow.ui" line="283"/>
+        <source>Close All View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="288"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="290"/>
+        <location filename="../desktopapp/mainwindow.ui" line="293"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="295"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="246"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="345"/>
+        <location filename="../desktopapp/mainwindow.ui" line="298"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="248"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="349"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="465"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="300"/>
+        <location filename="../desktopapp/mainwindow.ui" line="303"/>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="305"/>
+        <location filename="../desktopapp/mainwindow.ui" line="308"/>
         <source>Close project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="310"/>
+        <location filename="../desktopapp/mainwindow.ui" line="313"/>
         <source>Back up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="315"/>
+        <location filename="../desktopapp/mainwindow.ui" line="318"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="320"/>
+        <location filename="../desktopapp/mainwindow.ui" line="323"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="325"/>
+        <location filename="../desktopapp/mainwindow.ui" line="328"/>
         <source>Open Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="345"/>
+        <location filename="../desktopapp/mainwindow.ui" line="348"/>
         <source>Recent projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="357"/>
+        <location filename="../desktopapp/mainwindow.ui" line="360"/>
         <source>Spell checking</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="360"/>
+        <location filename="../desktopapp/mainwindow.ui" line="363"/>
         <source>Shift+F7</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="567"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="649"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="397"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="401"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="247"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="346"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="249"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="350"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="466"/>
         <source>Do you want to save changes to %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="284"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="287"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="503"/>
         <source>Do you really want to quit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="315"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="319"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="376"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="380"/>
         <source>Do you really want to close %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="434"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="438"/>
         <source>Ctrl+E</source>
         <comment>export shortcut</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="564"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="646"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>

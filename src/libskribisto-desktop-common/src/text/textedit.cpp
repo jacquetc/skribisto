@@ -59,7 +59,7 @@ TextEdit::TextEdit(QWidget *parent) :
     connect(this->verticalScrollBar(), &QScrollBar::rangeChanged, this, &TextEdit::adaptScollBarRange);
 }
 
-QString TextEdit::uuid()
+QString TextEdit::uuid() const
 {
 return m_uuid;
 }

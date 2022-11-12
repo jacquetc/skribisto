@@ -17,15 +17,15 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(int newWindowId);
+    MainWindow(int newWindowId, bool restoreViewEnabled);
     ~MainWindow();
 
-    int windowId() const;
     void setWindowId(int newWindowId);
 
     ViewManager *viewManager() const;
 
 public slots:
+    int windowId();
     void addWindowForItemId(int projectId,
                                        int treeItemId);
     void addWindowForProjectIndependantPageType(const QString& pageType);
@@ -34,6 +34,9 @@ public slots:
 
 protected:
     void closeEvent(QCloseEvent *event);
+
+signals:
+    void aboutToBeDestroyed();
 
 private slots:
 

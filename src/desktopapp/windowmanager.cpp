@@ -52,7 +52,7 @@ MainWindow *WindowManager::restoreWindows()
     int numberOfWindows = settings.value("window/numberOfWindows", 1).toInt();
 
     for (int i = 0; i < numberOfWindows; i++) {
-        window = addEmptyWindow();
+        window = addEmptyWindow(true);
     }
 
     return window;
@@ -78,11 +78,11 @@ int WindowManager::getNumberOfWindows()
 
 void WindowManager::closeAllWindows(){
 
-    for (MainWindow *window : m_windowList) {
+    QSettings settings;
+    qDebug() << this->getNumberOfWindows();
+    settings.setValue("window/numberOfWindows", this->getNumberOfWindows());
 
-        QSettings settings;
-        qDebug() << windowManager->getNumberOfWindows();
-        settings.setValue("window/numberOfWindows", windowManager->getNumberOfWindows());
+    for (MainWindow *window : m_windowList) {
 
         this->closeWindow(window);
     }
@@ -101,18 +101,17 @@ void WindowManager::closeWindow(MainWindow *window){
     settings.setValue("visibility", window->windowState().toInt());
     settings.endGroup();
 
-    if(this->getNumberOfWindows() == 1){
-        settings.setValue("window/numberOfWindows", windowManager->getNumberOfWindows());
-    }
+    m_windowList.removeAll(window);
 
+    emit window->aboutToBeDestroyed();
     window->deleteLater();
 }
 
 //----------------------------------------------
 
-MainWindow *WindowManager::addEmptyWindow()
+MainWindow *WindowManager::addEmptyWindow(bool restoreViewEnabled)
 {
- return addWindow();
+ return addWindow(restoreViewEnabled);
 }
 
 //----------------------------------------------
@@ -122,19 +121,19 @@ void WindowManager::addWindowForItemId(int projectId, int treeItemId)
 
     QString type = skrdata->treeHub()->getType(projectId, treeItemId);
 
-    addWindow(type, projectId, treeItemId);
+    addWindow(false, type, projectId, treeItemId);
 }
 //----------------------------------------------
 
 void WindowManager::addWindowForProjectIndependantPageType(const QString &pageType)
 {
-    addWindow(pageType);
+    addWindow(false, pageType);
 }
 //----------------------------------------------
 
 void WindowManager::addWindowForProjectDependantPageType(int projectId, const QString &pageType)
 {
-    addWindow(pageType,projectId);
+    addWindow(false, pageType,projectId);
 
 }
 //----------------------------------------------
@@ -150,12 +149,11 @@ void WindowManager::insertAdditionalPropertyForViewManager(const QString &key, c
 
 }
 
-MainWindow * WindowManager::addWindow(const QString &pageType, int projectId, int treeItemId)
+MainWindow * WindowManager::addWindow(bool restoreViewEnabled, const QString &pageType, int projectId, int treeItemId)
 {
-
     int nextFreeWindowId = m_windowList.count();
 
-    MainWindow *window = new MainWindow(nextFreeWindowId);
+    MainWindow *window = new MainWindow(nextFreeWindowId, restoreViewEnabled);
     this->subscribeWindow(window);
 
 

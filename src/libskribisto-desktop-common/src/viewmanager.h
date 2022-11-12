@@ -11,7 +11,8 @@ class ViewSplitter;
 class SKRDESKTOPCOMMONEXPORT ViewManager : public QObject {
   Q_OBJECT
 public:
-  explicit ViewManager(QObject *parent, QWidget *viewWidget);
+    explicit ViewManager(QObject *parent, QWidget *viewWidget, bool restoreViewEnabled);
+    ~ViewManager();
   void openSpecificView(const QString &pageType, int projectId, int treeItemId);
 
   View *split(View *view, Qt::Orientation orientation = Qt::Horizontal);
@@ -30,6 +31,9 @@ public slots:
 
   View *splitForSamePage(View *view, Qt::Orientation orientation);
 
+  void clear();
+  void saveSplitterStructure();
+
 signals:
   void currentViewChanged(View *view);
   void aboutToRemoveView(View *view);
@@ -46,8 +50,9 @@ private:
   View *m_currentView;
 
 private:
-  void restoreSplitterStructure(const QByteArray &byteArray);
-  QByteArray saveSplitterStructure() const;
+  void extracted(QList<QVariantHash> &variantHashList);
+  void restoreSplitterStructure();
+  QList<QVariantHash> saveSplitterRecursively(ViewSplitter *viewSplitter) const;
 };
 
 //---------------------------------------------------------------
@@ -55,6 +60,8 @@ private:
 
 class ViewSplitter : public QSplitter {
 
+    Q_OBJECT
+    Q_PROPERTY(QString uuid READ uuid WRITE setUuid NOTIFY uuidChanged)
 public:
   explicit ViewSplitter(Qt::Orientation orientation, QWidget *parent = nullptr);
 
@@ -66,6 +73,20 @@ public:
   bool isFirstSplitASplitter();
   ViewSplitter *getSplitter(int index);
   bool isSecondSplitASplitter();
+
+
+  QList<ViewSplitter *> listAllSplittersRecursively();
+
+  QString uuid() const;
+  void setUuid(const QString &newUuid);
+
+signals:
+  void uuidChanged();
+
+private:
+  QString m_uuid;
+
 };
+
 
 #endif // VIEWMANAGER_H

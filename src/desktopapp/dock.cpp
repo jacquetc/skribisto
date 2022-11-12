@@ -24,7 +24,6 @@ void Dock::init(){
     m_stack = new QStackedWidget(this);
     this->setWidget(m_stack);
     m_stack->show();
-    QObject::connect(m_dockTitle->toolbarSelector(), &ToolbarSelector::currentIndexChanged, m_stack, &QStackedWidget::setCurrentIndex);
 }
 
 void Dock::setToolboxes(QList<Toolbox *> toolboxes)
@@ -36,6 +35,8 @@ void Dock::setToolboxes(QList<Toolbox *> toolboxes)
     m_stack->deleteLater();
     m_stack = new QStackedWidget(this);
     this->setWidget(m_stack);
+
+    QObject::connect(m_dockTitle->toolbarSelector(), &ToolbarSelector::currentIndexChanged, m_stack, &QStackedWidget::setCurrentIndex);
 
 
     // add

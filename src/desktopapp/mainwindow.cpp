@@ -17,7 +17,7 @@
 #include <skrdata.h>
 #include <QMessageBox>
 
-MainWindow::MainWindow(int newWindowId)
+MainWindow::MainWindow(int newWindowId, bool restoreViewEnabled)
     : QMainWindow()
     , ui(new Ui::MainWindow)
 {
@@ -32,7 +32,7 @@ MainWindow::MainWindow(int newWindowId)
 
     // view manager
 
-    m_viewManager = new ViewManager(this, ui->centralwidget);
+    m_viewManager = new ViewManager(this, ui->centralwidget, restoreViewEnabled);
 
     QObject::connect(m_viewManager, &ViewManager::currentViewChanged, this, [this](View *view){
         ui->viewDock->setToolboxes(view->toolboxes());
@@ -41,6 +41,8 @@ MainWindow::MainWindow(int newWindowId)
     QObject::connect(m_viewManager, &ViewManager::aboutToRemoveView, this, [this](View *view){
         ui->viewDock->setToolboxes(QList<Toolbox *>());
     });
+
+    QObject::connect(this, &MainWindow::aboutToBeDestroyed, m_viewManager, &ViewManager::saveSplitterStructure);
 
     this->setupMenuActions();
 
@@ -209,7 +211,7 @@ void MainWindow::addWindowForProjectDependantPageType(int projectId, const QStri
 
 //---------------------------------------
 
-int MainWindow::windowId() const
+int MainWindow::windowId()
 {
     return this->property("windowId").toInt();
 }
@@ -277,6 +279,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
             projectCommands->closeProject(projectId);
         }
 
+        windowManager->closeAllWindows();
         return;
 
     }
@@ -291,6 +294,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
             for(int projectId : projectList){
                projectCommands->closeProject(projectId);
             }
+            windowManager->closeAllWindows();
             event->accept();
             return;
             break;
@@ -440,14 +444,92 @@ void MainWindow::setupMenuActions()
     //-------------------
 
     ui->actionQuit->setShortcuts(QKeySequence::Quit);
-    connect(ui->actionQuit, &QAction::triggered, this, [](){
-        // accepted
-        windowManager->closeAllWindows();
+    connect(ui->actionQuit, &QAction::triggered, this, [this](){
+
+
+        QList<int> projectList = skrdata->projectHub()->getProjectIdList();
+        QList<int> notSavedProjectList;
+
+        for(int projectId : projectList){
+            if(!skrdata->projectHub()->isProjectSaved(projectId)){
+                notSavedProjectList.append(projectId);
+            }
+        }
+
+
+        if(!notSavedProjectList.isEmpty()){
+
+            SKRResult result;
+
+            for(int projectId : notSavedProjectList){
+                QMessageBox::StandardButton toggledButton = QMessageBox::question(this, tr("Save"),
+                                                                                  tr("Do you want to save changes to %1?").arg(skrdata->projectHub()->getProjectName(projectId)),
+                                                                                  QMessageBox::Cancel | QMessageBox::Discard | QMessageBox::Save);
+
+                switch (toggledButton) {
+                case QMessageBox::Cancel:
+
+                    return;
+
+                    break;
+                case QMessageBox::Save:
+                    result.clear();
+                    result = projectCommands->save(projectId);
+                    if(!result.isSuccess() && result.containsErrorCode("no_path")){
+                        this->openSaveAsDialog(projectId);
+                    }
+                    projectCommands->closeProject(projectId);
+
+                    break;
+                case QMessageBox::Discard:
+                    projectCommands->closeProject(projectId);
+                    break;
+                default:
+                    break;
+                }
+
+            }
+
+            // close the already saved projects:
+            for(int projectId : projectList){
+                projectCommands->closeProject(projectId);
+            }
+
+            windowManager->closeAllWindows();
+            return;
+
+        }
+        else{
+            QMessageBox::StandardButton toggledButton = QMessageBox::question(this, tr("Quit"),tr("Do you really want to quit?"));
+            switch (toggledButton) {
+            case QMessageBox::No:
+                return;
+                break;
+            case QMessageBox::Yes:
+                for(int projectId : projectList){
+                   projectCommands->closeProject(projectId);
+                }
+                windowManager->closeAllWindows();
+                return;
+                break;
+            default:
+                break;
+            }
+        }
+
+
     });
     //-------------------
 
     connect(ui->actionAdd_Window, &QAction::triggered, this, [](){
-        windowManager->addEmptyWindow();
+        windowManager->addEmptyWindow(false);
+
+    });
+    //-------------------
+
+    connect(ui->actionClose_all_views, &QAction::triggered, this, [this](){
+        this->viewManager()->clear();
+         this->viewManager()->openViewAtCurrentView("EMPTY");
 
     });
     //-------------------

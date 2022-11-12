@@ -277,7 +277,10 @@
   </action>
   <action name="actionClose_all_views">
    <property name="text">
-    <string>Remove All Splits</string>
+    <string>Close All Views</string>
+   </property>
+   <property name="toolTip">
+    <string>Close All View</string>
    </property>
   </action>
   <action name="actionUndo">

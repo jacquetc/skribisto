@@ -8,7 +8,7 @@
 #include "skrdata.h"
 #include "emptyview.h"
 
-ViewManager::ViewManager(QObject *parent, QWidget *viewWidget)
+ViewManager::ViewManager(QObject *parent, QWidget *viewWidget, bool restoreViewEnabled)
     : QObject{parent}, m_viewWidget(viewWidget)
 {
     this->setObjectName("viewManager");
@@ -16,7 +16,6 @@ ViewManager::ViewManager(QObject *parent, QWidget *viewWidget)
     QVBoxLayout *layout = new QVBoxLayout(viewWidget);
     layout->setContentsMargins(0,0,0,0);
     m_rootSplitter = new ViewSplitter(Qt::Horizontal, viewWidget);
-
     layout->addWidget(m_rootSplitter);
 
     EmptyView *emptyView = new EmptyView;
@@ -46,7 +45,18 @@ ViewManager::ViewManager(QObject *parent, QWidget *viewWidget)
         }
     });
 
+    if(restoreViewEnabled){
+
+        this->restoreSplitterStructure();
+    }
+
     QTimer::singleShot(0, this, &ViewManager::init);
+}
+
+//---------------------------------------
+
+ViewManager::~ViewManager()
+{
 }
 
 //---------------------------------------
@@ -163,14 +173,40 @@ View* ViewManager::openViewAt(View *atView, const QString &type, int projectId, 
 
 View* ViewManager::splitForSamePage(View *view, Qt::Orientation orientation)
 {
+    if(m_viewList.count() >= 10){
+        return nullptr;
+    }
     View *newView = this->split(view, orientation);
     return this->openViewAt(newView, view->type(), view->projectId(), view->treeItemId());
 }
 
 //----------------------------------------
 
+void ViewManager::clear()
+{
+    qDeleteAll(m_viewList);
+    m_viewList.clear();
+
+    delete m_rootSplitter;
+
+    delete m_viewWidget->layout();
+    QVBoxLayout *layout = new QVBoxLayout(m_viewWidget);
+    layout->setContentsMargins(0,0,0,0);
+    m_rootSplitter = new ViewSplitter(Qt::Horizontal, m_viewWidget);
+    layout->addWidget(m_rootSplitter);
+
+
+}
+
+//----------------------------------------
+
 View* ViewManager::split(View *view, Qt::Orientation orientation)
 {
+
+    if(m_viewList.count() >= 10){
+        return nullptr;
+    }
+
     EmptyView *emptyView = new EmptyView;
     m_viewList.append(emptyView);
 
@@ -284,17 +320,191 @@ View *ViewManager::nextView(View *view)
 
 void ViewManager::addViewParametersBeforeCreation(const QVariantMap &parameters)
 {
- m_parameters = parameters;
+    m_parameters = parameters;
 }
 
-void ViewManager::restoreSplitterStructure(const QByteArray &byteArray)
+//----------------------------------------------
+
+void ViewManager::restoreSplitterStructure()
 {
+
+    int windowId;
+    QMetaObject::invokeMethod(m_viewWidget->window(), "windowId", Qt::DirectConnection, Q_RETURN_ARG(int, windowId));
+
+
+    QSettings settings;
+    settings.beginGroup("window_" + QString::number(windowId));
+    QByteArray splitterStructure = settings.value("splitterStructure", QByteArray()).toByteArray();
+    settings.endGroup();
+
+
+    if(splitterStructure.isEmpty()) {
+        return;
+    }
+    this->clear();
+
+    QByteArray array = splitterStructure;
+    QList<QVariantHash> variantHashList;
+    QDataStream stream(&array, QIODevice::ReadOnly);
+    stream >> variantHashList;
+
+
+
+    for(int i = 0; i < variantHashList.count() ; i++){
+
+        const QVariantHash &splitterVariantHash = variantHashList.at(i);
+
+        ViewSplitter *parentSplitter = nullptr;
+        if(i == 0){ // means m_rootSplitter
+           parentSplitter = m_rootSplitter;
+           parentSplitter->setUuid(splitterVariantHash.value("splitterUuid").toString());
+        }
+        else {
+            // find the good parent splitter
+            QList<ViewSplitter *> childSplitterList = m_rootSplitter->listAllSplittersRecursively();
+            QString parentUuid = splitterVariantHash.value("splitterUuid").toString();
+            for(ViewSplitter *splitter : childSplitterList){
+                if(splitter->uuid() == parentUuid){
+                    parentSplitter = splitter;
+                }
+            }
+
+            if(nullptr == parentSplitter){
+                qFatal("");
+                return;
+            }
+
+        }
+
+        Qt::Orientation orientation = static_cast<Qt::Orientation>(splitterVariantHash.value("splitterOrientation").toInt());
+        parentSplitter->setOrientation(orientation);
+
+        // first child
+
+        if(splitterVariantHash.value("firstIsSplitter").toBool()){
+            ViewSplitter *firstSplitter = new ViewSplitter(orientation);
+            firstSplitter->setUuid(splitterVariantHash.value("firstSplitterUuid").toString());
+            parentSplitter->addWidget(firstSplitter);
+        }
+        else{
+            EmptyView *view = new EmptyView;
+            view->setUuid(splitterVariantHash.value("firstViewUuid").toString());
+            m_viewList.append(view);
+            parentSplitter->addWidget(view);
+        }
+
+        // second child
+
+        if(splitterVariantHash.value("splitCount").toInt() == 2){
+            if(splitterVariantHash.value("secondIsSplitter").toBool()){
+                ViewSplitter *secondSplitter = new ViewSplitter(orientation);
+                secondSplitter->setUuid(splitterVariantHash.value("secondSplitterUuid").toString());
+                parentSplitter->addWidget(secondSplitter);
+            }
+            else{
+                EmptyView *view = new EmptyView;
+                view->setUuid(splitterVariantHash.value("secondViewUuid").toString());
+                m_viewList.append(view);
+                parentSplitter->addWidget(view);
+            }
+        }
+
+        // size:
+
+        QString sizeListString = splitterVariantHash.value("splitSizes").toString();
+        QStringList sizeStringList = sizeListString.split(",");
+
+        QList<int> sizes;
+        for(const QString &sizeString : sizeStringList){
+            sizes << sizeString.toInt();
+        }
+
+        parentSplitter->setSizes(sizes);
+
+    }
+}
+
+//----------------------------------------------
+
+void ViewManager::saveSplitterStructure()
+{
+
+    QList<QVariantHash> variantHashList = saveSplitterRecursively(m_rootSplitter);
+
+
+    QByteArray byteArray;
+    QDataStream stream(&byteArray, QIODevice::WriteOnly);
+    stream << variantHashList;
+
+
+
+    int windowId;
+    QMetaObject::invokeMethod(m_viewWidget->window(), "windowId", Qt::DirectConnection, Q_RETURN_ARG(int, windowId));
+
+    QSettings settings;
+    settings.beginGroup("window_" + QString::number(windowId));
+    settings.setValue("splitterStructure", byteArray);
+    settings.endGroup();
 
 }
 
-QByteArray ViewManager::saveSplitterStructure() const
-{
+//---------------------------------------
 
+QList<QVariantHash> ViewManager::saveSplitterRecursively(ViewSplitter *viewSplitter) const
+{
+    QList<QVariantHash> variantHashList;
+
+    QVariantHash splitterVariantHash;
+
+    //save current :
+    splitterVariantHash.insert("splitterOrientation", viewSplitter->orientation());
+    splitterVariantHash.insert("splitterUuid", viewSplitter->uuid());
+    splitterVariantHash.insert("splitCount", viewSplitter->count());
+
+    // save first split
+    splitterVariantHash.insert("firstIsSplitter", viewSplitter->isFirstSplitASplitter());
+    if(viewSplitter->isFirstSplitASplitter()){
+        splitterVariantHash.insert("firstSplitterUuid", viewSplitter->getSplitter(0)->uuid());
+    }
+    else{
+        splitterVariantHash.insert("firstViewUuid", viewSplitter->getView(0)->uuid());
+    }
+
+
+    // save second split
+
+    if(viewSplitter->count() == 2){
+        splitterVariantHash.insert("secondIsSplitter", viewSplitter->isSecondSplitASplitter());
+
+        if(viewSplitter->isSecondSplitASplitter()){
+            splitterVariantHash.insert("secondSplitterUuid", viewSplitter->getSplitter(1)->uuid());
+        }
+        else{
+            splitterVariantHash.insert("secondViewUuid", viewSplitter->getView(1)->uuid());
+        }
+
+        QStringList sizes;
+        for(int size : viewSplitter->sizes()){
+            sizes << QString::number(size);
+        }
+        splitterVariantHash.insert("splitSizes", sizes.join(","));
+
+    }
+    variantHashList  << splitterVariantHash;
+
+            //save children :
+
+    if(viewSplitter->isFirstSplitASplitter()){
+        variantHashList << saveSplitterRecursively(viewSplitter->getSplitter(0));
+    }
+
+    if(viewSplitter->count() == 2){
+        if(viewSplitter->isSecondSplitASplitter()){
+            variantHashList << saveSplitterRecursively(viewSplitter->getSplitter(1));
+        }
+    }
+
+    return variantHashList;
 }
 
 //---------------------------------------
@@ -326,10 +536,16 @@ void ViewManager::openSpecificView(const QString &pageType, int projectId, int t
 
 //---------------------------------------------------------------
 //---------------------------------------------------------------
+//---------------------------------------------------------------
+//---------------------------------------------------------------
 
 
 ViewSplitter::ViewSplitter(Qt::Orientation orientation, QWidget *parent) : QSplitter(orientation, parent)
 {
+    this->setObjectName("ViewSplitter");
+    m_uuid = QUuid::createUuid().toString();
+
+
     //TODO: make it collapsible, deleting cleanly the hidden splitter or view
     this->setChildrenCollapsible(false);
 
@@ -358,11 +574,47 @@ bool ViewSplitter::isFirstSplitASplitter()
 
 ViewSplitter *ViewSplitter::getSplitter(int index)
 {
-    return static_cast<ViewSplitter *>(this->widget(1));
+    return static_cast<ViewSplitter *>(this->widget(index));
 }
 
 bool ViewSplitter::isSecondSplitASplitter()
 {
     return QString(this->widget(1)->metaObject()->className()) == "ViewSplitter";
 
+}
+
+QList<ViewSplitter *> ViewSplitter::listAllSplittersRecursively()
+{
+    QList<ViewSplitter *> splitters;
+
+    splitters << this;
+
+    if(this->count() == 0){
+        return splitters;
+    }
+
+    if(this->isFirstSplitASplitter()){
+        splitters << this->getSplitter(0)->listAllSplittersRecursively();
+    }
+
+    if(this->count() == 2){
+        if(this->isSecondSplitASplitter()){
+            splitters << this->getSplitter(1)->listAllSplittersRecursively();
+        }
+    }
+
+    return splitters;
+}
+
+QString ViewSplitter::uuid() const
+{
+    return m_uuid;
+}
+
+void ViewSplitter::setUuid(const QString &newUuid)
+{
+    if (m_uuid == newUuid)
+        return;
+    m_uuid = newUuid;
+    emit uuidChanged();
 }

@@ -9,14 +9,14 @@ ComboBox::ComboBox(QWidget *parent): QComboBox(parent)
     QString buttonArgb = this->palette().button().color().name(QColor::NameFormat::HexArgb);
     QString buttonTextArgb = this->palette().buttonText().color().name(QColor::NameFormat::HexArgb);
     QString styleSheet = QString("QComboBox{ background: %1; color: %2; }").arg(buttonArgb, buttonTextArgb);
-    this->setStyleSheet(styleSheet);
+    //this->setStyleSheet(styleSheet);
 
     connect(themeManager, &ThemeManager::currentThemeTypeChanged, this, [&](){
 
         QString buttonArgb = this->palette().button().color().name(QColor::NameFormat::HexArgb);
         QString buttonTextArgb = this->palette().buttonText().color().name(QColor::NameFormat::HexArgb);
         QString styleSheet = QString("QComboBox{ background: %1; color: %2; }").arg(buttonArgb, buttonTextArgb);
-        this->setStyleSheet(styleSheet);
+        //this->setStyleSheet(styleSheet);
         shakePalette();
 
     }, Qt::QueuedConnection);
@@ -36,7 +36,7 @@ void ComboBox::shakePalette(){
     QString buttonArgb = this->palette().button().color().name(QColor::NameFormat::HexArgb);
     QString buttonTextArgb = this->palette().buttonText().color().name(QColor::NameFormat::HexArgb);
     QString styleSheet = QString("QComboBox{ background: %1; color: %2; }").arg(buttonArgb, buttonTextArgb);
-    this->setStyleSheet(styleSheet);
+    //this->setStyleSheet(styleSheet);
 
     for(int i = 40; i < 500 ; i++){
         this->setFixedWidth(i);

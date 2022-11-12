@@ -33,6 +33,10 @@ public:
   const QVariantMap &parameters() const;
   void setParameters(const QVariantMap &newParameters);
 
+  QString uuid() const;
+
+  void setUuid(const QString &newUuid);
+
 protected:
   virtual void initialize() = 0;
 
@@ -60,6 +64,7 @@ private slots:
 
 private:
   Ui::View *ui;
+  QString m_uuid;
   QString m_type;
   int m_projectId;
   int m_treeItemId;
