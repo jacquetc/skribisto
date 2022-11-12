@@ -21,6 +21,7 @@ public:
 
 
     QStackedWidget *stack() const;
+    void clear();
 
 public slots:
     void setToolboxes(QList<Toolbox *> toolboxes);
@@ -29,13 +30,14 @@ protected:
     void paintEvent(QPaintEvent *event);
 
 signals:
-
+     void aboutToBeDestroyed();
 
 private slots:
     void init();
 private:
     DockTitle *m_dockTitle;
     QStackedWidget *m_stack;
+    QList<Toolbox *> m_toolboxList;
 
 };
 

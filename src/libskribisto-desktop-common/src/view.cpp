@@ -13,15 +13,12 @@
 #include <QMenu>
 #include "thememanager.h"
 #include <QMetaObject>
-#include <QUuid>
 
 View::View(const QString &type, QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::View), m_type(type), m_projectId(-1), m_treeItemId(-1)
+    ui(new Ui::View), m_type(type), m_projectId(-1), m_treeItemId(-1), m_uuid(QUuid::createUuid())
 {
     ui->setupUi(this);
-
-    m_uuid = QUuid::createUuid().toString();
 
     QToolBar *historyToolbar = new QToolBar;
     historyToolbar->setIconSize(QSize(16, 16));
@@ -50,6 +47,8 @@ View::View(const QString &type, QWidget *parent) :
     ui->toolBarLayout->setStretch(1, 1);
     ui->toolBarLayout->setContentsMargins(0,0,0,0);
 
+    //------------------------------
+
     QAction *splitHorizontalyAction = new QAction(QIcon(":/icons/backup/view-split-left-right.svg"), "Split", this);
     QObject::connect(splitHorizontalyAction, &QAction::triggered, this, [this](){
 
@@ -60,6 +59,8 @@ View::View(const QString &type, QWidget *parent) :
     });
 
 
+    //------------------------------
+
     QAction *splitVerticalyAction = new QAction(QIcon(":/icons/backup/view-split-top-bottom.svg"), "Split verticaly", this);
     QObject::connect(splitVerticalyAction, &QAction::triggered, this, [this](){
 
@@ -68,6 +69,8 @@ View::View(const QString &type, QWidget *parent) :
         viewManager->splitForSamePage(this, Qt::Vertical);
 
     });
+
+    //------------------------------
 
     QAction *openInNewWindowAction = new QAction(QIcon(":/icons/backup/window-new.svg"), "Open in a new window", this);
     QObject::connect(openInNewWindowAction, &QAction::triggered, this, [this](){
@@ -93,6 +96,8 @@ View::View(const QString &type, QWidget *parent) :
 
     });
 
+    //------------------------------
+
     QMenu *splitMenu = new QMenu;
     splitMenu->addAction(splitHorizontalyAction);
     splitMenu->addAction(splitVerticalyAction);
@@ -117,19 +122,20 @@ void View::init(){
 
 }
 
-//---------------------------------------
-
-void View::setUuid(const QString &newUuid)
-{
-    m_uuid = newUuid;
-}
-
-//---------------------------------------
-
-QString View::uuid() const
+QUuid View::uuid() const
 {
     return m_uuid;
 }
+
+void View::setUuid(const QUuid &newUuid)
+{
+    if (m_uuid == newUuid)
+        return;
+    m_uuid = newUuid;
+    emit uuidChanged();
+}
+
+//---------------------------------------
 
 //---------------------------------------
 
@@ -146,6 +152,8 @@ void View::setIdentifiersAndInitialize(int projectId, int treeItemId)
     m_treeItemId = treeItemId;
 
     this->initialize();
+
+    this->applyParameters();
 
     emit initialized(projectId, treeItemId);
 }
@@ -189,37 +197,52 @@ void View::setSecondToolBarVisible(bool visible)
     ui->toolBarSystemLayout->itemAt(1)->widget()->setVisible(visible);
 }
 
+//------------------------------------------------------------
+
 int View::treeItemId() const
 {
     return m_treeItemId;
 }
+
+//------------------------------------------------------------
 
 int View::projectId() const
 {
     return m_projectId;
 }
 
+//------------------------------------------------------------
+
 const QString &View::type() const
 {
     return m_type;
 }
 
+//------------------------------------------------------------
+
 void View::on_closeToolButton_clicked()
 {
 
     ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-    viewManager->removeSplit(this);
+    viewManager->removeSplitWithView(this);
 }
+
+//------------------------------------------------------------
 
 const QVariantMap &View::parameters() const
 {
     return m_parameters;
 }
 
+//------------------------------------------------------------
+
 void View::setParameters(const QVariantMap &newParameters)
 {
     m_parameters = newParameters;
 }
+
+//------------------------------------------------------------
+
 
 //void View::paintEvent(QPaintEvent *event)
 // {

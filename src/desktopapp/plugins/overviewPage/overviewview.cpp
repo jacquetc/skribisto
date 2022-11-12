@@ -389,7 +389,7 @@ void OverviewView::open(const QModelIndex &index)
         QString type = index.data(ProjectTreeItem::TypeRole).toString();
 
         ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewAtCurrentView(type, this->projectId(), m_targetTreeItemId);
+        viewManager->openViewAtCurrentViewHolder(type, this->projectId(), m_targetTreeItemId);
 
     }
 }
@@ -401,7 +401,7 @@ void OverviewView::openInAnotherView(const QModelIndex &index)
         QString type = index.data(ProjectTreeItem::TypeRole).toString();
 
         ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewInAnotherView(type, this->projectId(), m_targetTreeItemId);
+        viewManager->openViewInAnotherViewHolder(type, this->projectId(), m_targetTreeItemId);
 
     }
 }

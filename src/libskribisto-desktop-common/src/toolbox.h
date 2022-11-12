@@ -29,6 +29,7 @@ public:
 
 signals:
     void initialized(int projectId, int treeItemId);
+    void aboutToBeDestroyed();
 
 
 private:

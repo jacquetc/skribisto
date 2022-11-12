@@ -41,6 +41,14 @@ protected:
     void settingsChanged(const QHash<QString, QVariant> &newSettings) override;
 
 
+
+    // View interface
+public:
+    void applyParameters() override;
+
+    // View interface
+protected:
+    QVariantMap addOtherViewParametersBeforeSplit() override;
 };
 
 #endif // TEXTVIEW_H

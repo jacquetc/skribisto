@@ -7,12 +7,37 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QTimer>
+#include <skrdata.h>
 
 Dock::Dock(QWidget *parent)
     : QDockWidget{parent}
 {
     m_dockTitle = new DockTitle(this);
     this->setTitleBarWidget(m_dockTitle);
+
+    connect(skrdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, [this](int projectId){
+        if(m_toolboxList.isEmpty()){
+            return;
+        }
+
+        if(m_toolboxList.at(0)->projectId() == projectId){
+            m_dockTitle->toolbarSelector()->clear();
+
+            for(auto *toolbox : m_toolboxList){
+                emit toolbox->aboutToBeDestroyed();
+            }
+
+            m_stack->deleteLater();
+            m_stack = new QStackedWidget(this);
+            this->setWidget(m_stack);
+            qDeleteAll(m_toolboxList);
+            m_toolboxList.clear();
+
+            QObject::connect(m_dockTitle->toolbarSelector(), &ToolbarSelector::currentIndexChanged, m_stack, &QStackedWidget::setCurrentIndex);
+
+        }
+
+    });
 
     QTimer::singleShot(0, this, &Dock::init);
 }
@@ -29,21 +54,15 @@ void Dock::init(){
 void Dock::setToolboxes(QList<Toolbox *> toolboxes)
 {
     // clear
-
-    m_dockTitle->toolbarSelector()->clear();
-
-    m_stack->deleteLater();
-    m_stack = new QStackedWidget(this);
-    this->setWidget(m_stack);
-
-    QObject::connect(m_dockTitle->toolbarSelector(), &ToolbarSelector::currentIndexChanged, m_stack, &QStackedWidget::setCurrentIndex);
-
+        this->clear();
 
     // add
 
     int index = 0;
     for(auto toolbox : toolboxes){
         m_stack->addWidget(toolbox);
+        m_toolboxList.append(toolbox);
+
         m_dockTitle->toolbarSelector()->add(toolbox->icon(), toolbox->title());
         index++;
 
@@ -70,6 +89,26 @@ void Dock::paintEvent(QPaintEvent *event)
 QStackedWidget *Dock::stack() const
 {
     return m_stack;
+}
+//------------------------------------------------------------------------------------
+
+void Dock::clear()
+{
+
+    m_dockTitle->toolbarSelector()->clear();
+
+    for(auto *toolbox : m_toolboxList){
+        emit toolbox->aboutToBeDestroyed();
+    }
+
+    m_stack->deleteLater();
+    m_stack = new QStackedWidget(this);
+    this->setWidget(m_stack);
+    qDeleteAll(m_toolboxList);
+    m_toolboxList.clear();
+
+    QObject::connect(m_dockTitle->toolbarSelector(), &ToolbarSelector::currentIndexChanged, m_stack, &QStackedWidget::setCurrentIndex);
+
 }
 
 //------------------------------------------------------------------------------------

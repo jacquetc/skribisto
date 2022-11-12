@@ -3,6 +3,7 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <QTextEdit>
+#include <QApplication>
 
 #include "interfaces/pagedesktopinterface.h"
 #include "skrdata.h"
@@ -18,31 +19,29 @@ ViewManager::ViewManager(QObject *parent, QWidget *viewWidget, bool restoreViewE
     m_rootSplitter = new ViewSplitter(Qt::Horizontal, viewWidget);
     layout->addWidget(m_rootSplitter);
 
+    ViewHolder *viewHolder = new ViewHolder;
+    m_rootSplitter->addWidget(viewHolder);
+    m_viewHolderList.append(viewHolder);
+
     EmptyView *emptyView = new EmptyView;
-    m_rootSplitter->addWidget(emptyView);
-    m_viewList.append(emptyView);
+    viewHolder->addView(emptyView);
 
 
+    QObject::connect(qApp, &QApplication::focusChanged,  this, &ViewManager::determineCurrentView, Qt::QueuedConnection);
 
-    QTimer *m_focusDetectorTimer = new QTimer(this);
-    m_focusDetectorTimer->setInterval(2000);
-    QObject::connect(m_focusDetectorTimer, &QTimer::timeout,  this, &ViewManager::determineCurrentView);
-    m_focusDetectorTimer->start();
 
     connect(skrdata->treeHub(), &SKRTreeHub::treeItemAboutToBeRemoved, this, [this](int projectId, int treeItemId){
-        for(auto *view : m_viewList){
-            if(projectId == view->projectId() && treeItemId == view->treeItemId()){
-                removeSplit(view);
-            }
+        for(ViewHolder *viewHolder : m_viewHolderList){
+            viewHolder->removeViews(projectId, treeItemId);
         }
+        determineCurrentView();
     });
 
     connect(skrdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, [this](int projectId){
-        for(auto *view : m_viewList){
-            if(projectId == view->projectId()){
-                removeSplit(view);
-            }
+        for(ViewHolder *viewHolder : m_viewHolderList){
+            viewHolder->removeViews(projectId);
         }
+        determineCurrentView();
     });
 
     if(restoreViewEnabled){
@@ -66,64 +65,111 @@ void ViewManager::init(){
 
 }
 
+//---------------------------------------
+
 void ViewManager::determineCurrentView()
 {
     View* oldView = m_currentView;
 
-        if(!m_viewList.contains(m_currentView)){
-            m_currentView = nullptr;
+    QList<View *> currentViewList;
+    for(ViewHolder *viewHolder : m_viewHolderList){
+        currentViewList << viewHolder->currentView();
+    }
+
+
+    if(!currentViewList.contains(m_currentView)){
+        m_currentView = nullptr;
+    }
+
+    for(auto *view : currentViewList){
+        QList<QWidget *> allWidgets = view->findChildren<QWidget *>();
+        for(auto *widget : allWidgets){
+
+            if(widget->hasFocus()){
+                m_currentView = view;
+                break;
+            }
         }
+    }
+    if(currentViewList.isEmpty()){
+        if(m_viewHolderList.isEmpty()){
+            ViewHolder *viewHolder = new ViewHolder;
+            m_rootSplitter->addWidget(viewHolder);
+            m_viewHolderList.append(viewHolder);
+        }
+        EmptyView *emptyView = new EmptyView;
+        m_viewHolderList.at(0)->addView(emptyView);
+    }
 
-       for(auto *view : m_viewList){
-           QList<QWidget *> allWidgets = view->findChildren<QWidget *>();
-           for(auto *widget : allWidgets){
+    if(!m_currentView){
+        m_currentView = m_viewHolderList.at(0)->currentView();
+    }
 
-               if(widget->hasFocus()){
-                  m_currentView = view;
-               }
-           }
-       }
-       if(m_viewList.isEmpty()){
-           EmptyView *emptyView = new EmptyView;
-           m_rootSplitter->addWidget(emptyView);
-           m_viewList.append(emptyView);
-       }
+    // determine current view holder:
 
-       if(!m_currentView){
-          m_currentView = m_viewList.at(0);
-       }
-
-       if(oldView != m_currentView && m_currentView){
-           emit currentViewChanged(m_currentView);
-       }
-
-}
+    for(ViewHolder *viewHolder : m_viewHolderList){
+        if(m_currentView == viewHolder->currentView()){
+            m_currentViewHolder = viewHolder;
+            break;
+        }
+    }
 
 
-//---------------------------------------
-
-void ViewManager::openViewAtCurrentView(const QString &type, int projectId, int treeItemId)
-{
-    View* currentView = this->currentView();
-
-
-    this->openViewAt(currentView, type, projectId, treeItemId);
-}
-
-//---------------------------------------
-
-void ViewManager::openViewInAnotherView(const QString &type, int projectId, int treeItemId)
-{
-    View* nextView = this->nextView(this->currentView());
-    this->openViewAt(nextView, type, projectId, treeItemId);
+    if(oldView != m_currentView && m_currentView){
+        emit currentViewChanged(m_currentView);
+        emit currentViewHolderChanged(m_currentViewHolder);
+    }
 
 }
 
 //---------------------------------------
 
-View* ViewManager::openViewAt(View *atView, const QString &type, int projectId, int treeItemId)
+ViewHolder *ViewManager::currentViewHolder()
 {
 
+    this->determineCurrentView();
+
+    return m_currentViewHolder;
+}
+
+
+//---------------------------------------
+
+void ViewManager::openViewAtCurrentViewHolder(const QString &type, int projectId, int treeItemId)
+{
+    ViewHolder* currentViewHolder = this->currentViewHolder();
+
+
+    this->openViewAt(currentViewHolder, type, projectId, treeItemId);
+}
+
+//---------------------------------------
+
+void ViewManager::openViewInAnotherViewHolder(const QString &type, int projectId, int treeItemId)
+{
+    ViewHolder* nextViewHolder = this->nextViewHolder(this->currentViewHolder());
+    this->openViewAt(nextViewHolder, type, projectId, treeItemId);
+
+}
+
+//---------------------------------------
+
+View* ViewManager::openViewAt(ViewHolder *atViewHolder, const QString &type, int projectId, int treeItemId)
+{
+    // find existing View in the ViewHolder:
+
+    for(View *view : atViewHolder->viewList()){
+        if(view->type() == type && view->projectId() == projectId && view->treeItemId() == treeItemId){
+            atViewHolder->setCurrentView(view);
+            view->setParameters(m_parameters);
+            view->applyParameters();
+            m_parameters.clear();
+
+            return view;
+        }
+    }
+
+    // else create new View :
 
     QList<PageDesktopInterface *> pluginList =
             skrpluginhub->pluginsByType<PageDesktopInterface>();
@@ -145,23 +191,14 @@ View* ViewManager::openViewAt(View *atView, const QString &type, int projectId, 
 
     if(view != nullptr){
 
-
-        ViewSplitter *parentSplitter = static_cast<ViewSplitter *>(atView->parent());
-        int viewIndex = parentSplitter->indexOf(atView);
-        m_viewList.append(view);
-        parentSplitter->insertWidget(viewIndex, view);
-        m_viewList.removeAll(atView);
-        emit atView->aboutToBeDestroyed();
-        atView->hide();
-        atView->deleteLater();
+        atViewHolder->addView(view);
         view->setParameters(m_parameters);
         view->setIdentifiersAndInitialize(projectId, treeItemId);
         m_parameters.clear();
-
+        atViewHolder->setCurrentView(view);
         view->setFocus();
         this->determineCurrentView();
 
-            //QObject::connect(view, &View::focuscha)
     }
 
 
@@ -173,19 +210,34 @@ View* ViewManager::openViewAt(View *atView, const QString &type, int projectId, 
 
 View* ViewManager::splitForSamePage(View *view, Qt::Orientation orientation)
 {
-    if(m_viewList.count() >= 10){
+    if(m_viewHolderList.count() >= 10){
         return nullptr;
     }
-    View *newView = this->split(view, orientation);
-    return this->openViewAt(newView, view->type(), view->projectId(), view->treeItemId());
+
+
+    ViewHolder *sourceViewHolder = nullptr;
+
+    for(ViewHolder *viewHolder : m_viewHolderList){
+        if(view == viewHolder->currentView()){
+            sourceViewHolder = viewHolder;
+            break;
+        }
+    }
+
+    if(nullptr == sourceViewHolder){
+        return nullptr;
+    }
+
+    ViewHolder *newViewHolder = this->split(sourceViewHolder, orientation);
+    return this->openViewAt(newViewHolder, view->type(), view->projectId(), view->treeItemId());
 }
 
 //----------------------------------------
 
 void ViewManager::clear()
 {
-    qDeleteAll(m_viewList);
-    m_viewList.clear();
+    qDeleteAll(m_viewHolderList);
+    m_viewHolderList.clear();
 
     delete m_rootSplitter;
 
@@ -200,54 +252,92 @@ void ViewManager::clear()
 
 //----------------------------------------
 
-View* ViewManager::split(View *view, Qt::Orientation orientation)
+ViewHolder* ViewManager::split(ViewHolder *viewHolder, Qt::Orientation orientation)
 {
 
-    if(m_viewList.count() >= 10){
+    if(m_viewHolderList.count() >= 10){
         return nullptr;
     }
 
-    EmptyView *emptyView = new EmptyView;
-    m_viewList.append(emptyView);
+    ViewHolder *newViewHolder = new ViewHolder;
+    m_viewHolderList.append(newViewHolder);
 
-    ViewSplitter *parentSplitter = static_cast<ViewSplitter *>(view->parentWidget());
+    EmptyView *emptyView = new EmptyView;
+    newViewHolder->addView(emptyView);
+
+    ViewSplitter *parentSplitter = static_cast<ViewSplitter *>(viewHolder->parentWidget());
     QByteArray array = parentSplitter->saveState();
 
     // do not add new splitter, but modify it for root splitter
     if(parentSplitter == m_rootSplitter && m_rootSplitter->count() == 1){
         m_rootSplitter->setOrientation(orientation);
-        m_rootSplitter->addWidget(emptyView);
+        m_rootSplitter->addWidget(newViewHolder);
+
+        // set sizes
+        int halfSize = parentSplitter->orientation() == Qt::Horizontal ? parentSplitter->width() / 2 : parentSplitter->height() / 2;
+        parentSplitter->setSizes(QList<int>() << halfSize <<  halfSize);
     }
     else{
         ViewSplitter *childSplitter = new ViewSplitter(orientation);
-        int viewIndex = parentSplitter->indexOf(view);
+        int viewIndex = parentSplitter->indexOf(viewHolder);
         parentSplitter->insertWidget(viewIndex, childSplitter);
-        childSplitter->addWidget(view);
-        childSplitter->addWidget(emptyView);
+        childSplitter->addWidget(viewHolder);
+        childSplitter->addWidget(newViewHolder);
         parentSplitter->restoreState(array);
+
+        // set sizes
+        int halfSize = childSplitter->orientation() == Qt::Horizontal ? childSplitter->width() / 2 : childSplitter->height() / 2;
+        childSplitter->setSizes(QList<int>() << halfSize <<  halfSize);
     }
 
 
-    return emptyView;
+
+
+    return newViewHolder;
 }
 
-void ViewManager::removeSplit(View *view)
-{
-    bool isCurrentView = view == this->currentView();
+void ViewManager::removeSplitWithView(View *view){
 
-    ViewSplitter *parentSplitter = static_cast<ViewSplitter *>(view->parentWidget());
+    ViewHolder *sourceViewHolder = nullptr;
+
+    for(ViewHolder *viewHolder : m_viewHolderList){
+        if(view == viewHolder->currentView()){
+            sourceViewHolder = viewHolder;
+            break;
+        }
+    }
+
+    if(nullptr == sourceViewHolder){
+        return;
+    }
+
+    this->removeSplit(sourceViewHolder);
+}
+
+void ViewManager::removeSplit(ViewHolder *viewHolder)
+{
+    bool isCurrentViewHolder = viewHolder == this->currentViewHolder();
+
+    ViewSplitter *parentSplitter = static_cast<ViewSplitter *>(viewHolder->parentWidget());
 
     if(parentSplitter == m_rootSplitter){
-        emit view->aboutToBeDestroyed();
-        m_viewList.removeAll(view);
-        view->hide();
+        emit viewHolder->aboutToBeDestroyed();
+        m_viewHolderList.removeAll(viewHolder);
+        viewHolder->clear();
+        viewHolder->hide();
 
+        // actually count() == 0, but later after true deletion of viewHolder
         if(m_rootSplitter->count() == 1){
+
+            ViewHolder *newViewHolder = new ViewHolder;
+            m_viewHolderList.append(newViewHolder);
+            m_rootSplitter->addWidget(newViewHolder);
+
             EmptyView *emptyView = new EmptyView;
-            m_rootSplitter->addWidget(emptyView);
-            m_viewList.append(emptyView);
+            newViewHolder->addView(emptyView);
+
         }
-        view->deleteLater();
+        viewHolder->deleteLater();
     }
     else{
         ViewSplitter *grandParentSplitter = static_cast<ViewSplitter *>(parentSplitter->parentWidget());
@@ -257,10 +347,11 @@ void ViewManager::removeSplit(View *view)
 
         if(parentSplitter && grandParentSplitter){
 
-             m_viewList.removeAll(view);
-             emit view->aboutToBeDestroyed();
-             view->hide();
-             delete view;
+             viewHolder->clear();
+             m_viewHolderList.removeAll(viewHolder);
+             emit viewHolder->aboutToBeDestroyed();
+             viewHolder->hide();
+             delete viewHolder;
              //view->deleteLater();
 
             // widget is splitter or view
@@ -276,9 +367,12 @@ void ViewManager::removeSplit(View *view)
             parentSplitter->deleteLater();
         }
     }
+
+    //TODO: not sure about this part :
     determineCurrentView();
-    if(isCurrentView){
+    if(isCurrentViewHolder){
         emit currentViewChanged(m_currentView);
+        emit currentViewHolderChanged(m_currentViewHolder);
     }
 }
 
@@ -293,27 +387,27 @@ View *ViewManager::currentView()
 
 //----------------------------------------------
 
-View *ViewManager::nextView(View *view)
+ViewHolder *ViewManager::nextViewHolder(ViewHolder *viewHolder)
 {
-    View* nextView = nullptr;
+    ViewHolder* nextViewHolder = nullptr;
 
-        if(!m_viewList.contains(view) ){
-            nextView = m_viewList.at(0);
+        if(!m_viewHolderList.contains(viewHolder) ){
+            nextViewHolder = m_viewHolderList.at(0);
         }
-        else if(m_viewList.last() == view){
+        else if(m_viewHolderList.last() == viewHolder){
             // create new split
 
-            return this->split(view, Qt::Horizontal);
+            return this->split(viewHolder, Qt::Horizontal);
         }
-        else if(view){
-            nextView = m_viewList.at(m_viewList.indexOf(view) + 1);
+        else if(viewHolder){
+            nextViewHolder = m_viewHolderList.at(m_viewHolderList.indexOf(viewHolder) + 1);
         }
         else{
-            nextView = m_viewList.at(0);
+            nextViewHolder = m_viewHolderList.at(0);
         }
 
 
-       return nextView;
+       return nextViewHolder;
 }
 
 //----------------------------------------------
@@ -357,12 +451,12 @@ void ViewManager::restoreSplitterStructure()
         ViewSplitter *parentSplitter = nullptr;
         if(i == 0){ // means m_rootSplitter
            parentSplitter = m_rootSplitter;
-           parentSplitter->setUuid(splitterVariantHash.value("splitterUuid").toString());
+           parentSplitter->setUuid(splitterVariantHash.value("splitterUuid").toUuid());
         }
         else {
             // find the good parent splitter
             QList<ViewSplitter *> childSplitterList = m_rootSplitter->listAllSplittersRecursively();
-            QString parentUuid = splitterVariantHash.value("splitterUuid").toString();
+            QUuid parentUuid = splitterVariantHash.value("splitterUuid").toUuid();
             for(ViewSplitter *splitter : childSplitterList){
                 if(splitter->uuid() == parentUuid){
                     parentSplitter = splitter;
@@ -383,14 +477,20 @@ void ViewManager::restoreSplitterStructure()
 
         if(splitterVariantHash.value("firstIsSplitter").toBool()){
             ViewSplitter *firstSplitter = new ViewSplitter(orientation);
-            firstSplitter->setUuid(splitterVariantHash.value("firstSplitterUuid").toString());
+            firstSplitter->setUuid(splitterVariantHash.value("firstSplitterUuid").toUuid());
             parentSplitter->addWidget(firstSplitter);
         }
         else{
-            EmptyView *view = new EmptyView;
-            view->setUuid(splitterVariantHash.value("firstViewUuid").toString());
-            m_viewList.append(view);
-            parentSplitter->addWidget(view);
+
+
+            ViewHolder *newViewHolder = new ViewHolder;
+            m_viewHolderList.append(newViewHolder);
+            parentSplitter->addWidget(newViewHolder);
+
+            EmptyView *emptyView = new EmptyView;
+            newViewHolder->addView(emptyView);
+            newViewHolder->setUuid(splitterVariantHash.value("firstViewHolderUuid").toUuid());
+
         }
 
         // second child
@@ -398,14 +498,18 @@ void ViewManager::restoreSplitterStructure()
         if(splitterVariantHash.value("splitCount").toInt() == 2){
             if(splitterVariantHash.value("secondIsSplitter").toBool()){
                 ViewSplitter *secondSplitter = new ViewSplitter(orientation);
-                secondSplitter->setUuid(splitterVariantHash.value("secondSplitterUuid").toString());
+                secondSplitter->setUuid(splitterVariantHash.value("secondSplitterUuid").toUuid());
                 parentSplitter->addWidget(secondSplitter);
             }
             else{
-                EmptyView *view = new EmptyView;
-                view->setUuid(splitterVariantHash.value("secondViewUuid").toString());
-                m_viewList.append(view);
-                parentSplitter->addWidget(view);
+
+                ViewHolder *newViewHolder = new ViewHolder;
+                m_viewHolderList.append(newViewHolder);
+                parentSplitter->addWidget(newViewHolder);
+
+                EmptyView *emptyView = new EmptyView;
+                newViewHolder->addView(emptyView);
+                newViewHolder->setUuid(splitterVariantHash.value("secondViewHolderUuid").toUuid());
             }
         }
 
@@ -467,7 +571,7 @@ QList<QVariantHash> ViewManager::saveSplitterRecursively(ViewSplitter *viewSplit
         splitterVariantHash.insert("firstSplitterUuid", viewSplitter->getSplitter(0)->uuid());
     }
     else{
-        splitterVariantHash.insert("firstViewUuid", viewSplitter->getView(0)->uuid());
+        splitterVariantHash.insert("firstViewHolderUuid", viewSplitter->getViewHolder(0)->uuid());
     }
 
 
@@ -480,7 +584,7 @@ QList<QVariantHash> ViewManager::saveSplitterRecursively(ViewSplitter *viewSplit
             splitterVariantHash.insert("secondSplitterUuid", viewSplitter->getSplitter(1)->uuid());
         }
         else{
-            splitterVariantHash.insert("secondViewUuid", viewSplitter->getView(1)->uuid());
+            splitterVariantHash.insert("secondViewHolderUuid", viewSplitter->getViewHolder(1)->uuid());
         }
 
         QStringList sizes;
@@ -517,18 +621,11 @@ QList<QVariantHash> ViewManager::saveSplitterRecursively(ViewSplitter *viewSplit
 /// Open only one view for this window.
 void ViewManager::openSpecificView(const QString &pageType, int projectId, int treeItemId)
 {
-
-        m_rootSplitter->close();
-        delete m_rootSplitter;
-
-        m_rootSplitter = new ViewSplitter(Qt::Horizontal, m_viewWidget);
-        m_viewWidget->layout()->addWidget(m_rootSplitter);
-
-        m_viewList.clear();
+        this->clear();
 
         QTimer::singleShot(20, this, [this, pageType, projectId, treeItemId](){
 
-        openViewAtCurrentView(pageType, projectId, treeItemId);
+        openViewAtCurrentViewHolder(pageType, projectId, treeItemId);
 
         });
 }
@@ -540,10 +637,9 @@ void ViewManager::openSpecificView(const QString &pageType, int projectId, int t
 //---------------------------------------------------------------
 
 
-ViewSplitter::ViewSplitter(Qt::Orientation orientation, QWidget *parent) : QSplitter(orientation, parent)
+ViewSplitter::ViewSplitter(Qt::Orientation orientation, QWidget *parent) : QSplitter(orientation, parent), m_uuid(QUuid::createUuid())
 {
     this->setObjectName("ViewSplitter");
-    m_uuid = QUuid::createUuid().toString();
 
 
     //TODO: make it collapsible, deleting cleanly the hidden splitter or view
@@ -552,19 +648,9 @@ ViewSplitter::ViewSplitter(Qt::Orientation orientation, QWidget *parent) : QSpli
 
 }
 
-void ViewSplitter::setView(int index, View *view)
+ViewHolder* ViewSplitter::getViewHolder(int index)
 {
-
-}
-
-View* ViewSplitter::getView(int index)
-{
-    return static_cast<View *>(this->widget(index));
-}
-
-ViewSplitter *ViewSplitter::addChildSplitter(int index)
-{
-
+    return static_cast<ViewHolder *>(this->widget(index));
 }
 
 bool ViewSplitter::isFirstSplitASplitter()
@@ -606,15 +692,16 @@ QList<ViewSplitter *> ViewSplitter::listAllSplittersRecursively()
     return splitters;
 }
 
-QString ViewSplitter::uuid() const
+QUuid ViewSplitter::uuid() const
 {
     return m_uuid;
 }
 
-void ViewSplitter::setUuid(const QString &newUuid)
+void ViewSplitter::setUuid(const QUuid &newUuid)
 {
     if (m_uuid == newUuid)
         return;
     m_uuid = newUuid;
     emit uuidChanged();
 }
+

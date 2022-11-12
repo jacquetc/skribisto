@@ -70,7 +70,7 @@ void TopToolBar::init(){
                 int activeProjectId = skrdata->projectHub()->getActiveProject();
 
                 ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-                viewManager->openViewAtCurrentView(plugin->pageType(), activeProjectId);
+                viewManager->openViewAtCurrentViewHolder(plugin->pageType(), activeProjectId);
             });
 
 

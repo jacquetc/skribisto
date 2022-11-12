@@ -10,6 +10,7 @@ EmptyView::EmptyView(QWidget *parent) :
 
     setCentralWidget(centralWidget);
 
+
 }
 
 EmptyView::~EmptyView()

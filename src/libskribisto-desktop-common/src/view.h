@@ -6,6 +6,7 @@
 #include "skribisto_desktop_common_global.h"
 #include <QList>
 #include <QToolBar>
+#include <QUuid>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -32,10 +33,11 @@ public:
 
   const QVariantMap &parameters() const;
   void setParameters(const QVariantMap &newParameters);
+  virtual void applyParameters() {};
 
-  QString uuid() const;
 
-  void setUuid(const QString &newUuid);
+  QUuid uuid() const;
+  void setUuid(const QUuid &newUuid);
 
 protected:
   virtual void initialize() = 0;
@@ -57,6 +59,9 @@ signals:
     void initialized(int projectId, int treeItemId);
     void aboutToBeDestroyed();
 
+
+    void uuidChanged();
+
 private slots:
   void on_closeToolButton_clicked();
 
@@ -64,11 +69,12 @@ private slots:
 
 private:
   Ui::View *ui;
-  QString m_uuid;
+  QUuid m_uuid;
   QString m_type;
   int m_projectId;
   int m_treeItemId;
   QVariantMap m_parameters;
+  Q_PROPERTY(QUuid uuid READ uuid WRITE setUuid NOTIFY uuidChanged)
 };
 
 #endif // VIEW_H

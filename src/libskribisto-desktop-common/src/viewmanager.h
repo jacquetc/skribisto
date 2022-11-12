@@ -6,6 +6,8 @@
 
 #include <QObject>
 #include <QSplitter>
+#include <QUuid>
+#include "viewholder.h"
 
 class ViewSplitter;
 class SKRDESKTOPCOMMONEXPORT ViewManager : public QObject {
@@ -15,18 +17,20 @@ public:
     ~ViewManager();
   void openSpecificView(const QString &pageType, int projectId, int treeItemId);
 
-  View *split(View *view, Qt::Orientation orientation = Qt::Horizontal);
-  void removeSplit(View *view);
+  ViewHolder *split(ViewHolder *viewHolder, Qt::Orientation orientation = Qt::Horizontal);
+  void removeSplit(ViewHolder *viewHolder);
   View *currentView();
-  View *nextView(View *view);
+  ViewHolder *currentViewHolder();
+  ViewHolder *nextViewHolder(ViewHolder *viewHolder);
   void addViewParametersBeforeCreation(const QVariantMap &parameters);
+  void removeSplitWithView(View *view);
 
 public slots:
-  void openViewAtCurrentView(const QString &type, int projectId = -1,
+  void openViewAtCurrentViewHolder(const QString &type, int projectId = -1,
                              int treeItemId = -1);
-  void openViewInAnotherView(const QString &type, int projectId = -1,
+  void openViewInAnotherViewHolder(const QString &type, int projectId = -1,
                              int treeItemId = -1);
-  View *openViewAt(View *atView, const QString &type, int projectId = -1,
+  View *openViewAt(ViewHolder *atViewHolder, const QString &type, int projectId = -1,
                    int treeItemId = -1);
 
   View *splitForSamePage(View *view, Qt::Orientation orientation);
@@ -36,6 +40,7 @@ public slots:
 
 signals:
   void currentViewChanged(View *view);
+  void currentViewHolderChanged(ViewHolder *viewHolder);
   void aboutToRemoveView(View *view);
 
 private slots:
@@ -44,10 +49,11 @@ private slots:
 
 private:
   QWidget *m_viewWidget;
-  QList<View *> m_viewList;
+  QList<ViewHolder *> m_viewHolderList;
   ViewSplitter *m_rootSplitter;
   QVariantMap m_parameters;
   View *m_currentView;
+  ViewHolder *m_currentViewHolder;
 
 private:
   void extracted(QList<QVariantHash> &variantHashList);
@@ -61,15 +67,11 @@ private:
 class ViewSplitter : public QSplitter {
 
     Q_OBJECT
-    Q_PROPERTY(QString uuid READ uuid WRITE setUuid NOTIFY uuidChanged)
+    Q_PROPERTY(QUuid uuid READ uuid WRITE setUuid NOTIFY uuidChanged)
 public:
   explicit ViewSplitter(Qt::Orientation orientation, QWidget *parent = nullptr);
 
-  void setView(int index, View *view);
-  View *getView(int index);
-
-  ViewSplitter *addChildSplitter(int index);
-
+  ViewHolder *getViewHolder(int index);
   bool isFirstSplitASplitter();
   ViewSplitter *getSplitter(int index);
   bool isSecondSplitASplitter();
@@ -77,14 +79,16 @@ public:
 
   QList<ViewSplitter *> listAllSplittersRecursively();
 
-  QString uuid() const;
-  void setUuid(const QString &newUuid);
+
+  QUuid uuid() const;
+  void setUuid(const QUuid &newUuid);
 
 signals:
+
   void uuidChanged();
 
 private:
-  QString m_uuid;
+  QUuid m_uuid;
 
 };
 

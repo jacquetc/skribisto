@@ -364,4 +364,44 @@ void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
     if(newSettings.contains("common/spellChecker")){
         m_highlighter->getSpellChecker()->activate(newSettings.value("common/spellChecker").toBool());
     }
+
+
+}
+
+//------------------------------------------------------
+
+void TextView::applyParameters()
+{
+    QVariantMap parameters = this->parameters();
+
+    QTimer::singleShot(0, this, [=](){
+
+
+        int scrollBarValue = parameters.value("textScrollBarValue").toInt();
+        centralWidgetUi->verticalScrollBar->setValue(scrollBarValue);
+       // centralWidgetUi->textEdit->ensureCursorVisible();
+
+        // restore cursor position
+
+        int cursorPosition = parameters.value("textCursorPosition").toInt();
+
+        QTextCursor cursor(centralWidgetUi->textEdit->document());
+        cursor.setPosition(cursorPosition);
+        centralWidgetUi->textEdit->setTextCursor(cursor);
+
+    });
+
+}
+
+//------------------------------------------------------
+
+
+QVariantMap TextView::addOtherViewParametersBeforeSplit()
+{
+    QVariantMap parameters;
+
+    parameters.insert("textScrollBarValue", centralWidgetUi->verticalScrollBar->value());
+    parameters.insert("textCursorPosition", centralWidgetUi->textEdit->textCursor().position());
+
+    return parameters;
 }

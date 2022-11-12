@@ -42,6 +42,8 @@ MainWindow::MainWindow(int newWindowId, bool restoreViewEnabled)
         ui->viewDock->setToolboxes(QList<Toolbox *>());
     });
 
+    QObject::connect(this, &MainWindow::aboutToBeDestroyed, ui->viewDock, &Dock::aboutToBeDestroyed);
+    QObject::connect(this, &MainWindow::aboutToBeDestroyed, ui->projectDock, &Dock::aboutToBeDestroyed);
     QObject::connect(this, &MainWindow::aboutToBeDestroyed, m_viewManager, &ViewManager::saveSplitterStructure);
 
     this->setupMenuActions();
@@ -529,7 +531,7 @@ void MainWindow::setupMenuActions()
 
     connect(ui->actionClose_all_views, &QAction::triggered, this, [this](){
         this->viewManager()->clear();
-         this->viewManager()->openViewAtCurrentView("EMPTY");
+         this->viewManager()->openViewAtCurrentViewHolder("EMPTY");
 
     });
     //-------------------

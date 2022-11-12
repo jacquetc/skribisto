@@ -878,7 +878,7 @@
 <context>
     <name>DockTitle</name>
     <message>
-        <location filename="../desktopapp/dock.cpp" line="106"/>
+        <location filename="../desktopapp/dock.cpp" line="145"/>
         <source>Hide dock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1044,17 +1044,17 @@
 <context>
     <name>EmptyView</name>
     <message>
-        <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="17"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="42"/>
+        <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="45"/>
         <source>**Open a document**</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="104"/>
+        <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="107"/>
         <source>- Click on a page in Navigation
 - Drag and drop a page here</source>
         <translation type="unfinished"></translation>
@@ -1679,9 +1679,9 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="233"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="287"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="379"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="503"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="289"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="381"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="505"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1737,9 +1737,9 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="298"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="248"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="349"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="465"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="250"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="351"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="467"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1789,46 +1789,46 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="649"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="651"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="401"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="403"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="249"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="350"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="466"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="251"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="352"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="468"/>
         <source>Do you want to save changes to %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="287"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="503"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="289"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="505"/>
         <source>Do you really want to quit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="319"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="321"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="380"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="382"/>
         <source>Do you really want to close %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="438"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="440"/>
         <source>Ctrl+E</source>
         <comment>export shortcut</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="646"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="648"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5473,6 +5473,14 @@ This action isn&apos;t recoverable.</source>
     <message>
         <location filename="../libskribisto-desktop-common/src/view.ui" line="144"/>
         <source>close</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ViewHolder</name>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/viewholder.ui" line="14"/>
+        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

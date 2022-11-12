@@ -14,15 +14,18 @@ OutlineToolbox::OutlineToolbox(QWidget *parent) :
     ui(new Ui::OutlineToolbox), m_wasModified(false)
 {
     ui->setupUi(this);
+
+    connect(this, &Toolbox::aboutToBeDestroyed, this, [this](){
+        if(m_wasModified){
+            saveContent();
+        }
+
+        saveTextState();
+    });
 }
 
 OutlineToolbox::~OutlineToolbox()
 {
-    if(m_wasModified){
-        saveContent();
-    }
-
-    saveTextState();
     delete ui;
 }
 

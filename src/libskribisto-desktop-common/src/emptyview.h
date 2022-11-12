@@ -15,10 +15,10 @@ class SKRDESKTOPCOMMONEXPORT EmptyView : public View {
 public:
   explicit EmptyView(QWidget *parent = nullptr);
   ~EmptyView();
-  QList<Toolbox *> toolboxes();
+  QList<Toolbox *> toolboxes() override;
 
 protected:
-  void initialize();
+  void initialize() override;
 
 private:
   Ui::EmptyView *centralWidgetUi;

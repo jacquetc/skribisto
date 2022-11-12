@@ -30,6 +30,7 @@ set(common_SRCS
     text/textbridge.h text/textbridge.cpp
     tagdialog.h tagdialog.cpp tagdialog.ui
     desktopapplication.h desktopapplication.cpp
+    viewholder.h viewholder.cpp viewholder.ui
 )
 
 set(common_INTERFACES
