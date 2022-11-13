@@ -1412,7 +1412,7 @@ void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
     //        toString();
 
 
-    m_treeHub->moveTreeItem(fromProjectId, fromTreeItemId, toTreeItemId, false);
+    m_treeHub->moveTreeItem(fromProjectId, fromTreeItemId, fromProjectId, toTreeItemId, false);
 
 
     sort(0);
@@ -1425,7 +1425,7 @@ void SKRSearchTreeListProxyModel::moveItem(int from, int to) {
 
 void SKRSearchTreeListProxyModel::moveItemById(int fromProjectId, int fromTreeItemId, int toTreeItemId)
 {
-    m_treeHub->moveTreeItem(fromProjectId, fromTreeItemId, toTreeItemId, false);
+    m_treeHub->moveTreeItem(fromProjectId, fromTreeItemId, fromProjectId,  toTreeItemId, false);
 
 
     sort(0);

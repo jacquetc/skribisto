@@ -33,7 +33,7 @@ struct EXPORT PLMProjectItem {
 
 public:
 
-    explicit PLMProjectItem() {
+    Q_DECL_DEPRECATED explicit PLMProjectItem() {
         title            = "";
         fileName         = "";
         lastModification = QDateTime();

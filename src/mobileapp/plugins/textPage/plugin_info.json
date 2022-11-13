@@ -1,0 +1,9 @@
+{
+    "type" :            "page",
+    "shortname" :       "TextPage",
+    "longname" :        "Skribisto Text Page",
+    "version" :         "1.0",
+    "mandatory" :    true,
+    "activatedByDefault" :    true,
+    "dependencies" :    []
+}

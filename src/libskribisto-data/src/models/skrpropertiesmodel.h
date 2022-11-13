@@ -30,7 +30,7 @@ class EXPORT SKRPropertiesModel : public QAbstractItemModel {
 
 public:
 
-    explicit SKRPropertiesModel(QObject *parent = nullptr);
+    Q_DECL_DEPRECATED explicit SKRPropertiesModel(QObject *parent = nullptr);
 
     //    // Header:
     //    QVariant headerData(int section, Qt::Orientation orientation, int role

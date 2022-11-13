@@ -5,6 +5,7 @@
 #include <QByteArray>
 
 #include "skrdata.h"
+#include "importer.h"
 
 class SettingsCase : public QObject {
     Q_OBJECT
@@ -43,6 +44,7 @@ void SettingsCase::initTestCase()
 {
     m_data            = new SKRData(this);
     m_testProjectPath = "qrc:/testfiles/skribisto_test_project.skrib";
+    Importer::init();
 }
 
 void SettingsCase::cleanupTestCase()
@@ -50,10 +52,9 @@ void SettingsCase::cleanupTestCase()
 
 void SettingsCase::init()
 {
-    QSignalSpy spy(skrdata->projectHub(), SIGNAL(projectLoaded(int)));
 
-    skrdata->projectHub()->loadProject(m_testProjectPath);
-    QCOMPARE(spy.count(), 1);
+    SKRResult result(this);
+    int projectId = Importer::importProject(m_testProjectPath, "skrib", QVariantMap(), result);
     QList<int> idList = skrdata->projectHub()->getProjectIdList();
 
     if (idList.isEmpty()) {
@@ -125,6 +126,6 @@ void SettingsCase::userDBLoaded()
 // PLMPaperHub::Visible).toBool();
 //    QCOMPARE(value, true);
 // }
-QTEST_GUILESS_MAIN(SettingsCase)
+QTEST_MAIN(SettingsCase)
 
 #include "tst_settingscase.moc"

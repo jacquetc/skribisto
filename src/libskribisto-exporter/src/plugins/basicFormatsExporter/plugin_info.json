@@ -1,0 +1,9 @@
+{
+    "type": "exporter",
+    "shortname": "BasicFormatsExporter",
+    "longname": "Skribisto exporter for basic formats",
+    "version": "1.0",
+    "mandatory": true,
+    "activatedByDefault": true,
+    "dependencies": []
+}

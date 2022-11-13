@@ -32,10 +32,13 @@ class EXPORT SKRTagHub : public QObject {
 public:
 
     explicit SKRTagHub(QObject *parent);
+    Q_INVOKABLE QVariantMap saveId(int projectId, int tagId) const;
+    Q_INVOKABLE SKRResult restoreId(int projectId, int tagId, const QVariantMap &values);
 
     Q_INVOKABLE QList<int>getAllTagIds(int projectId) const;
     Q_INVOKABLE SKRResult addTag(int            projectId,
                                  const QString& tagName);
+    Q_INVOKABLE SKRResult addTag(int            projectId);
     Q_INVOKABLE SKRResult removeTag(int projectId,
                                     int tagId);
     Q_INVOKABLE int       getTagIdWithName(int            projectId,
@@ -45,6 +48,9 @@ public:
     Q_INVOKABLE SKRResult setTagName(int            projectId,
                                      int            tagId,
                                      const QString& tagName);
+    Q_INVOKABLE SKRResult setTagId(int            projectId,
+                                     int            tagId,
+                                     int            newTagId);
     Q_INVOKABLE bool      doesTagNameAlreadyExist(int            projectId,
                                                   const QString& tagName);
     Q_INVOKABLE QString   getTagColor(int projectId,
@@ -74,7 +80,8 @@ public:
                               int             tagId,
                               const QString & fieldName,
                               const QVariant& value,
-                              bool            setCurrentDateBool = true);
+                              bool            setCurrentDateBool = true,
+                              bool            commit             = true);
     QVariant              get(int            projectId,
                               int            tagId,
                               const QString& fieldName) const;
@@ -96,6 +103,9 @@ public:
     Q_INVOKABLE SKRResult setTagRandomColors(int projectId,
                                              int tagId);
 
+    Q_INVOKABLE QPair<QString, QString> getTagRandomColors();
+    Q_INVOKABLE QMap<QString, QString> getTagPresetColors();
+
 signals:
 
     void errorSent(const SKRResult& result) const;
@@ -111,6 +121,10 @@ signals:
     void nameChanged(int            projectId,
                      int            tagId,
                      const QString& newName);
+
+    void tagIdChanged(int projectId,
+                      int tagId,
+                      int newTagId);
     void colorChanged(int            projectId,
                       int            tagId,
                       const QString& newColor);
@@ -136,6 +150,7 @@ signals:
                               int tagId);
 
 private:
+    void commit(int projectId);
 
     int m_last_added_id;
 };

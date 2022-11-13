@@ -32,7 +32,7 @@ class EXPORT SKRTagListModel : public QAbstractListModel {
 
 public:
 
-    explicit SKRTagListModel(QObject *parent = nullptr);
+    Q_DECL_DEPRECATED explicit SKRTagListModel(QObject *parent = nullptr);
 
     // Header:
     QVariant headerData(int             section,

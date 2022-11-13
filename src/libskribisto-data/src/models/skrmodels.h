@@ -36,7 +36,7 @@ class EXPORT SKRModels : public QObject {
 
 public:
 
-    explicit SKRModels(QObject *parent = nullptr);
+    Q_DECL_DEPRECATED explicit SKRModels(QObject *parent = nullptr);
     ~SKRModels();
     static SKRModels* instance()
     {

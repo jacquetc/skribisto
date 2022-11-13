@@ -47,6 +47,25 @@ template<typename T>Q_DECL_UNUSED T* findParentOfACertainType(QObject *object)
 
 // -------------------------------
 
+namespace PairListIntQVariantConverter {
+QList< QPair<int, int>> convertToIntInt(const QList< QPair<int, QVariant>>& pairList)
+{
+    QList< QPair<int, int>> newPairList;
+
+    // converting
+    QListIterator<QPair<int, QVariant>> i(pairList);
+
+    while (i.hasNext()) {
+        QPair<int, QVariant> pair = i.next();
+        newPairList.append(QPair<int, int>(pair.first, pair.second.toInt()));
+    }
+
+    return newPairList;
+}
+
+}
+// -------------------------------
+
 namespace HashIntQVariantConverter {
 QHash<int, int>convertToIntInt(const QHash<int, QVariant>& hash)
 {
@@ -62,6 +81,8 @@ QHash<int, int>convertToIntInt(const QHash<int, QVariant>& hash)
 
     return newHash;
 }
+
+
 
 Q_DECL_UNUSED QHash<int, bool>convertToIntBool(const QHash<int, QVariant>& hash)
 {

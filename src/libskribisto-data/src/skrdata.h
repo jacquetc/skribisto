@@ -28,15 +28,14 @@
 #include "skrpropertyhub.h"
 #include "skrtreehub.h"
 #include "skrtaghub.h"
-#include "plmsignalhub.h"
 #include "skrpluginhub.h"
 #include "skrprojectdicthub.h"
 #include "skribisto_data_global.h"
 #include "skrstathub.h"
-#include "tasks/plmprojectmanager.h"
+#include "project/plmprojectmanager.h"
 
 #define skrdata SKRData::instance()
-#define plmpluginhub SKRData::instance()->pluginHub()
+#define skrpluginhub SKRData::instance()->pluginHub()
 
 
 class EXPORT SKRData : public QObject {
@@ -52,7 +51,6 @@ public:
         return m_instance;
     }
 
-    PLMSignalHub                 * signalHub();
     Q_INVOKABLE SKRErrorHub      * errorHub();
     Q_INVOKABLE SKRTreeHub       * treeHub();
     Q_INVOKABLE SKRPropertyHub   * treePropertyHub();
@@ -71,7 +69,6 @@ private:
     static SKRData *m_instance;
 
     SKRErrorHub *m_errorHub;
-    PLMSignalHub *m_signalHub;
     PLMProjectHub *m_projectHub;
     SKRTreeHub *m_treeHub;
     PLMProjectManager *m_projectManager;

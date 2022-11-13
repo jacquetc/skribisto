@@ -1,0 +1,9 @@
+{
+    "type" :            "page",
+    "shortname" :       "OverviewPage",
+    "longname" :        "Skribisto Overview Page",
+    "version" :         "1.0",
+    "mandatory" :    true,
+    "activatedByDefault" :    true,
+    "dependencies" :    []
+}
