@@ -37,7 +37,7 @@ TextEdit::TextEdit(QWidget *parent) :
     m_underlineAction->setShortcut(QKeySequence(tr("Ctrl+U")));
     m_underlineAction->setCheckable(true);
 
-    m_bulletListAction = new QAction(QIcon(":/icons/backup/format-text-underline.svg"), tr("List"), this);
+    m_bulletListAction = new QAction(QIcon(":/icons/backup/format-list-unordered.svg"), tr("List"), this);
     m_bulletListAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     m_bulletListAction->setShortcut(QKeySequence(tr("")));
     m_bulletListAction->setCheckable(true);

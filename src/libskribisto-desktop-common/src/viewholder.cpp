@@ -1,5 +1,9 @@
 #include "viewholder.h"
+#include "invoker.h"
+#include "skrdata.h"
 #include "ui_viewholder.h"
+#include "viewmanager.h"
+#include <QMimeData>
 
 ViewHolder::ViewHolder(QWidget *parent) :
     QWidget(parent),
@@ -245,6 +249,7 @@ void ViewHolder::clearHistoryOfView(View *view)
 
 void ViewHolder::goBackInHistory()
 {
+    qDebug() << "goBackAction";
     int index = m_historyItemList.indexOf(m_currentHistoryItem);
 
     if(index == 1){
@@ -330,4 +335,56 @@ QVariantMap HistoryItem::parameters() const
 bool HistoryItem::operator==(const HistoryItem &otherHistoryItem) const
 {
     return this->m_uuid == otherHistoryItem.m_uuid;
+}
+
+
+void ViewHolder::dropEvent(QDropEvent *event)
+{
+    if(event->mimeData()->hasFormat("application/x-navigationtreeitem-list")){
+
+        QList< QPair<int, int> > pairList;
+        QByteArray byteArray = event->mimeData()->data("application/x-navigationtreeitem-list");
+        QDataStream stream(&byteArray, QIODevice::ReadOnly);
+        stream >> pairList;
+
+        QPair<int, int> pair = pairList.first();
+
+        int sourceProjectId = pair.first;
+        int sourceTreeItemId = pair.second;
+
+        QString type = skrdata->treeHub()->getType(sourceProjectId, sourceTreeItemId);
+
+        ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
+        viewManager->openViewAt(this, type, sourceProjectId, sourceTreeItemId);
+
+        this->setCursor(QCursor(Qt::ArrowCursor));
+        event->acceptProposedAction();
+
+    }
+}
+
+
+void ViewHolder::dragEnterEvent(QDragEnterEvent *event)
+{
+   if(event->mimeData()->hasFormat("application/x-navigationtreeitem-list")){
+       this->setCursor(QCursor(Qt::DragCopyCursor));
+      event->acceptProposedAction();
+   }
+}
+
+void ViewHolder::dragLeaveEvent(QDragLeaveEvent *event)
+{
+//   QGuiApplication::restoreOverrideCursor();
+   this->setCursor(QCursor(Qt::ArrowCursor));
+//        event->accept();
+
+}
+
+
+void ViewHolder::dragMoveEvent(QDragMoveEvent *event)
+{
+//    if(event->mimeData()->hasFormat("application/x-navigationtreeitem-list")){
+
+//        this->setCursor(QCursor(Qt::DragCopyCursor));
+//    }
 }

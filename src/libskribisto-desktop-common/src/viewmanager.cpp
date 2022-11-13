@@ -19,7 +19,7 @@ ViewManager::ViewManager(QObject *parent, QWidget *viewWidget, bool restoreViewE
     m_rootSplitter = new ViewSplitter(Qt::Horizontal, viewWidget);
     layout->addWidget(m_rootSplitter);
 
-    ViewHolder *viewHolder = new ViewHolder;
+    ViewHolder *viewHolder = new ViewHolder(viewWidget);
     m_rootSplitter->addWidget(viewHolder);
     m_viewHolderList.append(viewHolder);
 
@@ -93,7 +93,7 @@ void ViewManager::determineCurrentView()
     }
     if(currentViewList.isEmpty()){
         if(m_viewHolderList.isEmpty()){
-            ViewHolder *viewHolder = new ViewHolder;
+            ViewHolder *viewHolder = new ViewHolder(m_viewWidget);
             m_rootSplitter->addWidget(viewHolder);
             m_viewHolderList.append(viewHolder);
         }
@@ -164,6 +164,7 @@ View* ViewManager::openViewAt(ViewHolder *atViewHolder, const QString &type, int
             view->setParameters(m_parameters);
             view->applyParameters();
             m_parameters.clear();
+            this->determineCurrentView();
 
             return view;
         }
@@ -259,7 +260,7 @@ ViewHolder* ViewManager::split(ViewHolder *viewHolder, Qt::Orientation orientati
         return nullptr;
     }
 
-    ViewHolder *newViewHolder = new ViewHolder;
+    ViewHolder *newViewHolder = new ViewHolder(m_viewWidget);
     m_viewHolderList.append(newViewHolder);
 
     EmptyView *emptyView = new EmptyView;
@@ -329,7 +330,7 @@ void ViewManager::removeSplit(ViewHolder *viewHolder)
         // actually count() == 0, but later after true deletion of viewHolder
         if(m_rootSplitter->count() == 1){
 
-            ViewHolder *newViewHolder = new ViewHolder;
+            ViewHolder *newViewHolder = new ViewHolder(m_viewWidget);
             m_viewHolderList.append(newViewHolder);
             m_rootSplitter->addWidget(newViewHolder);
 
@@ -483,7 +484,7 @@ void ViewManager::restoreSplitterStructure()
         else{
 
 
-            ViewHolder *newViewHolder = new ViewHolder;
+            ViewHolder *newViewHolder = new ViewHolder(m_viewWidget);
             m_viewHolderList.append(newViewHolder);
             parentSplitter->addWidget(newViewHolder);
 
@@ -503,7 +504,7 @@ void ViewManager::restoreSplitterStructure()
             }
             else{
 
-                ViewHolder *newViewHolder = new ViewHolder;
+                ViewHolder *newViewHolder = new ViewHolder(m_viewWidget);
                 m_viewHolderList.append(newViewHolder);
                 parentSplitter->addWidget(newViewHolder);
 

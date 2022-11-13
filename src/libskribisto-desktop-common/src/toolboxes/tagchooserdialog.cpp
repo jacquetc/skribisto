@@ -2,6 +2,7 @@
 #include "skrdata.h"
 #include "tagcommands.h"
 #include "tagdialog.h"
+#include "thememanager.h"
 #include "ui_tagchooserdialog.h"
 
 TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemId) :
@@ -11,6 +12,8 @@ TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemI
     m_treeItemId(treeItemId)
 {
     ui->setupUi(this);
+
+    ui->itemTagsGroupBox->setTitle(skrdata->treeHub()->getTitle(projectId, treeItemId));
 
 
     connect(ui->removeTagToolButton, &QAbstractButton::clicked, this, [this](){
@@ -119,6 +122,9 @@ TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemI
 
     reloadAvailableTags();
     reloadItemTags();
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+
 }
 
 //--------------------------------------------------

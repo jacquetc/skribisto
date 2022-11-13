@@ -129,5 +129,6 @@
         <file>icons/backup/folder-pictures.svg</file>
         <file>icons/backup/smartphone.svg</file>
         <file>icons/backup/accessibility.svg</file>
+        <file>icons/backup/format-list-unordered.svg</file>
     </qresource>
 </RCC>

@@ -72,6 +72,7 @@ void Dock::setToolboxes(QList<Toolbox *> toolboxes)
     themeManager->reapplyCurrentTheme();
     themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
 
+
 }
 
 void Dock::paintEvent(QPaintEvent *event)

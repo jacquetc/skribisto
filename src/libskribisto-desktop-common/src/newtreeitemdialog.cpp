@@ -1,4 +1,5 @@
 #include "newtreeitemdialog.h"
+#include "thememanager.h"
 #include "ui_newtreeitemdialog.h"
 #include "projecttreecommands.h"
 
@@ -140,6 +141,9 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
 
 
     ui->listWidget->setCurrentRow(0);
+
+    themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+
 
 }
 

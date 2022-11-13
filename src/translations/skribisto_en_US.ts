@@ -878,7 +878,7 @@
 <context>
     <name>DockTitle</name>
     <message>
-        <location filename="../desktopapp/dock.cpp" line="145"/>
+        <location filename="../desktopapp/dock.cpp" line="146"/>
         <source>Hide dock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4643,8 +4643,13 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="66"/>
-        <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="80"/>
+        <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="53"/>
+        <source>Project-wide tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="73"/>
+        <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="87"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5532,17 +5537,17 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>ViewHolder</name>
     <message>
-        <location filename="../libskribisto-desktop-common/src/viewholder.ui" line="14"/>
+        <location filename="../libskribisto-desktop-common/src/viewholder.ui" line="17"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/viewholder.cpp" line="12"/>
+        <location filename="../libskribisto-desktop-common/src/viewholder.cpp" line="16"/>
         <source>Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/viewholder.cpp" line="17"/>
+        <location filename="../libskribisto-desktop-common/src/viewholder.cpp" line="21"/>
         <source>Forward</source>
         <translation type="unfinished"></translation>
     </message>
