@@ -1,8 +1,8 @@
 app-id: eu.skribisto.skribisto
 runtime: org.kde.Platform
-runtime-version: '6.2'
+runtime-version: '6.4'
 sdk: org.kde.Sdk
-command: skribisto
+command: SkribistoDesktop
 finish-args:
   - --share=ipc
   - --share=network

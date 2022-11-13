@@ -37,24 +37,12 @@ class EXPORT PLMProjectHub : public QObject {
 public:
 
     explicit PLMProjectHub(QObject *parent);
-    Q_INVOKABLE SKRResult loadProject(const QUrl& urlFilePath,
-                                      bool        hidden = false);
-    Q_INVOKABLE SKRResult createNewEmptyProject(const QUrl& path,
-                                                bool        hidden = false);
-    SKRResult             createSilentlyNewSpecificEmptyProject(const QUrl   & path,
-                                                                const QString& sqlFile);
-    Q_INVOKABLE SKRResult saveProject(int projectId);
-    Q_INVOKABLE SKRResult saveProjectAs(int            projectId,
-                                        const QString& type,
-                                        const QUrl   & path);
-    Q_INVOKABLE SKRResult saveAProjectCopy(int            projectId,
-                                           const QString& type,
-                                           const QUrl   & path);
-    Q_INVOKABLE SKRResult backupAProject(int            projectId,
-                                         const QString& type,
-                                         const QUrl   & folderPath);
-    Q_INVOKABLE bool      doesBackupOfTheDayExistAtPath(int         projectId,
-                                                        const QUrl& folderPath);
+//    SKRResult             createSilentlyNewSpecificEmptyProject(const QUrl   & path,
+//                                                                const QString& sqlFile);
+//    Q_INVOKABLE SKRResult saveAProjectCopy(int            projectId,
+//                                           const QString& type,
+//                                           const QUrl   & path);
+
     Q_INVOKABLE SKRResult closeProject(int projectId);
     Q_INVOKABLE SKRResult closeAllProjects();
     Q_INVOKABLE bool      isProjectToBeClosed(int projectId) const;
@@ -83,6 +71,10 @@ public:
     Q_INVOKABLE SKRResult setProjectName(int            projectId,
                                          const QString& projectName);
 
+    Q_INVOKABLE QString   getAuthor(int projectId) const;
+    Q_INVOKABLE SKRResult setAuthor(int            projectId,
+                                         const QString& author);
+
     Q_INVOKABLE QString   getLangCode(int projectId) const;
     Q_INVOKABLE SKRResult setLangCode(int            projectId,
                                       const QString& langCode);
@@ -99,14 +91,12 @@ public:
     QVariant get(int            projectId,
                  const QString& fieldName) const;
 
+    void setProjectSaved(int projectId);
+    void setProjectLoaded(int projectId);
 signals:
 
     void errorSent(const SKRResult& result) const;
 
-    ///
-    /// \brief projectToBeLoaded
-    /// To be used with a direct connection
-    void projectToBeLoaded();
     void projectLoaded(int projectId);
 
     ///
@@ -124,6 +114,8 @@ signals:
                             const QUrl& newUrlPath);
     void projectNameChanged(int            projectId,
                             const QString& newProjectName);
+    void authorChanged(int            projectId,
+                            const QString& author);
     void langCodeChanged(int            projectId,
                          const QString& newLang);
     void projectSaved(int projectId);

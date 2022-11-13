@@ -31,14 +31,21 @@ set(EN_US_FILENAME "${CMAKE_SOURCE_DIR}/src/translations/skribisto_en_US.ts")
 message(${EN_US_FILENAME})
 message("${LUPDATE_EXECUTABLE} ${CMAKE_SOURCE_DIR} -ts ${EN_US_FILENAME}")
 
+if(ANDROID OR IOS)
+else()
+
 add_custom_target("update_ts_en_US" ALL
   COMMAND ${LUPDATE_EXECUTABLE} ${CMAKE_SOURCE_DIR} -ts ${EN_US_FILENAME}
   DEPENDS ${EN_US_FILENAME}
 )
+endif()
+
 
 
 # Release :
 
+if(ANDROID OR IOS)
+else()
 set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease")
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if(EXISTS "${CMAKE_PREFIX_PATH}/../../bin/lrelease.exe")
@@ -51,26 +58,27 @@ message(${LRELEASE_EXECUTABLE})
 
 file(GLOB_RECURSE TS_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/translations/skribisto_*.ts")
 
-foreach(TS_FILEPATH ${TS_FILES})
-      get_filename_component(TS_FILENAME ${TS_FILEPATH} NAME)
-      string(REGEX MATCH "\\_([0-9a-zA-Z_]*)\\." LANGSTR ${TS_FILENAME})
-      string(REPLACE "." ""  LANGSTR ${LANGSTR})
-      set(QM_FILENAME "skribisto${LANGSTR}.qm")
-      add_custom_target("release_ts${LANGSTR}" ALL
-        COMMAND ${LRELEASE_EXECUTABLE} ${TS_FILEPATH} -silent -qm ${QM_FILENAME}
-        DEPENDS ${TS_FILEPATH}
-      )
+    foreach(TS_FILEPATH ${TS_FILES})
+          get_filename_component(TS_FILENAME ${TS_FILEPATH} NAME)
+          string(REGEX MATCH "\\_([0-9a-zA-Z_]*)\\." LANGSTR ${TS_FILENAME})
+          string(REPLACE "." ""  LANGSTR ${LANGSTR})
+          set(QM_FILENAME "skribisto${LANGSTR}.qm")
+          add_custom_target("release_ts${LANGSTR}" ALL
+            COMMAND ${LRELEASE_EXECUTABLE} ${TS_FILEPATH} -silent -qm ${QM_FILENAME}
+            DEPENDS ${TS_FILEPATH}
+          )
 
-      if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-          install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${QM_FILENAME}" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/skribisto/translations")
-      endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+          if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+              install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${QM_FILENAME}" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/skribisto/translations")
+          endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
-      if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-          install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${QM_FILENAME}" DESTINATION "bin/translations")
-      endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+          if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+              install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${QM_FILENAME}" DESTINATION "bin/translations")
+          endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
-endforeach(TS_FILEPATH)
+    endforeach(TS_FILEPATH)
 
 
 # make the ts files visible in the IDE
 add_custom_target(translations SOURCES ${TS_FILES})
+endif()

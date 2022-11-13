@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/icons/skribisto">
+        <file>Discord-Logo-Color.svg</file>
+        <file>Love_Heart_symbol.svg</file>
+        <file>Octicons-mark-github.svg</file>
+        <file>skr_icons.qrc</file>
+        <file>skribisto-book-beginning.svg</file>
+        <file>skribisto-book-end.svg</file>
+        <file>skribisto-document-print-none.svg</file>
+        <file>skribisto.png</file>
+        <file>skribisto.svg</file>
+        <file>dock-left-close.svg</file>
+        <file>dock-right-close.svg</file>
+    </qresource>
+</RCC>

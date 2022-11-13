@@ -1,29 +1,27 @@
-cmake_minimum_required(VERSION 3.16.0)
-#if (POLICY CMP0063)
-#    cmake_policy(SET CMP0063 NEW)
-#endif()
+cmake_minimum_required(VERSION 3.18)
 
-#if (POLICY CMP0071)
-#    cmake_policy(SET CMP0071 NEW)
-#endif()
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
 
-if (POLICY CMP0114)
-    cmake_policy(SET CMP0114 NEW)
-endif()
+# forbid some old things
+add_definitions(-DQT_NO_FOREACH)
+
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(QT_MIN_VERSION "6.2.2")
 set(QT_DEFAULT_MAJOR_VERSION 6)
 
-set(OpenGL_GL_PREFERENCE "GLVND")
-
-#set(SKR_TEST_APP false)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH})
 
 # git tag for version :
 include(MunkeyVersionFromGit)
 version_from_git(
-  LOG       ON
-  TIMESTAMP "%Y%m%d%H%M%S"
+    LOG ON
+    TIMESTAMP "%Y%m%d%H%M%S"
 )
 
 add_definitions(-DSKR_VERSION=${VERSION})
@@ -40,12 +38,7 @@ set(SKR_VERSION_MINOR ${VERSION_MINOR})
 add_compile_definitions(SKR_VERSION_PATCH=${VERSION_PATCH})
 set(SKR_VERSION_PATCH ${VERSION_PATCH})
 
-
-
-
-
-
-project(skribisto LANGUAGES CXX VERSION ${VERSION})
+project(skribisto VERSION ${SKR_VERSION} LANGUAGES CXX)
 
 message("------------------CMAKE_SYSTEM_NAME---------------------")
 message("${CMAKE_SYSTEM_NAME}")
@@ -58,60 +51,37 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     include(GNUInstallDirs)
     add_subdirectory(resources/unix/icons)
 
-
-
     message("-----------ECM_MODULE_PATH----------")
     message(${ECM_MODULE_PATH})
 endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
-# Include GNUInstallDirs, which sets sensible defaults for install directories.
-# See https://cmake.org/cmake/help/v3.0/module/GNUInstallDirs.html for further information.
-# These values can be easily overridden if required.
-# Some defaults are set for OpenBSD as well (info and man pages).
-
-#include(GNUInstallDirs)
-#include(FeatureSummary)
-
 include(CMakePackageConfigHelpers)
 
-include_directories(${Qt${QT_VERSION_MAJOR}Core_PRIVATE_INCLUDE_DIRS})
-
-# forbid some old things
-add_definitions(-DQT_NO_FOREACH)
-
-#add_compile_definitions(VERSIONSTR=1.6 FORCEQML=1)
-# Find includes in corresponding build directories
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-# Instruct CMake to run moc automatically when needed
-set(CMAKE_AUTOMOC ON)
-# Create code from a list of Qt designer ui files
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTORCC ON)
-
-
-#set(BREEZEICONS_DIR ${CMAKE_SOURCE_DIR}/3rdparty/breeze-icons/)
-
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_EXTENSIONS OFF)
-#set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fsanitize=address,undefined -O0")
-
-
 add_subdirectory(src/libskribisto-data/src)
+add_subdirectory(src/libskribisto-backend/src)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(SKR_DEBUG true)
     add_compile_definitions(SKR_DEBUG=true)
+
+    add_subdirectory(src/libskribisto-common/tests)
     add_subdirectory(src/libskribisto-data/tests)
-    add_subdirectory(src/app/tests)
+
+# add_subdirectory(src/mobileapp/tests)
 else()
     set(SKR_DEBUG false)
     add_compile_definitions(SKR_DEBUG=false)
-endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-add_subdirectory(src/app/src)
-add_subdirectory(src/plugins)
+if(IOS)
+    add_subdirectory(src/mobileapp)
+endif()
+
+add_subdirectory(src/libskribisto-common/src)
+add_subdirectory(src/libskribisto-exporter/src)
+add_subdirectory(src/libskribisto-importer/src)
+add_subdirectory(src/libskribisto-desktop-common/src)
+add_subdirectory(src/desktopapp)
 add_subdirectory(src/translations)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -120,3 +90,5 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(FILES eu.skribisto.skribisto.appdata.xml DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/metainfo")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
+if(APPLE)
+endif(APPLE)

@@ -10,7 +10,7 @@ class EXPORT PLMWriteDocumentListModel : public PLMDocumentListModel {
 
 public:
 
-    PLMWriteDocumentListModel(QObject *parent = nullptr);
+    Q_DECL_DEPRECATED PLMWriteDocumentListModel(QObject *parent = nullptr);
     Q_INVOKABLE QVariant getDocumentData(int                              projectId,
                                          int                              paperId,
                                          int                              subWindowId,

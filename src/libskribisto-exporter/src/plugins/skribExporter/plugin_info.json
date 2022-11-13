@@ -1,0 +1,9 @@
+{
+    "type": "exporter",
+    "shortname": "SkribExporter",
+    "longname": "Skribisto .skrib exporter",
+    "version": "1.0",
+    "mandatory": true,
+    "activatedByDefault": true,
+    "dependencies": []
+}

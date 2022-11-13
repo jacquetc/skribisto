@@ -1,0 +1,27 @@
+{
+    "colors": {
+        "window": "#313131",
+        "windowText": "#deddda",
+        "base": "#282525",
+        "text": "#deddda",
+        "brightText": "#deddda",
+        "highlight": "#b56c17",
+        "highlightedText": "#deddda",
+        "button": "#0e0e0e",
+        "buttonText": "#deddda",
+        "toolTipBase": "#313131",
+        "toolTipText": "#deddda",
+        "placeholderText": "#10ffffff",
+        "light": "#bfbfbf",
+        "mid": "#a9a9a9",
+        "dark": "#ffffff",
+        "link": "#a5cdff",
+        "visitedLink": "#ff00ff",
+        "shadow": "#cc000000"
+    },
+    "info": "Based on the Pop!_OS Dark theme, designed for the custom GNU/Linux distribution produced by System76",
+    "isEditable": false,
+    "themeType": "dark",
+    "isForDesktop": true,
+    "themeName": "The Answer to Snowblind"
+}

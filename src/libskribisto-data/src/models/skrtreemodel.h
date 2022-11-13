@@ -31,7 +31,7 @@ class EXPORT SKRTreeModel : public QAbstractItemModel {
 
 public:
 
-    explicit SKRTreeModel(QObject *parent = nullptr);
+    Q_DECL_DEPRECATED explicit SKRTreeModel(QObject *parent = nullptr);
 
     // Header:
     QVariant headerData(int             section,

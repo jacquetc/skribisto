@@ -1,4 +1,5 @@
 #include "skrwordmeter.h"
+#include "text/markdowntextdocument.h"
 
 #include <QTextDocument>
 
@@ -13,9 +14,9 @@ SKRWordMeterWorker::SKRWordMeterWorker(QObject       *parent,
 
 void SKRWordMeterWorker::countWords()
 {
-    QTextDocument textDocument;
+    MarkdownTextDocument textDocument;
 
-    textDocument.setHtml(m_text);
+    textDocument.setSkribistoMarkdown(m_text);
     QString plainText = textDocument.toPlainText();
 
     plainText.replace(QRegularExpression("\\n+|\\t+"), " ");
@@ -39,12 +40,12 @@ void SKRWordMeterWorker::countWords()
 
 void SKRWordMeterWorker::countCharacters()
 {
-    QTextDocument textDocument;
+    MarkdownTextDocument textDocument;
 
-    textDocument.setHtml(m_text);
+    textDocument.setSkribistoMarkdown(m_text);
     QString plainText = textDocument.toPlainText();
 
-    int charCount = plainText.count();
+    int charCount = plainText.size();
 
     emit characterCountCalculated(m_projectId, m_treeItemId, charCount,  m_triggerProjectModifiedSignal);
 }

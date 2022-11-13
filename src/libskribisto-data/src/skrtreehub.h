@@ -72,9 +72,18 @@ class EXPORT SKRTreeHub : public QObject {
 public:
 
     explicit SKRTreeHub(QObject *parent = nullptr);
-    QHash<int, int>       getAllSortOrders(int projectId) const;
-    QHash<int, int>       getAllIndents(int projectId) const;
+    QHash<int, int> getAllSortOrders(int projectId) const;
+    QHash<int, int> getAllIndents(int projectId) const;
     Q_INVOKABLE QList<int>getAllIds(int projectId) const;
+    Q_INVOKABLE QList<int>getAllTrashedIds(int projectId) const;
+    QList<QVariantMap> saveTree(int projectId) const;
+    SKRResult restoreTree(int projectId, QList<QVariantMap> allValues);
+    Q_INVOKABLE QVariantMap saveId(int projectId, int treeItemId) const;
+    Q_INVOKABLE SKRResult restoreId(int projectId, int treeItemId, const QVariantMap &values);
+
+    Q_INVOKABLE SKRResult setTreeItemId(int            projectId,
+                                   int            treeItemId,
+                                   int newId);
 
     Q_INVOKABLE SKRResult setTitle(int            projectId,
                                    int            treeItemId,
@@ -97,6 +106,9 @@ public:
     SKRResult             setIndent(int projectId,
                                     int treeItemId,
                                     int newIndent);
+    SKRResult             setIndent(int projectId,
+                                    int treeItemId,
+                                    int newIndent, bool setCurrentdate, bool commit);
     Q_INVOKABLE int       getIndent(int projectId,
                                     int treeItemId) const;
     SKRResult             setSortOrder(int projectId,
@@ -156,6 +168,9 @@ public:
     QDateTime             getUpdateDate(int projectId,
                                         int treeItemId) const;
 
+    int row(int projectId,
+            int treeItemId) const;
+
 
     Q_INVOKABLE bool hasChildren(int  projectId,
                                  int  treeItemId,
@@ -163,6 +178,8 @@ public:
                                  bool notTrashedAreIncluded = true) const;
 
     Q_INVOKABLE int getTopTreeItemId(int projectId) const;
+
+    QList<int> filterOutChildren(int projectId, QList<int> treeItemIds) const;
 
     SKRResult       getError();
     SKRResult       set(int             projectId,
@@ -175,8 +192,10 @@ public:
                  int            treeItemId,
                  const QString& fieldName) const;
 
+
     Q_INVOKABLE int       getLastAddedId();
 
+    SKRResult             addTreeItem(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle, bool renumber = true);
     SKRResult             addTreeItem(const QHash<QString, QVariant>& values,
                                       int                             projectId, bool renumber= true);
     Q_INVOKABLE SKRResult addTreeItemAbove(int            projectId,
@@ -194,6 +213,7 @@ public:
 
     Q_INVOKABLE SKRResult moveTreeItem(int  sourceProjectId,
                                        int  sourceTreeItemId,
+                                       int  targetProjectId,
                                        int  targetTreeItemId,
                                        bool after = false);
 
@@ -208,7 +228,7 @@ public:
                                                 bool sendSignal      = true,
                                                 int  wantedSortOrder = -1);
     Q_INVOKABLE int getParentId(int projectId,
-                                int treeItemId);
+                                int treeItemId) const;
 
 
     SKRResult             renumberSortOrders(int projectId);
@@ -222,14 +242,14 @@ public:
 
 
     Q_INVOKABLE QList<int>getAllChildren(int projectId,
-                                         int treeItemId);
+                                         int treeItemId) const;
 
     Q_INVOKABLE QList<int>getAllDirectChildren(int  projectId,
                                                int  treeItemId,
                                                bool trashedAreIncluded    = false,
-                                               bool notTrashedAreIncluded = true);
+                                               bool notTrashedAreIncluded = true) const;
     Q_INVOKABLE QList<int>getAllAncestors(int projectId,
-                                          int treeItemId);
+                                          int treeItemId) const;
     QList<int>            getAllSiblings(int  projectId,
                                          int  treeItemId,
                                          bool treetemIncluded = false);
@@ -249,7 +269,7 @@ public:
                                                  int receiverTreeItemId);
 
     Q_INVOKABLE int       getPreviousTreeItemIdOfTheSameType(int projectId,
-                                                             int treeItemId);
+                                                             int treeItemId) const;
 
     Q_INVOKABLE SKRResult duplicateTreeItem(int projectId,
                                             int treeItemId,
@@ -271,9 +291,10 @@ public:
                                int treeItemId) const;
 
 private:
+    void commit(int projectId);
 
     SKRResult setTrashedDateToNow(int projectId,
-                                  int treeItemId);
+                                  int treeItemId, const QDateTime &forcedDate = QDateTime());
     SKRResult setTrashedDateToNull(int projectId,
                                    int treeItemId);
 
@@ -285,6 +306,8 @@ signals:
 
     void errorSent(const SKRResult& result) const;
     void projectModified(int projectId); // for save
+    void treeReset(int projectId); // for save
+    void allValuesChanged(int projectId, int treeItemId);
     void treeItemIdChanged(int projectId,
                            int treeItemId,
                            int newId);
@@ -322,6 +345,8 @@ signals:
                        int treeItemId);
     void treeItemsAdded(int       projectId,
                         QList<int>treeItemIds);
+    void treeItemAboutToBeRemoved(int projectId,
+                         int treeItemId);
     void treeItemRemoved(int projectId,
                          int treeItemId);
     void treeItemMoved(int       sourceProjectId,

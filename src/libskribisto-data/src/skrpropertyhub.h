@@ -43,6 +43,10 @@ public:
 
     QList<int>            getAllIdsWithPaperCode(int projectId,
                                                  int treeItemCode) const;
+
+    QList<QVariantMap> save(int projectId) const;
+    SKRResult restore(int projectId, QList<QVariantMap> allValues);
+
     Q_INVOKABLE SKRResult setProperty(int            projectId,
                                       int            treeItemCode,
                                       const QString& name,
@@ -56,6 +60,10 @@ public:
                                       int imposedPropertyId = -1);
     Q_INVOKABLE SKRResult removeProperty(int projectId,
                                          int propertyId);
+
+    QVariant get(int            projectId,
+                 int            propertyId,
+                 const QString& fieldName) const;
     SKRResult             setId(int projectId,
                                 int propertyId,
                                 int newId);
@@ -132,6 +140,7 @@ signals:
                        int propertyId);
     void propertyRemoved(int projectId,
                          int propertyId);
+    void propertiesReset(int projectId);
 
 private:
 

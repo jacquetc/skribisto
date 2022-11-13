@@ -30,7 +30,7 @@ class EXPORT SKRTreeProxyModel : public QSortFilterProxyModel {
 
 public:
 
-    explicit SKRTreeProxyModel(QObject *parent = nullptr);
+    Q_DECL_DEPRECATED explicit SKRTreeProxyModel(QObject *parent = nullptr);
 
     Qt::ItemFlags flags(const QModelIndex& index) const;
 

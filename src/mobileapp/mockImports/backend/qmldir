@@ -1,0 +1,4 @@
+module backend
+singleton SkrTools 1.0 SkrTools.qml
+ShortcutBackend 1.0 ShortcutBackend.qml
+SKRViewManager 1.0 SKRViewManager.qml

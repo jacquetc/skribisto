@@ -38,19 +38,19 @@ class EXPORT SKRSearchTreeListProxyModel : public QSortFilterProxyModel {
 
 public:
 
-    explicit SKRSearchTreeListProxyModel();
+    Q_DECL_DEPRECATED explicit SKRSearchTreeListProxyModel();
 
     Q_INVOKABLE SKRSearchTreeListProxyModel* clone();
 
     int                                      columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
-    Qt::ItemFlags                            flags(const QModelIndex& index) const;
+    Qt::ItemFlags                            flags(const QModelIndex& index) const override;
 
     QVariant                                 data(const QModelIndex& index,
-                                                  int                role) const;
+                                                  int                role) const override;
     bool                                     setData(const QModelIndex& index,
                                                      const QVariant   & value,
-                                                     int                role);
+                                                     int                role) override;
 
     Q_INVOKABLE void      setProjectIdFilter(int projectIdFilter);
     void                  clearFilters();

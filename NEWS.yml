@@ -1,3 +1,10 @@
+Version: 2.0.0
+Date: 2022-11-13
+Type: stable
+Description:
+- "Switch to QtWidget application for desktop"
+- "Deactivate temporarily QML application"
+---
 Version: 1.9.42
 Date: 2022-05-01
 Type: stable

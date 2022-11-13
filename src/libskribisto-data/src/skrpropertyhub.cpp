@@ -21,7 +21,7 @@
 ***************************************************************************/
 #include "skrpropertyhub.h"
 #include "tools.h"
-#include "tasks/plmsqlqueries.h"
+#include "sql/plmsqlqueries.h"
 
 SKRPropertyHub::SKRPropertyHub(QObject       *parent,
                                const QString& tableName,
@@ -154,6 +154,72 @@ QList<int>SKRPropertyHub::getAllIdsWithPaperCode(int projectId, int treeItemCode
 // --------------------------------------------------------------
 
 
+QList<QVariantMap> SKRPropertyHub::save(int projectId) const
+{
+    SKRResult result(this);
+
+    PLMSqlQueries queries(projectId, m_tableName);
+    QStringList fieldNames = queries.getAllFieldTitles();
+
+    QVariantMap allFields;
+    QList<QVariantMap> list;
+
+    for(int propertyId : this->getAllIds(projectId)){
+
+        for(const QString &fieldName : fieldNames) {
+            allFields.insert(fieldName, this->get(projectId, propertyId, fieldName));
+        }
+
+        list.append(allFields);
+    }
+
+    IFKO(result) {
+        emit errorSent(result);
+    }
+
+    return list;
+
+}
+
+// ----------------------------------------------------------------------------------------
+
+SKRResult SKRPropertyHub::restore(int projectId, QList<QVariantMap> allValues)
+{
+    SKRResult result(this);
+
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    result = queries.injectDirectSql("PRAGMA foreign_keys = 0");
+    result = queries.injectDirectSql("DELETE FROM tbl_tree");
+
+    for(const QVariantMap &values : allValues){
+
+        QHash<QString, QVariant> hash;
+        QVariantMap::const_iterator i = values.constBegin();
+        while (i != values.constEnd()) {
+            hash.insert(i.key(), i.value());
+            ++i;
+        }
+        int newId;
+        queries.add(hash, newId);
+
+    }
+    result = queries.injectDirectSql("PRAGMA foreign_keys = 1");
+
+
+    IFOK(result) {
+        queries.commit();
+        emit propertiesReset(projectId);
+        emit projectModified(projectId);
+    }
+    IFKO(result) {
+        queries.rollback();
+        emit errorSent(result);
+    }
+    return result;
+
+}
+
 // --------------------------------------------------------------
 SKRResult SKRPropertyHub::setProperty(int            projectId,
                                       int            treeItemCode,
@@ -201,6 +267,8 @@ SKRResult SKRPropertyHub::setProperty(int            projectId,
         if (triggerProjectModifiedSignal && !isSilent) {
             emit projectModified(projectId);
         }
+
+        result.addData("propertyId", propertyId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -765,6 +833,27 @@ SKRResult SKRPropertyHub::removeProperty(int projectId, int propertyId)
     }
     return result;
 }
+
+//--------------------------------------------------------------------------
+
+QVariant SKRPropertyHub::get(int projectId, int propertyId, const QString &fieldName) const
+{
+    SKRResult result(this);
+    QVariant  var;
+    QVariant  value;
+    PLMSqlQueries queries(projectId, m_tableName);
+
+    result = queries.get(propertyId, fieldName, var);
+    IFOK(result) {
+        value = var;
+    }
+    IFKO(result) {
+        emit errorSent(result);
+    }
+    return value;
+}
+
+//--------------------------------------------------------------------------
 
 bool SKRPropertyHub::propertyExists(int projectId, int treeItemCode, const QString& name)
 {

@@ -28,9 +28,12 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="1.9.41" date="2022-04-11T00:00:00Z">
+    <release type="stable" version="2.0.0" date="2022-11-13T00:00:00Z">
       <description>
-        <p>Quick fix: First Dialog crash</p>
+        <ul>
+          <li>Switch to QtWidget application for desktop</li>
+          <li>Deactivate temporarily QML application</li>
+        </ul>
       </description>
     </release>
   </releases>
@@ -38,7 +41,7 @@
     <mimetype>application/x-skribisto</mimetype>
   </mimetypes>
   <provides>
-    <binary>skribisto</binary>
+    <binary>SkribistoDesktop</binary>
   </provides>
   <content_rating type="oars-1.1"/>
 </component>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 32 32"
+   version="1.1"
+   id="svg2956"
+   sodipodi:docname="skribisto-book-beginning.svg"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview2958"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="36.46875"
+     inkscape:cx="8.4592973"
+     inkscape:cy="15.98629"
+     inkscape:window-width="2560"
+     inkscape:window-height="1384"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2956" />
+  <defs
+     id="defs3051">
+    <style
+       type="text/css"
+       id="current-color-scheme">
+      .ColorScheme-Text {
+        color:#232629;
+      }
+      </style>
+  </defs>
+  <path
+     style="fill:currentColor;fill-opacity:1;stroke:none"
+     d="M 7,4 V 6 H 4 v 6 h 3 v 8 H 4 v 6 h 3 v 2 H 28 V 4 Z M 8,27 C 2.6666667,9 5.3333333,18 8,27 Z M 8,5 H 27 V 27 H 8 Z"
+     class="ColorScheme-Text"
+     id="path2954"
+     sodipodi:nodetypes="cccccccccccccccccccc" />
+  <path
+     style="fill:none;stroke:currentColor;stroke-width:1.0885px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m 11.696845,4.9050881 -0.0543,7.8754039 3.067842,-3.150162 2.877798,2.953276 0.02715,-7.8097747"
+     id="path3728"
+     class="ColorScheme-Text" />
+  <g
+     id="g21594"
+     transform="matrix(1,0,0,-1,0,41.488727)">
+    <path
+       style="fill:none;stroke:currentColor;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 11.379607,17.412168 17.521852,21.58012 23.8012,17.412168"
+       id="path3900"
+       class="ColorScheme-Text" />
+    <path
+       style="fill:none;stroke:currentColor;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 10.447301,23.965724 14.094259,0.02742"
+       id="path3902"
+       class="ColorScheme-Text" />
+  </g>
+</svg>
