@@ -14,14 +14,15 @@ ViewHolder::ViewHolder(QWidget *parent) :
 
 // history:
     m_goBackAction = new QAction(QIcon(":/icons/backup/go-previous-view.svg"), tr("Back"), this);
-    m_goBackAction->setShortcutContext(Qt::ShortcutContext::WindowShortcut);
-    m_goBackAction->setShortcut(QKeySequence("Ctrl+>"));
-    //    m_goBackAction->setShortcut(QKeySequence(QKeySequence::Back));
+    m_goBackAction->setShortcutContext(Qt::ShortcutContext::WidgetWithChildrenShortcut);
+    m_goBackAction->setShortcut(QKeySequence(QKeySequence::Back));
+    this->addAction(m_goBackAction);
     connect(m_goBackAction, &QAction::triggered, this, &ViewHolder::goBackInHistory);
 
     m_goForwardAction = new QAction(QIcon(":/icons/backup/go-next-view.svg"), tr("Forward"), this);
     m_goForwardAction->setShortcutContext(Qt::ShortcutContext::WidgetWithChildrenShortcut);
     m_goForwardAction->setShortcut(QKeySequence(QKeySequence::Forward));
+    this->addAction(m_goForwardAction);
     connect(m_goForwardAction, &QAction::triggered, this, &ViewHolder::goForwardInHistory);
 }
 

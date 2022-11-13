@@ -24,6 +24,7 @@ MainWindow::MainWindow(int newWindowId, bool restoreViewEnabled)
 {
     ui->setupUi(this);
 
+
     this->setWindowId(newWindowId);
     this->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -278,6 +279,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         }
 
         // close the already saved projects:
+        QList<int> projectList = skrdata->projectHub()->getProjectIdList();
         for(int projectId : projectList){
             projectCommands->closeProject(projectId);
         }
@@ -324,7 +326,10 @@ void MainWindow::openSaveAsDialog(int projectId){
                                                        filter, &selectedFilter, QFileDialog::Options()
                                                        );
 
-    projectCommands->saveAs(projectId, saveFileNameUrl, QFileInfo(saveFileNameUrl.toLocalFile()).suffix());
+    if(!saveFileNameUrl.isEmpty()){
+         projectCommands->saveAs(projectId, saveFileNameUrl, QFileInfo(saveFileNameUrl.toLocalFile()).suffix());
+    }
+
 
 }
 
@@ -403,7 +408,10 @@ void MainWindow::setupMenuActions()
     connect(ui->actionLoad_Project, &QAction::triggered, this, [this](){
         QUrl openFileNameUrl = QFileDialog::getOpenFileUrl(this, "Open a project", QUrl(), tr("Skribisto project (*.skrib)"));
 
-        projectCommands->loadProject(openFileNameUrl);
+        if(!openFileNameUrl.isEmpty()){
+            projectCommands->loadProject(openFileNameUrl);
+        }
+
     });
     //-------------------
 
@@ -502,6 +510,7 @@ void MainWindow::setupMenuActions()
             }
 
             // close the already saved projects:
+            QList<int> projectList = skrdata->projectHub()->getProjectIdList();
             for(int projectId : projectList){
                 projectCommands->closeProject(projectId);
             }
@@ -559,10 +568,53 @@ void MainWindow::setupMenuActions()
 
     //-------------------
 
+    ui->actionGo_to_View_Dock->setShortcut(QKeySequence(tr("Ctrl+=")));
+    connect(ui->actionGo_to_View_Dock, &QAction::triggered, this, [this](bool checked){
+        ui->actionShow_View_Dock->setChecked(true);
+
+        if(nullptr == ui->viewDock->currentToolbox()){
+            return;
+        }
+
+        if(!ui->viewDock->currentToolbox()->hasFocus()){
+            ui->viewDock->currentToolbox()->setFocus();
+        }
+        else{
+            ui->viewDock->switchToNextToolbox();
+            ui->viewDock->currentToolbox()->setFocus();
+        }
+
+    });
+    //-------------------
+
     connect(ui->actionShow_Project_Dock, &QAction::triggered, this, [this](bool checked){
         ui->projectDock->setVisible(checked);
 
     });
+
+    //-------------------
+
+    ui->actionGo_to_Project_Dock->setShortcut(QKeySequence(tr("Ctrl+`")));
+    connect(ui->actionGo_to_Project_Dock, &QAction::triggered, this, [this](bool checked){
+        ui->actionShow_Project_Dock->setChecked(true);
+
+        if(!ui->projectDock->currentToolbox()->hasFocus()){
+            ui->projectDock->currentToolbox()->setFocus();
+        }
+        else{
+            ui->projectDock->switchToNextToolbox();
+            ui->projectDock->currentToolbox()->setFocus();
+        }
+
+    });
+
+
+    //-------------------
+
+    connect(ui->actionFocus_back_on_view, &QAction::triggered, this, [this](bool checked){
+        m_viewManager->currentView()->setFocus();
+    });
+
 
     //-------------------
 
@@ -585,6 +637,7 @@ void MainWindow::setupMenuActions()
     newSettings.insert("common/spellChecker", spellChecking);
     emit static_cast<DesktopApplication *>(qApp)->settingsChanged(newSettings);
     //-------------------
+
 }
 
 

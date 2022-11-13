@@ -15,6 +15,8 @@ OutlineToolbox::OutlineToolbox(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    this->setFocusProxy(ui->textEdit);
+
     connect(this, &Toolbox::aboutToBeDestroyed, this, [this](){
         if(m_wasModified){
             saveContent();

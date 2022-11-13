@@ -22,6 +22,8 @@ public:
 
     QStackedWidget *stack() const;
     void clear();
+    QWidget *currentToolbox();
+    void switchToNextToolbox();
 
 public slots:
     void setToolboxes(QList<Toolbox *> toolboxes);
@@ -80,6 +82,7 @@ public:
     void add(const QIcon &icon, const QString &title);
     void clear();
 
+    void setActionChecked(int actionIndex);
 signals:
     void currentIndexChanged(int index);
 

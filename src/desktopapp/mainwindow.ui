@@ -69,7 +69,10 @@
     </property>
     <addaction name="actionAdd_Window"/>
     <addaction name="actionShow_Project_Dock"/>
+    <addaction name="actionGo_to_Project_Dock"/>
     <addaction name="actionShow_View_Dock"/>
+    <addaction name="actionGo_to_View_Dock"/>
+    <addaction name="actionFocus_back_on_view"/>
     <addaction name="separator"/>
     <addaction name="actionClose_all_views"/>
     <addaction name="separator"/>
@@ -361,6 +364,24 @@
    </property>
    <property name="shortcut">
     <string>Shift+F7</string>
+   </property>
+  </action>
+  <action name="actionGo_to_Project_Dock">
+   <property name="text">
+    <string>Go to Project Dock</string>
+   </property>
+  </action>
+  <action name="actionGo_to_View_Dock">
+   <property name="text">
+    <string>Go to View Dock</string>
+   </property>
+  </action>
+  <action name="actionFocus_back_on_view">
+   <property name="text">
+    <string>Focus back on view</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
    </property>
   </action>
  </widget>

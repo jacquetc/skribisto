@@ -988,7 +988,7 @@
 <context>
     <name>DockTitle</name>
     <message>
-        <location filename="../desktopapp/dock.cpp" line="146"/>
+        <location filename="../desktopapp/dock.cpp" line="175"/>
         <source>Hide dock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1753,192 +1753,222 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="80"/>
+        <location filename="../desktopapp/mainwindow.ui" line="83"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="87"/>
+        <location filename="../desktopapp/mainwindow.ui" line="90"/>
         <source>Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="191"/>
+        <location filename="../desktopapp/mainwindow.ui" line="194"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="215"/>
+        <location filename="../desktopapp/mainwindow.ui" line="218"/>
         <source>New Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="218"/>
+        <location filename="../desktopapp/mainwindow.ui" line="221"/>
         <source>Ctrl+Shift+N</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="223"/>
+        <location filename="../desktopapp/mainwindow.ui" line="226"/>
         <source>Preferences</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="228"/>
+        <location filename="../desktopapp/mainwindow.ui" line="231"/>
         <source>Add Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="233"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="290"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="382"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="514"/>
+        <location filename="../desktopapp/mainwindow.ui" line="236"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="292"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="387"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="523"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="238"/>
+        <location filename="../desktopapp/mainwindow.ui" line="241"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="243"/>
+        <location filename="../desktopapp/mainwindow.ui" line="246"/>
         <source>About Qt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="248"/>
+        <location filename="../desktopapp/mainwindow.ui" line="251"/>
         <source>Disctraction Free</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="251"/>
+        <location filename="../desktopapp/mainwindow.ui" line="254"/>
         <source>Switch to disctraction free mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="263"/>
+        <location filename="../desktopapp/mainwindow.ui" line="266"/>
         <source>Show View Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="275"/>
+        <location filename="../desktopapp/mainwindow.ui" line="278"/>
         <source>Show Project Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="280"/>
+        <location filename="../desktopapp/mainwindow.ui" line="283"/>
         <source>Close All Views</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="283"/>
+        <location filename="../desktopapp/mainwindow.ui" line="286"/>
         <source>Close All View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="288"/>
+        <location filename="../desktopapp/mainwindow.ui" line="291"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="293"/>
+        <location filename="../desktopapp/mainwindow.ui" line="296"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="298"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="251"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="352"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="476"/>
+        <location filename="../desktopapp/mainwindow.ui" line="301"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="252"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="357"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="484"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="303"/>
+        <location filename="../desktopapp/mainwindow.ui" line="306"/>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="308"/>
+        <location filename="../desktopapp/mainwindow.ui" line="311"/>
         <source>Close project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="313"/>
+        <location filename="../desktopapp/mainwindow.ui" line="316"/>
         <source>Back up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="318"/>
+        <location filename="../desktopapp/mainwindow.ui" line="321"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="323"/>
+        <location filename="../desktopapp/mainwindow.ui" line="326"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="328"/>
+        <location filename="../desktopapp/mainwindow.ui" line="331"/>
         <source>Open Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="348"/>
+        <location filename="../desktopapp/mainwindow.ui" line="351"/>
         <source>Recent projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="360"/>
+        <location filename="../desktopapp/mainwindow.ui" line="363"/>
         <source>Spell checking</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="363"/>
+        <location filename="../desktopapp/mainwindow.ui" line="366"/>
         <source>Shift+F7</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="660"/>
+        <location filename="../desktopapp/mainwindow.ui" line="371"/>
+        <source>Go to Project Dock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="376"/>
+        <source>Go to View Dock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="381"/>
+        <source>Focus back on view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.ui" line="384"/>
+        <source>Esc</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.cpp" line="713"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="404"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="409"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="252"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="353"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="477"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="253"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="358"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="485"/>
         <source>Do you want to save changes to %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="290"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="514"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="292"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="523"/>
         <source>Do you really want to quit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="322"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="324"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="383"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="388"/>
         <source>Do you really want to close %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="449"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="457"/>
         <source>Ctrl+E</source>
         <comment>export shortcut</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="657"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="571"/>
+        <source>Ctrl+=</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.cpp" line="597"/>
+        <source>Ctrl+`</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.cpp" line="710"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1961,53 +1991,53 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="57"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="59"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="68"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="75"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="87"/>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="95"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="98"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="110"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="95"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="110"/>
         <source>Enter a new title for the item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="107"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="122"/>
         <source>Add below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="119"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="139"/>
         <source>Add above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="130"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="154"/>
         <source>Add sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="152"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="181"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="179"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="213"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="191"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="228"/>
         <source>Set as the active project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5638,6 +5668,19 @@ This action isn&apos;t recoverable.</source>
     <message>
         <location filename="../libskribisto-desktop-common/src/viewholder.cpp" line="22"/>
         <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ViewManager</name>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/viewmanager.cpp" line="71"/>
+        <source>Go to previous split</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/viewmanager.cpp" line="91"/>
+        <source>Go to next split</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -19,6 +19,8 @@ Navigation::Navigation(class QWidget *parent) :
 {
     ui->setupUi(this);
 
+    this->setFocusProxy(ui->treeView);
+
     ProjectTreeProxyModel *model = new ProjectTreeProxyModel(this);
     FilterModel *filterModel = new FilterModel(this);
     filterModel->setSourceModel(model);
@@ -59,6 +61,11 @@ Navigation::Navigation(class QWidget *parent) :
     m_openItemInAnotherViewAction->setShortcut(QKeySequence("Ctrl+Return"));
     m_openItemInAnotherViewAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_openItemInAnotherViewAction, &QAction::triggered, this, [this](){
+
+        if(!ui->treeView->selectionModel()->currentIndex().isValid()){
+            return;
+        }
+
         QModelIndex index = ui->treeView->selectionModel()->currentIndex();
         this->setCurrentIndex(index);
         this->openInAnotherView(index);
@@ -70,6 +77,10 @@ Navigation::Navigation(class QWidget *parent) :
     m_openItemInANewWindowAction->setShortcut(QKeySequence("Ctrl+Shift+Return"));
     m_openItemInANewWindowAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_openItemInANewWindowAction, &QAction::triggered, this, [this](){
+        if(!ui->treeView->selectionModel()->currentIndex().isValid()){
+            return;
+        }
+
         QModelIndex index = ui->treeView->selectionModel()->currentIndex();
         this->setCurrentIndex(index);
 
@@ -89,6 +100,10 @@ Navigation::Navigation(class QWidget *parent) :
     m_renameAction->setShortcut(QKeySequence("F2"));
     m_renameAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_renameAction, &QAction::triggered, this, [this](){
+        if(!ui->treeView->selectionModel()->currentIndex().isValid()){
+            return;
+        }
+
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
 
         bool ok;
@@ -109,6 +124,11 @@ Navigation::Navigation(class QWidget *parent) :
     m_addItemAfterAction->setShortcut(QKeySequence("Ctrl+N"));
     m_addItemAfterAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_addItemAfterAction, &QAction::triggered, this, [this, addItemDialog](){
+
+        if(!ui->treeView->selectionModel()->currentIndex().isValid()){
+            return;
+        }
+
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
         addItemDialog->setActionType(NewTreeItemDialog::AddAfter);
         addItemDialog->setIdentifiers(m_projectId, m_targetTreeItemId);
@@ -121,6 +141,10 @@ Navigation::Navigation(class QWidget *parent) :
     m_addItemBeforeAction->setShortcut(QKeySequence("Ctrl+H"));
     m_addItemBeforeAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_addItemBeforeAction, &QAction::triggered, this, [this, addItemDialog](){
+        if(!ui->treeView->selectionModel()->currentIndex().isValid()){
+            return;
+        }
+
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
         addItemDialog->setActionType(NewTreeItemDialog::AddBefore);
         addItemDialog->setIdentifiers(m_projectId, m_targetTreeItemId);
@@ -132,6 +156,11 @@ Navigation::Navigation(class QWidget *parent) :
     m_addSubItemAction->setShortcut(QKeySequence("Ctrl+J"));
     m_addSubItemAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_addSubItemAction, &QAction::triggered, this, [this, addItemDialog](){
+
+        if(!ui->treeView->selectionModel()->currentIndex().isValid()){
+            return;
+        }
+
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
 
         addItemDialog->setActionType(NewTreeItemDialog::AddSubItem);
@@ -154,6 +183,11 @@ Navigation::Navigation(class QWidget *parent) :
     m_sendToTrashAction->setShortcut(QKeySequence::Delete);
     m_sendToTrashAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_sendToTrashAction, &QAction::triggered, this, [this](){
+
+        if(!ui->treeView->selectionModel()->currentIndex().isValid()){
+            return;
+        }
+
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
         QModelIndexList indexList = ui->treeView->selectionModel()->selectedIndexes();
 
@@ -181,6 +215,9 @@ Navigation::Navigation(class QWidget *parent) :
     m_exportAction->setShortcut(QKeySequence("Ctrl+E"));
     m_exportAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     QObject::connect(m_exportAction, &QAction::triggered, this, [this](){
+        if(!ui->treeView->selectionModel()->currentIndex().isValid()){
+            return;
+        }
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
 
 
@@ -188,16 +225,20 @@ Navigation::Navigation(class QWidget *parent) :
     } );
 
 
-        m_setActiveProjectAction = new QAction(tr("Set as the active project"), this);
-        ui->treeView->addAction(m_setActiveProjectAction);
-        m_setActiveProjectAction->setShortcut(QKeySequence("Ctrl+A"));
-        m_setActiveProjectAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        QObject::connect(m_setActiveProjectAction, &QAction::triggered, this, [this](){
-            this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
+    m_setActiveProjectAction = new QAction(tr("Set as the active project"), this);
+    ui->treeView->addAction(m_setActiveProjectAction);
+    m_setActiveProjectAction->setShortcut(QKeySequence("Ctrl+A"));
+    m_setActiveProjectAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    QObject::connect(m_setActiveProjectAction, &QAction::triggered, this, [this](){
+        if(!ui->treeView->selectionModel()->currentIndex().isValid()){
+            return;
+        }
 
-            projectCommands->setActiveProject(m_projectId);
+        this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
 
-        } );
+        projectCommands->setActiveProject(m_projectId);
+
+    } );
 
 //    m_copyItemsAction = new QAction(tr("Copy"), this);
 //    ui->treeView->addAction(m_copyItemsAction);

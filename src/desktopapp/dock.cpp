@@ -113,6 +113,35 @@ void Dock::clear()
 }
 
 //------------------------------------------------------------------------------------
+
+QWidget *Dock::currentToolbox()
+{
+ return m_stack->currentWidget();
+}
+
+//------------------------------------------------------------------------------------
+
+void Dock::switchToNextToolbox()
+{
+    QWidget *toolbox = m_stack->currentWidget();
+
+    if(nullptr == toolbox){
+        return;
+    }
+
+    int index = m_toolboxList.indexOf(toolbox);
+
+    if(index == m_toolboxList.count() - 1){
+        m_dockTitle->toolbarSelector()->setActionChecked(0);
+    }
+    else {
+        m_dockTitle->toolbarSelector()->setActionChecked(index + 1);
+    }
+
+
+}
+
+
 //------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------
 
@@ -219,6 +248,20 @@ ToolbarSelector::ToolbarSelector(QWidget *parent)
 
  m_actionGroup = new QActionGroup(this);
 
+}
+
+//------------------------------------------------------------------------------------
+void ToolbarSelector::setActionChecked(int actionIndex)
+{
+    if(m_actionGroup->actions().isEmpty()){
+        return;
+    }
+    if(m_actionGroup->actions().count() <= actionIndex){
+        return;
+    }
+
+
+    m_actionGroup->actions().at(actionIndex)->setChecked(true);
 }
 
 //------------------------------------------------------------------------------------

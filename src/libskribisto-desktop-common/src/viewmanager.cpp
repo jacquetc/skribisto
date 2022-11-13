@@ -4,6 +4,7 @@
 #include <QVBoxLayout>
 #include <QTextEdit>
 #include <QApplication>
+#include <QKeySequence>
 
 #include "interfaces/pagedesktopinterface.h"
 #include "skrdata.h"
@@ -49,6 +50,10 @@ ViewManager::ViewManager(QObject *parent, QWidget *viewWidget, bool restoreViewE
         this->restoreSplitterStructure();
     }
 
+
+
+
+
     QTimer::singleShot(0, this, &ViewManager::init);
 }
 
@@ -62,6 +67,45 @@ ViewManager::~ViewManager()
 
 void ViewManager::init(){
 
+
+    QAction *m_previousViewHolder = new QAction(tr("Go to previous split"), this);
+    m_previousViewHolder->setShortcuts(QKeySequence::PreviousChild);
+    //m_previousViewHolder->setShortcuts(QList<QKeySequence>() << QKeySequence("Ctrl+Shift+T"));
+    m_previousViewHolder->setShortcutContext(Qt::WindowShortcut);
+    m_viewWidget->addAction(m_previousViewHolder);
+    connect(m_previousViewHolder, &QAction::triggered, this, [this](){
+        determineCurrentView();
+
+        int index = m_viewHolderList.indexOf(m_currentViewHolder);
+
+        if(index == 0){
+            m_currentViewHolder->currentView()->setFocus();
+            return;
+        }
+
+        ViewHolder* previousViewHolder = m_viewHolderList.at(index - 1);
+        previousViewHolder->currentView()->setFocus();
+
+    });
+
+    QAction *m_nextViewHolder = new QAction(tr("Go to next split"), this);
+    m_nextViewHolder->setShortcuts(QKeySequence::NextChild);
+    m_nextViewHolder->setShortcutContext(Qt::WindowShortcut);
+    m_viewWidget->addAction(m_nextViewHolder);
+    connect(m_nextViewHolder, &QAction::triggered, this, [this](){
+        determineCurrentView();
+
+        int index = m_viewHolderList.indexOf(m_currentViewHolder);
+
+        if(index == m_viewHolderList.count() - 1){
+            m_currentViewHolder->currentView()->setFocus();
+            return;
+        }
+
+        ViewHolder* previousViewHolder = m_viewHolderList.at(index + 1);
+        previousViewHolder->currentView()->setFocus();
+
+    });
 
 }
 

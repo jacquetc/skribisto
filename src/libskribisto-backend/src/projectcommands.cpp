@@ -128,6 +128,10 @@ QTextDocument *ProjectCommands::getPrintTextDocument(int projectId, const QVaria
 
 void ProjectCommands::loadProject(const QUrl &url)
 {
+    if(!url.isValid()){
+        return;
+    }
+
     m_undoStack->clear();
 
     SKRResult result(this);
