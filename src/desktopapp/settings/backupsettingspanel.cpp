@@ -2,7 +2,7 @@
 #include "backupmanager.h"
 #include "ui_backupsettingspanel.h"
 
-#include <DesktopApplication.h>
+#include "desktopapplication.h"
 #include <QFileDialog>
 #include <QSettings>
 #include <QStandardPaths>

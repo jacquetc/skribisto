@@ -136,7 +136,7 @@ int ProjectTrashedTreeModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.column() > 0) return 0;
 
-    if(m_projectId == -1){
+    if(m_projectId < 0){
         return 0;
     }
 
@@ -487,7 +487,7 @@ void ProjectTrashedTreeModel::populate()
     qDeleteAll(m_itemList);
     m_itemList.clear();
 
-    if(m_projectId == -1 || skrdata->projectHub()->getProjectCount() == 0){
+    if(m_projectId < 0 || skrdata->projectHub()->getProjectCount() == 0){
         this->endResetModel();
         return;
     }
