@@ -33,6 +33,8 @@ set(common_SRCS
     viewholder.h viewholder.cpp viewholder.ui
     toolboxes/tagtoolbox.h toolboxes/tagtoolbox.cpp toolboxes/tagtoolbox.ui
     toolboxes/tagchooserdialog.h toolboxes/tagchooserdialog.cpp toolboxes/tagchooserdialog.ui
+    toolboxes/tagitemdelegate.h toolboxes/tagitemdelegate.cpp
+    basicsettingspanel.h basicsettingspanel.cpp
 )
 
 set(common_INTERFACES

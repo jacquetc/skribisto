@@ -5,7 +5,7 @@
 #include <interfaces/settingspanelinterface.h>
 
 SettingsPanel::SettingsPanel(QWidget *parent)
-    : QWidget(parent), ui(new Ui::SettingsPanel) {
+    : BasicSettingsPanel(parent), ui(new Ui::SettingsPanel) {
     ui->setupUi(this);
 }
 
@@ -35,9 +35,6 @@ void SettingsPanel::setSettingsGroup(const QString &newSettingsGroup) {
     }
     emit settingsGroupChanged();
 }
-
-void SettingsPanel::accept() { emit this->accepted(); }
-void SettingsPanel::reset() { emit this->reseted(); }
 
 void SettingsPanel::on_listWidget_itemActivated(QListWidgetItem *item) {
     ui->stackedWidget->setCurrentIndex(ui->listWidget->row(item));

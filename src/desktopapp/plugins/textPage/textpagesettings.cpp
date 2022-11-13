@@ -12,7 +12,7 @@ TextPageSettings::TextPageSettings(QWidget *parent) :
     centralWidgetUi->setupUi(widget);
     setCentralWidget(widget);
 
-    reset();
+    TextPageSettings::reset();
 
     connect(centralWidgetUi->fontPointSizeSpinBox, &QSpinBox::valueChanged, this, &TextPageSettings::updateSampleTextFormat);
     connect(centralWidgetUi->paragraphTopMarginSpinBox, &QSpinBox::valueChanged, this, &TextPageSettings::updateSampleTextFormat);

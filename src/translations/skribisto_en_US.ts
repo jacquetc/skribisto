@@ -266,6 +266,40 @@
     </message>
 </context>
 <context>
+    <name>AppearanceSettingsPanel</name>
+    <message>
+        <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="20"/>
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="29"/>
+        <source>Day theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="39"/>
+        <source>Night theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="55"/>
+        <source>Modify theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="65"/>
+        <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="74"/>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>BackupPanel</name>
     <message>
         <location filename="../mobileapp/content/WelcomePage/SettingsPanels/BackupPanel.qml" line="109"/>
@@ -308,6 +342,14 @@
     <message>
         <location filename="../mobileapp/content/WelcomePage/SettingsPanels/BackupPanelForm.ui.qml" line="140"/>
         <source>Back up once a day</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>BackupSettingsPanel</name>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.ui" line="14"/>
+        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4055,59 +4097,38 @@ Please select the destination folder.</source>
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="14"/>
+        <location filename="../desktopapp/settings/settingsdialog.ui" line="14"/>
         <source>Preferences</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="127"/>
-        <location filename="../desktopapp/settingsdialog.ui" line="136"/>
-        <source>Language</source>
+        <location filename="../desktopapp/settings/settingsdialog.ui" line="81"/>
+        <source>Backup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="167"/>
+        <location filename="../desktopapp/settings/settingsdialog.ui" line="106"/>
         <source>pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="179"/>
+        <location filename="../desktopapp/settings/settingsdialog.ui" line="119"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="192"/>
+        <location filename="../desktopapp/settings/settingsdialog.ui" line="132"/>
         <source>TextLabel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="55"/>
+        <location filename="../desktopapp/settings/settingsdialog.ui" line="32"/>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="29"/>
+        <location filename="../desktopapp/settings/settingsdialog.ui" line="55"/>
         <source>Pages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="82"/>
-        <source>Theme</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="91"/>
-        <source>Day theme</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="101"/>
-        <source>Night theme</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../desktopapp/settingsdialog.ui" line="117"/>
-        <source>Modify theme</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5547,7 +5568,7 @@ This action isn&apos;t recoverable.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/viewholder.cpp" line="21"/>
+        <location filename="../libskribisto-desktop-common/src/viewholder.cpp" line="22"/>
         <source>Forward</source>
         <translation type="unfinished"></translation>
     </message>

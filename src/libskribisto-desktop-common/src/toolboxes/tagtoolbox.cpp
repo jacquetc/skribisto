@@ -1,5 +1,6 @@
 #include "skrdata.h"
 #include "tagtoolbox.h"
+#include "toolboxes/tagitemdelegate.h"
 #include "ui_tagtoolbox.h"
 
 #include "tagchooserdialog.h"
@@ -10,6 +11,9 @@
 TagToolbox::TagToolbox(QWidget *parent, int projectId, int treeItemId)
     : Toolbox(parent), m_projectId(projectId), m_treeItemId(treeItemId), ui(new Ui::TagToolbox) {
   ui->setupUi(this);
+
+  ui->listWidget->setItemDelegate(new TagItemDelegate(this));
+
 
   connect(skrdata->tagHub(), &SKRTagHub::tagAdded, this,
           &TagToolbox::reloadTags);
@@ -74,10 +78,10 @@ void TagToolbox::reloadTags() {
     auto item = new QListWidgetItem(
         skrdata->tagHub()->getTagName(m_projectId, tagId), ui->listWidget);
     item->setData(Qt::UserRole, tagId);
-    item->setForeground(
-        QBrush(QColor(skrdata->tagHub()->getTagTextColor(m_projectId, tagId))));
-    item->setBackground(
-        QBrush(QColor(skrdata->tagHub()->getTagColor(m_projectId, tagId))));
+
+    item->setData(Qt::UserRole + 1 , skrdata->tagHub()->getTagTextColor(m_projectId, tagId));
+    item->setData(Qt::UserRole + 2, skrdata->tagHub()->getTagColor(m_projectId, tagId));
+
   }
 }
 

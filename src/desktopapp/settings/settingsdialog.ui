@@ -19,33 +19,10 @@
      <item>
       <widget class="QStackedWidget" name="stackedWidget">
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="mainPage">
         <layout class="QGridLayout" name="gridLayout_2">
-         <item row="0" column="1">
-          <widget class="QToolButton" name="pagesToolButton">
-           <property name="text">
-            <string>Pages</string>
-           </property>
-           <property name="icon">
-            <iconset resource="../../3rdparty/icons.qrc">
-             <normaloff>:/icons/backup/document-edit-sign.svg</normaloff>:/icons/backup/document-edit-sign.svg</iconset>
-           </property>
-           <property name="iconSize">
-            <size>
-             <width>32</width>
-             <height>32</height>
-            </size>
-           </property>
-           <property name="toolButtonStyle">
-            <enum>Qt::ToolButtonTextUnderIcon</enum>
-           </property>
-           <property name="autoRaise">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0">
           <widget class="QToolButton" name="appearanceToolButton">
            <property name="focusPolicy">
@@ -55,7 +32,7 @@
             <string>Appearance</string>
            </property>
            <property name="icon">
-            <iconset resource="../../3rdparty/icons.qrc">
+            <iconset resource="../../../3rdparty/icons.qrc">
              <normaloff>:/icons/backup/folder-pictures.svg</normaloff>:/icons/backup/folder-pictures.svg</iconset>
            </property>
            <property name="iconSize">
@@ -72,101 +49,64 @@
            </property>
           </widget>
          </item>
-        </layout>
-       </widget>
-       <widget class="QWidget" name="appearancePage">
-        <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0,0">
-         <item>
-          <widget class="QGroupBox" name="groupBox">
-           <property name="title">
-            <string>Theme</string>
+         <item row="0" column="1">
+          <widget class="QToolButton" name="pagesToolButton">
+           <property name="text">
+            <string>Pages</string>
            </property>
-           <layout class="QFormLayout" name="formLayout_2">
-            <property name="fieldGrowthPolicy">
-             <enum>QFormLayout::FieldsStayAtSizeHint</enum>
-            </property>
-            <item row="0" column="0">
-             <widget class="QLabel" name="dayThemeLabel">
-              <property name="text">
-               <string>Day theme</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="ComboBox" name="dayThemeComboBox"/>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="nightThemeLabel">
-              <property name="text">
-               <string>Night theme</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="ComboBox" name="nightThemeComboBox"/>
-            </item>
-            <item row="3" column="1">
-             <widget class="QPushButton" name="createThemeButton">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Modify theme</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="groupBox_2">
-           <property name="title">
-            <string>Language</string>
+           <property name="icon">
+            <iconset resource="../../../3rdparty/icons.qrc">
+             <normaloff>:/icons/backup/document-edit-sign.svg</normaloff>:/icons/backup/document-edit-sign.svg</iconset>
            </property>
-           <layout class="QFormLayout" name="formLayout">
-            <property name="fieldGrowthPolicy">
-             <enum>QFormLayout::FieldsStayAtSizeHint</enum>
-            </property>
-            <item row="0" column="0">
-             <widget class="QLabel" name="languageLabel">
-              <property name="text">
-               <string>Language</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="ComboBox" name="languageComboBox">
-              <property name="sizeAdjustPolicy">
-               <enum>QComboBox::AdjustToContents</enum>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <spacer name="verticalSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
+           <property name="iconSize">
             <size>
-             <width>20</width>
-             <height>40</height>
+             <width>32</width>
+             <height>32</height>
             </size>
            </property>
-          </spacer>
+           <property name="toolButtonStyle">
+            <enum>Qt::ToolButtonTextUnderIcon</enum>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QToolButton" name="backupToolButton">
+           <property name="focusPolicy">
+            <enum>Qt::TabFocus</enum>
+           </property>
+           <property name="text">
+            <string>Backup</string>
+           </property>
+           <property name="icon">
+            <iconset resource="../../../3rdparty/icons.qrc">
+             <normaloff>:/icons/backup/tools-media-optical-burn-image.svg</normaloff>:/icons/backup/tools-media-optical-burn-image.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="toolButtonStyle">
+            <enum>Qt::ToolButtonTextUnderIcon</enum>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
+       <widget class="AppearanceSettingsPanel" name="appearancePanel"/>
        <widget class="SettingsPanel" name="pagesPanel">
         <property name="settingsGroup" stdset="0">
          <string>pages</string>
         </property>
        </widget>
+       <widget class="BackupSettingsPanel" name="backupPanel"/>
       </widget>
      </item>
     </layout>
@@ -215,19 +155,26 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ComboBox</class>
-   <extends>QComboBox</extends>
-   <header location="global">combobox.h</header>
-  </customwidget>
-  <customwidget>
    <class>SettingsPanel</class>
    <extends>QWidget</extends>
    <header>settingspanel.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>AppearanceSettingsPanel</class>
+   <extends>QWidget</extends>
+   <header>settings/appearancesettingspanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BackupSettingsPanel</class>
+   <extends>QWidget</extends>
+   <header>settings/backupsettingspanel.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources>
-  <include location="../../3rdparty/icons.qrc"/>
+  <include location="../../../3rdparty/icons.qrc"/>
  </resources>
  <connections>
   <connection>

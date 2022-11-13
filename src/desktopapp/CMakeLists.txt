@@ -35,12 +35,14 @@ set(app_SRCS
     statusbar.h statusbar.cpp statusbar.ui
     projectdockbackend.h projectdockbackend.cpp
     skribistostyle.h skribistostyle.cpp
-    settingsdialog.h settingsdialog.cpp settingsdialog.ui
+    settings/settingsdialog.h settings/settingsdialog.cpp settings/settingsdialog.ui
     themewizard.h themewizard.cpp themewizard.ui
     newprojectwizard.h newprojectwizard.cpp newprojectwizard.ui
     export/selectionexportwizard.h export/selectionexportwizard.cpp export/selectionexportwizard.ui
     export/exportdialog.h export/exportdialog.cpp export/exportdialog.ui
     export/bookexportwizard.h export/bookexportwizard.cpp export/bookexportwizard.ui
+    settings/appearancesettingspanel.h settings/appearancesettingspanel.cpp settings/appearancesettingspanel.ui
+    settings/backupsettingspanel.h settings/backupsettingspanel.cpp settings/backupsettingspanel.ui
 )
 
 set(QRC
@@ -90,6 +92,7 @@ add_dependencies(SkribistoDesktop skribisto-data)
 add_dependencies(SkribistoDesktop skribisto-common)
 add_dependencies(SkribistoDesktop skribisto-desktop-common)
 add_dependencies(SkribistoDesktop skribisto-backend)
+
 # ---------------------------------
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-backend/src/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")

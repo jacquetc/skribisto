@@ -4,12 +4,13 @@
 #include "skribisto_desktop_common_global.h"
 #include <QListWidgetItem>
 #include <QWidget>
+#include "basicsettingspanel.h"
 
 namespace Ui {
 class SettingsPanel;
 }
 
-class SKRDESKTOPCOMMONEXPORT SettingsPanel : public QWidget {
+class SKRDESKTOPCOMMONEXPORT SettingsPanel : public BasicSettingsPanel {
   Q_OBJECT
 
 public:
@@ -18,13 +19,9 @@ public:
 
   const QString &settingsGroup() const;
   void setSettingsGroup(const QString &newSettingsGroup);
-  void accept();
-  void reset();
 
 signals:
   void settingsGroupChanged();
-  void accepted();
-  void reseted();
 
 private slots:
   void on_listWidget_itemActivated(QListWidgetItem *item);

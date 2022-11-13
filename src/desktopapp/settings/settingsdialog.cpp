@@ -1,6 +1,5 @@
 #include "settingsdialog.h"
 #include "thememanager.h"
-#include "themewizard.h"
 #include "ui_settingsdialog.h"
 
 SettingsDialog::SettingsDialog(QWidget *parent) :
@@ -12,41 +11,27 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->setupUi(this);
     on_backToolButton_clicked();
 
-    connect(ui->createThemeButton, &QPushButton::clicked, this, [this](){
-        ThemeWizard wizard(this);
-        wizard.exec();
-    });
-
     themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
-    ui->appearancePage->setFocus();
+    ui->appearanceToolButton->setFocus();
 
-
-    // themes
-    themeManager->reloadThemes();
-
-    ui->dayThemeComboBox->addItems(themeManager->lightThemeWithLocationMap().keys());
-    ui->dayThemeComboBox->setCurrentText(themeManager->lightTheme());
-    ui->nightThemeComboBox->addItems(themeManager->darkThemeWithLocationMap().keys());
-    ui->nightThemeComboBox->setCurrentText(themeManager->darkTheme());
 
 
     connect(ui->buttonBox, &QDialogButtonBox::clicked, this, [this](QAbstractButton *button){
 
         if(ui->buttonBox->buttonRole(button) == QDialogButtonBox::ResetRole){
+            ui->appearancePanel->reset();
             ui->pagesPanel->reset();
         }
         if(ui->buttonBox->buttonRole(button) == QDialogButtonBox::AcceptRole){
-            themeManager->setLightTheme(ui->dayThemeComboBox->currentText());
-            themeManager->setDarkTheme(ui->nightThemeComboBox->currentText());
 
+            ui->appearancePanel->accept();
             ui->pagesPanel->accept();
 
             this->close();
         }
         if(ui->buttonBox->buttonRole(button) == QDialogButtonBox::ApplyRole){
-            themeManager->setLightTheme(ui->dayThemeComboBox->currentText());
-            themeManager->setDarkTheme(ui->nightThemeComboBox->currentText());
 
+            ui->appearancePanel->accept();
             ui->pagesPanel->accept();
 
         }
@@ -72,7 +57,7 @@ void SettingsDialog::on_backToolButton_clicked()
 
 void SettingsDialog::on_appearanceToolButton_clicked()
 {
-    ui->stackedWidget->setCurrentWidget(ui->appearancePage);
+    ui->stackedWidget->setCurrentWidget(ui->appearancePanel);
     ui->pageTitle->setText("**" + ui->appearanceToolButton->text() + "**");
     ui->pageTitle->show();
     ui->backToolButton->show();
@@ -83,6 +68,14 @@ void SettingsDialog::on_pagesToolButton_clicked()
 {
     ui->stackedWidget->setCurrentWidget(ui->pagesPanel);
     ui->pageTitle->setText("**" + ui->pagesToolButton->text() + "**");
+    ui->pageTitle->show();
+    ui->backToolButton->show();
+}
+
+void SettingsDialog::on_backupToolButton_clicked()
+{
+    ui->stackedWidget->setCurrentWidget(ui->backupPanel);
+    ui->pageTitle->setText("**" + ui->backupToolButton->text() + "**");
     ui->pageTitle->show();
     ui->backToolButton->show();
 }

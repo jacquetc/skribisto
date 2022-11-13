@@ -6,7 +6,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "view.h"
-#include "settingsdialog.h"
+#include "settings/settingsdialog.h"
 #include "newprojectwizard.h"
 
 #include <QCloseEvent>

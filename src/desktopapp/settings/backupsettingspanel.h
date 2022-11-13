@@ -1,0 +1,25 @@
+#ifndef BACKUPSETTINGSPANEL_H
+#define BACKUPSETTINGSPANEL_H
+
+#include "basicsettingspanel.h"
+#include <QWidget>
+
+namespace Ui {
+class BackupSettingsPanel;
+}
+
+class BackupSettingsPanel : public BasicSettingsPanel
+{
+    Q_OBJECT
+
+public:
+    explicit BackupSettingsPanel(QWidget *parent = nullptr);
+    ~BackupSettingsPanel();
+
+    void accept() override;
+    void reset() override;
+private:
+    Ui::BackupSettingsPanel *ui;
+};
+
+#endif // BACKUPSETTINGSPANEL_H
