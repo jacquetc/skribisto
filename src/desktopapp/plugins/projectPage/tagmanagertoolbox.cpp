@@ -1,5 +1,6 @@
 #include "tagmanagertoolbox.h"
 #include "skrdata.h"
+#include "toolboxes/tagitemdelegate.h"
 #include "ui_tagmanagertoolbox.h"
 
 #include "tagcommands.h"
@@ -12,6 +13,9 @@ TagManagerToolbox::TagManagerToolbox(QWidget *parent, int projectId) :
     ui(new Ui::TagManagerToolbox)
 {
     ui->setupUi(this);
+
+    ui->listWidget->setItemDelegate(new TagItemDelegate(this));
+
 
     connect(skrdata->tagHub(), &SKRTagHub::tagAdded, this, &TagManagerToolbox::reloadTags);
     connect(skrdata->tagHub(), &SKRTagHub::tagRemoved, this, &TagManagerToolbox::reloadTags);
@@ -61,6 +65,9 @@ void TagManagerToolbox::reloadTags()
     for(int tagId : skrdata->tagHub()->getAllTagIds(m_projectId)){
             auto item = new QListWidgetItem(skrdata->tagHub()->getTagName(m_projectId, tagId), ui->listWidget);
             item->setData(Qt::UserRole, tagId);
+            item->setData(Qt::UserRole + 1 , skrdata->tagHub()->getTagTextColor(m_projectId, tagId));
+            item->setData(Qt::UserRole + 2, skrdata->tagHub()->getTagColor(m_projectId, tagId));
+
             item->setForeground(QBrush(QColor(skrdata->tagHub()->getTagTextColor(m_projectId, tagId))));
             item->setBackground(QBrush(QColor(skrdata->tagHub()->getTagColor(m_projectId, tagId))));
     }

@@ -64,91 +64,6 @@ SKRResult ProjectCommands::saveAProjectCopy(int            projectId,
 }
 
 
-
-// ----------------------------------------------------------------------------
-
-SKRResult ProjectCommands::backupAProject(int            projectId,
-                                        const QString& type,
-                                        const QUrl   & folderPath)
-{
-    SKRResult result(this);
-
-    PLMProject * project = plmProjectManager->project(projectId);
-    QUrl projectPath = project->getFileName();
-
-    if (projectPath.isEmpty()) {
-        result = SKRResult(SKRResult::Warning, this, "no_path");
-        result.addData("projectId", projectId);
-    }
-
-//    if (projectPath.scheme() == "qrc") {
-//        result = SKRResult(SKRResult::Warning, this, "qrc_projects_cant_back_up");
-//        result.addData("projectId", projectId);
-//    }
-
-
-    IFOK(result) {
-        // verify backup path
-        QFileInfo folderInfo(folderPath.toLocalFile());
-
-        if (!folderInfo.exists()) {
-            result = SKRResult(SKRResult::Critical, this, "path_dont_exist");
-            result.addData("projectId", projectId);
-        }
-
-        if (!folderInfo.isDir()) {
-            result = SKRResult(SKRResult::Critical, this, "path_not_a_directory");
-            result.addData("projectId", projectId);
-        }
-
-        if (!folderInfo.isWritable()) {
-            result = SKRResult(SKRResult::Critical, this, "path_not_writable");
-            result.addData("projectId", projectId);
-        }
-    }
-
-
-    // determine file base
-    QFileInfo info(projectPath.toLocalFile());
-    QFileInfo backupFolderInfo(folderPath.toLocalFile());
-
-    QString   backupFile;
-    if(projectPath.scheme() == "qrc"){
-        backupFile = backupFolderInfo.filePath() + "/" + projectPath.path().split("/").last();
-        backupFile.remove(".skrib");
-    }
-    else{
-        backupFile = backupFolderInfo.filePath() + "/" + info.completeBaseName();
-    }
-
-    // add date and time :
-    QDateTime now     = QDateTime::currentDateTime();
-    QString   nowText = now.toString("_yyyy-MM-dd-HHmmss");
-
-    backupFile = backupFile + nowText;
-
-    // add suffix :
-    backupFile = backupFile + "." + type;
-
-    // firstly, save the project
-    if(projectPath.scheme() != "qrc"){
-        IFOKDO(result, this->save(projectId));
-    }
-
-    // then create a copy
-    IFOK(result) {
-        result = this->saveAProjectCopy(projectId,
-                                             type,
-                                             QUrl::fromLocalFile(backupFile));
-    }
-
-//    IFKO(result) {
-//        emit errorSent(result);
-//    }
-
-    return result;
-}
-
 // ----------------------------------------------------------------------------
 
 
@@ -223,6 +138,7 @@ void ProjectCommands::loadProject(const QUrl &url)
     int projectId = Importer::importProject(url, suffix, QVariantMap(), result);
 
     skrdata->projectHub()->setProjectLoaded(projectId);
+
 
 }
 

@@ -4,6 +4,7 @@
 #include "tagdialog.h"
 #include "thememanager.h"
 #include "ui_tagchooserdialog.h"
+#include "tagitemdelegate.h"
 
 TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemId) :
     QDialog(parent),
@@ -14,6 +15,9 @@ TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemI
     ui->setupUi(this);
 
     ui->itemTagsGroupBox->setTitle(skrdata->treeHub()->getTitle(projectId, treeItemId));
+
+    ui->itemTagsListWidget->setItemDelegate(new TagItemDelegate(this));
+    ui->availableTagsListWidget->setItemDelegate(new TagItemDelegate(this));
 
 
     connect(ui->removeTagToolButton, &QAbstractButton::clicked, this, [this](){
@@ -150,6 +154,8 @@ void TagChooserDialog::reloadAvailableTags()
 
         auto item = new QListWidgetItem(skrdata->tagHub()->getTagName(m_projectId, tagId), ui->availableTagsListWidget);
         item->setData(Qt::UserRole, tagId);
+        item->setData(Qt::UserRole + 1 , skrdata->tagHub()->getTagTextColor(m_projectId, tagId));
+        item->setData(Qt::UserRole + 2, skrdata->tagHub()->getTagColor(m_projectId, tagId));
         item->setForeground(QBrush(QColor(skrdata->tagHub()->getTagTextColor(m_projectId, tagId))));
         item->setBackground(QBrush(QColor(skrdata->tagHub()->getTagColor(m_projectId, tagId))));
     }
@@ -168,6 +174,10 @@ void TagChooserDialog::reloadItemTags()
       auto item = new QListWidgetItem(
           skrdata->tagHub()->getTagName(m_projectId, tagId), ui->itemTagsListWidget);
       item->setData(Qt::UserRole, tagId);
+
+      item->setData(Qt::UserRole + 1 , skrdata->tagHub()->getTagTextColor(m_projectId, tagId));
+      item->setData(Qt::UserRole + 2, skrdata->tagHub()->getTagColor(m_projectId, tagId));
+
       item->setForeground(
           QBrush(QColor(skrdata->tagHub()->getTagTextColor(m_projectId, tagId))));
       item->setBackground(

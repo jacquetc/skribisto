@@ -43,8 +43,6 @@ public:
 //                                           const QString& type,
 //                                           const QUrl   & path);
 
-    Q_INVOKABLE bool      doesBackupOfTheDayExistAtPath(int         projectId,
-                                                        const QUrl& folderPath);
     Q_INVOKABLE SKRResult closeProject(int projectId);
     Q_INVOKABLE SKRResult closeAllProjects();
     Q_INVOKABLE bool      isProjectToBeClosed(int projectId) const;

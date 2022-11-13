@@ -19,11 +19,13 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     connect(ui->buttonBox, &QDialogButtonBox::clicked, this, [this](QAbstractButton *button){
 
         if(ui->buttonBox->buttonRole(button) == QDialogButtonBox::ResetRole){
+            ui->backupPanel->reset();
             ui->appearancePanel->reset();
             ui->pagesPanel->reset();
         }
         if(ui->buttonBox->buttonRole(button) == QDialogButtonBox::AcceptRole){
 
+            ui->backupPanel->accept();
             ui->appearancePanel->accept();
             ui->pagesPanel->accept();
 
@@ -31,6 +33,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
         }
         if(ui->buttonBox->buttonRole(button) == QDialogButtonBox::ApplyRole){
 
+            ui->backupPanel->accept();
             ui->appearancePanel->accept();
             ui->pagesPanel->accept();
 

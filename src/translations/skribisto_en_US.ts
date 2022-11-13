@@ -352,6 +352,74 @@
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.ui" line="35"/>
+        <source>Backup paths</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.ui" line="43"/>
+        <source>Remove backup path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.ui" line="67"/>
+        <source>Add backup path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.ui" line="121"/>
+        <source>Periodical backup:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.ui" line="111"/>
+        <source>Enable periodical backup:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.ui" line="138"/>
+        <source>Back up once a day:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="32"/>
+        <source>Select a folder for backups</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="46"/>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="54"/>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="157"/>
+        <source> hour</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="54"/>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="157"/>
+        <source> hours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="68"/>
+        <source>Backups disabled: backup paths missing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="71"/>
+        <source>Active project is backed up only once a day.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="74"/>
+        <source>All periodic backups are disabled !</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/settings/backupsettingspanel.cpp" line="77"/>
+        <source>Next periodic backup at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>BasicFormatsExporter</name>
@@ -1721,9 +1789,9 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="233"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="289"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="381"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="505"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="290"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="382"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="514"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1779,9 +1847,9 @@
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="298"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="250"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="351"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="467"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="251"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="352"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="476"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1831,46 +1899,46 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="651"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="660"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="403"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="404"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="251"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="352"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="468"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="252"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="353"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="477"/>
         <source>Do you want to save changes to %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="289"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="505"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="290"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="514"/>
         <source>Do you really want to quit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="321"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="322"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="382"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="383"/>
         <source>Do you really want to close %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="440"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="449"/>
         <source>Ctrl+E</source>
         <comment>export shortcut</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="648"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="657"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3294,7 +3362,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="58"/>
+        <location filename="../desktopapp/main.cpp" line="59"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4587,27 +4655,27 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="107"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="104"/>
         <source>Add selected tags to item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="117"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="114"/>
         <source>Remove selected tags from item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="120"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="117"/>
         <source>&lt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="127"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="124"/>
         <source>Remove all tags from item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="130"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="127"/>
         <source>&lt;&lt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5675,7 +5743,7 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="63"/>
+        <location filename="../desktopapp/main.cpp" line="64"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

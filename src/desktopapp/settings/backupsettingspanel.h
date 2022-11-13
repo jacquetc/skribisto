@@ -18,8 +18,14 @@ public:
 
     void accept() override;
     void reset() override;
+
+private slots:
+    void checkConfiguration();
+
 private:
     Ui::BackupSettingsPanel *ui;
+    QList<QUrl> m_urlPathsToRemove, m_urlPathsToAdd;
+    QHash<QString, QVariant> m_defaultValuesHash;
 };
 
 #endif // BACKUPSETTINGSPANEL_H

@@ -1,4 +1,5 @@
-﻿#include "desktopapplication.h"
+﻿#include "backupmanager.h"
+#include "desktopapplication.h"
 #include "export/exportdialog.h"
 #include "projecttreecommands.h"
 #include "thememanager.h"
@@ -418,6 +419,14 @@ void MainWindow::setupMenuActions()
         int activeProject = skrdata->projectHub()->getActiveProject();
 
         this->openSaveAsDialog(activeProject);
+    });
+    //-------------------
+
+    ui->actionBack_up->setShortcut(QKeySequence("Ctrl+Shift+B"));
+    connect(ui->actionBack_up, &QAction::triggered, this, [this](){
+        int activeProject = skrdata->projectHub()->getActiveProject();
+        backupManager->createBackups(activeProject);
+
     });
     //-------------------
 

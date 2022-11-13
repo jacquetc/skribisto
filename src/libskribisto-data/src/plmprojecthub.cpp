@@ -155,67 +155,6 @@ QList<int>PLMProjectHub::projectsNotSaved() {
 
 // ----------------------------------------------------------------------------
 
-bool PLMProjectHub::doesBackupOfTheDayExistAtPath(int projectId, const QUrl& folderPath) {
-    SKRResult result(this);
-
-    QUrl projectPath = this->getPath(projectId);
-
-    if (projectPath.isEmpty()) {
-        result = SKRResult(SKRResult::Warning, this, "no_path");
-        result.addData("projectId", projectId);
-    }
-    IFOK(result) {
-        // verify backup path
-        QFileInfo folderInfo(folderPath.toLocalFile());
-
-        if (!folderInfo.exists()) {
-            result = SKRResult(SKRResult::Critical, this, "path_dont_exist");
-            result.addData("projectId", projectId);
-        }
-
-        if (!folderInfo.isDir()) {
-            result = SKRResult(SKRResult::Critical, this, "path_not_a_directory");
-            result.addData("projectId", projectId);
-        }
-
-        if (!folderInfo.isWritable()) {
-            result = SKRResult(SKRResult::Critical, this, "path_not_writable");
-            result.addData("projectId", projectId);
-        }
-    }
-    IFKO(result) {
-        emit errorSent(result);
-
-        return true;
-    }
-
-
-    // determine file base
-    QFileInfo info(projectPath.toLocalFile());
-    QString   backupFileOfTheDay = info.completeBaseName();
-
-    // add date and time :
-    QDateTime now     = QDateTime::currentDateTime();
-    QString   nowText = now.toString("_yyyy-MM-dd");
-
-    backupFileOfTheDay = backupFileOfTheDay + nowText + "*";
-
-    // find file begining with backupFileOfTheDay
-
-    QDir dir(folderPath.toLocalFile());
-    QStringList nameFilters;
-
-    nameFilters << backupFileOfTheDay;
-    QStringList entries = dir.entryList(nameFilters);
-
-    if (entries.isEmpty()) {
-        return false;
-    }
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-
 SKRResult PLMProjectHub::closeProject(int projectId)
 {
     SKRResult result(this);
@@ -230,9 +169,11 @@ SKRResult PLMProjectHub::closeProject(int projectId)
 
         if (isThereAnyLoadedProject()) {
             emit isThereAnyLoadedProjectChanged(true);
+            setActiveProject(this->getProjectIdList().first());
         }
         else {
             emit isThereAnyLoadedProjectChanged(false);
+            setActiveProject(-2);
         }
         m_projectsNotModifiedOnceList.removeAll(projectId);
         m_projectsNotSavedList.removeAll(projectId);

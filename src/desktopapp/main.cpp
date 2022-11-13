@@ -1,3 +1,4 @@
+#include "backupmanager.h"
 #include "commands.h"
 #include "desktopapplication.h"
 #include "interfaces/newprojectformatinterface.h"
@@ -85,6 +86,10 @@ int main(int argc, char *argv[]) {
   new ProjectCommands(skrData, undoStack);
   new ProjectTreeCommands(skrData, undoStack, projectTreeModel);
   new TagCommands(skrData, undoStack);
+  new BackupManager(skrData);
+  QObject::connect(&app, &DesktopApplication::settingsChanged, backupManager, &BackupManager::settingsChanged);
+
+
   ThemeManager::instance();
   TextBridge::instance();
 

@@ -23,7 +23,6 @@ public:
     int createNewEmptyProject();
 
     SKRResult save(int projectId);
-    SKRResult backupAProject(int projectId, const QString &type, const QUrl &folderPath);
     SKRResult saveAProjectCopy(int projectId, const QString &extension, const QUrl &path);
     void closeProject(int projectId);
     SKRResult saveAs(int projectId, const QUrl &url, const QString &extension);
