@@ -86,6 +86,7 @@ TextView::TextView(QWidget *parent) :
 
     connect(this, &TextView::aboutToBeDestroyed, this, [this](){
         saveTextState();
+
     });
 
 
@@ -97,6 +98,12 @@ TextView::~TextView()
     if(m_wasModified){
         saveContent(true);
     }
+
+    QString uniqueDocumentReference = QString("%1_%2_%3").arg(this->projectId()).arg(this->treeItemId()).arg(m_isSecondaryContent ? "secondary" : "primary");
+    textBridge->unsubscribeTextDocument(
+                uniqueDocumentReference,
+                centralWidgetUi->textEdit->uuid(),
+                static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document()));
 
     delete centralWidgetUi;
 }

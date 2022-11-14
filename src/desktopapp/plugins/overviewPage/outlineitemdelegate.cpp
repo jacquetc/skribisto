@@ -151,6 +151,14 @@ void OutlineItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *mode
 
     skrdata->treeHub()->setSecondaryContent(projectId, treeItemId, document->toSkribistoMarkdown());
 
+
+    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(projectId), QString::number(treeItemId), "secondary");
+    textBridge->unsubscribeTextDocument(
+                uniqueDocumentReference,
+                textEditor->uuid(),
+                document);
+
+
     emit editFinished(index);
 }
 

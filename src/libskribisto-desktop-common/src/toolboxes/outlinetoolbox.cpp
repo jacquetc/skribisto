@@ -28,6 +28,14 @@ OutlineToolbox::OutlineToolbox(QWidget *parent) :
 
 OutlineToolbox::~OutlineToolbox()
 {
+
+    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->projectId()), QString::number(this->treeItemId()), "secondary");
+    textBridge->unsubscribeTextDocument(
+                uniqueDocumentReference,
+                ui->textEdit->uuid(),
+                static_cast<MarkdownTextDocument *>(ui->textEdit->document()));
+
+
     delete ui;
 }
 
