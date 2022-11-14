@@ -73,13 +73,6 @@ set_target_properties(SkribistoDesktop PROPERTIES
 target_compile_definitions(SkribistoDesktop
     PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 
-# --------------HUNSPELL --------------------
-if(${SKR_DEV})
-    set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
-    set(PKG_HUNSPELL_LIBRARY_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/lib)
-    set(PKG_HUNSPELL_INCLUDE_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/include)
-endif(${SKR_DEV})
-
 # ---------------------------------
 target_link_libraries(SkribistoDesktop
     PRIVATE skribisto-data skribisto-backend skribisto-common skribisto-desktop-common

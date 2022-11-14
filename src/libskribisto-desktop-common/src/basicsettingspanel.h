@@ -2,8 +2,9 @@
 #define BASICSETTINGSPANEL_H
 
 #include <QWidget>
+#include "skribisto_desktop_common_global.h"
 
-class BasicSettingsPanel : public QWidget
+class SKRDESKTOPCOMMONEXPORT BasicSettingsPanel : public QWidget
 {
     Q_OBJECT
 public:

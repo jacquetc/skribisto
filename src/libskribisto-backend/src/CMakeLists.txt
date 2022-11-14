@@ -71,13 +71,10 @@ if(${SKR_DEV})
     set(PKG_HUNSPELL_INCLUDE_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/include)
 endif(${SKR_DEV})
 
-if(IOS)
-else()
-    find_package(hunspell REQUIRED)
-    target_include_directories(skribisto-backend SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
+find_package(hunspell REQUIRED)
+target_include_directories( skribisto-backend SYSTEM PRIVATE ${HUNSPELL_INCLUDE_DIRS})
+target_link_libraries( skribisto-backend PRIVATE ${HUNSPELL_LIBRARY})
 
-    target_link_libraries(skribisto-backend PRIVATE ${HUNSPELL_LIBRARY})
-endif(IOS)
 
 
 # ---------------------------------

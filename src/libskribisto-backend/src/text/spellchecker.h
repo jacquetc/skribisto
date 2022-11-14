@@ -27,11 +27,12 @@
 #include <QHash>
 #include <QTextStream>
 #include <QStringList>
+#include "skribisto_backend_global.h"
 
 
 class Hunspell;
 
-class SpellChecker : public QObject {
+class SKRBACKENDEXPORT SpellChecker : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(bool active WRITE activate READ isActive NOTIFY activated)

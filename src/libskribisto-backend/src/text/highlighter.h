@@ -24,8 +24,9 @@
 
 #include <QSyntaxHighlighter>
 #include "spellchecker.h"
+#include "skribisto_backend_global.h"
 
-class Highlighter : public QSyntaxHighlighter {
+class SKRBACKENDEXPORT Highlighter : public QSyntaxHighlighter {
     Q_OBJECT
 
     Q_PROPERTY(SpellChecker * spellChecker READ getSpellChecker CONSTANT)

@@ -233,7 +233,10 @@ void NewProjectWizard::accept()
 
     projectCommands->setProjectName(newProjectId, m_projectName);
     projectCommands->setAuthor(newProjectId, ui->authorLineEdit->text());
-    projectCommands->setLanguageCode(newProjectId, ui->languageComboBox->currentData().toString());
+
+    if(!ui->languageComboBox->currentData().toString().isEmpty()){
+        projectCommands->setLanguageCode(newProjectId, ui->languageComboBox->currentData().toString());
+    }
 
 
     // template:

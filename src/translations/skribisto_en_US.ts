@@ -4859,7 +4859,7 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.h" line="28"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.h" line="29"/>
         <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
