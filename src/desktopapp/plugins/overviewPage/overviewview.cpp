@@ -250,10 +250,12 @@ QList<Toolbox *> OverviewView::toolboxes()
 
 void OverviewView::initialize()
 {
-    m_overviewProxyModel->setProjectId(this->projectId());
+    if(this->projectId() > 0){
+        m_overviewProxyModel->setProjectId(this->projectId());
+        expandProjectItems();
+        restoreExpandStates();
 
-    expandProjectItems();
-    restoreExpandStates();
+    }
 
     // history
     emit this->addToHistoryCalled(this, QVariantMap());
