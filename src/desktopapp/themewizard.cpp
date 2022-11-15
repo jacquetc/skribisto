@@ -1,5 +1,4 @@
 #include "themewizard.h"
-#include "thememanager.h"
 #include "ui_themewizard.h"
 
 #include <QColorDialog>
@@ -10,11 +9,11 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
     ui->themeTreeWidget->setHeaderLabel(tr("Themes"));
 
     ui->typeComboBox->addItem(tr("Light"), "light");
     ui->typeComboBox->addItem(tr("Dark"), "dark");
-
 
 
     resetThemeList();
@@ -53,12 +52,22 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
             QMap<QString, QString> colorMap = themeManager->getColorMap(m_selectedTheme);
             this->setColorTableColors(colorMap);
 
-            ui->themeExampleWidget->setPalette(themeManager->toPalette(colorMap));
-            ui->comboBoxExample->setPalette(themeManager->toPalette(colorMap));
+            QPalette palette = themeManager->toPalette(colorMap);
+            // side example tab :
+            QPalette sidePalette = themeManager->createSidePalette(palette);
+            ui->sideThemeExampleWidget->setPalette(sidePalette);
+            ui->comboBoxExample->setPalette(sidePalette);
             QTimer::singleShot(0, this, [this](){
                 ui->comboBoxExample->shakePalette();
             });
 
+            // middle example tab :
+            QPalette middlePalette = themeManager->createMiddlePalette(palette);
+            ui->middleThemeExampleWidget->setPalette(middlePalette);
+            ui->comboBoxExample_2->setPalette(middlePalette);
+            QTimer::singleShot(0, this, [this](){
+                ui->comboBoxExample_2->shakePalette();
+            });
         }
 
     });
@@ -67,16 +76,61 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
         QBrush brush = item->background();
         QColor newColor = QColorDialog::getColor(brush.color(), this, tr("Select Color"), QColorDialog::ShowAlphaChannel | QColorDialog::DontUseNativeDialog);
 
-        item->setBackground(QBrush(QColor(newColor)));
+        if(newColor.isValid()){
+            ui->colorTableWidget->item(item->row(), 1)->setBackground(QBrush(QColor(newColor)));
 
-        auto colorMap = getColorMapFromTable();
-        ui->themeExampleWidget->setPalette(themeManager->toPalette(colorMap));
-        ui->comboBoxExample->setPalette(themeManager->toPalette(colorMap));
+            auto colorMap = getColorMapFromTable();
+            ui->sideThemeExampleWidget->setPalette(themeManager->toPalette(colorMap));
+            ui->comboBoxExample->setPalette(themeManager->toPalette(colorMap));
+            QTimer::singleShot(0, this, [this](){ ui->comboBoxExample->shakePalette();});
 
-        qDebug() << ui->comboBoxExample->palette().button().color().name();
-        QTimer::singleShot(0, this, [this](){ ui->comboBoxExample->shakePalette();});
+        }
     });
 
+    connect(ui->nameLineEdit, &QLineEdit::textChanged, this, [this](const QString &themeName){
+
+         bool isEditableAndExists = themeManager->themeWithEditableHash().value(themeName, false);
+
+        if(isEditableAndExists){
+            this->button(QWizard::WizardButton::FinishButton)->setEnabled(true);
+
+            if(themeManager->lightThemeWithLocationMap().contains(themeName)){
+                m_outputFileName = themeManager->lightThemeWithLocationMap().value(themeName);
+            }
+            else if(themeManager->darkThemeWithLocationMap().contains(themeName)){
+                m_outputFileName = themeManager->darkThemeWithLocationMap().value(themeName);
+            }
+
+            ui->outputInfoLabel->setText(tr("Replacing: %1").arg(m_outputFileName));
+        } //if new name :
+        else if (!themeManager->themeWithEditableHash().contains(themeName)){
+
+            this->button(QWizard::WizardButton::FinishButton)->setEnabled(true);
+            QString validatorText = themeName;
+            validatorText.remove("*");
+            validatorText.remove(QRegularExpression("[<>:\"/\\\\\\|\\?]."));
+
+            m_outputFileName = themeManager->getWritablePathForTheme() + "/" + validatorText + ".json";
+            ui->outputInfoLabel->setText(tr("Creating: %1").arg(m_outputFileName));
+        }
+        else{
+            this->button(QWizard::WizardButton::FinishButton)->setEnabled(false);
+            ui->outputInfoLabel->setText(tr("Error: The name of this theme already exists!"));
+        }
+
+
+    });
+
+    connect(ui->typeComboBox, &QComboBox::activated, this, [this](int index){
+        if(index == 0){
+            m_outputThemeType = ThemeManager::Light;
+        }
+        else if(index == 1){
+            m_outputThemeType = ThemeManager::Dark;
+        }
+
+    });
+    m_outputThemeType = ThemeManager::Light;
 }
 
 ThemeWizard::~ThemeWizard()
@@ -233,3 +287,13 @@ QMap<QString, QString> ThemeWizard::getColorMapFromTable() const
 //----------------------------------------------------
 //----------------------------------------------------
 
+
+
+void ThemeWizard::done(int result)
+{
+    if(result == QDialog::Accepted){
+        themeManager->saveTheme(ui->nameLineEdit->text(), m_outputFileName, m_outputThemeType, getColorMapFromTable());
+    }
+
+    QWizard::done(result);
+}

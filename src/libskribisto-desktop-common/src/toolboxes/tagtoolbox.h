@@ -3,12 +3,13 @@
 
 #include "toolbox.h"
 #include <QWidget>
+#include "skribisto_desktop_common_global.h"
 
 namespace Ui {
 class TagToolbox;
 }
 
-class TagToolbox : public Toolbox {
+class SKRDESKTOPCOMMONEXPORT TagToolbox : public Toolbox {
   Q_OBJECT
 
 public:

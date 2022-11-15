@@ -3,8 +3,9 @@
 
 #include <QStyledItemDelegate>
 #include <QObject>
+#include "skribisto_desktop_common_global.h"
 
-class TagItemDelegate : public QStyledItemDelegate
+class SKRDESKTOPCOMMONEXPORT TagItemDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 public:

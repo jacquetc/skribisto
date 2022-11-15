@@ -298,6 +298,7 @@ void TextBridge::useTextBridge(int position, int charsRemoved, int charsAdded) {
       otherTextDocument->setSkribistoMarkdown(textDocument->toSkribistoMarkdown());
       qDebug() << "failsafe used for "
                << senderSyncDoc.uniqueDocumentReference();
+      qFatal("");
     }
 
     this->connectContentsChangeSignal(syncDoc);

@@ -4859,7 +4859,7 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.h" line="28"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.h" line="29"/>
         <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5291,91 +5291,126 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="50"/>
+        <location filename="../desktopapp/themewizard.ui" line="33"/>
+        <source>Please select a theme to modify or duplicate an existing theme to create a new one.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.ui" line="53"/>
         <source>Selected theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="66"/>
+        <location filename="../desktopapp/themewizard.ui" line="69"/>
         <source>Info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="107"/>
+        <location filename="../desktopapp/themewizard.ui" line="110"/>
         <source>Action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="113"/>
-        <location filename="../desktopapp/themewizard.ui" line="146"/>
+        <location filename="../desktopapp/themewizard.ui" line="116"/>
+        <location filename="../desktopapp/themewizard.ui" line="149"/>
         <source>Modify</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="120"/>
+        <location filename="../desktopapp/themewizard.ui" line="123"/>
         <source>Duplicate and modify</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="154"/>
+        <location filename="../desktopapp/themewizard.ui" line="152"/>
+        <source>Modify the selected theme.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.ui" line="179"/>
         <source>Theme settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="160"/>
+        <location filename="../desktopapp/themewizard.ui" line="185"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="170"/>
+        <location filename="../desktopapp/themewizard.ui" line="195"/>
         <source>Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="216"/>
-        <location filename="../desktopapp/themewizard.ui" line="228"/>
-        <location filename="../desktopapp/themewizard.ui" line="254"/>
-        <location filename="../desktopapp/themewizard.ui" line="287"/>
-        <location filename="../desktopapp/themewizard.ui" line="290"/>
-        <location filename="../desktopapp/themewizard.ui" line="302"/>
-        <location filename="../desktopapp/themewizard.ui" line="330"/>
-        <location filename="../desktopapp/themewizard.ui" line="333"/>
+        <location filename="../desktopapp/themewizard.ui" line="248"/>
+        <source>Side</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.ui" line="269"/>
+        <location filename="../desktopapp/themewizard.ui" line="296"/>
+        <location filename="../desktopapp/themewizard.ui" line="322"/>
+        <location filename="../desktopapp/themewizard.ui" line="355"/>
+        <location filename="../desktopapp/themewizard.ui" line="358"/>
+        <location filename="../desktopapp/themewizard.ui" line="370"/>
+        <location filename="../desktopapp/themewizard.ui" line="398"/>
+        <location filename="../desktopapp/themewizard.ui" line="401"/>
+        <location filename="../desktopapp/themewizard.ui" line="436"/>
+        <location filename="../desktopapp/themewizard.ui" line="463"/>
+        <location filename="../desktopapp/themewizard.ui" line="489"/>
+        <location filename="../desktopapp/themewizard.ui" line="522"/>
+        <location filename="../desktopapp/themewizard.ui" line="525"/>
+        <location filename="../desktopapp/themewizard.ui" line="537"/>
+        <location filename="../desktopapp/themewizard.ui" line="565"/>
+        <location filename="../desktopapp/themewizard.ui" line="568"/>
         <source>Example</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="235"/>
+        <location filename="../desktopapp/themewizard.ui" line="303"/>
+        <location filename="../desktopapp/themewizard.ui" line="470"/>
         <source>This is a placeholder text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="244"/>
+        <location filename="../desktopapp/themewizard.ui" line="312"/>
+        <location filename="../desktopapp/themewizard.ui" line="479"/>
         <source>CheckBox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="257"/>
+        <location filename="../desktopapp/themewizard.ui" line="325"/>
+        <location filename="../desktopapp/themewizard.ui" line="492"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="274"/>
+        <location filename="../desktopapp/themewizard.ui" line="342"/>
+        <location filename="../desktopapp/themewizard.ui" line="509"/>
         <source>test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="279"/>
+        <location filename="../desktopapp/themewizard.ui" line="347"/>
+        <location filename="../desktopapp/themewizard.ui" line="514"/>
         <source>test 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="307"/>
+        <location filename="../desktopapp/themewizard.ui" line="375"/>
+        <location filename="../desktopapp/themewizard.ui" line="542"/>
         <source>Example 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.ui" line="312"/>
+        <location filename="../desktopapp/themewizard.ui" line="380"/>
+        <location filename="../desktopapp/themewizard.ui" line="547"/>
         <source>Example 3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.ui" line="418"/>
+        <source>Middle</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5385,103 +5420,118 @@ Please select the destination folder.</source>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.cpp" line="15"/>
-        <location filename="../desktopapp/themewizard.cpp" line="93"/>
+        <location filename="../desktopapp/themewizard.cpp" line="147"/>
         <source>Light</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.cpp" line="16"/>
-        <location filename="../desktopapp/themewizard.cpp" line="112"/>
+        <location filename="../desktopapp/themewizard.cpp" line="166"/>
         <source>Dark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="39"/>
+        <location filename="../desktopapp/themewizard.cpp" line="38"/>
         <source>(Copy)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="68"/>
+        <location filename="../desktopapp/themewizard.cpp" line="77"/>
         <source>Select Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="163"/>
+        <location filename="../desktopapp/themewizard.cpp" line="104"/>
+        <source>Replacing: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.cpp" line="114"/>
+        <source>Creating: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.cpp" line="118"/>
+        <source>Error: The name of this theme already exists!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.cpp" line="217"/>
         <source>Window background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="166"/>
+        <location filename="../desktopapp/themewizard.cpp" line="220"/>
         <source>Window text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="169"/>
+        <location filename="../desktopapp/themewizard.cpp" line="223"/>
         <source>Base background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="172"/>
+        <location filename="../desktopapp/themewizard.cpp" line="226"/>
         <source>Base text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="175"/>
+        <location filename="../desktopapp/themewizard.cpp" line="229"/>
         <source>Bright text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="178"/>
+        <location filename="../desktopapp/themewizard.cpp" line="232"/>
         <source>Highlight</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="181"/>
+        <location filename="../desktopapp/themewizard.cpp" line="235"/>
         <source>Highlighted text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="184"/>
+        <location filename="../desktopapp/themewizard.cpp" line="238"/>
         <source>Button background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="187"/>
+        <location filename="../desktopapp/themewizard.cpp" line="241"/>
         <source>Button text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="190"/>
+        <location filename="../desktopapp/themewizard.cpp" line="244"/>
         <source>Light hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="193"/>
+        <location filename="../desktopapp/themewizard.cpp" line="247"/>
         <source>Midlight hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="196"/>
+        <location filename="../desktopapp/themewizard.cpp" line="250"/>
         <source>Dark hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="199"/>
+        <location filename="../desktopapp/themewizard.cpp" line="253"/>
         <source>Placeholder text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="202"/>
+        <location filename="../desktopapp/themewizard.cpp" line="256"/>
         <source>Tip text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="205"/>
+        <location filename="../desktopapp/themewizard.cpp" line="259"/>
         <source>Tip background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="208"/>
+        <location filename="../desktopapp/themewizard.cpp" line="262"/>
         <source>Shadow</source>
         <translation type="unfinished"></translation>
     </message>

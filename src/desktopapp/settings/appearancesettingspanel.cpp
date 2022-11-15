@@ -13,6 +13,7 @@ AppearanceSettingsPanel::AppearanceSettingsPanel(QWidget *parent) :
     connect(ui->createThemeButton, &QPushButton::clicked, this, [this](){
         ThemeWizard wizard(this);
         wizard.exec();
+        AppearanceSettingsPanel::reset();
     });
 
 
