@@ -288,6 +288,63 @@ QString ThemeManager::themeInfo(const QString &themeName) const
 void ThemeManager::saveTheme(const QString &themeName, const QString &location, const ThemeType &themeType, const QMap<QString, QString> colorMap) const
 {
 
+//    QFileInfo fileInfo(location);
+
+//    if(!QDir(fileInfo.path()).exists() || !fileInfo.isWritable()  ){
+//        qWarning() << "theme can't save at" << location;
+//    }
+    QFile     file(location);
+
+
+    QJsonDocument   jsonDoc;
+    QJsonObject rootJsonObject = jsonDoc.object();
+
+    // write properties
+    rootJsonObject.insert("themeName", themeName);
+
+    QString themeTypeName;
+    switch (themeType) {
+    case ThemeType::Light:
+        themeTypeName = "light";
+        break;
+    case ThemeType::Dark:
+        themeTypeName = "dark";
+        break;
+    default:
+        themeTypeName = "light";
+        break;
+    }
+
+
+    rootJsonObject.insert("themeType", themeTypeName);
+    rootJsonObject.insert("isEditable", true);
+    rootJsonObject.insert("isForDesktop", true);
+    rootJsonObject.insert("info", "");
+
+
+    QJsonObject colorObject;
+    QMap<QString, QString>::const_iterator i = colorMap.constBegin();
+    while (i != colorMap.constEnd()) {
+        colorObject.insert(i.key(), i.value().toLower());
+        ++i;
+    }
+
+
+    rootJsonObject.insert("colors", colorObject);
+
+
+    // write back to file
+    jsonDoc.setObject(rootJsonObject);
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        return;
+    }
+
+
+    file.write(jsonDoc.toJson());
+    file.close();
+
+
 }
 
 //----------------------------------------------
@@ -398,6 +455,24 @@ void ThemeManager::updateAllIconColors()
 
 
     }
+}
+
+//----------------------------------------------
+
+QString ThemeManager::getWritablePathForTheme() const{
+
+    QStringList paths = PLMUtils::Dir::writableAddonsPathsList();
+
+    for (const QString &path : qAsConst(paths)) {
+      QString themePath = path + "/themes";
+      QFileInfo fileInfo(themePath);
+      if(fileInfo.isWritable() && fileInfo.isDir()){
+          return themePath;
+      }
+
+    }
+
+    return QString();
 }
 
 //----------------------------------------------

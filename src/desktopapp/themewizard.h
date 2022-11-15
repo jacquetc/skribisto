@@ -5,6 +5,7 @@
 #include <QStyledItemDelegate>
 #include <QTableWidgetItem>
 #include <QWizard>
+#include "thememanager.h"
 
 namespace Ui {
 class ThemeWizard;
@@ -27,7 +28,13 @@ private:
     void setColorTableColors(QMap<QString, QString> colorMap);
     QString getHumanReadableName(const QString &colorPropertyName) const;
     QMap<QString, QString> getColorMapFromTable() const;
+    QString m_outputFileName;
+    ThemeManager::ThemeType m_outputThemeType;
 
+
+    // QDialog interface
+public slots:
+    void done(int result) override;
 };
 
 

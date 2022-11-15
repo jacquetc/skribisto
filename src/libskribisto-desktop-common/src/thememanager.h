@@ -60,6 +60,9 @@ public:
 
   ThemeManager::ThemeType switchThemeType();
   void reapplyCurrentTheme();
+  QString getWritablePathForTheme() const;
+  QPalette createSidePalette(const QPalette &palette) const;
+  QPalette createMiddlePalette(const QPalette &palette) const;
 public slots:
 
   void updateAllIconColors();
@@ -84,8 +87,6 @@ private:
 
   void applyTheme(const QString &themeName);
 
-  QPalette createSidePalette(const QPalette &palette) const;
-  QPalette createMiddlePalette(const QPalette &palette) const;
   QJsonDocument loadThemeJson(const QString &themeName) const;
 };
 
