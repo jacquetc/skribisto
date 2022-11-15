@@ -28,12 +28,9 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="2.0.0" date="2022-11-13T00:00:00Z">
+    <release type="stable" version="2.0.1" date="2022-11-15T00:00:00Z">
       <description>
-        <ul>
-          <li>Switch to QtWidget application for desktop</li>
-          <li>Deactivate temporarily QML application</li>
-        </ul>
+        <p>Fix Theme creation dialog</p>
       </description>
     </release>
   </releases>
