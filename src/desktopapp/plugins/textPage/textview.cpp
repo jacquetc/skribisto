@@ -191,6 +191,8 @@ void TextView::initialize()
 
     QSettings settings;
 
+    // spellchecker :
+
     m_highlighter = new Highlighter(document);
     m_highlighter->setProjectId(this->projectId());
     m_highlighter->getSpellChecker()->setLangCode(skrdata->projectHub()->getLangCode(this->projectId()));
@@ -300,7 +302,6 @@ void TextView::connectSaveConnection()
     });
 
 }
-
 //---------------------------------------------
 
 void TextView::addPositionToHistory()
