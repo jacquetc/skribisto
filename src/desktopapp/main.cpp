@@ -99,6 +99,14 @@ int main(int argc, char *argv[]) {
 
   QMainWindow *window = windowManager->restoreWindows();
 
+  if(!args.empty() && QUrl::fromLocalFile(args.first()).isValid()){
+      QFileInfo fileInfo(args.first());
+        if(fileInfo.exists() && fileInfo.isReadable()){
+            projectCommands->loadProject(QUrl::fromLocalFile(args.first()));
+        }
+
+  }
+
 
   if (parser.isSet("testProject")) {
     projectCommands->loadProject(
