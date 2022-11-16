@@ -28,9 +28,12 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="2.0.1" date="2022-11-15T00:00:00Z">
+    <release type="stable" version="2.0.2" date="2022-11-17T00:00:00Z">
       <description>
-        <p>Fix Theme creation dialog</p>
+        <ul>
+          <li>Add spellchecking suggestions</li>
+          <li>Add quick note creation</li>
+        </ul>
       </description>
     </release>
   </releases>
