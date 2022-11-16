@@ -3334,6 +3334,14 @@
     </message>
 </context>
 <context>
+    <name>ProjectTreeCommands</name>
+    <message>
+        <location filename="../libskribisto-backend/src/projecttreecommands.cpp" line="228"/>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ProjectView</name>
     <message>
         <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="14"/>
@@ -3392,7 +3400,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="59"/>
+        <location filename="../desktopapp/main.cpp" line="60"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4888,58 +4896,89 @@ Please select the destination folder.</source>
 <context>
     <name>TextEdit</name>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="19"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="30"/>
         <source>Italic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="21"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="32"/>
         <source>Ctrl+I</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="24"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="35"/>
         <source>Bold</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="26"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="37"/>
         <source>Ctrl+B</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="29"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="40"/>
         <source>Strikethrough</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="31"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="42"/>
         <source>Ctrl+T</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="35"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="46"/>
         <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="37"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="48"/>
         <source>Ctrl+U</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="40"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="51"/>
         <source>List</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="46"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="57"/>
         <source>Center the cursor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="48"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="59"/>
         <source>Ctrl+Shift+C</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="396"/>
+        <source>Add to Dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="399"/>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="404"/>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="408"/>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="412"/>
+        <source>Paste without formatting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="416"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="498"/>
+        <source>Create a note</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5420,118 +5459,123 @@ Please select the destination folder.</source>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.cpp" line="15"/>
-        <location filename="../desktopapp/themewizard.cpp" line="147"/>
+        <location filename="../desktopapp/themewizard.cpp" line="157"/>
         <source>Light</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.cpp" line="16"/>
-        <location filename="../desktopapp/themewizard.cpp" line="166"/>
+        <location filename="../desktopapp/themewizard.cpp" line="176"/>
         <source>Dark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="38"/>
-        <source>(Copy)</source>
+        <location filename="../desktopapp/themewizard.cpp" line="18"/>
+        <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="77"/>
+        <location filename="../desktopapp/themewizard.cpp" line="45"/>
+        <source>%1 (Copy)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/themewizard.cpp" line="87"/>
         <source>Select Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="104"/>
+        <location filename="../desktopapp/themewizard.cpp" line="114"/>
         <source>Replacing: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="114"/>
+        <location filename="../desktopapp/themewizard.cpp" line="124"/>
         <source>Creating: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="118"/>
+        <location filename="../desktopapp/themewizard.cpp" line="128"/>
         <source>Error: The name of this theme already exists!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="217"/>
+        <location filename="../desktopapp/themewizard.cpp" line="227"/>
         <source>Window background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="220"/>
+        <location filename="../desktopapp/themewizard.cpp" line="230"/>
         <source>Window text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="223"/>
+        <location filename="../desktopapp/themewizard.cpp" line="233"/>
         <source>Base background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="226"/>
+        <location filename="../desktopapp/themewizard.cpp" line="236"/>
         <source>Base text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="229"/>
+        <location filename="../desktopapp/themewizard.cpp" line="239"/>
         <source>Bright text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="232"/>
+        <location filename="../desktopapp/themewizard.cpp" line="242"/>
         <source>Highlight</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="235"/>
+        <location filename="../desktopapp/themewizard.cpp" line="245"/>
         <source>Highlighted text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="238"/>
+        <location filename="../desktopapp/themewizard.cpp" line="248"/>
         <source>Button background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="241"/>
+        <location filename="../desktopapp/themewizard.cpp" line="251"/>
         <source>Button text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="244"/>
+        <location filename="../desktopapp/themewizard.cpp" line="254"/>
         <source>Light hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="247"/>
+        <location filename="../desktopapp/themewizard.cpp" line="257"/>
         <source>Midlight hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="250"/>
+        <location filename="../desktopapp/themewizard.cpp" line="260"/>
         <source>Dark hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="253"/>
+        <location filename="../desktopapp/themewizard.cpp" line="263"/>
         <source>Placeholder text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="256"/>
+        <location filename="../desktopapp/themewizard.cpp" line="266"/>
         <source>Tip text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="259"/>
+        <location filename="../desktopapp/themewizard.cpp" line="269"/>
         <source>Tip background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/themewizard.cpp" line="262"/>
+        <location filename="../desktopapp/themewizard.cpp" line="272"/>
         <source>Shadow</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5836,7 +5880,7 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>main</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="64"/>
+        <location filename="../desktopapp/main.cpp" line="65"/>
         <source>Show progress during copy</source>
         <translation type="unfinished"></translation>
     </message>

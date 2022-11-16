@@ -53,7 +53,7 @@ void TagItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
 
     painter->setPen(QPen(Qt::black, 1));
     painter->drawPolygon(tagPolygon, Qt::WindingFill);
-    qDebug() << "tagPolygon.boundingRect()" << tagPolygon.boundingRect() ;
+    //qDebug() << "tagPolygon.boundingRect()" << tagPolygon.boundingRect() ;
     // hole
 
     painter->drawEllipse(QPoint(14, rect.height() / 2), 3, 3);
@@ -85,7 +85,7 @@ QSize TagItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModel
 {
     QSize defaultSize = QStyledItemDelegate::sizeHint(option,index);
 
-    qDebug() << defaultSize;
+    //qDebug() << defaultSize;
 
     QImage image(200, 200, QImage::Format_ARGB32);
     QPainter painter(&image);
@@ -96,7 +96,7 @@ QSize TagItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModel
                       , index.data(Qt::DisplayRole).toString(),
                       &boundingRect);
 
-    qDebug() << "boundingRect" << boundingRect;
+    //qDebug() << "boundingRect" << boundingRect;
 
     return QSize(1, boundingRect.height() + 4);
 

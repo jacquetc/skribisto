@@ -22,7 +22,7 @@ public:
     }
     QUndoStack *undoStack() const;
 
-    void subscribe(InvokableCommandGroupInterface &object);
+    void subscribe(InvokableCommandGroupInterface *object);
 
     void invoke(const QString &address, const QString &action, const QVariantMap &parameters);
 

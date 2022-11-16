@@ -46,6 +46,10 @@ TagDialog::TagDialog(QWidget *parent, int projectId, int tagId, bool creating) :
         setColors(item->background().color().name(), item->foreground().color().name());
     });
 
+    ui->buttonBox->button(QDialogButtonBox::StandardButton::Ok)->setEnabled(false);
+    connect(ui->tagNameLineEdit, &QLineEdit::textChanged, this, [this](){
+        ui->buttonBox->button(QDialogButtonBox::StandardButton::Ok)->setEnabled(ui->tagNameLineEdit->text().size() > 0);
+    });
 
 
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, [this](){

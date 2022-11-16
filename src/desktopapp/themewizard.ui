@@ -23,7 +23,7 @@
    <enum>QWizard::ModernStyle</enum>
   </property>
   <property name="options">
-   <set>QWizard::NoCancelButton|QWizard::NoDefaultButton</set>
+   <set>QWizard::NoDefaultButton</set>
   </property>
   <widget class="QWizardPage" name="wizardPage1">
    <property name="title">

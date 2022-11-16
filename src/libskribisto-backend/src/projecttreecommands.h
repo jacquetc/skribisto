@@ -3,11 +3,12 @@
 
 #include "treemodels/projecttreemodel.h"
 #include "skribisto_backend_global.h"
+#include "interfaces/invokablecommandgroupinterface.h"
 
 #include <QObject>
 #define projectTreeCommands ProjectTreeCommands::instance()
 
-class SKRBACKENDEXPORT ProjectTreeCommands : public QObject
+class SKRBACKENDEXPORT ProjectTreeCommands : public QObject, public InvokableCommandGroupInterface
 {
 
     Q_OBJECT
@@ -39,6 +40,7 @@ public:
     void moveItemsBelow(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
     void moveItemsAsChildOf(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
 
+    int addNote(int projectId, const QString &name, int targetFolderId = -1);
     void sendItemToTrash(int projectId, int targetId);
     void sendSeveralItemsToTrash(int projectId, QList<int> targetIds);
 
@@ -65,6 +67,14 @@ private:
 QUndoStack *m_undoStack;
 ProjectTreeModel *m_treeModel;
 
+
+// InvokableCommandGroupInterface interface
+public:
+QString address() const override
+{
+    return "project_tree";
+}
+Command *getCommand(const QString &action, const QVariantMap &parameters) override;
 };
 
 #endif // PROJECTTREECOMMANDS_H
