@@ -53,9 +53,6 @@ public:
     {
         return "project";
     }
-
-    // InvokableCommandGroupInterface interface
-public:
     Command *getCommand(const QString &action, const QVariantMap &parameters) override;
 };
 

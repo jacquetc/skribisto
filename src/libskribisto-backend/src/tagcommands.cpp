@@ -1,4 +1,5 @@
 #include "tagcommands.h"
+#include "commands.h"
 #include "skrresult.h"
 
 #include <skrdata.h>
@@ -7,6 +8,7 @@ TagCommands::TagCommands(QObject *parent, QUndoStack *undoStack)
     : QObject{parent}, m_undoStack(undoStack)
 {
     m_instance = this;
+    commands->subscribe(this);
 
 }
 TagCommands *TagCommands::m_instance = nullptr;

@@ -46,6 +46,7 @@ class SKRBACKENDEXPORT Highlighter : public QSyntaxHighlighter {
 public:
 
     Highlighter(QTextDocument *parentDoc);
+    Highlighter(QTextDocument *parentDoc, int projectId);
     Q_INVOKABLE void setTextToHighlight(QString string);
     Q_INVOKABLE void setCaseSensitivity(bool isCaseSensitive);
     SpellChecker* getSpellChecker();

@@ -55,6 +55,10 @@ Highlighter::Highlighter(QTextDocument *parentDoc)
 
 // -------------------------------------------------------------------
 
+Highlighter::Highlighter(QTextDocument *parentDoc, int projectId) : Highlighter::Highlighter(parentDoc){
+    this->setProjectId(projectId);
+}
+
 
 // -------------------------------------------------------------------
 

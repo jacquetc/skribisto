@@ -219,7 +219,7 @@ void SpellChecker::addWordToUserDict(const QString& word, bool emitSignal)
     }
 
     QString affix = "";
-    qDebug() << "m_langCode" << m_langCode;
+    //qDebug() << "m_langCode" << m_langCode;
     if(m_langCode.contains("en")){
         affix = "M";
     }
@@ -233,7 +233,7 @@ void SpellChecker::addWordToUserDict(const QString& word, bool emitSignal)
 
     QStringList suffixList;
     for(const std::string &str : stringList){
-        qDebug()<< "suffix_suggest" << QString::fromStdString(str);
+       // qDebug()<< "suffix_suggest" << QString::fromStdString(str);
     }
 
 

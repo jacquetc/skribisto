@@ -25,6 +25,7 @@ set(backend_SRCS
     text/highlighter.h text/highlighter.cpp
     text/spellchecker.h text/spellchecker.cpp
     backupmanager.h backupmanager.cpp
+    dictcommands.h dictcommands.cpp
 )
 
 set(backend_MODELS

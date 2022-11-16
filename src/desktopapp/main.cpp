@@ -1,6 +1,7 @@
 #include "backupmanager.h"
 #include "commands.h"
 #include "desktopapplication.h"
+#include "dictcommands.h"
 #include "interfaces/newprojectformatinterface.h"
 #include "interfaces/pagetypeiconinterface.h"
 #include "projectcommands.h"
@@ -84,8 +85,10 @@ int main(int argc, char *argv[]) {
   new ProjectTreeModel(skrData);
   new Commands(skrData, undoStack);
   new ProjectCommands(skrData, undoStack);
+  commands->subscribe(projectCommands);
   new ProjectTreeCommands(skrData, undoStack, projectTreeModel);
   new TagCommands(skrData, undoStack);
+  new DictCommands(skrData, undoStack);
   new BackupManager(skrData);
   QObject::connect(&app, &DesktopApplication::settingsChanged, backupManager, &BackupManager::settingsChanged);
 

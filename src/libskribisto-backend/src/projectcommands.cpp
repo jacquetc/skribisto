@@ -1,4 +1,5 @@
 #include "projectcommands.h"
+#include "commands.h"
 #include "skrdata.h"
 #include "project/plmprojectmanager.h"
 #include "project/plmproject.h"
@@ -9,6 +10,7 @@ ProjectCommands::ProjectCommands(QObject *parent, QUndoStack *undoStack)
     : QObject{parent}, m_undoStack(undoStack)
 {
     m_instance = this;
+    commands->subscribe(this);
 
     Exporter::init();
     Importer::init();

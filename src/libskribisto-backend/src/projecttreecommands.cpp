@@ -1,4 +1,5 @@
 #include "projecttreecommands.h"
+#include "commands.h"
 #include "interfaces/newprojecttemplateinterface.h"
 #include "interfaces/pageinterface.h"
 
@@ -6,6 +7,7 @@ ProjectTreeCommands::ProjectTreeCommands(QObject *parent, QUndoStack *undoStack,
     : QObject{parent}, m_undoStack(undoStack), m_treeModel(treeModel)
 {
     m_instance = this;
+    commands->subscribe(this);
     skrpluginhub->addPluginType<NewProjectTemplateInterface>();
 
 }
@@ -213,6 +215,40 @@ void ProjectTreeCommands::moveItemsAsChildOf(int sourceProjectId, QList<int> sou
 
 //------------------------------------------------------------------------------------
 
+
+int ProjectTreeCommands::addNote(int projectId, const QString &name, int targetFolderId)
+{
+    m_undoStack->beginMacro("Add note");
+
+    int noteFolder = -1;
+    if(targetFolderId == -1){
+        QList<int> folders = skrdata->treeHub()->getIdsWithInternalTitle(projectId, "note_folder");
+
+        if(folders.isEmpty()){
+            noteFolder = this->addSubItem(projectId, 0, "FOLDER", tr("Notes"));
+        }
+        else {
+            noteFolder = folders.first();
+        }
+
+
+    }
+    else {
+        noteFolder = targetFolderId;
+    }
+
+
+    int newId = this->addSubItem(projectId, noteFolder, "TEXT", name);
+
+
+
+    m_undoStack->endMacro();
+
+    return newId;
+}
+
+//------------------------------------------------------------------------------------
+
 void ProjectTreeCommands::sendItemToTrash(int projectId, int targetId)
 {
     m_undoStack->push(new TrashItemCommand(projectId, targetId, true));
@@ -357,4 +393,13 @@ int ProjectTreeCommands::addTreeItemInTemplate(int projectId, int sortOrder, int
 QUndoStack *ProjectTreeCommands::undoStack() const
 {
     return m_undoStack;
+}
+
+Command *ProjectTreeCommands::getCommand(const QString &action, const QVariantMap &parameters)
+{
+    if(action == "rename"){
+        return new RenameItemCommand(parameters.value("projectId").toInt(), parameters.value("treeItemId").toInt(), parameters.value("name").toString());
+    }
+    return nullptr;
+
 }

@@ -1,18 +1,29 @@
 #include "textedit.h"
+#include "dictcommands.h"
+#include "invoker.h"
+#include "projecttreecommands.h"
+#include "skrdata.h"
+#include "viewmanager.h"
 
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTextList>
 #include <QScrollBar>
 #include <QUuid>
+#include <QInputDialog>
 
-TextEdit::TextEdit(QWidget *parent) :
+TextEdit::TextEdit(QWidget *parent, int projectId) :
     m_mouse_button_down(false),
-    m_always_center_cursor(false)
+    m_always_center_cursor(false),
+    m_forceDisableCenterCursor(false),
+    m_projectId(projectId)
 {
     this->setMouseTracking(true);
 
     m_uuid = QUuid::createUuid().toString();
+
+
+    setupContextMenu();
 
     connect(this, &QTextEdit::cursorPositionChanged, this, &TextEdit::updateFontActions);
 
@@ -238,6 +249,9 @@ QAction *TextEdit::centerCursorAction() const
 
 void TextEdit::centerCursor(bool force)
 {
+    if(m_forceDisableCenterCursor){
+        return;
+    }
     const QRect cursor = this->cursorRect();
     const QRect viewport = this->viewport()->rect();
     if (force || m_always_center_cursor || (cursor.bottom() >= viewport.bottom()) || (cursor.top() <= viewport.top())) {
@@ -246,9 +260,6 @@ void TextEdit::centerCursor(bool force)
         this->verticalScrollBar()->setValue(scrollbar->value() - offset.y());
     }
 }
-
-//---------------------------------------------------------
-
 
 void TextEdit::adaptScollBarRange(int min, int max)
 {
@@ -260,6 +271,68 @@ void TextEdit::adaptScollBarRange(int min, int max)
 
 //---------------------------------------------------------
 
+
+
+void TextEdit::setupHighlighter()
+{
+    if(m_projectId == -1){
+        return;
+    }
+    m_highlighter = new Highlighter(this->document(), m_projectId);
+    m_highlighter->getSpellChecker()->setLangCode(skrdata->projectHub()->getLangCode(m_projectId));
+    m_highlighter->setSpellCheckHighlightColor("#FF0000");
+}
+//---------------------------------------------------------
+
+
+void TextEdit::setSpellcheckerEnabled(bool value)
+{
+    m_highlighter->getSpellChecker()->activate(value);
+
+}
+//---------------------------------------------------------
+
+bool TextEdit::isWordMisspelled(int cursorPosition)
+{
+    QTextCursor textCursor(this->document());
+
+    textCursor.setPosition(cursorPosition);
+    textCursor.movePosition(QTextCursor::StartOfWord);
+    textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+
+    return !m_highlighter->getSpellChecker()->spell(textCursor.selectedText());
+}
+
+//---------------------------------------------------------
+
+QStringList TextEdit::listSpellSuggestionsAt(int cursorPosition) const{
+    QTextCursor textCursor(this->document());
+    textCursor.setPosition(cursorPosition);
+    textCursor.movePosition(QTextCursor::StartOfWord);
+    textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+    QString word = textCursor.selectedText();
+    return m_highlighter->getSpellChecker()->suggest(word);
+}
+//---------------------------------------------------------
+
+QStringList TextEdit::listSpellSuggestionsAtTextCursor() const{
+    return listSpellSuggestionsAt(this->textCursor().position());
+
+}
+//---------------------------------------------------------
+
+void TextEdit::replaceWordAt(int cursorPosition, const QString& newWord)
+{
+    m_forceDisableCenterCursor = true;
+
+    QTextCursor textCursor(this->document());
+    textCursor.setPosition(cursorPosition);
+    textCursor.movePosition(QTextCursor::StartOfWord);
+    textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+    textCursor.insertText(newWord);
+
+    m_forceDisableCenterCursor = false;
+}
 
 
 void TextEdit::mousePressEvent(QMouseEvent *event)
@@ -310,4 +383,150 @@ void TextEdit::keyPressEvent(QKeyEvent *event)
     }
 
     QTextEdit::keyPressEvent(event);
+}
+
+void TextEdit::setupContextMenu(){
+
+    m_contextMenu = new QMenu("Context menu", this);
+    this->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, &TextEdit::customContextMenuRequested, this, &TextEdit::onCustomContextMenu);
+
+    m_contextMenu->setMinimumSize(100, 50);
+
+    m_addToUserDictAction = new QAction(tr("Add to Dictionary"), this);
+    m_connectionHolder = new QObject(this);
+
+    m_cutAction = new QAction(QIcon(":/icons/backup/edit-cut.svg"), tr("Cut"), this);
+    connect(m_cutAction, &QAction::triggered, this, [=](){
+        this->cut();
+    });
+
+    m_copyAction = new QAction(QIcon(":/icons/backup/edit-copy.svg"), tr("Copy"), this);
+    connect(m_copyAction, &QAction::triggered, this, [=](){
+        this->copy();
+    });
+    m_pasteAction = new QAction(QIcon(":/icons/backup/edit-paste.svg"), tr("Paste"), this);
+    connect(m_pasteAction, &QAction::triggered, this, [=](){
+        this->paste();
+    });
+    m_pasteWithoutFormattingAction = new QAction(tr("Paste without formatting"), this);
+    connect(m_pasteWithoutFormattingAction, &QAction::triggered, this, [=](){
+        this->paste();
+    });
+    m_createNote = new QAction(tr("Create a note"), this);
+}
+
+void TextEdit::onCustomContextMenu(const QPoint &point)
+{
+    // clear:
+    delete m_connectionHolder;
+    m_connectionHolder = new QObject(this);
+    m_contextMenu->clear();
+
+    int currentPosition = this->textCursor().position();
+    int currentAnchor = this->textCursor().anchor();
+    currentPosition = qMin(currentPosition, currentAnchor);
+    currentAnchor = qMax(currentPosition, currentAnchor);
+    int positionUnderCursor = this->cursorForPosition(point).position();
+
+    // if outside selected text
+    if(this->textCursor().hasSelection() && positionUnderCursor < currentPosition && positionUnderCursor > currentAnchor){
+        this->setTextCursor(this->cursorForPosition(point));
+    }
+    else if(!this->textCursor().hasSelection()){
+        this->setTextCursor(this->cursorForPosition(point));
+    }
+
+    QString selectedText = this->textCursor().selectedText();
+
+
+    // spell check:
+
+    if(selectedText.isEmpty() && m_projectId != -1 && this->isWordMisspelled(currentPosition)){
+
+        QStringList suggestions = this->listSpellSuggestionsAt(currentPosition);
+
+        for(const QString &suggestion : suggestions){
+            QAction *suggestAction = new QAction(suggestion, m_contextMenu);
+            connect(suggestAction, &QAction::triggered, this, [=](){
+                    replaceWordAt(currentPosition, suggestion);
+            });
+            m_contextMenu->addAction(suggestAction);
+        }
+
+
+        if(!suggestions.isEmpty()){
+            m_contextMenu->addSeparator();
+        }
+
+            m_contextMenu->addAction(m_addToUserDictAction);
+
+        connect(m_addToUserDictAction, &QAction::triggered, m_connectionHolder, [=](){
+
+
+            QTextCursor textCursor(this->document());
+            textCursor.setPosition(currentPosition);
+            textCursor.movePosition(QTextCursor::StartOfWord);
+            textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+            QString wordUnderCursor = textCursor.selectedText();
+
+            dictCommands->addWordToProjectDict(m_projectId, wordUnderCursor);
+        });
+
+
+        m_contextMenu->addSeparator();
+
+    }
+
+    if(!selectedText.isEmpty()){
+        //m_contextMenu->addSeparator();
+
+        m_contextMenu->addAction(m_cutAction);
+        m_contextMenu->addAction(m_copyAction);
+
+    }
+
+    m_contextMenu->addAction(m_pasteAction);
+    m_contextMenu->addAction(m_pasteWithoutFormattingAction);
+
+    if(m_projectId != -1){
+        m_contextMenu->addSeparator();
+        m_contextMenu->addAction(m_createNote);
+
+        connect(m_createNote, &QAction::triggered, m_connectionHolder, [=](){
+            bool ok = false;
+            QString noteName = QInputDialog::getText(this, tr("Create a note"), "", QLineEdit::Normal, selectedText.left(30).trimmed(), &ok);
+
+            if(ok){
+                int newNoteId = projectTreeCommands->addNote(m_projectId, noteName, -1);
+                ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
+                viewManager->openViewInAnotherViewHolder("TEXT", m_projectId, newNoteId);
+            }
+        });
+
+    }
+
+    m_contextMenu->popup(this->viewport()->mapToGlobal(point));
+
+}
+
+int TextEdit::projectId() const
+{
+    return m_projectId;
+}
+
+void TextEdit::setProjectId(int newProjectId)
+{
+    m_projectId = newProjectId;
+}
+
+
+bool TextEdit::canInsertFromMimeData(const QMimeData *source) const
+{
+    return QTextEdit::canInsertFromMimeData(source);
+}
+
+void TextEdit::insertFromMimeData(const QMimeData *source)
+{
+    return QTextEdit::insertFromMimeData(source);
 }

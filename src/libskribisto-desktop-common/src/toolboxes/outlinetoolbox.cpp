@@ -41,6 +41,7 @@ OutlineToolbox::~OutlineToolbox()
 
 void OutlineToolbox::initialize()
 {
+    ui->textEdit->setProjectId(this->projectId());
 
     MarkdownTextDocument *document = new MarkdownTextDocument(this);
 
@@ -68,6 +69,10 @@ void OutlineToolbox::initialize()
 
 
     QSettings settings;
+
+    // spellchecker :
+    ui->textEdit->setupHighlighter();
+    ui->textEdit->setSpellcheckerEnabled(settings.value("common/spellChecker", true).toBool());
 
     // restore font size:
 
@@ -168,5 +173,14 @@ void OutlineToolbox::wheelEvent(QWheelEvent *event)
     }
     else {
             ui->textEdit->wheelEvent(event);
+    }
+
+}
+
+void OutlineToolbox::settingsChanged(const QHash<QString, QVariant> &newSettings)
+{
+
+    if(newSettings.contains("common/spellChecker")){
+        ui->textEdit->setSpellcheckerEnabled(newSettings.value("common/spellChecker").toBool());
     }
 }

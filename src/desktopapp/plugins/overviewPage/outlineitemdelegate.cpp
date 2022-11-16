@@ -121,6 +121,7 @@ void OutlineItemDelegate::setEditorData(QWidget *editor, const QModelIndex &inde
     int treeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
 
     TextEdit * textEdit = qobject_cast<TextEdit*>(editor);
+    textEdit->setProjectId(projectId);
 
     MarkdownTextDocument *document = new MarkdownTextDocument(editor);
     document->setSkribistoMarkdown(index.data(ProjectTreeItem::SecondaryContentRole).toString());

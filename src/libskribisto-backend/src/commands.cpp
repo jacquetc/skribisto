@@ -13,10 +13,10 @@ return m_undoStack;
 
 }
 
-void Commands::subscribe(InvokableCommandGroupInterface &object)
+void Commands::subscribe(InvokableCommandGroupInterface *object)
 {
 
-    m_addressWithObjectHash.insert(object.address() , &object);
+    m_addressWithObjectHash.insert(object->address() , object);
 }
 
 void Commands::invoke(const QString &address, const QString &action, const QVariantMap &parameters)

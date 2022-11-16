@@ -129,6 +129,8 @@ QList<Toolbox *> TextView::toolboxes()
 
 void TextView::initialize()
 {
+    centralWidgetUi->textEdit->setProjectId(this->projectId());
+
     MarkdownTextDocument *document = new MarkdownTextDocument(this);
 
     m_isSecondaryContent = parameters().value("is_secondary_content", false).toBool();
@@ -192,13 +194,8 @@ void TextView::initialize()
     QSettings settings;
 
     // spellchecker :
-
-    m_highlighter = new Highlighter(document);
-    m_highlighter->setProjectId(this->projectId());
-    m_highlighter->getSpellChecker()->setLangCode(skrdata->projectHub()->getLangCode(this->projectId()));
-    m_highlighter->setSpellCheckHighlightColor("#FF0000");
-    m_highlighter->getSpellChecker()->activate(settings.value("common/spellChecker", true).toBool());
-
+    centralWidgetUi->textEdit->setupHighlighter();
+    centralWidgetUi->textEdit->setSpellcheckerEnabled(settings.value("common/spellChecker", true).toBool());
 
     // restore font size and family:
 
@@ -419,7 +416,7 @@ void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
     }
 
     if(newSettings.contains("common/spellChecker")){
-        m_highlighter->getSpellChecker()->activate(newSettings.value("common/spellChecker").toBool());
+        centralWidgetUi->textEdit->setSpellcheckerEnabled(newSettings.value("common/spellChecker").toBool());
     }
 
 

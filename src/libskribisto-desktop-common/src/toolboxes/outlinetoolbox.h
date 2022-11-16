@@ -34,8 +34,7 @@ public slots:
 
 protected:
     void wheelEvent(QWheelEvent *event) override;
-
-
+    void settingsChanged(const QHash<QString, QVariant> &newSettings) override;
 private:
     Ui::OutlineToolbox *ui;
 
