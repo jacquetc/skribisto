@@ -467,6 +467,8 @@ QString ThemeManager::getWritablePathForTheme() const{
       QString themePath = path + "/themes";
       QFileInfo fileInfo(themePath);
       if(fileInfo.isWritable() && fileInfo.isDir()){
+          QDir dir(themePath);
+          dir.mkpath(dir.path());
           return themePath;
       }
 

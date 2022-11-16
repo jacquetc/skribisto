@@ -15,9 +15,16 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
     ui->typeComboBox->addItem(tr("Light"), "light");
     ui->typeComboBox->addItem(tr("Dark"), "dark");
 
+    this->setButtonText(WizardButton::FinishButton, tr("Save"));
+
 
     resetThemeList();
     themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
+
+
+    QTimer::singleShot(0, this, [this](){
+         this->button(QWizard::NextButton)->setEnabled(false);
+    });
 
     connect(ui->themeTreeWidget, &QTreeWidget::currentItemChanged, this, [this](QTreeWidgetItem *current, QTreeWidgetItem *previous){
         if(!current->data(0, Qt::UserRole).toString().isEmpty()){
@@ -35,7 +42,7 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
             ui->duplicateAndModifyRadioButton->setChecked(!isEditable);
 
             if(ui->duplicateAndModifyRadioButton->isChecked()){
-                ui->nameLineEdit->setText(m_selectedTheme + " " + tr("(Copy)"));
+                ui->nameLineEdit->setText(tr("%1 (Copy)").arg(m_selectedTheme));
             }
             else{
                 ui->nameLineEdit->setText(m_selectedTheme);
@@ -68,6 +75,9 @@ ThemeWizard::ThemeWizard(QWidget *parent) :
             QTimer::singleShot(0, this, [this](){
                 ui->comboBoxExample_2->shakePalette();
             });
+
+            this->button(QWizard::NextButton)->setEnabled(true );
+
         }
 
     });
