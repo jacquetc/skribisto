@@ -30,6 +30,9 @@ int main(int argc, char *argv[]) {
 
   // QIcon::setFallbackSearchPaths(QIcon::fallbackSearchPaths() <<
   // ":/icons/backup/");
+
+  qputenv("QT_STYLE_OVERRIDE", "");
+
   DesktopApplication app(argc, argv);
   QApplication::setStyle(new SkribistoStyle);
 
@@ -42,9 +45,7 @@ int main(int argc, char *argv[]) {
   // Names for the QSettings
   QCoreApplication::setOrganizationName("skribisto");
   QCoreApplication::setOrganizationDomain("skribisto.eu");
-  QCoreApplication::setApplicationVersion(QString::number(SKR_VERSION_MAJOR) +
-                                          "." +
-                                          QString::number(SKR_VERSION_MINOR));
+  QCoreApplication::setApplicationVersion(QString("%1.%2.%3").arg(QString::number(SKR_VERSION_MAJOR), QString::number(SKR_VERSION_MINOR), QString::number(SKR_VERSION_PATCH)));
   qDebug() << QCoreApplication::applicationVersion();
   QString appName = "Skribisto-desktop";
   QCoreApplication::setApplicationName(appName);
@@ -85,7 +86,6 @@ int main(int argc, char *argv[]) {
   new ProjectTreeModel(skrData);
   new Commands(skrData, undoStack);
   new ProjectCommands(skrData, undoStack);
-  commands->subscribe(projectCommands);
   new ProjectTreeCommands(skrData, undoStack, projectTreeModel);
   new TagCommands(skrData, undoStack);
   new DictCommands(skrData, undoStack);
@@ -95,6 +95,9 @@ int main(int argc, char *argv[]) {
 
   ThemeManager::instance();
   TextBridge::instance();
+
+//theme:
+
 
 
   QMainWindow *window = windowManager->restoreWindows();

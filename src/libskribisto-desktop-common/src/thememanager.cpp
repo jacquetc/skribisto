@@ -37,7 +37,7 @@ void ThemeManager::setDarkTheme(const QString &newDarkTheme) {
     if(currentThemeType() == ThemeType::Dark){
         this->applyTheme(m_darkTheme);
     }
-
+    saveThemeState();
     emit darkThemeChanged(newDarkTheme);
   }
 }
@@ -53,7 +53,7 @@ void ThemeManager::setLightTheme(const QString &newLightTheme) {
     if(currentThemeType() == ThemeType::Light){
         this->applyTheme(m_lightTheme);
     }
-
+    saveThemeState();
     emit lightThemeChanged(newLightTheme);
   }
 }
@@ -75,7 +75,7 @@ void ThemeManager::setCurrentThemeType(
         this->applyTheme(this->darkTheme());
     }
 
-
+    saveThemeState();
     emit currentThemeTypeChanged(newCurrentThemeType);
   }
 }
@@ -116,12 +116,11 @@ void ThemeManager::restoreThemeState()
     settings.beginGroup("theme");
 
     QString lightTheme = settings.value("light_theme", "Default Light").toString();
-    this->setLightTheme(lightTheme);
-
     QString darkTheme = settings.value("dark_theme", "Default Dark").toString();
-    this->setDarkTheme(darkTheme);
-
     ThemeManager::ThemeType themeType = static_cast<ThemeManager::ThemeType>(settings.value("current_type", 0).toInt());
+
+    this->setLightTheme(lightTheme);
+    this->setDarkTheme(darkTheme);
     this->setCurrentThemeType(themeType);
 
     settings.endGroup();

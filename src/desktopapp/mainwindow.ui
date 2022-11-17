@@ -38,7 +38,7 @@
    </property>
    <widget class="QMenu" name="menuProject">
     <property name="title">
-     <string>Project</string>
+     <string>&amp;Project</string>
     </property>
     <addaction name="actionNew_project"/>
     <addaction name="actionLoad_Project"/>
@@ -58,14 +58,14 @@
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
-     <string>Edit</string>
+     <string>&amp;Edit</string>
     </property>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>View</string>
+     <string>&amp;View</string>
     </property>
     <addaction name="actionAdd_Window"/>
     <addaction name="actionShow_Project_Dock"/>
@@ -80,14 +80,14 @@
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="actionAbout"/>
     <addaction name="actionAbout_Qt"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
-     <string>Tools</string>
+     <string>&amp;Tools</string>
     </property>
     <addaction name="actionSpell_checking"/>
    </widget>
@@ -211,8 +211,8 @@
   </widget>
   <action name="actionNew_project">
    <property name="icon">
-    <iconset theme="applications-office">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="../../3rdparty/icons.qrc">
+     <normaloff>:/icons/backup/address-book-new.svg</normaloff>:/icons/backup/address-book-new.svg</iconset>
    </property>
    <property name="text">
     <string>New Project</string>
@@ -222,16 +222,28 @@
    </property>
   </action>
   <action name="actionPreferences">
+   <property name="icon">
+    <iconset resource="../../3rdparty/icons.qrc">
+     <normaloff>:/icons/backup/configure.svg</normaloff>:/icons/backup/configure.svg</iconset>
+   </property>
    <property name="text">
     <string>Preferences</string>
    </property>
   </action>
   <action name="actionAdd_Window">
+   <property name="icon">
+    <iconset resource="../../3rdparty/icons.qrc">
+     <normaloff>:/icons/backup/window-new.svg</normaloff>:/icons/backup/window-new.svg</iconset>
+   </property>
    <property name="text">
     <string>Add Window</string>
    </property>
   </action>
   <action name="actionQuit">
+   <property name="icon">
+    <iconset resource="../../3rdparty/icons.qrc">
+     <normaloff>:/icons/backup/window-close.svg</normaloff>:/icons/backup/window-close.svg</iconset>
+   </property>
    <property name="text">
     <string>Quit</string>
    </property>
