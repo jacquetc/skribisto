@@ -53,6 +53,9 @@ SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree
     connect(this, &SKRTreeHub::treeItemRemoved, this, &SKRTreeHub::resetCacheByAddress);
     connect(this, &SKRTreeHub::treeItemMoved, this, [this](QList<TreeItemAddress> sourceTreeItemAddresses,
             const TreeItemAddress &targetTreeItemAddress){
+        if(!sourceTreeItemAddresses.isEmpty()){
+            this->resetCache(sourceTreeItemAddresses.first().projectId);
+        }
     });
     connect(this, &SKRTreeHub::allValuesChanged, this, &SKRTreeHub::resetCacheByAddress);
 
