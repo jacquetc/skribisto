@@ -109,17 +109,17 @@ QStringList ProjectCommands::getExportExtensionHumanNames() const
 
 // ----------------------------------------------------------------------------
 
-SKRResult ProjectCommands::exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds)
+SKRResult ProjectCommands::exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<TreeItemAddress> treeItemAddresses)
 {
-    return Exporter::exportProject(projectId, url, extension, parameters, treeItemIds);
+    return Exporter::exportProject(projectId, url, extension, parameters, treeItemAddresses);
 }
 
 // ----------------------------------------------------------------------------
 
-QTextDocument *ProjectCommands::getPrintTextDocument(int projectId, const QVariantMap &parameters, QList<int> treeItemIds) const
+QTextDocument *ProjectCommands::getPrintTextDocument(const QVariantMap &parameters, QList<TreeItemAddress> treeItemAddresses) const
 {
     SKRResult result(this);
-    QTextDocument *textDocument = Exporter::getPrintTextDocument(projectId, parameters, treeItemIds, &result);
+    QTextDocument *textDocument = Exporter::getPrintTextDocument(treeItemAddresses, parameters, &result);
 
 
 

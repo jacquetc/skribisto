@@ -4,6 +4,7 @@
 #include "treemodels/projecttreemodel.h"
 #include "skribisto_backend_global.h"
 #include "interfaces/invokablecommandgroupinterface.h"
+#include "interfaces/pageinterface.h"
 
 #include <QObject>
 #define projectTreeCommands ProjectTreeCommands::instance()
@@ -22,27 +23,27 @@ public:
 
     QUndoStack *undoStack() const;
 
-    void renameItem(int projectId, int targetId,  const QString &newName);
+    void renameItem(const TreeItemAddress &targetTreeItemAddress,  const QString &newName);
 
-    int addItemAfter(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
-    int addItemBefore(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
-    int addSubItem(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
-    int addTreeItemInTemplate(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle = QString(),  const QVariantMap &custom_properties = QVariantMap(), bool renumber = false);
+    TreeItemAddress addItemAfter(const TreeItemAddress &targetTreeItemAddress, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
+    TreeItemAddress addItemBefore(const TreeItemAddress &targetTreeItemAddress, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
+    TreeItemAddress addSubItem(const TreeItemAddress &targetTreeItemAddress, const QString &type, const QString &title, const QVariantMap &properties = QVariantMap());
+    TreeItemAddress addTreeItemInTemplate(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle = QString(),  const QVariantMap &custom_properties = QVariantMap(), bool renumber = false);
 
 
-    QList<int> addSeveralSubItems(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
-    QList<int> addSeveralItemsAfter(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
-    QList<int> addSeveralItemsBefore(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
+    QList<TreeItemAddress> addSeveralSubItems(const TreeItemAddress &targetTreeItemAddress, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
+    QList<TreeItemAddress> addSeveralItemsAfter(const TreeItemAddress &targetTreeItemAddress, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
+    QList<TreeItemAddress> addSeveralItemsBefore(const TreeItemAddress &targetTreeItemAddress, const QString &type, int count, const QStringList &titles, const QVariantMap &properties);
 
-    void setItemProperties(int projectId, int targetId, const QVariantMap &properties, bool isSystem = true);
+    void setItemProperties(const TreeItemAddress &targetTreeItemAddress, const QVariantMap &properties, bool isSystem = true);
 
-    void moveItemsAbove(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
-    void moveItemsBelow(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
-    void moveItemsAsChildOf(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId);
+    void moveItemsAbove(QList<TreeItemAddress> sourceTreeItemAddresses, const TreeItemAddress &targetTreeItemAddress);
+    void moveItemsBelow(QList<TreeItemAddress> sourceTreeItemAddresses, const TreeItemAddress &targetTreeItemAddress);
+    void moveItemsAsChildOf(QList<TreeItemAddress> sourceTreeItemAddresses, const TreeItemAddress &targetTreeItemAddress);
 
-    int addNote(int projectId, const QString &name, int targetFolderId = -1);
-    void sendItemToTrash(int projectId, int targetId);
-    void sendSeveralItemsToTrash(int projectId, QList<int> targetIds);
+    TreeItemAddress addNote(int projectId, const QString &name, const TreeItemAddress &targetFolderAddress = TreeItemAddress());
+    void sendItemToTrash(const TreeItemAddress &targetTreeItemAddress);
+    void sendSeveralItemsToTrash(QList<TreeItemAddress> targetTreeItemAddresses);
 
     ///
     /// \brief restoreItemFromTrash
@@ -52,20 +53,21 @@ public:
     /// \param forcedOriginalRow
     /// \return 0 if ok, or the targetId if can't restore by lack of valid orignal parent and/or row
     ///
-    int restoreItemFromTrash(int projectId, int targetId, int forcedOriginalParentId = -1, int forcedOriginalRow = -1);
-    QList<int> restoreSeveralItemsFromTrash(int projectId, QList<int> targetIds);
+    TreeItemAddress restoreItemFromTrash(const TreeItemAddress &targetTreeItemAddress, const TreeItemAddress &forcedOriginalParentAddress = TreeItemAddress(), int forcedOriginalRow = -1);
+    QList<TreeItemAddress> restoreSeveralItemsFromTrash(QList<TreeItemAddress> targetTreeItemAddresses);
 
-    void setContent(int projectId, int targetId, const QString &content, bool isSecondary = false);
+    void setContent(const TreeItemAddress &targetTreeItemAddress, const QString &content, bool isSecondary = false);
 
     void emptyTrash(int projectId);
 
-    void updateCharAndWordCount(int projectId, int treeItemId, const QString& pageType, bool sameThread);
+    void updateCharAndWordCount(const TreeItemAddress &treeItemAddress, const QString& pageType, bool sameThread);
 
 signals:
 private:
     static ProjectTreeCommands *m_instance;
 QUndoStack *m_undoStack;
 ProjectTreeModel *m_treeModel;
+QList<PageInterface *> m_pageInterfacePluginList;
 
 
 // InvokableCommandGroupInterface interface

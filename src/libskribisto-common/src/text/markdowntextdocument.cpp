@@ -82,8 +82,14 @@ QString MarkdownTextDocument::cleanUpMarkdown(const QString &markdownText) const
 
 QStringList MarkdownTextDocument::createBlockListFromMarkdown(const QString &markdownText) const
 {
+    if(markdownText.isEmpty()){
+        return QStringList() << "";
+    }
+
+
     QStringList blockList;
     const QStringList lineList = markdownText.split("\n");
+
 
     bool hadLastLineEmpty = false;
     QString block = "";

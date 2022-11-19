@@ -20,17 +20,17 @@ public:
     explicit RestorationDialog(QWidget *parent = nullptr);
     ~RestorationDialog();
 
-    const QList<int> &notRestorableIds() const;
-    void setNotRestorableIds(const QList<int> &newNotRestorableIds);
+    const QList<TreeItemAddress> &notRestorableIds() const;
+    void setNotRestorableIds(const QList<TreeItemAddress> &newNotRestorableIds);
 
     int projectId() const;
     void setProjectId(int newProjectId);
 
 private:
     Ui::RestorationDialog *ui;
-    QList<int> m_notRestorableIds;
+    QList<TreeItemAddress> m_notRestorableIds;
     int m_projectId;
-    QList< QPair<int, int> > m_notRestorableIdForTargetFolderList;
+    QList< QPair<TreeItemAddress, TreeItemAddress> > m_notRestorableIdForTargetFolderList;
     QHash<QString, PageTypeIconInterface *> m_typeWithPlugin;
     FilterModel *m_treeModel;
 
@@ -62,7 +62,7 @@ public:
     int projectId() const;
     void setProjectId(int newProjectId);
 
-    QModelIndex getModelIndex(int projectId, int treeItemId) const;
+    QModelIndex getModelIndex(const TreeItemAddress &treeItemAddress) const;
 protected:
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
 

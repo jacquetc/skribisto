@@ -7,6 +7,7 @@
 #include "skribisto_backend_global.h"
 #include "interfaces/invokablecommandgroupinterface.h"
 #include "skrresult.h"
+#include "treeitemaddress.h"
 
 #define projectCommands ProjectCommands::instance()
 
@@ -31,8 +32,8 @@ public:
     QString getSaveFilter() const;
     QList< QPair<QString, QString>> getExportExtensions() const;
     QStringList getExportExtensionHumanNames() const;
-    SKRResult exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds);
-    QTextDocument *getPrintTextDocument(int projectId, const QVariantMap &parameters, QList<int> treeItemIds) const;
+    SKRResult exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<TreeItemAddress> treeItemAddresses);
+    QTextDocument *getPrintTextDocument(const QVariantMap &parameters, QList<TreeItemAddress> treeItemAddresses) const;
 
     // project settings
     void setProjectName(int projectId, const QString &name);

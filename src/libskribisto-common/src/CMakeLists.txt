@@ -18,6 +18,7 @@ set(common_SRCS
     skrresult.h skrresult.cpp
 
     text/markdowntextdocument.h text/markdowntextdocument.cpp
+treeitemaddress.h treeitemaddress.cpp
 )
 
 set(common_INTERFACES

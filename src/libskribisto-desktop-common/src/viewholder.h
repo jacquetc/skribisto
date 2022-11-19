@@ -26,7 +26,7 @@ public:
     QList<View *> viewList() const;
     void addView(View *view);
     void removeView(View *view);
-    void removeViews(int projectId, int treeItemId = -1);
+    void removeViews(const TreeItemAddress &treeItemAddress = TreeItemAddress());
     void clear();
     View *currentView() const;
     void setCurrentView(View *view);

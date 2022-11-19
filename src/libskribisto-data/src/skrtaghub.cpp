@@ -537,7 +537,7 @@ int SKRTagHub::getLastAddedId()
 
 // --------------------------------------------------------------------------------
 
-int SKRTagHub::getTopPaperId(int projectId) const
+int SKRTagHub::getTopTagId(int projectId) const
 {
     int value       = -2;
     QList<int> list = this->getAllTagIds(projectId);
@@ -554,12 +554,12 @@ int SKRTagHub::getTopPaperId(int projectId) const
 // --------------------------------------------------------------------------------
 
 
-QList<int>SKRTagHub::getItemIdsFromTag(int projectId,
+QList<TreeItemAddress>SKRTagHub::getItemIdsFromTag(int projectId,
                                        int tagId) const
 {
     SKRResult result(this);
 
-    QList<int> list;
+    QList<TreeItemAddress> list;
     QHash<int, QVariant> out;
 
     QHash<QString, QVariant> where;
@@ -578,7 +578,7 @@ QList<int>SKRTagHub::getItemIdsFromTag(int projectId,
 
         while (i != out.constEnd()) {
             if (!i.value().isNull()) {
-                list.append(i.key());
+                list.append(TreeItemAddress(projectId, i.key()));
             }
             ++i;
         }
@@ -594,8 +594,7 @@ QList<int>SKRTagHub::getItemIdsFromTag(int projectId,
 // --------------------------------------------------------------------------------
 
 
-QList<int>SKRTagHub::getTagsFromItemId(int projectId,
-                                       int treeItemId) const
+QList<int>SKRTagHub::getTagsFromItemId(const TreeItemAddress &treeItemAddress) const
 {
     SKRResult result(this);
 
@@ -604,10 +603,10 @@ QList<int>SKRTagHub::getTagsFromItemId(int projectId,
 
     QHash<QString, QVariant> where;
 
-    where.insert("l_tree_code", treeItemId);
+    where.insert("l_tree_code", treeItemAddress.itemId);
 
 
-    PLMSqlQueries queries(projectId, "tbl_tag_relationship");
+    PLMSqlQueries queries(treeItemAddress.projectId, "tbl_tag_relationship");
 
     result = queries.getValueByIdsWhere("l_tag_code", out, where);
 
@@ -631,8 +630,7 @@ QList<int>SKRTagHub::getTagsFromItemId(int projectId,
 // --------------------------------------------------------------------------------
 
 
-SKRResult SKRTagHub::setTagRelationship(int projectId,
-                                        int treeItemId,
+SKRResult SKRTagHub::setTagRelationship(const TreeItemAddress &treeItemAddress,
                                         int tagId)
 {
     SKRResult result(this);
@@ -642,10 +640,10 @@ SKRResult SKRTagHub::setTagRelationship(int projectId,
 
     QHash<QString, QVariant> where;
 
-    where.insert("l_tree_code", treeItemId);
+    where.insert("l_tree_code", treeItemAddress.itemId);
     where.insert("l_tag_code",  tagId);
 
-    PLMSqlQueries queries(projectId, "tbl_tag_relationship");
+    PLMSqlQueries queries(treeItemAddress.projectId, "tbl_tag_relationship");
 
 
     // verify if the relationship doesn't yet exist
@@ -682,7 +680,7 @@ SKRResult SKRTagHub::setTagRelationship(int projectId,
             int newId = -2;
             QHash<QString, QVariant> values;
 
-            values.insert("l_tree_code", treeItemId);
+            values.insert("l_tree_code", treeItemAddress.itemId);
             values.insert("l_tag_code",  tagId);
 
             result = queries.add(values, newId);
@@ -697,9 +695,9 @@ SKRResult SKRTagHub::setTagRelationship(int projectId,
             }
 
             IFOK(result) {
-                emit tagRelationshipAdded(projectId, treeItemId, tagId);
-                emit tagRelationshipChanged(projectId, treeItemId, tagId);
-                emit projectModified(projectId);
+                emit tagRelationshipAdded(treeItemAddress, tagId);
+                emit tagRelationshipChanged(treeItemAddress, tagId);
+                emit projectModified(treeItemAddress.projectId);
             }
         }
 
@@ -715,8 +713,7 @@ SKRResult SKRTagHub::setTagRelationship(int projectId,
 
 // --------------------------------------------------------------------------------
 
-SKRResult SKRTagHub::removeTagRelationship(int projectId,
-                                           int treeItemId,
+SKRResult SKRTagHub::removeTagRelationship(const TreeItemAddress &treeItemAddress,
                                            int tagId)
 {
     SKRResult result(this);
@@ -727,9 +724,9 @@ SKRResult SKRTagHub::removeTagRelationship(int projectId,
     QHash<QString, QVariant> where;
 
     where.insert("l_tag_code",  tagId);
-    where.insert("l_tree_code", treeItemId);
+    where.insert("l_tree_code", treeItemAddress.itemId);
 
-    PLMSqlQueries queries(projectId,  "tbl_tag_relationship");
+    PLMSqlQueries queries(treeItemAddress.projectId,  "tbl_tag_relationship");
 
     result = queries.getValueByIdsWhere("l_tag_relationship_id", out, where);
 
@@ -778,8 +775,8 @@ SKRResult SKRTagHub::removeTagRelationship(int projectId,
     }
 
     IFOK(result) {
-        emit tagRelationshipRemoved(projectId, treeItemId, tagId);
-        emit projectModified(projectId);
+        emit tagRelationshipRemoved(treeItemAddress, tagId);
+        emit projectModified(treeItemAddress.projectId);
     }
 
     return result;

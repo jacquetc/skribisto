@@ -45,12 +45,11 @@ QVariantMap ProjectPage::propertiesForCreationOfTreeItem(const QVariantMap &cust
 
 // ---------------------------------------------------
 
-void ProjectPage::updateCharAndWordCount(int projectId, int treeItemId, bool sameThread)
+void ProjectPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread)
 {}
 
 // ---------------------------------------------------
-QTextDocumentFragment ProjectPage::generateExporterTextFragment(int                projectId,
-                                                                int                treeItemId,
+QTextDocumentFragment ProjectPage::generateExporterTextFragment(const TreeItemAddress &treeItemAddress,
                                                                 const QVariantMap& exportProperties,
                                                                 SKRResult        & result) const
 {

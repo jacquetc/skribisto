@@ -22,10 +22,10 @@ class Navigation : public Toolbox
 public:
     explicit Navigation(QWidget *parent = nullptr);
     ~Navigation();
-    QString title() const {
+    QString title() const override{
         return tr("Navigation");
     }
-    QIcon icon() const;
+    QIcon icon() const override;
 
 private slots:
     void onCustomContextMenu(const QPoint &point);
@@ -42,7 +42,7 @@ private:
 
     Ui::Navigation *ui;
     QList<Path> m_expandedPathes;
-    int m_targetTreeItemId, m_projectId;
+    TreeItemAddress m_targetTreeItemAddress;
     QModelIndex m_currentModelIndex;
     QAction *m_addItemAfterAction, *m_addItemBeforeAction, *m_addSubItemAction,
     *m_openItemAction, *m_openItemInAnotherViewAction, *m_openItemInANewWindowAction, *m_renameAction,
@@ -68,7 +68,7 @@ class FilterModel : public QSortFilterProxyModel
 public:
     FilterModel(QObject *parent = nullptr);
 
-    QModelIndex getModelIndex(int projectId, int treeItemId) const;
+    QModelIndex getModelIndex(const TreeItemAddress &treeItemAddress) const;
 protected:
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
 

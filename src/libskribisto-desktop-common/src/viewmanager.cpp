@@ -31,16 +31,16 @@ ViewManager::ViewManager(QObject *parent, QWidget *viewWidget, bool restoreViewE
     QObject::connect(qApp, &QApplication::focusChanged,  this, &ViewManager::determineCurrentView, Qt::QueuedConnection);
 
 
-    connect(skrdata->treeHub(), &SKRTreeHub::treeItemAboutToBeRemoved, this, [this](int projectId, int treeItemId){
+    connect(skrdata->treeHub(), &SKRTreeHub::treeItemAboutToBeRemoved, this, [this](const TreeItemAddress &treeItemAddress){
         for(ViewHolder *viewHolder : m_viewHolderList){
-            viewHolder->removeViews(projectId, treeItemId);
+            viewHolder->removeViews(treeItemAddress);
         }
         determineCurrentView();
     });
 
     connect(skrdata->projectHub(), &PLMProjectHub::projectToBeClosed, this, [this](int projectId){
         for(ViewHolder *viewHolder : m_viewHolderList){
-            viewHolder->removeViews(projectId);
+            viewHolder->removeViews(TreeItemAddress(projectId, -1));
         }
         determineCurrentView();
     });
@@ -179,31 +179,31 @@ ViewHolder *ViewManager::currentViewHolder()
 
 //---------------------------------------
 
-void ViewManager::openViewAtCurrentViewHolder(const QString &type, int projectId, int treeItemId)
+void ViewManager::openViewAtCurrentViewHolder(const QString &type, const TreeItemAddress &treeItemAddress)
 {
     ViewHolder* currentViewHolder = this->currentViewHolder();
 
 
-    this->openViewAt(currentViewHolder, type, projectId, treeItemId);
+    this->openViewAt(currentViewHolder, type, treeItemAddress);
 }
 
 //---------------------------------------
 
-void ViewManager::openViewInAnotherViewHolder(const QString &type, int projectId, int treeItemId)
+void ViewManager::openViewInAnotherViewHolder(const QString &type, const TreeItemAddress &treeItemAddress)
 {
     ViewHolder* nextViewHolder = this->nextViewHolder(this->currentViewHolder());
-    this->openViewAt(nextViewHolder, type, projectId, treeItemId);
+    this->openViewAt(nextViewHolder, type, treeItemAddress);
 
 }
 
 //---------------------------------------
 
-View* ViewManager::openViewAt(ViewHolder *atViewHolder, const QString &type, int projectId, int treeItemId)
+View* ViewManager::openViewAt(ViewHolder *atViewHolder, const QString &type, const TreeItemAddress &treeItemAddress)
 {
     // find existing View in the ViewHolder:
 
     for(View *view : atViewHolder->viewList()){
-        if(view->type() == type && view->projectId() == projectId && view->treeItemId() == treeItemId){
+        if(view->type() == type && view->treeItemAddress() == treeItemAddress){
             atViewHolder->setCurrentView(view);
             view->setParameters(m_parameters);
             view->applyParameters();
@@ -238,7 +238,7 @@ View* ViewManager::openViewAt(ViewHolder *atViewHolder, const QString &type, int
 
         atViewHolder->addView(view);
         view->setParameters(m_parameters);
-        view->setIdentifiersAndInitialize(projectId, treeItemId);
+        view->setIdentifiersAndInitialize(treeItemAddress);
         m_parameters.clear();
         atViewHolder->setCurrentView(view);
         view->setFocus();
@@ -274,7 +274,7 @@ View* ViewManager::splitForSamePage(View *view, Qt::Orientation orientation)
     }
 
     ViewHolder *newViewHolder = this->split(sourceViewHolder, orientation);
-    return this->openViewAt(newViewHolder, view->type(), view->projectId(), view->treeItemId());
+    return this->openViewAt(newViewHolder, view->type(), view->treeItemAddress());
 }
 
 //----------------------------------------
@@ -664,13 +664,13 @@ QList<QVariantHash> ViewManager::saveSplitterRecursively(ViewSplitter *viewSplit
 /// \param projectId
 /// \param treeItemId
 /// Open only one view for this window.
-void ViewManager::openSpecificView(const QString &pageType, int projectId, int treeItemId)
+void ViewManager::openSpecificView(const QString &pageType, const TreeItemAddress &treeItemAddress)
 {
         this->clear();
 
-        QTimer::singleShot(20, this, [this, pageType, projectId, treeItemId](){
+        QTimer::singleShot(20, this, [this, pageType, treeItemAddress](){
 
-        openViewAtCurrentViewHolder(pageType, projectId, treeItemId);
+        openViewAtCurrentViewHolder(pageType, treeItemAddress);
 
         });
 }

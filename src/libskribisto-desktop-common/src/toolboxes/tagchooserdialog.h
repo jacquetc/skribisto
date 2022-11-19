@@ -1,6 +1,7 @@
 #ifndef TAGCHOOSERDIALOG_H
 #define TAGCHOOSERDIALOG_H
 
+#include "treeitemaddress.h"
 #include <QDialog>
 
 namespace Ui {
@@ -12,7 +13,7 @@ class TagChooserDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit TagChooserDialog(QWidget *parent, int projectId, int treeItemId);
+    explicit TagChooserDialog(QWidget *parent, const TreeItemAddress &treeItemAddress);
     ~TagChooserDialog();
 
 public slots:
@@ -22,7 +23,8 @@ public slots:
 
 private:
     Ui::TagChooserDialog *ui;
-    int m_projectId, m_treeItemId;
+    TreeItemAddress m_treeItemAddress;
+    int m_projectId;
 
 };
 

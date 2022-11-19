@@ -8,6 +8,7 @@
 #include "skribisto_backend_global.h"
 
 #include "interfaces/invokablecommandgroupinterface.h"
+#include "treeitemaddress.h"
 
 #define tagCommands TagCommands::instance()
 
@@ -32,10 +33,10 @@ public:
     void setTagTextColor(int projectId, int tagId, const QColor &color);
     void removeTag(int projectId, int tagId);
     void removeSeveralTags(int projectId, QList<int> tagIds);
-    void setTagRelationship(int projectId, int treeItemId, int tagId);
-    void removeTagRelationship(int projectId, int treeItemId, int tagId);
-    void setSeveralTagsRelationship(int projectId, int treeItemId, QList<int> tagIds);
-    void removeSeveralTagsRelationship(int projectId, int treeItemId, QList<int> tagIds);
+    void setTagRelationship(const TreeItemAddress &treeItemAddress, int tagId);
+    void removeTagRelationship(const TreeItemAddress &treeItemAddress, int tagId);
+    void setSeveralTagsRelationship(const TreeItemAddress &treeItemAddress, QList<int> tagIds);
+    void removeSeveralTagsRelationship(const TreeItemAddress &treeItemAddress, QList<int> tagIds);
 
 signals:
 
@@ -120,7 +121,7 @@ private:
     int m_projectId, m_tagId;
     QString m_name;
     QVariantMap m_savedTagValues;
-    QList<int> m_relatedTreeItemIds;
+    QList<TreeItemAddress> m_relatedTreeItemIds;
 
 
 };
@@ -132,12 +133,13 @@ private:
 class SetTagRelationshipCommand : public Command
 {
 public:
-    SetTagRelationshipCommand(int projectId, int treeItemId, int tagId);
+    SetTagRelationshipCommand(const TreeItemAddress &treeItemAddress, int tagId);
     void undo();
     void redo();
 private:
     int tagId;
-    int m_projectId, m_treeItemId, m_tagId;
+    TreeItemAddress m_treeItemAddress;
+    int m_tagId;
 };
 
 //------------------------------------------------------------------------------------------------------------
@@ -146,12 +148,13 @@ private:
 class RemoveTagRelationshipCommand : public Command
 {
 public:
-    RemoveTagRelationshipCommand(int projectId, int treeItemId, int tagId);
+    RemoveTagRelationshipCommand(const TreeItemAddress &treeItemAddress, int tagId);
     void undo();
     void redo();
 private:
     int tagId;
-    int m_projectId, m_treeItemId, m_tagId;
+    TreeItemAddress m_treeItemAddress;
+    int m_tagId;
 };
 
 #endif // TAGCOMMANDS_H

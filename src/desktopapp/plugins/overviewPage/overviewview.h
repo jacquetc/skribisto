@@ -36,7 +36,7 @@ private:
     QModelIndex pathToIndex(const Path &path);
     Ui::OverviewView *centralWidgetUi;
     OverviewProxyModel *m_overviewProxyModel;
-    int m_targetTreeItemId;
+    TreeItemAddress m_targetTreeItemAddress;
     QModelIndex m_currentModelIndex;
     QAction *m_addItemAfterAction, *m_addItemBeforeAction, *m_addSubItemAction,
     *m_openItemAction, *m_openItemInAnotherViewAction, *m_openItemInANewWindowAction, *m_renameAction, *m_sendToTrashAction, *m_copyItemsAction, *m_cutItemsAction, *m_pasteItemsAction;

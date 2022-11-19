@@ -25,6 +25,7 @@
 #include <QString>
 #include <QVariantMap>
 #include "skrcoreinterface.h"
+#include "treeitemaddress.h"
 
 
 class PageInterface : public SKRCoreInterface {
@@ -40,8 +41,7 @@ public:
 
     virtual QVariantMap propertiesForCreationOfTreeItem(const QVariantMap &customProperties = QVariantMap()) const = 0;
 
-    virtual void      updateCharAndWordCount(int  projectId,
-                                             int  treeItemId,
+    virtual void      updateCharAndWordCount(const TreeItemAddress &treeItemAddress,
                                              bool sameThread = false) {}
 
 protected:

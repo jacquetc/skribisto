@@ -31,6 +31,7 @@
 
 #include "skrresult.h"
 #include "skribisto_data_global.h"
+#include "treeitemaddress.h"
 
 class EXPORT SKRPropertyHub : public QObject {
     Q_OBJECT
@@ -47,16 +48,14 @@ public:
     QList<QVariantMap> save(int projectId) const;
     SKRResult restore(int projectId, QList<QVariantMap> allValues);
 
-    Q_INVOKABLE SKRResult setProperty(int            projectId,
-                                      int            treeItemCode,
+    Q_INVOKABLE SKRResult setProperty(const TreeItemAddress &treeItemAddress,
                                       const QString& name,
                                       const QString& value,
                                       bool           isSystem                     = false,
                                       bool           isSilent                     = false,
                                       bool           triggerProjectModifiedSignal = true);
     int                   getLastAddedId();
-    SKRResult             addProperty(int projectId,
-                                      int treeItemCode,
+    SKRResult             addProperty(const TreeItemAddress &treeItemAddress,
                                       int imposedPropertyId = -1);
     Q_INVOKABLE SKRResult removeProperty(int projectId,
                                          int propertyId);
@@ -75,10 +74,10 @@ public:
                                   const QString& name);
     QString               getName(int projectId,
                                   int propertyId);
-    SKRResult             setPaperCode(int projectId,
+    SKRResult             setTreeItemCode(int projectId,
                                        int propertyId,
                                        int treeItemCode);
-    int                   getPaperCode(int projectId,
+    int                   getTreeItemCode(int projectId,
                                        int propertyId);
     SKRResult             setCreationDate(int              projectId,
                                           int              propertyId,
@@ -100,23 +99,18 @@ public:
                                       bool isSilent);
     bool                  getIsSilent(int projectId,
                                       int propertyId) const;
-    bool                  propertyExists(int            projectId,
-                                         int            treeItemCode,
+    bool                  propertyExists(const TreeItemAddress &treeItemAddress,
                                          const QString& name);
-    Q_INVOKABLE int       findPropertyId(int            projectId,
-                                         int            treeItemCode,
+    Q_INVOKABLE int       findPropertyId(const TreeItemAddress &treeItemAddress,
                                          const QString& name);
-    QString               getProperty(int            projectId,
-                                      int            treeItemCode,
+    QString               getProperty(const TreeItemAddress &treeItemAddress,
                                       const QString& name) const;
-    Q_INVOKABLE QString   getProperty(int            projectId,
-                                      int            treeItemCode,
+    Q_INVOKABLE QString   getProperty(const TreeItemAddress &treeItemAddress,
                                       const QString& name,
                                       const QString& defaultValue) const;
     QString            getPropertyById(int projectId,
                                        int propertyId) const;
-    int                getPropertyId(int            projectId,
-                                     int            treeItemCode,
+    int                getPropertyId(const TreeItemAddress &treeItemAddress,
                                      const QString& name) const;
     QHash<int, QString>getAllNames(int projectId) const;
     QHash<int, QString>getAllValues(int projectId) const;

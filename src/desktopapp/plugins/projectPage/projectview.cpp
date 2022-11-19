@@ -48,7 +48,7 @@ QList<Toolbox *> ProjectView::toolboxes()
 
     OutlineToolbox *outlineToolbox = new OutlineToolbox;    toolboxes.append(outlineToolbox);
     connect(this, &View::initialized, outlineToolbox, &Toolbox::setIdentifiersAndInitialize);
-    outlineToolbox->setIdentifiersAndInitialize(this->projectId(), this->treeItemId());
+    outlineToolbox->setIdentifiersAndInitialize(this->treeItemAddress());
 
     return toolboxes;
 

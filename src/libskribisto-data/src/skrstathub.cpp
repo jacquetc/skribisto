@@ -4,10 +4,10 @@
 SKRStatHub::SKRStatHub(QObject *parent) : QObject(parent)
 {
     connect(skrdata->treeHub(), &SKRTreeHub::trashedChanged,
-            this, &SKRStatHub::updateTreeItemCounts);
+            this, &SKRStatHub::updateTreeItemCounts, Qt::QueuedConnection);
 
     connect(skrdata->treeHub(), &SKRTreeHub::treeItemRemoved,
-            this, &SKRStatHub::removeTreeItemFromStat);
+            this, &SKRStatHub::removeTreeItemFromStat, Qt::QueuedConnection);
 
     connect(skrdata->treePropertyHub(), &SKRPropertyHub::propertyChanged, this, [this]( int projectId,
             int            propertyId,
@@ -16,62 +16,64 @@ SKRStatHub::SKRStatHub(QObject *parent) : QObject(parent)
             const QString& value)
     {
         if (name == "printable")
-            updateTreeItemCounts(projectId, treeItemCode);
+            updateTreeItemCounts(TreeItemAddress(projectId, treeItemCode));
 
-    }
+    }, Qt::QueuedConnection
     );
 }
 
 int SKRStatHub::getTreeItemTotalCount(SKRStatHub::StatType type, int project)
 {
     int totalCount                                = 0;
-    QHash<int, QHash<QString, int> > treeItemHash = m_treeItemHashByProjectHash.value(project,
-                                                                                      QHash<int,
-                                                                                      QHash<QString, int> >());
 
-    QHash<int, QHash<QString, int> >::const_iterator i = treeItemHash.constBegin();
 
-    while (i != treeItemHash.constEnd()) {
-        QHash<QString, int> hash = i.value();
+    QHash<TreeItemAddress, QVariantHash>::const_iterator i = m_treeItemAddressWithDataHash.constBegin();
+    while (i != m_treeItemAddressWithDataHash.constEnd()) {
+        const TreeItemAddress &address = i.key();
+        if(address.projectId == project){
+            const QVariantHash &data = i.value();
 
-        if (!hash.value("isTrashed", 0) && hash.value("isPrintable", 1)) {
-            switch (type) {
-            case SKRStatHub::Character:
-                totalCount += hash.value("characterCount", 0);
-                break;
+            if (!data.value("isTrashed", false).toBool() && data.value("isPrintable", true).toBool()) {
+                switch (type) {
+                case SKRStatHub::Character:
+                    totalCount += data.value("characterCount", 0).toInt();
+                    break;
 
-            case SKRStatHub::Word:
-                totalCount += hash.value("wordCount", 0);
-                break;
+                case SKRStatHub::Word:
+                    totalCount += data.value("wordCount", 0).toInt();
+                    break;
+                }
             }
+
         }
+
         ++i;
     }
+
 
     return totalCount;
 }
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::updateWordStats(int  projectId,
-                                 int  treeItemId,
+void SKRStatHub::updateWordStats(const TreeItemAddress &treeItemAddress,
                                  int  wordCount,
                                  bool triggerProjectModifiedSignal)
 {
-    QHash<int, QHash<QString, int> > projectHash = m_treeItemHashByProjectHash.value(projectId);
+
+
     SKRPropertyHub *propertyHub                  = skrdata->treePropertyHub();
     SKRTreeHub     *treeHub                      = skrdata->treeHub();
 
 
     // ------------- get trashed
-    bool isTrashed = treeHub->getTrashed(projectId, treeItemId);
-    bool isPrintable = propertyHub->getProperty(projectId, treeItemId, "printable", "true") == "true" ? true : false;
+    bool isTrashed = treeHub->getTrashed(treeItemAddress);
+    bool isPrintable = propertyHub->getProperty(treeItemAddress, "printable", "true") == "true" ? true : false;
 
     // ------------- update word_count
 
     if (wordCount != -1) {
-        propertyHub->setProperty(projectId,
-                                 treeItemId,
+        propertyHub->setProperty(treeItemAddress,
                                  "word_count",
                                  QString::number(wordCount),
                                  true,
@@ -80,86 +82,92 @@ void SKRStatHub::updateWordStats(int  projectId,
 
     // ------------- update general stats
 
-    QHash<QString, int> treeItemHash = projectHash.value(treeItemId);
+
+
+
+    QVariantHash data = m_treeItemAddressWithDataHash.value(treeItemAddress);
 
     if (wordCount != -1) {
-        treeItemHash.insert("wordCount", wordCount);
+        data.insert("wordCount", wordCount);
     }
-    treeItemHash.insert("isTrashed", isTrashed);
-    treeItemHash.insert("isPrintable", isPrintable);
-    projectHash.insert(treeItemId, treeItemHash);
+    data.insert("isTrashed", isTrashed);
+    data.insert("isPrintable", isPrintable);
 
-    int totalCount = 0;
+    m_treeItemAddressWithDataHash.insert(treeItemAddress, data);
 
-    m_treeItemHashByProjectHash.insert(projectId, projectHash);
-    totalCount = getTreeItemTotalCount(SKRStatHub::Word, projectId);
-
-    emit statsChanged(SKRStatHub::Word, projectId, totalCount);
+    int totalCount = getTreeItemTotalCount(SKRStatHub::Word, treeItemAddress.projectId);
+    emit statsChanged(SKRStatHub::Word, treeItemAddress.projectId, totalCount);
 
 
     // -------------update parents' charCountWithChildren:
 
     // get all ancestors
-    QList<int> ancestors = treeHub->getAllAncestors(projectId, treeItemId);
+    QList<TreeItemAddress> ancestors = treeHub->getAllAncestors(treeItemAddress);
 
-    ancestors.prepend(treeItemId);
+    ancestors.prepend(treeItemAddress);
 
     // for each ancestor, get all children
 
-    for (int ancestorId : qAsConst(ancestors)) {
-        QList<int> children = treeHub->getAllChildren(projectId, ancestorId);
+
+    int timerCounter = 1;
+    for (const TreeItemAddress &ancestorId : qAsConst(ancestors)) {
+
+        QList<TreeItemAddress> children = treeHub->getAllChildren(ancestorId);
+
 
         // remove trashed
-        QMutableListIterator<int> i(children);
+        QMutableListIterator<TreeItemAddress> i(children);
 
         while (i.hasNext()) {
-            int childId                   = i.next();
-            QHash<QString, int> childHash = projectHash.value(childId, QHash<QString, int>());
+            TreeItemAddress childId                   = i.next();
 
-            if (childHash.value("isTrashed", 0) || !childHash.value("isPrintable", 1)) {
+            const QVariantHash &data = m_treeItemAddressWithDataHash.value(childId, QVariantHash());
+            if (data.value("isTrashed", false).toBool() || !data.value("isPrintable", true).toBool()) {
                 i.remove();
             }
         }
 
         int totalChildrenCount = 0;
 
-        for (int childId : qAsConst(children)) {
-            QHash<QString, int> childHash = projectHash.value(childId, QHash<QString, int>());
+        for (const TreeItemAddress &childId : qAsConst(children)) {
+            const QVariantHash &childData = m_treeItemAddressWithDataHash.value(childId, QVariantHash());
 
-            totalChildrenCount += childHash.value("wordCount", 0);
+            totalChildrenCount += childData.value("wordCount", 0).toInt();
         }
 
         // add ancestor count
-        QHash<QString, int> ancestorHash = projectHash.value(ancestorId, QHash<QString, int>());
-        totalChildrenCount += ancestorHash.value("wordCount", 0);
+        const QVariantHash &ancestorData = m_treeItemAddressWithDataHash.value(ancestorId, QVariantHash());
+        totalChildrenCount += ancestorData.value("wordCount", 0).toInt();
 
         // set property
 
-        propertyHub->setProperty(projectId, ancestorId, "word_count_with_children",
+        QTimer::singleShot(50 + timerCounter * 50, this, [=](){
+            propertyHub->setProperty(ancestorId, "word_count_with_children",
                                  QString::number(totalChildrenCount), true, triggerProjectModifiedSignal);
+        });
     }
+
 }
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::updateCharacterStats(int  projectId,
-                                      int  treeItemId,
+void SKRStatHub::updateCharacterStats(const TreeItemAddress &treeItemAddress,
                                       int  characterCount,
                                       bool triggerProjectModifiedSignal)
 {
-    QHash<int, QHash<QString, int> > projectHash = m_treeItemHashByProjectHash.value(projectId);
+
     SKRPropertyHub *propertyHub                  = skrdata->treePropertyHub();
     SKRTreeHub     *treeHub                      = skrdata->treeHub();
 
+
     // ------------- get trashed
-    bool isTrashed = treeHub->getTrashed(projectId, treeItemId);
-    bool isPrintable = propertyHub->getProperty(projectId, treeItemId, "printable", "true") == "true" ? true : false;
+    bool isTrashed = treeHub->getTrashed(treeItemAddress);
+    bool isPrintable = propertyHub->getProperty(treeItemAddress, "printable", "true") == "true" ? true : false;
 
     // ------------- update char_count
 
     if (characterCount != -1) {
-        propertyHub->setProperty(projectId,
-                                 treeItemId,
+        propertyHub->setProperty(treeItemAddress,
                                  "char_count",
                                  QString::number(characterCount),
                                  true,
@@ -168,84 +176,79 @@ void SKRStatHub::updateCharacterStats(int  projectId,
 
     // ------------- update general stats
 
-    QHash<QString, int> treeItemHash = projectHash.value(treeItemId);
+
+    QVariantHash data = m_treeItemAddressWithDataHash.value(treeItemAddress);
 
     if (characterCount != -1) {
-        treeItemHash.insert("characterCount", characterCount);
+        data.insert("wordCount", characterCount);
     }
+    data.insert("isTrashed", isTrashed);
+    data.insert("isPrintable", isPrintable);
 
-    treeItemHash.insert("isTrashed", isTrashed);
-    treeItemHash.insert("isPrintable", isPrintable);
-    projectHash.insert(treeItemId, treeItemHash);
+    m_treeItemAddressWithDataHash.insert(treeItemAddress, data);
 
-    int totalCount = 0;
-
-    m_treeItemHashByProjectHash.insert(projectId, projectHash);
-    totalCount = getTreeItemTotalCount(SKRStatHub::Character, projectId);
-
-    emit statsChanged(SKRStatHub::Character, projectId, totalCount);
+    int totalCount = getTreeItemTotalCount(SKRStatHub::Word, treeItemAddress.projectId);
+    emit statsChanged(SKRStatHub::Word, treeItemAddress.projectId, totalCount);
 
     // -------------update parents' charCountWithChildren:
 
     // get all ancerstors
-    QList<int> ancestors = treeHub->getAllAncestors(projectId, treeItemId);
+    QList<TreeItemAddress> ancestors = treeHub->getAllAncestors(treeItemAddress);
 
-    ancestors.prepend(treeItemId);
+    ancestors.prepend(treeItemAddress);
 
     // for each ancestor, get all children
 
-    for (int ancestorId : qAsConst(ancestors)) {
-        QList<int> children = treeHub->getAllChildren(projectId, ancestorId);
+
+    for (const TreeItemAddress &ancestorId : qAsConst(ancestors)) {
+        QList<TreeItemAddress> children = treeHub->getAllChildren(ancestorId);
 
         // remove trashed
-        QMutableListIterator<int> i(children);
+        QMutableListIterator<TreeItemAddress> i(children);
 
         while (i.hasNext()) {
-            int childId                   = i.next();
-            QHash<QString, int> childHash = projectHash.value(childId, QHash<QString, int>());
+            TreeItemAddress childId                   = i.next();
 
-            if (childHash.value("isTrashed", 0) || !childHash.value("isPrintable", 1)) {
+            const QVariantHash &data = m_treeItemAddressWithDataHash.value(childId, QVariantHash());
+            if (data.value("isTrashed", false).toBool() || !data.value("isPrintable", true).toBool()) {
                 i.remove();
             }
         }
 
         int totalChildrenCount = 0;
 
-        for (int childId : qAsConst(children)) {
-            QHash<QString, int> childHash = projectHash.value(childId, QHash<QString, int>());
+        for (const TreeItemAddress &childId : qAsConst(children)) {
+            const QVariantHash &childData = m_treeItemAddressWithDataHash.value(childId, QVariantHash());
 
-            totalChildrenCount += childHash.value("characterCount", 0);
+            totalChildrenCount += childData.value("characterCount", 0).toInt();
         }
 
         // add ancestor count
-        QHash<QString, int> ancestorHash = projectHash.value(ancestorId, QHash<QString, int>());
-        totalChildrenCount += ancestorHash.value("characterCount", 0);
+        const QVariantHash &ancestorData = m_treeItemAddressWithDataHash.value(ancestorId, QVariantHash());
+        totalChildrenCount += ancestorData.value("characterCount", 0).toInt();
 
         // set property
 
-        propertyHub->setProperty(projectId, ancestorId, "char_count_with_children",
+        propertyHub->setProperty(ancestorId, "char_count_with_children",
                                  QString::number(totalChildrenCount), true, triggerProjectModifiedSignal);
     }
 }
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::updateTreeItemCounts(int projectId, int treeItemId)
+void SKRStatHub::updateTreeItemCounts(const TreeItemAddress &treeItemAddress)
 {
-    updateCharacterStats(projectId, treeItemId);
-    updateWordStats(projectId, treeItemId);
+    updateCharacterStats(treeItemAddress);
+    updateWordStats(treeItemAddress);
 }
 
 // ---------------------------------------------------------------------------------
 
-void SKRStatHub::removeTreeItemFromStat(int projectId, int treeItemId)
+void SKRStatHub::removeTreeItemFromStat(const TreeItemAddress &treeItemAddress)
 {
     //  needed for cleaner calculation
-    updateTreeItemCounts(projectId, treeItemId);
+    updateTreeItemCounts(treeItemAddress);
 
     // delete ref to treeItemId
-    QHash<int, QHash<QString, int> > projectHash = m_treeItemHashByProjectHash.value(projectId);
-
-    projectHash.remove(treeItemId);
-    m_treeItemHashByProjectHash.insert(projectId, projectHash);
+    m_treeItemAddressWithDataHash.remove(treeItemAddress);
 }

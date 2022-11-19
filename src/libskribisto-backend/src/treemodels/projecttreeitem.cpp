@@ -9,26 +9,25 @@ m_invalidatedRoles(), m_isRootItem(false), otherPropertiesIncrement(0)
 
 
     m_data.insert(Roles::ProjectIdRole,       -2);
-    m_data.insert(Roles::TreeItemIdRole,      -2);
+    m_data.insert(Roles::TreeItemAddressRole, QVariant::fromValue(TreeItemAddress()));
     m_data.insert(Roles::IndentRole,          -2);
     m_data.insert(Roles::SortOrderRole, 99999999);
 }
 
-ProjectTreeItem::ProjectTreeItem(int projectId, int treeItemId) :
+ProjectTreeItem::ProjectTreeItem(const TreeItemAddress &treeItemAddress) :
 
     m_invalidatedRoles(), m_isRootItem(false), otherPropertiesIncrement(0)
 {
     m_treeHub     = skrdata->treeHub();
     m_propertyHub = skrdata->treePropertyHub();
 
-    m_data.insert(Roles::ProjectIdRole,   projectId);
-    m_data.insert(Roles::TreeItemIdRole, treeItemId);
+    m_data.insert(Roles::ProjectIdRole,   treeItemAddress.projectId);
+    m_data.insert(Roles::TreeItemAddressRole, QVariant::fromValue(treeItemAddress));
 
     this->invalidateAllData();
 }
 
-ProjectTreeItem::ProjectTreeItem(int projectId,
-                         int treeItemId,
+ProjectTreeItem::ProjectTreeItem(const TreeItemAddress &treeItemAddress,
                          int indent,
                          int sortOrder) :
 
@@ -37,8 +36,8 @@ ProjectTreeItem::ProjectTreeItem(int projectId,
     m_treeHub     = skrdata->treeHub();
     m_propertyHub = skrdata->treePropertyHub();
 
-    m_data.insert(Roles::ProjectIdRole,   projectId);
-    m_data.insert(Roles::TreeItemIdRole, treeItemId);
+    m_data.insert(Roles::ProjectIdRole,   treeItemAddress.projectId);
+    m_data.insert(Roles::TreeItemAddressRole, QVariant::fromValue(treeItemAddress));
     m_data.insert(Roles::IndentRole,         indent);
     m_data.insert(Roles::SortOrderRole,   sortOrder);
 
@@ -61,7 +60,7 @@ void ProjectTreeItem::invalidateAllData()
     for (int i = 0; i < metaEnum.keyCount(); ++i) {
         m_invalidatedRoles <<   metaEnum.value(i);
         m_invalidatedRoles.removeAll(ProjectTreeItem::Roles::ProjectIdRole);
-        m_invalidatedRoles.removeAll(ProjectTreeItem::Roles::TreeItemIdRole);
+        m_invalidatedRoles.removeAll(ProjectTreeItem::Roles::TreeItemAddressRole);
     }
 }
 
@@ -78,7 +77,7 @@ QVariant ProjectTreeItem::data(int role)
 
     if (m_invalidatedRoles.contains(role)) {
         int projectId  = this->projectId();
-        int treeItemId = this->treeItemId();
+        const TreeItemAddress &treeItemAddress = this->treeItemAddress();
 
 
         switch (role) {
@@ -94,90 +93,90 @@ QVariant ProjectTreeItem::data(int role)
             // useless
             break;
 
-        case Roles::TreeItemIdRole:
+        case Roles::TreeItemAddressRole:
 
             // useless
             break;
 
         case Roles::TitleRole:
-            m_data.insert(role, m_treeHub->getTitle(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->getTitle(treeItemAddress));
             break;
 
         case Roles::InternalTitleRole:
-            m_data.insert(role, m_treeHub->getInternalTitle(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->getInternalTitle(treeItemAddress));
             break;
 
         case Roles::TypeRole:
-            m_data.insert(role, m_treeHub->getType(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->getType(treeItemAddress));
             break;
 
         case Roles::LabelRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "label"));
             break;
 
         case Roles::IndentRole:
-            m_data.insert(role, m_treeHub->getIndent(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->getIndent(treeItemAddress));
             break;
 
         case Roles::SortOrderRole:
-            m_data.insert(role, m_treeHub->getSortOrder(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->getSortOrder(treeItemAddress));
             break;
 
         case Roles::SecondaryContentRole:
-            m_data.insert(role, m_treeHub->getSecondaryContent(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->getSecondaryContent(treeItemAddress));
             break;
 
         case Roles::TrashedRole:
-            m_data.insert(role, m_treeHub->getTrashed(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->getTrashed(treeItemAddress));
             break;
 
         case Roles::CreationDateRole:
-            m_data.insert(role, m_treeHub->getCreationDate(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->getCreationDate(treeItemAddress));
             break;
 
         case Roles::UpdateDateRole:
-            m_data.insert(role, m_treeHub->getUpdateDate(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->getUpdateDate(treeItemAddress));
             break;
 
         case Roles::CutCopyRole:
-            m_data.insert(role, m_treeHub->isCutCopy(projectId, treeItemId));
+            m_data.insert(role, m_treeHub->isCutCopy(treeItemAddress));
             break;
 
         case Roles::CharCountRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "char_count"));
             break;
 
         case Roles::WordCountRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "word_count"));
             break;
 
         case Roles::CharCountGoalRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "char_count_goal", "0").toInt());
             break;
 
         case Roles::WordCountGoalRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "word_count_goal", "0").toInt());
             break;
 
         case Roles::CharCountWithChildrenRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "char_count_with_children"));
             break;
 
         case Roles::WordCountWithChildrenRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "word_count_with_children"));
             break;
 
@@ -193,21 +192,21 @@ QVariant ProjectTreeItem::data(int role)
 
         case Roles::IsRenamableRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "is_renamable",
                                                      "true") == "true" ? true : false);
             break;
 
         case Roles::IsMovableRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "is_movable",
                                                      "true") == "true" ? true : false);
             break;
 
         case Roles::CanAddSiblingTreeItemRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "can_add_sibling_tree_item",
                                                      "true") == "true" ? true : false);
             break;
@@ -215,7 +214,7 @@ QVariant ProjectTreeItem::data(int role)
 
         case Roles::CanAddChildTreeItemRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "can_add_child_tree_item",
                                                      "true") == "true" ? true : false);
             break;
@@ -223,21 +222,21 @@ QVariant ProjectTreeItem::data(int role)
 
         case Roles::IsTrashableRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "is_trashable",
                                                      "true") == "true" ? true : false);
             break;
 
         case Roles::IsOpenableRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "is_openable",
                                                      "true") == "true" ? true : false);
             break;
 
         case Roles::IsCopyableRole:
             m_data.insert(role,
-                          m_propertyHub->getProperty(projectId, treeItemId,
+                          m_propertyHub->getProperty(treeItemAddress,
                                                      "is_copyable",
                                                      "true") == "true" ? true : false);
             break;
@@ -259,13 +258,13 @@ QList<int>ProjectTreeItem::dataRoles() const
 
 int ProjectTreeItem::row()
 {
-    int parentId = skrdata->treeHub()->getParentId(projectId(), treeItemId());
+    const TreeItemAddress &parentAddress = skrdata->treeHub()->getParentId(treeItemAddress());
 
-    if(parentId == -1){
+    if(!parentAddress.isValid()){
         return skrdata->projectHub()->getProjectIdList().indexOf(projectId());
     }
 
-    return skrdata->treeHub()->getAllDirectChildren(projectId(), parentId, true, true).indexOf(treeItemId());
+    return skrdata->treeHub()->getAllDirectChildren(parentAddress, true, true).indexOf(treeItemAddress());
 }
 
 bool ProjectTreeItem::isRootItem() const
@@ -280,14 +279,24 @@ void ProjectTreeItem::setIsRootItem()
     m_data.clear();
     m_invalidatedRoles.clear();
     m_data.insert(Roles::ProjectIdRole,       -2);
-    m_data.insert(Roles::TreeItemIdRole,       -2);
+    m_data.insert(Roles::TreeItemAddressRole, QVariant::fromValue(TreeItemAddress()));
     m_data.insert(Roles::IndentRole,           -2);
     m_data.insert(Roles::SortOrderRole, -90000000);
 }
 
+QPersistentModelIndex ProjectTreeItem::getModelIndex() const
+{
+    return modelIndex;
+}
+
+void ProjectTreeItem::setModelIndex(const QPersistentModelIndex &newModelIndex)
+{
+    modelIndex = newModelIndex;
+}
+
 bool ProjectTreeItem::isProjectItem()
 {
-    return this->indent() == 0  && this->treeItemId() == 0 ? true : false;
+    return this->indent() == 0  && this->treeItemAddress().itemId == 0 ? true : false;
 }
 
 int ProjectTreeItem::projectId()
@@ -295,9 +304,9 @@ int ProjectTreeItem::projectId()
     return data(Roles::ProjectIdRole).toInt();
 }
 
-int ProjectTreeItem::treeItemId()
+TreeItemAddress ProjectTreeItem::treeItemAddress()
 {
-    return data(Roles::TreeItemIdRole).toInt();
+    return data(Roles::TreeItemAddressRole).value<TreeItemAddress>();
 }
 
 int ProjectTreeItem::sortOrder()

@@ -24,14 +24,13 @@ public:
   ~View();
   virtual QList<Toolbox *> toolboxes() { return QList<Toolbox *>(); }
 
-  virtual void setIdentifiersAndInitialize(int projectId = -1,
-                                           int treeItemId = -1);
+  void setIdentifiersAndInitialize(const TreeItemAddress &treeItemAddress = TreeItemAddress());
 
   const QString &type() const;
 
   int projectId() const;
 
-  int treeItemId() const;
+  TreeItemAddress treeItemAddress() const;
 
   const QVariantMap &parameters() const;
   void setParameters(const QVariantMap &newParameters);
@@ -61,7 +60,7 @@ protected slots:
   virtual void settingsChanged(const QHash<QString, QVariant> &newSettings){};
 
 signals:
-    void initialized(int projectId, int treeItemId);
+  void initialized(const TreeItemAddress &treeItemAddress);
     void aboutToBeDestroyed();
     void uuidChanged();
     void addToHistoryCalled(View* view, QVariantMap parameters);
@@ -76,8 +75,8 @@ private:
   QUuid m_uuid;
   QString m_type;
   int m_projectId;
-  int m_treeItemId;
-  QVariantMap m_parameters;
+    TreeItemAddress m_treeItemAddress;
+    QVariantMap m_parameters;
   QAction *m_goBackAction, *m_goForwardAction;
 
   // QWidget interface

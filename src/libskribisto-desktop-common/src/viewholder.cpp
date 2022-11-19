@@ -82,14 +82,14 @@ void ViewHolder::removeView(View *view)
 
 //--------------------------------------------------------------
 
-void ViewHolder::removeViews(int projectId, int treeItemId)
+void ViewHolder::removeViews(const TreeItemAddress &treeItemAddress)
 {
     QList<View*> m_tempViewList = m_viewList;
 
-    if(treeItemId == -1){
+    if(treeItemAddress.hasOnlyProjectId()){
         for(View *view : m_tempViewList){
 
-            if(view->projectId() == projectId){
+            if(view->projectId() == treeItemAddress.projectId){
                 this->removeView(view);
             }
         }
@@ -99,7 +99,7 @@ void ViewHolder::removeViews(int projectId, int treeItemId)
 
         for(View *view : m_tempViewList){
 
-            if(view->projectId() == projectId && view->treeItemId() == treeItemId){
+            if(view->treeItemAddress() == treeItemAddress){
                 this->removeView(view);
             }
         }
@@ -344,20 +344,16 @@ void ViewHolder::dropEvent(QDropEvent *event)
 {
     if(event->mimeData()->hasFormat("application/x-navigationtreeitem-list")){
 
-        QList< QPair<int, int> > pairList;
+        QList< TreeItemAddress >  sourceTreeItemAddresses;
         QByteArray byteArray = event->mimeData()->data("application/x-navigationtreeitem-list");
         QDataStream stream(&byteArray, QIODevice::ReadOnly);
-        stream >> pairList;
+        stream >> sourceTreeItemAddresses;
 
-        QPair<int, int> pair = pairList.first();
 
-        int sourceProjectId = pair.first;
-        int sourceTreeItemId = pair.second;
-
-        QString type = skrdata->treeHub()->getType(sourceProjectId, sourceTreeItemId);
+        QString type = skrdata->treeHub()->getType(sourceTreeItemAddresses.first());
 
         ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewAt(this, type, sourceProjectId, sourceTreeItemId);
+        viewManager->openViewAt(this, type, sourceTreeItemAddresses.first());
 
         this->setCursor(QCursor(Qt::ArrowCursor));
         event->acceptProposedAction();

@@ -2,6 +2,7 @@
 #define PAGETYPEICONINTERFACE_H
 
 #include "command.h"
+#include "treeitemaddress.h"
 #include <QObject>
 #include <QString>
 
@@ -11,7 +12,7 @@ public:
   virtual ~PageTypeIconInterface() {}
 
     virtual QString pageType() const       = 0;
-  virtual QString pageTypeIconUrl(int projectId, int treeItemId) const = 0;
+  virtual QString pageTypeIconUrl(const TreeItemAddress &treeItemAddress) const = 0;
 };
 
 #define PageTypeIconInterface_iid "com.skribisto.PageTypeIconInterface/1.0"

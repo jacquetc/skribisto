@@ -26,9 +26,9 @@ QList<Toolbox *> FolderView::toolboxes()
 
     OutlineToolbox *outlineToolbox = new OutlineToolbox;    toolboxes.append(outlineToolbox);
     connect(this, &View::initialized, outlineToolbox, &Toolbox::setIdentifiersAndInitialize);
-    outlineToolbox->setIdentifiersAndInitialize(this->projectId(), this->treeItemId());
+    outlineToolbox->setIdentifiersAndInitialize(this->treeItemAddress());
 
-    TagToolbox *tagToolbox = new TagToolbox(nullptr, this->projectId(), this->treeItemId());
+    TagToolbox *tagToolbox = new TagToolbox(nullptr, this->treeItemAddress());
     toolboxes.append(tagToolbox);
 
     return toolboxes;

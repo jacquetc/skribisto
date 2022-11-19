@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include "view.h"
-#include "text/highlighter.h"
+#include "skrwordmeter.h"
 
 namespace Ui {
 class TextView;
@@ -31,6 +31,7 @@ private:
     QTimer *m_saveTimer, *m_historyTimer;
     bool m_wasModified;
     int m_oldCursorPosition;
+    SKRWordMeter *m_localWordMeter;
 
     void saveTextState();
     void connectSaveConnection();
@@ -40,8 +41,6 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
     void settingsChanged(const QHash<QString, QVariant> &newSettings) override;
-
-
 
     // View interface
 public:

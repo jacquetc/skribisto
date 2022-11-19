@@ -1,6 +1,7 @@
 #ifndef OVERVIEWPROXYMODEL_H
 #define OVERVIEWPROXYMODEL_H
 
+#include "treeitemaddress.h"
 #include <QSortFilterProxyModel>
 
 class OverviewProxyModel : public QSortFilterProxyModel
@@ -22,7 +23,7 @@ public:
 
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
-    QModelIndex getModelIndex(int projectId, int treeItemId) const;
+    QModelIndex getModelIndex(const TreeItemAddress &treeItemAddress) const;
 private:
 
     // QSortFilterProxyModel interface

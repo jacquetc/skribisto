@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QDateTime>
 #include "skribisto_backend_global.h"
 #include "skrresult.h"
 

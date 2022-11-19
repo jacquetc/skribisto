@@ -49,13 +49,13 @@ TreeItemCreationParametersWidget *SectionPage::pageCreationParametersWidget() co
 
 // ---------------------------------------------------
 
-QString SectionPage::pageTypeIconUrl(int projectId, int treeItemId) const {
+QString SectionPage::pageTypeIconUrl(const TreeItemAddress &treeItemAddress) const {
 
-    if(projectId == -1 && treeItemId == -1){
+    if(!treeItemAddress.isValid()){
         return ":/icons/backup/bookmark-new.svg";
     }
 
-    QString section_type = skrdata->treePropertyHub()->getProperty(projectId, treeItemId, "section_type", "separator");
+    QString section_type = skrdata->treePropertyHub()->getProperty(treeItemAddress, "section_type", "separator");
 
 
     if (section_type == "book-beginning") {
@@ -91,19 +91,18 @@ QVariantMap SectionPage::propertiesForCreationOfTreeItem(const QVariantMap &cust
 
 // ---------------------------------------------------
 
-void SectionPage::updateCharAndWordCount(int projectId, int treeItemId, bool sameThread)
+void SectionPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread)
 {}
 
 // ---------------------------------------------------
-QTextDocumentFragment SectionPage::generateExporterTextFragment(int                projectId,
-                                                                int                treeItemId,
+QTextDocumentFragment SectionPage::generateExporterTextFragment(const TreeItemAddress &treeItemAddress,
                                                                 const QVariantMap& exportProperties,
                                                                 SKRResult        & result) const
 {
     MarkdownTextDocument document;
-    QString sectionType = skrdata->treePropertyHub()->getProperty(projectId, treeItemId, "section_type", "separator");
+    QString sectionType = skrdata->treePropertyHub()->getProperty(treeItemAddress, "section_type", "separator");
 
-    int indent = skrdata->treeHub()->getIndent(projectId, treeItemId);
+    int indent = skrdata->treeHub()->getIndent(treeItemAddress);
 
     QFont font;
     font.setFamily(exportProperties.value("font_family", "Times New Roman").toString());
@@ -129,7 +128,7 @@ QTextDocumentFragment SectionPage::generateExporterTextFragment(int             
     QTextCharFormat charFormat;
     charFormat.setFont(font, QTextCharFormat::FontPropertiesSpecifiedOnly);
 
-    QString title = skrdata->treeHub()->getTitle(projectId, treeItemId);
+    QString title = skrdata->treeHub()->getTitle(treeItemAddress);
 
     if(sectionType == "book-beginning" || sectionType == "chapter") {
         document.setSkribistoMarkdown(title);

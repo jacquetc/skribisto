@@ -42,6 +42,9 @@ public:
 public slots:
     void adaptScollBarRange(int min, int max);
 
+signals:
+    void activeFocusChanged(bool value);
+
 private slots:
     void updateFontActions();
 
@@ -67,11 +70,12 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
-    void focusOutEvent(QFocusEvent *event) override;
 
     // QWidget interface
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    void focusOutEvent(QFocusEvent *event) override;
+    void focusInEvent(QFocusEvent *event) override;
 
     // QTextEdit interface
 protected:

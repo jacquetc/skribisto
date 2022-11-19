@@ -63,10 +63,10 @@ void NovelTemplates::applyTemplate(int projectId, const QString &templateName)
         for(int i = 0; i < 15; i++){
             int sceneNumber = 1;
 
-            projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 2, "FOLDER", chapterTitle.arg(chapterNumber++));
+            projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 2, "FOLDER", chapterTitle.arg(chapterNumber));
             customProperties.clear();
             customProperties.insert("section_type", "chapter");
-            projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 3, "SECTION", chapterTitle.arg(chapterNumber),  QString(), customProperties);
+            projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 3, "SECTION", chapterTitle.arg(chapterNumber++),  QString(), customProperties);
             projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 3, "TEXT", sceneTitle.arg(sceneNumber++));
 
 
@@ -92,10 +92,10 @@ void NovelTemplates::applyTemplate(int projectId, const QString &templateName)
         for(int i = 0; i < 20; i++){
             int sceneNumber = 1;
 
-            projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 2, "FOLDER", chapterTitle.arg(chapterNumber++));
+            projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 2, "FOLDER", chapterTitle.arg(chapterNumber));
             customProperties.clear();
             customProperties.insert("section_type", "chapter");
-            projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 3, "SECTION", chapterTitle.arg(chapterNumber),  QString(), customProperties);
+            projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 3, "SECTION", chapterTitle.arg(chapterNumber++),  QString(), customProperties);
             projectTreeCommands->addTreeItemInTemplate(projectId, sortOrder++, 3, "TEXT", sceneTitle.arg(sceneNumber++));
 
 

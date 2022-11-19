@@ -541,7 +541,7 @@ void SKRTreeListModel::refreshAfterProjectIsActiveChanged(int projectId)
 
 // --------------------------------------------------------------------
 
-void SKRTreeListModel::refreshAfterIndentChanged(int projectId, int treeItemId,
+void SKRTreeListModel::refreshAfterIndentChanged(const TreeItemAddress &treeItemAddress,
                                                  int newIndent)
 {
     for (SKRTreeItem *item : qAsConst(m_allTreeItems)) {
@@ -604,7 +604,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
 {
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::titleChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            const QString& value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId, SKRTreeItem::Roles::TitleRole);
@@ -622,7 +622,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::treeItemIdChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            int value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
@@ -631,7 +631,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::indentChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            int value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
@@ -640,7 +640,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::sortOrderChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            int value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
@@ -650,7 +650,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::updateDateChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            const QDateTime& value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
@@ -659,7 +659,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::trashedChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            bool value) {
         Q_UNUSED(value)
         this->exploitSignalFromSKRData(projectId, treeItemId,
@@ -679,7 +679,7 @@ void SKRTreeListModel::connectToSKRDataSignals()
 
     m_dataConnectionsList << this->connect(skrdata->treeHub(),
                                            &SKRTreeHub::cutCopyChanged, this,
-                                           [this](int projectId, int treeItemId, bool value) {
+                                           [this](const TreeItemAddress &treeItemAddress, bool value) {
         Q_UNUSED(value)
        this->exploitSignalFromSKRData(projectId, treeItemId,
                                            SKRTreeItem::Roles::CutCopyRole);
@@ -771,7 +771,7 @@ void SKRTreeListModel::disconnectFromSKRDataSignals()
 // -----------------------------------------------------------------------------------
 
 
-QModelIndexList SKRTreeListModel::getModelIndex(int projectId, int treeItemId)
+QModelIndexList SKRTreeListModel::getModelIndex(const TreeItemAddress &treeItemAddress)
 {
     QModelIndexList list;
     QModelIndexList modelList =  this->match(this->index(0, 0,
@@ -802,7 +802,7 @@ SKRTreeItem * SKRTreeListModel::getParentTreeItem(SKRTreeItem *childItem)
 }
 
 // -----------------------------------------------------------------------------------
-SKRTreeItem * SKRTreeListModel::getItem(int projectId, int treeItemId)
+SKRTreeItem * SKRTreeListModel::getItem(const TreeItemAddress &treeItemAddress)
 {
     SKRTreeItem *result_item = nullptr;
 

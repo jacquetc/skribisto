@@ -179,6 +179,7 @@ void MainWindow::init(){
 
     m_projectDockBackend = new ProjectDockBackend(this, ui->projectDock);
 
+    themeManager->reapplyCurrentTheme();
     themeManager->scanChildrenAndAddWidgetsHoldingIcons(this);
 }
 //---------------------------------------
@@ -196,9 +197,9 @@ ViewManager *MainWindow::viewManager() const
     return m_viewManager;
 }
 
-void MainWindow::addWindowForItemId(int projectId, int treeItemId)
+void MainWindow::addWindowForItemId(const TreeItemAddress &treeItemAddress)
 {
-    windowManager->addWindowForItemId(projectId, treeItemId);
+    windowManager->addWindowForItemId(treeItemAddress);
 }
 
 void MainWindow::addWindowForProjectIndependantPageType(const QString &pageType)

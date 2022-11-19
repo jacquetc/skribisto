@@ -4,6 +4,7 @@
 #include <QObject>
 #include "skr.h"
 #include "skribisto_data_global.h"
+#include "treeitemaddress.h"
 
 
 class SKRWordMeterWorker : public QThread {
@@ -12,9 +13,8 @@ class SKRWordMeterWorker : public QThread {
 public:
 
     SKRWordMeterWorker(QObject       *parent,
-                       int            projectId,
-                       int            treeItemId,
-                       const QString& text,
+                       const TreeItemAddress &treeItemAddress,
+                       const QString&& text,
                        bool           triggerProjectModifiedSignal);
 
 public slots:
@@ -24,22 +24,17 @@ public slots:
 
 signals:
 
-    void wordCountCalculated(int  projectId,
-                             int  treeItemId,
+    void wordCountCalculated(const TreeItemAddress &treeItemAddress,
                              int  wordCount,
                              bool triggerProjectModifiedSignal);
-    void characterCountCalculated(int  projectId,
-                                  int  treeItemId,
+    void characterCountCalculated(const TreeItemAddress &treeItemAddress,
                                   int  charCount,
                                   bool triggerProjectModifiedSignal);
-    void finished();
 
 private:
 
     void run() override;
-
-    int m_projectId;
-    int m_treeItemId;
+    TreeItemAddress m_treeItemAddress;
     QString m_text;
     bool m_triggerProjectModifiedSignal;
 };
@@ -50,20 +45,17 @@ class EXPORT SKRWordMeter : public QObject {
 public:
 
     explicit SKRWordMeter(QObject *parent = nullptr);
-    void countText(int            projectId,
-                   int            treeItemId,
-                   const QString& text,
+    void countText(const TreeItemAddress &treeItemAddress,
+                   const QString&& text,
                    bool           sameThread,
                    bool           triggerProjectModifiedSignal = true);
 
 signals:
 
-    void wordCountCalculated(int  projectId,
-                             int  treeItemId,
+    void wordCountCalculated(const TreeItemAddress &treeItemAddress,
                              int  wordCount,
                              bool triggerProjectModifiedSignal);
-    void characterCountCalculated(int  projectId,
-                                  int  treeItemId,
+    void characterCountCalculated(const TreeItemAddress &treeItemAddress,
                                   int  charCount,
                                   bool triggerProjectModifiedSignal);
 

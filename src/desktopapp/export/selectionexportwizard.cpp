@@ -55,14 +55,14 @@ SelectionExportWizard::SelectionExportWizard(QWidget *parent, int projectId, boo
                 return;
             }
             ProjectTreeSelectProxyModel *selectProxyModel = static_cast<ProjectTreeSelectProxyModel *>(ui->treeView->model());
-            QList<int> checkedIdList =selectProxyModel->getCheckedIdsList();
+            QList<TreeItemAddress> checkedIdList =selectProxyModel->getCheckedIdsList();
 
             QPrinterInfo printerInfo;
             QPrinter     printer(printerInfo);
 
             QPrintPreviewDialog previewDialog(&printer);
 
-            QTextDocument *finalDocument = projectCommands->getPrintTextDocument(m_projectId, m_parameters, checkedIdList);
+            QTextDocument *finalDocument = projectCommands->getPrintTextDocument(m_parameters, checkedIdList);
 
             this->connect(&previewDialog, &QPrintPreviewDialog::paintRequested, this, [finalDocument](QPrinter *printer) {
                 finalDocument->print(printer);
@@ -92,7 +92,7 @@ SelectionExportWizard::~SelectionExportWizard()
 void SelectionExportWizard::done(int result)
 {
     ProjectTreeSelectProxyModel *selectProxyModel = static_cast<ProjectTreeSelectProxyModel *>(ui->treeView->model());
-    QList<int> checkedIdList =selectProxyModel->getCheckedIdsList();
+    QList<TreeItemAddress> checkedIdList =selectProxyModel->getCheckedIdsList();
 
     switch (result) {
     case 0:
@@ -114,7 +114,7 @@ void SelectionExportWizard::done(int result)
             QPrintDialog printDialog(&printer);
 
             if (printDialog.exec() == QDialog::Accepted) {
-                QTextDocument *finalDocument = projectCommands->getPrintTextDocument(m_projectId, m_parameters, checkedIdList);
+                QTextDocument *finalDocument = projectCommands->getPrintTextDocument(m_parameters, checkedIdList);
                 finalDocument->print(&printer);
             }
         }

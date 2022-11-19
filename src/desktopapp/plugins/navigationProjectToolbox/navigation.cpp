@@ -86,8 +86,7 @@ Navigation::Navigation(class QWidget *parent) :
 
 
         QMetaObject::invokeMethod(this->window(), "addWindowForItemId", Qt::QueuedConnection
-                                  , Q_ARG(int, m_projectId)
-                                  , Q_ARG(int, m_targetTreeItemId)
+                                  , Q_ARG(TreeItemAddress, m_targetTreeItemAddress)
                                   );
 
 
@@ -108,10 +107,10 @@ Navigation::Navigation(class QWidget *parent) :
 
         bool ok;
         QString newName = QInputDialog::getText(ui->treeView, tr("Rename"), tr("Enter a new title for the item"), QLineEdit::Normal,
-                                                skrdata->treeHub()->getTitle(m_projectId, m_targetTreeItemId), &ok);
+                                                skrdata->treeHub()->getTitle(m_targetTreeItemAddress), &ok);
 
         if(ok){
-            projectTreeCommands->renameItem(m_projectId, m_targetTreeItemId, newName);
+            projectTreeCommands->renameItem(m_targetTreeItemAddress, newName);
         }
 
     } );
@@ -131,7 +130,7 @@ Navigation::Navigation(class QWidget *parent) :
 
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
         addItemDialog->setActionType(NewTreeItemDialog::AddAfter);
-        addItemDialog->setIdentifiers(m_projectId, m_targetTreeItemId);
+        addItemDialog->setIdentifiers(m_targetTreeItemAddress);
         addItemDialog->open();
     } );
 
@@ -147,7 +146,7 @@ Navigation::Navigation(class QWidget *parent) :
 
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
         addItemDialog->setActionType(NewTreeItemDialog::AddBefore);
-        addItemDialog->setIdentifiers(m_projectId, m_targetTreeItemId);
+        addItemDialog->setIdentifiers(m_targetTreeItemAddress);
         addItemDialog->open();
     } );
 
@@ -164,12 +163,12 @@ Navigation::Navigation(class QWidget *parent) :
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
 
         addItemDialog->setActionType(NewTreeItemDialog::AddSubItem);
-        addItemDialog->setIdentifiers(m_projectId, m_targetTreeItemId);
+        addItemDialog->setIdentifiers(m_targetTreeItemAddress);
         addItemDialog->open();
 
         QObject::connect(addItemDialog, &QDialog::finished, this, [this](int result){
             if(result == QDialog::Accepted){
-            //auto modelIndex = static_cast<FilterModel *>(ui->treeView->model())->getModelIndex(m_projectId, m_targetTreeItemId);
+            //auto modelIndex = static_cast<FilterModel *>(ui->treeView->model())->getModelIndex(m_projectId, m_targetTreeItemAddress);
             ui->treeView->expand(m_currentModelIndex);
             }
         });
@@ -192,18 +191,18 @@ Navigation::Navigation(class QWidget *parent) :
         QModelIndexList indexList = ui->treeView->selectionModel()->selectedIndexes();
 
         if(indexList.size() == 1){
-            projectTreeCommands->sendItemToTrash(m_projectId, m_targetTreeItemId);
+            projectTreeCommands->sendItemToTrash(m_targetTreeItemAddress);
 
         }
         else{
             //TODO: forbid selection accross multiple projects
 
-            QList<int> targetIds;
+            QList<TreeItemAddress> targetIds;
             for(const QModelIndex &index : indexList){
-                targetIds.append(index.data(ProjectTreeItem::TreeItemIdRole).toInt());
+                targetIds.append(index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>());
             }
 
-            projectTreeCommands->sendSeveralItemsToTrash(m_projectId, targetIds);
+            projectTreeCommands->sendSeveralItemsToTrash(targetIds);
         }
 
 
@@ -236,7 +235,7 @@ Navigation::Navigation(class QWidget *parent) :
 
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
 
-        projectCommands->setActiveProject(m_projectId);
+        projectCommands->setActiveProject(m_targetTreeItemAddress.projectId);
 
     } );
 
@@ -262,12 +261,13 @@ Navigation::Navigation(class QWidget *parent) :
           int firstIndexProjectId = indexList.first().data(ProjectTreeItem::ProjectIdRole).toInt();
 
           for(const QModelIndex &index : indexList){
+              TreeItemAddress treeItemAddress = index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
               // forbid selection accross multiple projects
-              if(index.data(ProjectTreeItem::ProjectIdRole).toInt() != firstIndexProjectId){
+              if(treeItemAddress.projectId != firstIndexProjectId){
                   ui->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
               }
               // deselect project item
-              if(index.data(ProjectTreeItem::TreeItemIdRole).toInt() == 0){
+              if(treeItemAddress.itemId == 0){
                   ui->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
               }
           }
@@ -313,11 +313,11 @@ void Navigation::onCustomContextMenu(const QPoint &point)
         contextMenu->addAction(m_addItemBeforeAction);
         contextMenu->addAction(m_addItemAfterAction);
         contextMenu->addAction(m_addSubItemAction);
-        if(m_targetTreeItemId > 0){
+        if(m_targetTreeItemAddress.itemId > 0){
             contextMenu->addSeparator();
             contextMenu->addAction(m_sendToTrashAction);
         }
-        if(m_targetTreeItemId == 0){
+        if(m_targetTreeItemAddress.itemId == 0){
 
             contextMenu->addSeparator();
             contextMenu->addAction(m_setActiveProjectAction);
@@ -376,7 +376,7 @@ void Navigation::restoreExpandStates()
 void Navigation::expandProjectItems()
 {
     for(int projectId : skrdata->projectHub()->getProjectIdList()){
-        auto modelIndex = static_cast<ProjectTreeProxyModel *>(ui->treeView->model())->getModelIndex(projectId, 0);
+        auto modelIndex = static_cast<ProjectTreeProxyModel *>(ui->treeView->model())->getModelIndex(TreeItemAddress(projectId, 0));
         if(modelIndex.isValid()){
             ui->treeView->expand(modelIndex);
         }
@@ -416,8 +416,7 @@ void Navigation::setCurrentIndex(const QModelIndex &index)
 {
     if (index.isValid()) {
 
-        m_projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-        m_targetTreeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+        m_targetTreeItemAddress = index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
         m_currentModelIndex = index;
 
         m_addItemAfterAction->setEnabled(index.data(ProjectTreeItem::CanAddSiblingTreeItemRole).toBool());
@@ -425,7 +424,7 @@ void Navigation::setCurrentIndex(const QModelIndex &index)
         m_addSubItemAction->setEnabled(index.data(ProjectTreeItem::CanAddChildTreeItemRole).toBool());
         m_sendToTrashAction->setEnabled(index.data(ProjectTreeItem::IsTrashableRole).toBool());
 
-        m_setActiveProjectAction->setEnabled(m_projectId != skrdata->projectHub()->getActiveProject());
+        m_setActiveProjectAction->setEnabled(m_targetTreeItemAddress.projectId != skrdata->projectHub()->getActiveProject());
 
     }
 }
@@ -438,7 +437,7 @@ void Navigation::open(const QModelIndex &index)
         QString type = index.data(ProjectTreeItem::TypeRole).toString();
 
         ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewAtCurrentViewHolder(type, m_projectId, m_targetTreeItemId);
+        viewManager->openViewAtCurrentViewHolder(type, m_targetTreeItemAddress);
 
     }
 }
@@ -450,7 +449,7 @@ void Navigation::openInAnotherView(const QModelIndex &index)
         QString type = index.data(ProjectTreeItem::TypeRole).toString();
 
         ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewInAnotherViewHolder(type, m_projectId, m_targetTreeItemId);
+        viewManager->openViewInAnotherViewHolder(type, m_targetTreeItemAddress);
 
     }
 }
@@ -504,13 +503,13 @@ bool FilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_par
 }
 
 
-QModelIndex FilterModel::getModelIndex(int projectId, int treeItemId) const {
+QModelIndex FilterModel::getModelIndex(const TreeItemAddress &treeItemAddress) const {
     // search for index
     QModelIndex index;
     QModelIndexList list =  this->match(this->index(0, 0,
                                                     QModelIndex()),
-                                        ProjectTreeItem::Roles::TreeItemIdRole,
-                                        treeItemId,
+                                        ProjectTreeItem::Roles::TreeItemAddressRole,
+                                        QVariant::fromValue(treeItemAddress),
                                         -1,
                                         Qt::MatchFlag::MatchRecursive |
                                         Qt::MatchFlag::MatchExactly |

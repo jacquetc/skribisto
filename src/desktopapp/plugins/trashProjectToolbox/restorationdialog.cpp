@@ -43,11 +43,11 @@ RestorationDialog::RestorationDialog(QWidget *parent) :
             return;
         }
 
-        int selectedTargetFolderId = ui->treeView->selectionModel()->selection().indexes().first().data(ProjectTreeItem::TreeItemIdRole).toInt();
+        TreeItemAddress selectedTargetFolderId = ui->treeView->selectionModel()->selection().indexes().first().data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
 
         for(int row = 0 ; row < ui->itemListWidget->count(); row++){
             QListWidgetItem *item = ui->itemListWidget->item(row);
-            item->setData(Qt::UserRole + 1, selectedTargetFolderId);
+            item->setData(Qt::UserRole + 1, QVariant::fromValue(selectedTargetFolderId));
             item->setCheckState(Qt::Checked);
         }
 
@@ -60,9 +60,9 @@ RestorationDialog::RestorationDialog(QWidget *parent) :
             return;
         }
 
-        int selectedTargetFolderId = selected.indexes().first().data(ProjectTreeItem::TreeItemIdRole).toInt();
+        TreeItemAddress selectedTargetFolderId = selected.indexes().first().data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
 
-        ui->itemListWidget->currentItem()->setData(Qt::UserRole + 1, selectedTargetFolderId);
+        ui->itemListWidget->currentItem()->setData(Qt::UserRole + 1, QVariant::fromValue(selectedTargetFolderId));
         ui->itemListWidget->currentItem()->setCheckState(Qt::Checked);
         ui->applyToAllButton->setEnabled(true);
     });
@@ -73,10 +73,10 @@ RestorationDialog::RestorationDialog(QWidget *parent) :
         }
 
         bool ok;
-        int targetFolderId = current->data(Qt::UserRole + 1).toInt(&ok);
-        if(ok){
+        TreeItemAddress targetFolderId = current->data(Qt::UserRole + 1).value<TreeItemAddress>();
+        if(targetFolderId.isValid()){
 
-            QModelIndex index = m_treeModel->getModelIndex(m_projectId, targetFolderId);
+            QModelIndex index = m_treeModel->getModelIndex(targetFolderId);
             if(index.isValid()){
                 ui->treeView->selectionModel()->select(index, QItemSelectionModel::Select);
             }
@@ -97,14 +97,14 @@ RestorationDialog::~RestorationDialog()
 
 //----------------------------------------------------------
 
-const QList<int> &RestorationDialog::notRestorableIds() const
+const QList<TreeItemAddress> &RestorationDialog::notRestorableIds() const
 {
     return m_notRestorableIds;
 }
 
 //----------------------------------------------------------
 
-void RestorationDialog::setNotRestorableIds(const QList<int> &newNotRestorableIds)
+void RestorationDialog::setNotRestorableIds(const QList<TreeItemAddress> &newNotRestorableIds)
 {
     m_notRestorableIds = newNotRestorableIds;
 }
@@ -132,20 +132,20 @@ void RestorationDialog::reset()
 
     // item list:
 
-    for(int notRestorableId : m_notRestorableIds){
+    for(const TreeItemAddress &notRestorableId : m_notRestorableIds){
 
-        QString text = skrdata->treeHub()->getTitle(m_projectId, notRestorableId);
+        QString text = skrdata->treeHub()->getTitle(notRestorableId);
         QIcon icon;
-        auto *plugin = m_typeWithPlugin.value(skrdata->treeHub()->getType(m_projectId, notRestorableId), nullptr);
+        auto *plugin = m_typeWithPlugin.value(skrdata->treeHub()->getType(notRestorableId), nullptr);
             if(plugin){
-                icon = QIcon(plugin->pageTypeIconUrl(m_projectId, notRestorableId));
+                icon = QIcon(plugin->pageTypeIconUrl(notRestorableId));
             }
 
 
 
         QListWidgetItem *item = new QListWidgetItem(icon, text,ui->itemListWidget);
         item->setFlags(Qt::ItemFlag::ItemIsEnabled | Qt::ItemFlag::ItemIsUserCheckable | Qt::ItemFlag::ItemIsSelectable);
-        item->setData(Qt::UserRole, notRestorableId);
+        item->setData(Qt::UserRole, QVariant::fromValue(notRestorableId));
         item->setCheckState(Qt::Unchecked);
     }
 
@@ -176,10 +176,10 @@ void RestorationDialog::accept()
 
     for(int row = 0 ; row < ui->itemListWidget->count(); row++){
         QListWidgetItem *item = ui->itemListWidget->item(row);
-        bool ok;
-        item->data(Qt::UserRole + 1).toInt(&ok);
-        if(item->checkState() == Qt::Checked && ok){
-            QPair<int, int> pair(item->data(Qt::UserRole).toInt(), item->data(Qt::UserRole + 1).toInt());
+
+        TreeItemAddress destinationFolderAddress = item->data(Qt::UserRole + 1).value<TreeItemAddress>();
+        if(item->checkState() == Qt::Checked && destinationFolderAddress.isValid()){
+            QPair<TreeItemAddress, TreeItemAddress> pair(item->data(Qt::UserRole).value<TreeItemAddress>(), destinationFolderAddress);
 
             m_notRestorableIdForTargetFolderList.append(pair);
         }
@@ -188,9 +188,9 @@ void RestorationDialog::accept()
 
 
 
-    for(QPair<int, int> notRestorableIdForTargetFolder : m_notRestorableIdForTargetFolderList){
+    for(QPair<TreeItemAddress, TreeItemAddress> notRestorableIdForTargetFolder : m_notRestorableIdForTargetFolderList){
 
-        projectTreeCommands->restoreItemFromTrash(m_projectId, notRestorableIdForTargetFolder.first, notRestorableIdForTargetFolder.second);
+        projectTreeCommands->restoreItemFromTrash(notRestorableIdForTargetFolder.first, notRestorableIdForTargetFolder.second);
 
     }
     QDialog::accept();
@@ -266,13 +266,13 @@ void FilterModel::setProjectId(int newProjectId)
 
 
 
-QModelIndex FilterModel::getModelIndex(int projectId, int treeItemId) const {
+QModelIndex FilterModel::getModelIndex(const TreeItemAddress &treeItemAddress) const {
     // search for index
     QModelIndex index;
     QModelIndexList list =  this->match(this->index(0, 0,
                                                     QModelIndex()),
-                                        ProjectTreeItem::Roles::TreeItemIdRole,
-                                        treeItemId,
+                                        ProjectTreeItem::Roles::TreeItemAddressRole,
+                                        QVariant::fromValue(treeItemAddress),
                                         -1,
                                         Qt::MatchFlag::MatchRecursive |
                                         Qt::MatchFlag::MatchExactly |

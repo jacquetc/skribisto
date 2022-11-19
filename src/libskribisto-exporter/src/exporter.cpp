@@ -16,7 +16,7 @@ void Exporter::init()
 
 }
 
-SKRResult Exporter::exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds)
+SKRResult Exporter::exportProject(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<TreeItemAddress> treeItemAddresses)
 {
     SKRResult result("Exporter");
 
@@ -34,6 +34,22 @@ SKRResult Exporter::exportProject(int projectId, const QUrl &url, const QString 
         return result;
     }
 
+    QList<TreeItemAddress> treeItemAddressesToExport;
+    if(treeItemAddresses.isEmpty()){
+        treeItemAddressesToExport = skrdata->treeHub()->getAllIds(projectId);
+
+        QMutableListIterator<TreeItemAddress> i(treeItemAddressesToExport);
+        while (i.hasNext()) {
+            TreeItemAddress treeItemAddress = i.next();
+            if(skrdata->treeHub()->getTrashed(treeItemAddress) || skrdata->treePropertyHub()->getProperty(treeItemAddress, "printable", "true") != "true"){
+                i.remove();
+            }
+        }
+    }
+    else {
+        treeItemAddressesToExport = treeItemAddresses;
+    }
+
 
     QList<ExporterInterface *> pluginList =
             skrpluginhub->pluginsByType<ExporterInterface>();
@@ -41,7 +57,7 @@ SKRResult Exporter::exportProject(int projectId, const QUrl &url, const QString 
     bool havePlugin = false;
     for(auto *plugin : pluginList){
         if(plugin->extensions().contains(extension)){
-            result = plugin->run(projectId, url, extension, parameters, treeItemIds);
+            result = plugin->run(treeItemAddressesToExport, url, extension, parameters );
             havePlugin = true;
             break;
         }
@@ -59,15 +75,15 @@ SKRResult Exporter::exportProject(int projectId, const QUrl &url, const QString 
 
 //-----------------------------------------------------------------------------
 
-QTextDocument *Exporter::getPrintTextDocument(int projectId, const QVariantMap &parameters, QList<int> treeItemIds, SKRResult *result)
+QTextDocument *Exporter::getPrintTextDocument(QList<TreeItemAddress> treeItemAddresses, const QVariantMap &parameters, SKRResult *result)
 {
     QTextDocument *textDocument = new QTextDocument();
 
-    PLMProject *project = plmProjectManager->project(projectId);
+    PLMProject *project = plmProjectManager->project(treeItemAddresses.first().projectId);
 
     if (!project) {
         *result = SKRResult(SKRResult::Critical, "Exporter", "project_missing");
-        result->addData("projectId", projectId);
+        result->addData("projectId", treeItemAddresses.first().projectId);
         return new QTextDocument();
     }
 
@@ -91,7 +107,7 @@ QTextDocument *Exporter::getPrintTextDocument(int projectId, const QVariantMap &
         bool havePlugin = false;
         for(auto *plugin : pluginList){
             if(plugin->extensions().contains(extension)){
-                *result = plugin->run(projectId, url, extension, parameters, treeItemIds);
+                *result = plugin->run(treeItemAddresses, url, extension, parameters);
                 havePlugin = true;
                 break;
             }
@@ -99,7 +115,7 @@ QTextDocument *Exporter::getPrintTextDocument(int projectId, const QVariantMap &
 
         if(!havePlugin){
             *result = SKRResult(SKRResult::Critical, "Exporter" , "no_plugin_found");
-            result->addData("projectId", projectId);
+            result->addData("projectId", treeItemAddresses.first().projectId);
             result->addData("extension", extension);
             return new QTextDocument();
         }

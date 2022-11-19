@@ -117,11 +117,10 @@ QWidget *OutlineItemDelegate::createEditor(QWidget *parent, const QStyleOptionVi
 
 void OutlineItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
-    int projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-    int treeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+    TreeItemAddress treeItemAddress = index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
 
     TextEdit * textEdit = qobject_cast<TextEdit*>(editor);
-    textEdit->setProjectId(projectId);
+    textEdit->setProjectId(treeItemAddress.projectId);
 
     MarkdownTextDocument *document = new MarkdownTextDocument(editor);
     document->setSkribistoMarkdown(index.data(ProjectTreeItem::SecondaryContentRole).toString());
@@ -129,7 +128,7 @@ void OutlineItemDelegate::setEditorData(QWidget *editor, const QModelIndex &inde
     textEdit->document()->setDocumentMargin(0);
 
 
-    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(projectId), QString::number(treeItemId), "secondary");
+    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(treeItemAddress.projectId), QString::number(treeItemAddress.itemId), "secondary");
     textBridge->subscribeTextDocument(
                 uniqueDocumentReference,
                 textEdit->uuid(),
@@ -144,16 +143,15 @@ void OutlineItemDelegate::setEditorData(QWidget *editor, const QModelIndex &inde
 
 void OutlineItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
-    int projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-    int treeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+    TreeItemAddress treeItemAddress = index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
 
     TextEdit *textEditor = qobject_cast<TextEdit *>(editor);
     MarkdownTextDocument *document = qobject_cast<MarkdownTextDocument *>(textEditor->document());
 
-    skrdata->treeHub()->setSecondaryContent(projectId, treeItemId, document->toSkribistoMarkdown());
+    skrdata->treeHub()->setSecondaryContent(treeItemAddress, document->toSkribistoMarkdown());
 
 
-    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(projectId), QString::number(treeItemId), "secondary");
+    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(treeItemAddress.projectId), QString::number(treeItemAddress.itemId), "secondary");
     textBridge->unsubscribeTextDocument(
                 uniqueDocumentReference,
                 textEditor->uuid(),

@@ -42,8 +42,7 @@ public:
         return false;
     }
 
-    void updateCharAndWordCount(int  projectId,
-                                int  treeItemId,
+    void updateCharAndWordCount(const TreeItemAddress &treeItemAddress,
                                 bool sameThread = false) override {}
 
     // PageInterface interface

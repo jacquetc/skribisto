@@ -133,21 +133,21 @@ void TagCommands::removeSeveralTags(int projectId, QList<int> tagIds)
 
 //-------------------------------------------------------------
 
-void TagCommands::setTagRelationship(int projectId, int treeItemId, int tagId)
+void TagCommands::setTagRelationship(const TreeItemAddress &treeItemAddress, int tagId)
 {
-    m_undoStack->push(new SetTagRelationshipCommand(projectId, treeItemId, tagId));
+    m_undoStack->push(new SetTagRelationshipCommand(treeItemAddress, tagId));
 
 }
 
 //-------------------------------------------------------------
 
-void TagCommands::setSeveralTagsRelationship(int projectId, int treeItemId, QList<int> tagIds)
+void TagCommands::setSeveralTagsRelationship(const TreeItemAddress &treeItemAddress, QList<int> tagIds)
 {
 
     m_undoStack->beginMacro("Set several tag relationships");
 
     for(int tagId : tagIds){
-        m_undoStack->push(new SetTagRelationshipCommand(projectId, treeItemId, tagId));
+        m_undoStack->push(new SetTagRelationshipCommand(treeItemAddress, tagId));
 
     }
 
@@ -155,19 +155,19 @@ void TagCommands::setSeveralTagsRelationship(int projectId, int treeItemId, QLis
 }
 //-------------------------------------------------------------
 
-void TagCommands::removeTagRelationship(int projectId, int treeItemId, int tagId)
+void TagCommands::removeTagRelationship(const TreeItemAddress &treeItemAddress, int tagId)
 {
-    m_undoStack->push(new RemoveTagRelationshipCommand(projectId, treeItemId, tagId));
+    m_undoStack->push(new RemoveTagRelationshipCommand(treeItemAddress, tagId));
 }
 
 //-------------------------------------------------------------
 
-void TagCommands::removeSeveralTagsRelationship(int projectId, int treeItemId, QList<int> tagIds)
+void TagCommands::removeSeveralTagsRelationship(const TreeItemAddress &treeItemAddress, QList<int> tagIds)
 {
     m_undoStack->beginMacro("Remove several tag relationships");
 
     for(int tagId : tagIds){
-        m_undoStack->push(new RemoveTagRelationshipCommand(projectId, treeItemId, tagId));
+        m_undoStack->push(new RemoveTagRelationshipCommand(treeItemAddress, tagId));
 
     }
 
@@ -303,8 +303,8 @@ void RemoveTagCommand::undo()
         skrdata->tagHub()->restoreId(m_projectId, m_tagId, m_savedTagValues);
     }
 
-    for(int treeItemId : m_relatedTreeItemIds){
-        skrdata->tagHub()->setTagRelationship(m_projectId, treeItemId, m_tagId);
+    for(const TreeItemAddress &treeItemAddress : m_relatedTreeItemIds){
+        skrdata->tagHub()->setTagRelationship(treeItemAddress, m_tagId);
     }
 }
 
@@ -321,40 +321,40 @@ void RemoveTagCommand::redo()
 //-------------------------------------------------------------
 //-------------------------------------------------------------
 
-SetTagRelationshipCommand::SetTagRelationshipCommand(int projectId, int treeItemId, int tagId) : Command("Set tag relationship"),
-    m_projectId(projectId), m_treeItemId(treeItemId), m_tagId(tagId)
+SetTagRelationshipCommand::SetTagRelationshipCommand(const TreeItemAddress &treeItemAddress, int tagId) : Command("Set tag relationship"),
+    m_treeItemAddress(treeItemAddress), m_tagId(tagId)
 {
 
 }
 
 void SetTagRelationshipCommand::undo()
 {
-    skrdata->tagHub()->removeTagRelationship(m_projectId,m_treeItemId, m_tagId);
+    skrdata->tagHub()->removeTagRelationship(m_treeItemAddress, m_tagId);
 }
 
 void SetTagRelationshipCommand::redo()
 {
-    skrdata->tagHub()->setTagRelationship(m_projectId,m_treeItemId, m_tagId);
+    skrdata->tagHub()->setTagRelationship(m_treeItemAddress, m_tagId);
 }
 
 //-------------------------------------------------------------
 //-------------------------------------------------------------
 //-------------------------------------------------------------
 
-RemoveTagRelationshipCommand::RemoveTagRelationshipCommand(int projectId, int treeItemId, int tagId) : Command("Remove tag relationship"),
-    m_projectId(projectId), m_treeItemId(treeItemId), m_tagId(tagId)
+RemoveTagRelationshipCommand::RemoveTagRelationshipCommand(const TreeItemAddress &treeItemAddress, int tagId) : Command("Remove tag relationship"),
+    m_treeItemAddress(treeItemAddress), m_tagId(tagId)
 {
 
 }
 
 void RemoveTagRelationshipCommand::undo()
 {
-    skrdata->tagHub()->setTagRelationship(m_projectId,m_treeItemId, m_tagId);
+    skrdata->tagHub()->setTagRelationship(m_treeItemAddress, m_tagId);
 }
 
 void RemoveTagRelationshipCommand::redo()
 {
-    skrdata->tagHub()->removeTagRelationship(m_projectId,m_treeItemId, m_tagId);
+    skrdata->tagHub()->removeTagRelationship(m_treeItemAddress, m_tagId);
 }
 //-------------------------------------------------------------
 //-------------------------------------------------------------

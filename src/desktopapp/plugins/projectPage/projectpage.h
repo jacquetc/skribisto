@@ -68,20 +68,19 @@ public:
 
   bool isConstructible() const override { return false; }
 
-  QString pageTypeIconUrl(int projectId, int treeItemId) const override {
-    Q_UNUSED(projectId)
-    Q_UNUSED(treeItemId)
+  QString pageTypeIconUrl(const TreeItemAddress &treeItemAddress) const override {
+    Q_UNUSED(treeItemAddress)
     return ":/icons/backup/address-book-new.svg";
   }
 
   QVariantMap propertiesForCreationOfTreeItem(const QVariantMap &customProperties = QVariantMap()) const override;
 
-  void updateCharAndWordCount(int projectId, int treeItemId,
+  void updateCharAndWordCount(const TreeItemAddress &treeItemAddress,
                               bool sameThread = false) override;
 
   // exporter
   QTextDocumentFragment
-  generateExporterTextFragment(int projectId, int treeItemId,
+  generateExporterTextFragment(const TreeItemAddress &treeItemAddress,
                                const QVariantMap &exportProperties,
                                SKRResult &result) const override;
 

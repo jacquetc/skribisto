@@ -6,15 +6,13 @@
 #include "ui_tagchooserdialog.h"
 #include "tagitemdelegate.h"
 
-TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemId) :
+TagChooserDialog::TagChooserDialog(QWidget *parent, const TreeItemAddress &treeItemAddress) :
     QDialog(parent),
-    ui(new Ui::TagChooserDialog),
-    m_projectId(projectId),
-    m_treeItemId(treeItemId)
+    ui(new Ui::TagChooserDialog), m_treeItemAddress(treeItemAddress), m_projectId(treeItemAddress.projectId)
 {
     ui->setupUi(this);
 
-    ui->itemTagsGroupBox->setTitle(skrdata->treeHub()->getTitle(projectId, treeItemId));
+    ui->itemTagsGroupBox->setTitle(skrdata->treeHub()->getTitle(m_treeItemAddress));
 
     ui->itemTagsListWidget->setItemDelegate(new TagItemDelegate(this));
     ui->availableTagsListWidget->setItemDelegate(new TagItemDelegate(this));
@@ -44,7 +42,7 @@ TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemI
 
       if(dialog.newTagId() != -1){
           // add new tag to item
-          tagCommands->setTagRelationship(m_projectId, m_treeItemId, dialog.newTagId());
+          tagCommands->setTagRelationship(m_treeItemAddress, dialog.newTagId());
           reloadItemTags();
       }
     });
@@ -80,7 +78,7 @@ TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemI
         }
 
         if(!tagIdsToBeAdded.isEmpty()){
-            tagCommands->setSeveralTagsRelationship(m_projectId, m_treeItemId, tagIdsToBeAdded);
+            tagCommands->setSeveralTagsRelationship(m_treeItemAddress, tagIdsToBeAdded);
         }
 
         reloadAvailableTags();
@@ -98,7 +96,7 @@ TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemI
         }
 
         if(!tagIdsToBeRemoved.isEmpty()){
-            tagCommands->removeSeveralTagsRelationship(m_projectId, m_treeItemId, tagIdsToBeRemoved);
+            tagCommands->removeSeveralTagsRelationship(m_treeItemAddress, tagIdsToBeRemoved);
         }
 
         reloadAvailableTags();
@@ -117,7 +115,7 @@ TagChooserDialog::TagChooserDialog(QWidget *parent, int projectId, int treeItemI
         }
 
         if(!tagIdsToBeRemoved.isEmpty()){
-            tagCommands->removeSeveralTagsRelationship(m_projectId, m_treeItemId, tagIdsToBeRemoved);
+            tagCommands->removeSeveralTagsRelationship(m_treeItemAddress, tagIdsToBeRemoved);
         }
 
         reloadAvailableTags();
@@ -145,7 +143,7 @@ void TagChooserDialog::reloadAvailableTags()
 {
     ui->availableTagsListWidget->clear();
 
-    QList<int> itemTagIdsList = skrdata->tagHub()->getTagsFromItemId(m_projectId, m_treeItemId);
+    QList<int> itemTagIdsList = skrdata->tagHub()->getTagsFromItemId(m_treeItemAddress);
 
     for(int tagId : skrdata->tagHub()->getAllTagIds(m_projectId)){
         if(itemTagIdsList.contains(tagId)){
@@ -169,7 +167,7 @@ void TagChooserDialog::reloadItemTags()
 {
     ui->itemTagsListWidget->clear();
 
-    for (int tagId : skrdata->tagHub()->getTagsFromItemId(m_projectId, m_treeItemId)) {
+    for (int tagId : skrdata->tagHub()->getTagsFromItemId(m_treeItemAddress)) {
 
       auto item = new QListWidgetItem(
           skrdata->tagHub()->getTagName(m_projectId, tagId), ui->itemTagsListWidget);

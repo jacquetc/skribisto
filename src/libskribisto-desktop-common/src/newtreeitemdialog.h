@@ -2,6 +2,7 @@
 #define NEWTREEITEMDIALOG_H
 
 #include "skribisto_desktop_common_global.h"
+#include "treeitemaddress.h"
 #include "treeitemcreationparameterswidget.h"
 
 #include <QDialog>
@@ -21,7 +22,7 @@ public:
 
   explicit NewTreeItemDialog(QWidget *parent = nullptr);
   ~NewTreeItemDialog();
-  void setIdentifiers(int projectId = -1, int treeItemId = -1);
+  void setIdentifiers(const TreeItemAddress &treeItemAddress);
 
   NewTreeItemDialog::ActionType actionType() const;
   void setActionType(ActionType newActionType);
@@ -42,8 +43,7 @@ private:
       m_typeWithparameterWidgetHash;
   TreeItemCreationParametersWidget *m_customPropertiesWidget;
   QString m_type;
-  int m_projectId;
-  int m_treeItemId;
+  TreeItemAddress m_treeItemAddress;
   int m_numberToCreate;
 };
 

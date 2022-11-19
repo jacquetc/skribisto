@@ -2,6 +2,7 @@
 #define PROJECTTREEITEM_H
 
 #include <QObject>
+#include <QPersistentModelIndex>
 #include "skrtreehub.h"
 #include "skribisto_backend_global.h"
 
@@ -16,7 +17,7 @@ public:
         // treeItems :
         ProjectNameRole   = Qt::UserRole,
         ProjectIdRole     = Qt::UserRole + 1,
-        TreeItemIdRole    = Qt::UserRole + 2,
+        TreeItemAddressRole    = Qt::UserRole + 2,
         TitleRole         = Qt::UserRole + 3,
         InternalTitleRole = Qt::UserRole + 4,
         TypeRole          = Qt::UserRole + 5,
@@ -54,10 +55,8 @@ public:
     Q_ENUM(Roles)
 
     explicit ProjectTreeItem();
-    explicit ProjectTreeItem(int projectId,
-                             int treeItemId);
-    explicit ProjectTreeItem(int projectId,
-                         int treeItemId,
+    explicit ProjectTreeItem(const TreeItemAddress &treeItemAddress);
+    explicit ProjectTreeItem(const TreeItemAddress &treeItemAddress,
                          int indent,
                          int sortOrder);
     ~ProjectTreeItem();
@@ -68,7 +67,7 @@ public:
 
     int                 projectId();
 
-    int                 treeItemId();
+    TreeItemAddress     treeItemAddress();
     int                 sortOrder();
     int                 indent();
     Q_INVOKABLE QString name();
@@ -83,6 +82,9 @@ public:
     bool                isRootItem() const;
     void                setIsRootItem();
 
+    QPersistentModelIndex getModelIndex() const;
+    void setModelIndex(const QPersistentModelIndex &newModelIndex);
+
 signals:
 
 public slots:
@@ -95,6 +97,7 @@ private:
     QList<int>m_invalidatedRoles;
     bool m_isRootItem;
     int otherPropertiesIncrement;
+    QPersistentModelIndex modelIndex;
 };
 
 

@@ -439,7 +439,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-exporter/src/plugins/basicFormatsExporter/basicformatsexporter.h" line="63"/>
+        <location filename="../libskribisto-exporter/src/plugins/basicFormatsExporter/basicformatsexporter.h" line="62"/>
         <source>.skrib exporter</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3341,7 +3341,7 @@
 <context>
     <name>ProjectTreeCommands</name>
     <message>
-        <location filename="../libskribisto-backend/src/projecttreecommands.cpp" line="228"/>
+        <location filename="../libskribisto-backend/src/projecttreecommands.cpp" line="229"/>
         <source>Notes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5009,7 +5009,7 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="116"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="115"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="115"/>
         <source>Text page</source>
         <translation type="unfinished"></translation>

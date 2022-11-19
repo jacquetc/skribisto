@@ -18,18 +18,22 @@ OutlineToolbox::OutlineToolbox(QWidget *parent) :
     this->setFocusProxy(ui->textEdit);
 
     connect(this, &Toolbox::aboutToBeDestroyed, this, [this](){
+        ui->textEdit->blockSignals(true);
+        saveTextState();
+        if(m_saveTimer->isActive()){
+            m_saveTimer->stop();
+        }
         if(m_wasModified){
             saveContent();
         }
 
-        saveTextState();
     });
 }
 
 OutlineToolbox::~OutlineToolbox()
 {
 
-    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->projectId()), QString::number(this->treeItemId()), "secondary");
+    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->treeItemAddress().projectId), QString::number(this->treeItemAddress().itemId), "secondary");
     textBridge->unsubscribeTextDocument(
                 uniqueDocumentReference,
                 ui->textEdit->uuid(),
@@ -46,12 +50,12 @@ void OutlineToolbox::initialize()
     MarkdownTextDocument *document = new MarkdownTextDocument(this);
 
 
-   document->setSkribistoMarkdown(skrdata->treeHub()->getSecondaryContent(this->projectId(), this->treeItemId()));
+   document->setSkribistoMarkdown(skrdata->treeHub()->getSecondaryContent(this->treeItemAddress()));
 
 
     ui->textEdit->setDocument(document);
 
-    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->projectId()), QString::number(this->treeItemId()), "secondary");
+    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->treeItemAddress().projectId), QString::number(this->treeItemAddress().itemId), "secondary");
     textBridge->subscribeTextDocument(
                 uniqueDocumentReference,
                 ui->textEdit->uuid(),
@@ -67,6 +71,12 @@ void OutlineToolbox::initialize()
     connect(m_saveTimer, &QTimer::timeout, this, &OutlineToolbox::saveContent);
     QTimer::singleShot(0, this, [this](){ connectSaveConnection();});
 
+    connect(ui->textEdit, &TextEdit::activeFocusChanged, this, [this](int focus){
+        if(!focus){
+            saveContent();
+        }
+
+    });
 
     QSettings settings;
 
@@ -85,7 +95,7 @@ void OutlineToolbox::initialize()
 
     // restore cursor position
 
-    int cursorPosition = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "outlineTextCursorPosition", QString::number(this->treeItemId()), 0).toInt();
+    int cursorPosition = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "outlineTextCursorPosition", QString::number(this->treeItemAddress().itemId), 0).toInt();
 
     QTextCursor cursor(ui->textEdit->document());
     cursor.setPosition(cursorPosition);
@@ -98,7 +108,7 @@ void OutlineToolbox::saveContent()
 {
     QString markdown = static_cast<MarkdownTextDocument *>(ui->textEdit->document())->toSkribistoMarkdown();
 
-    projectTreeCommands->setContent(this->projectId(), this->treeItemId(), markdown, true);
+    projectTreeCommands->setContent(this->treeItemAddress(), markdown, true);
 
     m_wasModified = false;
 }
@@ -106,7 +116,7 @@ void OutlineToolbox::saveContent()
 
 void OutlineToolbox::saveTextState()
 {
-    SKRUserSettings::insertInProjectSettingHash(this->projectId(), "outlineTextCursorPosition", QString::number(this->treeItemId()),
+    SKRUserSettings::insertInProjectSettingHash(this->projectId(), "outlineTextCursorPosition", QString::number(this->treeItemAddress().itemId),
                                                                      ui->textEdit->textCursor().position());
 
 }
@@ -119,10 +129,13 @@ void OutlineToolbox::connectSaveConnection()
       connect(ui->textEdit, &QTextEdit::textChanged, this, [this]() {
         m_wasModified = true;
 
+        ;
         if(m_saveTimer->isActive()){
           m_saveTimer->stop();
         }
-        m_saveTimer->start();
+       if(this->hasFocus()){
+            m_saveTimer->start();
+        }
       });
 }
 

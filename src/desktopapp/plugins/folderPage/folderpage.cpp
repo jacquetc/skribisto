@@ -52,19 +52,18 @@ QVariantMap FolderPage::propertiesForCreationOfTreeItem(const QVariantMap &custo
 }
 // ---------------------------------------------------
 
-void FolderPage::updateCharAndWordCount(int projectId, int treeItemId, bool sameThread)
+void FolderPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread)
 {
 }
 
 // ---------------------------------------------------
-QTextDocumentFragment FolderPage::generateExporterTextFragment(int                projectId,
-                                                             int                treeItemId,
+QTextDocumentFragment FolderPage::generateExporterTextFragment(const TreeItemAddress &treeItemAddress,
                                                              const QVariantMap& exportProperties,
                                                              SKRResult        & result) const
 {
     MarkdownTextDocument document;
 
-    int indent = skrdata->treeHub()->getIndent(projectId, treeItemId);
+    int indent = skrdata->treeHub()->getIndent(treeItemAddress);
 
     QFont font;
     font.setFamily(exportProperties.value("font_family", "Times New Roman").toString());
@@ -83,7 +82,7 @@ QTextDocumentFragment FolderPage::generateExporterTextFragment(int              
     QTextCharFormat charFormat;
     charFormat.setFont(font, QTextCharFormat::FontPropertiesSpecifiedOnly);
 
-    QString title = skrdata->treeHub()->getTitle(projectId, treeItemId);
+    QString title = skrdata->treeHub()->getTitle(treeItemAddress);
 
     document.setSkribistoMarkdown(title);
 

@@ -16,7 +16,7 @@
 
 View::View(const QString &type, QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::View), m_type(type), m_projectId(-1), m_treeItemId(-1), m_uuid(QUuid::createUuid())
+    ui(new Ui::View), m_type(type), m_projectId(-1), m_treeItemAddress(TreeItemAddress()), m_uuid(QUuid::createUuid())
 {
     ui->setupUi(this);
 
@@ -72,10 +72,10 @@ View::View(const QString &type, QWidget *parent) :
     QAction *openInNewWindowAction = new QAction(QIcon(":/icons/backup/window-new.svg"), "Open in a new window", this);
     QObject::connect(openInNewWindowAction, &QAction::triggered, this, [this](){
 
-        if(m_treeItemId == -1 && m_projectId == -1){
+        if(m_treeItemAddress.itemId == -1 && m_projectId == -1){
             QMetaObject::invokeMethod(this->window(), "addWindowForProjectIndependantPageType", Qt::QueuedConnection, Q_ARG(QString, m_type));
         }
-        else if(m_treeItemId == -1){
+        else if(m_treeItemAddress.itemId == -1){
             QMetaObject::invokeMethod(this->window(), "addWindowForProjectDependantPageType", Qt::QueuedConnection
                                       , Q_ARG(int, m_projectId)
                                       , Q_ARG(QString, m_type)
@@ -83,8 +83,7 @@ View::View(const QString &type, QWidget *parent) :
         }
         else {
             QMetaObject::invokeMethod(this->window(), "addWindowForItemId", Qt::QueuedConnection
-                                      , Q_ARG(int, m_projectId)
-                                      , Q_ARG(int, m_treeItemId)
+                                      , Q_ARG(TreeItemAddress, m_treeItemAddress)
                                       );
         }
 
@@ -149,18 +148,17 @@ View::~View()
     delete ui;
 }
 
-//---------------------------------------
 
-void View::setIdentifiersAndInitialize(int projectId, int treeItemId)
+void View::setIdentifiersAndInitialize(const TreeItemAddress &treeItemAddress)
 {
-    m_projectId = projectId;
-    m_treeItemId = treeItemId;
+    m_projectId = treeItemAddress.projectId;
+    m_treeItemAddress = treeItemAddress;
 
     this->initialize();
 
     this->applyParameters();
 
-    emit initialized(projectId, treeItemId);
+    emit initialized(treeItemAddress);
 }
 
 void View::setCentralWidget(QWidget *widget)
@@ -204,9 +202,9 @@ void View::setSecondToolBarVisible(bool visible)
 
 //------------------------------------------------------------
 
-int View::treeItemId() const
+TreeItemAddress View::treeItemAddress() const
 {
-    return m_treeItemId;
+    return m_treeItemAddress;
 }
 
 //------------------------------------------------------------

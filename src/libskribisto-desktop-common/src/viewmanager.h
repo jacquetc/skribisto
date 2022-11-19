@@ -15,7 +15,7 @@ class SKRDESKTOPCOMMONEXPORT ViewManager : public QObject {
 public:
     explicit ViewManager(QObject *parent, QWidget *viewWidget, bool restoreViewEnabled);
     ~ViewManager();
-  void openSpecificView(const QString &pageType, int projectId, int treeItemId);
+  void openSpecificView(const QString &pageType, const TreeItemAddress &treeItemAddress);
 
   ViewHolder *split(ViewHolder *viewHolder, Qt::Orientation orientation = Qt::Horizontal);
   void removeSplit(ViewHolder *viewHolder);
@@ -26,12 +26,9 @@ public:
   void removeSplitWithView(View *view);
 
 public slots:
-  void openViewAtCurrentViewHolder(const QString &type, int projectId = -1,
-                             int treeItemId = -1);
-  void openViewInAnotherViewHolder(const QString &type, int projectId = -1,
-                             int treeItemId = -1);
-  View *openViewAt(ViewHolder *atViewHolder, const QString &type, int projectId = -1,
-                   int treeItemId = -1);
+  void openViewAtCurrentViewHolder(const QString &type, const TreeItemAddress &treeItemAddress = TreeItemAddress());
+  void openViewInAnotherViewHolder(const QString &type, const TreeItemAddress &treeItemAddress = TreeItemAddress());
+  View *openViewAt(ViewHolder *atViewHolder, const QString &type, const TreeItemAddress &treeItemAddress);
 
   View *splitForSamePage(View *view, Qt::Orientation orientation);
 
