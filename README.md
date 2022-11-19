@@ -275,9 +275,10 @@ Build and run it, optionally with --testProject
 Prerequisites (>1Go):
 ```
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak install flathub org.kde.Sdk//6.2
-flatpak install flathub org.kde.Platform//6.2
+flatpak install flathub org.kde.Sdk//6.4
+flatpak install flathub org.kde.Platform//6.4
 ```
+You can follow the setup guide for Flathub at https://flatpak.org/setup/ .
 
 Older flatpak-builder doesn't support YAML manifest files. Convert it to JSON using one of the online website easily found, then place the new file by eu.skribisto.skribisto.yml. Adapt the flatpak commands to point to this new file instead of the .yml file.
 
@@ -312,6 +313,26 @@ Later, when a new version is online, you can update with this single line:
 cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/eu.skribisto.skribisto.yml --force-clean && flatpak install local-repo eu.skribisto.skribisto -y --reinstall
 ```
 
+To run this installation of Skribisto :
+```
+flatpak run --branch=master eu.skribisto.skribisto
+```
+
+To list the installations :
+```
+flatpak list
+```
+
+To run the older but stable Skribisto :
+```
+flatpak run --branch=stable eu.skribisto.skribisto
+```
+
+To remove it:
+```
+flatpak remove eu.skribisto.skribisto
+```
+and you select the "master" skribisto so as to remove it
 
 ##### Flatpak from local source code
 
@@ -345,6 +366,27 @@ After you modified the code you want in whichever git branch you want, type this
 ```
 cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/local/eu.skribisto.skribisto.yml --force-clean && flatpak install local-repo eu.skribisto.skribisto -y --reinstall
 ```
+
+To run this installation of Skribisto :
+```
+flatpak run --branch=master eu.skribisto.skribisto
+```
+
+To list the installations :
+```
+flatpak list
+```
+
+To run the older but stable Skribisto :
+```
+flatpak run --branch=stable eu.skribisto.skribisto
+```
+
+To remove it:
+```
+flatpak remove eu.skribisto.skribisto
+```
+and you select the "master" skribisto so as to remove it
 
 ### MacOS
 
