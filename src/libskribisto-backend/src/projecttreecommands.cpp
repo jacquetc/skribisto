@@ -1,7 +1,6 @@
 #include "projecttreecommands.h"
 #include "commands.h"
 #include "interfaces/newprojecttemplateinterface.h"
-#include "interfaces/pageinterface.h"
 
 ProjectTreeCommands::ProjectTreeCommands(QObject *parent, QUndoStack *undoStack, ProjectTreeModel *treeModel)
     : QObject{parent}, m_undoStack(undoStack), m_treeModel(treeModel)
@@ -9,163 +8,165 @@ ProjectTreeCommands::ProjectTreeCommands(QObject *parent, QUndoStack *undoStack,
     m_instance = this;
     commands->subscribe(this);
     skrpluginhub->addPluginType<NewProjectTemplateInterface>();
+    m_pageInterfacePluginList = skrdata->pluginHub()->pluginsByType<PageInterface>();
+
 
 }
 ProjectTreeCommands *ProjectTreeCommands::m_instance = nullptr;
 
 
-void ProjectTreeCommands::renameItem(int projectId, int targetId, const QString &newName)
+void ProjectTreeCommands::renameItem(const TreeItemAddress &targetTreeItemAddress, const QString &newName)
 {
-    m_undoStack->push(new RenameItemCommand(projectId, targetId, newName));
+    m_undoStack->push(new RenameItemCommand(targetTreeItemAddress, newName));
 }
 
 //------------------------------------------------------------------------------------
 
-int ProjectTreeCommands::addItemAfter(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties)
+TreeItemAddress ProjectTreeCommands::addItemAfter(const TreeItemAddress &targetTreeItemAddress, const QString &type, const QString &title, const QVariantMap &properties)
 {
     m_undoStack->beginMacro("Add an item after");
 
-    auto *command = new AddItemAfterCommand(projectId, targetId, type, properties, m_treeModel);
+    auto *command = new AddItemAfterCommand(targetTreeItemAddress, type, properties, m_treeModel);
     m_undoStack->push(command);
-    int newId = command->result();
-    renameItem(projectId, newId, title);
+    TreeItemAddress newAddress = command->result();
+    renameItem(newAddress, title);
     m_undoStack->endMacro();
 
-    return newId;
+    return newAddress;
 }
 
 //------------------------------------------------------------------------------------
 
-QList<int> ProjectTreeCommands::addSeveralItemsAfter(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties)
+QList<TreeItemAddress> ProjectTreeCommands::addSeveralItemsAfter(const TreeItemAddress &targetTreeItemAddress, const QString &type, int count, const QStringList &titles, const QVariantMap &properties)
 {
-    QList<int> newIds;
+    QList<TreeItemAddress> treeItemAddresses;
 
     m_undoStack->beginMacro("Add several items after");
 
-    auto *command = new AddItemAfterCommand(projectId, targetId, type, properties, m_treeModel);
+    auto *command = new AddItemAfterCommand(targetTreeItemAddress, type, properties, m_treeModel);
     m_undoStack->push(command);
-    int newId = command->result();
-    newIds.append(newId);
-    renameItem(projectId, newId, titles.at(0));
+    TreeItemAddress newAddress = command->result();
+    treeItemAddresses.append(newAddress);
+    renameItem(newAddress, titles.at(0));
 
     for(int i = 1 ; i < count; i++){
-        command = new AddItemAfterCommand(projectId, newId, type, properties, m_treeModel);
+        command = new AddItemAfterCommand(newAddress, type, properties, m_treeModel);
         m_undoStack->push(command);
-        newId = command->result();
-        newIds.append(newId);
+        newAddress = command->result();
+        treeItemAddresses.append(newAddress);
 
 
         if(i >= titles.size()){
-            renameItem(projectId, newId, "");
+            renameItem(newAddress, "");
         }
         else {
-            renameItem(projectId, newId, titles.at(i));
+            renameItem(newAddress, titles.at(i));
         }
     }
 
     m_undoStack->endMacro();
 
-    return newIds;
+    return treeItemAddresses;
 }
 
 //------------------------------------------------------------------------------------
 
-int ProjectTreeCommands::addItemBefore(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties)
+TreeItemAddress ProjectTreeCommands::addItemBefore(const TreeItemAddress &targetTreeItemAddress, const QString &type, const QString &title, const QVariantMap &properties)
 {
     m_undoStack->beginMacro("Add an item before");
 
-    auto *command = new AddItemBeforeCommand(projectId, targetId, type, properties, m_treeModel);
+    auto *command = new AddItemBeforeCommand(targetTreeItemAddress, type, properties, m_treeModel);
     m_undoStack->push(command);
-    int newId = command->result();
-    renameItem(projectId, newId, title);
+    TreeItemAddress newAddress = command->result();
+    renameItem(newAddress, title);
 
     m_undoStack->endMacro();
 
-    return newId;
+    return newAddress;
 }
 
 //------------------------------------------------------------------------------------
 
-QList<int>  ProjectTreeCommands::addSeveralItemsBefore(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties)
+QList<TreeItemAddress>  ProjectTreeCommands::addSeveralItemsBefore(const TreeItemAddress &targetTreeItemAddress, const QString &type, int count, const QStringList &titles, const QVariantMap &properties)
 {
-    QList<int> newIds;
+    QList<TreeItemAddress> treeItemAddresses;
 
     m_undoStack->beginMacro("Add several items before");
 
-    auto *command = new AddItemBeforeCommand(projectId, targetId, type, properties, m_treeModel);
+    auto *command = new AddItemBeforeCommand(targetTreeItemAddress, type, properties, m_treeModel);
     m_undoStack->push(command);
-    int newId = command->result();
-    newIds.append(newId);
-    renameItem(projectId, newId, titles.at(0));
+    TreeItemAddress newAddress = command->result();
+    treeItemAddresses.append(newAddress);
+    renameItem(newAddress, titles.at(0));
 
     for(int i = 0 ; i < count; i++){
-        auto *command = new AddItemAfterCommand(projectId, newId, type, properties, m_treeModel);
+        auto *command = new AddItemAfterCommand(newAddress, type, properties, m_treeModel);
         m_undoStack->push(command);
-        newId = command->result();
-        newIds.append(newId);
+        newAddress = command->result();
+        treeItemAddresses.append(newAddress);
 
 
         if(i >= titles.size()){
-            renameItem(projectId, newId, "");
+            renameItem(newAddress, "");
         }
         else {
-            renameItem(projectId, newId, titles.at(i));
+            renameItem(newAddress, titles.at(i));
         }
     }
 
     m_undoStack->endMacro();
 
-    return newIds;
+    return treeItemAddresses;
 }
 
 //------------------------------------------------------------------------------------
 
-int ProjectTreeCommands::addSubItem(int projectId, int targetId, const QString &type, const QString &title, const QVariantMap &properties)
+TreeItemAddress ProjectTreeCommands::addSubItem(const TreeItemAddress &targetTreeItemAddress, const QString &type, const QString &title, const QVariantMap &properties)
 {
     m_undoStack->beginMacro("Add a sub-item");
 
-    auto *command = new AddSubItemCommand(projectId, targetId, type, properties, m_treeModel);
+    auto *command = new AddSubItemCommand(targetTreeItemAddress, type, properties, m_treeModel);
     m_undoStack->push(command);
-    int newId = command->result();
-    renameItem(projectId, newId, title);
+    TreeItemAddress newAddress = command->result();
+    renameItem(newAddress, title);
 
     m_undoStack->endMacro();
 
-    return newId;
+    return newAddress;
 
 }
 //------------------------------------------------------------------------------------
 
 
-QList<int>   ProjectTreeCommands::addSeveralSubItems(int projectId, int targetId, const QString &type, int count, const QStringList &titles, const QVariantMap &properties)
+QList<TreeItemAddress>   ProjectTreeCommands::addSeveralSubItems(const TreeItemAddress &targetTreeItemAddress, const QString &type, int count, const QStringList &titles, const QVariantMap &properties)
 {
-    QList<int> newIds;
+    QList<TreeItemAddress> treeItemAddresses;
 
     m_undoStack->beginMacro("Add several sub-items");
 
     for(int i = 0 ; i < count; i++){
-        auto *command = new AddSubItemCommand(projectId, targetId, type, properties, m_treeModel);
+        auto *command = new AddSubItemCommand(targetTreeItemAddress, type, properties, m_treeModel);
         m_undoStack->push(command);
-        int newId = command->result();
-        newIds.append(newId);
+        TreeItemAddress newAddress = command->result();
+        treeItemAddresses.append(newAddress);
 
         if(i >= titles.size()){
-            renameItem(projectId, newId, "");
+            renameItem(newAddress, "");
         }
         else {
-            renameItem(projectId, newId, titles.at(i));
+            renameItem(newAddress, titles.at(i));
         }
 
     }
 
     m_undoStack->endMacro();
 
-    return newIds;
+    return treeItemAddresses;
 }
 
 //------------------------------------------------------------------------------------
 
-void ProjectTreeCommands::setItemProperties(int projectId, int targetId, const QVariantMap &properties, bool isSystem)
+void ProjectTreeCommands::setItemProperties(const TreeItemAddress &targetTreeItemAddress, const QVariantMap &properties, bool isSystem)
 {
 
     m_undoStack->beginMacro("Set tree item properties");
@@ -174,7 +175,7 @@ void ProjectTreeCommands::setItemProperties(int projectId, int targetId, const Q
 
     while (iter.hasNext()){
         iter.next();
-        m_undoStack->push(new SetItemPropertyCommand(projectId, targetId, iter.key(), iter.value(), isSystem));
+        m_undoStack->push(new SetItemPropertyCommand(targetTreeItemAddress, iter.key(), iter.value(), isSystem));
     }
 
 
@@ -186,10 +187,10 @@ void ProjectTreeCommands::setItemProperties(int projectId, int targetId, const Q
 //------------------------------------------------------------------------------------
 
 
-void ProjectTreeCommands::moveItemsAbove(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId)
+void ProjectTreeCommands::moveItemsAbove(QList<TreeItemAddress> sourceTreeItemAddresses, const TreeItemAddress &targetTreeItemAddress)
 {
 
-    m_undoStack->push(new MoveItemsCommand(sourceProjectId, sourceIds, targetProjectId, targetId, MoveItemsCommand::Above));
+    m_undoStack->push(new MoveItemsCommand(sourceTreeItemAddresses, targetTreeItemAddress, MoveItemsCommand::Above));
 
 
 
@@ -197,48 +198,48 @@ void ProjectTreeCommands::moveItemsAbove(int sourceProjectId, QList<int> sourceI
 
 //------------------------------------------------------------------------------------
 
-void ProjectTreeCommands::moveItemsBelow(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId)
+void ProjectTreeCommands::moveItemsBelow(QList<TreeItemAddress> sourceTreeItemAddresses, const TreeItemAddress &targetTreeItemAddress)
 {
 
-    m_undoStack->push(new MoveItemsCommand(sourceProjectId, sourceIds, targetProjectId, targetId, MoveItemsCommand::Below));
+    m_undoStack->push(new MoveItemsCommand(sourceTreeItemAddresses, targetTreeItemAddress, MoveItemsCommand::Below));
 
 }
 
 //------------------------------------------------------------------------------------
 
-void ProjectTreeCommands::moveItemsAsChildOf(int sourceProjectId, QList<int> sourceIds, int targetProjectId, int targetId)
+void ProjectTreeCommands::moveItemsAsChildOf(QList<TreeItemAddress> sourceTreeItemAddresses, const TreeItemAddress &targetTreeItemAddress)
 {
 
-    m_undoStack->push(new MoveItemsCommand(sourceProjectId, sourceIds, targetProjectId, targetId, MoveItemsCommand::AsChildOf));
+    m_undoStack->push(new MoveItemsCommand(sourceTreeItemAddresses, targetTreeItemAddress, MoveItemsCommand::AsChildOf));
 
 }
 
 //------------------------------------------------------------------------------------
 
 
-int ProjectTreeCommands::addNote(int projectId, const QString &name, int targetFolderId)
+TreeItemAddress ProjectTreeCommands::addNote(int projectId, const QString &name, const TreeItemAddress &targetFolderAddress)
 {
     m_undoStack->beginMacro("Add note");
 
-    int noteFolder = -1;
-    if(targetFolderId == -1){
-        QList<int> folders = skrdata->treeHub()->getIdsWithInternalTitle(projectId, "note_folder");
+    TreeItemAddress noteFolderAddress;
+    if(!targetFolderAddress.isValid()){
+        QList<TreeItemAddress> folders = skrdata->treeHub()->getIdsWithInternalTitle(projectId, "note_folder");
 
         if(folders.isEmpty()){
-            noteFolder = this->addSubItem(projectId, 0, "FOLDER", tr("Notes"));
+            noteFolderAddress = this->addSubItem(TreeItemAddress(projectId, 0), "FOLDER", tr("Notes"));
         }
         else {
-            noteFolder = folders.first();
+            noteFolderAddress = folders.first();
         }
 
 
     }
     else {
-        noteFolder = targetFolderId;
+        noteFolderAddress = targetFolderAddress;
     }
 
 
-    int newId = this->addSubItem(projectId, noteFolder, "TEXT", name);
+    TreeItemAddress newId = this->addSubItem(noteFolderAddress, "TEXT", name);
 
 
 
@@ -249,23 +250,23 @@ int ProjectTreeCommands::addNote(int projectId, const QString &name, int targetF
 
 //------------------------------------------------------------------------------------
 
-void ProjectTreeCommands::sendItemToTrash(int projectId, int targetId)
+void ProjectTreeCommands::sendItemToTrash(const TreeItemAddress &targetTreeItemAddress)
 {
-    m_undoStack->push(new TrashItemCommand(projectId, targetId, true));
+    m_undoStack->push(new TrashItemCommand(targetTreeItemAddress, true));
 
 }
 
 //------------------------------------------------------------------------------------
 
-void ProjectTreeCommands::sendSeveralItemsToTrash(int projectId, QList<int> targetIds)
+void ProjectTreeCommands::sendSeveralItemsToTrash(QList<TreeItemAddress> targetTreeItemAddresses)
 {
 
-    QList<int> filteredOutTargets = skrdata->treeHub()->filterOutChildren(projectId, targetIds);
+    QList<TreeItemAddress> filteredOutTargets = skrdata->treeHub()->filterOutChildren(targetTreeItemAddresses);
 
     m_undoStack->beginMacro("Trash several items");
 
-    for(int targetId : filteredOutTargets){
-        m_undoStack->push(new TrashItemCommand(projectId, targetId, true));
+    for(const TreeItemAddress &targetAddress : filteredOutTargets){
+        m_undoStack->push(new TrashItemCommand(targetAddress, true));
     }
 
     m_undoStack->endMacro();
@@ -274,31 +275,31 @@ void ProjectTreeCommands::sendSeveralItemsToTrash(int projectId, QList<int> targ
 
 //------------------------------------------------------------------------------------
 
-int ProjectTreeCommands::restoreItemFromTrash(int projectId, int targetId, int forcedOriginalParentId, int forcedOriginalRow)
+TreeItemAddress ProjectTreeCommands::restoreItemFromTrash(const TreeItemAddress &targetTreeItemAddress, const TreeItemAddress &forcedOriginalParentAddress , int forcedOriginalRow)
 {
-    auto *command = new TrashItemCommand(projectId, targetId, false, forcedOriginalParentId, forcedOriginalRow);
+    auto *command = new TrashItemCommand(targetTreeItemAddress, false, forcedOriginalParentAddress, forcedOriginalRow);
 
     m_undoStack->push(command);
     if(!command->result()){
-        return targetId;
+        return targetTreeItemAddress;
     }
 
-    return 0;
+    return TreeItemAddress();
 }
 
 //------------------------------------------------------------------------------------
 
-QList<int> ProjectTreeCommands::restoreSeveralItemsFromTrash(int projectId, QList<int> targetIds)
+QList<TreeItemAddress> ProjectTreeCommands::restoreSeveralItemsFromTrash(QList<TreeItemAddress> targetTreeItemAddresses)
 {
-    QList<int> results;
+    QList<TreeItemAddress> results;
 
-    QList<int> filteredOutTargets = skrdata->treeHub()->filterOutChildren(projectId, targetIds);
+    QList<TreeItemAddress> filteredOutTargets = skrdata->treeHub()->filterOutChildren(targetTreeItemAddresses);
 
     m_undoStack->beginMacro("Restore several items");
 
     for(int i = filteredOutTargets.size() - 1 ; i >= 0 ; i-- ){
-        int targetId = filteredOutTargets.at(i);
-        auto *command = new TrashItemCommand(projectId, targetId, false);
+        TreeItemAddress targetId = filteredOutTargets.at(i);
+        auto *command = new TrashItemCommand(targetId, false);
         m_undoStack->push(command);
 
         if(!command->result()){
@@ -313,14 +314,14 @@ QList<int> ProjectTreeCommands::restoreSeveralItemsFromTrash(int projectId, QLis
 
 //------------------------------------------------------------------------------------
 
-void ProjectTreeCommands::setContent(int projectId, int targetId, const QString &content, bool isSecondary)
+void ProjectTreeCommands::setContent(const TreeItemAddress &targetTreeItemAddress, const QString &content, bool isSecondary)
 {
 
     if(isSecondary){
-        skrdata->treeHub()->setSecondaryContent(projectId, targetId, content);
+        skrdata->treeHub()->setSecondaryContent(targetTreeItemAddress, content);
     }
     else {
-        skrdata->treeHub()->setPrimaryContent(projectId, targetId, content);
+        skrdata->treeHub()->setPrimaryContent(targetTreeItemAddress, content);
     }
 }
 
@@ -331,24 +332,22 @@ void ProjectTreeCommands::emptyTrash(int projectId)
 {
     m_undoStack->clear();
 
-    QList<int> idList = skrdata->treeHub()->getAllTrashedIds(projectId);
+    QList<TreeItemAddress> idList = skrdata->treeHub()->getAllTrashedIds(projectId);
 
-    for(int id : idList){
-        skrdata->treeHub()->removeTreeItem(projectId, id);
+    for(const TreeItemAddress &address : idList){
+        skrdata->treeHub()->removeTreeItem(address);
     }
 
 }
 
 //------------------------------------------------------------------------------------
 
-void ProjectTreeCommands::updateCharAndWordCount(int projectId, int treeItemId, const QString &pageType, bool sameThread)
+void ProjectTreeCommands::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, const QString &pageType, bool sameThread)
 {
 
-    QList<PageInterface *> pluginList = skrdata->pluginHub()->pluginsByType<PageInterface>();
-
-    for (PageInterface *plugin: qAsConst(pluginList)) {
+    for (PageInterface *plugin: qAsConst(m_pageInterfacePluginList)) {
         if (pageType == plugin->pageType()) {
-            plugin->updateCharAndWordCount(projectId, treeItemId, sameThread);
+            plugin->updateCharAndWordCount(treeItemAddress, sameThread);
             break;
         }
     }
@@ -358,33 +357,32 @@ void ProjectTreeCommands::updateCharAndWordCount(int projectId, int treeItemId, 
 //------------------------------------------------------------------------------------
 
 
-int ProjectTreeCommands::addTreeItemInTemplate(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle,  const QVariantMap &custom_properties, bool renumber)
+TreeItemAddress ProjectTreeCommands::addTreeItemInTemplate(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle,  const QVariantMap &custom_properties, bool renumber)
 {
+    auto *command = new AddRawItemCommand(projectId, sortOrder, indent, type, title, internalTitle, custom_properties, renumber, m_treeModel);
+    m_undoStack->push(command);
+    TreeItemAddress newAddress = command->result();
+//    SKRResult result = skrdata->treeHub()->addTreeItem(projectId, sortOrder, indent, type, title, internalTitle, renumber);
+//    TreeItemAddress newTreeItemAddress = result.getData("treeItemAddress", QVariant::fromValue(TreeItemAddress())).value<TreeItemAddress>();
 
+//    for(auto *plugin : m_pageInterfacePluginList){
+//        if(plugin->pageType() == type){
+//            QVariantMap properties = plugin->propertiesForCreationOfTreeItem(custom_properties);
 
-    QList<PageInterface *> pluginList =
-            skrpluginhub->pluginsByType<PageInterface>();
+//            QVariantMap::const_iterator i = properties.constBegin();
+//            while (i != properties.constEnd()) {
+//                SKRResult result = skrdata->treePropertyHub()->setProperty(newTreeItemAddress, i.key() , i.value().toString(), true );
+//                ++i;
+//            }
 
+//            break;
+//        }
+//    }
 
-    SKRResult result = skrdata->treeHub()->addTreeItem(projectId, sortOrder, indent, type, title, internalTitle, renumber);
-    int newTreeItemId = result.getData("treeItemId", -1).toInt();
+    //TODO: not the more efficient way to avoid crashes:
+    //skrdata->treeHub()->treeReset(projectId);
 
-    for(auto *plugin : pluginList){
-        if(plugin->pageType() == type){
-            QVariantMap properties = plugin->propertiesForCreationOfTreeItem(custom_properties);
-
-            QVariantMap::const_iterator i = properties.constBegin();
-            while (i != properties.constEnd()) {
-                SKRResult result = skrdata->treePropertyHub()->setProperty(projectId, newTreeItemId, i.key() , i.value().toString(), true );
-                ++i;
-            }
-
-            break;
-        }
-    }
-    emit skrdata->treeHub()->treeReset(projectId);
-
-    return newTreeItemId;
+    return newAddress;
 }
 
 //------------------------------------------------------------------------------------
@@ -398,7 +396,7 @@ QUndoStack *ProjectTreeCommands::undoStack() const
 Command *ProjectTreeCommands::getCommand(const QString &action, const QVariantMap &parameters)
 {
     if(action == "rename"){
-        return new RenameItemCommand(parameters.value("projectId").toInt(), parameters.value("treeItemId").toInt(), parameters.value("name").toString());
+        return new RenameItemCommand(parameters.value("projectAddress").value<TreeItemAddress>(), parameters.value("name").toString());
     }
     return nullptr;
 

@@ -8,8 +8,8 @@
 
 #include <tagdialog.h>
 
-TagToolbox::TagToolbox(QWidget *parent, int projectId, int treeItemId)
-    : Toolbox(parent), m_projectId(projectId), m_treeItemId(treeItemId), ui(new Ui::TagToolbox) {
+TagToolbox::TagToolbox(QWidget *parent, const TreeItemAddress &treeItemAddress)
+    : Toolbox(parent), m_treeItemAddress(treeItemAddress), ui(new Ui::TagToolbox) {
   ui->setupUi(this);
 
   ui->listWidget->setItemDelegate(new TagItemDelegate(this));
@@ -35,7 +35,7 @@ TagToolbox::TagToolbox(QWidget *parent, int projectId, int treeItemId)
     }
 
     if (!tagIdsToBeRemoved.isEmpty()) {
-      tagCommands->removeSeveralTagsRelationship(m_projectId, m_treeItemId, tagIdsToBeRemoved);
+      tagCommands->removeSeveralTagsRelationship(m_treeItemAddress, tagIdsToBeRemoved);
     }
   });
 
@@ -43,7 +43,7 @@ TagToolbox::TagToolbox(QWidget *parent, int projectId, int treeItemId)
 
   connect(ui->addTagButton, &QAbstractButton::clicked, this, [this]() {
 
-      TagChooserDialog dialog(this, m_projectId, m_treeItemId);
+      TagChooserDialog dialog(this, m_treeItemAddress);
     dialog.exec();
     reloadTags();
   });
@@ -52,7 +52,7 @@ TagToolbox::TagToolbox(QWidget *parent, int projectId, int treeItemId)
 
   connect(ui->listWidget, &QListWidget::itemActivated, this,
           [this](QListWidgetItem *item) {
-            TagDialog dialog(this, m_projectId,
+            TagDialog dialog(this, m_treeItemAddress.projectId,
                              item->data(Qt::UserRole).toInt(), false);
             dialog.exec();
             reloadTags();
@@ -73,14 +73,14 @@ TagToolbox::~TagToolbox() { delete ui; }
 void TagToolbox::reloadTags() {
   ui->listWidget->clear();
 
-  for (int tagId : skrdata->tagHub()->getTagsFromItemId(m_projectId, m_treeItemId)) {
+  for (int tagId : skrdata->tagHub()->getTagsFromItemId(m_treeItemAddress)) {
 
     auto item = new QListWidgetItem(
-        skrdata->tagHub()->getTagName(m_projectId, tagId), ui->listWidget);
+        skrdata->tagHub()->getTagName(m_treeItemAddress.projectId, tagId), ui->listWidget);
     item->setData(Qt::UserRole, tagId);
 
-    item->setData(Qt::UserRole + 1 , skrdata->tagHub()->getTagTextColor(m_projectId, tagId));
-    item->setData(Qt::UserRole + 2, skrdata->tagHub()->getTagColor(m_projectId, tagId));
+    item->setData(Qt::UserRole + 1 , skrdata->tagHub()->getTagTextColor(m_treeItemAddress.projectId, tagId));
+    item->setData(Qt::UserRole + 2, skrdata->tagHub()->getTagColor(m_treeItemAddress.projectId, tagId));
 
   }
 }

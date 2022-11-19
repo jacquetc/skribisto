@@ -89,8 +89,7 @@ OverviewView::OverviewView(QWidget *parent) :
 
 
         QMetaObject::invokeMethod(this->window(), "addWindowForItemId", Qt::QueuedConnection
-                                  , Q_ARG(int, this->projectId())
-                                  , Q_ARG(int, m_targetTreeItemId)
+                                  , Q_ARG(TreeItemAddress, m_targetTreeItemAddress)
                                   );
 
 
@@ -107,9 +106,9 @@ OverviewView::OverviewView(QWidget *parent) :
         bool ok;
 
         QString newName = QInputDialog::getText(centralWidgetUi->treeView, tr("Rename"), tr("Enter a new title for the item"), QLineEdit::Normal,
-                                                skrdata->treeHub()->getTitle(this->projectId(), m_targetTreeItemId), &ok);
+                                                skrdata->treeHub()->getTitle(m_targetTreeItemAddress), &ok);
         if(ok){
-            projectTreeCommands->renameItem(this->projectId(), m_targetTreeItemId, newName);
+            projectTreeCommands->renameItem(m_targetTreeItemAddress, newName);
         }
 
     } );
@@ -124,7 +123,7 @@ OverviewView::OverviewView(QWidget *parent) :
     QObject::connect(m_addItemAfterAction, &QAction::triggered, this, [this, addItemDialog](){
         this->setCurrentIndex(centralWidgetUi->treeView->selectionModel()->currentIndex());
         addItemDialog->setActionType(NewTreeItemDialog::AddAfter);
-        addItemDialog->setIdentifiers(this->projectId(), m_targetTreeItemId);
+        addItemDialog->setIdentifiers(m_targetTreeItemAddress);
         addItemDialog->open();
     } );
 
@@ -136,7 +135,7 @@ OverviewView::OverviewView(QWidget *parent) :
     QObject::connect(m_addItemBeforeAction, &QAction::triggered, this, [this, addItemDialog](){
         this->setCurrentIndex(centralWidgetUi->treeView->selectionModel()->currentIndex());
         addItemDialog->setActionType(NewTreeItemDialog::AddBefore);
-        addItemDialog->setIdentifiers(this->projectId(), m_targetTreeItemId);
+        addItemDialog->setIdentifiers(m_targetTreeItemAddress);
         addItemDialog->open();
     } );
 
@@ -148,7 +147,7 @@ OverviewView::OverviewView(QWidget *parent) :
         this->setCurrentIndex(centralWidgetUi->treeView->selectionModel()->currentIndex());
 
         addItemDialog->setActionType(NewTreeItemDialog::AddSubItem);
-        addItemDialog->setIdentifiers(this->projectId(), m_targetTreeItemId);
+        addItemDialog->setIdentifiers(m_targetTreeItemAddress);
         addItemDialog->open();
 
         QObject::connect(addItemDialog, &QDialog::finished, this, [this](int result){
@@ -170,18 +169,18 @@ OverviewView::OverviewView(QWidget *parent) :
         QModelIndexList indexList = centralWidgetUi->treeView->selectionModel()->selectedIndexes();
 
         if(indexList.size() == 1){
-            projectTreeCommands->sendItemToTrash(this->projectId(), m_targetTreeItemId);
+            projectTreeCommands->sendItemToTrash(m_targetTreeItemAddress);
 
         }
         else{
             //TODO: forbid selection accross multiple projects
 
-            QList<int> targetIds;
+            QList<TreeItemAddress> targetIds;
             for(const QModelIndex &index : indexList){
-                targetIds.append(index.data(ProjectTreeItem::TreeItemIdRole).toInt());
+                targetIds.append(index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>());
             }
 
-            projectTreeCommands->sendSeveralItemsToTrash(this->projectId(), targetIds);
+            projectTreeCommands->sendSeveralItemsToTrash(targetIds);
         }
 
 
@@ -216,7 +215,7 @@ OverviewView::OverviewView(QWidget *parent) :
                     centralWidgetUi->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
                 }
                 // deselect project item
-                if(index.data(ProjectTreeItem::TreeItemIdRole).toInt() == 0){
+                if(index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>().itemId == 0){
                     centralWidgetUi->treeView->selectionModel()->select(index, QItemSelectionModel::Deselect);
                 }
             }
@@ -368,7 +367,7 @@ void OverviewView::setCurrentIndex(const QModelIndex &index)
 {
     if (index.isValid()) {
 
-        m_targetTreeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+        m_targetTreeItemAddress = index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
         m_currentModelIndex = index;
 
         m_addItemAfterAction->setEnabled(index.data(ProjectTreeItem::CanAddSiblingTreeItemRole).toBool());
@@ -376,10 +375,10 @@ void OverviewView::setCurrentIndex(const QModelIndex &index)
         m_addSubItemAction->setEnabled(index.data(ProjectTreeItem::CanAddChildTreeItemRole).toBool());
         m_sendToTrashAction->setEnabled(index.data(ProjectTreeItem::IsTrashableRole).toBool());
 
-        //project item
-        if(m_targetTreeItemId == 0){
+//        //project item
+//        if(m_targetTreeItemAddress == 0){
 
-        }
+//        }
 
     }
 }
@@ -393,7 +392,7 @@ void OverviewView::open(const QModelIndex &index)
         QString type = index.data(ProjectTreeItem::TypeRole).toString();
 
         ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewAtCurrentViewHolder(type, this->projectId(), m_targetTreeItemId);
+        viewManager->openViewAtCurrentViewHolder(type, m_targetTreeItemAddress);
 
     }
 }
@@ -405,7 +404,7 @@ void OverviewView::openInAnotherView(const QModelIndex &index)
         QString type = index.data(ProjectTreeItem::TypeRole).toString();
 
         ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewInAnotherViewHolder(type, this->projectId(), m_targetTreeItemId);
+        viewManager->openViewInAnotherViewHolder(type, m_targetTreeItemAddress);
 
     }
 }

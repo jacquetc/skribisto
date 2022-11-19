@@ -92,7 +92,7 @@ void TreeListModelCase::cleanup()
 }
 
 void TreeListModelCase::sortAlphabetically() {
-    skrdata->treeHub()->sortAlphabetically(m_currentProjectId, 0);
+    skrdata->treeHub()->sortAlphabetically(TreeItemAddress(m_currentProjectId, 0));
 }
 
 QTEST_MAIN(TreeListModelCase)

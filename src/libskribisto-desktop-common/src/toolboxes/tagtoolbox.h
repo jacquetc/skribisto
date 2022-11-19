@@ -13,7 +13,7 @@ class SKRDESKTOPCOMMONEXPORT TagToolbox : public Toolbox {
   Q_OBJECT
 
 public:
-  explicit TagToolbox(QWidget *parent, int projectId, int treeItemId);
+  explicit TagToolbox(QWidget *parent, const TreeItemAddress &treeItemAddress);
   ~TagToolbox();
 
 public slots:
@@ -21,8 +21,7 @@ public slots:
 
 private:
   Ui::TagToolbox *ui;
-  int m_projectId;
-  int m_treeItemId;
+  TreeItemAddress m_treeItemAddress;
 
   // Toolbox interface
 public:

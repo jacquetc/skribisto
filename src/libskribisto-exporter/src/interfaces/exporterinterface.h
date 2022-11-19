@@ -5,6 +5,7 @@
 #include <QString>
 #include <QObject>
 #include "interfaces/skrcoreinterface.h"
+#include "treeitemaddress.h"
 
 
 
@@ -23,7 +24,7 @@ public:
 
     virtual bool canSave() = 0;
 
-    virtual SKRResult run(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds) const = 0;
+    virtual SKRResult run(QList<TreeItemAddress> treeItemAddresses, const QUrl &url, const QString &extension, const QVariantMap &parameters) const = 0;
 
 
 };

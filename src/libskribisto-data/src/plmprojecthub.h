@@ -23,6 +23,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QUrl>
 #include "skrresult.h"
 #include "skribisto_data_global.h"
 

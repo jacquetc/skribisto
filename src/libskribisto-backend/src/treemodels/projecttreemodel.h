@@ -1,6 +1,7 @@
 #ifndef PROJECTTREEMODEL_H
 #define PROJECTTREEMODEL_H
 
+#include "interfaces/pageinterface.h"
 #include "projecttreeitem.h"
 #include "skribisto_backend_global.h"
 #include "interfaces/pagetypeiconinterface.h"
@@ -19,6 +20,7 @@ class SKRBACKENDEXPORT ProjectTreeModel : public QAbstractItemModel
     friend class AddItemAfterCommand;
     friend class AddItemBeforeCommand;
     friend class AddSubItemCommand;
+    friend class AddRawItemCommand;
     friend class TrashItemCommand;
 
 public:
@@ -59,7 +61,7 @@ public:
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
     bool removeColumns(int column, int count, const QModelIndex &parent = QModelIndex()) override;
     QHash<int, QByteArray> roleNames() const override;
-    QModelIndex getModelIndex(int projectId, int treeItemId) const;
+    QModelIndex getModelIndex(const TreeItemAddress &treeItemAddress) const;
 
 public:
 
@@ -71,8 +73,7 @@ private slots:
 
     void populate();
     void clear();
-    void exploitSignalFromSKRData(int                projectId,
-                                  int                treeItemId,
+    void exploitSignalFromSKRData(const TreeItemAddress &treeItemAddress,
                                   ProjectTreeItem::Roles role);
 
 private:
@@ -87,8 +88,8 @@ private:
     QHash<QString, PageTypeIconInterface *> m_typeWithPlugin;
 
 
-    ProjectTreeItem *getTreeItem(int projectId, int treeItemId) const;
-    void removeProjectItem(int projectId, int treeItemId);
+    ProjectTreeItem *getTreeItem(const TreeItemAddress &treeItemAddress) const;
+    void removeProjectItem(const TreeItemAddress &treeItemAddress);
 };
 
 
@@ -102,18 +103,20 @@ private:
 class AddItemAfterCommand : public QUndoCommand
 {
 public:
-    AddItemAfterCommand(int projectId, int targetId, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
+    AddItemAfterCommand(const TreeItemAddress &targetTreeItemAddress, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
     void undo();
     void redo();
-    int result();
+    TreeItemAddress result() const;
 
 private:
-    int m_projectId, m_targetId, m_newId;
+    TreeItemAddress m_targetTreeItemAddress;
+    TreeItemAddress m_newId;
     QString m_type;
     QVariantMap m_properties;
     QList<int> m_propertyIds;
     ProjectTreeModel *m_model;
     QVariantMap m_savedItemValues;
+    QList<PageInterface *> m_pageInterfacePluginList;
 };
 
 //------------------------------------------------------------------------------------------------------------
@@ -123,17 +126,19 @@ private:
 class AddItemBeforeCommand : public QUndoCommand
 {
 public:
-    AddItemBeforeCommand(int projectId, int targetId, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
+    AddItemBeforeCommand(const TreeItemAddress &targetTreeItemAddress, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
     void undo();
     void redo();
-    int result();
+    TreeItemAddress result() const;
 private:
-    int m_projectId, m_targetId, m_newId;
+    TreeItemAddress m_targetTreeItemAddress;
+    TreeItemAddress m_newId;
     QString m_type;
     QVariantMap m_properties;
     QList<int> m_propertyIds;
     ProjectTreeModel *m_model;
     QVariantMap m_savedItemValues;
+    QList<PageInterface *> m_pageInterfacePluginList;
 };
 
 //------------------------------------------------------------------------------------------------------------
@@ -142,17 +147,44 @@ private:
 class AddSubItemCommand : public QUndoCommand
 {
 public:
-    AddSubItemCommand(int projectId, int targetId, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
+    AddSubItemCommand(const TreeItemAddress &targetTreeItemAddress, const QString &type, const QVariantMap &properties, ProjectTreeModel *model);
     void undo();
     void redo();
-    int result();
+    TreeItemAddress result() const;
 private:
-    int m_projectId, m_targetId, m_newId;
+    TreeItemAddress m_targetTreeItemAddress;
+    TreeItemAddress m_newId;
     QString m_type;
     QVariantMap m_properties;
     QList<int> m_propertyIds;
     ProjectTreeModel *m_model;
     QVariantMap m_savedItemValues;
+    QList<PageInterface *> m_pageInterfacePluginList;
+};
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+
+class AddRawItemCommand : public QUndoCommand
+{
+public:
+    AddRawItemCommand(int projectId, int sortOrder, int indent, const QString &type, const QString &title, const QString &internalTitle,  const QVariantMap &properties, bool renumber, ProjectTreeModel *model);
+    void undo();
+    void redo();
+    TreeItemAddress result() const;
+private:
+    int m_projectId, m_sortOrder, m_indent;
+    bool m_renumber;
+    TreeItemAddress m_newId;
+    QString m_title, m_type, m_internalTitle;
+    QVariantMap m_properties;
+    QList<int> m_propertyIds;
+    ProjectTreeModel *m_model;
+    QVariantMap m_savedItemValues;
+    QList<QVariantMap> m_newTree, m_newPropertyTable;
+    QList<QVariantMap> m_oldTree, m_oldPropertyTable;
+    QList<PageInterface *> m_pageInterfacePluginList;
+
 };
 
 //------------------------------------------------------------------------------------------------------------
@@ -161,11 +193,12 @@ private:
 class SetItemPropertyCommand : public QUndoCommand
 {
 public:
-    SetItemPropertyCommand(int projectId, int targetId, const QString &property, const QVariant &value, bool isSystem);
+    SetItemPropertyCommand(const TreeItemAddress &targetTreeItemAddress, const QString &property, const QVariant &value, bool isSystem);
     void undo();
     void redo();
 private:
-    int m_projectId, m_targetId, m_newId;
+    TreeItemAddress m_targetTreeItemAddress;
+    int m_newId;
     QString m_property;
     QVariant m_newValue;
     QVariant m_oldValue;
@@ -189,12 +222,12 @@ public:
 
 
 
-    MoveItemsCommand(int sourceProjectId, QList<int>  sourceIds, int targetProjectId, int targetId, Move move);
+    MoveItemsCommand(QList<TreeItemAddress> sourceTreeItemAddresses, const TreeItemAddress &targetTreeItemAddress, Move move);
     void undo();
     void redo();
 private:
-    int m_sourceProjectId, m_targetProjectId, m_targetId;
-    QList<int> m_sourceIds;
+    TreeItemAddress m_targetTreeItemAddress;
+    QList<TreeItemAddress> m_sourceTreeItemAddresses;
     QList<QVariantMap> m_newTree;
     QList<QVariantMap> m_oldTree;
     Move m_move;
@@ -208,11 +241,11 @@ class RenameItemCommand : public Command
 public:
 
 
-    RenameItemCommand(int projectId, int treeItemId, const QString &newName);
+    RenameItemCommand(const TreeItemAddress &treeItemAddress, const QString &newName);
     void undo();
     void redo();
 private:
-    int m_projectId, m_treeItemId;
+    TreeItemAddress m_treeItemAddress;
     QString m_oldName, m_newName;
 
 };
@@ -224,12 +257,13 @@ private:
 class TrashItemCommand : public Command
 {
 public:
-    TrashItemCommand(int projectId, int treeItemId, bool newTrashState, int forcedOriginalParentId = -1, int forcedOriginalRow = -1);
+    TrashItemCommand(const TreeItemAddress &treeItemAddress, bool newTrashState, const TreeItemAddress &forcedOriginalParentAddress = TreeItemAddress(), int forcedOriginalRow = -1);
     void undo();
     void redo();
     bool result() const;
 private:
-    int m_projectId, m_treeItemId, m_originalParentId, m_originalRow, m_forcedOriginalParentId, m_forcedOriginalRow;
+    TreeItemAddress m_treeItemAddress, m_originalParentId, m_forcedOriginalParentAddress;
+    int m_originalRow, m_forcedOriginalRow;
     bool m_oldTrashState, m_newTrashState;
     QList<QVariantMap> m_newTree, m_newPropertyTable;
     QList<QVariantMap> m_oldTree, m_oldPropertyTable;

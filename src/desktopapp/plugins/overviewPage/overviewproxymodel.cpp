@@ -111,13 +111,13 @@ void OverviewProxyModel::setProjectId(int newProjectId)
     this->invalidateFilter();
 }
 
-QModelIndex OverviewProxyModel::getModelIndex(int projectId, int treeItemId) const {
+QModelIndex OverviewProxyModel::getModelIndex(const TreeItemAddress &treeItemAddress) const {
     // search for index
     QModelIndex index;
     QModelIndexList list =  this->match(this->index(0, 0,
                                                     QModelIndex()),
-                                        ProjectTreeItem::Roles::TreeItemIdRole,
-                                        treeItemId,
+                                        ProjectTreeItem::Roles::TreeItemAddressRole,
+                                        QVariant::fromValue(treeItemAddress),
                                         -1,
                                         Qt::MatchFlag::MatchRecursive |
                                         Qt::MatchFlag::MatchExactly |
@@ -127,7 +127,7 @@ QModelIndex OverviewProxyModel::getModelIndex(int projectId, int treeItemId) con
         ProjectTreeItem *t = static_cast<ProjectTreeItem *>(modelIndex.internalPointer());
 
         if (t)
-            if (t->projectId() == projectId) index = modelIndex;
+            if (t->projectId() == treeItemAddress.projectId) index = modelIndex;
     }
 
     if (index.isValid())
@@ -146,14 +146,14 @@ Qt::ItemFlags OverviewProxyModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return Qt::NoItemFlags;
 
-    if(index.data(ProjectTreeItem::TreeItemIdRole).toInt() > 0){
+    if(index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>().itemId > 0){
         defaultFlags |= Qt::ItemIsDragEnabled;
     }
     if(index.data(ProjectTreeItem::CanAddChildTreeItemRole).toBool()){
         defaultFlags.setFlag(Qt::ItemIsDropEnabled);
     }
 
-    if(index.column() <= 2 && index.data(ProjectTreeItem::TreeItemIdRole).toInt() > 0){
+    if(index.column() <= 2 && index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>().itemId > 0){
         defaultFlags.setFlag(Qt::ItemIsEditable);
     }
 

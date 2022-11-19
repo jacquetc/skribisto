@@ -38,7 +38,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
     QHash<int, QByteArray> roleNames() const override;
-    QModelIndex getModelIndex(int projectId, int treeItemId) const;
+    QModelIndex getModelIndex(const TreeItemAddress &treeItemAddress) const;
 
 public:
 
@@ -56,8 +56,7 @@ private slots:
 
     void populate();
     void clear();
-    void exploitSignalFromSKRData(int                projectId,
-                                  int                treeItemId,
+    void exploitSignalFromSKRData(const TreeItemAddress &treeItemAddress,
                                   ProjectTreeItem::Roles role);
 
 private:
@@ -72,8 +71,8 @@ private:
     QHash<QString, PageTypeIconInterface *> m_typeWithPlugin;
 
 
-    ProjectTreeItem *getTreeItem(int projectId, int treeItemId) const;
-    void removeProjectItem(int projectId, int treeItemId);
+    ProjectTreeItem *getTreeItem(const TreeItemAddress &treeItemAddress) const;
+    void removeProjectItem(const TreeItemAddress &treeItemAddress);
     Q_PROPERTY(int projectId READ projectId WRITE setProjectId NOTIFY projectIdChanged)
 };
 

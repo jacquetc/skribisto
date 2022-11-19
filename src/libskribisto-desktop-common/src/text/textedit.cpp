@@ -366,9 +366,18 @@ void TextEdit::mouseDoubleClickEvent(QMouseEvent *event)
 
 void TextEdit::focusOutEvent(QFocusEvent *event)
 {
+    emit activeFocusChanged(false);
     m_mouse_button_down = false;
     QTextEdit::focusOutEvent(event);
 }
+
+void TextEdit::focusInEvent(QFocusEvent *event)
+{
+    emit activeFocusChanged(true);
+    QTextEdit::focusInEvent(event);
+}
+
+//------------------------------------------------------
 
 
 void TextEdit::keyPressEvent(QKeyEvent *event)
@@ -498,9 +507,9 @@ void TextEdit::onCustomContextMenu(const QPoint &point)
             QString noteName = QInputDialog::getText(this, tr("Create a note"), "", QLineEdit::Normal, selectedText.left(30).trimmed(), &ok);
 
             if(ok){
-                int newNoteId = projectTreeCommands->addNote(m_projectId, noteName, -1);
+                TreeItemAddress newNoteAddress = projectTreeCommands->addNote(m_projectId, noteName);
                 ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-                viewManager->openViewInAnotherViewHolder("TEXT", m_projectId, newNoteId);
+                viewManager->openViewInAnotherViewHolder("TEXT", newNoteAddress);
             }
         });
 
@@ -520,6 +529,7 @@ void TextEdit::setProjectId(int newProjectId)
     m_projectId = newProjectId;
 }
 
+//------------------------------------------------------
 
 bool TextEdit::canInsertFromMimeData(const QMimeData *source) const
 {

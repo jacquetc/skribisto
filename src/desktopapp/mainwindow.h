@@ -26,8 +26,7 @@ public:
 
 public slots:
     int windowId();
-    void addWindowForItemId(int projectId,
-                                       int treeItemId);
+    void addWindowForItemId(const TreeItemAddress &treeItemAddress);
     void addWindowForProjectIndependantPageType(const QString& pageType);
     void addWindowForProjectDependantPageType(int            projectId,
                                                          const QString& pageType);

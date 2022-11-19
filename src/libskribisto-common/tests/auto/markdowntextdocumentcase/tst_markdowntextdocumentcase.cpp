@@ -30,6 +30,7 @@ private Q_SLOTS:
     void setAndFromMarkdown();
     void setAndFromMarkdown_multipleEmptyLines();
     void setAndFromMarkdown_multipleEmptyLines_2();
+    void setAndFromMarkdown_empty();
 
 private:
 
@@ -216,6 +217,19 @@ void MarkdownTextDocumentCase::setAndFromMarkdown_multipleEmptyLines_2()
 
     MarkdownTextDocumentProxy doc;
     QString originalString = "word1\n\ntabcdefghij\n\nword";
+    doc.setSkribistoMarkdown(originalString);
+
+    QCOMPARE(doc.toSkribistoMarkdown(), originalString);
+
+}
+//------------------------------------------
+
+
+void MarkdownTextDocumentCase::setAndFromMarkdown_empty()
+{
+
+    MarkdownTextDocumentProxy doc;
+    QString originalString = "";
     doc.setSkribistoMarkdown(originalString);
 
     QCOMPARE(doc.toSkribistoMarkdown(), originalString);

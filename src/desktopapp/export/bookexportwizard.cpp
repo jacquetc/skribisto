@@ -18,8 +18,8 @@ BookExportWizard::BookExportWizard(QWidget *parent, int projectId, bool enablePr
     ui(new Ui::BookExportWizard),
       m_enablePrint(enablePrint),
       m_projectId(projectId),
-      m_selectedBookId(-1),
-      m_selectedChapterId(-1)
+      m_selectedBookId(TreeItemAddress()),
+      m_selectedChapterId(TreeItemAddress())
 {
     ui->setupUi(this);
 
@@ -56,14 +56,14 @@ BookExportWizard::BookExportWizard(QWidget *parent, int projectId, bool enablePr
             m_parameters.insert("text_block_top_margin", ui->paragraphTopMarginSpinBox->value());
             m_parameters.insert("text_space_between_line", ui->spaceBetweenLinesSpinBox->value());
 
-            QList<int> outputItems = determineOutputItems();
+            QList<TreeItemAddress> outputItems = determineOutputItems();
 
             QPrinterInfo printerInfo;
             QPrinter     printer(printerInfo);
 
             QPrintPreviewDialog previewDialog(&printer);
 
-            QTextDocument *finalDocument = projectCommands->getPrintTextDocument(m_projectId, m_parameters, outputItems);
+            QTextDocument *finalDocument = projectCommands->getPrintTextDocument(m_parameters, outputItems);
 
             this->connect(&previewDialog, &QPrintPreviewDialog::paintRequested, this, [finalDocument](QPrinter *printer) {
                 finalDocument->print(printer);
@@ -83,46 +83,46 @@ BookExportWizard::BookExportWizard(QWidget *parent, int projectId, bool enablePr
 
 
 
-    for(int treeItemId : skrdata->treeHub()->getAllIds(m_projectId)){
-        if(skrdata->treeHub()->getType(m_projectId, treeItemId) == "SECTION"){
-            if(skrdata->treePropertyHub()->getProperty(m_projectId, treeItemId, "section_type", "separator") == "book-beginning"){
-                if(!skrdata->treeHub()->getTrashed(m_projectId, treeItemId)){
+    for(const TreeItemAddress &treeItemAddress : skrdata->treeHub()->getAllIds(m_projectId)){
+        if(skrdata->treeHub()->getType(treeItemAddress) == "SECTION"){
+            if(skrdata->treePropertyHub()->getProperty(treeItemAddress, "section_type", "separator") == "book-beginning"){
+                if(!skrdata->treeHub()->getTrashed(treeItemAddress)){
 
 
-                    QString title = skrdata->treeHub()->getTitle(m_projectId, treeItemId);
+                    QString title = skrdata->treeHub()->getTitle(treeItemAddress);
                     QIcon icon;
-                    auto *plugin = m_typeWithPlugin.value(skrdata->treeHub()->getType(m_projectId, treeItemId), nullptr);
+                    auto *plugin = m_typeWithPlugin.value(skrdata->treeHub()->getType(treeItemAddress), nullptr);
                         if(plugin){
-                            icon = QIcon(plugin->pageTypeIconUrl(m_projectId, treeItemId));
+                            icon = QIcon(plugin->pageTypeIconUrl(treeItemAddress));
                         }
 
 
 
 
                     QListWidgetItem *bookItem = new QListWidgetItem(icon, title, ui->bookListWidget);
-                    bookItem->setData(Qt::UserRole, treeItemId);
+                    bookItem->setData(Qt::UserRole, QVariant::fromValue(treeItemAddress));
                 }
             }
         }
     }
 
     connect(ui->bookListWidget, &QListWidget::itemActivated, this, [this](QListWidgetItem *item){
-        m_selectedBookId = item->data(Qt::UserRole).toInt();
-        this->fillChapterListWidget(item->data(Qt::UserRole).toInt());
+        m_selectedBookId = item->data(Qt::UserRole).value<TreeItemAddress>();
+        this->fillChapterListWidget(m_selectedBookId);
     });
     connect(ui->bookListWidget, &QListWidget::itemClicked, this, [this](QListWidgetItem *item){
-        m_selectedBookId = item->data(Qt::UserRole).toInt();
-        this->fillChapterListWidget(item->data(Qt::UserRole).toInt());
+        m_selectedBookId = item->data(Qt::UserRole).value<TreeItemAddress>();
+        this->fillChapterListWidget(m_selectedBookId);
     });
     connect(ui->bookListWidget, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *item){
-        m_selectedBookId = item->data(Qt::UserRole).toInt();
-        this->fillChapterListWidget(item->data(Qt::UserRole).toInt());
+        m_selectedBookId = item->data(Qt::UserRole).value<TreeItemAddress>();
+        this->fillChapterListWidget(m_selectedBookId);
     });
 
 
     if(ui->bookListWidget->count() > 0){
         ui->bookListWidget->setCurrentRow(0);
-        this->fillChapterListWidget(ui->bookListWidget->currentItem()->data(Qt::UserRole).toInt());
+        this->fillChapterListWidget(ui->bookListWidget->currentItem()->data(Qt::UserRole).value<TreeItemAddress>());
     }
 
 
@@ -130,13 +130,13 @@ BookExportWizard::BookExportWizard(QWidget *parent, int projectId, bool enablePr
 
 
     connect(ui->chapterListWidget, &QListWidget::itemActivated, this, [this](QListWidgetItem *item){
-        m_selectedChapterId = item->data(Qt::UserRole).toInt();
+        m_selectedChapterId = item->data(Qt::UserRole).value<TreeItemAddress>();
     });
     connect(ui->chapterListWidget, &QListWidget::itemClicked, this, [this](QListWidgetItem *item){
-        m_selectedChapterId = item->data(Qt::UserRole).toInt();
+        m_selectedChapterId = item->data(Qt::UserRole).value<TreeItemAddress>();
     });
     connect(ui->chapterListWidget, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *item){
-        m_selectedChapterId = item->data(Qt::UserRole).toInt();
+        m_selectedChapterId = item->data(Qt::UserRole).value<TreeItemAddress>();
     });
 
     if(ui->chapterListWidget->count() > 0){
@@ -157,7 +157,7 @@ BookExportWizard::~BookExportWizard()
 
 void BookExportWizard::done(int result)
 {
-    QList<int> outputItems = determineOutputItems();
+    QList<TreeItemAddress> outputItems = determineOutputItems();
 
     switch (result) {
     case 0:
@@ -165,6 +165,8 @@ void BookExportWizard::done(int result)
 
         break;
     case 1:
+
+
 
         m_parameters.insert("font_size", ui->fontSizeSpinBox->value());
         m_parameters.insert("font_family", ui->fontComboBox->currentFont().family());
@@ -179,7 +181,7 @@ void BookExportWizard::done(int result)
             QPrintDialog printDialog(&printer);
 
             if (printDialog.exec() == QDialog::Accepted) {
-                QTextDocument *finalDocument = projectCommands->getPrintTextDocument(m_projectId, m_parameters, outputItems);
+                QTextDocument *finalDocument = projectCommands->getPrintTextDocument(m_parameters, outputItems);
                 finalDocument->print(&printer);
             }
         }
@@ -200,7 +202,7 @@ void BookExportWizard::done(int result)
 
 //----------------------------------------------
 
-void BookExportWizard::fillChapterListWidget(int bookItemId)
+void BookExportWizard::fillChapterListWidget(TreeItemAddress bookItemId)
 {
     ui->chapterListWidget->clear();
     m_chaptersWithContents.clear();
@@ -208,24 +210,24 @@ void BookExportWizard::fillChapterListWidget(int bookItemId)
     m_allItemsOfBook.append(m_selectedBookId);
 
     // list all ids for this book
-    QList<int> chapterContent;
+    QList<TreeItemAddress> chapterContent;
 
     bool insideBook = false;
-    for(int treeItemId : skrdata->treeHub()->getAllIds(m_projectId)){
-        if(treeItemId == bookItemId){
+    for(const TreeItemAddress &treeItemAddress : skrdata->treeHub()->getAllIds(m_projectId)){
+        if(treeItemAddress == bookItemId){
             insideBook = true;
             continue;
         }
 
-        QString type = skrdata->treeHub()->getType(m_projectId, treeItemId);
-        QString sectionType = skrdata->treePropertyHub()->getProperty(m_projectId, treeItemId, "section_type", "separator");
-        bool trashed = skrdata->treeHub()->getTrashed(m_projectId, treeItemId);
+        QString type = skrdata->treeHub()->getType(treeItemAddress);
+        QString sectionType = skrdata->treePropertyHub()->getProperty(treeItemAddress, "section_type", "separator");
+        bool trashed = skrdata->treeHub()->getTrashed(treeItemAddress);
         if(trashed){
             continue;
         }
 
         if(insideBook){
-            m_allItemsOfBook.append(treeItemId);
+            m_allItemsOfBook.append(treeItemAddress);
         }
         else{
             continue;
@@ -247,45 +249,45 @@ void BookExportWizard::fillChapterListWidget(int bookItemId)
             break;
         }
 
-        chapterContent << treeItemId;
+        chapterContent << treeItemAddress;
 
     }
     QListWidgetItem *bookItem = new QListWidgetItem(tr("All"), ui->chapterListWidget);
     bookItem->setData(Qt::UserRole, -1);
 
 
-    for(const QList<int> &chapterContentList : m_chaptersWithContents){
-            int chapterSectionId = chapterContentList.first();
+    for(const QList<TreeItemAddress> &chapterContentList : m_chaptersWithContents){
+            TreeItemAddress chapterSectionId = chapterContentList.first();
 
             if(chapterSectionId == m_selectedBookId){
                 continue;
             }
 
 
-            QString title = skrdata->treeHub()->getTitle(m_projectId, chapterSectionId);
+            QString title = skrdata->treeHub()->getTitle(chapterSectionId);
             QIcon icon;
-            auto *plugin = m_typeWithPlugin.value(skrdata->treeHub()->getType(m_projectId, chapterSectionId), nullptr);
+            auto *plugin = m_typeWithPlugin.value(skrdata->treeHub()->getType(chapterSectionId), nullptr);
                 if(plugin){
-                    icon = QIcon(plugin->pageTypeIconUrl(m_projectId, chapterSectionId));
+                    icon = QIcon(plugin->pageTypeIconUrl(chapterSectionId));
                 }
 
 
 
 
             QListWidgetItem *bookItem = new QListWidgetItem(icon, title, ui->chapterListWidget);
-            bookItem->setData(Qt::UserRole, chapterSectionId);
+            bookItem->setData(Qt::UserRole, QVariant::fromValue(chapterSectionId));
 
     }
 }
 
 //----------------------------------------------
 
-QList<int> BookExportWizard::determineOutputItems()
+QList<TreeItemAddress> BookExportWizard::determineOutputItems()
 {
 
-    if(m_selectedChapterId > -1){
-        for(QList<int> contentList : m_chaptersWithContents){
-            int chapterId = contentList.first();
+    if(m_selectedChapterId.isValid()){
+        for(QList<TreeItemAddress> contentList : m_chaptersWithContents){
+            TreeItemAddress chapterId = contentList.first();
 
             if(chapterId == m_selectedChapterId){
                 return contentList;

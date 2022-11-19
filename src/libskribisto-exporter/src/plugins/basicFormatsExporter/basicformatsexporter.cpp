@@ -35,12 +35,9 @@ BasicFormatsExporter::BasicFormatsExporter(QObject *parent) : QObject(parent) {}
 
 BasicFormatsExporter::~BasicFormatsExporter() {}
 
-SKRResult BasicFormatsExporter::run(int projectId, const QUrl &url,
+SKRResult BasicFormatsExporter::run(QList<TreeItemAddress> treeItemAddresses, const QUrl &url,
                                     const QString &extension,
-                                    const QVariantMap &parameters,
-                                    QList<int> treeItemIds) const {
-
-  PLMProject *project = plmProjectManager->project(projectId);
+                                    const QVariantMap &parameters) const {
 
   QUrl fileName = url;
   SKRResult result(this);
@@ -68,15 +65,15 @@ SKRResult BasicFormatsExporter::run(int projectId, const QUrl &url,
       QTextCharFormat charFormat;
       charFormat.setFont(font, QTextCharFormat::FontPropertiesSpecifiedOnly);
 
-      for(int treeItemId : treeItemIds){
+      for(const TreeItemAddress &treeItemAddress : treeItemAddresses){
 
-          QString pageType = skrdata->treeHub()->getType(projectId, treeItemId);
+          QString pageType = skrdata->treeHub()->getType(treeItemAddress);
 
 
 
           for(auto *plugin : pluginList){
               if(plugin->pageType() == pageType){
-                  textDocFragments.append(plugin->generateExporterTextFragment(projectId, treeItemId, parameters, result));
+                  textDocFragments.append(plugin->generateExporterTextFragment(treeItemAddress, parameters, result));
               }
           }
 

@@ -78,8 +78,7 @@ Trash::Trash(class QWidget *parent) :
 
 
         QMetaObject::invokeMethod(this->window(), "addWindowForItemId", Qt::QueuedConnection
-                                  , Q_ARG(int, m_projectId)
-                                  , Q_ARG(int, m_targetTreeItemId)
+                                  , Q_ARG(TreeItemAddress, m_targetTreeItemAddress)
                                   );
 
 
@@ -95,8 +94,8 @@ Trash::Trash(class QWidget *parent) :
         this->setCurrentIndex(ui->treeView->selectionModel()->currentIndex());
 
         QString newName = QInputDialog::getText(ui->treeView, tr("Rename"), tr("Enter a new title for the item"), QLineEdit::Normal,
-                                                skrdata->treeHub()->getTitle(m_projectId, m_targetTreeItemId));
-        projectTreeCommands->renameItem(m_projectId, m_targetTreeItemId, newName);
+                                                skrdata->treeHub()->getTitle(m_targetTreeItemAddress));
+        projectTreeCommands->renameItem(m_targetTreeItemAddress, newName);
 
     } );
 
@@ -112,23 +111,23 @@ Trash::Trash(class QWidget *parent) :
         QModelIndexList indexList = ui->treeView->selectionModel()->selectedIndexes();
 
         if(indexList.size() == 1){
-               int notRestorableId =  projectTreeCommands->restoreItemFromTrash(m_projectId, m_targetTreeItemId);
+               TreeItemAddress notRestorableId =  projectTreeCommands->restoreItemFromTrash(m_targetTreeItemAddress);
 
-            if(notRestorableId != 0){
+            if(notRestorableId.isValid()){
                 restorationDialog->setProjectId(m_projectId);
-                restorationDialog->setNotRestorableIds(QList<int>() << notRestorableId);
+                restorationDialog->setNotRestorableIds(QList<TreeItemAddress>() << notRestorableId);
                 restorationDialog->open();
             }
 
         }
         else{
 
-            QList<int> targetIds;
+            QList<TreeItemAddress> targetIds;
             for(const QModelIndex &index : indexList){
-                targetIds.append(index.data(ProjectTreeItem::TreeItemIdRole).toInt());
+                targetIds.append(index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>());
             }
 
-            QList<int> notRestorableIdList =  projectTreeCommands->restoreSeveralItemsFromTrash(m_projectId, targetIds);
+            QList<TreeItemAddress> notRestorableIdList =  projectTreeCommands->restoreSeveralItemsFromTrash(targetIds);
 
 
             if(!notRestorableIdList.empty()){
@@ -256,7 +255,7 @@ void Trash::restoreExpandStates()
 void Trash::expandProjectItems()
 {
     for(int projectId : skrdata->projectHub()->getProjectIdList()){
-        auto modelIndex = static_cast<ProjectTrashedTreeModel *>(ui->treeView->model())->getModelIndex(projectId, 0);
+        auto modelIndex = static_cast<ProjectTrashedTreeModel *>(ui->treeView->model())->getModelIndex(TreeItemAddress(projectId, 0));
         if(modelIndex.isValid()){
             ui->treeView->expand(modelIndex);
         }
@@ -297,13 +296,13 @@ void Trash::setCurrentIndex(const QModelIndex &index)
     if (index.isValid()) {
 
         m_projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-        m_targetTreeItemId = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
+        m_targetTreeItemAddress = index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
         m_currentModelIndex = index;
 
         //project item
-        if(m_targetTreeItemId){
+//        if(m_targetTreeItemId){
 
-        }
+//        }
 
     }
 }
@@ -316,7 +315,7 @@ void Trash::open(const QModelIndex &index)
         QString type = index.data(ProjectTreeItem::TypeRole).toString();
 
         ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewAtCurrentViewHolder(type, m_projectId, m_targetTreeItemId);
+        viewManager->openViewAtCurrentViewHolder(type, m_targetTreeItemAddress);
 
     }
 }
@@ -328,7 +327,7 @@ void Trash::openInAnotherView(const QModelIndex &index)
         QString type = index.data(ProjectTreeItem::TypeRole).toString();
 
         ViewManager *viewManager = invoke<ViewManager>(this, "viewManager");
-        viewManager->openViewInAnotherViewHolder(type, m_projectId, m_targetTreeItemId);
+        viewManager->openViewInAnotherViewHolder(type, m_targetTreeItemAddress);
 
     }
 }

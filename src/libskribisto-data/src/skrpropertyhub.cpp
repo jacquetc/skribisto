@@ -221,8 +221,7 @@ SKRResult SKRPropertyHub::restore(int projectId, QList<QVariantMap> allValues)
 }
 
 // --------------------------------------------------------------
-SKRResult SKRPropertyHub::setProperty(int            projectId,
-                                      int            treeItemCode,
+SKRResult SKRPropertyHub::setProperty(const TreeItemAddress &treeItemAddress,
                                       const QString& name,
                                       const QString& value,
                                       bool           isSystem,
@@ -232,18 +231,18 @@ SKRResult SKRPropertyHub::setProperty(int            projectId,
     SKRResult result(this);
     int propertyId = -2;
 
-    if (propertyExists(projectId, treeItemCode, name)) {
-        propertyId = findPropertyId(projectId, treeItemCode, name);
+    if (propertyExists(treeItemAddress, name)) {
+        propertyId = findPropertyId(treeItemAddress, name);
     }
     else {
-        IFOKDO(result, addProperty(projectId, treeItemCode));
+        IFOKDO(result, addProperty(treeItemAddress));
         IFOK(result) {
             propertyId = getLastAddedId();
         }
     }
 
 
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress, m_tableName);
 
     queries.beginTransaction();
 
@@ -262,10 +261,10 @@ SKRResult SKRPropertyHub::setProperty(int            projectId,
 
     IFOKDO(result, queries.get(propertyId, m_codeFieldName, variant));
     IFOK(result) {
-        emit propertyChanged(projectId, propertyId, treeItemCode, name, value);
+        emit propertyChanged(treeItemAddress.projectId, propertyId, treeItemAddress.itemId, name, value);
 
         if (triggerProjectModifiedSignal && !isSilent) {
-            emit projectModified(projectId);
+            emit projectModified(treeItemAddress.projectId);
         }
 
         result.addData("propertyId", propertyId);
@@ -402,7 +401,7 @@ QString SKRPropertyHub::getName(int projectId, int propertyId)
 
 // ---------------------------------------------------------------------
 
-SKRResult SKRPropertyHub::setPaperCode(int projectId, int propertyId, int treeItemCode)
+SKRResult SKRPropertyHub::setTreeItemCode(int projectId, int propertyId, int treeItemCode)
 {
     bool isSilent = this->getIsSilent(projectId, propertyId);
 
@@ -440,7 +439,7 @@ SKRResult SKRPropertyHub::setPaperCode(int projectId, int propertyId, int treeIt
 
 // ---------------------------------------------------------------------
 
-int SKRPropertyHub::getPaperCode(int projectId, int propertyId)
+int SKRPropertyHub::getTreeItemCode(int projectId, int propertyId)
 {
     SKRResult result(this);
     int value;
@@ -681,17 +680,17 @@ bool SKRPropertyHub::getIsSilent(int projectId, int propertyId) const
 
 // ---------------------------------------------------------------------
 
-QString SKRPropertyHub::getProperty(int projectId, int treeItemCode,
+QString SKRPropertyHub::getProperty(const TreeItemAddress &treeItemAddress,
                                     const QString& name) const
 {
     SKRResult result(this);
     QString   value;
 
     QHash<int, QVariant> out;
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress, m_tableName);
     QHash<QString, QVariant> where;
 
-    where.insert(m_codeFieldName, treeItemCode);
+    where.insert(m_codeFieldName, treeItemAddress.itemId);
     where.insert("t_name",        name);
     result = queries.getValueByIdsWhere("m_value", out, where);
 
@@ -712,12 +711,11 @@ QString SKRPropertyHub::getProperty(int projectId, int treeItemCode,
 
 // ---------------------------------------------------------------------
 
-QString SKRPropertyHub::getProperty(int            projectId,
-                                    int            treeItemCode,
+QString SKRPropertyHub::getProperty(const TreeItemAddress &treeItemAddress,
                                     const QString& name,
                                     const QString& defaultValue) const
 {
-    QString value = getProperty(projectId, treeItemCode, name);
+    QString value = getProperty(treeItemAddress, name);
 
     if (value.isNull()) {
         value = defaultValue;
@@ -745,16 +743,16 @@ QString SKRPropertyHub::getPropertyById(int projectId, int propertyId) const
 
 // ---------------------------------------------------------------------
 
-int SKRPropertyHub::getPropertyId(int projectId, int treeItemCode, const QString& name) const
+int SKRPropertyHub::getPropertyId(const TreeItemAddress &treeItemAddress, const QString& name) const
 {
     SKRResult result(this);
     int value = -2;
 
     QHash<int, QVariant> out;
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress, m_tableName);
     QHash<QString, QVariant> where;
 
-    where.insert(m_codeFieldName, treeItemCode);
+    where.insert(m_codeFieldName, treeItemAddress.itemId);
     where.insert("t_name",        name);
     result = queries.getValueByIdsWhere("m_value", out, where);
 
@@ -783,13 +781,13 @@ int SKRPropertyHub::getLastAddedId()
 // ---------------------------------------------------------------------
 
 
-SKRResult SKRPropertyHub::addProperty(int projectId, int treeItemCode, int imposedPropertyId)
+SKRResult SKRPropertyHub::addProperty(const TreeItemAddress &treeItemAddress, int imposedPropertyId)
 {
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress, m_tableName);
 
     QHash<QString, QVariant> values;
 
-    values.insert(m_codeFieldName, treeItemCode);
+    values.insert(m_codeFieldName, treeItemAddress.itemId);
 
     if (imposedPropertyId != -1) values.insert(queries.getIdName(), imposedPropertyId);
     int newPropertyId = -1;
@@ -801,8 +799,8 @@ SKRResult SKRPropertyHub::addProperty(int projectId, int treeItemCode, int impos
     IFOK(result) {
         queries.commit();
         m_last_added_id = newPropertyId;
-        emit propertyAdded(projectId, newPropertyId);
-        emit projectModified(projectId);
+        emit propertyAdded(treeItemAddress.projectId, newPropertyId);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -855,29 +853,29 @@ QVariant SKRPropertyHub::get(int projectId, int propertyId, const QString &field
 
 //--------------------------------------------------------------------------
 
-bool SKRPropertyHub::propertyExists(int projectId, int treeItemCode, const QString& name)
+bool SKRPropertyHub::propertyExists(const TreeItemAddress &treeItemAddress, const QString& name)
 {
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress, m_tableName);
 
 
     QHash<QString, QVariant> where;
 
-    where.insert(m_codeFieldName, treeItemCode);
+    where.insert(m_codeFieldName, treeItemAddress.itemId);
     where.insert("t_name",        name);
 
     return queries.resultExists(where);
 }
 
-int SKRPropertyHub::findPropertyId(int projectId, int treeItemCode, const QString& name)
+int SKRPropertyHub::findPropertyId(const TreeItemAddress &treeItemAddress, const QString& name)
 {
     SKRResult result(this);
     int value = -2;
 
     QHash<int, QVariant> out;
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress, m_tableName);
     QHash<QString, QVariant> where;
 
-    where.insert(m_codeFieldName, treeItemCode);
+    where.insert(m_codeFieldName, treeItemAddress.itemId);
     where.insert("t_name",        name);
     result = queries.getValueByIdsWhere(m_codeFieldName, out, where);
 

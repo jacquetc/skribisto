@@ -28,11 +28,12 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="2.0.2" date="2022-11-17T00:00:00Z">
+    <release type="stable" version="2.0.3" date="2022-11-19T00:00:00Z">
       <description>
         <ul>
-          <li>Add spellchecking suggestions</li>
-          <li>Add quick note creation</li>
+          <li>Fix path creation in theme creator dialog</li>
+          <li>Word count in Text view</li>
+          <li>Speed optimizations</li>
         </ul>
       </description>
     </release>

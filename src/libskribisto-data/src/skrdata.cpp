@@ -1,10 +1,12 @@
 #include "skrdata.h"
+#include "treeitemaddress.h"
 #include <QDebug>
 #include <QCoreApplication>
 
 SKRData::SKRData(QObject *parent) : QObject(parent)
 {
     m_instance = this;
+
 
     m_errorHub       = new SKRErrorHub(this);
     m_projectManager = new PLMProjectManager(this);

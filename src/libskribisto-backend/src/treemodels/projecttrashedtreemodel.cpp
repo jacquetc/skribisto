@@ -79,31 +79,33 @@ QModelIndex ProjectTrashedTreeModel::index(int row, int column, const QModelInde
 
     if(parentItem->isRootItem()){
 
-        QList<int> trashFolderIds = skrdata->treeHub()->getIdsWithInternalTitle(m_projectId, "trash_folder");
+        QList<TreeItemAddress> trashFolderIds = skrdata->treeHub()->getIdsWithInternalTitle(m_projectId, "trash_folder");
 
         if(trashFolderIds.isEmpty()){
             return QModelIndex();
         }
 
-        QList<int> directChildren = skrdata->treeHub()->getAllDirectChildren(m_projectId, trashFolderIds.first(), true, false);
+        QList<TreeItemAddress> directChildren = skrdata->treeHub()->getAllDirectChildren(trashFolderIds.first(), true, false);
 
 
-        auto *projectItem = this->getTreeItem(m_projectId, directChildren.at(row));
+        auto *projectItem = this->getTreeItem(directChildren.at(row));
+        QModelIndex modelIndex = createIndex(row, column, projectItem);
+        projectItem->setModelIndex(QPersistentModelIndex(modelIndex));
 
-        return createIndex(row, column, projectItem);
+        return modelIndex;
     }
 
 
 
-    QList<int> directChildren = skrdata->treeHub()->getAllDirectChildren(m_projectId, parentItem->treeItemId(), true, false);
-    int projectId = parentItem->projectId();
-    int treeItemId = directChildren.at(row);
+    QList<TreeItemAddress> directChildren = skrdata->treeHub()->getAllDirectChildren(parentItem->treeItemAddress(), true, false);
+    TreeItemAddress treeItemId = directChildren.at(row);
 
 
-    ProjectTreeItem *childItem = getTreeItem(projectId, treeItemId);
 
-
-    return createIndex(row, column, childItem);
+    ProjectTreeItem *childItem = getTreeItem(treeItemId);
+    QModelIndex modelIndex = createIndex(row, column, childItem);
+    parentItem->setModelIndex(QPersistentModelIndex(modelIndex));
+    return modelIndex;
 
 }
 
@@ -116,16 +118,16 @@ QModelIndex ProjectTrashedTreeModel::parent(const QModelIndex &index) const
     }
 
     ProjectTreeItem *childItem  = static_cast<ProjectTreeItem *>(index.internalPointer());
-    int parentId = skrdata->treeHub()->getParentId(childItem->projectId(), childItem->treeItemId());
+    TreeItemAddress parentAddress = skrdata->treeHub()->getParentId(childItem->treeItemAddress());
 
-    if(parentId == -1){
+    if(!parentAddress.isValid()){
         return QModelIndex();
     }
 
-    if(skrdata->treeHub()->getInternalTitle(childItem->projectId(), parentId) == "trash_folder"){
+    if(skrdata->treeHub()->getInternalTitle(parentAddress) == "trash_folder"){
         return QModelIndex();
     }
-    ProjectTreeItem *parentItem = getTreeItem(childItem->projectId(), parentId);
+    ProjectTreeItem *parentItem = getTreeItem(parentAddress);
 
     QModelIndex parentIndex = createIndex(parentItem->row(), 0, parentItem);
     return parentIndex;
@@ -142,18 +144,18 @@ int ProjectTrashedTreeModel::rowCount(const QModelIndex &parent) const
 
     if (!parent.isValid()) {
 
-        QList<int> trashFolderIds = skrdata->treeHub()->getIdsWithInternalTitle(m_projectId, "trash_folder");
+        QList<TreeItemAddress> trashFolderIds = skrdata->treeHub()->getIdsWithInternalTitle(m_projectId, "trash_folder");
 
         if(trashFolderIds.isEmpty()){
             qCritical() << "no trash_folder found";
             return 0;
         }
 
-        return skrdata->treeHub()->getAllDirectChildren(m_projectId, trashFolderIds.first(), true, false).count();
+        return skrdata->treeHub()->getAllDirectChildren(trashFolderIds.first(), true, false).count();
     }
 
     ProjectTreeItem *parentItem = static_cast<ProjectTreeItem *>(parent.internalPointer());
-    return skrdata->treeHub()->getAllDirectChildren(m_projectId, parentItem->treeItemId(), true, false).count();
+    return skrdata->treeHub()->getAllDirectChildren(parentItem->treeItemAddress(), true, false).count();
 }
 
 int ProjectTrashedTreeModel::columnCount(const QModelIndex &parent) const
@@ -199,7 +201,7 @@ QVariant ProjectTrashedTreeModel::data(const QModelIndex &index, int role) const
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::TreeItemIdRole) {
+    if (role == ProjectTreeItem::Roles::TreeItemAddressRole) {
         return item->data(role);
     }
 
@@ -310,7 +312,7 @@ QVariant ProjectTrashedTreeModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DecorationRole) {
         auto *plugin = m_typeWithPlugin.value(item->data(ProjectTreeItem::Roles::TypeRole).toString(), nullptr);
         if(plugin){
-            return QIcon(plugin->pageTypeIconUrl(item->data(ProjectTreeItem::Roles::ProjectIdRole).toInt(), item->data(ProjectTreeItem::Roles::TreeItemIdRole).toInt()));
+            return QIcon(plugin->pageTypeIconUrl(item->data(ProjectTreeItem::Roles::TreeItemAddressRole).value<TreeItemAddress>()));
         }
         return QVariant();
     }
@@ -323,7 +325,7 @@ bool ProjectTrashedTreeModel::setData(const QModelIndex &index, const QVariant &
     if (data(index, role) != value) {
         ProjectTreeItem *item = static_cast<ProjectTreeItem *>(index.internalPointer());
         int projectId     = item->projectId();
-        int treeItemId    = item->treeItemId();
+        TreeItemAddress treeItemAddress    = item->treeItemAddress();
         SKRResult result(this);
 
         this->disconnectFromSKRDataSignals();
@@ -338,32 +340,32 @@ bool ProjectTrashedTreeModel::setData(const QModelIndex &index, const QVariant &
             // useless
             break;
 
-        case ProjectTreeItem::Roles::TreeItemIdRole:
+        case ProjectTreeItem::Roles::TreeItemAddressRole:
 
             // useless
             break;
 
         case ProjectTreeItem::Roles::TitleRole:
-            result = m_treeHub->setTitle(projectId, treeItemId, value.toString());
+            result = m_treeHub->setTitle(treeItemAddress, value.toString());
 
             break;
 
         case ProjectTreeItem::Roles::TypeRole:
-            result = m_treeHub->setType(projectId, treeItemId, value.toString());
+            result = m_treeHub->setType(treeItemAddress, value.toString());
 
             break;
 
         case ProjectTreeItem::Roles::LabelRole:
-            result = m_propertyHub->setProperty(projectId, treeItemId,
+            result = m_propertyHub->setProperty(treeItemAddress,
                                                 "label", value.toString());
             break;
 
         case ProjectTreeItem::Roles::IndentRole:
-            result = m_treeHub->setIndent(projectId, treeItemId, value.toInt());
+            result = m_treeHub->setIndent(treeItemAddress, value.toInt());
             break;
 
         case ProjectTreeItem::Roles::SortOrderRole:
-            result = m_treeHub->setSortOrder(projectId, treeItemId, value.toInt());
+            result = m_treeHub->setSortOrder(treeItemAddress, value.toInt());
             IFOKDO(result, m_treeHub->renumberSortOrders(projectId));
 
             for (ProjectTreeItem *item : qAsConst(m_itemList)) {
@@ -374,20 +376,17 @@ bool ProjectTrashedTreeModel::setData(const QModelIndex &index, const QVariant &
             break;
 
         case ProjectTreeItem::Roles::TrashedRole:
-            result = m_treeHub->setTrashedWithChildren(projectId,
-                                                       treeItemId,
+            result = m_treeHub->setTrashedWithChildren(treeItemAddress,
                                                        value.toBool());
             break;
 
         case ProjectTreeItem::Roles::CreationDateRole:
-            result = m_treeHub->setCreationDate(projectId,
-                                                treeItemId,
+            result = m_treeHub->setCreationDate(treeItemAddress,
                                                 value.toDateTime());
             break;
 
         case ProjectTreeItem::Roles::UpdateDateRole:
-            result = m_treeHub->setUpdateDate(projectId,
-                                              treeItemId,
+            result = m_treeHub->setUpdateDate(treeItemAddress,
                                               value.toDateTime());
             break;
 
@@ -397,8 +396,7 @@ bool ProjectTrashedTreeModel::setData(const QModelIndex &index, const QVariant &
             break;
 
         case ProjectTreeItem::Roles::CharCountRole:
-            result = m_propertyHub->setProperty(projectId,
-                                                treeItemId,
+            result = m_propertyHub->setProperty(treeItemAddress,
                                                 "char_count",
                                                 QString::number(
                                                     value.toInt()));
@@ -406,8 +404,7 @@ bool ProjectTrashedTreeModel::setData(const QModelIndex &index, const QVariant &
 
         case ProjectTreeItem::Roles::WordCountRole:
 
-            result = m_propertyHub->setProperty(projectId,
-                                                treeItemId,
+            result = m_propertyHub->setProperty(treeItemAddress,
                                                 "word_count",
                                                 QString::number(
                                                     value.toInt()));
@@ -448,7 +445,7 @@ QHash<int, QByteArray>ProjectTrashedTreeModel::roleNames() const {
     QHash<int, QByteArray> roles;
 
     roles[ProjectTreeItem::Roles::ProjectNameRole]           = "projectName";
-    roles[ProjectTreeItem::Roles::TreeItemIdRole]            = "treeItemId";
+    roles[ProjectTreeItem::Roles::TreeItemAddressRole]       = "treeItemAddress";
     roles[ProjectTreeItem::Roles::ProjectIdRole]             = "projectId";
     roles[ProjectTreeItem::Roles::TitleRole]                 = "title";
     roles[ProjectTreeItem::Roles::InternalTitleRole]         = "internalTitle";
@@ -492,7 +489,7 @@ void ProjectTrashedTreeModel::populate()
         return;
     }
 
-    QList<int> trashFolderIds = skrdata->treeHub()->getIdsWithInternalTitle(m_projectId, "trash_folder");
+    QList<TreeItemAddress> trashFolderIds = skrdata->treeHub()->getIdsWithInternalTitle(m_projectId, "trash_folder");
 
     if(trashFolderIds.isEmpty()){
         this->endResetModel();
@@ -500,14 +497,14 @@ void ProjectTrashedTreeModel::populate()
     }
 
 
-    auto idList         = skrdata->treeHub()->getAllChildren(m_projectId, trashFolderIds.first());
+    auto idList         = skrdata->treeHub()->getAllChildren(trashFolderIds.first());
     auto sortOrdersHash = skrdata->treeHub()->getAllSortOrders(m_projectId);
     auto indentsHash    = skrdata->treeHub()->getAllIndents(m_projectId);
 
-    for (int treeItemId : qAsConst(idList)) {
-        m_itemList.append(new ProjectTreeItem(m_projectId, treeItemId,
-                                              indentsHash.value(treeItemId),
-                                              sortOrdersHash.value(treeItemId)));
+    for (const TreeItemAddress &treeItemAddress: qAsConst(idList)) {
+        m_itemList.append(new ProjectTreeItem(treeItemAddress,
+                                              indentsHash.value(treeItemAddress),
+                                              sortOrdersHash.value(treeItemAddress)));
     }
 
 
@@ -524,43 +521,47 @@ void ProjectTrashedTreeModel::clear()
 
 // --------------------------------------------------------------------
 
-void ProjectTrashedTreeModel::exploitSignalFromSKRData(int                projectId,
-                                                int                treeItemId,
+void ProjectTrashedTreeModel::exploitSignalFromSKRData(const TreeItemAddress &treeItemAddress,
                                                 ProjectTreeItem::Roles role)
 {
-    ProjectTreeItem *item = this->getTreeItem(projectId, treeItemId);
+    ProjectTreeItem *item = this->getTreeItem(treeItemAddress);
 
     if (!item) {
         return;
     }
 
+
     item->invalidateData(role);
 
     // search for index
-    QModelIndex index;
-    QModelIndexList list =  this->match(this->index(0, 0,
-                                                    QModelIndex()),
-                                        ProjectTreeItem::Roles::TreeItemIdRole,
-                                        treeItemId,
-                                        -1,
-                                        Qt::MatchFlag::MatchRecursive |
-                                        Qt::MatchFlag::MatchExactly |
-                                        Qt::MatchFlag::MatchWrap);
+    QModelIndex index = item->getModelIndex();
 
-    for (const QModelIndex& modelIndex : qAsConst(list)) {
-        ProjectTreeItem *t = static_cast<ProjectTreeItem *>(modelIndex.internalPointer());
+    if(!index.isValid()){
+        // search for index
+        QModelIndex index;
+        QModelIndexList list =  this->match(this->index(0, 0,
+                                                        QModelIndex()),
+                                            ProjectTreeItem::Roles::TreeItemAddressRole,
+                                            QVariant::fromValue(treeItemAddress),
+                                            -1,
+                                            Qt::MatchFlag::MatchRecursive |
+                                            Qt::MatchFlag::MatchExactly |
+                                            Qt::MatchFlag::MatchWrap);
 
-        if (t)
-            if (t->projectId() == projectId) index = modelIndex;
+        for (const QModelIndex& modelIndex : qAsConst(list)) {
+            ProjectTreeItem *t = static_cast<ProjectTreeItem *>(modelIndex.internalPointer());
+
+            if (t)
+                if (t->projectId() == treeItemAddress.projectId) index = modelIndex;
+        }
+
     }
-
-
     if (index.isValid()) {
         if(role == ProjectTreeItem::Roles::AllRoles){
              emit dataChanged(index, index);
         }
         else {
-             emit dataChanged(index, index, QVector<int>() << role);
+             QTimer::singleShot(2, this, [=](){emit dataChanged(index, index, QVector<int>() << role);});
         }
 
     }
@@ -572,74 +573,74 @@ void ProjectTrashedTreeModel::connectToSKRDataSignals()
 {
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::allValuesChanged, this,
-                                           [this](int projectId, int treeItemId) {
+                                           [this](const TreeItemAddress &treeItemAddress) {
 
-        this->exploitSignalFromSKRData(projectId, treeItemId, ProjectTreeItem::Roles::AllRoles);
-    });
+        this->exploitSignalFromSKRData(treeItemAddress, ProjectTreeItem::Roles::AllRoles);
+    }, Qt::QueuedConnection);
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::titleChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromSKRData(projectId, treeItemId, ProjectTreeItem::Roles::TitleRole);
-    });
+        this->exploitSignalFromSKRData(treeItemAddress, ProjectTreeItem::Roles::TitleRole);
+    }, Qt::QueuedConnection);
 
     m_dataConnectionsList << this->connect(skrdata->projectHub(),
                                            &PLMProjectHub::projectNameChanged, this,
                                            [this](int projectId,
                                            const QString& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromSKRData(projectId, 0,
+        this->exploitSignalFromSKRData(TreeItemAddress(projectId, 0),
                                        ProjectTreeItem::Roles::ProjectNameRole);
-    });
+    }, Qt::QueuedConnection);
 
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::treeItemIdChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            int value) {
         Q_UNUSED(value)
-        this->exploitSignalFromSKRData(projectId, treeItemId,
-                                       ProjectTreeItem::Roles::TreeItemIdRole);
-    });
+        this->exploitSignalFromSKRData(treeItemAddress,
+                                       ProjectTreeItem::Roles::TreeItemAddressRole);
+    }, Qt::QueuedConnection);
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::indentChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            int value) {
         Q_UNUSED(value)
-        this->exploitSignalFromSKRData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(treeItemAddress,
                                        ProjectTreeItem::Roles::IndentRole);
-    });
+    }, Qt::QueuedConnection);
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::sortOrderChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            int value) {
         Q_UNUSED(value)
-        this->exploitSignalFromSKRData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(treeItemAddress,
                                        ProjectTreeItem::Roles::SortOrderRole);
-    });
+    }, Qt::QueuedConnection);
 
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::updateDateChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            const QDateTime& value) {
         Q_UNUSED(value)
-        this->exploitSignalFromSKRData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(treeItemAddress,
                                        ProjectTreeItem::Roles::UpdateDateRole);
-    });
+    }, Qt::QueuedConnection);
 
     m_dataConnectionsList << this->connect(m_treeHub,
                                            &SKRTreeHub::trashedChanged, this,
-                                           [this](int projectId, int treeItemId,
+                                           [this](const TreeItemAddress &treeItemAddress,
                                            bool value) {
         Q_UNUSED(value)
-        this->exploitSignalFromSKRData(projectId, treeItemId,
+        this->exploitSignalFromSKRData(treeItemAddress,
                                        ProjectTreeItem::Roles::TrashedRole);
-    });
+    }, Qt::QueuedConnection);
 
     m_dataConnectionsList << this->connect(skrdata->projectHub(),
                                            &PLMProjectHub::activeProjectChanged, this,
@@ -647,19 +648,19 @@ void ProjectTrashedTreeModel::connectToSKRDataSignals()
         Q_UNUSED(projectId)
 
         for (int _projectId : skrdata->projectHub()->getProjectIdList()) {
-            this->exploitSignalFromSKRData(_projectId, -1,
+            this->exploitSignalFromSKRData(TreeItemAddress(_projectId, 0),
                                            ProjectTreeItem::Roles::ProjectIsActiveRole);
         }
-    });
+    }, Qt::QueuedConnection);
 
     m_dataConnectionsList << this->connect(skrdata->treeHub(),
                                            &SKRTreeHub::cutCopyChanged, this,
-                                           [this](int projectId, int treeItemId, bool value) {
+                                           [this](const TreeItemAddress &treeItemAddress, bool value) {
         Q_UNUSED(value)
-       this->exploitSignalFromSKRData(projectId, treeItemId,
+       this->exploitSignalFromSKRData(treeItemAddress,
                                            ProjectTreeItem::Roles::CutCopyRole);
 
-    });
+    }, Qt::QueuedConnection);
 
     m_dataConnectionsList << this->connect(m_propertyHub,
                                            &SKRPropertyHub::propertyChanged, this,
@@ -669,68 +670,69 @@ void ProjectTrashedTreeModel::connectToSKRDataSignals()
                                            const QString& value) {
         Q_UNUSED(value)
         Q_UNUSED(propertyId)
+        const TreeItemAddress treeItemAddress(projectId, treeItemCode);
 
 
-        if (name == "label") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        if (name == "label") this->exploitSignalFromSKRData(treeItemAddress,
                                                             ProjectTreeItem::Roles::LabelRole);
 
-        if (name == "char_count") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "char_count") this->exploitSignalFromSKRData(treeItemAddress,
                                                                  ProjectTreeItem::Roles::
                                                                  CharCountRole);
 
-        if (name == "word_count") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "word_count") this->exploitSignalFromSKRData(treeItemAddress,
                                                                  ProjectTreeItem::Roles::
                                                                  WordCountRole);
 
-        if (name == "char_count_goal") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "char_count_goal") this->exploitSignalFromSKRData(treeItemAddress,
                                                                  ProjectTreeItem::Roles::
                                                                  CharCountGoalRole);
 
-        if (name == "word_count_goal") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "word_count_goal") this->exploitSignalFromSKRData(treeItemAddress,
                                                                  ProjectTreeItem::Roles::
                                                                  WordCountGoalRole);
 
-        if (name == "char_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "char_count_with_children") this->exploitSignalFromSKRData(treeItemAddress,
                                                                                ProjectTreeItem::Roles::
                                                                                CharCountWithChildrenRole);
 
-        if (name == "word_count_with_children") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "word_count_with_children") this->exploitSignalFromSKRData(treeItemAddress,
                                                                                ProjectTreeItem::Roles::
                                                                                WordCountWithChildrenRole);
 
-        if (name == "is_renamable") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "is_renamable") this->exploitSignalFromSKRData(treeItemAddress,
                                                                    ProjectTreeItem::Roles::
                                                                    IsRenamableRole);
 
-        if (name == "is_movable") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "is_movable") this->exploitSignalFromSKRData(treeItemAddress,
                                                                  ProjectTreeItem::Roles::
                                                                  IsMovableRole);
 
-        if (name == "can_add_sibling_tree_item") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "can_add_sibling_tree_item") this->exploitSignalFromSKRData(treeItemAddress,
                                                                                 ProjectTreeItem::Roles::
                                                                                 CanAddSiblingTreeItemRole);
 
-        if (name == "can_add_child_tree_item") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "can_add_child_tree_item") this->exploitSignalFromSKRData(treeItemAddress,
                                                                               ProjectTreeItem::Roles::
                                                                               CanAddChildTreeItemRole);
 
-        if (name == "is_trashable") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "is_trashable") this->exploitSignalFromSKRData(treeItemAddress,
                                                                    ProjectTreeItem::Roles::
                                                                    IsTrashableRole);
 
-        if (name == "is_openable") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "is_openable") this->exploitSignalFromSKRData(treeItemAddress,
                                                                   ProjectTreeItem::Roles::
                                                                   IsOpenableRole);
 
-        if (name == "is_copyable") this->exploitSignalFromSKRData(projectId, treeItemCode,
+        else if (name == "is_copyable") this->exploitSignalFromSKRData(treeItemAddress,
                                                                   ProjectTreeItem::Roles::
                                                                   IsCopyableRole);
         else {
-            this->exploitSignalFromSKRData(projectId, treeItemCode,
+            this->exploitSignalFromSKRData(treeItemAddress,
                                            ProjectTreeItem::Roles::
                                            OtherPropertiesRole);
         }
-    });
+    }, Qt::QueuedConnection);
 }
 
 void ProjectTrashedTreeModel::disconnectFromSKRDataSignals()
@@ -758,13 +760,13 @@ void ProjectTrashedTreeModel::setProjectId(int newProjectId)
 }
 
 
-QModelIndex ProjectTrashedTreeModel::getModelIndex(int projectId, int treeItemId) const {
+QModelIndex ProjectTrashedTreeModel::getModelIndex(const TreeItemAddress &treeItemAddress) const {
     // search for index
     QModelIndex index;
     QModelIndexList list =  this->match(this->index(0, 0,
                                                     QModelIndex()),
-                                        ProjectTreeItem::Roles::TreeItemIdRole,
-                                        treeItemId,
+                                        ProjectTreeItem::Roles::TreeItemAddressRole,
+                                        QVariant::fromValue(treeItemAddress),
                                         -1,
                                         Qt::MatchFlag::MatchRecursive |
                                         Qt::MatchFlag::MatchExactly |
@@ -774,7 +776,7 @@ QModelIndex ProjectTrashedTreeModel::getModelIndex(int projectId, int treeItemId
         ProjectTreeItem *t = static_cast<ProjectTreeItem *>(modelIndex.internalPointer());
 
         if (t)
-            if (t->projectId() == projectId) index = modelIndex;
+            if (t->projectId() == treeItemAddress.projectId) index = modelIndex;
     }
 
     if (index.isValid())
@@ -783,30 +785,30 @@ QModelIndex ProjectTrashedTreeModel::getModelIndex(int projectId, int treeItemId
     return QModelIndex();
 }
 
-ProjectTreeItem *ProjectTrashedTreeModel::getTreeItem(int projectId, int treeItemId) const
+ProjectTreeItem *ProjectTrashedTreeModel::getTreeItem(const TreeItemAddress &treeItemAddress) const
 {
     ProjectTreeItem *result_item = nullptr;
 
     for (ProjectTreeItem *item : qAsConst(m_itemList)) {
-        if ((item->projectId() == projectId) && (item->treeItemId() == treeItemId)) {
+        if (treeItemAddress == item->treeItemAddress()) {
             result_item = item;
             break;
         }
     }
 
-    if (!result_item && treeItemId != -1) {
+    if (!result_item ) {
     //      qDebug() << "result_item is null";
     }
 
     return result_item;
 }
 
-void ProjectTrashedTreeModel::removeProjectItem(int projectId, int treeItemId)
+void ProjectTrashedTreeModel::removeProjectItem(const TreeItemAddress &treeItemAddress)
 {
     QMutableListIterator<ProjectTreeItem *> iter(m_itemList);
     while (iter.hasNext()) {
         ProjectTreeItem *item = iter.next();
-         if ((item->projectId() == projectId) && (item->treeItemId() == treeItemId))  {
+        if (treeItemAddress == item->treeItemAddress()) {
              iter.remove();
          }
     }

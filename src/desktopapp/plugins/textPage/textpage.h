@@ -90,21 +90,18 @@ public:
         return true;
     }
 
-    QString pageTypeIconUrl(int projectId, int treeItemId) const override {
-        Q_UNUSED(projectId)
-        Q_UNUSED(treeItemId)
+    QString pageTypeIconUrl(const TreeItemAddress &treeItemAddress) const override {
+        Q_UNUSED(treeItemAddress)
         return ":/icons/backup/document-edit-sign.svg";
     }
 
     QVariantMap propertiesForCreationOfTreeItem(const QVariantMap &customProperties = QVariantMap()) const override;
 
-    void      updateCharAndWordCount(int  projectId,
-                                     int  treeItemId,
+    void      updateCharAndWordCount(const TreeItemAddress &treeItemAddress,
                                      bool sameThread = false)  override;
 
     // exporter
-    QTextDocumentFragment generateExporterTextFragment(int                projectId,
-                                                       int                treeItemId,
+    QTextDocumentFragment generateExporterTextFragment(const TreeItemAddress &treeItemAddress,
                                                        const QVariantMap& exportProperties,
                                                        SKRResult        & result) const override;
 

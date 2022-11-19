@@ -116,12 +116,12 @@ MainWindow *WindowManager::addEmptyWindow(bool restoreViewEnabled)
 
 //----------------------------------------------
 
-void WindowManager::addWindowForItemId(int projectId, int treeItemId)
+void WindowManager::addWindowForItemId(const TreeItemAddress &treeItemAddress)
 {
 
-    QString type = skrdata->treeHub()->getType(projectId, treeItemId);
+    QString type = skrdata->treeHub()->getType(treeItemAddress);
 
-    addWindow(false, type, projectId, treeItemId);
+    addWindow(false, type, treeItemAddress);
 }
 //----------------------------------------------
 
@@ -133,7 +133,7 @@ void WindowManager::addWindowForProjectIndependantPageType(const QString &pageTy
 
 void WindowManager::addWindowForProjectDependantPageType(int projectId, const QString &pageType)
 {
-    addWindow(false, pageType,projectId);
+    addWindow(false, pageType, TreeItemAddress(projectId, -1));
 
 }
 //----------------------------------------------
@@ -149,7 +149,7 @@ void WindowManager::insertAdditionalPropertyForViewManager(const QString &key, c
 
 }
 
-MainWindow * WindowManager::addWindow(bool restoreViewEnabled, const QString &pageType, int projectId, int treeItemId)
+MainWindow * WindowManager::addWindow(bool restoreViewEnabled, const QString &pageType, const TreeItemAddress &treeItemAddress)
 {
     int nextFreeWindowId = m_windowList.count();
 
@@ -174,8 +174,8 @@ MainWindow * WindowManager::addWindow(bool restoreViewEnabled, const QString &pa
 
 
 
-    if(!pageType.isEmpty() || projectId >=0 || treeItemId >= 0)
-        window->viewManager()->openSpecificView(pageType, projectId, treeItemId);
+    if(!pageType.isEmpty() || treeItemAddress.hasOnlyProjectId() || treeItemAddress.isValid())
+        window->viewManager()->openSpecificView(pageType, treeItemAddress);
 
     window->show();
     window->raise();

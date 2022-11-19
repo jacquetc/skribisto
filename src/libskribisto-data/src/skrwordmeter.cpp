@@ -4,11 +4,10 @@
 #include <QTextDocument>
 
 SKRWordMeterWorker::SKRWordMeterWorker(QObject       *parent,
-                                       int            projectId,
-                                       int            treeItemId,
-                                       const QString& text,
+                                       const TreeItemAddress &treeItemAddress,
+                                       const QString&& text,
                                        bool           triggerProjectModifiedSignal) :
-    QThread(parent), m_projectId(projectId), m_treeItemId(treeItemId), m_text(text),
+    QThread(parent), m_treeItemAddress(treeItemAddress), m_text(text),
     m_triggerProjectModifiedSignal(triggerProjectModifiedSignal)
 {}
 
@@ -35,7 +34,7 @@ void SKRWordMeterWorker::countWords()
         wordCount += 1;
     }
 
-    emit wordCountCalculated(m_projectId, m_treeItemId, wordCount, m_triggerProjectModifiedSignal);
+    emit wordCountCalculated(m_treeItemAddress, wordCount, m_triggerProjectModifiedSignal);
 }
 
 void SKRWordMeterWorker::countCharacters()
@@ -47,29 +46,25 @@ void SKRWordMeterWorker::countCharacters()
 
     int charCount = plainText.size();
 
-    emit characterCountCalculated(m_projectId, m_treeItemId, charCount,  m_triggerProjectModifiedSignal);
+    emit characterCountCalculated(m_treeItemAddress, charCount,  m_triggerProjectModifiedSignal);
 }
 
 void SKRWordMeterWorker::run()
 {
     countWords();
     countCharacters();
-    emit finished();
 }
 
 SKRWordMeter::SKRWordMeter(QObject *parent) : QObject(parent)
 {}
 
-void SKRWordMeter::countText(int            projectId,
-                             int            treeItemId,
-                             const QString& text,
+void SKRWordMeter::countText(const TreeItemAddress &treeItemAddress,
+                             const QString&& text,
                              bool           sameThread,
                              bool           triggerProjectModifiedSignal)
 {
-    SKRWordMeterWorker *worker = new SKRWordMeterWorker(this,
-                                                        projectId,
-                                                        treeItemId,
-                                                        text,
+    SKRWordMeterWorker *worker = new SKRWordMeterWorker(this, treeItemAddress,
+                                                        std::move(text),
                                                         triggerProjectModifiedSignal);
 
     if (sameThread) {

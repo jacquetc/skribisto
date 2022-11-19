@@ -25,6 +25,7 @@
 #include "skrresult.h"
 #include "skr.h"
 #include "skribisto_data_global.h"
+#include "treeitemaddress.h"
 
 class EXPORT SKRTagHub : public QObject {
     Q_OBJECT
@@ -64,14 +65,14 @@ public:
                                           int            tagId,
                                           const QString& color);
     Q_INVOKABLE SKRResult setUpdateDate(int              projectId,
-                                        int              paperId,
+                                        int              tagId,
                                         const QDateTime& newDate);
     Q_INVOKABLE QDateTime getUpdateDate(int projectId,
                                         int tagId) const;
 
 
     Q_INVOKABLE SKRResult setCreationDate(int              projectId,
-                                          int              paperId,
+                                          int              tagId,
                                           const QDateTime& newDate);
     Q_INVOKABLE QDateTime getCreationDate(int projectId,
                                           int tagId) const;
@@ -86,18 +87,15 @@ public:
                               int            tagId,
                               const QString& fieldName) const;
     Q_INVOKABLE int       getLastAddedId();
-    Q_INVOKABLE int       getTopPaperId(int projectId) const;
+    Q_INVOKABLE int       getTopTagId(int projectId) const;
 
     // relationship :
-    Q_INVOKABLE QList<int>getItemIdsFromTag(int projectId,
+    Q_INVOKABLE QList<TreeItemAddress>getItemIdsFromTag(int projectId,
                                             int tagId) const;
-    Q_INVOKABLE QList<int>getTagsFromItemId(int projectId,
-                                            int treeItemId) const;
-    Q_INVOKABLE SKRResult setTagRelationship(int projectId,
-                                             int treeItemId,
+    Q_INVOKABLE QList<int>getTagsFromItemId(const TreeItemAddress &treeItemAddress) const;
+    Q_INVOKABLE SKRResult setTagRelationship(const TreeItemAddress &treeItemAddress,
                                              int tagId);
-    Q_INVOKABLE SKRResult removeTagRelationship(int projectId,
-                                                int treeItemId,
+    Q_INVOKABLE SKRResult removeTagRelationship(const TreeItemAddress &treeItemAddress,
                                                 int tagId);
 
     Q_INVOKABLE SKRResult setTagRandomColors(int projectId,
@@ -132,21 +130,18 @@ signals:
                           int            tagId,
                           const QString& newColor);
     void creationDateChanged(int              projectId,
-                             int              paperId,
+                             int              tagId,
                              const QDateTime& newDate);
     void updateDateChanged(int              projectId,
                            int              tagId,
                            const QDateTime& newDate);
 
 
-    void tagRelationshipChanged(int projectId,
-                                int treeItemId,
+    void tagRelationshipChanged(const TreeItemAddress &treeItemAddress,
                                 int tagId);
-    void tagRelationshipRemoved(int projectId,
-                                int treeItemId,
+    void tagRelationshipRemoved(const TreeItemAddress &treeItemAddress,
                                 int tagId);
-    void tagRelationshipAdded(int projectId,
-                              int treeItemId,
+    void tagRelationshipAdded(const TreeItemAddress &treeItemAddress,
                               int tagId);
 
 private:

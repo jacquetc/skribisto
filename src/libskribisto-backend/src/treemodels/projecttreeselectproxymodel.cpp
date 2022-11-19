@@ -46,7 +46,7 @@ QVariant ProjectTreeSelectProxyModel::data(const QModelIndex &index, int role) c
     ProjectTreeItem *item = static_cast<ProjectTreeItem *>(sourceIndex.internalPointer());
 
     if ((role == Qt::CheckStateRole) && (col == 0)) {
-        return m_checkedIdsHash.value(item->treeItemId(), Qt::Unchecked);
+        return m_checkedIdsHash.value(item->treeItemAddress(), Qt::Unchecked);
     }
 
     return QSortFilterProxyModel::data(index, role);
@@ -86,15 +86,14 @@ bool ProjectTreeSelectProxyModel::setData(const QModelIndex &index, const QVaria
         static_cast<ProjectTreeItem *>(sourceIndex.internalPointer());
 
     if ((role == Qt::CheckStateRole) && (sourceIndex.column() == 0)) {
-        int treeItemId            = item->treeItemId();
+        TreeItemAddress treeItemId            = item->treeItemAddress();
         Qt::CheckState checkState = static_cast<Qt::CheckState>(value.toInt());
         m_checkedIdsHash.insert(treeItemId, checkState);
 
             if ((checkState == Qt::Checked) || (checkState == Qt::Unchecked)) {
-                this->checkStateOfAllChildren(item->projectId(), item->treeItemId(), checkState);
+                this->checkStateOfAllChildren(item->treeItemAddress(), checkState);
             }
-            this->determineCheckStateOfAllAncestors(item->projectId(),
-                                                    item->treeItemId(),
+            this->determineCheckStateOfAllAncestors(item->treeItemAddress(),
                                                     checkState);
 
     }
@@ -105,17 +104,15 @@ bool ProjectTreeSelectProxyModel::setData(const QModelIndex &index, const QVaria
 
 // --------------------------------------------------------------
 
-void ProjectTreeSelectProxyModel::checkStateOfAllChildren(int            projectId,
-                                                          int            treeItemId,
+void ProjectTreeSelectProxyModel::checkStateOfAllChildren(const TreeItemAddress &treeItemAddress,
                                                           Qt::CheckState checkState) {
     ProjectTreeModel *model = static_cast<ProjectTreeModel *>(this->sourceModel());
 
-    QList<int> childrenIdsList = skrdata->treeHub()->getAllChildren(projectId,
-                                                       treeItemId);
+    QList<TreeItemAddress> childrenIdsList = skrdata->treeHub()->getAllChildren(treeItemAddress);
 
-    for (int childId : qAsConst(childrenIdsList)) {
-        m_checkedIdsHash.insert(childId, checkState);
-        QModelIndex modelIndex = model->getModelIndex(projectId, childId);
+    for (const TreeItemAddress &childTreeItemAddress : qAsConst(childrenIdsList)) {
+        m_checkedIdsHash.insert(childTreeItemAddress, checkState);
+        QModelIndex modelIndex = model->getModelIndex(childTreeItemAddress);
 
         emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
                          QVector<int>() << Qt::CheckStateRole);
@@ -124,14 +121,11 @@ void ProjectTreeSelectProxyModel::checkStateOfAllChildren(int            project
 
 // --------------------------------------------------------------
 
-void ProjectTreeSelectProxyModel::determineCheckStateOfAllAncestors(
-    int            projectId,
-    int            treeItemId,
+void ProjectTreeSelectProxyModel::determineCheckStateOfAllAncestors(const TreeItemAddress &treeItemAddress,
     Qt::CheckState checkState)
 {
     ProjectTreeModel *model     = static_cast<ProjectTreeModel *>(this->sourceModel());
-    QList<int> ancestorsIdsList = skrdata->treeHub()->getAllAncestors(projectId,
-                                                         treeItemId);
+    QList<TreeItemAddress> ancestorsIdsList = skrdata->treeHub()->getAllAncestors(treeItemAddress);
 
     if (ancestorsIdsList.isEmpty()) {
         return;
@@ -142,8 +136,7 @@ void ProjectTreeSelectProxyModel::determineCheckStateOfAllAncestors(
 
     if (checkState == Qt::Unchecked) {
         // see if the direct ancestor has all its children unchecked
-        QList<int> siblingsIdsList = skrdata->treeHub()->getAllSiblings(projectId,
-                                                           treeItemId);
+        QList<TreeItemAddress> siblingsIdsList = skrdata->treeHub()->getAllSiblings(treeItemAddress);
 
         if (siblingsIdsList.isEmpty()) {
             ancestorCheckState = Qt::PartiallyChecked;
@@ -154,8 +147,8 @@ void ProjectTreeSelectProxyModel::determineCheckStateOfAllAncestors(
             bool areAtLeastOneSiblingPartiallyChecked = false;
             bool areAtLeastOneSiblingUnchecked        = false;
 
-            for (int siblingId : qAsConst(siblingsIdsList)) {
-                Qt::CheckState state = m_checkedIdsHash.value(siblingId, Qt::Unchecked);
+            for (const TreeItemAddress &siblingTreeItemAddress : qAsConst(siblingsIdsList)) {
+                Qt::CheckState state = m_checkedIdsHash.value(siblingTreeItemAddress, Qt::Unchecked);
 
                 if (state == Qt::Checked) {
                     areAtLeastOneSiblingChecked = true;
@@ -188,8 +181,7 @@ void ProjectTreeSelectProxyModel::determineCheckStateOfAllAncestors(
         // see if the direct ancestor has all its children checked
 
 
-        QList<int> siblingsIdsList = skrdata->treeHub()->getAllSiblings(projectId,
-                                                           treeItemId);
+        QList<TreeItemAddress> siblingsIdsList = skrdata->treeHub()->getAllSiblings(treeItemAddress);
 
         if (siblingsIdsList.isEmpty()) {
             ancestorCheckState = Qt::Checked;
@@ -200,8 +192,8 @@ void ProjectTreeSelectProxyModel::determineCheckStateOfAllAncestors(
             bool areAtLeastOneSiblingPartiallyChecked = false;
             bool areAtLeastOneSiblingUnchecked        = false;
 
-            for (int siblingId : qAsConst(siblingsIdsList)) {
-                Qt::CheckState state = m_checkedIdsHash.value(siblingId, Qt::Unchecked);
+            for (const TreeItemAddress &siblingTreeItemAddress : qAsConst(siblingsIdsList)) {
+                Qt::CheckState state = m_checkedIdsHash.value(siblingTreeItemAddress, Qt::Unchecked);
 
                 if (state == Qt::Checked) {
                     areAtLeastOneSiblingChecked = true;
@@ -252,14 +244,13 @@ void ProjectTreeSelectProxyModel::determineCheckStateOfAllAncestors(
     // for (int ancestorId : ancestorsIdsList) {
     m_checkedIdsHash.insert(ancestorsIdsList.first(), ancestorCheckState);
     QModelIndex modelIndex =
-        model->getModelIndex(projectId, ancestorsIdsList.first());
+        model->getModelIndex(ancestorsIdsList.first());
 
     emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
                      QVector<int>() << Qt::CheckStateRole);
 
     // }
-    determineCheckStateOfAllAncestors(m_projectId,
-                                      ancestorsIdsList.first(),
+    determineCheckStateOfAllAncestors(ancestorsIdsList.first(),
                                       ancestorCheckState);
 }
 
@@ -267,14 +258,14 @@ void ProjectTreeSelectProxyModel::determineCheckStateOfAllAncestors(
 
 //----------------------------------------------------------
 
-QList<int>ProjectTreeSelectProxyModel::getCheckedIdsList() {
-    QList<int> list;
+QList<TreeItemAddress>ProjectTreeSelectProxyModel::getCheckedIdsList() {
+    QList<TreeItemAddress> checkedList;
 
-    QHash<int, Qt::CheckState>::const_iterator i = m_checkedIdsHash.constBegin();
+    QHash<TreeItemAddress, Qt::CheckState>::const_iterator i = m_checkedIdsHash.constBegin();
 
     while (i != m_checkedIdsHash.constEnd()) {
         if ((i.value() == Qt::Checked) || (i.value() == Qt::PartiallyChecked)) {
-            list << i.key();
+            checkedList << i.key();
         }
         ++i;
     }
@@ -282,12 +273,12 @@ QList<int>ProjectTreeSelectProxyModel::getCheckedIdsList() {
 
     // sort list
 
-    QList<int> allSortedIds = skrdata->treeHub()->getAllIds(m_projectId);
-    QList<int> sortedCheckedIds;
+    QList<TreeItemAddress> allSortedIds = skrdata->treeHub()->getAllIds(m_projectId);
+    QList<TreeItemAddress> sortedCheckedIds;
 
-    for (int sortedId : qAsConst(allSortedIds)) {
-        if (list.contains(sortedId)) {
-            sortedCheckedIds.append(sortedId);
+    for (const TreeItemAddress &sortedTreeItemAddress : qAsConst(allSortedIds)) {
+        if (checkedList.contains(sortedTreeItemAddress)) {
+            sortedCheckedIds.append(sortedTreeItemAddress);
         }
     }
 
@@ -298,29 +289,28 @@ QList<int>ProjectTreeSelectProxyModel::getCheckedIdsList() {
 // --------------------------------------------------------------
 
 
-void ProjectTreeSelectProxyModel::setCheckedIdsList(const QList<int>checkedIdsList) {
+void ProjectTreeSelectProxyModel::setCheckedIdsList(const QList<TreeItemAddress> checkedAddresses) {
     ProjectTreeModel *model = static_cast<ProjectTreeModel *>(this->sourceModel());
 
 
     m_checkedIdsHash.clear();
 
 
-    if (checkedIdsList.isEmpty()) {
+    if (checkedAddresses.isEmpty()) {
         return;
     }
 
-    for (int i = checkedIdsList.count() - 1; i >= 0; i--) {
-        int treeItemId = checkedIdsList[i];
+    for (int i = checkedAddresses.count() - 1; i >= 0; i--) {
+        const TreeItemAddress &treeItemAddress = checkedAddresses.at(i);
 
 
-        if (!skrdata->treeHub()->hasChildren(m_projectId, treeItemId)) {
-            m_checkedIdsHash.insert(treeItemId, Qt::Checked);
+        if (!skrdata->treeHub()->hasChildren(treeItemAddress)) {
+            m_checkedIdsHash.insert(treeItemAddress, Qt::Checked);
         }
         else { // has children so verify if there is one checked or partially
             // checked
             Qt::CheckState finalState  = Qt::Unchecked;
-            QList<int> childrenIdsList = skrdata->treeHub()->getAllChildren(m_projectId,
-                                                               treeItemId);
+            QList<TreeItemAddress> childrenIdsList = skrdata->treeHub()->getAllChildren(treeItemAddress);
 
 
             bool areAllChildrenChecked              = false;
@@ -328,8 +318,8 @@ void ProjectTreeSelectProxyModel::setCheckedIdsList(const QList<int>checkedIdsLi
             bool areAtLeastOneChildPartiallyChecked = false;
             bool areAtLeastOneChildUnchecked        = false;
 
-            for (int childId : qAsConst(childrenIdsList)) {
-                Qt::CheckState state = m_checkedIdsHash.value(childId, Qt::Unchecked);
+            for (const TreeItemAddress &childTreeItemAddress : qAsConst(childrenIdsList)) {
+                Qt::CheckState state = m_checkedIdsHash.value(childTreeItemAddress, Qt::Unchecked);
 
                 if (state == Qt::Checked) {
                     areAtLeastOneChildChecked = true;
@@ -356,11 +346,11 @@ void ProjectTreeSelectProxyModel::setCheckedIdsList(const QList<int>checkedIdsLi
             }
 
 
-            m_checkedIdsHash.insert(treeItemId, finalState);
+            m_checkedIdsHash.insert(treeItemAddress, finalState);
         }
 
         // m_checkedIdsHash.insert(treeItemId, Qt::Checked);
-        QModelIndex modelIndex = model->getModelIndex(m_projectId, treeItemId);
+        QModelIndex modelIndex = model->getModelIndex(treeItemAddress);
 
         if (!modelIndex.isValid()) {
             continue;
@@ -376,12 +366,12 @@ void ProjectTreeSelectProxyModel::setCheckedIdsList(const QList<int>checkedIdsLi
 void ProjectTreeSelectProxyModel::checkNone()
 {
     ProjectTreeModel *model = static_cast<ProjectTreeModel *>(this->sourceModel());
-    QHash<int, Qt::CheckState> checkedIdsHash(m_checkedIdsHash);
+    QHash<TreeItemAddress, Qt::CheckState> checkedIdsHash(m_checkedIdsHash);
 
     m_checkedIdsHash.clear();
 
-    for (int treeItemId : checkedIdsHash.keys()) {
-        QModelIndex modelIndex = model->getModelIndex(m_projectId, treeItemId);
+    for (const TreeItemAddress &treeItemAddress : checkedIdsHash.keys()) {
+        QModelIndex modelIndex = model->getModelIndex(treeItemAddress);
         emit dataChanged(this->mapFromSource(modelIndex), this->mapFromSource(modelIndex),
                          QVector<int>() << Qt::CheckStateRole);
     }

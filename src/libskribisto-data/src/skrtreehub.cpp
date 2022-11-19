@@ -26,25 +26,67 @@
 #include <QCollator>
 #include <QHash>
 
-SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree"), m_last_added_id(-1), m_cutCopy(
+SKRTreeHub::SKRTreeHub(QObject *parent) : QObject(parent), m_tableName("tbl_tree"), m_last_added_address(TreeItemAddress()), m_cutCopy(
                                                                                                              CutCopy())
 {
     connect(this,                  &SKRTreeHub::errorSent,        this, &SKRTreeHub::setError, Qt::DirectConnection);
 
     // reset m_cutCopy
     connect(skrdata->projectHub(), &PLMProjectHub::projectClosed, this, [this](int projectId) {
-        if (m_cutCopy.projectId == projectId) {
+        // clear current cutCopy
+        if (!m_cutCopy.treeItemAddresses.isEmpty() && m_cutCopy.treeItemAddresses.first().projectId == projectId) {
             m_cutCopy = CutCopy();
         }
     });
+
+    connect(skrdata->projectHub(), &PLMProjectHub::projectLoaded, this, &SKRTreeHub::resetCache);
+
+    connect(this, &SKRTreeHub::treeReset, this, &SKRTreeHub::resetCache);
+    connect(this, &SKRTreeHub::allValuesChanged, this, &SKRTreeHub::resetCacheByAddress);
+    connect(this, &SKRTreeHub::treeItemAdded, this, &SKRTreeHub::resetCacheByAddress);
+    connect(this, &SKRTreeHub::treeItemsAdded, this, [this](QList<TreeItemAddress> treeItemAddresses){
+        if(!treeItemAddresses.isEmpty()){
+            this->resetCache(treeItemAddresses.first().projectId);
+        }
+    });
+    connect(this, &SKRTreeHub::treeItemAboutToBeRemoved, this, &SKRTreeHub::resetCacheByAddress);
+    connect(this, &SKRTreeHub::treeItemRemoved, this, &SKRTreeHub::resetCacheByAddress);
+    connect(this, &SKRTreeHub::treeItemMoved, this, [this](QList<TreeItemAddress> sourceTreeItemAddresses,
+            const TreeItemAddress &targetTreeItemAddress){
+    });
+    connect(this, &SKRTreeHub::allValuesChanged, this, &SKRTreeHub::resetCacheByAddress);
+
 }
 
 // ----------------------------------------------------------------------------------------
 
-QHash<int, int>SKRTreeHub::getAllSortOrders(int projectId) const
+void SKRTreeHub::resetCache(int projectId)
 {
+    m_getAllIds_cache.remove(projectId);
+    m_getAllIds_cache.insert(projectId, this->getAllIds(projectId));
+
+    m_getAllSortOrders_cache.remove(projectId);
+    m_getAllSortOrders_cache.insert(projectId, this->getAllSortOrders(projectId));
+
+    m_getAllIndents_cache.remove(projectId);
+    m_getAllIndents_cache.insert(projectId, this->getAllIndents(projectId));
+}
+
+void SKRTreeHub::resetCacheByAddress(const TreeItemAddress &treeItemAddress)
+{
+    this->resetCache(treeItemAddress.projectId);
+}
+// ----------------------------------------------------------------------------------------
+
+QHash<TreeItemAddress, int>SKRTreeHub::getAllSortOrders(int projectId) const
+{
+    if(m_getAllSortOrders_cache.contains(projectId)){
+        return m_getAllSortOrders_cache.value(projectId);
+    }
+
     SKRResult result(this);
 
+    QHash<TreeItemAddress, int> final;
     QHash<int, int> hash;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
@@ -52,31 +94,52 @@ QHash<int, int>SKRTreeHub::getAllSortOrders(int projectId) const
     result = queries.getValueByIds("l_sort_order", out, "", QVariant(), true);
     IFOK(result) {
         hash = HashIntQVariantConverter::convertToIntInt(out);
+
+        QHash<int, int>::const_iterator i = hash.constBegin();
+        while(i != hash.constEnd()){
+            final.insert(TreeItemAddress(projectId, i.key()), i.value());
+            i++;
+        }
     }
     IFKO(result) {
         emit errorSent(result);
     }
-    return hash;
+    return final;
 }
 
 // ----------------------------------------------------------------------------------------
 
-QHash<int, int>SKRTreeHub::getAllIndents(int projectId) const
+QHash<TreeItemAddress, int>SKRTreeHub::getAllIndents(int projectId) const
 {
+
+
+    if(m_getAllIndents_cache.contains(projectId)){
+        return m_getAllIndents_cache.value(projectId);
+    }
+
     SKRResult result(this);
 
     QHash<int, int> hash;
+    QHash<TreeItemAddress, int> final;
     QHash<int, QVariant> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
     result = queries.getValueByIds("l_indent", out, "", QVariant(), true);
     IFOK(result) {
         hash = HashIntQVariantConverter::convertToIntInt(out);
+
+
+        QHash<int, int>::const_iterator i = hash.constBegin();
+        while(i != hash.constEnd()){
+            final.insert(TreeItemAddress(projectId, i.key()), i.value());
+            i++;
+        }
+
     }
     IFKO(result) {
         emit errorSent(result);
     }
-    return hash;
+    return final;
 }
 
 // ----------------------------------------------------------------------------------------
@@ -86,32 +149,43 @@ QHash<int, int>SKRTreeHub::getAllIndents(int projectId) const
 /// \param projectId
 /// \return
 /// Get sorted ids, trashed ids included
-QList<int>SKRTreeHub::getAllIds(int projectId) const
+QList<TreeItemAddress>SKRTreeHub::getAllIds(int projectId) const
 {
     SKRResult result(this);
 
-    QList<int> list;
+
+    if(m_getAllIds_cache.contains(projectId)){
+        return m_getAllIds_cache.value(projectId);
+    }
+
+    QList<TreeItemAddress> list;
+
     QList<int> out;
     PLMSqlQueries queries(projectId, m_tableName);
 
     result = queries.getSortedIds(out);
     IFOK(result) {
-        list = out;
+        for(int itemId: out){
+            list << TreeItemAddress(projectId, itemId);
+        }
     }
     IFKO(result) {
         emit errorSent(result);
     }
+
+
+
     return list;
 }
 
 //-------------------------------------------------------
 
-QList<int> SKRTreeHub::getAllTrashedIds(int projectId) const
+QList<TreeItemAddress> SKRTreeHub::getAllTrashedIds(int projectId) const
 {
 
     SKRResult result(this);
 
-    QList<int> list;
+    QList<TreeItemAddress> list;
 
 
     QHash<int, QVariant> out;
@@ -127,7 +201,13 @@ QList<int> SKRTreeHub::getAllTrashedIds(int projectId) const
     hash = HashIntQVariantConverter::convertToIntInt(out);
 
     IFOK(result) {
-        list = hash.values();
+
+        QHash<int, int>::const_iterator i = hash.constBegin();
+        while(i != hash.constEnd()){
+            list << TreeItemAddress(projectId, i.value());
+            i++;
+        }
+
     }
     IFKO(result) {
         emit errorSent(result);
@@ -147,10 +227,10 @@ QList<QVariantMap> SKRTreeHub::saveTree(int projectId) const
     QVariantMap allFields;
     QList<QVariantMap> list;
 
-    for(int treeItemId : this->getAllIds(projectId)){
+    for(const TreeItemAddress &treeItemAddress : this->getAllIds(projectId)){
 
         for(const QString &fieldName : fieldNames) {
-            allFields.insert(fieldName, this->get(projectId, treeItemId, fieldName));
+            allFields.insert(fieldName, this->get(treeItemAddress, fieldName));
         }
 
         list.append(allFields);
@@ -204,17 +284,17 @@ SKRResult SKRTreeHub::restoreTree(int projectId, QList<QVariantMap> allValues)
 
 // ----------------------------------------------------------------------------------------
 
-QVariantMap SKRTreeHub::saveId(int projectId, int treeItemId) const
+QVariantMap SKRTreeHub::saveId(const TreeItemAddress &treeItemAddress) const
 {
     SKRResult result(this);
 
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress.projectId, m_tableName);
     QStringList fieldNames = queries.getAllFieldTitles();
 
     QVariantMap allFields;
 
     for(const QString &fieldName : fieldNames) {
-        allFields.insert(fieldName, this->get(projectId, treeItemId, fieldName));
+        allFields.insert(fieldName, this->get(treeItemAddress, fieldName));
     }
 
     IFKO(result) {
@@ -226,22 +306,22 @@ QVariantMap SKRTreeHub::saveId(int projectId, int treeItemId) const
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::restoreId(int projectId, int treeItemId, const QVariantMap &values)
+SKRResult SKRTreeHub::restoreId(const TreeItemAddress &treeItemAddress, const QVariantMap &values)
 {
     SKRResult result(this);
 
     QVariantMap::const_iterator i = values.constBegin();
     while (i != values.constEnd()) {
-        result = set(projectId, treeItemId, i.key(), i.value(), false, false);
+        result = set(treeItemAddress, i.key(), i.value(), false, false);
         ++i;
     }
-    this->commit(projectId);
+    this->commit(treeItemAddress.projectId);
 
 
     IFOK(result) {
         // do like if a tree item was added :
-        emit treeItemAdded(projectId, treeItemId);
-        emit projectModified(projectId);
+        emit treeItemAdded(treeItemAddress);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -251,14 +331,14 @@ SKRResult SKRTreeHub::restoreId(int projectId, int treeItemId, const QVariantMap
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setTreeItemId(int projectId, int treeItemId, int newId)
+SKRResult SKRTreeHub::setTreeItemId(const TreeItemAddress &treeItemAddress, int newId)
 {
 
-    SKRResult result = set(projectId, treeItemId, "l_tree_id", newId);
+    SKRResult result = set(treeItemAddress, "l_tree_id", newId);
 
     IFOK(result) {
-        emit treeItemIdChanged(projectId, treeItemId, newId);
-        emit projectModified(projectId);
+        emit treeItemIdChanged(treeItemAddress, newId);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -268,13 +348,13 @@ SKRResult SKRTreeHub::setTreeItemId(int projectId, int treeItemId, int newId)
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setTitle(int projectId, int treeItemId, const QString& newTitle)
+SKRResult SKRTreeHub::setTitle(const TreeItemAddress &treeItemAddress, const QString& newTitle)
 {
-    SKRResult result = set(projectId, treeItemId, "t_title", newTitle);
+    SKRResult result = set(treeItemAddress, "t_title", newTitle);
 
     IFOK(result) {
-        emit titleChanged(projectId, treeItemId, newTitle);
-        emit projectModified(projectId);
+        emit titleChanged(treeItemAddress, newTitle);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -284,21 +364,21 @@ SKRResult SKRTreeHub::setTitle(int projectId, int treeItemId, const QString& new
 
 // ----------------------------------------------------------------------------------------
 
-QString SKRTreeHub::getTitle(int projectId, int treeItemId) const
+QString SKRTreeHub::getTitle(const TreeItemAddress &treeItemAddress) const
 {
-    return get(projectId, treeItemId, "t_title").toString();
+    return get(treeItemAddress, "t_title").toString();
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setInternalTitle(int projectId, int treeItemId, const QString& internalTitle)
+SKRResult SKRTreeHub::setInternalTitle(const TreeItemAddress &treeItemAddress, const QString& internalTitle)
 {
 
-    SKRResult result = set(projectId, treeItemId, "t_internal_title", internalTitle);
+    SKRResult result = set(treeItemAddress, "t_internal_title", internalTitle);
 
     IFOK(result) {
-        emit internalTitleChanged(projectId, treeItemId, internalTitle);
-        emit projectModified(projectId);
+        emit internalTitleChanged(treeItemAddress, internalTitle);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -312,11 +392,11 @@ SKRResult SKRTreeHub::removeInternalTitleFromAll(int projectId, const QString& i
 {
     SKRResult result(this);
 
-    QList<int> idList = this->getAllIds(projectId);
+    QList<TreeItemAddress> idList = this->getAllIds(projectId);
 
-    for (int id : qAsConst(idList)) {
-        if (this->getInternalTitle(projectId, id) == internalTitle) {
-            result = this->setInternalTitle(projectId, id, "");
+    for (const TreeItemAddress &treeItemAddress : qAsConst(idList)) {
+        if (this->getInternalTitle(treeItemAddress) == internalTitle) {
+            result = this->setInternalTitle(treeItemAddress, "");
         }
     }
 
@@ -328,7 +408,7 @@ SKRResult SKRTreeHub::removeInternalTitleFromAll(int projectId, const QString& i
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getIdsWithInternalTitle(int projectId, const QString& internalTitle) const
+QList<TreeItemAddress>SKRTreeHub::getIdsWithInternalTitle(int projectId, const QString& internalTitle) const
 {
     SKRResult result(this);
     QHash<int, QVariant> out;
@@ -341,32 +421,38 @@ QList<int>SKRTreeHub::getIdsWithInternalTitle(int projectId, const QString& inte
 
     result = queries.getValueByIdsWhere("t_title", out, where);
 
-    return out.keys();
+    QList<TreeItemAddress> treeItemAddresses;
+    for(int itemId: out.keys()){
+        treeItemAddresses << TreeItemAddress(projectId, itemId);
+
+    }
+
+    return treeItemAddresses;
 }
 
 // ----------------------------------------------------------------------------------------
 
-QString SKRTreeHub::getInternalTitle(int projectId, int treeItemId) const
+QString SKRTreeHub::getInternalTitle(const TreeItemAddress &treeItemAddress) const
 {
-    return get(projectId, treeItemId, "t_internal_title").toString();
+    return get(treeItemAddress, "t_internal_title").toString();
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setIndent(int projectId, int treeItemId, int newIndent)
+SKRResult SKRTreeHub::setIndent(const TreeItemAddress &treeItemAddress, int newIndent)
 {
-     return this->setIndent(projectId, treeItemId, newIndent, true, true);
+     return this->setIndent(treeItemAddress, newIndent, true, true);
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setIndent(int projectId, int treeItemId, int newIndent, bool setCurrentdate, bool commit)
+SKRResult SKRTreeHub::setIndent(const TreeItemAddress &treeItemAddress, int newIndent, bool setCurrentdate, bool commit)
 {
-    SKRResult result = set(projectId, treeItemId, "l_indent", newIndent, setCurrentdate, commit);
+    SKRResult result = set(treeItemAddress, "l_indent", newIndent, setCurrentdate, commit);
 
     IFOK(result) {
-        emit indentChanged(projectId, treeItemId, newIndent);
-        emit projectModified(projectId);
+        emit indentChanged(treeItemAddress, newIndent);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -376,14 +462,14 @@ SKRResult SKRTreeHub::setIndent(int projectId, int treeItemId, int newIndent, bo
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getIndent(int projectId, int treeItemId) const
+int SKRTreeHub::getIndent(const TreeItemAddress &treeItemAddress) const
 {
     int indent;
 
-    if (treeItemId == -1) // is project item
+    if (treeItemAddress.itemId == -1) // is project item
         indent = -1;
     else {
-        indent = get(projectId, treeItemId, "l_indent").toInt();
+        indent = get(treeItemAddress, "l_indent").toInt();
     }
 
     return indent;
@@ -391,20 +477,20 @@ int SKRTreeHub::getIndent(int projectId, int treeItemId) const
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setSortOrder(int projectId, int treeItemId, int newSortOrder)
+SKRResult SKRTreeHub::setSortOrder(const TreeItemAddress &treeItemAddress, int newSortOrder)
 {
-    return this->setSortOrder(projectId, treeItemId, newSortOrder, true, true);
+    return this->setSortOrder(treeItemAddress, newSortOrder, true, true);
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setSortOrder(int projectId, int treeItemId, int newSortOrder, bool setCurrentdate, bool commit)
+SKRResult SKRTreeHub::setSortOrder(const TreeItemAddress &treeItemAddress, int newSortOrder, bool setCurrentdate, bool commit)
 {
-    SKRResult result = set(projectId, treeItemId, "l_sort_order", newSortOrder, setCurrentdate, commit);
+    SKRResult result = set(treeItemAddress, "l_sort_order", newSortOrder, setCurrentdate, commit);
 
     IFOK(result) {
-        emit sortOrderChanged(projectId, treeItemId, newSortOrder);
-        emit projectModified(projectId);
+        emit sortOrderChanged(treeItemAddress, newSortOrder);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -414,20 +500,20 @@ SKRResult SKRTreeHub::setSortOrder(int projectId, int treeItemId, int newSortOrd
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getSortOrder(int projectId, int treeItemId) const
+int SKRTreeHub::getSortOrder(const TreeItemAddress &treeItemAddress) const
 {
-    return get(projectId, treeItemId, "l_sort_order").toInt();
+    return get(treeItemAddress, "l_sort_order").toInt();
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setType(int projectId, int treeItemId, const QString& newType)
+SKRResult SKRTreeHub::setType(const TreeItemAddress &treeItemAddress, const QString& newType)
 {
-    SKRResult result = set(projectId, treeItemId, "t_type", newType);
+    SKRResult result = set(treeItemAddress, "t_type", newType);
 
     IFOK(result) {
-        emit typeChanged(projectId, treeItemId, newType);
-        emit projectModified(projectId);
+        emit typeChanged(treeItemAddress, newType);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -437,31 +523,30 @@ SKRResult SKRTreeHub::setType(int projectId, int treeItemId, const QString& newT
 
 // ----------------------------------------------------------------------------------------
 
-QString SKRTreeHub::getType(int projectId, int treeItemId) const
+QString SKRTreeHub::getType(const TreeItemAddress &treeItemAddress) const
 {
-    return get(projectId, treeItemId, "t_type").toString();
+    return get(treeItemAddress, "t_type").toString();
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setPrimaryContent(int projectId, int treeItemId, const QString& newContent)
+SKRResult SKRTreeHub::setPrimaryContent(const TreeItemAddress &treeItemAddress, const QString& newContent)
 {
-    return this->setPrimaryContent(projectId, treeItemId, newContent, true, true);
+    return this->setPrimaryContent(treeItemAddress, newContent, true, true);
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setPrimaryContent(int            projectId,
-                                        int            treeItemId,
+SKRResult SKRTreeHub::setPrimaryContent(const TreeItemAddress &treeItemAddress,
                                         const QString& newContent,
                                         bool           setCurrentdate,
                                         bool           commit)
 {
-    SKRResult result = set(projectId, treeItemId, "m_primary_content", newContent, setCurrentdate, commit);
+    SKRResult result = set(treeItemAddress, "m_primary_content", newContent, setCurrentdate, commit);
 
     IFOK(result) {
-        emit primaryContentChanged(projectId, treeItemId, newContent);
-        emit projectModified(projectId);
+        emit primaryContentChanged(treeItemAddress, newContent);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -471,33 +556,32 @@ SKRResult SKRTreeHub::setPrimaryContent(int            projectId,
 
 // ----------------------------------------------------------------------------------------
 
-QString SKRTreeHub::getPrimaryContent(int projectId, int treeItemId) const
+QString SKRTreeHub::getPrimaryContent(const TreeItemAddress &treeItemAddress) const
 {
-    QString content = get(projectId, treeItemId, "m_primary_content").toString();
+    QString content = get(treeItemAddress, "m_primary_content").toString();
 
     return content;
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setSecondaryContent(int projectId, int treeItemId, const QString& newContent)
+SKRResult SKRTreeHub::setSecondaryContent(const TreeItemAddress &treeItemAddress, const QString& newContent)
 {
-    return this->setSecondaryContent(projectId, treeItemId, newContent, true, true);
+    return this->setSecondaryContent(treeItemAddress, newContent, true, true);
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setSecondaryContent(int            projectId,
-                                          int            treeItemId,
+SKRResult SKRTreeHub::setSecondaryContent(const TreeItemAddress &treeItemAddress,
                                           const QString& newContent,
                                           bool           setCurrentdate,
                                           bool           commit)
 {
-    SKRResult result = set(projectId, treeItemId, "m_secondary_content", newContent, setCurrentdate, commit);
+    SKRResult result = set(treeItemAddress, "m_secondary_content", newContent, setCurrentdate, commit);
 
     IFOK(result) {
-        emit secondaryContentChanged(projectId, treeItemId, newContent);
-        emit projectModified(projectId);
+        emit secondaryContentChanged(treeItemAddress, newContent);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -507,39 +591,39 @@ SKRResult SKRTreeHub::setSecondaryContent(int            projectId,
 
 // ----------------------------------------------------------------------------------------
 
-QString SKRTreeHub::getSecondaryContent(int projectId, int treeItemId) const
+QString SKRTreeHub::getSecondaryContent(const TreeItemAddress &treeItemAddress) const
 {
-    QString content = get(projectId, treeItemId, "m_secondary_content").toString();
+    QString content = get(treeItemAddress, "m_secondary_content").toString();
 
     return content;
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setTrashedWithChildren(int projectId, int treeItemId, bool newTrashedState)
+SKRResult SKRTreeHub::setTrashedWithChildren(const TreeItemAddress &treeItemAddress, bool newTrashedState)
 {
     SKRResult result(this);
 
-    QDateTime parenTrashDate = this->getTrashedDate(projectId, treeItemId);
-    QList<int> childrenIdList = this->getAllChildren(projectId, treeItemId);
+    QDateTime parenTrashDate = this->getTrashedDate(treeItemAddress);
+    QList<TreeItemAddress> childTreeItemAddresses = this->getAllChildren(treeItemAddress);
 
     QDateTime now = QDateTime::currentDateTime();
 
 
     // children deletion (or recovery)
-    for (int& _id : childrenIdList) {
-        IFOKDO(result, set(projectId, _id, "b_trashed", newTrashedState));
+    for (const TreeItemAddress &childTreeItemAddress : childTreeItemAddresses) {
+        IFOKDO(result, set(childTreeItemAddress, "b_trashed", newTrashedState));
 
         // set date but those already deleted
-        if (newTrashedState && this->getTrashedDate(projectId, _id).isNull()) {
-            result = this->setTrashedDateToNow(projectId, _id, now);
-            emit trashedChanged(projectId, _id, newTrashedState);
+        if (newTrashedState && this->getTrashedDate(childTreeItemAddress).isNull()) {
+            result = this->setTrashedDateToNow(childTreeItemAddress, now);
+            emit trashedChanged(childTreeItemAddress, newTrashedState);
         }
 
         // restore those deleted at the same time
-        else if (!newTrashedState && this->getTrashedDate(projectId, _id) == parenTrashDate) {
-            result = this->setTrashedDateToNull(projectId, _id);
-            emit trashedChanged(projectId, _id, newTrashedState);
+        else if (!newTrashedState && this->getTrashedDate(childTreeItemAddress) == parenTrashDate) {
+            result = this->setTrashedDateToNull(childTreeItemAddress);
+            emit trashedChanged(childTreeItemAddress, newTrashedState);
         }
 
     }
@@ -547,22 +631,22 @@ SKRResult SKRTreeHub::setTrashedWithChildren(int projectId, int treeItemId, bool
 
     // do parent :
     IFOK(result) {
-        result = set(projectId, treeItemId, "b_trashed", newTrashedState);
+        result = set(treeItemAddress, "b_trashed", newTrashedState);
 
         // set date but those already deleted
-        if (newTrashedState && this->getTrashedDate(projectId, treeItemId).isNull()) {
-            result = this->setTrashedDateToNow(projectId, treeItemId, now);
+        if (newTrashedState && this->getTrashedDate(treeItemAddress).isNull()) {
+            result = this->setTrashedDateToNow(treeItemAddress, now);
         }
 
         // restore
         else if (!newTrashedState) {
-            result = this->setTrashedDateToNull(projectId, treeItemId);
+            result = this->setTrashedDateToNull(treeItemAddress);
         }
     }
 
     IFOK(result) {
-        emit trashedChanged(projectId, treeItemId, newTrashedState);
-        emit projectModified(projectId);
+        emit trashedChanged(treeItemAddress, newTrashedState);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -572,14 +656,14 @@ SKRResult SKRTreeHub::setTrashedWithChildren(int projectId, int treeItemId, bool
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::untrashOnlyOneTreeItem(int projectId, int treeItemId)
+SKRResult SKRTreeHub::untrashOnlyOneTreeItem(const TreeItemAddress &treeItemAddress)
 {
-    SKRResult result = set(projectId, treeItemId, "b_trashed", false);
+    SKRResult result = set(treeItemAddress, "b_trashed", false);
 
-    IFOKDO(result, this->setTrashedDateToNull(projectId, treeItemId));
+    IFOKDO(result, this->setTrashedDateToNull(treeItemAddress));
 
     IFOK(result) {
-        emit trashedChanged(projectId, treeItemId, false);
+        emit trashedChanged(treeItemAddress, false);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -589,20 +673,20 @@ SKRResult SKRTreeHub::untrashOnlyOneTreeItem(int projectId, int treeItemId)
 
 // ----------------------------------------------------------------------------------------
 
-bool SKRTreeHub::getTrashed(int projectId, int treeItemId) const
+bool SKRTreeHub::getTrashed(const TreeItemAddress &treeItemAddress) const
 {
-    return get(projectId, treeItemId, "b_trashed").toBool();
+    return get(treeItemAddress, "b_trashed").toBool();
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setCreationDate(int projectId, int treeItemId, const QDateTime& newDate)
+SKRResult SKRTreeHub::setCreationDate(const TreeItemAddress &treeItemAddress, const QDateTime& newDate)
 {
-    SKRResult result = set(projectId, treeItemId, "dt_created", newDate);
+    SKRResult result = set(treeItemAddress, "dt_created", newDate);
 
     IFOK(result) {
-        emit creationDateChanged(projectId, treeItemId, newDate);
-        emit projectModified(projectId);
+        emit creationDateChanged(treeItemAddress, newDate);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -612,20 +696,20 @@ SKRResult SKRTreeHub::setCreationDate(int projectId, int treeItemId, const QDate
 
 // ----------------------------------------------------------------------------------------
 
-QDateTime SKRTreeHub::getCreationDate(int projectId, int treeItemId) const
+QDateTime SKRTreeHub::getCreationDate(const TreeItemAddress &treeItemAddress) const
 {
-    return get(projectId, treeItemId, "dt_created").toDateTime();
+    return get(treeItemAddress, "dt_created").toDateTime();
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setUpdateDate(int projectId, int treeItemId, const QDateTime& newDate)
+SKRResult SKRTreeHub::setUpdateDate(const TreeItemAddress &treeItemAddress, const QDateTime& newDate)
 {
-    SKRResult result = set(projectId, treeItemId, "dt_updated", newDate);
+    SKRResult result = set(treeItemAddress, "dt_updated", newDate);
 
     IFOK(result) {
-        emit updateDateChanged(projectId, treeItemId, newDate);
-        emit projectModified(projectId);
+        emit updateDateChanged(treeItemAddress, newDate);
+        emit projectModified(treeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -635,18 +719,18 @@ SKRResult SKRTreeHub::setUpdateDate(int projectId, int treeItemId, const QDateTi
 
 // ----------------------------------------------------------------------------------------
 
-QDateTime SKRTreeHub::getUpdateDate(int projectId, int treeItemId) const
+QDateTime SKRTreeHub::getUpdateDate(const TreeItemAddress &treeItemAddress) const
 {
-    return get(projectId, treeItemId, "dt_updated").toDateTime();
+    return get(treeItemAddress, "dt_updated").toDateTime();
 }
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::row(int projectId, int treeItemId) const
+int SKRTreeHub::row(const TreeItemAddress &treeItemAddress) const
 {
-    int sortOrder = this->getSortOrder(projectId, treeItemId);
-    int parentId = this->getParentId(projectId, treeItemId);
-    int parentSortOrder = this->getSortOrder(projectId, parentId);
+    int sortOrder = this->getSortOrder(treeItemAddress);
+    const TreeItemAddress &parentTreeItemAddress = this->getParentId(treeItemAddress);
+    int parentSortOrder = this->getSortOrder(parentTreeItemAddress);
 
     return (sortOrder - parentSortOrder) / 1000 - 1;
 
@@ -654,10 +738,10 @@ int SKRTreeHub::row(int projectId, int treeItemId) const
 
 // ----------------------------------------------------------------------------------------
 
-bool SKRTreeHub::hasChildren(int projectId, int treeItemId, bool trashedAreIncluded, bool notTrashedAreIncluded) const
+bool SKRTreeHub::hasChildren(const TreeItemAddress &treeItemAddress, bool trashedAreIncluded, bool notTrashedAreIncluded) const
 {
     SKRResult result(this);
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress.projectId, m_tableName);
 
     // if last of id list:
     QList<int> idList;
@@ -668,23 +752,23 @@ bool SKRTreeHub::hasChildren(int projectId, int treeItemId, bool trashedAreInclu
         return false;
     }
 
-    if (treeItemId == idList.last()) {
+    if (treeItemAddress.itemId == idList.last()) {
         return false;
     }
 
-    int indent = getIndent(projectId, treeItemId);
+    int indent = getIndent(treeItemAddress);
 
     int possibleFirstChildId;
 
-    if (treeItemId == -1) {                  // project item
+    if (treeItemAddress.itemId == -1) {                  // project item
         possibleFirstChildId = idList.at(0); // first real treeItem in table
     }
     else {
-        possibleFirstChildId = idList.at(idList.indexOf(treeItemId) + 1);
+        possibleFirstChildId = idList.at(idList.indexOf(treeItemAddress.itemId) + 1);
     }
 
 
-    int possibleFirstChildIndent = getIndent(projectId, possibleFirstChildId);
+    int possibleFirstChildIndent = getIndent(TreeItemAddress(treeItemAddress.projectId, possibleFirstChildId));
 
     // verify indent of child
     if (indent == possibleFirstChildIndent - 1) {
@@ -695,14 +779,15 @@ bool SKRTreeHub::hasChildren(int projectId, int treeItemId, bool trashedAreInclu
 
         for (int i = firstChildIndex; i < idList.count(); i++) {
             int childId = idList.at(i);
-            int indent  = getIndent(projectId, childId);
+            const TreeItemAddress &childTreeItemAddress = TreeItemAddress(treeItemAddress.projectId, childId);
+            int indent  = getIndent(childTreeItemAddress);
 
             if (indent < possibleFirstChildIndent) {
                 break;
             }
 
             if (indent == possibleFirstChildIndent) {
-                if (getTrashed(projectId, childId) == false) {
+                if (getTrashed(childTreeItemAddress) == false) {
                     haveOneNotTrashedChild = true;
                 }
                 else {
@@ -730,14 +815,14 @@ bool SKRTreeHub::hasChildren(int projectId, int treeItemId, bool trashedAreInclu
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getTopTreeItemId(int projectId) const
+TreeItemAddress SKRTreeHub::getTopTreeItemId(int projectId) const
 {
-    int value       = -2;
-    QList<int> list = this->getAllIds(projectId);
+    TreeItemAddress value       = TreeItemAddress();
+    QList<TreeItemAddress> list = this->getAllIds(projectId);
 
-    for (int id : qAsConst(list)) {
-        if (!this->getTrashed(projectId, id)) {
-            value = id;
+    for (const TreeItemAddress &treeItemAddress  : qAsConst(list)) {
+        if (!this->getTrashed(treeItemAddress)) {
+            value = treeItemAddress;
             break;
         }
     }
@@ -748,20 +833,20 @@ int SKRTreeHub::getTopTreeItemId(int projectId) const
 
 // ----------------------------------------------------------------------------------------
 
-QList<int> SKRTreeHub::filterOutChildren(int projectId, QList<int> treeItemIds) const
+QList<TreeItemAddress> SKRTreeHub::filterOutChildren(QList<TreeItemAddress> treeItemAddresses) const
 {
-    QList<int> finalList;
+    QList<TreeItemAddress> finalList;
 
-    QSet<int> childrenSet;
+    QSet<TreeItemAddress> childrenSet;
 
-    for(int id : treeItemIds){
-        for(int child : this->getAllChildren(projectId, id)){
-            childrenSet.insert(child);
+    for(const TreeItemAddress &treeItemAddress : treeItemAddresses){
+        for(const TreeItemAddress &childTreeItemAddress : this->getAllChildren(treeItemAddress)){
+            childrenSet.insert(childTreeItemAddress);
         }
     }
-    for(int id : treeItemIds){
-        if(!childrenSet.contains(id)){
-            finalList.append(id);
+    for(const TreeItemAddress &treeItemAddress : treeItemAddresses){
+        if(!childrenSet.contains(treeItemAddress)){
+            finalList.append(treeItemAddress);
         }
     }
     return finalList;
@@ -776,21 +861,20 @@ SKRResult SKRTreeHub::getError()
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::set(int             projectId,
-                          int             treeItemId,
+SKRResult SKRTreeHub::set(const TreeItemAddress &treeItemAddress,
                           const QString & fieldName,
                           const QVariant& value,
                           bool            setCurrentDateBool,
                           bool            commit)
 {
     SKRResult result(this);
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress.projectId, m_tableName);
 
     queries.beginTransaction();
-    result = queries.set(treeItemId, fieldName, value);
+    result = queries.set(treeItemAddress.itemId, fieldName, value);
 
     if (setCurrentDateBool) {
-        IFOKDO(result, queries.setCurrentDate(treeItemId, "dt_updated"));
+        IFOKDO(result, queries.setCurrentDate(treeItemAddress.itemId, "dt_updated"));
     }
 
     IFKO(result) {
@@ -809,14 +893,14 @@ SKRResult SKRTreeHub::set(int             projectId,
 
 // ----------------------------------------------------------------------------------------
 
-QVariant SKRTreeHub::get(int projectId, int treeItemId, const QString& fieldName) const
+QVariant SKRTreeHub::get(const TreeItemAddress &treeItemAddress, const QString& fieldName) const
 {
     SKRResult result(this);
     QVariant  var;
     QVariant  value;
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress.projectId, m_tableName);
 
-    result = queries.get(treeItemId, fieldName, var);
+    result = queries.get(treeItemAddress.itemId, fieldName, var);
     IFOK(result) {
         value = var;
     }
@@ -837,9 +921,9 @@ void SKRTreeHub::commit(int projectId)
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getLastAddedId()
+TreeItemAddress SKRTreeHub::getLastAddedAddress()
 {
-    return m_last_added_id;
+    return m_last_added_address;
 }
 
 // ----------------------------------------------------------------------------------------
@@ -880,9 +964,9 @@ SKRResult SKRTreeHub::addTreeItem(const QHash<QString, QVariant>& values, int pr
         emit errorSent(result);
     }
     IFOK(result) {
-        m_last_added_id = newId;
-        result.addData("treeItemId", newId);
-        emit treeItemAdded(projectId, newId);
+        m_last_added_address = TreeItemAddress(projectId, newId);
+        result.addData("treeItemAddress", QVariant::fromValue<TreeItemAddress>(TreeItemAddress(projectId, newId)));
+        emit treeItemAdded(TreeItemAddress(projectId, newId));
         emit projectModified(projectId);
     }
     return result;
@@ -890,12 +974,12 @@ SKRResult SKRTreeHub::addTreeItem(const QHash<QString, QVariant>& values, int pr
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::addTreeItemAbove(int projectId, int targetId, const QString& type)
+SKRResult SKRTreeHub::addTreeItemAbove(const TreeItemAddress &targetTreeItemAddress, const QString& type)
 {
-    int target_indent = getIndent(projectId, targetId);
+    int target_indent = getIndent(targetTreeItemAddress);
 
     SKRResult result(this);
-    int finalSortOrder = this->getValidSortOrderBeforeTree(projectId, targetId);
+    int finalSortOrder = this->getValidSortOrderBeforeTree(targetTreeItemAddress);
 
     // finally add treeItem
     QHash<QString, QVariant> values;
@@ -903,7 +987,7 @@ SKRResult SKRTreeHub::addTreeItemAbove(int projectId, int targetId, const QStrin
     values.insert("l_sort_order", finalSortOrder);
     values.insert("l_indent",     target_indent);
     values.insert("t_type",       type);
-    IFOKDO(result, addTreeItem(values, projectId));
+    IFOKDO(result, addTreeItem(values, targetTreeItemAddress.projectId));
     IFKO(result) {
         emit errorSent(result);
     }
@@ -912,12 +996,12 @@ SKRResult SKRTreeHub::addTreeItemAbove(int projectId, int targetId, const QStrin
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::addTreeItemBelow(int projectId, int targetId, const QString& type)
+SKRResult SKRTreeHub::addTreeItemBelow(const TreeItemAddress &targetTreeItemAddress, const QString& type)
 {
-    int target_indent = getIndent(projectId, targetId);
+    int target_indent = getIndent(targetTreeItemAddress);
 
     SKRResult result(this);
-    int finalSortOrder = this->getValidSortOrderAfterTree(projectId, targetId);
+    int finalSortOrder = this->getValidSortOrderAfterTree(targetTreeItemAddress);
 
     // finally add treeItem
     QHash<QString, QVariant> values;
@@ -925,7 +1009,7 @@ SKRResult SKRTreeHub::addTreeItemBelow(int projectId, int targetId, const QStrin
     values.insert("l_sort_order", finalSortOrder);
     values.insert("l_indent",     target_indent);
     values.insert("t_type",       type);
-    IFOKDO(result, addTreeItem(values, projectId));
+    IFOKDO(result, addTreeItem(values, targetTreeItemAddress.projectId));
     IFKO(result) {
         emit errorSent(result);
     }
@@ -934,23 +1018,23 @@ SKRResult SKRTreeHub::addTreeItemBelow(int projectId, int targetId, const QStrin
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::addChildTreeItem(int projectId, int targetId, const QString& type)
+SKRResult SKRTreeHub::addChildTreeItem(const TreeItemAddress &targetTreeItemAddress, const QString& type)
 {
     SKRResult result(this);
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(targetTreeItemAddress.projectId, m_tableName);
 
 
-    int target_sort_order = getSortOrder(projectId, targetId);
-    int target_indent     = getIndent(projectId, targetId);
+    int target_sort_order = getSortOrder(targetTreeItemAddress);
+    int target_indent     = getIndent(targetTreeItemAddress);
 
     // for invalid parent ("root")
-    if (targetId == -2) {
+    if (!targetTreeItemAddress.isValid()) {
         result = SKRResult(SKRResult::Critical, this, "invalid_root_parent");
         return result;
     }
 
     // for project item as parent :
-    if (targetId == 0) {
+    if (targetTreeItemAddress.itemId == 0) {
         target_indent = 0;
 
         // get the highest sort order
@@ -1025,7 +1109,7 @@ SKRResult SKRTreeHub::addChildTreeItem(int projectId, int targetId, const QStrin
     values.insert("l_sort_order", finalSortOrder);
     values.insert("l_indent",     target_indent + 1);
     values.insert("t_type",       type);
-    IFOKDO(result, addTreeItem(values, projectId));
+    IFOKDO(result, addTreeItem(values, targetTreeItemAddress.projectId));
     IFKO(result) {
         emit errorSent(result);
     }
@@ -1034,13 +1118,13 @@ SKRResult SKRTreeHub::addChildTreeItem(int projectId, int targetId, const QStrin
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::removeTreeItem(int projectId, int targetId)
+SKRResult SKRTreeHub::removeTreeItem(const TreeItemAddress &targetTreeItemAddress)
 {
-    PLMSqlQueries queries(projectId, m_tableName);
-    emit treeItemAboutToBeRemoved(projectId, targetId);
+    PLMSqlQueries queries(targetTreeItemAddress.projectId, m_tableName);
+    emit treeItemAboutToBeRemoved(targetTreeItemAddress);
 
     queries.beginTransaction();
-    SKRResult result = queries.remove(targetId);
+    SKRResult result = queries.remove(targetTreeItemAddress.itemId);
 
     IFOKDO(result, queries.renumberSortOrder());
     IFOKDO(result, queries.trimTreePropertyTable());
@@ -1056,59 +1140,61 @@ SKRResult SKRTreeHub::removeTreeItem(int projectId, int targetId)
         emit errorSent(result);
     }
     IFOK(result) {
-        emit treeItemRemoved(projectId, targetId);
-        emit projectModified(projectId);
+        emit treeItemRemoved(targetTreeItemAddress);
+        emit projectModified(targetTreeItemAddress.projectId);
     }
     return result;
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId,
-                                   int  targetProjectId, int targetTreeItemId, bool after)
+SKRResult SKRTreeHub::moveTreeItem(const TreeItemAddress &sourceTreeItemAddress,
+                                   const TreeItemAddress &targetTreeItemAddress, bool after)
 {
     SKRResult result(this);
 
     // TODO: adapt to multiple projects
 
 
-    QList<int> childrenList = this->getAllChildren(sourceProjectId, sourceTreeItemId);
+    QList<TreeItemAddress> childrenList = this->getAllChildren(sourceTreeItemAddress);
 
-    PLMSqlQueries queries(sourceProjectId, m_tableName);
+    PLMSqlQueries queries(sourceTreeItemAddress.projectId, m_tableName);
 
-    if (targetTreeItemId == 0) { // means end of list, so add to end
+    TreeItemAddress targetAddress = targetTreeItemAddress;
+
+    if (targetAddress.itemId == 0) { // means end of list, so add to end
         after = true;
-        int lastChildrenId = this->getAllIds(targetProjectId).last();
-        targetTreeItemId = lastChildrenId;
+        TreeItemAddress lastChildrenId = this->getAllIds(targetTreeItemAddress.projectId).last();
+        targetAddress = lastChildrenId;
     }
 
 
-    int targetSortOrder = this->getSortOrder(targetProjectId, targetTreeItemId);
-    int targetIndent = this->getIndent(targetProjectId, targetTreeItemId);
-    int sourceIndent = this->getIndent(sourceProjectId, sourceTreeItemId);
+    int targetSortOrder = this->getSortOrder(targetAddress);
+    int targetIndent = this->getIndent(targetAddress);
+    int sourceIndent = this->getIndent(sourceTreeItemAddress);
     int indentDelta = targetIndent - sourceIndent;
 
 
-    if (after && this->hasChildren(targetProjectId, targetTreeItemId, true, true)) {
+    if (after && this->hasChildren(targetAddress, true, true)) {
         // find the child at the most down of the target
-        int lastChildrenId = this->getAllChildren(targetProjectId, targetTreeItemId).last();
-        targetTreeItemId = lastChildrenId;
-        targetSortOrder  = this->getSortOrder(targetProjectId, lastChildrenId);
+        TreeItemAddress lastChildrenId = this->getAllChildren(targetAddress).last();
+        targetAddress = lastChildrenId;
+        targetSortOrder  = this->getSortOrder(targetAddress);
     }
 
     targetSortOrder = targetSortOrder + (after ? 1 : -999);
-    result          = setSortOrder(sourceProjectId, sourceTreeItemId, targetSortOrder, true, false);
-    result           = setIndent(sourceProjectId, sourceTreeItemId, sourceIndent + indentDelta);
+    result          = setSortOrder(sourceTreeItemAddress, targetSortOrder, true, false);
+    result           = setIndent(sourceTreeItemAddress, sourceIndent + indentDelta);
 
-    for (int childId : qAsConst(childrenList)) {
+    for (const TreeItemAddress &childTreeItemAddress : qAsConst(childrenList)) {
         targetSortOrder += 1;
-        result           = setSortOrder(sourceProjectId, childId, targetSortOrder, true, false);
+        result           = setSortOrder(childTreeItemAddress, targetSortOrder, true, false);
 
-        int childIndent = this->getIndent(sourceProjectId, childId);
-        result           = setIndent(sourceProjectId, childId, childIndent + indentDelta);
+        int childIndent = this->getIndent(childTreeItemAddress);
+        result           = setIndent(childTreeItemAddress, childIndent + indentDelta);
     }
 
-    childrenList.prepend(sourceTreeItemId);
+    childrenList.prepend(sourceTreeItemAddress);
 
     IFOKDO(result, queries.renumberSortOrder())
 
@@ -1120,11 +1206,11 @@ SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId,
         queries.commit();
     }
     IFOK(result) {
-        emit treeItemMoved(sourceProjectId, childrenList, targetProjectId, targetTreeItemId);
-        emit projectModified(sourceProjectId);
+        emit treeItemMoved(childrenList, targetAddress);
+        emit projectModified(sourceTreeItemAddress.projectId);
 
-        if (sourceProjectId != targetProjectId) {
-            emit projectModified(targetProjectId);
+        if (sourceTreeItemAddress != targetAddress) {
+            emit projectModified(targetAddress.projectId);
         }
     }
 
@@ -1133,11 +1219,11 @@ SKRResult SKRTreeHub::moveTreeItem(int sourceProjectId, int sourceTreeItemId,
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
+SKRResult SKRTreeHub::moveTreeItemUp(const TreeItemAddress &treeItemAddress)
 {
     SKRResult result(this);
 
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress, m_tableName);
 
     // get treeItem before this :
 
@@ -1154,39 +1240,38 @@ SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
 
     IFOKDO(result, queries.getSortedIds(idList));
 
-    if (idList.first() == treeItemId) {
+    if (idList.first() == treeItemAddress.itemId) {
         result = SKRResult(SKRResult::Critical, this, "first_in_idList_cant_move_up");
     }
-    int targetTreeItemId = -2;
+    TreeItemAddress targetTreeItemAddress;
 
     IFOK(result) {
         // find treeItem before with same indent
-        int possibleTargetTreeItemId = -2;
+        TreeItemAddress possibleTargetTreeItemAddress;
 
-        for (int i = idList.indexOf(treeItemId) - 1; i >= 0; --i) {
-            possibleTargetTreeItemId = idList.at(i);
+        for (int i = idList.indexOf(treeItemAddress.itemId) - 1; i >= 0; --i) {
+            possibleTargetTreeItemAddress.set(treeItemAddress.projectId, idList.at(i));
 
-            if (this->getIndent(projectId,
-                                possibleTargetTreeItemId) ==
-                    this->getIndent(projectId, treeItemId)) {
-                targetTreeItemId = possibleTargetTreeItemId;
+            if (this->getIndent(possibleTargetTreeItemAddress) ==
+                    this->getIndent(treeItemAddress)) {
+                targetTreeItemAddress = possibleTargetTreeItemAddress;
                 break;
             }
         }
 
-        if (possibleTargetTreeItemId == -2) {
-            result = SKRResult(SKRResult::Critical, this, "possibleTargetTreeItemId_is_-2");
+        if (possibleTargetTreeItemAddress.isValid()) {
+            result = SKRResult(SKRResult::Critical, this, "possibleTargetTreeItemAddress_is_invalid");
         }
         IFOK(result) {
-            int targetIndent   = this->getIndent(projectId, targetTreeItemId);
-            int treeItemIndent = this->getIndent(projectId, treeItemId);
+            int targetIndent   = this->getIndent(targetTreeItemAddress);
+            int treeItemIndent = this->getIndent(treeItemAddress);
 
             if (treeItemIndent  != targetIndent) {
                 result = SKRResult(SKRResult::Critical, this, "indents_dont_match");
             }
         }
     }
-    IFOKDO(result, this->moveTreeItem(projectId, treeItemId, projectId, targetTreeItemId))
+    IFOKDO(result, this->moveTreeItem(treeItemAddress, targetTreeItemAddress))
 
 
             IFKO(result) {
@@ -1197,11 +1282,11 @@ SKRResult SKRTreeHub::moveTreeItemUp(int projectId, int treeItemId)
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
+SKRResult SKRTreeHub::moveTreeItemDown(const TreeItemAddress &treeItemAddress)
 {
     SKRResult result(this);
 
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress, m_tableName);
 
     // get treeItem before this :
 
@@ -1218,39 +1303,38 @@ SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
 
     IFOKDO(result, queries.getSortedIds(idList));
 
-    if (idList.last() == treeItemId) {
+    if (idList.last() == treeItemAddress.itemId) {
         result = SKRResult(SKRResult::Critical, this, "last_in_idList_cant_move_down");
     }
-    int targetTreeItemId = -2;
+    TreeItemAddress targetTreeItemAddress;
 
     IFOK(result) {
         // find treeItem after with same indent
-        int possibleTargetTreeItemId = -2;
+        TreeItemAddress possibleTargetTreeItemAddress;
 
-        for (int i = idList.indexOf(treeItemId) + 1; i < idList.count(); ++i) {
-            possibleTargetTreeItemId = idList.at(i);
+        for (int i = idList.indexOf(treeItemAddress.itemId) + 1; i < idList.count(); ++i) {
+            possibleTargetTreeItemAddress.set(treeItemAddress.projectId, idList.at(i));
 
-            if (this->getIndent(projectId,
-                                possibleTargetTreeItemId) ==
-                    this->getIndent(projectId, treeItemId)) {
-                targetTreeItemId = possibleTargetTreeItemId;
+            if (this->getIndent(possibleTargetTreeItemAddress) ==
+                    this->getIndent(treeItemAddress)) {
+                targetTreeItemAddress = possibleTargetTreeItemAddress;
                 break;
             }
         }
 
-        if (possibleTargetTreeItemId == -2) {
-            result = SKRResult(SKRResult::Critical, this, "possibleTargetTreeItemId_is_-2");
+        if (possibleTargetTreeItemAddress.isValid()) {
+            result = SKRResult(SKRResult::Critical, this, "possibleTargetTreeItemAddress_is_invalid");
         }
         IFOK(result) {
-            int targetIndent   = this->getIndent(projectId, targetTreeItemId);
-            int treeItemIndent = this->getIndent(projectId, treeItemId);
+            int targetIndent   = this->getIndent(targetTreeItemAddress);
+            int treeItemIndent = this->getIndent(treeItemAddress);
 
             if (treeItemIndent  != targetIndent) {
                 result = SKRResult(SKRResult::Critical, this, "indents_dont_match");
             }
         }
     }
-    IFOKDO(result, this->moveTreeItem(projectId, treeItemId, projectId, targetTreeItemId, true))
+    IFOKDO(result, this->moveTreeItem(treeItemAddress, targetTreeItemAddress, true))
 
 
             IFKO(result) {
@@ -1261,21 +1345,19 @@ SKRResult SKRTreeHub::moveTreeItemDown(int projectId, int treeItemId)
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::moveTreeItemAsChildOf(int  sourceProjectId,
-                                            int  sourceTreeItemId,
-                                            int  targetProjectId,
-                                            int  targetParentId,
+SKRResult SKRTreeHub::moveTreeItemAsChildOf(const TreeItemAddress &sourceTreeItemAddress,
+                                            const TreeItemAddress &targetTreeItemAddress,
                                             bool sendSignal,
                                             int  wantedSortOrder)
 {
     SKRResult result(this);
 
 
-    QList<int> childrenList  = this->getAllChildren(sourceProjectId, sourceTreeItemId);
-    int originalSourceIndent =  this->getIndent(sourceProjectId, sourceTreeItemId);
+    QList<TreeItemAddress> childrenList  = this->getAllChildren(sourceTreeItemAddress);
+    int originalSourceIndent =  this->getIndent(sourceTreeItemAddress);
 
-    if (sourceProjectId == targetProjectId) {
-        int validSortOrder = getValidSortOrderAfterTree(targetProjectId, targetParentId);
+    if (sourceTreeItemAddress.projectId == targetTreeItemAddress.projectId) {
+        int validSortOrder = getValidSortOrderAfterTree(targetTreeItemAddress);
 
 
         if (wantedSortOrder == -1) {
@@ -1286,23 +1368,23 @@ SKRResult SKRTreeHub::moveTreeItemAsChildOf(int  sourceProjectId,
             result = SKRResult(SKRResult::Critical, this, "wantedSortOrder_is_outside_scope_of_parent");
         }
         IFOK(result) {
-            result = this->setSortOrder(sourceProjectId, sourceTreeItemId, wantedSortOrder);
+            result = this->setSortOrder(sourceTreeItemAddress, wantedSortOrder);
         }
         IFOK(result) {
-            int parentIndent = this->getIndent(targetProjectId, targetParentId);
+            int parentIndent = this->getIndent(targetTreeItemAddress);
 
-            result = this->setIndent(sourceProjectId, sourceTreeItemId, parentIndent + 1);
+            result = this->setIndent(sourceTreeItemAddress, parentIndent + 1);
 
             int i = 0;
 
-            for (int childId : qAsConst(childrenList)) {
-                result = this->setSortOrder(sourceProjectId, childId, wantedSortOrder + i);
+            for (const TreeItemAddress &childTreeItemAddress : qAsConst(childrenList)) {
+                result = this->setSortOrder(childTreeItemAddress, wantedSortOrder + i);
                 i++;
 
-                int orignalSourceChildIndent = this->getIndent(sourceProjectId, childId);
+                int orignalSourceChildIndent = this->getIndent(childTreeItemAddress);
                 int delta                    = orignalSourceChildIndent - originalSourceIndent;
 
-                result = this->setIndent(sourceProjectId, childId, parentIndent + 1 + delta);
+                result = this->setIndent(childTreeItemAddress, parentIndent + 1 + delta);
             }
         }
     }
@@ -1314,16 +1396,14 @@ SKRResult SKRTreeHub::moveTreeItemAsChildOf(int  sourceProjectId,
         emit errorSent(result);
     }
     IFOK(result) {
-        this->renumberSortOrders(sourceProjectId);
-        emit treeItemMoved(sourceProjectId,
-                           QList<int>() << sourceTreeItemId << childrenList,
-                           targetProjectId,
-                           targetParentId);
-        emit projectModified(sourceProjectId);
+        this->renumberSortOrders(sourceTreeItemAddress.projectId);
+        emit treeItemMoved(QList<TreeItemAddress>() << sourceTreeItemAddress << childrenList,
+                           targetTreeItemAddress);
+        emit projectModified(sourceTreeItemAddress.projectId);
 
-        if (sourceProjectId != targetProjectId) {
-            this->renumberSortOrders(targetProjectId);
-            emit projectModified(targetProjectId);
+        if (sourceTreeItemAddress.projectId != targetTreeItemAddress.projectId) {
+            this->renumberSortOrders(targetTreeItemAddress.projectId);
+            emit projectModified(targetTreeItemAddress.projectId);
         }
     }
 
@@ -1333,25 +1413,25 @@ SKRResult SKRTreeHub::moveTreeItemAsChildOf(int  sourceProjectId,
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getParentId(int projectId, int treeItemId) const
+TreeItemAddress SKRTreeHub::getParentId(const TreeItemAddress &treeItemAddress) const
 {
-    int parentId = -2;
+    TreeItemAddress parentId;
 
     // get indents
-    QHash<int, int> indentList = getAllIndents(projectId);
-    QList<int> sortedIdList    = getAllIds(projectId);
+    QHash<TreeItemAddress, int> indentList = getAllIndents(treeItemAddress.projectId);
+    QList<TreeItemAddress> sortedIdList    = getAllIds(treeItemAddress.projectId);
 
 
     // determine direct ancestor
 
-    int indent = indentList.value(treeItemId);
+    int indent = indentList.value(treeItemAddress);
 
     if (indent == 0) {
-        return -1;
+        return TreeItemAddress();
     }
 
-    for (int i = sortedIdList.indexOf(treeItemId); i >= 0; i--) {
-        int id = sortedIdList.at(i);
+    for (int i = sortedIdList.indexOf(treeItemAddress); i >= 0; i--) {
+        TreeItemAddress id = sortedIdList.at(i);
 
         //        if (id == treeItemId) {
         //            continue;
@@ -1385,9 +1465,9 @@ SKRResult SKRTreeHub::renumberSortOrders(int projectId)
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getValidSortOrderBeforeTree(int projectId, int treeItemId) const
+int SKRTreeHub::getValidSortOrderBeforeTree(const TreeItemAddress &treeItemAddress) const
 {
-    int target_sort_order = getSortOrder(projectId, treeItemId);
+    int target_sort_order = getSortOrder(treeItemAddress);
 
     int finalSortOrder = target_sort_order - 1;
 
@@ -1396,10 +1476,10 @@ int SKRTreeHub::getValidSortOrderBeforeTree(int projectId, int treeItemId) const
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getValidSortOrderAfterTree(int projectId, int treeItemId) const
+int SKRTreeHub::getValidSortOrderAfterTree(const TreeItemAddress &treeItemAddress) const
 {
-    int target_sort_order = getSortOrder(projectId, treeItemId);
-    int target_indent     = getIndent(projectId, treeItemId);
+    int target_sort_order = getSortOrder(treeItemAddress);
+    int target_indent     = getIndent(treeItemAddress);
 
     // find next node with the same indentation
     QHash<int, QVariant> hash;
@@ -1407,7 +1487,7 @@ int SKRTreeHub::getValidSortOrderAfterTree(int projectId, int treeItemId) const
 
     where.insert("l_indent <=",    target_indent);
     where.insert("l_sort_order >", target_sort_order);
-    PLMSqlQueries queries(projectId, m_tableName);
+    PLMSqlQueries queries(treeItemAddress, m_tableName);
     SKRResult     result = queries.getValueByIdsWhere("l_sort_order", hash, where, true);
     int finalSortOrder   = 0;
 
@@ -1460,15 +1540,13 @@ int SKRTreeHub::getValidSortOrderAfterTree(int projectId, int treeItemId) const
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
+SKRResult SKRTreeHub::sortAlphabetically(const TreeItemAddress &parentTreeItemAddress)
 {
     SKRResult result(this);
 
-    QList<int> directChildren = this->getAllDirectChildren(projectId, parentTreeItemId, true, true);
-    QList<int> allChildren    = this->getAllChildren(projectId, parentTreeItemId);
-    QList<int> allIds         = this->getAllIds(projectId);
+    const QList<TreeItemAddress> &directChildren = this->getAllDirectChildren(parentTreeItemAddress, true, true);
+    const QList<TreeItemAddress> &allIds         = this->getAllIds(parentTreeItemAddress.projectId);
 
-    int parentTreeItemIndexInAllIds = allIds.indexOf(parentTreeItemId);
 
     QStringList titleList;
 
@@ -1476,8 +1554,8 @@ SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
         return result;
     }
 
-    for (int directChildId : qAsConst(directChildren)) {
-        titleList << this->getTitle(projectId, directChildId);
+    for (const TreeItemAddress &directChildTreeItemAddress : qAsConst(directChildren)) {
+        titleList << this->getTitle(directChildTreeItemAddress);
     }
 
     QCollator collator;
@@ -1486,16 +1564,16 @@ SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
     std::sort(titleList.begin(), titleList.end(), collator);
 
 
-    QMultiHash<QString, int> allTitlesWithIds;
+    QMultiHash<QString, TreeItemAddress> allTitlesWithIds;
 
-    for (int directChildId : qAsConst(directChildren)) {
-        allTitlesWithIds.insert(this->getTitle(projectId, directChildId), directChildId);
+    for (const TreeItemAddress &directChildTreeItemAddress : qAsConst(directChildren)) {
+        allTitlesWithIds.insert(this->getTitle(directChildTreeItemAddress), directChildTreeItemAddress);
     }
 
-    QList<int> newOrderedDirectChildrenList;
+    QList<TreeItemAddress> newOrderedDirectChildrenList;
 
     for (const QString& title : qAsConst(titleList)) {
-        QMultiHash<QString, int>::iterator i = allTitlesWithIds.begin();
+        QMultiHash<QString, TreeItemAddress>::iterator i = allTitlesWithIds.begin();
 
         while (i != allTitlesWithIds.end()) {
             if (i.key() == title) {
@@ -1509,28 +1587,28 @@ SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
     }
 
 
-    QList<int> newOrderedIdListPlusChildren;
+    QList<TreeItemAddress> newOrderedIdListPlusChildren;
 
     bool parentPassed = false;
 
-    for (int id : qAsConst(newOrderedDirectChildrenList)) {
-        QList<int> children = skrdata->treeHub()->getAllChildren(projectId, id);
+    for (const TreeItemAddress &treeItemAddress : qAsConst(newOrderedDirectChildrenList)) {
+        QList<TreeItemAddress> children = skrdata->treeHub()->getAllChildren(treeItemAddress);
 
-        newOrderedIdListPlusChildren.append(id);
+        newOrderedIdListPlusChildren.append(treeItemAddress);
         newOrderedIdListPlusChildren.append(children);
     }
 
 
-    int newSortOrder = this->getSortOrder(projectId, parentTreeItemId) + 1;
+    int newSortOrder = this->getSortOrder(parentTreeItemAddress) + 1;
 
-    for (int id : qAsConst(newOrderedIdListPlusChildren)) {
-        IFOKDO(result, this->setSortOrder(projectId, id, newSortOrder, true, false));
+    for (const TreeItemAddress &treeItemAddress : qAsConst(newOrderedIdListPlusChildren)) {
+        IFOKDO(result, this->setSortOrder(treeItemAddress, newSortOrder, true, false));
         newSortOrder += 1;
     }
 
 
-    IFOKDO(result, this->renumberSortOrders(projectId));
-    PLMSqlQueries queries(projectId, m_tableName);
+    IFOKDO(result, this->renumberSortOrders(parentTreeItemAddress.projectId));
+    PLMSqlQueries queries(parentTreeItemAddress, m_tableName);
 
     IFKO(result) {
         queries.rollback();
@@ -1539,10 +1617,10 @@ SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
     IFOK(result) {
         queries.commit();
 
-        for (int id : qAsConst(newOrderedDirectChildrenList)) {
-            emit sortOrderChanged(projectId, id, this->getSortOrder(projectId, id));
+        for (const TreeItemAddress &treeItemAddress : qAsConst(newOrderedDirectChildrenList)) {
+            emit sortOrderChanged(parentTreeItemAddress, this->getSortOrder(treeItemAddress));
         }
-        emit projectModified(projectId);
+        emit projectModified(parentTreeItemAddress.projectId);
     }
 
     return result;
@@ -1550,22 +1628,22 @@ SKRResult SKRTreeHub::sortAlphabetically(int projectId, int parentTreeItemId)
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getAllChildren(int projectId, int treeItemId) const
+QList<TreeItemAddress>SKRTreeHub::getAllChildren(const TreeItemAddress &treeItemAddress) const
 {
-    QList<int> childrenList;
+    QList<TreeItemAddress> childrenList;
 
     // get indents
-    QHash<int, int> indentList = getAllIndents(projectId);
-    QList<int> sortedIdList    = getAllIds(projectId);
+    const QHash<TreeItemAddress, int> &indentList = getAllIndents(treeItemAddress.projectId);
+    const QList<TreeItemAddress> &sortedIdList    = getAllIds(treeItemAddress.projectId);
 
 
     // determine children
 
-    int  parentIndent = indentList.value(treeItemId);
+    int  parentIndent = indentList.value(treeItemAddress);
     bool parentPassed = false;
 
-    for (int id : qAsConst(sortedIdList)) {
-        if (id == treeItemId) {
+    for (const TreeItemAddress &id : qAsConst(sortedIdList)) {
+        if (id == treeItemAddress) {
             parentPassed = true;
             continue;
         }
@@ -1588,25 +1666,27 @@ QList<int>SKRTreeHub::getAllChildren(int projectId, int treeItemId) const
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getAllDirectChildren(int  projectId,
-                                           int  treeItemId,
+QList<TreeItemAddress>SKRTreeHub::getAllDirectChildren(const TreeItemAddress &treeItemAddress,
                                            bool trashedAreIncluded,
                                            bool notTrashedAreIncluded) const
 {
-    QList<int> childrenList;
+
+
+
+    QList<TreeItemAddress> childrenList;
 
     // get indents
-    QHash<int, int> indentList = getAllIndents(projectId);
-    QList<int> sortedIdList    = getAllIds(projectId);
+    const QHash<TreeItemAddress, int> &indentList = getAllIndents(treeItemAddress.projectId);
+    const QList<TreeItemAddress> &sortedIdList    = getAllIds(treeItemAddress.projectId);
 
 
     // determine children
 
-    int  parentIndent = indentList.value(treeItemId);
+    int  parentIndent = indentList.value(treeItemAddress);
     bool parentPassed = false;
 
-    for (int id : qAsConst(sortedIdList)) {
-        if (id == treeItemId) {
+    for (const TreeItemAddress &id : qAsConst(sortedIdList)) {
+        if (id == treeItemAddress) {
             parentPassed = true;
             continue;
         }
@@ -1615,7 +1695,7 @@ QList<int>SKRTreeHub::getAllDirectChildren(int  projectId,
             int idIndent = indentList.value(id);
 
             if (idIndent == parentIndent + 1) {
-                bool isTrashed = this->getTrashed(projectId, id);
+                bool isTrashed = this->getTrashed(id);
 
                 if (trashedAreIncluded && isTrashed) {
                     childrenList.append(id);
@@ -1637,22 +1717,21 @@ QList<int>SKRTreeHub::getAllDirectChildren(int  projectId,
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getAllAncestors(int projectId, int treeItemId) const
+QList<TreeItemAddress>SKRTreeHub::getAllAncestors(const TreeItemAddress &treeItemAddress) const
 {
-    QList<int> ancestorsList;
+    QList<TreeItemAddress> ancestorsList;
 
     // get indents
-    QHash<int, int> indentList = getAllIndents(projectId);
-    QList<int> sortedIdList    = getAllIds(projectId);
-
+    const QHash<TreeItemAddress, int> &indentList = getAllIndents(treeItemAddress.projectId);
+    const QList<TreeItemAddress> &sortedIdList    = getAllIds(treeItemAddress.projectId);
 
     // determine ancestors
 
-    int indent = indentList.value(treeItemId);
+    int indent = indentList.value(treeItemAddress);
 
 
-    for (int i = sortedIdList.indexOf(treeItemId); i >= 0; i--) {
-        int id = sortedIdList.at(i);
+    for (int i = sortedIdList.indexOf(treeItemAddress); i >= 0; i--) {
+        const TreeItemAddress &id = sortedIdList.at(i);
 
         //        if (id == treeItemId) {
         //            continue;
@@ -1676,25 +1755,25 @@ QList<int>SKRTreeHub::getAllAncestors(int projectId, int treeItemId) const
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId, bool treeItemIncluded)
+QList<TreeItemAddress>SKRTreeHub::getAllSiblings(const TreeItemAddress &treeItemAddress, bool treeItemIncluded)
 {
-    QList<int> siblingsList;
+    QList<TreeItemAddress> siblingsList;
 
     // get indents
-    QHash<int, int> indentList = getAllIndents(projectId);
-    QList<int> sortedIdList    = getAllIds(projectId);
-    int treeItemSortedIdIndex  = sortedIdList.indexOf(treeItemId);
+    const QHash<TreeItemAddress, int> &indentList = getAllIndents(treeItemAddress.projectId);
+    const QList<TreeItemAddress> &sortedIdList    = getAllIds(treeItemAddress.projectId);
+    int treeItemSortedIdIndex  = sortedIdList.indexOf(treeItemAddress);
 
 
     // determine siblings
 
-    int indent = indentList.value(treeItemId);
+    int indent = indentList.value(treeItemAddress);
 
     // min sibling index
     int minSiblingIndex = treeItemSortedIdIndex;
 
     for (int i = treeItemSortedIdIndex; i >= 0; i--) {
-        int id = sortedIdList.at(i);
+        const TreeItemAddress &id = sortedIdList.at(i);
 
         //        if (id == treeItemId) {
         //            continue;
@@ -1712,7 +1791,7 @@ QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId, bool treeIte
     int maxSiblingIndex = treeItemSortedIdIndex;
 
     for (int i = treeItemSortedIdIndex; i < sortedIdList.count(); i++) {
-        int id = sortedIdList.at(i);
+        const TreeItemAddress &id = sortedIdList.at(i);
 
         //        if (id == treeItemId) {
         //            continue;
@@ -1735,7 +1814,7 @@ QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId, bool treeIte
     // same level
 
     for (int i = minSiblingIndex; i <= maxSiblingIndex; i++) {
-        int id = sortedIdList.at(i);
+        const TreeItemAddress &id = sortedIdList.at(i);
 
         //        if (id == treeItemId) {
         //            continue;
@@ -1749,7 +1828,7 @@ QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId, bool treeIte
     }
 
     if (!treeItemIncluded) {
-        siblingsList.removeAll(treeItemId);
+        siblingsList.removeAll(treeItemAddress);
     }
 
 
@@ -1758,24 +1837,27 @@ QList<int>SKRTreeHub::getAllSiblings(int projectId, int treeItemId, bool treeIte
 
 // ----------------------------------------------------------------------------------------
 
-QDateTime SKRTreeHub::getTrashedDate(int projectId, int treeItemId) const
+QDateTime SKRTreeHub::getTrashedDate(const TreeItemAddress &treeItemAddress) const
 {
-    return get(projectId, treeItemId, "dt_trashed").toDateTime();
+    return get(treeItemAddress, "dt_trashed").toDateTime();
 }
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getTreeRelationshipSourcesFromReceiverId(int projectId, int receiverTreeItemId) const
+QList<TreeItemAddress>SKRTreeHub::getTreeRelationshipSourcesFromReceiverId(const TreeItemAddress &receiverTreeItemAddress) const
 {
     SKRResult  result;
-    QList<int> list;
+    QList<TreeItemAddress> list;
     QHash<int, QVariant> out;
-    PLMSqlQueries queries(projectId, "tbl_tree_relationship");
+    PLMSqlQueries queries(receiverTreeItemAddress, "tbl_tree_relationship");
 
-    result = queries.getValueByIds("l_tree_source_code", out, "l_tree_receiver_code", receiverTreeItemId);
+    result = queries.getValueByIds("l_tree_source_code", out, "l_tree_receiver_code", receiverTreeItemAddress.itemId);
 
     IFOK(result) {
-        list = HashIntQVariantConverter::convertToIntInt(out).values();
+        for(int i : HashIntQVariantConverter::convertToIntInt(out).values()){
+            list << TreeItemAddress(receiverTreeItemAddress.projectId, i);
+        }
+
     }
     IFKO(result) {
         emit errorSent(result);
@@ -1785,17 +1867,20 @@ QList<int>SKRTreeHub::getTreeRelationshipSourcesFromReceiverId(int projectId, in
 
 // ----------------------------------------------------------------------------------------
 
-QList<int>SKRTreeHub::getTreeRelationshipReceiversFromSourceId(int projectId, int sourceTreeItemId) const
+QList<TreeItemAddress>SKRTreeHub::getTreeRelationshipReceiversFromSourceId(const TreeItemAddress &sourceTreeItemAddress) const
 {
     SKRResult  result;
-    QList<int> list;
+    QList<TreeItemAddress> list;
     QHash<int, QVariant> out;
-    PLMSqlQueries queries(projectId, "tbl_tree_relationship");
+    PLMSqlQueries queries(sourceTreeItemAddress, "tbl_tree_relationship");
 
-    result = queries.getValueByIds("l_tree_receiver_code", out, "l_tree_source_code", sourceTreeItemId);
+    result = queries.getValueByIds("l_tree_receiver_code", out, "l_tree_source_code", sourceTreeItemAddress.itemId);
 
     IFOK(result) {
-        list = HashIntQVariantConverter::convertToIntInt(out).values();
+        for(int i : HashIntQVariantConverter::convertToIntInt(out).values()){
+
+            list << TreeItemAddress(sourceTreeItemAddress.projectId, i);
+        }
     }
     IFKO(result) {
         emit errorSent(result);
@@ -1805,7 +1890,8 @@ QList<int>SKRTreeHub::getTreeRelationshipReceiversFromSourceId(int projectId, in
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setTreeRelationship(int projectId, int sourceTreeItemId, int receiverTreeItemId)
+SKRResult SKRTreeHub::setTreeRelationship(const TreeItemAddress &sourceTreeItemAddress,
+                                          const TreeItemAddress &receiverTreeItemAddress)
 {
     SKRResult result(this);
 
@@ -1814,10 +1900,10 @@ SKRResult SKRTreeHub::setTreeRelationship(int projectId, int sourceTreeItemId, i
 
     QHash<QString, QVariant> where;
 
-    where.insert("l_tree_receiver_code", receiverTreeItemId);
-    where.insert("l_tree_source_code",   sourceTreeItemId);
+    where.insert("l_tree_receiver_code", receiverTreeItemAddress.itemId);
+    where.insert("l_tree_source_code",   sourceTreeItemAddress.itemId);
 
-    PLMSqlQueries queries(projectId, "tbl_tree_relationship");
+    PLMSqlQueries queries(sourceTreeItemAddress, "tbl_tree_relationship");
 
 
     // verify if the relationship doesn't yet exist
@@ -1840,13 +1926,13 @@ SKRResult SKRTreeHub::setTreeRelationship(int projectId, int sourceTreeItemId, i
 
             int newId = -2;
             QHash<QString, QVariant> values;
-            values.insert("l_tree_receiver_code", receiverTreeItemId);
-            values.insert("l_tree_source_code",   sourceTreeItemId);
+            values.insert("l_tree_receiver_code", receiverTreeItemAddress.itemId);
+            values.insert("l_tree_source_code",   sourceTreeItemAddress.itemId);
             result = queries.add(values, newId);
 
             IFOK(result) {
-                emit treeRelationshipAdded(projectId, sourceTreeItemId, receiverTreeItemId);
-                emit projectModified(projectId);
+                emit treeRelationshipAdded(sourceTreeItemAddress, receiverTreeItemAddress);
+                emit projectModified(sourceTreeItemAddress.projectId);
             }
         }
     }
@@ -1855,7 +1941,8 @@ SKRResult SKRTreeHub::setTreeRelationship(int projectId, int sourceTreeItemId, i
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::removeTreeRelationship(int projectId, int sourceTreeItemId, int receiverTreeItemId)
+SKRResult SKRTreeHub::removeTreeRelationship(const TreeItemAddress &sourceTreeItemAddress,
+                                             const TreeItemAddress &receiverTreeItemAddress)
 {
     SKRResult result(this);
 
@@ -1864,9 +1951,9 @@ SKRResult SKRTreeHub::removeTreeRelationship(int projectId, int sourceTreeItemId
 
     QHash<QString, QVariant> where;
 
-    where.insert("l_tree_receiver_code", receiverTreeItemId);
+    where.insert("l_tree_receiver_code", receiverTreeItemAddress.itemId);
 
-    PLMSqlQueries queries(projectId, "tbl_tree_relationship");
+    PLMSqlQueries queries(sourceTreeItemAddress, "tbl_tree_relationship");
 
     result = queries.getValueByIdsWhere("l_tree_source_code", out, where);
 
@@ -1891,8 +1978,8 @@ SKRResult SKRTreeHub::removeTreeRelationship(int projectId, int sourceTreeItemId
         result = queries.remove(key);
     }
     IFOK(result) {
-        emit treeRelationshipRemoved(projectId, sourceTreeItemId, receiverTreeItemId);
-        emit projectModified(projectId);
+        emit treeRelationshipRemoved(sourceTreeItemAddress, receiverTreeItemAddress);
+        emit projectModified(sourceTreeItemAddress.projectId);
     }
     IFKO(result) {
         emit errorSent(result);
@@ -1901,69 +1988,34 @@ SKRResult SKRTreeHub::removeTreeRelationship(int projectId, int sourceTreeItemId
     return result;
 }
 
-// ----------------------------------------------------------------------------------------
-SKRResult SKRTreeHub::addQuickNote(int projectId, int receiverTreeItemId, const QString& type, const QString& noteName)
-{
-    SKRResult result(this);
 
-    QList<int> noteFolders = this->getIdsWithInternalTitle(projectId, "note_folder");
-
-    int noteFolderId = -2;
-
-    if (noteFolders.isEmpty()) {
-        noteFolderId = 0; // project item id
-    }
-    else {
-        noteFolderId = noteFolders.takeFirst();
-    }
-
-    result = this->addChildTreeItem(projectId, noteFolderId, type);
-
-    int noteId = -2;
-    IFOK(result) {
-        noteId = result.getData("treeItemId", -2).toInt();
-
-        if (noteId == -2) {
-            result = SKRResult(SKRResult::Critical, this, "add_quick_note_error");
-        }
-    }
-    IFOK(result) {
-        result = this->setTitle(projectId, noteId, noteName);
-    }
-    IFOK(result) {
-        result = this->setTreeRelationship(projectId, noteId, receiverTreeItemId);
-    }
-
-
-    return result;
-}
 
 // ----------------------------------------------------------------------------------------
 
-int SKRTreeHub::getPreviousTreeItemIdOfTheSameType(int projectId, int treeItemId) const
+TreeItemAddress SKRTreeHub::getPreviousTreeItemIdOfTheSameType(const TreeItemAddress &treeItemAddress) const
 {
     SKRResult result(this);
-    int previousTreeItemId = -1;
+    TreeItemAddress previousTreeItemId;
 
-    QList<int> allIds = this->getAllIds(projectId);
+    QList<TreeItemAddress> allIds = this->getAllIds(treeItemAddress.projectId);
 
-    int thisItemIndex    = allIds.indexOf(treeItemId);
-    QString thisItemType = this->getType(projectId, treeItemId);
+    int thisItemIndex    = allIds.indexOf(treeItemAddress);
+    QString thisItemType = this->getType(treeItemAddress);
 
     if (thisItemIndex == -1) {
         result = SKRResult(SKRResult::Critical, this, "no_index_found");
     }
 
     if (thisItemIndex <= 1) {
-        return -1;
+        return TreeItemAddress();
     }
 
     IFOK(result) {
         for (int i = thisItemIndex - 1; i >= 0; i--) {
-            int potentiallyPreviousItemId = allIds.at(i);
+            TreeItemAddress potentiallyPreviousItemId = allIds.at(i);
 
-            if (!this->getTrashed(projectId, potentiallyPreviousItemId)) {
-                QString previousItemType = this->getType(projectId, potentiallyPreviousItemId);
+            if (!this->getTrashed(potentiallyPreviousItemId)) {
+                QString previousItemType = this->getType(potentiallyPreviousItemId);
 
                 if (previousItemType == thisItemType) {
                     previousTreeItemId = potentiallyPreviousItemId;
@@ -1981,61 +2033,61 @@ int SKRTreeHub::getPreviousTreeItemIdOfTheSameType(int projectId, int treeItemId
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::duplicateTreeItem(int projectId, int treeItemId, bool duplicateChildren, bool renumber)
+SKRResult SKRTreeHub::duplicateTreeItem(const TreeItemAddress &treeItemAddress, bool duplicateChildren, bool renumber)
 {
     SKRResult result(this);
-    QList<int> resultTreeItemIdList;
+    QList<TreeItemAddress> resultTreeItemIdList;
 
     QHash<QString, QVariant> values;
 
-    int validSortOrder = getValidSortOrderAfterTree(projectId, treeItemId);
+    int validSortOrder = getValidSortOrderAfterTree(treeItemAddress);
 
-    values.insert("t_title",             getTitle(projectId, treeItemId));
-    values.insert("l_indent",            getIndent(projectId, treeItemId));
+    values.insert("t_title",             getTitle(treeItemAddress));
+    values.insert("l_indent",            getIndent(treeItemAddress));
     values.insert("l_sort_order",        validSortOrder);
-    values.insert("t_type",              getType(projectId, treeItemId));
-    values.insert("m_primary_content",   getPrimaryContent(projectId, treeItemId));
-    values.insert("m_secondary_content", getSecondaryContent(projectId, treeItemId));
+    values.insert("t_type",              getType(treeItemAddress));
+    values.insert("m_primary_content",   getPrimaryContent(treeItemAddress));
+    values.insert("m_secondary_content", getSecondaryContent(treeItemAddress));
 
-    result = this->addTreeItem(values, projectId, false);
+    result = this->addTreeItem(values, treeItemAddress.projectId, false);
 
-    int newTreeItemId = result.getData("treeItemId", -2).toInt();
+    TreeItemAddress newTreeItemId =  result.getData("treeItemAddress", QVariant::fromValue(TreeItemAddress())).value<TreeItemAddress>();
     resultTreeItemIdList << newTreeItemId;
 
     if(duplicateChildren){
-        QList<int> childrenList = getAllChildren(projectId, treeItemId);
-        QList<int> childrenNotTrashed;
-        for(int childId: childrenList){
-            if(!getTrashed(projectId, childId)){
-                childrenNotTrashed.append(childId);
+        QList<TreeItemAddress> childrenList = getAllChildren(treeItemAddress);
+        QList<TreeItemAddress> childrenNotTrashed;
+        for(const TreeItemAddress &chilTreeItemAddress: childrenList){
+            if(!getTrashed(chilTreeItemAddress)){
+                childrenNotTrashed.append(chilTreeItemAddress);
             }
         }
         childrenList = childrenNotTrashed;
 
         int sortOrderOffset = 1;
-        for(int childId: childrenList){
+        for(const TreeItemAddress &chilTreeItemAddress : childrenList){
 
             QHash<QString, QVariant> childValues;
 
-            childValues.insert("t_title",             getTitle(projectId, childId));
-            childValues.insert("l_indent",            getIndent(projectId, childId));
+            childValues.insert("t_title",             getTitle(chilTreeItemAddress));
+            childValues.insert("l_indent",            getIndent(chilTreeItemAddress));
             childValues.insert("l_sort_order",        validSortOrder + sortOrderOffset);
-            childValues.insert("t_type",              getType(projectId, childId));
-            childValues.insert("m_primary_content",   getPrimaryContent(projectId, childId));
-            childValues.insert("m_secondary_content", getSecondaryContent(projectId, childId));
-            result = this->addTreeItem(childValues, projectId, false);
+            childValues.insert("t_type",              getType(chilTreeItemAddress));
+            childValues.insert("m_primary_content",   getPrimaryContent(chilTreeItemAddress));
+            childValues.insert("m_secondary_content", getSecondaryContent(chilTreeItemAddress));
+            result = this->addTreeItem(childValues, chilTreeItemAddress.projectId, false);
 
-            resultTreeItemIdList << result.getData("treeItemId", -2).toInt();
+            resultTreeItemIdList << result.getData("treeItemAddress", QVariant::fromValue(TreeItemAddress())).value<TreeItemAddress>();
 
             sortOrderOffset += 1;
 
         }
     }
     if(renumber){
-        IFOKDO(result, renumberSortOrders(projectId))
+        IFOKDO(result, renumberSortOrders(treeItemAddress.projectId))
     }
     IFOK(result) {
-        result.addData("treeItemIdList", QVariant::fromValue<QList<int> >(resultTreeItemIdList));
+        result.addData("treeItemAddressList", QVariant::fromValue<QList<TreeItemAddress> >(resultTreeItemIdList));
     }
     IFKO(result) {
         emit errorSent(result);
@@ -2045,86 +2097,93 @@ SKRResult SKRTreeHub::duplicateTreeItem(int projectId, int treeItemId, bool dupl
 
 // ----------------------------------------------------------------------------------------
 
-void SKRTreeHub::cut(int projectId, QList<int>treeItemIds)
+void SKRTreeHub::cut(QList<TreeItemAddress> treeItemAddresses)
 {
+    if(treeItemAddresses.isEmpty()){
+        return;
+    }
+
     // unset old treeItems
     m_cutCopy.hasRunOnce = true;
-    int oldProjectId = m_cutCopy.projectId;
 
-    for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
-        emit cutCopyChanged(oldProjectId, treeItemId, false);
+    for (const TreeItemAddress &treeItemAddress : qAsConst(m_cutCopy.treeItemAddresses)) {
+        emit cutCopyChanged(treeItemAddress, false);
     }
 
     // set new treeItems
-    m_cutCopy = CutCopy(CutCopy::Cut, projectId, treeItemIds);
+    m_cutCopy = CutCopy(CutCopy::Cut, treeItemAddresses);
 
-    for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
-        emit cutCopyChanged(projectId, treeItemId, true);
+    for (const TreeItemAddress &treeItemAddress : qAsConst(m_cutCopy.treeItemAddresses)) {
+        emit cutCopyChanged(treeItemAddress, true);
     }
 }
 
 // ----------------------------------------------------------------------------------------
 
-void SKRTreeHub::copy(int projectId, QList<int>treeItemIds)
+void SKRTreeHub::copy(QList<TreeItemAddress> treeItemAddresses)
 {
+    if(treeItemAddresses.isEmpty()){
+        return;
+    }
     // unset old treeItems
     m_cutCopy.hasRunOnce = true;
-    int oldProjectId = m_cutCopy.projectId;
 
-    for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
-        emit cutCopyChanged(oldProjectId, treeItemId, false);
+    for (const TreeItemAddress &treeItemAddress : qAsConst(m_cutCopy.treeItemAddresses)) {
+        emit cutCopyChanged(treeItemAddress, false);
     }
 
     // set new treeItems
-    m_cutCopy = CutCopy(CutCopy::Copy, projectId, treeItemIds);
+    m_cutCopy = CutCopy(CutCopy::Copy, treeItemAddresses);
 
-    for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
-        emit cutCopyChanged(projectId, treeItemId, true);
+    for (const TreeItemAddress &treeItemAddress :  qAsConst(m_cutCopy.treeItemAddresses)) {
+        emit cutCopyChanged(treeItemAddress, true);
     }
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::paste(int targetProjectId, int parentTreeItemId, bool copyChildren)
+SKRResult SKRTreeHub::paste(const TreeItemAddress &parentTreeItemAddress , bool copyChildren)
 {
     SKRResult  result(this);
-    QList<int> treeItemIdList;
-    QList<int> originalTreeItemIdList = m_cutCopy.treeItemIds;
-    int sourceProjectId               = m_cutCopy.projectId;
+
+
+    if(m_cutCopy.treeItemAddresses.isEmpty()){
+        result = SKRResult(SKRResult::Warning ,this ,"No cut or copied tree items");
+        return result;
+    }
+
+    QList<TreeItemAddress> treeItemIdList;
+    QList<TreeItemAddress> originalTreeItemIdList = m_cutCopy.treeItemAddresses;
 
     if (m_cutCopy.type != CutCopy::Type::None) {
         if (m_cutCopy.type == CutCopy::Type::Cut) {
-            if (targetProjectId == sourceProjectId) {
-                for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
-                    result = this->moveTreeItemAsChildOf(sourceProjectId,
-                                                         treeItemId,
-                                                         targetProjectId,
-                                                         parentTreeItemId,
+            if (parentTreeItemAddress.projectId == m_cutCopy.treeItemAddresses.first().projectId) {
+                for (const TreeItemAddress &sourceTreeItemAddress : qAsConst(originalTreeItemIdList)) {
+                    result = this->moveTreeItemAsChildOf(sourceTreeItemAddress,
+                                                         parentTreeItemAddress,
                                                          false);
-                    result = this->renumberSortOrders(targetProjectId);
-                    treeItemIdList << treeItemId;
+                    result = this->renumberSortOrders(parentTreeItemAddress.projectId);
+                    treeItemIdList << sourceTreeItemAddress;
                 }
             }
 
             // TODO: case if projects are different
 
             // become a Copy after first paste
-            m_cutCopy.projectId   = targetProjectId;
-            m_cutCopy.treeItemIds = treeItemIdList;
+            m_cutCopy.treeItemAddresses = treeItemIdList;
             m_cutCopy.type        = CutCopy::Type::Copy;
         }
         else if (m_cutCopy.type == CutCopy::Type::Copy) {
-            for (int treeItemId : qAsConst(m_cutCopy.treeItemIds)) {
-                if (targetProjectId == sourceProjectId) {
-                    result = this->duplicateTreeItem(sourceProjectId, treeItemId, copyChildren, false);
-                    QList<int> newTreeItemIdList = result.getData("treeItemIdList",
-                                                                  QVariant::fromValue<QList<int> >(QList<int>())).value<QList<int> >();
+            for (const TreeItemAddress &sourceTreeItemAddress : qAsConst(originalTreeItemIdList)) {
+                if (parentTreeItemAddress.projectId == m_cutCopy.treeItemAddresses.first().projectId) {
+                    result = this->duplicateTreeItem(sourceTreeItemAddress, copyChildren, false);
+                    QList<TreeItemAddress> newTreeItemIdList = result.getData("treeItemAddressList",
+                                                                  QVariant::fromValue<QList<TreeItemAddress> >(QList<TreeItemAddress>())).value<QList<TreeItemAddress> >();
                     treeItemIdList << newTreeItemIdList.first();
                     IFOKDO(result,
-                           this->moveTreeItemAsChildOf(sourceProjectId, newTreeItemIdList.first(), targetProjectId,
-                                                       parentTreeItemId,
+                           this->moveTreeItemAsChildOf(newTreeItemIdList.first(), parentTreeItemAddress,
                                                        false))
-                            result = this->renumberSortOrders(targetProjectId);
+                            result = this->renumberSortOrders(parentTreeItemAddress.projectId);
                 }
 
                 // TODO: case if projects are different
@@ -2132,13 +2191,13 @@ SKRResult SKRTreeHub::paste(int targetProjectId, int parentTreeItemId, bool copy
         }
     }
     IFOK(result) {
-        result.addData("treeItemIdList", QVariant::fromValue<QList<int> >(treeItemIdList));
+        result.addData("treeItemAddressList", QVariant::fromValue<QList<TreeItemAddress>> (treeItemIdList));
 
         // unset old treeItems
         m_cutCopy.hasRunOnce = true;
 
-        for (int treeItemId : qAsConst(originalTreeItemIdList)) {
-            emit cutCopyChanged(sourceProjectId, treeItemId, false);
+        for (const TreeItemAddress &treeItemAddress : qAsConst(originalTreeItemIdList)) {
+            emit cutCopyChanged(treeItemAddress, false);
         }
     }
     IFKO(result) {
@@ -2147,22 +2206,22 @@ SKRResult SKRTreeHub::paste(int targetProjectId, int parentTreeItemId, bool copy
 
     IFOK(result) {
         if (m_cutCopy.type == CutCopy::Type::Cut) {
-            emit treeItemMoved(sourceProjectId, treeItemIdList, targetProjectId, parentTreeItemId);
+            emit treeItemMoved(treeItemIdList, parentTreeItemAddress);
 
-            emit projectModified(sourceProjectId);
+            emit projectModified(m_cutCopy.treeItemAddresses.first().projectId);
 
-            if (sourceProjectId != targetProjectId) {
-                emit projectModified(targetProjectId);
+            if (m_cutCopy.treeItemAddresses.first().projectId != parentTreeItemAddress.projectId) {
+                emit projectModified(parentTreeItemAddress.projectId);
             }
         }
         else if (m_cutCopy.type == CutCopy::Type::Copy) {
-            emit treeItemsAdded(targetProjectId, treeItemIdList);
+            emit treeItemsAdded(treeItemIdList);
 
-            if (sourceProjectId == targetProjectId) {
-                emit projectModified(sourceProjectId);
+            if (m_cutCopy.treeItemAddresses.first().projectId == parentTreeItemAddress.projectId) {
+                emit projectModified(m_cutCopy.treeItemAddresses.first().projectId);
             }
             else {
-                emit projectModified(targetProjectId);
+                emit projectModified(parentTreeItemAddress.projectId);
             }
         }
     }
@@ -2170,9 +2229,15 @@ SKRResult SKRTreeHub::paste(int targetProjectId, int parentTreeItemId, bool copy
     return result;
 }
 
-bool SKRTreeHub::isCutCopy(int projectId, int treeItemId) const {
-    if ((m_cutCopy.projectId == projectId) && !m_cutCopy.hasRunOnce) {
-        return m_cutCopy.treeItemIds.contains(treeItemId);
+bool SKRTreeHub::isCutCopy(const TreeItemAddress &treeItemAddress) const {
+
+
+    if(m_cutCopy.treeItemAddresses.isEmpty()){
+        return false;
+    }
+
+    if ((m_cutCopy.treeItemAddresses.first().projectId == treeItemAddress.projectId) && !m_cutCopy.hasRunOnce) {
+        return m_cutCopy.treeItemAddresses.contains(treeItemAddress);
     }
 
     return false;
@@ -2180,7 +2245,7 @@ bool SKRTreeHub::isCutCopy(int projectId, int treeItemId) const {
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setTrashedDateToNow(int projectId, int treeItemId, const QDateTime &forcedDate)
+SKRResult SKRTreeHub::setTrashedDateToNow(const TreeItemAddress &treeItemAddress, const QDateTime &forcedDate)
 {
     QDateTime date;
     if(forcedDate.isValid()){
@@ -2190,14 +2255,14 @@ SKRResult SKRTreeHub::setTrashedDateToNow(int projectId, int treeItemId, const Q
         date = QDateTime::currentDateTime();
     }
 
-    return set(projectId, treeItemId, "dt_trashed", date);
+    return set(treeItemAddress, "dt_trashed", date);
 }
 
 // ----------------------------------------------------------------------------------------
 
-SKRResult SKRTreeHub::setTrashedDateToNull(int projectId, int treeItemId)
+SKRResult SKRTreeHub::setTrashedDateToNull(const TreeItemAddress &treeItemAddress)
 {
-    return set(projectId, treeItemId, "dt_trashed", "NULL");
+    return set(treeItemAddress, "dt_trashed", "NULL");
 }
 
 // ----------------------------------------------------------------------------------------

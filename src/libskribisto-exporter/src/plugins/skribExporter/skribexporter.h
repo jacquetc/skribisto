@@ -61,7 +61,7 @@ public:
     {
         return true;
     }
-    SKRResult run(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds) const override;
+    SKRResult run(QList<TreeItemAddress> treeItemAddresses, const QUrl &url, const QString &extension, const QVariantMap &parameters) const override;
 
     // SKRInterfaceSettings interface
 public:

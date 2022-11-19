@@ -3,7 +3,6 @@
 #include "ui_newtreeitemdialog.h"
 #include "projecttreecommands.h"
 
-#include "interfaces/pageinterface.h"
 #include "interfaces/pagedesktopinterface.h"
 
 #include "interfaces/pagetypeiconinterface.h"
@@ -19,23 +18,13 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
         if(result == QDialog::Accepted){
             int numberToCreate = ui->numberToCreateSpinBox->value();
 
-            QList<PageInterface *> pluginList =
-                    skrpluginhub->pluginsByType<PageInterface>();
-
             QVariantMap creationProperties;
-            for(auto *plugin : pluginList){
-                if(plugin->pageType() == m_type){
-                    QVariantMap customProperties;
-                    auto *customPropertiesWidget = this->getCustomPropertiesWidget();
-                    if(customPropertiesWidget){
+            auto *customPropertiesWidget = this->getCustomPropertiesWidget();
+            if(customPropertiesWidget){
 
-                        customProperties = customPropertiesWidget->getItemCreationProperties();
-                    }
-
-                    creationProperties = plugin->propertiesForCreationOfTreeItem(customProperties);
-                    break;
-                }
+                creationProperties = customPropertiesWidget->getItemCreationProperties();
             }
+
 
             //titles
 
@@ -53,27 +42,27 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
             if(result == 1){
                 if(this->actionType() == NewTreeItemDialog::AddBefore){
                 if(numberToCreate == 1){
-                    projectTreeCommands->addItemBefore(m_projectId, m_treeItemId, m_type, titles.first(), creationProperties);
+                    projectTreeCommands->addItemBefore(m_treeItemAddress, m_type, titles.first(), creationProperties);
                 }
                 else {
-                    projectTreeCommands->addSeveralItemsBefore(m_projectId, m_treeItemId, m_type, numberToCreate, titles, creationProperties);
+                    projectTreeCommands->addSeveralItemsBefore(m_treeItemAddress, m_type, numberToCreate, titles, creationProperties);
                 }
                 }
                 if(this->actionType() == NewTreeItemDialog::AddAfter){
                     if(numberToCreate == 1){
-                        projectTreeCommands->addItemAfter(m_projectId, m_treeItemId, m_type, titles.first(), creationProperties);
+                        projectTreeCommands->addItemAfter(m_treeItemAddress, m_type, titles.first(), creationProperties);
                     }
                     else {
-                        projectTreeCommands->addSeveralItemsAfter(m_projectId, m_treeItemId, m_type, numberToCreate, titles, creationProperties);
+                        projectTreeCommands->addSeveralItemsAfter(m_treeItemAddress, m_type, numberToCreate, titles, creationProperties);
                     }
                 }
                 if(this->actionType() == NewTreeItemDialog::AddSubItem){
 
                     if(numberToCreate == 1){
-                        projectTreeCommands->addSubItem(m_projectId, m_treeItemId, m_type, titles.first(), creationProperties);
+                        projectTreeCommands->addSubItem(m_treeItemAddress, m_type, titles.first(), creationProperties);
                     }
                     else {
-                        projectTreeCommands->addSeveralSubItems(m_projectId, m_treeItemId, m_type, numberToCreate, titles, creationProperties);
+                        projectTreeCommands->addSeveralSubItems(m_treeItemAddress, m_type, numberToCreate, titles, creationProperties);
                     }
                 }
             }
@@ -93,7 +82,7 @@ NewTreeItemDialog::NewTreeItemDialog(QWidget *parent) :
     QHash<QString, QString> pageTypeByIconUrl;
 
     for(auto *plugin : pageTypeIconPluginList){
-        pageTypeByIconUrl.insert(plugin->pageType(), plugin->pageTypeIconUrl(-1, -1));
+        pageTypeByIconUrl.insert(plugin->pageType(), plugin->pageTypeIconUrl(TreeItemAddress()));
     }
 
 
@@ -152,10 +141,9 @@ NewTreeItemDialog::~NewTreeItemDialog()
     delete ui;
 }
 
-void NewTreeItemDialog::setIdentifiers(int projectId, int treeItemId)
+void NewTreeItemDialog::setIdentifiers(const TreeItemAddress &treeItemAddress)
 {
-    m_projectId = projectId;
-    m_treeItemId = treeItemId;
+    m_treeItemAddress = treeItemAddress;
     ui->listWidget->setCurrentRow(0);
 }
 
@@ -201,8 +189,7 @@ void NewTreeItemDialog::removeCustomPropertiesWidget()
 void NewTreeItemDialog::reset()
 {
     m_type = "";
-    m_projectId = -1;
-    m_treeItemId = -1;
+    m_treeItemAddress = TreeItemAddress();
     ui->numberToCreateSpinBox->setValue(1);
 
 }

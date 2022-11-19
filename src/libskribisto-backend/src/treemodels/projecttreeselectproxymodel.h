@@ -3,6 +3,7 @@
 
 #include <QSortFilterProxyModel>
 #include "skribisto_backend_global.h"
+#include "treeitemaddress.h"
 
 class SKRBACKENDEXPORT ProjectTreeSelectProxyModel : public QSortFilterProxyModel
 {
@@ -19,19 +20,19 @@ public:
 
 private:
     int m_projectId;
-    QHash<int, Qt::CheckState>m_checkedIdsHash;
+    QHash<TreeItemAddress, Qt::CheckState>m_checkedIdsHash;
 
     // QSortFilterProxyModel interface
-    void checkStateOfAllChildren(int projectId, int treeItemId, Qt::CheckState checkState);
-    void determineCheckStateOfAllAncestors(int projectId, int treeItemId, Qt::CheckState checkState);
+    void checkStateOfAllChildren(const TreeItemAddress &treeItemAddress, Qt::CheckState checkState);
+    void determineCheckStateOfAllAncestors(const TreeItemAddress &treeItemAddress, Qt::CheckState checkState);
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
 
     // QAbstractItemModel interface
 public:
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
-    void setCheckedIdsList(const QList<int> checkedIdsList);
-    QList<int> getCheckedIdsList();
+    void setCheckedIdsList(const QList<TreeItemAddress> checkedAddresses);
+    QList<TreeItemAddress> getCheckedIdsList();
     void checkNone();
 };
 

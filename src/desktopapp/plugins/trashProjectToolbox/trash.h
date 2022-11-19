@@ -19,10 +19,11 @@ class Trash : public Toolbox
 public:
     explicit Trash(QWidget *parent = nullptr);
     ~Trash();
-    QString title() const {
+    QString title() const override
+    {
         return tr("Trash");
     }
-    QIcon icon() const
+    QIcon icon() const override
     {
         return QIcon(":/icons/backup/edit-delete.svg");
     }
@@ -42,7 +43,8 @@ private:
 
     Ui::Trash *ui;
     QList<Path> m_expandedPathes;
-    int m_targetTreeItemId, m_projectId;
+    TreeItemAddress m_targetTreeItemAddress;
+    int m_projectId;
     QModelIndex m_currentModelIndex;
     QAction *m_openItemAction, *m_openItemInAnotherViewAction, *m_openItemInANewWindowAction, *m_renameAction, *m_restoreAction,
     *m_empyTrashAction;

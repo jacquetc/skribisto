@@ -30,21 +30,6 @@ set(data_SRCS
     sql/plmsqlqueries.cpp
     skrwordmeter.cpp
     sql/skrsqltools.cpp
-    models/skrtreemodel.cpp
-    models/skrtreeproxymodel.cpp
-    models/plmprojectlistmodel.cpp
-    models/plmdocumentlistmodel.cpp
-    models/plmwritedocumentlistmodel.cpp
-    models/plmdocumentlistproxymodel.cpp
-    models/skrpropertiesmodel.cpp
-    models/skrpropertiesproxymodel.cpp
-    models/skrtreeitem.cpp
-    models/skrmodels.cpp
-    models/skrtreelistmodel.cpp
-    models/skrsearchtreelistproxymodel.cpp
-    models/skrtagitem.cpp
-    models/skrtaglistmodel.cpp
-    models/skrsearchtaglistproxymodel.cpp
 )
 set(data_HDR
     skrdata.h
@@ -67,21 +52,7 @@ set(data_HDR
     sql/plmsqlqueries.h
     skrwordmeter.h
     sql/skrsqltools.h
-    models/skrtreemodel.h
-    models/skrtreeproxymodel.h
-    models/plmprojectlistmodel.h
-    models/plmdocumentlistmodel.h
-    models/plmwritedocumentlistmodel.h
-    models/plmdocumentlistproxymodel.h
-    models/skrpropertiesmodel.h
-    models/skrpropertiesproxymodel.h
-    models/skrtreeitem.h
-    models/skrmodels.h
-    models/skrtreelistmodel.h
-    models/skrsearchtreelistproxymodel.h
-    models/skrtagitem.h
-    models/skrtaglistmodel.h
-    models/skrsearchtaglistproxymodel.h
+
 )
 
 set(data_INTERFACES

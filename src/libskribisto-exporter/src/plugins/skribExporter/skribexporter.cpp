@@ -34,11 +34,11 @@ SkribExporter::SkribExporter(QObject *parent) : QObject(parent)
 SkribExporter::~SkribExporter()
 {}
 
-SKRResult SkribExporter::run(int projectId, const QUrl &url, const QString &extension, const QVariantMap &parameters, QList<int> treeItemIds) const
+SKRResult SkribExporter::run(QList<TreeItemAddress> treeItemAddresses, const QUrl &url, const QString &extension, const QVariantMap &parameters) const
 {
     Q_UNUSED(extension)
 
-    PLMProject *project = plmProjectManager->project(projectId);
+    PLMProject *project = plmProjectManager->project(treeItemAddresses.first().projectId);
 
     QUrl fileName = url;
     SKRResult result(this);

@@ -31,9 +31,9 @@ QList<Toolbox *> SectionView::toolboxes()
 
     OutlineToolbox *outlineToolbox = new OutlineToolbox;    toolboxes.append(outlineToolbox);
     connect(this, &View::initialized, outlineToolbox, &Toolbox::setIdentifiersAndInitialize);
-    outlineToolbox->setIdentifiersAndInitialize(this->projectId(), this->treeItemId());
+    outlineToolbox->setIdentifiersAndInitialize(this->treeItemAddress());
 
-    TagToolbox *tagToolbox = new TagToolbox(nullptr, this->projectId(), this->treeItemId());
+    TagToolbox *tagToolbox = new TagToolbox(nullptr, this->treeItemAddress());
     toolboxes.append(tagToolbox);
 
     return toolboxes;
@@ -49,7 +49,7 @@ void SectionView::initialize()
     centralWidgetUi->comboBox->addItem(QIcon(":/icons/backup/menu_new_sep.svg"), tr("Separator"), "separator");
     centralWidgetUi->comboBox->addItem(QIcon(":/icons/skribisto/skribisto-book-end.svg"), tr("End of a book"), "book-end");
 
-    QString property = skrdata->treePropertyHub()->getProperty(this->projectId(), this->treeItemId(), "section_type", "separator");
+    QString property = skrdata->treePropertyHub()->getProperty(this->treeItemAddress(), "section_type", "separator");
     centralWidgetUi->comboBox->setCurrentIndex(centralWidgetUi->comboBox->findData(property));
 
 
@@ -58,7 +58,7 @@ void SectionView::initialize()
         QVariantMap properties;
         properties.insert("section_type", centralWidgetUi->comboBox->currentData().toString());
 
-        projectTreeCommands->setItemProperties(this->projectId(), this->treeItemId(), properties);
+        projectTreeCommands->setItemProperties(this->treeItemAddress(), properties);
     });
 
 
@@ -68,7 +68,7 @@ void SectionView::initialize()
                      const QString& name,
                      const QString& value){
 
-        if(projectId == this->projectId() && treeItemCode == this->treeItemId() && name == "section_type"){
+        if(projectId == this->projectId() && treeItemCode == this->treeItemAddress().itemId && name == "section_type"){
             centralWidgetUi->comboBox->setCurrentIndex(centralWidgetUi->comboBox->findData(value));
         }
 

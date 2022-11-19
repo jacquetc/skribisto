@@ -26,6 +26,7 @@
 #include <QTextDocument>
 #include <QTextCharFormat>
 #include "skrresult.h"
+#include "treeitemaddress.h"
 
 
 class ItemExporterInterface  {
@@ -35,7 +36,7 @@ public:
     virtual ~ItemExporterInterface() {}
 
     virtual QString pageType() const = 0;
-    virtual QTextDocumentFragment generateExporterTextFragment(int projectId, int treeItemId, const QVariantMap &exportProperties, SKRResult &result) const = 0;
+    virtual QTextDocumentFragment generateExporterTextFragment(const TreeItemAddress &treeItemAddress, const QVariantMap &exportProperties, SKRResult &result) const = 0;
 
     void setFormat(QTextCharFormat charFormat, QTextBlockFormat blockFormat);
     QTextCharFormat charFormat() const;

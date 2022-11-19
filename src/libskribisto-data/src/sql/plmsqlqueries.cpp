@@ -28,6 +28,11 @@
 #include <QRegularExpression>
 #include "skrsqltools.h"
 
+PLMSqlQueries::PLMSqlQueries(const TreeItemAddress &treeItemAddress, const QString &tableName) : PLMSqlQueries(treeItemAddress.projectId, tableName)
+{
+
+}
+
 PLMSqlQueries::PLMSqlQueries(int            projectId,
                              const QString& tableName) : m_projectId(projectId),
     m_tableName(tableName)

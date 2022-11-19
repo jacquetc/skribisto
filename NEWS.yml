@@ -1,3 +1,11 @@
+Version: 2.0.3
+Date: 2022-11-19
+Type: stable
+Description:
+- "Fix path creation in theme creator dialog"
+- "Word count in Text view"
+- "Speed optimizations"
+---
 Version: 2.0.2
 Date: 2022-11-17
 Type: stable

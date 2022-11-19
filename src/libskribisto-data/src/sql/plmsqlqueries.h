@@ -31,6 +31,7 @@
 #include <QtSql/QSqlDatabase>
 #include "skrresult.h"
 #include "skribisto_data_global.h"
+#include "treeitemaddress.h"
 
 
 class EXPORT PLMSqlQueries : public QObject {
@@ -39,6 +40,8 @@ class EXPORT PLMSqlQueries : public QObject {
 public:
 
 
+    explicit PLMSqlQueries(const TreeItemAddress &treeItemAddress,
+                           const QString& tableName);
     explicit PLMSqlQueries(int            projectId,
                            const QString& tableName);
     explicit PLMSqlQueries(QSqlDatabase   sqlDB,

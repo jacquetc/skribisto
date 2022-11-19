@@ -38,7 +38,7 @@ Qt::ItemFlags ProjectTreeProxyModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return Qt::NoItemFlags;
 
-    if(index.data(ProjectTreeItem::TreeItemIdRole).toInt() > 0){
+    if(index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>().itemId > 0){
         defaultFlags |= Qt::ItemIsDragEnabled;
     }
     if(index.data(ProjectTreeItem::CanAddChildTreeItemRole).toBool()){
@@ -50,13 +50,13 @@ Qt::ItemFlags ProjectTreeProxyModel::flags(const QModelIndex &index) const
 }
 
 
-QModelIndex ProjectTreeProxyModel::getModelIndex(int projectId, int treeItemId) const {
+QModelIndex ProjectTreeProxyModel::getModelIndex(const TreeItemAddress &treeItemAddress) const {
     // search for index
     QModelIndex index;
     QModelIndexList list =  this->match(this->index(0, 0,
                                                     QModelIndex()),
-                                        ProjectTreeItem::Roles::TreeItemIdRole,
-                                        treeItemId,
+                                        ProjectTreeItem::Roles::TreeItemAddressRole,
+                                        QVariant::fromValue(treeItemAddress),
                                         -1,
                                         Qt::MatchFlag::MatchRecursive |
                                         Qt::MatchFlag::MatchExactly |
@@ -66,7 +66,7 @@ QModelIndex ProjectTreeProxyModel::getModelIndex(int projectId, int treeItemId) 
         ProjectTreeItem *t = static_cast<ProjectTreeItem *>(modelIndex.internalPointer());
 
         if (t)
-            if (t->projectId() == projectId) index = modelIndex;
+            if (t->projectId() == treeItemAddress.projectId) index = modelIndex;
     }
 
     if (index.isValid())
@@ -89,39 +89,27 @@ QMimeData *ProjectTreeProxyModel::mimeData(const QModelIndexList &indexes) const
 
     // only keep toppest parents
 
-    QList< QPair<int, int> > pairList;
+    QList< TreeItemAddress > sourceTreeItemAddresses;
     for(const QModelIndex &index : indexes){
-        QPair<int, int> pair;
-        pair.first = index.data(ProjectTreeItem::ProjectIdRole).toInt();
-        pair.second = index.data(ProjectTreeItem::TreeItemIdRole).toInt();
-
-        pairList.append(pair);
+         sourceTreeItemAddresses << index.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
     }
 
-    int projectId = pairList.first().first;
-
-    QList<int> keptList;
+    int projectId = sourceTreeItemAddresses.first().projectId;
     // forbid multiple projects
-    for(const QPair<int, int> &pair : pairList) {
-        if(projectId == pair.first){
-            keptList.append(pair.second);
+
+    QList< TreeItemAddress > keptAddresses;
+    for(const TreeItemAddress &sourceTreeItemAddress : sourceTreeItemAddresses){
+        if(projectId == sourceTreeItemAddress.projectId){
+            keptAddresses.append(sourceTreeItemAddress);
         }
     }
 
-    keptList = skrdata->treeHub()->filterOutChildren(projectId, keptList);
-
-    pairList.clear();
-    for(int id : keptList) {
-        QPair<int, int> pair;
-        pair.first = projectId;
-        pair.second = id;
-        pairList.append(pair);
-    }
-
+    sourceTreeItemAddresses = skrdata->treeHub()->filterOutChildren(keptAddresses);
+    //qDebug() << "drag" << sourceTreeItemAddresses;
 
     QByteArray byteArray;
     QDataStream stream(&byteArray, QIODevice::WriteOnly);
-    stream << pairList;
+    stream << sourceTreeItemAddresses;
 
     QMimeData *mimeData = new QMimeData;
     mimeData->setData("application/x-navigationtreeitem-list", byteArray);
@@ -131,68 +119,66 @@ QMimeData *ProjectTreeProxyModel::mimeData(const QModelIndexList &indexes) const
 
 bool ProjectTreeProxyModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
 {
-//    if(!parent.isValid()){
-//        return false;
-//    }
+    //    if(!parent.isValid()){
+    //        return false;
+    //    }
 
-    QList< QPair<int, int> > pairList;
-    QByteArray byteArray = data->data("application/x-navigationtreeitem-list");
-    QDataStream stream(&byteArray, QIODevice::ReadOnly);
-    stream >> pairList;
+    if(data->hasFormat("application/x-navigationtreeitem-list")){
 
-    int sourceProjectId = pairList.first().first;
+        QList< TreeItemAddress >  sourceTreeItemAddresses;
+      QByteArray byteArray = data->data("application/x-navigationtreeitem-list");
+        QDataStream stream(&byteArray, QIODevice::ReadOnly);
+        stream >> sourceTreeItemAddresses;
+        //QList< QVariant > variantList = QVariant(byteArray).toList();
 
-    // forbid multiple projects
-    for(const QPair<int, int> &pair : pairList) {
-        if(sourceProjectId != pair.first){
+        //qDebug() << "drop" << sourceTreeItemAddresses;
+
+        int sourceProjectId = sourceTreeItemAddresses.first().projectId;
+
+        // forbid multiple projects
+        for(const TreeItemAddress &treeItemAddress : sourceTreeItemAddresses) {
+            if(sourceProjectId != treeItemAddress.projectId){
+                return false;
+            }
+        }
+
+        // forbid drag drop on other project for now
+        if(parent.data(ProjectTreeItem::ProjectIdRole).toInt() != sourceProjectId){
             return false;
         }
+
+        return true;
+
     }
+    return false;
 
-    // forbid drag drop on other project for now
-    if(parent.data(ProjectTreeItem::ProjectIdRole).toInt() != sourceProjectId){
-        return false;
-    }
-
-
-    return true;
 }
 
 bool ProjectTreeProxyModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
 {
     if(data->hasFormat("application/x-navigationtreeitem-list")){
 
-        QList< QPair<int, int> > pairList;
+        QList< TreeItemAddress >  sourceTreeItemAddresses;
         QByteArray byteArray = data->data("application/x-navigationtreeitem-list");
         QDataStream stream(&byteArray, QIODevice::ReadOnly);
-        stream >> pairList;
+        stream >> sourceTreeItemAddresses;
 
-        int sourceProjectId = pairList.first().first;
-        int sourceTreeItemId = pairList.first().second;
+        int sourceProjectId = sourceTreeItemAddresses.first().projectId;
 
         // forbid multiple projects
-        for(const QPair<int, int> &pair : pairList) {
-            if(sourceProjectId != pair.first){
+        for(const TreeItemAddress &treeItemAddress : sourceTreeItemAddresses) {
+            if(sourceProjectId != treeItemAddress.projectId){
                 return false;
             }
         }
 
-        QList<int> sourceTreeItemIds;
-
-        for(const QPair<int, int> &pair : pairList) {
-            sourceTreeItemIds.append(pair.second);
-        }
-
-
-
-        int targetProjectId = parent.data(ProjectTreeItem::ProjectIdRole).toInt();
-        int targetParentTreeItemId = parent.data(ProjectTreeItem::TreeItemIdRole).toInt();
+        TreeItemAddress targetParentTreeItemAddress = parent.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
         // as sub item
         if(row == -1 && column == -1){
-            projectTreeCommands->moveItemsAsChildOf(sourceProjectId, sourceTreeItemIds, targetProjectId, targetParentTreeItemId);
+            projectTreeCommands->moveItemsAsChildOf(sourceTreeItemAddresses, targetParentTreeItemAddress);
         }
         //add below
-        else if(row == skrdata->treeHub()->getAllDirectChildren(targetProjectId, targetParentTreeItemId, true, true).count()) {
+        else if(row == skrdata->treeHub()->getAllDirectChildren(targetParentTreeItemAddress, true, true).count()) {
 
             QModelIndex childIndex = this->index(row - 1, column, parent);
 
@@ -200,8 +186,8 @@ bool ProjectTreeProxyModel::dropMimeData(const QMimeData *data, Qt::DropAction a
                 return false;
             }
 
-            int targetTreeItemId = childIndex.data(ProjectTreeItem::TreeItemIdRole).toInt();
-            projectTreeCommands->moveItemsBelow(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId);
+            TreeItemAddress targetTreeItemAddress = childIndex.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
+            projectTreeCommands->moveItemsBelow(sourceTreeItemAddresses, targetTreeItemAddress);
 
         }
         //add before
@@ -212,8 +198,8 @@ bool ProjectTreeProxyModel::dropMimeData(const QMimeData *data, Qt::DropAction a
                 return false;
             }
 
-            int targetTreeItemId = childIndex.data(ProjectTreeItem::TreeItemIdRole).toInt();
-            projectTreeCommands->moveItemsAbove(sourceProjectId, sourceTreeItemIds, targetProjectId, targetTreeItemId);
+            TreeItemAddress targetTreeItemAddress = childIndex.data(ProjectTreeItem::TreeItemAddressRole).value<TreeItemAddress>();
+            projectTreeCommands->moveItemsAbove(sourceTreeItemAddresses, targetTreeItemAddress);
         }
 
 

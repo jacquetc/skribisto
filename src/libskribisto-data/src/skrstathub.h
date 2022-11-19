@@ -4,6 +4,7 @@
 #include <QObject>
 #include "skr.h"
 #include "skribisto_data_global.h"
+#include "treeitemaddress.h"
 
 class EXPORT SKRStatHub : public QObject {
     Q_OBJECT
@@ -23,21 +24,17 @@ public:
 
 public slots:
 
-    void updateWordStats(int  projectId,
-                         int  treeItemId,
+    void updateWordStats(const TreeItemAddress &treeItemAddress,
                          int  wordCount                    = -1,
                          bool triggerProjectModifiedSignal = true);
-    void updateCharacterStats(int  projectId,
-                              int  treeItemId,
+    void updateCharacterStats(const TreeItemAddress &treeItemAddress,
                               int  characterCount               = -1,
                               bool triggerProjectModifiedSignal = true);
 
 private slots:
 
-    void updateTreeItemCounts(int  projectId,
-                            int  treeItemId);
-    void removeTreeItemFromStat(int projectId,
-                                int treeItemId);
+    void updateTreeItemCounts(const TreeItemAddress &treeItemAddress);
+    void removeTreeItemFromStat(const TreeItemAddress &treeItemAddress);
 
 signals:
 
@@ -47,7 +44,7 @@ signals:
 
 private:
 
-    QHash<int, QHash<int, QHash<QString, int> > >m_treeItemHashByProjectHash;
+    QHash<TreeItemAddress, QVariantHash >m_treeItemAddressWithDataHash;
 };
 
 #endif // SKRSTATHUB_H

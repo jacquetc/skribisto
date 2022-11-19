@@ -31,16 +31,17 @@ protected:
 private:
     Ui::BookExportWizard *ui;
     bool m_enablePrint;
-    int m_projectId, m_selectedBookId, m_selectedChapterId;
+    int m_projectId;
+    TreeItemAddress m_selectedBookId, m_selectedChapterId;
     QVariantMap m_parameters;
     QHash<QString, PageTypeIconInterface *> m_typeWithPlugin;
-    QList<QList<int>> m_chaptersWithContents;
-    QList<int> m_allItemsOfBook;
+    QList<QList<TreeItemAddress>> m_chaptersWithContents;
+    QList<TreeItemAddress> m_allItemsOfBook;
     QString m_currentFormat, m_destinationPath;
 
 
-    void fillChapterListWidget(int bookItemId);
-    QList<int> determineOutputItems();
+    void fillChapterListWidget(TreeItemAddress bookItemId);
+    QList<TreeItemAddress> determineOutputItems();
     void setupOptionPage();
 
 

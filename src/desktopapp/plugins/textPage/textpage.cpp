@@ -64,16 +64,15 @@ QVariantMap TextPage::propertiesForCreationOfTreeItem(const QVariantMap &customP
 }
 // ---------------------------------------------------
 
-void TextPage::updateCharAndWordCount(int projectId, int treeItemId, bool sameThread)
+void TextPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread)
 {
-    QString primaryContent = skrdata->treeHub()->getPrimaryContent(projectId, treeItemId);
+    const QString &primaryContent = skrdata->treeHub()->getPrimaryContent(treeItemAddress);
 
-    m_wordMeter->countText(projectId, treeItemId, primaryContent, sameThread, false);
+    m_wordMeter->countText(treeItemAddress, std::move(primaryContent), sameThread, false);
 }
 
 // ---------------------------------------------------
-QTextDocumentFragment TextPage::generateExporterTextFragment(int                projectId,
-                                                             int                treeItemId,
+QTextDocumentFragment TextPage::generateExporterTextFragment(const TreeItemAddress &treeItemAddress,
                                                              const QVariantMap& exportProperties,
                                                              SKRResult        & result) const
 {
@@ -92,7 +91,7 @@ QTextDocumentFragment TextPage::generateExporterTextFragment(int                
     blockFormat.setTopMargin(exportProperties.value("text_block_top_margin", 0).toInt());
     blockFormat.setLineHeight(exportProperties.value("text_space_between_line", 100).toInt(), QTextBlockFormat::ProportionalHeight);
 
-    QString primaryContent = skrdata->treeHub()->getPrimaryContent(projectId, treeItemId);
+    QString primaryContent = skrdata->treeHub()->getPrimaryContent(treeItemAddress);
 
     document.setSkribistoMarkdown(primaryContent);
 

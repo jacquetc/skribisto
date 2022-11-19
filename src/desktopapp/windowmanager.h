@@ -25,8 +25,7 @@ public:
     int  getWindowId(MainWindow *windowObject);
     int  getNumberOfWindows();
     MainWindow *addEmptyWindow(bool restoreViewEnabled);
-     void addWindowForItemId(int projectId,
-                                        int treeItemId);
+     void addWindowForItemId(const TreeItemAddress &treeItemAddress);
      void addWindowForProjectIndependantPageType(const QString& pageType);
      void addWindowForProjectDependantPageType(int            projectId,
                                                           const QString& pageType);
@@ -35,7 +34,7 @@ public:
      void insertAdditionalPropertyForViewManager(const QString & key,
                                                             const QVariant& value);
 
-     MainWindow *addWindow(bool restoreViewEnabled, const QString& pageType = "", int projectId = -1,int treeItemId = -1);
+     MainWindow *addWindow(bool restoreViewEnabled, const QString& pageType = "", const TreeItemAddress &treeItemAddress = TreeItemAddress());
      MainWindow *restoreWindows();
 
      void closeAllWindows();
