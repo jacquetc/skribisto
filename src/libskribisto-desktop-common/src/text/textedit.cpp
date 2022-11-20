@@ -16,7 +16,8 @@ TextEdit::TextEdit(QWidget *parent, int projectId) :
     m_mouse_button_down(false),
     m_always_center_cursor(false),
     m_forceDisableCenterCursor(false),
-    m_projectId(projectId)
+    m_projectId(projectId),
+    m_highlighter(nullptr)
 {
     this->setMouseTracking(true);
 
@@ -68,6 +69,10 @@ TextEdit::TextEdit(QWidget *parent, int projectId) :
     });
 
     connect(this->verticalScrollBar(), &QScrollBar::rangeChanged, this, &TextEdit::adaptScollBarRange);
+
+    QTimer::singleShot(0, this, [this](){this->setCursorWidth(2);});
+
+
 }
 
 QString TextEdit::uuid() const
@@ -278,7 +283,10 @@ void TextEdit::setupHighlighter()
     if(m_projectId == -1){
         return;
     }
-    m_highlighter = new Highlighter(this->document(), m_projectId);
+    if(nullptr == m_highlighter){
+        m_highlighter = new Highlighter(this->document(), m_projectId);
+    }
+
     m_highlighter->getSpellChecker()->setLangCode(skrdata->projectHub()->getLangCode(m_projectId));
     m_highlighter->setSpellCheckHighlightColor("#FF0000");
 }

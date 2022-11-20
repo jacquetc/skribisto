@@ -141,7 +141,7 @@ void SKRStatHub::updateWordStats(const TreeItemAddress &treeItemAddress,
 
         // set property
 
-        QTimer::singleShot(50 + timerCounter * 50, this, [=](){
+        QTimer::singleShot(50 + timerCounter * 2, this, [=](){
             propertyHub->setProperty(ancestorId, "word_count_with_children",
                                  QString::number(totalChildrenCount), true, triggerProjectModifiedSignal);
         });

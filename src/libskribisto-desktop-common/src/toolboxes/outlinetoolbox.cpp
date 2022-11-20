@@ -101,14 +101,16 @@ void OutlineToolbox::initialize()
     cursor.setPosition(cursorPosition);
     ui->textEdit->setTextCursor(cursor);
     ui->textEdit->ensureCursorVisible();
+
+   // ui->textEdit->setCursorWidth(2);
 }
 
 
 void OutlineToolbox::saveContent()
 {
-    QString markdown = static_cast<MarkdownTextDocument *>(ui->textEdit->document())->toSkribistoMarkdown();
+    const QString &markdown = static_cast<MarkdownTextDocument *>(ui->textEdit->document())->toSkribistoMarkdown();
 
-    projectTreeCommands->setContent(this->treeItemAddress(), markdown, true);
+    projectTreeCommands->setContent(this->treeItemAddress(), std::move(markdown), true);
 
     m_wasModified = false;
 }

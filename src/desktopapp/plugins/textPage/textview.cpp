@@ -99,7 +99,7 @@ TextView::TextView(QWidget *parent) :
             saveContent(true);
         }
 
-        QString uniqueDocumentReference = QString("%1_%2_%3").arg(this->projectId(), this->treeItemAddress().itemId).arg(m_isSecondaryContent ? "secondary" : "primary");
+        QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->projectId()), QString::number(this->treeItemAddress().itemId), m_isSecondaryContent ? "secondary" : "primary");
         textBridge->unsubscribeTextDocument(
                     uniqueDocumentReference,
                     centralWidgetUi->textEdit->uuid(),
@@ -165,7 +165,7 @@ void TextView::initialize()
 
     centralWidgetUi->textEdit->setDocument(document);
 
-    QString uniqueDocumentReference = QString("%1_%2_%3").arg(this->projectId(), this->treeItemAddress().itemId).arg(m_isSecondaryContent ? "secondary" : "primary");
+    QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->projectId()), QString::number(this->treeItemAddress().itemId), m_isSecondaryContent ? "secondary" : "primary");
     textBridge->subscribeTextDocument(
                 uniqueDocumentReference,
                 centralWidgetUi->textEdit->uuid(),
@@ -179,7 +179,7 @@ void TextView::initialize()
     m_saveTimer = new QTimer(this);
     m_saveTimer->setSingleShot(true);
     // a bit blocking because of word count counting, so 10s is sufficient
-    m_saveTimer->setInterval(10000);
+    m_saveTimer->setInterval(100);
     connect(m_saveTimer, &QTimer::timeout, this, [this](){ saveContent();});
     QTimer::singleShot(0, this, [this](){ connectSaveConnection();});
 
@@ -287,15 +287,15 @@ void TextView::initialize()
 
     });
 
+    //centralWidgetUi->textEdit->setCursorWidth(2);
 
 }
 
 void TextView::saveContent(bool sameThread)
 {
+    qDebug() << "s";
 
-    QString markdown = static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document())->toSkribistoMarkdown();
-
-    projectTreeCommands->setContent(this->treeItemAddress(), markdown, m_isSecondaryContent);
+    projectTreeCommands->setContent(this->treeItemAddress(), std::move(centralWidgetUi->textEdit->document()->toPlainText()), m_isSecondaryContent);
 
     if(!m_isSecondaryContent){
         projectTreeCommands->updateCharAndWordCount(this->treeItemAddress(), "TEXT", sameThread);

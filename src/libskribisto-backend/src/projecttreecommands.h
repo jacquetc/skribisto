@@ -56,7 +56,7 @@ public:
     TreeItemAddress restoreItemFromTrash(const TreeItemAddress &targetTreeItemAddress, const TreeItemAddress &forcedOriginalParentAddress = TreeItemAddress(), int forcedOriginalRow = -1);
     QList<TreeItemAddress> restoreSeveralItemsFromTrash(QList<TreeItemAddress> targetTreeItemAddresses);
 
-    void setContent(const TreeItemAddress &targetTreeItemAddress, const QString &content, bool isSecondary = false);
+    void setContent(const TreeItemAddress &targetTreeItemAddress, const QString &&content, bool isSecondary = false);
 
     void emptyTrash(int projectId);
 

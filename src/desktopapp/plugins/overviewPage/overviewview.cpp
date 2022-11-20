@@ -38,6 +38,7 @@ OverviewView::OverviewView(QWidget *parent) :
     OutlineItemDelegate *outlineItemDelegate = new OutlineItemDelegate(centralWidgetUi->treeView);
     centralWidgetUi->treeView->setItemDelegateForColumn(1, outlineItemDelegate);
 
+
     connect(outlineItemDelegate, &OutlineItemDelegate::editFinished,  this, [this](const QModelIndex &index){
         centralWidgetUi->treeView->dataChanged(index, index, QList<int>() << Qt::ItemDataRole::SizeHintRole);
     });

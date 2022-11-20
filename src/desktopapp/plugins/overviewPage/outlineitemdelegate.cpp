@@ -23,24 +23,17 @@ void OutlineItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
 //    timer.start();
 //    qDebug() << "!" << timer.elapsed();
 
-
-    //QString content = skrdata->treeHub()->getSecondaryContent(projectId, treeItemId);
-//    qDebug() << "(!)(" << timer.elapsed();
     QString content = index.data(ProjectTreeItem::SecondaryContentRole).toString();
-//    qDebug() << "(!)((" << timer.elapsed();
 
     if(content.isEmpty()){
         return QStyledItemDelegate::paint(painter, option, index);
     }
-//    qDebug() << "a" << timer.elapsed();
 
     MarkdownTextDocument document;
     document.setSkribistoMarkdown(content);
-//    qDebug() << "b" <<timer.elapsed();
 
     TextEdit textEdit;
     textEdit.setDocument(&document);
-//    qDebug() << "bb" <<timer.elapsed();
     textEdit.document()->setDocumentMargin(0);
     textEdit.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     textEdit.setFrameShape(QFrame::Shape::NoFrame);
@@ -48,10 +41,8 @@ void OutlineItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
     textEdit.setLineWidth(0);
     //initStyleOption(&option, index);
 
-//    qDebug() << "c" <<timer.elapsed();
 
     painter->save();
-    //qDebug() << option.rect;
 
     option.widget->style()->drawControl(QStyle::CE_ItemViewItem, &option, painter);
     textEdit.setGeometry(option.rect);
@@ -60,7 +51,6 @@ void OutlineItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
     painter->restore();
     //QStyledItemDelegate::paint(painter, option, index);
 
-//    qDebug() << "d" <<timer.elapsed();
 
 
 }
@@ -100,8 +90,8 @@ QSize OutlineItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QM
 
 QWidget *OutlineItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    TextEdit *textEdit = new TextEdit(parent);
 
+    TextEdit *textEdit = new TextEdit(parent);
     //textEdit->document()->setDocumentMargin(0);
     textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     textEdit->setFrameShape(QFrame::Shape::NoFrame);
@@ -109,6 +99,8 @@ QWidget *OutlineItemDelegate::createEditor(QWidget *parent, const QStyleOptionVi
     textEdit->setLineWidth(0);
     textEdit->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
     textEdit->setParent(parent);
+
+
 
     return textEdit;
 }
@@ -137,6 +129,17 @@ void OutlineItemDelegate::setEditorData(QWidget *editor, const QModelIndex &inde
     QTextCursor textCursor  = textEdit->textCursor();
     textCursor.movePosition(QTextCursor::End);
     textEdit->setTextCursor(textCursor);
+
+
+
+    QSettings settings;
+
+    // spellchecker :
+    int projectId = index.data(ProjectTreeItem::ProjectIdRole).toInt();
+    textEdit->setProjectId(projectId);
+    textEdit->setupHighlighter();
+    textEdit->setSpellcheckerEnabled(settings.value("common/spellChecker", true).toBool());
+
 }
 
 //---------------------------------------------------------------------------
@@ -156,7 +159,6 @@ void OutlineItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *mode
                 uniqueDocumentReference,
                 textEditor->uuid(),
                 document);
-
 
     emit editFinished(index);
 }
@@ -192,6 +194,6 @@ bool OutlineItemDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, 
 
 void OutlineItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-
+qDebug() << "updateEditorGeometry";
 editor->setGeometry(option.rect);
 }

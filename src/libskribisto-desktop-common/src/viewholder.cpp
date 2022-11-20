@@ -356,7 +356,7 @@ void ViewHolder::dropEvent(QDropEvent *event)
         viewManager->openViewAt(this, type, sourceTreeItemAddresses.first());
 
         this->setCursor(QCursor(Qt::ArrowCursor));
-        event->acceptProposedAction();
+        event->ignore();
 
     }
 }

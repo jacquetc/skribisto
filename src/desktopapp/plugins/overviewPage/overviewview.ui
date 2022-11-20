@@ -34,6 +34,9 @@
      <property name="dragDropMode">
       <enum>QAbstractItemView::DragDrop</enum>
      </property>
+     <property name="defaultDropAction">
+      <enum>Qt::MoveAction</enum>
+     </property>
      <property name="selectionMode">
       <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>

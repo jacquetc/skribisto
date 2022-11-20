@@ -68,7 +68,12 @@ void TextPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bo
 {
     const QString &primaryContent = skrdata->treeHub()->getPrimaryContent(treeItemAddress);
 
-    m_wordMeter->countText(treeItemAddress, std::move(primaryContent), sameThread, false);
+    MarkdownTextDocument textDocument;
+
+    textDocument.setSkribistoMarkdown(primaryContent);
+    const QString &plainText = textDocument.toPlainText();
+
+    m_wordMeter->countText(treeItemAddress, std::move(plainText), sameThread, false);
 }
 
 // ---------------------------------------------------
