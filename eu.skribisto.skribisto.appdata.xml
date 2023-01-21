@@ -10,16 +10,20 @@
   <description>
     <p>Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or write hundreds of notes. The tools are designed to be most unobstrusive, so you can write, write and write a bit more without too much distraction.</p>
   </description>
-  <categories>
-    <category>Office</category>
-  </categories>
+  <launchable type="desktop-id">eu.skribisto.skribisto.desktop</launchable>
   <url type="homepage">https://github.com/jacquetc/skribisto</url>
   <url type="bugtracker">https://github.com/jacquetc/skribisto/issues</url>
   <url type="faq">https://manual.skribisto.eu/faq/</url>
   <url type="help">https://manual.skribisto.eu/manual/</url>
   <url type="translate">https://github.com/jacquetc/skribisto#translation</url>
   <url type="contact">https://github.com/jacquetc/skribisto#to-contact-me</url>
-  <launchable type="desktop-id">eu.skribisto.skribisto.desktop</launchable>
+  <categories>
+    <category>Office</category>
+  </categories>
+  <provides>
+    <mediatype>application/x-skribisto</mediatype>
+    <binary>SkribistoDesktop</binary>
+  </provides>
   <screenshots>
     <screenshot type="default">
       <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot1.png</image>
@@ -28,21 +32,11 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="2.0.3" date="2022-11-19T00:00:00Z">
+    <release type="stable" version="2.0.4" date="2023-01-21T00:00:00Z">
       <description>
-        <ul>
-          <li>Fix path creation in theme creator dialog</li>
-          <li>Word count in Text view</li>
-          <li>Speed optimizations</li>
-        </ul>
+        <p>Fix crash when clicking on a list item when exporting a book</p>
       </description>
     </release>
   </releases>
-  <mimetypes>
-    <mimetype>application/x-skribisto</mimetype>
-  </mimetypes>
-  <provides>
-    <binary>SkribistoDesktop</binary>
-  </provides>
   <content_rating type="oars-1.1"/>
 </component>
