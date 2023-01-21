@@ -52,8 +52,7 @@ public:
                                       const QString& name,
                                       const QString& value,
                                       bool           isSystem                     = false,
-                                      bool           isSilent                     = false,
-                                      bool           triggerProjectModifiedSignal = true);
+                                      bool           isSilent                     = false);
     int                   getLastAddedId();
     SKRResult             addProperty(const TreeItemAddress &treeItemAddress,
                                       int imposedPropertyId = -1);

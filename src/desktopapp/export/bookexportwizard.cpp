@@ -114,8 +114,11 @@ BookExportWizard::BookExportWizard(QWidget *parent, int projectId, bool enablePr
         m_selectedBookId = item->data(Qt::UserRole).value<TreeItemAddress>();
         this->fillChapterListWidget(m_selectedBookId);
     });
-    connect(ui->bookListWidget, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *item){
-        m_selectedBookId = item->data(Qt::UserRole).value<TreeItemAddress>();
+    connect(ui->bookListWidget, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *current, QListWidgetItem *previous){
+        if(!current){
+            return;
+        }
+        m_selectedBookId = current->data(Qt::UserRole).value<TreeItemAddress>();
         this->fillChapterListWidget(m_selectedBookId);
     });
 
@@ -135,8 +138,11 @@ BookExportWizard::BookExportWizard(QWidget *parent, int projectId, bool enablePr
     connect(ui->chapterListWidget, &QListWidget::itemClicked, this, [this](QListWidgetItem *item){
         m_selectedChapterId = item->data(Qt::UserRole).value<TreeItemAddress>();
     });
-    connect(ui->chapterListWidget, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *item){
-        m_selectedChapterId = item->data(Qt::UserRole).value<TreeItemAddress>();
+    connect(ui->chapterListWidget, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *current, QListWidgetItem *previous){
+        if(!current){
+            return;
+        }
+        m_selectedChapterId = current->data(Qt::UserRole).value<TreeItemAddress>();
     });
 
     if(ui->chapterListWidget->count() > 0){

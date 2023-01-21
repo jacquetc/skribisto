@@ -43,7 +43,7 @@ public:
     }
 
     void updateCharAndWordCount(const TreeItemAddress &treeItemAddress,
-                                bool sameThread = false) override {}
+                                bool sameThread = false, bool triggerProjectModifiedSignal = true) override {}
 
     // PageInterface interface
 public:

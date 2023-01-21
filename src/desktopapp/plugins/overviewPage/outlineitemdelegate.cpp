@@ -8,6 +8,7 @@
 #include <QTreeView>
 #include <QHeaderView>
 #include <skrdata.h>
+#include <QVBoxLayout>
 
 OutlineItemDelegate::OutlineItemDelegate(QObject *parent)
     : QStyledItemDelegate{parent}
@@ -31,6 +32,7 @@ void OutlineItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
 
     MarkdownTextDocument document;
     document.setSkribistoMarkdown(content);
+
 
     TextEdit textEdit;
     textEdit.setDocument(&document);
@@ -194,6 +196,6 @@ bool OutlineItemDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, 
 
 void OutlineItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-qDebug() << "updateEditorGeometry";
+//qDebug() << "updateEditorGeometry";
 editor->setGeometry(option.rect);
 }

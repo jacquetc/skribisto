@@ -448,10 +448,14 @@ void TextEdit::onCustomContextMenu(const QPoint &point)
 
     // if outside selected text
     if(this->textCursor().hasSelection() && positionUnderCursor < currentPosition && positionUnderCursor > currentAnchor){
-        this->setTextCursor(this->cursorForPosition(point));
+        QTextCursor cursor(this->document());
+        cursor.setPosition(positionUnderCursor);
+        this->setTextCursor(cursor);
     }
     else if(!this->textCursor().hasSelection()){
-        this->setTextCursor(this->cursorForPosition(point));
+        QTextCursor cursor(this->document());
+        cursor.setPosition(positionUnderCursor);
+        this->setTextCursor(cursor);
     }
 
     QString selectedText = this->textCursor().selectedText();
@@ -459,14 +463,14 @@ void TextEdit::onCustomContextMenu(const QPoint &point)
 
     // spell check:
 
-    if(selectedText.isEmpty() && m_projectId != -1 && this->isWordMisspelled(currentPosition)){
+    if(selectedText.isEmpty() && m_projectId != -1 && this->isWordMisspelled(positionUnderCursor)){
 
-        QStringList suggestions = this->listSpellSuggestionsAt(currentPosition);
+        QStringList suggestions = this->listSpellSuggestionsAt(positionUnderCursor);
 
         for(const QString &suggestion : suggestions){
             QAction *suggestAction = new QAction(suggestion, m_contextMenu);
             connect(suggestAction, &QAction::triggered, this, [=](){
-                    replaceWordAt(currentPosition, suggestion);
+                    replaceWordAt(positionUnderCursor, suggestion);
             });
             m_contextMenu->addAction(suggestAction);
         }

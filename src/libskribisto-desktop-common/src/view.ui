@@ -68,6 +68,9 @@
           </property>
           <item>
            <widget class="QToolButton" name="backHistoryButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string notr="true">Back</string>
             </property>
@@ -79,6 +82,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="forwardHistoryButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string notr="true">Forward</string>
             </property>

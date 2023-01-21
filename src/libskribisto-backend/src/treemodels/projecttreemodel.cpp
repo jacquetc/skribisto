@@ -81,7 +81,7 @@ QModelIndex ProjectTreeModel::index(int row, int column, const QModelIndex &pare
         int projectId = skrdata->projectHub()->getProjectIdList().at(row);
         auto *projectItem = this->getTreeItem(TreeItemAddress(projectId, 0));
         QModelIndex modelIndex = createIndex(row, column, projectItem);
-        projectItem->setModelIndex(QPersistentModelIndex(modelIndex));
+        projectItem->setModelIndex(column, QPersistentModelIndex(modelIndex));
 
         return modelIndex;
     }
@@ -97,7 +97,7 @@ QModelIndex ProjectTreeModel::index(int row, int column, const QModelIndex &pare
 
     ProjectTreeItem *childItem = getTreeItem(treeItemAddress);
     QModelIndex modelIndex = createIndex(row, column, childItem);
-    parentItem->setModelIndex(QPersistentModelIndex(modelIndex));
+    parentItem->setModelIndex(column, QPersistentModelIndex(modelIndex));
 
     return modelIndex;
 
@@ -120,7 +120,7 @@ QModelIndex ProjectTreeModel::parent(const QModelIndex &index) const
     ProjectTreeItem *parentItem = getTreeItem(parentAddress);
 
     QModelIndex parentIndex = createIndex(parentItem->row(), 0, parentItem);
-    parentItem->setModelIndex(QPersistentModelIndex(parentIndex));
+    parentItem->setModelIndex(0, QPersistentModelIndex(parentIndex));
     return parentIndex;
 
 }
@@ -227,27 +227,27 @@ QVariant ProjectTreeModel::data(const QModelIndex &index, int role) const
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::CharCountRole && index.column() == 0) {
+    if (role == ProjectTreeItem::Roles::CharCountRole) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::WordCountRole && index.column() == 0) {
+    if (role == ProjectTreeItem::Roles::WordCountRole) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::CharCountGoalRole && index.column() == 0) {
+    if (role == ProjectTreeItem::Roles::CharCountGoalRole) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::WordCountGoalRole && index.column() == 0) {
+    if (role == ProjectTreeItem::Roles::WordCountGoalRole) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::CharCountWithChildrenRole && index.column() == 0) {
+    if (role == ProjectTreeItem::Roles::CharCountWithChildrenRole) {
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::WordCountWithChildrenRole && index.column() == 0) {
+    if (role == ProjectTreeItem::Roles::WordCountWithChildrenRole) {
         return item->data(role);
     }
 
@@ -581,42 +581,59 @@ void ProjectTreeModel::exploitSignalFromSKRData(const TreeItemAddress &treeItemA
         return;
     }
 
+//    if(role == ProjectTreeItem::WordCountRole || role == ProjectTreeItem::WordCountWithChildrenRole ){
+
+//        item->invalidateData(role);
+
+//        QModelIndex index = item->getModelIndex(2);
+
+//        if(index.isValid()){
+//            QTimer::singleShot(2, this, [=](){emit dataChanged(index, index, QVector<int>() << role);});
+//            return;
+//        }
+//        else {
+//            qDebug() << "!index.isValid()";
+//        }
+
+//    }
+
 
 
     item->invalidateData(role);
+    for(int column = 0; column < this->columnCount(QModelIndex()) ; column++){
 
-    // search for index
-    QModelIndex index = item->getModelIndex();
+        // search for index
+        QModelIndex index = item->getModelIndex(column);
 
-    if(!index.isValid()){
+        if(!index.isValid()){
 
 
+            QModelIndexList list =  this->match(this->index(0, column,
+                                                            QModelIndex()),
+                                                ProjectTreeItem::Roles::TreeItemAddressRole,
+                                                QVariant::fromValue(treeItemAddress),
+                                                -1,
+                                                Qt::MatchFlag::MatchRecursive |
+                                                Qt::MatchFlag::MatchExactly |
+                                                Qt::MatchFlag::MatchWrap);
 
-        QModelIndexList list =  this->match(this->index(0, 0,
-                                                        QModelIndex()),
-                                            ProjectTreeItem::Roles::TreeItemAddressRole,
-                                            QVariant::fromValue(treeItemAddress),
-                                            -1,
-                                            Qt::MatchFlag::MatchRecursive |
-                                            Qt::MatchFlag::MatchExactly |
-                                            Qt::MatchFlag::MatchWrap);
+            for (const QModelIndex& modelIndex : qAsConst(list)) {
+                ProjectTreeItem *t = static_cast<ProjectTreeItem *>(modelIndex.internalPointer());
 
-        for (const QModelIndex& modelIndex : qAsConst(list)) {
-            ProjectTreeItem *t = static_cast<ProjectTreeItem *>(modelIndex.internalPointer());
+                if (t)
+                    if (t->projectId() == treeItemAddress.projectId) index = modelIndex;
+            }
 
-            if (t)
-                if (t->projectId() == treeItemAddress.projectId) index = modelIndex;
         }
+        if (index.isValid()) {
+            if(role == ProjectTreeItem::Roles::AllRoles){
+                emit dataChanged(index, index);
+            }
+            else {
+                QTimer::singleShot(2 + column*3, this, [=](){emit dataChanged(index, index, QVector<int>() << role);});
+            }
 
-    }
-    if (index.isValid()) {
-        if(role == ProjectTreeItem::Roles::AllRoles){
-            emit dataChanged(index, index);
         }
-        else {
-            QTimer::singleShot(2, this, [=](){emit dataChanged(index, index, QVector<int>() << role);});
-        }
-
     }
 }
 

@@ -2,6 +2,7 @@
 #define SKRSTATHUB_H
 
 #include <QObject>
+#include "interfaces/pageinterface.h"
 #include "skr.h"
 #include "skribisto_data_global.h"
 #include "treeitemaddress.h"
@@ -18,17 +19,15 @@ public:
     Q_ENUM(StatType)
 
     explicit SKRStatHub(QObject *parent = nullptr);
+    ~SKRStatHub();
 
-    Q_INVOKABLE int getTreeItemTotalCount(SKRStatHub::StatType type,
+    Q_INVOKABLE int getProjectTotalCount(SKRStatHub::StatType type,
                                           int                  project);
 
 public slots:
 
-    void updateWordStats(const TreeItemAddress &treeItemAddress,
-                         int  wordCount                    = -1,
-                         bool triggerProjectModifiedSignal = true);
-    void updateCharacterStats(const TreeItemAddress &treeItemAddress,
-                              int  characterCount               = -1,
+    void updateStats(const TreeItemAddress &treeItemAddress, SKRStatHub::StatType type,
+                              int  count               = -1,
                               bool triggerProjectModifiedSignal = true);
 
 private slots:
@@ -45,6 +44,9 @@ signals:
 private:
 
     QHash<TreeItemAddress, QVariantHash >m_treeItemAddressWithDataHash;
+    QList<PageInterface *> m_pageInterfacePluginList;
+    QTimer *m_setPropertyTimer;
+    QSet<TreeItemAddress> m_countPropertiesToSet;
 };
 
 #endif // SKRSTATHUB_H

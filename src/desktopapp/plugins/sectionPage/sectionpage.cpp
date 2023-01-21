@@ -90,11 +90,6 @@ QVariantMap SectionPage::propertiesForCreationOfTreeItem(const QVariantMap &cust
 }
 
 // ---------------------------------------------------
-
-void SectionPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread)
-{}
-
-// ---------------------------------------------------
 QTextDocumentFragment SectionPage::generateExporterTextFragment(const TreeItemAddress &treeItemAddress,
                                                                 const QVariantMap& exportProperties,
                                                                 SKRResult        & result) const
