@@ -35,11 +35,11 @@ SKRResult Exporter::exportProject(int projectId, const QUrl &url, const QString 
     }
 
     QList<TreeItemAddress> treeItemAddressesToExport;
-    if(treeItemAddresses.isEmpty()){
+    if(treeItemAddresses.isEmpty()){ // export all ids
         treeItemAddressesToExport = skrdata->treeHub()->getAllIds(projectId);
 
         QMutableListIterator<TreeItemAddress> i(treeItemAddressesToExport);
-        while (i.hasNext()) {
+        while (i.hasNext()) { // remove trashed and non-printable
             TreeItemAddress treeItemAddress = i.next();
             if(skrdata->treeHub()->getTrashed(treeItemAddress) || skrdata->treePropertyHub()->getProperty(treeItemAddress, "printable", "true") != "true"){
                 i.remove();
@@ -84,7 +84,7 @@ QTextDocument *Exporter::getPrintTextDocument(QList<TreeItemAddress> treeItemAdd
     if (!project) {
         *result = SKRResult(SKRResult::Critical, "Exporter", "project_missing");
         result->addData("projectId", treeItemAddresses.first().projectId);
-        return new QTextDocument();
+        return textDocument;
     }
 
     QString extension = "html";

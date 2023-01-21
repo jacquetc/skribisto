@@ -30,12 +30,18 @@ TextPage::TextPage(QObject *parent) : QObject(parent)
 {
     m_wordMeter = new SKRWordMeter(this);
 
-    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, skrdata->statHub(),
-            &SKRStatHub::updateCharacterStats);
+    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, this , [](const TreeItemAddress &treeItemAddress,
+            int  charCount,
+            bool triggerProjectModifiedSignal){
+             skrdata->statHub()->updateStats(treeItemAddress, SKRStatHub::Character ,charCount, triggerProjectModifiedSignal);
+    });
+
     connect(m_wordMeter,
-            &SKRWordMeter::wordCountCalculated,
-            skrdata->statHub(),
-            &SKRStatHub::updateWordStats);
+            &SKRWordMeter::wordCountCalculated, this , [](const TreeItemAddress &treeItemAddress,
+            int  wordCount,
+            bool triggerProjectModifiedSignal){
+             skrdata->statHub()->updateStats(treeItemAddress, SKRStatHub::Word ,wordCount, triggerProjectModifiedSignal);
+    });
 }
 
 // ---------------------------------------------------
@@ -64,11 +70,16 @@ QVariantMap TextPage::propertiesForCreationOfTreeItem(const QVariantMap &customP
 }
 // ---------------------------------------------------
 
-void TextPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread)
+void TextPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread, bool triggerProjectModifiedSignal)
 {
     const QString &primaryContent = skrdata->treeHub()->getPrimaryContent(treeItemAddress);
 
-    m_wordMeter->countText(treeItemAddress, std::move(primaryContent), sameThread, false);
+    MarkdownTextDocument textDocument;
+
+    textDocument.setSkribistoMarkdown(primaryContent);
+    const QString &plainText = textDocument.toPlainText();
+
+    m_wordMeter->countText(treeItemAddress, std::move(plainText), sameThread, triggerProjectModifiedSignal);
 }
 
 // ---------------------------------------------------

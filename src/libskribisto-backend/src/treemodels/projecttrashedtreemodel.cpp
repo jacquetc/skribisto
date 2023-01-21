@@ -90,7 +90,7 @@ QModelIndex ProjectTrashedTreeModel::index(int row, int column, const QModelInde
 
         auto *projectItem = this->getTreeItem(directChildren.at(row));
         QModelIndex modelIndex = createIndex(row, column, projectItem);
-        projectItem->setModelIndex(QPersistentModelIndex(modelIndex));
+        projectItem->setModelIndex(column, QPersistentModelIndex(modelIndex));
 
         return modelIndex;
     }
@@ -104,7 +104,7 @@ QModelIndex ProjectTrashedTreeModel::index(int row, int column, const QModelInde
 
     ProjectTreeItem *childItem = getTreeItem(treeItemId);
     QModelIndex modelIndex = createIndex(row, column, childItem);
-    parentItem->setModelIndex(QPersistentModelIndex(modelIndex));
+    parentItem->setModelIndex(column, QPersistentModelIndex(modelIndex));
     return modelIndex;
 
 }
@@ -130,6 +130,7 @@ QModelIndex ProjectTrashedTreeModel::parent(const QModelIndex &index) const
     ProjectTreeItem *parentItem = getTreeItem(parentAddress);
 
     QModelIndex parentIndex = createIndex(parentItem->row(), 0, parentItem);
+    parentItem->setModelIndex(0, QPersistentModelIndex(parentIndex));
     return parentIndex;
 
 }
@@ -237,41 +238,41 @@ QVariant ProjectTrashedTreeModel::data(const QModelIndex &index, int role) const
         return item->data(role);
     }
 
-    if (role == ProjectTreeItem::Roles::CharCountRole) {
-        return item->data(role);
-    }
+//    if (role == ProjectTreeItem::Roles::CharCountRole) {
+//        return item->data(role);
+//    }
 
-    if (role == ProjectTreeItem::Roles::WordCountRole) {
-        return item->data(role);
-    }
+//    if (role == ProjectTreeItem::Roles::WordCountRole) {
+//        return item->data(role);
+//    }
 
-    if (role == ProjectTreeItem::Roles::CharCountGoalRole) {
-        return item->data(role);
-    }
+//    if (role == ProjectTreeItem::Roles::CharCountGoalRole) {
+//        return item->data(role);
+//    }
 
-    if (role == ProjectTreeItem::Roles::WordCountGoalRole) {
-        return item->data(role);
-    }
+//    if (role == ProjectTreeItem::Roles::WordCountGoalRole) {
+//        return item->data(role);
+//    }
 
-    if (role == ProjectTreeItem::Roles::CharCountWithChildrenRole) {
-        return item->data(role);
-    }
+//    if (role == ProjectTreeItem::Roles::CharCountWithChildrenRole) {
+//        return item->data(role);
+//    }
 
-    if (role == ProjectTreeItem::Roles::WordCountWithChildrenRole) {
-        return item->data(role);
-    }
+//    if (role == ProjectTreeItem::Roles::WordCountWithChildrenRole) {
+//        return item->data(role);
+//    }
 
-    if (role == ProjectTreeItem::Roles::TrashedRole) {
-        return item->data(role);
-    }
+//    if (role == ProjectTreeItem::Roles::TrashedRole) {
+//        return item->data(role);
+//    }
 
-    if (role == ProjectTreeItem::Roles::ProjectIsBackupRole) {
-        return item->data(role);
-    }
+//    if (role == ProjectTreeItem::Roles::ProjectIsBackupRole) {
+//        return item->data(role);
+//    }
 
-    if (role == ProjectTreeItem::Roles::ProjectIsActiveRole) {
-        return item->data(role);
-    }
+//    if (role == ProjectTreeItem::Roles::ProjectIsActiveRole) {
+//        return item->data(role);
+//    }
 
     if (role == ProjectTreeItem::Roles::IsRenamableRole) {
         return item->data(role);
@@ -458,14 +459,14 @@ QHash<int, QByteArray>ProjectTrashedTreeModel::roleNames() const {
     roles[ProjectTreeItem::Roles::ContentDateRole]           = "contentDate";
     roles[ProjectTreeItem::Roles::HasChildrenRole]           = "hasChildren";
     roles[ProjectTreeItem::Roles::TrashedRole]               = "trashed";
-    roles[ProjectTreeItem::Roles::WordCountRole]             = "wordCount";
-    roles[ProjectTreeItem::Roles::CharCountRole]             = "charCount";
-    roles[ProjectTreeItem::Roles::WordCountGoalRole]         = "wordCountGoal";
-    roles[ProjectTreeItem::Roles::CharCountGoalRole]         = "charCountGoal";
-    roles[ProjectTreeItem::Roles::WordCountWithChildrenRole] = "wordCountWithChildren";
-    roles[ProjectTreeItem::Roles::CharCountWithChildrenRole] = "charCountWithChildren";
-    roles[ProjectTreeItem::Roles::ProjectIsBackupRole]       = "projectIsBackup";
-    roles[ProjectTreeItem::Roles::ProjectIsActiveRole]       = "projectIsActive";
+//    roles[ProjectTreeItem::Roles::WordCountRole]             = "wordCount";
+//    roles[ProjectTreeItem::Roles::CharCountRole]             = "charCount";
+//    roles[ProjectTreeItem::Roles::WordCountGoalRole]         = "wordCountGoal";
+//    roles[ProjectTreeItem::Roles::CharCountGoalRole]         = "charCountGoal";
+//    roles[ProjectTreeItem::Roles::WordCountWithChildrenRole] = "wordCountWithChildren";
+//    roles[ProjectTreeItem::Roles::CharCountWithChildrenRole] = "charCountWithChildren";
+//    roles[ProjectTreeItem::Roles::ProjectIsBackupRole]       = "projectIsBackup";
+//    roles[ProjectTreeItem::Roles::ProjectIsActiveRole]       = "projectIsActive";
     roles[ProjectTreeItem::Roles::IsRenamableRole]           = "isRenamable";
     roles[ProjectTreeItem::Roles::IsMovableRole]             = "isMovable";
     roles[ProjectTreeItem::Roles::CanAddSiblingTreeItemRole] = "canAddSiblingTreeItem";
@@ -534,7 +535,7 @@ void ProjectTrashedTreeModel::exploitSignalFromSKRData(const TreeItemAddress &tr
     item->invalidateData(role);
 
     // search for index
-    QModelIndex index = item->getModelIndex();
+    QModelIndex index = item->getModelIndex(0);
 
     if(!index.isValid()){
         // search for index
@@ -642,16 +643,16 @@ void ProjectTrashedTreeModel::connectToSKRDataSignals()
                                        ProjectTreeItem::Roles::TrashedRole);
     }, Qt::QueuedConnection);
 
-    m_dataConnectionsList << this->connect(skrdata->projectHub(),
-                                           &PLMProjectHub::activeProjectChanged, this,
-                                           [this](int projectId) {
-        Q_UNUSED(projectId)
+//    m_dataConnectionsList << this->connect(skrdata->projectHub(),
+//                                           &PLMProjectHub::activeProjectChanged, this,
+//                                           [this](int projectId) {
+//        Q_UNUSED(projectId)
 
-        for (int _projectId : skrdata->projectHub()->getProjectIdList()) {
-            this->exploitSignalFromSKRData(TreeItemAddress(_projectId, 0),
-                                           ProjectTreeItem::Roles::ProjectIsActiveRole);
-        }
-    }, Qt::QueuedConnection);
+//        for (int _projectId : skrdata->projectHub()->getProjectIdList()) {
+//            this->exploitSignalFromSKRData(TreeItemAddress(_projectId, 0),
+//                                           ProjectTreeItem::Roles::ProjectIsActiveRole);
+//        }
+//    }, Qt::QueuedConnection);
 
     m_dataConnectionsList << this->connect(skrdata->treeHub(),
                                            &SKRTreeHub::cutCopyChanged, this,
@@ -676,29 +677,29 @@ void ProjectTrashedTreeModel::connectToSKRDataSignals()
         if (name == "label") this->exploitSignalFromSKRData(treeItemAddress,
                                                             ProjectTreeItem::Roles::LabelRole);
 
-        else if (name == "char_count") this->exploitSignalFromSKRData(treeItemAddress,
-                                                                 ProjectTreeItem::Roles::
-                                                                 CharCountRole);
+//        else if (name == "char_count") this->exploitSignalFromSKRData(treeItemAddress,
+//                                                                 ProjectTreeItem::Roles::
+//                                                                 CharCountRole);
 
-        else if (name == "word_count") this->exploitSignalFromSKRData(treeItemAddress,
-                                                                 ProjectTreeItem::Roles::
-                                                                 WordCountRole);
+//        else if (name == "word_count") this->exploitSignalFromSKRData(treeItemAddress,
+//                                                                 ProjectTreeItem::Roles::
+//                                                                 WordCountRole);
 
-        else if (name == "char_count_goal") this->exploitSignalFromSKRData(treeItemAddress,
-                                                                 ProjectTreeItem::Roles::
-                                                                 CharCountGoalRole);
+//        else if (name == "char_count_goal") this->exploitSignalFromSKRData(treeItemAddress,
+//                                                                 ProjectTreeItem::Roles::
+//                                                                 CharCountGoalRole);
 
-        else if (name == "word_count_goal") this->exploitSignalFromSKRData(treeItemAddress,
-                                                                 ProjectTreeItem::Roles::
-                                                                 WordCountGoalRole);
+//        else if (name == "word_count_goal") this->exploitSignalFromSKRData(treeItemAddress,
+//                                                                 ProjectTreeItem::Roles::
+//                                                                 WordCountGoalRole);
 
-        else if (name == "char_count_with_children") this->exploitSignalFromSKRData(treeItemAddress,
-                                                                               ProjectTreeItem::Roles::
-                                                                               CharCountWithChildrenRole);
+//        else if (name == "char_count_with_children") this->exploitSignalFromSKRData(treeItemAddress,
+//                                                                               ProjectTreeItem::Roles::
+//                                                                               CharCountWithChildrenRole);
 
-        else if (name == "word_count_with_children") this->exploitSignalFromSKRData(treeItemAddress,
-                                                                               ProjectTreeItem::Roles::
-                                                                               WordCountWithChildrenRole);
+//        else if (name == "word_count_with_children") this->exploitSignalFromSKRData(treeItemAddress,
+//                                                                               ProjectTreeItem::Roles::
+//                                                                               WordCountWithChildrenRole);
 
         else if (name == "is_renamable") this->exploitSignalFromSKRData(treeItemAddress,
                                                                    ProjectTreeItem::Roles::

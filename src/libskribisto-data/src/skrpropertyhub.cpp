@@ -225,8 +225,7 @@ SKRResult SKRPropertyHub::setProperty(const TreeItemAddress &treeItemAddress,
                                       const QString& name,
                                       const QString& value,
                                       bool           isSystem,
-                                      bool           isSilent,
-                                      bool           triggerProjectModifiedSignal)
+                                      bool           isSilent)
 {
     SKRResult result(this);
     int propertyId = -2;
@@ -263,7 +262,7 @@ SKRResult SKRPropertyHub::setProperty(const TreeItemAddress &treeItemAddress,
     IFOK(result) {
         emit propertyChanged(treeItemAddress.projectId, propertyId, treeItemAddress.itemId, name, value);
 
-        if (triggerProjectModifiedSignal && !isSilent) {
+        if (!isSilent) {
             emit projectModified(treeItemAddress.projectId);
         }
 

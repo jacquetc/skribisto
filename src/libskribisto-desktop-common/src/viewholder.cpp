@@ -24,6 +24,7 @@ ViewHolder::ViewHolder(QWidget *parent) :
     m_goForwardAction->setShortcut(QKeySequence(QKeySequence::Forward));
     this->addAction(m_goForwardAction);
     connect(m_goForwardAction, &QAction::triggered, this, &ViewHolder::goForwardInHistory);
+
 }
 
 //--------------------------------------------------------------
@@ -53,8 +54,11 @@ void ViewHolder::addView(View *view)
     // history
     view->setHistoryActions(m_goBackAction, m_goForwardAction);
     connect(view, &View::addToHistoryCalled, this, &ViewHolder::addToHistory);
+    emit view->addToHistoryCalled(view, QVariantMap());
 
     ui->stackedWidget->setCurrentWidget(view);
+
+
 
     emit viewAdded(view);
 }
@@ -71,7 +75,7 @@ void ViewHolder::removeView(View *view)
     emit view->aboutToBeDestroyed();
 
 
-
+    this->clearHistoryOfView(view);
     ui->stackedWidget->removeWidget(view);
     m_viewList.removeAll(view);
     view->hide();
@@ -253,8 +257,10 @@ void ViewHolder::goBackInHistory()
 {
     qDebug() << "goBackAction";
     int index = m_historyItemList.indexOf(m_currentHistoryItem);
+    if(index == -1){
 
-    if(index == 1){
+    }
+    else if(index == 1){
         m_currentHistoryItem = m_historyItemList.at(index - 1);
         this->setCurrentView(m_currentHistoryItem->view());
         m_currentHistoryItem->view()->applyHistoryParameters(m_currentHistoryItem->parameters());
@@ -280,7 +286,10 @@ void ViewHolder::goForwardInHistory()
 {
     int index = m_historyItemList.indexOf(m_currentHistoryItem);
 
-    if(index == m_historyItemList.count() - 2){
+    if(index == -1){
+
+    }
+    else if(index == m_historyItemList.count() - 2){
         m_currentHistoryItem = m_historyItemList.at(index + 1);
         this->setCurrentView(m_currentHistoryItem->view());
         m_currentHistoryItem->view()->applyHistoryParameters(m_currentHistoryItem->parameters());
@@ -356,7 +365,7 @@ void ViewHolder::dropEvent(QDropEvent *event)
         viewManager->openViewAt(this, type, sourceTreeItemAddresses.first());
 
         this->setCursor(QCursor(Qt::ArrowCursor));
-        event->acceptProposedAction();
+        event->ignore();
 
     }
 }

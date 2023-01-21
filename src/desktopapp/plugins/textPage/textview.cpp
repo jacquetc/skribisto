@@ -99,7 +99,7 @@ TextView::TextView(QWidget *parent) :
             saveContent(true);
         }
 
-        QString uniqueDocumentReference = QString("%1_%2_%3").arg(this->projectId(), this->treeItemAddress().itemId).arg(m_isSecondaryContent ? "secondary" : "primary");
+        QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->projectId()), QString::number(this->treeItemAddress().itemId), m_isSecondaryContent ? "secondary" : "primary");
         textBridge->unsubscribeTextDocument(
                     uniqueDocumentReference,
                     centralWidgetUi->textEdit->uuid(),
@@ -116,9 +116,26 @@ TextView::TextView(QWidget *parent) :
             &SKRWordMeter::wordCountCalculated, this, [wordCountLabel](const TreeItemAddress &treeItemAddress,
                int  wordCount,
             bool triggerProjectModifiedSignal){
-        wordCountLabel->setText(tr("%1 words").arg(QLocale().toString(wordCount)));
+
+
+
+
+
 
     });
+
+    connect(skrdata->treePropertyHub(), &SKRPropertyHub::propertyChanged, this, [this, wordCountLabel]( int projectId,
+            int            propertyId,
+            int            treeItemCode,
+            const QString& name,
+            const QString& value)
+    {
+        if (name == "word_count" && projectId == this->treeItemAddress().projectId && treeItemCode == this->treeItemAddress().itemId){
+            wordCountLabel->setText(tr("%1 words").arg(QLocale().toString(value.toInt())));
+        }
+    }, Qt::QueuedConnection
+    );
+
 }
 
 TextView::~TextView()
@@ -165,12 +182,6 @@ void TextView::initialize()
 
     centralWidgetUi->textEdit->setDocument(document);
 
-    QString uniqueDocumentReference = QString("%1_%2_%3").arg(this->projectId(), this->treeItemAddress().itemId).arg(m_isSecondaryContent ? "secondary" : "primary");
-    textBridge->subscribeTextDocument(
-                uniqueDocumentReference,
-                centralWidgetUi->textEdit->uuid(),
-                document);
-
 
     //centralWidgetUi->textEdit->adaptScollBarRange(centralWidgetUi->verticalScrollBar->minimum(), centralWidgetUi->verticalScrollBar->maximum());
 
@@ -179,7 +190,7 @@ void TextView::initialize()
     m_saveTimer = new QTimer(this);
     m_saveTimer->setSingleShot(true);
     // a bit blocking because of word count counting, so 10s is sufficient
-    m_saveTimer->setInterval(10000);
+    m_saveTimer->setInterval(100);
     connect(m_saveTimer, &QTimer::timeout, this, [this](){ saveContent();});
     QTimer::singleShot(0, this, [this](){ connectSaveConnection();});
 
@@ -256,7 +267,13 @@ void TextView::initialize()
     // restore y position
 
 
-    QTimer::singleShot(0, this, [this](){
+    QTimer::singleShot(0, this, [this, document](){
+
+        QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->projectId()), QString::number(this->treeItemAddress().itemId), m_isSecondaryContent ? "secondary" : "primary");
+        textBridge->subscribeTextDocument(
+                    uniqueDocumentReference,
+                    centralWidgetUi->textEdit->uuid(),
+                    document);
 
         QSettings settings;
         // restore cursor always centered:
@@ -287,15 +304,15 @@ void TextView::initialize()
 
     });
 
+    //centralWidgetUi->textEdit->setCursorWidth(2);
 
 }
 
 void TextView::saveContent(bool sameThread)
 {
-
-    QString markdown = static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document())->toSkribistoMarkdown();
-
-    projectTreeCommands->setContent(this->treeItemAddress(), markdown, m_isSecondaryContent);
+    //qDebug() << "s";
+    const QString &markdown = static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document())->toSkribistoMarkdown();
+    projectTreeCommands->setContent(this->treeItemAddress(), std::move(markdown), m_isSecondaryContent);
 
     if(!m_isSecondaryContent){
         projectTreeCommands->updateCharAndWordCount(this->treeItemAddress(), "TEXT", sameThread);
@@ -322,7 +339,7 @@ void TextView::connectSaveConnection()
     m_saveConnection = connect(centralWidgetUi->textEdit, &QTextEdit::textChanged, this, [this](){
         m_wasModified = true;
 
-        m_localWordMeter->countText(this->treeItemAddress(), std::move(centralWidgetUi->textEdit->toPlainText()), true,false);
+        //m_localWordMeter->countText(this->treeItemAddress(), std::move(centralWidgetUi->textEdit->toPlainText()), true,false);
 
 
         if(m_saveTimer->isActive()){

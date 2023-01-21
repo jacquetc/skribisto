@@ -235,7 +235,7 @@ void Highlighter::highlightBlock(const QString& text)
                     // spellcheckFormat);
 
 
-                    if (text.mid(wordStart + wordLength, 1) == "-") { // cerf-volant,
+                    if (text.mid(wordStart + wordLength, 1) == "-" || text.mid(wordStart + wordLength, 1) == "\'" ) { // cerf-volant,
                         // orateur-né
                         wordFinder.toNextBoundary();
                         int nextWordLength = wordFinder.toNextBoundary() -

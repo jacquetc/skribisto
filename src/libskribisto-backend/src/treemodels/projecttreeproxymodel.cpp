@@ -21,9 +21,9 @@ QVariant ProjectTreeProxyModel::data(const QModelIndex &index, int role) const
         return QVariant();
 
     QModelIndex sourceIndex = this->mapToSource(index);
-    int col                 = index.column();
-    int row                 = index.row();
-    ProjectTreeItem *item = static_cast<ProjectTreeItem *>(sourceIndex.internalPointer());
+//    int col                 = index.column();
+//    int row                 = index.row();
+//    ProjectTreeItem *item = static_cast<ProjectTreeItem *>(sourceIndex.internalPointer());
 
 
 

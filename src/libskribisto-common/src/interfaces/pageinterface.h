@@ -42,7 +42,7 @@ public:
     virtual QVariantMap propertiesForCreationOfTreeItem(const QVariantMap &customProperties = QVariantMap()) const = 0;
 
     virtual void      updateCharAndWordCount(const TreeItemAddress &treeItemAddress,
-                                             bool sameThread = false) {}
+                                             bool sameThread = false, bool triggerProjectModifiedSignal = true) {}
 
 protected:
 

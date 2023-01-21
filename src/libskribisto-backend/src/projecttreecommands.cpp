@@ -314,7 +314,7 @@ QList<TreeItemAddress> ProjectTreeCommands::restoreSeveralItemsFromTrash(QList<T
 
 //------------------------------------------------------------------------------------
 
-void ProjectTreeCommands::setContent(const TreeItemAddress &targetTreeItemAddress, const QString &content, bool isSecondary)
+void ProjectTreeCommands::setContent(const TreeItemAddress &targetTreeItemAddress, const QString &&content, bool isSecondary)
 {
 
     if(isSecondary){

@@ -82,8 +82,8 @@ public:
     bool                isRootItem() const;
     void                setIsRootItem();
 
-    QPersistentModelIndex getModelIndex() const;
-    void setModelIndex(const QPersistentModelIndex &newModelIndex);
+    QPersistentModelIndex getModelIndex(int column) const;
+    void setModelIndex(int column, const QPersistentModelIndex &newModelIndex);
 
 signals:
 
@@ -97,7 +97,7 @@ private:
     QList<int>m_invalidatedRoles;
     bool m_isRootItem;
     int otherPropertiesIncrement;
-    QPersistentModelIndex modelIndex;
+    QHash<int, QPersistentModelIndex> m_columnWithModelIndexHash;
 };
 
 

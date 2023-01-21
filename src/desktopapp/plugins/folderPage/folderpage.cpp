@@ -50,11 +50,6 @@ QVariantMap FolderPage::propertiesForCreationOfTreeItem(const QVariantMap &custo
 {
  return QVariantMap();
 }
-// ---------------------------------------------------
-
-void FolderPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread)
-{
-}
 
 // ---------------------------------------------------
 QTextDocumentFragment FolderPage::generateExporterTextFragment(const TreeItemAddress &treeItemAddress,

@@ -6,6 +6,7 @@
 #include "outlineitemdelegate.h"
 #include "ui_overviewview.h"
 #include "viewmanager.h"
+#include "thememanager.h"
 
 #include <QKeyEvent>
 #include <QMenu>
@@ -35,8 +36,26 @@ OverviewView::OverviewView(QWidget *parent) :
 
     centralWidgetUi->treeView->setModel(m_overviewProxyModel);
 
+    centralWidgetUi->treeView->setStyleSheet(R"""(QTreeView::item {
+                                             border: 1px solid #d9d9d9;
+                                            border-left-color: transparent;
+                                            border-right-color: transparent;
+                                            border-top-color: transparent;
+                                        })""");
+
+    connect(themeManager, &ThemeManager::currentThemeTypeChanged, this, [this](){
+
+        centralWidgetUi->treeView->setStyleSheet(R"""(QTreeView::item {
+                                                 border: 1px solid #d9d9d9;
+                                                border-left-color: transparent;
+                                                border-right-color: transparent;
+                                                border-top-color: transparent;
+                                            })""");
+    });
+
     OutlineItemDelegate *outlineItemDelegate = new OutlineItemDelegate(centralWidgetUi->treeView);
     centralWidgetUi->treeView->setItemDelegateForColumn(1, outlineItemDelegate);
+
 
     connect(outlineItemDelegate, &OutlineItemDelegate::editFinished,  this, [this](const QModelIndex &index){
         centralWidgetUi->treeView->dataChanged(index, index, QList<int>() << Qt::ItemDataRole::SizeHintRole);

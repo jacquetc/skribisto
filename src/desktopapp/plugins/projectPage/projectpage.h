@@ -75,9 +75,6 @@ public:
 
   QVariantMap propertiesForCreationOfTreeItem(const QVariantMap &customProperties = QVariantMap()) const override;
 
-  void updateCharAndWordCount(const TreeItemAddress &treeItemAddress,
-                              bool sameThread = false) override;
-
   // exporter
   QTextDocumentFragment
   generateExporterTextFragment(const TreeItemAddress &treeItemAddress,

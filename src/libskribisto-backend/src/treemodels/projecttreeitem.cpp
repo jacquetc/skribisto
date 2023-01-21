@@ -284,14 +284,14 @@ void ProjectTreeItem::setIsRootItem()
     m_data.insert(Roles::SortOrderRole, -90000000);
 }
 
-QPersistentModelIndex ProjectTreeItem::getModelIndex() const
+QPersistentModelIndex ProjectTreeItem::getModelIndex(int column) const
 {
-    return modelIndex;
+    return m_columnWithModelIndexHash.value(column, QPersistentModelIndex());
 }
 
-void ProjectTreeItem::setModelIndex(const QPersistentModelIndex &newModelIndex)
+void ProjectTreeItem::setModelIndex(int column, const QPersistentModelIndex &newModelIndex)
 {
-    modelIndex = newModelIndex;
+    m_columnWithModelIndexHash.insert(column, newModelIndex);
 }
 
 bool ProjectTreeItem::isProjectItem()
