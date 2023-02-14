@@ -11,12 +11,11 @@
 #include "windowmanager.h"
 
 #include "projectcommands.h"
+#include "welcomedialog.h"
 #include <QCloseEvent>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSettings>
-#include <QTimer>
-#include <WelcomeDialog.h>
 #include <skrdata.h>
 
 MainWindow::MainWindow(int newWindowId, bool restoreViewEnabled) : QMainWindow(), ui(new Ui::MainWindow)

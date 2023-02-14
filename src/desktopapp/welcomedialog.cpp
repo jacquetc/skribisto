@@ -3,7 +3,7 @@
 #include "skrdata.h"
 #include "ui_welcomedialog.h"
 
-#include <NewProjectWizard.h>
+#include "newprojectwizard.h"
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QSettings>
