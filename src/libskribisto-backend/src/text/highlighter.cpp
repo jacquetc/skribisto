@@ -1,9 +1,9 @@
 ﻿#include "highlighter.h"
-#include <QDebug>
-#include <QTextDocument>
-#include <QTextBoundaryFinder>
-#include <QColor>
 #include "skrdata.h"
+#include <QColor>
+#include <QDebug>
+#include <QTextBoundaryFinder>
+#include <QTextDocument>
 
 Highlighter::Highlighter(QTextDocument *parentDoc)
     : QSyntaxHighlighter(parentDoc), m_spellCheckerSet(false), m_projectId(-2), m_isForMinimap(false)
@@ -12,57 +12,56 @@ Highlighter::Highlighter(QTextDocument *parentDoc)
 
     this->setSpellChecker(spellChecker);
 
-    connect(skrdata->projectDictHub(),
-            &SKRProjectDictHub::projectDictFullyChanged,
-            this,
-            [this](int projectId, const QStringList& newProjectDict) {
-        if (projectId == this->getProjectId()) {
-            this->getSpellChecker()->setUserDict(newProjectDict);
-            this->rehighlight();
-        }
-    }
-            );
+    connect(skrdata->projectDictHub(), &SKRProjectDictHub::projectDictFullyChanged, this,
+            [this](int projectId, const QStringList &newProjectDict) {
+                if (projectId == this->getProjectId())
+                {
+                    this->getSpellChecker()->setUserDict(newProjectDict);
+                    this->rehighlight();
+                }
+            });
 
     connect(skrdata->projectDictHub(), &SKRProjectDictHub::projectDictWordAdded, this,
-            [this](int projectId, const QString& newWord) {
-        if (projectId == this->getProjectId()) {
-            this->getSpellChecker()->addWordToUserDict(newWord);
-            this->rehighlight();
-        }
-    }
-            );
+            [this](int projectId, const QString &newWord) {
+                if (projectId == this->getProjectId())
+                {
+                    this->getSpellChecker()->addWordToUserDict(newWord);
+                    this->rehighlight();
+                }
+            });
 
     connect(skrdata->projectDictHub(), &SKRProjectDictHub::projectDictWordRemoved, this,
-            [this](int projectId, const QString& wordToBeRemoved) {
-        if (projectId == this->getProjectId()) {
-            this->getSpellChecker()->removeWordFromUserDict(wordToBeRemoved);
-            this->rehighlight();
-        }
-    }
-            );
+            [this](int projectId, const QString &wordToBeRemoved) {
+                if (projectId == this->getProjectId())
+                {
+                    this->getSpellChecker()->removeWordFromUserDict(wordToBeRemoved);
+                    this->rehighlight();
+                }
+            });
 
     connect(spellChecker, &SpellChecker::activated, this, [this](bool activated) {
-        if (activated) {
+        if (activated)
+        {
             this->getSpellChecker()->setUserDict(m_userDictList);
             this->rehighlight();
         }
-        else{
+        else
+        {
             this->rehighlight();
         }
-    }
-            );
+    });
 }
 
 // -------------------------------------------------------------------
 
-Highlighter::Highlighter(QTextDocument *parentDoc, int projectId) : Highlighter::Highlighter(parentDoc){
+Highlighter::Highlighter(QTextDocument *parentDoc, int projectId) : Highlighter::Highlighter(parentDoc)
+{
     this->setProjectId(projectId);
 }
 
-
 // -------------------------------------------------------------------
 
-void Highlighter::highlightBlock(const QString& text)
+void Highlighter::highlightBlock(const QString &text)
 {
     //    if (text.length() > 7000) { // cancel the highlighting to prevent
     // slowing.
@@ -79,41 +78,44 @@ void Highlighter::highlightBlock(const QString& text)
 
     QTextCharFormat findFormat;
 
-    if (m_isForMinimap) {
+    if (m_isForMinimap)
+    {
         findFormat.setBackground(QBrush(QColor(m_findHighlightColor)));
     }
-    else {
+    else
+    {
         findFormat.setBackground(QColor(m_findHighlightColor));
     }
 
-    if (!textToHighLight.isEmpty()) {
+    if (!textToHighLight.isEmpty())
+    {
         int position = 0;
 
-        while (position >= 0) {
+        while (position >= 0)
+        {
             int start = text.indexOf(textToHighLight, position, sensitivity);
 
-            if (start == -1) break;
+            if (start == -1)
+                break;
 
             //            setFormat(start , textToHighLight.size(), findFormat);
 
             // list for later merging :
-            for (int i = start; i < start + textToHighLight.size();
-                 ++i) findList.append(i);
+            for (int i = start; i < start + textToHighLight.size(); ++i)
+                findList.append(i);
 
-            position = text.indexOf(textToHighLight,
-                                    position + textToHighLight.size(),
-                                    sensitivity);
+            position = text.indexOf(textToHighLight, position + textToHighLight.size(), sensitivity);
         }
     }
 
     // -----------------------------------------------------------------
     //  dialogs:
 
-
     QList<int> dialogList;
     QTextCharFormat dialogFormat;
 
-    if (m_isForMinimap) {
+    if (m_isForMinimap)
+    {
         // french dialogs
         dialogFormat.setBackground(QBrush(QColor(m_otherHighlightColor_1)));
 
@@ -122,33 +124,37 @@ void Highlighter::highlightBlock(const QString& text)
 
         int startIndex = 0;
 
-        if (previousBlockState() != 1) startIndex = text.indexOf(startExpression);
+        if (previousBlockState() != 1)
+            startIndex = text.indexOf(startExpression);
 
-        while (startIndex >= 0) {
+        while (startIndex >= 0)
+        {
             QRegularExpressionMatch endMatch;
             int endIndex = text.indexOf(endExpression, startIndex, &endMatch);
             int dialogLength;
 
-            if (endIndex == -1) {
+            if (endIndex == -1)
+            {
                 setCurrentBlockState(1);
                 dialogLength = text.length() - startIndex;
-            } else {
-                dialogLength = endIndex - startIndex
-                               + endMatch.capturedLength();
+            }
+            else
+            {
+                dialogLength = endIndex - startIndex + endMatch.capturedLength();
             }
             setFormat(startIndex, dialogLength, dialogFormat);
 
-
-            for (int i = startIndex; i < startIndex + dialogLength; i++) {
+            for (int i = startIndex; i < startIndex + dialogLength; i++)
+            {
                 dialogList << i;
             }
 
-            startIndex = text.indexOf(startExpression,
-                                      startIndex + dialogLength);
+            startIndex = text.indexOf(startExpression, startIndex + dialogLength);
         }
     }
 
-    if (m_isForMinimap) {
+    if (m_isForMinimap)
+    {
         // english dialogs
         dialogFormat.setBackground(QBrush(QColor(m_otherHighlightColor_1)));
 
@@ -157,29 +163,32 @@ void Highlighter::highlightBlock(const QString& text)
 
         int startIndex = 0;
 
-        if (previousBlockState() != 1) startIndex = text.indexOf(startExpression);
+        if (previousBlockState() != 1)
+            startIndex = text.indexOf(startExpression);
 
-        while (startIndex >= 0) {
+        while (startIndex >= 0)
+        {
             QRegularExpressionMatch endMatch;
             int endIndex = text.indexOf(endExpression, startIndex, &endMatch);
             int dialogLength;
 
-            if (endIndex == -1) {
+            if (endIndex == -1)
+            {
                 setCurrentBlockState(1);
                 dialogLength = text.length() - startIndex;
-            } else {
-                dialogLength = endIndex - startIndex
-                               + endMatch.capturedLength();
+            }
+            else
+            {
+                dialogLength = endIndex - startIndex + endMatch.capturedLength();
             }
             setFormat(startIndex, dialogLength, dialogFormat);
 
-
-            for (int i = startIndex; i < startIndex + dialogLength; i++) {
+            for (int i = startIndex; i < startIndex + dialogLength; i++)
+            {
                 dialogList << i;
             }
 
-            startIndex = text.indexOf(startExpression,
-                                      startIndex + dialogLength);
+            startIndex = text.indexOf(startExpression, startIndex + dialogLength);
         }
     }
 
@@ -197,23 +206,26 @@ void Highlighter::highlightBlock(const QString& text)
     //
     spellcheckFormat.setUnderlineStyle(QTextCharFormat::WaveUnderline);
 
-    if (m_isForMinimap) {
+    if (m_isForMinimap)
+    {
         spellcheckFormat.setBackground(QBrush(QColor(m_spellCheckHighlightColor)));
     }
-//    else {
-//        spellcheckFormat.setForeground(QBrush(QColor(m_spellCheckHighlightColor)));
-//    }
+    //    else {
+    //        spellcheckFormat.setForeground(QBrush(QColor(m_spellCheckHighlightColor)));
+    //    }
 
     if (m_spellCheckerSet)
-        if (m_spellChecker->isActive()) {
+        if (m_spellChecker->isActive())
+        {
             QTextBoundaryFinder wordFinder(QTextBoundaryFinder::Word, text);
-            int wordStart     = 0;
-            int wordLength    = 0;
+            int wordStart = 0;
+            int wordLength = 0;
             QString wordValue = "";
 
             while (wordFinder.position() < text.length())
             {
-                if (wordFinder.position() == -1) break;
+                if (wordFinder.position() == -1)
+                    break;
 
                 if (wordFinder.position() == 0)
                 {
@@ -224,71 +236,70 @@ void Highlighter::highlightBlock(const QString& text)
                     wordStart = wordFinder.position();
                 }
 
-
                 wordLength = wordFinder.toNextBoundary() - wordStart;
 
                 wordValue = text.mid(wordStart, wordLength);
 
-
-                if (!m_spellChecker->spell(text.mid(wordStart, wordLength))) {
+                if (!m_spellChecker->spell(text.mid(wordStart, wordLength)))
+                {
                     //                setFormat(wordStart, wordLength,
                     // spellcheckFormat);
 
-
-                    if (text.mid(wordStart + wordLength, 1) == "-" || text.mid(wordStart + wordLength, 1) == "\'" ) { // cerf-volant,
+                    if (text.mid(wordStart + wordLength, 1) == "-" /*|| text.mid(wordStart + wordLength, 1) == "\'" */)
+                    { // cerf-volant,
                         // orateur-né
                         wordFinder.toNextBoundary();
-                        int nextWordLength = wordFinder.toNextBoundary() -
-                                             (wordStart + wordLength + 1);
+                        int nextWordLength = wordFinder.toNextBoundary() - (wordStart + wordLength + 1);
                         wordFinder.toPreviousBoundary();
                         wordFinder.toPreviousBoundary();
 
-                        QString hyphenWord = text.mid(wordStart,
-                                                      wordLength + nextWordLength + 1);
+                        QString hyphenWord = text.mid(wordStart, wordLength + nextWordLength + 1);
 
                         //                    qDebug() <<
                         // "hyphenWord_Highlighter : " + hyphenWord;
-                        if (!m_spellChecker->spell(text.mid(wordStart,
-                                                            hyphenWord.size()))) {
+                        if (!m_spellChecker->spell(text.mid(wordStart, hyphenWord.size())))
+                        {
                             wordLength = hyphenWord.size();
                             wordFinder.toNextBoundary();
                             wordFinder.toNextBoundary();
 
-                            for (int i = wordStart; i < wordStart + wordLength;
-                                 ++i) spellcheckerList.append(i);
+                            for (int i = wordStart; i < wordStart + wordLength; ++i)
+                                spellcheckerList.append(i);
                             continue;
                         }
-                        else {
+                        else
+                        {
                             wordFinder.toNextBoundary();
                             wordFinder.toNextBoundary();
                             continue;
                         }
                     }
 
-
                     // list for later merging :
-                    for (int i = wordStart; i < wordStart + wordLength;
-                         ++i) spellcheckerList.append(i);
+                    for (int i = wordStart; i < wordStart + wordLength; ++i)
+                        spellcheckerList.append(i);
                 }
             }
         }
 
-
     // QList<int> spellcheckPositionList;
 
-    for (int k = 0; k < text.length(); ++k) {
+    for (int k = 0; k < text.length(); ++k)
+    {
         QTextCharFormat finalFormat;
 
-        if (dialogList.contains(k)) {
+        if (dialogList.contains(k))
+        {
             finalFormat.merge(dialogFormat);
         }
 
-        if (findList.contains(k)) {
+        if (findList.contains(k))
+        {
             finalFormat.merge(findFormat);
         }
 
-
-        if (spellcheckerList.contains(k)) {
+        if (spellcheckerList.contains(k))
+        {
             finalFormat.merge(spellcheckFormat);
 
             // bug fix:
@@ -306,7 +317,6 @@ void Highlighter::highlightBlock(const QString& text)
 
 // -------------------------------------------------------------------
 
-
 void Highlighter::setTextToHighlight(QString string)
 {
     textToHighLight = string;
@@ -317,19 +327,22 @@ void Highlighter::setTextToHighlight(QString string)
 
 void Highlighter::setCaseSensitivity(bool isCaseSensitive)
 {
-    if (isCaseSensitive) {
+    if (isCaseSensitive)
+    {
         sensitivity = Qt::CaseSensitive;
     }
-    else {
+    else
+    {
         sensitivity = Qt::CaseInsensitive;
     }
 }
 
 // -------------------------------------------------------------------
 
-SpellChecker * Highlighter::getSpellChecker()
+SpellChecker *Highlighter::getSpellChecker()
 {
-    if (!m_spellChecker) {
+    if (!m_spellChecker)
+    {
         qDebug() << "no check speller set";
     }
     return m_spellChecker;
@@ -339,11 +352,13 @@ SpellChecker * Highlighter::getSpellChecker()
 
 void Highlighter::setSpellChecker(SpellChecker *spellChecker)
 {
-    if (spellChecker) {
-        m_spellChecker    = spellChecker;
+    if (spellChecker)
+    {
+        m_spellChecker = spellChecker;
         m_spellCheckerSet = true;
     }
-    else {
+    else
+    {
         //        qWarning() << "TextHighlighter : no spellchecker set";
         m_spellCheckerSet = false;
     }
@@ -354,9 +369,10 @@ QString Highlighter::getOtherHighlightColor_3() const
     return m_otherHighlightColor_3;
 }
 
-void Highlighter::setOtherHighlightColor_3(const QString& newOtherHighlightColor_3)
+void Highlighter::setOtherHighlightColor_3(const QString &newOtherHighlightColor_3)
 {
-    if (m_otherHighlightColor_3 == newOtherHighlightColor_3) return;
+    if (m_otherHighlightColor_3 == newOtherHighlightColor_3)
+        return;
 
     m_otherHighlightColor_3 = newOtherHighlightColor_3;
     this->rehighlight();
@@ -368,9 +384,10 @@ QString Highlighter::getOtherHighlightColor_2() const
     return m_otherHighlightColor_2;
 }
 
-void Highlighter::setOtherHighlightColor_2(const QString& newOtherHighlightColor_2)
+void Highlighter::setOtherHighlightColor_2(const QString &newOtherHighlightColor_2)
 {
-    if (m_otherHighlightColor_2 == newOtherHighlightColor_2) return;
+    if (m_otherHighlightColor_2 == newOtherHighlightColor_2)
+        return;
 
     m_otherHighlightColor_2 = newOtherHighlightColor_2;
     this->rehighlight();
@@ -382,9 +399,10 @@ QString Highlighter::getOtherHighlightColor_1() const
     return m_otherHighlightColor_1;
 }
 
-void Highlighter::setOtherHighlightColor_1(const QString& newOtherHighlightColor_1)
+void Highlighter::setOtherHighlightColor_1(const QString &newOtherHighlightColor_1)
 {
-    if (m_otherHighlightColor_1 == newOtherHighlightColor_1) return;
+    if (m_otherHighlightColor_1 == newOtherHighlightColor_1)
+        return;
 
     m_otherHighlightColor_1 = newOtherHighlightColor_1;
     this->rehighlight();
@@ -396,9 +414,10 @@ QString Highlighter::getFindHighlightColor() const
     return m_findHighlightColor;
 }
 
-void Highlighter::setFindHighlightColor(const QString& newFindHighlightColor)
+void Highlighter::setFindHighlightColor(const QString &newFindHighlightColor)
 {
-    if (m_findHighlightColor == newFindHighlightColor) return;
+    if (m_findHighlightColor == newFindHighlightColor)
+        return;
 
     m_findHighlightColor = newFindHighlightColor;
     this->rehighlight();
@@ -410,9 +429,10 @@ QString Highlighter::spellCheckHighlightColor() const
     return m_spellCheckHighlightColor;
 }
 
-void Highlighter::setSpellCheckHighlightColor(const QString& newSpellCheckHighlightColor)
+void Highlighter::setSpellCheckHighlightColor(const QString &newSpellCheckHighlightColor)
 {
-    if (m_spellCheckHighlightColor == newSpellCheckHighlightColor) return;
+    if (m_spellCheckHighlightColor == newSpellCheckHighlightColor)
+        return;
 
     m_spellCheckHighlightColor = newSpellCheckHighlightColor;
 
@@ -449,7 +469,8 @@ void Highlighter::setProjectId(int projectId)
     m_projectId = projectId;
 
     // get userdict
-    if (projectId != -2) {
+    if (projectId != -2)
+    {
         m_userDictList.clear();
         m_userDictList = skrdata->projectDictHub()->getProjectDictList(projectId);
 
@@ -460,10 +481,10 @@ void Highlighter::setProjectId(int projectId)
     }
 
     // set user dict
-    if (m_spellChecker && m_spellChecker->isHunspellLaunched() && (projectId != -2)) {
+    if (m_spellChecker && m_spellChecker->isHunspellLaunched() && (projectId != -2))
+    {
         m_spellChecker->setUserDict(m_userDictList);
     }
-
 
     emit projectIdChanged(projectId);
 }

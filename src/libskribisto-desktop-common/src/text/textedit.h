@@ -10,13 +10,13 @@
 class SKRDESKTOPCOMMONEXPORT TextEdit : public QTextEdit
 {
     Q_OBJECT
-public:
+  public:
     TextEdit(QWidget *parent = nullptr, int projectId = -1);
     QString uuid() const;
     //    QSize sizeHint() const override;
 
     // QWidget interface
-public:
+  public:
     void wheelEvent(QWheelEvent *event) override;
 
     QAction *boldAction() const;
@@ -39,21 +39,22 @@ public:
     int projectId() const;
     void setProjectId(int newProjectId);
 
-public slots:
+  public slots:
     void adaptScollBarRange(int min, int max);
 
-signals:
+  signals:
     void activeFocusChanged(bool value);
 
-private slots:
+  private slots:
     void updateFontActions();
 
     void onCustomContextMenu(const QPoint &point);
-private:
+
+  private:
     QString m_uuid;
     QAction *m_boldAction, *m_italicAction, *m_strikeAction, *m_underlineAction, *m_bulletListAction,
-    *m_centerCursorAction, *m_addToUserDictAction, *m_cutAction, *m_copyAction, *m_pasteAction, *m_pasteWithoutFormattingAction,
-    *m_createNote;
+        *m_centerCursorAction, *m_addToUserDictAction, *m_cutAction, *m_copyAction, *m_pasteAction,
+        *m_pasteWithoutFormattingAction, *m_createNote;
     QList<QMetaObject::Connection> m_actionConnectionsList;
     bool m_mouse_button_down, m_always_center_cursor;
     Highlighter *m_highlighter;
@@ -66,19 +67,21 @@ private:
     void disconnectActions();
 
     void setupContextMenu();
-protected:
+    QString getWordUnderCursor(int position) const;
+
+  protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
 
     // QWidget interface
-protected:
+  protected:
     void keyPressEvent(QKeyEvent *event) override;
     void focusOutEvent(QFocusEvent *event) override;
     void focusInEvent(QFocusEvent *event) override;
 
     // QTextEdit interface
-protected:
+  protected:
     bool canInsertFromMimeData(const QMimeData *source) const override;
     void insertFromMimeData(const QMimeData *source) override;
 };
