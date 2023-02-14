@@ -32,9 +32,15 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="2.0.4" date="2023-01-21T00:00:00Z">
+    <release type="stable" version="2.0.5" date="2023-02-15T00:00:00Z">
       <description>
-        <p>Fix crash when clicking on a list item when exporting a book</p>
+        <ul>
+          <li>Add Welcome dialog</li>
+          <li>Add paste without formating</li>
+          <li>Make HTML paste cleaner</li>
+          <li>Add user dictionary dialog</li>
+          <li>Fix words with apostrophe not spellchecked</li>
+        </ul>
       </description>
     </release>
   </releases>
