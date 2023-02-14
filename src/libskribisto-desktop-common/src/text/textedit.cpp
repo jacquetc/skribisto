@@ -5,7 +5,9 @@
 #include "skrdata.h"
 #include "viewmanager.h"
 
+#include <QClipboard>
 #include <QInputDialog>
+#include <QMimeData>
 #include <QScrollBar>
 #include <QTextBlock>
 #include <QTextCursor>
@@ -326,6 +328,23 @@ QString TextEdit::getWordUnderCursor(int position) const
 
 void TextEdit::pasteWithoutFormatting()
 {
+    QClipboard *clipboard = QApplication::clipboard();
+    const QMimeData *mimeData = clipboard->mimeData();
+
+    if (mimeData->hasText())
+    {
+        this->insertPlainText(clipboard->text());
+        emit textPasted();
+    }
+    else if (mimeData->hasHtml())
+    {
+        // strangely, this part is never reached
+
+        QTextDocument document;
+        document.setHtml(clipboard->text());
+        this->insertPlainText(document.toPlainText());
+        emit textPasted();
+    }
 }
 //---------------------------------------------------------
 
@@ -341,9 +360,9 @@ void TextEdit::replaceWordAt(int cursorPosition, const QString &newWord)
 
     int wordLength = getWordUnderCursor(cursorPosition).length();
 
-    qDebug() << "word" << getWordUnderCursor(cursorPosition);
-    qDebug() << "wordLength" << wordLength;
-    qDebug() << "newWord" << newWord;
+    //    qDebug() << "word" << getWordUnderCursor(cursorPosition);
+    //    qDebug() << "wordLength" << wordLength;
+    //    qDebug() << "newWord" << newWord;
     QTextCursor textCursor(this->document());
     textCursor.setPosition(cursorPosition);
     textCursor.movePosition(QTextCursor::StartOfWord);
@@ -562,6 +581,8 @@ void TextEdit::insertFromMimeData(const QMimeData *source)
 {
     if (source->hasHtml())
     {
+        // remove style
+
         QString html = source->html();
         QStringList styleToRemoveList;
         styleToRemoveList << "font-family";
@@ -582,7 +603,7 @@ void TextEdit::insertFromMimeData(const QMimeData *source)
         static QRegularExpression headers("<h[0-9].*?>|<h[0-9]>|</h[0-9]>");
         html.remove(headers);
 
-        // align
+        // remove align
 
         static QRegularExpression align("align=\\\".*?\\\"");
         html.remove(align);
@@ -591,6 +612,7 @@ void TextEdit::insertFromMimeData(const QMimeData *source)
 
         static QRegularExpression div("<div.*?>|</div>");
         html.remove(div);
+
         // remove table:
 
         static QRegularExpression table("<table.*?>|</table>|<div.*?>|</div>|<tbody>|</tbody>|<(tr|td)>|</(tr|td)>");
