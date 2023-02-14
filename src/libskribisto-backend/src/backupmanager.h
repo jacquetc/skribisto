@@ -32,7 +32,7 @@ public:
     QDateTime timeOfNextBackup() const;
 
 public slots:
-    void settingsChanged(const QHash<QString, QVariant> &newSettings);
+    void applySettingsChanges(const QHash<QString, QVariant> &newSettings);
 
 signals:
 

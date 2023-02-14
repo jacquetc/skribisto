@@ -15,7 +15,7 @@ public:
 
         // settings:
 
-        connect(static_cast<DesktopApplication *>(qApp), &DesktopApplication::settingsChanged, this, &Toolbox::settingsChanged);
+        connect(static_cast<DesktopApplication *>(qApp), &DesktopApplication::settingsChanged, this, &Toolbox::applySettingsChanges);
 
     }
   virtual ~Toolbox() {}
@@ -36,7 +36,7 @@ public:
     TreeItemAddress treeItemAddress() const;
 
 protected:
-    virtual void settingsChanged(const QHash<QString, QVariant> &newSettings){};
+    virtual void applySettingsChanges(const QHash<QString, QVariant> &newSettings){};
 
 
 signals:

@@ -57,7 +57,7 @@ protected:
   //    void paintEvent(QPaintEvent *event);
 
 protected slots:
-  virtual void settingsChanged(const QHash<QString, QVariant> &newSettings){};
+  virtual void applySettingsChanges(const QHash<QString, QVariant> &newSettings){};
 
 signals:
   void initialized(const TreeItemAddress &treeItemAddress);

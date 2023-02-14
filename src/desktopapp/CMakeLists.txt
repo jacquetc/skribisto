@@ -43,6 +43,7 @@ set(app_SRCS
     export/bookexportwizard.h export/bookexportwizard.cpp export/bookexportwizard.ui
     settings/appearancesettingspanel.h settings/appearancesettingspanel.cpp settings/appearancesettingspanel.ui
     settings/backupsettingspanel.h settings/backupsettingspanel.cpp settings/backupsettingspanel.ui
+    welcomedialog.h welcomedialog.cpp welcomedialog.ui
 )
 
 set(QRC

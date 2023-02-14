@@ -1,3 +1,13 @@
+Version: 2.0.5
+Date: 2023-02-15
+Type: stable
+Description:
+- "Add Welcome dialog"
+- "Add paste without formating"
+- "Make HTML paste cleaner"
+- "Add user dictionary dialog"
+- "Fix words with apostrophe not spellchecked"
+---
 Version: 2.0.4
 Date: 2023-01-21
 Type: stable

@@ -30,7 +30,7 @@
      <x>0</x>
      <y>0</y>
      <width>1643</width>
-     <height>37</height>
+     <height>24</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -90,6 +90,8 @@
      <string>&amp;Tools</string>
     </property>
     <addaction name="actionSpell_checking"/>
+    <addaction name="separator"/>
+    <addaction name="actionWelcome"/>
    </widget>
    <addaction name="menuProject"/>
    <addaction name="menuEdit"/>
@@ -394,6 +396,11 @@
    </property>
    <property name="shortcut">
     <string>Esc</string>
+   </property>
+  </action>
+  <action name="actionWelcome">
+   <property name="text">
+    <string>Welcome</string>
    </property>
   </action>
  </widget>

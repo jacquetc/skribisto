@@ -41,7 +41,7 @@
       <number>0</number>
      </property>
      <item>
-      <layout class="QHBoxLayout" name="toolBarLayout" stretch="0,0,0">
+      <layout class="QHBoxLayout" name="toolBarLayout" stretch="0,0,0,0">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -152,6 +152,37 @@
             <property name="icon">
              <iconset resource="../../../3rdparty/icons.qrc">
               <normaloff>:/icons/backup/view-close.svg</normaloff>:/icons/backup/view-close.svg</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="titleFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="titleLabel">
+            <property name="text">
+             <string notr="true"/>
             </property>
            </widget>
           </item>

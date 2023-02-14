@@ -35,6 +35,7 @@ set(common_SRCS
     toolboxes/tagchooserdialog.h toolboxes/tagchooserdialog.cpp toolboxes/tagchooserdialog.ui
     toolboxes/tagitemdelegate.h toolboxes/tagitemdelegate.cpp
     basicsettingspanel.h basicsettingspanel.cpp
+    projectdictdialog.cpp projectdictdialog.h projectdictdialog.ui
 )
 
 set(common_INTERFACES
