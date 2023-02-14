@@ -1,34 +1,34 @@
 #include "textview.h"
 #include "desktopapplication.h"
-#include "text/markdowntextdocument.h"
 #include "projecttreecommands.h"
 #include "skrusersettings.h"
+#include "text/highlighter.h"
+#include "text/markdowntextdocument.h"
 #include "text/textbridge.h"
 #include "text/textedit.h"
+#include "toolboxes/outlinetoolbox.h"
 #include "toolboxes/tagtoolbox.h"
 #include "ui_textview.h"
-#include "toolboxes/outlinetoolbox.h"
-#include "text/highlighter.h"
 
 #include <QLabel>
 #include <QTimer>
 #include <QWheelEvent>
 #include <skrdata.h>
 
-TextView::TextView(QWidget *parent) :
-    View("TEXT",parent),
-    centralWidgetUi(new Ui::TextView), m_isSecondaryContent(false), m_wasModified(false), m_oldCursorPosition(-1), m_localWordMeter(new SKRWordMeter(this))
+TextView::TextView(QWidget *parent)
+    : View("TEXT", parent), centralWidgetUi(new Ui::TextView), m_isSecondaryContent(false), m_wasModified(false),
+      m_oldCursorPosition(-1), m_localWordMeter(new SKRWordMeter(this))
 {
 
-    //central ui
+    // central ui
     QWidget *centralWidget = new QWidget;
     centralWidgetUi->setupUi(centralWidget);
     setCentralWidget(centralWidget);
 
-    //toolbar
+    // toolbar
 
     QToolBar *toolBar = new QToolBar;
-    QAction *showFontToolBar = new QAction(QIcon(":/icons/backup/format-text-italic.svg"), "Show font toolbar",this);
+    QAction *showFontToolBar = new QAction(QIcon(":/icons/backup/format-text-italic.svg"), "Show font toolbar", this);
     showFontToolBar->setCheckable(true);
     toolBar->addAction(showFontToolBar);
     toolBar->addAction(centralWidgetUi->textEdit->centerCursorAction());
@@ -46,18 +46,15 @@ TextView::TextView(QWidget *parent) :
     fontToolBar->addSeparator();
     fontToolBar->addAction(centralWidgetUi->textEdit->bulletListAction());
 
-    QObject::connect(showFontToolBar, &QAction::triggered, this, [this, fontToolBar](bool checked){
-        if(checked){
+    QObject::connect(showFontToolBar, &QAction::triggered, this, [this, fontToolBar](bool checked) {
+        if (checked)
+        {
             this->setSecondToolBar(fontToolBar);
         }
         this->setSecondToolBarVisible(checked);
     });
 
-
     setToolBar(toolBar);
-
-
-
 
     // link scrollbar to textedit
 
@@ -66,7 +63,7 @@ TextView::TextView(QWidget *parent) :
     centralWidgetUi->verticalScrollBar = centralWidgetUi->textEdit->verticalScrollBar();
     centralWidgetUi->verticalScrollBar->hide();
 
-    connect(centralWidgetUi->verticalScrollBar, &QScrollBar::rangeChanged, this, [&](int min, int max){
+    connect(centralWidgetUi->verticalScrollBar, &QScrollBar::rangeChanged, this, [&](int min, int max) {
         centralWidgetUi->verticalScrollBar->setVisible(min < max + centralWidgetUi->textEdit->viewport()->height() / 2);
     });
 
@@ -80,67 +77,55 @@ TextView::TextView(QWidget *parent) :
     centralWidget->setFocusProxy(centralWidgetUi->textEdit);
     centralWidgetUi->widget->setFocusProxy(centralWidgetUi->textEdit);
 
-
-    connect(centralWidgetUi->sizeHandle, &SizeHandle::moved, this, [this](int deltaX){
+    connect(centralWidgetUi->sizeHandle, &SizeHandle::moved, this, [this](int deltaX) {
         centralWidgetUi->textEditHolder->setMaximumWidth(centralWidgetUi->textEditHolder->maximumWidth() + deltaX);
 
         QSettings settings;
         settings.setValue("textPage/textWidth", centralWidgetUi->textEditHolder->maximumWidth());
     });
 
-    connect(this, &TextView::aboutToBeDestroyed, this, [this](){
-
+    connect(this, &TextView::aboutToBeDestroyed, this, [this]() {
         centralWidgetUi->textEdit->blockSignals(true);
-        if(m_saveTimer->isActive()){
+        if (m_saveTimer->isActive())
+        {
             m_saveTimer->stop();
         }
         saveTextState();
-        if(m_wasModified){
+        if (m_wasModified)
+        {
             saveContent(true);
         }
 
-        QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->projectId()), QString::number(this->treeItemAddress().itemId), m_isSecondaryContent ? "secondary" : "primary");
-        textBridge->unsubscribeTextDocument(
-                    uniqueDocumentReference,
-                    centralWidgetUi->textEdit->uuid(),
-                    static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document()));
-
-
+        QString uniqueDocumentReference =
+            QString("%1_%2_%3")
+                .arg(QString::number(this->projectId()), QString::number(this->treeItemAddress().itemId),
+                     m_isSecondaryContent ? "secondary" : "primary");
+        textBridge->unsubscribeTextDocument(uniqueDocumentReference, centralWidgetUi->textEdit->uuid(),
+                                            static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document()));
     });
 
+    //            connect(m_localWordMeter, &SKRWordMeter::characterCountCalculated, skrdata->statHub(),
+    //                    &SKRStatHub::updateCharacterStats);
+    connect(m_localWordMeter, &SKRWordMeter::wordCountCalculated, this,
+            [wordCountLabel](const TreeItemAddress &treeItemAddress, int wordCount, bool triggerProjectModifiedSignal) {
 
+            });
 
-//            connect(m_localWordMeter, &SKRWordMeter::characterCountCalculated, skrdata->statHub(),
-//                    &SKRStatHub::updateCharacterStats);
-    connect(m_localWordMeter,
-            &SKRWordMeter::wordCountCalculated, this, [wordCountLabel](const TreeItemAddress &treeItemAddress,
-               int  wordCount,
-            bool triggerProjectModifiedSignal){
-
-
-
-
-
-
-    });
-
-    connect(skrdata->treePropertyHub(), &SKRPropertyHub::propertyChanged, this, [this, wordCountLabel]( int projectId,
-            int            propertyId,
-            int            treeItemCode,
-            const QString& name,
-            const QString& value)
-    {
-        if (name == "word_count" && projectId == this->treeItemAddress().projectId && treeItemCode == this->treeItemAddress().itemId){
-            wordCountLabel->setText(tr("%1 words").arg(QLocale().toString(value.toInt())));
-        }
-    }, Qt::QueuedConnection
-    );
-
+    connect(
+        skrdata->treePropertyHub(), &SKRPropertyHub::propertyChanged, this,
+        [this, wordCountLabel](int projectId, int propertyId, int treeItemCode, const QString &name,
+                               const QString &value) {
+            if (name == "word_count" && projectId == this->treeItemAddress().projectId &&
+                treeItemCode == this->treeItemAddress().itemId)
+            {
+                wordCountLabel->setText(tr("%1 words").arg(QLocale().toString(value.toInt())));
+            }
+        },
+        Qt::QueuedConnection);
 }
 
 TextView::~TextView()
 {
-
 
     delete centralWidgetUi;
 }
@@ -148,7 +133,6 @@ TextView::~TextView()
 QList<Toolbox *> TextView::toolboxes()
 {
     QList<Toolbox *> toolboxes;
-
 
     OutlineToolbox *outlineToolbox = new OutlineToolbox;
     toolboxes.append(outlineToolbox);
@@ -159,9 +143,7 @@ QList<Toolbox *> TextView::toolboxes()
     TagToolbox *tagToolbox = new TagToolbox(nullptr, this->treeItemAddress());
     toolboxes.append(tagToolbox);
 
-
     return toolboxes;
-
 }
 
 void TextView::initialize()
@@ -171,19 +153,19 @@ void TextView::initialize()
     MarkdownTextDocument *document = new MarkdownTextDocument(this);
 
     m_isSecondaryContent = parameters().value("is_secondary_content", false).toBool();
-    if(m_isSecondaryContent){
+    if (m_isSecondaryContent)
+    {
         document->setSkribistoMarkdown(skrdata->treeHub()->getSecondaryContent(this->treeItemAddress()));
-
     }
-    else {
+    else
+    {
         document->setSkribistoMarkdown(skrdata->treeHub()->getPrimaryContent(this->treeItemAddress()));
-
     }
 
     centralWidgetUi->textEdit->setDocument(document);
 
-
-    //centralWidgetUi->textEdit->adaptScollBarRange(centralWidgetUi->verticalScrollBar->minimum(), centralWidgetUi->verticalScrollBar->maximum());
+    // centralWidgetUi->textEdit->adaptScollBarRange(centralWidgetUi->verticalScrollBar->minimum(),
+    // centralWidgetUi->verticalScrollBar->maximum());
 
     // create save timer
 
@@ -191,44 +173,40 @@ void TextView::initialize()
     m_saveTimer->setSingleShot(true);
     // a bit blocking because of word count counting, so 10s is sufficient
     m_saveTimer->setInterval(100);
-    connect(m_saveTimer, &QTimer::timeout, this, [this](){ saveContent();});
-    QTimer::singleShot(0, this, [this](){ connectSaveConnection();});
+    connect(m_saveTimer, &QTimer::timeout, this, [this]() { saveContent(); });
+    QTimer::singleShot(0, this, [this]() { connectSaveConnection(); });
 
-    connect(centralWidgetUi->textEdit, &TextEdit::activeFocusChanged, this, [this](int focus){
-        if(!focus){
-            //qDebug() << "saving";
+    connect(centralWidgetUi->textEdit, &TextEdit::activeFocusChanged, this, [this](int focus) {
+        if (!focus)
+        {
+            // qDebug() << "saving";
             m_saveTimer->stop();
             saveContent();
         }
-
     });
 
-
-
-    //history
+    // history
     m_historyTimer = new QTimer(this);
     m_historyTimer->setSingleShot(true);
     m_historyTimer->setInterval(2000);
-    connect(m_saveTimer, &QTimer::timeout, this, [this](){ addPositionToHistory();});
-    connect(centralWidgetUi->textEdit, &TextEdit::cursorPositionChanged, this, [this](){
+    connect(m_saveTimer, &QTimer::timeout, this, [this]() { addPositionToHistory(); });
+    connect(centralWidgetUi->textEdit, &TextEdit::cursorPositionChanged, this, [this]() {
+        int newPosition = centralWidgetUi->textEdit->textCursor().position();
 
-        int newPosition =  centralWidgetUi->textEdit->textCursor().position();
-
-        if(m_oldCursorPosition != -1){
+        if (m_oldCursorPosition != -1)
+        {
             m_historyTimer->stop();
             m_historyTimer->start();
 
             // handle the case where the new position is far from the old position
-            if(qAbs(m_oldCursorPosition - newPosition) > 30){
-                    addPositionToHistory();
+            if (qAbs(m_oldCursorPosition - newPosition) > 30)
+            {
+                addPositionToHistory();
             }
-
         }
 
         m_oldCursorPosition = centralWidgetUi->textEdit->textCursor().position();
-
     });
-
 
     //---------------------------------
 
@@ -259,6 +237,18 @@ void TextView::initialize()
     textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
     textCursor.mergeBlockFormat(blockFormat);
 
+    connect(centralWidgetUi->textEdit, &TextEdit::textPasted, this, [this]() {
+        QSettings settings;
+        QTextBlockFormat blockFormat;
+        blockFormat.setTopMargin(settings.value("textPage/paragraphTopMargin", 12).toInt());
+        blockFormat.setTextIndent(settings.value("textPage/paragraphFirstLineIndent", 12).toInt());
+
+        QTextCursor textCursor = centralWidgetUi->textEdit->textCursor();
+        textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
+        textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+        textCursor.mergeBlockFormat(blockFormat);
+    });
+
     // restore textWidth:
 
     int textWidth = settings.value("textPage/textWidth", 600).toInt();
@@ -266,90 +256,96 @@ void TextView::initialize()
 
     // restore y position
 
-
-    QTimer::singleShot(0, this, [this, document](){
-
-        QString uniqueDocumentReference = QString("%1_%2_%3").arg(QString::number(this->projectId()), QString::number(this->treeItemAddress().itemId), m_isSecondaryContent ? "secondary" : "primary");
-        textBridge->subscribeTextDocument(
-                    uniqueDocumentReference,
-                    centralWidgetUi->textEdit->uuid(),
-                    document);
+    QTimer::singleShot(0, this, [this, document]() {
+        QString uniqueDocumentReference =
+            QString("%1_%2_%3")
+                .arg(QString::number(this->projectId()), QString::number(this->treeItemAddress().itemId),
+                     m_isSecondaryContent ? "secondary" : "primary");
+        textBridge->subscribeTextDocument(uniqueDocumentReference, centralWidgetUi->textEdit->uuid(), document);
 
         QSettings settings;
         // restore cursor always centered:
-        bool textCursorCentered = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textCursorAlwaysCentered", QString::number(this->treeItemAddress().itemId), 0).toBool();
+        bool textCursorCentered =
+            SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textCursorAlwaysCentered",
+                                                       QString::number(this->treeItemAddress().itemId), 0)
+                .toBool();
         bool textCursorAlwaysCentered = settings.value("textPage/alwaysCenterTheCursor", false).toBool();
-        if(textCursorCentered || textCursorAlwaysCentered){
+        if (textCursorCentered || textCursorAlwaysCentered)
+        {
             centralWidgetUi->textEdit->centerCursorAction()->setChecked(true);
         }
 
-        this->connect(centralWidgetUi->textEdit->centerCursorAction(), &QAction::triggered, this, [this](bool checked){
+        this->connect(centralWidgetUi->textEdit->centerCursorAction(), &QAction::triggered, this, [this](bool checked) {
             QSettings settings;
             settings.setValue("textPage/textCursorAlwaysCentered", checked);
         });
 
-
-        int scrollBarValue = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textScrollBarValue", QString::number(this->treeItemAddress().itemId), 0).toInt();
+        int scrollBarValue =
+            SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textScrollBarValue",
+                                                       QString::number(this->treeItemAddress().itemId), 0)
+                .toInt();
         centralWidgetUi->verticalScrollBar->setValue(scrollBarValue);
-       // centralWidgetUi->textEdit->ensureCursorVisible();
+        // centralWidgetUi->textEdit->ensureCursorVisible();
 
         // restore cursor position
 
-        int cursorPosition = SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textCursorPosition", QString::number(this->treeItemAddress().itemId), 0).toInt();
+        int cursorPosition =
+            SKRUserSettings::getFromProjectSettingHash(this->projectId(), "textCursorPosition",
+                                                       QString::number(this->treeItemAddress().itemId), 0)
+                .toInt();
 
         QTextCursor cursor(centralWidgetUi->textEdit->document());
         cursor.setPosition(cursorPosition);
         centralWidgetUi->textEdit->setTextCursor(cursor);
-
-
     });
 
-    //centralWidgetUi->textEdit->setCursorWidth(2);
-
+    // centralWidgetUi->textEdit->setCursorWidth(2);
 }
 
 void TextView::saveContent(bool sameThread)
 {
-    //qDebug() << "s";
-    const QString &markdown = static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document())->toSkribistoMarkdown();
+    // qDebug() << "s";
+    const QString &markdown =
+        static_cast<MarkdownTextDocument *>(centralWidgetUi->textEdit->document())->toSkribistoMarkdown();
     projectTreeCommands->setContent(this->treeItemAddress(), std::move(markdown), m_isSecondaryContent);
 
-    if(!m_isSecondaryContent){
+    if (!m_isSecondaryContent)
+    {
         projectTreeCommands->updateCharAndWordCount(this->treeItemAddress(), "TEXT", sameThread);
     }
 
     m_wasModified = false;
-
 }
 
 void TextView::saveTextState()
 {
-    SKRUserSettings::insertInProjectSettingHash(this->projectId(), "textCursorPosition", QString::number(this->treeItemAddress().itemId),
-                                                                     centralWidgetUi->textEdit->textCursor().position());
-    SKRUserSettings::insertInProjectSettingHash(this->projectId(), "textScrollBarValue", QString::number(this->treeItemAddress().itemId),
-                                                                     centralWidgetUi->verticalScrollBar->value());
-    //qDebug() << "saveTextState" << centralWidgetUi->verticalScrollBar->value();
-
+    SKRUserSettings::insertInProjectSettingHash(this->projectId(), "textCursorPosition",
+                                                QString::number(this->treeItemAddress().itemId),
+                                                centralWidgetUi->textEdit->textCursor().position());
+    SKRUserSettings::insertInProjectSettingHash(this->projectId(), "textScrollBarValue",
+                                                QString::number(this->treeItemAddress().itemId),
+                                                centralWidgetUi->verticalScrollBar->value());
+    // qDebug() << "saveTextState" << centralWidgetUi->verticalScrollBar->value();
 }
 
 void TextView::connectSaveConnection()
 {
 
-
-    m_saveConnection = connect(centralWidgetUi->textEdit, &QTextEdit::textChanged, this, [this](){
+    m_saveConnection = connect(centralWidgetUi->textEdit, &QTextEdit::textChanged, this, [this]() {
         m_wasModified = true;
 
-        //m_localWordMeter->countText(this->treeItemAddress(), std::move(centralWidgetUi->textEdit->toPlainText()), true,false);
+        // m_localWordMeter->countText(this->treeItemAddress(), std::move(centralWidgetUi->textEdit->toPlainText()),
+        // true,false);
 
-
-        if(m_saveTimer->isActive()){
+        if (m_saveTimer->isActive())
+        {
             m_saveTimer->stop();
         }
-        if(this->hasFocus()){
-             m_saveTimer->start();
+        if (this->hasFocus())
+        {
+            m_saveTimer->start();
         }
     });
-
 }
 //---------------------------------------------
 
@@ -374,32 +370,40 @@ void TextView::mousePressEvent(QMouseEvent *event)
 
 void TextView::wheelEvent(QWheelEvent *event)
 {
-    if(event->modifiers() == Qt::ControlModifier) {
+    if (event->modifiers() == Qt::ControlModifier)
+    {
 
         QPoint numPixels = event->pixelDelta();
         QPoint numDegrees = event->angleDelta() / 8;
 
-
         QObject::disconnect(m_saveConnection);
 
-        if (!numPixels.isNull()) {
-            if(numPixels.y() > 0) {
+        if (!numPixels.isNull())
+        {
+            if (numPixels.y() > 0)
+            {
                 centralWidgetUi->textEdit->zoomOut();
             }
-            else{
+            else
+            {
                 centralWidgetUi->textEdit->zoomIn();
             }
-        } else if (!numDegrees.isNull()) {
+        }
+        else if (!numDegrees.isNull())
+        {
             QPoint numSteps = numDegrees / 15;
-            if(numSteps.y() > 0) {
+            if (numSteps.y() > 0)
+            {
                 centralWidgetUi->textEdit->zoomOut();
             }
-            else{
+            else
+            {
                 centralWidgetUi->textEdit->zoomIn();
             }
         }
 
-        if(centralWidgetUi->textEdit->font().pointSize() < 8){
+        if (centralWidgetUi->textEdit->font().pointSize() < 8)
+        {
 
             QFont font = centralWidgetUi->textEdit->font();
             font.setPointSize(8);
@@ -412,7 +416,6 @@ void TextView::wheelEvent(QWheelEvent *event)
 
         connectSaveConnection();
 
-
         QSettings settings;
         settings.setValue("textPage/textFontPointSize", centralWidgetUi->textEdit->font().pointSize());
 
@@ -422,28 +425,30 @@ void TextView::wheelEvent(QWheelEvent *event)
 
         event->accept();
     }
-    else {
-            centralWidgetUi->textEdit->wheelEvent(event);
+    else
+    {
+        centralWidgetUi->textEdit->wheelEvent(event);
     }
 }
 
-
 void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
 {
-    if(newSettings.contains("textPage/textFontFamily")){
+    if (newSettings.contains("textPage/textFontFamily"))
+    {
         QString textFontFamily = newSettings.value("textPage/textFontFamily").toString();
         QFont font = centralWidgetUi->textEdit->font();
         font.setFamily(textFontFamily);
         centralWidgetUi->textEdit->setFont(font);
     }
-    if(newSettings.contains("textPage/textFontPointSize")){
+    if (newSettings.contains("textPage/textFontPointSize"))
+    {
         int textFontPointSize = newSettings.value("textPage/textFontPointSize").toInt();
         QFont font = centralWidgetUi->textEdit->font();
         font.setPointSize(textFontPointSize);
         centralWidgetUi->textEdit->setFont(font);
-
     }
-    if(newSettings.contains("textPage/paragraphTopMargin")){
+    if (newSettings.contains("textPage/paragraphTopMargin"))
+    {
         QTextBlockFormat blockFormat;
         blockFormat.setTopMargin(newSettings.value("textPage/paragraphTopMargin").toInt());
 
@@ -452,7 +457,8 @@ void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
         textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
         textCursor.mergeBlockFormat(blockFormat);
     }
-    if(newSettings.contains("textPage/paragraphFirstLineIndent")){
+    if (newSettings.contains("textPage/paragraphFirstLineIndent"))
+    {
 
         QTextBlockFormat blockFormat;
         blockFormat.setTextIndent(newSettings.value("textPage/paragraphFirstLineIndent").toInt());
@@ -463,28 +469,26 @@ void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
         textCursor.mergeBlockFormat(blockFormat);
     }
 
-    if(newSettings.contains("textPage/alwaysCenterTheCursor")){
-        centralWidgetUi->textEdit->centerCursorAction()->setChecked(newSettings.value("textPage/alwaysCenterTheCursor").toBool());
+    if (newSettings.contains("textPage/alwaysCenterTheCursor"))
+    {
+        centralWidgetUi->textEdit->centerCursorAction()->setChecked(
+            newSettings.value("textPage/alwaysCenterTheCursor").toBool());
     }
 
-    if(newSettings.contains("common/spellChecker")){
+    if (newSettings.contains("common/spellChecker"))
+    {
         centralWidgetUi->textEdit->setSpellcheckerEnabled(newSettings.value("common/spellChecker").toBool());
     }
-
-
 }
-
 
 void TextView::applyParameters()
 {
     QVariantMap parameters = this->parameters();
 
-    QTimer::singleShot(0, this, [=](){
-
-
+    QTimer::singleShot(0, this, [=]() {
         int scrollBarValue = parameters.value("textScrollBarValue").toInt();
         centralWidgetUi->verticalScrollBar->setValue(scrollBarValue);
-       // centralWidgetUi->textEdit->ensureCursorVisible();
+        // centralWidgetUi->textEdit->ensureCursorVisible();
 
         // restore cursor position
 
@@ -495,13 +499,10 @@ void TextView::applyParameters()
         centralWidgetUi->textEdit->setTextCursor(cursor);
 
         addPositionToHistory();
-
     });
-
 }
 
 //------------------------------------------------------
-
 
 QVariantMap TextView::addOtherViewParametersBeforeSplit()
 {
@@ -512,7 +513,6 @@ QVariantMap TextView::addOtherViewParametersBeforeSplit()
 
     return parameters;
 }
-
 
 void TextView::applyHistoryParameters(const QVariantMap &parameters)
 {
@@ -529,5 +529,4 @@ void TextView::applyHistoryParameters(const QVariantMap &parameters)
     centralWidgetUi->textEdit->setTextCursor(cursor);
 
     centralWidgetUi->textEdit->ensureCursorVisible();
-
 }

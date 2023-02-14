@@ -40,10 +40,11 @@ class SKRDESKTOPCOMMONEXPORT TextEdit : public QTextEdit
     void setProjectId(int newProjectId);
 
   public slots:
-    void adaptScollBarRange(int min, int max);
+    void adaptScrollBarRange(int min, int max);
 
   signals:
     void activeFocusChanged(bool value);
+    void textPasted();
 
   private slots:
     void updateFontActions();
@@ -68,6 +69,7 @@ class SKRDESKTOPCOMMONEXPORT TextEdit : public QTextEdit
 
     void setupContextMenu();
     QString getWordUnderCursor(int position) const;
+    void pasteWithoutFormatting();
 
   protected:
     void mousePressEvent(QMouseEvent *event) override;

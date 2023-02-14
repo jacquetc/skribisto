@@ -64,7 +64,7 @@ TextEdit::TextEdit(QWidget *parent, int projectId)
         }
     });
 
-    connect(this->verticalScrollBar(), &QScrollBar::rangeChanged, this, &TextEdit::adaptScollBarRange);
+    connect(this->verticalScrollBar(), &QScrollBar::rangeChanged, this, &TextEdit::adaptScrollBarRange);
 
     QTimer::singleShot(0, this, [this]() { this->setCursorWidth(2); });
 }
@@ -175,7 +175,7 @@ void TextEdit::connectActions()
     m_actionConnectionsList << QObject::connect(m_centerCursorAction, &QAction::toggled, this, [this](bool checked) {
         m_always_center_cursor = checked;
         centerCursor();
-        adaptScollBarRange(this->verticalScrollBar()->minimum(), this->verticalScrollBar()->maximum());
+        adaptScrollBarRange(this->verticalScrollBar()->minimum(), this->verticalScrollBar()->maximum());
     });
 }
 
@@ -255,7 +255,7 @@ void TextEdit::centerCursor(bool force)
     }
 }
 
-void TextEdit::adaptScollBarRange(int min, int max)
+void TextEdit::adaptScrollBarRange(int min, int max)
 {
 
     this->verticalScrollBar()->blockSignals(true);
@@ -320,6 +320,12 @@ QString TextEdit::getWordUnderCursor(int position) const
     int wordLength = wordFinder.toNextBoundary() - wordStart;
 
     return text.mid(wordStart, wordLength);
+}
+
+//---------------------------------------------------------
+
+void TextEdit::pasteWithoutFormatting()
+{
 }
 //---------------------------------------------------------
 
@@ -428,7 +434,7 @@ void TextEdit::setupContextMenu()
     m_pasteAction = new QAction(QIcon(":/icons/backup/edit-paste.svg"), tr("Paste"), this);
     connect(m_pasteAction, &QAction::triggered, this, [=]() { this->paste(); });
     m_pasteWithoutFormattingAction = new QAction(tr("Paste without formatting"), this);
-    connect(m_pasteWithoutFormattingAction, &QAction::triggered, this, [=]() { this->paste(); });
+    connect(m_pasteWithoutFormattingAction, &QAction::triggered, this, [=]() { this->pasteWithoutFormatting(); });
     m_createNote = new QAction(tr("Create a note"), this);
 }
 
@@ -539,10 +545,66 @@ void TextEdit::setProjectId(int newProjectId)
 
 bool TextEdit::canInsertFromMimeData(const QMimeData *source) const
 {
-    return QTextEdit::canInsertFromMimeData(source);
+    if (source->hasHtml())
+    {
+        return true;
+    }
+
+    if (source->hasText())
+    {
+        return true;
+    }
+
+    return false;
 }
 
 void TextEdit::insertFromMimeData(const QMimeData *source)
 {
-    return QTextEdit::insertFromMimeData(source);
+    if (source->hasHtml())
+    {
+        QString html = source->html();
+        QStringList styleToRemoveList;
+        styleToRemoveList << "font-family";
+        styleToRemoveList << "font-size";
+        //    styleToRemoveList << "font-style";
+        styleToRemoveList << "line-height";
+        styleToRemoveList << "margin-left";
+        styleToRemoveList << "margin-right";
+        styleToRemoveList << "margin-top";
+        styleToRemoveList << "margin-bottom";
+        styleToRemoveList << "-qt-block-indent";
+        styleToRemoveList << "-qt-user-state";
+        styleToRemoveList << "text-indent";
+        styleToRemoveList << "color";
+
+        for (const QString &style : qAsConst(styleToRemoveList))
+            html.remove(QRegularExpression(style + ":.*?;?"));
+        static QRegularExpression headers("<h[0-9].*?>|<h[0-9]>|</h[0-9]>");
+        html.remove(headers);
+
+        // align
+
+        static QRegularExpression align("align=\\\".*?\\\"");
+        html.remove(align);
+
+        // remove div
+
+        static QRegularExpression div("<div.*?>|</div>");
+        html.remove(div);
+        // remove table:
+
+        static QRegularExpression table("<table.*?>|</table>|<div.*?>|</div>|<tbody>|</tbody>|<(tr|td)>|</(tr|td)>");
+        html.remove(table);
+
+        // qDebug() << html;
+
+        this->insertHtml(html);
+
+        emit textPasted();
+    }
+    else if (source->hasText())
+    {
+        QTextEdit::insertFromMimeData(source);
+        emit textPasted();
+    }
 }
