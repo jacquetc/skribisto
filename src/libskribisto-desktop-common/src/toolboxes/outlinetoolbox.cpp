@@ -91,23 +91,7 @@ void OutlineToolbox::initialize()
     QTextBlockFormat blockFormat;
     blockFormat.setTopMargin(settings.value("outlineToolbox/paragraphTopMargin", 6).toInt());
     blockFormat.setTextIndent(settings.value("outlineToolbox/paragraphFirstLineIndent", 6).toInt());
-
-    QTextCursor textCursor = ui->textEdit->textCursor();
-    textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
-    textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
-    textCursor.mergeBlockFormat(blockFormat);
-
-    connect(ui->textEdit, &TextEdit::textPasted, this, [this]() {
-        QSettings settings;
-        QTextBlockFormat blockFormat;
-        blockFormat.setTopMargin(settings.value("outlineToolbox/paragraphTopMargin", 6).toInt());
-        blockFormat.setTextIndent(settings.value("outlineToolbox/paragraphFirstLineIndent", 6).toInt());
-
-        QTextCursor textCursor = ui->textEdit->textCursor();
-        textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
-        textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
-        textCursor.mergeBlockFormat(blockFormat);
-    });
+    ui->textEdit->setBlockFormat(blockFormat);
 
     // restore cursor position
 
@@ -214,7 +198,7 @@ void OutlineToolbox::wheelEvent(QWheelEvent *event)
     }
 }
 
-void OutlineToolbox::settingsChanged(const QHash<QString, QVariant> &newSettings)
+void OutlineToolbox::applySettingsChanges(const QHash<QString, QVariant> &newSettings)
 {
 
     if (newSettings.contains("common/spellChecker"))

@@ -314,7 +314,7 @@ QDateTime BackupManager::timeOfNextBackup() const
 
 //---------------------------------------------------
 
-void BackupManager::settingsChanged(const QHash<QString, QVariant> &newSettings)
+void BackupManager::applySettingsChanges(const QHash<QString, QVariant> &newSettings)
 {
     if(newSettings.contains("backup/enablePeriodicalBackup")){
         bool enablePeriodicalBackup = newSettings.value("backup/enablePeriodicalBackup").toBool();

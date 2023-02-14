@@ -11,6 +11,7 @@
 #include <QScrollBar>
 #include <QTextBlock>
 #include <QTextCursor>
+#include <QTextDocumentFragment>
 #include <QTextList>
 #include <QUuid>
 
@@ -19,6 +20,7 @@ TextEdit::TextEdit(QWidget *parent, int projectId)
       m_projectId(projectId), m_highlighter(nullptr)
 {
     this->setMouseTracking(true);
+    this->setAutoFormatting(QTextEdit::AutoNone);
 
     m_uuid = QUuid::createUuid().toString();
 
@@ -27,35 +29,43 @@ TextEdit::TextEdit(QWidget *parent, int projectId)
     connect(this, &QTextEdit::cursorPositionChanged, this, &TextEdit::updateFontActions);
 
     m_italicAction = new QAction(QIcon(":/icons/backup/format-text-italic.svg"), tr("Italic"), this);
-    m_italicAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     m_italicAction->setShortcut(QKeySequence(tr("Ctrl+I")));
+    m_italicAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     m_italicAction->setCheckable(true);
+    this->addAction(m_italicAction);
 
     m_boldAction = new QAction(QIcon(":/icons/backup/format-text-bold.svg"), tr("Bold"), this);
     m_boldAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     m_boldAction->setShortcut(QKeySequence(tr("Ctrl+B")));
     m_boldAction->setCheckable(true);
+    this->addAction(m_boldAction);
 
     m_strikeAction = new QAction(QIcon(":/icons/backup/format-text-strikethrough.svg"), tr("Strikethrough"), this);
     m_strikeAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     m_strikeAction->setShortcut(QKeySequence(tr("Ctrl+T")));
     m_strikeAction->setCheckable(true);
+    this->addAction(m_strikeAction);
 
     m_underlineAction = new QAction(QIcon(":/icons/backup/format-text-underline.svg"), tr("Underline"), this);
     m_underlineAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     m_underlineAction->setShortcut(QKeySequence(tr("Ctrl+U")));
     m_underlineAction->setCheckable(true);
+    this->addAction(m_underlineAction);
 
     m_bulletListAction = new QAction(QIcon(":/icons/backup/format-list-unordered.svg"), tr("List"), this);
     m_bulletListAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     m_bulletListAction->setShortcut(QKeySequence(tr("")));
     m_bulletListAction->setCheckable(true);
+    this->addAction(m_bulletListAction);
 
     m_centerCursorAction =
         new QAction(QIcon(":/icons/backup/format-align-vertical-center.svg"), tr("Center the cursor"), this);
     m_centerCursorAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     m_centerCursorAction->setShortcut(QKeySequence(tr("Ctrl+Shift+C")));
     m_centerCursorAction->setCheckable(true);
+    this->addAction(m_centerCursorAction);
+
+    connectActions();
 
     // center cursor:
 
@@ -291,9 +301,7 @@ void TextEdit::setSpellcheckerEnabled(bool value)
 
 bool TextEdit::isWordMisspelled(int cursorPosition)
 {
-
     QString wordValue = getWordUnderCursor(cursorPosition);
-
     return !m_highlighter->getSpellChecker()->spell(wordValue);
 }
 
@@ -301,10 +309,11 @@ bool TextEdit::isWordMisspelled(int cursorPosition)
 
 QStringList TextEdit::listSpellSuggestionsAt(int cursorPosition) const
 {
-
     QString wordValue = getWordUnderCursor(cursorPosition);
     return m_highlighter->getSpellChecker()->suggest(wordValue);
 }
+
+//---------------------------------------------------------
 
 QString TextEdit::getWordUnderCursor(int position) const
 {
@@ -334,7 +343,6 @@ void TextEdit::pasteWithoutFormatting()
     if (mimeData->hasText())
     {
         this->insertPlainText(clipboard->text());
-        emit textPasted();
     }
     else if (mimeData->hasHtml())
     {
@@ -343,7 +351,6 @@ void TextEdit::pasteWithoutFormatting()
         QTextDocument document;
         document.setHtml(clipboard->text());
         this->insertPlainText(document.toPlainText());
-        emit textPasted();
     }
 }
 //---------------------------------------------------------
@@ -442,7 +449,7 @@ void TextEdit::setupContextMenu()
 
     m_contextMenu->setMinimumSize(100, 50);
 
-    m_addToUserDictAction = new QAction(tr("Add to Dictionary"), this);
+    m_addToUserDictAction = new QAction(this);
     m_connectionHolder = new QObject(this);
 
     m_cutAction = new QAction(QIcon(":/icons/backup/edit-cut.svg"), tr("Cut"), this);
@@ -507,6 +514,7 @@ void TextEdit::onCustomContextMenu(const QPoint &point)
             m_contextMenu->addSeparator();
         }
 
+        m_addToUserDictAction->setText(tr("Add \"%1\" to Dictionary").arg(getWordUnderCursor(positionUnderCursor)));
         m_contextMenu->addAction(m_addToUserDictAction);
 
         connect(m_addToUserDictAction, &QAction::triggered, m_connectionHolder, [=]() {
@@ -618,15 +626,43 @@ void TextEdit::insertFromMimeData(const QMimeData *source)
         static QRegularExpression table("<table.*?>|</table>|<div.*?>|</div>|<tbody>|</tbody>|<(tr|td)>|</(tr|td)>");
         html.remove(table);
 
-        // qDebug() << html;
+        qDebug() << "html";
 
-        this->insertHtml(html);
+        // apply char format
+        QTextDocument document;
+        document.setHtml(html);
+        QTextCursor textCursor(&document);
+        textCursor.select(QTextCursor::SelectionType::Document);
+        textCursor.mergeBlockFormat(m_blockFormat);
 
-        emit textPasted();
+        QTextCharFormat charFormat;
+        charFormat.setFont(this->font(), QTextCharFormat::FontPropertiesSpecifiedOnly);
+        textCursor.mergeCharFormat(charFormat);
+        QTextDocumentFragment fragment(&document);
+
+        this->insertHtml(fragment.toHtml());
+
+        // emit textPasted();
     }
     else if (source->hasText())
     {
         QTextEdit::insertFromMimeData(source);
-        emit textPasted();
+        // emit textPasted();
+    }
+}
+
+//---------------------------------------------
+
+void TextEdit::setBlockFormat(const QTextBlockFormat &blockFormat)
+{
+    if (m_blockFormat != blockFormat)
+    {
+        m_blockFormat = blockFormat;
+
+        QTextCursor textCursor = this->textCursor();
+        textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
+        textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+        textCursor.mergeBlockFormat(blockFormat);
+        this->document()->clearUndoRedoStacks();
     }
 }

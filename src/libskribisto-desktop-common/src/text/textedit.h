@@ -39,12 +39,12 @@ class SKRDESKTOPCOMMONEXPORT TextEdit : public QTextEdit
     int projectId() const;
     void setProjectId(int newProjectId);
 
+    void setBlockFormat(const QTextBlockFormat &blockFormat);
   public slots:
     void adaptScrollBarRange(int min, int max);
 
   signals:
     void activeFocusChanged(bool value);
-    void textPasted();
 
   private slots:
     void updateFontActions();
@@ -63,6 +63,7 @@ class SKRDESKTOPCOMMONEXPORT TextEdit : public QTextEdit
     bool m_forceDisableCenterCursor;
     QObject *m_connectionHolder;
     int m_projectId;
+    QTextBlockFormat m_blockFormat;
 
     void connectActions();
     void disconnectActions();

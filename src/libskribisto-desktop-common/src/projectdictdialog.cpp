@@ -30,7 +30,8 @@ ProjectDictDialog::ProjectDictDialog(QWidget *parent, int projectId)
         QString word = QInputDialog::getText(this, tr("New word"), tr("Add a new word to the user dictionary"),
                                              QLineEdit::EchoMode::Normal, "", &ok);
 
-        if (!ok || word.isEmpty() || m_originalWords.contains(word) || m_newWordList.contains(word))
+        if (!ok || word.isEmpty() || word.contains(" ") || m_originalWords.contains(word) ||
+            m_newWordList.contains(word))
         {
             return;
         }

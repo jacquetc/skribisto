@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     new TagCommands(skrData, undoStack);
     new DictCommands(skrData, undoStack);
     new BackupManager(skrData);
-    QObject::connect(&app, &DesktopApplication::settingsChanged, backupManager, &BackupManager::settingsChanged);
+    QObject::connect(&app, &DesktopApplication::settingsChanged, backupManager, &BackupManager::applySettingsChanges);
 
     ThemeManager::instance();
     TextBridge::instance();

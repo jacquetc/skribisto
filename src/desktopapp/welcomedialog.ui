@@ -63,6 +63,15 @@
        <property name="lineWidth">
         <number>0</number>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>35</width>
+         <height>35</height>
+        </size>
+       </property>
+       <property name="spacing">
+        <number>5</number>
+       </property>
       </widget>
      </item>
      <item>

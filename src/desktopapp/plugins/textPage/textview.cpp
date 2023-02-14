@@ -231,23 +231,7 @@ void TextView::initialize()
     QTextBlockFormat blockFormat;
     blockFormat.setTopMargin(settings.value("textPage/paragraphTopMargin", 12).toInt());
     blockFormat.setTextIndent(settings.value("textPage/paragraphFirstLineIndent", 12).toInt());
-
-    QTextCursor textCursor = centralWidgetUi->textEdit->textCursor();
-    textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
-    textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
-    textCursor.mergeBlockFormat(blockFormat);
-
-    connect(centralWidgetUi->textEdit, &TextEdit::textPasted, this, [this]() {
-        QSettings settings;
-        QTextBlockFormat blockFormat;
-        blockFormat.setTopMargin(settings.value("textPage/paragraphTopMargin", 12).toInt());
-        blockFormat.setTextIndent(settings.value("textPage/paragraphFirstLineIndent", 12).toInt());
-
-        QTextCursor textCursor = centralWidgetUi->textEdit->textCursor();
-        textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
-        textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
-        textCursor.mergeBlockFormat(blockFormat);
-    });
+    centralWidgetUi->textEdit->setBlockFormat(blockFormat);
 
     // restore textWidth:
 
@@ -431,7 +415,7 @@ void TextView::wheelEvent(QWheelEvent *event)
     }
 }
 
-void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
+void TextView::applySettingsChanges(const QHash<QString, QVariant> &newSettings)
 {
     if (newSettings.contains("textPage/textFontFamily"))
     {
@@ -456,6 +440,8 @@ void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
         textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
         textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
         textCursor.mergeBlockFormat(blockFormat);
+
+        centralWidgetUi->textEdit->document()->clearUndoRedoStacks();
     }
     if (newSettings.contains("textPage/paragraphFirstLineIndent"))
     {
@@ -467,6 +453,8 @@ void TextView::settingsChanged(const QHash<QString, QVariant> &newSettings)
         textCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
         textCursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
         textCursor.mergeBlockFormat(blockFormat);
+
+        centralWidgetUi->textEdit->document()->clearUndoRedoStacks();
     }
 
     if (newSettings.contains("textPage/alwaysCenterTheCursor"))
