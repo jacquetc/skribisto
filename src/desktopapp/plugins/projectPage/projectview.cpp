@@ -1,14 +1,13 @@
 #include "projectview.h"
 #include "projectcommands.h"
+#include "projectdictdialog.h"
+#include "skrdata.h"
+#include "tagmanagertoolbox.h"
 #include "text/spellchecker.h"
 #include "toolboxes/outlinetoolbox.h"
 #include "ui_projectview.h"
-#include "skrdata.h"
-#include "tagmanagertoolbox.h"
 
-ProjectView::ProjectView(QWidget *parent) :
-    View("PROJECT", parent),
-    centralWidgetUi(new Ui::ProjectView)
+ProjectView::ProjectView(QWidget *parent) : View("PROJECT", parent), centralWidgetUi(new Ui::ProjectView)
 {
     QWidget *centralWidget = new QWidget;
     centralWidgetUi->setupUi(centralWidget);
@@ -16,21 +15,30 @@ ProjectView::ProjectView(QWidget *parent) :
     setCentralWidget(centralWidget);
     this->setFocusProxy(centralWidgetUi->projectNameLineEdit);
 
-
-    connect(centralWidgetUi->projectNameLineEdit, &QLineEdit::editingFinished, this, [this](){
-        if(skrdata->projectHub()->getProjectName(this->projectId()) != centralWidgetUi->projectNameLineEdit->text()){
+    connect(centralWidgetUi->projectNameLineEdit, &QLineEdit::editingFinished, this, [this]() {
+        if (skrdata->projectHub()->getProjectName(this->projectId()) != centralWidgetUi->projectNameLineEdit->text())
+        {
             projectCommands->setProjectName(this->projectId(), centralWidgetUi->projectNameLineEdit->text());
         }
     });
-    connect(centralWidgetUi->authorLineEdit, &QLineEdit::editingFinished, this, [this](){
-        if(skrdata->projectHub()->getAuthor(this->projectId()) != centralWidgetUi->authorLineEdit->text()){
+    connect(centralWidgetUi->authorLineEdit, &QLineEdit::editingFinished, this, [this]() {
+        if (skrdata->projectHub()->getAuthor(this->projectId()) != centralWidgetUi->authorLineEdit->text())
+        {
             projectCommands->setAuthor(this->projectId(), centralWidgetUi->authorLineEdit->text());
         }
     });
-    connect(centralWidgetUi->dictionaryComboBox, &QComboBox::activated, this, [this](int index){
-        if(skrdata->projectHub()->getLangCode(this->projectId()) != centralWidgetUi->dictionaryComboBox->currentData().toString()){
-            projectCommands->setLanguageCode(this->projectId(), centralWidgetUi->dictionaryComboBox->currentData().toString());
+    connect(centralWidgetUi->dictionaryComboBox, &QComboBox::activated, this, [this](int index) {
+        if (skrdata->projectHub()->getLangCode(this->projectId()) !=
+            centralWidgetUi->dictionaryComboBox->currentData().toString())
+        {
+            projectCommands->setLanguageCode(this->projectId(),
+                                             centralWidgetUi->dictionaryComboBox->currentData().toString());
         }
+    });
+
+    connect(centralWidgetUi->userDictPushButton, &QPushButton::clicked, this, [this]() {
+        ProjectDictDialog dialog(this, this->projectId());
+        dialog.exec();
     });
 }
 
@@ -45,14 +53,12 @@ QList<Toolbox *> ProjectView::toolboxes()
 
     toolboxes.append(new TagManagerToolbox(nullptr, this->projectId()));
 
-
-    OutlineToolbox *outlineToolbox = new OutlineToolbox;    toolboxes.append(outlineToolbox);
+    OutlineToolbox *outlineToolbox = new OutlineToolbox;
+    toolboxes.append(outlineToolbox);
     connect(this, &View::initialized, outlineToolbox, &Toolbox::setIdentifiersAndInitialize);
     outlineToolbox->setIdentifiersAndInitialize(this->treeItemAddress());
 
     return toolboxes;
-
-
 }
 
 void ProjectView::initialize()
@@ -65,19 +71,17 @@ void ProjectView::initialize()
 
     QMap<QString, QString> dictAndPathMap = SpellChecker::dictAndPathMap();
     QMap<QString, QString>::const_iterator i = dictAndPathMap.constBegin();
-     while (i != dictAndPathMap.constEnd()) {
-         QLocale locale(i.key());
-        centralWidgetUi->dictionaryComboBox->addItem(QString("%1 (%2)").arg(locale.nativeLanguageName(),i.key()), i.key());
-         ++i;
-     }
+    while (i != dictAndPathMap.constEnd())
+    {
+        QLocale locale(i.key());
+        centralWidgetUi->dictionaryComboBox->addItem(QString("%1 (%2)").arg(locale.nativeLanguageName(), i.key()),
+                                                     i.key());
+        ++i;
+    }
 
-    centralWidgetUi->dictionaryComboBox->setCurrentIndex(centralWidgetUi->dictionaryComboBox->findData(
-                                                             skrdata->projectHub()->getLangCode(this->projectId())));
-
+    centralWidgetUi->dictionaryComboBox->setCurrentIndex(
+        centralWidgetUi->dictionaryComboBox->findData(skrdata->projectHub()->getLangCode(this->projectId())));
 
     // history
     emit this->addToHistoryCalled(this, QVariantMap());
-
 }
-
-

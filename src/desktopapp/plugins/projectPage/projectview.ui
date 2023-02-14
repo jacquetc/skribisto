@@ -52,7 +52,7 @@
         <x>108</x>
         <y>0</y>
         <width>400</width>
-        <height>246</height>
+        <height>280</height>
        </rect>
       </property>
       <property name="sizePolicy">
@@ -190,6 +190,13 @@
           <widget class="ComboBox" name="dictionaryComboBox"/>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="userDictPushButton">
+         <property name="text">
+          <string>User dictionary</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
