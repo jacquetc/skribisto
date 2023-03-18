@@ -1,0 +1,44 @@
+# The source directories to parse
+sourcedirs += ./sources
+sourcedirs += ./sources/gui/presenter
+sourcedirs += ./sources/gui/presenter/author
+sourcedirs += ./sources/gui/presenter/system
+sourcedirs += ./sources/gui/presenter/undo_redo
+
+# The include directories to search for header files
+headerdirs += ./sources
+headerdirs += ./sources/gui/presenter
+headerdirs += ./sources/gui/presenter/author
+headerdirs += ./sources/gui/presenter/system
+headerdirs += ./sources/gui/presenter/undo_redo
+
+includepaths += ./sources
+
+# The output directory for the generated documentation
+outputdir = ./docs
+
+# The project name
+project = Skribisto
+
+# The project description
+description = "Project with clean architecture principles using C++ and Qt6."
+
+# The project version
+version = 1.0.0
+
+# The file extension for C++ source files
+sourcefileextensions = "*.cpp"
+
+# The file extension for C++ header files
+headerfileextensions = "*.h"
+
+# The file extension for Qt resource files
+extrafileextensions = "*.qrc"
+
+# The format for the generated documentation (defaults to HTML)
+# format = html
+
+# The main page for the documentation (optional, can be left empty)
+# mainpage = "index"
+
+# Add any additional settings or options required for your specific project

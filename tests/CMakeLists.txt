@@ -1,0 +1,5 @@
+add_subdirectory(usecases)
+add_subdirectory(automapper)
+add_subdirectory(undo_redo)
+add_subdirectory(repository)
+add_subdirectory(presenter)
