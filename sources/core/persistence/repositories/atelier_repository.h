@@ -1,7 +1,7 @@
 #pragma once
 
 #include "atelier.h"
-#include "database/interface_database.h"
+#include "database/interface_database_table.h"
 #include "generic_repository.h"
 #include "persistence/interface_atelier_repository.h"
 #include "persistence_global.h"
@@ -16,7 +16,7 @@ class SKR_PERSISTENCE_EXPORT AtelierRepository : public QObject,
     Q_OBJECT
     Q_INTERFACES(Contracts::Persistence::InterfaceAtelierRepository)
   public:
-    explicit AtelierRepository(InterfaceDatabase<Domain::Atelier> *database);
+    explicit AtelierRepository(InterfaceDatabaseTable<Domain::Atelier> *database);
 };
 
 } // namespace Repository

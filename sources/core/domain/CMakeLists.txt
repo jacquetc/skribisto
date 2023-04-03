@@ -15,6 +15,8 @@ author.h
 entity.h
 atelier.h
 book.h
+ordered_entity.h
+unique_entity.h
 )
 
 add_library(skribisto-domain SHARED ${domain_SRCS})

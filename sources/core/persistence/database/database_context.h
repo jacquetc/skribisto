@@ -11,7 +11,7 @@ namespace Database
 {
 
 /**
- * @brief The SkribFileContext class represents the context for a Skrib file database.
+ * @brief The SkribFileContext class represents the context for a internal database.
  */
 class SKR_PERSISTENCE_EXPORT DatabaseContext : public QObject, public Contracts::Database::InterfaceDatabaseContext
 {
@@ -28,26 +28,26 @@ class SKR_PERSISTENCE_EXPORT DatabaseContext : public QObject, public Contracts:
     ~DatabaseContext();
 
     /**
-     * @brief Initializes the Skrib file database.
+     * @brief Initializes the internal database.
      * @return A Result object with a value of nullptr if successful, or an Error object if an error occurred.
      */
     Result<void> init();
 
     /**
-     * @brief Returns the name of the Skrib file database.
-     * @return The name of the Skrib file database.
+     * @brief Returns the name of the internal database.
+     * @return The name of the internal database.
      */
     QString databaseName() const override;
 
     /**
-     * @brief Returns the file name of the Skrib file database.
-     * @return The file name of the Skrib file database.
+     * @brief Returns the file name of the internal database.
+     * @return The file name of the internal database.
      */
     QUrl fileName() const;
 
     /**
-     * @brief Sets the file name of the Skrib file database.
-     * @param newFileName The new file name of the Skrib file database.
+     * @brief Sets the file name of the internal database.
+     * @param newFileName The new file name of the internal database.
      */
     void setFileName(const QUrl &newFileName);
 
@@ -63,13 +63,13 @@ class SKR_PERSISTENCE_EXPORT DatabaseContext : public QObject, public Contracts:
   signals:
 
   private:
-    QUrl m_fileName;          /**< The file name of the Skrib file database. */
-    QString m_databaseName;   /**< The name of the Skrib file database. */
-    QThreadPool m_threadPool; /**< The thread pool used for loading the Skrib file database. */
+    QUrl m_fileName;          /**< The file name of the internal database. */
+    QString m_databaseName;   /**< The name of the internal database. */
+    QThreadPool m_threadPool; /**< The thread pool used for loading the internal database. */
 
     /**
-     * @brief Loads the Skrib file database from the given file name.
-     * @param fileName The file name of the Skrib file database to load.
+     * @brief Loads the internal database from the given file name.
+     * @param fileName The file name of the internal database to load.
      * @return A Result object with the name of the loaded database if successful, or an Error object if an error
      * occurred.
      */

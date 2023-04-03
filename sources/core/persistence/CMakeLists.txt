@@ -12,15 +12,23 @@ set(persistence_SRCS
 
     persistence_global.h
     persistence_registration.h persistence_registration.cpp
+
+    # repositories:
     repositories/generic_repository.h
+    repositories/unique_generic_repository.h
+    repositories/ordered_generic_repository.h
     repositories/author_repository.h repositories/author_repository.cpp
     repositories/atelier_repository.h repositories/atelier_repository.cpp
     repositories/book_repository.h repositories/book_repository.cpp
-    database/internal_database.h
+    repositories/repository_provider.h repositories/repository_provider.cpp
+
+    # database:
+    database/database_table.h
+    database/ordered_database_table.h
     database/database_context.h database/database_context.cpp
     database/foreign_entity.h
     database/tools.h
-    repositories/repository_provider.h repositories/repository_provider.cpp
+    database/entity_table_sql_generator.h database/entity_table_sql_generator.cpp
 )
 
 add_library(skribisto-persistence SHARED ${persistence_SRCS})

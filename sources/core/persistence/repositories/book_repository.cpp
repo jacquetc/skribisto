@@ -2,7 +2,7 @@
 
 using namespace Repository;
 
-BookRepository::BookRepository(InterfaceDatabase<Domain::Book> *database)
+BookRepository::BookRepository(InterfaceDatabaseTable<Domain::Book> *database)
     : QObject(nullptr), Repository::GenericRepository<Domain::Book>(database)
 {
 }

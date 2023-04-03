@@ -94,7 +94,12 @@ template <typename T> class SKR_CONTRACTS_EXPORT Result
      * @brief Constructs a Result object containing the given value.
      * @param value The value to be contained in the Result object.
      */
-    explicit Result(const T &value) : m_value(value), m_error(Error())
+    explicit Result(const T &value) : m_value(std::move(value)), m_error(Error())
+    {
+        m_error.setStatus(Error::Ok);
+    }
+
+    explicit Result(T &&value) : m_value(std::move(value)), m_error(Error())
     {
         m_error.setStatus(Error::Ok);
     }
@@ -141,7 +146,7 @@ template <typename T> class SKR_CONTRACTS_EXPORT Result
     {
         if (Q_LIKELY(&result != this))
         {
-            m_value = result.m_value;
+            m_value = std::move(result.m_value);
             m_error = result.m_error;
         }
 

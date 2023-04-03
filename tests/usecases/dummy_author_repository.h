@@ -20,16 +20,25 @@ class DummyAuthorRepository : public QObject, public Contracts::Persistence::Int
     void fillAdd(const Domain::Author &entity);
     void fillUpdate(const Domain::Author &entity);
     void fillExists(bool value);
+    void fillSave(const SaveData &save);
 
     // InterfaceGenericRepository interface
 
   public:
     Result<Domain::Author> get(const QUuid &uuid) override;
+    Result<Domain::Author> get(const int &id) override;
     Result<QList<Domain::Author>> getAll() override;
+    Result<QList<Domain::Author>> getAll(const QHash<QString, QVariant> &filters) override;
     Result<Domain::Author> remove(Domain::Author &&entity) override;
     Result<Domain::Author> add(Domain::Author &&entity) override;
     Result<Domain::Author> update(Domain::Author &&entity) override;
     Result<bool> exists(const QUuid &uuid) override;
+    Result<void> clear() override;
+    Result<SaveData> save(const QList<int> &idList) override;
+    Result<void> restore(const SaveData &saveData) override;
+    Result<void> beginChanges() override;
+    Result<void> saveChanges() override;
+    Result<void> cancelChanges() override;
 
   private:
     Domain::Author m_getEntity;
@@ -38,6 +47,7 @@ class DummyAuthorRepository : public QObject, public Contracts::Persistence::Int
     Domain::Author m_addEntity;
     Domain::Author m_updateEntity;
     bool m_exists;
+    SaveData m_save;
 };
 
 inline void DummyAuthorRepository::fillGet(const Domain::Author &entity)
@@ -70,12 +80,27 @@ inline void DummyAuthorRepository::fillExists(bool value)
     m_exists = value;
 }
 
+inline void DummyAuthorRepository::fillSave(const SaveData &save)
+{
+    m_save = save;
+}
+
 inline Result<Domain::Author> DummyAuthorRepository::get(const QUuid &uuid)
 {
     return Result<Domain::Author>(m_getEntity);
 }
 
+inline Result<Domain::Author> DummyAuthorRepository::get(const int &id)
+{
+    return Result<Domain::Author>(m_getEntity);
+}
+
 inline Result<QList<Domain::Author>> DummyAuthorRepository::getAll()
+{
+    return Result<QList<Domain::Author>>(m_getAllList);
+}
+
+inline Result<QList<Domain::Author>> DummyAuthorRepository::getAll(const QHash<QString, QVariant> &filters)
 {
     return Result<QList<Domain::Author>>(m_getAllList);
 }
@@ -98,4 +123,34 @@ inline Result<Domain::Author> DummyAuthorRepository::update(Domain::Author &&ent
 inline Result<bool> DummyAuthorRepository::exists(const QUuid &uuid)
 {
     return Result<bool>(m_exists);
+}
+
+inline Result<void> DummyAuthorRepository::clear()
+{
+    return Result<void>();
+}
+
+inline Result<SaveData> DummyAuthorRepository::save(const QList<int> &idList)
+{
+    return Result<SaveData>(m_save);
+}
+
+inline Result<void> DummyAuthorRepository::restore(const SaveData &saveData)
+{
+    return Result<void>();
+}
+
+inline Result<void> DummyAuthorRepository::beginChanges()
+{
+    return Result<void>();
+}
+
+inline Result<void> DummyAuthorRepository::saveChanges()
+{
+    return Result<void>();
+}
+
+inline Result<void> DummyAuthorRepository::cancelChanges()
+{
+    return Result<void>();
 }

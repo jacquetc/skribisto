@@ -1,5 +1,8 @@
 #include "database_context.h"
 #include "QtConcurrent/qtconcurrenttask.h"
+#include "atelier.h"
+#include "author.h"
+#include "entity_table_sql_generator.h"
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QString>
@@ -120,13 +123,9 @@ QStringList DatabaseContext::SqlEmptyDatabaseQuery() const
 {
     QStringList queryList;
 
-    queryList << "CREATE TABLE Author ("
-                 "uuid TEXT PRIMARY KEY NOT NULL,"
-                 "creationDate DATETIME NOT NULL,"
-                 "updateDate DATETIME NOT NULL,"
-                 "name TEXT NOT NULL,"
-                 "relative TEXT NOT NULL"
-                 ")";
+    queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Author>();
+    queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Atelier>();
+    queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Book>();
 
     return queryList;
 }

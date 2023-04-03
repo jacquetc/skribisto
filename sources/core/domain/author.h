@@ -9,8 +9,8 @@ namespace Domain
 class SKR_DOMAIN_EXPORT Author : public Entity
 {
     Q_OBJECT
-    Q_PROPERTY(QString name READ getName WRITE setName)
-    Q_PROPERTY(QUuid relative READ getRelative WRITE setRelative)
+    Q_PROPERTY(QString name READ name WRITE setName)
+    Q_PROPERTY(QUuid relative READ relative WRITE setRelative)
 
   public:
     Author() : Entity(){};
@@ -42,11 +42,6 @@ class SKR_DOMAIN_EXPORT Author : public Entity
         return *this;
     }
 
-    QString getName() const
-    {
-        return m_name;
-    }
-
     QString name() const
     {
         return m_name;
@@ -55,11 +50,6 @@ class SKR_DOMAIN_EXPORT Author : public Entity
     void setName(const QString &name)
     {
         m_name = name;
-    }
-
-    QUuid getRelative() const
-    {
-        return m_relative;
     }
 
     QUuid relative() const

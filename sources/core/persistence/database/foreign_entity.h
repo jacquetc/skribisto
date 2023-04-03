@@ -47,7 +47,7 @@ template <class T> class ForeignEntity
     QHash<QString, PropertyWithForeignKey> getEntityPropertiesWithForeignKey();
 
   private:
-    QScopedPointer<InterfaceDatabaseContext>
+    InterfaceDatabaseContext *
         m_databaseContext; /**< A QScopedPointer that holds the InterfaceDatabaseContext associated with this SkribFile.
                             */
     const QHash<QString, PropertyWithForeignKey> m_foreignKeyProperties = this->getEntityPropertiesWithForeignKey();
@@ -63,7 +63,7 @@ template <class T> ForeignEntity<T>::ForeignEntity(InterfaceDatabaseContext *con
 
 template <class T> QString ForeignEntity<T>::getRelationshipTableName(const QString &otherEntityClassName)
 {
-    QString entityClassName = Tools<T>::getEntityClassName();
+    QString entityClassName = Tools<T>::getEntityTableName();
     QString relationshipTableName = entityClassName + otherEntityClassName + "Relationship";
     return relationshipTableName;
 }

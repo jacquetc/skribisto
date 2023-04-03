@@ -11,23 +11,24 @@ namespace Domain
 class SKR_DOMAIN_EXPORT Entity : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QUuid uuid READ getUuid WRITE setUuid)
-    Q_PROPERTY(QDateTime creationDate READ getCreationDate WRITE setCreationDate)
-    Q_PROPERTY(QDateTime updateDate READ getUpdateDate WRITE setUpdateDate)
+    Q_PROPERTY(int id READ id WRITE setId)
+    Q_PROPERTY(QUuid uuid READ uuid WRITE setUuid)
+    Q_PROPERTY(QDateTime creationDate READ creationDate WRITE setCreationDate)
+    Q_PROPERTY(QDateTime updateDate READ updateDate WRITE setUpdateDate)
   public:
-    Entity() : QObject()
+    Entity() : QObject(), m_id(-1)
     {
     }
-    Entity(const QUuid &uuid) : QObject(), m_uuid(uuid)
+    Entity(const QUuid &uuid) : QObject(), m_uuid(uuid), m_id(-1)
     {
     }
     Entity(const QUuid &uuid, const QDateTime &creationDate, const QDateTime &updateDate)
-        : QObject(), m_uuid(uuid), m_creationDate(creationDate), m_updateDate(updateDate)
+        : QObject(), m_uuid(uuid), m_id(-1), m_creationDate(creationDate), m_updateDate(updateDate)
     {
     }
 
     Entity(const Entity &other)
-        : m_uuid(other.m_uuid), m_creationDate(other.m_creationDate), m_updateDate(other.m_updateDate)
+        : m_id(other.m_id), m_uuid(other.m_uuid), m_creationDate(other.m_creationDate), m_updateDate(other.m_updateDate)
     {
     }
 
@@ -35,6 +36,7 @@ class SKR_DOMAIN_EXPORT Entity : public QObject
     {
         if (this != &other)
         {
+            m_id = other.m_id;
             m_uuid = other.m_uuid;
             m_creationDate = other.m_creationDate;
             m_updateDate = other.m_updateDate;
@@ -42,9 +44,14 @@ class SKR_DOMAIN_EXPORT Entity : public QObject
         return *this;
     }
 
-    QUuid getUuid() const
+    int id() const
     {
-        return m_uuid;
+        return m_id;
+    }
+
+    void setId(const int &id)
+    {
+        m_id = id;
     }
 
     QUuid uuid() const
@@ -56,12 +63,6 @@ class SKR_DOMAIN_EXPORT Entity : public QObject
     {
         m_uuid = uuid;
     }
-
-    QDateTime getCreationDate() const
-    {
-        return m_creationDate;
-    }
-
     QDateTime creationDate() const
     {
         return m_creationDate;
@@ -70,11 +71,6 @@ class SKR_DOMAIN_EXPORT Entity : public QObject
     void setCreationDate(const QDateTime &creationDate)
     {
         m_creationDate = creationDate;
-    }
-
-    QDateTime getUpdateDate() const
-    {
-        return m_updateDate;
     }
 
     QDateTime updateDate() const
@@ -88,6 +84,7 @@ class SKR_DOMAIN_EXPORT Entity : public QObject
     }
 
   private:
+    int m_id;
     QUuid m_uuid;
     QDateTime m_creationDate;
     QDateTime m_updateDate;

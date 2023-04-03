@@ -83,7 +83,7 @@ void AutoMapperTest::invertedMap()
     Domain::Author author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
 
     QCOMPARE(author.uuid(), uuid);
-    QCOMPARE(author.getName(), "e");
+    QCOMPARE(author.name(), "e");
 }
 
 QTEST_MAIN(AutoMapperTest)

@@ -2,7 +2,7 @@
 
 using namespace Repository;
 
-AuthorRepository::AuthorRepository(InterfaceDatabase<Domain::Author> *database)
+AuthorRepository::AuthorRepository(InterfaceDatabaseTable<Domain::Author> *database)
     : QObject(nullptr), Repository::GenericRepository<Domain::Author>(database)
 {
 }

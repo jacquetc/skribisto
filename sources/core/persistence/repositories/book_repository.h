@@ -1,7 +1,7 @@
 #pragma once
 
 #include "book.h"
-#include "database/interface_database.h"
+#include "database/interface_database_table.h"
 #include "generic_repository.h"
 #include "persistence/interface_book_repository.h"
 #include "persistence_global.h"
@@ -16,7 +16,7 @@ class SKR_PERSISTENCE_EXPORT BookRepository : public QObject,
     Q_OBJECT
     Q_INTERFACES(Contracts::Persistence::InterfaceBookRepository)
   public:
-    explicit BookRepository(InterfaceDatabase<Domain::Book> *database);
+    explicit BookRepository(InterfaceDatabaseTable<Domain::Book> *database);
 };
 
 } // namespace Repository

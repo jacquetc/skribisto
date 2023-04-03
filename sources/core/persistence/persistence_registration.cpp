@@ -1,6 +1,7 @@
 #include "persistence_registration.h"
 #include "database/database_context.h"
-#include "database/internal_database.h"
+#include "database/database_table.h"
+#include "database/ordered_database_table.h"
 #include "repositories/atelier_repository.h"
 #include "repositories/author_repository.h"
 #include "repositories/book_repository.h"
@@ -17,13 +18,12 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
     context->init();
 
     // repositories:
-    QSharedPointer<AuthorRepository> authorRepository(
-        new AuthorRepository(new InternalDatabase<Domain::Author>(context)));
+    QSharedPointer<AuthorRepository> authorRepository(new AuthorRepository(new DatabaseTable<Domain::Author>(context)));
 
     QSharedPointer<AtelierRepository> atelierRepository(
-        new AtelierRepository(new InternalDatabase<Domain::Atelier>(context)));
+        new AtelierRepository(new DatabaseTable<Domain::Atelier>(context)));
 
-    QSharedPointer<BookRepository> bookRepository(new BookRepository(new InternalDatabase<Domain::Book>(context)));
+    QSharedPointer<BookRepository> bookRepository(new BookRepository(new OrderedDatabaseTable<Domain::Book>(context)));
 
     // register repositories:
     Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Author, authorRepository);

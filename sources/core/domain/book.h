@@ -1,33 +1,32 @@
 #pragma once
 
-#include "domain_global.h"
-#include "entity.h"
-
 #include "book.h"
+#include "domain_global.h"
+#include "ordered_entity.h"
 
 namespace Domain
 {
 
-class SKR_DOMAIN_EXPORT Book : public Entity
+class SKR_DOMAIN_EXPORT Book : public OrderedEntity
 {
     Q_OBJECT
-    Q_PROPERTY(QString name READ getName WRITE setName)
+    Q_PROPERTY(QString name READ name WRITE setName)
 
   public:
-    Book() : Entity(){};
+    Book() : OrderedEntity(){};
 
-    Book(const QUuid &uuid, const QString &name, const QUuid &relative) : Entity(uuid)
+    Book(const QUuid &uuid, const QString &name, const QUuid &relative) : OrderedEntity(uuid, QUuid(), QUuid())
     {
         m_name = name;
     }
 
-    Book(const QUuid &uuid, const QString &name, const QUuid &relative, const QDateTime &creationDate,
-         const QDateTime &updateDate)
-        : Entity(uuid, creationDate, updateDate), m_name(name)
+    Book(const QUuid &uuid, const QString &name, const QDateTime &creationDate, const QDateTime &updateDate,
+         const QUuid &previous, const QUuid &next)
+        : OrderedEntity(uuid, creationDate, updateDate, previous, next), m_name(name)
     {
     }
 
-    Book(const Book &other) : Entity(other), m_name(other.m_name)
+    Book(const Book &other) : OrderedEntity(other), m_name(other.m_name)
     {
     }
 
@@ -35,15 +34,10 @@ class SKR_DOMAIN_EXPORT Book : public Entity
     {
         if (this != &other)
         {
-            Entity::operator=(other);
+            OrderedEntity::operator=(other);
             m_name = other.m_name;
         }
         return *this;
-    }
-
-    QString getName() const
-    {
-        return m_name;
     }
 
     QString name() const
