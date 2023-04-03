@@ -21,10 +21,10 @@ class SKR_CONTRACTS_EXPORT UpdateAuthorCommandValidator
     Result<void> validate(const UpdateAuthorDTO &dto) const
     {
 
-        Result<bool> exists = m_repository->exists(dto.uuid());
+        Result<bool> exists = m_repository->exists(dto.id());
         if (!exists.value())
         {
-            return Result<void>(Error("UpdateAuthorCommandValidator", Error::Critical, "uuid_missing"));
+            return Result<void>(Error("UpdateAuthorCommandValidator", Error::Critical, "id_already_exists"));
         }
         //        if (!dto.relative().isNull())
         //        {
@@ -39,4 +39,3 @@ class SKR_CONTRACTS_EXPORT UpdateAuthorCommandValidator
     QSharedPointer<InterfaceAuthorRepository> m_repository;
 };
 } // namespace Contracts::CQRS::Author::Validators
-

@@ -14,15 +14,15 @@ class DummyEntity : public OrderedEntity
   public:
     DummyEntity() : OrderedEntity(){};
 
-    DummyEntity(const QUuid &uuid, const QString &name, const QString &author) : OrderedEntity(uuid, QUuid(), QUuid())
+    DummyEntity(int id, const QUuid &uuid, const QString &name, const QString &author) : OrderedEntity(id, uuid)
     {
         m_name = name;
         m_author = author;
     }
 
-    DummyEntity(const QUuid &uuid, const QString &name, const QString &author, const QDateTime &creationDate,
-                const QDateTime &updateDate, const QUuid &previous, const QUuid &next)
-        : OrderedEntity(uuid, creationDate, updateDate, previous, next), m_name(name), m_author(author)
+    DummyEntity(int id, const QUuid &uuid, const QString &name, const QString &author, const QDateTime &creationDate,
+                const QDateTime &updateDate)
+        : OrderedEntity(id, uuid, creationDate, updateDate), m_name(name), m_author(author)
     {
     }
 

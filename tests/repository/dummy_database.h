@@ -34,6 +34,7 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
     Result<Domain::Author> add(Domain::Author &&entity) override;
     Result<Domain::Author> update(Domain::Author &&entity) override;
     Result<bool> exists(const QUuid &uuid) override;
+    Result<bool> exists(int id) override;
     Result<void> clear() override;
     Result<QMap<QString, QList<QVariantHash>>> save(const QList<int> &idList) override;
     Result<void> restore(const QMap<QString, QList<QVariantHash>> &rows) override;
@@ -123,6 +124,11 @@ inline Result<Domain::Author> DummyDatabase::update(Domain::Author &&entity)
 }
 
 inline Result<bool> DummyDatabase::exists(const QUuid &uuid)
+{
+    return Result<bool>(m_exists);
+}
+
+inline Result<bool> DummyDatabase::exists(int id)
 {
     return Result<bool>(m_exists);
 }

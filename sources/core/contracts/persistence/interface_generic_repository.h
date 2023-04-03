@@ -26,6 +26,7 @@ template <class T> class SKR_CONTRACTS_EXPORT InterfaceGenericRepository
     virtual Result<T> remove(T &&entity) = 0;
     virtual Result<T> add(T &&entity) = 0;
     virtual Result<T> update(T &&entity) = 0;
+    virtual Result<bool> exists(int id) = 0;
     virtual Result<bool> exists(const QUuid &uuid) = 0;
     virtual Result<void> clear() = 0;
     virtual Result<SaveData> save(const QList<int> &idList) = 0;

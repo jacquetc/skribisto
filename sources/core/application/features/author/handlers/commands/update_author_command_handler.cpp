@@ -49,7 +49,7 @@ Result<AuthorDTO> UpdateAuthorCommandHandler::restore()
 
 Result<AuthorDTO> UpdateAuthorCommandHandler::handleImpl(const UpdateAuthorCommand &request)
 {
-    qDebug() << "UpdateAuthorCommandHandler::handleImpl called with id" << request.req.uuid();
+    qDebug() << "UpdateAuthorCommandHandler::handleImpl called with id" << request.req.id();
 
     // validate:
     auto validator = UpdateAuthorCommandValidator(m_repository);
@@ -71,7 +71,7 @@ Result<AuthorDTO> UpdateAuthorCommandHandler::handleImpl(const UpdateAuthorComma
     // save old state
     if (m_oldState.isEmpty())
     {
-        Result<Domain::Author> saveResult = m_repository->get(request.req.uuid());
+        Result<Domain::Author> saveResult = m_repository->get(request.req.id());
         if (saveResult.hasError())
         {
             qDebug() << "Error getting author from repository:" << saveResult.error().message();

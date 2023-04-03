@@ -174,6 +174,8 @@ class SKR_CONTRACTS_EXPORT Error
         return m_code;
     }
 
+    QString className() const;
+
   private:
     QString m_code;
     QString m_message;
@@ -181,3 +183,8 @@ class SKR_CONTRACTS_EXPORT Error
     QString m_className;
     Error::Status m_status;
 };
+
+inline QString Error::className() const
+{
+    return m_className;
+}

@@ -32,6 +32,7 @@ class SKR_CONTRACTS_EXPORT AuthorDTOBase : public QObject
 
     AuthorDTOBase &operator=(const AuthorDTOBase &other)
     {
+
         m_name = other.m_name;
         m_relative = other.m_relative;
         m_creationDate = other.m_creationDate;

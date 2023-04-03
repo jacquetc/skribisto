@@ -10,18 +10,17 @@ namespace Contracts::DTO::Author
 class SKR_CONTRACTS_EXPORT UpdateAuthorDTO : public AuthorDTOBase
 {
     Q_OBJECT
-    Q_PROPERTY(QUuid uuid READ getUuid WRITE setUuid)
+    Q_PROPERTY(int id READ id WRITE setId)
   public:
     UpdateAuthorDTO(QObject *parent = nullptr) : AuthorDTOBase(parent)
     {
     }
 
-    UpdateAuthorDTO(const QUuid &uuid, const QString &name, const QUuid &relative)
-        : AuthorDTOBase(name, relative), m_uuid(uuid)
+    UpdateAuthorDTO(int id, const QString &name, const QUuid &relative) : AuthorDTOBase(name, relative), m_id(id)
     {
     }
 
-    UpdateAuthorDTO(const UpdateAuthorDTO &other) : AuthorDTOBase(other), m_uuid(other.m_uuid)
+    UpdateAuthorDTO(const UpdateAuthorDTO &other) : AuthorDTOBase(other), m_id(other.m_id)
     {
     }
     UpdateAuthorDTO &operator=(const UpdateAuthorDTO &other)
@@ -29,32 +28,27 @@ class SKR_CONTRACTS_EXPORT UpdateAuthorDTO : public AuthorDTOBase
         if (this != &other)
         {
             AuthorDTOBase::operator=(other);
-            m_uuid = other.m_uuid;
+            m_id = other.m_id;
         }
         return *this;
     }
-    QUuid getUuid() const;
-    QUuid uuid() const;
-    void setUuid(const QUuid &newUuid);
+    int id() const;
+    void setId(int newId);
 
   private:
-    QUuid m_uuid;
+    int m_id;
 };
 
 //-------------------------------------------------
 
-inline QUuid UpdateAuthorDTO::getUuid() const
+inline int UpdateAuthorDTO::id() const
 {
-    return m_uuid;
-}
-inline QUuid UpdateAuthorDTO::uuid() const
-{
-    return m_uuid;
+    return m_id;
 }
 
-inline void UpdateAuthorDTO::setUuid(const QUuid &newUuid)
+inline void UpdateAuthorDTO::setId(int newId)
 {
-    m_uuid = newUuid;
+    m_id = newId;
 }
 
 } // namespace Contracts::DTO::Author

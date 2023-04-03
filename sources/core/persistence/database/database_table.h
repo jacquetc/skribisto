@@ -61,6 +61,7 @@ class SKR_PERSISTENCE_EXPORT DatabaseTable : public virtual InterfaceDatabaseTab
     Result<T> update(T &&entity) override;
 
     Result<bool> exists(const QUuid &uuid) override;
+    Result<bool> exists(int id) override;
     virtual Result<void> clear() override;
 
     virtual Result<SaveData> save(const QList<int> &idList) override;
@@ -615,6 +616,48 @@ template <class T> Result<bool> DatabaseTable<T>::exists(const QUuid &uuid)
                return Result<bool>(Error("DatabaseTable", Error::Fatal, "normaly_unreacheable", ""));
            })
         .withArguments(uuid)
+        .onThreadPool(m_databaseContext->threadPool())
+        .spawn()
+        .result();
+}
+
+//--------------------------------------------
+
+template <class T> Result<bool> DatabaseTable<T>::exists(int id)
+{
+    return QtConcurrent::task([this](int id) {
+               const QString &entityName = this->tableName();
+               QSqlDatabase database = QSqlDatabase::database(m_databaseContext->databaseName());
+
+               {
+
+                   QSqlQuery query(database);
+                   QString queryStr = "SELECT COUNT(*) FROM " + entityName + " WHERE id = :id";
+                   if (!query.prepare(queryStr))
+                   {
+                       return Result<bool>(
+                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                   }
+                   query.bindValue(":id", id);
+                   if (!query.exec())
+                   {
+                       return Result<bool>(
+                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                   }
+
+                   if (query.next())
+                   {
+                       return Result<bool>(query.value(0).toBool());
+                   }
+                   else
+                   {
+                       return Result<bool>(Error("DatabaseTable", Error::Critical, "sql_row_missing",
+                                                 "No row with id " + QString::number(id)));
+                   }
+               }
+               return Result<bool>(Error("DatabaseTable", Error::Fatal, "normaly_unreacheable", ""));
+           })
+        .withArguments(id)
         .onThreadPool(m_databaseContext->threadPool())
         .spawn()
         .result();

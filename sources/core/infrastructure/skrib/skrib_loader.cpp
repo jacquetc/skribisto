@@ -159,13 +159,14 @@ Result<void> SkribLoader::fillRepositories(InterfaceRepositoryProvider *reposito
 
     while (query.next())
     {
+        int id = query.value("id").toInt();
         QUuid uuid = query.value("uuid").toUuid();
         QString name = query.value("name").toString();
         QUuid relative = query.value("relative").toUuid();
         QDateTime creationDate = query.value("creationDate").toDateTime();
         QDateTime updateDate = query.value("updateDate").toDateTime();
 
-        Domain::Author author(uuid, name, relative, creationDate, updateDate);
+        Domain::Author author(id, uuid, name, relative, creationDate, updateDate);
         Result<Domain::Author> addResult = authorRepository->add(std::move(author));
 
         if (addResult.hasError())

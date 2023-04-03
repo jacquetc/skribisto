@@ -19,11 +19,11 @@ class SKR_DOMAIN_EXPORT Entity : public QObject
     Entity() : QObject(), m_id(-1)
     {
     }
-    Entity(const QUuid &uuid) : QObject(), m_uuid(uuid), m_id(-1)
+    Entity(int id, const QUuid &uuid) : QObject(), m_uuid(uuid), m_id(id)
     {
     }
-    Entity(const QUuid &uuid, const QDateTime &creationDate, const QDateTime &updateDate)
-        : QObject(), m_uuid(uuid), m_id(-1), m_creationDate(creationDate), m_updateDate(updateDate)
+    Entity(int id, const QUuid &uuid, const QDateTime &creationDate, const QDateTime &updateDate)
+        : QObject(), m_id(id), m_uuid(uuid), m_creationDate(creationDate), m_updateDate(updateDate)
     {
     }
 

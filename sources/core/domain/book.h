@@ -15,14 +15,13 @@ class SKR_DOMAIN_EXPORT Book : public OrderedEntity
   public:
     Book() : OrderedEntity(){};
 
-    Book(const QUuid &uuid, const QString &name, const QUuid &relative) : OrderedEntity(uuid, QUuid(), QUuid())
+    Book(int id, const QUuid &uuid, const QString &name) : OrderedEntity(id, uuid)
     {
         m_name = name;
     }
 
-    Book(const QUuid &uuid, const QString &name, const QDateTime &creationDate, const QDateTime &updateDate,
-         const QUuid &previous, const QUuid &next)
-        : OrderedEntity(uuid, creationDate, updateDate, previous, next), m_name(name)
+    Book(int id, const QUuid &uuid, const QString &name, const QDateTime &creationDate, const QDateTime &updateDate)
+        : OrderedEntity(id, uuid, creationDate, updateDate), m_name(name)
     {
     }
 

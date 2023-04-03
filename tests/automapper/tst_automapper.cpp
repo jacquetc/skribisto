@@ -65,7 +65,7 @@ void AutoMapperTest::basicMap()
 {
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(uuid, "e", QUuid());
+    Domain::Author author(1, uuid, "e", QUuid());
 
     AuthorDTO dto = AutoMapper::AutoMapper::map<AuthorDTO>(author);
 
@@ -78,10 +78,11 @@ void AutoMapperTest::invertedMap()
 {
 
     QUuid uuid = QUuid::createUuid();
-    AuthorDTO dto(uuid, "e", QUuid());
+    AuthorDTO dto(1, uuid, "e", QUuid());
 
     Domain::Author author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
 
+    QCOMPARE(author.id(), 1);
     QCOMPARE(author.uuid(), uuid);
     QCOMPARE(author.name(), "e");
 }

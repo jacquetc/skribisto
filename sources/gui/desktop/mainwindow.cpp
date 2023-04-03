@@ -26,17 +26,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         case Error::Status::Warning:
             box->setIcon(QMessageBox::Icon::Warning);
             box->setText(tr("Warning: %1").arg(error.message()));
-            box->setDetailedText(error.code());
+            box->setDetailedText(error.className() + ": " + error.code());
             break;
         case Error::Status::Critical:
             box->setIcon(QMessageBox::Icon::Critical);
             box->setText(tr("Critical: %1").arg(error.message()));
-            box->setDetailedText(error.code());
+            box->setDetailedText(error.className() + ": " + error.code());
             break;
         case Error::Status::Fatal:
             box->setIcon(QMessageBox::Icon::NoIcon);
             box->setText(tr("Fatal: %1").arg(error.message()));
-            box->setDetailedText(error.code());
+            box->setDetailedText(error.className() + ": " + error.code());
             break;
         default:
             break;

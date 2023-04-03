@@ -75,7 +75,7 @@ void UseCases::getAuthor()
 
     QUuid uuid = QUuid::createUuid();
     QUuid relative = QUuid::createUuid();
-    Domain::Author author(uuid, "test", relative);
+    Domain::Author author(1, uuid, "test", relative);
     repository->fillGet(author);
 
     GetAuthorRequestHandler handler(repository);
@@ -89,6 +89,7 @@ void UseCases::getAuthor()
     }
     QVERIFY(dtoResult.isSuccess());
 
+    QCOMPARE(dtoResult.value().id(), 1);
     QCOMPARE(dtoResult.value().getName(), "test");
     QCOMPARE(dtoResult.value().getRelative(), relative);
 }

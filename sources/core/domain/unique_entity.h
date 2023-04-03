@@ -12,7 +12,8 @@ class SKR_DOMAIN_EXPORT UniqueEntity : public Entity
   public:
     UniqueEntity() : Entity(){};
 
-    UniqueEntity(const QDateTime &creationDate, const QDateTime &updateDate) : Entity(QUuid(), creationDate, updateDate)
+    UniqueEntity(const QDateTime &creationDate, const QDateTime &updateDate)
+        : Entity(-1, QUuid(), creationDate, updateDate)
     {
     }
 

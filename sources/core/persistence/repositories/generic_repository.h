@@ -42,6 +42,7 @@ class SKR_PERSISTENCE_EXPORT GenericRepository : public virtual Contracts::Persi
     virtual Result<T> update(T &&entity) override;
 
     virtual Result<bool> exists(const QUuid &uuid) override;
+    virtual Result<bool> exists(int id) override;
     Result<void> clear() override;
 
     Result<SaveData> save(const QList<int> &idList) override;
@@ -134,6 +135,16 @@ template <class T> Result<bool> GenericRepository<T>::exists(const QUuid &uuid)
     QReadLocker locker(&m_lock);
     return QtConcurrent::task([](InterfaceDatabaseTable<T> *database, QUuid uuid) { return database->exists(uuid); })
         .withArguments(m_database, uuid)
+        .spawn()
+        .result();
+}
+
+template <class T> Result<bool> GenericRepository<T>::exists(int id)
+{
+
+    QReadLocker locker(&m_lock);
+    return QtConcurrent::task([](InterfaceDatabaseTable<T> *database, int id) { return database->exists(id); })
+        .withArguments(m_database, id)
         .spawn()
         .result();
 }

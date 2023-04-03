@@ -12,13 +12,12 @@ class SKR_DOMAIN_EXPORT OrderedEntity : public Entity
   public:
     OrderedEntity() : Entity(){};
 
-    OrderedEntity(const QUuid &uuid, const QUuid &previous, const QUuid &next) : Entity(uuid)
+    OrderedEntity(int id, const QUuid &uuid) : Entity(id, uuid)
     {
     }
 
-    OrderedEntity(const QUuid &uuid, const QDateTime &creationDate, const QDateTime &updateDate, const QUuid &previous,
-                  const QUuid &next)
-        : Entity(uuid, creationDate, updateDate)
+    OrderedEntity(int id, const QUuid &uuid, const QDateTime &creationDate, const QDateTime &updateDate)
+        : Entity(id, uuid, creationDate, updateDate)
     {
     }
 
