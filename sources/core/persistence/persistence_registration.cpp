@@ -15,7 +15,12 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
 {
 
     auto *context = new DatabaseContext();
-    context->init();
+    Result<void> initResult = context->init();
+    if (initResult.hasError())
+    {
+        Error error = initResult.error();
+        qCritical() << error.className() + "\n" + error.code() + "\n" + error.message() + "\n" + error.data();
+    }
 
     // repositories:
     QSharedPointer<AuthorRepository> authorRepository(new AuthorRepository(new DatabaseTable<Domain::Author>(context)));

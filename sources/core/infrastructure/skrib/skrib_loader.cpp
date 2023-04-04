@@ -81,8 +81,8 @@ Result<void> SkribLoader::loadDatabase(QPromise<Result<void>> &progressPromise, 
 
     if (!file.exists())
     {
-        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "absent_filename", fileNameString + " doesn't exist",
-                                  fileNameString));
+        return Result<void>(
+            Error(Q_FUNC_INFO, Error::Critical, "absent_filename", fileNameString + " doesn't exist", fileNameString));
     }
 
     if (!file.open(QIODevice::ReadOnly))
@@ -98,7 +98,6 @@ Result<void> SkribLoader::loadDatabase(QPromise<Result<void>> &progressPromise, 
 
     // open temp file
     QSqlDatabase sqlDb = QSqlDatabase::addDatabase("QSQLITE", tempFileName);
-    sqlDb.setHostName("localhost");
     sqlDb.setDatabaseName(tempFileName);
 
     // try to open the copied database file
@@ -168,12 +167,11 @@ Result<void> SkribLoader::fillRepositories(QPromise<Result<void>> &progressPromi
     auto authorRepository = qSharedPointerCast<InterfaceAuthorRepository>(
         repositoryProvider->repository(InterfaceRepositoryProvider::Author));
 
-    // authorRepository->beginChanges();
-
     QSqlQuery query(sqlDb);
     query.prepare("SELECT * FROM author");
     query.exec();
 
+    // authorRepository->beginChanges();
     while (query.next())
     {
         int id = query.value("id").toInt();

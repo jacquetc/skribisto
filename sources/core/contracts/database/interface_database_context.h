@@ -1,5 +1,6 @@
 #pragma once
 #include "contracts_global.h"
+#include <QSqlDatabase>
 #include <QThreadPool>
 
 namespace Contracts::Database
@@ -11,7 +12,9 @@ class SKR_CONTRACTS_EXPORT InterfaceDatabaseContext
     {
     }
 
-    virtual QString databaseName() const = 0;
-    virtual QThreadPool &threadPool() = 0;
+    virtual QSqlDatabase getConnection() = 0;
+    virtual bool beginTransaction(QSqlDatabase &database) = 0;
+    virtual bool commitTransaction(QSqlDatabase &database) = 0;
+    virtual bool rollbackTransaction(QSqlDatabase &database) = 0;
 };
 } // namespace Contracts::Database

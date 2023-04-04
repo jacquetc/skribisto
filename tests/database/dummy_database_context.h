@@ -16,24 +16,24 @@ class DummyDatabaseContext : public Contracts::Database::InterfaceDatabaseContex
     DummyDatabaseContext();
     ~DummyDatabaseContext();
 
-    QString databaseName() const override;
-    QThreadPool &threadPool() override;
-
   private:
-    QThreadPool m_threadPool;
     QString m_databaseName;
+
+    // InterfaceDatabaseContext interface
+  public:
+    QSqlDatabase getConnection() override;
+    bool beginTransaction(QSqlDatabase &database) override;
+    bool commitTransaction(QSqlDatabase &database) override;
+    bool rollbackTransaction(QSqlDatabase &database) override;
 };
 
 DummyDatabaseContext::DummyDatabaseContext()
 {
-    m_threadPool.setMaxThreadCount(1);
-    m_threadPool.setExpiryTimeout(0);
 
-    QtConcurrent::task([this]() {
-        m_databaseName = QUuid::createUuid().toString();
-        auto db = QSqlDatabase::addDatabase("QSQLITE", ":memory:");
-        db.open();
+    m_databaseName = ":memory:";
+    auto db = DummyDatabaseContext::getConnection();
 
+    {
         QSqlQuery query(db);
 
         QStringList sqlList;
@@ -51,23 +51,42 @@ DummyDatabaseContext::DummyDatabaseContext()
                 qCritical() << query.lastError().text() << queryStr;
             }
         }
-    })
-        .onThreadPool(m_threadPool)
-        .spawn()
-        .waitForFinished();
+    }
 }
 
 DummyDatabaseContext::~DummyDatabaseContext()
 {
-    // QSqlDatabase::removeDatabase(":memory:");
 }
 
-QString DummyDatabaseContext::databaseName() const
+QSqlDatabase DummyDatabaseContext::getConnection()
 {
-    return ":memory:";
+    QString connectionName = QString("Thread_%1").arg(uintptr_t(QThread::currentThreadId()));
+    if (!QSqlDatabase::contains(connectionName))
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        database.setDatabaseName(m_databaseName);
+        if (!database.open())
+        {
+            QSqlDatabase::removeDatabase(connectionName);
+            qDebug() << Q_FUNC_INFO << "sql_error" << database.lastError().text();
+        }
+    }
+    qDebug() << QSqlDatabase::connectionNames();
+
+    return QSqlDatabase::database(connectionName);
 }
 
-QThreadPool &DummyDatabaseContext::threadPool()
+bool DummyDatabaseContext::beginTransaction(QSqlDatabase &database)
 {
-    return m_threadPool;
+    return database.transaction();
+}
+
+bool DummyDatabaseContext::commitTransaction(QSqlDatabase &database)
+{
+    return database.commit();
+}
+
+bool DummyDatabaseContext::rollbackTransaction(QSqlDatabase &database)
+{
+    return database.rollback();
 }

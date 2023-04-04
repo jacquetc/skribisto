@@ -66,6 +66,7 @@ void UndoRedoCommand::onFinished()
     }
     m_running = false;
     m_finished = true;
+    emit progressRangeChanged(0, 0);
     emit finished();
 }
 

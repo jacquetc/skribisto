@@ -3,6 +3,7 @@
 #include "database/interface_database_context.h"
 #include "persistence_global.h"
 #include "result.h"
+#include <QMutexLocker>
 #include <QReadWriteLock>
 #include <QThreadPool>
 #include <QUrl>
@@ -33,39 +34,20 @@ class SKR_PERSISTENCE_EXPORT DatabaseContext : public QObject, public Contracts:
      */
     Result<void> init();
 
-    /**
-     * @brief Returns the name of the internal database.
-     * @return The name of the internal database.
-     */
-    QString databaseName() const override;
+    QSqlDatabase getConnection() override;
 
-    /**
-     * @brief Returns the file name of the internal database.
-     * @return The file name of the internal database.
-     */
-    QUrl fileName() const;
+    bool beginTransaction(QSqlDatabase &database) override;
 
-    /**
-     * @brief Sets the file name of the internal database.
-     * @param newFileName The new file name of the internal database.
-     */
-    void setFileName(const QUrl &newFileName);
+    bool commitTransaction(QSqlDatabase &database) override;
 
-    /**
-     * @brief Returns the thread pool used by the SkribFileContext object.
-     * Necesssary so the QSqlDatabase can stay on the same thread.
-     * @return The thread pool used by the SkribFileContext object.
-     */
-    QThreadPool &threadPool() override;
-
-    QReadWriteLock &lock();
+    bool rollbackTransaction(QSqlDatabase &database) override;
 
   signals:
 
   private:
-    QUrl m_fileName;          /**< The file name of the internal database. */
-    QString m_databaseName;   /**< The name of the internal database. */
-    QThreadPool m_threadPool; /**< The thread pool used for loading the internal database. */
+    QMutex mutex;
+    QUrl m_fileName;        /**< The file name of the internal database. */
+    QString m_databaseName; /**< The name of the internal database. */
 
     /**
      * @brief Loads the internal database from the given file name.
@@ -74,6 +56,6 @@ class SKR_PERSISTENCE_EXPORT DatabaseContext : public QObject, public Contracts:
      * occurred.
      */
     Result<QString> createEmptyDatabase();
-    QStringList SqlEmptyDatabaseQuery() const;
+    QStringList sqlEmptyDatabaseQuery() const;
 };
 } // namespace Database

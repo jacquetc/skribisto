@@ -29,6 +29,7 @@ set(persistence_SRCS
     database/foreign_entity.h
     database/tools.h
     database/entity_table_sql_generator.h database/entity_table_sql_generator.cpp
+
 )
 
 add_library(skribisto-persistence SHARED ${persistence_SRCS})

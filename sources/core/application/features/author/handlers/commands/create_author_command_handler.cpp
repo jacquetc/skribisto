@@ -81,9 +81,12 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(const CreateAuthorComma
     }
 
     // Add the author to the repository
+    // m_repository->beginChanges();
+
     auto authorResult = m_repository->add(std::move(author));
     if (authorResult.hasError())
     {
+        m_repository->cancelChanges();
         return Result<AuthorDTO>(authorResult.error());
     }
 
@@ -91,6 +94,7 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(const CreateAuthorComma
 
     m_oldState = Result<AuthorDTO>(authorDTO);
 
+    // m_repository->saveChanges();
     emit authorCreated(authorDTO);
 
     qDebug() << "Author added:" << authorDTO.uuid();

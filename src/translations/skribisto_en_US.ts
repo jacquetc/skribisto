@@ -2031,12 +2031,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="34"/>
+        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="35"/>
         <source>Critical: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="39"/>
+        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="41"/>
         <source>Fatal: %1</source>
         <translation type="unfinished"></translation>
     </message>

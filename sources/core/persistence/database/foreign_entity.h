@@ -72,7 +72,7 @@ template <class T>
 Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, const QUuid &otherEntityUuid,
                                                      const QString &otherEntityName, int position)
 {
-    QSqlDatabase database = QSqlDatabase::database(m_databaseContext->databaseName());
+    QSqlDatabase database = m_databaseContext->getConnection();
     QSqlQuery query(database);
 
     auto foreignKeyPropertyIter = m_foreignKeyProperties.find(otherEntityName);
@@ -172,7 +172,7 @@ template <class T>
 Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid, const QUuid &otherEntityUuid,
                                                         const QString &otherEntityName)
 {
-    QSqlDatabase database = QSqlDatabase::database(m_databaseContext->databaseName());
+    QSqlDatabase database = m_databaseContext->getConnection();
     QSqlQuery query(database);
 
     auto foreignKeyPropertyIter = m_foreignKeyProperties.find(otherEntityName);
@@ -276,7 +276,7 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
 template <class T>
 Result<QList<QUuid>> ForeignEntity<T>::getRelatedEntityUuids(const QUuid &entityUuid, const QString &otherEntityName)
 {
-    QSqlDatabase database = QSqlDatabase::database(m_databaseContext->databaseName());
+    QSqlDatabase database = m_databaseContext->getConnection();
     QSqlQuery query(database);
 
     auto foreignKeyPropertyIter = m_foreignKeyProperties.find(otherEntityName);
@@ -394,7 +394,7 @@ template <class T> QHash<QString, PropertyWithForeignKey> ForeignEntity<T>::getE
                 QString relationshipTableName = getRelationshipTableName(otherEntityClassName);
 
                 // Check if the relationship table exists
-                QSqlDatabase database = QSqlDatabase::database(m_databaseContext->databaseName());
+                QSqlDatabase database = m_databaseContext->getConnection();
                 if (database.tables().contains(relationshipTableName))
                 {
                     PropertyWithForeignKey propWithForeignKey{otherEntityClassName, relationshipTableName,

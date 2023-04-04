@@ -1,5 +1,5 @@
 #include "database_context.h"
-#include "QtConcurrent/qtconcurrenttask.h"
+#include "QtSql/qsqlerror.h"
 #include "atelier.h"
 #include "author.h"
 #include "entity_table_sql_generator.h"
@@ -12,12 +12,11 @@ using namespace Database;
 
 DatabaseContext::DatabaseContext() : QObject()
 {
-    m_threadPool.setMaxThreadCount(1);
-    m_threadPool.setExpiryTimeout(0);
 }
 
 DatabaseContext::~DatabaseContext()
 {
+    // QFile::remove(m_databaseName);
 }
 
 //-------------------------------------------------
@@ -32,94 +31,109 @@ Result<void> DatabaseContext::init()
         return Result<void>(databaseNameResult.error());
     }
 
-    m_databaseName = databaseNameResult.value();
-
     return Result<void>();
 }
 
 //-------------------------------------------------
 
-QString DatabaseContext::databaseName() const
+QSqlDatabase DatabaseContext::getConnection()
 {
-    return m_databaseName;
+    QMutexLocker locker(&mutex);
+    QString connectionName = QString("Thread_%1").arg(uintptr_t(QThread::currentThreadId()));
+    if (!QSqlDatabase::contains(connectionName))
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        database.setDatabaseName(m_databaseName);
+        if (!database.open())
+        {
+            QSqlDatabase::removeDatabase(connectionName);
+            qDebug() << Q_FUNC_INFO << "sql_error" << database.lastError().text();
+        }
+    }
+    qDebug() << QSqlDatabase::connectionNames();
+
+    return QSqlDatabase::database(connectionName);
 }
 
-//-------------------------------------------------
-
-QUrl DatabaseContext::fileName() const
+bool DatabaseContext::beginTransaction(QSqlDatabase &database)
 {
-    return m_fileName;
+    QMutexLocker locker(&mutex);
+    return getConnection().transaction();
 }
 
-//-------------------------------------------------
-
-void DatabaseContext::setFileName(const QUrl &newFileName)
+bool DatabaseContext::commitTransaction(QSqlDatabase &database)
 {
-    m_fileName = newFileName;
+    QMutexLocker locker(&mutex);
+    return getConnection().commit();
+}
+
+bool DatabaseContext::rollbackTransaction(QSqlDatabase &database)
+{
+    QMutexLocker locker(&mutex);
+    return getConnection().rollback();
 }
 
 //-------------------------------------------------
 
 Result<QString> DatabaseContext::createEmptyDatabase()
 {
-    return QtConcurrent::task([this]() {
-               // create a temporary file to copy the database to
-               QTemporaryFile tempFile;
-               tempFile.open();
-               tempFile.setAutoRemove(false);
-               QString tempFileName = tempFile.fileName();
+    QString databaseName;
 
-               QSqlDatabase sqlDb = QSqlDatabase::addDatabase("QSQLITE", tempFileName);
-               sqlDb.setHostName("localhost");
-               sqlDb.setDatabaseName(tempFileName);
+    // create a temporary file to copy the database to
+    QTemporaryFile tempFile;
+    tempFile.open();
+    tempFile.setAutoRemove(false);
+    QString tempFileName = tempFile.fileName();
 
-               // try to open the copied database file
-               bool ok = sqlDb.open();
+    {
+        m_databaseName = tempFileName;
+        databaseName = m_databaseName;
+        qDebug() << m_databaseName;
 
-               if (!ok)
-               {
-                   return Result<QString>(Error(Q_FUNC_INFO, Error::Critical, "cant_open_database",
-                                                "Can't open database " + tempFileName, tempFileName));
-               }
-               // start a transaction
-               sqlDb.transaction();
+        QSqlDatabase sqlDb = getConnection();
 
-               // execute each table creation as a single query within the transaction
-               QSqlQuery query(sqlDb);
-               for (const QString &string : this->SqlEmptyDatabaseQuery())
-               {
-                   query.prepare(string);
-                   query.exec();
-               }
+        // start a transaction
+        sqlDb.transaction();
 
-               // database optimization options
-               QStringList optimization;
-               optimization << QStringLiteral("PRAGMA case_sensitive_like=true")
-                            << QStringLiteral("PRAGMA journal_mode=MEMORY")
-                            << QStringLiteral("PRAGMA temp_store=MEMORY")
-                            << QStringLiteral("PRAGMA locking_mode=EXCLUSIVE")
-                            << QStringLiteral("PRAGMA synchronous = OFF")
-                            << QStringLiteral("PRAGMA recursive_triggers=true");
+        // execute each table creation as a single query within the transaction
+        QSqlQuery query(sqlDb);
+        for (const QString &string : this->sqlEmptyDatabaseQuery())
+        {
+            if (!query.prepare(string))
+            {
+                return Result<QString>(
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), string));
+            }
+            if (!query.exec())
+            {
+                return Result<QString>(
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), string));
+            }
+        }
 
-               // execute each optimization option as a single query within the transaction
+        // database optimization options
+        QStringList optimization;
+        optimization << QStringLiteral("PRAGMA case_sensitive_like=true")
+                     << QStringLiteral("PRAGMA journal_mode=MEMORY") << QStringLiteral("PRAGMA temp_store=MEMORY")
+                     << QStringLiteral("PRAGMA locking_mode=NORMAL") << QStringLiteral("PRAGMA synchronous = OFF")
+                     << QStringLiteral("PRAGMA recursive_triggers=true");
 
-               for (const QString &string : qAsConst(optimization))
-               {
-                   query.prepare(string);
-                   query.exec();
-               }
+        // execute each optimization option as a single query within the transaction
 
-               sqlDb.commit();
+        for (const QString &string : qAsConst(optimization))
+        {
+            query.prepare(string);
+            query.exec();
+        }
 
-               // return the name of the copied database file
-               return Result<QString>(sqlDb.databaseName());
-           })
-        .onThreadPool(m_threadPool)
-        .spawn()
-        .result();
+        sqlDb.commit();
+    }
+
+    // return the name of the copied database file
+    return Result<QString>(databaseName);
 }
 
-QStringList DatabaseContext::SqlEmptyDatabaseQuery() const
+QStringList DatabaseContext::sqlEmptyDatabaseQuery() const
 {
     QStringList queryList;
 
@@ -128,9 +142,4 @@ QStringList DatabaseContext::SqlEmptyDatabaseQuery() const
     queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Book>();
 
     return queryList;
-}
-
-QThreadPool &DatabaseContext::threadPool()
-{
-    return m_threadPool;
 }

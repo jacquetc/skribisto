@@ -77,10 +77,7 @@ template <class T> QString EntityTableSqlGenerator::generateMainTableSql()
                                       " NOT NULL ON CONFLICT ROLLBACK");
             }
 
-            if (i < propertyCount - 1)
-            {
-                createTableSql.append(", ");
-            }
+            createTableSql.append(", ");
         }
         else
         {
@@ -89,6 +86,8 @@ template <class T> QString EntityTableSqlGenerator::generateMainTableSql()
             qWarning("Unsupported property type for '%s': %s", propertyName, metaType.name());
         }
     }
+    // remove last comma
+    createTableSql.chop(2);
 
     // Add foreign key to ordering table if T is an OrderedEntity
     if (std::is_base_of<Domain::OrderedEntity, T>::value)

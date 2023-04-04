@@ -25,7 +25,7 @@ class SKR_PERSISTENCE_EXPORT OrderedGenericRepository
     // InterfaceGenericRepository interface
 
   public:
-    OrderedGenericRepository(InterfaceOrderedDatabaseTable<T> *database) : GenericRepository<T>(database){};
+    OrderedGenericRepository(InterfaceOrderedDatabaseTable<T> *databaseTable) : GenericRepository<T>(databaseTable){};
 
     Result<T> remove(T &&entity) override;
 
@@ -44,35 +44,21 @@ class SKR_PERSISTENCE_EXPORT OrderedGenericRepository
 template <class T> Result<T> OrderedGenericRepository<T>::remove(T &&entity)
 {
     QWriteLocker locker(&m_lock);
-    return QtConcurrent::task(
-               [](InterfaceOrderedDatabaseTable<T> *database, T entity) { return database->remove(std::move(entity)); })
-        .withArguments(GenericRepository<T>::database(), std::move(entity))
-        .spawn()
-        .result();
+    return GenericRepository<T>::databaseTable()->remove(std::move(entity));
 }
 
 template <class T> Result<T> OrderedGenericRepository<T>::insert(T &&entity, int position)
 {
     QWriteLocker locker(&m_lock);
-    return QtConcurrent::task([](InterfaceOrderedDatabaseTable<T> *database, T entity, int position) {
-               return database->insert(std::move(entity), position);
-           })
-        .withArguments(GenericRepository<T>::database(), std::move(entity), position)
-        .spawn()
-        .result();
+    return GenericRepository<T>::databaseTable()->insert(std::move(entity), position);
 }
 
 template <class T>
 Result<T> OrderedGenericRepository<T>::insert(T &&entity, int position, const QHash<QString, QVariant> &filter)
 {
     QWriteLocker locker(&m_lock);
-    return QtConcurrent::task([](InterfaceOrderedDatabaseTable<T> *database, T entity, int position,
-                                 const QHash<QString, QVariant> &filter) {
-               return database->insert(std::move(entity), position, filter);
-           })
-        .withArguments(GenericRepository<T>::database(), std::move(entity), position, filter)
-        .spawn()
-        .result();
+
+    return GenericRepository<T>::databaseTable()->insert(std::move(entity), position, filter);
 }
 
 } // namespace Repository

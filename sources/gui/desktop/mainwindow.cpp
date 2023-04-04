@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // disable all:
     ui->saveSystemPushButton->setEnabled(false);
-    ui->addAsyncPushButton->setEnabled(false);
+    // ui->addAsyncPushButton->setEnabled(false);
     ui->removePushButton->setEnabled(false);
 
     // error handling :
@@ -27,17 +27,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         case Error::Status::Warning:
             box->setIcon(QMessageBox::Icon::Warning);
             box->setText(tr("Warning: %1").arg(error.message()));
-            box->setDetailedText(error.className() + ": " + error.code());
+            box->setDetailedText(error.className() + "\n" + error.code() + "\n" + error.message() + "\n" +
+                                 error.data());
             break;
         case Error::Status::Critical:
             box->setIcon(QMessageBox::Icon::Critical);
             box->setText(tr("Critical: %1").arg(error.message()));
-            box->setDetailedText(error.className() + ": " + error.code());
+            box->setDetailedText(error.className() + "\n" + error.code() + "\n" + error.message() + "\n" +
+                                 error.data());
             break;
         case Error::Status::Fatal:
             box->setIcon(QMessageBox::Icon::NoIcon);
             box->setText(tr("Fatal: %1").arg(error.message()));
-            box->setDetailedText(error.className() + ": " + error.code());
+            box->setDetailedText(error.className() + "\n" + error.code() + "\n" + error.message() + "\n" +
+                                 error.data());
             break;
         default:
             break;
@@ -54,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     progressDialog->setWindowModality(Qt::WindowModal);
     progressDialog->setMinimumDuration(0);
     progressDialog->setCancelButton(nullptr);
+    progressDialog->hide();
 
     connect(systemController, &SystemController::loadSystemProgressRangeChanged, this, [=](int minimum, int maximum) {
         if (minimum == 0 && maximum == 0)
@@ -62,6 +66,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
         else
         {
+
             progressDialog->setRange(minimum, maximum);
             progressDialog->setValue(0);
         }
