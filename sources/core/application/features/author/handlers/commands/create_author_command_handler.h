@@ -37,7 +37,7 @@ class SKR_APPLICATION_EXPORT CreateAuthorCommandHandler : public Handler
      * @return A Result object containing the UUID of the newly created author, or an error message if the operation
      * failed.
      */
-    Result<AuthorDTO> handle(const CreateAuthorCommand &request);
+    Result<AuthorDTO> handle(QPromise<Result<void> > &progressPromise, const CreateAuthorCommand &request);
     Result<AuthorDTO> restore();
 
   signals:

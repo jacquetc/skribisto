@@ -3,7 +3,9 @@
 
 namespace Presenter::UndoRedo
 {
-
+///
+/// \brief The AlterCommand class
+/// Used for commands doing actions, in opposition to QueryCommand which for read-only requests
 template <class Handler, class Request> class AlterCommand : public UndoRedoCommand
 {
 
@@ -18,9 +20,9 @@ template <class Handler, class Request> class AlterCommand : public UndoRedoComm
     {
         return Result<void>(m_handler->restore().error());
     }
-    Result<void> redo() override
+    void redo(QPromise<Result<void>> &progressPromise) override
     {
-        return Result<void>(m_handler->handle(m_request).error());
+        progressPromise.addResult(Result<void>(m_handler->handle(progressPromise, m_request).error()));
     }
 
   private:

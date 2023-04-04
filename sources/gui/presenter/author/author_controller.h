@@ -24,7 +24,7 @@ class SKR_PRESENTER_EXPORT AuthorController : public QObject
 
     static AuthorController *instance();
 
-    static void getAsync(const QUuid &uuid);
+    static void getAsync(int id);
 
     static void getAllAsync();
 
@@ -32,7 +32,7 @@ class SKR_PRESENTER_EXPORT AuthorController : public QObject
 
     static void updateAsync(const UpdateAuthorDTO &dto);
 
-    static void removeAsync(const QUuid &uuid);
+    static void removeAsync(int id);
 
   signals:
     void getAuthorReplied(Contracts::DTO::Author::AuthorDTO result);

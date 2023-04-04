@@ -12,6 +12,6 @@ class SKR_CONTRACTS_EXPORT GetAuthorRequest
     {
     }
 
-    QUuid id;
+    int id = -1;
 };
 } // namespace Contracts::CQRS::Author::Requests

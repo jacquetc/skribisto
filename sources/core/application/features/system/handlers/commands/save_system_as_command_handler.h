@@ -15,7 +15,7 @@ class SKR_APPLICATION_EXPORT SaveSystemAsCommandHandler : public Handler
     Q_OBJECT
   public:
     SaveSystemAsCommandHandler();
-    Result<void> handle(const SaveSystemAsCommand &request);
+    Result<void> handle(QPromise<Result<void> > &progressPromise, const SaveSystemAsCommand &request);
 
   signals:
     void systemSaved();

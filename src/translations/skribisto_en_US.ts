@@ -2026,17 +2026,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="28"/>
+        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="29"/>
         <source>Warning: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="33"/>
+        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="34"/>
         <source>Critical: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="38"/>
+        <location filename="../../sources/gui/desktop/mainwindow.cpp" line="39"/>
         <source>Fatal: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3279,17 +3279,17 @@
 <context>
     <name>Presenter::Author::AuthorController</name>
     <message>
-        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="141"/>
+        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="142"/>
         <source>Create author</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="168"/>
+        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="169"/>
         <source>Update author</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="197"/>
+        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="198"/>
         <source>Remove author</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3297,8 +3297,13 @@
 <context>
     <name>Presenter::System::SystemController</name>
     <message>
-        <location filename="../../sources/gui/presenter/system/system_controller.cpp" line="42"/>
-        <source>Remove author</source>
+        <location filename="../../sources/gui/presenter/system/system_controller.cpp" line="44"/>
+        <source>Load system</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sources/gui/presenter/system/system_controller.cpp" line="80"/>
+        <source>Close system</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

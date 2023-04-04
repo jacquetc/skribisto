@@ -19,6 +19,10 @@ UndoRedoCommand::UndoRedoCommand(const QString &text)
     : QObject(nullptr), m_text(text), m_running(false), m_finished(false)
 {
     m_watcher = new QFutureWatcher<Result<void>>(this);
+    connect(m_watcher, &QFutureWatcher<void>::finished, this, &UndoRedoCommand::onFinished);
+    connect(m_watcher, &QFutureWatcher<void>::progressRangeChanged, this, &UndoRedoCommand::progressRangeChanged);
+    connect(m_watcher, &QFutureWatcher<void>::progressTextChanged, this, &UndoRedoCommand::progressTextChanged);
+    connect(m_watcher, &QFutureWatcher<void>::progressValueChanged, this, &UndoRedoCommand::progressValueChanged);
 }
 
 /*!
@@ -28,7 +32,6 @@ void UndoRedoCommand::asyncUndo()
 {
     m_running = true;
     QFuture<Result<void>> future = QtConcurrent::run(&UndoRedoCommand::undo, this);
-    connect(m_watcher, &QFutureWatcher<void>::finished, this, &UndoRedoCommand::onFinished);
     m_watcher->setFuture(future);
 }
 
@@ -39,7 +42,6 @@ void UndoRedoCommand::asyncRedo()
 {
     m_running = true;
     QFuture<Result<void>> future = QtConcurrent::run(&UndoRedoCommand::redo, this);
-    connect(m_watcher, &QFutureWatcher<void>::finished, this, &UndoRedoCommand::onFinished);
     m_watcher->setFuture(future);
 }
 

@@ -17,14 +17,14 @@ class SKR_APPLICATION_EXPORT LoadSystemCommandHandler : public Handler
     Q_OBJECT
   public:
     LoadSystemCommandHandler(InterfaceSkribLoader *skribLoader);
-    Result<void> handle(const LoadSystemCommand &request);
+    Result<void> handle(QPromise<Result<void>> &progressPromise, const LoadSystemCommand &request);
 
     Result<void> restore();
-signals:
+  signals:
     void systemLoaded();
 
   private:
     InterfaceSkribLoader *m_skribLoader;
-    Result<void> handleImpl(const LoadSystemCommand &request);
+    Result<void> handleImpl(QPromise<Result<void>> &progressPromise, const LoadSystemCommand &request);
 };
 } // namespace Application::Features::System::Commands

@@ -183,7 +183,8 @@ template <class T> Result<void> GenericRepository<T>::restore(const SaveData &sa
 template <class T> Result<void> GenericRepository<T>::beginChanges()
 {
     QWriteLocker locker(&m_lock);
-    return QtConcurrent::task([](InterfaceDatabaseTable<T> *database) { return database->beginTransaction(); })
+    return QtConcurrent::task(
+               [](InterfaceDatabaseTable<T> *databaseTable) { return databaseTable->beginTransaction(); })
         .withArguments(m_database)
         .spawn()
         .result();
@@ -192,7 +193,7 @@ template <class T> Result<void> GenericRepository<T>::beginChanges()
 template <class T> Result<void> GenericRepository<T>::saveChanges()
 {
     QWriteLocker locker(&m_lock);
-    return QtConcurrent::task([](InterfaceDatabaseTable<T> *database) { return database->commit(); })
+    return QtConcurrent::task([](InterfaceDatabaseTable<T> *databaseTable) { return databaseTable->commit(); })
         .withArguments(m_database)
         .spawn()
         .result();
@@ -201,7 +202,7 @@ template <class T> Result<void> GenericRepository<T>::saveChanges()
 template <class T> Result<void> GenericRepository<T>::cancelChanges()
 {
     QWriteLocker locker(&m_lock);
-    return QtConcurrent::task([](InterfaceDatabaseTable<T> *database) { return database->rollback(); })
+    return QtConcurrent::task([](InterfaceDatabaseTable<T> *databaseTable) { return databaseTable->rollback(); })
         .withArguments(m_database)
         .spawn()
         .result();

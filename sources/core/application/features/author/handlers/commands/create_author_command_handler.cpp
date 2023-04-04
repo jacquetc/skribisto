@@ -12,7 +12,8 @@ CreateAuthorCommandHandler::CreateAuthorCommandHandler(QSharedPointer<InterfaceA
     : Handler(), m_repository(repository)
 {
 }
-Result<AuthorDTO> CreateAuthorCommandHandler::handle(const CreateAuthorCommand &request)
+Result<AuthorDTO> CreateAuthorCommandHandler::handle(QPromise<Result<void>> &progressPromise,
+                                                     const CreateAuthorCommand &request)
 {
     Result<AuthorDTO> result;
 

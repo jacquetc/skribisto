@@ -503,13 +503,13 @@ template <class T> Result<void> OrderedDatabaseTable<T>::clear()
 
                if (!query.prepare(queryStrMain))
                {
-                   return Result<void>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
-                                             query.lastError().text(), queryStrMain));
+                   return Result<void>(
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStrMain));
                }
                if (!query.exec())
                {
-                   return Result<void>(Error("OrderedDatabaseTable", Error::Critical, "sql_clear_failed",
-                                             "Failed to clear the main table"));
+                   return Result<void>(
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_clear_failed", "Failed to clear the main table"));
                }
 
                return Result<void>();
@@ -611,13 +611,13 @@ template <class T> Result<QList<int>> OrderedDatabaseTable<T>::getAllOrderedId()
                if (!query.prepare(queryStr))
                {
                    return Result<QList<int>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                if (!query.exec())
                {
                    return Result<QList<int>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                QList<int> orderedIds;
@@ -830,8 +830,8 @@ Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int position, const QHash<
 
                if (!query.exec(updateNewRowStr))
                {
-                   return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
-                                          query.lastError().text(), updateNextRowStr));
+                   return Result<T>(
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), updateNextRowStr));
                }
                qDebug() << "Executed SQL:" << updateNewRowStr;
 

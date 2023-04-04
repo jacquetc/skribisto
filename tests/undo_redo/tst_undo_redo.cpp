@@ -18,9 +18,9 @@ class DummyCommand : public UndoRedoCommand
     {
         return m_undoReturn;
     }
-    Result<void> redo() override
+    void redo(QPromise<Result<void>> &progressPromise) override
     {
-        return m_redoReturn;
+        progressPromise.addResult(m_redoReturn);
     }
 
     void setUndoReturn(const Result<void> &result)

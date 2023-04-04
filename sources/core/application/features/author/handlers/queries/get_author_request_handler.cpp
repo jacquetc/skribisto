@@ -9,7 +9,8 @@ GetAuthorRequestHandler::GetAuthorRequestHandler(QSharedPointer<InterfaceAuthorR
 {
 }
 
-Result<AuthorDTO> GetAuthorRequestHandler::handle(const GetAuthorRequest &request)
+Result<AuthorDTO> GetAuthorRequestHandler::handle(QPromise<Result<void>> &progressPromise,
+                                                  const GetAuthorRequest &request)
 {
     Result<AuthorDTO> result;
 

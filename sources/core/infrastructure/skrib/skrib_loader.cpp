@@ -12,18 +12,18 @@ SkribLoader::SkribLoader(InterfaceRepositoryProvider *repositoryProvider) : m_re
 {
 }
 
-Result<void> SkribLoader::load(const LoadSystemDTO &dto)
+Result<void> SkribLoader::load(QPromise<Result<void>> &progressPromise, const LoadSystemDTO &dto)
 {
     QString databaseName;
     // open
-    Result<void> result = loadDatabase(dto.fileName(), databaseName);
+    Result<void> result = loadDatabase(progressPromise, dto.fileName(), databaseName);
     if (result.hasError())
     {
         return result;
     }
 
     // update
-    result = updateDatabase(databaseName);
+    result = updateDatabase(progressPromise, databaseName);
     if (result.hasError())
     {
         return result;
@@ -31,14 +31,14 @@ Result<void> SkribLoader::load(const LoadSystemDTO &dto)
 
     // fill repositories
 
-    result = fillRepositories(m_repositoryProvider, databaseName);
+    result = fillRepositories(progressPromise, m_repositoryProvider, databaseName);
     if (result.hasError())
     {
         return result;
     }
 
     // close database and clean up
-    result = closeDatabase(databaseName);
+    result = closeDatabase(progressPromise, databaseName);
     if (result.hasError())
     {
         return result;
@@ -47,8 +47,11 @@ Result<void> SkribLoader::load(const LoadSystemDTO &dto)
     return Result<void>();
 }
 
-Result<void> SkribLoader::loadDatabase(const QUrl &fileName, QString &databaseName)
+Result<void> SkribLoader::loadDatabase(QPromise<Result<void>> &progressPromise, const QUrl &fileName,
+                                       QString &databaseName)
 {
+    progressPromise.setProgressValueAndText(0, "loading file");
+
     // create a temporary file to copy the database to
     QTemporaryFile tempFile;
     tempFile.open();
@@ -88,6 +91,7 @@ Result<void> SkribLoader::loadDatabase(const QUrl &fileName, QString &databaseNa
                                   fileNameString + " can't be opened", fileNameString));
     }
 
+    // copy to temp file
     QByteArray array(file.readAll());
     tempFile.write(array);
     tempFile.close();
@@ -108,11 +112,14 @@ Result<void> SkribLoader::loadDatabase(const QUrl &fileName, QString &databaseNa
 
     // return the name of the copied database file
     databaseName = sqlDb.databaseName();
+
     return Result<void>();
 }
 
-Result<void> SkribLoader::updateDatabase(QString &databaseName)
+Result<void> SkribLoader::updateDatabase(QPromise<Result<void>> &progressPromise, QString &databaseName)
 {
+    progressPromise.setProgressValueAndText(5, "updating");
+
     QSqlDatabase sqlDb = QSqlDatabase::database(databaseName);
     // database optimization options
     QStringList optimization;
@@ -145,13 +152,23 @@ Result<void> SkribLoader::updateDatabase(QString &databaseName)
     return Result<void>();
 }
 
-Result<void> SkribLoader::fillRepositories(InterfaceRepositoryProvider *repositoryProvider, QString &databaseName)
+Result<void> SkribLoader::fillRepositories(QPromise<Result<void>> &progressPromise,
+                                           InterfaceRepositoryProvider *repositoryProvider, QString &databaseName)
 {
+    progressPromise.setProgressValueAndText(10, "loading content");
+    int progressIndex = 1;
+    int repositoryCount = 3;
+
     QSqlDatabase sqlDb = QSqlDatabase::database(databaseName);
 
-    // author:
+    //-----------------------------------
+    // author
+    //-----------------------------------
+
     auto authorRepository = qSharedPointerCast<InterfaceAuthorRepository>(
         repositoryProvider->repository(InterfaceRepositoryProvider::Author));
+
+    // authorRepository->beginChanges();
 
     QSqlQuery query(sqlDb);
     query.prepare("SELECT * FROM author");
@@ -175,11 +192,38 @@ Result<void> SkribLoader::fillRepositories(InterfaceRepositoryProvider *reposito
             return Result<void>(addResult.error());
         }
     }
+    progressPromise.setProgressValueAndText(20 + progressIndex++ * (80 / repositoryCount), "loading content");
+    // authorRepository->saveChanges();
+
+    int waitTime = 0;
+
+    while (waitTime < 1000000000)
+    {
+        waitTime++;
+    }
+
+    progressPromise.setProgressValueAndText(20 + progressIndex++ * (80 / repositoryCount), "loading content");
+
+    waitTime = 0;
+
+    while (waitTime < 1000000000)
+    {
+        waitTime++;
+    }
+
+    progressPromise.setProgressValueAndText(20 + progressIndex++ * (80 / repositoryCount), "loading content");
+
+    waitTime = 0;
+
+    while (waitTime < 1000000000)
+    {
+        waitTime++;
+    }
 
     return Result<void>();
 }
 
-Result<void> SkribLoader::closeDatabase(QString &databaseName)
+Result<void> SkribLoader::closeDatabase(QPromise<Result<void>> &progressPromise, QString &databaseName)
 {
     QSqlDatabase::removeDatabase(databaseName);
     QFile file(databaseName);
@@ -190,5 +234,8 @@ Result<void> SkribLoader::closeDatabase(QString &databaseName)
         return Result<void>(
             Error("SkribLoader", Error::Critical, "tempfile_not_removed", databaseName + " not removed", databaseName));
     }
+
+    progressPromise.setProgressValueAndText(99, "loading finished");
+
     return Result<void>();
 }

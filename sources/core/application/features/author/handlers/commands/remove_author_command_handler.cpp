@@ -12,7 +12,8 @@ RemoveAuthorCommandHandler::RemoveAuthorCommandHandler(QSharedPointer<InterfaceA
 {
 }
 
-Result<AuthorDTO> RemoveAuthorCommandHandler::handle(const RemoveAuthorCommand &request)
+Result<AuthorDTO> RemoveAuthorCommandHandler::handle(QPromise<Result<void>> &progressPromise,
+                                                     const RemoveAuthorCommand &request)
 {
     Result<AuthorDTO> result;
 

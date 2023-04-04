@@ -23,7 +23,7 @@ QueryCommand::QueryCommand(const QString &text) : UndoRedoCommand(text)
  * \brief Sets the function to be executed asynchronously when "redo()" is called in UndoRedoSystem.
  * \param function A std::function<void()> representing the function to be executed.
  */
-void QueryCommand::setQueryFunction(const std::function<Result<void>()> &function)
+void QueryCommand::setQueryFunction(const std::function<Result<void>(QPromise<Result<void>> &promise)> &function)
 {
     m_queryFunction = function;
 }
@@ -34,11 +34,12 @@ Result<void> QueryCommand::undo()
     return Result<void>(Error(this, Error::Fatal, "unreachable", "unreachable"));
 }
 
-Result<void> QueryCommand::redo()
+void QueryCommand::redo(QPromise<Result<void>> &progressPromise)
 {
     if (m_queryFunction)
     {
-        return m_queryFunction();
+        progressPromise.addResult(Result<void>(m_queryFunction(progressPromise).error()));
+        return;
     }
-    return Result<void>(Error(this, Error::Critical, "no_m_queryFunction", "no m_queryFunction"));
+    progressPromise.addResult(Result<void>(Error(this, Error::Critical, "no_m_queryFunction", "no m_queryFunction")));
 }

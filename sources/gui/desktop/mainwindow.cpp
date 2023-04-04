@@ -4,6 +4,7 @@
 #include "system/system_controller.h"
 
 #include <QMessageBox>
+#include <QProgressDialog>
 
 using namespace Presenter::Author;
 using namespace Presenter::System;
@@ -49,11 +50,36 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     auto systemController = SystemController::instance();
 
+    auto *progressDialog = new QProgressDialog(this);
+    progressDialog->setWindowModality(Qt::WindowModal);
+    progressDialog->setMinimumDuration(0);
+    progressDialog->setCancelButton(nullptr);
+
+    connect(systemController, &SystemController::loadSystemProgressRangeChanged, this, [=](int minimum, int maximum) {
+        if (minimum == 0 && maximum == 0)
+        {
+            progressDialog->reset();
+        }
+        else
+        {
+            progressDialog->setRange(minimum, maximum);
+            progressDialog->setValue(0);
+        }
+    });
+
+    connect(systemController, &SystemController::loadSystemProgressTextChanged, this,
+            [=](const QString &progressText) { progressDialog->setLabelText(progressText); });
+
+    connect(systemController, &SystemController::loadSystemProgressValueChanged, this,
+            [=](int progressValue) { progressDialog->setValue(progressValue); });
+
     connect(ui->loadSystemPushButton, &QPushButton::clicked, this, [=]() {
+        SystemController::closeSystem();
+
         Contracts::DTO::System::LoadSystemDTO dto;
         dto.setFileName(QUrl("qrc:/test_clean.skrib"));
 
-        SystemController::loadSystem(dto);
+        systemController->loadSystem(dto);
     });
 
     connect(systemController, &SystemController::systemLoaded, this, [this]() {
@@ -67,6 +93,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 {
                     auto *item = new QListWidgetItem(ui->listWidget);
                     item->setText(author.name());
+                    item->setData(Qt::UserRole, author.id());
                 }
             },
             Qt::SingleShotConnection);
@@ -94,20 +121,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(authorController, &AuthorController::authorCreated, this, [this](AuthorDTO result) {
         auto *item = new QListWidgetItem(ui->listWidget);
         item->setText(result.name());
-        item->setData(Qt::UserRole, result.uuid());
+        item->setData(Qt::UserRole, result.id());
     });
 
     connect(ui->removePushButton, &QPushButton::clicked, this, [this]() {
         QListWidgetItem *item = ui->listWidget->item(0);
+        if (!item)
+        {
+            return;
+        }
         auto authorController = AuthorController::instance();
 
-        authorController->removeAsync(item->data(Qt::UserRole).toUuid());
+        authorController->removeAsync(item->data(Qt::UserRole).toInt());
     });
 
     connect(authorController, &AuthorController::authorRemoved, this, [this](Contracts::DTO::Author::AuthorDTO result) {
         for (int i = 0; i < ui->listWidget->count(); i++)
         {
-            if (ui->listWidget->item(i)->data(Qt::UserRole).toUuid() == result.uuid())
+            if (ui->listWidget->item(i)->data(Qt::UserRole).toInt() == result.id())
             {
                 ui->listWidget->takeItem(i);
                 break;

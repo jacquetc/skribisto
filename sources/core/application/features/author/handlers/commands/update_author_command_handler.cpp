@@ -13,7 +13,8 @@ UpdateAuthorCommandHandler::UpdateAuthorCommandHandler(QSharedPointer<InterfaceA
     : Handler(), m_repository(repository)
 {
 }
-Result<AuthorDTO> UpdateAuthorCommandHandler::handle(const UpdateAuthorCommand &request)
+Result<AuthorDTO> UpdateAuthorCommandHandler::handle(QPromise<Result<void>> &progressPromise,
+                                                     const UpdateAuthorCommand &request)
 {
     Result<AuthorDTO> result;
 

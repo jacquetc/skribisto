@@ -8,7 +8,8 @@ SaveSystemAsCommandHandler::SaveSystemAsCommandHandler() : Handler()
 {
 }
 
-Result<void> SaveSystemAsCommandHandler::handle(const SaveSystemAsCommand &request)
+Result<void> SaveSystemAsCommandHandler::handle(QPromise<Result<void>> &progressPromise,
+                                                const SaveSystemAsCommand &request)
 {
 
     // validate:

@@ -80,9 +80,10 @@ void UseCases::getAuthor()
 
     GetAuthorRequestHandler handler(repository);
     GetAuthorRequest request;
-    request.id = uuid;
+    request.id = 1;
 
-    Result<AuthorDTO> dtoResult = handler.handle(request);
+    QPromise<Result<void>> progressPromise;
+    Result<AuthorDTO> dtoResult = handler.handle(progressPromise, request);
     if (!dtoResult)
     {
         qDebug() << dtoResult.error().message() << dtoResult.error().data();
@@ -118,7 +119,8 @@ void UseCases::addAuthor()
     CreateAuthorCommand command;
     command.req = dto;
 
-    Result<AuthorDTO> result = handler.handle(command);
+    QPromise<Result<void>> progressPromise;
+    Result<AuthorDTO> result = handler.handle(progressPromise, command);
 
     if (!result)
     {
@@ -134,6 +136,7 @@ void UseCases::removeAuthor()
 
     // Add an author to the repository
     AuthorDTO dto;
+    dto.setId(1);
     dto.setUuid(QUuid::createUuid());
     dto.setName("test");
     dto.setRelative(QUuid::createUuid());
@@ -144,9 +147,10 @@ void UseCases::removeAuthor()
     // Remove the author
     RemoveAuthorCommandHandler handler(repository);
     RemoveAuthorCommand command;
-    command.id = author.uuid();
+    command.id = author.id();
 
-    Result<AuthorDTO> result = handler.handle(command);
+    QPromise<Result<void>> progressPromise;
+    Result<AuthorDTO> result = handler.handle(progressPromise, command);
     if (!result)
     {
         qDebug() << result.error().message() << result.error().data();

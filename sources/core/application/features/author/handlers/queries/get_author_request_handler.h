@@ -17,7 +17,7 @@ class SKR_APPLICATION_EXPORT GetAuthorRequestHandler : public Handler
     Q_OBJECT
   public:
     GetAuthorRequestHandler(QSharedPointer<InterfaceAuthorRepository> repository);
-    Result<AuthorDTO> handle(const GetAuthorRequest &request);
+    Result<AuthorDTO> handle(QPromise<Result<void>> &progressPromise, const GetAuthorRequest &request);
 
   private:
     QSharedPointer<InterfaceAuthorRepository> m_repository;

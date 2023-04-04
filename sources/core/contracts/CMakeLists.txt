@@ -47,6 +47,7 @@ set(contracts_SRCS
     # system:
     dto/system/save_system_as_dto.h
     dto/system/load_system_dto.h
+    cqrs/system/commands/close_system_command.h
     cqrs/system/commands/save_system_as_command.h
     cqrs/system/commands/load_system_command.h
     cqrs/system/validators/save_system_as_command_validator.h

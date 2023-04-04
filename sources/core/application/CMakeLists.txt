@@ -22,6 +22,7 @@ set(application_SRCS
     # system:
     features/system/handlers/commands/save_system_as_command_handler.h features/system/handlers/commands/save_system_as_command_handler.cpp
     features/system/handlers/commands/load_system_command_handler.h features/system/handlers/commands/load_system_command_handler.cpp
+    features/system/handlers/commands/close_system_command_handler.h features/system/handlers/commands/close_system_command_handler.cpp
 )
 
 add_library(${PROJECT_NAME} SHARED ${application_SRCS})

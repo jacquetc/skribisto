@@ -28,10 +28,15 @@ class SKR_PRESENTER_EXPORT SystemController : public QObject
 
     static void saveSystemAs(const SaveSystemAsDTO &dto);
 
-  signals:
+    static void closeSystem();
 
+  signals:
+    void loadSystemProgressRangeChanged(int minimum, int maximum);
+    void loadSystemProgressTextChanged(const QString &progressText);
+    void loadSystemProgressValueChanged(int progressValue);
     void systemLoaded();
     void systemSaved();
+    void systemClosed();
 
   private:
     static QScopedPointer<SystemController> s_instance;

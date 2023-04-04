@@ -3,6 +3,7 @@
 #include "result.h"
 #include <QFutureWatcher>
 #include <QObject>
+#include <QPromise>
 
 namespace Presenter::UndoRedo
 {
@@ -21,7 +22,7 @@ class UndoRedoCommand : public QObject
 
     virtual Result<void> undo() = 0;
 
-    virtual Result<void> redo() = 0;
+    virtual void redo(QPromise<Result<void>> &progressPromise) = 0;
 
     void asyncUndo();
 
@@ -48,6 +49,9 @@ class UndoRedoCommand : public QObject
      * actions.
      */
     void errorSent(Error error);
+    void progressRangeChanged(int minimum, int maximum);
+    void progressTextChanged(const QString &progressText);
+    void progressValueChanged(int progressValue);
 
   private slots:
     void onFinished();

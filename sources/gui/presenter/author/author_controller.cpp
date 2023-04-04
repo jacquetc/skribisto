@@ -73,23 +73,24 @@ AuthorController *AuthorController::instance()
 
     When the operation is complete, the getAuthorReplied signal is emitted.
 */
-void AuthorController::getAsync(const QUuid &uuid)
+void AuthorController::getAsync(int id)
 {
-    GetAuthorRequest request;
-    request.id = uuid;
 
     auto queryCommand = new QueryCommand("get");
-    queryCommand->setQueryFunction([&]() {
+    queryCommand->setQueryFunction([=](QPromise<Result<void>> &progressPromise) {
+        GetAuthorRequest request;
+        request.id = id;
         auto interface = qSharedPointerCast<InterfaceAuthorRepository>(
             s_repositoryProvider->repository(InterfaceRepositoryProvider::Author));
         GetAuthorRequestHandler handler(interface);
-        auto result = handler.handle(request);
+        auto result = handler.handle(progressPromise, request);
         if (result.isSuccess())
         {
             emit AuthorController::instance()->getAuthorReplied(result.value());
         }
         return Result<void>(result.error());
     });
+
     s_undo_redo_system->push(queryCommand, UndoRedoCommand::Scope::Author);
 }
 
@@ -101,11 +102,11 @@ void AuthorController::getAsync(const QUuid &uuid)
 void AuthorController::getAllAsync()
 {
     auto queryCommand = new QueryCommand("getAll");
-    queryCommand->setQueryFunction([&]() {
+    queryCommand->setQueryFunction([&](QPromise<Result<void>> &progressPromise) {
         auto interface = qSharedPointerCast<InterfaceAuthorRepository>(
             s_repositoryProvider->repository(InterfaceRepositoryProvider::Author));
         GetAuthorListRequestHandler handler(interface);
-        auto result = handler.handle();
+        auto result = handler.handle(progressPromise);
         if (result.isSuccess())
         {
             emit AuthorController::instance()->getAllReplied(result.value());
@@ -176,10 +177,10 @@ void AuthorController::updateAsync(const UpdateAuthorDTO &dto)
 
     When the operation is complete, the authorRemoved signal is emitted.
 */
-void AuthorController::removeAsync(const QUuid &uuid)
+void AuthorController::removeAsync(int id)
 {
     RemoveAuthorCommand request;
-    request.id = uuid;
+    request.id = id;
 
     auto repository = qSharedPointerCast<InterfaceAuthorRepository>(
         s_repositoryProvider->repository(InterfaceRepositoryProvider::Author));

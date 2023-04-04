@@ -9,7 +9,7 @@ GetAuthorListRequestHandler::GetAuthorListRequestHandler(QSharedPointer<Interfac
 {
 }
 
-Result<QList<AuthorDTO>> GetAuthorListRequestHandler::handle()
+Result<QList<AuthorDTO>> GetAuthorListRequestHandler::handle(QPromise<Result<void>> &progressPromise)
 {
     qDebug() << "GetAuthorListRequestHandler::handle called";
 

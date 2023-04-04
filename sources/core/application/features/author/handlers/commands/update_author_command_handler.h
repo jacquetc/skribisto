@@ -19,7 +19,7 @@ class SKR_APPLICATION_EXPORT UpdateAuthorCommandHandler : public Handler
     Q_OBJECT
   public:
     UpdateAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository> repository);
-    Result<AuthorDTO> handle(const UpdateAuthorCommand &request);
+    Result<AuthorDTO> handle(QPromise<Result<void> > &progressPromise, const UpdateAuthorCommand &request);
     Result<AuthorDTO> restore();
 
   signals:

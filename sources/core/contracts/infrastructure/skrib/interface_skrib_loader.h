@@ -2,6 +2,7 @@
 #include "contracts_global.h"
 #include "dto/system/load_system_dto.h"
 #include "result.h"
+#include <QPromise>
 
 using namespace Contracts::DTO::System;
 
@@ -14,6 +15,6 @@ class SKR_CONTRACTS_EXPORT InterfaceSkribLoader
     {
     }
 
-    virtual Result<void> load(const LoadSystemDTO &dto) = 0;
+    virtual Result<void> load(QPromise<Result<void>> &progressPromise, const LoadSystemDTO &dto) = 0;
 };
 } // namespace Contracts::Infrastructure::Skrib
