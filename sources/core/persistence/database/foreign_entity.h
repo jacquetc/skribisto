@@ -91,7 +91,7 @@ Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, co
             if (!query.exec())
             {
                 return Result<void>(
-                    Error("SkribFile", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
             }
             return Result<void>();
         }
@@ -111,7 +111,7 @@ Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, co
             if (!query.exec())
             {
                 return Result<void>(
-                    Error("SkribFile", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
             }
             return Result<void>();
         }
@@ -161,7 +161,7 @@ Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, co
     }
     else
     {
-        return Result<void>(Error("SkribFile", Error::Critical, "add_relationship_failed",
+        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "add_relationship_failed",
                                   "Unknown relationship property", otherEntityName));
     }
 }
@@ -189,7 +189,7 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
             if (!query.exec())
             {
                 return Result<void>(
-                    Error("SkribFile", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
             }
             return Result<void>();
         }
@@ -238,7 +238,7 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
             if (!query.exec())
             {
                 return Result<void>(
-                    Error("SkribFile", Error::Critical, "sql_error", query.lastError().text(), query.lastQuery()));
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), query.lastQuery()));
             }
             return Result<void>();
         }
@@ -259,14 +259,14 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
             if (!query.exec())
             {
                 return Result<void>(
-                    Error("SkribFile", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
             }
             return Result<void>();
         }
     }
     else
     {
-        return Result<void>(Error("SkribFile", Error::Critical, "remove_relationship_failed",
+        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "remove_relationship_failed",
                                   "Unknown relationship property", otherEntityName));
     }
 }
@@ -321,7 +321,7 @@ Result<QList<QUuid>> ForeignEntity<T>::getRelatedEntityUuids(const QUuid &entity
 
         if (!query.exec())
         {
-            return Result<QList<QUuid>>(Error("SkribFile", Error::Critical, "sql_error", query.lastError().text()));
+            return Result<QList<QUuid>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text()));
         }
 
         QList<QUuid> uuids;
@@ -333,7 +333,7 @@ Result<QList<QUuid>> ForeignEntity<T>::getRelatedEntityUuids(const QUuid &entity
     }
     else
     {
-        return Result<QList<QUuid>>(Error("SkribFile", Error::Critical, "get_related_uuids_failed",
+        return Result<QList<QUuid>>(Error(Q_FUNC_INFO, Error::Critical, "get_related_uuids_failed",
                                           "Unknown relationship property", otherEntityName));
     }
 }

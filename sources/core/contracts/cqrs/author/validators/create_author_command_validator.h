@@ -23,7 +23,7 @@ class SKR_CONTRACTS_EXPORT CreateAuthorCommandValidator
 
         if (dto.relative().isNull())
         {
-            return Result<void>(Error("CreateAuthorCommandValidator", Error::Critical, "relative_uuid_missing"));
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "relative_uuid_missing"));
         }
 
         // Return that is Ok :

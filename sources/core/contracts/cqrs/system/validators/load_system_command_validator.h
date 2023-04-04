@@ -23,12 +23,12 @@ class SKR_CONTRACTS_EXPORT LoadSystemCommandValidator
 
         if (!url.isValid())
         {
-            return Result<void>(Error("LoadSystemCommandValidator", Error::Critical, "invalid_filename"));
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "invalid_filename"));
         }
 
         if (!url.isLocalFile() && url.scheme() != "qrc")
         {
-            return Result<void>(Error("LoadSystemCommandValidator", Error::Critical, "invalid_not_local"));
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "invalid_not_local"));
         }
 
         QString fileNameString;
@@ -52,13 +52,13 @@ class SKR_CONTRACTS_EXPORT LoadSystemCommandValidator
         if (!file.exists())
         {
 
-            return Result<void>(Error("LoadSystemCommandValidator", Error::Critical, "absent_filename",
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "absent_filename",
                                         fileNameString + " doesn't exist", fileNameString));
         }
 
         if (!file.open(QIODevice::ReadOnly))
         {
-            return Result<void>(Error("LoadSystemCommandValidator", Error::Critical, "readonly_filename",
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "readonly_filename",
                                         fileNameString + " can't be opened", fileNameString));
         }
 

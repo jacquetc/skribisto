@@ -21,7 +21,7 @@ Result<void> CloseSystemCommandHandler::handle(QPromise<Result<void>> &progressP
     }
     catch (const std::exception &ex)
     {
-        result = Result<void>(Error(this, Error::Critical, "Unknown error", ex.what()));
+        result = Result<void>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling CloseSystemCommand:" << ex.what();
     }
 

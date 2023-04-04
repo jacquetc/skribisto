@@ -78,7 +78,7 @@ Result<QString> DatabaseContext::createEmptyDatabase()
 
                if (!ok)
                {
-                   return Result<QString>(Error("SkribFileContext", Error::Critical, "cant_open_database",
+                   return Result<QString>(Error(Q_FUNC_INFO, Error::Critical, "cant_open_database",
                                                 "Can't open database " + tempFileName, tempFileName));
                }
                // start a transaction

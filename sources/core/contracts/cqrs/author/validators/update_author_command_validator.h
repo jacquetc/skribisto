@@ -24,11 +24,11 @@ class SKR_CONTRACTS_EXPORT UpdateAuthorCommandValidator
         Result<bool> exists = m_repository->exists(dto.id());
         if (!exists.value())
         {
-            return Result<void>(Error("UpdateAuthorCommandValidator", Error::Critical, "id_already_exists"));
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "id_already_exists"));
         }
         //        if (!dto.relative().isNull())
         //        {
-        //            return Result<void>(Error("CreateAuthorValidator", Error::Critical, "project_uuid_missing"));
+        //            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "project_uuid_missing"));
         //        }
 
         // Return that is Ok :

@@ -142,14 +142,14 @@ template <class T> Result<T> Tools<T>::mapToEntity(const QHash<QString, QVariant
                 bool success = destinationProperty.write(&entity, value);
                 if (!success)
                 {
-                    Result<T>(Error("SkribFile", Error::Fatal, "map_write_failed",
+                    Result<T>(Error(Q_FUNC_INFO, Error::Fatal, "map_write_failed",
                                     "Failed to write value to destination property", propertyName));
                 }
             }
         }
         else
         {
-            Result<T>(Error("SkribFile", Error::Fatal, "map_missing_property", "Missing property in destination object",
+            Result<T>(Error(Q_FUNC_INFO, Error::Fatal, "map_missing_property", "Missing property in destination object",
                             propertyName));
         }
         ++i;

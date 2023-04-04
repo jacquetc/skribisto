@@ -81,13 +81,13 @@ Result<void> SkribLoader::loadDatabase(QPromise<Result<void>> &progressPromise, 
 
     if (!file.exists())
     {
-        return Result<void>(Error("SkribLoader", Error::Critical, "absent_filename", fileNameString + " doesn't exist",
+        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "absent_filename", fileNameString + " doesn't exist",
                                   fileNameString));
     }
 
     if (!file.open(QIODevice::ReadOnly))
     {
-        return Result<void>(Error("SkribLoader", Error::Critical, "readonly_filename",
+        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "readonly_filename",
                                   fileNameString + " can't be opened", fileNameString));
     }
 
@@ -106,7 +106,7 @@ Result<void> SkribLoader::loadDatabase(QPromise<Result<void>> &progressPromise, 
 
     if (!ok)
     {
-        return Result<void>(Error("SkribLoader", Error::Critical, "cant_open_database",
+        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "cant_open_database",
                                   "Can't open database " + tempFileName, tempFileName));
     }
 
@@ -145,7 +145,7 @@ Result<void> SkribLoader::updateDatabase(QPromise<Result<void>> &progressPromise
     //     if (result)
     //     {
     //         return Result<void>(
-    //             Error(this, Error::Critical, "upgrade_sqlite_failed", "Upgrade of database failed",
+    //             Error(Q_FUNC_INFO, Error::Critical, "upgrade_sqlite_failed", "Upgrade of database failed",
     //             tempFileName));
     //     }
 
@@ -232,7 +232,7 @@ Result<void> SkribLoader::closeDatabase(QPromise<Result<void>> &progressPromise,
     if (!removalResult)
     {
         return Result<void>(
-            Error("SkribLoader", Error::Critical, "tempfile_not_removed", databaseName + " not removed", databaseName));
+            Error(Q_FUNC_INFO, Error::Critical, "tempfile_not_removed", databaseName + " not removed", databaseName));
     }
 
     progressPromise.setProgressValueAndText(99, "loading finished");

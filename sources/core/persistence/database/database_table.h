@@ -135,18 +135,18 @@ template <class T> Result<T> DatabaseTable<T>::get(const int &id)
                    if (!query.prepare(queryStr))
                    {
                        return Result<T>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    query.bindValue(":id", QVariant(id));
                    if (!query.exec())
                    {
                        return Result<T>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    if (query.lastError().isValid())
                    {
                        return Result<T>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
 
                    while (query.next())
@@ -158,7 +158,7 @@ template <class T> Result<T> DatabaseTable<T>::get(const int &id)
                    }
                    if (columnWithValues.isEmpty())
                    {
-                       return Result<T>(Error("DatabaseTable", Error::Critical, "sql_row_missing",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_row_missing",
                                               "No row with id " + QString::number(id)));
                    }
                }
@@ -196,18 +196,18 @@ template <class T> Result<T> DatabaseTable<T>::get(const QUuid &uuid)
                    if (!query.prepare(queryStr))
                    {
                        return Result<T>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    query.bindValue(":uuid", QVariant(uuid));
                    if (!query.exec())
                    {
                        return Result<T>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    if (query.lastError().isValid())
                    {
                        return Result<T>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
 
                    while (query.next())
@@ -219,7 +219,7 @@ template <class T> Result<T> DatabaseTable<T>::get(const QUuid &uuid)
                    }
                    if (columnWithValues.isEmpty())
                    {
-                       return Result<T>(Error("DatabaseTable", Error::Critical, "sql_row_missing",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_row_missing",
                                               "No row with uuid " + uuid.toString()));
                    }
                }
@@ -257,17 +257,17 @@ template <class T> Result<QList<T>> DatabaseTable<T>::getAll()
                    if (!query.prepare(queryStr))
                    {
                        return Result<QList<T>>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    if (!query.exec())
                    {
                        return Result<QList<T>>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    if (query.lastError().isValid())
                    {
                        return Result<QList<T>>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
 
                    while (query.next())
@@ -344,7 +344,7 @@ template <class T> Result<QList<T>> DatabaseTable<T>::getAll(const QHash<QString
                    if (!query.prepare(queryStr))
                    {
                        return Result<QList<T>>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    for (auto it = filters.constBegin(); it != filters.constEnd(); ++it)
                    {
@@ -354,12 +354,12 @@ template <class T> Result<QList<T>> DatabaseTable<T>::getAll(const QHash<QString
                    if (!query.exec())
                    {
                        return Result<QList<T>>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    if (query.lastError().isValid())
                    {
                        return Result<QList<T>>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
 
                    while (query.next())
@@ -407,7 +407,7 @@ template <class T> Result<T> DatabaseTable<T>::remove(T &&entity)
                    if (!query.prepare(queryStr))
                    {
                        return Result<T>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    query.bindValue(":id", entity.id());
 
@@ -415,7 +415,7 @@ template <class T> Result<T> DatabaseTable<T>::remove(T &&entity)
                    if (!query.exec())
                    {
                        return Result<T>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
 
                    // Return an appropriate Result object based on the query execution result
@@ -425,11 +425,11 @@ template <class T> Result<T> DatabaseTable<T>::remove(T &&entity)
                    }
                    else
                    {
-                       return Result<T>(Error("DatabaseTable", Error::Critical, "sql_delete_failed",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_delete_failed",
                                               "Failed to delete row from database", QString::number(entity.id())));
                    }
                }
-               return Result<T>(Error("DatabaseTable", Error::Fatal, "normaly_unreacheable", ""));
+               return Result<T>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
            })
         .withArguments(std::move(entity))
         .onThreadPool(m_databaseContext->threadPool())
@@ -476,7 +476,7 @@ template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
                    QSqlQuery query(database);
                    if (!query.prepare(queryStrMain))
                    {
-                       return Result<T>(Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(),
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(),
                                               queryStrMain));
                    }
 
@@ -488,7 +488,7 @@ template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
 
                    if (!query.exec())
                    {
-                       return Result<T>(Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(),
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(),
                                               queryStrMain));
                    }
 
@@ -500,11 +500,11 @@ template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
                    }
                    else
                    {
-                       return Result<T>(Error("DatabaseTable", Error::Critical, "sql_insert_failed",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_insert_failed",
                                               "Failed to insert row into database"));
                    }
                }
-               return Result<T>(Error("DatabaseTable", Error::Fatal, "normaly_unreacheable", ""));
+               return Result<T>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
            })
         .withArguments(std::move(entity))
         .onThreadPool(m_databaseContext->threadPool())
@@ -545,7 +545,7 @@ template <class T> Result<T> DatabaseTable<T>::update(T &&entity)
                    QSqlQuery query(database);
                    if (!query.prepare(queryStrMain))
                    {
-                       return Result<T>(Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(),
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(),
                                               queryStrMain));
                    }
 
@@ -557,7 +557,7 @@ template <class T> Result<T> DatabaseTable<T>::update(T &&entity)
 
                    if (!query.exec())
                    {
-                       return Result<T>(Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(),
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(),
                                               queryStrMain));
                    }
 
@@ -567,11 +567,11 @@ template <class T> Result<T> DatabaseTable<T>::update(T &&entity)
                    }
                    else
                    {
-                       return Result<T>(Error("DatabaseTable", Error::Critical, "sql_update_failed",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_update_failed",
                                               "Failed to update row in database"));
                    }
                }
-               return Result<T>(Error("DatabaseTable", Error::Fatal, "normaly_unreacheable", ""));
+               return Result<T>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
            })
         .withArguments(std::move(entity))
         .onThreadPool(m_databaseContext->threadPool())
@@ -594,13 +594,13 @@ template <class T> Result<bool> DatabaseTable<T>::exists(const QUuid &uuid)
                    if (!query.prepare(queryStr))
                    {
                        return Result<bool>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    query.bindValue(":uuid", uuid.toString());
                    if (!query.exec())
                    {
                        return Result<bool>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
 
                    if (query.next())
@@ -609,11 +609,11 @@ template <class T> Result<bool> DatabaseTable<T>::exists(const QUuid &uuid)
                    }
                    else
                    {
-                       return Result<bool>(Error("DatabaseTable", Error::Critical, "sql_row_missing",
+                       return Result<bool>(Error(Q_FUNC_INFO, Error::Critical, "sql_row_missing",
                                                  "No row with uuid " + uuid.toString()));
                    }
                }
-               return Result<bool>(Error("DatabaseTable", Error::Fatal, "normaly_unreacheable", ""));
+               return Result<bool>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
            })
         .withArguments(uuid)
         .onThreadPool(m_databaseContext->threadPool())
@@ -636,13 +636,13 @@ template <class T> Result<bool> DatabaseTable<T>::exists(int id)
                    if (!query.prepare(queryStr))
                    {
                        return Result<bool>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    query.bindValue(":id", id);
                    if (!query.exec())
                    {
                        return Result<bool>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
 
                    if (query.next())
@@ -651,11 +651,11 @@ template <class T> Result<bool> DatabaseTable<T>::exists(int id)
                    }
                    else
                    {
-                       return Result<bool>(Error("DatabaseTable", Error::Critical, "sql_row_missing",
+                       return Result<bool>(Error(Q_FUNC_INFO, Error::Critical, "sql_row_missing",
                                                  "No row with id " + QString::number(id)));
                    }
                }
-               return Result<bool>(Error("DatabaseTable", Error::Fatal, "normaly_unreacheable", ""));
+               return Result<bool>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
            })
         .withArguments(id)
         .onThreadPool(m_databaseContext->threadPool())
@@ -676,12 +676,12 @@ template <class T> Result<void> DatabaseTable<T>::clear()
                if (!query.prepare(queryStrMain))
                {
                    return Result<void>(
-                       Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStrMain));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStrMain));
                }
                if (!query.exec())
                {
                    return Result<void>(
-                       Error("DatabaseTable", Error::Critical, "sql_clear_failed", "Failed to clear the main table"));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_clear_failed", "Failed to clear the main table"));
                }
 
                return Result<void>();
@@ -731,7 +731,7 @@ template <class T> Result<SaveData> DatabaseTable<T>::save(const QList<int> &idL
                    if (!query.prepare(queryStr))
                    {
                        return Result<QMap<QString, QList<QVariantHash>>>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                    if (!idList.isEmpty())
                    {
@@ -759,7 +759,7 @@ template <class T> Result<SaveData> DatabaseTable<T>::save(const QList<int> &idL
                    {
                        // Handle query error
                        return Result<QMap<QString, QList<QVariantHash>>>(
-                           Error("DatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                           Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                    }
                }
 
@@ -793,19 +793,19 @@ template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &tableR
 
                        if (!checkQuery.prepare(checkQueryStr))
                        {
-                           return Result<void>(Error("DatabaseTable", Error::Critical, "sql_error",
+                           return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                      checkQuery.lastError().text(), checkQueryStr));
                        }
                        checkQuery.bindValue(":id", row.value("id"));
                        if (!checkQuery.exec())
                        {
-                           return Result<void>(Error("DatabaseTable", Error::Critical, "sql_error",
+                           return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                      checkQuery.lastError().text(), checkQueryStr));
                        }
                        if (!checkQuery.next())
                        {
                            return Result<void>(
-                               Error("DatabaseTable", Error::Critical, "sql_error", checkQuery.lastError().text()));
+                               Error(Q_FUNC_INFO, Error::Critical, "sql_error", checkQuery.lastError().text()));
                        }
 
                        int rowCount = checkQuery.value(0).toInt();
@@ -833,7 +833,7 @@ template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &tableR
 
                            if (!updateQuery.exec())
                            {
-                               return Result<void>(Error("DatabaseTable", Error::Critical, "sql_error",
+                               return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                          updateQuery.lastError().text()));
                            }
                        }
@@ -854,7 +854,7 @@ template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &tableR
                            QSqlQuery insertQuery(database);
                            if (!insertQuery.prepare(insertStr))
                            {
-                               return Result<void>(Error("DatabaseTable", Error::Critical, "sql_error",
+                               return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                          insertQuery.lastError().text(), insertStr));
                            }
                            for (const QString &column : columns)
@@ -864,7 +864,7 @@ template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &tableR
 
                            if (!insertQuery.exec())
                            {
-                               return Result<void>(Error("DatabaseTable", Error::Critical, "sql_error",
+                               return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                          insertQuery.lastError().text()));
                            }
                        }
@@ -889,7 +889,7 @@ template <class T> Result<void> DatabaseTable<T>::beginTransaction()
                if (!database.transaction())
                {
                    return Result<void>(
-                       Error("DatabaseTable", Error::Critical, "transaction_error", "Failed to begin a transaction."));
+                       Error(Q_FUNC_INFO, Error::Critical, "transaction_error", "Failed to begin a transaction."));
                }
            })
         .onThreadPool(databaseContext()->threadPool())
@@ -906,7 +906,7 @@ template <class T> Result<void> DatabaseTable<T>::commit()
                // Commit the transaction
                if (!database.commit())
                {
-                   return Result<void>(Error("DatabaseTable", Error::Critical, "transaction_error",
+                   return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "transaction_error",
                                              "Failed to commit the transaction."));
                }
            })
@@ -924,7 +924,7 @@ template <class T> Result<void> DatabaseTable<T>::rollback()
                // Commit the transaction
                if (!database.rollback())
                {
-                   return Result<void>(Error("DatabaseTable", Error::Critical, "transaction_error",
+                   return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "transaction_error",
                                              "Failed to rollback the transaction."));
                }
            })

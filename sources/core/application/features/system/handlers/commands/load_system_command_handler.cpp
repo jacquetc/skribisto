@@ -22,7 +22,7 @@ Result<void> LoadSystemCommandHandler::handle(QPromise<Result<void>> &progressPr
     }
     catch (const std::exception &ex)
     {
-        result = Result<void>(Error(this, Error::Critical, "Unknown error", ex.what()));
+        result = Result<void>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling LoadSystemCommand:" << ex.what();
     }
 

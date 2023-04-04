@@ -119,7 +119,7 @@ class UndoRedoSystemTest : public QObject
         UndoRedoSystem system(this);
 
         auto *command = new DummyCommand("Command 1");
-        command->setRedoReturn(Result<void>(Error(this, Error::Critical, "test error", "this is an error")));
+        command->setRedoReturn(Result<void>(Error(Q_FUNC_INFO, Error::Critical, "test error", "this is an error")));
 
         QSignalSpy spy(&system, &UndoRedoSystem::errorSent);
         QVERIFY(spy.isValid());

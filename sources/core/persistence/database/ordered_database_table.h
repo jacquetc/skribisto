@@ -84,7 +84,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::add(T &&entity)
                if (!query.exec(getLastOrderingIdStr))
                {
 
-                   return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                           query.lastError().text(), getLastOrderingIdStr));
                }
 
@@ -109,7 +109,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::add(T &&entity)
                    if (!query.prepare(insertOrderingStr))
                    {
                        database.rollback();
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), insertOrderingStr));
                    }
 
@@ -117,7 +117,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::add(T &&entity)
                }
                if (!query.exec())
                {
-                   return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                           query.lastError().text(), insertOrderingStr));
                }
 
@@ -131,7 +131,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::add(T &&entity)
                    query.bindValue(":id", insertedEntity.id());
                    if (!query.exec())
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updateEntityStr));
                    }
                }
@@ -146,7 +146,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::add(T &&entity)
                                            .arg(lastOrderingId);
                    if (!query.prepare(updatePrevNextStr))
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updatePrevNextStr));
                    }
                    query.bindValue(":lastOrderingId", lastOrderingId);
@@ -154,7 +154,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::add(T &&entity)
                    if (!query.exec())
                    {
 
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updatePrevNextStr));
                    }
                }
@@ -204,7 +204,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int pos
                    QString("INSERT INTO %1 (previous, next) VALUES (NULL, NULL)").arg(entityOrderingTableName);
                if (!query.exec(insertOrderingStr))
                {
-                   return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                           query.lastError().text(), insertOrderingStr));
                }
                qDebug() << "Executed SQL:" << insertOrderingStr;
@@ -221,7 +221,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int pos
                    query.bindValue(":id", insertedEntity.id());
                    if (!query.exec())
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updateEntityStr));
                    }
                    qDebug() << "Executed SQL:" << updateEntityStr;
@@ -240,7 +240,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int pos
 
                    if (!query.exec(updatePrevRowStr))
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updatePrevRowStr));
                    }
                    qDebug() << "Executed SQL:" << updatePrevRowStr;
@@ -255,7 +255,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int pos
 
                    if (!query.exec(updateNextRowStr))
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updateNextRowStr));
                    }
                    qDebug() << "Executed SQL:" << updateNextRowStr;
@@ -270,7 +270,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int pos
 
                if (!query.exec(updateNewRowStr))
                {
-                   return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                           query.lastError().text(), updateNextRowStr));
                }
                qDebug() << "Executed SQL:" << updateNewRowStr;
@@ -356,7 +356,7 @@ Result<QList<QUuid>> OrderedDatabaseTable<T>::getAllOrderedUuid(const QHash<QStr
                if (!query.prepare(queryStr))
                {
                    return Result<QList<QUuid>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                // Bind the filter values
@@ -369,7 +369,7 @@ Result<QList<QUuid>> OrderedDatabaseTable<T>::getAllOrderedUuid(const QHash<QStr
                if (!query.exec())
                {
                    return Result<QList<QUuid>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                QList<QUuid> orderedFilteredUuids;
@@ -456,7 +456,7 @@ template <class T> Result<QList<int>> OrderedDatabaseTable<T>::getAllOrderedId(c
                if (!query.prepare(queryStr))
                {
                    return Result<QList<int>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                // Bind the filter values
@@ -469,7 +469,7 @@ template <class T> Result<QList<int>> OrderedDatabaseTable<T>::getAllOrderedId(c
                if (!query.exec())
                {
                    return Result<QList<int>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
                QList<int> orderedFilteredIds;
                while (query.next())
@@ -554,13 +554,13 @@ template <class T> Result<QList<QUuid>> OrderedDatabaseTable<T>::getAllOrderedUu
                if (!query.prepare(queryStr))
                {
                    return Result<QList<QUuid>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                if (!query.exec())
                {
                    return Result<QList<QUuid>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                QList<QUuid> orderedUuids;
@@ -763,7 +763,7 @@ Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int position, const QHash<
                    QString("INSERT INTO %1 (previous, next) VALUES (NULL, NULL)").arg(entityOrderingTableName);
                if (!query.exec(insertOrderingStr))
                {
-                   return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                           query.lastError().text(), insertOrderingStr));
                }
                qDebug() << "Executed SQL:" << insertOrderingStr;
@@ -780,7 +780,7 @@ Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int position, const QHash<
                    query.bindValue(":id", insertedEntity.id());
                    if (!query.exec())
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updateEntityStr));
                    }
                    qDebug() << "Executed SQL:" << updateEntityStr;
@@ -799,7 +799,7 @@ Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int position, const QHash<
 
                    if (!query.exec(updatePrevRowStr))
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updatePrevRowStr));
                    }
                    qDebug() << "Executed SQL:" << updatePrevRowStr;
@@ -814,7 +814,7 @@ Result<T> OrderedDatabaseTable<T>::insert(T &&entity, int position, const QHash<
 
                    if (!query.exec(updateNextRowStr))
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updateNextRowStr));
                    }
                    qDebug() << "Executed SQL:" << updateNextRowStr;
@@ -918,7 +918,7 @@ template <class T> Result<QList<T>> OrderedDatabaseTable<T>::getAll(const QHash<
                if (!query.prepare(queryStr))
                {
                    return Result<QList<T>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                // Bind the filter values
@@ -931,7 +931,7 @@ template <class T> Result<QList<T>> OrderedDatabaseTable<T>::getAll(const QHash<
                if (!query.exec())
                {
                    return Result<QList<T>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                QList<T> entities;
@@ -1006,13 +1006,13 @@ template <class T> Result<QList<T>> OrderedDatabaseTable<T>::getAll()
                if (!query.prepare(queryStr))
                {
                    return Result<QList<T>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                if (!query.exec())
                {
                    return Result<QList<T>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                QList<T> entities;
@@ -1062,7 +1062,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::remove(T &&entity)
 
                    if (!query.exec(updatePreviousRowQueryStr))
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updatePreviousRowQueryStr));
                    }
                }
@@ -1078,7 +1078,7 @@ template <class T> Result<T> OrderedDatabaseTable<T>::remove(T &&entity)
 
                    if (!query.exec(updateNextRowQueryStr))
                    {
-                       return Result<T>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               query.lastError().text(), updateNextRowQueryStr));
                    }
                }
@@ -1130,7 +1130,7 @@ template <class T> Result<SaveData> OrderedDatabaseTable<T>::save(const QList<in
                if (!query.prepare(queryStr))
                {
                    return Result<QMap<QString, QList<QVariantHash>>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
                if (!idList.isEmpty())
                {
@@ -1162,7 +1162,7 @@ template <class T> Result<SaveData> OrderedDatabaseTable<T>::save(const QList<in
                {
                    // Handle query error
                    return Result<QMap<QString, QList<QVariantHash>>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                // Add the ordering table rows to the result map
@@ -1264,19 +1264,19 @@ template <class T> Result<void> OrderedDatabaseTable<T>::restore(const SaveData 
 
             if (!checkQuery.prepare(checkQueryStr))
             {
-                return Result<void>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                           checkQuery.lastError().text(), checkQueryStr));
             }
             checkQuery.bindValue(":ordering_id", row.value("ordering_id"));
             if (!checkQuery.exec())
             {
-                return Result<void>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                           checkQuery.lastError().text(), checkQueryStr));
             }
             if (!checkQuery.next())
             {
                 return Result<void>(
-                    Error("OrderedDatabaseTable", Error::Critical, "sql_error", checkQuery.lastError().text()));
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", checkQuery.lastError().text()));
             }
 
             int rowCount = checkQuery.value(0).toInt();
@@ -1295,7 +1295,7 @@ template <class T> Result<void> OrderedDatabaseTable<T>::restore(const SaveData 
                 if (!updateQuery.exec())
                 {
                     return Result<void>(
-                        Error("OrderedDatabaseTable", Error::Critical, "sql_error", updateQuery.lastError().text()));
+                        Error(Q_FUNC_INFO, Error::Critical, "sql_error", updateQuery.lastError().text()));
                 }
             }
             else
@@ -1306,7 +1306,7 @@ template <class T> Result<void> OrderedDatabaseTable<T>::restore(const SaveData 
                 QSqlQuery insertQuery(database);
                 if (!insertQuery.prepare(insertStr))
                 {
-                    return Result<void>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                    return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                               insertQuery.lastError().text(), insertStr));
                 }
                 insertQuery.bindValue(":ordering_id", row.value("ordering_id"));
@@ -1316,7 +1316,7 @@ template <class T> Result<void> OrderedDatabaseTable<T>::restore(const SaveData 
                 if (!insertQuery.exec())
                 {
                     return Result<void>(
-                        Error("OrderedDatabaseTable", Error::Critical, "sql_error", insertQuery.lastError().text()));
+                        Error(Q_FUNC_INFO, Error::Critical, "sql_error", insertQuery.lastError().text()));
                 }
             }
         }
@@ -1346,19 +1346,19 @@ template <class T> Result<QPair<int, int>> OrderedDatabaseTable<T>::getFuturePre
 
                if (!query.prepare(checkQueryStr))
                {
-                   return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                         query.lastError().text(), checkQueryStr));
                }
 
                if (!query.exec())
                {
-                   return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                         query.lastError().text(), checkQueryStr));
                }
                if (!query.next())
                {
                    return Result<QPair<int, int>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text()));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text()));
                }
 
                int rowCount = query.value(0).toInt();
@@ -1382,7 +1382,7 @@ template <class T> Result<QPair<int, int>> OrderedDatabaseTable<T>::getFuturePre
                    if (!query.exec(selectNextStr))
                    {
                        database.rollback();
-                       return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                             query.lastError().text(), selectNextStr));
                    }
 
@@ -1402,7 +1402,7 @@ template <class T> Result<QPair<int, int>> OrderedDatabaseTable<T>::getFuturePre
                    if (!query.exec(selectPreviousStr))
                    {
                        database.rollback();
-                       return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                             query.lastError().text(), selectPreviousStr));
                    }
 
@@ -1428,7 +1428,7 @@ template <class T> Result<QPair<int, int>> OrderedDatabaseTable<T>::getFuturePre
                            .arg(position);
                    if (!query.exec(selectPreviousStr))
                    {
-                       return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                             query.lastError().text(), selectPreviousStr));
                    }
                    if (query.next())
@@ -1450,7 +1450,7 @@ template <class T> Result<QPair<int, int>> OrderedDatabaseTable<T>::getFuturePre
                                                .arg(position + 1);
                    if (!query.exec(selectNextStr))
                    {
-                       return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                       return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                             query.lastError().text(), selectNextStr));
                    }
                    if (query.next())
@@ -1485,7 +1485,7 @@ template <class T> Result<QPair<int, int>> OrderedDatabaseTable<T>::getPreviousA
                    QString("SELECT ordering_id FROM %1 WHERE id = %2").arg(entityTableName).arg(entityId);
                if (!query.exec(getEntityOrderingIdStr))
                {
-                   return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                         query.lastError().text(), getEntityOrderingIdStr));
                }
 
@@ -1496,7 +1496,7 @@ template <class T> Result<QPair<int, int>> OrderedDatabaseTable<T>::getPreviousA
                }
                else
                {
-                   return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                         "Entity not found for given entityId."));
                }
 
@@ -1506,7 +1506,7 @@ template <class T> Result<QPair<int, int>> OrderedDatabaseTable<T>::getPreviousA
                                                       .arg(entityOrderingId);
                if (!query.exec(selectPreviousAndNextStr))
                {
-                   return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                         query.lastError().text(), selectPreviousAndNextStr));
                }
 
@@ -1520,7 +1520,7 @@ template <class T> Result<QPair<int, int>> OrderedDatabaseTable<T>::getPreviousA
                }
                else
                {
-                   return Result<QPair<int, int>>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<QPair<int, int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                                         "Ordering not found for given entityId."));
                }
 
@@ -1564,13 +1564,13 @@ template <class T> Result<QList<QVariantMap>> OrderedDatabaseTable<T>::getOrderi
                if (!query.prepare(queryStr))
                {
                    return Result<QList<QVariantMap>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                if (!query.exec())
                {
                    return Result<QList<QVariantMap>>(
-                       Error("OrderedDatabaseTable", Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                       Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
                }
 
                QList<QVariantMap> orderedTableData;
@@ -1618,7 +1618,7 @@ template <class T> Result<int> OrderedDatabaseTable<T>::getOrderingId(int entity
                QString queryString = QString("SELECT ordering_id FROM %1 WHERE id=:id").arg(this->tableName());
                if (!query.prepare(queryString))
                {
-                   return Result<int>(Error("OrderedDatabaseTable", Error::Critical, "sql_error",
+                   return Result<int>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
                                             query.lastError().text(), queryString));
                }
                query.bindValue(":id", entityId);

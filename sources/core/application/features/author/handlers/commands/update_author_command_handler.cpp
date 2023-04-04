@@ -24,7 +24,7 @@ Result<AuthorDTO> UpdateAuthorCommandHandler::handle(QPromise<Result<void>> &pro
     }
     catch (const std::exception &ex)
     {
-        result = Result<AuthorDTO>(Error(this, Error::Critical, "Unknown error", ex.what()));
+        result = Result<AuthorDTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling UpdateAuthorCommand:" << ex.what();
     }
 
@@ -41,7 +41,7 @@ Result<AuthorDTO> UpdateAuthorCommandHandler::restore()
     }
     catch (const std::exception &ex)
     {
-        result = Result<AuthorDTO>(Error(this, Error::Critical, "Unknown error", ex.what()));
+        result = Result<AuthorDTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling UpdateAuthorCommand restore:" << ex.what();
     }
 
