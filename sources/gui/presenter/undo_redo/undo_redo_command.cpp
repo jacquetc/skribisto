@@ -20,6 +20,7 @@ UndoRedoCommand::UndoRedoCommand(const QString &text)
 {
     m_watcher = new QFutureWatcher<Result<void>>(this);
     connect(m_watcher, &QFutureWatcher<void>::finished, this, &UndoRedoCommand::onFinished);
+    connect(m_watcher, &QFutureWatcher<void>::finished, this, &UndoRedoCommand::progressFinished);
     connect(m_watcher, &QFutureWatcher<void>::progressRangeChanged, this, &UndoRedoCommand::progressRangeChanged);
     connect(m_watcher, &QFutureWatcher<void>::progressTextChanged, this, &UndoRedoCommand::progressTextChanged);
     connect(m_watcher, &QFutureWatcher<void>::progressValueChanged, this, &UndoRedoCommand::progressValueChanged);
@@ -66,7 +67,7 @@ void UndoRedoCommand::onFinished()
     }
     m_running = false;
     m_finished = true;
-    emit progressRangeChanged(0, 0);
+    emit progressFinished();
     emit finished();
 }
 

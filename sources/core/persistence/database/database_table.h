@@ -793,26 +793,29 @@ template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &tableR
 
 template <class T> Result<void> DatabaseTable<T>::beginTransaction()
 {
+
     QSqlDatabase database = m_databaseContext->getConnection();
 
-    // Begin a transaction
-    if (!database.transaction())
+    bool result = database.transaction();
+    if (!result)
     {
-        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "transaction_error", "Failed to begin a transaction."));
+        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "transaction_error", database.lastError().text()));
     }
+    return Result<void>();
 }
 //--------------------------------------------
 
 template <class T> Result<void> DatabaseTable<T>::commit()
 {
+
     QSqlDatabase database = m_databaseContext->getConnection();
 
-    // Commit the transaction
-    if (!database.commit())
+    bool result = database.commit();
+    if (!result)
     {
-        return Result<void>(
-            Error(Q_FUNC_INFO, Error::Critical, "transaction_error", "Failed to commit the transaction."));
+        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "transaction_error", database.lastError().text()));
     }
+    return Result<void>();
 }
 //--------------------------------------------
 
@@ -820,12 +823,12 @@ template <class T> Result<void> DatabaseTable<T>::rollback()
 {
     QSqlDatabase database = m_databaseContext->getConnection();
 
-    // Commit the transaction
-    if (!database.rollback())
+    bool result = database.rollback();
+    if (!result)
     {
-        return Result<void>(
-            Error(Q_FUNC_INFO, Error::Critical, "transaction_error", "Failed to rollback the transaction."));
+        return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "transaction_error", database.lastError().text()));
     }
+    return Result<void>();
 }
 //--------------------------------------------
 

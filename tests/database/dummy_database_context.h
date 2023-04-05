@@ -22,9 +22,6 @@ class DummyDatabaseContext : public Contracts::Database::InterfaceDatabaseContex
     // InterfaceDatabaseContext interface
   public:
     QSqlDatabase getConnection() override;
-    bool beginTransaction(QSqlDatabase &database) override;
-    bool commitTransaction(QSqlDatabase &database) override;
-    bool rollbackTransaction(QSqlDatabase &database) override;
 };
 
 DummyDatabaseContext::DummyDatabaseContext()
@@ -74,19 +71,4 @@ QSqlDatabase DummyDatabaseContext::getConnection()
     qDebug() << QSqlDatabase::connectionNames();
 
     return QSqlDatabase::database(connectionName);
-}
-
-bool DummyDatabaseContext::beginTransaction(QSqlDatabase &database)
-{
-    return database.transaction();
-}
-
-bool DummyDatabaseContext::commitTransaction(QSqlDatabase &database)
-{
-    return database.commit();
-}
-
-bool DummyDatabaseContext::rollbackTransaction(QSqlDatabase &database)
-{
-    return database.rollback();
 }

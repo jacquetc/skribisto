@@ -39,7 +39,6 @@ Result<void> LoadSystemCommandHandler::handleImpl(QPromise<Result<void>> &progre
     Result<void> validatorResult = validator.validate(request.req);
     if (validatorResult.hasError())
     {
-        progressPromise.setProgressRange(0, 0);
         return Result<void>(validatorResult.error());
     }
 
@@ -47,7 +46,6 @@ Result<void> LoadSystemCommandHandler::handleImpl(QPromise<Result<void>> &progre
     Result<void> loadResult = m_skribLoader->load(progressPromise, request.req);
     if (loadResult.hasError())
     {
-        progressPromise.setProgressRange(0, 0);
         return Result<void>(loadResult.error());
     }
 

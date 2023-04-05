@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QProgressDialog>
 
 QT_BEGIN_NAMESPACE
 namespace Ui

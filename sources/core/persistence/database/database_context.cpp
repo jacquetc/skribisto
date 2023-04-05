@@ -55,24 +55,6 @@ QSqlDatabase DatabaseContext::getConnection()
     return QSqlDatabase::database(connectionName);
 }
 
-bool DatabaseContext::beginTransaction(QSqlDatabase &database)
-{
-    QMutexLocker locker(&mutex);
-    return getConnection().transaction();
-}
-
-bool DatabaseContext::commitTransaction(QSqlDatabase &database)
-{
-    QMutexLocker locker(&mutex);
-    return getConnection().commit();
-}
-
-bool DatabaseContext::rollbackTransaction(QSqlDatabase &database)
-{
-    QMutexLocker locker(&mutex);
-    return getConnection().rollback();
-}
-
 //-------------------------------------------------
 
 Result<QString> DatabaseContext::createEmptyDatabase()

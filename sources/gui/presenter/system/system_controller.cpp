@@ -44,6 +44,8 @@ void SystemController::loadSystem(const LoadSystemDTO &dto)
     auto command = new AlterCommand<LoadSystemCommandHandler, LoadSystemCommand>(SystemController::tr("Load system"),
                                                                                  handler, request);
 
+    connect(command, &UndoRedoCommand::progressFinished, SystemController::instance(),
+            &SystemController::loadSystemProgressFinished);
     connect(command, &UndoRedoCommand::progressRangeChanged, SystemController::instance(),
             &SystemController::loadSystemProgressRangeChanged);
     connect(command, &UndoRedoCommand::progressTextChanged, SystemController::instance(),

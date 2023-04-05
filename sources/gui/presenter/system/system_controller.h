@@ -31,6 +31,7 @@ class SKR_PRESENTER_EXPORT SystemController : public QObject
     static void closeSystem();
 
   signals:
+    void loadSystemProgressFinished();
     void loadSystemProgressRangeChanged(int minimum, int maximum);
     void loadSystemProgressTextChanged(const QString &progressText);
     void loadSystemProgressValueChanged(int progressValue);

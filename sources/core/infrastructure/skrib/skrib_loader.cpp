@@ -171,7 +171,7 @@ Result<void> SkribLoader::fillRepositories(QPromise<Result<void>> &progressPromi
     query.prepare("SELECT * FROM author");
     query.exec();
 
-    // authorRepository->beginChanges();
+    authorRepository->beginChanges();
     while (query.next())
     {
         int id = query.value("id").toInt();
@@ -191,7 +191,7 @@ Result<void> SkribLoader::fillRepositories(QPromise<Result<void>> &progressPromi
         }
     }
     progressPromise.setProgressValueAndText(20 + progressIndex++ * (80 / repositoryCount), "loading content");
-    // authorRepository->saveChanges();
+    authorRepository->saveChanges();
 
     int waitTime = 0;
 

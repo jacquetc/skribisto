@@ -52,31 +52,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // system :
 
     auto systemController = SystemController::instance();
-
-    auto *progressDialog = new QProgressDialog(this);
+    QProgressDialog *progressDialog = new QProgressDialog(this);
     progressDialog->setWindowModality(Qt::WindowModal);
-    progressDialog->setMinimumDuration(0);
+    progressDialog->setMinimumDuration(1000);
     progressDialog->setCancelButton(nullptr);
-    progressDialog->hide();
+    progressDialog->reset();
 
-    connect(systemController, &SystemController::loadSystemProgressRangeChanged, this, [=](int minimum, int maximum) {
-        if (minimum == 0 && maximum == 0)
-        {
-            progressDialog->reset();
-        }
-        else
-        {
-
-            progressDialog->setRange(minimum, maximum);
-            progressDialog->setValue(0);
-        }
+    connect(systemController, &SystemController::loadSystemProgressFinished, this, [progressDialog]() {
+        progressDialog->reset();
+        progressDialog->close();
     });
 
+    connect(systemController, &SystemController::loadSystemProgressRangeChanged, this,
+            [progressDialog](int minimum, int maximum) { progressDialog->setRange(minimum, maximum); });
+
     connect(systemController, &SystemController::loadSystemProgressTextChanged, this,
-            [=](const QString &progressText) { progressDialog->setLabelText(progressText); });
+            [progressDialog](const QString &progressText) { progressDialog->setLabelText(progressText); });
 
     connect(systemController, &SystemController::loadSystemProgressValueChanged, this,
-            [=](int progressValue) { progressDialog->setValue(progressValue); });
+            [progressDialog](int progressValue) { progressDialog->setValue(progressValue); });
 
     connect(ui->loadSystemPushButton, &QPushButton::clicked, this, [=]() {
         SystemController::closeSystem();

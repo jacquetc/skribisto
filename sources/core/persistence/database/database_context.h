@@ -36,12 +36,6 @@ class SKR_PERSISTENCE_EXPORT DatabaseContext : public QObject, public Contracts:
 
     QSqlDatabase getConnection() override;
 
-    bool beginTransaction(QSqlDatabase &database) override;
-
-    bool commitTransaction(QSqlDatabase &database) override;
-
-    bool rollbackTransaction(QSqlDatabase &database) override;
-
   signals:
 
   private:

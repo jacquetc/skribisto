@@ -49,6 +49,7 @@ class UndoRedoCommand : public QObject
      * actions.
      */
     void errorSent(Error error);
+    void progressFinished();
     void progressRangeChanged(int minimum, int maximum);
     void progressTextChanged(const QString &progressText);
     void progressValueChanged(int progressValue);

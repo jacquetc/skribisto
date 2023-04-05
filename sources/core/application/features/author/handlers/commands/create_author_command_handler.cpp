@@ -81,20 +81,20 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(const CreateAuthorComma
     }
 
     // Add the author to the repository
-    // m_repository->beginChanges();
 
+    m_repository->beginChanges();
     auto authorResult = m_repository->add(std::move(author));
     if (authorResult.hasError())
     {
         m_repository->cancelChanges();
         return Result<AuthorDTO>(authorResult.error());
     }
+    m_repository->saveChanges();
 
     auto authorDTO = AutoMapper::AutoMapper::map<AuthorDTO>(authorResult.value());
 
     m_oldState = Result<AuthorDTO>(authorDTO);
 
-    // m_repository->saveChanges();
     emit authorCreated(authorDTO);
 
     qDebug() << "Author added:" << authorDTO.uuid();

@@ -3302,7 +3302,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/system/system_controller.cpp" line="80"/>
+        <location filename="../../sources/gui/presenter/system/system_controller.cpp" line="82"/>
         <source>Close system</source>
         <translation type="unfinished"></translation>
     </message>
