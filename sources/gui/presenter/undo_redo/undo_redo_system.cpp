@@ -13,7 +13,8 @@ using namespace Presenter::UndoRedo;
 /*!
  * \brief Constructs an UndoRedoSystem with the specified \a parent.
  */
-UndoRedoSystem::UndoRedoSystem(QObject *parent) : QObject(parent), m_currentIndex(-1), m_undoLimit(10)
+UndoRedoSystem::UndoRedoSystem(QObject *parent, Scopes scopes)
+    : QObject(parent), m_currentIndex(-1), m_undoLimit(10), m_scopes(scopes)
 {
 }
 
@@ -37,7 +38,17 @@ void UndoRedoSystem::run()
  */
 bool UndoRedoSystem::canUndo() const
 {
-    return m_currentIndex >= 0 && !m_generalCommandQueue[m_currentIndex]->isRunning();
+    bool hasACommandRunning = false;
+    for (const auto &command : m_generalCommandQueue)
+    {
+        if (command->isRunning())
+        {
+            hasACommandRunning = true;
+            break;
+        }
+    }
+
+    return m_currentIndex >= 0 && !hasACommandRunning;
 }
 
 /*!
@@ -76,19 +87,30 @@ void UndoRedoSystem::redo()
 /*!
  * \brief Adds an \a command to the UndoRedoSystem with the specified \a scope.
  */
-void UndoRedoSystem::push(UndoRedoCommand *command, const UndoRedoCommand::Scope &scope)
+void UndoRedoSystem::push(UndoRedoCommand *command, const QString &commandScope)
 {
     command->setParent(this);
+
+    Scope scope = m_scopes.createScopeFromString(commandScope);
     command->setScope(scope);
 
-    QQueue<QSharedPointer<UndoRedoCommand>> &queue = m_scopedCommandQueueHash[scope];
-    // Enqueue the command
-    queue.enqueue(QSharedPointer<UndoRedoCommand>(command));
+    auto commandSharedPointer = QSharedPointer<UndoRedoCommand>(command);
 
-    // If the system is not currently executing a command, start executing the next command
-    if (!m_currentCommandHash[scope])
+    // Add the command to the appropriate queues
+    for (ScopeFlag scopeFlag : m_scopes.flags())
     {
-        executeNextCommand(scope);
+        if (scope.hasScopeFlag(scopeFlag))
+        {
+            QQueue<QSharedPointer<UndoRedoCommand>> &commandQueue = m_scopedCommandQueueHash[scopeFlag];
+            commandQueue.enqueue(commandSharedPointer);
+
+            // If the system is not currently executing a command for the given scope flag, start executing the next
+            // command
+            if (m_currentCommandHash[scopeFlag].isNull())
+            {
+                executeNextCommand(scopeFlag);
+            }
+        }
     }
 
     // Emit the stateChanged signal
@@ -148,7 +170,8 @@ QString UndoRedoSystem::undoText() const
 }
 
 /*!
- * \brief Returns the text of the next redo command in the queue, or an empty QString if there is no command to redo.
+ * \brief Returns the text of the next redo command in the queue, or an empty QString if there is no command to
+ * redo.
  */
 QString UndoRedoSystem::redoText() const
 {
@@ -162,29 +185,104 @@ QString UndoRedoSystem::redoText() const
     }
 }
 
+QStringList UndoRedoSystem::undoRedoTextList() const
+{
+    QStringList resultList;
+
+    for (const auto &command : m_generalCommandQueue)
+    {
+        if (!command.isNull())
+            resultList << command->text();
+    }
+    return resultList;
+}
+
+int UndoRedoSystem::currentIndex() const
+{
+    return m_currentIndex;
+}
+
+bool UndoRedoSystem::isRunning() const
+{
+
+    for (ScopeFlag scopeFlag : m_scopes.flags())
+    {
+
+        if (!m_scopedCommandQueueHash[scopeFlag].isEmpty())
+        {
+            return true;
+        }
+
+        if (!m_currentCommandHash.value(scopeFlag, QSharedPointer<UndoRedoCommand>()).isNull() &&
+            !m_currentCommandHash.value(scopeFlag, QSharedPointer<UndoRedoCommand>())->isFinished())
+        {
+            return true;
+        }
+    }
+
+    for (const auto &command : m_generalCommandQueue)
+    {
+        if (command->isRunning())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+QStringList UndoRedoSystem::queuedCommandTextListByScope(const QString &scopeFlagString) const
+{
+    QStringList resultList;
+
+    ScopeFlag scopeFlag = m_scopes.flags(scopeFlagString);
+
+    const QQueue<QSharedPointer<UndoRedoCommand>> &queue = m_scopedCommandQueueHash[scopeFlag];
+    for (const QSharedPointer<UndoRedoCommand> &command : queue)
+    {
+        resultList << command->text();
+    }
+    return resultList;
+}
+
 /*!
  * \brief Handles the finished() signal from an UndoRedoCommand and updates the UndoRedoSystem state.
  */
 void UndoRedoSystem::onCommandFinished()
 {
-
-    auto command = dynamic_cast<UndoRedoCommand *>(QObject::sender());
-
-    const UndoRedoCommand::Scope &scope = command->scope();
+    auto *senderObject = QObject::sender();
+    auto *command = dynamic_cast<UndoRedoCommand *>(senderObject);
+    if (command == nullptr)
+    {
+        qFatal("Command pointer is null!");
+    }
+    const Scope &commandScope = command->scope();
 
     // Set the current command to nullptr
-    m_currentCommandHash.insert(scope, QSharedPointer<UndoRedoCommand>());
 
-    if (command->obsolete())
+    for (const ScopeFlag &scopeFlag : commandScope.flags())
     {
-        m_generalCommandQueue.removeLast();
-        m_currentIndex--;
+
+        m_currentCommandHash.insert(scopeFlag, QSharedPointer<UndoRedoCommand>());
+    }
+
+    if (nullptr == qobject_cast<QueryCommand *>(QObject::sender()))
+    {
+        if (command->obsolete())
+        {
+            m_generalCommandQueue.removeLast();
+            m_currentIndex--;
+        }
     }
 
     // If there are commands in the queue, execute the next one
-    if (!m_scopedCommandQueueHash[scope].isEmpty())
+
+    for (ScopeFlag scopeFlag : commandScope.flags())
     {
-        executeNextCommand(scope);
+        if (!m_scopedCommandQueueHash[scopeFlag].isEmpty())
+        {
+            executeNextCommand(scopeFlag);
+        }
     }
 
     // Emit the stateChanged signal
@@ -194,41 +292,109 @@ void UndoRedoSystem::onCommandFinished()
 /*!
  * \brief Executes the next command in the queue for the specified \a scope.
  */
-void UndoRedoSystem::executeNextCommand(const UndoRedoCommand::Scope &scope)
+void UndoRedoSystem::executeNextCommand(const ScopeFlag &scopeFlag)
 {
+    // Dequeue the next command
+    QQueue<QSharedPointer<UndoRedoCommand>> &queue = m_scopedCommandQueueHash[scopeFlag];
+    QSharedPointer<UndoRedoCommand> command = queue.dequeue();
 
-    // keep in store only the true UndoRedoCommands, not QueryCommand
-    if (qSharedPointerDynamicCast<QueryCommand>(m_scopedCommandQueueHash[scope].head()).isNull())
+    m_currentCommandHash.insert(scopeFlag, command);
+    bool allowedToRun = isCommandAllowedToRun(command, scopeFlag);
+
+    // keep in general command queue only the true AlterCommands, not QueryCommand, and only if it's allowed to run
+    if (qSharedPointerDynamicCast<QueryCommand>(command).isNull() && allowedToRun)
     {
+
         // Remove any redo commands that are after the current index
         m_generalCommandQueue.erase(m_generalCommandQueue.begin() + m_currentIndex + 1, m_generalCommandQueue.end());
 
-        // Add the new command to the end of the list
+        // Add the new command to the end of the list if not already there:
 
-        m_generalCommandQueue.enqueue(m_scopedCommandQueueHash[scope].head());
-        // Increment the current index
-        m_currentIndex++;
-
-        // Remove excess commands from the general command queue if necessary
-        while (m_generalCommandQueue.size() > m_undoLimit)
+        if (!m_generalCommandQueue.contains(command))
         {
-            m_generalCommandQueue.dequeue();
-            m_currentIndex--;
+            m_generalCommandQueue.enqueue(command);
+            // Increment the current index
+            m_currentIndex++;
+
+            // Remove excess commands from the general command queue if necessary
+            while (m_generalCommandQueue.size() > m_undoLimit)
+            {
+                m_generalCommandQueue.dequeue();
+                m_currentIndex--;
+            }
         }
     }
 
-    // Dequeue the next command
-    QQueue<QSharedPointer<UndoRedoCommand>> &queue = m_scopedCommandQueueHash[scope];
-    QSharedPointer<UndoRedoCommand> command = queue.dequeue();
+    // if not already running (from another scope)
+    if (allowedToRun)
+    {
+        // Connect the finished signal to the onCommandFinished slot
+        connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::onCommandFinished,
+                Qt::UniqueConnection);
 
-    m_currentCommandHash.insert(scope, command);
+        // Connect the errorSent signal to the errorSent signal
+        connect(command.data(), &UndoRedoCommand::errorSent, this, &UndoRedoSystem::errorSent, Qt::UniqueConnection);
 
-    // Connect the finished signal to the onCommandFinished slot
-    connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::onCommandFinished, Qt::UniqueConnection);
+        // Execute the command asynchronously
 
-    // Connect the errorSent signal to the errorSent signal
-    connect(command.data(), &UndoRedoCommand::errorSent, this, &UndoRedoSystem::errorSent, Qt::UniqueConnection);
+        command->asyncRedo();
+    }
+}
 
-    // Execute the command asynchronously
-    command->asyncRedo();
+/*!
+ * \brief Check if the command \a is allowed to run. It verifies if all queues corresponding to the command scope have
+ * this command as current, allowing it to be run.
+ */
+bool UndoRedoSystem::isCommandAllowedToRun(QSharedPointer<UndoRedoCommand> command, const ScopeFlag &currentScopeFlag)
+{
+    // get command scopes
+    const Scope &commandScope = command->scope();
+
+    if (commandScope.flags().count() == 1)
+    {
+        return true;
+    }
+
+    bool result = true;
+    // check if this command is current for each scope
+    for (ScopeFlag scopeFlag : commandScope.flags())
+    {
+
+        if (m_scopedCommandQueueHash[scopeFlag].contains(command))
+        {
+            return false;
+        }
+
+        if (currentScopeFlag == scopeFlag)
+        {
+            continue;
+        }
+
+        // check if the command is already running or finished for this scope
+        bool isAlreadyRunning = false;
+        if (!m_currentCommandHash.value(scopeFlag).isNull())
+        {
+            isAlreadyRunning = (m_currentCommandHash.value(scopeFlag) == command);
+        }
+
+        if (isAlreadyRunning && command->isRunning())
+        {
+            // if the command is already running, but not finished yet, it cannot be allowed to run again
+            return false;
+        }
+        else if (isAlreadyRunning && command->isFinished())
+        {
+            // if the command is already finished, it cannot be allowed to run again
+            return false;
+        }
+        else if (isAlreadyRunning && command->isWaiting())
+        {
+            // if the command is waiting, it can be allowed to run
+            result |= true;
+        }
+    }
+
+    // if the command was already running or finished for all relevant scopes, or if it has no relevant scopes, it
+    // cannot be allowed to run
+    return result;
 }

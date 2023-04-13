@@ -12,7 +12,7 @@ class SKR_PRESENTER_EXPORT ThreadedUndoRedoSystem : public QObject
 {
     Q_OBJECT
   public:
-    ThreadedUndoRedoSystem(QObject *parent = nullptr);
+    ThreadedUndoRedoSystem(QObject *parent, const Scopes &scopes);
 
     ~ThreadedUndoRedoSystem();
 
@@ -26,7 +26,7 @@ class SKR_PRESENTER_EXPORT ThreadedUndoRedoSystem : public QObject
 
     void redo();
 
-    void push(UndoRedoCommand *command, const UndoRedoCommand::Scope &scope);
+    void push(UndoRedoCommand *command, const QString &commandScope);
 
     void clear();
 

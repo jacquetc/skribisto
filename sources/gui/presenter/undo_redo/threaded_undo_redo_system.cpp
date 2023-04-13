@@ -18,7 +18,7 @@ ThreadedUndoRedoSystem *ThreadedUndoRedoSystem::m_instance = nullptr;
 /*!
  * \brief Constructs an ThreadedUndoRedoSystem with the specified \a parent.
  */
-ThreadedUndoRedoSystem::ThreadedUndoRedoSystem(QObject *parent) : QObject(parent)
+ThreadedUndoRedoSystem::ThreadedUndoRedoSystem(QObject *parent, const Scopes &scopes) : QObject(parent)
 {
     QMutexLocker locker(&m_mutex);
     // singleton
@@ -27,7 +27,7 @@ ThreadedUndoRedoSystem::ThreadedUndoRedoSystem(QObject *parent) : QObject(parent
     m_instance = this;
 
     // Create a new UndoRedoSystem instance
-    m_undoRedoSystem = new UndoRedoSystem();
+    m_undoRedoSystem = new UndoRedoSystem(nullptr, scopes);
 
     // Move the UndoRedoSystem to a new thread
     m_thread = new QThread(this);
@@ -120,13 +120,12 @@ void ThreadedUndoRedoSystem::redo()
 /*!
  * \brief Adds a new command to the command history with the specified \a scope.
  */
-void ThreadedUndoRedoSystem::push(UndoRedoCommand *command, const UndoRedoCommand::Scope &scope)
+void ThreadedUndoRedoSystem::push(UndoRedoCommand *command, const QString &commandScope)
 {
     QMutexLocker locker(&m_mutex);
     command->moveToThread(m_undoRedoSystem->thread());
     QMetaObject::invokeMethod(m_undoRedoSystem, "push", Qt::QueuedConnection,
-                              Q_ARG(Presenter::UndoRedo::UndoRedoCommand *, command),
-                              Q_ARG(Presenter::UndoRedo::UndoRedoCommand::Scope, scope));
+                              Q_ARG(Presenter::UndoRedo::UndoRedoCommand *, command), Q_ARG(QString, commandScope));
 }
 
 /*!

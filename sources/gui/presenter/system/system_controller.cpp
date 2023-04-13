@@ -54,7 +54,7 @@ void SystemController::loadSystem(const LoadSystemDTO &dto)
             &SystemController::loadSystemProgressValueChanged);
 
     // push command
-    s_undo_redo_system->push(command, UndoRedoCommand::Scope::All);
+    s_undo_redo_system->push(command, "all");
     s_undo_redo_system->clear();
 }
 
@@ -83,6 +83,6 @@ void SystemController::closeSystem()
                                                                                    handler, request);
 
     // push command
-    s_undo_redo_system->push(command, UndoRedoCommand::Scope::All);
+    s_undo_redo_system->push(command, "all");
     s_undo_redo_system->clear();
 }

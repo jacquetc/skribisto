@@ -91,7 +91,7 @@ void AuthorController::getAsync(int id)
         return Result<void>(result.error());
     });
 
-    s_undo_redo_system->push(queryCommand, UndoRedoCommand::Scope::Author);
+    s_undo_redo_system->push(queryCommand, "author");
 }
 
 /*!
@@ -113,7 +113,7 @@ void AuthorController::getAllAsync()
         }
         return Result<void>(result.error());
     });
-    s_undo_redo_system->push(queryCommand, UndoRedoCommand::Scope::Author);
+    s_undo_redo_system->push(queryCommand, "author");
 }
 
 /*!
@@ -142,7 +142,7 @@ void AuthorController::createAsync(const CreateAuthorDTO &dto)
         AuthorController::tr("Create author"), handler, request);
 
     // push command
-    s_undo_redo_system->push(command, UndoRedoCommand::Scope::Author);
+    s_undo_redo_system->push(command, "author");
 }
 
 /*!
@@ -169,7 +169,7 @@ void AuthorController::updateAsync(const UpdateAuthorDTO &dto)
         AuthorController::tr("Update author"), handler, request);
 
     // push command
-    s_undo_redo_system->push(command, UndoRedoCommand::Scope::Author);
+    s_undo_redo_system->push(command, "author");
 }
 
 /*!
@@ -198,5 +198,5 @@ void AuthorController::removeAsync(int id)
         AuthorController::tr("Remove author"), handler, request);
 
     // push command
-    s_undo_redo_system->push(command, UndoRedoCommand::Scope::Author);
+    s_undo_redo_system->push(command, "author");
 }

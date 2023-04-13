@@ -7,7 +7,8 @@ using namespace Presenter;
 PresenterRegistration::PresenterRegistration(QObject *parent) : QObject{parent}
 {
 
-    auto *undoRedoSystem = new UndoRedo::ThreadedUndoRedoSystem(this);
+    Scopes scopes(QStringList() << "author");
+    auto *undoRedoSystem = new UndoRedo::ThreadedUndoRedoSystem(this, scopes);
 
     s_undoRedoSystem.reset(undoRedoSystem);
     auto repository_provider = Repository::RepositoryProvider::instance();

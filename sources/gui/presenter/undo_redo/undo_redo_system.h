@@ -9,11 +9,12 @@
 
 namespace Presenter::UndoRedo
 {
+
 class UndoRedoSystem : public QObject
 {
     Q_OBJECT
   public:
-    UndoRedoSystem(QObject *parent = nullptr);
+    UndoRedoSystem(QObject *parent, Scopes scopes);
 
     Q_INVOKABLE void run();
 
@@ -25,8 +26,7 @@ class UndoRedoSystem : public QObject
 
     Q_INVOKABLE void redo();
 
-    Q_INVOKABLE void push(Presenter::UndoRedo::UndoRedoCommand *command,
-                          const Presenter::UndoRedo::UndoRedoCommand::Scope &scope);
+    Q_INVOKABLE void push(Presenter::UndoRedo::UndoRedoCommand *command, const QString &commandScope);
 
     Q_INVOKABLE void clear();
 
@@ -38,6 +38,12 @@ class UndoRedoSystem : public QObject
 
     Q_INVOKABLE QString redoText() const;
 
+    Q_INVOKABLE QStringList undoRedoTextList() const;
+
+    Q_INVOKABLE int currentIndex() const;
+
+    QStringList queuedCommandTextListByScope(const QString &scopeFlagString) const;
+    bool isRunning() const;
   private slots:
     void onCommandFinished();
 
@@ -49,13 +55,15 @@ class UndoRedoSystem : public QObject
     void errorSent(Error error);
 
   private:
-    void executeNextCommand(const UndoRedoCommand::Scope &scope);
+    void executeNextCommand(const ScopeFlag &scopeFlag);
+    bool isCommandAllowedToRun(QSharedPointer<UndoRedoCommand> command, const ScopeFlag &currentScopeFlag);
 
     int m_undoLimit;    /*!< The maximum number of undo commands that can be stored in the undo-redo system. */
     int m_currentIndex; /*!< The current index in the command history. */
+    Scopes m_scopes;
 
     QQueue<QSharedPointer<UndoRedoCommand>> m_generalCommandQueue;
-    QHash<UndoRedoCommand::Scope, QQueue<QSharedPointer<UndoRedoCommand>>> m_scopedCommandQueueHash;
-    QHash<UndoRedoCommand::Scope, QSharedPointer<UndoRedoCommand>> m_currentCommandHash;
+    QHash<ScopeFlag, QQueue<QSharedPointer<UndoRedoCommand>>> m_scopedCommandQueueHash;
+    QHash<ScopeFlag, QSharedPointer<UndoRedoCommand>> m_currentCommandHash;
 };
 } // namespace Presenter::UndoRedo
