@@ -1,28 +1,28 @@
 /***************************************************************************
-*   Copyright (C) 2021 by Cyril Jacquet                                 *
-*   cyril.jacquet@skribisto.eu                                        *
-*                                                                         *
-*  Filename: textpage.cpp                                                   *
-*  This file is part of Skribisto.                                    *
-*                                                                         *
-*  Skribisto is free software: you can redistribute it and/or modify  *
-*  it under the terms of the GNU General Public License as published by   *
-*  the Free Software Foundation, either version 3 of the License, or      *
-*  (at your option) any later version.                                    *
-*                                                                         *
-*  Skribisto is distributed in the hope that it will be useful,       *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
-*  GNU General Public License for more details.                           *
-*                                                                         *
-*  You should have received a copy of the GNU General Public License      *
-*  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
-***************************************************************************/
+ *   Copyright (C) 2021 by Cyril Jacquet                                 *
+ *   cyril.jacquet@skribisto.eu                                        *
+ *                                                                         *
+ *  Filename: textpage.cpp                                                   *
+ *  This file is part of Skribisto.                                    *
+ *                                                                         *
+ *  Skribisto is free software: you can redistribute it and/or modify  *
+ *  it under the terms of the GNU General Public License as published by   *
+ *  the Free Software Foundation, either version 3 of the License, or      *
+ *  (at your option) any later version.                                    *
+ *                                                                         *
+ *  Skribisto is distributed in the hope that it will be useful,       *
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+ *  GNU General Public License for more details.                           *
+ *                                                                         *
+ *  You should have received a copy of the GNU General Public License      *
+ *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
+ ***************************************************************************/
 #include "textpage.h"
-#include "text/markdowntextdocument.h"
 #include "skrdata.h"
-#include "textview.h"
+#include "text/markdowntextdocument.h"
 #include "textpagesettings.h"
+#include "textview.h"
 
 #include <QTextCursor>
 
@@ -30,30 +30,30 @@ TextPage::TextPage(QObject *parent) : QObject(parent)
 {
     m_wordMeter = new SKRWordMeter(this);
 
-    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, this , [](const TreeItemAddress &treeItemAddress,
-            int  charCount,
-            bool triggerProjectModifiedSignal){
-             skrdata->statHub()->updateStats(treeItemAddress, SKRStatHub::Character ,charCount, triggerProjectModifiedSignal);
-    });
+    connect(m_wordMeter, &SKRWordMeter::characterCountCalculated, this,
+            [](const TreeItemAddress &treeItemAddress, int charCount, bool triggerProjectModifiedSignal) {
+                skrdata->statHub()->updateStats(treeItemAddress, SKRStatHub::Character, charCount,
+                                                triggerProjectModifiedSignal);
+            });
 
-    connect(m_wordMeter,
-            &SKRWordMeter::wordCountCalculated, this , [](const TreeItemAddress &treeItemAddress,
-            int  wordCount,
-            bool triggerProjectModifiedSignal){
-             skrdata->statHub()->updateStats(treeItemAddress, SKRStatHub::Word ,wordCount, triggerProjectModifiedSignal);
-    });
+    connect(m_wordMeter, &SKRWordMeter::wordCountCalculated, this,
+            [](const TreeItemAddress &treeItemAddress, int wordCount, bool triggerProjectModifiedSignal) {
+                skrdata->statHub()->updateStats(treeItemAddress, SKRStatHub::Word, wordCount,
+                                                triggerProjectModifiedSignal);
+            });
 }
 
 // ---------------------------------------------------
 
 TextPage::~TextPage()
-{}
+{
+}
 
 // ---------------------------------------------------
 
 View *TextPage::getView() const
 {
-  return new TextView();
+    return new TextView();
 }
 
 // ---------------------------------------------------
@@ -70,25 +70,26 @@ QVariantMap TextPage::propertiesForCreationOfTreeItem(const QVariantMap &customP
 }
 // ---------------------------------------------------
 
-void TextPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread, bool triggerProjectModifiedSignal)
+void TextPage::updateCharAndWordCount(const TreeItemAddress &treeItemAddress, bool sameThread,
+                                      bool triggerProjectModifiedSignal)
 {
-    const QString &primaryContent = skrdata->treeHub()->getPrimaryContent(treeItemAddress);
+    // deactivated because of lag
+    //    const QString &primaryContent = skrdata->treeHub()->getPrimaryContent(treeItemAddress);
 
-    MarkdownTextDocument textDocument;
+    //    MarkdownTextDocument textDocument;
 
-    textDocument.setSkribistoMarkdown(primaryContent);
-    const QString &plainText = textDocument.toPlainText();
+    //    textDocument.setSkribistoMarkdown(primaryContent);
+    //    const QString &plainText = textDocument.toPlainText();
 
-    m_wordMeter->countText(treeItemAddress, std::move(plainText), sameThread, triggerProjectModifiedSignal);
+    //    m_wordMeter->countText(treeItemAddress, std::move(plainText), sameThread, triggerProjectModifiedSignal);
 }
 
 // ---------------------------------------------------
 QTextDocumentFragment TextPage::generateExporterTextFragment(const TreeItemAddress &treeItemAddress,
-                                                             const QVariantMap& exportProperties,
-                                                             SKRResult        & result) const
+                                                             const QVariantMap &exportProperties,
+                                                             SKRResult &result) const
 {
     MarkdownTextDocument document;
-
 
     QFont font;
     font.setFamily(exportProperties.value("font_family", "Times New Roman").toString());
@@ -100,7 +101,8 @@ QTextDocumentFragment TextPage::generateExporterTextFragment(const TreeItemAddre
     QTextBlockFormat blockFormat;
     blockFormat.setTextIndent(exportProperties.value("text_block_indent", 0).toInt());
     blockFormat.setTopMargin(exportProperties.value("text_block_top_margin", 0).toInt());
-    blockFormat.setLineHeight(exportProperties.value("text_space_between_line", 100).toInt(), QTextBlockFormat::ProportionalHeight);
+    blockFormat.setLineHeight(exportProperties.value("text_space_between_line", 100).toInt(),
+                              QTextBlockFormat::ProportionalHeight);
 
     QString primaryContent = skrdata->treeHub()->getPrimaryContent(treeItemAddress);
 
