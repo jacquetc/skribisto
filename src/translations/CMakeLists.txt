@@ -40,10 +40,10 @@ message("${LUPDATE_EXECUTABLE} ${CMAKE_SOURCE_DIR} -ts ${EN_US_FILENAME}")
 if(ANDROID OR IOS)
 else()
 
-add_custom_target("update_ts_en_US" ALL
-  COMMAND ${LUPDATE_EXECUTABLE} ${CMAKE_SOURCE_DIR} -ts ${EN_US_FILENAME}
-  DEPENDS ${EN_US_FILENAME}
-)
+    add_custom_target("update_ts_en_US" ALL
+      COMMAND ${LUPDATE_EXECUTABLE} ${CMAKE_SOURCE_DIR} -ts ${EN_US_FILENAME}
+      DEPENDS ${EN_US_FILENAME}
+    )
 endif()
 
 
@@ -52,23 +52,23 @@ endif()
 
 if(ANDROID OR IOS)
 else()
-set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease")
-if(NOT EXISTS "${LRELEASE_EXECUTABLE}")
-    set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease-qt6")
-endif()
-if(NOT EXISTS "${LRELEASE_EXECUTABLE}")
-    set(LRELEASE_EXECUTABLE "/usr/lib/qt6/bin/lrelease")
-endif()
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    if(EXISTS "${CMAKE_PREFIX_PATH}/../../bin/lrelease.exe")
-        set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/../../bin/lrelease.exe")
-    else()
-        set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease.exe")
+    set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease")
+    if(NOT EXISTS "${LRELEASE_EXECUTABLE}")
+        set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease-qt6")
     endif()
-endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-message(${LRELEASE_EXECUTABLE})
+    if(NOT EXISTS "${LRELEASE_EXECUTABLE}")
+        set(LRELEASE_EXECUTABLE "/usr/lib/qt6/bin/lrelease")
+    endif()
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        if(EXISTS "${CMAKE_PREFIX_PATH}/../../bin/lrelease.exe")
+            set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/../../bin/lrelease.exe")
+        else()
+            set(LRELEASE_EXECUTABLE "${CMAKE_PREFIX_PATH}/bin/lrelease.exe")
+        endif()
+    endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    message(${LRELEASE_EXECUTABLE})
 
-file(GLOB_RECURSE TS_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/translations/skribisto_*.ts")
+    file(GLOB_RECURSE TS_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/translations/skribisto_*.ts")
 
     foreach(TS_FILEPATH ${TS_FILES})
           get_filename_component(TS_FILENAME ${TS_FILEPATH} NAME)
@@ -91,6 +91,6 @@ file(GLOB_RECURSE TS_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/translatio
     endforeach(TS_FILEPATH)
 
 
-# make the ts files visible in the IDE
-add_custom_target(translations SOURCES ${TS_FILES})
+    # make the ts files visible in the IDE
+    add_custom_target(translations SOURCES ${TS_FILES})
 endif()

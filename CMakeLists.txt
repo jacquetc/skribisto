@@ -82,7 +82,7 @@ add_subdirectory(src/libskribisto-exporter/src)
 add_subdirectory(src/libskribisto-importer/src)
 add_subdirectory(src/libskribisto-desktop-common/src)
 add_subdirectory(src/desktopapp)
-#add_subdirectory(src/translations)
+add_subdirectory(src/translations)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(PROGRAMS resources/unix/applications/eu.skribisto.skribisto.desktop DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
