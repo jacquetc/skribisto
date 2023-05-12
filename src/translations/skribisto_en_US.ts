@@ -1731,6 +1731,19 @@
     </message>
 </context>
 <context>
+    <name>MainScreenForm.ui</name>
+    <message>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="47"/>
+        <source>Hello Skribisto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="57"/>
+        <source>Butto</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="14"/>

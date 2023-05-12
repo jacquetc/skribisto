@@ -17,6 +17,7 @@ set(QT_DEFAULT_MAJOR_VERSION 6)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH})
 
+set(SKR_VERSION 0.2)
 set(VERSION 0.2)
 
 project(skribisto VERSION ${SKR_VERSION} LANGUAGES CXX)
@@ -59,6 +60,7 @@ add_subdirectory(sources/core/infrastructure)
 add_subdirectory(sources/core/application)
 add_subdirectory(sources/gui/presenter)
 add_subdirectory(sources/gui/desktop)
+add_subdirectory(sources/gui/touch)
 
 # temporary
 add_subdirectory(src/libskribisto-data/src)

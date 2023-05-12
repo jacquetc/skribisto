@@ -5,8 +5,8 @@ set(PROJECT_NAME "skribisto-presenter")
 
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION})
 
-find_package(QT NAMES Qt6 COMPONENTS Core Gui Concurrent CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Concurrent CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Gui Concurrent Qml CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Concurrent Qml CONFIG REQUIRED)
 
 set(presenter_SRCS
 
@@ -29,6 +29,11 @@ set(presenter_SRCS
 )
 
 add_library(${PROJECT_NAME} STATIC ${presenter_SRCS})
+
+add_subdirectory(author)
+
+
+
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC SKRIBISTO_PRESENTER_LIBRARY)
@@ -44,7 +49,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-infrastructure)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Concurrent)
+    Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Concurrent Qt${QT_VERSION_MAJOR}::Qml)
 
 # ---------------------------------
 if(IOS)

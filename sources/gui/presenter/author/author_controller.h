@@ -5,8 +5,8 @@
 #include "dto/author/update_author_dto.h"
 #include "persistence/interface_repository_provider.h"
 #include "presenter_global.h"
-#include "result.h"
 #include "undo_redo/threaded_undo_redo_system.h"
+#include <QQmlEngine>
 
 using namespace Contracts::DTO::Author;
 using namespace Presenter;
@@ -19,6 +19,8 @@ namespace Presenter::Author
 class SKR_PRESENTER_EXPORT AuthorController : public QObject
 {
     Q_OBJECT
+    //    QML_ELEMENT
+    //    QML_SINGLETON
   public:
     AuthorController(InterfaceRepositoryProvider *repositoryProvider);
 
