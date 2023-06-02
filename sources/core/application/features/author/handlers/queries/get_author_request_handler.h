@@ -1,8 +1,8 @@
 #pragma once
 
 #include "application_global.h"
+#include "author_dto.h"
 #include "cqrs/author/requests/get_author_request.h"
-#include "dto/author/author_dto.h"
 #include "handler.h"
 #include "persistence/interface_author_repository.h"
 

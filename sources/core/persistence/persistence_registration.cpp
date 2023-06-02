@@ -5,6 +5,7 @@
 #include "repositories/atelier_repository.h"
 #include "repositories/author_repository.h"
 #include "repositories/book_repository.h"
+#include "repositories/chapter_repository.h"
 #include "repositories/repository_provider.h"
 
 using namespace Repository;
@@ -30,8 +31,12 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
 
     QSharedPointer<BookRepository> bookRepository(new BookRepository(new OrderedDatabaseTable<Domain::Book>(context)));
 
+    QSharedPointer<ChapterRepository> chapterRepository(
+        new ChapterRepository(new OrderedDatabaseTable<Domain::Chapter>(context)));
+
     // register repositories:
     Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Author, authorRepository);
     Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Atelier, atelierRepository);
     Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Book, bookRepository);
+    Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Chapter, chapterRepository);
 }

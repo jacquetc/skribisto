@@ -1,5 +1,5 @@
+#include "author_dto.h"
 #include "automapper/automapper.h"
-#include "dto/author/author_dto.h"
 #include "dummy_author_repository.h"
 #include "features/author/handlers/commands/create_author_command_handler.h"
 #include "features/author/handlers/commands/remove_author_command_handler.h"
@@ -74,8 +74,7 @@ void UseCases::getAuthor()
     QSharedPointer<DummyAuthorRepository> repository(new DummyAuthorRepository(this));
 
     QUuid uuid = QUuid::createUuid();
-    QUuid relative = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test", relative);
+    Domain::Author author(1, uuid, "test");
     repository->fillGet(author);
 
     GetAuthorRequestHandler handler(repository);
@@ -92,7 +91,6 @@ void UseCases::getAuthor()
 
     QCOMPARE(dtoResult.value().id(), 1);
     QCOMPARE(dtoResult.value().getName(), "test");
-    QCOMPARE(dtoResult.value().getRelative(), relative);
 }
 
 // ----------------------------------------------------------
@@ -106,7 +104,6 @@ void UseCases::addAuthor()
     // Create an AuthorDTO to add
     CreateAuthorDTO dto;
     dto.setName("new author");
-    dto.setRelative(QUuid::createUuid());
 
     // prefill the dummy repo:
     auto author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
@@ -139,7 +136,6 @@ void UseCases::removeAuthor()
     dto.setId(1);
     dto.setUuid(QUuid::createUuid());
     dto.setName("test");
-    dto.setRelative(QUuid::createUuid());
     auto author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
     repository->fillRemove(author);
     repository->fillGet(author);

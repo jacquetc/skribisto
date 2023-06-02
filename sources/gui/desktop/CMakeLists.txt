@@ -5,8 +5,8 @@ project(${PROJECT_NAME} VERSION ${VERSION} LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools Qml Concurrent)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools Qml Concurrent)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools Qml Quick Concurrent)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools Qml Quick Concurrent)
 
 set(US_TS_FILE i18n/skribisto-desktop_en_US.ts)
 set(TS_FILES ${US_TS_FILE} i18n/skribisto-desktop_fr_FR.ts)
@@ -54,7 +54,7 @@ add_dependencies(${PROJECT_NAME} skribisto-desktop_lupdate)
 add_dependencies(${PROJECT_NAME} skribisto-presenter)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-presenter)
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Qml Qt${QT_VERSION_MAJOR}::Concurrent)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Qml  Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Concurrent)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com

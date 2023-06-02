@@ -55,6 +55,7 @@ endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 add_subdirectory(sources/core/domain)
 add_subdirectory(sources/core/contracts)
+add_subdirectory(sources/core/contracts.dto)
 add_subdirectory(sources/core/persistence)
 add_subdirectory(sources/core/infrastructure)
 add_subdirectory(sources/core/application)

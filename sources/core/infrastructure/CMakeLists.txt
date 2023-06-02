@@ -5,8 +5,8 @@ set(PROJECT_NAME "skribisto-infrastructure")
 
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION})
 
-find_package(QT NAMES Qt6 COMPONENTS Core Concurrent Sql CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Concurrent Sql CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Concurrent Sql Qml Quick  CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Concurrent Sql  Qml Quick CONFIG REQUIRED)
 
 set(infrastructure_SRCS
 
@@ -25,7 +25,7 @@ add_dependencies(${PROJECT_NAME} skribisto-contracts)
 
 
 target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-contracts)
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Concurrent)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Concurrent Qt${QT_VERSION_MAJOR}::Qml Qt${QT_VERSION_MAJOR}::Quick )
 
 # ---------------------------------
 if(IOS)

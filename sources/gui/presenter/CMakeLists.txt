@@ -19,6 +19,9 @@ set(presenter_SRCS
     # system
     system/system_controller.h system/system_controller.cpp
 
+    # chapter
+    chapter/chapter_controller.h chapter/chapter_controller.cpp
+
     # undo redo
     undo_redo/undo_redo_command.h undo_redo/undo_redo_command.cpp
     undo_redo/undo_redo_system.h undo_redo/undo_redo_system.cpp
@@ -30,8 +33,6 @@ set(presenter_SRCS
 
 add_library(${PROJECT_NAME} STATIC ${presenter_SRCS})
 
-add_subdirectory(author)
-
 
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -39,6 +40,9 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(${PROJECT_NAME} PUBLIC SKRIBISTO_PRESENTER_LIBRARY)
 
 add_dependencies(${PROJECT_NAME} skribisto-contracts)
+add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-system)
+add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-author)
+add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-chapter)
 add_dependencies(${PROJECT_NAME} skribisto-application)
 add_dependencies(${PROJECT_NAME} skribisto-persistence)
 add_dependencies(${PROJECT_NAME} skribisto-infrastructure)
@@ -46,6 +50,9 @@ add_dependencies(${PROJECT_NAME} skribisto-infrastructure)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-persistence)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-system)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-author)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-chapter)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-infrastructure)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "application_global.h"
-#include "dto/author/author_dto.h"
+#include "author_dto.h"
 #include "handler.h"
 #include "persistence/interface_author_repository.h"
 
@@ -15,7 +15,7 @@ class SKR_APPLICATION_EXPORT GetAuthorListRequestHandler : public Handler
     Q_OBJECT
   public:
     GetAuthorListRequestHandler(QSharedPointer<InterfaceAuthorRepository> repository);
-    Result<QList<AuthorDTO>> handle(QPromise<Result<void> > &progressPromise);
+    Result<QList<AuthorDTO>> handle(QPromise<Result<void>> &progressPromise);
 
   private:
     QSharedPointer<InterfaceAuthorRepository> m_repository;

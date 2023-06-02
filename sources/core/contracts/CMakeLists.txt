@@ -4,8 +4,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # set(PROJECT_NAME "skribisto-contracts")
 project(skribisto-contracts LANGUAGES CXX VERSION ${VERSION})
 
-find_package(QT NAMES Qt6 COMPONENTS Core Sql CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Sql CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Sql Qml Quick CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Sql Qml Quick CONFIG REQUIRED)
 
 set(contracts_SRCS
 
@@ -29,14 +29,11 @@ set(contracts_SRCS
     persistence/interface_author_repository.h
     persistence/interface_atelier_repository.h
     persistence/interface_book_repository.h
+    persistence/interface_chapter_repository.h
     persistence/interface_repository.h
     persistence/interface_repository_provider.h
 
     # author:
-    dto/author/author_dto.h
-    dto/author/create_author_dto.h
-    dto/author/author_dto_base.h
-    dto/author/update_author_dto.h
     cqrs/author/requests/get_author_request.h
     cqrs/author/commands/create_author_command.h
     cqrs/author/commands/remove_author_command.h
@@ -45,27 +42,49 @@ set(contracts_SRCS
     cqrs/author/validators/update_author_command_validator.h
 
     # system:
-    dto/system/save_system_as_dto.h
-    dto/system/load_system_dto.h
     cqrs/system/commands/close_system_command.h
     cqrs/system/commands/save_system_as_command.h
     cqrs/system/commands/load_system_command.h
     cqrs/system/validators/save_system_as_command_validator.h
     cqrs/system/validators/load_system_command_validator.h
 
+    # chapter:
+    cqrs/chapter/requests/get_chapter_request.h
+    cqrs/chapter/commands/create_chapter_command.h
+    cqrs/chapter/commands/remove_chapter_command.h
+    cqrs/chapter/commands/update_chapter_command.h
+    cqrs/chapter/validators/create_chapter_command_validator.h
+    cqrs/chapter/validators/update_chapter_command_validator.h
+
     # infrastructure:
     infrastructure/skrib/interface_skrib_loader.h
 )
 
 add_library(skribisto-contracts SHARED ${contracts_SRCS})
+
+
+#qt6_add_qml_module(skribisto-contracts
+#  URI Contracts.DTO.Author
+#  VERSION 1.0
+#  SOURCES
+#  # author:
+#)
+
+
 target_include_directories(skribisto-contracts PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_compile_definitions(skribisto-contracts PUBLIC SKRIBISTO_CONTRACTS_LIBRARY)
 
 add_dependencies(skribisto-contracts skribisto-domain)
+add_dependencies(skribisto-contracts skribisto-contracts-dto-system)
+add_dependencies(skribisto-contracts skribisto-contracts-dto-chapter)
+add_dependencies(skribisto-contracts skribisto-contracts-dto-author)
 
 target_link_libraries(skribisto-contracts PUBLIC skribisto-domain)
-target_link_libraries(skribisto-contracts PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql)
+target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-system)
+target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-chapter)
+target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-author)
+target_link_libraries(skribisto-contracts PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Qml Qt${QT_VERSION_MAJOR}::Quick )
 
 # ---------------------------------
 if(IOS)

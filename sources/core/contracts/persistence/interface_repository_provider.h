@@ -14,7 +14,8 @@ class SKR_CONTRACTS_EXPORT InterfaceRepositoryProvider
     {
         Author,
         Atelier,
-        Book
+        Book,
+        Chapter
     };
 
     virtual ~InterfaceRepositoryProvider()

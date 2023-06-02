@@ -1,9 +1,9 @@
 #pragma once
 
 #include "contracts_global.h"
-#include "dto/author/update_author_dto.h"
 #include "persistence/interface_author_repository.h"
 #include "result.h"
+#include "update_author_dto.h"
 
 using namespace Contracts::Persistence;
 using namespace Contracts::DTO::Author;

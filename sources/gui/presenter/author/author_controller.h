@@ -1,12 +1,11 @@
 #pragma once
 
-#include "dto/author/author_dto.h"
-#include "dto/author/create_author_dto.h"
-#include "dto/author/update_author_dto.h"
+#include "author_dto.h"
+#include "create_author_dto.h"
 #include "persistence/interface_repository_provider.h"
 #include "presenter_global.h"
 #include "undo_redo/threaded_undo_redo_system.h"
-#include <QQmlEngine>
+#include "update_author_dto.h"
 
 using namespace Contracts::DTO::Author;
 using namespace Presenter;
@@ -19,29 +18,27 @@ namespace Presenter::Author
 class SKR_PRESENTER_EXPORT AuthorController : public QObject
 {
     Q_OBJECT
-    //    QML_ELEMENT
-    //    QML_SINGLETON
   public:
     AuthorController(InterfaceRepositoryProvider *repositoryProvider);
 
     static AuthorController *instance();
 
-    static void getAsync(int id);
+    static void get(int id);
 
-    static void getAllAsync();
+    static void getAll();
 
-    static void createAsync(const CreateAuthorDTO &dto);
+    static void create(const CreateAuthorDTO &dto);
 
-    static void updateAsync(const UpdateAuthorDTO &dto);
+    static void update(const UpdateAuthorDTO &dto);
 
-    static void removeAsync(int id);
+    static void remove(int id);
 
   signals:
-    void getAuthorReplied(Contracts::DTO::Author::AuthorDTO result);
-    void getAllReplied(QList<Contracts::DTO::Author::AuthorDTO> result);
-    void authorCreated(Contracts::DTO::Author::AuthorDTO result);
-    void authorRemoved(Contracts::DTO::Author::AuthorDTO result);
-    void authorUpdated(Contracts::DTO::Author::AuthorDTO result);
+    void getReplied(Contracts::DTO::Author::AuthorDTO dto);
+    void getAllReplied(QList<Contracts::DTO::Author::AuthorDTO> dtoList);
+    void authorCreated(Contracts::DTO::Author::AuthorDTO dto);
+    void authorRemoved(Contracts::DTO::Author::AuthorDTO dto);
+    void authorUpdated(Contracts::DTO::Author::AuthorDTO dto);
 
   private:
     static QScopedPointer<AuthorController> s_instance;

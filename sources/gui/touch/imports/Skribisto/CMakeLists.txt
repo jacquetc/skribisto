@@ -15,7 +15,5 @@ qt6_add_qml_module(Skribisto
     QML_FILES
         DirectoryFontLoader.qml
         Constants.qml
-        EventListModel.qml
-        EventListSimulator.qml
 
 )

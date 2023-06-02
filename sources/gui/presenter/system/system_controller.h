@@ -1,10 +1,9 @@
 #pragma once
 
-#include "dto/system/load_system_dto.h"
-#include "dto/system/save_system_as_dto.h"
+#include "load_system_dto.h"
 #include "persistence/interface_repository_provider.h"
 #include "presenter_global.h"
-#include "result.h"
+#include "save_system_as_dto.h"
 #include "undo_redo/threaded_undo_redo_system.h"
 
 using namespace Contracts::DTO::System;

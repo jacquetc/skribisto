@@ -9,7 +9,9 @@ qt6_add_qml_module(content
     VERSION 1.0
     QML_FILES
         MainScreenForm.ui.qml
+        SideScreen.qml
         App.qml
         MainScreen.qml
+        SideScreenForm.ui.qml
 
 )

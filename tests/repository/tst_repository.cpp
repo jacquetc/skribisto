@@ -1,4 +1,4 @@
-#include "dto/author/author_dto.h"
+#include "author_dto.h"
 #include "dummy_database.h"
 #include "repositories/author_repository.h"
 #include <QDate>
@@ -71,15 +71,13 @@ void RepositoryTest::getAuthor()
     Repository::AuthorRepository repository(database);
 
     QUuid uuid = QUuid::createUuid();
-    QUuid relative = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test", relative);
+    Domain::Author author(1, uuid, "test");
     database->fillGet(author);
 
     Result<Domain::Author> result = repository.get(uuid);
 
     QCOMPARE(result.value().id(), 1);
     QCOMPARE(result.value().name(), "test");
-    QCOMPARE(result.value().relative(), relative);
 }
 
 // ----------------------------------------------------------
@@ -90,8 +88,7 @@ void RepositoryTest::addAuthor()
     Repository::AuthorRepository repository(database);
 
     QUuid uuid = QUuid::createUuid();
-    QUuid relative = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test", relative);
+    Domain::Author author(1, uuid, "test");
     database->fillAdd(author);
 
     Result<Domain::Author> result = repository.add(std::move(author));
@@ -99,7 +96,6 @@ void RepositoryTest::addAuthor()
     QVERIFY(result.isSuccess());
     QCOMPARE(result.value().id(), 1);
     QCOMPARE(result.value().name(), "test");
-    QCOMPARE(result.value().relative(), relative);
 }
 
 void RepositoryTest::removeAuthor()
@@ -108,7 +104,7 @@ void RepositoryTest::removeAuthor()
     Repository::AuthorRepository repository(database);
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test", QUuid::createUuid());
+    Domain::Author author(1, uuid, "test");
     database->fillRemove(author);
 
     Result<Domain::Author> result = repository.remove(std::move(author));
@@ -128,8 +124,7 @@ void RepositoryTest::updateAuthor()
     Repository::AuthorRepository repository(database);
 
     QUuid uuid = QUuid::createUuid();
-    QUuid relative = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test", relative);
+    Domain::Author author(1, uuid, "test");
     database->fillUpdate(author);
 
     Result<Domain::Author> result = repository.update(std::move(author));
@@ -140,7 +135,6 @@ void RepositoryTest::updateAuthor()
     QVERIFY(result.isSuccess());
     QCOMPARE(result.value().id(), 1);
     QCOMPARE(result.value().name(), "test");
-    QCOMPARE(result.value().relative(), relative);
 }
 
 void RepositoryTest::authorExists()
@@ -165,8 +159,8 @@ void RepositoryTest::getAllAuthors()
     auto database = new DummyDatabase;
     Repository::AuthorRepository repository(database);
 
-    Domain::Author author1(1, QUuid::createUuid(), "test1", QUuid::createUuid());
-    Domain::Author author2(2, QUuid::createUuid(), "test2", QUuid::createUuid());
+    Domain::Author author1(1, QUuid::createUuid(), "test1");
+    Domain::Author author2(2, QUuid::createUuid(), "test2");
     QList<Domain::Author> expected = {author1, author2};
     database->fillGetAll(expected);
 

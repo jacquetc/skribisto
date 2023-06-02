@@ -1,8 +1,8 @@
 #pragma once
 
 #include "application_global.h"
+#include "author_dto.h"
 #include "cqrs/author/commands/remove_author_command.h"
-#include "dto/author/author_dto.h"
 #include "handler.h"
 #include "persistence/interface_author_repository.h"
 #include "result.h"
@@ -18,7 +18,7 @@ class SKR_APPLICATION_EXPORT RemoveAuthorCommandHandler : public Handler
     Q_OBJECT
   public:
     RemoveAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository> repository);
-    Result<AuthorDTO> handle(QPromise<Result<void> > &progressPromise, const RemoveAuthorCommand &request);
+    Result<AuthorDTO> handle(QPromise<Result<void>> &progressPromise, const RemoveAuthorCommand &request);
     Result<AuthorDTO> restore();
 
   signals:

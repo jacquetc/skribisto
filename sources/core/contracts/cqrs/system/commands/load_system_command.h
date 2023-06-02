@@ -1,7 +1,7 @@
 #pragma once
 
 #include "contracts_global.h"
-#include "dto/system/load_system_dto.h"
+#include "load_system_dto.h"
 
 namespace Contracts::CQRS::System::Commands
 {

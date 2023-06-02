@@ -2,6 +2,7 @@
 #include "QtSql/qsqlerror.h"
 #include "atelier.h"
 #include "author.h"
+#include "chapter.h"
 #include "entity_table_sql_generator.h"
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -122,6 +123,7 @@ QStringList DatabaseContext::sqlEmptyDatabaseQuery() const
     queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Author>();
     queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Atelier>();
     queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Book>();
+    queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Chapter>();
 
     return queryList;
 }

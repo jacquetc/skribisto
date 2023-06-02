@@ -1,6 +1,6 @@
 #include "author.h"
+#include "author_dto.h"
 #include "automapper/automapper.h"
-#include "dto/author/author_dto.h"
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
@@ -65,7 +65,7 @@ void AutoMapperTest::basicMap()
 {
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(1, uuid, "e", QUuid());
+    Domain::Author author(1, uuid, "e");
 
     AuthorDTO dto = AutoMapper::AutoMapper::map<AuthorDTO>(author);
 
@@ -78,7 +78,7 @@ void AutoMapperTest::invertedMap()
 {
 
     QUuid uuid = QUuid::createUuid();
-    AuthorDTO dto(1, uuid, "e", QUuid());
+    AuthorDTO dto(1, uuid, "e");
 
     Domain::Author author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
 

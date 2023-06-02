@@ -1,3 +1,0 @@
-Module Presenter
-import Contracts.DTO.Chapter
-singleton ChapterController 1.0 ChapterController.qml

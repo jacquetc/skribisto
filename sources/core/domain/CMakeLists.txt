@@ -15,6 +15,7 @@ author.h
 entity.h
 atelier.h
 book.h
+chapter.h
 ordered_entity.h
 unique_entity.h
 )

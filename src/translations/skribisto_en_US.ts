@@ -3308,6 +3308,24 @@
     </message>
 </context>
 <context>
+    <name>Presenter::Chapter::ChapterController</name>
+    <message>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="148"/>
+        <source>Create chapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="181"/>
+        <source>Update chapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="210"/>
+        <source>Remove chapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Presenter::System::SystemController</name>
     <message>
         <location filename="../../sources/gui/presenter/system/system_controller.cpp" line="44"/>
@@ -4580,6 +4598,14 @@ Please select the destination folder.</source>
     <message>
         <location filename="../libskribisto-desktop-common/src/settingssubpanel.ui" line="14"/>
         <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SideScreenForm.ui</name>
+    <message>
+        <location filename="../../sources/gui/touch/content/SideScreenForm.ui.qml" line="21"/>
+        <source>Button</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

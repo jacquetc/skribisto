@@ -1,0 +1,4 @@
+Module Contracts.DTO.Author
+AuthorDTO 1.0 AuthorDTO.qml
+CreateAuthorDTO 1.0 CreateAuthorDTO.qml
+UpdateAuthorDTO 1.0 UpdateAuthorDTO.qml

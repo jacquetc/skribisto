@@ -6,7 +6,7 @@ set(PROJECT_NAME "skribisto-application")
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION})
 
 find_package(QT NAMES Qt6 COMPONENTS Core Concurrent Sql CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Concurrent Sql CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Concurrent Sql Qml Quick CONFIG REQUIRED)
 
 set(application_SRCS
 
@@ -19,6 +19,12 @@ set(application_SRCS
     features/author/handlers/commands/remove_author_command_handler.h features/author/handlers/commands/remove_author_command_handler.cpp
     features/author/handlers/commands/update_author_command_handler.h features/author/handlers/commands/update_author_command_handler.cpp
     features/author/handlers/queries/get_author_list_request_handler.h features/author/handlers/queries/get_author_list_request_handler.cpp
+    # chapter:
+    features/chapter/handlers/queries/get_chapter_request_handler.h features/chapter/handlers/queries/get_chapter_request_handler.cpp
+    features/chapter/handlers/commands/create_chapter_command_handler.h features/chapter/handlers/commands/create_chapter_command_handler.cpp
+    features/chapter/handlers/commands/remove_chapter_command_handler.h features/chapter/handlers/commands/remove_chapter_command_handler.cpp
+    features/chapter/handlers/commands/update_chapter_command_handler.h features/chapter/handlers/commands/update_chapter_command_handler.cpp
+    features/chapter/handlers/queries/get_chapter_list_request_handler.h features/chapter/handlers/queries/get_chapter_list_request_handler.cpp
     # system:
     features/system/handlers/commands/save_system_as_command_handler.h features/system/handlers/commands/save_system_as_command_handler.cpp
     features/system/handlers/commands/load_system_command_handler.h features/system/handlers/commands/load_system_command_handler.cpp
@@ -31,10 +37,16 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(${PROJECT_NAME} PUBLIC SKRIBISTO_APPLICATION_LIBRARY)
 
 add_dependencies(${PROJECT_NAME} skribisto-contracts)
+add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-system)
+add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-author)
+add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-chapter)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-contracts)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-system)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-author)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-chapter)
 target_link_libraries(${PROJECT_NAME} PRIVATE
-     Qt6::Core Qt6::Sql Qt6::Concurrent)
+     Qt6::Core Qt6::Sql Qt6::Concurrent Qt::Qml Qt::Quick)
 
 # ---------------------------------
 if(IOS)

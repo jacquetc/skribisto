@@ -2,32 +2,33 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import Presenter
 import Contracts.DTO.Chapter
+import Models
 
 MainScreenForm {
 
+    listView.model: ChapterListModel
 
     Connections {
         target: ChapterController
-        onChapterCreated: {
-            button.text = dto.title
-            chapterListModel.append({
-                                                      "name": "ee"
-                                                  })
+        function onChapterCreatedPointer(dto) {
+            var chapterDto = dto
+            console.log("dto", chapterDto)
+            console.log("dto.title", chapterDto.title)
+            button.text = chapterDto.title
         }
     }
 
     CreateChapterDTO {
-            id: createChapterDTO
-        }
+        id: createChapterDTO
+    }
 
     Connections {
         target: button
         onClicked: {
             var dto = createChapterDTO
             dto.title = "test chapter"
-            dto.comment = "test comment"
-            ChapterController.create(dto)
 
+            ChapterController.create(dto)
         }
     }
 }

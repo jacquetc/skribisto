@@ -73,7 +73,7 @@ AuthorController *AuthorController::instance()
 
     When the operation is complete, the getAuthorReplied signal is emitted.
 */
-void AuthorController::getAsync(int id)
+void AuthorController::get(int id)
 {
 
     auto queryCommand = new QueryCommand("get");
@@ -86,7 +86,7 @@ void AuthorController::getAsync(int id)
         auto result = handler.handle(progressPromise, request);
         if (result.isSuccess())
         {
-            emit AuthorController::instance()->getAuthorReplied(result.value());
+            emit AuthorController::instance()->getReplied(result.value());
         }
         return Result<void>(result.error());
     });
@@ -99,7 +99,7 @@ void AuthorController::getAsync(int id)
 
     When the operation is complete, the getAuthorListReplied signal is emitted.
 */
-void AuthorController::getAllAsync()
+void AuthorController::getAll()
 {
     auto queryCommand = new QueryCommand("getAll");
     queryCommand->setQueryFunction([&](QPromise<Result<void>> &progressPromise) {
@@ -121,7 +121,7 @@ void AuthorController::getAllAsync()
 
     When the operation is complete, the authorCreated signal is emitted.
 */
-void AuthorController::createAsync(const CreateAuthorDTO &dto)
+void AuthorController::create(const CreateAuthorDTO &dto)
 {
     CreateAuthorCommand request;
     request.req = dto;
@@ -150,7 +150,7 @@ void AuthorController::createAsync(const CreateAuthorDTO &dto)
 
     When the operation is complete, the authorUpdated signal is emitted.
 */
-void AuthorController::updateAsync(const UpdateAuthorDTO &dto)
+void AuthorController::update(const UpdateAuthorDTO &dto)
 {
     UpdateAuthorCommand request;
     request.req = dto;
@@ -177,7 +177,7 @@ void AuthorController::updateAsync(const UpdateAuthorDTO &dto)
 
     When the operation is complete, the authorRemoved signal is emitted.
 */
-void AuthorController::removeAsync(int id)
+void AuthorController::remove(int id)
 {
     RemoveAuthorCommand request;
     request.id = id;

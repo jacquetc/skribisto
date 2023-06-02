@@ -97,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             },
             Qt::SingleShotConnection);
 
-        AuthorController::instance()->getAllAsync();
+        AuthorController::instance()->getAll();
     });
 
     // undo redo buttons:
@@ -112,9 +112,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     auto authorController = AuthorController::instance();
 
     connect(ui->addAsyncPushButton, &QPushButton::clicked, this, [=]() {
-        Contracts::DTO::Author::CreateAuthorDTO dto("test", QUuid::createUuid());
+        Contracts::DTO::Author::CreateAuthorDTO dto("test");
 
-        authorController->createAsync(dto);
+        authorController->create(dto);
     });
 
     connect(authorController, &AuthorController::authorCreated, this, [this](AuthorDTO result) {
@@ -131,7 +131,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
         auto authorController = AuthorController::instance();
 
-        authorController->removeAsync(item->data(Qt::UserRole).toInt());
+        authorController->remove(item->data(Qt::UserRole).toInt());
     });
 
     connect(authorController, &AuthorController::authorRemoved, this, [this](Contracts::DTO::Author::AuthorDTO result) {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "contracts_global.h"
-#include "dto/system/load_system_dto.h"
+#include "load_system_dto.h"
 #include "result.h"
 
 #include <QFile>
@@ -53,13 +53,13 @@ class SKR_CONTRACTS_EXPORT LoadSystemCommandValidator
         {
 
             return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "absent_filename",
-                                        fileNameString + " doesn't exist", fileNameString));
+                                      fileNameString + " doesn't exist", fileNameString));
         }
 
         if (!file.open(QIODevice::ReadOnly))
         {
             return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "readonly_filename",
-                                        fileNameString + " can't be opened", fileNameString));
+                                      fileNameString + " can't be opened", fileNameString));
         }
 
         // Return that is Ok :

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "contracts_global.h"
-#include "dto/author/update_author_dto.h"
+#include "update_author_dto.h"
 
 namespace Contracts::CQRS::Author::Commands
 {

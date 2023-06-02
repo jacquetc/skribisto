@@ -6,8 +6,8 @@
 #pragma once
 
 #include "application_global.h"
+#include "author_dto.h"
 #include "cqrs/author/commands/create_author_command.h"
-#include "dto/author/author_dto.h"
 #include "handler.h"
 #include "persistence/interface_author_repository.h"
 #include "result.h"
@@ -37,7 +37,7 @@ class SKR_APPLICATION_EXPORT CreateAuthorCommandHandler : public Handler
      * @return A Result object containing the UUID of the newly created author, or an error message if the operation
      * failed.
      */
-    Result<AuthorDTO> handle(QPromise<Result<void> > &progressPromise, const CreateAuthorCommand &request);
+    Result<AuthorDTO> handle(QPromise<Result<void>> &progressPromise, const CreateAuthorCommand &request);
     Result<AuthorDTO> restore();
 
   signals:

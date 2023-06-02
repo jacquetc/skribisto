@@ -15,6 +15,7 @@ Rectangle {
     height: Constants.height
 
     color: Constants.backgroundColor
+    property alias listView: listView
     property alias button: button
 
     Row {
@@ -25,7 +26,6 @@ Rectangle {
             id: listView
             width: 129
             height: 422
-            model: chapterListModel
             delegate: Item {
                 x: 5
                 width: 80
@@ -35,7 +35,7 @@ Rectangle {
                     spacing: 10
 
                     Text {
-                        text: name
+                        text: title
                         anchors.verticalCenter: parent.verticalCenter
                         font.bold: true
                     }

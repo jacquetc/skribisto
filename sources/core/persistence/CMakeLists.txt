@@ -20,6 +20,7 @@ set(persistence_SRCS
     repositories/author_repository.h repositories/author_repository.cpp
     repositories/atelier_repository.h repositories/atelier_repository.cpp
     repositories/book_repository.h repositories/book_repository.cpp
+    repositories/chapter_repository.h repositories/chapter_repository.cpp
     repositories/repository_provider.h repositories/repository_provider.cpp
 
     # database:

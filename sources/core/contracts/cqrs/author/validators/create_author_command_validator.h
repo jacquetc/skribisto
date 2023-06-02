@@ -1,7 +1,7 @@
 #pragma once
 
 #include "contracts_global.h"
-#include "dto/author/create_author_dto.h"
+#include "create_author_dto.h"
 #include "persistence/interface_author_repository.h"
 #include "result.h"
 
@@ -21,10 +21,10 @@ class SKR_CONTRACTS_EXPORT CreateAuthorCommandValidator
     Result<void> validate(const CreateAuthorDTO &dto) const
     {
 
-        if (dto.relative().isNull())
-        {
-            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "relative_uuid_missing"));
-        }
+        //        if (dto.relative().isNull())
+        //        {
+        //            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "relative_uuid_missing"));
+        //        }
 
         // Return that is Ok :
         return Result<void>();
