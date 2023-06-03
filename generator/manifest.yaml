@@ -1,0 +1,50 @@
+---
+entities:
+  list:
+    - name: Entity
+      parent: QObject
+      generate: true
+      fields:
+        - type: int
+          name: id
+        - type: QUuid
+          name: uuid
+        - type: QDateTime
+          name: creationDate
+        - type: QDateTime
+          name: updateDate
+    - name: Chapter
+      parent: Entity
+      generate: true
+      fields:
+        - type: QString
+          name: title
+    - name: Book
+      parent: Entity
+      generate: true
+      fields:
+        - type: QString
+          name: title
+        - type: QList<Chapter>
+          name: chapters
+  export: SKR_DOMAIN_EXPORT
+  export_header_file: domain_global.h
+  forder_path: ../sources/core/domain_test/
+  list_file: ../sources/core/domain_test/entities.txt
+
+repositories:
+  list:
+    - entity_name: Chapter
+      generate: true
+    - entity_name: Book
+      generate: true
+
+  interface_path: ../sources/core/contracts_test/
+  list_file: ../sources/core/contracts/repositories.txt
+  export: SKR_PERSISTENCE_EXPORT
+  export_header_file: persistence_global.h
+  forder_path: ../sources/core/persistence_test/repositories/
+  list_file: ../sources/core/persistence_test/repositories.txt
+
+
+contracts_folder_path: ../sources/core/contracts

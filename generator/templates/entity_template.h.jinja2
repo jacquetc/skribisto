@@ -1,0 +1,87 @@
+#pragma once
+
+#include "{{ header_file }}"
+{% for header in headers -%}
+#include {{ header }}
+{% endfor %}
+{% if parent != 'QObject' -%}
+#include "{{ parent.lower() }}.h"
+{%- endif %}
+
+namespace Domain
+{
+
+class {{ export }} {{ name }} : public {{ parent }}
+{
+    Q_OBJECT
+{% for field in fields %}
+    Q_PROPERTY({{ field.type }} {{ field.name }} READ {{ field.name }} WRITE set{{ field.name.capitalize() }})
+
+    {% if field.type.startswith('QList') %}
+    Q_PROPERTY(bool {{ field.name }}Loaded MEMBER m_{{ field.name }}Loaded)
+    {% endif %}{% endfor %}
+
+  public:
+    {{ name }}() : {{ parent }}({{ parent_init_values }}){};
+
+   {{ name }}( {% for field in parent_fields %} const {{ field.type }} &{{ field.name }}, {% endfor %} {% for field in fields %}{% if field.type in ['int', 'float', 'bool'] %} {{ field.type }} {{ field.name }}{% else %} const {{ field.type }} &{{ field.name }}{% endif %}{% if not loop.last %}, {% endif %} {% endfor %}) 
+        : {{ parent }}({{ parent_fields | map(attribute='name') | join(", ")}}), {% for field in fields %}m_{{ field.name }}({{ field.name }}){% if not loop.last %}, {% endif %}{% endfor %}
+    {
+    }
+
+    {{ name }}(const {{ name }} &other) : {{ parent }}(other){% for field in fields %}, m_{{ field.name }}(other.m_{{ field.name }}){% endfor %}
+    {
+    }
+
+    {{ name }} &operator=(const {{ name }} &other)
+    {
+        if (this != &other)
+        {
+            {{ parent }}::operator=(other);
+            {% for field in fields -%}
+            m_{{ field.name }} = other.m_{{ field.name }};
+            {%- endfor %}
+        }
+        return *this;
+    }
+
+{% for field in fields %}
+    // ------ {{ field.name }} : -----
+
+    {{ field.type }} {{ field.name }}() const
+    {
+        {% if field.type.startswith('QList') -%}
+        if (!m_{{ field.name }}Loaded && m_{{ field.name }}Loader)
+        {
+            m_{{ field.name }} = m_{{ field.name }}Loader();
+            m_{{ field.name }}Loaded = true;
+        }
+        {%- endif %}
+        return m_{{ field.name }};
+    }
+
+    void set{{ field.name.capitalize() }}({% if field.type in ['int', 'float', 'bool'] %} {{ field.type }} {{ field.name }}{% else %} const {{ field.type }} &{{ field.name }}{% endif %})
+    {
+        m_{{ field.name }} = {{ field.name }};
+    }
+    {% if field.type.startswith('QList') %}
+    using {{ field.name.capitalize() }}Loader = std::function<{{ field.type }}()>;
+
+    void set{{ field.name.capitalize() }}Loader(const {{ field.name.capitalize() }}Loader &loader)
+    {
+        m_{{ field.name }}Loader = loader;
+    }
+    {% endif %}
+{% endfor %}
+
+  private:
+{% for field in fields -%}
+    {{ field.type }} m_{{ field.name }};
+    {% if field.type.startswith('QList') -%}
+    {{ field.name.capitalize() }}Loader m_{{ field.name }}Loader;
+    bool m_{{ field.name }}Loaded = false;
+    {%- endif %}
+{%- endfor %}
+};
+
+} // namespace Domain
