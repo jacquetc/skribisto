@@ -1,6 +1,8 @@
 #pragma once
 
 #include "domain_global.h"
+#include <QString>
+
 #include "entity.h"
 
 namespace Domain
@@ -9,17 +11,15 @@ namespace Domain
 class SKR_DOMAIN_EXPORT Author : public Entity
 {
     Q_OBJECT
+
     Q_PROPERTY(QString name READ name WRITE setName)
+
+    
 
   public:
     Author() : Entity(){};
 
-    Author(int id, const QUuid &uuid, const QString &name) : Entity(id, uuid)
-    {
-        m_name = name;
-    }
-
-    Author(int id, const QUuid &uuid, const QString &name, const QDateTime &creationDate, const QDateTime &updateDate)
+   Author(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &name ) 
         : Entity(id, uuid, creationDate, updateDate), m_name(name)
     {
     }
@@ -34,22 +34,30 @@ class SKR_DOMAIN_EXPORT Author : public Entity
         {
             Entity::operator=(other);
             m_name = other.m_name;
+            
         }
         return *this;
     }
 
+
+    // ------ name : -----
+
     QString name() const
     {
+        
         return m_name;
     }
 
-    void setName(const QString &name)
+    void setName( const QString &name)
     {
         m_name = name;
     }
+    
+
 
   private:
-    QString m_name;
+QString m_name;
+    
 };
 
 } // namespace Domain

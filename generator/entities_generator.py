@@ -1,6 +1,7 @@
 from jinja2 import Environment, FileSystemLoader
 import yaml
 import os
+import stringcase
 
 
 def generate_cpp_files(manifest_file):
@@ -44,6 +45,10 @@ def generate_cpp_files(manifest_file):
         fields = entity["fields"]
         parent = entity.get("parent", "QObject")
         generate = entity.get("generate", True)
+
+        # add name_pascal to fields
+        for field in fields:
+            field["name_pascal"] = stringcase.pascalcase(field["name"])
 
         if not generate:
             continue

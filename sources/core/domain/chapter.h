@@ -1,30 +1,30 @@
 #pragma once
 
 #include "domain_global.h"
-#include "ordered_entity.h"
+#include <QString>
+
+#include "entity.h"
 
 namespace Domain
 {
 
-class SKR_DOMAIN_EXPORT Chapter : public OrderedEntity
+class SKR_DOMAIN_EXPORT Chapter : public Entity
 {
     Q_OBJECT
+
     Q_PROPERTY(QString title READ title WRITE setTitle)
 
+    
+
   public:
-    Chapter() : OrderedEntity(){};
+    Chapter() : Entity(){};
 
-    Chapter(int id, const QUuid &uuid, const QString &title) : OrderedEntity(id, uuid)
-    {
-        m_title = title;
-    }
-
-    Chapter(int id, const QUuid &uuid, const QString &title, const QDateTime &creationDate, const QDateTime &updateDate)
-        : OrderedEntity(id, uuid, creationDate, updateDate), m_title(title)
+   Chapter(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &title ) 
+        : Entity(id, uuid, creationDate, updateDate), m_title(title)
     {
     }
 
-    Chapter(const Chapter &other) : OrderedEntity(other), m_title(other.m_title)
+    Chapter(const Chapter &other) : Entity(other), m_title(other.m_title)
     {
     }
 
@@ -32,24 +32,32 @@ class SKR_DOMAIN_EXPORT Chapter : public OrderedEntity
     {
         if (this != &other)
         {
-            OrderedEntity::operator=(other);
+            Entity::operator=(other);
             m_title = other.m_title;
+            
         }
         return *this;
     }
 
+
+    // ------ title : -----
+
     QString title() const
     {
+        
         return m_title;
     }
 
-    void setTitle(const QString &title)
+    void setTitle( const QString &title)
     {
         m_title = title;
     }
+    
+
 
   private:
-    QString m_title;
+QString m_title;
+    
 };
 
 } // namespace Domain

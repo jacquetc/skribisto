@@ -1,4 +1,4 @@
-#include "database/ordered_database_table.h"
+#include "database/database_table.h"
 #include "dummy_database_context.h"
 #include "dummy_entity.h"
 #include <QDate>
@@ -28,7 +28,7 @@ class ForeignEntityTest : public QObject
     void cleanup();
 
   private:
-    Database::OrderedDatabaseTable<Domain::DummyEntity> *m_entityTable;
+    Database::DatabaseTable<Domain::DummyEntity> *m_entityTable;
 };
 
 ForeignEntityTest::ForeignEntityTest()
@@ -42,7 +42,7 @@ ForeignEntityTest::~ForeignEntityTest()
 void ForeignEntityTest::initTestCase()
 {
     DummyDatabaseContext *context = new DummyDatabaseContext();
-    m_entityTable = new Database::OrderedDatabaseTable<Domain::DummyEntity>(context);
+    m_entityTable = new Database::DatabaseTable<Domain::DummyEntity>(context);
 }
 
 void ForeignEntityTest::cleanupTestCase()

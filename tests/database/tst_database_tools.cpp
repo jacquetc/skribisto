@@ -1,4 +1,4 @@
-#include "database/ordered_database_table.h"
+#include "database/database_table.h"
 #include "database/tools.h"
 #include "dummy_database_context.h"
 #include "dummy_entity.h"
@@ -34,7 +34,7 @@ class DatabaseToolsTest : public QObject
     void testGetEntityTableName();
 
   private:
-    Database::OrderedDatabaseTable<Domain::DummyEntity> *m_entityTable;
+    Database::DatabaseTable<Domain::DummyEntity> *m_entityTable;
 };
 
 DatabaseToolsTest::DatabaseToolsTest()
@@ -48,7 +48,7 @@ DatabaseToolsTest::~DatabaseToolsTest()
 void DatabaseToolsTest::initTestCase()
 {
     DummyDatabaseContext *context = new DummyDatabaseContext();
-    m_entityTable = new Database::OrderedDatabaseTable<Domain::DummyEntity>(context);
+    m_entityTable = new Database::DatabaseTable<Domain::DummyEntity>(context);
 }
 
 void DatabaseToolsTest::cleanupTestCase()

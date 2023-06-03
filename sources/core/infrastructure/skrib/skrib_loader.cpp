@@ -180,7 +180,7 @@ Result<void> SkribLoader::fillRepositories(QPromise<Result<void>> &progressPromi
         QDateTime creationDate = query.value("creationDate").toDateTime();
         QDateTime updateDate = query.value("updateDate").toDateTime();
 
-        Domain::Author author(id, uuid, name, creationDate, updateDate);
+        Domain::Author author(id, uuid, creationDate, updateDate, name);
         Result<Domain::Author> addResult = authorRepository->add(std::move(author));
 
         if (addResult.hasError())

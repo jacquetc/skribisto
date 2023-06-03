@@ -25,7 +25,6 @@ set(persistence_SRCS
 
     # database:
     database/database_table.h
-    database/ordered_database_table.h
     database/database_context.h database/database_context.cpp
     database/foreign_entity.h
     database/tools.h

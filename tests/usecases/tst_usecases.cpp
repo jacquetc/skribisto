@@ -74,7 +74,7 @@ void UseCases::getAuthor()
     QSharedPointer<DummyAuthorRepository> repository(new DummyAuthorRepository(this));
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test");
+    Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
     repository->fillGet(author);
 
     GetAuthorRequestHandler handler(repository);

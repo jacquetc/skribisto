@@ -1,20 +1,21 @@
 #pragma once
 
-#include "ordered_entity.h"
+#include "entity.h"
 
 namespace Domain
 {
 
-class DummyEntity : public OrderedEntity
+class DummyEntity : public Entity
 {
     Q_OBJECT
     Q_PROPERTY(QString name READ name WRITE setName)
     Q_PROPERTY(QString author READ author WRITE setAuthor)
 
   public:
-    DummyEntity() : OrderedEntity(){};
+    DummyEntity() : Entity(){};
 
-    DummyEntity(int id, const QUuid &uuid, const QString &name, const QString &author) : OrderedEntity(id, uuid)
+    DummyEntity(int id, const QUuid &uuid, const QString &name, const QString &author)
+        : Entity(id, uuid, QDateTime(), QDateTime())
     {
         m_name = name;
         m_author = author;
@@ -22,11 +23,11 @@ class DummyEntity : public OrderedEntity
 
     DummyEntity(int id, const QUuid &uuid, const QString &name, const QString &author, const QDateTime &creationDate,
                 const QDateTime &updateDate)
-        : OrderedEntity(id, uuid, creationDate, updateDate), m_name(name), m_author(author)
+        : Entity(id, uuid, creationDate, updateDate), m_name(name), m_author(author)
     {
     }
 
-    DummyEntity(const DummyEntity &other) : OrderedEntity(other), m_name(other.m_name), m_author(other.m_author)
+    DummyEntity(const DummyEntity &other) : Entity(other), m_name(other.m_name), m_author(other.m_author)
     {
     }
 
@@ -34,7 +35,7 @@ class DummyEntity : public OrderedEntity
     {
         if (this != &other)
         {
-            OrderedEntity::operator=(other);
+            Entity::operator=(other);
             m_name = other.m_name;
         }
         return *this;

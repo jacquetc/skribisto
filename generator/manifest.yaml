@@ -27,10 +27,24 @@ entities:
           name: title
         - type: QList<Chapter>
           name: chapters
+    - name: Atelier
+      parent: Entity
+      generate: true
+      fields:
+        - type: QString
+          name: name
+        - type: QList<Book>
+          name: books
+    - name: Author
+      parent: Entity
+      generate: true
+      fields:
+        - type: QString
+          name: name
   export: SKR_DOMAIN_EXPORT
   export_header_file: domain_global.h
-  forder_path: ../sources/core/domain_test/
-  list_file: ../sources/core/domain_test/entities.txt
+  forder_path: ../sources/core/domain/
+  list_file: ../sources/core/domain/entities.txt
 
 repositories:
   list:

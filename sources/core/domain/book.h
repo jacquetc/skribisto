@@ -1,31 +1,36 @@
 #pragma once
 
-#include "book.h"
 #include "domain_global.h"
-#include "ordered_entity.h"
+#include <QString>
+#include "chapter.h"
+
+#include "entity.h"
 
 namespace Domain
 {
 
-class SKR_DOMAIN_EXPORT Book : public OrderedEntity
+class SKR_DOMAIN_EXPORT Book : public Entity
 {
     Q_OBJECT
-    Q_PROPERTY(QString name READ name WRITE setName)
+
+    Q_PROPERTY(QString title READ title WRITE setTitle)
+
+    
+    Q_PROPERTY(QList<Chapter> chapters READ chapters WRITE setChapters)
+
+    
+    Q_PROPERTY(bool chaptersLoaded MEMBER m_chaptersLoaded)
+    
 
   public:
-    Book() : OrderedEntity(){};
+    Book() : Entity(){};
 
-    Book(int id, const QUuid &uuid, const QString &name) : OrderedEntity(id, uuid)
-    {
-        m_name = name;
-    }
-
-    Book(int id, const QUuid &uuid, const QString &name, const QDateTime &creationDate, const QDateTime &updateDate)
-        : OrderedEntity(id, uuid, creationDate, updateDate), m_name(name)
+   Book(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &title,   const QList<Chapter> &chapters ) 
+        : Entity(id, uuid, creationDate, updateDate), m_title(title), m_chapters(chapters)
     {
     }
 
-    Book(const Book &other) : OrderedEntity(other), m_name(other.m_name)
+    Book(const Book &other) : Entity(other), m_title(other.m_title), m_chapters(other.m_chapters)
     {
     }
 
@@ -33,24 +38,60 @@ class SKR_DOMAIN_EXPORT Book : public OrderedEntity
     {
         if (this != &other)
         {
-            OrderedEntity::operator=(other);
-            m_name = other.m_name;
+            Entity::operator=(other);
+            m_title = other.m_title;
+            m_chapters = other.m_chapters;
+            
         }
         return *this;
     }
 
-    QString name() const
+
+    // ------ title : -----
+
+    QString title() const
     {
-        return m_name;
+        
+        return m_title;
     }
 
-    void setName(const QString &name)
+    void setTitle( const QString &title)
     {
-        m_name = name;
+        m_title = title;
     }
+    
+
+    // ------ chapters : -----
+
+    QList<Chapter> chapters() 
+    {
+        if (!m_chaptersLoaded && m_chaptersLoader)
+        {
+            m_chapters = m_chaptersLoader();
+            m_chaptersLoaded = true;
+        }
+        return m_chapters;
+    }
+
+    void setChapters( const QList<Chapter> &chapters)
+    {
+        m_chapters = chapters;
+    }
+    
+    using ChaptersLoader = std::function<QList<Chapter>()>;
+
+    void setChaptersLoader(const ChaptersLoader &loader)
+    {
+        m_chaptersLoader = loader;
+    }
+    
+
 
   private:
-    QString m_name;
+QString m_title;
+    QList<Chapter> m_chapters;
+    ChaptersLoader m_chaptersLoader;
+    bool m_chaptersLoaded = false;
 };
 
 } // namespace Domain

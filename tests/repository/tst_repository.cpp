@@ -71,7 +71,7 @@ void RepositoryTest::getAuthor()
     Repository::AuthorRepository repository(database);
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test");
+    Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
     database->fillGet(author);
 
     Result<Domain::Author> result = repository.get(uuid);
@@ -88,7 +88,7 @@ void RepositoryTest::addAuthor()
     Repository::AuthorRepository repository(database);
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test");
+    Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
     database->fillAdd(author);
 
     Result<Domain::Author> result = repository.add(std::move(author));
@@ -104,7 +104,7 @@ void RepositoryTest::removeAuthor()
     Repository::AuthorRepository repository(database);
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test");
+    Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
     database->fillRemove(author);
 
     Result<Domain::Author> result = repository.remove(std::move(author));
@@ -124,7 +124,7 @@ void RepositoryTest::updateAuthor()
     Repository::AuthorRepository repository(database);
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(1, uuid, "test");
+    Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
     database->fillUpdate(author);
 
     Result<Domain::Author> result = repository.update(std::move(author));
@@ -159,8 +159,8 @@ void RepositoryTest::getAllAuthors()
     auto database = new DummyDatabase;
     Repository::AuthorRepository repository(database);
 
-    Domain::Author author1(1, QUuid::createUuid(), "test1");
-    Domain::Author author2(2, QUuid::createUuid(), "test2");
+    Domain::Author author1(1, QUuid::createUuid(), QDateTime(), QDateTime(), "test1");
+    Domain::Author author2(2, QUuid::createUuid(), QDateTime(), QDateTime(), "test2");
     QList<Domain::Author> expected = {author1, author2};
     database->fillGetAll(expected);
 

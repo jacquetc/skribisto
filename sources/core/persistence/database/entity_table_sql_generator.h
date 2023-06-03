@@ -1,5 +1,4 @@
 #include "entity.h"
-#include "ordered_entity.h"
 #include "tools.h"
 #include <QMetaObject>
 #include <QMetaProperty>
@@ -30,10 +29,6 @@ template <class T> QStringList EntityTableSqlGenerator::generateEntitySql()
     static_assert(std::is_base_of<Domain::Entity, T>::value, "T must inherit from Domain::Entity");
 
     QStringList finalSqlList;
-    if (std::is_base_of<Domain::OrderedEntity, T>::value)
-    {
-        finalSqlList.append(EntityTableSqlGenerator::generateOrderingTable<T>());
-    }
     finalSqlList.append(EntityTableSqlGenerator::generateMainTableSql<T>());
 
     finalSqlList.append(EntityTableSqlGenerator::generateIndexes<T>());
@@ -90,12 +85,13 @@ template <class T> QString EntityTableSqlGenerator::generateMainTableSql()
     createTableSql.chop(2);
 
     // Add foreign key to ordering table if T is an OrderedEntity
-    if (std::is_base_of<Domain::OrderedEntity, T>::value)
-    {
-        createTableSql.append(
-            QString(", ordering_id INTEGER, FOREIGN KEY (ordering_id) REFERENCES %1 (ordering_id) ON DELETE CASCADE")
-                .arg(Tools<T>::getEntityOrderingTableName()));
-    }
+    //    if (std::is_base_of<Domain::OrderedEntity, T>::value)
+    //    {
+    //        createTableSql.append(
+    //            QString(", ordering_id INTEGER, FOREIGN KEY (ordering_id) REFERENCES %1 (ordering_id) ON DELETE
+    //            CASCADE")
+    //                .arg(Tools<T>::getEntityOrderingTableName()));
+    //    }
 
     createTableSql.append(");");
 
@@ -119,11 +115,11 @@ template <class T> QStringList EntityTableSqlGenerator::generateIndexes()
 {
     QStringList indexList;
 
-    if (std::is_base_of<Domain::OrderedEntity, T>::value)
-    {
-        indexList.append(QString("CREATE INDEX %1_id_index ON %2 (ordering_id);")
-                             .arg(Tools<T>::getEntityOrderingTableName(), Tools<T>::getEntityTableName()));
-    }
+    //    if (std::is_base_of<Domain::OrderedEntity, T>::value)
+    //    {
+    //        indexList.append(QString("CREATE INDEX %1_id_index ON %2 (ordering_id);")
+    //                             .arg(Tools<T>::getEntityOrderingTableName(), Tools<T>::getEntityTableName()));
+    //    }
 
     return indexList;
 }

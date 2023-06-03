@@ -65,7 +65,7 @@ void AutoMapperTest::basicMap()
 {
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(1, uuid, "e");
+    Domain::Author author(1, uuid, QDateTime(), QDateTime(), "e");
 
     AuthorDTO dto = AutoMapper::AutoMapper::map<AuthorDTO>(author);
 

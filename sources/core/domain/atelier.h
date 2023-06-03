@@ -1,35 +1,36 @@
 #pragma once
 
-#include "book.h"
 #include "domain_global.h"
-#include "unique_entity.h"
-#include <QList>
-#include <functional>
+#include <QString>
+#include "book.h"
+
+#include "entity.h"
 
 namespace Domain
 {
 
-class SKR_DOMAIN_EXPORT Atelier : public UniqueEntity
+class SKR_DOMAIN_EXPORT Atelier : public Entity
 {
     Q_OBJECT
+
     Q_PROPERTY(QString name READ name WRITE setName)
+
+    
     Q_PROPERTY(QList<Book> books READ books WRITE setBooks)
 
+    
+    Q_PROPERTY(bool booksLoaded MEMBER m_booksLoaded)
+    
+
   public:
-    Atelier() : UniqueEntity(){};
+    Atelier() : Entity(){};
 
-    Atelier(const QString &name, const QList<Book> &books) : UniqueEntity()
-    {
-        m_name = name;
-        m_books = books;
-    }
-
-    Atelier(const QString &name, const QList<Book> &books, const QDateTime &creationDate, const QDateTime &updateDate)
-        : UniqueEntity(creationDate, updateDate), m_name(name), m_books(books)
+   Atelier(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &name,   const QList<Book> &books ) 
+        : Entity(id, uuid, creationDate, updateDate), m_name(name), m_books(books)
     {
     }
 
-    Atelier(const Atelier &other) : UniqueEntity(other), m_name(other.m_name), m_books(other.m_books)
+    Atelier(const Atelier &other) : Entity(other), m_name(other.m_name), m_books(other.m_books)
     {
     }
 
@@ -37,65 +38,60 @@ class SKR_DOMAIN_EXPORT Atelier : public UniqueEntity
     {
         if (this != &other)
         {
-            UniqueEntity::operator=(other);
+            Entity::operator=(other);
             m_name = other.m_name;
             m_books = other.m_books;
-            m_booksLoader = other.m_booksLoader;
-            m_booksLoaded = other.m_booksLoaded;
+            
         }
         return *this;
     }
 
+
+    // ------ name : -----
+
     QString name() const
     {
+        
         return m_name;
     }
 
-    void setName(const QString &name)
+    void setName( const QString &name)
     {
         m_name = name;
     }
+    
 
-    // Books
-    //------------------------------------
+    // ------ books : -----
 
-    using BooksLoader = std::function<QList<Book>()>;
-    void setBooksLoader(const BooksLoader &loader);
-    QList<Book> books();
-    void setBooks(const QList<Book> &relative);
-    bool booksLoaded() const;
-
-  private:
-    QString m_name;
-    QList<Book> m_books;
-    mutable BooksLoader m_booksLoader;
-    mutable bool m_booksLoaded = false;
-};
-
-inline void Atelier::setBooksLoader(const BooksLoader &loader)
-{
-    m_booksLoader = loader;
-}
-
-inline QList<Book> Atelier::books()
-{
-    if (!m_booksLoaded && m_booksLoader)
+    QList<Book> books() 
     {
-        m_books = m_booksLoader();
-        m_booksLoaded = true;
+        if (!m_booksLoaded && m_booksLoader)
+        {
+            m_books = m_booksLoader();
+            m_booksLoaded = true;
+        }
+        return m_books;
     }
 
-    return m_books;
-}
+    void setBooks( const QList<Book> &books)
+    {
+        m_books = books;
+    }
+    
+    using BooksLoader = std::function<QList<Book>()>;
 
-inline void Atelier::setBooks(const QList<Book> &relative)
-{
-    m_books = relative;
-}
+    void setBooksLoader(const BooksLoader &loader)
+    {
+        m_booksLoader = loader;
+    }
+    
 
-inline bool Atelier::booksLoaded() const
-{
-    return m_booksLoaded;
-}
+
+  private:
+QString m_name;
+    QList<Book> m_books;
+    BooksLoader m_booksLoader;
+    bool m_booksLoaded = false;
+};
 
 } // namespace Domain
