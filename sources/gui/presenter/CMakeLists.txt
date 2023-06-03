@@ -5,8 +5,8 @@ set(PROJECT_NAME "skribisto-presenter")
 
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION})
 
-find_package(QT NAMES Qt6 COMPONENTS Core Gui Concurrent Qml CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Concurrent Qml CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Gui Concurrent CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Concurrent CONFIG REQUIRED)
 
 set(presenter_SRCS
 
@@ -56,7 +56,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-chapter)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-infrastructure)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Concurrent Qt${QT_VERSION_MAJOR}::Qml)
+    Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Concurrent)
 
 # ---------------------------------
 if(IOS)

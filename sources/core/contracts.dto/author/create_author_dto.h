@@ -4,7 +4,6 @@
 #include "author_dto_base.h"
 #include <QDateTime>
 #include <QObject>
-#include <QQmlEngine>
 
 namespace Contracts::DTO::Author
 {
@@ -14,7 +13,6 @@ namespace Contracts::DTO::Author
 class CreateAuthorDTO : public AuthorDTOBase
 {
     Q_OBJECT
-    QML_ELEMENT
   public:
     CreateAuthorDTO(QObject *parent = nullptr) : AuthorDTOBase(parent)
     {

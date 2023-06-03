@@ -7,7 +7,6 @@
 #include "features/chapter/handlers/commands/update_chapter_command_handler.h"
 #include "features/chapter/handlers/queries/get_chapter_list_request_handler.h"
 #include "features/chapter/handlers/queries/get_chapter_request_handler.h"
-#include "jsdto_mapper.h"
 #include "undo_redo/alter_command.h"
 #include "undo_redo/query_command.h"
 
@@ -135,11 +134,6 @@ void ChapterController::create(const CreateChapterDTO &dto)
     // connect
     QObject::connect(handler, &CreateChapterCommandHandler::chapterCreated, ChapterController::instance(),
                      &ChapterController::chapterCreated);
-    QObject::connect(handler, &CreateChapterCommandHandler::chapterCreated, [](ChapterDTO chapterDTO) {
-        auto chapterDTOPointer = new ChapterDTO(chapterDTO);
-        QQmlEngine::setObjectOwnership(chapterDTOPointer, QQmlEngine::JavaScriptOwnership);
-        emit ChapterController::instance()->chapterCreatedPointer(chapterDTOPointer);
-    });
     QObject::connect(handler, &CreateChapterCommandHandler::chapterRemoved, ChapterController::instance(),
                      &ChapterController::chapterRemoved);
 
@@ -149,12 +143,6 @@ void ChapterController::create(const CreateChapterDTO &dto)
 
     // push command
     s_undo_redo_system->push(command, "chapter");
-}
-
-void ChapterController::create(const QJSValue &jsDto)
-{
-    CreateChapterDTO cppDto = mapToDto<CreateChapterDTO>(jsDto);
-    create(cppDto);
 }
 
 /*!

@@ -2,7 +2,6 @@
 
 #include "author_dto_base.h"
 #include <QUuid>
-#include <QQmlEngine>
 
 namespace Contracts::DTO::Author
 {
@@ -12,7 +11,6 @@ namespace Contracts::DTO::Author
 class AuthorDTO : public AuthorDTOBase
 {
     Q_OBJECT
-    QML_ELEMENT
     Q_PROPERTY(int id READ id WRITE setId)
     Q_PROPERTY(QUuid uuid READ uuid WRITE setUuid)
   public:

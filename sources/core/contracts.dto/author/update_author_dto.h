@@ -2,15 +2,13 @@
 
 #include "author_dto_base.h"
 #include <QUuid>
-#include <QQmlEngine>
 
 namespace Contracts::DTO::Author
 {
 
-class  UpdateAuthorDTO : public AuthorDTOBase
+class UpdateAuthorDTO : public AuthorDTOBase
 {
     Q_OBJECT
-    QML_ELEMENT
     Q_PROPERTY(int id READ id WRITE setId)
   public:
     UpdateAuthorDTO(QObject *parent = nullptr) : AuthorDTOBase(parent)

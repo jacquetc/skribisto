@@ -41,8 +41,8 @@ class SKR_APPLICATION_EXPORT CreateChapterCommandHandler : public Handler
     Result<ChapterDTO> restore();
 
   signals:
-    void chapterCreated(Contracts::DTO::Chapter::ChapterDTO result);
-    void chapterRemoved(Contracts::DTO::Chapter::ChapterDTO result);
+    void chapterCreated(Contracts::DTO::Chapter::ChapterDTO chapterDto);
+    void chapterRemoved(Contracts::DTO::Chapter::ChapterDTO chapterDto);
 
   private:
     QSharedPointer<InterfaceChapterRepository> m_repository; // A pointer to the interface repositories object.

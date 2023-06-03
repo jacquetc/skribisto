@@ -4,8 +4,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # set(PROJECT_NAME "skribisto-contracts")
 project(skribisto-contracts LANGUAGES CXX VERSION ${VERSION})
 
-find_package(QT NAMES Qt6 COMPONENTS Core Sql Qml Quick CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Sql Qml Quick CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Sql CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Sql CONFIG REQUIRED)
 
 set(contracts_SRCS
 
@@ -84,7 +84,7 @@ target_link_libraries(skribisto-contracts PUBLIC skribisto-domain)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-system)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-chapter)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-author)
-target_link_libraries(skribisto-contracts PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Qml Qt${QT_VERSION_MAJOR}::Quick )
+target_link_libraries(skribisto-contracts PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql)
 
 # ---------------------------------
 if(IOS)

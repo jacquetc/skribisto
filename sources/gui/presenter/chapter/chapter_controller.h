@@ -29,7 +29,6 @@ class SKR_PRESENTER_EXPORT ChapterController : public QObject
     static void getAll();
 
     static void create(const CreateChapterDTO &dto);
-    Q_INVOKABLE static void create(const QJSValue &jsDto);
 
     static void update(const UpdateChapterDTO &dto);
 
@@ -39,7 +38,6 @@ class SKR_PRESENTER_EXPORT ChapterController : public QObject
     void getReplied(Contracts::DTO::Chapter::ChapterDTO dto);
     void getAllReplied(QList<Contracts::DTO::Chapter::ChapterDTO> dtoList);
     void chapterCreated(Contracts::DTO::Chapter::ChapterDTO dto);
-    void chapterCreatedPointer(Contracts::DTO::Chapter::ChapterDTO *dto);
     void chapterRemoved(Contracts::DTO::Chapter::ChapterDTO dto);
     void chapterUpdated(Contracts::DTO::Chapter::ChapterDTO dto);
 

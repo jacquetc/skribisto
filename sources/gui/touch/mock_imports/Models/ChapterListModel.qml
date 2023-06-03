@@ -1,4 +1,5 @@
 pragma Singleton
+
 import QtQuick
 
 ListModel {
@@ -13,5 +14,9 @@ ListModel {
     }
     ListElement {
         title: "Chapter 4"
+    }
+
+    function create(createChapterDTO) {
+        append(createChapterDTO.title)
     }
 }

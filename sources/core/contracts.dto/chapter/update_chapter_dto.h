@@ -1,7 +1,6 @@
 #pragma once
 
 #include "chapter_dto_base.h"
-#include <QQmlEngine>
 #include <QUuid>
 
 namespace Contracts::DTO::Chapter
@@ -10,7 +9,6 @@ namespace Contracts::DTO::Chapter
 class UpdateChapterDTO : public ChapterDTOBase
 {
     Q_OBJECT
-    QML_ELEMENT
     Q_PROPERTY(int id READ id WRITE setId)
   public:
     UpdateChapterDTO(QObject *parent = nullptr) : ChapterDTOBase(parent)

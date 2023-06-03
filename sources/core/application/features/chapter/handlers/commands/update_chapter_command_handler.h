@@ -23,7 +23,7 @@ class SKR_APPLICATION_EXPORT UpdateChapterCommandHandler : public Handler
     Result<ChapterDTO> restore();
 
   signals:
-    void chapterUpdated(Contracts::DTO::Chapter::ChapterDTO result);
+    void chapterUpdated(Contracts::DTO::Chapter::ChapterDTO chapterDto);
 
   private:
     QSharedPointer<InterfaceChapterRepository> m_repository;

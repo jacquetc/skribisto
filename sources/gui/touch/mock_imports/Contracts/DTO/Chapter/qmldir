@@ -1,4 +1,2 @@
 Module Contracts.DTO.Chapter
-ChapterDTO 1.0 ChapterDTO.qml
 CreateChapterDTO 1.0 CreateChapterDTO.qml
-UpdateChapterDTO 1.0 UpdateChapterDTO.qml

@@ -4,7 +4,6 @@
 #include "chapter_dto_base.h"
 #include <QDateTime>
 #include <QObject>
-#include <QQmlEngine>
 
 namespace Contracts::DTO::Chapter
 {
@@ -14,7 +13,6 @@ namespace Contracts::DTO::Chapter
 class CreateChapterDTO : public ChapterDTOBase
 {
     Q_OBJECT
-    QML_ELEMENT
   public:
     CreateChapterDTO(QObject *parent = nullptr) : ChapterDTOBase(parent)
     {

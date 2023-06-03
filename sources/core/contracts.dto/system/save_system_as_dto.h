@@ -2,16 +2,31 @@
 
 #include <QObject>
 #include <QUrl>
-#include <QQmlEngine>
 
 namespace Contracts::DTO::System
 {
-class SaveSystemAsDTO
+class SaveSystemAsDTO : public QObject
 {
-    Q_GADGET
-    QML_ELEMENT
+    Q_OBJECT
     Q_PROPERTY(QUrl fileName MEMBER m_fileName)
   public:
+    SaveSystemAsDTO(QObject *parent = nullptr)
+    {
+    }
+
+    SaveSystemAsDTO(const SaveSystemAsDTO &other) : m_fileName(other.m_fileName)
+    {
+    }
+
+    SaveSystemAsDTO &operator=(const SaveSystemAsDTO &other)
+    {
+        if (this != &other)
+        {
+            m_fileName = other.m_fileName;
+        }
+        return *this;
+    }
+
     QUrl fileName() const
     {
         return m_fileName;

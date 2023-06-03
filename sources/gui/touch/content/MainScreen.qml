@@ -9,8 +9,8 @@ MainScreenForm {
     listView.model: ChapterListModel
 
     Connections {
-        target: ChapterController
-        function onChapterCreatedPointer(dto) {
+        target: ChapterListModel
+        function onChapterCreated(dto) {
             var chapterDto = dto
             console.log("dto", chapterDto)
             console.log("dto.title", chapterDto.title)
@@ -28,7 +28,7 @@ MainScreenForm {
             var dto = createChapterDTO
             dto.title = "test chapter"
 
-            ChapterController.create(dto)
+            ChapterListModel.create(dto)
         }
     }
 }

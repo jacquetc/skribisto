@@ -8,7 +8,7 @@ struct ForeignSystemController
     QML_FOREIGN(Presenter::System::SystemController)
     QML_SINGLETON
     QML_NAMED_ELEMENT(SystemController)
-public:
+  public:
     // Initialize this using myObject where you would previously
     // call qmlRegisterSingletonInstance().
     inline static Presenter::System::SystemController *s_singletonInstance = nullptr;
@@ -32,9 +32,10 @@ public:
         // Explicitly specify C++ ownership so that the engine doesn't delete
         // the instance.
         QJSEngine::setObjectOwnership(s_singletonInstance, QJSEngine::CppOwnership);
+
         return s_singletonInstance;
     }
 
-private:
+  private:
     inline static QJSEngine *s_engine = nullptr;
 };

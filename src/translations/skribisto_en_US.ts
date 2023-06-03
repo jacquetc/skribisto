@@ -3310,17 +3310,17 @@
 <context>
     <name>Presenter::Chapter::ChapterController</name>
     <message>
-        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="148"/>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="142"/>
         <source>Create chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="181"/>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="169"/>
         <source>Update chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="210"/>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="198"/>
         <source>Remove chapter</source>
         <translation type="unfinished"></translation>
     </message>

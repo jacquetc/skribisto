@@ -6,7 +6,7 @@ set(PROJECT_NAME "skribisto-application")
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${VERSION})
 
 find_package(QT NAMES Qt6 COMPONENTS Core Concurrent Sql CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Concurrent Sql Qml Quick CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Concurrent Sql CONFIG REQUIRED)
 
 set(application_SRCS
 
@@ -46,7 +46,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-system)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-author)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-chapter)
 target_link_libraries(${PROJECT_NAME} PRIVATE
-     Qt6::Core Qt6::Sql Qt6::Concurrent Qt::Qml Qt::Quick)
+     Qt6::Core Qt6::Sql Qt6::Concurrent)
 
 # ---------------------------------
 if(IOS)
