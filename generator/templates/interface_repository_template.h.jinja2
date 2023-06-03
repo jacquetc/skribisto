@@ -1,0 +1,21 @@
+#pragma once
+
+#include "{{ name.lower() }}.h"
+#include "{{ contracts_export_header_file }}" 
+#include "interface_generic_repository.h"
+#include "interface_repository.h"
+
+namespace Contracts::Persistence
+{
+class {{ contracts_export }} Interface{{ name }}Repository
+    : public virtual Contracts::Persistence::InterfaceGenericRepository<Domain::{{ name }}>,
+      public InterfaceRepository
+{
+  public:
+    virtual ~Interface{{ name }}Repository()
+    {
+    }
+};
+} // namespace Contracts::Persistence
+#define Interface{{ name }}Repository_iid "eu.skribisto.Contracts.Persistence.Interface{{ name }}Repository"
+Q_DECLARE_INTERFACE(Contracts::Persistence::Interface{{ name }}Repository, Interface{{ name }}Repository_iid)

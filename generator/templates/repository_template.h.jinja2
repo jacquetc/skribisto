@@ -1,0 +1,22 @@
+#pragma once
+
+#include "{{ name.lower() }}.h"
+#include "database/interface_database_table.h"
+#include "generic_repository.h"
+#include "persistence/interface_{{ name.lower() }}_repository.h"
+#include "{{ export_header_file }}"
+#include <QObject>
+
+namespace Repository
+{
+class {{ export }} {{ name }}Repository : public QObject,
+                                          public Repository::GenericRepository<Domain::{{ name }}>,
+                                          public Contracts::Persistence::Interface{{ name }}Repository
+{
+    Q_OBJECT
+    Q_INTERFACES(Contracts::Persistence::Interface{{ name }}Repository)
+  public:
+    explicit {{ name }}Repository(InterfaceDatabaseTable<Domain::{{ name }}> *database);
+};
+
+} // namespace Repository

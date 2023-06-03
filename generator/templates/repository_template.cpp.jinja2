@@ -1,0 +1,8 @@
+#include "{{ name.lower() }}_repository.h"
+
+using namespace Repository;
+
+{{ name }}Repository::{{ name }}Repository(InterfaceDatabaseTable<Domain::{{ name }}> *database)
+    : QObject(nullptr), Repository::GenericRepository<Domain::{{ name }}>(database)
+{
+}
