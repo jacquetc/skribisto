@@ -16,7 +16,6 @@ set(persistence_SRCS
     # repositories:
     repositories/generic_repository.h
     repositories/unique_generic_repository.h
-    repositories/ordered_generic_repository.h
     repositories/author_repository.h repositories/author_repository.cpp
     repositories/atelier_repository.h repositories/atelier_repository.cpp
     repositories/book_repository.h repositories/book_repository.cpp
@@ -27,6 +26,7 @@ set(persistence_SRCS
     database/database_table.h
     database/database_context.h database/database_context.cpp
     database/foreign_entity.h
+    database/foreign_entity_tools.h
     database/tools.h
     database/entity_table_sql_generator.h database/entity_table_sql_generator.cpp
 

@@ -1,6 +1,8 @@
 #pragma once
 #include "QtSql/qsqlerror.h"
 #include "database/interface_database_context.h"
+#include "entity.h"
+#include "foreign_entity_tools.h"
 #include "result.h"
 #include "tools.h"
 #include <QHash>
@@ -36,14 +38,10 @@ template <class T> class ForeignEntity
   public:
     ForeignEntity(InterfaceDatabaseContext *context);
 
-    static QString getRelationshipTableName(const QString &otherEntityClassName);
-    Result<void> addEntityRelationship(const QUuid &entityUuid, const QUuid &otherEntityUuid,
-                                       const QString &otherEntityName, int position = -1);
-    Result<void> removeEntityRelationship(const QUuid &entityUuid, const QUuid &otherEntityUuid,
-                                          const QString &otherEntityName);
-    Result<QList<QUuid>> getRelatedEntityUuids(const QUuid &entityUuid, const QString &otherEntityName);
-
-  private:
+    Result<void> addEntityRelationship(int entityId, int otherEntityId, const QString &otherEntityName,
+                                       int position = -1);
+    Result<void> removeEntityRelationship(int entityId, int otherEntityId, const QString &otherEntityName);
+    Result<QList<int>> getRelatedEntityIds(int entityId, const QString &otherEntityName);
     QHash<QString, PropertyWithForeignKey> getEntityPropertiesWithForeignKey();
 
   private:
@@ -61,16 +59,9 @@ template <class T> ForeignEntity<T>::ForeignEntity(InterfaceDatabaseContext *con
 
 //--------------------------------------------
 
-template <class T> QString ForeignEntity<T>::getRelationshipTableName(const QString &otherEntityClassName)
-{
-    QString entityClassName = Tools<T>::getEntityTableName();
-    QString relationshipTableName = entityClassName + otherEntityClassName + "Relationship";
-    return relationshipTableName;
-}
-
 template <class T>
-Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, const QUuid &otherEntityUuid,
-                                                     const QString &otherEntityName, int position)
+Result<void> ForeignEntity<T>::addEntityRelationship(int entityId, int otherEntityId, const QString &otherEntityName,
+                                                     int position)
 {
     QSqlDatabase database = m_databaseContext->getConnection();
     QSqlQuery query(database);
@@ -82,11 +73,11 @@ Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, co
         {
 
             QString propertyName = foreignKeyPropertyIter.key();
-            QString queryStr = QString("UPDATE %1 SET %2 = :otherEntityUuid WHERE uuid = :entityUuid")
+            QString queryStr = QString("UPDATE %1 SET %2 = :otherEntityId WHERE id = :entityId")
                                    .arg(Tools<T>::getEntityClassName(), propertyName);
             query.prepare(queryStr);
-            query.bindValue(":entityUuid", entityUuid.toString());
-            query.bindValue(":otherEntityUuid", otherEntityUuid.toString());
+            query.bindValue(":entityId", entityId);
+            query.bindValue(":otherEntityId", otherEntityId);
 
             if (!query.exec())
             {
@@ -97,16 +88,16 @@ Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, co
         }
         else if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::Set)
         {
-            QString relationshipTableName = getRelationshipTableName(otherEntityName);
-            QString entityUuidColumnName =
-                Tools<T>::getEntityClassName().left(1).toLower() + Tools<T>::getEntityClassName().mid(1) + "Uuid";
-            QString otherEntityUuidColumnName = otherEntityName.left(1).toLower() + otherEntityName.mid(1) + "Uuid";
+            QString relationshipTableName = foreignKeyPropertyIter->relationshipTableName;
+            QString entityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
+            QString otherEntityIdColumnName =
+                ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(otherEntityName);
 
-            QString queryStr = QString("INSERT INTO %1 (%2, %3) VALUES (:entityUuid, :otherEntityUuid)")
-                                   .arg(relationshipTableName, entityUuidColumnName, otherEntityUuidColumnName);
+            QString queryStr = QString("INSERT INTO %1 (%2, %3) VALUES (:entityId, :otherEntityId)")
+                                   .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
             query.prepare(queryStr);
-            query.bindValue(":entityUuid", entityUuid.toString());
-            query.bindValue(":otherEntityUuid", otherEntityUuid.toString());
+            query.bindValue(":entityId", entityId);
+            query.bindValue(":otherEntityId", otherEntityId);
 
             if (!query.exec())
             {
@@ -117,10 +108,10 @@ Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, co
         }
         else if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::List)
         {
-            QString relationshipTableName = getRelationshipTableName(otherEntityName);
-            QString entityUuidColumnName =
-                Tools<T>::getEntityClassName().left(1).toLower() + Tools<T>::getEntityClassName().mid(1) + "Uuid";
-            QString otherEntityUuidColumnName = otherEntityName.left(1).toLower() + otherEntityName.mid(1) + "Uuid";
+            QString relationshipTableName = foreignKeyPropertyIter->relationshipTableName;
+            QString entityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
+            QString otherEntityIdColumnName =
+                ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(otherEntityName);
 
             // This query is designed to insert an element in the relationship table for a
             // PropertyWithForeignKey::RelationshipType::List. The query is composed of multiple parts using common
@@ -136,26 +127,26 @@ Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, co
             QString queryStr = QString(R"(
                 WITH RECURSIVE
                     find_insert_point (prev, next) AS (
-                        SELECT prev, next FROM %1 WHERE %2 = :entityUuid
+                        SELECT prev, next FROM %1 WHERE %2 = :entityId
                         UNION ALL
-                        SELECT t.prev, t.next FROM %1 t, find_insert_point fip WHERE t.%2 = :entityUuid AND t.prev = fip.next
+                        SELECT t.prev, t.next FROM %1 t, find_insert_point fip WHERE t.%2 = :entityId AND t.prev = fip.next
                     ),
                     prev_element AS (SELECT prev FROM find_insert_point WHERE prev < :row AND next >= :row LIMIT 1),
                     next_element AS (SELECT next FROM find_insert_point WHERE prev < :row AND next >= :row LIMIT 1),
                     update_prev AS (
-                        UPDATE %1 SET next = :otherEntityUuid WHERE %2 = :entityUuid AND %3 = (SELECT prev FROM prev_element)
+                        UPDATE %1 SET next = :otherEntityId WHERE %2 = :entityId AND %3 = (SELECT prev FROM prev_element)
                     ),
                     update_next AS (
-                        UPDATE %1 SET prev = :otherEntityUuid WHERE %2 = :entityUuid AND %3 = (SELECT next FROM next_element)
+                        UPDATE %1 SET prev = :otherEntityId WHERE %2 = :entityId AND %3 = (SELECT next FROM next_element)
                     )
                 INSERT INTO %1 (prev, %2, %3, next)
-                VALUES ((SELECT prev FROM prev_element), :entityUuid, :otherEntityUuid, (SELECT next FROM next_element))
+                VALUES ((SELECT prev FROM prev_element), :entityId, :otherEntityId, (SELECT next FROM next_element))
             )")
-                                   .arg(relationshipTableName, entityUuidColumnName, otherEntityUuidColumnName);
+                                   .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
 
             query.prepare(queryStr);
-            query.bindValue(":entityUuid", entityUuid.toString());
-            query.bindValue(":otherEntityUuid", otherEntityUuid.toString());
+            query.bindValue(":entityId", entityId);
+            query.bindValue(":otherEntityId", otherEntityId);
             query.bindValue(":row", position);
         }
     }
@@ -169,8 +160,7 @@ Result<void> ForeignEntity<T>::addEntityRelationship(const QUuid &entityUuid, co
 //--------------------------------------------
 
 template <class T>
-Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid, const QUuid &otherEntityUuid,
-                                                        const QString &otherEntityName)
+Result<void> ForeignEntity<T>::removeEntityRelationship(int entityId, int otherEntityId, const QString &otherEntityName)
 {
     QSqlDatabase database = m_databaseContext->getConnection();
     QSqlQuery query(database);
@@ -182,9 +172,9 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
         {
             QString propertyName = foreignKeyPropertyIter.key();
             QString queryStr =
-                QString("UPDATE %1 SET %2 = NULL WHERE uuid = :uuid").arg(Tools<T>::getEntityClassName(), propertyName);
+                QString("UPDATE %1 SET %2 = NULL WHERE id = :id").arg(Tools<T>::getEntityClassName(), propertyName);
             query.prepare(queryStr);
-            query.bindValue(":uuid", entityUuid.toString());
+            query.bindValue(":id", entityId);
 
             if (!query.exec())
             {
@@ -195,16 +185,15 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
         }
         else if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::List)
         {
-            QString relationshipTableName = getRelationshipTableName(otherEntityName);
-            QString entityUuidColumnName =
-                Tools<T>::getEntityClassName().left(1).toLower() + Tools<T>::getEntityClassName().mid(1) + "Uuid";
-            QString otherEntityUuidColumnName = otherEntityName.left(1).toLower() + otherEntityName.mid(1) + "Uuid";
+            QString relationshipTableName = foreignKeyPropertyIter->relationshipTableName;
+            QString entityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
+            QString otherEntityIdColumnName =
+                ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(otherEntityName);
 
             // Prepare the query to find the element to remove and its neighbors
-            QString findElementQueryStr =
-                QString(R"(
+            QString findElementQueryStr = QString(R"(
                 WITH element AS (
-                    SELECT * FROM %1 WHERE %2 = :entityUuid AND %3 = :otherEntityUuid
+                    SELECT * FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId
                 ),
                 prev_element AS (
                     SELECT * FROM %1 WHERE %3 = (SELECT prev FROM element)
@@ -213,7 +202,7 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
                     SELECT * FROM %1 WHERE %2 = (SELECT next FROM element)
                 )
             )")
-                    .arg(relationshipTableName, entityUuidColumnName, otherEntityUuidColumnName);
+                                              .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
 
             // Update the 'next' value of the previous element and the 'prev' value of the next element
             QString updateNeighborsQueryStr =
@@ -223,17 +212,17 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
                 UPDATE %1
                 SET prev = (SELECT prev FROM element) WHERE %2 = (SELECT next FROM element);
             )")
-                    .arg(relationshipTableName, entityUuidColumnName, otherEntityUuidColumnName);
+                    .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
 
             // Remove the element from the relationship table
             QString removeElementQueryStr =
-                QString("DELETE FROM %1 WHERE %2 = :entityUuid AND %3 = :otherEntityUuid")
-                    .arg(relationshipTableName, entityUuidColumnName, otherEntityUuidColumnName);
+                QString("DELETE FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId")
+                    .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
 
             QSqlQuery query(database);
             query.prepare(findElementQueryStr + updateNeighborsQueryStr + removeElementQueryStr);
-            query.bindValue(":entityUuid", entityUuid.toString());
-            query.bindValue(":otherEntityUuid", otherEntityUuid.toString());
+            query.bindValue(":entityId", entityId);
+            query.bindValue(":otherEntityId", otherEntityId);
 
             if (!query.exec())
             {
@@ -245,16 +234,16 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
 
         else // Set case
         {
-            QString relationshipTableName = getRelationshipTableName(otherEntityName);
-            QString entityUuidColumnName =
-                Tools<T>::getEntityClassName().left(1).toLower() + Tools<T>::getEntityClassName().mid(1) + "Uuid";
-            QString otherEntityUuidColumnName = otherEntityName.left(1).toLower() + otherEntityName.mid(1) + "Uuid";
+            QString relationshipTableName = foreignKeyPropertyIter->relationshipTableName;
+            QString entityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
+            QString otherEntityIdColumnName =
+                ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(otherEntityName);
 
-            QString queryStr = QString("DELETE FROM %1 WHERE %2 = :entityUuid AND %3 = :otherEntityUuid")
-                                   .arg(relationshipTableName, entityUuidColumnName, otherEntityUuidColumnName);
+            QString queryStr = QString("DELETE FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId")
+                                   .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
             query.prepare(queryStr);
-            query.bindValue(":entityUuid", entityUuid.toString());
-            query.bindValue(":otherEntityUuid", otherEntityUuid.toString());
+            query.bindValue(":entityId", entityId);
+            query.bindValue(":otherEntityId", otherEntityId);
 
             if (!query.exec())
             {
@@ -274,7 +263,7 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(const QUuid &entityUuid,
 //--------------------------------------------
 
 template <class T>
-Result<QList<QUuid>> ForeignEntity<T>::getRelatedEntityUuids(const QUuid &entityUuid, const QString &otherEntityName)
+Result<QList<int>> ForeignEntity<T>::getRelatedEntityIds(int entityId, const QString &otherEntityName)
 {
     QSqlDatabase database = m_databaseContext->getConnection();
     QSqlQuery query(database);
@@ -282,59 +271,59 @@ Result<QList<QUuid>> ForeignEntity<T>::getRelatedEntityUuids(const QUuid &entity
     auto foreignKeyPropertyIter = m_foreignKeyProperties.find(otherEntityName);
     if (foreignKeyPropertyIter != m_foreignKeyProperties.end())
     {
-        QString entityUuidColumnName =
-            Tools<T>::getEntityClassName().left(1).toLower() + Tools<T>::getEntityClassName().mid(1) + "Uuid";
-        QString otherEntityUuidColumnName = otherEntityName.left(1).toLower() + otherEntityName.mid(1) + "Uuid";
-
         if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::Unique)
         {
             QString propertyName = foreignKeyPropertyIter.key();
             QString queryStr =
-                QString("SELECT %1 FROM %2 WHERE uuid = :entityUuid").arg(propertyName, Tools<T>::getEntityClassName());
+                QString("SELECT %1 FROM %2 WHERE id = :entityId").arg(propertyName, Tools<T>::getEntityClassName());
             query.prepare(queryStr);
-            query.bindValue(":entityUuid", entityUuid.toString());
+            query.bindValue(":entityId", entityId);
         }
         else
         {
-            QString relationshipTableName = getRelationshipTableName(otherEntityName);
+            QString relationshipTableName = foreignKeyPropertyIter->relationshipTableName;
+            QString entityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
+            QString otherEntityIdColumnName =
+                ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(otherEntityName);
+
             QString queryStr;
 
             if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::List)
             {
                 queryStr = QString("WITH RECURSIVE ordered_relationships AS "
-                                   "(SELECT %1, next FROM %2 WHERE %3 = :entityUuid AND prev IS NULL "
+                                   "(SELECT %1, next FROM %2 WHERE %3 = :entityId AND prev IS NULL "
                                    "UNION ALL "
                                    "SELECT r.%1, r.next FROM %2 r "
                                    "JOIN ordered_relationships ON r.prev = ordered_relationships.%1) "
                                    "SELECT %1 FROM ordered_relationships")
-                               .arg(otherEntityUuidColumnName, relationshipTableName, entityUuidColumnName);
+                               .arg(otherEntityIdColumnName, relationshipTableName, entityIdColumnName);
             }
             else // Set case
             {
-                queryStr = QString("SELECT %1 FROM %2 WHERE %3 = :entityUuid")
-                               .arg(otherEntityUuidColumnName, relationshipTableName, entityUuidColumnName);
+                queryStr = QString("SELECT %1 FROM %2 WHERE %3 = :entityId")
+                               .arg(otherEntityIdColumnName, relationshipTableName, entityIdColumnName);
             }
 
             query.prepare(queryStr);
-            query.bindValue(":entityUuid", entityUuid.toString());
+            query.bindValue(":entityId", entityId);
         }
 
         if (!query.exec())
         {
-            return Result<QList<QUuid>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text()));
+            return Result<QList<int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text()));
         }
 
-        QList<QUuid> uuids;
+        QList<int> ids;
         while (query.next())
         {
-            uuids.append(QUuid(query.value(0).toString()));
+            ids.append(query.value(0).toInt());
         }
-        return Result<QList<QUuid>>(uuids);
+        return Result<QList<int>>(ids);
     }
     else
     {
-        return Result<QList<QUuid>>(Error(Q_FUNC_INFO, Error::Critical, "get_related_uuids_failed",
-                                          "Unknown relationship property", otherEntityName));
+        return Result<QList<int>>(Error(Q_FUNC_INFO, Error::Critical, "get_related_ids_failed",
+                                        "Unknown relationship property", otherEntityName));
     }
 }
 
@@ -354,6 +343,9 @@ template <class T> QHash<QString, PropertyWithForeignKey> ForeignEntity<T>::getE
             QString typeName = property.typeName();
             QString otherEntityClassName;
             PropertyWithForeignKey::RelationshipType relationshipType;
+
+            const QMetaObject *metaObject = QMetaType::fromName(typeName.toLatin1()).metaObject();
+            bool inheritsEntity = metaObject ? metaObject->inherits(Domain::Entity().metaObject()) : false;
 
             if (typeName.startsWith("QList<"))
             {
@@ -379,8 +371,9 @@ template <class T> QHash<QString, PropertyWithForeignKey> ForeignEntity<T>::getE
                 }
                 relationshipType = PropertyWithForeignKey::RelationshipType::Set;
             }
-            else if (QMetaType::fromName(typeName.toLatin1()).flags() & QMetaType::PointerToQObject)
+            else if (inheritsEntity)
             {
+
                 otherEntityClassName = typeName;
                 relationshipType = PropertyWithForeignKey::RelationshipType::Unique;
             }
@@ -391,7 +384,7 @@ template <class T> QHash<QString, PropertyWithForeignKey> ForeignEntity<T>::getE
 
             if (!otherEntityClassName.isEmpty())
             {
-                QString relationshipTableName = getRelationshipTableName(otherEntityClassName);
+                QString relationshipTableName = ForeignEntityTools<T>::getRelationshipTableName(property.name());
 
                 // Check if the relationship table exists
                 QSqlDatabase database = m_databaseContext->getConnection();
@@ -400,6 +393,10 @@ template <class T> QHash<QString, PropertyWithForeignKey> ForeignEntity<T>::getE
                     PropertyWithForeignKey propWithForeignKey{otherEntityClassName, relationshipTableName,
                                                               relationshipType};
                     foreignKeyProperties.insert(property.name(), propWithForeignKey);
+                }
+                else
+                {
+                    qFatal("relationship table doesn't exist");
                 }
             }
         }

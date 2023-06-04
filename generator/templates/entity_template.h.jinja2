@@ -17,7 +17,7 @@ class {{ export }} {{ name }} : public {{ parent }}
 {% for field in fields %}
     Q_PROPERTY({{ field.type }} {{ field.name }} READ {{ field.name }} WRITE set{{ field.name_pascal }})
 
-    {% if field.type.startswith('QList') %}
+    {% if field.need_lazy_loader %}
     Q_PROPERTY(bool {{ field.name }}Loaded MEMBER m_{{ field.name }}Loaded)
     {% endif %}{% endfor %}
 
@@ -29,7 +29,7 @@ class {{ export }} {{ name }} : public {{ parent }}
     {
     }
 
-    {{ name }}(const {{ name }} &other) : {{ parent }}({% if parent != 'QObject' %}other{% endif %}){% for field in fields %}, m_{{ field.name }}(other.m_{{ field.name }}){% endfor %}
+    {{ name }}(const {{ name }} &other) : {{ parent }}({% if parent != 'QObject' %}other{% endif %}){% for field in fields %}, m_{{ field.name }}(other.m_{{ field.name }}){% if field.need_lazy_loader %}, m_{{ field.name }}Loaded(other.m_{{ field.name }}Loaded){% endif %}{% endfor %}
     {
     }
 
@@ -42,17 +42,25 @@ class {{ export }} {{ name }} : public {{ parent }}
             {%- endif %}
             {% for field in fields -%}
             m_{{ field.name }} = other.m_{{ field.name }};
-            {% endfor %}
+            {% if field.need_lazy_loader -%}
+            m_{{ field.name }}Loaded = other.m_{{ field.name }}Loaded;
+            {% endif %}{% endfor %}
         }
         return *this;
     }
 
+    friend bool operator==(const {{ name }} &lhs, const {{ name }} &rhs);
+
+
+    friend uint qHash(const {{ name }} &entity, uint seed) noexcept;
+
+
 {% for field in fields %}
     // ------ {{ field.name }} : -----
 
-    {{ field.type }} {{ field.name }}() {% if not field.type.startswith('QList') %}const{% endif %}
+    {{ field.type }} {{ field.name }}() {% if not field.need_lazy_loader %}const{% endif %}
     {
-        {% if field.type.startswith('QList') -%}
+        {% if field.need_lazy_loader -%}
         if (!m_{{ field.name }}Loaded && m_{{ field.name }}Loader)
         {
             m_{{ field.name }} = m_{{ field.name }}Loader();
@@ -66,7 +74,7 @@ class {{ export }} {{ name }} : public {{ parent }}
     {
         m_{{ field.name }} = {{ field.name }};
     }
-    {% if field.type.startswith('QList') %}
+    {% if field.need_lazy_loader %}
     using {{ field.name.capitalize() }}Loader = std::function<{{ field.type }}()>;
 
     void set{{ field.name_pascal }}Loader(const {{ field.name_pascal }}Loader &loader)
@@ -79,11 +87,41 @@ class {{ export }} {{ name }} : public {{ parent }}
   private:
 {% for field in fields -%}
     {{ field.type }} m_{{ field.name }};
-    {% if field.type.startswith('QList') -%}
+    {% if field.need_lazy_loader -%}
     {{ field.name_pascal }}Loader m_{{ field.name }}Loader;
     bool m_{{ field.name }}Loaded = false;
     {%- endif %}
 {%- endfor %}
 };
 
+inline bool operator==(const {{ name }} &lhs, const {{ name }} &rhs)
+{
+
+    return 
+            {% if parent != 'QObject' -%}
+            static_cast<const {{ parent }}&>(lhs) == static_cast<const {{ parent }}&>(rhs) &&
+            {%- endif %}
+    
+            {% for field in fields -%}
+            lhs.m_{{ field.name }} == rhs.m_{{ field.name }} {% if not loop.last %} && {% endif %}
+            {%- endfor %}
+    ;
+}
+
+inline uint qHash(const {{ name }} &entity, uint seed = 0) noexcept
+{        // Seed the hash with the parent class's hash
+        uint hash = 0;
+        {% if parent != 'QObject' -%}
+        hash ^= qHash(static_cast<const {{ parent }}&>(entity), seed);
+        {%- endif %}
+
+        // Combine with this class's properties
+        {% for field in fields -%}
+        hash ^= ::qHash(entity.m_{{ field.name }}, seed);
+        {% endfor %}
+
+        return hash;
+}
+
 } // namespace Domain
+Q_DECLARE_METATYPE(Domain::{{ name }})

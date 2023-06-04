@@ -37,6 +37,7 @@ class DummyEntity : public Entity
         {
             Entity::operator=(other);
             m_name = other.m_name;
+            m_author = other.m_author;
         }
         return *this;
     }

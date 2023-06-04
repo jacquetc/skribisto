@@ -4,8 +4,9 @@
 
 using namespace Database;
 
-EntityTableSqlGenerator::EntityTableSqlGenerator()
+EntityTableSqlGenerator::EntityTableSqlGenerator(const QStringList &entityClassNames)
 {
+    m_entityClassNames = entityClassNames;
 }
 
 const char *EntityTableSqlGenerator::qtMetaTypeToSqlType(int qtMetaType)
@@ -13,7 +14,7 @@ const char *EntityTableSqlGenerator::qtMetaTypeToSqlType(int qtMetaType)
     switch (qtMetaType)
     {
     case QMetaType::Bool:
-        return "INTEGER";
+        return "BOOLEAN";
     case QMetaType::Int:
         return "INTEGER";
     case QMetaType::UInt:

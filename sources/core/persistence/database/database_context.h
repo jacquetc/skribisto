@@ -36,12 +36,24 @@ class SKR_PERSISTENCE_EXPORT DatabaseContext : public QObject, public Contracts:
 
     QSqlDatabase getConnection() override;
 
-  signals:
+    using SqlEmptyDatabaseQueryFunction = std::function<QStringList()>;
+
+    void setSqlEmptyDatabaseQueryFunction(const SqlEmptyDatabaseQueryFunction &function)
+    {
+        m_sqlEmptyDatabaseQueryFunction = function;
+    }
+    QStringList entityClassNames() const;
+    void setEntityClassNames(const QStringList &newEntityClassNames);
+
+signals:
 
   private:
     QMutex mutex;
     QUrl m_fileName;        /**< The file name of the internal database. */
     QString m_databaseName; /**< The name of the internal database. */
+
+    SqlEmptyDatabaseQueryFunction m_sqlEmptyDatabaseQueryFunction;
+    QStringList m_entityClassNames;
 
     /**
      * @brief Loads the internal database from the given file name.

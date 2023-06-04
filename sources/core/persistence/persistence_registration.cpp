@@ -1,6 +1,7 @@
 #include "persistence_registration.h"
 #include "database/database_context.h"
 #include "database/database_table.h"
+#include "database/entity_table_sql_generator.h"
 #include "repositories/atelier_repository.h"
 #include "repositories/author_repository.h"
 #include "repositories/book_repository.h"
@@ -15,6 +16,28 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
 {
 
     auto *context = new DatabaseContext();
+
+    QStringList entityClassNameList;
+    entityClassNameList << "Author"
+                        << "Chapter"
+                        << "Book"
+                        << "Atelier";
+
+    context->setEntityClassNames(entityClassNameList);
+
+    // create the empty internal database:
+    context->setSqlEmptyDatabaseQueryFunction([entityClassNameList]() {
+        QStringList queryList;
+        EntityTableSqlGenerator sqlGenerator(entityClassNameList);
+
+        queryList << sqlGenerator.generateEntitySql<Domain::Author>();
+        queryList << sqlGenerator.generateEntitySql<Domain::Chapter>();
+        queryList << sqlGenerator.generateEntitySql<Domain::Book>();
+        queryList << sqlGenerator.generateEntitySql<Domain::Atelier>();
+
+        return queryList;
+    });
+
     Result<void> initResult = context->init();
     if (initResult.hasError())
     {

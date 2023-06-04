@@ -1,9 +1,5 @@
 #include "database_context.h"
 #include "QtSql/qsqlerror.h"
-#include "atelier.h"
-#include "author.h"
-#include "chapter.h"
-#include "entity_table_sql_generator.h"
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QString>
@@ -54,6 +50,16 @@ QSqlDatabase DatabaseContext::getConnection()
     qDebug() << QSqlDatabase::connectionNames();
 
     return QSqlDatabase::database(connectionName);
+}
+
+QStringList DatabaseContext::entityClassNames() const
+{
+    return m_entityClassNames;
+}
+
+void DatabaseContext::setEntityClassNames(const QStringList &newEntityClassNames)
+{
+    m_entityClassNames = newEntityClassNames;
 }
 
 //-------------------------------------------------
@@ -118,12 +124,5 @@ Result<QString> DatabaseContext::createEmptyDatabase()
 
 QStringList DatabaseContext::sqlEmptyDatabaseQuery() const
 {
-    QStringList queryList;
-
-    queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Author>();
-    queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Atelier>();
-    queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Book>();
-    queryList << EntityTableSqlGenerator::generateEntitySql<Domain::Chapter>();
-
-    return queryList;
+    return m_sqlEmptyDatabaseQueryFunction();
 }

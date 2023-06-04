@@ -13,6 +13,10 @@ class SKR_CONTRACTS_EXPORT InterfaceDatabaseContext
     {
     }
 
+    QStringList entityClassNames() const;
+    void init();
+    void setEntityClassNames(const QStringList &newEntityClassNames);
+
     virtual QSqlDatabase getConnection() = 0;
 };
 } // namespace Contracts::Database

@@ -1,0 +1,24 @@
+#pragma once
+
+#include "{{ header_file }}"
+{% for entity in entities_list -%}
+#include "{{ entity.name.lower() }}.h"
+{% endfor %}
+#include <QObject>
+
+namespace Domain {
+
+class {{ export }} DomainRegistration : public QObject
+{
+    Q_OBJECT
+  public:
+    explicit DomainRegistration(QObject *parent)
+    {
+        {% for entity in entities_list %}
+        qRegisterMetaType<Domain::{{ entity.name }}>("Domain::{{ entity.name }}");
+        {%- endfor %}
+
+    }
+};
+
+} // namespace Domain

@@ -17,8 +17,7 @@ template <class T> class Tools
      */
     static QString getEntityClassName();
     static QString getEntityTableName();
-    static QString getEntityShadowTableName();
-    static QString getEntityOrderingTableName();
+    static QString getTableNameFromClassName(const QString &className);
 
     /**
      * @brief getEntityProperties returns the list of properties associated with the class
@@ -27,6 +26,7 @@ template <class T> class Tools
      */
     static QStringList getEntityProperties();
     static QStringList getTablePropertyColumns();
+
     /**
      * @brief Maps a hash of field names to their corresponding values to an entity of type T.
      * @param fieldWithValue The hash of field names to their corresponding values to be mapped.
@@ -49,23 +49,21 @@ template <class T> QString Tools<T>::getEntityClassName()
     return QString(sourceMetaObject.className()).split("::").last();
 }
 
+//--------------------------------------------
+
 template <class T> QString Tools<T>::getEntityTableName()
 {
-    QString tableName = Tools<T>::getEntityClassName();
-    return Tools<T>::fromPascalToSnakeCase(tableName);
+    QString className = Tools<T>::getEntityClassName();
+    return getTableNameFromClassName(className);
 }
 
-template <class T> QString Tools<T>::getEntityShadowTableName()
+//--------------------------------------------
+
+template <class T> QString Tools<T>::getTableNameFromClassName(const QString &className)
 {
-    QString tableName = Tools<T>::getEntityTableName();
-    return tableName + "_shadow";
+    return Tools<T>::fromPascalToSnakeCase(className);
 }
 
-template <class T> QString Tools<T>::getEntityOrderingTableName()
-{
-    QString tableName = Tools<T>::getEntityTableName();
-    return tableName + "_ordering";
-}
 //--------------------------------------------
 
 template <class T> QStringList Tools<T>::getEntityProperties()

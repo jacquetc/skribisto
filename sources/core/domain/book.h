@@ -1,8 +1,8 @@
 #pragma once
 
 #include "domain_global.h"
-#include <QString>
 #include "chapter.h"
+#include <QString>
 
 #include "entity.h"
 
@@ -30,7 +30,7 @@ class SKR_DOMAIN_EXPORT Book : public Entity
     {
     }
 
-    Book(const Book &other) : Entity(other), m_title(other.m_title), m_chapters(other.m_chapters)
+    Book(const Book &other) : Entity(other), m_title(other.m_title), m_chapters(other.m_chapters), m_chaptersLoaded(other.m_chaptersLoaded)
     {
     }
 
@@ -41,10 +41,17 @@ class SKR_DOMAIN_EXPORT Book : public Entity
             Entity::operator=(other);
             m_title = other.m_title;
             m_chapters = other.m_chapters;
+            m_chaptersLoaded = other.m_chaptersLoaded;
             
         }
         return *this;
     }
+
+    friend bool operator==(const Book &lhs, const Book &rhs);
+
+
+    friend uint qHash(const Book &entity, uint seed) noexcept;
+
 
 
     // ------ title : -----
@@ -94,4 +101,28 @@ QString m_title;
     bool m_chaptersLoaded = false;
 };
 
+inline bool operator==(const Book &lhs, const Book &rhs)
+{
+
+    return 
+            static_cast<const Entity&>(lhs) == static_cast<const Entity&>(rhs) &&
+    
+            lhs.m_title == rhs.m_title  && lhs.m_chapters == rhs.m_chapters 
+    ;
+}
+
+inline uint qHash(const Book &entity, uint seed = 0) noexcept
+{        // Seed the hash with the parent class's hash
+        uint hash = 0;
+        hash ^= qHash(static_cast<const Entity&>(entity), seed);
+
+        // Combine with this class's properties
+        hash ^= ::qHash(entity.m_title, seed);
+        hash ^= ::qHash(entity.m_chapters, seed);
+        
+
+        return hash;
+}
+
 } // namespace Domain
+Q_DECLARE_METATYPE(Domain::Book)

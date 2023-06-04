@@ -1,8 +1,8 @@
 #pragma once
 
 #include "domain_global.h"
-#include <QUuid>
 #include <QDateTime>
+#include <QUuid>
 
 
 
@@ -51,6 +51,12 @@ class SKR_DOMAIN_EXPORT Entity : public QObject
         }
         return *this;
     }
+
+    friend bool operator==(const Entity &lhs, const Entity &rhs);
+
+
+    friend uint qHash(const Entity &entity, uint seed) noexcept;
+
 
 
     // ------ id : -----
@@ -118,4 +124,30 @@ int m_id;
     
 };
 
+inline bool operator==(const Entity &lhs, const Entity &rhs)
+{
+
+    return 
+            
+    
+            lhs.m_id == rhs.m_id  && lhs.m_uuid == rhs.m_uuid  && lhs.m_creationDate == rhs.m_creationDate  && lhs.m_updateDate == rhs.m_updateDate 
+    ;
+}
+
+inline uint qHash(const Entity &entity, uint seed = 0) noexcept
+{        // Seed the hash with the parent class's hash
+        uint hash = 0;
+        
+
+        // Combine with this class's properties
+        hash ^= ::qHash(entity.m_id, seed);
+        hash ^= ::qHash(entity.m_uuid, seed);
+        hash ^= ::qHash(entity.m_creationDate, seed);
+        hash ^= ::qHash(entity.m_updateDate, seed);
+        
+
+        return hash;
+}
+
 } // namespace Domain
+Q_DECLARE_METATYPE(Domain::Entity)

@@ -39,6 +39,12 @@ class SKR_DOMAIN_EXPORT Chapter : public Entity
         return *this;
     }
 
+    friend bool operator==(const Chapter &lhs, const Chapter &rhs);
+
+
+    friend uint qHash(const Chapter &entity, uint seed) noexcept;
+
+
 
     // ------ title : -----
 
@@ -60,4 +66,27 @@ QString m_title;
     
 };
 
+inline bool operator==(const Chapter &lhs, const Chapter &rhs)
+{
+
+    return 
+            static_cast<const Entity&>(lhs) == static_cast<const Entity&>(rhs) &&
+    
+            lhs.m_title == rhs.m_title 
+    ;
+}
+
+inline uint qHash(const Chapter &entity, uint seed = 0) noexcept
+{        // Seed the hash with the parent class's hash
+        uint hash = 0;
+        hash ^= qHash(static_cast<const Entity&>(entity), seed);
+
+        // Combine with this class's properties
+        hash ^= ::qHash(entity.m_title, seed);
+        
+
+        return hash;
+}
+
 } // namespace Domain
+Q_DECLARE_METATYPE(Domain::Chapter)

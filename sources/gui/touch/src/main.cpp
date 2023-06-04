@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0
 
 #include "app_environment.h"
+#include "domain_registration.h"
 #include "import_qml_plugins.h"
 #include "persistence_registration.h"
 #include "presenter_registration.h"
@@ -14,6 +15,7 @@ int main(int argc, char *argv[])
     set_qt_environment();
     QGuiApplication app(argc, argv);
 
+    new Domain::DomainRegistration(&app);
     new Persistence::PersistenceRegistration(&app);
     new Presenter::PresenterRegistration(&app);
 

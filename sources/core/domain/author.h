@@ -39,6 +39,12 @@ class SKR_DOMAIN_EXPORT Author : public Entity
         return *this;
     }
 
+    friend bool operator==(const Author &lhs, const Author &rhs);
+
+
+    friend uint qHash(const Author &entity, uint seed) noexcept;
+
+
 
     // ------ name : -----
 
@@ -60,4 +66,27 @@ QString m_name;
     
 };
 
+inline bool operator==(const Author &lhs, const Author &rhs)
+{
+
+    return 
+            static_cast<const Entity&>(lhs) == static_cast<const Entity&>(rhs) &&
+    
+            lhs.m_name == rhs.m_name 
+    ;
+}
+
+inline uint qHash(const Author &entity, uint seed = 0) noexcept
+{        // Seed the hash with the parent class's hash
+        uint hash = 0;
+        hash ^= qHash(static_cast<const Entity&>(entity), seed);
+
+        // Combine with this class's properties
+        hash ^= ::qHash(entity.m_name, seed);
+        
+
+        return hash;
+}
+
 } // namespace Domain
+Q_DECLARE_METATYPE(Domain::Author)

@@ -115,9 +115,9 @@ DatabaseTable<T>::DatabaseTable(const DatabaseTable &other) : m_databaseContext(
 
 template <class T> Result<T> DatabaseTable<T>::get(const int &id)
 {
-    const QString &entityName = this->tableName();
-    const QStringList &properties = this->properties();
-    const QStringList &columns = this->propertyColumns();
+    const QString &entityName = m_tableName;
+    const QStringList &properties = m_properties;
+    const QStringList &columns = m_propertyColumns;
 
     QSqlDatabase database = m_databaseContext->getConnection();
     QHash<QString, QVariant> columnWithValues;
@@ -167,9 +167,9 @@ template <class T> Result<T> DatabaseTable<T>::get(const int &id)
 
 template <class T> Result<T> DatabaseTable<T>::get(const QUuid &uuid)
 {
-    const QString &entityName = this->tableName();
-    const QStringList &properties = this->properties();
-    const QStringList &columns = this->propertyColumns();
+    const QString &entityName = m_tableName;
+    const QStringList &properties = m_properties;
+    const QStringList &columns = m_propertyColumns;
 
     QSqlDatabase database = m_databaseContext->getConnection();
     QHash<QString, QVariant> columnWithValues;
@@ -220,8 +220,8 @@ template <class T> Result<T> DatabaseTable<T>::get(const QUuid &uuid)
 template <class T> Result<QList<T>> DatabaseTable<T>::getAll()
 {
 
-    const QString &entityName = this->tableName();
-    const QStringList &columns = this->propertyColumns();
+    const QString &entityName = m_tableName;
+    const QStringList &columns = m_propertyColumns;
     QSqlDatabase database = m_databaseContext->getConnection();
     QList<QHash<QString, QVariant>> listOfColumnsWithValues;
     QList<T> entities;
@@ -292,9 +292,9 @@ template <class T> QString DatabaseTable<T>::generateFilterQueryString(const QHa
 
 template <class T> Result<QList<T>> DatabaseTable<T>::getAll(const QHash<QString, QVariant> &filters)
 {
-    const QString &entityName = this->tableName();
-    const QStringList &properties = this->properties();
-    const QStringList &columns = this->propertyColumns();
+    const QString &entityName = m_tableName;
+    const QStringList &properties = m_properties;
+    const QStringList &columns = m_propertyColumns;
 
     QSqlDatabase database = m_databaseContext->getConnection();
     QList<QHash<QString, QVariant>> fieldsWithValues;
@@ -366,7 +366,7 @@ template <class T> Result<QList<T>> DatabaseTable<T>::getAll(const QHash<QString
 
 template <class T> Result<T> DatabaseTable<T>::remove(T &&entity)
 {
-    const QString &entityName = this->tableName();
+    const QString &entityName = m_tableName;
     QSqlDatabase database = m_databaseContext->getConnection();
 
     // Generate the SQL DELETE statement
@@ -405,9 +405,9 @@ template <class T> Result<T> DatabaseTable<T>::remove(T &&entity)
 template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
 {
 
-    const QString &entityTableName = this->tableName();
-    const QStringList &properties = this->properties();
-    const QStringList &columns = this->propertyColumns();
+    const QString &entityTableName = m_tableName;
+    const QStringList &properties = m_properties;
+    const QStringList &columns = m_propertyColumns;
     QSqlDatabase database = m_databaseContext->getConnection();
     QHash<QString, QVariant> columnNameWithValue;
 
@@ -470,9 +470,9 @@ template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
 
 template <class T> Result<T> DatabaseTable<T>::update(T &&entity)
 {
-    const QString &entityName = this->tableName();
-    const QStringList &properties = this->properties();
-    const QStringList &columns = this->propertyColumns();
+    const QString &entityName = m_tableName;
+    const QStringList &properties = m_properties;
+    const QStringList &columns = m_propertyColumns;
 
     QSqlDatabase database = m_databaseContext->getConnection();
     QHash<QString, QVariant> fieldWithValue;
@@ -529,7 +529,7 @@ template <class T> Result<T> DatabaseTable<T>::update(T &&entity)
 
 template <class T> Result<bool> DatabaseTable<T>::exists(const QUuid &uuid)
 {
-    const QString &entityName = this->tableName();
+    const QString &entityName = m_tableName;
     QSqlDatabase database = m_databaseContext->getConnection();
 
     {
@@ -563,7 +563,7 @@ template <class T> Result<bool> DatabaseTable<T>::exists(const QUuid &uuid)
 
 template <class T> Result<bool> DatabaseTable<T>::exists(int id)
 {
-    const QString &entityName = this->tableName();
+    const QString &entityName = m_tableName;
     QSqlDatabase database = m_databaseContext->getConnection();
 
     {
@@ -597,7 +597,7 @@ template <class T> Result<bool> DatabaseTable<T>::exists(int id)
 
 template <class T> Result<void> DatabaseTable<T>::clear()
 {
-    const QString &entityName = this->tableName();
+    const QString &entityName = m_tableName;
     QSqlDatabase database = this->databaseContext()->getConnection();
     QSqlQuery query(database);
     QString queryStrMain = "DELETE FROM " + entityName;
@@ -621,8 +621,8 @@ template <class T> Result<SaveData> DatabaseTable<T>::save(const QList<int> &idL
     QMap<QString, QList<QVariantHash>> resultMap;
 
     QSqlDatabase database = m_databaseContext->getConnection();
-    const QString &entityName = this->tableName();
-    const QStringList &columns = this->propertyColumns();
+    const QString &entityName = m_tableName;
+    const QStringList &columns = m_propertyColumns;
 
     QStringList tableTypes = {"entity"};
 
@@ -692,8 +692,8 @@ template <class T> Result<SaveData> DatabaseTable<T>::save(const QList<int> &idL
 template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &tableRowsMap)
 {
     QSqlDatabase database = m_databaseContext->getConnection();
-    const QString &entityName = this->tableName();
-    const QStringList &columns = this->propertyColumns();
+    const QString &entityName = m_tableName;
+    const QStringList &columns = m_propertyColumns;
 
     for (const QString &tableType : tableRowsMap.keys())
     {

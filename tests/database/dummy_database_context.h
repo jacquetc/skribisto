@@ -10,31 +10,48 @@
 #include <QThreadPool>
 #include <QUuid>
 
-class DummyDatabaseContext : public Contracts::Database::InterfaceDatabaseContext
+template <class T, class U> class DummyDatabaseContext : public Contracts::Database::InterfaceDatabaseContext
 {
   public:
     DummyDatabaseContext();
     ~DummyDatabaseContext();
+    void init();
 
   private:
     QString m_databaseName;
+    QStringList m_entityClassNames;
 
     // InterfaceDatabaseContext interface
   public:
     QSqlDatabase getConnection() override;
+    QStringList entityClassNames() const;
+    void setEntityClassNames(const QStringList &newEntityClassNames);
 };
 
-DummyDatabaseContext::DummyDatabaseContext()
+template <class T, class U> DummyDatabaseContext<T, U>::DummyDatabaseContext()
 {
+    const char *t = T::staticMetaObject.className();
+    qRegisterMetaType<T>(t);
+    qRegisterMetaType<U>(U::staticMetaObject.className());
 
     m_databaseName = ":memory:";
+}
+
+template <class T, class U> DummyDatabaseContext<T, U>::~DummyDatabaseContext()
+{
+}
+
+template <class T, class U> void DummyDatabaseContext<T, U>::init()
+{
     auto db = DummyDatabaseContext::getConnection();
 
     {
         QSqlQuery query(db);
 
         QStringList sqlList;
-        sqlList << Database::EntityTableSqlGenerator::generateEntitySql<Domain::DummyEntity>();
+        Database::EntityTableSqlGenerator generator(m_entityClassNames);
+        sqlList << generator.generateEntitySql<U>();
+        sqlList << generator.generateEntitySql<T>();
 
         for (const QString &queryStr : sqlList)
         {
@@ -51,11 +68,7 @@ DummyDatabaseContext::DummyDatabaseContext()
     }
 }
 
-DummyDatabaseContext::~DummyDatabaseContext()
-{
-}
-
-QSqlDatabase DummyDatabaseContext::getConnection()
+template <class T, class U> QSqlDatabase DummyDatabaseContext<T, U>::getConnection()
 {
     QString connectionName = QString("Thread_%1").arg(uintptr_t(QThread::currentThreadId()));
     if (!QSqlDatabase::contains(connectionName))
@@ -71,4 +84,14 @@ QSqlDatabase DummyDatabaseContext::getConnection()
     qDebug() << QSqlDatabase::connectionNames();
 
     return QSqlDatabase::database(connectionName);
+}
+
+template <class T, class U> QStringList DummyDatabaseContext<T, U>::entityClassNames() const
+{
+    return m_entityClassNames;
+}
+
+template <class T, class U> void DummyDatabaseContext<T, U>::setEntityClassNames(const QStringList &newEntityClassNames)
+{
+    m_entityClassNames = newEntityClassNames;
 }
