@@ -1,34 +1,34 @@
 #pragma once
 
-#include "entity.h"
+#include "domain_global.h"
+#include <QString>
+
+#include "dummy_entity.h"
 
 namespace Domain
 {
 
-class DummyOtherEntity : public Entity
+class SKR_DOMAIN_EXPORT DummyOtherEntity : public DummyEntity
 {
-    Q_OBJECT
+    Q_GADGET
+
     Q_PROPERTY(QString name READ name WRITE setName)
 
   public:
-    DummyOtherEntity() : Entity(){};
+    DummyOtherEntity() : DummyEntity(), m_name(QString())
+    {
+    }
+
     ~DummyOtherEntity()
     {
     }
 
-    DummyOtherEntity(int id, const QUuid &uuid, const QString &name, const QString &author)
-        : Entity(id, uuid, QDateTime(), QDateTime())
-    {
-        m_name = name;
-    }
-
-    DummyOtherEntity(int id, const QUuid &uuid, const QString &name, const QString &author,
-                     const QDateTime &creationDate, const QDateTime &updateDate)
-        : Entity(id, uuid, creationDate, updateDate), m_name(name)
+    DummyOtherEntity(const int &id, const QUuid &uuid, const QDateTime &creationDate, const QString &name)
+        : DummyEntity(id, uuid, creationDate), m_name(name)
     {
     }
 
-    DummyOtherEntity(const DummyOtherEntity &other) : Entity(other), m_name(other.m_name)
+    DummyOtherEntity(const DummyOtherEntity &other) : DummyEntity(other), m_name(other.m_name)
     {
     }
 
@@ -36,14 +36,21 @@ class DummyOtherEntity : public Entity
     {
         if (this != &other)
         {
-            Entity::operator=(other);
+            DummyEntity::operator=(other);
             m_name = other.m_name;
         }
         return *this;
     }
 
+    friend bool operator==(const DummyOtherEntity &lhs, const DummyOtherEntity &rhs);
+
+    friend uint qHash(const DummyOtherEntity &entity, uint seed) noexcept;
+
+    // ------ name : -----
+
     QString name() const
     {
+
         return m_name;
     }
 
@@ -56,6 +63,24 @@ class DummyOtherEntity : public Entity
     QString m_name;
 };
 
-} // namespace Domain
+inline bool operator==(const DummyOtherEntity &lhs, const DummyOtherEntity &rhs)
+{
 
+    return static_cast<const DummyEntity &>(lhs) == static_cast<const DummyEntity &>(rhs) &&
+
+           lhs.m_name == rhs.m_name;
+}
+
+inline uint qHash(const DummyOtherEntity &entity, uint seed = 0) noexcept
+{ // Seed the hash with the parent class's hash
+    uint hash = 0;
+    hash ^= qHash(static_cast<const DummyEntity &>(entity), seed);
+
+    // Combine with this class's properties
+    hash ^= ::qHash(entity.m_name, seed);
+
+    return hash;
+}
+
+} // namespace Domain
 Q_DECLARE_METATYPE(Domain::DummyOtherEntity)

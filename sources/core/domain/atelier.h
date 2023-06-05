@@ -1,8 +1,8 @@
 #pragma once
 
 #include "domain_global.h"
-#include "book.h"
 #include <QString>
+#include "book.h"
 
 #include "entity.h"
 
@@ -11,7 +11,7 @@ namespace Domain
 
 class SKR_DOMAIN_EXPORT Atelier : public Entity
 {
-    Q_OBJECT
+    Q_GADGET
 
     Q_PROPERTY(QString name READ name WRITE setName)
 
@@ -23,7 +23,13 @@ class SKR_DOMAIN_EXPORT Atelier : public Entity
     
 
   public:
-    Atelier() : Entity() , m_name(QString()){}
+    Atelier() : Entity() , m_name(QString())
+    {
+    }
+
+    ~Atelier()
+    {
+    }
 
    Atelier(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &name,   const QList<Book> &books ) 
         : Entity(id, uuid, creationDate, updateDate), m_name(name), m_books(books)

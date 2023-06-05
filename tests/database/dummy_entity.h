@@ -1,33 +1,40 @@
 #pragma once
 
-#include "entity.h"
+#include "domain_global.h"
+#include <QDateTime>
+#include <QUuid>
+
+#include "entity_base.h"
 
 namespace Domain
 {
 
-class DummyEntity : public Entity
+class SKR_DOMAIN_EXPORT DummyEntity : public EntityBase
 {
-    Q_OBJECT
-    Q_PROPERTY(QString name READ name WRITE setName)
-    Q_PROPERTY(QString author READ author WRITE setAuthor)
+    Q_GADGET
+
+    Q_PROPERTY(QUuid uuid READ uuid WRITE setUuid)
+
+    
+    Q_PROPERTY(QDateTime creationDate READ creationDate WRITE setCreationDate)
+
+    
 
   public:
-    DummyEntity() : Entity(){};
-
-    DummyEntity(int id, const QUuid &uuid, const QString &name, const QString &author)
-        : Entity(id, uuid, QDateTime(), QDateTime())
-    {
-        m_name = name;
-        m_author = author;
-    }
-
-    DummyEntity(int id, const QUuid &uuid, const QString &name, const QString &author, const QDateTime &creationDate,
-                const QDateTime &updateDate)
-        : Entity(id, uuid, creationDate, updateDate), m_name(name), m_author(author)
+    DummyEntity() : EntityBase() , m_uuid(QUuid()), m_creationDate(QDateTime())
     {
     }
 
-    DummyEntity(const DummyEntity &other) : Entity(other), m_name(other.m_name), m_author(other.m_author)
+    ~DummyEntity()
+    {
+    }
+
+   DummyEntity(  const int &id,   const QUuid &uuid,   const QDateTime &creationDate ) 
+        : EntityBase(id), m_uuid(uuid), m_creationDate(creationDate)
+    {
+    }
+
+    DummyEntity(const DummyEntity &other) : EntityBase(other), m_uuid(other.m_uuid), m_creationDate(other.m_creationDate)
     {
     }
 
@@ -35,36 +42,78 @@ class DummyEntity : public Entity
     {
         if (this != &other)
         {
-            Entity::operator=(other);
-            m_name = other.m_name;
-            m_author = other.m_author;
+            EntityBase::operator=(other);
+            m_uuid = other.m_uuid;
+            m_creationDate = other.m_creationDate;
+            
         }
         return *this;
     }
 
-    QString name() const
+    friend bool operator==(const DummyEntity &lhs, const DummyEntity &rhs);
+
+
+    friend uint qHash(const DummyEntity &entity, uint seed) noexcept;
+
+
+
+    // ------ uuid : -----
+
+    QUuid uuid() const
     {
-        return m_name;
+        
+        return m_uuid;
     }
 
-    void setName(const QString &name)
+    void setUuid( const QUuid &uuid)
     {
-        m_name = name;
+        m_uuid = uuid;
+    }
+    
+
+    // ------ creationDate : -----
+
+    QDateTime creationDate() const
+    {
+        
+        return m_creationDate;
     }
 
-    QString author() const
+    void setCreationDate( const QDateTime &creationDate)
     {
-        return m_author;
+        m_creationDate = creationDate;
     }
-    void setAuthor(const QString &newAuthor)
-    {
-        m_author = newAuthor;
-    }
+    
+
 
   private:
-    QString m_name;
-    QString m_author;
+QUuid m_uuid;
+    QDateTime m_creationDate;
+    
 };
+
+inline bool operator==(const DummyEntity &lhs, const DummyEntity &rhs)
+{
+
+    return 
+            static_cast<const EntityBase&>(lhs) == static_cast<const EntityBase&>(rhs) &&
+    
+            lhs.m_uuid == rhs.m_uuid  && lhs.m_creationDate == rhs.m_creationDate 
+    ;
+}
+
+inline uint qHash(const DummyEntity &entity, uint seed = 0) noexcept
+{        // Seed the hash with the parent class's hash
+        uint hash = 0;
+        hash ^= qHash(static_cast<const EntityBase&>(entity), seed);
+
+        // Combine with this class's properties
+        hash ^= ::qHash(entity.m_uuid, seed);
+        hash ^= ::qHash(entity.m_creationDate, seed);
+        
+
+        return hash;
+}
 
 } // namespace Domain
 Q_DECLARE_METATYPE(Domain::DummyEntity)

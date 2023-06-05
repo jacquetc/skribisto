@@ -10,14 +10,20 @@ namespace Domain
 
 class SKR_DOMAIN_EXPORT Author : public Entity
 {
-    Q_OBJECT
+    Q_GADGET
 
     Q_PROPERTY(QString name READ name WRITE setName)
 
     
 
   public:
-    Author() : Entity() , m_name(QString()){}
+    Author() : Entity() , m_name(QString())
+    {
+    }
+
+    ~Author()
+    {
+    }
 
    Author(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &name ) 
         : Entity(id, uuid, creationDate, updateDate), m_name(name)

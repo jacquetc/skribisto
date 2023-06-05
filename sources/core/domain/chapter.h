@@ -10,14 +10,20 @@ namespace Domain
 
 class SKR_DOMAIN_EXPORT Chapter : public Entity
 {
-    Q_OBJECT
+    Q_GADGET
 
     Q_PROPERTY(QString title READ title WRITE setTitle)
 
     
 
   public:
-    Chapter() : Entity() , m_title(QString()){}
+    Chapter() : Entity() , m_title(QString())
+    {
+    }
+
+    ~Chapter()
+    {
+    }
 
    Chapter(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &title ) 
         : Entity(id, uuid, creationDate, updateDate), m_title(title)

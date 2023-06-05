@@ -1,8 +1,8 @@
 #pragma once
 
 #include "{{ header_file }}"
-{% for entity in entities_list -%}
-#include "{{ entity.name.lower() }}.h"
+{% for header in headers -%}
+#include {{ header }}
 {% endfor %}
 #include <QObject>
 

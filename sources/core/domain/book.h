@@ -1,8 +1,8 @@
 #pragma once
 
 #include "domain_global.h"
-#include "chapter.h"
 #include <QString>
+#include "chapter.h"
 
 #include "entity.h"
 
@@ -11,7 +11,7 @@ namespace Domain
 
 class SKR_DOMAIN_EXPORT Book : public Entity
 {
-    Q_OBJECT
+    Q_GADGET
 
     Q_PROPERTY(QString title READ title WRITE setTitle)
 
@@ -23,7 +23,13 @@ class SKR_DOMAIN_EXPORT Book : public Entity
     
 
   public:
-    Book() : Entity() , m_title(QString()){}
+    Book() : Entity() , m_title(QString())
+    {
+    }
+
+    ~Book()
+    {
+    }
 
    Book(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &title,   const QList<Chapter> &chapters ) 
         : Entity(id, uuid, creationDate, updateDate), m_title(title), m_chapters(chapters)

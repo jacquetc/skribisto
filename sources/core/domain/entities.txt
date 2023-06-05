@@ -3,4 +3,5 @@ chapter.h
 book.h
 atelier.h
 author.h
+entity_base.h
 domain_registration.h

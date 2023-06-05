@@ -6,6 +6,7 @@
 #include "book.h"
 #include "atelier.h"
 #include "author.h"
+#include "entity_base.h"
 
 #include <QObject>
 
@@ -23,6 +24,7 @@ class SKR_DOMAIN_EXPORT DomainRegistration : public QObject
         qRegisterMetaType<Domain::Book>("Domain::Book");
         qRegisterMetaType<Domain::Atelier>("Domain::Atelier");
         qRegisterMetaType<Domain::Author>("Domain::Author");
+        qRegisterMetaType<Domain::EntityBase>("Domain::EntityBase");
 
     }
 };

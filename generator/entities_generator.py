@@ -1,6 +1,7 @@
 from jinja2 import Environment, FileSystemLoader
 import yaml
 import os
+import sys
 import stringcase
 
 
@@ -14,6 +15,10 @@ def generate_cpp_files(manifest_file):
 
     entities_data = manifest_data.get("entities", [])
     entities_list = entities_data.get("list", [])
+    # remove entities that are not to be generated
+    entities_list = [entity for entity in entities_list if entity.get("generate", True)]
+
+    register_entity_base = entities_data.get("register_entity_base", False)
     export = entities_data.get("export", "")
     header_file = entities_data.get("export_header_file", "")
     path = entities_data.get("forder_path", ".")
@@ -64,7 +69,7 @@ def generate_cpp_files(manifest_file):
     for entity in entities_list:
         name = entity["name"]
         fields = entity["fields"]
-        parent = entity.get("parent", "QObject")
+        parent = entity.get("parent", "EntityBase")
         generate = entity.get("generate", True)
 
         # add name_pascal to fields
@@ -88,24 +93,55 @@ def generate_cpp_files(manifest_file):
         for field in fields:
             field_type = field["type"]
             if isListOrSetForeignEntity(field_type):
-                include_header_file = (
-                    field_type.split("<")[1].split(">")[0].strip().lower()
-                )
-                headers.append(f'"{include_header_file}.h"')
+                include_header_file = field_type.split("<")[1].split(">")[0].strip()
+                headers.append(f'"{stringcase.snakecase(include_header_file)}.h"')
             elif isUniqueForeignEntity(field_type):
-                headers.append(f'"{field_type.lower()}.h"')
+                headers.append(f'"{stringcase.snakecase(field_type)}.h"')
             elif field_type in ["QString", "QDateTime", "QUuid"]:
                 headers.append(f"<{field_type}>")
 
         # remove duplicates
         headers = list(set(headers))
 
-        # If the parent is a custom entity defined in the manifest, include its fields as well
-        parent_fields = (
-            entities_by_name.get(parent, {}).get("fields", [])
-            if parent in entities_by_name
-            else []
-        )
+        parent_header = f'"{stringcase.snakecase(parent)}.h"'
+
+        # If the parent is a custom entity defined in the manifest, include its fields as well. Also, it will add the fields parent of the parent recursively, butonly if the parent is defined in the
+        # manifest. If the parent is not defined in the manifest, it will only add the fields of the current entity. But it adds the field "id" of type "int" from EntityBase.
+        # This is done to avoid having to add the field "id" in every entity defined in the manifest.
+
+        # Initialize an empty list for parent fields
+        parent_fields = []
+
+        # Check if the parent of the current entity is a custom entity defined in the manifest
+        if parent in entities_by_name:
+            parent_fields.append(
+                {
+                    "name": "id",
+                    "type": "int",
+                    "need_lazy_loader": False,
+                    "name_pascal": "Id",
+                }
+            )
+            # If it is, then get the fields of the parent entity
+            parent_fields += entities_by_name[parent]["fields"]
+
+            # If parent has its own parent, recursively add its fields
+            while (
+                "parent" in entities_by_name[parent]
+                and entities_by_name[parent]["parent"] in entities_by_name
+            ):
+                parent = entities_by_name[parent]["parent"]
+
+                parent_fields += entities_by_name[parent]["fields"]
+        else:
+            parent_fields.append(
+                {
+                    "name": "id",
+                    "type": "int",
+                    "need_lazy_loader": False,
+                    "name_pascal": "Id",
+                }
+            )
 
         # only keep the fields from the current entity for initialization
         fields_init_values = ", ".join(
@@ -133,13 +169,14 @@ def generate_cpp_files(manifest_file):
             fields=fields,
             parent_fields=parent_fields,
             headers=headers,
+            parent_header=parent_header,
             export=export,
             header_file=header_file,
             fields_init_values=fields_init_values,
             parent_init_values=parent_init_values,
         )
 
-        output_file = os.path.join(path, f"{name.lower()}.h")
+        output_file = os.path.join(path, f"{stringcase.snakecase(name)}.h")
 
         # Create the directory if it does not exist
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -151,15 +188,28 @@ def generate_cpp_files(manifest_file):
             fh.write(rendered_template)
             print(f"Successfully wrote file {output_file}")
 
+    # add entity_base
+    if register_entity_base:
+        name = "EntityBase"
+        entities_list.append({"name": name})
+        output_file = os.path.join(path, f"{stringcase.snakecase(name)}.h")
+        generated_files.append(output_file)
+
     # generate domain registration file
 
     registration_template = template_env.get_template(
         "domain_registration_template.h.jinja2"
     )
 
+    headers = []
+    for entity in entities_list:
+        name = entity["name"]
+        headers.append(f'"{stringcase.snakecase(name)}.h"')
+
     rendered_template = registration_template.render(
         export=export,
         header_file=header_file,
+        headers=headers,
         entities_list=entities_list,
     )
 
@@ -183,4 +233,15 @@ def generate_cpp_files(manifest_file):
 
 
 # Main execution
-generate_cpp_files("manifest.yaml")
+# add the current directory to the path so that we can import the generated files
+sys.path.append(os.getcwd() + "/generator")
+
+
+# set the current directory to the generator directory
+os.chdir(os.getcwd() + "/generator")
+
+
+file = "manifest.yaml"
+
+# generate the files
+generate_cpp_files(file)

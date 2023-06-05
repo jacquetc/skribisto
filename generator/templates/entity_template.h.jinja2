@@ -4,16 +4,14 @@
 {% for header in headers -%}
 #include {{ header }}
 {% endfor %}
-{% if parent != 'QObject' -%}
-#include "{{ parent.lower() }}.h"
-{%- endif %}
+#include {{ parent_header }}
 
 namespace Domain
 {
 
 class {{ export }} {{ name }} : public {{ parent }}
 {
-    Q_OBJECT
+    Q_GADGET
 {% for field in fields %}
     Q_PROPERTY({{ field.type }} {{ field.name }} READ {{ field.name }} WRITE set{{ field.name_pascal }})
 
@@ -35,7 +33,7 @@ class {{ export }} {{ name }} : public {{ parent }}
     {
     }
 
-    {{ name }}(const {{ name }} &other) : {{ parent }}({% if parent != 'QObject' %}other{% endif %}){% for field in fields %}, m_{{ field.name }}(other.m_{{ field.name }}){% if field.need_lazy_loader %}, m_{{ field.name }}Loaded(other.m_{{ field.name }}Loaded){% endif %}{% endfor %}
+    {{ name }}(const {{ name }} &other) : {{ parent }}(other){% for field in fields %}, m_{{ field.name }}(other.m_{{ field.name }}){% if field.need_lazy_loader %}, m_{{ field.name }}Loaded(other.m_{{ field.name }}Loaded){% endif %}{% endfor %}
     {
     }
 
@@ -43,9 +41,7 @@ class {{ export }} {{ name }} : public {{ parent }}
     {
         if (this != &other)
         {
-            {% if parent != 'QObject' -%}
             {{ parent }}::operator=(other);
-            {%- endif %}
             {% for field in fields -%}
             m_{{ field.name }} = other.m_{{ field.name }};
             {% if field.need_lazy_loader -%}
@@ -104,9 +100,7 @@ inline bool operator==(const {{ name }} &lhs, const {{ name }} &rhs)
 {
 
     return 
-            {% if parent != 'QObject' -%}
             static_cast<const {{ parent }}&>(lhs) == static_cast<const {{ parent }}&>(rhs) &&
-            {%- endif %}
     
             {% for field in fields -%}
             lhs.m_{{ field.name }} == rhs.m_{{ field.name }} {% if not loop.last %} && {% endif %}
@@ -117,9 +111,7 @@ inline bool operator==(const {{ name }} &lhs, const {{ name }} &rhs)
 inline uint qHash(const {{ name }} &entity, uint seed = 0) noexcept
 {        // Seed the hash with the parent class's hash
         uint hash = 0;
-        {% if parent != 'QObject' -%}
         hash ^= qHash(static_cast<const {{ parent }}&>(entity), seed);
-        {%- endif %}
 
         // Combine with this class's properties
         {% for field in fields -%}

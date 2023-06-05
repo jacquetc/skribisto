@@ -1,6 +1,6 @@
 #include "database/database_table.h"
 #include "dummy_database_context.h"
-#include "dummy_entity.h"
+#include "dummy_basic_entity.h"
 #include <QtTest/QtTest>
 
 class TestDatabaseTable : public QObject
@@ -17,16 +17,16 @@ class TestDatabaseTable : public QObject
     void testRemove();
 
   private:
-    Database::DatabaseTable<Domain::DummyEntity> *m_entityTable;
+    Database::DatabaseTable<Domain::DummyBasicEntity> *m_entityTable;
 };
 
 void TestDatabaseTable::initTestCase()
 {
-    DummyDatabaseContext<Domain::DummyEntity, Domain::DummyEntity> *context =
-        new DummyDatabaseContext<Domain::DummyEntity, Domain::DummyEntity>();
+    DummyDatabaseContext<Domain::DummyBasicEntity, Domain::DummyBasicEntity> *context =
+        new DummyDatabaseContext<Domain::DummyBasicEntity, Domain::DummyBasicEntity>();
     context->setEntityClassNames(QStringList() << "DummyEntity");
     context->init();
-    m_entityTable = new Database::DatabaseTable<Domain::DummyEntity>(context);
+    m_entityTable = new Database::DatabaseTable<Domain::DummyBasicEntity>(context);
 }
 
 void TestDatabaseTable::cleanupTestCase()
@@ -44,7 +44,7 @@ void TestDatabaseTable::cleanup()
 void TestDatabaseTable::testAdd()
 {
 
-    Domain::DummyEntity entity;
+    Domain::DummyBasicEntity entity;
     entity.setName("Sample DummyEntity");
     entity.setUuid(QUuid::createUuid());
     entity.setCreationDate(QDateTime::currentDateTime());
@@ -72,7 +72,7 @@ void TestDatabaseTable::testAdd()
 
 void TestDatabaseTable::testRemove()
 {
-    Domain::DummyEntity entity;
+    Domain::DummyBasicEntity entity;
     entity.setName("Sample DummyEntity");
     entity.setUuid(QUuid::createUuid());
     auto addResult = m_entityTable->add(std::move(entity));

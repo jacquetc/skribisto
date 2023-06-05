@@ -1,7 +1,7 @@
 #include "database/database_table.h"
 #include "database/tools.h"
 #include "dummy_database_context.h"
-#include "dummy_entity.h"
+#include "dummy_basic_entity.h"
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
@@ -34,7 +34,7 @@ class DatabaseToolsTest : public QObject
     void testGetEntityTableName();
 
   private:
-    Database::DatabaseTable<Domain::DummyEntity> *m_entityTable;
+    Database::DatabaseTable<Domain::DummyBasicEntity> *m_entityTable;
 };
 
 DatabaseToolsTest::DatabaseToolsTest()
@@ -47,11 +47,11 @@ DatabaseToolsTest::~DatabaseToolsTest()
 
 void DatabaseToolsTest::initTestCase()
 {
-    DummyDatabaseContext<Domain::DummyEntity, Domain::DummyEntity> *context =
-        new DummyDatabaseContext<Domain::DummyEntity, Domain::DummyEntity>();
+    DummyDatabaseContext<Domain::DummyBasicEntity, Domain::DummyBasicEntity> *context =
+        new DummyDatabaseContext<Domain::DummyBasicEntity, Domain::DummyBasicEntity>();
     context->setEntityClassNames(QStringList() << "DummyEntity");
     context->init();
-    m_entityTable = new Database::DatabaseTable<Domain::DummyEntity>(context);
+    m_entityTable = new Database::DatabaseTable<Domain::DummyBasicEntity>(context);
 }
 
 void DatabaseToolsTest::cleanupTestCase()
@@ -81,28 +81,28 @@ void DatabaseToolsTest::testStringCaseConversion()
     {
         QString pascalCaseString = pascalCaseStrings.at(i);
         QString expectedSnakeCaseString = snakeCaseStrings.at(i);
-        QCOMPARE(Tools<Domain::DummyEntity>::fromPascalToSnakeCase(pascalCaseString), expectedSnakeCaseString);
+        QCOMPARE(Tools<Domain::DummyBasicEntity>::fromPascalToSnakeCase(pascalCaseString), expectedSnakeCaseString);
     }
     // Test fromSnakeCaseToCamel
     for (int i = 0; i < snakeCaseStrings.size(); ++i)
     {
         QString snakeCaseString = snakeCaseStrings.at(i);
         QString expectedCamelCaseString = camelCaseStrings.at(i);
-        QCOMPARE(Tools<Domain::DummyEntity>::fromSnakeCaseToCamelCase(snakeCaseString), expectedCamelCaseString);
+        QCOMPARE(Tools<Domain::DummyBasicEntity>::fromSnakeCaseToCamelCase(snakeCaseString), expectedCamelCaseString);
     }
     // Test fromSnakeCaseToPascal
     for (int i = 0; i < snakeCaseStrings.size(); ++i)
     {
         QString snakeCaseString = snakeCaseStrings.at(i);
         QString expectedPascalCaseString = pascalCaseStrings.at(i);
-        QCOMPARE(Tools<Domain::DummyEntity>::fromSnakeCaseToPascalCase(snakeCaseString), expectedPascalCaseString);
+        QCOMPARE(Tools<Domain::DummyBasicEntity>::fromSnakeCaseToPascalCase(snakeCaseString), expectedPascalCaseString);
     }
 }
 
 void DatabaseToolsTest::testGetEntityTableName()
 {
     // Create a Tools object for DummyEntity
-    Tools<Domain::DummyEntity> dummyEntityTools;
+    Tools<Domain::DummyBasicEntity> dummyEntityTools;
 
     // Call the getEntityClassName method
     QString entityClassName = dummyEntityTools.getEntityTableName();

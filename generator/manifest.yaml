@@ -2,10 +2,9 @@
 entities:
   list:
     - name: Entity
+      parent: EntityBase
       generate: true
       fields:
-        - type: int
-          name: id
         - type: QUuid
           name: uuid
         - type: QDateTime
@@ -40,10 +39,45 @@ entities:
       fields:
         - type: QString
           name: name
+    - name: DummyEntity
+      parent: EntityBase
+      generate: false
+      fields:
+        - type: QUuid
+          name: uuid
+        - type: QDateTime
+          name: creationDate
+    - name: DummyBasicEntity
+      parent: DummyEntity
+      generate: false
+      fields:
+        - type: QString
+          name: name
+        - type: QString
+          name: author
+    - name: DummyOtherEntity
+      parent: DummyEntity
+      generate: false
+      fields:
+        - type: QString
+          name: name
+    - name: DummyEntityWithForeign
+      parent: DummyEntity
+      generate: false
+      fields:
+        - type: QString
+          name: name
+        - type: QList<DummyOtherEntity>
+          name: lists
+        - type: QSet<DummyOtherEntity>
+          name: sets
+        - type: DummyOtherEntity
+          name: unique
   export: SKR_DOMAIN_EXPORT
   export_header_file: domain_global.h
   forder_path: ../sources/core/domain/
   list_file: ../sources/core/domain/entities.txt
+  register_entity_base: true
 
 repositories:
   list:
