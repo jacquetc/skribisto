@@ -47,6 +47,7 @@ DatabaseToolsTest::~DatabaseToolsTest()
 
 void DatabaseToolsTest::initTestCase()
 {
+
     DummyDatabaseContext<Domain::DummyBasicEntity, Domain::DummyBasicEntity> *context =
         new DummyDatabaseContext<Domain::DummyBasicEntity, Domain::DummyBasicEntity>();
     context->setEntityClassNames(QStringList() << "DummyEntity");

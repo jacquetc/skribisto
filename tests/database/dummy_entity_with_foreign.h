@@ -19,10 +19,6 @@ class SKR_DOMAIN_EXPORT DummyEntityWithForeign : public DummyEntity
 
     Q_PROPERTY(bool listsLoaded MEMBER m_listsLoaded)
 
-    Q_PROPERTY(QSet<DummyOtherEntity> sets READ sets WRITE setSets)
-
-    Q_PROPERTY(bool setsLoaded MEMBER m_setsLoaded)
-
     Q_PROPERTY(DummyOtherEntity unique READ unique WRITE setUnique)
 
     Q_PROPERTY(bool uniqueLoaded MEMBER m_uniqueLoaded)
@@ -39,14 +35,13 @@ class SKR_DOMAIN_EXPORT DummyEntityWithForeign : public DummyEntity
     DummyEntityWithForeign(const int &id, const QUuid &uuid, const QDateTime &creationDate, const QString &name,
                            const QList<DummyOtherEntity> &lists, const QSet<DummyOtherEntity> &sets,
                            const DummyOtherEntity &unique)
-        : DummyEntity(id, uuid, creationDate), m_name(name), m_lists(lists), m_sets(sets), m_unique(unique)
+        : DummyEntity(id, uuid, creationDate), m_name(name), m_lists(lists), m_unique(unique)
     {
     }
 
     DummyEntityWithForeign(const DummyEntityWithForeign &other)
         : DummyEntity(other), m_name(other.m_name), m_lists(other.m_lists), m_listsLoaded(other.m_listsLoaded),
-          m_sets(other.m_sets), m_setsLoaded(other.m_setsLoaded), m_unique(other.m_unique),
-          m_uniqueLoaded(other.m_uniqueLoaded)
+          m_unique(other.m_unique), m_uniqueLoaded(other.m_uniqueLoaded)
     {
     }
 
@@ -58,8 +53,6 @@ class SKR_DOMAIN_EXPORT DummyEntityWithForeign : public DummyEntity
             m_name = other.m_name;
             m_lists = other.m_lists;
             m_listsLoaded = other.m_listsLoaded;
-            m_sets = other.m_sets;
-            m_setsLoaded = other.m_setsLoaded;
             m_unique = other.m_unique;
             m_uniqueLoaded = other.m_uniqueLoaded;
         }
@@ -107,30 +100,6 @@ class SKR_DOMAIN_EXPORT DummyEntityWithForeign : public DummyEntity
         m_listsLoader = loader;
     }
 
-    // ------ sets : -----
-
-    QSet<DummyOtherEntity> sets()
-    {
-        if (!m_setsLoaded && m_setsLoader)
-        {
-            m_sets = m_setsLoader();
-            m_setsLoaded = true;
-        }
-        return m_sets;
-    }
-
-    void setSets(const QSet<DummyOtherEntity> &sets)
-    {
-        m_sets = sets;
-    }
-
-    using SetsLoader = std::function<QSet<DummyOtherEntity>()>;
-
-    void setSetsLoader(const SetsLoader &loader)
-    {
-        m_setsLoader = loader;
-    }
-
     // ------ unique : -----
 
     DummyOtherEntity unique()
@@ -160,9 +129,6 @@ class SKR_DOMAIN_EXPORT DummyEntityWithForeign : public DummyEntity
     QList<DummyOtherEntity> m_lists;
     ListsLoader m_listsLoader;
     bool m_listsLoaded = false;
-    QSet<DummyOtherEntity> m_sets;
-    SetsLoader m_setsLoader;
-    bool m_setsLoaded = false;
     DummyOtherEntity m_unique;
     UniqueLoader m_uniqueLoader;
     bool m_uniqueLoaded = false;
@@ -173,8 +139,7 @@ inline bool operator==(const DummyEntityWithForeign &lhs, const DummyEntityWithF
 
     return static_cast<const DummyEntity &>(lhs) == static_cast<const DummyEntity &>(rhs) &&
 
-           lhs.m_name == rhs.m_name && lhs.m_lists == rhs.m_lists && lhs.m_sets == rhs.m_sets &&
-           lhs.m_unique == rhs.m_unique;
+           lhs.m_name == rhs.m_name && lhs.m_lists == rhs.m_lists && lhs.m_unique == rhs.m_unique;
 }
 
 inline uint qHash(const DummyEntityWithForeign &entity, uint seed = 0) noexcept
@@ -185,7 +150,6 @@ inline uint qHash(const DummyEntityWithForeign &entity, uint seed = 0) noexcept
     // Combine with this class's properties
     hash ^= ::qHash(entity.m_name, seed);
     hash ^= ::qHash(entity.m_lists, seed);
-    hash ^= ::qHash(entity.m_sets, seed);
     hash ^= ::qHash(entity.m_unique, seed);
 
     return hash;

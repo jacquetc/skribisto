@@ -15,7 +15,6 @@ template <class T> class ForeignEntityTools
     static QString getOtherEntityTableName(const QString &propertyType);
     static QString getOtherEntityClassName(const QString &propertyType);
 
-    static bool isSet(const QStringList &entityClassNames, const QString &propertyType);
     static bool isList(const QStringList &entityClassNames, const QString &propertyType);
     static bool isUnique(const QStringList &entityClassNames, const QString &propertyType);
     static bool isForeign(const QStringList &entityClassNames, const QString &propertyType);
@@ -101,17 +100,6 @@ template <class T> QString ForeignEntityTools<T>::getOtherEntityClassName(const 
 
 //--------------------------------------------
 
-template <class T> bool ForeignEntityTools<T>::isSet(const QStringList &entityClassNames, const QString &propertyType)
-{
-    QString className =
-        propertyType.mid(propertyType.indexOf('<') + 1, propertyType.indexOf('>') - propertyType.indexOf('<') - 1)
-            .split("::")
-            .last();
-    return propertyType.startsWith("QSet<") && isEntity(entityClassNames, className);
-}
-
-//--------------------------------------------
-
 template <class T> bool ForeignEntityTools<T>::isList(const QStringList &entityClassNames, const QString &propertyType)
 {
     QString className =
@@ -142,8 +130,7 @@ bool ForeignEntityTools<T>::isEntity(const QStringList &entityClassNames, const 
 template <class T>
 bool ForeignEntityTools<T>::isForeign(const QStringList &entityClassNames, const QString &propertyType)
 {
-    return isSet(entityClassNames, propertyType) || isList(entityClassNames, propertyType) ||
-           isUnique(entityClassNames, propertyType);
+    return isList(entityClassNames, propertyType) || isUnique(entityClassNames, propertyType);
 }
 
 //--------------------------------------------

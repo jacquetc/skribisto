@@ -112,7 +112,7 @@ DatabaseTable<T>::DatabaseTable(InterfaceDatabaseContext *context)
 template <class T>
 DatabaseTable<T>::DatabaseTable(const DatabaseTable &other) : m_databaseContext(other.databaseContext())
 {
-    static_assert(std::is_base_of<Domain::Entity, T>::value, "T must inherit from Domain::Entity");
+    static_assert(std::is_base_of<Domain::EntityBase, T>::value, "T must inherit from Domain::Entity");
 }
 
 template <class T> Result<T> DatabaseTable<T>::get(const int &id)

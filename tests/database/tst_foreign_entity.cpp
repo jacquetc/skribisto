@@ -21,8 +21,6 @@ class ForeignEntityTest : public QObject
     ForeignEntityTest();
     ~ForeignEntityTest();
 
-  public slots:
-
   private Q_SLOTS:
 
     void initTestCase();
@@ -47,7 +45,6 @@ class ForeignEntityTest : public QObject
   private:
     Domain::DummyEntityWithForeign addToTable(
         const QString &name, const QList<Domain::DummyOtherEntity> &lists = QList<Domain::DummyOtherEntity>(),
-        const QSet<Domain::DummyOtherEntity> &sets = QSet<Domain::DummyOtherEntity>(),
         const Domain::DummyOtherEntity &unique = Domain::DummyOtherEntity());
     Domain::DummyOtherEntity addToOtherTable(const QString &name);
 
@@ -112,15 +109,6 @@ void ForeignEntityTest::testGetRelatedEntityIds()
     execStatus = query.exec();
     QVERIFY(execStatus);
 
-    // Insert a relationship into dummy_entity_with_foreign_sets_relationship
-    query.prepare(
-        "INSERT INTO dummy_entity_with_foreign_sets_relationship (dummy_entity_with_foreign_id, dummy_other_entity_id) "
-        "VALUES (:dummy_entity_id, :dummy_other_entity_id)");
-    query.bindValue(":dummy_entity_id", entity.id());
-    query.bindValue(":dummy_other_entity_id", otherEntity.id());
-    execStatus = query.exec();
-    QVERIFY(execStatus);
-
     // Insert a relationship into dummy_entity_with_foreign_unique_relationship
     query.prepare("INSERT INTO dummy_entity_with_foreign_unique_relationship (dummy_entity_with_foreign_id, "
                   "dummy_other_entity_id) "
@@ -144,16 +132,6 @@ void ForeignEntityTest::testGetRelatedEntityIds()
     QVERIFY(resultList.isOk());
     QList<int> relatedIdsList = resultList.value();
     QVERIFY(relatedIdsList.contains(otherEntity.id()));
-
-    // Use the ForeignEntityWrapper's testGetRelatedEntityIds function to get the list of related entity ids from 'sets'
-    Result<QList<int>> resultSets = m_foreignEntityTable->testGetRelatedEntityIds(entity.id(), "sets");
-    if (resultSets.hasError())
-    {
-        qDebug() << resultSets.errorString();
-    }
-    QVERIFY(resultSets.isOk());
-    QList<int> relatedIdsSets = resultSets.value();
-    QVERIFY(relatedIdsSets.contains(otherEntity.id()));
 
     // Use the ForeignEntityWrapper's testGetRelatedEntityIds function to get the list of related entity ids from
     // 'unique'
@@ -494,9 +472,10 @@ void ForeignEntityTest::testListMoveRelationship()
 {
 }
 
+//-----------------------------------------------------------------------------
+
 Domain::DummyEntityWithForeign ForeignEntityTest::addToTable(const QString &name,
                                                              const QList<Domain::DummyOtherEntity> &lists,
-                                                             const QSet<Domain::DummyOtherEntity> &sets,
                                                              const Domain::DummyOtherEntity &unique)
 {
 
@@ -506,7 +485,6 @@ Domain::DummyEntityWithForeign ForeignEntityTest::addToTable(const QString &name
     entity.setCreationDate(QDateTime::currentDateTime());
 
     entity.setLists(lists);
-    entity.setSets(sets);
     entity.setUnique(unique);
 
     auto addResult = m_entityTable->add(std::move(entity));
@@ -517,6 +495,8 @@ Domain::DummyEntityWithForeign ForeignEntityTest::addToTable(const QString &name
 
     return addResult.value();
 }
+
+//-----------------------------------------------------------------------------
 
 Domain::DummyOtherEntity ForeignEntityTest::addToOtherTable(const QString &name)
 {
@@ -533,6 +513,8 @@ Domain::DummyOtherEntity ForeignEntityTest::addToOtherTable(const QString &name)
 
     return addOtherResult.value();
 }
+
+//-----------------------------------------------------------------------------
 
 QTEST_APPLESS_MAIN(ForeignEntityTest)
 

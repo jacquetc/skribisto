@@ -69,8 +69,6 @@ entities:
           name: name
         - type: QList<DummyOtherEntity>
           name: lists
-        - type: QSet<DummyOtherEntity>
-          name: sets
         - type: DummyOtherEntity
           name: unique
   export: SKR_DOMAIN_EXPORT

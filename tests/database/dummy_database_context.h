@@ -28,9 +28,11 @@ template <class T, class U> class DummyDatabaseContext : public Contracts::Datab
 
 template <class T, class U> DummyDatabaseContext<T, U>::DummyDatabaseContext()
 {
-    const char *t = T::staticMetaObject.className();
-    qRegisterMetaType<T>();
+    qRegisterMetaType<T>(T::staticMetaObject.className());
+
     qRegisterMetaType<U>(U::staticMetaObject.className());
+
+    qRegisterMetaType<Domain::EntityBase>("Domain::EntityBase");
 
     m_databaseName = ":memory:";
 }

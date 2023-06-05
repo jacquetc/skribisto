@@ -1,7 +1,7 @@
 #pragma once
 #include "QtSql/qsqlerror.h"
 #include "database/interface_database_context.h"
-#include "entity.h"
+#include "entity_base.h"
 #include "foreign_entity_tools.h"
 #include "result.h"
 #include "tools.h"
@@ -55,7 +55,6 @@ struct PropertyWithForeignKey
     enum class RelationshipType
     {
         Unique,
-        Set,
         List
     };
     Q_ENUM(RelationshipType)
@@ -115,7 +114,7 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterEntityAddition(T &e
 
     for (const auto &foreignKeyProperty : m_foreignKeyProperties.values())
     {
-        // verify if the property have a non empty value faor the QSet and the QList
+        // verify if the property have a non empty value for the the QList
         QVariant propertyValue = Tools<T>::getEntityPropertyValue(entity, foreignKeyProperty.propertyName);
         if (propertyValue.isNull())
         {
@@ -124,7 +123,7 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterEntityAddition(T &e
 
         if (foreignKeyProperty.relationshipType == PropertyWithForeignKey::RelationshipType::Unique)
         {
-            Domain::Entity otherEntity = propertyValue.value<Domain::Entity>();
+            Domain::EntityBase otherEntity = propertyValue.value<Domain::EntityBase>();
 
             if (otherEntity.id() == 0) // 0 means no real entity
             {
@@ -139,29 +138,14 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterEntityAddition(T &e
                 return result;
             }
         }
-        else if (foreignKeyProperty.relationshipType == PropertyWithForeignKey::RelationshipType::Set)
-        {
-            QSet<Domain::Entity> otherEntities = propertyValue.value<QSet<Domain::Entity>>();
-            for (const Domain::Entity &otherEntity : otherEntities)
-            {
-                Result<void> result =
-                    this->addEntityRelationship(entity.id(), otherEntity.id(), foreignKeyProperty.propertyName);
-                if (!result)
-                {
-                    qWarning() << "Error while adding relationship between " << Tools<T>::getEntityClassName()
-                               << " and " << foreignKeyProperty.foreignTableName << " : " << result.error().message();
-                    return result;
-                }
-            }
-        }
         else if (foreignKeyProperty.relationshipType == PropertyWithForeignKey::RelationshipType::List)
         {
 
             QList<QVariant> variantList = propertyValue.toList();
             for (const QVariant &variantEntity : variantList)
             {
-                bool canConvert = variantEntity.canConvert<Domain::Entity>();
-                Domain::Entity otherEntity = variantEntity.value<Domain::Entity>();
+                bool canConvert = variantEntity.canConvert<Domain::EntityBase>();
+                Domain::EntityBase otherEntity = variantEntity.value<Domain::EntityBase>();
 
                 Result<void> result =
                     this->addEntityRelationship(entity.id(), otherEntity.id(), foreignKeyProperty.propertyName);
@@ -204,7 +188,7 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterEntityUpdate(T &ent
             continue;
         }
 
-        // verify if the property have a non empty value faor the QSet and the QList
+        // verify if the property have a non empty value for the the QList
         QVariant propertyValue = Tools<T>::getEntityPropertyValue(entity, foreignKeyProperty.propertyName);
         if (propertyValue.isNull())
         {
@@ -213,7 +197,7 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterEntityUpdate(T &ent
 
         if (foreignKeyProperty.relationshipType == PropertyWithForeignKey::RelationshipType::Unique)
         {
-            Domain::Entity otherEntity = propertyValue.value<Domain::Entity>();
+            Domain::EntityBase otherEntity = propertyValue.value<Domain::EntityBase>();
 
             if (otherEntity.id() == 0) // 0 means no real entity, so remove the relationship if exists
             {
@@ -267,61 +251,10 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterEntityUpdate(T &ent
                 return addResult;
             }
         }
-        else if (foreignKeyProperty.relationshipType == PropertyWithForeignKey::RelationshipType::Set)
-        {
-            QSet<Domain::Entity> otherEntitySet = propertyValue.value<QSet<Domain::Entity>>();
-
-            // get the current relationship:
-            Result<QList<int>> result = this->getRelatedEntityIds(entity.id(), foreignKeyProperty.propertyName);
-            if (!result)
-            {
-                qWarning() << "Error while removing relationship between " << Tools<T>::getEntityClassName() << " and "
-                           << foreignKeyProperty.foreignTableName << " : " << result.error().message();
-                return Result<void>(Error(result.error()));
-            }
-
-            QList<int> resultList = result.value();
-            QSet<int> foreignIds(resultList.begin(), resultList.end());
-
-            // convert otherEntitySet in QSet<int>
-            QSet<int> otherEntitySetIds;
-            for (const Domain::Entity &otherEntity : otherEntitySet)
-            {
-                otherEntitySetIds.insert(otherEntity.id());
-            }
-
-            // Compare the two sets and remove the relationships that are not in the property value
-            QSet<int> foreignIdsToRemove = foreignIds - otherEntitySetIds;
-            for (const int &foreignId : foreignIdsToRemove)
-            {
-                Result<void> result =
-                    this->removeEntityRelationship(entity.id(), foreignId, foreignKeyProperty.propertyName);
-                if (!result)
-                {
-                    qWarning() << "Error while removing relationship between " << Tools<T>::getEntityClassName()
-                               << " and " << foreignKeyProperty.foreignTableName << " : " << result.error().message();
-                    return result;
-                }
-            }
-
-            // Compare the two sets and add the relationships that are not in the relationship table
-            QSet<int> otherEntitiesToAdd = otherEntitySetIds - foreignIds;
-            for (const int &otherEntityId : otherEntitiesToAdd)
-            {
-                Result<void> result =
-                    this->addEntityRelationship(entity.id(), otherEntityId, foreignKeyProperty.propertyName);
-                if (!result)
-                {
-                    qWarning() << "Error while adding relationship between " << Tools<T>::getEntityClassName()
-                               << " and " << foreignKeyProperty.foreignTableName << " : " << result.error().message();
-                    return result;
-                }
-            }
-        }
 
         else if (foreignKeyProperty.relationshipType == PropertyWithForeignKey::RelationshipType::List)
         {
-            QList<Domain::Entity> otherEntityList = propertyValue.value<QList<Domain::Entity>>();
+            QList<Domain::EntityBase> otherEntityList = propertyValue.value<QList<Domain::EntityBase>>();
 
             // get the current relationship:
             Result<QList<int>> result = this->getRelatedEntityIds(entity.id(), foreignKeyProperty.propertyName);
@@ -335,7 +268,7 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterEntityUpdate(T &ent
 
             // convert otherEntityList in QList<int>
             QList<int> otherEntityListIds;
-            for (const Domain::Entity &otherEntity : otherEntityList)
+            for (const Domain::EntityBase &otherEntity : otherEntityList)
             {
                 otherEntityListIds.append(otherEntity.id());
             }
@@ -549,21 +482,6 @@ Result<void> ForeignEntity<T>::addEntityRelationship(int entityId, int otherEnti
                     Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
             }
         }
-        else if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::Set)
-        {
-
-            QString queryStr = QString("INSERT INTO %1 (%2, %3) VALUES (:entityId, :otherEntityId)")
-                                   .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
-            query.prepare(queryStr);
-            query.bindValue(":entityId", entityId);
-            query.bindValue(":otherEntityId", otherEntityId);
-
-            if (!query.exec())
-            {
-                return Result<void>(
-                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
-            }
-        }
         else if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::List)
         {
 
@@ -674,22 +592,6 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(int entityId, int otherE
             }
             return Result<void>();
         }
-        else if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::Set)
-        {
-
-            QString queryStr = QString("DELETE FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId")
-                                   .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
-            query.prepare(queryStr);
-            query.bindValue(":entityId", entityId);
-            query.bindValue(":otherEntityId", otherEntityId);
-
-            if (!query.exec())
-            {
-                return Result<void>(
-                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
-            }
-            return Result<void>();
-        }
         else if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::List)
         {
             // remove the element from the list and update the prev and next values of the elements before and
@@ -767,13 +669,6 @@ template <class T> Result<QList<int>> ForeignEntity<T>::getRelatedEntityIds(int 
                                ")"
                                "SELECT %3 FROM ordered_relationships ORDER BY row_number")
                            .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
-        }
-
-        else if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::Set)
-        {
-
-            queryStr = QString("SELECT %1 FROM %2 WHERE %3 = :entityId")
-                           .arg(otherEntityIdColumnName, relationshipTableName, entityIdColumnName);
         }
 
         if (!query.prepare(queryStr))
@@ -857,10 +752,6 @@ template <class T> QHash<QString, PropertyWithForeignKey> ForeignEntity<T>::getE
             if (ForeignEntityTools<T>::isList(m_databaseContext->entityClassNames(), typeName))
             {
                 relationshipType = PropertyWithForeignKey::RelationshipType::List;
-            }
-            else if (ForeignEntityTools<T>::isSet(m_databaseContext->entityClassNames(), typeName))
-            {
-                relationshipType = PropertyWithForeignKey::RelationshipType::Set;
             }
             else if (ForeignEntityTools<T>::isUnique(m_databaseContext->entityClassNames(), typeName))
             {

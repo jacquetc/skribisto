@@ -183,22 +183,6 @@ template <class T> QStringList EntityTableSqlGenerator::generateRelationshipTabl
 
             tableList.append(createTableSql);
         }
-        if (ForeignEntityTools<T>::isSet(m_entityClassNames, typeName))
-        {
-
-            createTableSql.append(QString("CREATE TABLE %1 (").arg(relationShipTableName));
-            createTableSql.append("id INTEGER PRIMARY KEY AUTOINCREMENT,");
-            createTableSql.append(QString("%1 INTEGER,").arg(relationshipEntityIdColumnName));
-            createTableSql.append(QString("%1 INTEGER,").arg(relationshipOtherEntityIdColumnName));
-            createTableSql.append(QString("FOREIGN KEY (%1) REFERENCES %2 (id) ON DELETE CASCADE,")
-                                      .arg(relationshipEntityIdColumnName, Tools<T>::getEntityTableName()));
-            createTableSql.append(QString("FOREIGN KEY (%1) REFERENCES %2 (id) ON DELETE CASCADE,")
-                                      .arg(relationshipOtherEntityIdColumnName, otherEntityTableName));
-            createTableSql.append(QString("UNIQUE (%1, %2) ON CONFLICT ROLLBACK);")
-                                      .arg(relationshipEntityIdColumnName, relationshipOtherEntityIdColumnName));
-
-            tableList.append(createTableSql);
-        }
         else if (ForeignEntityTools<T>::isUnique(m_entityClassNames, typeName))
         {
 

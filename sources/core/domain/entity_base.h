@@ -79,3 +79,4 @@ inline uint qHash(const EntityBase &entity, uint seed = 0) noexcept
 
 } // namespace Domain
 Q_DECLARE_METATYPE(Domain::EntityBase)
+Q_DECLARE_METATYPE(QSet<Domain::EntityBase>);
