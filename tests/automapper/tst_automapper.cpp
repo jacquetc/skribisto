@@ -67,7 +67,7 @@ void AutoMapperTest::basicMap()
     QUuid uuid = QUuid::createUuid();
     Domain::Author author(1, uuid, QDateTime(), QDateTime(), "e");
 
-    AuthorDTO dto = AutoMapper::AutoMapper::map<AuthorDTO>(author);
+    AuthorDTO dto = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(author);
 
     QCOMPARE(dto.getName(), "e");
     QCOMPARE(dto.uuid(), uuid);

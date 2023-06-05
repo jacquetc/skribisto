@@ -61,7 +61,7 @@ Result<ChapterDTO> UpdateChapterCommandHandler::handleImpl(const UpdateChapterCo
     }
 
     // map
-    auto chapter = AutoMapper::AutoMapper::map<Domain::Chapter>(request.req);
+    auto chapter = AutoMapper::AutoMapper::map<Domain::Chapter, UpdateChapterDTO>(request.req);
 
     // set update timestamp only on first pass
     if (m_oldState.isEmpty())
@@ -80,7 +80,7 @@ Result<ChapterDTO> UpdateChapterCommandHandler::handleImpl(const UpdateChapterCo
         }
 
         // map
-        m_oldState = Result<ChapterDTO>(AutoMapper::AutoMapper::map<ChapterDTO>(saveResult.value()));
+        m_oldState = Result<ChapterDTO>(AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(saveResult.value()));
     }
     // do
     auto chapterResult = m_repository->update(std::move(chapter));
@@ -90,7 +90,7 @@ Result<ChapterDTO> UpdateChapterCommandHandler::handleImpl(const UpdateChapterCo
     }
 
     // map
-    auto chapterDto = AutoMapper::AutoMapper::map<ChapterDTO>(chapterResult.value());
+    auto chapterDto = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(chapterResult.value());
 
     emit chapterUpdated(chapterDto);
 
@@ -103,7 +103,7 @@ Result<ChapterDTO> UpdateChapterCommandHandler::restoreImpl()
 {
     qDebug() << "UpdateChapterCommandHandler::restoreImpl called with id" << m_oldState.value().uuid();
     // map
-    auto chapter = AutoMapper::AutoMapper::map<Domain::Chapter>(m_oldState.value());
+    auto chapter = AutoMapper::AutoMapper::map<Domain::Chapter, ChapterDTO>(m_oldState.value());
 
     // do
     auto chapterResult = m_repository->update(std::move(chapter));
@@ -113,7 +113,7 @@ Result<ChapterDTO> UpdateChapterCommandHandler::restoreImpl()
     }
 
     // map
-    auto chapterDto = AutoMapper::AutoMapper::map<ChapterDTO>(chapterResult.value());
+    auto chapterDto = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(chapterResult.value());
 
     emit chapterUpdated(chapterDto);
 

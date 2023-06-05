@@ -40,7 +40,7 @@ Result<ChapterDTO> GetChapterRequestHandler::handleImpl(const GetChapterRequest 
     }
 
     // map
-    auto dto = AutoMapper::AutoMapper::map<ChapterDTO>(chapterResult.value());
+    auto dto = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(chapterResult.value());
 
     qDebug() << "GetChapterRequestHandler::handleImpl done";
 

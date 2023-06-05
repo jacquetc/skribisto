@@ -64,7 +64,7 @@ Result<AuthorDTO> RemoveAuthorCommandHandler::handleImpl(const RemoveAuthorComma
     }
 
     // map
-    auto dto = AutoMapper::AutoMapper::map<AuthorDTO>(deleteResult.value());
+    auto dto = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(deleteResult.value());
 
     // save
     m_oldState = Result<AuthorDTO>(dto);

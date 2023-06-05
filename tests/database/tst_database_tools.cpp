@@ -1,7 +1,7 @@
 #include "database/database_table.h"
 #include "database/tools.h"
-#include "dummy_database_context.h"
 #include "dummy_basic_entity.h"
+#include "dummy_database_context.h"
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
@@ -108,7 +108,7 @@ void DatabaseToolsTest::testGetEntityTableName()
     QString entityClassName = dummyEntityTools.getEntityTableName();
 
     // Verify the output
-    QCOMPARE(entityClassName, QString("dummy_entity"));
+    QCOMPARE(entityClassName, QString("dummy_basic_entity"));
 }
 
 QTEST_APPLESS_MAIN(DatabaseToolsTest)

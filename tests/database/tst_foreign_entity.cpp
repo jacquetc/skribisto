@@ -504,7 +504,6 @@ Domain::DummyEntityWithForeign ForeignEntityTest::addToTable(const QString &name
     entity.setName(name);
     entity.setUuid(QUuid::createUuid());
     entity.setCreationDate(QDateTime::currentDateTime());
-    entity.setUpdateDate(QDateTime::currentDateTime());
 
     entity.setLists(lists);
     entity.setSets(sets);
@@ -525,7 +524,6 @@ Domain::DummyOtherEntity ForeignEntityTest::addToOtherTable(const QString &name)
     otherEntity.setName(name);
     otherEntity.setUuid(QUuid::createUuid());
     otherEntity.setCreationDate(QDateTime::currentDateTime());
-    otherEntity.setUpdateDate(QDateTime::currentDateTime());
 
     auto addOtherResult = m_otherEntityTable->add(std::move(otherEntity));
     if (addOtherResult.isError())

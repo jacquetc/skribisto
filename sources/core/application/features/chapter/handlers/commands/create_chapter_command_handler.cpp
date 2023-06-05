@@ -62,7 +62,7 @@ Result<ChapterDTO> CreateChapterCommandHandler::handleImpl(const CreateChapterCo
         }
 
         // Map the create chapter command to a domain chapter object and generate a UUID
-        chapter = AutoMapper::AutoMapper::map<Domain::Chapter>(request.req);
+        chapter = AutoMapper::AutoMapper::map<Domain::Chapter, CreateChapterDTO>(request.req);
 
         // allow for forcing the uuid
         if (chapter.uuid().isNull())
@@ -77,7 +77,7 @@ Result<ChapterDTO> CreateChapterCommandHandler::handleImpl(const CreateChapterCo
     else
     {
         // Map the create chapter command to a domain chapter object and generate a UUID
-        chapter = AutoMapper::AutoMapper::map<Domain::Chapter>(m_oldState.value());
+        chapter = AutoMapper::AutoMapper::map<Domain::Chapter, ChapterDTO>(m_oldState.value());
     }
 
     // Add the chapter to the repository
@@ -91,7 +91,7 @@ Result<ChapterDTO> CreateChapterCommandHandler::handleImpl(const CreateChapterCo
     }
     m_repository->saveChanges();
 
-    auto chapterDTO = AutoMapper::AutoMapper::map<ChapterDTO>(chapterResult.value());
+    auto chapterDTO = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(chapterResult.value());
 
     m_oldState = Result<ChapterDTO>(chapterDTO);
 

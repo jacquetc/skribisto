@@ -1,7 +1,7 @@
 #pragma once
 
 #include "domain_global.h"
-#include "dummyotherentity.h"
+#include "dummy_other_entity.h"
 #include <QString>
 
 #include "dummy_entity.h"

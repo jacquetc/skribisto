@@ -11,53 +11,49 @@ namespace AutoMapper
 class SKR_CONTRACTS_EXPORT AutoMapper
 {
   public:
-    template <class Destination> static Destination map(const QObject &sourceObject)
+    template <class DestinationType, class SourceType> static DestinationType map(const SourceType &sourceObject)
     {
-        Destination destinationObject;
-        mapImpl<Destination>(sourceObject, destinationObject, std::is_pointer<QObject>{},
-                             std::is_pointer<Destination>{});
+        DestinationType destinationObject;
+        mapImpl<DestinationType>(sourceObject, destinationObject, std::is_pointer<SourceType>{},
+                                 std::is_pointer<DestinationType>{});
         return destinationObject;
     }
 
-    template <class Destination> static Destination map(QObject &sourceObject)
+    template <class DestinationType, class SourceType> static DestinationType map(SourceType &sourceObject)
     {
 
-        Destination destinationObject;
-        mapImpl<Destination>(sourceObject, destinationObject, std::is_pointer<QObject>{},
-                             std::is_pointer<Destination>{});
+        DestinationType destinationObject;
+        mapImpl<DestinationType>(sourceObject, destinationObject, std::is_pointer<SourceType>{},
+                                 std::is_pointer<DestinationType>{});
         return destinationObject;
     }
 
   private:
-    template <class Destination>
-    static typename std::enable_if<!std::is_pointer<QObject>::value && !std::is_pointer<Destination>::value>::type
-    mapImpl(const QObject &sourceObject, Destination &destinationObject, std::false_type, std::false_type)
+    template <class DestinationType, class SourceType>
+    static typename std::enable_if<!std::is_pointer<QObject>::value && !std::is_pointer<DestinationType>::value>::type
+    mapImpl(const SourceType &sourceObject, DestinationType &destinationObject, std::false_type, std::false_type)
     {
 
-        const QMetaObject *sourceMetaObject = sourceObject.metaObject();
-        const QMetaObject *destinationMetaObject = destinationObject.metaObject();
+        const QMetaObject &sourceMetaObject = SourceType::staticMetaObject;
+        const QMetaObject &destinationMetaObject = DestinationType::staticMetaObject;
 
-        int propertyCount = sourceMetaObject->propertyCount();
+        int propertyCount = sourceMetaObject.propertyCount();
 
         for (int i = 0; i < propertyCount; ++i)
         {
-            QMetaProperty sourceProperty = sourceMetaObject->property(i);
+            QMetaProperty sourceProperty = sourceMetaObject.property(i);
             if (sourceProperty.isReadable())
             {
-                if (sourceProperty.name() == QString("objectName"))
-                {
-                    continue;
-                }
-                int destinationPropertyIndex = destinationMetaObject->indexOfProperty(sourceProperty.name());
+                int destinationPropertyIndex = destinationMetaObject.indexOfProperty(sourceProperty.name());
                 if (destinationPropertyIndex >= 0)
                 {
-                    QVariant value = sourceProperty.read(&sourceObject);
-                    QMetaProperty destinationProperty = destinationMetaObject->property(destinationPropertyIndex);
+                    QVariant value = sourceProperty.readOnGadget(&sourceObject);
+                    QMetaProperty destinationProperty = destinationMetaObject.property(destinationPropertyIndex);
 
                     if (destinationProperty.isWritable() &&
                         QMetaType::canConvert(value.metaType(), destinationProperty.metaType()))
                     {
-                        bool success = destinationProperty.write(&destinationObject, value);
+                        bool success = destinationProperty.writeOnGadget(&destinationObject, value);
                         if (!success)
                         {
                             qWarning() << "Failed to write value" << value << "to destination property"
@@ -99,4 +95,3 @@ class SKR_CONTRACTS_EXPORT AutoMapper
 };
 
 } // namespace AutoMapper
-

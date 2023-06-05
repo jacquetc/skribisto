@@ -62,7 +62,7 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(const CreateAuthorComma
         }
 
         // Map the create author command to a domain author object and generate a UUID
-        author = AutoMapper::AutoMapper::map<Domain::Author>(request.req);
+        author = AutoMapper::AutoMapper::map<Domain::Author, CreateAuthorDTO>(request.req);
 
         // allow for forcing the uuid
         if (author.uuid().isNull())
@@ -77,7 +77,7 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(const CreateAuthorComma
     else
     {
         // Map the create author command to a domain author object and generate a UUID
-        author = AutoMapper::AutoMapper::map<Domain::Author>(m_oldState.value());
+        author = AutoMapper::AutoMapper::map<Domain::Author, AuthorDTO>(m_oldState.value());
     }
 
     // Add the author to the repository
@@ -91,7 +91,7 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(const CreateAuthorComma
     }
     m_repository->saveChanges();
 
-    auto authorDTO = AutoMapper::AutoMapper::map<AuthorDTO>(authorResult.value());
+    auto authorDTO = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(authorResult.value());
 
     m_oldState = Result<AuthorDTO>(authorDTO);
 

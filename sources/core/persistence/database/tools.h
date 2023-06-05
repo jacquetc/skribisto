@@ -110,7 +110,7 @@ template <class T> QVariant Tools<T>::getEntityPropertyValue(const T &entity, co
             }
             if (property.name() == propertyName)
             {
-                propertyValue = property.read(&entity);
+                propertyValue = property.readOnGadget(&entity);
                 break;
             }
         }
@@ -136,7 +136,7 @@ void Tools<T>::setEntityPropertyValue(T &entity, const QString &propertyName, co
             }
             if (property.name() == propertyName)
             {
-                property.write(&entity, propertyValue);
+                property.writeOnGadget(&entity, propertyValue);
                 break;
             }
         }
@@ -148,7 +148,7 @@ void Tools<T>::setEntityPropertyValue(T &entity, const QString &propertyName, co
 template <class T> Result<T> Tools<T>::mapToEntity(const QHash<QString, QVariant> &valuesHash)
 {
     T entity;
-    const QMetaObject *metaObject = entity.metaObject();
+    const QMetaObject &metaObject = T::staticMetaObject;
 
     QHash<QString, QVariant>::const_iterator i = valuesHash.constBegin();
     while (i != valuesHash.constEnd())
@@ -157,16 +157,16 @@ template <class T> Result<T> Tools<T>::mapToEntity(const QHash<QString, QVariant
         QString columnName = i.key();
         QString propertyName = Tools<T>::fromSnakeCaseToCamelCase(columnName);
 
-        int destinationPropertyIndex = metaObject->indexOfProperty(propertyName.toLatin1());
+        int destinationPropertyIndex = metaObject.indexOfProperty(propertyName.toLatin1());
         if (destinationPropertyIndex >= 0)
         {
             QVariant value = i.value();
-            QMetaProperty destinationProperty = metaObject->property(destinationPropertyIndex);
+            QMetaProperty destinationProperty = metaObject.property(destinationPropertyIndex);
 
             if (destinationProperty.isWritable() &&
                 QMetaType::canConvert(value.metaType(), destinationProperty.metaType()))
             {
-                bool success = destinationProperty.write(&entity, value);
+                bool success = destinationProperty.writeOnGadget(&entity, value);
                 if (!success)
                 {
                     Result<T>(Error(Q_FUNC_INFO, Error::Fatal, "map_write_failed",

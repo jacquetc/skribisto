@@ -64,7 +64,7 @@ Result<ChapterDTO> RemoveChapterCommandHandler::handleImpl(const RemoveChapterCo
     }
 
     // map
-    auto dto = AutoMapper::AutoMapper::map<ChapterDTO>(deleteResult.value());
+    auto dto = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(deleteResult.value());
 
     // save
     m_oldState = Result<ChapterDTO>(dto);
@@ -80,7 +80,7 @@ Result<ChapterDTO> RemoveChapterCommandHandler::restoreImpl()
 {
 
     // Map the create chapter command to a domain chapter object
-    auto chapter = AutoMapper::AutoMapper::map<Domain::Chapter>(m_oldState.value());
+    auto chapter = AutoMapper::AutoMapper::map<Domain::Chapter, ChapterDTO>(m_oldState.value());
 
     // Add the chapter to the repository
     auto chapterResult = m_repository->add(std::move(chapter));
@@ -89,7 +89,7 @@ Result<ChapterDTO> RemoveChapterCommandHandler::restoreImpl()
         return Result<ChapterDTO>(chapterResult.error());
     }
 
-    auto chapterDTO = AutoMapper::AutoMapper::map<ChapterDTO>(chapterResult.value());
+    auto chapterDTO = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(chapterResult.value());
 
     emit chapterCreated(chapterDTO);
     qDebug() << "Chapter added:" << chapterDTO.uuid();

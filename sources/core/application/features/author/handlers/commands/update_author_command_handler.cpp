@@ -61,7 +61,7 @@ Result<AuthorDTO> UpdateAuthorCommandHandler::handleImpl(const UpdateAuthorComma
     }
 
     // map
-    auto author = AutoMapper::AutoMapper::map<Domain::Author>(request.req);
+    auto author = AutoMapper::AutoMapper::map<Domain::Author, UpdateAuthorDTO>(request.req);
 
     // set update timestamp only on first pass
     if (m_oldState.isEmpty())
@@ -103,7 +103,7 @@ Result<AuthorDTO> UpdateAuthorCommandHandler::restoreImpl()
 {
     qDebug() << "UpdateAuthorCommandHandler::restoreImpl called with id" << m_oldState.value().uuid();
     // map
-    auto author = AutoMapper::AutoMapper::map<Domain::Author>(m_oldState.value());
+    auto author = AutoMapper::AutoMapper::map<Domain::Author, AuthorDTO>(m_oldState.value());
 
     // do
     auto authorResult = m_repository->update(std::move(author));

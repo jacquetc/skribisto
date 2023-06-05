@@ -30,7 +30,7 @@ class EntityTableSqlGenerator
 template <class T> QStringList EntityTableSqlGenerator::generateEntitySql()
 {
 
-    static_assert(std::is_base_of<Domain::Entity, T>::value, "T must inherit from Domain::Entity");
+    static_assert(std::is_base_of<Domain::EntityBase, T>::value, "T must inherit from Domain::Entity");
 
     QStringList finalSqlList;
     finalSqlList.append(EntityTableSqlGenerator::generateMainTableSql<T>());
@@ -44,7 +44,7 @@ template <class T> QStringList EntityTableSqlGenerator::generateEntitySql()
 template <class T> QString EntityTableSqlGenerator::generateMainTableSql()
 {
 
-    static_assert(std::is_base_of<Domain::Entity, T>::value, "T must inherit from Domain::Entity");
+    static_assert(std::is_base_of<Domain::EntityBase, T>::value, "T must inherit from Domain::Entity");
 
     QString tableName = Tools<T>::getEntityTableName();
 

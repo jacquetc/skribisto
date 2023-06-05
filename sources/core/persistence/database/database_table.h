@@ -5,7 +5,7 @@
 #include "QtCore/qmetaobject.h"
 #include "database/interface_database_context.h"
 #include "database/interface_database_table.h"
-#include "entity.h"
+#include "entity_base.h"
 #include "foreign_entity.h"
 #include "persistence_global.h"
 #include "result.h"
@@ -104,7 +104,7 @@ template <class T>
 DatabaseTable<T>::DatabaseTable(InterfaceDatabaseContext *context)
     : ForeignEntity<T>(context), m_databaseContext(context)
 {
-    static_assert(std::is_base_of<Domain::Entity, T>::value, "T must inherit from Domain::Entity");
+    static_assert(std::is_base_of<Domain::EntityBase, T>::value, "T must inherit from Domain::Entity");
 }
 
 //--------------------------------------------
@@ -427,7 +427,8 @@ template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
     // transform property names in snake case
     for (const QString &property : filteredProperties)
     {
-        QVariant value = entity.property(property.toLatin1());
+        int propertyIndex = T::staticMetaObject.indexOfProperty(property.toLatin1());
+        QVariant value = T::staticMetaObject.property(propertyIndex).readOnGadget(&entity);
         columnNameWithValue.insert(Tools<T>::fromPascalToSnakeCase(property), value);
     }
 
@@ -508,7 +509,8 @@ template <class T> Result<T> DatabaseTable<T>::update(T &&entity)
 
     for (const QString &property : filteredProperties)
     {
-        QVariant value = entity.property(property.toLatin1());
+        int propertyIndex = T::staticMetaObject.indexOfProperty(property.toLatin1());
+        QVariant value = T::staticMetaObject.property(propertyIndex).readOnGadget(&entity);
         fieldWithValue.insert(Tools<T>::fromPascalToSnakeCase(property), value);
     }
 

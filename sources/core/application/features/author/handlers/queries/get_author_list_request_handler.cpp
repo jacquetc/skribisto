@@ -45,7 +45,7 @@ Result<QList<AuthorDTO>> GetAuthorListRequestHandler::handleImpl()
 
     for (const Domain::Author &author : authorResult.value())
     {
-        auto dto = AutoMapper::AutoMapper::map<AuthorDTO>(author);
+        auto dto = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(author);
         dtoList.append(dto);
     }
 

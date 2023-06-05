@@ -45,7 +45,7 @@ Result<QList<ChapterDTO>> GetChapterListRequestHandler::handleImpl()
 
     for (const Domain::Chapter &chapter : chapterResult.value())
     {
-        auto dto = AutoMapper::AutoMapper::map<ChapterDTO>(chapter);
+        auto dto = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(chapter);
         dtoList.append(dto);
     }
 

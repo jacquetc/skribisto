@@ -1,6 +1,6 @@
 #include "database/database_table.h"
-#include "dummy_database_context.h"
 #include "dummy_basic_entity.h"
+#include "dummy_database_context.h"
 #include <QtTest/QtTest>
 
 class TestDatabaseTable : public QObject
@@ -48,7 +48,6 @@ void TestDatabaseTable::testAdd()
     entity.setName("Sample DummyEntity");
     entity.setUuid(QUuid::createUuid());
     entity.setCreationDate(QDateTime::currentDateTime());
-    entity.setUpdateDate(QDateTime::currentDateTime());
     auto addResult = m_entityTable->add(std::move(entity));
     if (addResult.isError())
     {
@@ -67,7 +66,7 @@ void TestDatabaseTable::testAdd()
     auto entities = entitiesResult.value();
     QCOMPARE(entities.size(), 1);
     QCOMPARE(entities.first().name(), QString("Sample DummyEntity"));
-    QVERIFY(entities.first().updateDate().isValid());
+    QVERIFY(entities.first().creationDate().isValid());
 }
 
 void TestDatabaseTable::testRemove()

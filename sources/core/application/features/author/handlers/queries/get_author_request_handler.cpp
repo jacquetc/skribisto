@@ -40,7 +40,7 @@ Result<AuthorDTO> GetAuthorRequestHandler::handleImpl(const GetAuthorRequest &re
     }
 
     // map
-    auto dto = AutoMapper::AutoMapper::map<AuthorDTO>(authorResult.value());
+    auto dto = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(authorResult.value());
 
     qDebug() << "GetAuthorRequestHandler::handleImpl done";
 
