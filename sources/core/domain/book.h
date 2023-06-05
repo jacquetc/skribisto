@@ -23,7 +23,7 @@ class SKR_DOMAIN_EXPORT Book : public Entity
     
 
   public:
-    Book() : Entity(){};
+    Book() : Entity() , m_title(QString()){}
 
    Book(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &title,   const QList<Chapter> &chapters ) 
         : Entity(id, uuid, creationDate, updateDate), m_title(title), m_chapters(chapters)

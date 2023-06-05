@@ -23,7 +23,7 @@ class SKR_DOMAIN_EXPORT Atelier : public Entity
     
 
   public:
-    Atelier() : Entity(){};
+    Atelier() : Entity() , m_name(QString()){}
 
    Atelier(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &name,   const QList<Book> &books ) 
         : Entity(id, uuid, creationDate, updateDate), m_name(name), m_books(books)

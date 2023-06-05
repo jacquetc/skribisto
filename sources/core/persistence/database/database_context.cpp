@@ -47,9 +47,14 @@ QSqlDatabase DatabaseContext::getConnection()
             qDebug() << Q_FUNC_INFO << "sql_error" << database.lastError().text();
         }
     }
-    qDebug() << QSqlDatabase::connectionNames();
+    // qDebug() << QSqlDatabase::connectionNames();
 
     return QSqlDatabase::database(connectionName);
+}
+
+void DatabaseContext::setSqlEmptyDatabaseQueryFunction(const SqlEmptyDatabaseQueryFunction &function)
+{
+    m_sqlEmptyDatabaseQueryFunction = function;
 }
 
 QStringList DatabaseContext::entityClassNames() const
@@ -77,7 +82,7 @@ Result<QString> DatabaseContext::createEmptyDatabase()
     {
         m_databaseName = tempFileName;
         databaseName = m_databaseName;
-        qDebug() << m_databaseName;
+        // qDebug() << m_databaseName;
 
         QSqlDatabase sqlDb = getConnection();
 

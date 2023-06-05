@@ -56,7 +56,8 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Test Core Sql REQUIRED)
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp ${RESOURCES}
     dummy_database_context.h
 dummy_entity_with_foreign.h
-dummy_other_entity.h)
+dummy_other_entity.h
+foreign_entity_wrapper.h)
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
 
 add_dependencies(${PROJECT_NAME} skribisto-contracts)

@@ -1,4 +1,3 @@
-#include "entity.h"
 #include "tools.h"
 #include <QString>
 
@@ -21,6 +20,9 @@ template <class T> class ForeignEntityTools
     static bool isUnique(const QStringList &entityClassNames, const QString &propertyType);
     static bool isForeign(const QStringList &entityClassNames, const QString &propertyType);
     static bool isEntity(const QStringList &entityClassNames, const QString &propertyType);
+
+    static bool isEntityPropertyLoaded(const T &entity, const QString &propertyName);
+    static void resetEntityProperty(T &entity, const QString &propertyName);
 };
 
 //--------------------------------------------
@@ -143,5 +145,22 @@ bool ForeignEntityTools<T>::isForeign(const QStringList &entityClassNames, const
     return isSet(entityClassNames, propertyType) || isList(entityClassNames, propertyType) ||
            isUnique(entityClassNames, propertyType);
 }
+
+//--------------------------------------------
+
+template <class T> bool ForeignEntityTools<T>::isEntityPropertyLoaded(const T &entity, const QString &propertyName)
+{
+    return Tools<T>::getEntityPropertyValue(entity, propertyName + "Loaded").toBool();
+}
+
+//--------------------------------------------
+
+template <class T> void ForeignEntityTools<T>::resetEntityProperty(T &entity, const QString &propertyName)
+{
+
+    Tools<T>::setEntityPropertyValue(entity, propertyName + "Loaded", false);
+    Tools<T>::setEntityPropertyValue(entity, propertyName, QVariant());
+}
+//--------------------------------------------
 
 } // namespace Database

@@ -25,7 +25,8 @@ template <class T> class Tools
      * @return A QStringList containing the property names.
      */
     static QStringList getEntityProperties();
-    static QStringList getTablePropertyColumns();
+    static QVariant getEntityPropertyValue(const T &entity, const QString &propertyName);
+    static void setEntityPropertyValue(T &entity, const QString &propertyName, const QVariant &propertyValue);
 
     /**
      * @brief Maps a hash of field names to their corresponding values to an entity of type T.
@@ -61,7 +62,7 @@ template <class T> QString Tools<T>::getEntityTableName()
 
 template <class T> QString Tools<T>::getTableNameFromClassName(const QString &className)
 {
-    return Tools<T>::fromPascalToSnakeCase(className);
+    return Tools<T>::fromPascalToSnakeCase(className.split("::").last());
 }
 
 //--------------------------------------------
@@ -91,9 +92,9 @@ template <class T> QStringList Tools<T>::getEntityProperties()
 
 //--------------------------------------------
 
-template <class T> QStringList Tools<T>::getTablePropertyColumns()
+template <class T> QVariant Tools<T>::getEntityPropertyValue(const T &entity, const QString &propertyName)
 {
-    QStringList propertyList;
+    QVariant propertyValue;
 
     const QMetaObject &metaObject = T::staticMetaObject;
     int propertyCount = metaObject.propertyCount();
@@ -107,11 +108,39 @@ template <class T> QStringList Tools<T>::getTablePropertyColumns()
             {
                 continue;
             }
-            propertyList.append(Tools<T>::fromPascalToSnakeCase(property.name()));
+            if (property.name() == propertyName)
+            {
+                propertyValue = property.read(&entity);
+                break;
+            }
         }
     }
 
-    return propertyList;
+    return propertyValue;
+}
+
+template <class T>
+void Tools<T>::setEntityPropertyValue(T &entity, const QString &propertyName, const QVariant &propertyValue)
+{
+    const QMetaObject &metaObject = T::staticMetaObject;
+    int propertyCount = metaObject.propertyCount();
+
+    for (int i = 0; i < propertyCount; ++i)
+    {
+        QMetaProperty property = metaObject.property(i);
+        if (property.isWritable())
+        {
+            if (property.name() == QString("objectName"))
+            {
+                continue;
+            }
+            if (property.name() == propertyName)
+            {
+                property.write(&entity, propertyValue);
+                break;
+            }
+        }
+    }
 }
 
 //--------------------------------------------

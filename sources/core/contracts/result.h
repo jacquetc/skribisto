@@ -78,6 +78,12 @@ template <> class SKR_CONTRACTS_EXPORT Result<void>
         return m_error;
     }
 
+    QString errorString() const
+    {
+        return m_error.message() + " (" + m_error.code() + ")" + " [" + m_error.className() + "]" + " [" +
+               m_error.data() + "]";
+    }
+
   private:
     Error m_error; /**< The error message contained in the Result object. */
 };
@@ -239,6 +245,12 @@ template <typename T> class SKR_CONTRACTS_EXPORT Result
     Error error() const
     {
         return m_error;
+    }
+
+    QString errorString() const
+    {
+        return m_error.message() + " (" + m_error.code() + ")" + " [" + m_error.className() + "]" + " [" +
+               m_error.data() + "]";
     }
 
   private:

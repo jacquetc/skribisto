@@ -12,19 +12,19 @@ namespace Database
 {
 
 /**
- * @brief The SkribFileContext class represents the context for a internal database.
+ * @brief The DatabaseContext class represents the context for a internal database.
  */
 class SKR_PERSISTENCE_EXPORT DatabaseContext : public QObject, public Contracts::Database::InterfaceDatabaseContext
 {
     Q_OBJECT
   public:
     /**
-     * @brief Constructs a new SkribFileContext object.
+     * @brief Constructs a new DatabaseContext object.
      */
     explicit DatabaseContext();
 
     /**
-     * @brief Destructor for the SkribFileContext object.
+     * @brief Destructor for the DatabaseContext object.
      */
     ~DatabaseContext();
 
@@ -32,20 +32,17 @@ class SKR_PERSISTENCE_EXPORT DatabaseContext : public QObject, public Contracts:
      * @brief Initializes the internal database.
      * @return A Result object with a value of nullptr if successful, or an Error object if an error occurred.
      */
-    Result<void> init();
+    Result<void> init() override;
 
     QSqlDatabase getConnection() override;
 
     using SqlEmptyDatabaseQueryFunction = std::function<QStringList()>;
 
-    void setSqlEmptyDatabaseQueryFunction(const SqlEmptyDatabaseQueryFunction &function)
-    {
-        m_sqlEmptyDatabaseQueryFunction = function;
-    }
-    QStringList entityClassNames() const;
-    void setEntityClassNames(const QStringList &newEntityClassNames);
+    void setSqlEmptyDatabaseQueryFunction(const SqlEmptyDatabaseQueryFunction &function);
+    QStringList entityClassNames() const override;
+    void setEntityClassNames(const QStringList &newEntityClassNames) override;
 
-signals:
+  signals:
 
   private:
     QMutex mutex;

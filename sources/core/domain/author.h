@@ -17,7 +17,7 @@ class SKR_DOMAIN_EXPORT Author : public Entity
     
 
   public:
-    Author() : Entity(){};
+    Author() : Entity() , m_name(QString()){}
 
    Author(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &name ) 
         : Entity(id, uuid, creationDate, updateDate), m_name(name)

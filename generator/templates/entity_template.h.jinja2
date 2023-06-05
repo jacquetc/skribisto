@@ -22,7 +22,13 @@ class {{ export }} {{ name }} : public {{ parent }}
     {% endif %}{% endfor %}
 
   public:
-    {{ name }}() : {{ parent }}(){};
+    {{ name }}() : {{ parent }}() {{ fields_init_values }}
+    {
+    }
+
+    ~{{ name }}()
+    {
+    }
 
    {{ name }}( {% for field in parent_fields %} const {{ field.type }} &{{ field.name }}, {% endfor %} {% for field in fields %}{% if field.type in ['int', 'float', 'bool'] %} {{ field.type }} {{ field.name }}{% else %} const {{ field.type }} &{{ field.name }}{% endif %}{% if not loop.last %}, {% endif %} {% endfor %}) 
         : {{ parent }}({{ parent_fields | map(attribute='name') | join(", ")}}), {% for field in fields %}m_{{ field.name }}({{ field.name }}){% if not loop.last %}, {% endif %}{% endfor %}

@@ -151,3 +151,4 @@ class DummyEntityWithForeign : public Entity
 };
 
 } // namespace Domain
+Q_DECLARE_METATYPE(Domain::DummyEntityWithForeign)

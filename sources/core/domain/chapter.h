@@ -17,7 +17,7 @@ class SKR_DOMAIN_EXPORT Chapter : public Entity
     
 
   public:
-    Chapter() : Entity(){};
+    Chapter() : Entity() , m_title(QString()){}
 
    Chapter(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &title ) 
         : Entity(id, uuid, creationDate, updateDate), m_title(title)

@@ -161,13 +161,13 @@ template <class T> QStringList EntityTableSqlGenerator::generateRelationshipTabl
         QString otherEntityTableName = ForeignEntityTools<T>::getOtherEntityTableName(typeName);
         QString createTableSql;
 
+        QString relationshipEntityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
+        QString relationshipOtherEntityIdColumnName =
+            ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(otherEntityClassName);
+
         if (ForeignEntityTools<T>::isList(m_entityClassNames, typeName))
 
         {
-            QString relationshipEntityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
-            QString relationshipOtherEntityIdColumnName =
-                ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(otherEntityClassName);
-
             createTableSql.append(QString("CREATE TABLE %1 (").arg(relationShipTableName));
             createTableSql.append("id INTEGER PRIMARY KEY AUTOINCREMENT,");
             createTableSql.append("previous INTEGER,");
@@ -185,9 +185,6 @@ template <class T> QStringList EntityTableSqlGenerator::generateRelationshipTabl
         }
         if (ForeignEntityTools<T>::isSet(m_entityClassNames, typeName))
         {
-            QString relationshipEntityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
-            QString relationshipOtherEntityIdColumnName =
-                ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(otherEntityClassName);
 
             createTableSql.append(QString("CREATE TABLE %1 (").arg(relationShipTableName));
             createTableSql.append("id INTEGER PRIMARY KEY AUTOINCREMENT,");
@@ -207,15 +204,13 @@ template <class T> QStringList EntityTableSqlGenerator::generateRelationshipTabl
 
             createTableSql.append(QString("CREATE TABLE %1 (").arg(relationShipTableName));
             createTableSql.append("id INTEGER PRIMARY KEY AUTOINCREMENT,");
-            createTableSql.append(
-                QString("%1 INTEGER, FOREIGN KEY (%1) REFERENCES %2 (id) ON DELETE CASCADE,")
-                    .arg(ForeignEntityTools<T>::getRelationshipEntityIdColumnName(), Tools<T>::getEntityTableName()));
-            createTableSql.append(
-                QString("%1 INTEGER, FOREIGN KEY (%1) REFERENCES %2 (id) ON DELETE CASCADE,")
-                    .arg(ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(otherEntityClassName),
-                         otherEntityTableName));
-            createTableSql.append(QString("UNIQUE (%1) ON CONFLICT ROLLBACK);")
-                                      .arg(ForeignEntityTools<T>::getRelationshipEntityIdColumnName()));
+            createTableSql.append(QString("%1 INTEGER,").arg(relationshipEntityIdColumnName));
+            createTableSql.append(QString("%1 INTEGER,").arg(relationshipOtherEntityIdColumnName));
+            createTableSql.append(QString("FOREIGN KEY (%1) REFERENCES %2 (id) ON DELETE CASCADE,")
+                                      .arg(relationshipEntityIdColumnName, Tools<T>::getEntityTableName()));
+            createTableSql.append(QString("FOREIGN KEY (%1) REFERENCES %2 (id) ON DELETE CASCADE,")
+                                      .arg(relationshipOtherEntityIdColumnName, otherEntityTableName));
+            createTableSql.append(QString("UNIQUE (%1) ON CONFLICT ROLLBACK);").arg(relationshipEntityIdColumnName));
 
             tableList.append(createTableSql);
         }

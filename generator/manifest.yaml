@@ -2,7 +2,6 @@
 entities:
   list:
     - name: Entity
-      parent: QObject
       generate: true
       fields:
         - type: int

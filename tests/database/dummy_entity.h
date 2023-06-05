@@ -67,3 +67,4 @@ class DummyEntity : public Entity
 };
 
 } // namespace Domain
+Q_DECLARE_METATYPE(Domain::DummyEntity)

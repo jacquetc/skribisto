@@ -13,9 +13,9 @@ class SKR_CONTRACTS_EXPORT InterfaceDatabaseContext
     {
     }
 
-    QStringList entityClassNames() const;
-    void init();
-    void setEntityClassNames(const QStringList &newEntityClassNames);
+    virtual QStringList entityClassNames() const = 0;
+    virtual Result<void> init() = 0;
+    virtual void setEntityClassNames(const QStringList &newEntityClassNames) = 0;
 
     virtual QSqlDatabase getConnection() = 0;
 };

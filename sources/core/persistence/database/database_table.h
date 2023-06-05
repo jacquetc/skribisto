@@ -51,22 +51,22 @@ class SKR_PERSISTENCE_EXPORT DatabaseTable : public virtual InterfaceDatabaseTab
     Result<T> get(const int &id) override;
     Result<T> get(const QUuid &uuid) override;
 
-    virtual Result<QList<T>> getAll() override;
+    Result<QList<T>> getAll() override;
 
-    virtual Result<QList<T>> getAll(const QHash<QString, QVariant> &filters) override;
+    Result<QList<T>> getAll(const QHash<QString, QVariant> &filters) override;
 
-    virtual Result<T> remove(T &&entity) override;
+    Result<T> remove(T &&entity) override;
 
-    virtual Result<T> add(T &&entity) override;
+    Result<T> add(T &&entity) override;
 
     Result<T> update(T &&entity) override;
 
     Result<bool> exists(const QUuid &uuid) override;
     Result<bool> exists(int id) override;
-    virtual Result<void> clear() override;
+    Result<void> clear() override;
 
-    virtual Result<SaveData> save(const QList<int> &idList) override;
-    virtual Result<void> restore(const SaveData &saveData) override;
+    Result<SaveData> save(const QList<int> &idList) override;
+    Result<void> restore(const SaveData &saveData) override;
     Result<void> beginTransaction() override;
     Result<void> commit() override;
     Result<void> rollback() override;
@@ -85,7 +85,7 @@ class SKR_PERSISTENCE_EXPORT DatabaseTable : public virtual InterfaceDatabaseTab
 
     const QString m_tableName = Tools<T>::getEntityTableName();
     const QStringList m_properties = Tools<T>::getEntityProperties();
-    const QStringList m_propertyColumns = Tools<T>::getTablePropertyColumns();
+    const QStringList m_propertyColumns = getTablePropertyColumns();
 
     const QHash<QString, PropertyWithList> m_listProperties = this->getEntityPropertiesWithList();
 
@@ -94,6 +94,8 @@ class SKR_PERSISTENCE_EXPORT DatabaseTable : public virtual InterfaceDatabaseTab
     bool isCommonType(int typeId);
     QHash<QString, PropertyWithList> getEntityPropertiesWithList();
     QString generateFilterQueryString(const QHash<QString, QVariant> &filters);
+
+    QStringList getTablePropertyColumns();
 };
 
 //--------------------------------------------
@@ -411,7 +413,19 @@ template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
     QSqlDatabase database = m_databaseContext->getConnection();
     QHash<QString, QVariant> columnNameWithValue;
 
+    // ignore properties with foreign key:
+    QStringList filteredProperties;
+    const QStringList &propertyNamesWithForeignKey = this->getPropertyNamesWithForeignKeydAndLoaderProperty();
     for (const QString &property : properties)
+    {
+        if (!propertyNamesWithForeignKey.contains(property))
+        {
+            filteredProperties.append(property);
+        }
+    }
+
+    // transform property names in snake case
+    for (const QString &property : filteredProperties)
     {
         QVariant value = entity.property(property.toLatin1());
         columnNameWithValue.insert(Tools<T>::fromPascalToSnakeCase(property), value);
@@ -421,7 +435,7 @@ template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
     QString placeholders;
     for (const QString &column : columns)
     {
-        if (entity.id() == -1 && column == "id")
+        if (entity.id() == 0 && column == "id")
         {
             continue;
         }
@@ -455,7 +469,6 @@ template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
         {
             int newOrderingId = query.lastInsertId().toInt();
             entity.setId(newOrderingId);
-            return Result<T>(std::forward<T>(entity));
         }
         else
         {
@@ -463,7 +476,11 @@ template <class T> Result<T> DatabaseTable<T>::add(T &&entity)
                 Error(Q_FUNC_INFO, Error::Critical, "sql_insert_failed", "Failed to insert row into database"));
         }
     }
-    return Result<T>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
+
+    // manage foreign properties:
+    this->manageAfterEntityAddition(entity);
+
+    return Result<T>(std::forward<T>(entity));
 }
 
 //--------------------------------------------
@@ -475,9 +492,21 @@ template <class T> Result<T> DatabaseTable<T>::update(T &&entity)
     const QStringList &columns = m_propertyColumns;
 
     QSqlDatabase database = m_databaseContext->getConnection();
+
+    // ignore properties with foreign key:
+    QStringList filteredProperties;
+    const QStringList &propertyNamesWithForeignKey = this->getPropertyNamesWithForeignKeydAndLoaderProperty();
+    for (const QString &property : properties)
+    {
+        if (!propertyNamesWithForeignKey.contains(property))
+        {
+            filteredProperties.append(property);
+        }
+    }
+
     QHash<QString, QVariant> fieldWithValue;
 
-    for (const QString &property : properties)
+    for (const QString &property : filteredProperties)
     {
         QVariant value = entity.property(property.toLatin1());
         fieldWithValue.insert(Tools<T>::fromPascalToSnakeCase(property), value);
@@ -501,7 +530,7 @@ template <class T> Result<T> DatabaseTable<T>::update(T &&entity)
             return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStrMain));
         }
 
-        for (const QString &property : properties)
+        for (const QString &property : filteredProperties)
         {
             QVariant value = fieldWithValue.value(Tools<T>::fromPascalToSnakeCase(property));
             query.bindValue(":" + property, value);
@@ -512,17 +541,17 @@ template <class T> Result<T> DatabaseTable<T>::update(T &&entity)
             return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStrMain));
         }
 
-        if (query.numRowsAffected() == 1)
-        {
-            return Result<T>(std::forward<T>(entity));
-        }
-        else
+        if (query.numRowsAffected() != 1)
         {
             return Result<T>(
                 Error(Q_FUNC_INFO, Error::Critical, "sql_update_failed", "Failed to update row in database"));
         }
     }
-    return Result<T>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
+
+    // manage foreign properties:
+    this->manageAfterEntityUpdate(entity);
+
+    return Result<T>(std::forward<T>(entity));
 }
 
 //--------------------------------------------
@@ -611,7 +640,7 @@ template <class T> Result<void> DatabaseTable<T>::clear()
         return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_clear_failed", "Failed to clear the main table"));
     }
 
-    return Result<void>();
+    return this->manageAfterTableClearing();
 }
 
 //--------------------------------------------
@@ -927,4 +956,36 @@ template <class T> QHash<QString, PropertyWithList> DatabaseTable<T>::getEntityP
     return propertiesWithList;
 }
 
+//--------------------------------------------
+
+template <class T> QStringList DatabaseTable<T>::getTablePropertyColumns()
+{
+    QStringList columns;
+
+    const QStringList &properties = m_properties;
+
+    // ignore properties with foreign key:
+    QStringList filteredProperties;
+    const QStringList &propertyNamesWithForeignKey = this->getPropertyNamesWithForeignKeydAndLoaderProperty();
+    for (const QString &property : properties)
+    {
+        if (!propertyNamesWithForeignKey.contains(property))
+        {
+            filteredProperties.append(property);
+        }
+    }
+
+    for (const QString &property : filteredProperties)
+    {
+
+        if (property == QString("objectName"))
+        {
+            continue;
+        }
+
+        columns.append(Tools<T>::fromPascalToSnakeCase(property));
+    }
+
+    return columns;
+}
 } // namespace Database

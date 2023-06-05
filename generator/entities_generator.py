@@ -27,13 +27,13 @@ def generate_cpp_files(manifest_file):
 
     # Default initialization values
     default_init_values = {
-        "int": "-1",
+        "int": "0",
         "float": "0.0f",
         "double": "0.0",
         "bool": "false",
         "QString": "QString()",
-        "QDateTime": "QDateTime::currentDateTime()",
-        "QUuid": "QUuid::createUuid()",
+        "QDateTime": "QDateTime()",
+        "QUuid": "QUuid()",
         "QObject": "nullptr",
         "QList": "QList<>()",
     }
@@ -110,9 +110,13 @@ def generate_cpp_files(manifest_file):
         # only keep the fields from the current entity for initialization
         fields_init_values = ", ".join(
             [
-                f"{field['name']}({default_init_values.get(field['type'].split('<')[0], '{}')})"
+                f"m_{field['name']}({default_init_values.get(field['type'].split('<')[0], '{}')})"
                 for field in fields
+                if not field["need_lazy_loader"]
             ]
+        )
+        fields_init_values = (
+            ", " + fields_init_values if fields_init_values else fields_init_values
         )
 
         # use parent fields to initialize parent class in constructor

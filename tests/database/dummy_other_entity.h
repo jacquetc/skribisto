@@ -12,6 +12,9 @@ class DummyOtherEntity : public Entity
 
   public:
     DummyOtherEntity() : Entity(){};
+    ~DummyOtherEntity()
+    {
+    }
 
     DummyOtherEntity(int id, const QUuid &uuid, const QString &name, const QString &author)
         : Entity(id, uuid, QDateTime(), QDateTime())
