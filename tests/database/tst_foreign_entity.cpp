@@ -46,6 +46,10 @@ class ForeignEntityTest : public QObject
     void testListRemoveRelationship_OneOfTwo();
     void testListUpdateRelationship();
 
+    void testUniqueAddRelationship();
+    void testUniqueRemoveRelationship();
+    void testUniqueUpdateRelationship();
+
   private:
     Domain::DummyEntityWithForeign addToTable(
         const QString &name, const QList<Domain::DummyOtherEntity> &lists = QList<Domain::DummyOtherEntity>(),
@@ -750,6 +754,184 @@ void ForeignEntityTest::testListUpdateRelationship()
     QCOMPARE(updateEntity.lists().size(), 2);
     QCOMPARE(updateEntity.lists().at(0).name(), "Sample DummyOtherEntity 3");
     QCOMPARE(updateEntity.lists().at(1).name(), "Sample DummyOtherEntity 1");
+}
+
+//-----------------------------------------------------------------------------
+void ForeignEntityTest::testUniqueAddRelationship()
+{
+    // setup other table
+    Domain::DummyOtherEntity createdOtherEntity = this->addToOtherTable("Sample DummyOtherEntity");
+
+    // setup table
+    Domain::DummyEntityWithForeign createdEntity = this->addToTable("Sample DummyEntityWithForeign");
+
+    Domain::DummyEntityWithForeign::UniqueLoader uniqueLoader = [this, &createdEntity]() {
+        auto result = m_entityTable->getRelatedForeignIds(createdEntity, "unique");
+        if (result.isError())
+        {
+            qDebug() << result.error().code() << result.error().message() << result.error().data();
+            qFatal("");
+        }
+        QList<int> otherIds = result.value();
+
+        Domain::DummyOtherEntity otherEntity;
+        for (int otherId : otherIds)
+        {
+            otherEntity = m_otherEntityTable->get(otherId).value();
+        }
+
+        return otherEntity;
+    };
+
+    // setup the lazy loading :
+    createdEntity.setUniqueLoader(uniqueLoader);
+
+    // test the absence of the relationship
+    QCOMPARE(createdEntity.unique().id(), 0);
+
+    // add the relationship
+    createdEntity.setUnique(createdOtherEntity);
+
+    auto updateResult = m_entityTable->update(std::move(createdEntity));
+    if (updateResult.isError())
+    {
+        qDebug() << updateResult.error().code() << updateResult.error().message() << updateResult.error().data();
+    }
+    QVERIFY(updateResult.isSuccess());
+
+    // prepare the update result
+    Domain::DummyEntityWithForeign updateEntity = updateResult.value();
+
+    // setup the lazy loading :
+    updateEntity.setUniqueLoader(uniqueLoader);
+
+    // test the presence of the relationship
+    QCOMPARE(updateEntity.unique().id(), createdOtherEntity.id());
+    QCOMPARE(updateEntity.unique().name(), "Sample DummyOtherEntity");
+}
+
+//-----------------------------------------------------------------------------
+
+void ForeignEntityTest::testUniqueRemoveRelationship()
+{
+
+    // setup other table
+
+    Domain::DummyOtherEntity createdOtherEntity = this->addToOtherTable("Sample DummyOtherEntity");
+
+    // setup table
+
+    Domain::DummyEntityWithForeign createdEntity =
+        this->addToTable("Sample DummyEntityWithForeign", QList<Domain::DummyOtherEntity>(), createdOtherEntity);
+
+    Domain::DummyEntityWithForeign::UniqueLoader uniqueLoader = [this, &createdEntity]() {
+        auto result = m_entityTable->getRelatedForeignIds(createdEntity, "unique");
+        if (result.isError())
+        {
+            qDebug() << result.error().code() << result.error().message() << result.error().data();
+            qFatal("");
+        }
+        QList<int> otherIds = result.value();
+
+        Domain::DummyOtherEntity otherEntity;
+        for (int otherId : otherIds)
+        {
+            otherEntity = m_otherEntityTable->get(otherId).value();
+        }
+
+        return otherEntity;
+    };
+
+    // setup the lazy loading :
+    createdEntity.setUniqueLoader(uniqueLoader);
+
+    // test the presence of the relationship
+
+    QCOMPARE(createdEntity.unique().id(), 1);
+
+    QCOMPARE(createdEntity.unique().name(), "Sample DummyOtherEntity");
+
+    // remove the relationship
+
+    createdEntity.setUnique(Domain::DummyOtherEntity());
+
+    auto updateResult = m_entityTable->update(std::move(createdEntity));
+    if (updateResult.isError())
+    {
+        qDebug() << updateResult.error().code() << updateResult.error().message() << updateResult.error().data();
+    }
+    QVERIFY(updateResult.isSuccess());
+
+    // prepare the update result
+
+    Domain::DummyEntityWithForeign updateEntity = updateResult.value();
+
+    // setup the lazy loading :
+    updateEntity.setUniqueLoader(uniqueLoader);
+
+    // test the absence of list
+
+    QCOMPARE(updateEntity.unique().id(), 0);
+}
+
+//-----------------------------------------------------------------------------
+
+void ForeignEntityTest::testUniqueUpdateRelationship()
+{
+    // setup other table
+    Domain::DummyOtherEntity createdOtherEntity = this->addToOtherTable("Sample DummyOtherEntity");
+
+    // setup table
+    Domain::DummyEntityWithForeign createdEntity =
+        this->addToTable("Sample DummyEntityWithForeign", QList<Domain::DummyOtherEntity>(), createdOtherEntity);
+
+    // setup another other table
+    Domain::DummyOtherEntity newOtherEntity = this->addToOtherTable("New Sample DummyOtherEntity");
+
+    Domain::DummyEntityWithForeign::UniqueLoader uniqueLoader = [this, &createdEntity]() {
+        auto result = m_entityTable->getRelatedForeignIds(createdEntity, "unique");
+        if (result.isError())
+        {
+            qDebug() << result.error().code() << result.error().message() << result.error().data();
+            qFatal("");
+        }
+        QList<int> otherIds = result.value();
+
+        Domain::DummyOtherEntity otherEntity;
+        for (int otherId : otherIds)
+        {
+            otherEntity = m_otherEntityTable->get(otherId).value();
+        }
+
+        return otherEntity;
+    };
+
+    // setup the lazy loading :
+    createdEntity.setUniqueLoader(uniqueLoader);
+
+    // test the presence of the initial relationship
+    QCOMPARE(createdEntity.unique().id(), createdOtherEntity.id());
+    QCOMPARE(createdEntity.unique().name(), "Sample DummyOtherEntity");
+
+    // update the relationship
+    createdEntity.setUnique(newOtherEntity);
+
+    auto updateResult = m_entityTable->update(std::move(createdEntity));
+    if (updateResult.isError())
+    {
+        qDebug() << updateResult.error().code() << updateResult.error().message() << updateResult.error().data();
+    }
+    QVERIFY(updateResult.isSuccess());
+
+    // prepare the update result
+    Domain::DummyEntityWithForeign updateEntity = updateResult.value();
+
+    // setup the lazy loading :
+    updateEntity.setUniqueLoader(uniqueLoader);
+
+    // test the presence of the updated relationship
+    QCOMPARE(updateEntity.unique().id(), newOtherEntity.id());
+    QCOMPARE(updateEntity.unique().name(), "New Sample DummyOtherEntity");
 }
 
 //-----------------------------------------------------------------------------
