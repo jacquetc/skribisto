@@ -51,7 +51,20 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
     Domain::Author m_updateEntity;
     bool m_exists;
     QMap<QString, QList<QVariantHash>> m_save;
+
+    // InterfaceForeignEntity interface
+  public:
+    Result<QList<int>> getRelatedForeignIds(const Domain::Author &entity, const QString &propertyName) override;
+    Result<QList<int>> getRelatedForeignIds(int entityId, const QString &propertyName) override;
 };
+
+inline Result<QList<int>> DummyDatabase::getRelatedForeignIds(const Domain::Author &entity, const QString &propertyName)
+{
+}
+
+inline Result<QList<int>> DummyDatabase::getRelatedForeignIds(int entityId, const QString &propertyName)
+{
+}
 
 inline void DummyDatabase::fillGet(const Domain::Author &entity)
 {

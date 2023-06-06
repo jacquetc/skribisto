@@ -19,6 +19,7 @@ set(contracts_SRCS
 
     # database:
     database/interface_database_table.h
+    database/interface_foreign_entity.h
     database/interface_database_context.h
     database/interface_ordered_database_table.h
 

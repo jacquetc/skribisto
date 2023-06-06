@@ -45,16 +45,17 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
         qCritical() << error.className() + "\n" + error.code() + "\n" + error.message() + "\n" + error.data();
     }
 
+    // database tables:
+    auto authorDatabaseTable = new DatabaseTable<Domain::Author>(context);
+    auto chapterDatabaseTable = new DatabaseTable<Domain::Chapter>(context);
+    auto bookDatabaseTable = new DatabaseTable<Domain::Book>(context);
+    auto atelierDatabaseTable = new DatabaseTable<Domain::Atelier>(context);
+
     // repositories:
-    QSharedPointer<AuthorRepository> authorRepository(new AuthorRepository(new DatabaseTable<Domain::Author>(context)));
-
-    QSharedPointer<AtelierRepository> atelierRepository(
-        new AtelierRepository(new DatabaseTable<Domain::Atelier>(context)));
-
-    QSharedPointer<BookRepository> bookRepository(new BookRepository(new DatabaseTable<Domain::Book>(context)));
-
-    QSharedPointer<ChapterRepository> chapterRepository(
-        new ChapterRepository(new DatabaseTable<Domain::Chapter>(context)));
+    QSharedPointer<AuthorRepository> authorRepository(new AuthorRepository(authorDatabaseTable));
+    QSharedPointer<ChapterRepository> chapterRepository(new ChapterRepository(chapterDatabaseTable));
+    QSharedPointer<BookRepository> bookRepository(new BookRepository(bookDatabaseTable, chapterDatabaseTable));
+    QSharedPointer<AtelierRepository> atelierRepository(new AtelierRepository(atelierDatabaseTable));
 
     // register repositories:
     Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Author, authorRepository);

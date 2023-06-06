@@ -1,6 +1,7 @@
 #pragma once
 #include "QtSql/qsqlerror.h"
 #include "database/interface_database_context.h"
+#include "database/interface_foreign_entity.h"
 #include "entity_base.h"
 #include "foreign_entity_tools.h"
 #include "result.h"
@@ -67,11 +68,12 @@ struct PropertyWithForeignKey
 
 //--------------------------------------
 
-template <class T> class ForeignEntity
+template <class T> class ForeignEntity : public virtual InterfaceForeignEntity<T>
 {
   public:
     ForeignEntity(InterfaceDatabaseContext *context);
-    Result<QList<int>> getRelatedForeignIds(const T &entity, const QString &propertyName);
+    Result<QList<int>> getRelatedForeignIds(const T &entity, const QString &propertyName) override;
+    Result<QList<int>> getRelatedForeignIds(int entityId, const QString &propertyName) override;
 
   protected:
     QStringList getPropertyNamesWithForeignKeydAndLoaderProperty() const;
@@ -527,6 +529,14 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterTableClearing()
     }
 
     return Result<void>();
+}
+
+//--------------------------------------------
+
+template <class T> Result<QList<int>> ForeignEntity<T>::getRelatedForeignIds(int entityId, const QString &propertyName)
+{
+
+    return getRelatedEntityIds(entityId, propertyName);
 }
 
 //--------------------------------------------

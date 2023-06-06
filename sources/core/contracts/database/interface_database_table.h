@@ -1,17 +1,17 @@
 #pragma once
 
 #include "contracts_global.h"
+#include "database/interface_foreign_entity.h"
 #include "result.h"
 #include "types.h"
 #include <QHash>
-#include <QSet>
 #include <QString>
 #include <QUuid>
 
 namespace Contracts::Database
 {
 
-template <class T> class SKR_CONTRACTS_EXPORT InterfaceDatabaseTable
+template <class T> class SKR_CONTRACTS_EXPORT InterfaceDatabaseTable : public virtual InterfaceForeignEntity<T>
 {
   public:
     virtual ~InterfaceDatabaseTable()

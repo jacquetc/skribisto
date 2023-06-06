@@ -1,6 +1,5 @@
 #pragma once
 
-#include "QtConcurrent/qtconcurrenttask.h"
 #include "QtCore/qdebug.h"
 #include "QtCore/qmetaobject.h"
 #include "database/interface_database_context.h"

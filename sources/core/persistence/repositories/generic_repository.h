@@ -1,6 +1,5 @@
 #pragma once
 
-#include "QtConcurrent/qtconcurrenttask.h"
 #include "database/interface_database_table.h"
 #include "persistence/interface_generic_repository.h"
 #include "persistence_global.h"

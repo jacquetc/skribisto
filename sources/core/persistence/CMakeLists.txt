@@ -5,8 +5,8 @@ set(PROJECT_NAME "skribisto-persistence")
 
 project(skribisto-persistence LANGUAGES CXX VERSION ${VERSION})
 
-find_package(QT NAMES Qt6 COMPONENTS Core Concurrent Sql CONFIG REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Concurrent Sql CONFIG REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Core Sql CONFIG REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Sql CONFIG REQUIRED)
 
 set(persistence_SRCS
 
@@ -15,7 +15,6 @@ set(persistence_SRCS
 
     # repositories:
     repositories/generic_repository.h
-    repositories/unique_generic_repository.h
     repositories/author_repository.h repositories/author_repository.cpp
     repositories/atelier_repository.h repositories/atelier_repository.cpp
     repositories/book_repository.h repositories/book_repository.cpp
@@ -40,7 +39,7 @@ target_compile_definitions(skribisto-persistence PUBLIC SKRIBISTO_PERSISTENCE_LI
 add_dependencies(skribisto-persistence skribisto-contracts)
 
 target_link_libraries(skribisto-persistence PUBLIC skribisto-contracts)
-target_link_libraries(skribisto-persistence PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Concurrent)
+target_link_libraries(skribisto-persistence PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql)
 
 # ---------------------------------
 if(IOS)

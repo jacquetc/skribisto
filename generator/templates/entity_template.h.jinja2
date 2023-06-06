@@ -65,7 +65,7 @@ class {{ export }} {{ name }} : public {{ parent }}
         {% if field.need_lazy_loader -%}
         if (!m_{{ field.name }}Loaded && m_{{ field.name }}Loader)
         {
-            m_{{ field.name }} = m_{{ field.name }}Loader();
+            m_{{ field.name }} = m_{{ field.name }}Loader(this->id());
             m_{{ field.name }}Loaded = true;
         }
         {%- endif %}
@@ -77,7 +77,7 @@ class {{ export }} {{ name }} : public {{ parent }}
         m_{{ field.name }} = {{ field.name }};
     }
     {% if field.need_lazy_loader %}
-    using {{ field.name.capitalize() }}Loader = std::function<{{ field.type }}()>;
+    using {{ field.name.capitalize() }}Loader = std::function<{{ field.type }}(int entityId)>;
 
     void set{{ field.name_pascal }}Loader(const {{ field.name_pascal }}Loader &loader)
     {
