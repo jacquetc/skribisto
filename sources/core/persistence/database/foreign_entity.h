@@ -88,7 +88,8 @@ template <class T> class ForeignEntity
     QHash<QString, PropertyWithForeignKey> getEntityPropertiesWithForeignKey() const;
     Result<QPair<int, int>> getFuturePreviousAndNextRelationshipTableIds(int entityId, const QString &propertyName,
                                                                          int position);
-    Result<QPair<int, int>> getPreviousAndNextRelationshipTableIds(int entityId, const QString &propertyName);
+    Result<QPair<int, int>> getPreviousAndNextRelationshipTableIds(int entityId, int otherEntityId,
+                                                                   const QString &propertyName);
 
   private:
     InterfaceDatabaseContext *m_databaseContext;
@@ -351,56 +352,143 @@ Result<void> ForeignEntity<T>::moveEntityRelationship(int entityId, int otherEnt
         QString entityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
         QString otherEntityIdColumnName =
             ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(foreignKeyProperty.foreignTableName);
-
-        // This query first removes the existing entity relationship by updating the 'prev' and 'next' values of
-        // the neighboring elements, and then inserts the entity relationship at the new position.
-        QString queryStr = QString(R"(
-            WITH
-                current_position AS (
-                    SELECT row_number() OVER (ORDER BY previous) - 1 AS position
-                    FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId
-                ),
-                prev_element AS (
-                    SELECT next AS id FROM %1 WHERE previous = (SELECT position FROM current_position)
-                ),
-                next_element AS (
-                    SELECT previous AS id FROM %1 WHERE next = (SELECT position FROM current_position)
-                ),
-                remove AS (
-                    UPDATE %1 SET previous = (SELECT id FROM next_element) WHERE previous = (SELECT position FROM current_position);
-                    UPDATE %1 SET next = (SELECT id FROM prev_element) WHERE next = (SELECT position FROM current_position);
-                    DELETE FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId
-                ),
-                find_insert_point (previous, next) AS (
-                    SELECT previous, next FROM %1 WHERE %2 = :entityId
-                    UNION ALL
-                    SELECT t.previous, t.next FROM %1 t, find_insert_point fip WHERE t.%2 = :entityId AND t.previous = fip.next
-                ),
-                prev_element_insert AS (SELECT previous FROM find_insert_point WHERE previous < :newPosition AND next >= :newPosition LIMIT 1),
-                next_element_insert AS (SELECT next FROM find_insert_point WHERE previous < :newPosition AND next >= :newPosition LIMIT 1),
-                update_prev_insert AS (
-                    UPDATE %1 SET next = :otherEntityId WHERE %2 = :entityId AND %3 = (SELECT previous FROM prev_element_insert)
-                ),
-                update_next_insert AS (
-                    UPDATE %1 SET previous = :otherEntityId WHERE %2 = :entityId AND %3 = (SELECT next FROM next_element_insert)
-                )
-            INSERT INTO %1 (previous, %2, %3, next)
-            VALUES ((SELECT previous FROM prev_element_insert), :entityId, :otherEntityId, (SELECT next FROM next_element_insert))
-        )")
-                               .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
-
-        query.prepare(queryStr);
-        query.bindValue(":entityId", entityId);
-        query.bindValue(":otherEntityId", otherEntityId);
-        query.bindValue(":newPosition", newPosition);
-
-        if (!query.exec())
+        // Get current and future position IDs
+        Result<QPair<int, int>> currentPostionIdsResult =
+            getPreviousAndNextRelationshipTableIds(entityId, otherEntityId, propertyName);
+        if (currentPostionIdsResult.hasError())
         {
-            qWarning() << "Error while moving relationship between " << Tools<T>::getEntityClassName() << " and "
-                       << " : " << query.lastError().text();
-            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(),
+            qWarning() << "Error while moving relationship: Could not get previous and next relationship table ids for "
+                          "property named "
+                       << propertyName;
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", "Could not get current position ids",
                                       "Error while moving relationship"));
         }
+
+        Result<QPair<int, int>> futurePositionIdsResult =
+            getFuturePreviousAndNextRelationshipTableIds(entityId, propertyName, newPosition);
+        if (futurePositionIdsResult.hasError())
+        {
+            qWarning() << "Error while moving relationship: Could not get future previous and next relationship table "
+                          "ids for property named "
+                       << propertyName;
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", "Could not get future position ids",
+                                      "Error while moving relationship"));
+        }
+
+        // Extract ids
+        int currentPrevId = currentPostionIdsResult.value().first;
+        int currentNextId = currentPostionIdsResult.value().second;
+        int futurePrevId = futurePositionIdsResult.value().first;
+        int futureNextId = futurePositionIdsResult.value().second;
+
+        // Prepare the SQL queries
+        QString queryText;
+
+        int rowId = 0;
+
+        // 0 . Get the relationship table id of the moved row:
+        queryText = QString("SELECT id FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId")
+                        .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
+        query.prepare(queryText);
+        query.bindValue(":entityId", entityId);
+        query.bindValue(":otherEntityId", otherEntityId);
+        if (!query.exec())
+        {
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
+                                      "Database error while getting the id of the current row",
+                                      "Error while moving relationship"));
+        }
+        if (query.next())
+        {
+            rowId = query.value(0).toInt();
+        }
+        else
+        {
+
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
+                                      "Database error while getting the id of the current row",
+                                      "Error while moving relationship"));
+        }
+
+        // 1. Modify the 'next' of the future previous row, setting the target id, only if futurePrevId is not NULL
+        // (meaning the future empplacement of  the moved id will be at the beginning of the list)
+        if (futurePrevId > 0)
+        {
+            queryText = QString("UPDATE %1 SET next = :rowId WHERE id = :futurePrevId").arg(relationshipTableName);
+            query.prepare(queryText);
+            query.bindValue(":rowId", rowId);
+            query.bindValue(":futurePrevId", futurePrevId);
+            if (!query.exec())
+            {
+                return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
+                                          "Database error while updating future previous relationship",
+                                          "Error while moving relationship"));
+            }
+        }
+
+        // 2. Modify the 'previous' of the future next row, setting the target id, only if futureNextId is not NULL
+        // (meaning the future empplacement of  the moved id will be at the end of the list)
+        if (futureNextId > 0)
+        {
+            queryText = QString("UPDATE %1 SET previous = :rowId WHERE id = :futureNextId").arg(relationshipTableName);
+            query.prepare(queryText);
+            query.bindValue(":rowId", rowId);
+            query.bindValue(":futureNextId", futureNextId);
+            if (!query.exec())
+            {
+                return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
+                                          "Database error while updating future next relationship",
+                                          "Error while moving relationship"));
+            }
+        }
+
+        // 3. Modify the 'next' of the current previous row, setting the current next row, only if currentPrevId is not
+        // NULL (meaning the moved id was at the begining of the list)
+        if (currentPrevId > 0)
+        {
+            queryText =
+                QString("UPDATE %1 SET next = :currentNextId WHERE id = :currentPrevId").arg(relationshipTableName);
+            query.prepare(queryText);
+            query.bindValue(":currentNextId",
+                            currentNextId == 0 ? QVariant(QMetaType::fromType<int>()) : currentNextId);
+            query.bindValue(":currentPrevId", currentPrevId);
+            if (!query.exec())
+            {
+                return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
+                                          "Database error while updating current previous relationship",
+                                          "Error while moving relationship"));
+            }
+        }
+
+        // 4. Modify the 'previous' of the current next row, setting the current previous row, only if currentNextId is
+        // not NULL (meaning the moved id was at the end of the list)
+        queryText =
+            QString("UPDATE %1 SET previous = :currentPrevId WHERE id = :currentNextId").arg(relationshipTableName);
+        query.prepare(queryText);
+        query.bindValue(":currentPrevId", currentPrevId == 0 ? QVariant(QMetaType::fromType<int>()) : currentPrevId);
+        query.bindValue(":currentNextId", currentNextId);
+        if (!query.exec())
+        {
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
+                                      "Database error while updating current next relationship",
+                                      "Error while moving relationship"));
+        }
+
+        // 5. Modify the 'previous' and 'next' of the current row
+        queryText = QString("UPDATE %1 SET previous = :futurePrevId, next = :futureNextId WHERE id = :rowId")
+                        .arg(relationshipTableName);
+        query.prepare(queryText);
+        query.bindValue(":futurePrevId", futurePrevId == 0 ? QVariant(QMetaType::fromType<int>()) : futurePrevId);
+        query.bindValue(":futureNextId", futureNextId == 0 ? QVariant(QMetaType::fromType<int>()) : futureNextId);
+        query.bindValue(":rowId", rowId);
+        if (!query.exec())
+        {
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error",
+                                      "Database error while updating the previous and next of the current row",
+                                      "Error while moving relationship"));
+        }
+
+        return Result<void>();
     }
     else
     {
@@ -594,33 +682,66 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(int entityId, int otherE
         }
         else if (foreignKeyPropertyIter->relationshipType == PropertyWithForeignKey::RelationshipType::List)
         {
-            // remove the element from the list and update the prev and next values of the elements before and
-            // after the element being removed
+            // Step 1: Fetch the relevant 'previous' and 'next' values from the table
             QString queryStr = QString(R"(
-                    WITH RECURSIVE
-                        find_element (prev, next) AS (
-                            SELECT prev, next FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId
-                            UNION ALL
-                            SELECT t.prev, t.next FROM %1 t, find_element fe WHERE t.%2 = :entityId AND t.prev = fe.next
-                        ),
-                        update_prev AS (
-                            UPDATE %1 SET next = (SELECT next FROM find_element) WHERE %2 = :entityId AND %3 = (SELECT prev FROM find_element)
-                        ),
-                        update_next AS (
-                            UPDATE %1 SET prev = (SELECT prev FROM find_element) WHERE %2 = :entityId AND %3 = (SELECT next FROM find_element)
-                        )
-                    DELETE FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId
-                )")
+        SELECT previous, next FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId
+    )")
                                    .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
             query.prepare(queryStr);
             query.bindValue(":entityId", entityId);
             query.bindValue(":otherEntityId", otherEntityId);
+            if (!query.exec() || !query.next())
+            {
+                return Result<void>(
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
+            }
+            auto previous = query.value(0);
+            auto next = query.value(1);
 
+            // Step 2: Update the 'next' value for the previous element
+            queryStr = QString(R"(
+        UPDATE %1 SET next = :next WHERE %2 = :entityId AND %3 = :previous
+    )")
+                           .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
+            query.prepare(queryStr);
+            query.bindValue(":entityId", entityId);
+            query.bindValue(":next", next);
+            query.bindValue(":previous", previous);
             if (!query.exec())
             {
                 return Result<void>(
                     Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
             }
+
+            // Step 3: Update the 'previous' value for the next element
+            queryStr = QString(R"(
+        UPDATE %1 SET previous = :previous WHERE %2 = :entityId AND %3 = :next
+    )")
+                           .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
+            query.prepare(queryStr);
+            query.bindValue(":entityId", entityId);
+            query.bindValue(":previous", previous);
+            query.bindValue(":next", next);
+            if (!query.exec())
+            {
+                return Result<void>(
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
+            }
+
+            // Step 4: Delete the original element
+            queryStr = QString(R"(
+        DELETE FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId
+    )")
+                           .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
+            query.prepare(queryStr);
+            query.bindValue(":entityId", entityId);
+            query.bindValue(":otherEntityId", otherEntityId);
+            if (!query.exec())
+            {
+                return Result<void>(
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
+            }
+
             return Result<void>();
         }
     }
@@ -665,7 +786,8 @@ template <class T> Result<QList<int>> ForeignEntity<T>::getRelatedEntityIds(int 
                                "  UNION ALL"
                                "  SELECT deo.id, deo.%3, o_r.row_number + 1"
                                "  FROM %1 deo"
-                               "  JOIN ordered_relationships o_r ON deo.previous = o_r.id"
+                               "  JOIN ordered_relationships o_r ON deo.previous = o_r.id "
+                               "  AND %2 = :entityId"
                                ")"
                                "SELECT %3 FROM ordered_relationships ORDER BY row_number")
                            .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
@@ -831,11 +953,13 @@ Result<QPair<int, int>> ForeignEntity<T>::getFuturePreviousAndNextRelationshipTa
 
         int rowCount = query.value(0).toInt();
 
+        // rectify position
         if (position == -1 || position > rowCount)
         {
             position = rowCount;
         }
 
+        // edge case : empty
         if (rowCount == 0)
         {
             previousRowId = 0;
@@ -947,7 +1071,7 @@ Result<QPair<int, int>> ForeignEntity<T>::getFuturePreviousAndNextRelationshipTa
 }
 
 template <class T>
-Result<QPair<int, int>> ForeignEntity<T>::getPreviousAndNextRelationshipTableIds(int entityId,
+Result<QPair<int, int>> ForeignEntity<T>::getPreviousAndNextRelationshipTableIds(int entityId, int otherEntityId,
                                                                                  const QString &propertyName)
 {
     QSqlDatabase database = m_databaseContext->getConnection();
@@ -965,32 +1089,21 @@ Result<QPair<int, int>> ForeignEntity<T>::getPreviousAndNextRelationshipTableIds
         QString otherEntityIdColumnName =
             ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(foreignKeyPropertyIter->foreignTableName);
 
-        // dertermine previous row id and next row id:
-
-        // Get the ordering_id for the given entityId
-        QString getEntityOrderingIdStr =
-            QString("SELECT id FROM %1 WHERE %2 = %3").arg(relationshipTableName, entityIdColumnName).arg(entityId);
-        if (!query.exec(getEntityOrderingIdStr))
-        {
-            return Result<QPair<int, int>>(
-                Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), getEntityOrderingIdStr));
-        }
-
-        int relationshipId = 0;
-        if (query.next())
-        {
-            relationshipId = query.value(0).toInt();
-        }
-        else
-        {
-            return Result<QPair<int, int>>(
-                Error(Q_FUNC_INFO, Error::Critical, "sql_error", "Entity not found for given entityId."));
-        }
-
         // Get previous and next ordering ids using the entity's ordering_id
         QString selectPreviousAndNextStr =
-            QString("SELECT previous, next FROM %1 WHERE id = %2").arg(relationshipTableName).arg(relationshipId);
-        if (!query.exec(selectPreviousAndNextStr))
+            QString("SELECT previous, next FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId")
+                .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
+
+        if (!query.prepare(selectPreviousAndNextStr))
+        {
+            return Result<QPair<int, int>>(
+                Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), selectPreviousAndNextStr));
+        }
+
+        query.bindValue(":entityId", entityId);
+        query.bindValue(":otherEntityId", otherEntityId);
+
+        if (!query.exec())
         {
             return Result<QPair<int, int>>(
                 Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), selectPreviousAndNextStr));

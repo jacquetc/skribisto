@@ -34,19 +34,24 @@ class ForeignEntityTest : public QObject
     void testAddEntityRelationship_TwoDummyOtherEntity();
     void testAddEntityRelationship_TwoDummyOtherEntityAtPosition();
     void testGetRelatedEntityIds_TwoInList();
+    void testMoveRelatedEntityIds();
+    void testMoveRelatedEntityToFirstPosition();
+    void testMoveRelatedEntityToSamePosition();
+    void testMoveRelatedEntityNotFound();
 
     // higher level tests:
 
     void testListAddRelationship();
     void testListRemoveRelationship();
     void testListRemoveRelationship_OneOfTwo();
-    void testListMoveRelationship();
+    void testListUpdateRelationship();
 
   private:
     Domain::DummyEntityWithForeign addToTable(
         const QString &name, const QList<Domain::DummyOtherEntity> &lists = QList<Domain::DummyOtherEntity>(),
         const Domain::DummyOtherEntity &unique = Domain::DummyOtherEntity());
     Domain::DummyOtherEntity addToOtherTable(const QString &name);
+    void debugListsRelationshipTable();
 
   private:
     DummyDatabaseContext<Domain::DummyEntityWithForeign, Domain::DummyOtherEntity> *m_context;
@@ -88,6 +93,8 @@ void ForeignEntityTest::cleanup()
 {
     m_context->getConnection().rollback();
 }
+//-----------------------------------------------------------------------------
+
 void ForeignEntityTest::testGetRelatedEntityIds()
 {
     // Add an entity to the DummyOtherEntity table
@@ -140,6 +147,8 @@ void ForeignEntityTest::testGetRelatedEntityIds()
     QList<int> relatedIdsUnique = resultUnique.value();
     QVERIFY(relatedIdsUnique.contains(otherEntity.id()));
 }
+//-----------------------------------------------------------------------------
+
 void ForeignEntityTest::testGetRelatedEntityIds_TwoInList()
 {
     // Add an entity to the DummyOtherEntity table
@@ -181,6 +190,226 @@ void ForeignEntityTest::testGetRelatedEntityIds_TwoInList()
     QCOMPARE(relatedIdsList, QList<int>() << 2 << 1);
 }
 
+//-----------------------------------------------------------------------------
+
+void ForeignEntityTest::testMoveRelatedEntityIds()
+{
+
+    // Add three entities to the DummyOtherEntity table
+    Domain::DummyOtherEntity otherEntity1 = addToOtherTable("Sample DummyOtherEntity 1");
+    Domain::DummyOtherEntity otherEntity2 = addToOtherTable("Sample DummyOtherEntity 2");
+    Domain::DummyOtherEntity otherEntity3 = addToOtherTable("Sample DummyOtherEntity 3");
+
+    // Add an entity to the DummyEntityWithForeign table
+    Domain::DummyEntityWithForeign entity = addToTable("Sample DummyEntityWithForeign");
+
+    QSqlDatabase db = m_context->getConnection();
+    QSqlQuery query(db);
+    bool execStatus;
+
+    // Insert a relationship into dummy_entity_with_foreign_lists_relationship
+    query.prepare(
+        "INSERT INTO dummy_entity_with_foreign_lists_relationship (previous, next, dummy_entity_with_foreign_id, "
+        "dummy_other_entity_id) VALUES (:previous, :next, :dummy_entity_id, :dummy_other_entity_id)");
+    query.bindValue(":previous", QVariant(QMetaType::fromType<QString>()));
+    query.bindValue(":next", 2);
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity1.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    query.bindValue(":previous", 1);
+    query.bindValue(":next", 3);
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity2.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    query.bindValue(":previous", 2);
+    query.bindValue(":next", QVariant(QMetaType::fromType<QString>()));
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity3.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    qDebug() << "before";
+    void debugListsRelationshipTable();
+
+    // Call the moveEntityRelationship function to switch the position of otherEntity2 and otherEntity3
+    Result<void> result = m_foreignEntityTable->moveEntityRelationship(entity.id(), otherEntity2.id(), "lists", 3);
+    QVERIFY(result.isOk());
+
+    qDebug() << "after";
+    void debugListsRelationshipTable();
+
+    // Check the new order of the related entity ids
+    Result<QList<int>> resultList = m_foreignEntityTable->testGetRelatedEntityIds(entity.id(), "lists");
+    QVERIFY(resultList.isOk());
+    QList<int> relatedIdsList = resultList.value();
+    qDebug() << relatedIdsList;
+    QCOMPARE(relatedIdsList, QList<int>() << otherEntity1.id() << otherEntity3.id() << otherEntity2.id());
+}
+
+//-----------------------------------------------------------------------------
+
+void ForeignEntityTest::testMoveRelatedEntityToFirstPosition()
+{
+
+    // Add three entities to the DummyOtherEntity table
+    Domain::DummyOtherEntity otherEntity1 = addToOtherTable("Sample DummyOtherEntity 1");
+    Domain::DummyOtherEntity otherEntity2 = addToOtherTable("Sample DummyOtherEntity 2");
+    Domain::DummyOtherEntity otherEntity3 = addToOtherTable("Sample DummyOtherEntity 3");
+
+    // Add an entity to the DummyEntityWithForeign table
+    Domain::DummyEntityWithForeign entity = addToTable("Sample DummyEntityWithForeign");
+
+    QSqlDatabase db = m_context->getConnection();
+    QSqlQuery query(db);
+    bool execStatus;
+
+    // Insert a relationship into dummy_entity_with_foreign_lists_relationship
+    query.prepare(
+        "INSERT INTO dummy_entity_with_foreign_lists_relationship (previous, next, dummy_entity_with_foreign_id, "
+        "dummy_other_entity_id) VALUES (:previous, :next, :dummy_entity_id, :dummy_other_entity_id)");
+    query.bindValue(":previous", QVariant(QMetaType::fromType<QString>()));
+    query.bindValue(":next", 2);
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity1.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    query.bindValue(":previous", 1);
+    query.bindValue(":next", 3);
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity2.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    query.bindValue(":previous", 2);
+    query.bindValue(":next", QVariant(QMetaType::fromType<QString>()));
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity3.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    // Move the third entity to the first position
+    Result<void> result = m_foreignEntityTable->moveEntityRelationship(entity.id(), otherEntity3.id(), "lists", 0);
+    QVERIFY(result.isOk());
+
+    // Check the new order of the related entity ids
+    Result<QList<int>> resultList = m_foreignEntityTable->testGetRelatedEntityIds(entity.id(), "lists");
+    QVERIFY(resultList.isOk());
+    QList<int> relatedIdsList = resultList.value();
+    QCOMPARE(relatedIdsList, QList<int>() << otherEntity3.id() << otherEntity1.id() << otherEntity2.id());
+}
+
+//-----------------------------------------------------------------------------
+
+void ForeignEntityTest::testMoveRelatedEntityToSamePosition()
+{
+
+    // Add three entities to the DummyOtherEntity table
+    Domain::DummyOtherEntity otherEntity1 = addToOtherTable("Sample DummyOtherEntity 1");
+    Domain::DummyOtherEntity otherEntity2 = addToOtherTable("Sample DummyOtherEntity 2");
+    Domain::DummyOtherEntity otherEntity3 = addToOtherTable("Sample DummyOtherEntity 3");
+
+    // Add an entity to the DummyEntityWithForeign table
+    Domain::DummyEntityWithForeign entity = addToTable("Sample DummyEntityWithForeign");
+
+    QSqlDatabase db = m_context->getConnection();
+    QSqlQuery query(db);
+    bool execStatus;
+
+    // Insert a relationship into dummy_entity_with_foreign_lists_relationship
+    query.prepare(
+        "INSERT INTO dummy_entity_with_foreign_lists_relationship (previous, next, dummy_entity_with_foreign_id, "
+        "dummy_other_entity_id) VALUES (:previous, :next, :dummy_entity_id, :dummy_other_entity_id)");
+    query.bindValue(":previous", QVariant(QMetaType::fromType<QString>()));
+    query.bindValue(":next", 2);
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity1.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    query.bindValue(":previous", 1);
+    query.bindValue(":next", 3);
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity2.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    query.bindValue(":previous", 2);
+    query.bindValue(":next", QVariant(QMetaType::fromType<QString>()));
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity3.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    // Move the second entity to the second position (i.e., don't move it at all)
+    Result<void> result = m_foreignEntityTable->moveEntityRelationship(entity.id(), otherEntity2.id(), "lists", 1);
+    QVERIFY(result.isOk());
+
+    // Check the order of the related entity ids (it should be unchanged)
+    Result<QList<int>> resultList = m_foreignEntityTable->testGetRelatedEntityIds(entity.id(), "lists");
+    QVERIFY(resultList.isOk());
+    QList<int> relatedIdsList = resultList.value();
+    QCOMPARE(relatedIdsList, QList<int>() << otherEntity1.id() << otherEntity2.id() << otherEntity3.id());
+}
+
+//-----------------------------------------------------------------------------
+
+void ForeignEntityTest::testMoveRelatedEntityNotFound()
+{
+    // Add three entities to the DummyOtherEntity table
+    Domain::DummyOtherEntity otherEntity1 = addToOtherTable("Sample DummyOtherEntity 1");
+    Domain::DummyOtherEntity otherEntity2 = addToOtherTable("Sample DummyOtherEntity 2");
+    Domain::DummyOtherEntity otherEntity3 = addToOtherTable("Sample DummyOtherEntity 3");
+
+    // Add an entity to the DummyEntityWithForeign table
+    Domain::DummyEntityWithForeign entity = addToTable("Sample DummyEntityWithForeign");
+
+    QSqlDatabase db = m_context->getConnection();
+    QSqlQuery query(db);
+    bool execStatus;
+
+    // Insert a relationship into dummy_entity_with_foreign_lists_relationship
+    query.prepare(
+        "INSERT INTO dummy_entity_with_foreign_lists_relationship (previous, next, dummy_entity_with_foreign_id, "
+        "dummy_other_entity_id) VALUES (:previous, :next, :dummy_entity_id, :dummy_other_entity_id)");
+    query.bindValue(":previous", QVariant(QMetaType::fromType<QString>()));
+    query.bindValue(":next", 2);
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity1.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    query.bindValue(":previous", 1);
+    query.bindValue(":next", 3);
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity2.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    query.bindValue(":previous", 2);
+    query.bindValue(":next", QVariant(QMetaType::fromType<QString>()));
+    query.bindValue(":dummy_entity_id", entity.id());
+    query.bindValue(":dummy_other_entity_id", otherEntity3.id());
+    execStatus = query.exec();
+    QVERIFY(execStatus);
+
+    // Try to move an entity that isn't related to the main entity
+    Domain::DummyOtherEntity otherEntity4 = addToOtherTable("Sample DummyOtherEntity 4");
+    Result<void> result = m_foreignEntityTable->moveEntityRelationship(entity.id(), otherEntity4.id(), "lists", 2);
+    QVERIFY(result.hasError()); // It should return an error
+
+    // Check the order of the related entity ids (it should be unchanged)
+    Result<QList<int>> resultList = m_foreignEntityTable->testGetRelatedEntityIds(entity.id(), "lists");
+    QVERIFY(resultList.isOk());
+    QList<int> relatedIdsList = resultList.value();
+    QCOMPARE(relatedIdsList, QList<int>() << otherEntity1.id() << otherEntity2.id() << otherEntity3.id());
+}
+//-----------------------------------------------------------------------------
+
 void ForeignEntityTest::testAddEntityRelationship()
 {
     // Add an entity to the DummyOtherEntity table
@@ -210,6 +439,7 @@ void ForeignEntityTest::testAddEntityRelationship()
     qDebug() << relatedIdsResult.value();
     QVERIFY(relatedIds.contains(otherEntity.id()));
 }
+//-----------------------------------------------------------------------------
 
 void ForeignEntityTest::testAddEntityRelationship_TwoDummyOtherEntity()
 {
@@ -250,6 +480,8 @@ void ForeignEntityTest::testAddEntityRelationship_TwoDummyOtherEntity()
     QCOMPARE(relatedIds, QList<int>() << 1 << 2);
 }
 
+//-----------------------------------------------------------------------------
+
 void ForeignEntityTest::testAddEntityRelationship_TwoDummyOtherEntityAtPosition()
 {
     // Add an entity to the DummyOtherEntity table
@@ -288,6 +520,7 @@ void ForeignEntityTest::testAddEntityRelationship_TwoDummyOtherEntityAtPosition(
     qDebug() << relatedIdsResult.value();
     QCOMPARE(relatedIds, QList<int>() << 2 << 1);
 }
+//-----------------------------------------------------------------------------
 
 void ForeignEntityTest::testListAddRelationship()
 {
@@ -467,9 +700,56 @@ void ForeignEntityTest::testListRemoveRelationship_OneOfTwo()
 }
 
 //-----------------------------------------------------------------------------
-
-void ForeignEntityTest::testListMoveRelationship()
+void ForeignEntityTest::testListUpdateRelationship()
 {
+    // setup other table
+    Domain::DummyOtherEntity createdOtherEntity1 = this->addToOtherTable("Sample DummyOtherEntity 1");
+    Domain::DummyOtherEntity createdOtherEntity2 = this->addToOtherTable("Sample DummyOtherEntity 2");
+    Domain::DummyOtherEntity createdOtherEntity3 = this->addToOtherTable("Sample DummyOtherEntity 3");
+
+    // setup table
+    Domain::DummyEntityWithForeign createdEntity =
+        this->addToTable("Sample DummyEntityWithForeign", QList<Domain::DummyOtherEntity>()
+                                                              << createdOtherEntity1 << createdOtherEntity2);
+
+    // setup the lazy loading
+    createdEntity.setListsLoader([this, &createdEntity]() {
+        QList<int> otherIds = m_entityTable->getRelatedForeignIds(createdEntity, "lists").value();
+        QList<Domain::DummyOtherEntity> otherEntities;
+        for (int otherId : otherIds)
+        {
+            otherEntities.append(m_otherEntityTable->get(otherId).value());
+        }
+        return otherEntities;
+    });
+
+    // test the presence of the relationships
+    QCOMPARE(createdEntity.lists().size(), 2);
+
+    // remove one entity, add a new one, and change the order
+    createdEntity.setLists(QList<Domain::DummyOtherEntity>() << createdOtherEntity3 << createdOtherEntity1);
+
+    auto updateResult = m_entityTable->update(std::move(createdEntity));
+    QVERIFY(updateResult.isSuccess());
+
+    // prepare the update result
+    Domain::DummyEntityWithForeign updateEntity = updateResult.value();
+
+    // setup the lazy loading
+    updateEntity.setListsLoader([this, &updateEntity]() {
+        QList<int> otherIds = m_entityTable->getRelatedForeignIds(updateEntity, "lists").value();
+        QList<Domain::DummyOtherEntity> otherEntities;
+        for (int otherId : otherIds)
+        {
+            otherEntities.append(m_otherEntityTable->get(otherId).value());
+        }
+        return otherEntities;
+    });
+
+    // test the updated list
+    QCOMPARE(updateEntity.lists().size(), 2);
+    QCOMPARE(updateEntity.lists().at(0).name(), "Sample DummyOtherEntity 3");
+    QCOMPARE(updateEntity.lists().at(1).name(), "Sample DummyOtherEntity 1");
 }
 
 //-----------------------------------------------------------------------------
@@ -515,6 +795,29 @@ Domain::DummyOtherEntity ForeignEntityTest::addToOtherTable(const QString &name)
 }
 
 //-----------------------------------------------------------------------------
+
+void ForeignEntityTest::debugListsRelationshipTable()
+{
+
+    QSqlDatabase db = m_context->getConnection();
+    QSqlQuery query(db);
+    // Add a SQL query to print all rows in the dummy_entity_with_foreign_lists_relationship table
+    query.prepare("SELECT * FROM dummy_entity_with_foreign_lists_relationship");
+    if (query.exec())
+    {
+        while (query.next())
+        {
+            qDebug() << "Id: " << query.value("id").toInt() << " Previous: " << query.value("previous").toInt()
+                     << " Next: " << query.value("next").toInt()
+                     << " Dummy Entity ID: " << query.value("dummy_entity_with_foreign_id").toInt()
+                     << " Dummy Other Entity ID: " << query.value("dummy_other_entity_id").toInt();
+        }
+    }
+    else
+    {
+        qWarning() << "Query execution error: " << query.lastError().text();
+    }
+}
 
 QTEST_APPLESS_MAIN(ForeignEntityTest)
 
