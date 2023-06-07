@@ -3,6 +3,7 @@ import yaml
 import os
 import sys
 import stringcase
+from pathlib import Path
 
 
 def generate_cpp_files(manifest_file):
@@ -27,7 +28,7 @@ def generate_cpp_files(manifest_file):
     # Organize entities by name for easier lookup
     entities_by_name = {entity["name"]: entity for entity in entities_list}
 
-    template_env = Environment(loader=FileSystemLoader("templates"))
+    template_env = Environment(loader=FileSystemLoader("templates/entities"))
     template = template_env.get_template("entity_template.h.jinja2")
 
     # Default initialization values
@@ -233,12 +234,14 @@ def generate_cpp_files(manifest_file):
 
 
 # Main execution
+full_path = Path(__file__).resolve().parent
+
 # add the current directory to the path so that we can import the generated files
-sys.path.append(os.getcwd() + "/generator")
+sys.path.append(full_path)
 
 
 # set the current directory to the generator directory
-os.chdir(os.getcwd() + "/generator")
+os.chdir(full_path)
 
 
 file = "manifest.yaml"

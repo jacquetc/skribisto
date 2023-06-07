@@ -1,8 +1,8 @@
 #pragma once
 
 #include "domain_global.h"
-#include <QDateTime>
 #include <QUuid>
+#include <QDateTime>
 
 #include "entity_base.h"
 

@@ -760,6 +760,7 @@ Result<void> ForeignEntity<T>::removeEntityRelationship(int entityId, int otherE
         return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "remove_relationship_failed",
                                   "Unknown relationship property", propertyName));
     }
+    return Result<void>();
 }
 
 //--------------------------------------------

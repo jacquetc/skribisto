@@ -10,13 +10,19 @@
 namespace Repository
 {
 class SKR_PERSISTENCE_EXPORT AuthorRepository : public QObject,
-                                                public Repository::GenericRepository<Domain::Author>,
-                                                public Contracts::Persistence::InterfaceAuthorRepository
+                                          public Repository::GenericRepository<Domain::Author>,
+                                          public Contracts::Persistence::InterfaceAuthorRepository
 {
     Q_OBJECT
     Q_INTERFACES(Contracts::Persistence::InterfaceAuthorRepository)
   public:
-    explicit AuthorRepository(InterfaceDatabaseTable<Domain::Author> *database);
+    explicit AuthorRepository(InterfaceDatabaseTable<Domain::Author> *authorDatabase);
+
+    
+
+   private:
+    InterfaceDatabaseTable<Domain::Author> *m_authorDatabase;
+    
 };
 
 } // namespace Repository

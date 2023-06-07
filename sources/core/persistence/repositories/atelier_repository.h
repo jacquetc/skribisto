@@ -10,13 +10,23 @@
 namespace Repository
 {
 class SKR_PERSISTENCE_EXPORT AtelierRepository : public QObject,
-                                                 public Repository::GenericRepository<Domain::Atelier>,
-                                                 public Contracts::Persistence::InterfaceAtelierRepository
+                                          public Repository::GenericRepository<Domain::Atelier>,
+                                          public Contracts::Persistence::InterfaceAtelierRepository
 {
     Q_OBJECT
     Q_INTERFACES(Contracts::Persistence::InterfaceAtelierRepository)
   public:
-    explicit AtelierRepository(InterfaceDatabaseTable<Domain::Atelier> *database);
+    explicit AtelierRepository(InterfaceDatabaseTable<Domain::Atelier> *atelierDatabase, InterfaceDatabaseTable<Domain::Book> *bookDatabase);
+
+    
+    Domain::Atelier::BooksLoader fetchBooksLoader();
+    
+
+   private:
+    InterfaceDatabaseTable<Domain::Atelier> *m_atelierDatabase;
+    
+    InterfaceDatabaseTable<Domain::Book> *m_bookDatabase;
+    
 };
 
 } // namespace Repository

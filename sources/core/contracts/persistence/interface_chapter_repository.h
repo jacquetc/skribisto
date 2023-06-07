@@ -1,7 +1,7 @@
 #pragma once
 
 #include "chapter.h"
-#include "contracts_global.h"
+#include "contracts_global.h" 
 #include "interface_generic_repository.h"
 #include "interface_repository.h"
 

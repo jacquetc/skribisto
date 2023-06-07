@@ -81,18 +81,27 @@ repositories:
   list:
     - entity_name: Chapter
       generate: true
+      lazy_loaders: true
     - entity_name: Book
       generate: true
+      lazy_loaders: true
+    - entity_name: Atelier
+      generate: true
+      lazy_loaders: true
+    - entity_name: Author
+      generate: true
+      lazy_loaders: true
 
-  interface_path: ../sources/core/contracts_test/persistence/
-  interface_list_file: ../sources/core/contracts_test/repositories.txt
+  interface_path: ../sources/core/contracts/persistence/
+  interface_list_file: ../sources/core/contracts/repositories.txt
   export: SKR_PERSISTENCE_EXPORT
   export_header_file: persistence_global.h
-  forder_path: ../sources/core/persistence_test/repositories/
-  list_file: ../sources/core/persistence_test/repositories.txt
+  forder_path: ../sources/core/persistence/repositories/
+  list_file: ../sources/core/persistence/repositories.txt
 
 
 contracts:
-  folder_path: ../sources/core/contracts_test
+  inverted_app_domain: eu.skribisto
+  folder_path: ../sources/core/contracts
   export: SKR_CONTRACTS_EXPORT
   export_header_file: contracts_global.h

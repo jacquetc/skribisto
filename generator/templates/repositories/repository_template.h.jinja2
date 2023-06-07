@@ -1,9 +1,9 @@
 #pragma once
 
-#include "{{ name.lower() }}.h"
+#include "{{ snake_name }}.h"
 #include "database/interface_database_table.h"
 #include "generic_repository.h"
-#include "persistence/interface_{{ name.lower() }}_repository.h"
+#include "persistence/interface_{{ snake_name }}_repository.h"
 #include "{{ export_header_file }}"
 #include <QObject>
 
@@ -16,7 +16,17 @@ class {{ export }} {{ name }}Repository : public QObject,
     Q_OBJECT
     Q_INTERFACES(Contracts::Persistence::Interface{{ name }}Repository)
   public:
-    explicit {{ name }}Repository(InterfaceDatabaseTable<Domain::{{ name }}> *database);
+    explicit {{ name }}Repository(InterfaceDatabaseTable<Domain::{{ name }}> *{{ camel_name }}Database{{ foreign_database_table_constructor_arguments_string }});
+
+    {% for loader_function in loader_function_list %}
+    {{ loader_function }}
+    {% endfor %}
+
+   private:
+    InterfaceDatabaseTable<Domain::{{ name }}> *m_{{ camel_name }}Database;
+    {% for loader_private_member in loader_private_member_list %}
+    {{ loader_private_member }}
+    {% endfor %}
 };
 
 } // namespace Repository

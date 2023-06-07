@@ -80,7 +80,7 @@ class SKR_DOMAIN_EXPORT Atelier : public Entity
     {
         if (!m_booksLoaded && m_booksLoader)
         {
-            m_books = m_booksLoader();
+            m_books = m_booksLoader(this->id());
             m_booksLoaded = true;
         }
         return m_books;
@@ -91,7 +91,7 @@ class SKR_DOMAIN_EXPORT Atelier : public Entity
         m_books = books;
     }
     
-    using BooksLoader = std::function<QList<Book>()>;
+    using BooksLoader = std::function<QList<Book>(int entityId)>;
 
     void setBooksLoader(const BooksLoader &loader)
     {

@@ -1,0 +1,47 @@
+#include "{{ snake_name }}_repository.h"
+
+using namespace Repository;
+
+{{ name }}Repository::{{ name }}Repository(InterfaceDatabaseTable<Domain::{{ name }}> *{{ camel_name }}Database{{ foreign_database_table_constructor_arguments_string }})
+    : QObject(nullptr), Repository::GenericRepository<Domain::{{ name }}>({{ camel_name }}Database){{ fields_init_values}}
+{
+}
+
+{% for key, value in foreign_entities.items() %}
+Domain::{{ name }}::{{ value["related_field_pascal_name"] }}Loader {{ name }}Repository::fetch{{ value["related_field_pascal_name"] }}Loader()
+{
+    return [this](int entityId) {
+        auto result = m_{{ camel_name }}Database->getRelatedForeignIds(entityId, "{{ value["related_field_name"] }}");
+        if (result.isError())
+        {
+            qCritical() << result.error().code() << result.error().message() << result.error().data();
+            {% if value["is_list"] %}
+            return QList<Domain::{{ value["type_name_only"] }}>();
+            {% else %}
+            return Domain::{{ value["type_name_only"] }}();
+            {% endif %}
+        }
+
+        QList<int> foreignIds = result.value();
+        {% if value["is_list"] %}   
+        QList<Domain::{{ value["type_name_only"] }}> foreignEntities;
+        for (int foreignId : foreignIds)
+        {
+            foreignEntities.append(m_{{ value["type_camel_name"] }}Database->get(foreignId).value());
+        }
+        return foreignEntities;
+        {% else %}
+        Domain::{{ value["type_name_only"] }} foreignEntity;
+        if (foreignIds.size() > 0)
+        {
+            foreignEntity = m_{{ value["type_camel_name"] }}Database->get(foreignIds[0]).value();
+        }
+        return foreignEntity;
+        {% endif %}
+
+    };
+}
+{% endfor %}
+
+
+

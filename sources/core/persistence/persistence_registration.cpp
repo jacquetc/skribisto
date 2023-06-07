@@ -55,7 +55,7 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
     QSharedPointer<AuthorRepository> authorRepository(new AuthorRepository(authorDatabaseTable));
     QSharedPointer<ChapterRepository> chapterRepository(new ChapterRepository(chapterDatabaseTable));
     QSharedPointer<BookRepository> bookRepository(new BookRepository(bookDatabaseTable, chapterDatabaseTable));
-    QSharedPointer<AtelierRepository> atelierRepository(new AtelierRepository(atelierDatabaseTable));
+    QSharedPointer<AtelierRepository> atelierRepository(new AtelierRepository(atelierDatabaseTable, bookDatabaseTable));
 
     // register repositories:
     Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Author, authorRepository);

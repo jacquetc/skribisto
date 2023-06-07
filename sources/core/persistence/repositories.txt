@@ -1,0 +1,8 @@
+repositories/chapter_repository.h
+repositories/chapter_repository.cpp
+repositories/book_repository.h
+repositories/book_repository.cpp
+repositories/atelier_repository.h
+repositories/atelier_repository.cpp
+repositories/author_repository.h
+repositories/author_repository.cpp
