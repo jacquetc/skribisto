@@ -77,9 +77,12 @@ template <class T> class ForeignEntity : public virtual InterfaceForeignEntity<T
 
   protected:
     QStringList getPropertyNamesWithForeignKeydAndLoaderProperty() const;
+    QStringList getPropertyColumnsWithForeignKeydAndLoaderProperty() const;
     Result<void> manageAfterEntityAddition(T &entity);
     Result<void> manageAfterEntityUpdate(T &entity);
     Result<void> manageAfterTableClearing();
+    Result<SaveData> save(const QList<int> &idList) override;
+    Result<void> restore(const SaveData &saveData) override;
 
   private:
     Result<void> addEntityRelationship(int entityId, int otherEntityId, const QString &propertyName, int position = -1);
@@ -531,6 +534,206 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterTableClearing()
     return Result<void>();
 }
 
+inline template <class T> Result<SaveData> ForeignEntity<T>::save(const QList<int> &idList)
+{
+    QMap<QString, QList<QVariantHash>> resultMap;
+
+    QSqlDatabase database = m_databaseContext->getConnection();
+    QSqlQuery query(database);
+
+    for (const auto &foreignKeyProperty : m_foreignKeyProperties.values())
+    {
+        QString relationshipTableName = foreignKeyProperty.relationshipTableName;
+        QString entityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
+        QString otherEntityIdColumnName =
+            ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(foreignKeyProperty.foreignTableName);
+        QStringList relationshipTableColumns =
+            ForeignEntityTools<T>::getRelationshipTableColumns(foreignKeyProperty.foreignTableName);
+
+        QString queryStr;
+
+        if (idList.isEmpty())
+        {
+            // Save the whole table
+            queryStr = "SELECT * FROM " + relationshipTableName;
+        }
+        else
+        {
+            // Save the specified list of rows
+            QString idPlaceholders;
+            for (int i = 0; i < idList.count(); ++i)
+            {
+                idPlaceholders += ":id" + QString::number(i) + ",";
+            }
+            idPlaceholders.chop(1);
+            queryStr = QString("SELECT * FROM %1 WHERE %2 IN (%3)")
+                           .arg(relationshipTableName, entityIdColumnName, idPlaceholders);
+        }
+
+        QSqlQuery query(database);
+        if (!query.prepare(queryStr))
+        {
+            return Result<QMap<QString, QList<QVariantHash>>>(
+                Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
+        }
+        if (!idList.isEmpty())
+        {
+            for (int i = 0; i < idList.count(); ++i)
+            {
+                query.bindValue(":id" + QString::number(i), idList[i]);
+            }
+        }
+
+        if (query.exec())
+        {
+            QList<QVariantHash> resultSet;
+            while (query.next())
+            {
+                QVariantHash row;
+
+                for (const QString &column : relationshipTableColumns)
+                {
+                    row[column] = query.value(column);
+                }
+                resultSet.append(row);
+            }
+            resultMap.insert(relationshipTableName, resultSet);
+        }
+        else
+        {
+            // Handle query error
+            return Result<QMap<QString, QList<QVariantHash>>>(
+                Error(Q_FUNC_INFO, Error::Critical, "database_table_save_error", query.lastError().text(), queryStr));
+        }
+    }
+
+    return Result<QMap<QString, QList<QVariantHash>>>(resultMap);
+}
+
+template <class T> Result<void> ForeignEntity<T>::restore(const SaveData &saveData)
+{
+    QSqlDatabase database = m_databaseContext->getConnection();
+    QSqlQuery query(database);
+
+    for (const auto &foreignKeyProperty : m_foreignKeyProperties.values())
+    {
+        QString relationshipTableName = foreignKeyProperty.relationshipTableName;
+        QString entityIdColumnName = ForeignEntityTools<T>::getRelationshipEntityIdColumnName();
+        QString otherEntityIdColumnName =
+            ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(foreignKeyProperty.foreignTableName);
+        QStringList relationshipTableColumns =
+            ForeignEntityTools<T>::getRelationshipTableColumns(foreignKeyProperty.foreignTableName);
+
+        QString queryStr;
+
+        if (!saveData.contains(relationshipTableName))
+        {
+
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "restore_foreign_key_error",
+                                      relationshipTableName + "table from the SaveData is missing"));
+        }
+
+        const QList<QVariantHash> &rows = saveData.value(relationshipTableName);
+
+        for (const QVariantHash &row : rows)
+        {
+            // Check if the row exists in the table
+            QSqlQuery checkQuery(database);
+            QString checkQueryStr = QString("SELECT COUNT(*) FROM %1 WHERE %2 = :entityId AND %3 = :otherEntityId")
+                                        .arg(relationshipTableName, entityIdColumnName, otherEntityIdColumnName);
+
+            if (!checkQuery.prepare(checkQueryStr))
+            {
+                return Result<void>(
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", checkQuery.lastError().text(), checkQueryStr));
+            }
+            checkQuery.bindValue(":entityId", row.value(entityIdColumnName));
+            checkQuery.bindValue(":otherEntityId", row.value(otherEntityIdColumnName));
+            if (!checkQuery.exec())
+            {
+                return Result<void>(
+                    Error(Q_FUNC_INFO, Error::Critical, "sql_error", checkQuery.lastError().text(), checkQueryStr));
+            }
+            if (!checkQuery.next())
+            {
+                return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", checkQuery.lastError().text()));
+            }
+
+            int rowCount = checkQuery.value(0).toInt();
+
+            if (rowCount == 1)
+            {
+                // Update the existing row
+                QString updateStr = "UPDATE " + relationshipTableName + " SET ";
+                for (const QString &column : relationshipTableColumns)
+                {
+                    if (column != "id")
+                    {
+                        updateStr += column + " = :" + column + ",";
+                    }
+                }
+                updateStr.chop(1);
+                updateStr += " WHERE id = :id";
+
+                QSqlQuery updateQuery(database);
+                updateQuery.prepare(updateStr);
+                for (const QString &column : relationshipTableColumns)
+                {
+                    updateQuery.bindValue(":" + column, row.value(column));
+                }
+
+                if (!updateQuery.exec())
+                {
+                    return Result<void>(
+                        Error(Q_FUNC_INFO, Error::Critical, "sql_error", updateQuery.lastError().text()));
+                }
+            }
+            else
+            {
+                // Insert the missing row
+                QString insertStr = "INSERT INTO " + relationshipTableName + " (";
+                QString placeholders;
+                for (const QString &column : relationshipTableColumns)
+                {
+                    insertStr += column + ",";
+                    placeholders += ":" + column + ",";
+                }
+                insertStr.chop(1);
+                placeholders.chop(1);
+                insertStr += ") VALUES (" + placeholders + ")";
+
+                QSqlQuery insertQuery(database);
+                if (!insertQuery.prepare(insertStr))
+                {
+                    return Result<void>(
+                        Error(Q_FUNC_INFO, Error::Critical, "sql_error", insertQuery.lastError().text(), insertStr));
+                }
+                for (const QString &column : relationshipTableColumns)
+                {
+                    insertQuery.bindValue(":" + column, row.value(column));
+                }
+
+                if (!insertQuery.exec())
+                {
+                    return Result<void>(
+                        Error(Q_FUNC_INFO, Error::Critical, "sql_error", insertQuery.lastError().text()));
+                }
+            }
+        }
+    }
+
+    // restore foreign entities
+
+    auto foreignRestoreResult = ForeignEntity<T>::restore(saveData);
+
+    if (foreignRestoreResult.hasError())
+    {
+        return Result<void>(foreignRestoreResult.error());
+    }
+
+    return Result<void>();
+}
+
 //--------------------------------------------
 
 template <class T> Result<QList<int>> ForeignEntity<T>::getRelatedForeignIds(int entityId, const QString &propertyName)
@@ -835,14 +1038,30 @@ template <class T> Result<QList<int>> ForeignEntity<T>::getRelatedEntityIds(int 
 
 template <class T> QStringList ForeignEntity<T>::getPropertyNamesWithForeignKeydAndLoaderProperty() const
 {
+    QStringList propertyNamesWithForeignKeydAndLoaderProperty;
     QStringList foreignKeyProperties = m_foreignKeyProperties.keys();
 
     // add "Loader" to each property name and append it to the list
-    QStringList propertyNamesWithForeignKeydAndLoaderProperty;
     propertyNamesWithForeignKeydAndLoaderProperty.append(foreignKeyProperties);
     for (const QString &propertyName : foreignKeyProperties)
     {
         propertyNamesWithForeignKeydAndLoaderProperty.append(propertyName + "Loaded");
+    }
+
+    return propertyNamesWithForeignKeydAndLoaderProperty;
+}
+
+template <class T> QStringList ForeignEntity<T>::getPropertyColumnsWithForeignKeydAndLoaderProperty() const
+{
+    QStringList propertyNamesWithForeignKeydAndLoaderProperty;
+
+    QStringList foreignKeyProperties = m_foreignKeyProperties.keys();
+
+    // add "Loader" to each property name and append it to the list
+    for (const QString &propertyName : foreignKeyProperties)
+    {
+        propertyNamesWithForeignKeydAndLoaderProperty.append(Tools<T>::fromPascalToSnakeCase(propertyName));
+        propertyNamesWithForeignKeydAndLoaderProperty.append(Tools<T>::fromPascalToSnakeCase(propertyName + "Loaded"));
     }
 
     return propertyNamesWithForeignKeydAndLoaderProperty;

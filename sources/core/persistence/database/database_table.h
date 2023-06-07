@@ -641,7 +641,7 @@ template <class T> Result<void> DatabaseTable<T>::clear()
         return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "sql_clear_failed", "Failed to clear the main table"));
     }
 
-    return this->manageAfterTableClearing();
+    return ForeignEntity<T>::manageAfterTableClearing();
 }
 
 //--------------------------------------------
@@ -711,25 +711,34 @@ template <class T> Result<SaveData> DatabaseTable<T>::save(const QList<int> &idL
         {
             // Handle query error
             return Result<QMap<QString, QList<QVariantHash>>>(
-                Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
+                Error(Q_FUNC_INFO, Error::Critical, "database_table_save_error", query.lastError().text(), queryStr));
         }
     }
+
+    // save foreign entities
+
+    auto foreignSaveResult = ForeignEntity<T>::save(idList);
+
+    if (foreignSaveResult.hasError())
+    {
+        return Result<QMap<QString, QList<QVariantHash>>>(foreignSaveResult.error());
+    }
+    resultMap.insert(foreignSaveResult.value());
 
     return Result<QMap<QString, QList<QVariantHash>>>(resultMap);
 }
 
 //--------------------------------------------
-template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &tableRowsMap)
+template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &saveData)
 {
     QSqlDatabase database = m_databaseContext->getConnection();
-    const QString &entityName = m_tableName;
+    const QString &tableName = m_tableName;
     const QStringList &columns = m_propertyColumns;
 
-    for (const QString &tableType : tableRowsMap.keys())
+    for (const QString &tableType : saveData.keys())
     {
-        QString tableName = entityName;
 
-        const QList<QVariantHash> &rows = tableRowsMap.value(tableType);
+        const QList<QVariantHash> &rows = saveData.value(tableType);
 
         for (const QVariantHash &row : rows)
         {
@@ -767,7 +776,7 @@ template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &tableR
                     }
                 }
                 updateStr.chop(1);
-                updateStr += " WHERE uuid = :id";
+                updateStr += " WHERE id = :id";
 
                 QSqlQuery updateQuery(database);
                 updateQuery.prepare(updateStr);
@@ -814,6 +823,15 @@ template <class T> Result<void> DatabaseTable<T>::restore(const SaveData &tableR
                 }
             }
         }
+    }
+
+    // restore foreign entities
+
+    auto foreignRestoreResult = ForeignEntity<T>::restore(saveData);
+
+    if (foreignRestoreResult.hasError())
+    {
+        return Result<void>(foreignRestoreResult.error());
     }
 
     return Result<void>();

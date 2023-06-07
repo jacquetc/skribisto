@@ -21,7 +21,6 @@ set(contracts_SRCS
     database/interface_database_table.h
     database/interface_foreign_entity.h
     database/interface_database_context.h
-    database/interface_ordered_database_table.h
 
     # persistence:
     persistence/interface_generic_repository.h

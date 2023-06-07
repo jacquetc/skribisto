@@ -12,6 +12,8 @@ template <class T> class ForeignEntityTools
     static QString getRelationshipTableName(const QString &propertyName);
     static QString getRelationshipEntityIdColumnName();
     static QString getRelationshipOtherEntityIdColumnName(const QString &otherEntityClassName);
+    static QStringList getRelationshipTableColumns(const QString &otherEntityClassName);
+
     static QString getOtherEntityTableName(const QString &propertyType);
     static QString getOtherEntityClassName(const QString &propertyType);
 
@@ -50,6 +52,18 @@ QString ForeignEntityTools<T>::getRelationshipOtherEntityIdColumnName(const QStr
 {
     return Tools<T>::fromPascalToSnakeCase(otherEntityClassName.left(1).toLower() + otherEntityClassName.mid(1) + "Id");
 }
+
+//--------------------------------------------
+
+template <class T> QStringList ForeignEntityTools<T>::getRelationshipTableColumns(const QString &otherEntityClassName)
+{
+    QStringList columns;
+    columns << "id" << getRelationshipEntityIdColumnName()
+            << getRelationshipOtherEntityIdColumnName(otherEntityClassName) << "previous"
+            << "next";
+}
+
+//--------------------------------------------
 
 template <class T> QString ForeignEntityTools<T>::getOtherEntityTableName(const QString &propertyType)
 {
