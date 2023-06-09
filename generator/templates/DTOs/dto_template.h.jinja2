@@ -1,0 +1,103 @@
+#pragma once
+
+#include <QObject>
+{% for header in headers -%}
+#include {{ header }}
+{% endfor %}
+
+{% for field in fields -%}
+{% if field.is_foreign -%}
+using namespace Contracts::DTO::{{ field.foreign_feature_name }};
+{% endif -%}
+{% endfor %}
+
+namespace Contracts::DTO::{{ feature_pascal_name }}
+{
+
+class {{ dto_pascal_type }}
+{
+    Q_GADGET
+{% for field in fields %}
+    Q_PROPERTY({{ field.type }} {{ field.name }} READ {{ field.name }} WRITE set{{ field.pascal_name }})
+{%- endfor %}
+
+  public:
+    {{ dto_pascal_type }}() : {{ fields_init_values }}
+    {
+    }
+
+    ~{{ dto_pascal_type }}()
+    {
+    }
+
+    {{ dto_pascal_type }}({% for field in fields %}{% if field.type in ['int', 'float', 'bool'] %} {{ field.type }} {{ field.name }}{% else %} const {{ field.type }} &{{ field.name }}{% endif %}{% if not loop.last %}, {% endif %} {% endfor %}) 
+        : {% for field in fields %}m_{{ field.name }}({{ field.name }}){% if not loop.last %}, {% endif %}{% endfor %}
+    {
+    }
+
+    {{ dto_pascal_type }}(const {{ dto_pascal_type }} &other) : {% for field in fields %}m_{{ field.name }}(other.m_{{ field.name }}){% if not loop.last %}, {% endif %}{% endfor %}
+    {
+    }
+
+    {{ dto_pascal_type }} &operator=(const {{ dto_pascal_type }} &other)
+    {
+        if (this != &other)
+        {
+            {% for field in fields -%}
+            m_{{ field.name }} = other.m_{{ field.name }};
+            {% endfor %}
+        }
+        return *this;
+    }
+
+    friend bool operator==(const {{ dto_pascal_type }} &lhs, const {{ dto_pascal_type }} &rhs);
+
+
+    friend uint qHash(const {{ dto_pascal_type }} &dto, uint seed) noexcept;
+
+
+{% for field in fields %}
+    // ------ {{ field.name }} : -----
+
+    {{ field.type }} {{ field.name }}() const
+    {
+        return m_{{ field.name }};
+    }
+
+    void set{{ field.pascal_name }}({% if field.type in ['int', 'float', 'bool'] %} {{ field.type }} {{ field.name }}{% else %} const {{ field.type }} &{{ field.name }}{% endif %})
+    {
+        m_{{ field.name }} = {{ field.name }};
+    }
+    
+{% endfor %}
+
+  private:
+{% for field in fields%}
+    {{ field.type }} m_{{ field.name }};
+{%- endfor %}
+};
+
+inline bool operator==(const {{ dto_pascal_type }} &lhs, const {{ dto_pascal_type }} &rhs)
+{
+
+    return 
+            {% for field in fields -%}
+            lhs.m_{{ field.name }} == rhs.m_{{ field.name }} {% if not loop.last %} && {% endif %}
+            {%- endfor %}
+    ;
+}
+
+inline uint qHash(const {{ dto_pascal_type }} &dto, uint seed = 0) noexcept
+{        // Seed the hash with the parent class's hash
+        uint hash = 0;
+
+        // Combine with this class's properties
+        {% for field in fields -%}
+        hash ^= ::qHash(dto.m_{{ field.name }}, seed);
+        {% endfor %}
+
+        return hash;
+}
+
+} // namespace Contracts::DTO::{{ feature_pascal_name }}
+Q_DECLARE_METATYPE(Contracts::DTO::{{ feature_pascal_name }}::{{ dto_pascal_type }})

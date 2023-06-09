@@ -21,6 +21,9 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Test Core REQUIRED)
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp ${RESOURCES}
     dummy_entity.h
     dummy_basic_entity.h
+    dummy_entity_with_details.h
+    dummy_basic_entity_dto.h
+    dummy_entity_with_details_dto.h
 )
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
 

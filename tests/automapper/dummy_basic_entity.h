@@ -14,10 +14,8 @@ class SKR_DOMAIN_EXPORT DummyBasicEntity : public DummyEntity
 
     Q_PROPERTY(QString name READ name WRITE setName)
 
-    Q_PROPERTY(QString author READ author WRITE setAuthor)
-
   public:
-    DummyBasicEntity() : DummyEntity(), m_name(QString()), m_author(QString())
+    DummyBasicEntity() : DummyEntity(), m_name(QString())
     {
     }
 
@@ -25,13 +23,12 @@ class SKR_DOMAIN_EXPORT DummyBasicEntity : public DummyEntity
     {
     }
 
-    DummyBasicEntity(const int &id, const QUuid &uuid, const QDateTime &creationDate, const QString &name,
-                     const QString &author)
-        : DummyEntity(id, uuid, creationDate), m_name(name), m_author(author)
+    DummyBasicEntity(const int &id, const QUuid &uuid, const QDateTime &creationDate, const QString &name)
+        : DummyEntity(id, uuid, creationDate), m_name(name)
     {
     }
 
-    DummyBasicEntity(const DummyBasicEntity &other) : DummyEntity(other), m_name(other.m_name), m_author(other.m_author)
+    DummyBasicEntity(const DummyBasicEntity &other) : DummyEntity(other), m_name(other.m_name)
     {
     }
 
@@ -41,7 +38,6 @@ class SKR_DOMAIN_EXPORT DummyBasicEntity : public DummyEntity
         {
             DummyEntity::operator=(other);
             m_name = other.m_name;
-            m_author = other.m_author;
         }
         return *this;
     }
@@ -63,22 +59,8 @@ class SKR_DOMAIN_EXPORT DummyBasicEntity : public DummyEntity
         m_name = name;
     }
 
-    // ------ author : -----
-
-    QString author() const
-    {
-
-        return m_author;
-    }
-
-    void setAuthor(const QString &author)
-    {
-        m_author = author;
-    }
-
   private:
     QString m_name;
-    QString m_author;
 };
 
 inline bool operator==(const DummyBasicEntity &lhs, const DummyBasicEntity &rhs)
@@ -86,7 +68,7 @@ inline bool operator==(const DummyBasicEntity &lhs, const DummyBasicEntity &rhs)
 
     return static_cast<const DummyEntity &>(lhs) == static_cast<const DummyEntity &>(rhs) &&
 
-           lhs.m_name == rhs.m_name && lhs.m_author == rhs.m_author;
+           lhs.m_name == rhs.m_name;
 }
 
 inline uint qHash(const DummyBasicEntity &entity, uint seed = 0) noexcept
@@ -96,7 +78,6 @@ inline uint qHash(const DummyBasicEntity &entity, uint seed = 0) noexcept
 
     // Combine with this class's properties
     hash ^= ::qHash(entity.m_name, seed);
-    hash ^= ::qHash(entity.m_author, seed);
 
     return hash;
 }

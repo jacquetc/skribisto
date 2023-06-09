@@ -112,7 +112,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     auto authorController = AuthorController::instance();
 
     connect(ui->addAsyncPushButton, &QPushButton::clicked, this, [=]() {
-        Contracts::DTO::Author::CreateAuthorDTO dto("test");
+        Contracts::DTO::Author::CreateAuthorDTO dto(QUuid(), QDateTime(), QDateTime(), "test");
 
         authorController->create(dto);
     });

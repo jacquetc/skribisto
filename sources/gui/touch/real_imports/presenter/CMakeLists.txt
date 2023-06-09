@@ -7,6 +7,7 @@ qt6_add_qml_module(presenter
     VERSION 1.0
     SOURCES
     foreign_system_controller.h
+    foreign_chapter_controller.h
 
 )
 

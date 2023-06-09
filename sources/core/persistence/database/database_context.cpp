@@ -13,7 +13,7 @@ DatabaseContext::DatabaseContext() : QObject()
 
 DatabaseContext::~DatabaseContext()
 {
-    // QFile::remove(m_databaseName);
+    QFile::remove(m_databaseName);
 }
 
 //-------------------------------------------------

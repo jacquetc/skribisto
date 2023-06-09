@@ -2,6 +2,8 @@
 #include <QJSValue>
 #include <QMetaProperty>
 #include <QObject>
+#include <QUuid>
+#include <QUrl>
 
 #pragma once
 
@@ -17,16 +19,39 @@ T mapToDto(const QJSValue &jsValue) {
     // Define QMap with conversion functions
     QMap<QString, std::function<void(const char*, QVariant)>> conversionMap;
 
+    conversionMap["bool"] = [&](const char* name, QVariant value) {
+        int propertyIndex = T::staticMetaObject.indexOfProperty(name);
+        T::staticMetaObject.property(propertyIndex).writeOnGadget(&dto, value.toBool());
+    };
+
+    conversionMap["QUuid"] = [&](const char* name, QVariant value) {
+        int propertyIndex = T::staticMetaObject.indexOfProperty(name);
+        T::staticMetaObject.property(propertyIndex).writeOnGadget(&dto, value.toUuid());
+    };
+
     conversionMap["QString"] = [&](const char* name, QVariant value) {
-        dto.setProperty(name, value.toString());
+        int propertyIndex = T::staticMetaObject.indexOfProperty(name);
+        T::staticMetaObject.property(propertyIndex).writeOnGadget(&dto, value.toString());
     };
 
     conversionMap["int"] = [&](const char* name, QVariant value) {
-        dto.setProperty(name, value.toInt());
+        int propertyIndex = T::staticMetaObject.indexOfProperty(name);
+        T::staticMetaObject.property(propertyIndex).writeOnGadget(&dto, value.toInt());
+    };
+
+    conversionMap["double"] = [&](const char* name, QVariant value) {
+        int propertyIndex = T::staticMetaObject.indexOfProperty(name);
+        T::staticMetaObject.property(propertyIndex).writeOnGadget(&dto, value.toDouble());
+    };
+
+    conversionMap["QUrl"] = [&](const char* name, QVariant value) {
+        int propertyIndex = T::staticMetaObject.indexOfProperty(name);
+        T::staticMetaObject.property(propertyIndex).writeOnGadget(&dto, value.toUrl());
     };
 
     conversionMap["QDateTime"] = [&](const char* name, QVariant value) {
-        dto.setProperty(name, value.toDateTime());
+        int propertyIndex = T::staticMetaObject.indexOfProperty(name);
+        T::staticMetaObject.property(propertyIndex).writeOnGadget(&dto, value.toDateTime());
     };
 
     // add more conversion functions for other property types...

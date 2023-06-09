@@ -27,6 +27,7 @@
 #include <QUrl>
 
 #include "chapter_dto.h"
+#include "create_chapter_dto.h"
 
 struct ChapterListItem
 {
@@ -72,10 +73,8 @@ class ChapterListModel : public QAbstractListModel
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 
-  public slots:
-    void create(const QJSValue &jsDto);
   signals:
-    void chapterCreated(Contracts::DTO::Chapter::ChapterDTO *dto);
+    void chapterCreated(Contracts::DTO::Chapter::ChapterDTO dto);
 
   private slots:
 

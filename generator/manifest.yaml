@@ -1,4 +1,11 @@
 ---
+
+global:
+  application_name: Skribisto
+  organisation:
+    name: skribisto
+    domain: skribisto.eu
+
 entities:
   list:
     - name: Entity
@@ -11,12 +18,20 @@ entities:
           name: creationDate
         - type: QDateTime
           name: updateDate
+    - name: Scene
+      parent: Entity
+      generate: true
+      fields:
+        - type: QString
+          name: title
     - name: Chapter
       parent: Entity
       generate: true
       fields:
         - type: QString
           name: title
+        - type: QList<Scene>
+          name: scenes
     - name: Book
       parent: Entity
       generate: true
@@ -73,7 +88,7 @@ entities:
           name: unique
   export: SKR_DOMAIN_EXPORT
   export_header_file: domain_global.h
-  forder_path: ../sources/core/domain/
+  folder_path: ../sources/core/domain/
   list_file: ../sources/core/domain/entities.txt
   register_entity_base: true
 
@@ -96,9 +111,243 @@ repositories:
   interface_list_file: ../sources/core/contracts/repositories.txt
   export: SKR_PERSISTENCE_EXPORT
   export_header_file: persistence_global.h
-  forder_path: ../sources/core/persistence/repositories/
+  folder_path: ../sources/core/persistence/repositories/
   list_file: ../sources/core/persistence/repositories.txt
 
+controller: 
+  list_file: ../sources/core/presenter/controllers.txt
+  folder_path: ../sources/core/presenter/
+  export: SKR_PRESENTER_EXPORT
+  export_header_file: presenter_global.h
+  list:
+    - name: Author
+      generate: True
+    - name: Book
+      generate: True
+    - name: Chapter
+      generate: True
+    - name: Scene
+      generate: True
+    - name: System
+      generate: True
+
+application:
+  common_cmake_folder_path: ../sources/core/application
+  features:
+    - name: Author
+      DTO:
+        id_field: id
+        dto_identical_to_entity:
+          enabled: true
+          generate: true
+          entity_mappable_with: Author
+      CRUD:
+        enabled: true       
+        entity_mappable_with: Author
+        get:
+          enabled: true
+          generate: true
+        get_all:
+          enabled: true
+          generate: true
+        get_with_details:
+          enabled: true
+          generate: true
+        create: 
+          enabled: true
+          generate: true
+          undo_redo: True
+        remove: 
+          enabled: true
+          generate: true
+          undo_redo: True
+        update: 
+          enabled: true
+          generate: true
+          undo_redo: True
+
+
+    - name: Chapter
+      DTO:
+        id_field: id
+        dto_identical_to_entity:
+          enabled: true
+          generate: true
+          entity_mappable_with: Chapter
+      CRUD:
+        enabled: true
+        entity_mappable_with: Chapter
+        get:
+          enabled: true
+          generate: true
+        get_all: 
+          enabled: true
+          generate: true
+        get_with_details: 
+          enabled: true
+          generate: true
+        create: 
+          enabled: true
+          generate: true
+          undo_redo: True
+        remove: 
+          enabled: true
+          generate: true
+          undo_redo: True
+        update: 
+          enabled: true
+          generate: true
+          undo_redo: True
+      commands:
+        - name: MoveChapter
+          generate: true
+          entities:
+            - Book
+            - Chapter
+          validator: 
+            enabled: True
+            generate: True
+          undo_redo: True
+          dto:
+            in:
+              type_prefix: MoveChapter
+              generate: True
+              fields:
+                - type: int
+                  name: originBookId
+                - type: int
+                  name: targetedSceneId
+                - type: int
+                  name: destinationBookId
+                - type: int
+                  name: scenePositionAtDestination
+            out:
+              type_prefix: MoveChapterReply
+              generate: True
+              fields:
+                - type: int
+                  name: originBookId
+                - type: int
+                  name: targetedChapterId
+                - type: int
+                  name: scenePositionAtOrigin
+                - type: int
+                  name: destinationChapterId
+                - type: int
+                  name: scenePositionAtDestination
+
+    - name: Scene
+      DTO:
+        id_field: id
+        dto_identical_to_entity:
+          enabled: true
+          generate: true
+          entity_mappable_with: Scene
+      CRUD:
+        enabled: true
+        entity_mappable_with: Scene
+        get:
+          enabled: true
+          generate: true
+        get_all: 
+          enabled: true
+          generate: true
+        get_with_details: 
+          enabled: true
+          generate: true
+        create: 
+          enabled: true
+          generate: true
+          undo_redo: True
+        remove: 
+          enabled: true
+          generate: true
+          undo_redo: True
+        update: 
+          enabled: true
+          generate: true
+          undo_redo: True
+      commands:
+        - name: MoveScene
+          generate: true
+          entities:
+            - Chapter
+            - Scene
+          validator: 
+            enabled: True
+            generate: True
+          restore: True
+          undo_redo: True
+          dto:
+            in:
+              type_prefix: MoveScene
+              generate: True
+              fields:
+                - type: int
+                  name: origiChapterId
+                - type: int
+                  name: targetedSceneId
+                - type: int
+                  name: destinationChapterId
+                - type: int
+                  name: scenePositionAtDestination
+            out:
+              type_prefix: MoveSceneReply
+              generate: True
+              fields:
+                - type: int
+                  name: originChapterId
+                - type: int
+                  name: targetedSceneId
+                - type: int
+                  name: scenePositionAtOrigin
+                - type: int
+                  name: destinationChapterId
+                - type: int
+                  name: scenePositionAtDestination
+
+    - name: System
+      DTO:
+        id_field: id
+        dto_identical_to_entity:
+          enabled: false
+      CRUD:
+        enabled: false
+      commands:
+        - name: SaveSystemAs
+          generate: true
+          entities:
+          validator: 
+            enabled: True
+            generate: True
+          undo_redo: False
+          dto:
+            in:
+              type_prefix: SaveSystemAs
+              generate: True
+              fields:
+                - type: QUrl
+                  name: fileName
+        - name: LoadSystem
+          generate: true
+          entities:
+          validator:
+            enabled: True
+            generate: True
+          undo_redo: False
+          dto:
+            in:
+              type_prefix: LoadSystem
+              generate: True
+              fields:
+                - type: QUrl
+                  name: fileName
+
+DTOs:
+  common_cmake_folder_path: ../sources/core/contracts.dto
+
+CQRS:
+  common_cmake_folder_path: ../sources/core/contracts.cqrs
 
 contracts:
   inverted_app_domain: eu.skribisto

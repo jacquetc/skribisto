@@ -1,6 +1,9 @@
-#include "author.h"
-#include "author_dto.h"
+
 #include "automapper/automapper.h"
+#include "dummy_basic_entity.h"
+#include "dummy_basic_entity_dto.h"
+#include "dummy_entity_with_details.h"
+#include "dummy_entity_with_details_dto.h"
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
@@ -10,7 +13,8 @@
 #include <QVariant>
 #include <QtTest>
 
-using namespace Contracts::DTO::Author;
+using namespace Contracts::DTO::DummyBasicEntity;
+using namespace Contracts::DTO::DummyEntityWithDetails;
 
 class AutoMapperTest : public QObject
 {
@@ -65,11 +69,11 @@ void AutoMapperTest::basicMap()
 {
 
     QUuid uuid = QUuid::createUuid();
-    Domain::Author author(1, uuid, QDateTime(), QDateTime(), "e");
+    Domain::DummyBasicEntity author(1, uuid, QDateTime(), "e");
 
-    AuthorDTO dto = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(author);
+    DummyBasicEntityDTO dto = AutoMapper::AutoMapper::map<DummyBasicEntityDTO, Domain::DummyBasicEntity>(author);
 
-    QCOMPARE(dto.getName(), "e");
+    QCOMPARE(dto.name(), "e");
     QCOMPARE(dto.uuid(), uuid);
 }
 // ----------------------------------------------------------
@@ -78,9 +82,9 @@ void AutoMapperTest::invertedMap()
 {
 
     QUuid uuid = QUuid::createUuid();
-    AuthorDTO dto(1, uuid, "e");
+    DummyBasicEntityDTO dto(1, uuid, QDateTime(), "e");
 
-    Domain::Author author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
+    Domain::DummyBasicEntity author = AutoMapper::AutoMapper::map<Domain::DummyBasicEntity, DummyBasicEntityDTO>(dto);
 
     QCOMPARE(author.id(), 1);
     QCOMPARE(author.uuid(), uuid);

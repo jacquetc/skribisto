@@ -29,12 +29,6 @@ using namespace Presenter::Chapter;
 
 ChapterListModel::ChapterListModel(QObject *parent) : QAbstractListModel(parent)
 {
-    QObject::connect(Chapter::ChapterController::instance(), &Chapter::ChapterController::chapterCreated,
-                     [this](ChapterDTO chapterDTO) {
-                         auto chapterDTOPointer = new ChapterDTO(chapterDTO);
-                         QQmlEngine::setObjectOwnership(chapterDTOPointer, QQmlEngine::JavaScriptOwnership);
-                         emit this->chapterCreated(chapterDTOPointer);
-                     });
 
     QObject::connect(Chapter::ChapterController::instance(), &Chapter::ChapterController::chapterCreated,
                      [this](ChapterDTO chapterDTO) {
@@ -43,7 +37,7 @@ ChapterListModel::ChapterListModel(QObject *parent) : QAbstractListModel(parent)
                          this->beginInsertRows(QModelIndex(), 0, 0);
 
                          ChapterListItem *projectItem = new ChapterListItem();
-                         projectItem->title = chapterDTO.getTitle();
+                         projectItem->title = chapterDTO.title();
 
                          m_items.insert(0, projectItem);
 
@@ -137,19 +131,11 @@ void ChapterListModel::doPopulate(const QList<Contracts::DTO::Chapter::ChapterDT
     {
 
         ChapterListItem *projectItem = new ChapterListItem();
-        projectItem->title = chapter_dto.getTitle();
+        projectItem->title = chapter_dto.title();
 
         // is project opened ?
         m_items.append(projectItem);
     }
 
     this->endResetModel();
-}
-
-// ----------------------------------------------------------
-
-void ChapterListModel::create(const QJSValue &jsDto)
-{
-    CreateChapterDTO cppDto = mapToDto<CreateChapterDTO>(jsDto);
-    Chapter::ChapterController::instance()->create(cppDto);
 }

@@ -1,13 +1,15 @@
 find_package(Qt6 COMPONENTS Core  REQUIRED)
 
-set(PROJECT_NAME skribisto-contracts-dto-author)
+set(PROJECT_NAME skribisto-contracts-dto-scene)
 
 set(SRC
 
     
-    author_dto.h
-    create_author_dto.h
-    update_author_dto.h
+    scene_dto.h
+    create_scene_dto.h
+    update_scene_dto.h
+    move_scene_dto.h
+    move_scene_reply_dto.h
 )
 qt_add_library(${PROJECT_NAME} STATIC ${SRC})
 

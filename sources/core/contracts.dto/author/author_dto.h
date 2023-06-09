@@ -1,75 +1,162 @@
 #pragma once
 
-#include "author_dto_base.h"
+#include <QObject>
+#include <QDateTime>
+#include <QString>
 #include <QUuid>
+
+
+
 
 namespace Contracts::DTO::Author
 {
 
-//-------------------------------------------------
-
-class AuthorDTO : public AuthorDTOBase
+class AuthorDTO
 {
-    Q_OBJECT
+    Q_GADGET
+
     Q_PROPERTY(int id READ id WRITE setId)
     Q_PROPERTY(QUuid uuid READ uuid WRITE setUuid)
+    Q_PROPERTY(QDateTime creationDate READ creationDate WRITE setCreationDate)
+    Q_PROPERTY(QDateTime updateDate READ updateDate WRITE setUpdateDate)
+    Q_PROPERTY(QString name READ name WRITE setName)
+
   public:
-    AuthorDTO(QObject *parent = nullptr) : AuthorDTOBase(parent)
+    AuthorDTO() : m_id(0), m_uuid(QUuid()), m_creationDate(QDateTime()), m_updateDate(QDateTime()), m_name(QString())
     {
     }
 
-    AuthorDTO(int id, const QUuid &uuid, const QString &name) : AuthorDTOBase(name), m_id(id), m_uuid(uuid)
+    ~AuthorDTO()
     {
     }
 
-    AuthorDTO(const AuthorDTO &other) : AuthorDTOBase(other), m_id(other.m_id), m_uuid(other.m_uuid)
+    AuthorDTO( int id,   const QUuid &uuid,   const QDateTime &creationDate,   const QDateTime &updateDate,   const QString &name ) 
+        : m_id(id), m_uuid(uuid), m_creationDate(creationDate), m_updateDate(updateDate), m_name(name)
     {
     }
+
+    AuthorDTO(const AuthorDTO &other) : m_id(other.m_id), m_uuid(other.m_uuid), m_creationDate(other.m_creationDate), m_updateDate(other.m_updateDate), m_name(other.m_name)
+    {
+    }
+
     AuthorDTO &operator=(const AuthorDTO &other)
     {
         if (this != &other)
         {
-            AuthorDTOBase::operator=(other);
             m_id = other.m_id;
             m_uuid = other.m_uuid;
+            m_creationDate = other.m_creationDate;
+            m_updateDate = other.m_updateDate;
+            m_name = other.m_name;
+            
         }
         return *this;
     }
 
-    bool operator==(const AuthorDTO &other) const
-    {
+    friend bool operator==(const AuthorDTO &lhs, const AuthorDTO &rhs);
 
-        return AuthorDTOBase::operator==(other) && m_id == other.m_id && m_uuid == other.m_uuid;
+
+    friend uint qHash(const AuthorDTO &dto, uint seed) noexcept;
+
+
+
+    // ------ id : -----
+
+    int id() const
+    {
+        return m_id;
     }
-    int id() const;
-    void setId(int newId);
-    QUuid uuid() const;
-    void setUuid(const QUuid &newUuid);
+
+    void setId( int id)
+    {
+        m_id = id;
+    }
+    
+
+    // ------ uuid : -----
+
+    QUuid uuid() const
+    {
+        return m_uuid;
+    }
+
+    void setUuid( const QUuid &uuid)
+    {
+        m_uuid = uuid;
+    }
+    
+
+    // ------ creationDate : -----
+
+    QDateTime creationDate() const
+    {
+        return m_creationDate;
+    }
+
+    void setCreationDate( const QDateTime &creationDate)
+    {
+        m_creationDate = creationDate;
+    }
+    
+
+    // ------ updateDate : -----
+
+    QDateTime updateDate() const
+    {
+        return m_updateDate;
+    }
+
+    void setUpdateDate( const QDateTime &updateDate)
+    {
+        m_updateDate = updateDate;
+    }
+    
+
+    // ------ name : -----
+
+    QString name() const
+    {
+        return m_name;
+    }
+
+    void setName( const QString &name)
+    {
+        m_name = name;
+    }
+    
+
 
   private:
+
     int m_id;
     QUuid m_uuid;
+    QDateTime m_creationDate;
+    QDateTime m_updateDate;
+    QString m_name;
 };
 
-inline QUuid AuthorDTO::uuid() const
+inline bool operator==(const AuthorDTO &lhs, const AuthorDTO &rhs)
 {
-    return m_uuid;
+
+    return 
+            lhs.m_id == rhs.m_id  && lhs.m_uuid == rhs.m_uuid  && lhs.m_creationDate == rhs.m_creationDate  && lhs.m_updateDate == rhs.m_updateDate  && lhs.m_name == rhs.m_name 
+    ;
 }
 
-inline void AuthorDTO::setUuid(const QUuid &newUuid)
-{
-    m_uuid = newUuid;
-}
-//-------------------------------------------------
+inline uint qHash(const AuthorDTO &dto, uint seed = 0) noexcept
+{        // Seed the hash with the parent class's hash
+        uint hash = 0;
 
-inline int AuthorDTO::id() const
-{
-    return m_id;
-}
+        // Combine with this class's properties
+        hash ^= ::qHash(dto.m_id, seed);
+        hash ^= ::qHash(dto.m_uuid, seed);
+        hash ^= ::qHash(dto.m_creationDate, seed);
+        hash ^= ::qHash(dto.m_updateDate, seed);
+        hash ^= ::qHash(dto.m_name, seed);
+        
 
-inline void AuthorDTO::setId(int newId)
-{
-    m_id = newId;
+        return hash;
 }
 
 } // namespace Contracts::DTO::Author
+Q_DECLARE_METATYPE(Contracts::DTO::Author::AuthorDTO)

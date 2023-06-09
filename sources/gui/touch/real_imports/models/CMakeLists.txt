@@ -1,8 +1,8 @@
 find_package(Qt6 COMPONENTS Core Quick Qml REQUIRED)
 
-qt_add_library(listmodels STATIC)
+qt_add_library(models STATIC)
 
-qt6_add_qml_module(listmodels
+qt6_add_qml_module(models
     URI "Models"
     VERSION 1.0
     SOURCES
@@ -12,10 +12,10 @@ qt6_add_qml_module(listmodels
 
 )
 
-add_dependencies(listmodels skribisto-presenter)
+add_dependencies(models skribisto-presenter)
 
-target_link_libraries(listmodels PRIVATE skribisto-presenter)
+target_link_libraries(models PRIVATE skribisto-presenter)
 
-target_link_libraries(listmodels
+target_link_libraries(models
     PRIVATE Qt6::Quick Qt6::Core Qt6::Qml Qt6::Quick
 )

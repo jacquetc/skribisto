@@ -2,6 +2,7 @@
 
 #include "domain_global.h"
 #include "entity.h"
+#include "scene.h"
 #include "chapter.h"
 #include "book.h"
 #include "atelier.h"
@@ -20,6 +21,7 @@ class SKR_DOMAIN_EXPORT DomainRegistration : public QObject
     {
         
         qRegisterMetaType<Domain::Entity>("Domain::Entity");
+        qRegisterMetaType<Domain::Scene>("Domain::Scene");
         qRegisterMetaType<Domain::Chapter>("Domain::Chapter");
         qRegisterMetaType<Domain::Book>("Domain::Book");
         qRegisterMetaType<Domain::Atelier>("Domain::Atelier");

@@ -24,6 +24,8 @@ class SKR_PRESENTER_EXPORT ChapterController : public QObject
 
     static ChapterController *instance();
 
+  public slots:
+
     static void get(int id);
 
     static void getAll();
@@ -33,6 +35,8 @@ class SKR_PRESENTER_EXPORT ChapterController : public QObject
     static void update(const UpdateChapterDTO &dto);
 
     static void remove(int id);
+
+    static Contracts::DTO::Chapter::CreateChapterDTO getCreateChapterDTO();
 
   signals:
     void getReplied(Contracts::DTO::Chapter::ChapterDTO dto);

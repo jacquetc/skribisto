@@ -8,10 +8,10 @@
 
 
 
-namespace Contracts::DTO::Chapter
+namespace Contracts::DTO::Scene
 {
 
-class ChapterDTO
+class UpdateSceneDTO
 {
     Q_GADGET
 
@@ -22,24 +22,24 @@ class ChapterDTO
     Q_PROPERTY(QString title READ title WRITE setTitle)
 
   public:
-    ChapterDTO() : m_id(0), m_uuid(QUuid()), m_creationDate(QDateTime()), m_updateDate(QDateTime()), m_title(QString())
+    UpdateSceneDTO() : m_id(0), m_uuid(QUuid()), m_creationDate(QDateTime()), m_updateDate(QDateTime()), m_title(QString())
     {
     }
 
-    ~ChapterDTO()
+    ~UpdateSceneDTO()
     {
     }
 
-    ChapterDTO( int id,   const QUuid &uuid,   const QDateTime &creationDate,   const QDateTime &updateDate,   const QString &title ) 
+    UpdateSceneDTO( int id,   const QUuid &uuid,   const QDateTime &creationDate,   const QDateTime &updateDate,   const QString &title ) 
         : m_id(id), m_uuid(uuid), m_creationDate(creationDate), m_updateDate(updateDate), m_title(title)
     {
     }
 
-    ChapterDTO(const ChapterDTO &other) : m_id(other.m_id), m_uuid(other.m_uuid), m_creationDate(other.m_creationDate), m_updateDate(other.m_updateDate), m_title(other.m_title)
+    UpdateSceneDTO(const UpdateSceneDTO &other) : m_id(other.m_id), m_uuid(other.m_uuid), m_creationDate(other.m_creationDate), m_updateDate(other.m_updateDate), m_title(other.m_title)
     {
     }
 
-    ChapterDTO &operator=(const ChapterDTO &other)
+    UpdateSceneDTO &operator=(const UpdateSceneDTO &other)
     {
         if (this != &other)
         {
@@ -53,10 +53,10 @@ class ChapterDTO
         return *this;
     }
 
-    friend bool operator==(const ChapterDTO &lhs, const ChapterDTO &rhs);
+    friend bool operator==(const UpdateSceneDTO &lhs, const UpdateSceneDTO &rhs);
 
 
-    friend uint qHash(const ChapterDTO &dto, uint seed) noexcept;
+    friend uint qHash(const UpdateSceneDTO &dto, uint seed) noexcept;
 
 
 
@@ -135,7 +135,7 @@ class ChapterDTO
     QString m_title;
 };
 
-inline bool operator==(const ChapterDTO &lhs, const ChapterDTO &rhs)
+inline bool operator==(const UpdateSceneDTO &lhs, const UpdateSceneDTO &rhs)
 {
 
     return 
@@ -143,7 +143,7 @@ inline bool operator==(const ChapterDTO &lhs, const ChapterDTO &rhs)
     ;
 }
 
-inline uint qHash(const ChapterDTO &dto, uint seed = 0) noexcept
+inline uint qHash(const UpdateSceneDTO &dto, uint seed = 0) noexcept
 {        // Seed the hash with the parent class's hash
         uint hash = 0;
 
@@ -158,5 +158,5 @@ inline uint qHash(const ChapterDTO &dto, uint seed = 0) noexcept
         return hash;
 }
 
-} // namespace Contracts::DTO::Chapter
-Q_DECLARE_METATYPE(Contracts::DTO::Chapter::ChapterDTO)
+} // namespace Contracts::DTO::Scene
+Q_DECLARE_METATYPE(Contracts::DTO::Scene::UpdateSceneDTO)

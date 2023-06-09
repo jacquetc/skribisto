@@ -1,7 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import Presenter
-import Contracts.DTO.Chapter
 import Models
 
 MainScreenForm {
@@ -9,7 +8,7 @@ MainScreenForm {
     listView.model: ChapterListModel
 
     Connections {
-        target: ChapterListModel
+        target: ChapterController
         function onChapterCreated(dto) {
             var chapterDto = dto
             console.log("dto", chapterDto)
@@ -18,17 +17,13 @@ MainScreenForm {
         }
     }
 
-    CreateChapterDTO {
-        id: createChapterDTO
-    }
-
     Connections {
         target: button
         onClicked: {
-            var dto = createChapterDTO
+            var dto = ChapterController.getCreateChapterDTO()
             dto.title = "test chapter"
 
-            ChapterListModel.create(dto)
+            ChapterController.create(dto)
         }
     }
 }

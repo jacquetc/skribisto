@@ -38,6 +38,11 @@ class SKR_DOMAIN_EXPORT EntityBase
         return *this;
     }
 
+    bool isValid()
+    {
+        return m_id > 0;
+    }
+
     friend bool operator==(const EntityBase &lhs, const EntityBase &rhs);
 
     friend uint qHash(const EntityBase &entity, uint seed) noexcept;

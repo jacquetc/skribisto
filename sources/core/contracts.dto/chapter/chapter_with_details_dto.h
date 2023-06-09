@@ -1,17 +1,19 @@
 #pragma once
 
 #include <QObject>
+#include "scene_dto.h"
 #include <QDateTime>
 #include <QString>
 #include <QUuid>
 
 
+using namespace Contracts::DTO::Scene;
 
 
 namespace Contracts::DTO::Chapter
 {
 
-class ChapterDTO
+class ChapterWithDetailsDTO
 {
     Q_GADGET
 
@@ -20,26 +22,27 @@ class ChapterDTO
     Q_PROPERTY(QDateTime creationDate READ creationDate WRITE setCreationDate)
     Q_PROPERTY(QDateTime updateDate READ updateDate WRITE setUpdateDate)
     Q_PROPERTY(QString title READ title WRITE setTitle)
+    Q_PROPERTY(QList<SceneDTO> scenes READ scenes WRITE setScenes)
 
   public:
-    ChapterDTO() : m_id(0), m_uuid(QUuid()), m_creationDate(QDateTime()), m_updateDate(QDateTime()), m_title(QString())
+    ChapterWithDetailsDTO() : m_id(0), m_uuid(QUuid()), m_creationDate(QDateTime()), m_updateDate(QDateTime()), m_title(QString())
     {
     }
 
-    ~ChapterDTO()
+    ~ChapterWithDetailsDTO()
     {
     }
 
-    ChapterDTO( int id,   const QUuid &uuid,   const QDateTime &creationDate,   const QDateTime &updateDate,   const QString &title ) 
-        : m_id(id), m_uuid(uuid), m_creationDate(creationDate), m_updateDate(updateDate), m_title(title)
+    ChapterWithDetailsDTO( int id,   const QUuid &uuid,   const QDateTime &creationDate,   const QDateTime &updateDate,   const QString &title,   const QList<SceneDTO> &scenes ) 
+        : m_id(id), m_uuid(uuid), m_creationDate(creationDate), m_updateDate(updateDate), m_title(title), m_scenes(scenes)
     {
     }
 
-    ChapterDTO(const ChapterDTO &other) : m_id(other.m_id), m_uuid(other.m_uuid), m_creationDate(other.m_creationDate), m_updateDate(other.m_updateDate), m_title(other.m_title)
+    ChapterWithDetailsDTO(const ChapterWithDetailsDTO &other) : m_id(other.m_id), m_uuid(other.m_uuid), m_creationDate(other.m_creationDate), m_updateDate(other.m_updateDate), m_title(other.m_title), m_scenes(other.m_scenes)
     {
     }
 
-    ChapterDTO &operator=(const ChapterDTO &other)
+    ChapterWithDetailsDTO &operator=(const ChapterWithDetailsDTO &other)
     {
         if (this != &other)
         {
@@ -48,15 +51,16 @@ class ChapterDTO
             m_creationDate = other.m_creationDate;
             m_updateDate = other.m_updateDate;
             m_title = other.m_title;
+            m_scenes = other.m_scenes;
             
         }
         return *this;
     }
 
-    friend bool operator==(const ChapterDTO &lhs, const ChapterDTO &rhs);
+    friend bool operator==(const ChapterWithDetailsDTO &lhs, const ChapterWithDetailsDTO &rhs);
 
 
-    friend uint qHash(const ChapterDTO &dto, uint seed) noexcept;
+    friend uint qHash(const ChapterWithDetailsDTO &dto, uint seed) noexcept;
 
 
 
@@ -125,6 +129,19 @@ class ChapterDTO
     }
     
 
+    // ------ scenes : -----
+
+    QList<SceneDTO> scenes() const
+    {
+        return m_scenes;
+    }
+
+    void setScenes( const QList<SceneDTO> &scenes)
+    {
+        m_scenes = scenes;
+    }
+    
+
 
   private:
 
@@ -133,17 +150,18 @@ class ChapterDTO
     QDateTime m_creationDate;
     QDateTime m_updateDate;
     QString m_title;
+    QList<SceneDTO> m_scenes;
 };
 
-inline bool operator==(const ChapterDTO &lhs, const ChapterDTO &rhs)
+inline bool operator==(const ChapterWithDetailsDTO &lhs, const ChapterWithDetailsDTO &rhs)
 {
 
     return 
-            lhs.m_id == rhs.m_id  && lhs.m_uuid == rhs.m_uuid  && lhs.m_creationDate == rhs.m_creationDate  && lhs.m_updateDate == rhs.m_updateDate  && lhs.m_title == rhs.m_title 
+            lhs.m_id == rhs.m_id  && lhs.m_uuid == rhs.m_uuid  && lhs.m_creationDate == rhs.m_creationDate  && lhs.m_updateDate == rhs.m_updateDate  && lhs.m_title == rhs.m_title  && lhs.m_scenes == rhs.m_scenes 
     ;
 }
 
-inline uint qHash(const ChapterDTO &dto, uint seed = 0) noexcept
+inline uint qHash(const ChapterWithDetailsDTO &dto, uint seed = 0) noexcept
 {        // Seed the hash with the parent class's hash
         uint hash = 0;
 
@@ -153,10 +171,11 @@ inline uint qHash(const ChapterDTO &dto, uint seed = 0) noexcept
         hash ^= ::qHash(dto.m_creationDate, seed);
         hash ^= ::qHash(dto.m_updateDate, seed);
         hash ^= ::qHash(dto.m_title, seed);
+        hash ^= ::qHash(dto.m_scenes, seed);
         
 
         return hash;
 }
 
 } // namespace Contracts::DTO::Chapter
-Q_DECLARE_METATYPE(Contracts::DTO::Chapter::ChapterDTO)
+Q_DECLARE_METATYPE(Contracts::DTO::Chapter::ChapterWithDetailsDTO)

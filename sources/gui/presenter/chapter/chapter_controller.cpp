@@ -200,3 +200,8 @@ void ChapterController::remove(int id)
     // push command
     s_undo_redo_system->push(command, "chapter");
 }
+
+CreateChapterDTO ChapterController::getCreateChapterDTO()
+{
+    return CreateChapterDTO();
+}

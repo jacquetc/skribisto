@@ -90,7 +90,7 @@ void UseCases::getAuthor()
     QVERIFY(dtoResult.isSuccess());
 
     QCOMPARE(dtoResult.value().id(), 1);
-    QCOMPARE(dtoResult.value().getName(), "test");
+    QCOMPARE(dtoResult.value().name(), "test");
 }
 
 // ----------------------------------------------------------
