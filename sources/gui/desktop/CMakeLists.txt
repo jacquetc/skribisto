@@ -52,8 +52,12 @@ add_dependencies(${PROJECT_NAME} skribisto-desktop_lupdate)
 # library dependencies
 
 add_dependencies(${PROJECT_NAME} skribisto-presenter)
+add_dependencies(${PROJECT_NAME} skribisto-persistence)
+
 
 target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-presenter)
+target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-persistence)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Concurrent)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

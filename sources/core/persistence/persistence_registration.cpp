@@ -65,3 +65,8 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
     Repository::RepositoryProvider::instance()->registerRepository("book", bookRepository);
     Repository::RepositoryProvider::instance()->registerRepository("chapter", chapterRepository);
 }
+
+RepositoryProvider * PersistenceRegistration::repositoryProvider()
+{
+    return Repository::RepositoryProvider::instance();
+}

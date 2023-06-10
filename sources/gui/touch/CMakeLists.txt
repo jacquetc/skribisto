@@ -26,8 +26,11 @@ qt_add_resources(SkribistoApp "configuration"
 # library dependencies
 
 add_dependencies(${PROJECT_NAME} skribisto-presenter)
+add_dependencies(${PROJECT_NAME} skribisto-persistence)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-presenter)
+target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-persistence)
+
 
 target_link_libraries(SkribistoApp PRIVATE
     Qt${QT_VERSION_MAJOR}::Core

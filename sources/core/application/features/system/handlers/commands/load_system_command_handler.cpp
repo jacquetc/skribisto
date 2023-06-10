@@ -8,35 +8,33 @@ using namespace Contracts::Infrastructure::Skrib;
 
 LoadSystemCommandHandler::LoadSystemCommandHandler(InterfaceSkribLoader *skribLoader)
     : Handler(), m_skribLoader(skribLoader)
-{
-}
+{}
 
-Result<void> LoadSystemCommandHandler::handle(QPromise<Result<void>> &progressPromise, const LoadSystemCommand &request)
+Result<void>LoadSystemCommandHandler::handle(QPromise<Result<void> >& progressPromise, const LoadSystemCommand& request)
 {
-
     Result<void> result;
 
     try
     {
         result = handleImpl(progressPromise, request);
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
         result = Result<void>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling LoadSystemCommand:" << ex.what();
     }
-
     return result;
 }
 
-Result<void> LoadSystemCommandHandler::handleImpl(QPromise<Result<void>> &progressPromise,
-                                                  const LoadSystemCommand &request)
+Result<void>LoadSystemCommandHandler::handleImpl(QPromise<Result<void> >& progressPromise,
+                                                 const LoadSystemCommand& request)
 {
     progressPromise.setProgressRange(0, 100);
 
     // validate:
-    auto validator = LoadSystemCommandValidator();
+    auto validator               = LoadSystemCommandValidator();
     Result<void> validatorResult = validator.validate(request.req);
+
     if (validatorResult.hasError())
     {
         return Result<void>(validatorResult.error());
@@ -44,6 +42,7 @@ Result<void> LoadSystemCommandHandler::handleImpl(QPromise<Result<void>> &progre
 
     // do
     Result<void> loadResult = m_skribLoader->load(progressPromise, request.req);
+
     if (loadResult.hasError())
     {
         return Result<void>(loadResult.error());
@@ -55,7 +54,7 @@ Result<void> LoadSystemCommandHandler::handleImpl(QPromise<Result<void>> &progre
     return Result<void>();
 }
 
-Result<void> LoadSystemCommandHandler::restore()
+Result<void>LoadSystemCommandHandler::restore()
 {
     Q_UNREACHABLE();
 }

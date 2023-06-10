@@ -17,19 +17,18 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
     new Domain::DomainRegistration(&app);
-    new Persistence::PersistenceRegistration(&app);
+    auto persistence = new Persistence::PersistenceRegistration(&app);
     new Application::ApplicationRegistration(&app);
-    new Presenter::PresenterRegistration(&app);
+    new Presenter::PresenterRegistration(&app, persistence->repositoryProvider());
 
     QQmlApplicationEngine engine;
 
     const QUrl url(u"qrc:Main/main.qml"_qs);
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreated, &app,
-        [url](QObject *obj, const QUrl &objUrl) {
-            if (!obj && url == objUrl)
-                QCoreApplication::exit(-1);
-        },
+        [url](QObject *obj, const QUrl& objUrl) {
+        if (!obj && (url == objUrl)) QCoreApplication::exit(-1);
+    },
         Qt::QueuedConnection);
 
     engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml");
