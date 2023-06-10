@@ -12,45 +12,51 @@
 
 using namespace Contracts::Persistence;
 
-namespace Repository
-{
-class SKR_PERSISTENCE_EXPORT RepositoryProvider : public QObject, public Contracts::Persistence::InterfaceRepositoryProvider
-{
+namespace Repository {
+class SKR_PERSISTENCE_EXPORT RepositoryProvider : public QObject,
+                                                  public Contracts::Persistence::InterfaceRepositoryProvider {
     Q_OBJECT
-  public:
-    static RepositoryProvider *instance();
+
+public:
+
+    static RepositoryProvider* instance();
 
     // InterfaceRepositoryProvider interface
-  public:
-    void registerRepository(Entities entity, QSharedPointer<InterfaceRepository> repository) override
+
+public:
+
+    void registerRepository(const QString& name, QSharedPointer<InterfaceRepository>repository) override
     {
         QMutexLocker locker(&m_mutex);
-        if (m_repositories.contains(entity))
+
+        if (m_repositories.contains(name.toCaseFolded()))
         {
             qWarning() << "Repositories: m_repositories contains already this InterfaceRepository";
             return;
         }
-        m_repositories.insert(entity, repository);
+        m_repositories.insert(name.toCaseFolded(), repository);
     }
-    QSharedPointer<InterfaceRepository> repository(Entities entity) override
+
+    QSharedPointer<InterfaceRepository>repository(const QString& name) override
     {
         QMutexLocker locker(&m_mutex);
-        auto repository = m_repositories.value(entity, nullptr);
+        auto repository = m_repositories.value(name.toCaseFolded(), nullptr);
+
         if (!repository)
         {
-            qWarning() << "No repository registered for type" << entity;
+            qWarning() << "No repository registered for type" << name.toCaseFolded();
         }
         return repository;
     }
 
-  private:
-    RepositoryProvider() = default;
-    RepositoryProvider(const RepositoryProvider &) = delete;
-    RepositoryProvider &operator=(const RepositoryProvider &) = delete;
+private:
 
-    QHash<RepositoryProvider::Entities, QSharedPointer<InterfaceRepository>> m_repositories;
+    RepositoryProvider()                                     = default;
+    RepositoryProvider(const RepositoryProvider&)            = delete;
+    RepositoryProvider& operator=(const RepositoryProvider&) = delete;
+
+    QHash<QString, QSharedPointer<InterfaceRepository> >m_repositories;
     QMutex m_mutex;
-    static QScopedPointer<RepositoryProvider> s_instance;
+    static QScopedPointer<RepositoryProvider>s_instance;
 };
-
 } // namespace Repository

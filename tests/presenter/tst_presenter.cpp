@@ -56,7 +56,7 @@ PresenterTest::~PresenterTest()
 void PresenterTest::initTestCase()
 {
     m_repository.reset(new DummyAuthorRepository(this));
-    m_repositoryProvider->registerRepository(DummyRepositoryProvider::Author, m_repository);
+    m_repositoryProvider->registerRepository("Author", m_repository);
 
     Scopes scopes(QStringList() << "author");
     new UndoRedo::ThreadedUndoRedoSystem(this, scopes);

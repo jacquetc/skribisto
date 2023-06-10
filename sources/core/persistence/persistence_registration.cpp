@@ -14,10 +14,10 @@ using namespace Persistence;
 
 PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{parent}
 {
-
     auto *context = new DatabaseContext();
 
     QStringList entityClassNameList;
+
     entityClassNameList << "Author"
                         << "Scene"
                         << "Chapter"
@@ -40,6 +40,7 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
     });
 
     Result<void> initResult = context->init();
+
     if (initResult.hasError())
     {
         Error error = initResult.error();
@@ -47,20 +48,20 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
     }
 
     // database tables:
-    auto authorDatabaseTable = new DatabaseTable<Domain::Author>(context);
+    auto authorDatabaseTable  = new DatabaseTable<Domain::Author>(context);
     auto chapterDatabaseTable = new DatabaseTable<Domain::Chapter>(context);
-    auto bookDatabaseTable = new DatabaseTable<Domain::Book>(context);
+    auto bookDatabaseTable    = new DatabaseTable<Domain::Book>(context);
     auto atelierDatabaseTable = new DatabaseTable<Domain::Atelier>(context);
 
     // repositories:
-    QSharedPointer<AuthorRepository> authorRepository(new AuthorRepository(authorDatabaseTable));
+    QSharedPointer<AuthorRepository>  authorRepository(new AuthorRepository(authorDatabaseTable));
     QSharedPointer<ChapterRepository> chapterRepository(new ChapterRepository(chapterDatabaseTable));
-    QSharedPointer<BookRepository> bookRepository(new BookRepository(bookDatabaseTable, chapterDatabaseTable));
+    QSharedPointer<BookRepository>    bookRepository(new BookRepository(bookDatabaseTable, chapterDatabaseTable));
     QSharedPointer<AtelierRepository> atelierRepository(new AtelierRepository(atelierDatabaseTable, bookDatabaseTable));
 
     // register repositories:
-    Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Author, authorRepository);
-    Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Atelier, atelierRepository);
-    Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Book, bookRepository);
-    Repository::RepositoryProvider::instance()->registerRepository(RepositoryProvider::Chapter, chapterRepository);
+    Repository::RepositoryProvider::instance()->registerRepository("author", authorRepository);
+    Repository::RepositoryProvider::instance()->registerRepository("atelier", atelierRepository);
+    Repository::RepositoryProvider::instance()->registerRepository("book", bookRepository);
+    Repository::RepositoryProvider::instance()->registerRepository("chapter", chapterRepository);
 }

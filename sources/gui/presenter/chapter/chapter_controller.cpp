@@ -23,19 +23,28 @@ using namespace Application::Features::Chapter::Commands;
 QScopedPointer<ChapterController> ChapterController::s_instance = QScopedPointer<ChapterController>(nullptr);
 InterfaceRepositoryProvider *ChapterController::s_repositoryProvider;
 ThreadedUndoRedoSystem *ChapterController::s_undo_redo_system;
+
 /*!
     \class ChapterController
-    \brief The ChapterController class provides an asynchronous interface for managing Chapter objects.
+    \brief The ChapterController class provides an asynchronous interface for
+       managing Chapter objects.
 
-    The ChapterController class provides methods for getting, creating, updating, and removing chapters in an
-    asynchronous manner. It uses the Command and Query Responsibility Segregation (CQRS) pattern to
-    separate read and write operations. The class also implements the Singleton pattern, ensuring that
+    The ChapterController class provides methods for getting, creating,
+       updating, and removing chapters in an
+    asynchronous manner. It uses the Command and Query Responsibility
+       Segregation (CQRS) pattern to
+    separate read and write operations. The class also implements the Singleton
+       pattern, ensuring that
     only one instance of the controller is active at any time.
 
-    The ChapterSignalBridge class is used to emit signals for Chapter events, such as chapterCreated,
-    chapterRemoved, and chapterUpdated. These signals are connected to the corresponding slots in the
-    ChapterController class. ChapterSignalBridge isn't meant to be used directly by the UI, only from
-    inside the UndoRedoCommand and QueryCommand, the signals are available directly from ChapterController.
+    The ChapterSignalBridge class is used to emit signals for Chapter events,
+       such as chapterCreated,
+    chapterRemoved, and chapterUpdated. These signals are connected to the
+       corresponding slots in the
+    ChapterController class. ChapterSignalBridge isn't meant to be used directly
+       by the UI, only from
+    inside the UndoRedoCommand and QueryCommand, the signals are available
+       directly from ChapterController.
 
     \section1 Example Usage
 
@@ -45,11 +54,11 @@ ThreadedUndoRedoSystem *ChapterController::s_undo_redo_system;
     \endcode
 
     \sa ChapterSignalBridge
-*/
+ */
 
 /*!
     \brief Constructs an ChapterController with the given \a repositoryProvider.
-*/
+ */
 ChapterController::ChapterController(InterfaceRepositoryProvider *repositoryProvider) : QObject(nullptr)
 {
     s_repositoryProvider = repositoryProvider;
@@ -62,8 +71,8 @@ ChapterController::ChapterController(InterfaceRepositoryProvider *repositoryProv
 
 /*!
     \brief Returns the singleton instance of the ChapterController.
-*/
-ChapterController *ChapterController::instance()
+ */
+ChapterController * ChapterController::instance()
 {
     return s_instance.data();
 }
@@ -72,18 +81,19 @@ ChapterController *ChapterController::instance()
     \brief Retrieves an chapter asynchronously by the given \a uuid.
 
     When the operation is complete, the getChapterReplied signal is emitted.
-*/
+ */
 void ChapterController::get(int id)
 {
-
     auto queryCommand = new QueryCommand("get");
-    queryCommand->setQueryFunction([=](QPromise<Result<void>> &progressPromise) {
+
+    queryCommand->setQueryFunction([ = ](QPromise<Result<void> >& progressPromise) {
         GetChapterRequest request;
-        request.id = id;
+        request.id     = id;
         auto interface = qSharedPointerCast<InterfaceChapterRepository>(
-            s_repositoryProvider->repository(InterfaceRepositoryProvider::Chapter));
+            s_repositoryProvider->repository("Chapter"));
         GetChapterRequestHandler handler(interface);
         auto result = handler.handle(progressPromise, request);
+
         if (result.isSuccess())
         {
             emit ChapterController::instance()->getReplied(result.value());
@@ -98,15 +108,17 @@ void ChapterController::get(int id)
     \brief Retrieves all chapters asynchronously.
 
     When the operation is complete, the getChapterListReplied signal is emitted.
-*/
+ */
 void ChapterController::getAll()
 {
     auto queryCommand = new QueryCommand("getAll");
-    queryCommand->setQueryFunction([&](QPromise<Result<void>> &progressPromise) {
+
+    queryCommand->setQueryFunction([&](QPromise<Result<void> >& progressPromise) {
         auto interface = qSharedPointerCast<InterfaceChapterRepository>(
-            s_repositoryProvider->repository(InterfaceRepositoryProvider::Chapter));
+            s_repositoryProvider->repository("Chapter"));
         GetChapterListRequestHandler handler(interface);
         auto result = handler.handle(progressPromise);
+
         if (result.isSuccess())
         {
             emit ChapterController::instance()->getAllReplied(result.value());
@@ -120,14 +132,15 @@ void ChapterController::getAll()
     \brief Creates a new chapter asynchronously with the given \a dto.
 
     When the operation is complete, the chapterCreated signal is emitted.
-*/
-void ChapterController::create(const CreateChapterDTO &dto)
+ */
+void ChapterController::create(const CreateChapterDTO& dto)
 {
     CreateChapterCommand request;
+
     request.req = dto;
 
     auto repository = qSharedPointerCast<InterfaceChapterRepository>(
-        s_repositoryProvider->repository(InterfaceRepositoryProvider::Chapter));
+        s_repositoryProvider->repository("Chapter"));
 
     auto *handler = new CreateChapterCommandHandler(repository);
 
@@ -149,14 +162,15 @@ void ChapterController::create(const CreateChapterDTO &dto)
     \brief Updates an existing chapter asynchronously with the given \a dto.
 
     When the operation is complete, the chapterUpdated signal is emitted.
-*/
-void ChapterController::update(const UpdateChapterDTO &dto)
+ */
+void ChapterController::update(const UpdateChapterDTO& dto)
 {
     UpdateChapterCommand request;
+
     request.req = dto;
 
     auto repository = qSharedPointerCast<InterfaceChapterRepository>(
-        s_repositoryProvider->repository(InterfaceRepositoryProvider::Chapter));
+        s_repositoryProvider->repository("Chapter"));
 
     auto *handler = new UpdateChapterCommandHandler(repository);
 
@@ -176,14 +190,15 @@ void ChapterController::update(const UpdateChapterDTO &dto)
     \brief Removes an chapter asynchronously by the given \a uuid.
 
     When the operation is complete, the chapterRemoved signal is emitted.
-*/
+ */
 void ChapterController::remove(int id)
 {
     RemoveChapterCommand request;
+
     request.id = id;
 
     auto repository = qSharedPointerCast<InterfaceChapterRepository>(
-        s_repositoryProvider->repository(InterfaceRepositoryProvider::Chapter));
+        s_repositoryProvider->repository("Chapter"));
 
     auto *handler = new RemoveChapterCommandHandler(repository);
 

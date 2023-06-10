@@ -21,21 +21,30 @@ using namespace Contracts::CQRS::Author::Commands;
 using namespace Application::Features::Author::Commands;
 
 QScopedPointer<AuthorController> AuthorController::s_instance = QScopedPointer<AuthorController>(nullptr);
-InterfaceRepositoryProvider *AuthorController::s_repositoryProvider;
+InterfaceRepositoryProvider     *AuthorController::s_repositoryProvider;
 ThreadedUndoRedoSystem *AuthorController::s_undo_redo_system;
+
 /*!
     \class AuthorController
-    \brief The AuthorController class provides an asynchronous interface for managing Author objects.
+    \brief The AuthorController class provides an asynchronous interface for
+       managing Author objects.
 
-    The AuthorController class provides methods for getting, creating, updating, and removing authors in an
-    asynchronous manner. It uses the Command and Query Responsibility Segregation (CQRS) pattern to
-    separate read and write operations. The class also implements the Singleton pattern, ensuring that
+    The AuthorController class provides methods for getting, creating, updating,
+       and removing authors in an
+    asynchronous manner. It uses the Command and Query Responsibility
+       Segregation (CQRS) pattern to
+    separate read and write operations. The class also implements the Singleton
+       pattern, ensuring that
     only one instance of the controller is active at any time.
 
-    The AuthorSignalBridge class is used to emit signals for Author events, such as authorCreated,
-    authorRemoved, and authorUpdated. These signals are connected to the corresponding slots in the
-    AuthorController class. AuthorSignalBridge isn't meant to be used directly by the UI, only from
-    inside the UndoRedoCommand and QueryCommand, the signals are available directly from AuthorController.
+    The AuthorSignalBridge class is used to emit signals for Author events, such
+       as authorCreated,
+    authorRemoved, and authorUpdated. These signals are connected to the
+       corresponding slots in the
+    AuthorController class. AuthorSignalBridge isn't meant to be used directly
+       by the UI, only from
+    inside the UndoRedoCommand and QueryCommand, the signals are available
+       directly from AuthorController.
 
     \section1 Example Usage
 
@@ -45,11 +54,11 @@ ThreadedUndoRedoSystem *AuthorController::s_undo_redo_system;
     \endcode
 
     \sa AuthorSignalBridge
-*/
+ */
 
 /*!
     \brief Constructs an AuthorController with the given \a repositoryProvider.
-*/
+ */
 AuthorController::AuthorController(InterfaceRepositoryProvider *repositoryProvider) : QObject(nullptr)
 {
     s_repositoryProvider = repositoryProvider;
@@ -62,8 +71,8 @@ AuthorController::AuthorController(InterfaceRepositoryProvider *repositoryProvid
 
 /*!
     \brief Returns the singleton instance of the AuthorController.
-*/
-AuthorController *AuthorController::instance()
+ */
+AuthorController * AuthorController::instance()
 {
     return s_instance.data();
 }
@@ -72,18 +81,19 @@ AuthorController *AuthorController::instance()
     \brief Retrieves an author asynchronously by the given \a uuid.
 
     When the operation is complete, the getAuthorReplied signal is emitted.
-*/
+ */
 void AuthorController::get(int id)
 {
-
     auto queryCommand = new QueryCommand("get");
-    queryCommand->setQueryFunction([=](QPromise<Result<void>> &progressPromise) {
+
+    queryCommand->setQueryFunction([ = ](QPromise<Result<void> >& progressPromise) {
         GetAuthorRequest request;
-        request.id = id;
+        request.id     = id;
         auto interface = qSharedPointerCast<InterfaceAuthorRepository>(
-            s_repositoryProvider->repository(InterfaceRepositoryProvider::Author));
+            s_repositoryProvider->repository("Author"));
         GetAuthorRequestHandler handler(interface);
         auto result = handler.handle(progressPromise, request);
+
         if (result.isSuccess())
         {
             emit AuthorController::instance()->getReplied(result.value());
@@ -98,15 +108,17 @@ void AuthorController::get(int id)
     \brief Retrieves all authors asynchronously.
 
     When the operation is complete, the getAuthorListReplied signal is emitted.
-*/
+ */
 void AuthorController::getAll()
 {
     auto queryCommand = new QueryCommand("getAll");
-    queryCommand->setQueryFunction([&](QPromise<Result<void>> &progressPromise) {
+
+    queryCommand->setQueryFunction([&](QPromise<Result<void> >& progressPromise) {
         auto interface = qSharedPointerCast<InterfaceAuthorRepository>(
-            s_repositoryProvider->repository(InterfaceRepositoryProvider::Author));
+            s_repositoryProvider->repository("Author"));
         GetAuthorListRequestHandler handler(interface);
         auto result = handler.handle(progressPromise);
+
         if (result.isSuccess())
         {
             emit AuthorController::instance()->getAllReplied(result.value());
@@ -120,14 +132,15 @@ void AuthorController::getAll()
     \brief Creates a new author asynchronously with the given \a dto.
 
     When the operation is complete, the authorCreated signal is emitted.
-*/
-void AuthorController::create(const CreateAuthorDTO &dto)
+ */
+void AuthorController::create(const CreateAuthorDTO& dto)
 {
     CreateAuthorCommand request;
+
     request.req = dto;
 
     auto repository = qSharedPointerCast<InterfaceAuthorRepository>(
-        s_repositoryProvider->repository(InterfaceRepositoryProvider::Author));
+        s_repositoryProvider->repository("Author"));
 
     auto *handler = new CreateAuthorCommandHandler(repository);
 
@@ -149,14 +162,15 @@ void AuthorController::create(const CreateAuthorDTO &dto)
     \brief Updates an existing author asynchronously with the given \a dto.
 
     When the operation is complete, the authorUpdated signal is emitted.
-*/
-void AuthorController::update(const UpdateAuthorDTO &dto)
+ */
+void AuthorController::update(const UpdateAuthorDTO& dto)
 {
     UpdateAuthorCommand request;
+
     request.req = dto;
 
     auto repository = qSharedPointerCast<InterfaceAuthorRepository>(
-        s_repositoryProvider->repository(InterfaceRepositoryProvider::Author));
+        s_repositoryProvider->repository("Author"));
 
     auto *handler = new UpdateAuthorCommandHandler(repository);
 
@@ -176,14 +190,15 @@ void AuthorController::update(const UpdateAuthorDTO &dto)
     \brief Removes an author asynchronously by the given \a uuid.
 
     When the operation is complete, the authorRemoved signal is emitted.
-*/
+ */
 void AuthorController::remove(int id)
 {
     RemoveAuthorCommand request;
+
     request.id = id;
 
     auto repository = qSharedPointerCast<InterfaceAuthorRepository>(
-        s_repositoryProvider->repository(InterfaceRepositoryProvider::Author));
+        s_repositoryProvider->repository("Author"));
 
     auto *handler = new RemoveAuthorCommandHandler(repository);
 

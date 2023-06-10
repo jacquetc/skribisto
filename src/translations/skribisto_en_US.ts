@@ -3292,17 +3292,17 @@
 <context>
     <name>Presenter::Author::AuthorController</name>
     <message>
-        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="142"/>
+        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="155"/>
         <source>Create author</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="169"/>
+        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="183"/>
         <source>Update author</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="198"/>
+        <location filename="../../sources/gui/presenter/author/author_controller.cpp" line="213"/>
         <source>Remove author</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3310,17 +3310,17 @@
 <context>
     <name>Presenter::Chapter::ChapterController</name>
     <message>
-        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="142"/>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="155"/>
         <source>Create chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="169"/>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="183"/>
         <source>Update chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="198"/>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="213"/>
         <source>Remove chapter</source>
         <translation type="unfinished"></translation>
     </message>
