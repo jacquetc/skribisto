@@ -4,13 +4,12 @@
 
 using namespace Application::Features::Author::Queries;
 
-GetAuthorRequestHandler::GetAuthorRequestHandler(QSharedPointer<InterfaceAuthorRepository> repository)
+GetAuthorRequestHandler::GetAuthorRequestHandler(QSharedPointer<InterfaceAuthorRepository>repository)
     : Handler(), m_repository(repository)
-{
-}
+{}
 
-Result<AuthorDTO> GetAuthorRequestHandler::handle(QPromise<Result<void>> &progressPromise,
-                                                  const GetAuthorRequest &request)
+Result<AuthorDTO>GetAuthorRequestHandler::handle(QPromise<Result<void> >& progressPromise,
+                                                 const GetAuthorRequest & request)
 {
     Result<AuthorDTO> result;
 
@@ -18,16 +17,15 @@ Result<AuthorDTO> GetAuthorRequestHandler::handle(QPromise<Result<void>> &progre
     {
         result = handleImpl(request);
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
         result = Result<AuthorDTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling GetAuthorRequest:" << ex.what();
     }
-
     return result;
 }
 
-Result<AuthorDTO> GetAuthorRequestHandler::handleImpl(const GetAuthorRequest &request)
+Result<AuthorDTO>GetAuthorRequestHandler::handleImpl(const GetAuthorRequest& request)
 {
     qDebug() << "GetAuthorRequestHandler::handleImpl called with id" << request.id;
 
@@ -40,7 +38,7 @@ Result<AuthorDTO> GetAuthorRequestHandler::handleImpl(const GetAuthorRequest &re
     }
 
     // map
-    auto dto = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(authorResult.value());
+    auto dto = AutoMapper::AutoMapper::map<Domain::Author, AuthorDTO>(authorResult.value());
 
     qDebug() << "GetAuthorRequestHandler::handleImpl done";
 

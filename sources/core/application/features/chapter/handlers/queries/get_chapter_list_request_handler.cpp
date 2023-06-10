@@ -4,31 +4,29 @@
 
 using namespace Application::Features::Chapter::Queries;
 
-GetChapterListRequestHandler::GetChapterListRequestHandler(QSharedPointer<InterfaceChapterRepository> repository)
+GetChapterListRequestHandler::GetChapterListRequestHandler(QSharedPointer<InterfaceChapterRepository>repository)
     : Handler(), m_repository(repository)
-{
-}
+{}
 
-Result<QList<ChapterDTO>> GetChapterListRequestHandler::handle(QPromise<Result<void>> &progressPromise)
+Result<QList<ChapterDTO> >GetChapterListRequestHandler::handle(QPromise<Result<void> >& progressPromise)
 {
     qDebug() << "GetChapterListRequestHandler::handle called";
 
-    Result<QList<ChapterDTO>> result;
+    Result<QList<ChapterDTO> > result;
 
     try
     {
         result = handleImpl();
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
-        result = Result<QList<ChapterDTO>>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        result = Result<QList<ChapterDTO> >(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling GetChapterListRequest:" << ex.what();
     }
-
     return result;
 }
 
-Result<QList<ChapterDTO>> GetChapterListRequestHandler::handleImpl()
+Result<QList<ChapterDTO> >GetChapterListRequestHandler::handleImpl()
 {
     qDebug() << "GetChapterListRequestHandler::handleImpl called";
 
@@ -37,19 +35,19 @@ Result<QList<ChapterDTO>> GetChapterListRequestHandler::handleImpl()
 
     if (chapterResult.isError())
     {
-        return Result<QList<ChapterDTO>>(chapterResult.error());
+        return Result<QList<ChapterDTO> >(chapterResult.error());
     }
 
     // map
     QList<ChapterDTO> dtoList;
 
-    for (const Domain::Chapter &chapter : chapterResult.value())
+    for (const Domain::Chapter& chapter : chapterResult.value())
     {
-        auto dto = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(chapter);
+        auto dto = AutoMapper::AutoMapper::map<Domain::Chapter, ChapterDTO>(chapter);
         dtoList.append(dto);
     }
 
     qDebug() << "GetChapterListRequestHandler::handleImpl done";
 
-    return Result<QList<ChapterDTO>>(dtoList);
+    return Result<QList<ChapterDTO> >(dtoList);
 }

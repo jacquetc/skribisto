@@ -4,31 +4,29 @@
 
 using namespace Application::Features::Author::Queries;
 
-GetAuthorListRequestHandler::GetAuthorListRequestHandler(QSharedPointer<InterfaceAuthorRepository> repository)
+GetAuthorListRequestHandler::GetAuthorListRequestHandler(QSharedPointer<InterfaceAuthorRepository>repository)
     : Handler(), m_repository(repository)
-{
-}
+{}
 
-Result<QList<AuthorDTO>> GetAuthorListRequestHandler::handle(QPromise<Result<void>> &progressPromise)
+Result<QList<AuthorDTO> >GetAuthorListRequestHandler::handle(QPromise<Result<void> >& progressPromise)
 {
     qDebug() << "GetAuthorListRequestHandler::handle called";
 
-    Result<QList<AuthorDTO>> result;
+    Result<QList<AuthorDTO> > result;
 
     try
     {
         result = handleImpl();
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
-        result = Result<QList<AuthorDTO>>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        result = Result<QList<AuthorDTO> >(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling GetAuthorListRequest:" << ex.what();
     }
-
     return result;
 }
 
-Result<QList<AuthorDTO>> GetAuthorListRequestHandler::handleImpl()
+Result<QList<AuthorDTO> >GetAuthorListRequestHandler::handleImpl()
 {
     qDebug() << "GetAuthorListRequestHandler::handleImpl called";
 
@@ -37,19 +35,19 @@ Result<QList<AuthorDTO>> GetAuthorListRequestHandler::handleImpl()
 
     if (authorResult.isError())
     {
-        return Result<QList<AuthorDTO>>(authorResult.error());
+        return Result<QList<AuthorDTO> >(authorResult.error());
     }
 
     // map
     QList<AuthorDTO> dtoList;
 
-    for (const Domain::Author &author : authorResult.value())
+    for (const Domain::Author& author : authorResult.value())
     {
-        auto dto = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(author);
+        auto dto = AutoMapper::AutoMapper::map<Domain::Author, AuthorDTO>(author);
         dtoList.append(dto);
     }
 
     qDebug() << "GetAuthorListRequestHandler::handleImpl done";
 
-    return Result<QList<AuthorDTO>>(dtoList);
+    return Result<QList<AuthorDTO> >(dtoList);
 }

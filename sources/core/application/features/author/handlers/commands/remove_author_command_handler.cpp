@@ -7,13 +7,12 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::Author::Commands;
 using namespace Application::Features::Author::Commands;
 
-RemoveAuthorCommandHandler::RemoveAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository> repository)
+RemoveAuthorCommandHandler::RemoveAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository>repository)
     : Handler(), m_repository(repository)
-{
-}
+{}
 
-Result<AuthorDTO> RemoveAuthorCommandHandler::handle(QPromise<Result<void>> &progressPromise,
-                                                     const RemoveAuthorCommand &request)
+Result<AuthorDTO>RemoveAuthorCommandHandler::handle(QPromise<Result<void> >  & progressPromise,
+                                                    const RemoveAuthorCommand& request)
 {
     Result<AuthorDTO> result;
 
@@ -21,16 +20,15 @@ Result<AuthorDTO> RemoveAuthorCommandHandler::handle(QPromise<Result<void>> &pro
     {
         result = handleImpl(request);
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
         result = Result<AuthorDTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling RemoveAuthorCommand:" << ex.what();
     }
-
     return result;
 }
 
-Result<AuthorDTO> RemoveAuthorCommandHandler::restore()
+Result<AuthorDTO>RemoveAuthorCommandHandler::restore()
 {
     Result<AuthorDTO> result;
 
@@ -38,18 +36,18 @@ Result<AuthorDTO> RemoveAuthorCommandHandler::restore()
     {
         result = restoreImpl();
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
         result = Result<AuthorDTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling RemoveAuthorCommand restore:" << ex.what();
     }
-
     return result;
 }
 
-Result<AuthorDTO> RemoveAuthorCommandHandler::handleImpl(const RemoveAuthorCommand &request)
+Result<AuthorDTO>RemoveAuthorCommandHandler::handleImpl(const RemoveAuthorCommand& request)
 {
     Result<Domain::Author> authorResult = m_repository->get(request.id);
+
     if (authorResult.hasError())
     {
         qDebug() << "Error getting author from repository:" << authorResult.error().message();
@@ -57,6 +55,7 @@ Result<AuthorDTO> RemoveAuthorCommandHandler::handleImpl(const RemoveAuthorComma
     }
 
     auto deleteResult = m_repository->remove(std::move(authorResult.value()));
+
     if (deleteResult.hasError())
     {
         qDebug() << "Error deleting author from repository:" << deleteResult.error().message();
@@ -64,7 +63,7 @@ Result<AuthorDTO> RemoveAuthorCommandHandler::handleImpl(const RemoveAuthorComma
     }
 
     // map
-    auto dto = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(deleteResult.value());
+    auto dto = AutoMapper::AutoMapper::map<Domain::Author, AuthorDTO>(deleteResult.value());
 
     // save
     m_oldState = Result<AuthorDTO>(dto);
@@ -76,20 +75,20 @@ Result<AuthorDTO> RemoveAuthorCommandHandler::handleImpl(const RemoveAuthorComma
     return Result<AuthorDTO>(dto);
 }
 
-Result<AuthorDTO> RemoveAuthorCommandHandler::restoreImpl()
+Result<AuthorDTO>RemoveAuthorCommandHandler::restoreImpl()
 {
-
     // Map the create author command to a domain author object
-    auto author = AutoMapper::AutoMapper::map<Domain::Author>(m_oldState.value());
+    auto author = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(m_oldState.value());
 
     // Add the author to the repository
     auto authorResult = m_repository->add(std::move(author));
+
     if (authorResult.hasError())
     {
         return Result<AuthorDTO>(authorResult.error());
     }
 
-    auto authorDTO = AutoMapper::AutoMapper::map<AuthorDTO>(authorResult.value());
+    auto authorDTO = AutoMapper::AutoMapper::map<Domain::Author, AuthorDTO>(authorResult.value());
 
     emit authorCreated(authorDTO);
     qDebug() << "Author added:" << authorDTO.uuid();

@@ -12,6 +12,7 @@ set(contracts_SRCS
     contracts_global.h
     exception.h
     automapper/automapper.h
+    automapper/automapper.cpp
     error.h
     wait_in_event_loop.h
     result.h
@@ -60,7 +61,8 @@ file(READ "repositories.txt" repositories_files)
 # Convert the new-line separated paths into a CMake list
 string(REPLACE "\n" ";" repositories_files "${repositories_files}")
 
-add_library(skribisto-contracts SHARED ${contracts_SRCS} ${repositories_files})
+add_library(skribisto-contracts SHARED ${contracts_SRCS} ${repositories_files}
+    automapper/automapper.cpp)
 
 
 #qt6_add_qml_module(skribisto-contracts
@@ -78,12 +80,14 @@ target_compile_definitions(skribisto-contracts PUBLIC SKRIBISTO_CONTRACTS_LIBRAR
 add_dependencies(skribisto-contracts skribisto-domain)
 add_dependencies(skribisto-contracts skribisto-contracts-dto-system)
 add_dependencies(skribisto-contracts skribisto-contracts-dto-chapter)
+add_dependencies(skribisto-contracts skribisto-contracts-dto-scene)
 add_dependencies(skribisto-contracts skribisto-contracts-dto-author)
 
 target_link_libraries(skribisto-contracts PUBLIC skribisto-domain)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-system)
-target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-chapter)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-author)
+target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-scene)
+target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-chapter)
 target_link_libraries(skribisto-contracts PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql)
 
 # ---------------------------------

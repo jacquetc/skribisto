@@ -17,17 +17,17 @@ using namespace Application::Features::Author::Queries;
 using namespace Application::Features::Author::Commands;
 using namespace Contracts::DTO::Author;
 
-class UseCases : public QObject
-{
+class UseCases : public QObject {
     Q_OBJECT
 
-  public:
+public:
+
     UseCases();
     ~UseCases();
 
-  public slots:
+public slots:
 
-  private Q_SLOTS:
+private Q_SLOTS:
 
     void initTestCase();
     void cleanupTestCase();
@@ -39,16 +39,14 @@ class UseCases : public QObject
     void addAuthor();
     void removeAuthor();
 
-  private:
+private:
 };
 
 UseCases::UseCases()
-{
-}
+{}
 
 UseCases::~UseCases()
-{
-}
+{}
 
 void UseCases::initTestCase()
 {
@@ -70,26 +68,27 @@ void UseCases::cleanup()
 
 void UseCases::getAuthor()
 {
-
     QSharedPointer<DummyAuthorRepository> repository(new DummyAuthorRepository(this));
 
     QUuid uuid = QUuid::createUuid();
     Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
+
     repository->fillGet(author);
 
     GetAuthorRequestHandler handler(repository);
     GetAuthorRequest request;
     request.id = 1;
 
-    QPromise<Result<void>> progressPromise;
+    QPromise<Result<void> > progressPromise;
     Result<AuthorDTO> dtoResult = handler.handle(progressPromise, request);
+
     if (!dtoResult)
     {
         qDebug() << dtoResult.error().message() << dtoResult.error().data();
     }
     QVERIFY(dtoResult.isSuccess());
 
-    QCOMPARE(dtoResult.value().id(), 1);
+    QCOMPARE(dtoResult.value().id(),   1);
     QCOMPARE(dtoResult.value().name(), "test");
 }
 
@@ -103,10 +102,11 @@ void UseCases::addAuthor()
 
     // Create an AuthorDTO to add
     CreateAuthorDTO dto;
+
     dto.setName("new author");
 
     // prefill the dummy repo:
-    auto author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
+    auto author = AutoMapper::AutoMapper::map<CreateAuthorDTO, Domain::Author>(dto);
     author.setUuid(QUuid::createUuid());
     repository->fillAdd(author);
     repository->fillGetAll(QList<Domain::Author>() << author);
@@ -116,7 +116,7 @@ void UseCases::addAuthor()
     CreateAuthorCommand command;
     command.req = dto;
 
-    QPromise<Result<void>> progressPromise;
+    QPromise<Result<void> > progressPromise;
     Result<AuthorDTO> result = handler.handle(progressPromise, command);
 
     if (!result)
@@ -125,6 +125,7 @@ void UseCases::addAuthor()
     }
     QVERIFY(result.isSuccess());
 }
+
 // ----------------------------------------------------------
 
 void UseCases::removeAuthor()
@@ -133,10 +134,11 @@ void UseCases::removeAuthor()
 
     // Add an author to the repository
     AuthorDTO dto;
+
     dto.setId(1);
     dto.setUuid(QUuid::createUuid());
     dto.setName("test");
-    auto author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
+    auto author = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(dto);
     repository->fillRemove(author);
     repository->fillGet(author);
 
@@ -145,8 +147,9 @@ void UseCases::removeAuthor()
     RemoveAuthorCommand command;
     command.id = author.id();
 
-    QPromise<Result<void>> progressPromise;
+    QPromise<Result<void> > progressPromise;
     Result<AuthorDTO> result = handler.handle(progressPromise, command);
+
     if (!result)
     {
         qDebug() << result.error().message() << result.error().data();

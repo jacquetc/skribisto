@@ -19,6 +19,7 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
 
     QStringList entityClassNameList;
     entityClassNameList << "Author"
+                        << "Scene"
                         << "Chapter"
                         << "Book"
                         << "Atelier";

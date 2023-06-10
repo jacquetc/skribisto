@@ -3,6 +3,8 @@
 #include "application_global.h"
 #include <QObject>
 
+namespace Application
+{
 class SKR_APPLICATION_EXPORT ApplicationRegistration : public QObject
 {
     Q_OBJECT
@@ -12,4 +14,6 @@ class SKR_APPLICATION_EXPORT ApplicationRegistration : public QObject
   signals:
   private:
 };
+}
+
 

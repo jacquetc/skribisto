@@ -1,6 +1,5 @@
 #pragma once
 
-#include "domain_global.h"
 #include <QDateTime>
 #include <QUuid>
 
@@ -9,7 +8,7 @@
 namespace Domain
 {
 
-class SKR_DOMAIN_EXPORT DummyEntity : public EntityBase
+class DummyEntity : public EntityBase
 {
     Q_GADGET
 

@@ -4,13 +4,12 @@
 
 using namespace Application::Features::Chapter::Queries;
 
-GetChapterRequestHandler::GetChapterRequestHandler(QSharedPointer<InterfaceChapterRepository> repository)
+GetChapterRequestHandler::GetChapterRequestHandler(QSharedPointer<InterfaceChapterRepository>repository)
     : Handler(), m_repository(repository)
-{
-}
+{}
 
-Result<ChapterDTO> GetChapterRequestHandler::handle(QPromise<Result<void>> &progressPromise,
-                                                    const GetChapterRequest &request)
+Result<ChapterDTO>GetChapterRequestHandler::handle(QPromise<Result<void> >& progressPromise,
+                                                   const GetChapterRequest& request)
 {
     Result<ChapterDTO> result;
 
@@ -18,16 +17,15 @@ Result<ChapterDTO> GetChapterRequestHandler::handle(QPromise<Result<void>> &prog
     {
         result = handleImpl(request);
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
         result = Result<ChapterDTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling GetChapterRequest:" << ex.what();
     }
-
     return result;
 }
 
-Result<ChapterDTO> GetChapterRequestHandler::handleImpl(const GetChapterRequest &request)
+Result<ChapterDTO>GetChapterRequestHandler::handleImpl(const GetChapterRequest& request)
 {
     qDebug() << "GetChapterRequestHandler::handleImpl called with id" << request.id;
 
@@ -40,7 +38,7 @@ Result<ChapterDTO> GetChapterRequestHandler::handleImpl(const GetChapterRequest 
     }
 
     // map
-    auto dto = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(chapterResult.value());
+    auto dto = AutoMapper::AutoMapper::map<Domain::Chapter, ChapterDTO>(chapterResult.value());
 
     qDebug() << "GetChapterRequestHandler::handleImpl done";
 

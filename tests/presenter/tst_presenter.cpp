@@ -16,17 +16,17 @@
 using namespace Presenter::Author;
 using namespace Contracts::DTO::Author;
 
-class PresenterTest : public QObject
-{
+class PresenterTest : public QObject {
     Q_OBJECT
 
-  public:
+public:
+
     PresenterTest();
     ~PresenterTest();
 
-  public slots:
+public slots:
 
-  private Q_SLOTS:
+private Q_SLOTS:
 
     void initTestCase();
     void cleanupTestCase();
@@ -38,9 +38,10 @@ class PresenterTest : public QObject
     void addAuthorAsync();
     void addAuthorAsync_TwoRapid();
 
-  private:
+private:
+
     DummyRepositoryProvider *m_repositoryProvider;
-    QSharedPointer<DummyAuthorRepository> m_repository;
+    QSharedPointer<DummyAuthorRepository>m_repository;
     AuthorController *m_authorController;
 };
 
@@ -50,8 +51,7 @@ PresenterTest::PresenterTest()
 }
 
 PresenterTest::~PresenterTest()
-{
-}
+{}
 
 void PresenterTest::initTestCase()
 {
@@ -81,12 +81,13 @@ void PresenterTest::getAuthorAsync()
 {
     // Create an AuthorDTO to add
     AuthorDTO dto;
+
     dto.setId(1);
     dto.setUuid(QUuid::createUuid());
     dto.setName("new author");
 
     // prefill the dummy repo:
-    auto author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
+    auto author = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(dto);
     m_repository->fillGet(author);
 
     // invoke
@@ -96,23 +97,25 @@ void PresenterTest::getAuthorAsync()
     AuthorController::get(dto.id());
 
     QVERIFY(spy.wait(5000));
-    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.count(),         1);
     QList<QVariant> arguments = spy.takeFirst();
-    auto signalResult = arguments.at(0).value<AuthorDTO>();
+    auto signalResult         = arguments.at(0).value<AuthorDTO>();
     QCOMPARE(signalResult.uuid(), dto.uuid());
 }
+
 // ----------------------------------------------------------
 
 void PresenterTest::getAuthorAsync_aLot()
 {
     // Create an AuthorDTO to add
     AuthorDTO dto;
+
     dto.setId(1);
     dto.setUuid(QUuid::createUuid());
     dto.setName("new author");
 
     // prefill the dummy repo:
-    auto author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
+    auto author = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(dto);
     m_repository->fillGet(author);
 
     // invoke
@@ -130,19 +133,21 @@ void PresenterTest::getAuthorAsync_aLot()
     QCOMPARE(spy.count(), 100);
 
     QList<QVariant> arguments = spy.takeFirst();
-    auto signalResult = arguments.at(0).value<AuthorDTO>();
+    auto signalResult         = arguments.at(0).value<AuthorDTO>();
     QVERIFY(signalResult.uuid() == dto.uuid());
 }
+
 // ----------------------------------------------------------
 
 void PresenterTest::addAuthorAsync()
 {
     // Create an AuthorDTO to add
     CreateAuthorDTO dto;
+
     dto.setName("new author");
 
     // prefill the dummy repo:
-    auto author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
+    auto author = AutoMapper::AutoMapper::map<CreateAuthorDTO, Domain::Author>(dto);
     author.setUuid(QUuid::createUuid());
     m_repository->fillAdd(author);
 
@@ -155,8 +160,9 @@ void PresenterTest::addAuthorAsync()
 
     QVERIFY(spy.wait(5000));
     QCOMPARE(spy.count(), 1);
-    QList<QVariant> arguments = spy.takeFirst();
-    Result<QUuid> signalResult = arguments.at(0).value<Result<QUuid>>();
+    QList<QVariant> arguments    = spy.takeFirst();
+    Result<QUuid>   signalResult = arguments.at(0).value<Result<QUuid> >();
+
     if (!signalResult)
     {
         qDebug() << signalResult.error().message() << signalResult.error().data();
@@ -164,16 +170,18 @@ void PresenterTest::addAuthorAsync()
 
     QVERIFY(signalResult.isSuccess());
 }
+
 // ----------------------------------------------------------
 
 void PresenterTest::addAuthorAsync_TwoRapid()
 {
     // Create an AuthorDTO to add
     CreateAuthorDTO dto;
+
     dto.setName("new author");
 
     // prefill the dummy repo:
-    auto author = AutoMapper::AutoMapper::map<Domain::Author>(dto);
+    auto author = AutoMapper::AutoMapper::map<CreateAuthorDTO, Domain::Author>(dto);
     author.setUuid(QUuid::createUuid());
     m_repository->fillAdd(author);
 
@@ -189,8 +197,9 @@ void PresenterTest::addAuthorAsync_TwoRapid()
     QCOMPARE(spy.count(), 1);
     QVERIFY(spy.wait(5000));
     QCOMPARE(spy.count(), 2);
-    QList<QVariant> arguments = spy.takeFirst();
-    Result<QUuid> signalResult = arguments.at(0).value<Result<QUuid>>();
+    QList<QVariant> arguments    = spy.takeFirst();
+    Result<QUuid>   signalResult = arguments.at(0).value<Result<QUuid> >();
+
     if (!signalResult)
     {
         qDebug() << signalResult.error().message() << signalResult.error().data();

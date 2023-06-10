@@ -9,6 +9,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include "application_registration.h"
 
 int main(int argc, char *argv[])
 {
@@ -17,6 +18,7 @@ int main(int argc, char *argv[])
 
     new Domain::DomainRegistration(&app);
     new Persistence::PersistenceRegistration(&app);
+    new Application::ApplicationRegistration(&app);
     new Presenter::PresenterRegistration(&app);
 
     QQmlApplicationEngine engine;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "domain_global.h"
 #include <QString>
 
 #include "dummy_entity.h"
@@ -8,7 +7,7 @@
 namespace Domain
 {
 
-class SKR_DOMAIN_EXPORT DummyBasicEntity : public DummyEntity
+class DummyBasicEntity : public DummyEntity
 {
     Q_GADGET
 

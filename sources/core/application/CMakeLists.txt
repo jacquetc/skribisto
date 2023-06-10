@@ -39,11 +39,13 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC SKRIBISTO_APPLICATION_LIBRARY)
 add_dependencies(${PROJECT_NAME} skribisto-contracts)
 add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-system)
 add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-author)
+add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-scene)
 add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-chapter)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE skribisto-contracts)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-system)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-author)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-scene)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-dto-chapter)
 target_link_libraries(${PROJECT_NAME} PRIVATE
      Qt6::Core Qt6::Sql Qt6::Concurrent)
