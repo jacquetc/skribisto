@@ -37,6 +37,10 @@ private Q_SLOTS:
     void invertedMap();
     void mapWithForeignEntity();
 
+    void mapWithForeignEntityInverted();
+
+    void mapWithUniqueForeignEntity();
+
 private:
 };
 
@@ -48,9 +52,6 @@ AutoMapperTest::~AutoMapperTest()
 
 void AutoMapperTest::initTestCase()
 {
-    qRegisterMetaType<Domain::DummyEntity>();
-    qRegisterMetaType<Domain::DummyBasicEntity>();
-    qRegisterMetaType<Domain::DummyEntityWithDetails>();
 }
 
 void AutoMapperTest::cleanupTestCase()
@@ -106,7 +107,7 @@ void AutoMapperTest::mapWithForeignEntity()
     Domain::DummyBasicEntity author(1, uuid, QDateTime(), "detail");
     QUuid uuid2 = QUuid::createUuid();
     Domain::DummyEntityWithDetails entity(1, uuid2, QDateTime(), "entity_with_detail",
-                                          QList<Domain::DummyBasicEntity>() << author);
+                                          QList<Domain::DummyBasicEntity>() << author, Domain::DummyBasicEntity());
 
     AutoMapper::AutoMapper::registerMapping<Domain::DummyBasicEntity, DummyBasicEntityDTO>();
     AutoMapper::AutoMapper::registerMapping<Domain::DummyEntityWithDetails, DummyEntityWithDetailsDTO>();
@@ -119,6 +120,48 @@ void AutoMapperTest::mapWithForeignEntity()
     QCOMPARE(dto.details().size(),         1);
     QCOMPARE(dto.details().first().name(), "detail");
     QCOMPARE(dto.details().first().uuid(), uuid);
+}
+
+void AutoMapperTest::mapWithForeignEntityInverted()
+{
+    QUuid uuid = QUuid::createUuid();
+    DummyBasicEntityDTO author(1, uuid, QDateTime(), "detail");
+    QUuid uuid2 = QUuid::createUuid();
+    DummyEntityWithDetailsDTO dto(1, uuid2, QDateTime(), "entity_with_detail",
+                                  QList<DummyBasicEntityDTO>() << author, DummyBasicEntityDTO());
+
+    AutoMapper::AutoMapper::registerMapping<Domain::DummyBasicEntity, DummyBasicEntityDTO>(            true);
+    AutoMapper::AutoMapper::registerMapping<Domain::DummyEntityWithDetails, DummyEntityWithDetailsDTO>(true);
+
+    Domain::DummyEntityWithDetails entity = AutoMapper::AutoMapper::map<DummyEntityWithDetailsDTO,
+                                                                        Domain::DummyEntityWithDetails>(dto);
+
+    QCOMPARE(entity.name(),                   "entity_with_detail");
+    QCOMPARE(entity.uuid(),                   uuid2);
+    QCOMPARE(entity.details().size(),         1);
+    QCOMPARE(entity.details().first().name(), "detail");
+    QCOMPARE(entity.details().first().uuid(), uuid);
+}
+
+void AutoMapperTest::mapWithUniqueForeignEntity() {
+    QUuid uuid = QUuid::createUuid();
+    Domain::DummyBasicEntity author(1, uuid, QDateTime(), "detail");
+    QUuid uuid2 = QUuid::createUuid();
+    Domain::DummyEntityWithDetails entity(1, uuid2, QDateTime(), "entity_with_detail",
+                                          QList<Domain::DummyBasicEntity>(),
+                                          author);
+
+    AutoMapper::AutoMapper::registerMapping<Domain::DummyBasicEntity, DummyBasicEntityDTO>();
+    AutoMapper::AutoMapper::registerMapping<Domain::DummyEntityWithDetails, DummyEntityWithDetailsDTO>();
+
+    DummyEntityWithDetailsDTO dto = AutoMapper::AutoMapper::map<Domain::DummyEntityWithDetails,
+                                                                DummyEntityWithDetailsDTO>(entity);
+
+    QCOMPARE(dto.name(),                "entity_with_detail");
+    QCOMPARE(dto.uuid(),                uuid2);
+    QCOMPARE(dto.details().size(),      0);
+    QCOMPARE(dto.uniqueDetail().name(), "detail");
+    QCOMPARE(dto.uniqueDetail().uuid(), uuid);
 }
 
 QTEST_MAIN(AutoMapperTest)

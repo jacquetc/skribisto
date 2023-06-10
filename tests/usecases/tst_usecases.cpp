@@ -50,6 +50,8 @@ UseCases::~UseCases()
 
 void UseCases::initTestCase()
 {
+    AutoMapper::AutoMapper::registerMapping<Domain::Author, AuthorDTO>(true);
+    AutoMapper::AutoMapper::registerMapping<CreateAuthorDTO, Domain::Author>();
 }
 
 void UseCases::cleanupTestCase()

@@ -61,6 +61,9 @@ void PresenterTest::initTestCase()
     Scopes scopes(QStringList() << "author");
     new UndoRedo::ThreadedUndoRedoSystem(this, scopes);
     m_authorController = new AuthorController(m_repositoryProvider);
+
+    AutoMapper::AutoMapper::registerMapping<Domain::Author, AuthorDTO>(true);
+    AutoMapper::AutoMapper::registerMapping<CreateAuthorDTO, Domain::Author>();
 }
 
 void PresenterTest::cleanupTestCase()

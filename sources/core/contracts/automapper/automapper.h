@@ -31,15 +31,13 @@ public:
                 return QVariant::fromValue(DestinationType());
             };
 
-
-        siblingMetaTypeHash[QMetaType::fromType<SourceType>()]         = QMetaType::fromType<DestinationType>();
-        siblingMetaTypeHash[QMetaType::fromType<QList<SourceType> >()] = QMetaType::fromType<QList<DestinationType> >();
-
-
         writerHash[QMetaType::fromType<SourceType>()] =
-            [&](const QMetaProperty& destinationProperty, void *gadgetPointer, const QVariant& value) {
+            [&](const QMetaProperty& destinationProperty, void *gadgetPointer, const QVariant& sourceValue) {
+                const QVariant& customDestinationObject = AutoMapper::implMap(sourceValue);
+                DestinationType destinationValue        = customDestinationObject.value<DestinationType>();
+
                 return destinationProperty.writeOnGadget(gadgetPointer,
-                                                         QVariant::fromValue(value.value<DestinationType>()));
+                                                         QVariant::fromValue(destinationValue));
             };
 
         writerForListHash[QMetaType::fromType<QList<SourceType> >()] =
@@ -67,15 +65,13 @@ public:
                 };
 
 
-            siblingMetaTypeHash[QMetaType::fromType<DestinationType>()]         = QMetaType::fromType<SourceType>();
-            siblingMetaTypeHash[QMetaType::fromType<QList<DestinationType> >()] =
-                QMetaType::fromType<QList<SourceType> >();
-
-
             writerHash[QMetaType::fromType<DestinationType>()] =
-                [](const QMetaProperty& destinationProperty, void *gadgetPointer, const QVariant& value) {
+                [](const QMetaProperty& destinationProperty, void *gadgetPointer, const QVariant& sourceValue) {
+                    const QVariant& customDestinationObject = AutoMapper::implMap(sourceValue);
+                    SourceType destinationValue             = customDestinationObject.value<SourceType>();
+
                     return destinationProperty.writeOnGadget(gadgetPointer,
-                                                             QVariant::fromValue(value.value<SourceType>()));
+                                                             QVariant::fromValue(destinationValue));
                 };
 
             writerForListHash[QMetaType::fromType<QList<DestinationType> >()] =
@@ -200,27 +196,19 @@ private:
                                     }
                                 }
                             } else {
-                                // It's a single QVariant.
-                                auto customIt          = getSiblingFunctions.find(value.metaType());
-                                auto siblingMetaTypeIt = siblingMetaTypeHash.find(value.metaType());
+                                // It's a single QVariant with custom type.
 
-                                if (customIt != getSiblingFunctions.end()) {
-                                    auto customDestinationObject = AutoMapper::implMap(value);
-                                    destinationValue = customDestinationObject;
+                                auto writeIt = writerHash.find(value.metaType());
 
-                                    auto writeFunction = writerHash.find(destinationProperty.metaType());
+                                if (writeIt != writerHash.end()) {
+                                    bool success = writeIt.value()(destinationProperty,
+                                                                   destinationPointer, value);
 
-                                    if (writeFunction != writerHash.end()) {
-                                        bool success = writeFunction.value()(destinationProperty,
-                                                                             destinationPointer,
-                                                                             destinationValue);
-
-                                        if (!success)
-                                        {
-                                            qWarning() << "Failed to write value" << destinationValue <<
-                                                "to destination property"
-                                                       << destinationProperty.name();
-                                        }
+                                    if (!success)
+                                    {
+                                        qWarning() << "Failed to write value" << destinationValue <<
+                                            "to destination property"
+                                                   << destinationProperty.name();
                                     }
                                 }
                             }
@@ -241,9 +229,8 @@ private:
 private:
 
     static QHash<QMetaType, std::function<QVariant()> >getSiblingFunctions;
-    static QHash<QMetaType, QMetaType>siblingMetaTypeHash;
     static QHash<QMetaType, std::function<bool(const QMetaProperty&  destinationProperty, void *gadgetPointer,
-                                               const QVariant& value)> >writerHash;
+                                               const QVariant& sourceValue)> >writerHash;
     static QHash<QMetaType, std::function<bool(const QMetaProperty&  destinationProperty, void *gadgetPointer,
                                                const QList<QVariant>& sourceList)> >writerForListHash;
 
