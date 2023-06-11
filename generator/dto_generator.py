@@ -237,7 +237,7 @@ def get_dto_dict_and_feature_ordered_dict(
         for command in feature.get("commands", []):
             command_dto_data = command.get("dto", {})
             dto_in = command_dto_data.get("in", {})
-            if dto_in:
+            if dto_in and dto_in.get("is_void", False):
                 dto_type_name = f"{dto_in['type_prefix']}DTO"
                 generate = dto_in.get("generate", True)
                 dto_dict[dto_type_name] = {
@@ -259,7 +259,7 @@ def get_dto_dict_and_feature_ordered_dict(
                 )
 
             dto_out = command_dto_data.get("out", {})
-            if dto_out:
+            if dto_out and dto_out.get("is_void", False):
                 dto_type_name = f"{dto_out['type_prefix']}DTO"
                 generate = dto_out.get("generate", True)
                 dto_dict[dto_type_name] = {
@@ -284,7 +284,7 @@ def get_dto_dict_and_feature_ordered_dict(
         for query in feature.get("queries", []):
             query_dto_data = query.get("dto", {})
             dto_in = query_dto_data.get("in", {})
-            if dto_in:
+            if dto_in and dto_in.get("is_void", False):
                 dto_type_name = f"{dto_in['type_prefix']}DTO"
                 generate = dto_in.get("generate", True)
                 dto_dict[dto_type_name] = {
@@ -306,7 +306,7 @@ def get_dto_dict_and_feature_ordered_dict(
                 )
 
             dto_out = query_dto_data.get("out", {})
-            if dto_out:
+            if dto_out and dto_out.get("is_void", False):
                 dto_type_name = f"{dto_out['type_prefix']}DTO"
                 generate = dto_out.get("generate", True)
                 dto_dict[dto_type_name] = {
@@ -614,7 +614,7 @@ def generate_dto(
         print(f"Successfully wrote file {dto_file_path}")
 
 
-def generate_dto_files(manifest_file):
+def generate_dto_files(manifest_file, files_to_be_generated: dict[str, bool] = None):
     with open(manifest_file, "r") as stream:
         try:
             manifest_data = yaml.safe_load(stream)
@@ -730,7 +730,9 @@ def generate_dto_files(manifest_file):
         print(f"Successfully wrote file {dto_common_cmakelists_file}")
 
 
-def get_files_to_be_generated(manifest_file: str) -> list[str]:
+def get_files_to_be_generated(
+    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+) -> list[str]:
     """
     Get the list of files that need to be generated based on the manifest file
     """
@@ -761,12 +763,12 @@ def get_files_to_be_generated(manifest_file: str) -> list[str]:
         feature_by_name, entities_by_name
     )
 
-    files_to_be_generated = []
+    files = []
     for feature_name, feature_data in feature_ordered_dict.items():
         feature_snake_name = stringcase.snakecase(feature_name)
 
         for dto_type, dto_data in feature_data["dtos"].items():
-            files_to_be_generated.append(
+            files.append(
                 os.path.join(
                     dto_common_cmake_folder_path,
                     feature_snake_name,
@@ -778,18 +780,26 @@ def get_files_to_be_generated(manifest_file: str) -> list[str]:
             dto_common_cmake_folder_path, feature_snake_name, "CMakeLists.txt"
         )
 
-        files_to_be_generated.append(dto_cmakelists_file)
+        files.append(dto_cmakelists_file)
 
     # generate common cmakelists.txt
     dto_cmakelists_file = os.path.join(dto_common_cmake_folder_path, "CMakeLists.txt")
 
-    files_to_be_generated.append(dto_cmakelists_file)
+    files.append(dto_cmakelists_file)
 
-    return files_to_be_generated
+    # strip from files if the value in files_to_be_generated is False
+    if files_to_be_generated:
+        for path, generate in files_to_be_generated.items():
+            if not generate:
+                files.remove(path)
+
+    return files
 
 
 # generate the files into the preview folder
-def preview_dto_files(manifest_file: str):
+def preview_dto_files(
+    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+):
     manifest_preview_file = "temp/manifest_preview.yaml"
 
     # make a copy of the manifest file into temp/manifest_preview.yaml
@@ -808,7 +818,16 @@ def preview_dto_files(manifest_file: str):
     with open(manifest_preview_file, "w") as fh:
         yaml.dump(manifest, fh)
 
-    generate_dto_files(manifest_preview_file)
+    if files_to_be_generated:
+        # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
+
+        for path, _ in files_to_be_generated.items():
+            files_to_be_generated[path] = "preview/" + path.replace("..", "")
+
+        generate_dto_files(manifest_preview_file, files_to_be_generated)
+
+    else:
+        generate_dto_files(manifest_preview_file)
 
 
 # Main execution

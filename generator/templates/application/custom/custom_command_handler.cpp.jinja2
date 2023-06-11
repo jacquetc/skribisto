@@ -1,0 +1,121 @@
+#include "{{ command.snake_name }}_command_handler.h"
+#include "automapper/automapper.h"
+{% if validator_enabled %}#include "cqrs/{{ feature_snake_name }}/validators/{{ command.snake_name }}_command_validator.h"{% endif %}
+{% for repository in command.repositories %}
+#include "persistence/{{ repository.snake_name}}.h"{% endfor %}
+
+using namespace Contracts::DTO::{{ feature_pascal_name }};
+using namespace Contracts::Persistence;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Validators;
+using namespace Application::Features::{{ feature_pascal_name }}::Commands;
+
+{{ command.pascal_name }}CommandHandler::{{ command.pascal_name }}CommandHandler({% for repository in command.repositories %}
+QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository) {% if not loop.last %},{% endif %}{% endfor %})
+    : Handler(){% for repository in command.repositories %}, m_{{ repository.camel_name }}Repository({{ repository.camel_name }}Repository){% endfor %}
+{}
+
+Result<{{ command.dto_out_pascal_name }}>{{ command.pascal_name }}CommandHandler::handle(QPromise<Result<void> >   & progressPromise,
+                                                      const {{ command.pascal_name }}Command& request)
+{
+    Result<{{ command.dto_out_pascal_name }}> result;
+
+    try
+    {
+        result = handleImpl(request);
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ command.dto_out_pascal_name }}>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling {{ command.pascal_name }}Command:" << ex.what();
+    }
+    return result;
+}
+
+{% if command.restore %}
+Result<{{ command.dto_out_pascal_name }}>{{ command.pascal_name }}CommandHandler::restore()
+{
+    Result<{{ command.dto_out_pascal_name }}> result;
+
+    try
+    {
+        result = restoreImpl();
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ command.dto_out_pascal_name }}>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling {{ command.pascal_name }}Command restore:" << ex.what();
+    }
+    return result;
+}
+{% endif %}
+
+Result<{{ command.dto_out_pascal_name }}>{{ command.pascal_name }}CommandHandler::handleImpl(const {{ command.pascal_name }}Command& request)
+{
+    qDebug() << "{{ command.pascal_name }}CommandHandler::handleImpl called";
+    Domain::{{ feature_pascal_name }} {{ feature_snake_name }};
+    
+{% if command.restore %}
+    if (m_newState.isEmpty())
+    { {% endif %}
+    {% if validator_enabled %}
+        // Validate the create {{ feature_snake_name }} command using the validator
+        auto validator               = {{ command.pascal_name }}CommandValidator(m_repository);
+        Result<void> validatorResult = validator.validate(request.req);
+
+        if (validatorResult.hasError())
+        {
+            return Result<{{ command.dto_out_pascal_name }}>(validatorResult.error());
+        }
+    {% endif %}
+        
+        // implement logic here which will not be repeated on restore
+        {{ feature_snake_name }} = AutoMapper::AutoMapper::map<{{ command.dto.in.type_prefix }}DTO, Domain::{{ feature_pascal_name }}>(request.req);
+
+            
+{% if command.restore %}
+    }
+    else
+    {
+        // implement logic here to load already filled newState for restore
+        {{ feature_snake_name }} = AutoMapper::AutoMapper::map<{{ command.dto.in.type_prefix }}DTO, Domain::{{ feature_pascal_name }}>(request.req);
+
+    }
+{% endif %}
+   
+    m_repository->beginChanges();
+
+    // play here with the repositories
+    m_repository->saveChanges();
+  
+    // implement logic here to save to new state for restore
+    auto {{ feature_camel_name }}DTO = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ command.dto_out_pascal_name }}DTO>({{ feature_snake_name }}Result.value());
+
+{% if command.restore %}
+    m_newState = Result<{{ command.dto_out_pascal_name }}>({{ feature_camel_name }}DTO);
+{% endif %}
+
+    // emit signal
+    emit {{ command.camel_name }}Changed({{ command.dto_out_camel_name }});
+
+    // Return 
+    return Result<{{ command.dto_out_pascal_name }}>({{ command.dto_out_camel_name }});
+}
+
+{% if command.restore %}
+Result<{{ command.dto_out_pascal_name }}>{{ command.pascal_name }}CommandHandler::restoreImpl()
+{
+
+
+    auto {{ command.dto_out_camel_name }} = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>(value);
+
+    emit {{ command.camel_name }}Changed({{ command.dto_out_camel_name }});
+
+
+    return Result<{{ command.dto_out_pascal_name }}>({{ command.dto_out_camel_name }});
+}
+{% endif %}
+
+void CallOnce::registerMappings() 
+{
+
+}

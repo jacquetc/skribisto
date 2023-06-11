@@ -1,23 +1,23 @@
 #pragma once
-#include "chapter/chapter_controller.h"
+#include "{{ controller.feature_snake_name }}/{{ controller.feature_snake_name }}_controller.h"
 #include <QQmlEngine>
 
-struct ForeignChapterController
+struct Foreign{{ controller.feature_pascal_name }}Controller
 {
     Q_GADGET
-    QML_FOREIGN(Presenter::Chapter::ChapterController)
+    QML_FOREIGN(Presenter::{{ controller.feature_pascal_name }}::{{ controller.feature_pascal_name }}Controller)
     QML_SINGLETON
-    QML_NAMED_ELEMENT(ChapterController)
+    QML_NAMED_ELEMENT({{ controller.feature_pascal_name }}Controller)
 
 public:
 
     // Initialize this singleton instance with the given engine.
 
-    inline static Presenter::Chapter::ChapterController *s_singletonInstance = nullptr;
+    inline static Presenter::{{ controller.feature_pascal_name }}::{{ controller.feature_pascal_name }}Controller *s_singletonInstance = nullptr;
 
-    static Presenter::Chapter::ChapterController* create(QQmlEngine *, QJSEngine *engine)
+    static Presenter::{{ controller.feature_pascal_name }}::{{ controller.feature_pascal_name }}Controller* create(QQmlEngine *, QJSEngine *engine)
     {
-        s_singletonInstance = Presenter::Chapter::ChapterController::instance();
+        s_singletonInstance = Presenter::{{ controller.feature_pascal_name }}::{{ controller.feature_pascal_name }}Controller::instance();
 
         // The instance has to exist before it is used. We cannot replace it.
         Q_ASSERT(s_singletonInstance);

@@ -131,8 +131,15 @@ controller:
     - name: System
       generate: True
 
+qml:
+  mock_imports_folder_path: ../sources/gui/touch/mock_imports/
+  real_imports_folder_path: ../sources/gui/touch/real_imports/
+
+
 application:
   common_cmake_folder_path: ../sources/core/application
+  export: SKR_APPLICATION_EXPORT
+  export_header_file: application_global.h
   features:
     - name: Author
       DTO:
@@ -328,6 +335,8 @@ application:
               fields:
                 - type: QUrl
                   name: fileName
+            out:
+              is_void: true
         - name: LoadSystem
           generate: true
           entities:
@@ -342,6 +351,8 @@ application:
               fields:
                 - type: QUrl
                   name: fileName
+            out:
+              is_void: true
 
 DTOs:
   common_cmake_folder_path: ../sources/core/contracts.dto

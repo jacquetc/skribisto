@@ -8,12 +8,14 @@ struct ForeignSystemController
     QML_FOREIGN(Presenter::System::SystemController)
     QML_SINGLETON
     QML_NAMED_ELEMENT(SystemController)
-  public:
-    // Initialize this using myObject where you would previously
-    // call qmlRegisterSingletonInstance().
+
+public:
+
+    // Initialize this singleton instance with the given engine.
+
     inline static Presenter::System::SystemController *s_singletonInstance = nullptr;
 
-    static Presenter::System::SystemController *create(QQmlEngine *, QJSEngine *engine)
+    static Presenter::System::SystemController* create(QQmlEngine *, QJSEngine *engine)
     {
         s_singletonInstance = Presenter::System::SystemController::instance();
 
@@ -24,10 +26,8 @@ struct ForeignSystemController
         Q_ASSERT(engine->thread() == s_singletonInstance->thread());
 
         // There can only be one engine accessing the singleton.
-        if (s_engine)
-            Q_ASSERT(engine == s_engine);
-        else
-            s_engine = engine;
+        if (s_engine) Q_ASSERT(engine == s_engine);
+        else s_engine = engine;
 
         // Explicitly specify C++ ownership so that the engine doesn't delete
         // the instance.
@@ -36,6 +36,7 @@ struct ForeignSystemController
         return s_singletonInstance;
     }
 
-  private:
+private:
+
     inline static QJSEngine *s_engine = nullptr;
 };

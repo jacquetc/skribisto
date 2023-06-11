@@ -1,0 +1,58 @@
+#include "get_all_{{ feature_snake_name }}_request_handler.h"
+#include "automapper/automapper.h"
+#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+
+using namespace Application::Features::{{ feature_pascal_name }}::Queries;
+
+GetAll{{ feature_pascal_name }}RequestHandler::GetAll{{ feature_pascal_name }}RequestHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository>repository)
+    : Handler(), m_repository(repository)
+{}
+
+Result<QList<{{ feature_pascal_name }}DTO> >GetAll{{ feature_pascal_name }}RequestHandler::handle(QPromise<Result<void> >& progressPromise)
+{
+    qDebug() << "GetAll{{ feature_pascal_name }}RequestHandler::handle called";
+
+    Result<QList<{{ feature_pascal_name }}DTO> > result;
+
+    try
+    {
+        result = handleImpl();
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<QList<{{ feature_pascal_name }}DTO> >(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling GetAll{{ feature_pascal_name }}Request:" << ex.what();
+    }
+    return result;
+}
+
+Result<QList<{{ feature_pascal_name }}DTO> >GetAll{{ feature_pascal_name }}RequestHandler::handleImpl()
+{
+    qDebug() << "GetAll{{ feature_pascal_name }}RequestHandler::handleImpl called";
+
+    // do
+    auto {{ feature_snake_name }}Result = m_repository->getAll();
+
+    if ({{ feature_snake_name }}Result.isError())
+    {
+        return Result<QList<{{ feature_pascal_name }}DTO> >({{ feature_snake_name }}Result.error());
+    }
+
+    // map
+    QList<{{ feature_pascal_name }}DTO> dtoList;
+
+    for (const Domain::{{ feature_pascal_name }}& {{ feature_snake_name }} : {{ feature_snake_name }}Result.value())
+    {
+        auto dto = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>({{ feature_snake_name }});
+        dtoList.append(dto);
+    }
+
+    qDebug() << "GetAll{{ feature_pascal_name }}RequestHandler::handleImpl done";
+
+    return Result<QList<{{ feature_pascal_name }}DTO> >(dtoList);
+}
+
+void CallOnce::registerMappings() 
+{
+    AutoMapper::AutoMapper::registerMapping<Domain::{{ feature_pascal_name }}, Contracts::DTO::{{ feature_pascal_name }}::{{ feature_pascal_name }}DTO>(true);
+}

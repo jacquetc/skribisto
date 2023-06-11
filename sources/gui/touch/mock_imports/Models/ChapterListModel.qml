@@ -16,7 +16,4 @@ ListModel {
         title: "Chapter 4"
     }
 
-    function create(createChapterDTO) {
-        append(createChapterDTO.title)
-    }
 }

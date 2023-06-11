@@ -1,0 +1,38 @@
+#pragma once
+
+#include "{{ export_header_file }}"
+#include "{{ feature_snake_name }}_dto.h"
+#include "handler.h"
+#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+
+using namespace Contracts::DTO::{{ feature_pascal_name }};
+using namespace Contracts::Persistence;
+
+namespace Application::Features::{{ feature_pascal_name }}::Queries
+{
+class {{ export }} GetAll{{ feature_pascal_name }}RequestHandler : public Handler
+{
+    Q_OBJECT
+  public:
+    GetAll{{ feature_pascal_name }}RequestHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository> repository);
+    Result<QList<{{ feature_pascal_name }}DTO>> handle(QPromise<Result<void>> &progressPromise);
+
+  private:
+    QSharedPointer<Interface{{ feature_pascal_name }}Repository> m_repository;
+    Result<QList<{{ feature_pascal_name }}DTO>> handleImpl();
+};
+
+
+struct CallOnce
+{
+    CallOnce()
+    {
+        registerMappings();
+    }
+    void registerMappings();
+
+};
+// This line will ensure the function is called once at the start of the program.
+static CallOnce callOnceInstance;
+
+} // namespace Application::Features::{{ feature_pascal_name }}::Queries

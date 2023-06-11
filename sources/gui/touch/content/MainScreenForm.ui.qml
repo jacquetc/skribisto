@@ -8,6 +8,7 @@ Check out https://doc.qt.io/qtcreator/creator-quick-ui-forms.html for details on
 */
 import QtQuick 6.4
 import QtQuick.Controls 6.4
+import QtQuick.Layouts
 import Skribisto
 
 Rectangle {
@@ -18,7 +19,7 @@ Rectangle {
     property alias listView: listView
     property alias button: button
 
-    Row {
+    RowLayout {
         id: row
         anchors.fill: parent
 

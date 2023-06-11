@@ -1,8 +1,8 @@
 #pragma once
 
 #include "domain_global.h"
-#include <QString>
 #include "scene.h"
+#include <QString>
 
 #include "entity.h"
 

@@ -1,0 +1,50 @@
+#pragma once
+
+#include "{{ export_header_file }}"
+#include "{{ query.snake_name }}_dto.h"
+#include "cqrs/{{ feature_snake_name }}/querys/{{ query.snake_name }}_query.h"
+#include "handler.h"
+#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+#include "result.h"
+
+using namespace Contracts::DTO::{{ feature_pascal_name }};
+using namespace Contracts::Persistence;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Querys;
+
+namespace Application::Features::{{ feature_pascal_name }}::Querys
+{
+class {{ export }} {{ query.pascal_name }}QueryHandler : public Handler
+{
+    Q_OBJECT
+  public:
+    {{ query.pascal_name }}QueryHandler({% for repository in query.repositories %}
+QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository) {% if not loop.last %},{% endif %}{% endfor %});
+
+    Result<{{ query.dto_out_pascal_name }}> handle(QPromise<Result<void>> &progressPromise, const {{ query.pascal_name }}Query &request);
+
+  signals:
+    void {{ query.camel_name }}Changed(Contracts::DTO::{{ feature_pascal_name }}::{{ query.dto_out_pascal_name }}DTO {{ query.dto_out_camel_name }});
+
+  private:
+  {% for repository in query.repositories %}
+    QSharedPointer<Interface{{ repository.pascal_name }}Repository> m_{{ repository.camel_name }}Repository;
+  {%- endfor %}
+    Result<{{ query.dto_out_pascal_name }}> handleImpl(const {{ query.pascal_name }}Query &request);
+
+
+};
+
+struct CallOnce
+{
+    CallOnce()
+    {
+        registerMappings();
+    }
+    void registerMappings();
+
+};
+// This line will ensure the function is called once at the start of the program.
+static CallOnce callOnceInstance;
+
+
+} // namespace Application::Features::{{ feature_pascal_name }}::Querys

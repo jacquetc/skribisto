@@ -1,0 +1,133 @@
+#include "update_{{ feature_snake_name }}_command_handler.h"
+#include "automapper/automapper.h"
+#include "cqrs/{{ feature_snake_name }}/validators/update_{{ feature_snake_name }}_command_validator.h"
+#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+
+using namespace Contracts::DTO::{{ feature_pascal_name }};
+using namespace Contracts::Persistence;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Commands;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Validators;
+using namespace Application::Features::{{ feature_pascal_name }}::Commands;
+
+Update{{ feature_pascal_name }}CommandHandler::Update{{ feature_pascal_name }}CommandHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository>repository)
+    : Handler(), m_repository(repository)
+{}
+
+Result<{{ feature_pascal_name }}DTO>Update{{ feature_pascal_name }}CommandHandler::handle(QPromise<Result<void> >   & progressPromise,
+                                                      const Update{{ feature_pascal_name }}Command& request)
+{
+    Result<{{ feature_pascal_name }}DTO> result;
+
+    try
+    {
+        result = handleImpl(request);
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ feature_pascal_name }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling Update{{ feature_pascal_name }}Command:" << ex.what();
+    }
+    return result;
+}
+
+Result<{{ feature_pascal_name }}DTO>Update{{ feature_pascal_name }}CommandHandler::restore()
+{
+    Result<{{ feature_pascal_name }}DTO> result;
+
+    try
+    {
+        result = restoreImpl();
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ feature_pascal_name }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling Update{{ feature_pascal_name }}Command restore:" << ex.what();
+    }
+    return result;
+}
+
+Result<{{ feature_pascal_name }}DTO>Update{{ feature_pascal_name }}CommandHandler::handleImpl(const Update{{ feature_pascal_name }}Command& request)
+{
+    qDebug() << "Update{{ feature_pascal_name }}CommandHandler::handleImpl called with id" << request.req.id();
+
+    // validate:
+    auto validator               = Update{{ feature_pascal_name }}CommandValidator(m_repository);
+    Result<void> validatorResult = validator.validate(request.req);
+
+    if (validatorResult.hasError())
+    {
+        return Result<{{ feature_pascal_name }}DTO>(validatorResult.error());
+    }
+
+    // map
+    auto {{ feature_snake_name }} = AutoMapper::AutoMapper::map<Update{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>(request.req);
+
+    // set update timestamp only on first pass
+    if (m_newState.isEmpty())
+    {
+        {{ feature_snake_name }}.setUpdateDate(QDateTime::currentDateTime());
+    }
+
+    // save old state
+    if (m_newState.isEmpty())
+    {
+        Result<Domain::{{ feature_pascal_name }}> saveResult = m_repository->get(request.req.id());
+
+        if (saveResult.hasError())
+        {
+            qDebug() << "Error getting {{ feature_snake_name }} from repository:" << saveResult.error().message();
+            return Result<{{ feature_pascal_name }}DTO>(saveResult.error());
+        }
+
+        // map
+        m_newState = Result<{{ feature_pascal_name }}DTO>(AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>(saveResult.value()));
+    }
+
+    // do
+    auto {{ feature_snake_name }}Result = m_repository->update(std::move({{ feature_snake_name }}));
+
+    if ({{ feature_snake_name }}Result.hasError())
+    {
+        return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.error());
+    }
+
+    // map
+    auto {{ feature_snake_name }}Dto = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.value());
+
+    emit {{ feature_snake_name }}Updated({{ feature_snake_name }}Dto);
+
+    qDebug() << "Update{{ feature_pascal_name }}CommandHandler::handleImpl done";
+
+    return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Dto);
+}
+
+Result<{{ feature_pascal_name }}DTO>Update{{ feature_pascal_name }}CommandHandler::restoreImpl()
+{
+    qDebug() << "Update{{ feature_pascal_name }}CommandHandler::restoreImpl called with id" << m_newState.value().uuid();
+
+    // map
+    auto {{ feature_snake_name }} = AutoMapper::AutoMapper::map<{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>(m_newState.value());
+
+    // do
+    auto {{ feature_snake_name }}Result = m_repository->update(std::move({{ feature_snake_name }}));
+
+    if ({{ feature_snake_name }}Result.hasError())
+    {
+        return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.error());
+    }
+
+    // map
+    auto {{ feature_snake_name }}Dto = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.value());
+
+    emit {{ feature_snake_name }}Updated({{ feature_snake_name }}Dto);
+
+    qDebug() << "Update{{ feature_pascal_name }}CommandHandler::restoreImpl done";
+
+    return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Dto);
+}
+
+void CallOnce::registerMappings() 
+{
+    AutoMapper::AutoMapper::registerMapping<Domain::{{ feature_pascal_name }}, Contracts::DTO::{{ feature_pascal_name }}::{{ feature_pascal_name }}DTO>(true);
+    AutoMapper::AutoMapper::registerMapping<Contracts::DTO::{{ feature_pascal_name }}::Update{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>();
+}

@@ -7,11 +7,15 @@ import shutil
 from pathlib import Path
 
 
-def generate_controller_files(manifest_file: str):
+def generate_controller_files(
+    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+):
     pass
 
 
-def get_files_to_be_generated(manifest_file: str) -> list[str]:
+def get_files_to_be_generated(
+    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+) -> list[str]:
     """
     Get the list of files that need to be generated based on the manifest file
     """
@@ -22,17 +26,17 @@ def get_files_to_be_generated(manifest_file: str) -> list[str]:
     folder_path = manifest["controller"]["folder_path"]
 
     # Get the list of files to be generated
-    files_to_be_generated = []
+    files = []
     for controller in manifest["controller"]["list"]:
         controller_name = controller["name"]
         if controller.get("generate", True):
-            files_to_be_generated.append(
+            files.append(
                 os.path.join(
                     folder_path,
                     f"{stringcase.snakecase(controller_name)}_controller.h",
                 )
             )
-            files_to_be_generated.append(
+            files.append(
                 os.path.join(
                     folder_path,
                     f"{stringcase.snakecase(controller_name)}_controller.cpp",
@@ -41,13 +45,21 @@ def get_files_to_be_generated(manifest_file: str) -> list[str]:
 
     # add list_file:
     list_file = manifest["controller"]["list_file"]
-    files_to_be_generated.append(list_file)
+    files.append(list_file)
 
-    return files_to_be_generated
+    # strip from files if the value in files_to_be_generated is False
+    if files_to_be_generated:
+        for path, generate in files_to_be_generated.items():
+            if not generate:
+                files.remove(path)
+
+    return files
 
 
 # generate the files into the preview folder
-def preview_controller_files(manifest_file: str):
+def preview_controller_files(
+    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+):
     manifest_preview_file = "temp/manifest_preview.yaml"
 
     # make a copy of the manifest file into temp/manifest_preview.yaml
@@ -69,7 +81,16 @@ def preview_controller_files(manifest_file: str):
     with open(manifest_preview_file, "w") as fh:
         yaml.dump(manifest, fh)
 
-    generate_controller_files(manifest_preview_file)
+    if files_to_be_generated:
+        # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
+
+        for path, _ in files_to_be_generated.items():
+            files_to_be_generated[path] = "preview/" + path.replace("..", "")
+
+        generate_controller_files(manifest_preview_file, files_to_be_generated)
+
+    else:
+        generate_controller_files(manifest_preview_file)
 
 
 # Main execution

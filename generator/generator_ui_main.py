@@ -12,6 +12,9 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QMessageBox,
     QCheckBox,
+    QListView,
+    QTextEdit,
+    QSizePolicy,
 )
 from PySide6.QtCore import (
     Qt,
@@ -19,6 +22,8 @@ from PySide6.QtCore import (
     QModelIndex,
     QCoreApplication,
     QSettings,
+    QFileSystemWatcher,
+    QTimer,
 )
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 import sys
@@ -33,6 +38,7 @@ import repositories_generator
 import cqrs_generator
 import controller_generator
 import application_generator
+import qml_generator
 
 # this little application is a GUI for the generator
 # It allows you to select which part to generate by clicking on the tree view on checkboxes at the "generate" items
@@ -52,9 +58,23 @@ class MainWindow(QMainWindow):
         self.temp_manifest_file = "temp/manifest_temp.yaml"
         self.settings_file = "temp/settings.yaml"
 
+        # manifest file watcher
+        self.watcher = QFileSystemWatcher([self.manifest_file])
+        self.watcher.fileChanged.connect(self.on_manifest_file_changed)
+
+        self.timer = QTimer()
+        self.timer.setInterval(1000)  # check every second
+        self.timer.timeout.connect(self.check_manifest_file)
+        self.timer.start()
+
+        self.last_manifest_mtime = os.path.getmtime(self.manifest_file)
+
+        # geometry
+
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle("Qt Clean Architecture Generator")
 
+        # UI
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.central_layout = QVBoxLayout()
@@ -66,6 +86,8 @@ class MainWindow(QMainWindow):
         self.tree = QTreeView(self.splitter)
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self.open_menu)
+
+        self.file_list_view = CheckableFileListView(self.splitter)
 
         self.text_box = QPlainTextEdit(self.splitter)
         self.text_box.setReadOnly(True)
@@ -92,6 +114,12 @@ class MainWindow(QMainWindow):
         self.btn_clear_preview_folder = QPushButton("Clear Preview Folder", self)
         self.btn_clear_preview_folder.clicked.connect(self.clear_preview_folder)
         self.tools_layout.addWidget(self.btn_clear_preview_folder)
+
+        # Refresh
+
+        self.btn_refresh = QPushButton("Refresh", self)
+        self.btn_refresh.clicked.connect(self.refresh)
+        self.tools_layout.addWidget(self.btn_refresh)
 
         self.button_layout.addWidget(self.tools_group_box)
 
@@ -223,6 +251,27 @@ class MainWindow(QMainWindow):
 
         self.button_layout.addWidget(self.generate_application_group_box)
 
+        # Generate QML
+
+        self.generate_qml_group_box = QGroupBox()
+        self.generate_qml_group_box.setTitle("Generate QML")
+        self.generate_qml_layout = QVBoxLayout()
+        self.generate_qml_group_box.setLayout(self.generate_qml_layout)
+
+        self.btn_list_qml = QPushButton("List", self)
+        self.btn_list_qml.clicked.connect(self.list_qml)
+        self.generate_qml_layout.addWidget(self.btn_list_qml)
+
+        self.btn_preview_qml = QPushButton("Preview", self)
+        self.btn_preview_qml.clicked.connect(self.preview_qml)
+        self.generate_qml_layout.addWidget(self.btn_preview_qml)
+
+        self.btn_generate_qml = QPushButton("Generate", self)
+        self.btn_generate_qml.clicked.connect(self.generate_qml)
+        self.generate_qml_layout.addWidget(self.btn_generate_qml)
+
+        self.button_layout.addWidget(self.generate_qml_group_box)
+
         # generate all
 
         self.generate_all_group_box = QGroupBox()
@@ -257,62 +306,116 @@ class MainWindow(QMainWindow):
         self.load_data()
         self.load_settings()
 
+    def on_manifest_file_changed(self, path):
+        QMessageBox.information(
+            None, "File Changed", f"The file {path} has been changed. Refreshing now..."
+        )
+        self.refresh()
+
+    def check_manifest_file(self):
+        new_mtime = os.path.getmtime(self.manifest_file)
+        if new_mtime != self.last_manifest_mtime:
+            self.on_manifest_file_changed(self.manifest_file)
+            self.last_manifest_mtime = new_mtime
+
     def clear_preview_folder(self):
         preview_path = Path(__file__).resolve().parent / "preview"
         if preview_path.exists():
             shutil.rmtree(preview_path)
         os.mkdir(preview_path)
 
+    def refresh(self):
+        self.clear_preview_folder()
+        self.create_temp_manifest_file()
+        self.load_data()
+        self.load_settings()
+
     # all
 
     def list_all(self):
         list = []
-        list.append(
+        list.extend(
             entities_generator.get_files_to_be_generated(self.temp_manifest_file)
         )
-        list.append(dto_generator.get_files_to_be_generated(self.temp_manifest_file))
-        list.append(
+        list.extend(dto_generator.get_files_to_be_generated(self.temp_manifest_file))
+        list.extend(
             repositories_generator.get_files_to_be_generated(self.temp_manifest_file)
         )
-        list.append(cqrs_generator.get_files_to_be_generated(self.temp_manifest_file))
-        list.append(
+        list.extend(cqrs_generator.get_files_to_be_generated(self.temp_manifest_file))
+        list.extend(
             controller_generator.get_files_to_be_generated(self.temp_manifest_file)
         )
-        self.text_box.setPlainText("All files to be generated:\n\n")
+        list.extend(
+            application_generator.get_files_to_be_generated(self.temp_manifest_file)
+        )
+        self.text_box.setPlainText("All files:\n\n")
         self.text_box.appendPlainText("\n".join(list))
+        self.file_list_view.list_files(list)
 
     def preview_all(self):
         self.clear_preview_folder()
-
-        entities_generator.preview_entity_files(self.temp_manifest_file)
-        dto_generator.preview_dto_files(self.temp_manifest_file)
-        repositories_generator.preview_repository_files(self.temp_manifest_file)
-        cqrs_generator.preview_cqrs_files(self.temp_manifest_file)
-        controller_generator.preview_controller_files(self.temp_manifest_file)
+        self.list_all()
+        entities_generator.preview_entity_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
+        dto_generator.preview_dto_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
+        repositories_generator.preview_repository_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
+        cqrs_generator.preview_cqrs_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
+        controller_generator.preview_controller_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
+        application_generator.preview_application_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
 
         self.text_box.setPlainText(
             f"Preview folder cleared beforehand. All files previewed at {Path(__file__).resolve().parent}/preview/ folder"
         )
 
     def generate_all(self):
-        entities_generator.generate_entity_files(self.temp_manifest_file)
-        dto_generator.generate_dto_files(self.temp_manifest_file)
-        repositories_generator.generate_repository_files(self.temp_manifest_file)
-        cqrs_generator.generate_cqrs_files(self.temp_manifest_file)
-        controller_generator.generate_controller_files(self.temp_manifest_file)
+        if self.display_overwrite_confirmation():
+            self.list_all()
+            entities_generator.generate_entity_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            dto_generator.generate_dto_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            repositories_generator.generate_repository_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            cqrs_generator.generate_cqrs_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            controller_generator.generate_controller_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            application_generator.generate_application_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
 
-        self.text_box.setPlainText("All files generated")
+            self.text_box.setPlainText("All files generated")
 
     # entities functions
 
     def list_entities(self):
         list = entities_generator.get_files_to_be_generated(self.temp_manifest_file)
         self.text_box.clear()
-        self.text_box.setPlainText("Entities to be generated:\n\n")
+        self.text_box.setPlainText("Entities:\n\n")
         self.text_box.appendPlainText("\n".join(list))
+        self.file_list_view.list_files(list)
 
     def preview_entities(self):
-        entities_generator.preview_entity_files(self.temp_manifest_file)
+        self.list_entities()
+        entities_generator.preview_entity_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
         self.text_box.clear()
         self.text_box.setPlainText(
             f'Preview folder NOT cleared beforehand. Do it if needed by clicking on "Clear Preview Folder" button.'
@@ -322,20 +425,32 @@ class MainWindow(QMainWindow):
         )
 
     def generate_entities(self):
-        entities_generator.generate_entity_files(self.temp_manifest_file)
-        self.text_box.clear()
-        self.text_box.setPlainText("Entities generated")
+        self.list_entities()
+        if self.display_overwrite_confirmation(
+            entities_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+        ):
+            entities_generator.generate_entity_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            self.text_box.clear()
+            self.text_box.setPlainText("Entities generated")
 
     # DTOs functions
 
     def list_dtos(self):
         list = dto_generator.get_files_to_be_generated(self.temp_manifest_file)
         self.text_box.clear()
-        self.text_box.setPlainText("DTOs to be generated:\n\n")
+        self.text_box.setPlainText("DTOs:\n\n")
         self.text_box.appendPlainText("\n".join(list))
+        self.file_list_view.list_files(list)
 
     def preview_dtos(self):
-        dto_generator.preview_dto_files(self.temp_manifest_file)
+        self.list_dtos()
+        dto_generator.preview_dto_files(
+            self.temp_manifest_file, self.file_list_view.get_selected_files()
+        )
         self.text_box.clear()
         self.text_box.setPlainText(
             f'Preview folder NOT cleared beforehand. Do it if needed by clicking on "Clear Preview Folder" button.'
@@ -345,20 +460,32 @@ class MainWindow(QMainWindow):
         )
 
     def generate_dtos(self):
-        dto_generator.generate_dto_files(self.temp_manifest_file)
-        self.text_box.clear()
-        self.text_box.setPlainText("DTOs generated")
+        self.list_dtos()
+        if self.display_overwrite_confirmation(
+            dto_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+        ):
+            dto_generator.generate_dto_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            self.text_box.clear()
+            self.text_box.setPlainText("DTOs generated")
 
     # Repositories functions
 
     def list_repositories(self):
         list = repositories_generator.get_files_to_be_generated(self.temp_manifest_file)
         self.text_box.clear()
-        self.text_box.setPlainText("Repositories to be generated:\n\n")
+        self.text_box.setPlainText("Repositories:\n\n")
         self.text_box.appendPlainText("\n".join(list))
+        self.file_list_view.list_files(list)
 
     def preview_repositories(self):
-        repositories_generator.preview_repository_files(self.temp_manifest_file)
+        self.list_repositories()
+        repositories_generator.preview_repository_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
         self.text_box.clear()
         self.text_box.setPlainText(
             f'Preview folder NOT cleared beforehand. Do it if needed by clicking on "Clear Preview Folder" button.'
@@ -368,19 +495,32 @@ class MainWindow(QMainWindow):
         )
 
     def generate_repositories(self):
-        repositories_generator.generate_repositories_files(self.temp_manifest_file)
-        self.text_box.clear()
-        self.text_box.setPlainText("Repositories generated")
+        self.list_repositories()
+        if self.display_overwrite_confirmation(
+            repositories_generator.get_files_to_be_generated(
+                self.temp_manifest_file,
+                self.file_list_view.gfetch_file_stateset_selected_files(),
+            )
+        ):
+            repositories_generator.generate_repositories_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            self.text_box.clear()
+            self.text_box.setPlainText("Repositories generated")
 
     # CQRS functions
 
     def list_cqrs(self):
         list = cqrs_generator.get_files_to_be_generated(self.temp_manifest_file)
-        self.text_box.setPlainText("CQRS to be generated:\n\n")
+        self.text_box.setPlainText("CQRS:\n\n")
         self.text_box.appendPlainText("\n".join(list))
+        self.file_list_view.list_files(list)
 
     def preview_cqrs(self):
-        cqrs_generator.preview_cqrs_files(self.temp_manifest_file)
+        self.list_cqrs()
+        cqrs_generator.preview_cqrs_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
         self.text_box.clear()
         self.text_box.setPlainText(
             f'Preview folder NOT cleared beforehand. Do it if needed by clicking on "Clear Preview Folder" button.'
@@ -390,9 +530,17 @@ class MainWindow(QMainWindow):
         )
 
     def generate_cqrs(self):
-        cqrs_generator.generate_cqrs_files(self.temp_manifest_file)
-        self.text_box.clear()
-        self.text_box.setPlainText("CQRS generated")
+        self.list_cqrs()
+        if self.display_overwrite_confirmation(
+            cqrs_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+        ):
+            cqrs_generator.generate_cqrs_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            self.text_box.clear()
+            self.text_box.setPlainText("CQRS generated")
 
     # Controllers functions
 
@@ -401,9 +549,13 @@ class MainWindow(QMainWindow):
         self.text_box.clear()
         self.text_box.setPlainText("Controllers to be generated:\n\n")
         self.text_box.appendPlainText("\n".join(list))
+        self.file_list_view.list_files(list)
 
     def preview_controllers(self):
-        controller_generator.preview_controller_files(self.temp_manifest_file)
+        self.list_controllers()
+        controller_generator.preview_controller_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
         self.text_box.clear()
         self.text_box.setPlainText(
             f'Preview folder NOT cleared beforehand. Do it if needed by clicking on "Clear Preview Folder" button.'
@@ -413,20 +565,31 @@ class MainWindow(QMainWindow):
         )
 
     def generate_controllers(self):
-        controller_generator.generate_controller_files(self.temp_manifest_file)
-        self.text_box.clear()
-        self.text_box.setPlainText("Controllers generated")
+        self.list_controllers()
+        if self.display_overwrite_confirmation(
+            controller_generator.get_files_to_be_generated(self.temp_manifest_file),
+            self.file_list_view.fetch_file_states(),
+        ):
+            controller_generator.generate_controller_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            self.text_box.clear()
+            self.text_box.setPlainText("Controllers generated")
 
     # Application functions
 
     def list_application(self):
         list = application_generator.get_files_to_be_generated(self.temp_manifest_file)
         self.text_box.clear()
-        self.text_box.setPlainText("Application to be generated:\n\n")
+        self.text_box.setPlainText("Application:\n\n")
         self.text_box.appendPlainText("\n".join(list))
+        self.file_list_view.list_files(list)
 
     def preview_application(self):
-        application_generator.preview_application_files(self.temp_manifest_file)
+        self.list_application()
+        application_generator.preview_application_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
         self.text_box.clear()
         self.text_box.setPlainText(
             f'Preview folder NOT cleared beforehand. Do it if needed by clicking on "Clear Preview Folder" button.'
@@ -436,9 +599,83 @@ class MainWindow(QMainWindow):
         )
 
     def generate_application(self):
-        application_generator.generate_application_files(self.temp_manifest_file)
+        self.list_application()
+        if self.display_overwrite_confirmation(
+            application_generator.get_files_to_be_generated(self.temp_manifest_file),
+            self.file_list_view.fetch_file_states(),
+        ):
+            application_generator.generate_application_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            self.text_box.clear()
+            self.text_box.setPlainText("Application generated")
+
+    # QML functions
+
+    def list_qml(self):
+        list = qml_generator.get_files_to_be_generated(self.temp_manifest_file)
         self.text_box.clear()
-        self.text_box.setPlainText("Application generated")
+        self.text_box.setPlainText("QML:\n\n")
+        self.text_box.appendPlainText("\n".join(list))
+        self.file_list_view.list_files(list)
+
+    def preview_qml(self):
+        self.list_qml()
+        qml_generator.preview_qml_files(
+            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+        )
+        self.text_box.clear()
+        self.text_box.setPlainText(
+            f'Preview folder NOT cleared beforehand. Do it if needed by clicking on "Clear Preview Folder" button.'
+        )
+        self.text_box.appendPlainText(
+            f" QML files previewed at {Path(__file__).resolve().parent}/preview/ folder"
+        )
+
+    def generate_qml(self):
+        self.list_qml()
+        if self.display_overwrite_confirmation(
+            qml_generator.get_files_to_be_generated(self.temp_manifest_file),
+            self.file_list_view.fetch_file_states(),
+        ):
+            qml_generator.generate_qml_files(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
+            self.text_box.clear()
+            self.text_box.setPlainText("QML generated")
+
+    def display_overwrite_confirmation(self, files: list):
+        existing_files = [file for file in files if os.path.isfile(file)]
+
+        if not existing_files:  # if the list is empty
+            return False
+
+        # format the file list as a string for display
+        fileList = "\n".join(existing_files)
+
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Warning)
+        msgBox.setText(
+            f"The following files exist and will be overwritten:\nAre you sure you want to continue?"
+        )
+        msgBox.setWindowTitle("Overwrite Confirmation")
+        msgBox.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+        msgBox.setDefaultButton(QMessageBox.Cancel)
+
+        # adjust the sizePolicy to control QMessageBox's size
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(1)
+        msgBox.setSizePolicy(sizePolicy)
+        msgBox.setInformativeText(
+            f"\n{fileList}\n"
+        )  # required for the sizePolicy to be considered
+        msgBox.adjustSize()
+
+        returnValue = msgBox.exec()
+        if returnValue == QMessageBox.Ok:
+            return True
+        else:
+            return False
 
     # Expand all
 
@@ -682,8 +919,92 @@ def main():
     if show_dialog:
         window.show_launch_dialog()
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
+
+# List view with checkboxes
+
+
+class CheckableFileListView(QWidget):
+    def __init__(self, parent=None):
+        super(CheckableFileListView, self).__init__(parent)
+        self.settings = QSettings()
+
+        self.fileListView = QListView(self)
+        self.model = QStandardItemModel(self.fileListView)
+
+        self.checkAllButton = QPushButton("Check All", self)
+        self.checkAllButton.clicked.connect(self.check_all)
+
+        self.uncheckAllButton = QPushButton("Uncheck All", self)
+        self.uncheckAllButton.clicked.connect(self.uncheck_all)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.fileListView)
+        layout.addWidget(self.checkAllButton)
+        layout.addWidget(self.uncheckAllButton)
+
+        self.fileListView.setModel(self.model)
+
+    def list_files(self, file_paths):
+        self.model.clear()
+
+        for file_path in file_paths:
+            item = QStandardItem(file_path)
+            item.setCheckable(True)
+
+            # Load saved check state, default to checked
+
+            check_state_bool = self.settings.value(
+                f"file_check_state/{file_path}", Qt.Checked, type=bool
+            )
+            if check_state_bool:
+                check_state = Qt.Checked
+            else:
+                check_state = Qt.Unchecked
+
+            item.setCheckState(check_state)
+
+            self.model.appendRow(item)
+
+        # Connect to the itemChanged signal
+        self.model.itemChanged.connect(self.handle_item_changed)
+
+    def handle_item_changed(self, item):
+        # Save the check state of the item
+        self.settings.setValue(
+            f"file_check_state/{item.text()}", item.checkState() == Qt.Checked
+        )
+
+    def fetch_file_states(self):
+        file_states = {}
+
+        for row in range(self.model.rowCount()):
+            item = self.model.item(row)
+            file_states[item.text()] = item.checkState() == Qt.Checked
+
+        return file_states
+
+    def get_selected_files(self):
+        selected_files = []
+        for row in range(self.model.rowCount()):
+            item = self.model.item(row)
+            if item.checkState() == Qt.Checked:
+                selected_files.append(item.text())
+        return selected_files
+
+    def check_all(self):
+        for row in range(self.model.rowCount()):
+            item = self.model.item(row)
+            item.setCheckState(Qt.Checked)
+
+    def uncheck_all(self):
+        for row in range(self.model.rowCount()):
+            item = self.model.item(row)
+            item.setCheckState(Qt.Unchecked)
+
+
+# This is the entry point of the script
 
 if __name__ == "__main__":
     full_path = Path(__file__).resolve().parent

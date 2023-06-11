@@ -1,0 +1,72 @@
+#include "{{ query.snake_name }}_query_handler.h"
+#include "automapper/automapper.h"
+{% if validator_enabled %}#include "cqrs/{{ feature_snake_name }}/validators/{{ query.snake_name }}_query_validator.h"{% endif %}
+{% for repository in query.repositories %}
+#include "persistence/{{ repository.snake_name}}.h"{% endfor %}
+
+using namespace Contracts::DTO::{{ feature_pascal_name }};
+using namespace Contracts::Persistence;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Validators;
+using namespace Application::Features::{{ feature_pascal_name }}::Querys;
+
+{{ query.pascal_name }}QueryHandler::{{ query.pascal_name }}QueryHandler({% for repository in query.repositories %}
+QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository) {% if not loop.last %},{% endif %}{% endfor %})
+    : Handler(){% for repository in query.repositories %}, m_{{ repository.camel_name }}Repository({{ repository.camel_name }}Repository){% endfor %}
+{}
+
+Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::handle(QPromise<Result<void> >   & progressPromise,
+                                                      const {{ query.pascal_name }}Query& request)
+{
+    Result<{{ query.dto_out_pascal_name }}> result;
+
+    try
+    {
+        result = handleImpl(request);
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ query.dto_out_pascal_name }}>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling {{ query.pascal_name }}Query:" << ex.what();
+    }
+    return result;
+}
+
+Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::handleImpl(const {{ query.pascal_name }}Query& request)
+{
+    qDebug() << "{{ query.pascal_name }}QueryHandler::handleImpl called";
+    Domain::{{ feature_pascal_name }} {{ feature_snake_name }};
+{% if validator_enabled %}
+    // Validate the query using the validator
+    auto validator               = {{ query.pascal_name }}QueryValidator(m_repository);
+    Result<void> validatorResult = validator.validate(request.req);
+
+    if (validatorResult.hasError())
+    {
+        return Result<{{ query.dto_out_pascal_name }}>(validatorResult.error());
+    }
+{% endif %}
+
+    // implement logic here 
+    {{ feature_snake_name }} = AutoMapper::AutoMapper::map<{{ query.dto_out_pascal_name }}, Domain::{{ feature_pascal_name }}>(request.req);
+
+   
+
+
+    // play here with the repositories
+
+  
+
+    auto {{ feature_camel_name }}DTO = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ query.dto_out_pascal_name }}>({{ feature_snake_name }}Result.value());
+
+
+    // emit signal
+    emit {{ query.camel_name }}Changed({{ query.dto_out_camel_name }});
+
+    // Return 
+    return Result<{{ query.dto_out_pascal_name }}>({{ query.dto_out_camel_name }});
+}
+
+void CallOnce::registerMappings() 
+{
+
+}

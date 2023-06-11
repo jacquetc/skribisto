@@ -1,23 +1,23 @@
 #pragma once
-#include "chapter/chapter_controller.h"
+#include "scene/scene_controller.h"
 #include <QQmlEngine>
 
-struct ForeignChapterController
+struct ForeignSceneController
 {
     Q_GADGET
-    QML_FOREIGN(Presenter::Chapter::ChapterController)
+    QML_FOREIGN(Presenter::Scene::SceneController)
     QML_SINGLETON
-    QML_NAMED_ELEMENT(ChapterController)
+    QML_NAMED_ELEMENT(SceneController)
 
 public:
 
     // Initialize this singleton instance with the given engine.
 
-    inline static Presenter::Chapter::ChapterController *s_singletonInstance = nullptr;
+    inline static Presenter::Scene::SceneController *s_singletonInstance = nullptr;
 
-    static Presenter::Chapter::ChapterController* create(QQmlEngine *, QJSEngine *engine)
+    static Presenter::Scene::SceneController* create(QQmlEngine *, QJSEngine *engine)
     {
-        s_singletonInstance = Presenter::Chapter::ChapterController::instance();
+        s_singletonInstance = Presenter::Scene::SceneController::instance();
 
         // The instance has to exist before it is used. We cannot replace it.
         Q_ASSERT(s_singletonInstance);

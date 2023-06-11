@@ -1,0 +1,51 @@
+pragma Singleton
+
+import QtQuick
+
+QtObject {
+{% if crud_enabled %}
+{% if create_enabled %}
+    function getCreate{{ controller.feature_pascal_name }}DTO() {
+        return {
+            "title": "{{ controller.feature_pascal_name }} 1"
+        }
+    }
+    signal {{ controller.feature_camel_name }}Created(var dto)
+    function create(dto) {
+        dto["id"] = 1
+        {{ controller.feature_camel_name }}Created(dto)
+    }
+{% endif -%}
+{% if get_enabled %}
+    signal getReplied(var dto)
+    function get(id) {
+        getReplied(id)
+    }
+{% endif -%}
+{% if get_all_enabled %}
+    signal getAllReplied(var dtos)
+    function getAll() {
+        getAllReplied()
+    }
+{% endif -%}
+{% if update_enabled %}
+    signal {{ controller.feature_camel_name }}Updated(var dto)
+    function update(dto) {
+        {{ controller.feature_camel_name }}Updated(dto)
+    }
+{% endif -%}
+{% if remove_enabled %}
+    signal {{ controller.feature_camel_name }}Removed(int id)
+    function remove(id) {
+        {{ controller.feature_camel_name }}Removed(id)
+    }
+{% endif -%}
+{% endif -%}
+
+    {%- for custom_function in controller.mock_custom_functions %}
+        signal {{ custom_function }}Replied(var dto)
+        function {{ custom_function }}(dto) {
+            {{ custom_function }}Replied(dto)
+        }
+    {% endfor %}
+}

@@ -6,8 +6,11 @@ qt6_add_qml_module(presenter
     URI "Presenter"
     VERSION 1.0
     SOURCES
-    foreign_system_controller.h
-    foreign_chapter_controller.h
+    
+    ../foreign_author_controller.h
+    ../foreign_chapter_controller.h
+    ../foreign_scene_controller.h
+    ../foreign_system_controller.h
 
 )
 

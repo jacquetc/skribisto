@@ -88,6 +88,8 @@ build
 *.qbs.user
 *.qbs.user.*
 CMakeLists.txt.user
+*.qtds.*
+*.qtds
 
 # QML
 *.qmlc

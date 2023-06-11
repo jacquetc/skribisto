@@ -1,0 +1,139 @@
+#include "create_{{ feature_snake_name }}_command_handler.h"
+#include "automapper/automapper.h"
+#include "cqrs/{{ feature_snake_name }}/validators/create_{{ feature_snake_name }}_command_validator.h"
+#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+
+using namespace Contracts::DTO::{{ feature_pascal_name }};
+using namespace Contracts::Persistence;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Validators;
+using namespace Application::Features::{{ feature_pascal_name }}::Commands;
+
+Create{{ feature_pascal_name }}CommandHandler::Create{{ feature_pascal_name }}CommandHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository>repository)
+    : Handler(), m_repository(repository)
+{}
+
+Result<{{ feature_pascal_name }}DTO>Create{{ feature_pascal_name }}CommandHandler::handle(QPromise<Result<void> >   & progressPromise,
+                                                      const Create{{ feature_pascal_name }}Command& request)
+{
+    Result<{{ feature_pascal_name }}DTO> result;
+
+    try
+    {
+        result = handleImpl(request);
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ feature_pascal_name }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling Create{{ feature_pascal_name }}Command:" << ex.what();
+    }
+    return result;
+}
+
+Result<{{ feature_pascal_name }}DTO>Create{{ feature_pascal_name }}CommandHandler::restore()
+{
+    Result<{{ feature_pascal_name }}DTO> result;
+
+    try
+    {
+        result = restoreImpl();
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ feature_pascal_name }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling Create{{ feature_pascal_name }}Command restore:" << ex.what();
+    }
+    return result;
+}
+
+Result<{{ feature_pascal_name }}DTO>Create{{ feature_pascal_name }}CommandHandler::handleImpl(const Create{{ feature_pascal_name }}Command& request)
+{
+    qDebug() << "Create{{ feature_pascal_name }}CommandHandler::handleImpl called";
+    Domain::{{ feature_pascal_name }} {{ feature_snake_name }};
+
+    if (m_newState.isEmpty())
+    {
+        // Validate the create {{ feature_snake_name }} command using the validator
+        auto validator               = Create{{ feature_pascal_name }}CommandValidator(m_repository);
+        Result<void> validatorResult = validator.validate(request.req);
+
+        if (validatorResult.hasError())
+        {
+            return Result<{{ feature_pascal_name }}DTO>(validatorResult.error());
+        }
+
+        // Map the create {{ feature_snake_name }} command to a domain {{ feature_snake_name }} object and
+        // generate a UUID
+        {{ feature_snake_name }} = AutoMapper::AutoMapper::map<Create{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>(request.req);
+
+        // allow for forcing the uuid
+        if ({{ feature_snake_name }}.uuid().isNull())
+        {
+            {{ feature_snake_name }}.setUuid(QUuid::createUuid());
+        }
+
+        // Set the creation and update timestamps to the current date and time
+        {{ feature_snake_name }}.setCreationDate(QDateTime::currentDateTime());
+        {{ feature_snake_name }}.setUpdateDate(QDateTime::currentDateTime());
+    }
+    else
+    {
+        // Map the create {{ feature_snake_name }} command to a domain {{ feature_snake_name }} object and
+        // generate a UUID
+        {{ feature_snake_name }} = AutoMapper::AutoMapper::map<{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>(m_newState.value());
+    }
+
+    // Add the {{ feature_snake_name }} to the repository
+
+    m_repository->beginChanges();
+    auto {{ feature_snake_name }}Result = m_repository->add(std::move({{ feature_snake_name }}));
+
+    if ({{ feature_snake_name }}Result.hasError())
+    {
+        m_repository->cancelChanges();
+        return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.error());
+    }
+    m_repository->saveChanges();
+
+    auto {{ feature_snake_name }}DTO = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.value());
+
+    m_newState = Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}DTO);
+
+    emit {{ feature_snake_name }}Created({{ feature_snake_name }}DTO);
+
+    qDebug() << "{{ feature_pascal_name }} added:" << {{ feature_snake_name }}DTO.uuid();
+
+    // Return the UUID of the newly created {{ feature_snake_name }} as a Result object
+    return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}DTO);
+}
+
+Result<{{ feature_pascal_name }}DTO>Create{{ feature_pascal_name }}CommandHandler::restoreImpl()
+{
+    Result<Domain::{{ feature_pascal_name }}> {{ feature_snake_name }}Result = m_repository->get(m_newState.value().uuid());
+
+    if ({{ feature_snake_name }}Result.hasError())
+    {
+        qDebug() << "Error getting {{ feature_snake_name }} from repository:" << {{ feature_snake_name }}Result.error().message();
+        return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.error());
+    }
+
+    auto deleteResult = m_repository->remove(std::move({{ feature_snake_name }}Result.value()));
+
+    if (deleteResult.hasError())
+    {
+        qDebug() << "Error deleting {{ feature_snake_name }} from repository:" << deleteResult.error().message();
+        return Result<{{ feature_pascal_name }}DTO>(deleteResult.error());
+    }
+    auto {{ feature_snake_name }}DTO = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>(deleteResult.value());
+
+    emit {{ feature_snake_name }}Removed({{ feature_snake_name }}DTO);
+
+    qDebug() << "{{ feature_pascal_name }} removed:" << deleteResult.value().uuid();
+
+    return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}DTO);
+}
+
+void CallOnce::registerMappings() 
+{
+    AutoMapper::AutoMapper::registerMapping<Domain::{{ feature_pascal_name }}, Contracts::DTO::{{ feature_pascal_name }}::{{ feature_pascal_name }}DTO>(true);
+    AutoMapper::AutoMapper::registerMapping<Contracts::DTO::{{ feature_pascal_name }}::Create{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>();
+}

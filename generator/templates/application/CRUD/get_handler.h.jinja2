@@ -1,0 +1,40 @@
+#pragma once
+
+#include "{{ export_header_file }}"
+#include "{{ feature_snake_name }}_dto.h"
+#include "cqrs/{{ feature_snake_name }}/requests/get_{{ feature_snake_name }}_request.h"
+#include "handler.h"
+#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+
+using namespace Contracts::DTO::{{ feature_pascal_name }};
+using namespace Contracts::Persistence;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Requests;
+
+namespace Application::Features::{{ feature_pascal_name }}::Queries
+{
+class {{ export }} Get{{ feature_pascal_name }}RequestHandler : public Handler
+{
+    Q_OBJECT
+  public:
+    Get{{ feature_pascal_name }}RequestHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository> repository);
+    Result<{{ feature_pascal_name }}DTO> handle(QPromise<Result<void>> &progressPromise, const Get{{ feature_pascal_name }}Request &request);
+
+  private:
+    QSharedPointer<Interface{{ feature_pascal_name }}Repository> m_repository;
+    Result<{{ feature_pascal_name }}DTO> handleImpl(const Get{{ feature_pascal_name }}Request &request);
+};
+
+
+struct CallOnce
+{
+    CallOnce()
+    {
+        registerMappings();
+    }
+    void registerMappings();
+
+};
+// This line will ensure the function is called once at the start of the program.
+static CallOnce callOnceInstance;
+
+} // namespace Application::Features::{{ feature_pascal_name }}::Queries

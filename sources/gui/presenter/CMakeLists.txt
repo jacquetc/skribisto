@@ -33,20 +33,16 @@ set(presenter_SRCS
 
 add_library(${PROJECT_NAME} STATIC ${presenter_SRCS})
 
-
-
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC SKRIBISTO_PRESENTER_LIBRARY)
 
 add_dependencies(${PROJECT_NAME} skribisto-contracts)
 add_dependencies(${PROJECT_NAME} skribisto-application)
-#add_dependencies(${PROJECT_NAME} skribisto-persistence)
 add_dependencies(${PROJECT_NAME} skribisto-infrastructure)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application)
-#target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-persistence)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-infrastructure)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

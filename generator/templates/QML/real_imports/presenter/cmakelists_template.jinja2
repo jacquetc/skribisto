@@ -1,0 +1,21 @@
+find_package(Qt6 COMPONENTS Core Quick Qml REQUIRED)
+
+qt_add_library(presenter STATIC)
+
+qt6_add_qml_module(presenter
+    URI "Presenter"
+    VERSION 1.0
+    SOURCES
+    {% for file in files %}
+    {{ file }}
+    {%- endfor %}
+
+)
+
+add_dependencies(presenter {{ application_name }}-presenter)
+
+target_link_libraries(presenter PRIVATE {{ application_name }}-presenter)
+
+target_link_libraries(presenter
+    PRIVATE Qt6::Quick Qt6::Core Qt6::Qml
+)

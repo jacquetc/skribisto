@@ -1,0 +1,104 @@
+#include "remove_{{ feature_snake_name }}_command_handler.h"
+#include "automapper/automapper.h"
+#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+
+using namespace Contracts::DTO::{{ feature_pascal_name }};
+using namespace Contracts::Persistence;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Commands;
+using namespace Application::Features::{{ feature_pascal_name }}::Commands;
+
+Remove{{ feature_pascal_name }}CommandHandler::Remove{{ feature_pascal_name }}CommandHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository>repository)
+    : Handler(), m_repository(repository)
+{}
+
+Result<{{ feature_pascal_name }}DTO>Remove{{ feature_pascal_name }}CommandHandler::handle(QPromise<Result<void> >   & progressPromise,
+                                                      const Remove{{ feature_pascal_name }}Command& request)
+{
+    Result<{{ feature_pascal_name }}DTO> result;
+
+    try
+    {
+        result = handleImpl(request);
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ feature_pascal_name }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling Remove{{ feature_pascal_name }}Command:" << ex.what();
+    }
+    return result;
+}
+
+Result<{{ feature_pascal_name }}DTO>Remove{{ feature_pascal_name }}CommandHandler::restore()
+{
+    Result<{{ feature_pascal_name }}DTO> result;
+
+    try
+    {
+        result = restoreImpl();
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ feature_pascal_name }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling Remove{{ feature_pascal_name }}Command restore:" << ex.what();
+    }
+    return result;
+}
+
+Result<{{ feature_pascal_name }}DTO>Remove{{ feature_pascal_name }}CommandHandler::handleImpl(const Remove{{ feature_pascal_name }}Command& request)
+{
+    Result<Domain::{{ feature_pascal_name }}> {{ feature_snake_name }}Result = m_repository->get(request.id);
+
+    if ({{ feature_snake_name }}Result.hasError())
+    {
+        qDebug() << "Error getting {{ feature_snake_name }} from repository:" << {{ feature_snake_name }}Result.error().message();
+        return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.error());
+    }
+
+    auto deleteResult = m_repository->remove(std::move({{ feature_snake_name }}Result.value()));
+
+    if (deleteResult.hasError())
+    {
+        qDebug() << "Error deleting {{ feature_snake_name }} from repository:" << deleteResult.error().message();
+        return Result<{{ feature_pascal_name }}DTO>(deleteResult.error());
+    }
+
+    // map
+    auto dto = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>(deleteResult.value());
+
+    // save
+    m_newState = Result<{{ feature_pascal_name }}DTO>(dto);
+
+    emit {{ feature_snake_name }}Removed(dto);
+
+    qDebug() << "{{ feature_pascal_name }} removed:" << dto.id();
+
+    return Result<{{ feature_pascal_name }}DTO>(dto);
+}
+
+Result<{{ feature_pascal_name }}DTO>Remove{{ feature_pascal_name }}CommandHandler::restoreImpl()
+{
+    // Map the create {{ feature_snake_name }} command to a domain {{ feature_snake_name }} object
+    auto {{ feature_snake_name }} = AutoMapper::AutoMapper::map<{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>(m_newState.value());
+
+    // Add the {{ feature_snake_name }} to the repository
+    auto {{ feature_snake_name }}Result = m_repository->add(std::move({{ feature_snake_name }}));
+
+    if ({{ feature_snake_name }}Result.hasError())
+    {
+        return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.error());
+    }
+
+    auto {{ feature_snake_name }}DTO = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.value());
+
+    emit {{ feature_snake_name }}Created({{ feature_snake_name }}DTO);
+    qDebug() << "{{ feature_pascal_name }} added:" << {{ feature_snake_name }}DTO.id();
+
+    // Return the UUID of the newly created {{ feature_snake_name }} as a Result object
+    return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}DTO);
+}
+
+
+void CallOnce::registerMappings() 
+{
+    AutoMapper::AutoMapper::registerMapping<Domain::{{ feature_pascal_name }}, Contracts::DTO::{{ feature_pascal_name }}::{{ feature_pascal_name }}DTO>(true);
+}

@@ -1,0 +1,5 @@
+Module Presenter
+singleton AuthorController 1.0 AuthorController.qml
+singleton ChapterController 1.0 ChapterController.qml
+singleton SceneController 1.0 SceneController.qml
+singleton SystemController 1.0 SystemController.qml

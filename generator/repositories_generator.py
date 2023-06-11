@@ -7,7 +7,9 @@ import shutil
 from pathlib import Path
 
 
-def generate_repository_files(manifest_file):
+def generate_repository_files(
+    manifest_file, files_to_be_generated: dict[str, bool] = None
+):
     with open(manifest_file, "r") as stream:
         try:
             manifest_data = yaml.safe_load(stream)
@@ -236,7 +238,9 @@ def generate_repository_files(manifest_file):
             fh.write(relative_path + "\n")
 
 
-def get_files_to_be_generated(manifest_file: str) -> list[str]:
+def get_files_to_be_generated(
+    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+) -> list[str]:
     """
     Get the list of files that need to be generated based on the manifest file
     """
@@ -248,21 +252,21 @@ def get_files_to_be_generated(manifest_file: str) -> list[str]:
     interface_folder_path = manifest["repositories"]["interface_path"]
 
     # Get the list of files to be generated
-    files_to_be_generated = []
+    files = []
     for entity in manifest["repositories"]["list"]:
         entity_name = entity["entity_name"]
         if entity.get("generate", True):
-            files_to_be_generated.append(
+            files.append(
                 os.path.join(
                     folder_path, f"{stringcase.snakecase(entity_name)}_repository.h"
                 )
             )
-            files_to_be_generated.append(
+            files.append(
                 os.path.join(
                     folder_path, f"{stringcase.snakecase(entity_name)}_repository.cpp"
                 )
             )
-            files_to_be_generated.append(
+            files.append(
                 os.path.join(
                     interface_folder_path,
                     f"interface_{stringcase.snakecase(entity_name)}_repository.h",
@@ -271,16 +275,25 @@ def get_files_to_be_generated(manifest_file: str) -> list[str]:
 
     # add list_file:
     list_file = manifest["repositories"]["list_file"]
-    files_to_be_generated.append(list_file)
+    files.append(list_file)
     # add list_file:
     interface_list_file = manifest["repositories"]["interface_list_file"]
-    files_to_be_generated.append(interface_list_file)
+    files.append(interface_list_file)
 
-    return files_to_be_generated
+
+    # strip from files if the value in files_to_be_generated is False
+    if files_to_be_generated:
+        for path, generate in files_to_be_generated.items():
+            if not generate:
+                files.remove(path)
+
+    return files
 
 
 # generate the files into the preview folder
-def preview_repository_files(manifest_file: str):
+def preview_repository_files(
+    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+):
     manifest_preview_file = "temp/manifest_preview.yaml"
 
     # make a copy of the manifest file into temp/manifest_preview.yaml
@@ -308,7 +321,14 @@ def preview_repository_files(manifest_file: str):
     with open(manifest_preview_file, "w") as fh:
         yaml.dump(manifest, fh)
 
-    generate_repository_files(manifest_preview_file)
+    if files_to_be_generated:
+        # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
+        for path, _ in files_to_be_generated.items():
+            files_to_be_generated[path] = "preview/" + path.replace("..", "")
+
+        generate_repository_files(manifest_preview_file, files_to_be_generated)
+    else:
+        generate_repository_files(manifest_preview_file)
 
 
 # Main execution
