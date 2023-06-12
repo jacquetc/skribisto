@@ -5,6 +5,7 @@ import sys
 import stringcase
 import shutil
 import copy
+import uncrustify
 from pathlib import Path
 from collections import OrderedDict
 
@@ -237,7 +238,7 @@ def get_dto_dict_and_feature_ordered_dict(
         for command in feature.get("commands", []):
             command_dto_data = command.get("dto", {})
             dto_in = command_dto_data.get("in", {})
-            if dto_in and dto_in.get("is_void", False):
+            if dto_in and not dto_in.get("is_void", False):
                 dto_type_name = f"{dto_in['type_prefix']}DTO"
                 generate = dto_in.get("generate", True)
                 dto_dict[dto_type_name] = {
@@ -259,7 +260,7 @@ def get_dto_dict_and_feature_ordered_dict(
                 )
 
             dto_out = command_dto_data.get("out", {})
-            if dto_out and dto_out.get("is_void", False):
+            if dto_out and not dto_out.get("is_void", False):
                 dto_type_name = f"{dto_out['type_prefix']}DTO"
                 generate = dto_out.get("generate", True)
                 dto_dict[dto_type_name] = {
@@ -284,7 +285,7 @@ def get_dto_dict_and_feature_ordered_dict(
         for query in feature.get("queries", []):
             query_dto_data = query.get("dto", {})
             dto_in = query_dto_data.get("in", {})
-            if dto_in and dto_in.get("is_void", False):
+            if dto_in and not dto_in.get("is_void", False):
                 dto_type_name = f"{dto_in['type_prefix']}DTO"
                 generate = dto_in.get("generate", True)
                 dto_dict[dto_type_name] = {
@@ -306,7 +307,7 @@ def get_dto_dict_and_feature_ordered_dict(
                 )
 
             dto_out = query_dto_data.get("out", {})
-            if dto_out and dto_out.get("is_void", False):
+            if dto_out and not dto_out.get("is_void", False):
                 dto_type_name = f"{dto_out['type_prefix']}DTO"
                 generate = dto_out.get("generate", True)
                 dto_dict[dto_type_name] = {
@@ -577,6 +578,7 @@ def generate_dto(
     dto_data,
     dto_common_cmake_folder_path,
     default_init_values,
+    files_to_be_generated,
 ):
     fields = dto_data.get("fields", [])
 
@@ -598,6 +600,9 @@ def generate_dto(
         dto_data["file_name"],
     )
 
+    if not files_to_be_generated.get(dto_file_path, False):
+        return
+
     # Create the directory if it does not exist
     os.makedirs(os.path.dirname(dto_file_path), exist_ok=True)
 
@@ -613,8 +618,14 @@ def generate_dto(
         )
         print(f"Successfully wrote file {dto_file_path}")
 
+    return dto_file_path
 
-def generate_dto_files(manifest_file, files_to_be_generated: dict[str, bool] = None):
+
+def generate_dto_files(
+    manifest_file,
+    files_to_be_generated: dict[str, bool] = None,
+    uncrustify_config_file: str = None,
+):
     with open(manifest_file, "r") as stream:
         try:
             manifest_data = yaml.safe_load(stream)
@@ -667,20 +678,23 @@ def generate_dto_files(manifest_file, files_to_be_generated: dict[str, bool] = N
         feature_snake_name = stringcase.snakecase(feature_name)
 
         for dto_type, dto_data in feature_data["dtos"].items():
-            generate_dto(
-                template,
-                dto_type,
-                dto_data,
-                dto_common_cmake_folder_path,
-                default_init_values,
-            )
             generated_files.append(
-                os.path.join(
+                generate_dto(
+                    template,
+                    dto_type,
+                    dto_data,
                     dto_common_cmake_folder_path,
-                    feature_snake_name,
-                    dto_data["file_name"],
+                    default_init_values,
+                    files_to_be_generated,
                 )
             )
+
+        # strip generated files of None values
+        generated_files = [file for file in generated_files if file]
+
+        for file in generated_files:
+            if uncrustify_config_file:
+                uncrustify.run_uncrustify(file, uncrustify_config_file)
 
         # generate these DTO's cmakelists.txt
         dto_cmakelists_template = template_env.get_template(
@@ -713,21 +727,27 @@ def generate_dto_files(manifest_file, files_to_be_generated: dict[str, bool] = N
             feature_dependencies=spinal_case_feature_dependencies,
         )
 
-        with open(dto_cmakelists_file, "w") as fh:
-            fh.write(rendered_template)
-            print(f"Successfully wrote file {dto_cmakelists_file}")
+        # Create the directory if it does not exist
+        os.makedirs(os.path.dirname(dto_cmakelists_file), exist_ok=True)
+
+        if files_to_be_generated.get(dto_cmakelists_file, False):
+            with open(dto_cmakelists_file, "w") as fh:
+                fh.write(rendered_template)
+                print(f"Successfully wrote file {dto_cmakelists_file}")
 
     # generate common cmakelists.txt
 
     dto_common_cmakelists_file = os.path.join(
         dto_common_cmake_folder_path, "CMakeLists.txt"
     )
-
-    ## After the loop, write the list of features folders to the common cmakelists.txt
-    with open(dto_common_cmakelists_file, "w") as fh:
-        for feature_name, _ in feature_ordered_dict.items():
-            fh.write(f"add_subdirectory({stringcase.snakecase(feature_name)})" + "\n")
-        print(f"Successfully wrote file {dto_common_cmakelists_file}")
+    if files_to_be_generated.get(dto_common_cmakelists_file, False):
+        ## After the loop, write the list of features folders to the common cmakelists.txt
+        with open(dto_common_cmakelists_file, "w") as fh:
+            for feature_name, _ in feature_ordered_dict.items():
+                fh.write(
+                    f"add_subdirectory({stringcase.snakecase(feature_name)})" + "\n"
+                )
+            print(f"Successfully wrote file {dto_common_cmakelists_file}")
 
 
 def get_files_to_be_generated(
@@ -798,7 +818,9 @@ def get_files_to_be_generated(
 
 # generate the files into the preview folder
 def preview_dto_files(
-    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = None,
+    uncrustify_config_file: str = None,
 ):
     manifest_preview_file = "temp/manifest_preview.yaml"
 
@@ -818,16 +840,18 @@ def preview_dto_files(
     with open(manifest_preview_file, "w") as fh:
         yaml.dump(manifest, fh)
 
+    # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
     if files_to_be_generated:
-        # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
+        preview_files_to_be_generated = {}
+        for path, value in files_to_be_generated.items():
+            preview_files_to_be_generated["preview/" + path.replace("..", "")] = value
 
-        for path, _ in files_to_be_generated.items():
-            files_to_be_generated[path] = "preview/" + path.replace("..", "")
-
-        generate_dto_files(manifest_preview_file, files_to_be_generated)
+        generate_dto_files(
+            manifest_preview_file, preview_files_to_be_generated, uncrustify_config_file
+        )
 
     else:
-        generate_dto_files(manifest_preview_file)
+        generate_dto_files(manifest_preview_file, {}, uncrustify_config_file)
 
 
 # Main execution

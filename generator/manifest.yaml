@@ -138,8 +138,6 @@ qml:
 
 application:
   common_cmake_folder_path: ../sources/core/application
-  export: SKR_APPLICATION_EXPORT
-  export_header_file: application_global.h
   features:
     - name: Author
       DTO:

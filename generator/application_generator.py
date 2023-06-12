@@ -4,13 +4,13 @@ import os
 import sys
 import stringcase
 import shutil
+import uncrustify
 from pathlib import Path
 
 
 def get_generation_dict(
     common_cmake_folder_path: str,
-    export: str,
-    export_header_file: str,
+    application_name: str,
     feature_by_name: dict,
 ) -> dict:
     generation_dict = {}
@@ -23,6 +23,17 @@ def get_generation_dict(
             "feature_pascal_name": feature_pascal_name,
             "feature_spinal_name": feature_spinal_name,
         }
+        # add export_header
+        export_header = f"application_{feature_snake_name}_export.h"
+        generation_dict[feature_pascal_name]["export_header"] = export_header
+        generation_dict[feature_pascal_name]["export_header_file"] = os.path.join(
+            common_cmake_folder_path,
+            feature_snake_name,
+            export_header,
+        )
+        generation_dict[feature_pascal_name][
+            "export"
+        ] = f"{stringcase.uppercase(application_name)}_APPLICATION_{stringcase.uppercase(feature_snake_name)}_EXPORT"
 
     for feature_name, feature in generation_dict.items():
         feature_snake_name = feature["feature_snake_name"]
@@ -173,8 +184,9 @@ def get_generation_dict(
                     ],
                 }
         for handler_name, handler_data in crud_handlers.items():
-            handler_data["export"] = export
-            handler_data["export_header_file"] = export_header_file
+            handler_data["export"] = feature["export"]
+            handler_data["export_header"] = feature["export_header"]
+            handler_data["export_header_file"] = feature["export_header_file"]
 
     # add commands and queries to the feature:
     for feature_name, feature in generation_dict.items():
@@ -204,8 +216,9 @@ def get_generation_dict(
                     "custom_command_handler.h.jinja2",
                     "custom_command_handler.cpp.jinja2",
                 ]
-                command["export"] = export
-                command["export_header_file"] = export_header_file
+                command["export"] = feature["export"]
+                command["export_header"] = feature["export_header"]
+                command["export_header_file"] = feature["export_header_file"]
                 command["camel_name"] = stringcase.camelcase(command["name"])
                 command["snake_name"] = stringcase.snakecase(command["name"])
                 command["pascal_name"] = stringcase.pascalcase(command["name"])
@@ -260,8 +273,9 @@ def get_generation_dict(
                     "custom_query_handler.h.jinja2",
                     "custom_query_handler.cpp.jinja2",
                 ]
-                query["export"] = export
-                query["export_header_file"] = export_header_file
+                query["export"] = feature["export"]
+                query["export_header"] = feature["export_header"]
+                query["export_header_file"] = feature["export_header_file"]
                 query["camel_name"] = stringcase.camelcase(query["name"])
                 query["snake_name"] = stringcase.snakecase(query["name"])
                 query["pascal_name"] = stringcase.pascalcase(query["name"])
@@ -308,31 +322,86 @@ def get_generation_dict(
     return generation_dict
 
 
+def generate_common_cmakelists(
+    feature_by_name: dict,
+    common_cmake_folder_path: str,
+    files_to_be_generated: dict[str, bool],
+):
+    # generate common cmakelists.txt
+
+    common_cmakelists_file = os.path.join(common_cmake_folder_path, "CMakeLists.txt")
+    if files_to_be_generated.get(common_cmakelists_file, False):
+        ## After the loop, write the list of features folders to the common cmakelists.txt
+        with open(common_cmakelists_file, "w") as fh:
+            for feature_name, _ in feature_by_name.items():
+                fh.write(
+                    f"add_subdirectory({stringcase.snakecase(feature_name)})" + "\n"
+                )
+            print(f"Successfully wrote file {common_cmakelists_file}")
+
+
+def generate_feature_export_file(
+    feature: dict, application_name: str, files_to_be_generated: dict[str, bool]
+):
+    template_env = Environment(loader=FileSystemLoader("templates/application"))
+    dto_cmakelists_template = template_env.get_template("export_template.jinja2")
+
+    export_header_file = feature["export_header_file"]
+    export = feature["export"]
+
+    if not files_to_be_generated.get(export_header_file, False):
+        return
+
+    application_uppercase_name = stringcase.uppercase(application_name)
+
+    feature_snake_name = feature["feature_snake_name"]
+    feature_uppercase_name = stringcase.uppercase(feature_snake_name)
+
+    rendered_template = dto_cmakelists_template.render(
+        application_uppercase_name=application_uppercase_name,
+        feature_uppercase_name=feature_uppercase_name,
+        export=export,
+    )
+
+    # Create the directory if it does not exist
+    os.makedirs(os.path.dirname(export_header_file), exist_ok=True)
+
+    with open(export_header_file, "w") as fh:
+        fh.write(rendered_template)
+        print(f"Successfully wrote file {export_header_file}")
+
+
 def generate_handler_cmakelists(
     feature: dict, application_name: str, files_to_be_generated: dict[str, bool]
 ):
     # generate these DTO's cmakelists.txt
 
-    template_env = Environment(loader=FileSystemLoader("templates/application/CRUD"))
+    template_env = Environment(loader=FileSystemLoader("templates/application"))
     dto_cmakelists_template = template_env.get_template("cmakelists_template.jinja2")
 
     dto_cmakelists_file = feature["cmakelists_file"]
 
-    if files_to_be_generated.get(dto_cmakelists_file, False):
+    if not files_to_be_generated.get(dto_cmakelists_file, False):
         return
+
+    files = feature["handler_files"] + [feature["export_header_file"]]
 
     ## Convert the file path to be relative to the directory of the cmakelists
     relative_generated_files = []
-    for file_path in feature["handler_files"]:
+    for file_path in files:
         relative_generated_file = os.path.relpath(
             file_path, os.path.dirname(dto_cmakelists_file)
         )
         relative_generated_files.append(relative_generated_file)
 
+    feature_snake_name = feature["feature_snake_name"]
+
     rendered_template = dto_cmakelists_template.render(
-        feature_snake_name=feature["feature_snake_name"],
+        feature_snake_name=feature_snake_name,
+        feature_uppercase_name=stringcase.uppercase(feature_snake_name),
         files=relative_generated_files,
         application_name=application_name,
+        application_uppercase_name=stringcase.uppercase(application_name),
     )
 
     # Create the directory if it does not exist
@@ -344,10 +413,13 @@ def generate_handler_cmakelists(
 
 
 def generate_crud_handler(
-    handler: dict, feature: dict, files_to_be_generated: dict[str, bool]
+    handler: dict,
+    feature: dict,
+    files_to_be_generated: dict[str, bool],
+    uncrustify_config_file: str,
 ):
     for file_path in handler["files"]:
-        if files_to_be_generated.get(file_path, False):
+        if not files_to_be_generated.get(file_path, False):
             continue
 
         if not handler.get("generate", True):
@@ -369,17 +441,23 @@ def generate_crud_handler(
                     feature_pascal_name=feature["feature_pascal_name"],
                     feature_snake_name=feature["feature_snake_name"],
                     export=handler["export"],
-                    export_header_file=handler["export_header_file"],
+                    export_header=handler["export_header"],
                 )
             )
             print(f"Successfully wrote file {file_path}")
 
+        if uncrustify_config_file:
+            uncrustify.run_uncrustify(file_path, uncrustify_config_file)
+
 
 def generate_custom_command_handler(
-    handler: dict, feature: dict, files_to_be_generated: dict[str, bool]
+    handler: dict,
+    feature: dict,
+    files_to_be_generated: dict[str, bool],
+    uncrustify_config_file: str,
 ):
     for file_path in handler["files"]:
-        if files_to_be_generated.get(file_path, False):
+        if not files_to_be_generated.get(file_path, False):
             continue
 
         template_env = Environment(
@@ -399,7 +477,7 @@ def generate_custom_command_handler(
                     feature_snake_name=feature["feature_snake_name"],
                     command=handler,
                     export=handler["export"],
-                    export_header_file=handler["export_header_file"],
+                    export_header=handler["export_header"],
                     validator_enabled=handler.get("validator", {}).get(
                         "enabled", False
                     ),
@@ -407,12 +485,18 @@ def generate_custom_command_handler(
             )
             print(f"Successfully wrote file {file_path}")
 
+        if uncrustify_config_file:
+            uncrustify.run_uncrustify(file_path, uncrustify_config_file)
+
 
 def generate_custom_query_handler(
-    handler: dict, feature: dict, files_to_be_generated: dict[str, bool]
+    handler: dict,
+    feature: dict,
+    files_to_be_generated: dict[str, bool],
+    uncrustify_config_file: str,
 ):
     for file_path in handler["files"]:
-        if files_to_be_generated.get(file_path, False):
+        if not files_to_be_generated.get(file_path, False):
             continue
 
         template_env = Environment(
@@ -440,9 +524,14 @@ def generate_custom_query_handler(
             )
             print(f"Successfully wrote file {file_path}")
 
+        if uncrustify_config_file:
+            uncrustify.run_uncrustify(file_path, uncrustify_config_file)
+
 
 def generate_application_files(
-    manifest_file: str, files_to_be_generated: dict[str, bool] = {}
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = {},
+    uncrustify_config_file: str = "",
 ):
     with open(manifest_file, "r") as stream:
         try:
@@ -457,8 +546,6 @@ def generate_application_files(
     application_name = stringcase.spinalcase(application_name)
 
     application_data = manifest_data.get("application", [])
-    export = application_data.get("export", "")
-    export_header_file = application_data.get("export_header_file", "")
     feature_list = application_data.get("features", [])
     common_cmake_folder_path = application_data.get("common_cmake_folder_path", "")
 
@@ -466,27 +553,42 @@ def generate_application_files(
     feature_by_name = {feature["name"]: feature for feature in feature_list}
 
     for _, feature in get_generation_dict(
-        common_cmake_folder_path, export, export_header_file, feature_by_name
+        common_cmake_folder_path, application_name, feature_by_name
     ).items():
         # generate crud handlers
         for handler in feature["crud_handlers"].values():
-            generate_crud_handler(handler, feature, files_to_be_generated)
+            generate_crud_handler(
+                handler, feature, files_to_be_generated, uncrustify_config_file
+            )
 
         # generate custom handlers
         if feature.get("custom_handlers", None):
             if feature["custom_handlers"].get("commands", None):
                 for command_handler in feature["custom_handlers"]["commands"]:
                     generate_custom_command_handler(
-                        command_handler, feature, files_to_be_generated
+                        command_handler,
+                        feature,
+                        files_to_be_generated,
+                        uncrustify_config_file,
                     )
             if feature["custom_handlers"].get("queries", None):
                 for query_handler in feature["custom_handlers"]["queries"]:
                     generate_custom_query_handler(
-                        query_handler, feature, files_to_be_generated
+                        query_handler,
+                        feature,
+                        files_to_be_generated,
+                        uncrustify_config_file,
                     )
 
         # generate handler cmakelists.txt
         generate_handler_cmakelists(feature, application_name, files_to_be_generated)
+
+        generate_feature_export_file(feature, application_name, files_to_be_generated)
+
+        # generate common cmakelists.txt
+        generate_common_cmakelists(
+            feature_by_name, common_cmake_folder_path, files_to_be_generated
+        )
 
 
 def get_files_to_be_generated(
@@ -509,8 +611,6 @@ def get_files_to_be_generated(
     application_name = stringcase.spinalcase(application_name)
 
     application_data = manifest_data.get("application", [])
-    export = application_data.get("export", "")
-    export_header_file = application_data.get("export_header_file", "")
     feature_list = application_data.get("features", [])
     common_cmake_folder_path = application_data.get("common_cmake_folder_path", "")
 
@@ -519,15 +619,17 @@ def get_files_to_be_generated(
 
     files = []
     for _, feature in get_generation_dict(
-        common_cmake_folder_path, export, export_header_file, feature_by_name
+        common_cmake_folder_path, application_name, feature_by_name
     ).items():
         files += feature["handler_files"]
 
         common_cmake_file = feature["cmakelists_file"]
         files.append(common_cmake_file)
+        export_header_file = feature["export_header_file"]
+        files.append(export_header_file)
 
     # # add CMakelists.txt:
-    common_cmake_file = Path.joinpath(common_cmake_folder_path, "CMakeLists.txt")
+    common_cmake_file = os.path.join(common_cmake_folder_path, "CMakeLists.txt")
     files.append(common_cmake_file)
 
     # strip from files if the value in files_to_be_generated is False
@@ -541,7 +643,9 @@ def get_files_to_be_generated(
 
 # generate the files into the preview folder
 def preview_application_files(
-    manifest_file: str, files_to_be_generated: dict[str, bool] = {}
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = {},
+    uncrustify_config_file: str = "",
 ):
     manifest_preview_file = "temp/manifest_preview.yaml"
 
@@ -563,13 +667,16 @@ def preview_application_files(
 
     # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
     if files_to_be_generated:
-        for path, _ in files_to_be_generated.items():
-            files_to_be_generated[path] = "preview/" + path.replace("..", "")
+        preview_files_to_be_generated = {}
+        for path, value in files_to_be_generated.items():
+            preview_files_to_be_generated["preview/" + path.replace("..", "")] = value
 
-        generate_application_files(manifest_preview_file, files_to_be_generated)
+        generate_application_files(
+            manifest_preview_file, preview_files_to_be_generated, uncrustify_config_file
+        )
 
     else:
-        generate_application_files(manifest_preview_file)
+        generate_application_files(manifest_preview_file, {}, uncrustify_config_file)
 
 
 # Main execution

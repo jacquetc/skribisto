@@ -4,11 +4,14 @@ import os
 import sys
 import stringcase
 import shutil
+import uncrustify
 from pathlib import Path
 
 
 def generate_repository_files(
-    manifest_file, files_to_be_generated: dict[str, bool] = None
+    manifest_file,
+    files_to_be_generated: dict[str, bool] = None,
+    uncrustify_config_file: str = None,
 ):
     with open(manifest_file, "r") as stream:
         try:
@@ -158,11 +161,18 @@ def generate_repository_files(
             export_header_file=export_header_file,
         )
         output_file = os.path.join(path, f"{snake_name}_repository.h")
+
+        if not files_to_be_generated.get(output_file, False):
+            continue
+
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, "w") as fh:
             fh.write(rendered_template)
             print(f"Successfully wrote file {output_file}")
         generated_files.append(output_file)
+
+        if uncrustify_config_file:
+            uncrustify.run_uncrustify(output_file, uncrustify_config_file)
 
         # prepare the fields init values
 
@@ -187,10 +197,17 @@ def generate_repository_files(
             fields_init_values=fields_init_values,
         )
         output_file = os.path.join(path, f"{snake_name}_repository.cpp")
+
+        if not files_to_be_generated.get(output_file, False):
+            continue
+
         with open(output_file, "w") as fh:
             fh.write(rendered_template)
             print(f"Successfully wrote file {output_file}")
         generated_files.append(output_file)
+
+        if uncrustify_config_file:
+            uncrustify.run_uncrustify(output_file, uncrustify_config_file)
 
         # Create interface .h file
         rendered_template = iface_template.render(
@@ -203,39 +220,48 @@ def generate_repository_files(
         output_file = os.path.join(
             interface_path, f"interface_{snake_name}_repository.h"
         )
+
+        if not files_to_be_generated.get(output_file, False):
+            continue
+
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, "w") as fh:
             fh.write(rendered_template)
             print(f"Successfully wrote file {output_file}")
         interface_generated_files.append(output_file)
 
+        if uncrustify_config_file:
+            uncrustify.run_uncrustify(output_file, uncrustify_config_file)
+
     # write the repository list file
 
-    # Create the directory if it does not exist
-    os.makedirs(os.path.dirname(repositories_list_file), exist_ok=True)
+    if files_to_be_generated.get(repositories_list_file, False):
+        # Create the directory if it does not exist
+        os.makedirs(os.path.dirname(repositories_list_file), exist_ok=True)
 
-    # After the loop, write the list of generated files to a file
-    with open(repositories_list_file, "w") as fh:
-        for file_path in generated_files:
-            # Convert the file path to be relative to the directory of the repositories_list_file
-            relative_path = os.path.relpath(
-                file_path, os.path.dirname(repositories_list_file)
-            )
-            fh.write(relative_path + "\n")
+        # After the loop, write the list of generated files to a file
+        with open(repositories_list_file, "w") as fh:
+            for file_path in generated_files:
+                # Convert the file path to be relative to the directory of the repositories_list_file
+                relative_path = os.path.relpath(
+                    file_path, os.path.dirname(repositories_list_file)
+                )
+                fh.write(relative_path + "\n")
 
     # write the interface list file
 
-    # Create the directory if it does not exist
-    os.makedirs(os.path.dirname(interface_list_file), exist_ok=True)
+    if files_to_be_generated.get(interface_list_file, False):
+        # Create the directory if it does not exist
+        os.makedirs(os.path.dirname(interface_list_file), exist_ok=True)
 
-    # After the loop, write the list of generated files to a file
-    with open(interface_list_file, "w") as fh:
-        for file_path in interface_generated_files:
-            # Convert the file path to be relative to the directory of the repositories_list_file
-            relative_path = os.path.relpath(
-                file_path, os.path.dirname(interface_list_file)
-            )
-            fh.write(relative_path + "\n")
+        # After the loop, write the list of generated files to a file
+        with open(interface_list_file, "w") as fh:
+            for file_path in interface_generated_files:
+                # Convert the file path to be relative to the directory of the repositories_list_file
+                relative_path = os.path.relpath(
+                    file_path, os.path.dirname(interface_list_file)
+                )
+                fh.write(relative_path + "\n")
 
 
 def get_files_to_be_generated(
@@ -280,7 +306,6 @@ def get_files_to_be_generated(
     interface_list_file = manifest["repositories"]["interface_list_file"]
     files.append(interface_list_file)
 
-
     # strip from files if the value in files_to_be_generated is False
     if files_to_be_generated:
         for path, generate in files_to_be_generated.items():
@@ -292,7 +317,9 @@ def get_files_to_be_generated(
 
 # generate the files into the preview folder
 def preview_repository_files(
-    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = None,
+    uncrustify_config_file: str = None,
 ):
     manifest_preview_file = "temp/manifest_preview.yaml"
 
@@ -321,14 +348,17 @@ def preview_repository_files(
     with open(manifest_preview_file, "w") as fh:
         yaml.dump(manifest, fh)
 
+    # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
     if files_to_be_generated:
-        # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
-        for path, _ in files_to_be_generated.items():
-            files_to_be_generated[path] = "preview/" + path.replace("..", "")
+        preview_files_to_be_generated = {}
+        for path, value in files_to_be_generated.items():
+            preview_files_to_be_generated["preview/" + path.replace("..", "")] = value
 
-        generate_repository_files(manifest_preview_file, files_to_be_generated)
+        generate_repository_files(
+            manifest_preview_file, preview_files_to_be_generated, uncrustify_config_file
+        )
     else:
-        generate_repository_files(manifest_preview_file)
+        generate_repository_files(manifest_preview_file, {}, uncrustify_config_file)
 
 
 # Main execution

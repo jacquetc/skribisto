@@ -4,6 +4,7 @@ import os
 import sys
 import stringcase
 import shutil
+import uncrustify
 from pathlib import Path
 
 
@@ -14,7 +15,9 @@ def generate_controller_files(
 
 
 def get_files_to_be_generated(
-    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = None,
+    uncrustify_config_file: str = None,
 ) -> list[str]:
     """
     Get the list of files that need to be generated based on the manifest file
@@ -58,7 +61,9 @@ def get_files_to_be_generated(
 
 # generate the files into the preview folder
 def preview_controller_files(
-    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = None,
+    uncrustify_config_file: str = None,
 ):
     manifest_preview_file = "temp/manifest_preview.yaml"
 
@@ -81,16 +86,20 @@ def preview_controller_files(
     with open(manifest_preview_file, "w") as fh:
         yaml.dump(manifest, fh)
 
+    # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
     if files_to_be_generated:
-        # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
+        preview_files_to_be_generated = {}
+        for path, value in files_to_be_generated.items():
+            preview_files_to_be_generated[
+                "preview/" + path.replace("..", "")
+            ] = value
 
-        for path, _ in files_to_be_generated.items():
-            files_to_be_generated[path] = "preview/" + path.replace("..", "")
-
-        generate_controller_files(manifest_preview_file, files_to_be_generated)
+        generate_controller_files(
+            manifest_preview_file, preview_files_to_be_generated, uncrustify_config_file
+        )
 
     else:
-        generate_controller_files(manifest_preview_file)
+        generate_controller_files(manifest_preview_file, {}, uncrustify_config_file)
 
 
 # Main execution

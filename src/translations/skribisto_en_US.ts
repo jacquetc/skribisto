@@ -1733,12 +1733,12 @@
 <context>
     <name>MainScreenForm.ui</name>
     <message>
-        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="47"/>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="48"/>
         <source>Hello Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="57"/>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="58"/>
         <source>Butto</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3310,17 +3310,17 @@
 <context>
     <name>Presenter::Chapter::ChapterController</name>
     <message>
-        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="155"/>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="141"/>
         <source>Create chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="183"/>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="169"/>
         <source>Update chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="213"/>
+        <location filename="../../sources/gui/presenter/chapter/chapter_controller.cpp" line="199"/>
         <source>Remove chapter</source>
         <translation type="unfinished"></translation>
     </message>

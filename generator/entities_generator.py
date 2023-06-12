@@ -4,11 +4,14 @@ import os
 import sys
 import stringcase
 import shutil
+import uncrustify
 from pathlib import Path
 
 
 def generate_entity_files(
-    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = None,
+    uncrustify_config_file: str = None,
 ):
     with open(manifest_file, "r") as stream:
         try:
@@ -185,12 +188,18 @@ def generate_entity_files(
         # Create the directory if it does not exist
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
+        if not files_to_be_generated.get(output_file, False):
+            continue
+
         # Add the generated file to the list
         generated_files.append(output_file)
 
         with open(output_file, "w") as fh:
             fh.write(rendered_template)
             print(f"Successfully wrote file {output_file}")
+
+        if uncrustify_config_file:
+            uncrustify.run_uncrustify(output_file, uncrustify_config_file)
 
     # add entity_base
     if register_entity_base:
@@ -219,21 +228,24 @@ def generate_entity_files(
 
     output_file = os.path.join(path, "domain_registration.h")
 
-    # Add the generated file to the list
-    generated_files.append(output_file)
+    if files_to_be_generated.get(output_file, False):
 
-    with open(output_file, "w") as fh:
-        fh.write(rendered_template)
-        print(f"Successfully wrote file {output_file}")
+        # Add the generated file to the list
+        generated_files.append(output_file)
 
-    # After the loop, write the list of generated files to a file
-    with open(entities_list_file, "w") as fh:
-        for file_path in generated_files:
-            # Convert the file path to be relative to the directory of the entities_list_file
-            relative_path = os.path.relpath(
-                file_path, os.path.dirname(entities_list_file)
-            )
-            fh.write(relative_path + "\n")
+        with open(output_file, "w") as fh:
+            fh.write(rendered_template)
+            print(f"Successfully wrote file {output_file}")
+
+    if files_to_be_generated.get(entities_list_file, False):
+        # After the loop, write the list of generated files to a file
+        with open(entities_list_file, "w") as fh:
+            for file_path in generated_files:
+                # Convert the file path to be relative to the directory of the entities_list_file
+                relative_path = os.path.relpath(
+                    file_path, os.path.dirname(entities_list_file)
+                )
+                fh.write(relative_path + "\n")
 
 
 def get_files_to_be_generated(
@@ -261,7 +273,6 @@ def get_files_to_be_generated(
     list_file = manifest["entities"]["list_file"]
     files.append(list_file)
 
-
     # strip from files if the value in files_to_be_generated is False
     if files_to_be_generated:
         for path, generate in files_to_be_generated.items():
@@ -273,7 +284,9 @@ def get_files_to_be_generated(
 
 # generate the files into the preview folder
 def preview_entity_files(
-    manifest_file: str, files_to_be_generated: dict[str, bool] = None
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = None,
+    uncrustify_config_file: str = None,
 ):
     manifest_preview_file = "temp/manifest_preview.yaml"
 
@@ -296,14 +309,17 @@ def preview_entity_files(
     with open(manifest_preview_file, "w") as fh:
         yaml.dump(manifest, fh)
 
-    if files_to_be_generated:
     # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
-        for path, _ in files_to_be_generated.items():
-            files_to_be_generated[path] = "preview/" + path.replace("..", "")
+    if files_to_be_generated:
+        preview_files_to_be_generated = {}
+        for path, value in files_to_be_generated.items():
+            preview_files_to_be_generated["preview/" + path.replace("..", "")] = value
 
-        generate_entity_files(manifest_preview_file, files_to_be_generated)
+        generate_entity_files(
+            manifest_preview_file, preview_files_to_be_generated, uncrustify_config_file
+        )
     else:
-        generate_entity_files(manifest_preview_file)
+        generate_entity_files(manifest_preview_file, {}, uncrustify_config_file)
 
 
 # Main execution

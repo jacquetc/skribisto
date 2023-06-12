@@ -4,6 +4,7 @@ import os
 import sys
 import stringcase
 import shutil
+import uncrustify
 from pathlib import Path
 
 
@@ -92,7 +93,7 @@ def generate_mock_controller_file(
     controller: dict, generation_dict: dict, files_to_be_generated: dict[str, bool]
 ):
     # generate the mock controller file if in the files_to_be_generated dict the value is True
-    if files_to_be_generated.get(controller["mock_presenter_file"], False):
+    if not files_to_be_generated.get(controller["mock_presenter_file"], False):
         return
 
     # Create the jinja2 environment
@@ -133,7 +134,7 @@ def generate_mock_qmldir_file(
     generation_dict: dict, files_to_be_generated: dict[str, bool]
 ):
     # generate the mock qmldir file if in the files_to_be_generated dict the value is True
-    if files_to_be_generated.get(generation_dict["qmldir_file"], False):
+    if not files_to_be_generated.get(generation_dict["qmldir_file"], False):
         return
 
     # Create the jinja2 environment
@@ -158,10 +159,15 @@ def generate_mock_qmldir_file(
 
 
 def generate_real_controller_file(
-    controller: dict, generation_dict: dict, files_to_be_generated: dict[str, bool]
+    controller: dict,
+    generation_dict: dict,
+    files_to_be_generated: dict[str, bool],
+    uncrustify_config_file: str,
 ):
     # generate the real controller file if in the files_to_be_generated dict the value is True
-    if files_to_be_generated.get(controller["real_presenter_file"], False):
+    real_presenter_file = controller["real_presenter_file"]
+
+    if not files_to_be_generated.get(real_presenter_file, False):
         return
 
     # Create the jinja2 environment
@@ -174,18 +180,23 @@ def generate_real_controller_file(
     output = template.render(controller=controller)
 
     # Create the directory if it does not exist
-    os.makedirs(os.path.dirname(controller["real_presenter_file"]), exist_ok=True)
+    os.makedirs(os.path.dirname(real_presenter_file), exist_ok=True)
 
     # Write the output to the file
-    with open(controller["real_presenter_file"], "w") as fh:
+    with open(real_presenter_file, "w") as fh:
         fh.write(output)
+
+    if uncrustify_config_file:
+        uncrustify.run_uncrustify(real_presenter_file, uncrustify_config_file)
 
 
 def generate_real_cmakelists_file(
     generation_dict: dict, files_to_be_generated: dict[str, bool]
 ):
+    common_cmake_file = generation_dict["common_cmake_file"]
+
     # generate the real cmakelists file if in the files_to_be_generated dict the value is True
-    if files_to_be_generated.get(generation_dict["common_cmake_file"], False):
+    if not files_to_be_generated.get(common_cmake_file, False):
         return
 
     # Create the jinja2 environment
@@ -196,9 +207,7 @@ def generate_real_cmakelists_file(
     files = generation_dict["real_presenter_files"]
     relative_files = []
     for file in files:
-        relative_files.append(
-            os.path.relpath(file, generation_dict["common_cmake_file"])
-        )
+        relative_files.append(os.path.relpath(file, os.path.dirname(common_cmake_file)))
 
     # Render the template
     output = template.render(
@@ -207,14 +216,18 @@ def generate_real_cmakelists_file(
     )
 
     # Create the directory if it does not exist
-    os.makedirs(os.path.dirname(generation_dict["common_cmake_file"]), exist_ok=True)
+    os.makedirs(os.path.dirname(common_cmake_file), exist_ok=True)
 
     # Write the output to the file
-    with open(generation_dict["common_cmake_file"], "w") as fh:
+    with open(common_cmake_file, "w") as fh:
         fh.write(output)
 
 
-def generate_qml_files(manifest_file: str, files_to_be_generated: dict[str, bool] = {}):
+def generate_qml_files(
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = {},
+    uncrustify_config_file: str = None,
+):
     with open(manifest_file, "r") as stream:
         try:
             manifest_data = yaml.safe_load(stream)
@@ -254,7 +267,7 @@ def generate_qml_files(manifest_file: str, files_to_be_generated: dict[str, bool
     # generate real files
     for _, controller in generation_dict["controllers"].items():
         generate_real_controller_file(
-            controller, generation_dict, files_to_be_generated
+            controller, generation_dict, files_to_be_generated, uncrustify_config_file
         )
 
     # generate real CMakeLists.txt file
@@ -319,8 +332,10 @@ def get_files_to_be_generated(
 
 
 # generate the files into the preview folder
-def preview_application_files(
-    manifest_file: str, files_to_be_generated: dict[str, bool] = {}
+def preview_qml_files(
+    manifest_file: str,
+    files_to_be_generated: dict[str, bool] = {},
+    uncrustify_config_file: str = None,
 ):
     manifest_preview_file = "temp/manifest_preview.yaml"
 
@@ -345,13 +360,16 @@ def preview_application_files(
 
     # preprend preview/ to the file names in the dict files_to_be_generated and remove .. from the path
     if files_to_be_generated:
-        for path, _ in files_to_be_generated.items():
-            files_to_be_generated[path] = "preview/" + path.replace("..", "")
+        preview_files_to_be_generated = {}
+        for path, value in files_to_be_generated.items():
+            preview_files_to_be_generated["preview/" + path.replace("..", "")] = value
 
-        generate_qml_files(manifest_preview_file, files_to_be_generated)
+        generate_qml_files(
+            manifest_preview_file, preview_files_to_be_generated, uncrustify_config_file
+        )
 
     else:
-        generate_qml_files(manifest_preview_file)
+        generate_qml_files(manifest_preview_file, {}, uncrustify_config_file)
 
 
 # Main execution
@@ -367,7 +385,7 @@ if __name__ == "__main__":
     file = "manifest.yaml"
     # if argument is --preview, generate the files into the preview folder
     if len(sys.argv) > 1 and sys.argv[1] == "--preview":
-        preview_application_files(file)
+        preview_qml_files(file)
     else:
         # generate the files
         generate_qml_files(file)

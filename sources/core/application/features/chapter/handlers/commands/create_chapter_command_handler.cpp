@@ -50,7 +50,7 @@ Result<ChapterDTO>CreateChapterCommandHandler::handleImpl(const CreateChapterCom
     qDebug() << "CreateChapterCommandHandler::handleImpl called";
     Domain::Chapter chapter;
 
-    if (m_oldState.isEmpty())
+    if (m_newState.isEmpty())
     {
         // Validate the create chapter command using the validator
         auto validator               = CreateChapterCommandValidator(m_repository);
@@ -79,7 +79,7 @@ Result<ChapterDTO>CreateChapterCommandHandler::handleImpl(const CreateChapterCom
     {
         // Map the create chapter command to a domain chapter object and
         // generate a UUID
-        chapter = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(m_oldState.value());
+        chapter = AutoMapper::AutoMapper::map<ChapterDTO, Domain::Chapter>(m_newState.value());
     }
 
     // Add the chapter to the repository
@@ -96,7 +96,7 @@ Result<ChapterDTO>CreateChapterCommandHandler::handleImpl(const CreateChapterCom
 
     auto chapterDTO = AutoMapper::AutoMapper::map<Domain::Chapter, ChapterDTO>(chapterResult.value());
 
-    m_oldState = Result<ChapterDTO>(chapterDTO);
+    m_newState = Result<ChapterDTO>(chapterDTO);
 
     emit chapterCreated(chapterDTO);
 
@@ -108,7 +108,7 @@ Result<ChapterDTO>CreateChapterCommandHandler::handleImpl(const CreateChapterCom
 
 Result<ChapterDTO>CreateChapterCommandHandler::restoreImpl()
 {
-    Result<Domain::Chapter> chapterResult = m_repository->get(m_oldState.value().uuid());
+    Result<Domain::Chapter> chapterResult = m_repository->get(m_newState.value().uuid());
 
     if (chapterResult.hasError())
     {
@@ -130,4 +130,10 @@ Result<ChapterDTO>CreateChapterCommandHandler::restoreImpl()
     qDebug() << "Chapter removed:" << deleteResult.value().uuid();
 
     return Result<ChapterDTO>(chapterDTO);
+}
+
+void CallOnce::registerMappings()
+{
+    AutoMapper::AutoMapper::registerMapping<Domain::Chapter, Contracts::DTO::Chapter::ChapterDTO>(true);
+    AutoMapper::AutoMapper::registerMapping<Contracts::DTO::Chapter::CreateChapterDTO, Domain::Chapter>();
 }

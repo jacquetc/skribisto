@@ -23,6 +23,9 @@ ApplicationRegistration::ApplicationRegistration(QObject *parent) : QObject{pare
     AutoMapper::AutoMapper::registerMapping<Contracts::DTO::Scene::CreateSceneDTO, Domain::Scene>();
 
     // Chapter
-    AutoMapper::AutoMapper::registerMapping<Domain::Chapter, Contracts::DTO::Chapter::ChapterDTO>(true);
-    AutoMapper::AutoMapper::registerMapping<Contracts::DTO::Chapter::CreateChapterDTO, Domain::Chapter>();
+    //    AutoMapper::AutoMapper::registerMapping<Domain::Chapter,
+    // Contracts::DTO::Chapter::ChapterDTO>(true);
+    //
+    //  AutoMapper::AutoMapper::registerMapping<Contracts::DTO::Chapter::CreateChapterDTO,
+    // Domain::Chapter>();
 }

@@ -1,0 +1,9 @@
+#pragma once
+
+#include <QtCore/QtGlobal>
+
+#if defined({{ application_uppercase_name }}_APPLICATION_{{ feature_uppercase_name }}_LIBRARY)
+#define {{ export }} Q_DECL_EXPORT
+#else // if defined({{ application_uppercase_name }}_APPLICATION_{{ feature_uppercase_name }}_LIBRARY)
+#define {{ export }} Q_DECL_IMPORT
+#endif // if defined({{ application_uppercase_name }}_APPLICATION_{{ feature_uppercase_name }}_LIBRARY)

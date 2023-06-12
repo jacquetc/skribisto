@@ -69,6 +69,8 @@ class MainWindow(QMainWindow):
 
         self.last_manifest_mtime = os.path.getmtime(self.manifest_file)
 
+        self.uncrustify_config_file = "../uncrustify.cfg"
+
         # geometry
 
         self.setGeometry(100, 100, 800, 600)
@@ -356,22 +358,34 @@ class MainWindow(QMainWindow):
         self.clear_preview_folder()
         self.list_all()
         entities_generator.preview_entity_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         dto_generator.preview_dto_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         repositories_generator.preview_repository_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         cqrs_generator.preview_cqrs_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         controller_generator.preview_controller_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         application_generator.preview_application_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
 
         self.text_box.setPlainText(
@@ -382,22 +396,34 @@ class MainWindow(QMainWindow):
         if self.display_overwrite_confirmation():
             self.list_all()
             entities_generator.generate_entity_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             dto_generator.generate_dto_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             repositories_generator.generate_repository_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             cqrs_generator.generate_cqrs_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             controller_generator.generate_controller_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             application_generator.generate_application_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
 
             self.text_box.setPlainText("All files generated")
@@ -414,7 +440,9 @@ class MainWindow(QMainWindow):
     def preview_entities(self):
         self.list_entities()
         entities_generator.preview_entity_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         self.text_box.clear()
         self.text_box.setPlainText(
@@ -432,7 +460,9 @@ class MainWindow(QMainWindow):
             )
         ):
             entities_generator.generate_entity_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             self.text_box.clear()
             self.text_box.setPlainText("Entities generated")
@@ -449,7 +479,9 @@ class MainWindow(QMainWindow):
     def preview_dtos(self):
         self.list_dtos()
         dto_generator.preview_dto_files(
-            self.temp_manifest_file, self.file_list_view.get_selected_files()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         self.text_box.clear()
         self.text_box.setPlainText(
@@ -467,7 +499,9 @@ class MainWindow(QMainWindow):
             )
         ):
             dto_generator.generate_dto_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             self.text_box.clear()
             self.text_box.setPlainText("DTOs generated")
@@ -484,7 +518,9 @@ class MainWindow(QMainWindow):
     def preview_repositories(self):
         self.list_repositories()
         repositories_generator.preview_repository_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         self.text_box.clear()
         self.text_box.setPlainText(
@@ -503,7 +539,9 @@ class MainWindow(QMainWindow):
             )
         ):
             repositories_generator.generate_repositories_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             self.text_box.clear()
             self.text_box.setPlainText("Repositories generated")
@@ -519,7 +557,9 @@ class MainWindow(QMainWindow):
     def preview_cqrs(self):
         self.list_cqrs()
         cqrs_generator.preview_cqrs_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         self.text_box.clear()
         self.text_box.setPlainText(
@@ -537,7 +577,9 @@ class MainWindow(QMainWindow):
             )
         ):
             cqrs_generator.generate_cqrs_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             self.text_box.clear()
             self.text_box.setPlainText("CQRS generated")
@@ -554,7 +596,9 @@ class MainWindow(QMainWindow):
     def preview_controllers(self):
         self.list_controllers()
         controller_generator.preview_controller_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         self.text_box.clear()
         self.text_box.setPlainText(
@@ -571,7 +615,9 @@ class MainWindow(QMainWindow):
             self.file_list_view.fetch_file_states(),
         ):
             controller_generator.generate_controller_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             self.text_box.clear()
             self.text_box.setPlainText("Controllers generated")
@@ -588,7 +634,9 @@ class MainWindow(QMainWindow):
     def preview_application(self):
         self.list_application()
         application_generator.preview_application_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         self.text_box.clear()
         self.text_box.setPlainText(
@@ -605,7 +653,9 @@ class MainWindow(QMainWindow):
             self.file_list_view.fetch_file_states(),
         ):
             application_generator.generate_application_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             self.text_box.clear()
             self.text_box.setPlainText("Application generated")
@@ -622,7 +672,9 @@ class MainWindow(QMainWindow):
     def preview_qml(self):
         self.list_qml()
         qml_generator.preview_qml_files(
-            self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            self.temp_manifest_file,
+            self.file_list_view.fetch_file_states(),
+            self.uncrustify_config_file,
         )
         self.text_box.clear()
         self.text_box.setPlainText(
@@ -639,7 +691,9 @@ class MainWindow(QMainWindow):
             self.file_list_view.fetch_file_states(),
         ):
             qml_generator.generate_qml_files(
-                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
             )
             self.text_box.clear()
             self.text_box.setPlainText("QML generated")
