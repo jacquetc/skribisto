@@ -84,7 +84,7 @@ void TestDatabaseTable::testRemove()
 
     // remove the entity
 
-    auto removeResult = m_entityTable->remove(std::move(addResult.value()));
+    auto removeResult = m_entityTable->remove(addResult.value().id());
     QVERIFY(removeResult.isSuccess());
 
     // Verify the entity is removed

@@ -1,0 +1,22 @@
+#pragma once
+
+{% if not query.request_is_id %}
+#include "{{ query.feature_name_snake }}/{{ query.dto_snake }}.h"
+{% endif %}
+
+namespace Contracts::CQRS::{{ query.feature_name_pascal }}::Queries
+{
+class {{ query.name }}
+{
+  public:
+    {{ query.name }}()
+    {
+    }
+
+{% if query.request_is_id %}
+    int id = -1;
+{% else %}
+    Contracts::DTO::{{ query.feature_name_pascal }}::{{ query.dto_pascal }} req;
+{% endif %}
+};
+} // namespace Contracts::CQRS::{{ query.feature_name_pascal }}::Queries

@@ -5,6 +5,7 @@ import sys
 import stringcase
 import shutil
 import uncrustify
+import clang_format
 from pathlib import Path
 
 
@@ -186,8 +187,9 @@ def generate_real_controller_file(
     with open(real_presenter_file, "w") as fh:
         fh.write(output)
 
-    if uncrustify_config_file:
-        uncrustify.run_uncrustify(real_presenter_file, uncrustify_config_file)
+    # if uncrustify_config_file:
+    #     uncrustify.run_uncrustify(real_presenter_file, uncrustify_config_file)
+    clang_format.run_clang_format(real_presenter_file)  
 
 
 def generate_real_cmakelists_file(

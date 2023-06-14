@@ -14,10 +14,8 @@ class SKR_DOMAIN_EXPORT Author : public Entity
 
     Q_PROPERTY(QString name READ name WRITE setName)
 
-    
-
   public:
-    Author() : Entity() , m_name(QString())
+    Author() : Entity(), m_name(QString())
     {
     }
 
@@ -25,7 +23,8 @@ class SKR_DOMAIN_EXPORT Author : public Entity
     {
     }
 
-   Author(  const int &id,  const QUuid &uuid,  const QDateTime &creationDate,  const QDateTime &updateDate,   const QString &name ) 
+    Author(const int &id, const QUuid &uuid, const QDateTime &creationDate, const QDateTime &updateDate,
+           const QString &name)
         : Entity(id, uuid, creationDate, updateDate), m_name(name)
     {
     }
@@ -40,58 +39,48 @@ class SKR_DOMAIN_EXPORT Author : public Entity
         {
             Entity::operator=(other);
             m_name = other.m_name;
-            
         }
         return *this;
     }
 
     friend bool operator==(const Author &lhs, const Author &rhs);
 
-
     friend uint qHash(const Author &entity, uint seed) noexcept;
-
-
 
     // ------ name : -----
 
     QString name() const
     {
-        
+
         return m_name;
     }
 
-    void setName( const QString &name)
+    void setName(const QString &name)
     {
         m_name = name;
     }
-    
-
 
   private:
-QString m_name;
-    
+    QString m_name;
 };
 
 inline bool operator==(const Author &lhs, const Author &rhs)
 {
 
-    return 
-            static_cast<const Entity&>(lhs) == static_cast<const Entity&>(rhs) &&
-    
-            lhs.m_name == rhs.m_name 
-    ;
+    return static_cast<const Entity &>(lhs) == static_cast<const Entity &>(rhs) &&
+
+           lhs.m_name == rhs.m_name;
 }
 
 inline uint qHash(const Author &entity, uint seed = 0) noexcept
-{        // Seed the hash with the parent class's hash
-        uint hash = 0;
-        hash ^= qHash(static_cast<const Entity&>(entity), seed);
+{ // Seed the hash with the parent class's hash
+    uint hash = 0;
+    hash ^= qHash(static_cast<const Entity &>(entity), seed);
 
-        // Combine with this class's properties
-        hash ^= ::qHash(entity.m_name, seed);
-        
+    // Combine with this class's properties
+    hash ^= ::qHash(entity.m_name, seed);
 
-        return hash;
+    return hash;
 }
 
 } // namespace Domain

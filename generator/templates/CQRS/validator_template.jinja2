@@ -1,0 +1,56 @@
+#pragma once
+
+{% if not validator.request_is_id %}
+#include "{{ validator.feature_name_snake }}/{{ validator.dto_snake }}.h"
+{% endif %}
+{% for repository in validator.repositories %}
+#include "persistence/interface_{{ repository.snake_name }}_repository.h"
+{% endfor %}
+#include "result.h"
+
+{% if validator.repositories|length %}
+using namespace Contracts::Persistence;
+{% endif %}
+{% if not validator.request_is_id %}using namespace Contracts::DTO::{{ validator.feature_name_pascal }};{% endif %}
+
+namespace Contracts::CQRS::{{ validator.feature_name_pascal }}::Validators
+{
+class {{ validator.name }}
+{
+  public:
+    {{ validator.name }}({% for repository in validator.repositories %}QSharedPointer<Interface{{ repository.pascal_name }}Repository> {{ repository.camel_name }}Repository{% if not loop.last %},{% endif %}{% endfor %})
+        {% for repository in validator.repositories %}{% if loop.first %}: {% endif %} m_{{ repository.camel_name }}Repository({{ repository.camel_name }}Repository){% if not loop.last %},{% endif %}{% endfor %}
+    {
+    }
+{% if validator.request_is_id %}
+    Result<void> validate(int id) const
+{% else %}
+    Result<void> validate(const {{ validator.dto_pascal }} &dto) const
+{% endif %}
+    {
+
+{% if validator.check_if_exists %}
+{% for repository in validator.repositories %}
+{% if validator.request_is_id %}
+        Result<bool> existsResult = m_{{ repository.camel_name }}Repository->exists(id);
+{% else %}
+        Result<bool> existsResult = m_{{ repository.camel_name }}Repository->exists(dto.id());
+{% endif %}
+        if (!existsResult.value())
+        {
+            return Result<void>(Error(Q_FUNC_INFO, Error::Critical, "id_already_exists"));
+        }
+{% endfor %}
+{% endif %}
+
+
+        // Return that is Ok :
+        return Result<void>();
+    }
+
+  private:
+{% for repository in validator.repositories %}
+    QSharedPointer<Interface{{ repository.pascal_name }}Repository> m_{{ repository.camel_name }}Repository;
+{% endfor %}
+};
+} // namespace Contracts::CQRS::{{ validator.feature_name_pascal }}::Validators

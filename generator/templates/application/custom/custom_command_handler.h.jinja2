@@ -1,11 +1,12 @@
 #pragma once
 
 #include "{{ export_header }}"
-#include "{{ command.snake_name }}_dto.h"
-#include "cqrs/{{ feature_snake_name }}/commands/{{ command.snake_name }}_command.h"
-#include "handler.h"
-#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+#include "{{ feature_snake_name }}/{{ command.dto_out_snake_name }}.h"
+#include "{{ feature_snake_name }}/commands/{{ command.snake_name }}_command.h"
+{% for repository in command.repositories %}
+#include "persistence/interface_{{ repository.snake_name}}_repository.h"{% endfor %}
 #include "result.h"
+#include <QPromise>
 
 using namespace Contracts::DTO::{{ feature_pascal_name }};
 using namespace Contracts::Persistence;
@@ -13,14 +14,15 @@ using namespace Contracts::CQRS::{{ feature_pascal_name }}::Commands;
 
 namespace Application::Features::{{ feature_pascal_name }}::Commands
 {
-class {{ export }} {{ command.pascal_name }}CommandHandler : public Handler
+class {{ export }} {{ command.pascal_name }}CommandHandler : public QObject 
 {
     Q_OBJECT
   public:
     {{ command.pascal_name }}CommandHandler({% for repository in command.repositories %}
-QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository) {% if not loop.last %},{% endif %}{% endfor %});
+QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository {% if not loop.last %},{% endif %}{% endfor %});
 
     Result<{{ command.dto_out_pascal_name }}> handle(QPromise<Result<void>> &progressPromise, const {{ command.pascal_name }}Command &request);
+
     Result<{{ command.dto_out_pascal_name }}> restore();
 
   signals:
@@ -30,22 +32,13 @@ QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.cam
   {% for repository in command.repositories %}
     QSharedPointer<Interface{{ repository.pascal_name }}Repository> m_{{ repository.camel_name }}Repository;
   {%- endfor %}
-    Result<{{ command.dto_out_pascal_name }}> handleImpl(const {{ command.pascal_name }}Command &request);
+    Result<{{ command.dto_out_pascal_name }}> handleImpl(QPromise<Result<void> >   & progressPromise, const {{ command.pascal_name }}Command &request);
+{% if command.restore %}
     Result<{{ command.dto_out_pascal_name }}> restoreImpl();
     Result<{{ command.dto_out_pascal_name }}> m_newState;
-};
-
-struct CallOnce
-{
-    CallOnce()
-    {
-        registerMappings();
-    }
+{% endif %}    
+    static bool s_mappingRegistered;
     void registerMappings();
-
 };
-// This line will ensure the function is called once at the start of the program.
-static CallOnce callOnceInstance;
-
 
 } // namespace Application::Features::{{ feature_pascal_name }}::Commands

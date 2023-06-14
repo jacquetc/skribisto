@@ -1,40 +1,30 @@
 #pragma once
 
 #include "{{ export_header }}"
-#include "{{ feature_snake_name }}_dto.h"
-#include "cqrs/{{ feature_snake_name }}/requests/get_{{ feature_snake_name }}_request.h"
-#include "handler.h"
-#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+#include "{{ feature_snake_name }}/{{ entity_mappable_with_snake }}_dto.h"
+#include "{{ feature_snake_name }}/queries/get_{{ entity_mappable_with_snake }}_query.h"
+
+#include "persistence/interface_{{ entity_mappable_with_snake }}_repository.h"
+#include <QPromise>
 
 using namespace Contracts::DTO::{{ feature_pascal_name }};
 using namespace Contracts::Persistence;
-using namespace Contracts::CQRS::{{ feature_pascal_name }}::Requests;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Queries;
 
 namespace Application::Features::{{ feature_pascal_name }}::Queries
 {
-class {{ export }} Get{{ feature_pascal_name }}RequestHandler : public Handler
+class {{ export }} Get{{ entity_mappable_with_pascal }}QueryHandler  : public QObject
 {
     Q_OBJECT
   public:
-    Get{{ feature_pascal_name }}RequestHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository> repository);
-    Result<{{ feature_pascal_name }}DTO> handle(QPromise<Result<void>> &progressPromise, const Get{{ feature_pascal_name }}Request &request);
+    Get{{ entity_mappable_with_pascal }}QueryHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> repository);
+    Result<{{ entity_mappable_with_pascal }}DTO> handle(QPromise<Result<void>> &progressPromise, const Get{{ entity_mappable_with_pascal }}Query &query);
 
   private:
-    QSharedPointer<Interface{{ feature_pascal_name }}Repository> m_repository;
-    Result<{{ feature_pascal_name }}DTO> handleImpl(const Get{{ feature_pascal_name }}Request &request);
-};
-
-
-struct CallOnce
-{
-    CallOnce()
-    {
-        registerMappings();
-    }
+    QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> m_repository;
+    Result<{{ entity_mappable_with_pascal }}DTO> handleImpl(QPromise<Result<void> >   & progressPromise, const Get{{ entity_mappable_with_pascal }}Query &query);
+    static bool s_mappingRegistered;
     void registerMappings();
-
 };
-// This line will ensure the function is called once at the start of the program.
-static CallOnce callOnceInstance;
 
 } // namespace Application::Features::{{ feature_pascal_name }}::Queries

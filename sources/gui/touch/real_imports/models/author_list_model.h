@@ -26,7 +26,7 @@
 #include <QQmlEngine>
 #include <QUrl>
 
-#include "author_dto.h"
+#include "author/author_dto.h"
 
 struct AuthorListItem
 {

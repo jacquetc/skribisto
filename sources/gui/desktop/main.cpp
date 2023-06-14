@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
 
-    for (const QString& locale : uiLanguages)
+    for (const QString &locale : uiLanguages)
     {
         const QString baseName = "skribisto-desktop_" + QLocale(locale).name();
 

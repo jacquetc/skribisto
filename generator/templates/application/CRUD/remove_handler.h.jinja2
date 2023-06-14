@@ -1,11 +1,12 @@
 #pragma once
 
 #include "{{ export_header }}"
-#include "{{ feature_snake_name }}_dto.h"
-#include "cqrs/{{ feature_snake_name }}/commands/remove_{{ feature_snake_name }}_command.h"
-#include "handler.h"
-#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+#include "{{ feature_snake_name }}/{{ entity_mappable_with_snake }}_dto.h"
+#include "{{ feature_snake_name }}/commands/remove_{{ entity_mappable_with_snake }}_command.h"
+
+#include "persistence/interface_{{ entity_mappable_with_snake }}_repository.h"
 #include "result.h"
+#include <QPromise>
 
 using namespace Contracts::DTO::{{ feature_pascal_name }};
 using namespace Contracts::Persistence;
@@ -13,37 +14,25 @@ using namespace Contracts::CQRS::{{ feature_pascal_name }}::Commands;
 
 namespace Application::Features::{{ feature_pascal_name }}::Commands
 {
-class {{ export }} Remove{{ feature_pascal_name }}CommandHandler : public Handler
+class {{ export }} Remove{{ entity_mappable_with_pascal }}CommandHandler : public QObject 
 {
     Q_OBJECT
   public:
-    Remove{{ feature_pascal_name }}CommandHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository> repository);
-    Result<{{ feature_pascal_name }}DTO> handle(QPromise<Result<void>> &progressPromise, const Remove{{ feature_pascal_name }}Command &request);
-    Result<{{ feature_pascal_name }}DTO> restore();
+    Remove{{ entity_mappable_with_pascal }}CommandHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> repository);
+    Result<int> handle(QPromise<Result<void>> &progressPromise, const Remove{{ entity_mappable_with_pascal }}Command &request);
+    Result<int> restore();
 
   signals:
-    void {{ feature_snake_name }}Created(Contracts::DTO::{{ feature_pascal_name }}::{{ feature_pascal_name }}DTO {{ feature_snake_name }}Dto);
-    void {{ feature_snake_name }}Removed(Contracts::DTO::{{ feature_pascal_name }}::{{ feature_pascal_name }}DTO {{ feature_snake_name }}Dto);
+    void {{ entity_mappable_with_camel }}Created(Contracts::DTO::{{ entity_mappable_with_pascal }}::{{ entity_mappable_with_pascal }}DTO {{ entity_mappable_with_camel }}Dto);
+    void {{ entity_mappable_with_camel }}Removed(int id);
 
   private:
-    QSharedPointer<Interface{{ feature_pascal_name }}Repository> m_repository;
-    Result<{{ feature_pascal_name }}DTO> handleImpl(const Remove{{ feature_pascal_name }}Command &request);
-    Result<{{ feature_pascal_name }}DTO> restoreImpl();
-    Result<{{ feature_pascal_name }}DTO> saveOldState();
-    Result<{{ feature_pascal_name }}DTO> m_newState;
-};
-
-
-struct CallOnce
-{
-    CallOnce()
-    {
-        registerMappings();
-    }
+    QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> m_repository;
+    Result<int> handleImpl(QPromise<Result<void> >   & progressPromise, const Remove{{ entity_mappable_with_pascal }}Command &request);
+    Result<int> restoreImpl();
+    Domain::{{ entity_mappable_with_pascal }} m_oldState;
+    static bool s_mappingRegistered;
     void registerMappings();
-
 };
-// This line will ensure the function is called once at the start of the program.
-static CallOnce callOnceInstance;
 
 } // namespace Application::Features::{{ feature_pascal_name }}::Commands

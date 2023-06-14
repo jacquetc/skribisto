@@ -2,3 +2,5 @@ persistence/interface_chapter_repository.h
 persistence/interface_book_repository.h
 persistence/interface_atelier_repository.h
 persistence/interface_author_repository.h
+persistence/interface_scene_repository.h
+persistence/interface_scene_paragraph_repository.h

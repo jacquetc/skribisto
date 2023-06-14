@@ -134,10 +134,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         authorController->remove(item->data(Qt::UserRole).toInt());
     });
 
-    connect(authorController, &AuthorController::authorRemoved, this, [this](Contracts::DTO::Author::AuthorDTO result) {
+    connect(authorController, &AuthorController::authorRemoved, this, [this](int id) {
         for (int i = 0; i < ui->listWidget->count(); i++)
         {
-            if (ui->listWidget->item(i)->data(Qt::UserRole).toInt() == result.id())
+            if (ui->listWidget->item(i)->data(Qt::UserRole).toInt() == id)
             {
                 ui->listWidget->takeItem(i);
                 break;

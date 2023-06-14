@@ -5,6 +5,7 @@ import sys
 import stringcase
 import shutil
 import uncrustify
+import clang_format
 from pathlib import Path
 
 
@@ -12,6 +13,7 @@ def get_generation_dict(
     common_cmake_folder_path: str,
     application_name: str,
     feature_by_name: dict,
+    entities_by_name: dict,
 ) -> dict:
     generation_dict = {}
     for feature_name, feature in feature_by_name.items():
@@ -28,18 +30,27 @@ def get_generation_dict(
         generation_dict[feature_pascal_name]["export_header"] = export_header
         generation_dict[feature_pascal_name]["export_header_file"] = os.path.join(
             common_cmake_folder_path,
-            feature_snake_name,
+            feature_snake_name + "_feature",
             export_header,
         )
         generation_dict[feature_pascal_name][
             "export"
         ] = f"{stringcase.uppercase(application_name)}_APPLICATION_{stringcase.uppercase(feature_snake_name)}_EXPORT"
 
+    # add CRUD handlers
     for feature_name, feature in generation_dict.items():
         feature_snake_name = feature["feature_snake_name"]
+        feature_pascal_name = feature["feature_pascal_name"]
         feature["crud_handlers"] = {}
         crud_handlers = feature["crud_handlers"]
         crud_data = feature_by_name[feature_name].get("CRUD", {})
+        entity_mappable_with = crud_data.get("entity_mappable_with", None)
+        if crud_data.get("enabled", False) and not entity_mappable_with:
+            raise Exception(
+                f"CRUD.entity_mappable_with not defined for feature {feature_name}"
+            )
+        entity_mappable_with_snake = stringcase.snakecase(entity_mappable_with)
+        entity_mappable_with_pascal = stringcase.pascalcase(entity_mappable_with)
         if crud_data.get("enabled", False):
             create_data = crud_data.get("create", {})
             if create_data.get("enabled", False) and create_data.get("generate", True):
@@ -52,17 +63,24 @@ def get_generation_dict(
                     "files": [
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "commands",
-                            f"create_{feature_snake_name}_command_handler.cpp",
+                            f"create_{entity_mappable_with_snake}_command_handler.cpp",
                         ),
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "commands",
-                            f"create_{feature_snake_name}_command_handler.h",
+                            f"create_{entity_mappable_with_snake}_command_handler.h",
                         ),
                     ],
+                    "entity_mappable_with_snake": entity_mappable_with_snake,
+                    "entity_mappable_with_pascal": entity_mappable_with_pascal,
+                    "entity_mappable_with_camel": stringcase.camelcase(
+                        entity_mappable_with
+                    ),
                 }
             remove_data = crud_data.get("remove", {})
             if remove_data.get("enabled", False) and remove_data.get("generate", True):
@@ -75,17 +93,24 @@ def get_generation_dict(
                     "files": [
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "commands",
-                            f"remove_{feature_snake_name}_command_handler.cpp",
+                            f"remove_{entity_mappable_with_snake}_command_handler.cpp",
                         ),
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "commands",
-                            f"remove_{feature_snake_name}_command_handler.h",
+                            f"remove_{entity_mappable_with_snake}_command_handler.h",
                         ),
                     ],
+                    "entity_mappable_with_snake": entity_mappable_with_snake,
+                    "entity_mappable_with_pascal": entity_mappable_with_pascal,
+                    "entity_mappable_with_camel": stringcase.camelcase(
+                        entity_mappable_with
+                    ),
                 }
             update_data = crud_data.get("update", {})
             if update_data.get("enabled", False) and update_data.get("generate", True):
@@ -98,17 +123,24 @@ def get_generation_dict(
                     "files": [
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "commands",
-                            f"update_{feature_snake_name}_command_handler.cpp",
+                            f"update_{entity_mappable_with_snake}_command_handler.cpp",
                         ),
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "commands",
-                            f"update_{feature_snake_name}_command_handler.h",
+                            f"update_{entity_mappable_with_snake}_command_handler.h",
                         ),
                     ],
+                    "entity_mappable_with_snake": entity_mappable_with_snake,
+                    "entity_mappable_with_pascal": entity_mappable_with_pascal,
+                    "entity_mappable_with_camel": stringcase.camelcase(
+                        entity_mappable_with
+                    ),
                 }
             get_data = crud_data.get("get", {})
             if get_data.get("enabled", False) and get_data.get("generate", True):
@@ -121,17 +153,24 @@ def get_generation_dict(
                     "files": [
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "queries",
-                            f"get_{feature_snake_name}_query_handler.cpp",
+                            f"get_{entity_mappable_with_snake}_query_handler.cpp",
                         ),
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "queries",
-                            f"get_{feature_snake_name}_query_handler.h",
+                            f"get_{entity_mappable_with_snake}_query_handler.h",
                         ),
                     ],
+                    "entity_mappable_with_snake": entity_mappable_with_snake,
+                    "entity_mappable_with_pascal": entity_mappable_with_pascal,
+                    "entity_mappable_with_camel": stringcase.camelcase(
+                        entity_mappable_with
+                    ),
                 }
             get_all_data = crud_data.get("get_all", {})
             if get_all_data.get("enabled", False) and get_all_data.get(
@@ -146,17 +185,24 @@ def get_generation_dict(
                     "files": [
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "queries",
-                            f"get_all_{feature_snake_name}_query_handler.cpp",
+                            f"get_all_{entity_mappable_with_snake}_query_handler.cpp",
                         ),
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "queries",
-                            f"get_all_{feature_snake_name}_query_handler.h",
+                            f"get_all_{entity_mappable_with_snake}_query_handler.h",
                         ),
                     ],
+                    "entity_mappable_with_snake": entity_mappable_with_snake,
+                    "entity_mappable_with_pascal": entity_mappable_with_pascal,
+                    "entity_mappable_with_camel": stringcase.camelcase(
+                        entity_mappable_with
+                    ),
                 }
             get_with_details_data = crud_data.get("get_with_details", {})
             if get_with_details_data.get(
@@ -171,17 +217,30 @@ def get_generation_dict(
                     "files": [
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "queries",
-                            f"get_with_details_{feature_snake_name}_query_handler.cpp",
+                            f"get_{entity_mappable_with_snake}_with_details_query_handler.cpp",
                         ),
                         os.path.join(
                             common_cmake_folder_path,
+                            feature_snake_name + "_feature",
                             feature_snake_name,
                             "queries",
-                            f"get_with_details_{feature_snake_name}_query_handler.h",
+                            f"get_{entity_mappable_with_snake}_with_details_query_handler.h",
                         ),
                     ],
+                    "lazy_load_pascal_fields": [
+                        stringcase.pascalcase(field)
+                        for field in get_lazy_loading_fields(
+                            entity_mappable_with_pascal, entities_by_name
+                        )
+                    ],
+                    "entity_mappable_with_snake": entity_mappable_with_snake,
+                    "entity_mappable_with_pascal": entity_mappable_with_pascal,
+                    "entity_mappable_with_camel": stringcase.camelcase(
+                        entity_mappable_with
+                    ),
                 }
         for handler_name, handler_data in crud_handlers.items():
             handler_data["export"] = feature["export"]
@@ -190,6 +249,8 @@ def get_generation_dict(
 
     # add commands and queries to the feature:
     for feature_name, feature in generation_dict.items():
+        feature_snake_name = feature["feature_snake_name"]
+        feature_pascal_name = feature["feature_pascal_name"]
         feature["custom_handlers"] = {}
         if feature_by_name[feature_name].get("commands", None):
             feature["custom_handlers"]["commands"] = feature_by_name[feature_name][
@@ -200,12 +261,14 @@ def get_generation_dict(
                 files = [
                     os.path.join(
                         common_cmake_folder_path,
+                        feature_snake_name + "_feature",
                         feature_snake_name,
                         "commands",
                         f"{stringcase.snakecase(command['name'])}_command_handler.h",
                     ),
                     os.path.join(
                         common_cmake_folder_path,
+                        feature_snake_name + "_feature",
                         feature_snake_name,
                         "commands",
                         f"{stringcase.snakecase(command['name'])}_command_handler.cpp",
@@ -216,23 +279,55 @@ def get_generation_dict(
                     "custom_command_handler.h.jinja2",
                     "custom_command_handler.cpp.jinja2",
                 ]
+                command["repositories"] = []
+                for entity_name in command.get("entities", []):
+                    command["repositories"].append(
+                        {
+                            "pascal_name": stringcase.pascalcase(entity_name),
+                            "snake_name": stringcase.snakecase(entity_name),
+                            "camel_name": stringcase.camelcase(entity_name),
+                        }
+                    )
+
                 command["export"] = feature["export"]
                 command["export_header"] = feature["export_header"]
                 command["export_header_file"] = feature["export_header_file"]
                 command["camel_name"] = stringcase.camelcase(command["name"])
                 command["snake_name"] = stringcase.snakecase(command["name"])
                 command["pascal_name"] = stringcase.pascalcase(command["name"])
+                # DTO in
+                if command.get("dto", {}).get("in", {}):
+                    if command.get("dto", {}).get("in", {}).get("is_void", False):
+                        command["dto_in_pascal_name"] = "void"
+                        command["dto_in_camel_name"] = "void"
+                        command["dto_in_snake_name"] = "void"
+                    else:
+                        command["dto_in_pascal_name"] = stringcase.pascalcase(
+                            command["dto"]["in"]["type_prefix"] + "DTO"
+                        )
+                        command["dto_in_camel_name"] = stringcase.camelcase(
+                            command["dto"]["in"]["type_prefix"] + "DTO"
+                        )
+                        command["dto_in_snake_name"] = (
+                            stringcase.snakecase(command["dto"]["in"]["type_prefix"])
+                            + "_dto"
+                        )
                 # DTO out
                 if command.get("dto", {}).get("out", {}):
                     if command.get("dto", {}).get("out", {}).get("is_void", False):
                         command["dto_out_pascal_name"] = "void"
                         command["dto_out_camel_name"] = "void"
+                        command["dto_out_snake_name"] = "void"
                     else:
                         command["dto_out_pascal_name"] = stringcase.pascalcase(
                             command["dto"]["out"]["type_prefix"] + "DTO"
                         )
                         command["dto_out_camel_name"] = stringcase.camelcase(
                             command["dto"]["out"]["type_prefix"] + "DTO"
+                        )
+                        command["dto_out_snake_name"] = (
+                            stringcase.snakecase(command["dto"]["out"]["type_prefix"])
+                            + "_dto"
                         )
 
                 # for each command.dto.out.type_prefix, add command.dto.out.type_prefix_camel
@@ -257,12 +352,14 @@ def get_generation_dict(
                 files = [
                     os.path.join(
                         common_cmake_folder_path,
+                        feature_snake_name + "_feature",
                         feature_snake_name,
                         "queries",
                         f"{stringcase.snakecase(query['name'])}_query_handler.h",
                     ),
                     os.path.join(
                         common_cmake_folder_path,
+                        feature_snake_name + "_feature",
                         feature_snake_name,
                         "queries",
                         f"{stringcase.snakecase(query['name'])}_query_handler.cpp",
@@ -273,12 +370,57 @@ def get_generation_dict(
                     "custom_query_handler.h.jinja2",
                     "custom_query_handler.cpp.jinja2",
                 ]
+
+                query["repositories"] = []
+                for entity_name in query.get("entities", []):
+                    query["repositories"].append(
+                        {
+                            "pascal_name": stringcase.pascalcase(entity_name),
+                            "snake_name": stringcase.snakecase(entity_name),
+                            "camel_name": stringcase.camelcase(entity_name),
+                        }
+                    )
                 query["export"] = feature["export"]
                 query["export_header"] = feature["export_header"]
                 query["export_header_file"] = feature["export_header_file"]
                 query["camel_name"] = stringcase.camelcase(query["name"])
                 query["snake_name"] = stringcase.snakecase(query["name"])
                 query["pascal_name"] = stringcase.pascalcase(query["name"])
+                # DTO in
+                if query.get("dto", {}).get("in", {}):
+                    if query.get("dto", {}).get("in", {}).get("is_void", False):
+                        query["dto_in_pascal_name"] = "void"
+                        query["dto_in_camel_name"] = "void"
+                        query["dto_in_snake_name"] = "void"
+
+                    else:
+                        query["dto_in_pascal_name"] = stringcase.pascalcase(
+                            query["dto"]["in"]["type_prefix"] + "DTO"
+                        )
+                        query["dto_in_camel_name"] = stringcase.camelcase(
+                            query["dto"]["in"]["type_prefix"] + "DTO"
+                        )
+                        query["dto_in_snake_name"] = (
+                            stringcase.snakecase(query["dto"]["in"]["type_prefix"])
+                            + "_dto"
+                        )
+                # DTO out
+                if query.get("dto", {}).get("out", {}):
+                    if query.get("dto", {}).get("out", {}).get("is_void", False):
+                        query["dto_out_pascal_name"] = "void"
+                        query["dto_out_camel_name"] = "void"
+                        query["dto_out_snake_name"] = "void"
+                    else:
+                        query["dto_out_pascal_name"] = stringcase.pascalcase(
+                            query["dto"]["out"]["type_prefix"] + "DTO"
+                        )
+                        query["dto_out_camel_name"] = stringcase.camelcase(
+                            query["dto"]["out"]["type_prefix"] + "DTO"
+                        )
+                        query["dto_out_snake_name"] = (
+                            stringcase.snakecase(query["dto"]["out"]["type_prefix"])
+                            + "_dto"
+                        )
 
                 # for each query.dto.out.type_prefix, add query.dto.out.type_prefix_camel
                 for _, dto_data in query.get("dto", {}).items():
@@ -316,10 +458,49 @@ def get_generation_dict(
 
         # add CMakelists.txt file name to the feature:
         feature["cmakelists_file"] = os.path.join(
-            common_cmake_folder_path, feature_snake_name, "CMakeLists.txt"
+            common_cmake_folder_path,
+            feature_snake_name + "_feature",
+            "CMakeLists.txt",
         )
 
     return generation_dict
+
+
+def get_lazy_loading_fields(entity_mappable_with: str, entities_by_name: dict) -> list:
+    def is_unique_foreign_entity(field_type: str) -> bool:
+        for entity_name, entity in entities_by_name.items():
+            name = entity["name"]
+            if name == field_type:
+                return True
+
+        return False
+
+    def is_list_foreign_entity(field_type: str) -> bool:
+        if "<" not in field_type:
+            return False
+
+        type = field_type.split("<")[1].split(">")[0].strip()
+
+        for entity_name, entity in entities_by_name.items():
+            name = entity["name"]
+            if name == type:
+                return True
+
+        return False
+
+    entity_mappable_with_pascal = stringcase.pascalcase(entity_mappable_with)
+
+    # create a list of foreign entities
+    lazy_loading_fields = []
+    for field in entities_by_name[entity_mappable_with_pascal]["fields"]:
+        field_type = field["type"]
+        field_name = field["name"]
+        if is_unique_foreign_entity(field_type):
+            lazy_loading_fields += [stringcase.pascalcase(field_name)]
+        if is_list_foreign_entity(field_type):
+            lazy_loading_fields += [stringcase.pascalcase(field_name)]
+
+    return lazy_loading_fields
 
 
 def generate_common_cmakelists(
@@ -335,7 +516,8 @@ def generate_common_cmakelists(
         with open(common_cmakelists_file, "w") as fh:
             for feature_name, _ in feature_by_name.items():
                 fh.write(
-                    f"add_subdirectory({stringcase.snakecase(feature_name)})" + "\n"
+                    f"add_subdirectory({stringcase.snakecase(feature_name)}_feature)"
+                    + "\n"
                 )
             print(f"Successfully wrote file {common_cmakelists_file}")
 
@@ -395,9 +577,11 @@ def generate_handler_cmakelists(
         relative_generated_files.append(relative_generated_file)
 
     feature_snake_name = feature["feature_snake_name"]
+    feature_spinal_name = stringcase.spinalcase(feature_snake_name)
 
     rendered_template = dto_cmakelists_template.render(
         feature_snake_name=feature_snake_name,
+        feature_spinal_name=feature_spinal_name,
         feature_uppercase_name=stringcase.uppercase(feature_snake_name),
         files=relative_generated_files,
         application_name=application_name,
@@ -442,12 +626,17 @@ def generate_crud_handler(
                     feature_snake_name=feature["feature_snake_name"],
                     export=handler["export"],
                     export_header=handler["export_header"],
+                    entity_mappable_with_pascal=handler["entity_mappable_with_pascal"],
+                    entity_mappable_with_snake=handler["entity_mappable_with_snake"],
+                    entity_mappable_with_camel=handler["entity_mappable_with_camel"],
+                    lazy_load_pascal_fields=handler.get("lazy_load_pascal_fields", []),
                 )
             )
             print(f"Successfully wrote file {file_path}")
 
-        if uncrustify_config_file:
-            uncrustify.run_uncrustify(file_path, uncrustify_config_file)
+        # if uncrustify_config_file:
+        #     uncrustify.run_uncrustify(file_path, uncrustify_config_file)
+        clang_format.run_clang_format(file_path)
 
 
 def generate_custom_command_handler(
@@ -485,8 +674,9 @@ def generate_custom_command_handler(
             )
             print(f"Successfully wrote file {file_path}")
 
-        if uncrustify_config_file:
-            uncrustify.run_uncrustify(file_path, uncrustify_config_file)
+        # if uncrustify_config_file:
+        #     uncrustify.run_uncrustify(file_path, uncrustify_config_file)
+        clang_format.run_clang_format(file_path)
 
 
 def generate_custom_query_handler(
@@ -514,6 +704,7 @@ def generate_custom_query_handler(
                 template.render(
                     feature_pascal_name=feature["feature_pascal_name"],
                     feature_snake_name=feature["feature_snake_name"],
+                    feature_camel_name=feature["feature_camel_name"],
                     query=handler,
                     export=handler["export"],
                     export_header_file=handler["export_header_file"],
@@ -524,8 +715,9 @@ def generate_custom_query_handler(
             )
             print(f"Successfully wrote file {file_path}")
 
-        if uncrustify_config_file:
-            uncrustify.run_uncrustify(file_path, uncrustify_config_file)
+        # if uncrustify_config_file:
+        #     uncrustify.run_uncrustify(file_path, uncrustify_config_file)
+        clang_format.run_clang_format(file_path)
 
 
 def generate_application_files(
@@ -552,8 +744,16 @@ def generate_application_files(
     # Organize feature_list by name for easier lookup
     feature_by_name = {feature["name"]: feature for feature in feature_list}
 
+    entities_data = manifest_data.get("entities", [])
+    entities_list = entities_data.get("list", [])
+    # remove entities that are not to be generated
+    entities_list = [entity for entity in entities_list if entity.get("generate", True)]
+
+    # Organize entities by name for easier lookup
+    entities_by_name = {entity["name"]: entity for entity in entities_list}
+
     for _, feature in get_generation_dict(
-        common_cmake_folder_path, application_name, feature_by_name
+        common_cmake_folder_path, application_name, feature_by_name, entities_by_name
     ).items():
         # generate crud handlers
         for handler in feature["crud_handlers"].values():
@@ -585,10 +785,10 @@ def generate_application_files(
 
         generate_feature_export_file(feature, application_name, files_to_be_generated)
 
-        # generate common cmakelists.txt
-        generate_common_cmakelists(
-            feature_by_name, common_cmake_folder_path, files_to_be_generated
-        )
+    # generate common cmakelists.txt
+    generate_common_cmakelists(
+        feature_by_name, common_cmake_folder_path, files_to_be_generated
+    )
 
 
 def get_files_to_be_generated(
@@ -617,9 +817,17 @@ def get_files_to_be_generated(
     # Organize feature_list by name for easier lookup
     feature_by_name = {feature["name"]: feature for feature in feature_list}
 
+    entities_data = manifest_data.get("entities", [])
+    entities_list = entities_data.get("list", [])
+    # remove entities that are not to be generated
+    entities_list = [entity for entity in entities_list if entity.get("generate", True)]
+
+    # Organize entities by name for easier lookup
+    entities_by_name = {entity["name"]: entity for entity in entities_list}
+
     files = []
     for _, feature in get_generation_dict(
-        common_cmake_folder_path, application_name, feature_by_name
+        common_cmake_folder_path, application_name, feature_by_name, entities_by_name
     ).items():
         files += feature["handler_files"]
 

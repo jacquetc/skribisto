@@ -1,0 +1,66 @@
+#include "get_{{ entity_mappable_with_snake }}_with_details_query_handler.h"
+#include "automapper/automapper.h"
+#include "persistence/interface_{{ entity_mappable_with_snake }}_repository.h"
+
+using namespace Application::Features::{{ feature_pascal_name }}::Queries;
+
+Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler::Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository>repository)
+    : m_repository(repository)
+{
+    if (!s_mappingRegistered)
+    {
+        registerMappings();
+        s_mappingRegistered = true;
+    }
+}
+
+Result<{{ entity_mappable_with_pascal }}WithDetailsDTO>Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler::handle(QPromise<Result<void> >& progressPromise,
+                                                   const Get{{ entity_mappable_with_pascal }}Query& query)
+{
+    Result<{{ entity_mappable_with_pascal }}WithDetailsDTO> result;
+
+    try
+    {
+        result = handleImpl(progressPromise, query);
+    }
+    catch (const std::exception& ex)
+    {
+        result = Result<{{ entity_mappable_with_pascal }}WithDetailsDTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling Get{{ entity_mappable_with_pascal }}Query:" << ex.what();
+    }
+    return result;
+}
+
+Result<{{ entity_mappable_with_pascal }}WithDetailsDTO>Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler::handleImpl(QPromise<Result<void> >   & progressPromise,const Get{{ entity_mappable_with_pascal }}Query& query)
+{
+    qDebug() << "Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler::handleImpl called with id" << query.id;
+
+    // do
+    auto {{ entity_mappable_with_camel }}Result = m_repository->get(query.id);
+
+    if (Q_UNLIKELY(!{{ entity_mappable_with_camel }}Result.isError()))
+    {
+        return Result<{{ entity_mappable_with_pascal }}WithDetailsDTO>({{ entity_mappable_with_camel }}Result.error());
+    }
+
+    Domain::{{ entity_mappable_with_pascal }} {{ entity_mappable_with_camel }} = {{ entity_mappable_with_camel }}Result.value();
+
+    // set up lazy loading:
+    {% for lazy_load_field_name in lazy_load_pascal_fields %}
+    {{ entity_mappable_with_camel }}.set{{ lazy_load_field_name }}Loader(m_repository->fetch{{ lazy_load_field_name }}Loader());
+    {% endfor %}
+
+    // map
+    auto WithDetailsDTO = AutoMapper::AutoMapper::map<Domain::{{ entity_mappable_with_pascal }}, {{ entity_mappable_with_pascal }}WithDetailsDTO>({{ entity_mappable_with_camel }}Result.value());
+
+    qDebug() << "Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler::handleImpl done";
+
+    return Result<{{ entity_mappable_with_pascal }}WithDetailsDTO>(WithDetailsDTO);
+}
+
+bool Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler::s_mappingRegistered = false;
+
+void Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler::registerMappings() 
+{
+    AutoMapper::AutoMapper::registerMapping<Domain::{{ entity_mappable_with_pascal }}, Contracts::DTO::{{ feature_pascal_name }}::{{ entity_mappable_with_pascal }}WithDetailsDTO>();
+}

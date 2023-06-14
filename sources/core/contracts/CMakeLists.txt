@@ -28,29 +28,6 @@ set(contracts_SRCS
     persistence/interface_repository.h
     persistence/interface_repository_provider.h
 
-    # author:
-    cqrs/author/requests/get_author_request.h
-    cqrs/author/commands/create_author_command.h
-    cqrs/author/commands/remove_author_command.h
-    cqrs/author/commands/update_author_command.h
-    cqrs/author/validators/create_author_command_validator.h
-    cqrs/author/validators/update_author_command_validator.h
-
-    # system:
-    cqrs/system/commands/close_system_command.h
-    cqrs/system/commands/save_system_as_command.h
-    cqrs/system/commands/load_system_command.h
-    cqrs/system/validators/save_system_as_command_validator.h
-    cqrs/system/validators/load_system_command_validator.h
-
-    # chapter:
-    cqrs/chapter/requests/get_chapter_request.h
-    cqrs/chapter/commands/create_chapter_command.h
-    cqrs/chapter/commands/remove_chapter_command.h
-    cqrs/chapter/commands/update_chapter_command.h
-    cqrs/chapter/validators/create_chapter_command_validator.h
-    cqrs/chapter/validators/update_chapter_command_validator.h
-
     # infrastructure:
     infrastructure/skrib/interface_skrib_loader.h
 )
@@ -78,16 +55,23 @@ target_include_directories(skribisto-contracts PUBLIC "${CMAKE_CURRENT_SOURCE_DI
 target_compile_definitions(skribisto-contracts PUBLIC SKRIBISTO_CONTRACTS_LIBRARY)
 
 add_dependencies(skribisto-contracts skribisto-domain)
+# DTOs
 add_dependencies(skribisto-contracts skribisto-contracts-dto-system)
 add_dependencies(skribisto-contracts skribisto-contracts-dto-chapter)
+add_dependencies(skribisto-contracts skribisto-contracts-dto-scene-paragraph)
 add_dependencies(skribisto-contracts skribisto-contracts-dto-scene)
 add_dependencies(skribisto-contracts skribisto-contracts-dto-author)
 
+
+
 target_link_libraries(skribisto-contracts PUBLIC skribisto-domain)
+# DTOs
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-system)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-author)
+target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-scene-paragraph)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-scene)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-chapter)
+
 target_link_libraries(skribisto-contracts PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql)
 
 # ---------------------------------

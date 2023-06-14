@@ -1,58 +1,66 @@
-#include "get_all_{{ feature_snake_name }}_request_handler.h"
+#include "get_all_{{ entity_mappable_with_snake }}_query_handler.h"
 #include "automapper/automapper.h"
-#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+#include "persistence/interface_{{ entity_mappable_with_snake }}_repository.h"
 
 using namespace Application::Features::{{ feature_pascal_name }}::Queries;
 
-GetAll{{ feature_pascal_name }}RequestHandler::GetAll{{ feature_pascal_name }}RequestHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository>repository)
-    : Handler(), m_repository(repository)
-{}
-
-Result<QList<{{ feature_pascal_name }}DTO> >GetAll{{ feature_pascal_name }}RequestHandler::handle(QPromise<Result<void> >& progressPromise)
+GetAll{{ entity_mappable_with_pascal }}QueryHandler::GetAll{{ entity_mappable_with_pascal }}QueryHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository>repository)
+    : m_repository(repository)
 {
-    qDebug() << "GetAll{{ feature_pascal_name }}RequestHandler::handle called";
+    if (!s_mappingRegistered)
+    {
+        registerMappings();
+        s_mappingRegistered = true;
+    }
+}
 
-    Result<QList<{{ feature_pascal_name }}DTO> > result;
+Result<QList<{{ entity_mappable_with_pascal }}DTO> >GetAll{{ entity_mappable_with_pascal }}QueryHandler::handle(QPromise<Result<void> >& progressPromise)
+{
+    qDebug() << "GetAll{{ entity_mappable_with_pascal }}QueryHandler::handle called";
+
+    Result<QList<{{ entity_mappable_with_pascal }}DTO> > result;
 
     try
     {
-        result = handleImpl();
+        result = handleImpl(progressPromise);
     }
     catch (const std::exception& ex)
     {
-        result = Result<QList<{{ feature_pascal_name }}DTO> >(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
-        qDebug() << "Error handling GetAll{{ feature_pascal_name }}Request:" << ex.what();
+        result = Result<QList<{{ entity_mappable_with_pascal }}DTO> >(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling GetAll{{ entity_mappable_with_pascal }}Query:" << ex.what();
     }
     return result;
 }
 
-Result<QList<{{ feature_pascal_name }}DTO> >GetAll{{ feature_pascal_name }}RequestHandler::handleImpl()
+Result<QList<{{ entity_mappable_with_pascal }}DTO> >GetAll{{ entity_mappable_with_pascal }}QueryHandler::handleImpl(QPromise<Result<void> >   & progressPromise)
 {
-    qDebug() << "GetAll{{ feature_pascal_name }}RequestHandler::handleImpl called";
+    qDebug() << "GetAll{{ entity_mappable_with_pascal }}QueryHandler::handleImpl called";
 
     // do
-    auto {{ feature_snake_name }}Result = m_repository->getAll();
+    auto {{ entity_mappable_with_camel }}Result = m_repository->getAll();
 
-    if ({{ feature_snake_name }}Result.isError())
+    if (Q_UNLIKELY(!{{ entity_mappable_with_camel }}Result.isError()))
     {
-        return Result<QList<{{ feature_pascal_name }}DTO> >({{ feature_snake_name }}Result.error());
+        return Result<QList<{{ entity_mappable_with_pascal }}DTO> >({{ entity_mappable_with_camel }}Result.error());
     }
 
     // map
-    QList<{{ feature_pascal_name }}DTO> dtoList;
+    QList<{{ entity_mappable_with_pascal }}DTO> dtoList;
 
-    for (const Domain::{{ feature_pascal_name }}& {{ feature_snake_name }} : {{ feature_snake_name }}Result.value())
+    for (const Domain::{{ entity_mappable_with_pascal }}& {{ entity_mappable_with_camel }} : {{ entity_mappable_with_camel }}Result.value())
     {
-        auto dto = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>({{ feature_snake_name }});
+        auto dto = AutoMapper::AutoMapper::map<Domain::{{ entity_mappable_with_pascal }}, {{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }});
         dtoList.append(dto);
     }
 
-    qDebug() << "GetAll{{ feature_pascal_name }}RequestHandler::handleImpl done";
+    qDebug() << "GetAll{{ entity_mappable_with_pascal }}QueryHandler::handleImpl done";
 
-    return Result<QList<{{ feature_pascal_name }}DTO> >(dtoList);
+    return Result<QList<{{ entity_mappable_with_pascal }}DTO> >(dtoList);
 }
 
-void CallOnce::registerMappings() 
+bool GetAll{{ entity_mappable_with_pascal }}QueryHandler::s_mappingRegistered = false;
+
+void GetAll{{ entity_mappable_with_pascal }}QueryHandler::registerMappings() 
 {
-    AutoMapper::AutoMapper::registerMapping<Domain::{{ feature_pascal_name }}, Contracts::DTO::{{ feature_pascal_name }}::{{ feature_pascal_name }}DTO>(true);
+    AutoMapper::AutoMapper::registerMapping<Domain::{{ entity_mappable_with_pascal }}, Contracts::DTO::{{ feature_pascal_name }}::{{ entity_mappable_with_pascal }}DTO>(true);
 }

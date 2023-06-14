@@ -1,6 +1,6 @@
 find_package(Qt6 COMPONENTS Core  REQUIRED)
 
-set(PROJECT_NAME {{ application_name }}-application-feature-{{ feature_snake_name }})
+set(PROJECT_NAME {{ application_name }}-application-feature-{{ feature_spinal_name }})
 
 set(SRC
 
@@ -15,7 +15,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(${PROJECT_NAME} PUBLIC {{ application_uppercase_name }}_APPLICATION_{{ feature_uppercase_name }}_LIBRARY)
 
 add_dependencies(${PROJECT_NAME} {{ application_name }}-contracts)
+add_dependencies(${PROJECT_NAME} {{ application_name }}-contracts-cqrs-{{ feature_spinal_name }})
+
 target_link_libraries(${PROJECT_NAME} PUBLIC {{ application_name }}-contracts)
+target_link_libraries(${PROJECT_NAME} PUBLIC {{ application_name }}-contracts-cqrs-{{ feature_spinal_name }})
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE Qt6::Core

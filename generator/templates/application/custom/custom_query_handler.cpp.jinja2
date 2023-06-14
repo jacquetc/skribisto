@@ -1,8 +1,8 @@
 #include "{{ query.snake_name }}_query_handler.h"
 #include "automapper/automapper.h"
-{% if validator_enabled %}#include "cqrs/{{ feature_snake_name }}/validators/{{ query.snake_name }}_query_validator.h"{% endif %}
-{% for repository in query.repositories %}
-#include "persistence/{{ repository.snake_name}}.h"{% endfor %}
+#include "{{ feature_snake_name }}/{{ query.dto_in_snake_name }}.h"
+{% if validator_enabled %}#include "{{ feature_snake_name }}/validators/{{ query.snake_name }}_query_validator.h"{% endif %}
+#include <QDebug>
 
 using namespace Contracts::DTO::{{ feature_pascal_name }};
 using namespace Contracts::Persistence;
@@ -10,9 +10,15 @@ using namespace Contracts::CQRS::{{ feature_pascal_name }}::Validators;
 using namespace Application::Features::{{ feature_pascal_name }}::Querys;
 
 {{ query.pascal_name }}QueryHandler::{{ query.pascal_name }}QueryHandler({% for repository in query.repositories %}
-QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository) {% if not loop.last %},{% endif %}{% endfor %})
-    : Handler(){% for repository in query.repositories %}, m_{{ repository.camel_name }}Repository({{ repository.camel_name }}Repository){% endfor %}
-{}
+QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository {% if not loop.last %},{% endif %}{% endfor %})
+    {% for repository in query.repositories %}{% if loop.first %}: {% endif %}m_{{ repository.camel_name }}Repository({{ repository.camel_name }}Repository){% if not loop.last %},{% endif %}{% endfor %}
+{
+    if (!s_mappingRegistered)
+    {
+        registerMappings();
+        s_mappingRegistered = true;
+    }
+}
 
 Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::handle(QPromise<Result<void> >   & progressPromise,
                                                       const {{ query.pascal_name }}Query& request)
@@ -21,7 +27,7 @@ Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::hand
 
     try
     {
-        result = handleImpl(request);
+        result = handleImpl(progressPromise, request);
     }
     catch (const std::exception& ex)
     {
@@ -31,16 +37,17 @@ Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::hand
     return result;
 }
 
-Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::handleImpl(const {{ query.pascal_name }}Query& request)
+Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::handleImpl(QPromise<Result<void> >   & progressPromise, const {{ query.pascal_name }}Query& request)
 {
     qDebug() << "{{ query.pascal_name }}QueryHandler::handleImpl called";
+
     Domain::{{ feature_pascal_name }} {{ feature_snake_name }};
 {% if validator_enabled %}
     // Validate the query using the validator
     auto validator               = {{ query.pascal_name }}QueryValidator(m_repository);
     Result<void> validatorResult = validator.validate(request.req);
 
-    if (validatorResult.hasError())
+    if (Q_UNLIKELY(!validatorResult.hasError()))
     {
         return Result<{{ query.dto_out_pascal_name }}>(validatorResult.error());
     }
@@ -53,6 +60,7 @@ Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::hand
 
 
     // play here with the repositories
+    Q_UNIMPLEMENTED();
 
   
 
@@ -66,7 +74,9 @@ Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::hand
     return Result<{{ query.dto_out_pascal_name }}>({{ query.dto_out_camel_name }});
 }
 
-void CallOnce::registerMappings() 
+bool {{ query.pascal_name }}QueryHandler::s_mappingRegistered = false;
+
+void {{ query.pascal_name }}QueryHandler::registerMappings() 
 {
 
 }

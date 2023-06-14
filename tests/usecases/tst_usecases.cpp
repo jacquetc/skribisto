@@ -1,9 +1,9 @@
 #include "author_dto.h"
 #include "automapper/automapper.h"
 #include "dummy_author_repository.h"
-#include "features/author/handlers/commands/create_author_command_handler.h"
-#include "features/author/handlers/commands/remove_author_command_handler.h"
-#include "features/author/handlers/queries/get_author_request_handler.h"
+#include "commands/create_author_command_handler.h"
+#include "commands/remove_author_command_handler.h"
+#include "queries/get_author_request_handler.h"
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>

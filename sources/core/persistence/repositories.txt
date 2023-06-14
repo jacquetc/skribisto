@@ -6,3 +6,7 @@ repositories/atelier_repository.h
 repositories/atelier_repository.cpp
 repositories/author_repository.h
 repositories/author_repository.cpp
+repositories/scene_repository.h
+repositories/scene_repository.cpp
+repositories/scene_paragraph_repository.h
+repositories/scene_paragraph_repository.cpp

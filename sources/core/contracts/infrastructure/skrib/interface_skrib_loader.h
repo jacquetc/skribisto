@@ -1,7 +1,7 @@
 #pragma once
 #include "contracts_global.h"
-#include "load_system_dto.h"
 #include "result.h"
+#include "system/load_system_dto.h"
 #include <QPromise>
 
 using namespace Contracts::DTO::System;

@@ -1,18 +1,18 @@
 #include "chapter_controller.h"
 
-#include "cqrs/chapter/commands/create_chapter_command.h"
-#include "cqrs/chapter/commands/remove_chapter_command.h"
-#include "cqrs/chapter/commands/update_chapter_command.h"
-#include "features/chapter/handlers/commands/create_chapter_command_handler.h"
-#include "features/chapter/handlers/commands/update_chapter_command_handler.h"
-#include "features/chapter/handlers/queries/get_chapter_list_request_handler.h"
-#include "features/chapter/handlers/queries/get_chapter_request_handler.h"
+#include "chapter/commands/create_chapter_command.h"
+#include "chapter/commands/create_chapter_command_handler.h"
+#include "chapter/commands/remove_chapter_command.h"
+#include "chapter/commands/update_chapter_command.h"
+#include "chapter/commands/update_chapter_command_handler.h"
+#include "chapter/queries/get_all_chapter_query_handler.h"
+#include "chapter/queries/get_chapter_query_handler.h"
 #include "undo_redo/alter_command.h"
 #include "undo_redo/query_command.h"
 
-#include "features/chapter/handlers/commands/create_chapter_command_handler.h"
-#include "features/chapter/handlers/commands/remove_chapter_command_handler.h"
-#include "features/chapter/handlers/commands/update_chapter_command_handler.h"
+#include "chapter/commands/create_chapter_command_handler.h"
+#include "chapter/commands/remove_chapter_command_handler.h"
+#include "chapter/commands/update_chapter_command_handler.h"
 
 using namespace Presenter::Chapter;
 using namespace Presenter::UndoRedo;
@@ -58,13 +58,13 @@ ChapterController::ChapterController(InterfaceRepositoryProvider *repositoryProv
 /*!
     \brief Returns the singleton instance of the ChapterController.
  */
-ChapterController * ChapterController::instance()
+ChapterController *ChapterController::instance()
 {
     return s_instance.data();
 }
 
 /*!
-    \brief Retrieves an chapter asynchronously by the given \a uuid.
+    \brief Retrieves an chapter asynchronously by the given \a id.
 
     When the operation is complete, the getChapterReplied signal is emitted.
  */
@@ -72,13 +72,12 @@ void ChapterController::get(int id)
 {
     auto queryCommand = new QueryCommand("get");
 
-    queryCommand->setQueryFunction([ = ](QPromise<Result<void> >& progressPromise) {
-        GetChapterRequest request;
-        request.id     = id;
-        auto interface = qSharedPointerCast<InterfaceChapterRepository>(
-            s_repositoryProvider->repository("Chapter"));
-        GetChapterRequestHandler handler(interface);
-        auto result = handler.handle(progressPromise, request);
+    queryCommand->setQueryFunction([=](QPromise<Result<void>> &progressPromise) {
+        GetChapterQuery query;
+        query.id = id;
+        auto interface = qSharedPointerCast<InterfaceChapterRepository>(s_repositoryProvider->repository("Chapter"));
+        GetChapterQueryHandler handler(interface);
+        auto result = handler.handle(progressPromise, query);
 
         if (result.isSuccess())
         {
@@ -91,6 +90,18 @@ void ChapterController::get(int id)
 }
 
 /*!
+ * \brief Retrieves a chapter asynchronously with details by the given \a id.
+ *
+ * When the operation is complete, the getChapterWithDetailsReplied signal is
+ * emitted.
+
+ * \param id
+ */
+void ChapterController::getWithDetails(int id)
+{
+}
+
+/*!
     \brief Retrieves all chapters asynchronously.
 
     When the operation is complete, the getChapterListReplied signal is emitted.
@@ -99,10 +110,9 @@ void ChapterController::getAll()
 {
     auto queryCommand = new QueryCommand("getAll");
 
-    queryCommand->setQueryFunction([&](QPromise<Result<void> >& progressPromise) {
-        auto interface = qSharedPointerCast<InterfaceChapterRepository>(
-            s_repositoryProvider->repository("Chapter"));
-        GetChapterListRequestHandler handler(interface);
+    queryCommand->setQueryFunction([&](QPromise<Result<void>> &progressPromise) {
+        auto interface = qSharedPointerCast<InterfaceChapterRepository>(s_repositoryProvider->repository("Chapter"));
+        GetAllChapterQueryHandler handler(interface);
         auto result = handler.handle(progressPromise);
 
         if (result.isSuccess())
@@ -119,14 +129,13 @@ void ChapterController::getAll()
 
     When the operation is complete, the chapterCreated signal is emitted.
  */
-void ChapterController::create(const CreateChapterDTO& dto)
+void ChapterController::create(const CreateChapterDTO &dto)
 {
-    CreateChapterCommand request;
+    CreateChapterCommand query;
 
-    request.req = dto;
+    query.req = dto;
 
-    auto repository = qSharedPointerCast<InterfaceChapterRepository>(
-        s_repositoryProvider->repository("Chapter"));
+    auto repository = qSharedPointerCast<InterfaceChapterRepository>(s_repositoryProvider->repository("Chapter"));
 
     auto *handler = new CreateChapterCommandHandler(repository);
 
@@ -138,7 +147,7 @@ void ChapterController::create(const CreateChapterDTO& dto)
 
     // Create specialized UndoRedoCommand
     auto command = new AlterCommand<CreateChapterCommandHandler, CreateChapterCommand>(
-        ChapterController::tr("Create chapter"), handler, request);
+        ChapterController::tr("Create chapter"), handler, query);
 
     // push command
     s_undo_redo_system->push(command, "chapter");
@@ -149,14 +158,13 @@ void ChapterController::create(const CreateChapterDTO& dto)
 
     When the operation is complete, the chapterUpdated signal is emitted.
  */
-void ChapterController::update(const UpdateChapterDTO& dto)
+void ChapterController::update(const UpdateChapterDTO &dto)
 {
-    UpdateChapterCommand request;
+    UpdateChapterCommand query;
 
-    request.req = dto;
+    query.req = dto;
 
-    auto repository = qSharedPointerCast<InterfaceChapterRepository>(
-        s_repositoryProvider->repository("Chapter"));
+    auto repository = qSharedPointerCast<InterfaceChapterRepository>(s_repositoryProvider->repository("Chapter"));
 
     auto *handler = new UpdateChapterCommandHandler(repository);
 
@@ -166,7 +174,7 @@ void ChapterController::update(const UpdateChapterDTO& dto)
 
     // Create specialized UndoRedoCommand
     auto command = new AlterCommand<UpdateChapterCommandHandler, UpdateChapterCommand>(
-        ChapterController::tr("Update chapter"), handler, request);
+        ChapterController::tr("Update chapter"), handler, query);
 
     // push command
     s_undo_redo_system->push(command, "chapter");
@@ -179,12 +187,11 @@ void ChapterController::update(const UpdateChapterDTO& dto)
  */
 void ChapterController::remove(int id)
 {
-    RemoveChapterCommand request;
+    RemoveChapterCommand query;
 
-    request.id = id;
+    query.id = id;
 
-    auto repository = qSharedPointerCast<InterfaceChapterRepository>(
-        s_repositoryProvider->repository("Chapter"));
+    auto repository = qSharedPointerCast<InterfaceChapterRepository>(s_repositoryProvider->repository("Chapter"));
 
     auto *handler = new RemoveChapterCommandHandler(repository);
 
@@ -196,7 +203,7 @@ void ChapterController::remove(int id)
 
     // Create specialized UndoRedoCommand
     auto command = new AlterCommand<RemoveChapterCommandHandler, RemoveChapterCommand>(
-        ChapterController::tr("Remove chapter"), handler, request);
+        ChapterController::tr("Remove chapter"), handler, query);
 
     // push command
     s_undo_redo_system->push(command, "chapter");

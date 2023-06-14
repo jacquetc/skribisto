@@ -1,51 +1,59 @@
-#include "get_{{ feature_snake_name }}_request_handler.h"
+#include "get_{{ entity_mappable_with_snake }}_query_handler.h"
 #include "automapper/automapper.h"
-#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+#include "persistence/interface_{{ entity_mappable_with_snake }}_repository.h"
 
 using namespace Application::Features::{{ feature_pascal_name }}::Queries;
 
-Get{{ feature_pascal_name }}RequestHandler::Get{{ feature_pascal_name }}RequestHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository>repository)
-    : Handler(), m_repository(repository)
-{}
-
-Result<{{ feature_pascal_name }}DTO>Get{{ feature_pascal_name }}RequestHandler::handle(QPromise<Result<void> >& progressPromise,
-                                                   const Get{{ feature_pascal_name }}Request& request)
+Get{{ entity_mappable_with_pascal }}QueryHandler::Get{{ entity_mappable_with_pascal }}QueryHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository>repository)
+    : m_repository(repository)
 {
-    Result<{{ feature_pascal_name }}DTO> result;
+    if (!s_mappingRegistered)
+    {
+        registerMappings();
+        s_mappingRegistered = true;
+    }
+}
+
+Result<{{ entity_mappable_with_pascal }}DTO>Get{{ entity_mappable_with_pascal }}QueryHandler::handle(QPromise<Result<void> >& progressPromise,
+                                                   const Get{{ entity_mappable_with_pascal }}Query& query)
+{
+    Result<{{ entity_mappable_with_pascal }}DTO> result;
 
     try
     {
-        result = handleImpl(request);
+        result = handleImpl(progressPromise, query);
     }
     catch (const std::exception& ex)
     {
-        result = Result<{{ feature_pascal_name }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
-        qDebug() << "Error handling Get{{ feature_pascal_name }}Request:" << ex.what();
+        result = Result<{{ entity_mappable_with_pascal }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling Get{{ entity_mappable_with_pascal }}Query:" << ex.what();
     }
     return result;
 }
 
-Result<{{ feature_pascal_name }}DTO>Get{{ feature_pascal_name }}RequestHandler::handleImpl(const Get{{ feature_pascal_name }}Request& request)
+Result<{{ entity_mappable_with_pascal }}DTO>Get{{ entity_mappable_with_pascal }}QueryHandler::handleImpl(QPromise<Result<void> >   & progressPromise, const Get{{ entity_mappable_with_pascal }}Query& query)
 {
-    qDebug() << "Get{{ feature_pascal_name }}RequestHandler::handleImpl called with id" << request.id;
+    qDebug() << "Get{{ entity_mappable_with_pascal }}QueryHandler::handleImpl called with id" << query.id;
 
     // do
-    auto {{ feature_snake_name }}Result = m_repository->get(request.id);
+    auto {{ entity_mappable_with_camel }}Result = m_repository->get(query.id);
 
-    if ({{ feature_snake_name }}Result.isError())
+    if (Q_UNLIKELY(!{{ entity_mappable_with_camel }}Result.isError()))
     {
-        return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.error());
+        return Result<{{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}Result.error());
     }
 
     // map
-    auto dto = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>(chapterResult.value());
+    auto dto = AutoMapper::AutoMapper::map<Domain::{{ entity_mappable_with_pascal }}, {{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}Result.value());
 
-    qDebug() << "Get{{ feature_pascal_name }}RequestHandler::handleImpl done";
+    qDebug() << "Get{{ entity_mappable_with_pascal }}QueryHandler::handleImpl done";
 
-    return Result<{{ feature_pascal_name }}DTO>(dto);
+    return Result<{{ entity_mappable_with_pascal }}DTO>(dto);
 }
 
-void CallOnce::registerMappings() 
+bool Get{{ entity_mappable_with_pascal }}QueryHandler::s_mappingRegistered = false;
+
+void Get{{ entity_mappable_with_pascal }}QueryHandler::registerMappings() 
 {
-    AutoMapper::AutoMapper::registerMapping<Domain::{{ feature_pascal_name }}, Contracts::DTO::{{ feature_pascal_name }}::{{ feature_pascal_name }}DTO>(true);
+    AutoMapper::AutoMapper::registerMapping<Domain::{{ feature_pascal_name }}, Contracts::DTO::{{ feature_pascal_name }}::{{ entity_mappable_with_pascal }}DTO>(true);
 }

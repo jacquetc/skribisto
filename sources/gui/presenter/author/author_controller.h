@@ -1,11 +1,11 @@
 #pragma once
 
-#include "author_dto.h"
-#include "create_author_dto.h"
+#include "author/author_dto.h"
+#include "author/create_author_dto.h"
+#include "author/update_author_dto.h"
 #include "persistence/interface_repository_provider.h"
 #include "presenter_global.h"
 #include "undo_redo/threaded_undo_redo_system.h"
-#include "update_author_dto.h"
 
 using namespace Contracts::DTO::Author;
 using namespace Presenter;
@@ -37,7 +37,7 @@ class SKR_PRESENTER_EXPORT AuthorController : public QObject
     void getReplied(Contracts::DTO::Author::AuthorDTO dto);
     void getAllReplied(QList<Contracts::DTO::Author::AuthorDTO> dtoList);
     void authorCreated(Contracts::DTO::Author::AuthorDTO dto);
-    void authorRemoved(Contracts::DTO::Author::AuthorDTO dto);
+    void authorRemoved(int id);
     void authorUpdated(Contracts::DTO::Author::AuthorDTO dto);
 
   private:

@@ -1,37 +1,44 @@
-#include "create_{{ feature_snake_name }}_command_handler.h"
+#include "create_{{ entity_mappable_with_snake }}_command_handler.h"
 #include "automapper/automapper.h"
-#include "cqrs/{{ feature_snake_name }}/validators/create_{{ feature_snake_name }}_command_validator.h"
-#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+#include "{{ feature_snake_name }}/validators/create_{{ entity_mappable_with_snake }}_command_validator.h"
+#include "persistence/interface_{{ entity_mappable_with_snake }}_repository.h"
 
 using namespace Contracts::DTO::{{ feature_pascal_name }};
 using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::{{ feature_pascal_name }}::Validators;
 using namespace Application::Features::{{ feature_pascal_name }}::Commands;
 
-Create{{ feature_pascal_name }}CommandHandler::Create{{ feature_pascal_name }}CommandHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository>repository)
-    : Handler(), m_repository(repository)
-{}
-
-Result<{{ feature_pascal_name }}DTO>Create{{ feature_pascal_name }}CommandHandler::handle(QPromise<Result<void> >   & progressPromise,
-                                                      const Create{{ feature_pascal_name }}Command& request)
+Create{{ entity_mappable_with_pascal }}CommandHandler::Create{{ entity_mappable_with_pascal }}CommandHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository>repository)
+    : m_repository(repository)
 {
-    Result<{{ feature_pascal_name }}DTO> result;
+    if (!s_mappingRegistered)
+    {
+        registerMappings();
+        s_mappingRegistered = true;
+    }
+
+}
+
+Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal }}CommandHandler::handle(QPromise<Result<void> >   & progressPromise,
+                                                      const Create{{ entity_mappable_with_pascal }}Command& request)
+{
+    Result<{{ entity_mappable_with_pascal }}DTO> result;
 
     try
     {
-        result = handleImpl(request);
+        result = handleImpl(progressPromise, request);
     }
     catch (const std::exception& ex)
     {
-        result = Result<{{ feature_pascal_name }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        result = Result<{{ entity_mappable_with_pascal }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
         qDebug() << "Error handling Create{{ feature_pascal_name }}Command:" << ex.what();
     }
     return result;
 }
 
-Result<{{ feature_pascal_name }}DTO>Create{{ feature_pascal_name }}CommandHandler::restore()
+Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal }}CommandHandler::restore()
 {
-    Result<{{ feature_pascal_name }}DTO> result;
+    Result<{{ entity_mappable_with_pascal }}DTO> result;
 
     try
     {
@@ -39,101 +46,95 @@ Result<{{ feature_pascal_name }}DTO>Create{{ feature_pascal_name }}CommandHandle
     }
     catch (const std::exception& ex)
     {
-        result = Result<{{ feature_pascal_name }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
-        qDebug() << "Error handling Create{{ feature_pascal_name }}Command restore:" << ex.what();
+        result = Result<{{ entity_mappable_with_pascal }}DTO>(Error(Q_FUNC_INFO, Error::Critical, "Unknown error", ex.what()));
+        qDebug() << "Error handling Create{{ entity_mappable_with_pascal }}Command restore:" << ex.what();
     }
     return result;
 }
 
-Result<{{ feature_pascal_name }}DTO>Create{{ feature_pascal_name }}CommandHandler::handleImpl(const Create{{ feature_pascal_name }}Command& request)
+Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal }}CommandHandler::handleImpl(QPromise<Result<void> >   & progressPromise,const Create{{ entity_mappable_with_pascal }}Command& request)
 {
-    qDebug() << "Create{{ feature_pascal_name }}CommandHandler::handleImpl called";
-    Domain::{{ feature_pascal_name }} {{ feature_snake_name }};
+    qDebug() << "Create{{ entity_mappable_with_pascal }}CommandHandler::handleImpl called";
+    Domain::{{ entity_mappable_with_pascal }} {{ entity_mappable_with_camel }};
 
     if (m_newState.isEmpty())
     {
-        // Validate the create {{ feature_snake_name }} command using the validator
-        auto validator               = Create{{ feature_pascal_name }}CommandValidator(m_repository);
+        // Validate the create {{ entity_mappable_with_pascal }} command using the validator
+        auto validator               = Create{{ entity_mappable_with_pascal }}CommandValidator(m_repository);
         Result<void> validatorResult = validator.validate(request.req);
 
-        if (validatorResult.hasError())
+        if (Q_UNLIKELY(validatorResult.hasError()))
         {
-            return Result<{{ feature_pascal_name }}DTO>(validatorResult.error());
+            return Result<{{ entity_mappable_with_pascal }}DTO>(validatorResult.error());
         }
 
-        // Map the create {{ feature_snake_name }} command to a domain {{ feature_snake_name }} object and
+        // Map the create {{ entity_mappable_with_pascal }} command to a domain {{ entity_mappable_with_pascal }} object and
         // generate a UUID
-        {{ feature_snake_name }} = AutoMapper::AutoMapper::map<Create{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>(request.req);
+        {{ entity_mappable_with_camel }} = AutoMapper::AutoMapper::map<Create{{ entity_mappable_with_pascal }}DTO, Domain::{{ entity_mappable_with_pascal }}>(request.req);
 
         // allow for forcing the uuid
-        if ({{ feature_snake_name }}.uuid().isNull())
+        if ({{ entity_mappable_with_camel }}.uuid().isNull())
         {
-            {{ feature_snake_name }}.setUuid(QUuid::createUuid());
+            {{ entity_mappable_with_camel }}.setUuid(QUuid::createUuid());
         }
 
         // Set the creation and update timestamps to the current date and time
-        {{ feature_snake_name }}.setCreationDate(QDateTime::currentDateTime());
-        {{ feature_snake_name }}.setUpdateDate(QDateTime::currentDateTime());
+        {{ entity_mappable_with_camel }}.setCreationDate(QDateTime::currentDateTime());
+        {{ entity_mappable_with_camel }}.setUpdateDate(QDateTime::currentDateTime());
     }
     else
     {
-        // Map the create {{ feature_snake_name }} command to a domain {{ feature_snake_name }} object and
+        // Map the create {{ entity_mappable_with_camel }} command to a domain {{ entity_mappable_with_camel }} object and
         // generate a UUID
-        {{ feature_snake_name }} = AutoMapper::AutoMapper::map<{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>(m_newState.value());
+        {{ entity_mappable_with_camel }} = AutoMapper::AutoMapper::map<{{ entity_mappable_with_pascal }}DTO, Domain::{{ entity_mappable_with_pascal }}>(m_newState.value());
     }
 
-    // Add the {{ feature_snake_name }} to the repository
+    // Add the {{ entity_mappable_with_camel }} to the repository
 
     m_repository->beginChanges();
-    auto {{ feature_snake_name }}Result = m_repository->add(std::move({{ feature_snake_name }}));
+    auto {{ entity_mappable_with_camel }}Result = m_repository->add(std::move({{ entity_mappable_with_camel }}));
 
-    if ({{ feature_snake_name }}Result.hasError())
+    if (Q_UNLIKELY({{ entity_mappable_with_camel }}Result.hasError()))
     {
         m_repository->cancelChanges();
-        return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.error());
+        return Result<{{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}Result.error());
     }
     m_repository->saveChanges();
 
-    auto {{ feature_snake_name }}DTO = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.value());
+    auto {{ entity_mappable_with_camel }}DTO = AutoMapper::AutoMapper::map<Domain::{{ entity_mappable_with_pascal }}, {{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}Result.value());
 
-    m_newState = Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}DTO);
+    m_newState = Result<{{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}DTO);
 
-    emit {{ feature_snake_name }}Created({{ feature_snake_name }}DTO);
+    emit {{ entity_mappable_with_camel }}Created({{ entity_mappable_with_camel }}DTO);
 
-    qDebug() << "{{ feature_pascal_name }} added:" << {{ feature_snake_name }}DTO.uuid();
+    qDebug() << "{{ entity_mappable_with_pascal }} added:" << {{ entity_mappable_with_camel }}DTO.id();
 
-    // Return the UUID of the newly created {{ feature_snake_name }} as a Result object
-    return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}DTO);
+    // Return the DTO of the newly created {{ entity_mappable_with_pascal }} as a Result object
+    return Result<{{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}DTO);
 }
 
-Result<{{ feature_pascal_name }}DTO>Create{{ feature_pascal_name }}CommandHandler::restoreImpl()
+Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal }}CommandHandler::restoreImpl()
 {
-    Result<Domain::{{ feature_pascal_name }}> {{ feature_snake_name }}Result = m_repository->get(m_newState.value().uuid());
 
-    if ({{ feature_snake_name }}Result.hasError())
+    auto deleteResult = m_repository->remove(m_newState.value().id());
+
+    if (Q_UNLIKELY(!deleteResult.hasError()))
     {
-        qDebug() << "Error getting {{ feature_snake_name }} from repository:" << {{ feature_snake_name }}Result.error().message();
-        return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}Result.error());
+        qDebug() << "Error deleting {{ entity_mappable_with_pascal }} from repository:" << deleteResult.error().message();
+        return Result<{{ entity_mappable_with_pascal }}DTO>(deleteResult.error());
     }
 
-    auto deleteResult = m_repository->remove(std::move({{ feature_snake_name }}Result.value()));
+    emit {{ entity_mappable_with_camel }}Removed(deleteResult.value());
 
-    if (deleteResult.hasError())
-    {
-        qDebug() << "Error deleting {{ feature_snake_name }} from repository:" << deleteResult.error().message();
-        return Result<{{ feature_pascal_name }}DTO>(deleteResult.error());
-    }
-    auto {{ feature_snake_name }}DTO = AutoMapper::AutoMapper::map<Domain::{{ feature_pascal_name }}, {{ feature_pascal_name }}DTO>(deleteResult.value());
+    qDebug() << "{{ entity_mappable_with_pascal }} removed:" << deleteResult.value();
 
-    emit {{ feature_snake_name }}Removed({{ feature_snake_name }}DTO);
-
-    qDebug() << "{{ feature_pascal_name }} removed:" << deleteResult.value().uuid();
-
-    return Result<{{ feature_pascal_name }}DTO>({{ feature_snake_name }}DTO);
+    return Result<{{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_pascal }}DTO());
 }
 
-void CallOnce::registerMappings() 
+bool Create{{ entity_mappable_with_pascal }}CommandHandler::s_mappingRegistered = false;
+
+void Create{{ entity_mappable_with_pascal }}CommandHandler::registerMappings() 
 {
-    AutoMapper::AutoMapper::registerMapping<Domain::{{ feature_pascal_name }}, Contracts::DTO::{{ feature_pascal_name }}::{{ feature_pascal_name }}DTO>(true);
-    AutoMapper::AutoMapper::registerMapping<Contracts::DTO::{{ feature_pascal_name }}::Create{{ feature_pascal_name }}DTO, Domain::{{ feature_pascal_name }}>();
+    AutoMapper::AutoMapper::registerMapping<Domain::{{ entity_mappable_with_pascal }}, Contracts::DTO::{{ feature_pascal_name }}::{{ entity_mappable_with_pascal }}DTO>(true);
+    AutoMapper::AutoMapper::registerMapping<Contracts::DTO::{{ feature_pascal_name }}::Create{{ entity_mappable_with_pascal }}DTO, Domain::{{ entity_mappable_with_pascal }}>();
 }

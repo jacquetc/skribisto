@@ -20,13 +20,14 @@ class SKR_DOMAIN_EXPORT DomainRegistration : public QObject
     explicit DomainRegistration(QObject *parent)
     {
         
-        qRegisterMetaType<Domain::Entity>("Domain::Entity");
-        qRegisterMetaType<Domain::Scene>("Domain::Scene");
-        qRegisterMetaType<Domain::Chapter>("Domain::Chapter");
-        qRegisterMetaType<Domain::Book>("Domain::Book");
-        qRegisterMetaType<Domain::Atelier>("Domain::Atelier");
-        qRegisterMetaType<Domain::Author>("Domain::Author");
-        qRegisterMetaType<Domain::EntityBase>("Domain::EntityBase");
+        qRegisterMetaType<Domain::Entity>();
+        qRegisterMetaType<Domain::Scene>();
+        qRegisterMetaType<Domain::Chapter>();
+        qRegisterMetaType<Domain::Book>();
+        qRegisterMetaType<Domain::Atelier>();
+        qRegisterMetaType<Domain::Author>();
+        qRegisterMetaType<Domain::SceneParagraph>();
+        qRegisterMetaType<Domain::EntityBase>();
 
     }
 };

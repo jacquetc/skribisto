@@ -1,0 +1,30 @@
+#pragma once
+
+#include "{{ export_header }}"
+#include "{{ feature_snake_name }}/{{ entity_mappable_with_snake }}_with_details_dto.h"
+#include "{{ feature_snake_name }}/queries/get_{{ entity_mappable_with_snake }}_query.h"
+
+#include "persistence/interface_{{ entity_mappable_with_snake }}_repository.h"
+#include <QPromise>
+
+using namespace Contracts::DTO::{{ feature_pascal_name }};
+using namespace Contracts::Persistence;
+using namespace Contracts::CQRS::{{ feature_pascal_name }}::Queries;
+
+namespace Application::Features::{{ feature_pascal_name }}::Queries
+{
+class {{ export }} Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler  : public QObject
+{
+    Q_OBJECT
+  public:
+    Get{{ entity_mappable_with_pascal }}WithDetailsQueryHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> repository);
+    Result<{{ entity_mappable_with_pascal }}WithDetailsDTO> handle(QPromise<Result<void>> &progressPromise, const Get{{ entity_mappable_with_pascal }}Query &query);
+
+  private:
+    QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> m_repository;
+    Result<{{ entity_mappable_with_pascal }}WithDetailsDTO> handleImpl(QPromise<Result<void> >   & progressPromise, const Get{{ entity_mappable_with_pascal }}Query &query);
+    static bool s_mappingRegistered;
+    void registerMappings();
+};
+
+} // namespace Application::Features::{{ feature_pascal_name }}::Queries

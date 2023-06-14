@@ -1,7 +1,7 @@
 #include "system_handler.h"
 #include "jsdto_mapper.h"
-#include "load_system_dto.h"
-#include "save_system_as_dto.h"
+#include "system/load_system_dto.h"
+#include "system/save_system_as_dto.h"
 #include "system/system_controller.h"
 
 using namespace Contracts::DTO::System;

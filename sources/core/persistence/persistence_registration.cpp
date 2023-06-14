@@ -7,6 +7,8 @@
 #include "repositories/book_repository.h"
 #include "repositories/chapter_repository.h"
 #include "repositories/repository_provider.h"
+#include "repositories/scene_paragraph_repository.h"
+#include "repositories/scene_repository.h"
 
 using namespace Repository;
 using namespace Database;
@@ -19,6 +21,7 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
     QStringList entityClassNameList;
 
     entityClassNameList << "Author"
+                        << "SceneParagraph"
                         << "Scene"
                         << "Chapter"
                         << "Book"
@@ -32,6 +35,8 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
         EntityTableSqlGenerator sqlGenerator(entityClassNameList);
 
         queryList << sqlGenerator.generateEntitySql<Domain::Author>();
+        queryList << sqlGenerator.generateEntitySql<Domain::SceneParagraph>();
+        queryList << sqlGenerator.generateEntitySql<Domain::Scene>();
         queryList << sqlGenerator.generateEntitySql<Domain::Chapter>();
         queryList << sqlGenerator.generateEntitySql<Domain::Book>();
         queryList << sqlGenerator.generateEntitySql<Domain::Atelier>();
@@ -48,25 +53,34 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
     }
 
     // database tables:
-    auto authorDatabaseTable  = new DatabaseTable<Domain::Author>(context);
+    auto authorDatabaseTable = new DatabaseTable<Domain::Author>(context);
+    auto sceneParagraphDatabaseTable = new DatabaseTable<Domain::SceneParagraph>(context);
+    auto sceneDatabaseTable = new DatabaseTable<Domain::Scene>(context);
     auto chapterDatabaseTable = new DatabaseTable<Domain::Chapter>(context);
-    auto bookDatabaseTable    = new DatabaseTable<Domain::Book>(context);
+    auto bookDatabaseTable = new DatabaseTable<Domain::Book>(context);
     auto atelierDatabaseTable = new DatabaseTable<Domain::Atelier>(context);
 
     // repositories:
-    QSharedPointer<AuthorRepository>  authorRepository(new AuthorRepository(authorDatabaseTable));
-    QSharedPointer<ChapterRepository> chapterRepository(new ChapterRepository(chapterDatabaseTable));
-    QSharedPointer<BookRepository>    bookRepository(new BookRepository(bookDatabaseTable, chapterDatabaseTable));
+    QSharedPointer<AuthorRepository> authorRepository(new AuthorRepository(authorDatabaseTable));
+    QSharedPointer<SceneParagraphRepository> sceneParagraphRepository(
+        new SceneParagraphRepository(sceneParagraphDatabaseTable));
+    QSharedPointer<SceneRepository> sceneRepository(
+        new SceneRepository(sceneDatabaseTable, sceneParagraphDatabaseTable));
+    QSharedPointer<ChapterRepository> chapterRepository(
+        new ChapterRepository(chapterDatabaseTable, sceneDatabaseTable));
+    QSharedPointer<BookRepository> bookRepository(new BookRepository(bookDatabaseTable, chapterDatabaseTable));
     QSharedPointer<AtelierRepository> atelierRepository(new AtelierRepository(atelierDatabaseTable, bookDatabaseTable));
 
     // register repositories:
     Repository::RepositoryProvider::instance()->registerRepository("author", authorRepository);
-    Repository::RepositoryProvider::instance()->registerRepository("atelier", atelierRepository);
-    Repository::RepositoryProvider::instance()->registerRepository("book", bookRepository);
+    Repository::RepositoryProvider::instance()->registerRepository("scene_paragraph", atelierRepository);
+    Repository::RepositoryProvider::instance()->registerRepository("scene", atelierRepository);
     Repository::RepositoryProvider::instance()->registerRepository("chapter", chapterRepository);
+    Repository::RepositoryProvider::instance()->registerRepository("book", bookRepository);
+    Repository::RepositoryProvider::instance()->registerRepository("atelier", atelierRepository);
 }
 
-RepositoryProvider * PersistenceRegistration::repositoryProvider()
+RepositoryProvider *PersistenceRegistration::repositoryProvider()
 {
     return Repository::RepositoryProvider::instance();
 }

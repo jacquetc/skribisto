@@ -15,6 +15,9 @@ from PySide6.QtWidgets import (
     QListView,
     QTextEdit,
     QSizePolicy,
+    QLabel,
+    QDialog,
+    QDialogButtonBox,
 )
 from PySide6.QtCore import (
     Qt,
@@ -146,6 +149,16 @@ class MainWindow(QMainWindow):
 
         self.button_layout.addWidget(self.generate_entities_group_box)
 
+        # disable preview and generate buttons if list button is not clicked once
+        self.btn_preview_entities.setEnabled(False)
+        self.btn_generate_entities.setEnabled(False)
+
+        def enable_entities_buttons():
+            self.btn_preview_entities.setEnabled(True)
+            self.btn_generate_entities.setEnabled(True)
+
+        self.btn_list_entities.clicked.connect(enable_entities_buttons)
+
         # Generate DTOs
 
         self.generate_dtos_group_box = QGroupBox()
@@ -166,6 +179,16 @@ class MainWindow(QMainWindow):
         self.generate_dtos_layout.addWidget(self.btn_generate_dtos)
 
         self.button_layout.addWidget(self.generate_dtos_group_box)
+
+        # disable preview and generate buttons if list button is not clicked once
+        self.btn_preview_dtos.setEnabled(False)
+        self.btn_generate_dtos.setEnabled(False)
+
+        def enable_dtos_buttons():
+            self.btn_preview_dtos.setEnabled(True)
+            self.btn_generate_dtos.setEnabled(True)
+
+        self.btn_list_dtos.clicked.connect(enable_dtos_buttons)
 
         # Generate Repositories
 
@@ -190,6 +213,16 @@ class MainWindow(QMainWindow):
 
         self.button_layout.addWidget(self.generate_repositories_group_box)
 
+        # disable preview and generate buttons if list button is not clicked once
+        self.btn_preview_repositories.setEnabled(False)
+        self.btn_generate_repositories.setEnabled(False)
+
+        def enable_repositories_buttons():
+            self.btn_preview_repositories.setEnabled(True)
+            self.btn_generate_repositories.setEnabled(True)
+
+        self.btn_list_repositories.clicked.connect(enable_repositories_buttons)
+
         # Generate CQRS
 
         self.generate_cqrs_group_box = QGroupBox()
@@ -210,6 +243,16 @@ class MainWindow(QMainWindow):
         self.generate_cqrs_layout.addWidget(self.btn_generate_cqrs)
 
         self.button_layout.addWidget(self.generate_cqrs_group_box)
+
+        # disable preview and generate buttons if list button is not clicked once
+        self.btn_preview_cqrs.setEnabled(False)
+        self.btn_generate_cqrs.setEnabled(False)
+
+        def enable_cqrs_buttons():
+            self.btn_preview_cqrs.setEnabled(True)
+            self.btn_generate_cqrs.setEnabled(True)
+
+        self.btn_list_cqrs.clicked.connect(enable_cqrs_buttons)
 
         # Generate Controllers
 
@@ -232,6 +275,16 @@ class MainWindow(QMainWindow):
 
         self.button_layout.addWidget(self.generate_controllers_group_box)
 
+        # disable preview and generate buttons if list button is not clicked once
+        self.btn_preview_controllers.setEnabled(False)
+        self.btn_generate_controllers.setEnabled(False)
+
+        def enable_controllers_buttons():
+            self.btn_preview_controllers.setEnabled(True)
+            self.btn_generate_controllers.setEnabled(True)
+
+        self.btn_list_controllers.clicked.connect(enable_controllers_buttons)
+
         # Generate application
 
         self.generate_application_group_box = QGroupBox()
@@ -252,6 +305,16 @@ class MainWindow(QMainWindow):
         self.generate_application_layout.addWidget(self.btn_generate_application)
 
         self.button_layout.addWidget(self.generate_application_group_box)
+
+        # disable preview and generate buttons if list button is not clicked once
+        self.btn_preview_application.setEnabled(False)
+        self.btn_generate_application.setEnabled(False)
+
+        def enable_application_buttons():
+            self.btn_preview_application.setEnabled(True)
+            self.btn_generate_application.setEnabled(True)
+
+        self.btn_list_application.clicked.connect(enable_application_buttons)
 
         # Generate QML
 
@@ -274,6 +337,16 @@ class MainWindow(QMainWindow):
 
         self.button_layout.addWidget(self.generate_qml_group_box)
 
+        # disable preview and generate buttons if list button is not clicked once
+        self.btn_preview_qml.setEnabled(False)
+        self.btn_generate_qml.setEnabled(False)
+
+        def enable_qml_buttons():
+            self.btn_preview_qml.setEnabled(True)
+            self.btn_generate_qml.setEnabled(True)
+
+        self.btn_list_qml.clicked.connect(enable_qml_buttons)
+
         # generate all
 
         self.generate_all_group_box = QGroupBox()
@@ -293,6 +366,16 @@ class MainWindow(QMainWindow):
         self.generate_all_layout.addWidget(self.btn_generate_all)
 
         self.button_layout.addWidget(self.generate_all_group_box)
+
+        # disable preview and generate buttons if list button is not clicked once
+        self.btn_preview_all.setEnabled(False)
+        self.btn_generate_all.setEnabled(False)
+
+        def enable_all_buttons():
+            self.btn_preview_all.setEnabled(True)
+            self.btn_generate_all.setEnabled(True)
+
+        self.btn_list_all.clicked.connect(enable_all_buttons)
 
         # add to layout
 
@@ -393,7 +476,30 @@ class MainWindow(QMainWindow):
         )
 
     def generate_all(self):
-        if self.display_overwrite_confirmation():
+        file_list = []
+        file_list.extend(
+            entities_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+        )
+        file_list.extend(
+            dto_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+        )
+        file_list.extend(
+            repositories_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+        )
+        file_list.extend(
+            cqrs_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+        )
+        file_list.extend(
+            controller_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+        )
+        file_list.extend(
+            application_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+        )
+        file_list.extend(
+            qml_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+        )
+
+        if self.display_overwrite_confirmation(file_list):
             self.list_all()
             entities_generator.generate_entity_files(
                 self.temp_manifest_file,
@@ -425,6 +531,12 @@ class MainWindow(QMainWindow):
                 self.file_list_view.fetch_file_states(),
                 self.uncrustify_config_file,
             )
+            qml_generator.generate_qml_files(
+                self.temp_manifest_file,
+                self.file_list_view.fetch_file_states(),
+                self.uncrustify_config_file,
+            )
+
 
             self.text_box.setPlainText("All files generated")
 
@@ -535,10 +647,10 @@ class MainWindow(QMainWindow):
         if self.display_overwrite_confirmation(
             repositories_generator.get_files_to_be_generated(
                 self.temp_manifest_file,
-                self.file_list_view.gfetch_file_stateset_selected_files(),
+                self.file_list_view.fetch_file_states(),
             )
         ):
-            repositories_generator.generate_repositories_files(
+            repositories_generator.generate_repository_files(
                 self.temp_manifest_file,
                 self.file_list_view.fetch_file_states(),
                 self.uncrustify_config_file,
@@ -611,8 +723,9 @@ class MainWindow(QMainWindow):
     def generate_controllers(self):
         self.list_controllers()
         if self.display_overwrite_confirmation(
-            controller_generator.get_files_to_be_generated(self.temp_manifest_file),
-            self.file_list_view.fetch_file_states(),
+            controller_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         ):
             controller_generator.generate_controller_files(
                 self.temp_manifest_file,
@@ -649,8 +762,9 @@ class MainWindow(QMainWindow):
     def generate_application(self):
         self.list_application()
         if self.display_overwrite_confirmation(
-            application_generator.get_files_to_be_generated(self.temp_manifest_file),
-            self.file_list_view.fetch_file_states(),
+            application_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         ):
             application_generator.generate_application_files(
                 self.temp_manifest_file,
@@ -687,8 +801,9 @@ class MainWindow(QMainWindow):
     def generate_qml(self):
         self.list_qml()
         if self.display_overwrite_confirmation(
-            qml_generator.get_files_to_be_generated(self.temp_manifest_file),
-            self.file_list_view.fetch_file_states(),
+            qml_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         ):
             qml_generator.generate_qml_files(
                 self.temp_manifest_file,
@@ -701,32 +816,42 @@ class MainWindow(QMainWindow):
     def display_overwrite_confirmation(self, files: list):
         existing_files = [file for file in files if os.path.isfile(file)]
 
-        if not existing_files:  # if the list is empty
-            return False
 
         # format the file list as a string for display
         fileList = "\n".join(existing_files)
 
-        msgBox = QMessageBox()
-        msgBox.setIcon(QMessageBox.Warning)
-        msgBox.setText(
-            f"The following files exist and will be overwritten:\nAre you sure you want to continue?"
-        )
-        msgBox.setWindowTitle("Overwrite Confirmation")
-        msgBox.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
-        msgBox.setDefaultButton(QMessageBox.Cancel)
+        dialog = QDialog()  
+        layout = QVBoxLayout(dialog)
+        if existing_files:  # if the list has something in it
+            label = QLabel()
+            label.setText(f"The following files exist and will be overwritten:\nAre you sure you want to continue?")
 
-        # adjust the sizePolicy to control QMessageBox's size
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(1)
-        msgBox.setSizePolicy(sizePolicy)
-        msgBox.setInformativeText(
-            f"\n{fileList}\n"
-        )  # required for the sizePolicy to be considered
-        msgBox.adjustSize()
+            layout.addWidget(label)
+        
+            dialog.setWindowTitle("Overwrite Confirmation")
+    
+            # add the plain text edit to the dialog
+            textEdit = QPlainTextEdit()
+            textEdit.setReadOnly(True)
+            textEdit.setPlainText(f"{fileList}\n")
+            layout.addWidget(textEdit)
+            dialog.resize(700, 300)
+        else:
+            label = QLabel()
+            label.setText(f"Are you sure you want to continue?\n")
 
-        returnValue = msgBox.exec()
-        if returnValue == QMessageBox.Ok:
+            layout.addWidget(label)
+        
+            label.setWindowTitle("Confirmation")
+                
+        # create Ok and Cancel buttons
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(dialog.accept)
+        buttonBox.rejected.connect(dialog.reject)
+        layout.addWidget(buttonBox)
+
+        returnValue = dialog.exec()
+        if returnValue == QDialog.Accepted:
             return True
         else:
             return False

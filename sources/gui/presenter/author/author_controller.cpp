@@ -1,18 +1,18 @@
 #include "author_controller.h"
 
-#include "cqrs/author/commands/create_author_command.h"
-#include "cqrs/author/commands/remove_author_command.h"
-#include "cqrs/author/commands/update_author_command.h"
-#include "features/author/handlers/commands/create_author_command_handler.h"
-#include "features/author/handlers/commands/update_author_command_handler.h"
-#include "features/author/handlers/queries/get_author_list_request_handler.h"
-#include "features/author/handlers/queries/get_author_request_handler.h"
+#include "author/commands/create_author_command.h"
+#include "author/commands/create_author_command_handler.h"
+#include "author/commands/remove_author_command.h"
+#include "author/commands/update_author_command.h"
+#include "author/commands/update_author_command_handler.h"
+#include "author/queries/get_all_author_query_handler.h"
+#include "author/queries/get_author_query_handler.h"
 #include "undo_redo/alter_command.h"
 #include "undo_redo/query_command.h"
 
-#include "features/author/handlers/commands/create_author_command_handler.h"
-#include "features/author/handlers/commands/remove_author_command_handler.h"
-#include "features/author/handlers/commands/update_author_command_handler.h"
+#include "author/commands/create_author_command_handler.h"
+#include "author/commands/remove_author_command_handler.h"
+#include "author/commands/update_author_command_handler.h"
 
 using namespace Presenter::Author;
 using namespace Presenter::UndoRedo;
@@ -21,7 +21,7 @@ using namespace Contracts::CQRS::Author::Commands;
 using namespace Application::Features::Author::Commands;
 
 QScopedPointer<AuthorController> AuthorController::s_instance = QScopedPointer<AuthorController>(nullptr);
-InterfaceRepositoryProvider     *AuthorController::s_repositoryProvider;
+InterfaceRepositoryProvider *AuthorController::s_repositoryProvider;
 ThreadedUndoRedoSystem *AuthorController::s_undo_redo_system;
 
 /*!
@@ -72,7 +72,7 @@ AuthorController::AuthorController(InterfaceRepositoryProvider *repositoryProvid
 /*!
     \brief Returns the singleton instance of the AuthorController.
  */
-AuthorController * AuthorController::instance()
+AuthorController *AuthorController::instance()
 {
     return s_instance.data();
 }
@@ -86,13 +86,12 @@ void AuthorController::get(int id)
 {
     auto queryCommand = new QueryCommand("get");
 
-    queryCommand->setQueryFunction([ = ](QPromise<Result<void> >& progressPromise) {
-        GetAuthorRequest request;
-        request.id     = id;
-        auto interface = qSharedPointerCast<InterfaceAuthorRepository>(
-            s_repositoryProvider->repository("Author"));
-        GetAuthorRequestHandler handler(interface);
-        auto result = handler.handle(progressPromise, request);
+    queryCommand->setQueryFunction([=](QPromise<Result<void>> &progressPromise) {
+        GetAuthorQuery query;
+        query.id = id;
+        auto interface = qSharedPointerCast<InterfaceAuthorRepository>(s_repositoryProvider->repository("Author"));
+        GetAuthorQueryHandler handler(interface);
+        auto result = handler.handle(progressPromise, query);
 
         if (result.isSuccess())
         {
@@ -113,10 +112,9 @@ void AuthorController::getAll()
 {
     auto queryCommand = new QueryCommand("getAll");
 
-    queryCommand->setQueryFunction([&](QPromise<Result<void> >& progressPromise) {
-        auto interface = qSharedPointerCast<InterfaceAuthorRepository>(
-            s_repositoryProvider->repository("Author"));
-        GetAuthorListRequestHandler handler(interface);
+    queryCommand->setQueryFunction([&](QPromise<Result<void>> &progressPromise) {
+        auto interface = qSharedPointerCast<InterfaceAuthorRepository>(s_repositoryProvider->repository("Author"));
+        GetAllAuthorQueryHandler handler(interface);
         auto result = handler.handle(progressPromise);
 
         if (result.isSuccess())
@@ -133,14 +131,13 @@ void AuthorController::getAll()
 
     When the operation is complete, the authorCreated signal is emitted.
  */
-void AuthorController::create(const CreateAuthorDTO& dto)
+void AuthorController::create(const CreateAuthorDTO &dto)
 {
-    CreateAuthorCommand request;
+    CreateAuthorCommand query;
 
-    request.req = dto;
+    query.req = dto;
 
-    auto repository = qSharedPointerCast<InterfaceAuthorRepository>(
-        s_repositoryProvider->repository("Author"));
+    auto repository = qSharedPointerCast<InterfaceAuthorRepository>(s_repositoryProvider->repository("Author"));
 
     auto *handler = new CreateAuthorCommandHandler(repository);
 
@@ -152,7 +149,7 @@ void AuthorController::create(const CreateAuthorDTO& dto)
 
     // Create specialized UndoRedoCommand
     auto command = new AlterCommand<CreateAuthorCommandHandler, CreateAuthorCommand>(
-        AuthorController::tr("Create author"), handler, request);
+        AuthorController::tr("Create author"), handler, query);
 
     // push command
     s_undo_redo_system->push(command, "author");
@@ -163,14 +160,13 @@ void AuthorController::create(const CreateAuthorDTO& dto)
 
     When the operation is complete, the authorUpdated signal is emitted.
  */
-void AuthorController::update(const UpdateAuthorDTO& dto)
+void AuthorController::update(const UpdateAuthorDTO &dto)
 {
-    UpdateAuthorCommand request;
+    UpdateAuthorCommand query;
 
-    request.req = dto;
+    query.req = dto;
 
-    auto repository = qSharedPointerCast<InterfaceAuthorRepository>(
-        s_repositoryProvider->repository("Author"));
+    auto repository = qSharedPointerCast<InterfaceAuthorRepository>(s_repositoryProvider->repository("Author"));
 
     auto *handler = new UpdateAuthorCommandHandler(repository);
 
@@ -180,7 +176,7 @@ void AuthorController::update(const UpdateAuthorDTO& dto)
 
     // Create specialized UndoRedoCommand
     auto command = new AlterCommand<UpdateAuthorCommandHandler, UpdateAuthorCommand>(
-        AuthorController::tr("Update author"), handler, request);
+        AuthorController::tr("Update author"), handler, query);
 
     // push command
     s_undo_redo_system->push(command, "author");
@@ -193,12 +189,11 @@ void AuthorController::update(const UpdateAuthorDTO& dto)
  */
 void AuthorController::remove(int id)
 {
-    RemoveAuthorCommand request;
+    RemoveAuthorCommand query;
 
-    request.id = id;
+    query.id = id;
 
-    auto repository = qSharedPointerCast<InterfaceAuthorRepository>(
-        s_repositoryProvider->repository("Author"));
+    auto repository = qSharedPointerCast<InterfaceAuthorRepository>(s_repositoryProvider->repository("Author"));
 
     auto *handler = new RemoveAuthorCommandHandler(repository);
 
@@ -210,7 +205,7 @@ void AuthorController::remove(int id)
 
     // Create specialized UndoRedoCommand
     auto command = new AlterCommand<RemoveAuthorCommandHandler, RemoveAuthorCommand>(
-        AuthorController::tr("Remove author"), handler, request);
+        AuthorController::tr("Remove author"), handler, query);
 
     // push command
     s_undo_redo_system->push(command, "author");

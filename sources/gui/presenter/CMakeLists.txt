@@ -38,11 +38,17 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(${PROJECT_NAME} PUBLIC SKRIBISTO_PRESENTER_LIBRARY)
 
 add_dependencies(${PROJECT_NAME} skribisto-contracts)
-add_dependencies(${PROJECT_NAME} skribisto-application)
+add_dependencies(${PROJECT_NAME} skribisto-application-feature-scene)
+add_dependencies(${PROJECT_NAME} skribisto-application-feature-chapter)
+add_dependencies(${PROJECT_NAME} skribisto-application-feature-author)
+add_dependencies(${PROJECT_NAME} skribisto-application-feature-system)
 add_dependencies(${PROJECT_NAME} skribisto-infrastructure)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts)
-target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application-feature-scene)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application-feature-chapter)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application-feature-author)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application-feature-system)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-infrastructure)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

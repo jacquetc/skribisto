@@ -5,6 +5,7 @@ import sys
 import stringcase
 import shutil
 import uncrustify
+import clang_format
 from pathlib import Path
 
 
@@ -198,8 +199,9 @@ def generate_entity_files(
             fh.write(rendered_template)
             print(f"Successfully wrote file {output_file}")
 
-        if uncrustify_config_file:
-            uncrustify.run_uncrustify(output_file, uncrustify_config_file)
+        # if uncrustify_config_file:
+        #     uncrustify.run_uncrustify(output_file, uncrustify_config_file)
+        clang_format.run_clang_format(output_file)
 
     # add entity_base
     if register_entity_base:

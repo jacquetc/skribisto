@@ -18,12 +18,20 @@ entities:
           name: creationDate
         - type: QDateTime
           name: updateDate
+    - name: SceneParagraph
+      parent: Entity
+      generate: true
+      fields:
+        - type: QString
+          name: content
     - name: Scene
       parent: Entity
       generate: true
       fields:
         - type: QString
           name: title
+        - type: QList<SceneParagraph>
+          name: paragraphs
     - name: Chapter
       parent: Entity
       generate: true
@@ -50,7 +58,7 @@ entities:
           name: books
     - name: Author
       parent: Entity
-      generate: true
+      generate: True
       fields:
         - type: QString
           name: name
@@ -106,6 +114,12 @@ repositories:
     - entity_name: Author
       generate: true
       lazy_loaders: true
+    - entity_name: Scene
+      generate: true
+      lazy_loaders: true
+    - entity_name: SceneParagraph
+      generate: true
+      lazy_loaders: true
 
   interface_path: ../sources/core/contracts/persistence/
   interface_list_file: ../sources/core/contracts/repositories.txt
@@ -156,8 +170,8 @@ application:
           enabled: true
           generate: true
         get_with_details:
-          enabled: true
-          generate: true
+          enabled: false
+          generate: false
         create: 
           enabled: true
           generate: true
@@ -310,6 +324,37 @@ application:
                   name: destinationChapterId
                 - type: int
                   name: scenePositionAtDestination
+    - name: SceneParagraph
+      DTO:
+        id_field: id
+        dto_identical_to_entity:
+          enabled: true
+          generate: true
+          entity_mappable_with: SceneParagraph
+      CRUD:
+        enabled: true
+        entity_mappable_with: SceneParagraph
+        get:
+          enabled: true
+          generate: true
+        get_all: 
+          enabled: true
+          generate: true
+        get_with_details: 
+          enabled: true
+          generate: true
+        create: 
+          enabled: true
+          generate: true
+          undo_redo: True
+        remove: 
+          enabled: true
+          generate: true
+          undo_redo: True
+        update: 
+          enabled: true
+          generate: true
+          undo_redo: True
 
     - name: System
       DTO:
@@ -321,10 +366,10 @@ application:
       commands:
         - name: SaveSystemAs
           generate: true
-          entities:
           validator: 
             enabled: True
             generate: True
+            check_if_exists: False
           undo_redo: False
           dto:
             in:
@@ -337,7 +382,6 @@ application:
               is_void: true
         - name: LoadSystem
           generate: true
-          entities:
           validator:
             enabled: True
             generate: True
@@ -349,6 +393,16 @@ application:
               fields:
                 - type: QUrl
                   name: fileName
+            out:
+              is_void: true
+        - name: CloseSystem
+          generate: true
+          validator: 
+            enabled: False
+            generate: False
+            check_if_exists: False
+          undo_redo: False
+          dto:
             out:
               is_void: true
 

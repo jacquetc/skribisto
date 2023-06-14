@@ -34,7 +34,7 @@ class SKR_PERSISTENCE_EXPORT GenericRepository : public virtual Contracts::Persi
     virtual Result<QList<T>> getAll() override;
     Result<QList<T>> getAll(const QHash<QString, QVariant> &filters) override;
 
-    virtual Result<T> remove(T &&entity) override;
+    virtual Result<int> remove(int id) override;
 
     virtual Result<T> add(T &&entity) override;
 
@@ -84,10 +84,10 @@ template <class T> Result<QList<T>> GenericRepository<T>::getAll(const QHash<QSt
     return m_databaseTable->getAll(filters);
 }
 
-template <class T> Result<T> GenericRepository<T>::remove(T &&entity)
+template <class T> Result<int> GenericRepository<T>::remove(int id)
 {
     QWriteLocker locker(&m_lock);
-    return m_databaseTable->remove(std::move(entity));
+    return m_databaseTable->remove(id);
 }
 
 template <class T> Result<T> GenericRepository<T>::add(T &&entity)

@@ -1,0 +1,22 @@
+#pragma once
+
+{% if not command.request_is_id %}
+#include "{{ command.feature_name_snake }}/{{ command.dto_snake }}.h"
+{% endif %}
+
+namespace Contracts::CQRS::{{ command.feature_name_pascal }}::Commands
+{
+class {{ command.name }}
+{
+  public:
+    {{ command.name }}()
+    {
+    }
+
+{% if command.request_is_id %}
+    int id = -1;
+{% else %}
+    Contracts::DTO::{{ command.feature_name_pascal }}::{{ command.dto_pascal }} req;
+{% endif %}
+};
+} // namespace Contracts::CQRS::{{ command.feature_name_pascal }}::Commands

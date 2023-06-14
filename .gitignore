@@ -1,5 +1,7 @@
+# Skribisto
 generator/preview
 generator/temp/
+*_rc.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

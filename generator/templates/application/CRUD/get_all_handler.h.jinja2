@@ -1,38 +1,28 @@
 #pragma once
 
 #include "{{ export_header }}"
-#include "{{ feature_snake_name }}_dto.h"
-#include "handler.h"
-#include "persistence/interface_{{ feature_snake_name }}_repository.h"
+#include "{{ feature_snake_name }}/{{ entity_mappable_with_snake }}_dto.h"
+
+#include "persistence/interface_{{ entity_mappable_with_snake }}_repository.h"
+#include <QPromise>
 
 using namespace Contracts::DTO::{{ feature_pascal_name }};
 using namespace Contracts::Persistence;
 
 namespace Application::Features::{{ feature_pascal_name }}::Queries
 {
-class {{ export }} GetAll{{ feature_pascal_name }}RequestHandler : public Handler
+class {{ export }} GetAll{{ entity_mappable_with_pascal }}QueryHandler : public QObject
 {
     Q_OBJECT
   public:
-    GetAll{{ feature_pascal_name }}RequestHandler(QSharedPointer<Interface{{ feature_pascal_name }}Repository> repository);
-    Result<QList<{{ feature_pascal_name }}DTO>> handle(QPromise<Result<void>> &progressPromise);
+    GetAll{{ entity_mappable_with_pascal }}QueryHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> repository);
+    Result<QList<{{ entity_mappable_with_pascal }}DTO>> handle(QPromise<Result<void>> &progressPromise);
 
   private:
-    QSharedPointer<Interface{{ feature_pascal_name }}Repository> m_repository;
-    Result<QList<{{ feature_pascal_name }}DTO>> handleImpl();
-};
-
-
-struct CallOnce
-{
-    CallOnce()
-    {
-        registerMappings();
-    }
+    QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> m_repository;
+    Result<QList<{{ entity_mappable_with_pascal }}DTO>> handleImpl(QPromise<Result<void> >   & progressPromise);
+    static bool s_mappingRegistered;
     void registerMappings();
-
 };
-// This line will ensure the function is called once at the start of the program.
-static CallOnce callOnceInstance;
 
 } // namespace Application::Features::{{ feature_pascal_name }}::Queries

@@ -6,6 +6,7 @@ import stringcase
 import shutil
 import copy
 import uncrustify
+import clang_format
 from pathlib import Path
 from collections import OrderedDict
 
@@ -339,7 +340,9 @@ def get_dto_dict_and_feature_ordered_dict(
         for dto_dependency in dto_dependencies:
             if dto_dependency in dto_dict:
                 dto_dependency_file_name = dto_dict[dto_dependency]["file_name"]
-                header_list.append(f'"{dto_dependency_file_name}"')
+                header_list.append(
+                    f'"{stringcase.snakecase(dto_dependency.strip("DTO"))}/{dto_dependency_file_name}"'
+                )
 
         header_list = list(set(header_list))
         header_list.sort()
@@ -351,9 +354,15 @@ def get_dto_dict_and_feature_ordered_dict(
         for field in dto_data["fields"]:
             if not field["is_foreign"]:
                 continue
-            foreign_dto_type = field["foreign_dto_type"]
-            field["foreign_feature_name"] = dto_dict[foreign_dto_type]["feature_name"]
-
+            try:
+                foreign_dto_type = field["foreign_dto_type"]
+                field["foreign_feature_name"] = dto_dict[foreign_dto_type][
+                    "feature_name"
+                ]
+            except KeyError:
+                print(
+                    f"ERROR: DTO {dto_type_name} has a foreign field {field['name']} with foreign DTO type {foreign_dto_type} that does not exist. Maybe you forgot to create the corresponding feature ?"
+                )
             # dto_data["fields"][i] = field
 
     # create a new dict "feature_dto_dict" with only the DTOs that are needed for the feature. Each key is a feature name and each value is a dict.
@@ -493,85 +502,6 @@ def isListForeignDTO(dto_list: list, field_type: str) -> bool:
     return False
 
 
-""" 
-
-def generate_dto(
-    template,
-    feature_snake_name,
-    dto_pascal_type,
-    dto_file_name,
-    dto_common_cmake_folder_path,
-    fields,
-    default_init_values,
-    dto_list,
-) -> str:
-    dto_file_path = os.path.join(
-        dto_common_cmake_folder_path, feature_snake_name, dto_file_name
-    )
-
-    # Create the directory if it does not exist
-    os.makedirs(os.path.dirname(dto_file_path), exist_ok=True)
-
-    # transform foreigner entities to DTOs
-    # bad hack to infer DTOs from entities
-    for field in fields:
-        field_type = field["type"]
-        if "<" in field_type:
-            # insert 'DTO' before the last '>'
-            field_type = field_type.replace(">", "DTO>", 1)
-            if isListForeignDTO(dto_list, field_type):
-                entity_name = field_type.split("<")[1].split(">")[0].strip()
-                field["type"] = field_type
-        elif isUniqueForeignDTO(dto_list, f"{field_type}DTO"):
-            field["type"] = f"{entity_name}DTO"
-        elif field_type in ["QString", "QDateTime", "QUuid"]:
-            continue
-
-    # only keep the fields from the current entity for initialization
-    fields_init_values = ", ".join(
-        [
-            f"m_{field['name']}({default_init_values.get(field['type'].split('<')[0], '{}')})"
-            for field in fields
-            if field["type"].count("<") == 0
-        ]
-    )
-
-    # Get the headers to include based on the field types
-    headers = []
-    for field in fields:
-        field_type = field["type"]
-        if isListForeignDTO(dto_list, field_type):
-            include_header_file = field_type.split("<")[1].split(">")[0].strip()
-            headers.append(
-                f'"{stringcase.snakecase(include_header_file)}.h"'.replace(
-                    "_d_t_o", "_dto"
-                )
-            )
-        elif isUniqueForeignDTO(dto_list, field_type):
-            headers.append(f'"{stringcase.snakecase(field_type)}.h"')
-        elif field_type in ["QString", "QDateTime", "QUuid"]:
-            headers.append(f"<{field_type}>")
-
-    # remove duplicates
-    headers = list(set(headers))
-
-    with open(dto_file_path, "w") as f:
-        f.write(
-            template.render(
-                feature_pascal_name=stringcase.pascalcase(feature_snake_name),
-                dto_pascal_type=dto_pascal_type,
-                fields=fields,
-                headers=headers,
-                fields_init_values=fields_init_values,
-            )
-        )
-        print(f"Successfully wrote file {dto_file_path}")
-
-    return dto_file_path
-
-"""
-
-
 def generate_dto(
     template,
     dto_type,
@@ -596,12 +526,13 @@ def generate_dto(
 
     dto_file_path = os.path.join(
         dto_common_cmake_folder_path,
+        stringcase.snakecase(dto_data["feature_name"] + "_dto"),
         stringcase.snakecase(dto_data["feature_name"]),
         dto_data["file_name"],
     )
 
     if not files_to_be_generated.get(dto_file_path, False):
-        return
+        return dto_file_path
 
     # Create the directory if it does not exist
     os.makedirs(os.path.dirname(dto_file_path), exist_ok=True)
@@ -693,8 +624,10 @@ def generate_dto_files(
         generated_files = [file for file in generated_files if file]
 
         for file in generated_files:
-            if uncrustify_config_file:
-                uncrustify.run_uncrustify(file, uncrustify_config_file)
+            # if uncrustify_config_file and files_to_be_generated.get(file, False):
+            #     uncrustify.run_uncrustify(file, uncrustify_config_file)
+            if files_to_be_generated.get(file, False):
+                clang_format.run_clang_format(file)
 
         # generate these DTO's cmakelists.txt
         dto_cmakelists_template = template_env.get_template(
@@ -702,7 +635,9 @@ def generate_dto_files(
         )
 
         dto_cmakelists_file = os.path.join(
-            dto_common_cmake_folder_path, feature_snake_name, "CMakeLists.txt"
+            dto_common_cmake_folder_path,
+            feature_snake_name + "_dto",
+            "CMakeLists.txt",
         )
 
         ## Convert the file path to be relative to the directory of the cmakelists
@@ -745,7 +680,7 @@ def generate_dto_files(
         with open(dto_common_cmakelists_file, "w") as fh:
             for feature_name, _ in feature_ordered_dict.items():
                 fh.write(
-                    f"add_subdirectory({stringcase.snakecase(feature_name)})" + "\n"
+                    f"add_subdirectory({stringcase.snakecase(feature_name)}_dto)" + "\n"
                 )
             print(f"Successfully wrote file {dto_common_cmakelists_file}")
 
@@ -791,13 +726,16 @@ def get_files_to_be_generated(
             files.append(
                 os.path.join(
                     dto_common_cmake_folder_path,
+                    feature_snake_name + "_dto",
                     feature_snake_name,
                     dto_data["file_name"],
                 )
             )
 
         dto_cmakelists_file = os.path.join(
-            dto_common_cmake_folder_path, feature_snake_name, "CMakeLists.txt"
+            dto_common_cmake_folder_path,
+            feature_snake_name + "_dto",
+            "CMakeLists.txt",
         )
 
         files.append(dto_cmakelists_file)

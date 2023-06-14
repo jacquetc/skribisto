@@ -26,8 +26,8 @@
 #include <QQmlEngine>
 #include <QUrl>
 
-#include "chapter_dto.h"
-#include "create_chapter_dto.h"
+#include "chapter/chapter_dto.h"
+#include "chapter/create_chapter_dto.h"
 
 struct ChapterListItem
 {

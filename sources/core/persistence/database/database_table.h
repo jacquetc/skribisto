@@ -54,7 +54,7 @@ class SKR_PERSISTENCE_EXPORT DatabaseTable : public virtual InterfaceDatabaseTab
 
     Result<QList<T>> getAll(const QHash<QString, QVariant> &filters) override;
 
-    Result<T> remove(T &&entity) override;
+    Result<int> remove(int id) override;
 
     Result<T> add(T &&entity) override;
 
@@ -365,7 +365,7 @@ template <class T> Result<QList<T>> DatabaseTable<T>::getAll(const QHash<QString
 
 //--------------------------------------------
 
-template <class T> Result<T> DatabaseTable<T>::remove(T &&entity)
+template <class T> Result<int> DatabaseTable<T>::remove(int id)
 {
     const QString &entityName = m_tableName;
     QSqlDatabase database = m_databaseContext->getConnection();
@@ -377,28 +377,28 @@ template <class T> Result<T> DatabaseTable<T>::remove(T &&entity)
         QSqlQuery query(database);
         if (!query.prepare(queryStr))
         {
-            return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
+            return Result<int>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
         }
-        query.bindValue(":id", entity.id());
+        query.bindValue(":id", id);
 
         // Execute the DELETE statement with the entity ID
         if (!query.exec())
         {
-            return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
+            return Result<int>(Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
         }
 
         // Return an appropriate Result object based on the query execution result
         if (query.numRowsAffected() == 1)
         {
-            return Result<T>(std::forward<T>(entity));
+            return Result<int>(id);
         }
         else
         {
-            return Result<T>(Error(Q_FUNC_INFO, Error::Critical, "sql_delete_failed",
-                                   "Failed to delete row from database", QString::number(entity.id())));
+            return Result<int>(Error(Q_FUNC_INFO, Error::Critical, "sql_delete_failed",
+                                     "Failed to delete row from database", QString::number(id)));
         }
     }
-    return Result<T>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
+    return Result<int>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
 }
 
 //--------------------------------------------

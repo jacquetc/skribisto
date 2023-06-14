@@ -5,6 +5,7 @@ import sys
 import stringcase
 import shutil
 import uncrustify
+import clang_format
 from pathlib import Path
 
 
@@ -34,7 +35,9 @@ def generate_repository_files(
     template_env = Environment(loader=FileSystemLoader("templates/repositories"))
     repo_template = template_env.get_template("repository_template.h.jinja2")
     repo_cpp_template = template_env.get_template("repository_template.cpp.jinja2")
-    iface_template = template_env.get_template("interface_repository_template.h.jinja2")
+    interface_template = template_env.get_template(
+        "interface_repository_template.h.jinja2"
+    )
 
     contracts_data = manifest_data.get("contracts", [])
     contracts_export = contracts_data.get("export", "")
@@ -145,7 +148,7 @@ def generate_repository_files(
         if generate_lazy_loaders:
             for key, value in foreign_entities.items():
                 loader_function_list.append(
-                    f"Domain::{name}::{value['related_field_pascal_name']}Loader fetch{value['related_field_pascal_name']}Loader();"
+                    f"Domain::{name}::{value['related_field_pascal_name']}Loader fetch{value['related_field_pascal_name']}Loader() override;"
                 )
 
         # Create .h file
@@ -171,8 +174,9 @@ def generate_repository_files(
             print(f"Successfully wrote file {output_file}")
         generated_files.append(output_file)
 
-        if uncrustify_config_file:
-            uncrustify.run_uncrustify(output_file, uncrustify_config_file)
+        # if uncrustify_config_file:
+        #     uncrustify.run_uncrustify(output_file, uncrustify_config_file)
+        clang_format.run_clang_format(output_file)
 
         # prepare the fields init values
 
@@ -206,16 +210,27 @@ def generate_repository_files(
             print(f"Successfully wrote file {output_file}")
         generated_files.append(output_file)
 
-        if uncrustify_config_file:
-            uncrustify.run_uncrustify(output_file, uncrustify_config_file)
+        # if uncrustify_config_file:
+        #     uncrustify.run_uncrustify(output_file, uncrustify_config_file)
+        clang_format.run_clang_format(output_file)
+
+        # loader functions like     Domain::Book::ChaptersLoader fetchChaptersLoader();
+
+        loader_function_list_for_interface = []
+        if generate_lazy_loaders:
+            for key, value in foreign_entities.items():
+                loader_function_list_for_interface.append(
+                    f"virtual Domain::{name}::{value['related_field_pascal_name']}Loader fetch{value['related_field_pascal_name']}Loader() = 0;"
+                )
 
         # Create interface .h file
-        rendered_template = iface_template.render(
+        rendered_template = interface_template.render(
             name=name,
             snake_name=snake_name,
             inverted_app_domain=inverted_app_domain,
             contracts_export=contracts_export,
             contracts_export_header_file=contracts_export_header_file,
+            loader_function_list_for_interface=loader_function_list_for_interface,
         )
         output_file = os.path.join(
             interface_path, f"interface_{snake_name}_repository.h"
@@ -230,8 +245,9 @@ def generate_repository_files(
             print(f"Successfully wrote file {output_file}")
         interface_generated_files.append(output_file)
 
-        if uncrustify_config_file:
-            uncrustify.run_uncrustify(output_file, uncrustify_config_file)
+        # if uncrustify_config_file:
+        #     uncrustify.run_uncrustify(output_file, uncrustify_config_file)
+        clang_format.run_clang_format(output_file)
 
     # write the repository list file
 
