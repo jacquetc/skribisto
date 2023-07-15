@@ -338,6 +338,11 @@ void UndoRedoSystem::executeNextCommand(const ScopeFlag &scopeFlag)
         // Execute the command asynchronously
 
         command->asyncRedo();
+
+        // connecting after the initial asyncRedo to ovoid unwanted redoing signal when the command is added to the
+        // queue
+        connect(command.data(), &UndoRedoCommand::undoing, this, &UndoRedoSystem::undoing, Qt::UniqueConnection);
+        connect(command.data(), &UndoRedoCommand::redoing, this, &UndoRedoSystem::redoing, Qt::UniqueConnection);
     }
 }
 

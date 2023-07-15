@@ -59,6 +59,9 @@ class UndoRedoCommand : public QObject
     void progressTextChanged(const QString &progressText);
     void progressValueChanged(int progressValue);
 
+    void undoing(Scope scope, bool active);
+    void redoing(Scope scope, bool active);
+
   private slots:
     void onFinished();
 

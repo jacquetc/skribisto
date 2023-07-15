@@ -31,6 +31,7 @@ UndoRedoCommand::UndoRedoCommand(const QString &text) : QObject(nullptr), m_text
 void UndoRedoCommand::asyncUndo()
 {
     m_status = Status::Running;
+    emit undoing(m_scope, true);
     QFuture<Result<void>> future = QtConcurrent::run(&UndoRedoCommand::undo, this);
     m_watcher->setFuture(future);
 }
@@ -41,6 +42,7 @@ void UndoRedoCommand::asyncUndo()
 void UndoRedoCommand::asyncRedo()
 {
     m_status = Status::Running;
+    emit redoing(m_scope, true);
     QFuture<Result<void>> future = QtConcurrent::run(&UndoRedoCommand::redo, this);
     m_watcher->setFuture(future);
 }
@@ -75,6 +77,8 @@ void UndoRedoCommand::onFinished()
     m_status = Status::Finished;
     emit progressFinished();
     emit finished();
+    emit redoing(m_scope, false);
+    emit undoing(m_scope, false);
 }
 
 /*!

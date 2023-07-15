@@ -73,6 +73,8 @@ void ThreadedUndoRedoSystem::startUndoRedoSystem()
     connect(m_undoRedoSystem, &UndoRedoSystem::stateChanged, this,
             &ThreadedUndoRedoSystem::onUndoRedoSystemStateChanged);
     connect(m_undoRedoSystem, &UndoRedoSystem::errorSent, this, &ThreadedUndoRedoSystem::onErrorSent);
+    connect(m_undoRedoSystem, &UndoRedoSystem::undoing, this, &ThreadedUndoRedoSystem::undoing);
+    connect(m_undoRedoSystem, &UndoRedoSystem::redoing, this, &ThreadedUndoRedoSystem::redoing);
 
     QMetaObject::invokeMethod(m_undoRedoSystem, "run", Qt::QueuedConnection);
 }

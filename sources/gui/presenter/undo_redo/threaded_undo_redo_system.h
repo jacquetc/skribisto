@@ -50,6 +50,16 @@ class SKR_PRESENTER_EXPORT ThreadedUndoRedoSystem : public QObject
      * actions.
      */
     void errorSent(Error error);
+    /*!
+     * \brief A signal that is emitted when the undo redo system is about to start redoing.
+     * actions.
+     */
+    void redoing(Scope scope, bool active);
+    /*!
+     * \brief A signal that is emitted when the undo redo system is about to start undoing.
+     * actions.
+     */
+    void undoing(Scope scope, bool active);
 
   private slots:
     void startUndoRedoSystem();
