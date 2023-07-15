@@ -16,7 +16,7 @@ class DummyAuthorRepository : public QObject, public Contracts::Persistence::Int
 
     void fillGet(const Domain::Author &entity);
     void fillGetAll(const QList<Domain::Author> &list);
-    void fillRemove(const Domain::Author &entity);
+    void fillRemove(int entityId);
     void fillAdd(const Domain::Author &entity);
     void fillUpdate(const Domain::Author &entity);
     void fillExists(bool value);
@@ -29,7 +29,7 @@ class DummyAuthorRepository : public QObject, public Contracts::Persistence::Int
     Result<Domain::Author> get(const QUuid &uuid) override;
     Result<QList<Domain::Author>> getAll() override;
     Result<QList<Domain::Author>> getAll(const QHash<QString, QVariant> &filters) override;
-    Result<Domain::Author> remove(Domain::Author &&entity) override;
+    Result<int> remove(int id) override;
     Result<Domain::Author> add(Domain::Author &&entity) override;
     Result<Domain::Author> update(Domain::Author &&entity) override;
     Result<bool> exists(const QUuid &uuid) override;
@@ -44,7 +44,7 @@ class DummyAuthorRepository : public QObject, public Contracts::Persistence::Int
   private:
     Domain::Author m_getEntity;
     QList<Domain::Author> m_getAllList;
-    Domain::Author m_removeEntity;
+    int m_removeEntityId;
     Domain::Author m_addEntity;
     Domain::Author m_updateEntity;
     bool m_exists;
@@ -61,9 +61,9 @@ inline void DummyAuthorRepository::fillGetAll(const QList<Domain::Author> &list)
     m_getAllList = list;
 }
 
-inline void DummyAuthorRepository::fillRemove(const Domain::Author &entity)
+inline void DummyAuthorRepository::fillRemove(int entityId)
 {
-    m_removeEntity = entity;
+    m_removeEntityId = entityId;
 }
 
 inline void DummyAuthorRepository::fillAdd(const Domain::Author &entity)
@@ -112,9 +112,9 @@ inline Result<QList<Domain::Author>> DummyAuthorRepository::getAll(const QHash<Q
 {
     return Result<QList<Domain::Author>>(m_getAllList);
 }
-inline Result<Domain::Author> DummyAuthorRepository::remove(Domain::Author &&entity)
+inline Result<int> DummyAuthorRepository::remove(int id)
 {
-    return Result<Domain::Author>(m_removeEntity);
+    return Result<int>(m_removeEntityId);
 }
 
 inline Result<Domain::Author> DummyAuthorRepository::add(Domain::Author &&entity)

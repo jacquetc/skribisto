@@ -56,7 +56,7 @@ Result<int> RemoveSceneParagraphCommandHandler::handleImpl(QPromise<Result<void>
 {
     Result<Domain::SceneParagraph> sceneParagraphResult = m_repository->get(request.id);
 
-    if (Q_UNLIKELY(!sceneParagraphResult.hasError()))
+    if (Q_UNLIKELY(sceneParagraphResult.hasError()))
     {
         qDebug() << "Error getting sceneParagraph from repository:" << sceneParagraphResult.error().message();
         return Result<int>(sceneParagraphResult.error());
@@ -88,7 +88,7 @@ Result<int> RemoveSceneParagraphCommandHandler::restoreImpl()
     // Add the sceneParagraph to the repository
     auto sceneParagraphResult = m_repository->add(std::move(m_oldState));
 
-    if (Q_UNLIKELY(!sceneParagraphResult.hasError()))
+    if (Q_UNLIKELY(sceneParagraphResult.hasError()))
     {
         return Result<int>(sceneParagraphResult.error());
     }

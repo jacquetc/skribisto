@@ -175,15 +175,15 @@ application:
         create: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
         remove: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
         update: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
 
 
     - name: Chapter
@@ -208,15 +208,15 @@ application:
         create: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
         remove: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
         update: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
       commands:
         - name: MoveChapter
           generate: true
@@ -226,7 +226,7 @@ application:
           validator: 
             enabled: True
             generate: True
-          undo_redo: True
+          undo: True
           dto:
             in:
               type_prefix: MoveChapter
@@ -277,15 +277,15 @@ application:
         create: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
         remove: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
         update: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
       commands:
         - name: MoveScene
           generate: true
@@ -295,8 +295,7 @@ application:
           validator: 
             enabled: True
             generate: True
-          restore: True
-          undo_redo: True
+          undo: True
           dto:
             in:
               type_prefix: MoveScene
@@ -346,15 +345,15 @@ application:
         create: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
         remove: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
         update: 
           enabled: true
           generate: true
-          undo_redo: True
+          undo: True
 
     - name: System
       DTO:
@@ -370,7 +369,7 @@ application:
             enabled: True
             generate: True
             check_if_exists: False
-          undo_redo: False
+          undo: False
           dto:
             in:
               type_prefix: SaveSystemAs
@@ -385,7 +384,7 @@ application:
           validator:
             enabled: True
             generate: True
-          undo_redo: False
+          undo: False
           dto:
             in:
               type_prefix: LoadSystem
@@ -401,7 +400,7 @@ application:
             enabled: False
             generate: False
             check_if_exists: False
-          undo_redo: False
+          undo: False
           dto:
             out:
               is_void: true

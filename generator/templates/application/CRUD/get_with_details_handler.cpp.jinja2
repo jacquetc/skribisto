@@ -38,7 +38,7 @@ Result<{{ entity_mappable_with_pascal }}WithDetailsDTO>Get{{ entity_mappable_wit
     // do
     auto {{ entity_mappable_with_camel }}Result = m_repository->get(query.id);
 
-    if (Q_UNLIKELY(!{{ entity_mappable_with_camel }}Result.isError()))
+    if (Q_UNLIKELY({{ entity_mappable_with_camel }}Result.isError()))
     {
         return Result<{{ entity_mappable_with_pascal }}WithDetailsDTO>({{ entity_mappable_with_camel }}Result.error());
     }

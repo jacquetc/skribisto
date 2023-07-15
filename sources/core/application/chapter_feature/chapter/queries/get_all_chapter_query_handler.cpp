@@ -39,7 +39,7 @@ Result<QList<ChapterDTO>> GetAllChapterQueryHandler::handleImpl(QPromise<Result<
     // do
     auto chapterResult = m_repository->getAll();
 
-    if (Q_UNLIKELY(!chapterResult.isError()))
+    if (Q_UNLIKELY(chapterResult.isError()))
     {
         return Result<QList<ChapterDTO>>(chapterResult.error());
     }

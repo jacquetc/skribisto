@@ -118,7 +118,7 @@ Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal
 
     auto deleteResult = m_repository->remove(m_newState.value().id());
 
-    if (Q_UNLIKELY(!deleteResult.hasError()))
+    if (Q_UNLIKELY(deleteResult.hasError()))
     {
         qDebug() << "Error deleting {{ entity_mappable_with_pascal }} from repository:" << deleteResult.error().message();
         return Result<{{ entity_mappable_with_pascal }}DTO>(deleteResult.error());

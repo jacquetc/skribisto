@@ -38,7 +38,7 @@ Result<ChapterDTO> GetChapterQueryHandler::handleImpl(QPromise<Result<void>> &pr
     // do
     auto chapterResult = m_repository->get(query.id);
 
-    if (Q_UNLIKELY(!chapterResult.isError()))
+    if (Q_UNLIKELY(chapterResult.isError()))
     {
         return Result<ChapterDTO>(chapterResult.error());
     }

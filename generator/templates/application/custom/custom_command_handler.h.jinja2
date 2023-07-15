@@ -33,7 +33,7 @@ QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.cam
     QSharedPointer<Interface{{ repository.pascal_name }}Repository> m_{{ repository.camel_name }}Repository;
   {%- endfor %}
     Result<{{ command.dto_out_pascal_name }}> handleImpl(QPromise<Result<void> >   & progressPromise, const {{ command.pascal_name }}Command &request);
-{% if command.restore %}
+{% if command.undo %}
     Result<{{ command.dto_out_pascal_name }}> restoreImpl();
     Result<{{ command.dto_out_pascal_name }}> m_newState;
 {% endif %}    

@@ -120,7 +120,7 @@ Result<SceneParagraphDTO> CreateSceneParagraphCommandHandler::restoreImpl()
 
     auto deleteResult = m_repository->remove(m_newState.value().id());
 
-    if (Q_UNLIKELY(!deleteResult.hasError()))
+    if (Q_UNLIKELY(deleteResult.hasError()))
     {
         qDebug() << "Error deleting SceneParagraph from repository:" << deleteResult.error().message();
         return Result<SceneParagraphDTO>(deleteResult.error());

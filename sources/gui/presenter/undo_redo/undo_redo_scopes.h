@@ -12,7 +12,9 @@ using ScopeFlag = int;
 struct Scope
 
 {
+    Q_GADGET
 
+  public:
     int scope() const
     {
         return m_scope;
@@ -64,10 +66,13 @@ inline uint qHash(const Presenter::UndoRedo::Scope &scope, uint seed = 0)
 // Scopes class to manage multiple scopes for undo-redo commands
 class Scopes
 {
+    Q_GADGET
+
   public:
     // Constructor taking a QStringList of scopes
     Scopes(const QStringList &scopeList)
     {
+
         // Initialize the bit flags to 0x01, which is equivalent to 1
         int n = 0x01;
 

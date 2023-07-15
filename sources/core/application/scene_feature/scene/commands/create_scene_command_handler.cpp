@@ -118,7 +118,7 @@ Result<SceneDTO> CreateSceneCommandHandler::restoreImpl()
 
     auto deleteResult = m_repository->remove(m_newState.value().id());
 
-    if (Q_UNLIKELY(!deleteResult.hasError()))
+    if (Q_UNLIKELY(deleteResult.hasError()))
     {
         qDebug() << "Error deleting Scene from repository:" << deleteResult.error().message();
         return Result<SceneDTO>(deleteResult.error());

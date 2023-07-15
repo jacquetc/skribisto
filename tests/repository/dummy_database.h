@@ -16,7 +16,7 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
     void fillGet(const Domain::Author &entity);
     void fillGetAll(const QList<Domain::Author> &list);
     void fillGetAllFiltered(const QList<Domain::Author> &list);
-    void fillRemove(const Domain::Author &entity);
+    void fillRemove(int id);
     void fillAdd(const Domain::Author &entity);
     void fillUpdate(const Domain::Author &entity);
     void fillExists(bool value);
@@ -30,7 +30,7 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
 
     Result<QList<Domain::Author>> getAll() override;
     Result<QList<Domain::Author>> getAll(const QHash<QString, QVariant> &filters) override;
-    Result<Domain::Author> remove(Domain::Author &&entity) override;
+    Result<int> remove(int id) override;
     Result<Domain::Author> add(Domain::Author &&entity) override;
     Result<Domain::Author> update(Domain::Author &&entity) override;
     Result<bool> exists(const QUuid &uuid) override;
@@ -46,7 +46,7 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
     Domain::Author m_getEntity;
     QList<Domain::Author> m_getAllList;
     QList<Domain::Author> m_getAllFilteredList;
-    Domain::Author m_removeEntity;
+    int m_removeEntityId;
     Domain::Author m_addEntity;
     Domain::Author m_updateEntity;
     bool m_exists;
@@ -81,9 +81,9 @@ inline void DummyDatabase::fillGetAllFiltered(const QList<Domain::Author> &list)
     m_getAllFilteredList = list;
 }
 
-inline void DummyDatabase::fillRemove(const Domain::Author &entity)
+inline void DummyDatabase::fillRemove(int entityId)
 {
-    m_removeEntity = entity;
+    m_removeEntityId = entityId;
 }
 
 inline void DummyDatabase::fillAdd(const Domain::Author &entity)
@@ -121,9 +121,9 @@ Result<QList<Domain::Author>> DummyDatabase::getAll(const QHash<QString, QVarian
     return Result<QList<Domain::Author>>(m_getAllFilteredList);
 }
 
-inline Result<Domain::Author> DummyDatabase::remove(Domain::Author &&entity)
+inline Result<int> DummyDatabase::remove(int id)
 {
-    return Result<Domain::Author>(m_removeEntity);
+    return Result<int>(m_removeEntityId);
 }
 
 inline Result<Domain::Author> DummyDatabase::add(Domain::Author &&entity)

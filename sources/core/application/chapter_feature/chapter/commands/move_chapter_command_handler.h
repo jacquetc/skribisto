@@ -24,6 +24,8 @@ class SKRIBISTO_APPLICATION_CHAPTER_EXPORT MoveChapterCommandHandler : public QO
 
     Result<MoveChapterReplyDTO> handle(QPromise<Result<void>> &progressPromise, const MoveChapterCommand &request);
 
+    Result<MoveChapterReplyDTO> restore();
+
   signals:
     void moveChapterChanged(Contracts::DTO::Chapter::MoveChapterReplyDTO moveChapterReplyDto);
 
@@ -31,6 +33,9 @@ class SKRIBISTO_APPLICATION_CHAPTER_EXPORT MoveChapterCommandHandler : public QO
     QSharedPointer<InterfaceBookRepository> m_bookRepository;
     QSharedPointer<InterfaceChapterRepository> m_chapterRepository;
     Result<MoveChapterReplyDTO> handleImpl(QPromise<Result<void>> &progressPromise, const MoveChapterCommand &request);
+
+    Result<MoveChapterReplyDTO> restoreImpl();
+    Result<MoveChapterReplyDTO> m_newState;
 
     static bool s_mappingRegistered;
     void registerMappings();

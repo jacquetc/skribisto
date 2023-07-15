@@ -40,7 +40,7 @@ Result<ChapterWithDetailsDTO> GetChapterWithDetailsQueryHandler::handleImpl(QPro
     // do
     auto chapterResult = m_repository->get(query.id);
 
-    if (Q_UNLIKELY(!chapterResult.isError()))
+    if (Q_UNLIKELY(chapterResult.isError()))
     {
         return Result<ChapterWithDetailsDTO>(chapterResult.error());
     }

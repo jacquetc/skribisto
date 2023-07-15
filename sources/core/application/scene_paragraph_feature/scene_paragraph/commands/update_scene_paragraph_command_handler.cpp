@@ -62,7 +62,7 @@ Result<SceneParagraphDTO> UpdateSceneParagraphCommandHandler::handleImpl(QPromis
     auto validator = UpdateSceneParagraphCommandValidator(m_repository);
     Result<void> validatorResult = validator.validate(request.req);
 
-    if (Q_UNLIKELY(!validatorResult.hasError()))
+    if (Q_UNLIKELY(validatorResult.hasError()))
     {
         return Result<SceneParagraphDTO>(validatorResult.error());
     }
@@ -121,7 +121,7 @@ Result<SceneParagraphDTO> UpdateSceneParagraphCommandHandler::restoreImpl()
     // do
     auto sceneParagraphResult = m_repository->update(std::move(sceneParagraph));
 
-    if (Q_UNLIKELY(!sceneParagraphResult.hasError()))
+    if (Q_UNLIKELY(sceneParagraphResult.hasError()))
     {
         return Result<SceneParagraphDTO>(sceneParagraphResult.error());
     }

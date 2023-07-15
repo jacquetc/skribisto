@@ -55,7 +55,7 @@ Result<int> RemoveSceneCommandHandler::handleImpl(QPromise<Result<void>> &progre
 {
     Result<Domain::Scene> sceneResult = m_repository->get(request.id);
 
-    if (Q_UNLIKELY(!sceneResult.hasError()))
+    if (Q_UNLIKELY(sceneResult.hasError()))
     {
         qDebug() << "Error getting scene from repository:" << sceneResult.error().message();
         return Result<int>(sceneResult.error());
@@ -87,7 +87,7 @@ Result<int> RemoveSceneCommandHandler::restoreImpl()
     // Add the scene to the repository
     auto sceneResult = m_repository->add(std::move(m_oldState));
 
-    if (Q_UNLIKELY(!sceneResult.hasError()))
+    if (Q_UNLIKELY(sceneResult.hasError()))
     {
         return Result<int>(sceneResult.error());
     }

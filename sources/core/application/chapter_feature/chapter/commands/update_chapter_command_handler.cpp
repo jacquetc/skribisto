@@ -61,7 +61,7 @@ Result<ChapterDTO> UpdateChapterCommandHandler::handleImpl(QPromise<Result<void>
     auto validator = UpdateChapterCommandValidator(m_repository);
     Result<void> validatorResult = validator.validate(request.req);
 
-    if (Q_UNLIKELY(!validatorResult.hasError()))
+    if (Q_UNLIKELY(validatorResult.hasError()))
     {
         return Result<ChapterDTO>(validatorResult.error());
     }
@@ -118,7 +118,7 @@ Result<ChapterDTO> UpdateChapterCommandHandler::restoreImpl()
     // do
     auto chapterResult = m_repository->update(std::move(chapter));
 
-    if (Q_UNLIKELY(!chapterResult.hasError()))
+    if (Q_UNLIKELY(chapterResult.hasError()))
     {
         return Result<ChapterDTO>(chapterResult.error());
     }

@@ -61,7 +61,7 @@ Result<SceneDTO> UpdateSceneCommandHandler::handleImpl(QPromise<Result<void>> &p
     auto validator = UpdateSceneCommandValidator(m_repository);
     Result<void> validatorResult = validator.validate(request.req);
 
-    if (Q_UNLIKELY(!validatorResult.hasError()))
+    if (Q_UNLIKELY(validatorResult.hasError()))
     {
         return Result<SceneDTO>(validatorResult.error());
     }
@@ -118,7 +118,7 @@ Result<SceneDTO> UpdateSceneCommandHandler::restoreImpl()
     // do
     auto sceneResult = m_repository->update(std::move(scene));
 
-    if (Q_UNLIKELY(!sceneResult.hasError()))
+    if (Q_UNLIKELY(sceneResult.hasError()))
     {
         return Result<SceneDTO>(sceneResult.error());
     }

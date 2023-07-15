@@ -1,4 +1,4 @@
-#include "author_dto.h"
+#include "author/author_dto.h"
 #include "dummy_database.h"
 #include "repositories/author_repository.h"
 #include <QDate>
@@ -105,17 +105,16 @@ void RepositoryTest::removeAuthor()
 
     QUuid uuid = QUuid::createUuid();
     Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
-    database->fillRemove(author);
+    database->fillRemove(author.id());
 
-    Result<Domain::Author> result = repository.remove(std::move(author));
+    Result<int> result = repository.remove(author.id());
     if (!result)
     {
         qDebug() << result.error().message() << result.error().data();
     }
 
     QVERIFY(result);
-    QCOMPARE(result.value().id(), 1);
-    QCOMPARE(result.value().name(), "test");
+    QCOMPARE(result.value(), 1);
 }
 
 void RepositoryTest::updateAuthor()

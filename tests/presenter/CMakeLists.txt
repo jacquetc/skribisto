@@ -23,6 +23,7 @@ add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp ${RESOURCES}
     dummy_repository_provider.h)
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
 
+add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-author)
 add_dependencies(${PROJECT_NAME} skribisto-contracts)
 add_dependencies(${PROJECT_NAME} skribisto-presenter)
 add_dependencies(${PROJECT_NAME} skribisto-domain)

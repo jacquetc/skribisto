@@ -16,6 +16,7 @@ using namespace Presenter::UndoRedo;
 UndoRedoSystem::UndoRedoSystem(QObject *parent, Scopes scopes)
     : QObject(parent), m_currentIndex(-1), m_undoLimit(10), m_scopes(scopes)
 {
+    qRegisterMetaType<Presenter::UndoRedo::Scope>();
 }
 
 /*!
@@ -301,6 +302,37 @@ void UndoRedoSystem::executeNextCommand(const ScopeFlag &scopeFlag)
     m_currentCommandHash.insert(scopeFlag, command);
     bool allowedToRun = isCommandAllowedToRun(command, scopeFlag);
 
+    // if not already running (from another scope)
+    if (allowedToRun)
+    {
+        // Connect the finished signal to the onCommandFinished slot
+        connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::onCommandFinished,
+                Qt::UniqueConnection);
+
+        // Connect the errorSent signal to the errorSent signal
+        connect(command.data(), &UndoRedoCommand::errorSent, this, &UndoRedoSystem::errorSent, Qt::UniqueConnection);
+
+        // Execute the command asynchronously
+        command->asyncRedo();
+
+        // merge with previous command if possible
+        if (!m_generalCommandQueue.isEmpty() && m_currentIndex > 0)
+        {
+            QSharedPointer<UndoRedoCommand> previousCommand = m_generalCommandQueue[m_currentIndex - 1];
+            if (previousCommand->mergeWith(command.data()))
+            {
+                previousCommand->setObsolete(true);
+                m_generalCommandQueue.removeLast();
+                m_currentIndex--;
+            }
+        }
+
+        // connecting after the initial asyncRedo to ovoid unwanted redoing signal when the command is added to the
+        // queue
+        connect(command.data(), &UndoRedoCommand::undoing, this, &UndoRedoSystem::undoing, Qt::UniqueConnection);
+        connect(command.data(), &UndoRedoCommand::redoing, this, &UndoRedoSystem::redoing, Qt::UniqueConnection);
+    }
+
     // keep in general command queue only the true AlterCommands, not QueryCommand, and only if it's allowed to run
     if (qSharedPointerDynamicCast<QueryCommand>(command).isNull() && allowedToRun)
     {
@@ -323,26 +355,6 @@ void UndoRedoSystem::executeNextCommand(const ScopeFlag &scopeFlag)
                 m_currentIndex--;
             }
         }
-    }
-
-    // if not already running (from another scope)
-    if (allowedToRun)
-    {
-        // Connect the finished signal to the onCommandFinished slot
-        connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::onCommandFinished,
-                Qt::UniqueConnection);
-
-        // Connect the errorSent signal to the errorSent signal
-        connect(command.data(), &UndoRedoCommand::errorSent, this, &UndoRedoSystem::errorSent, Qt::UniqueConnection);
-
-        // Execute the command asynchronously
-
-        command->asyncRedo();
-
-        // connecting after the initial asyncRedo to ovoid unwanted redoing signal when the command is added to the
-        // queue
-        connect(command.data(), &UndoRedoCommand::undoing, this, &UndoRedoSystem::undoing, Qt::UniqueConnection);
-        connect(command.data(), &UndoRedoCommand::redoing, this, &UndoRedoSystem::redoing, Qt::UniqueConnection);
     }
 }
 

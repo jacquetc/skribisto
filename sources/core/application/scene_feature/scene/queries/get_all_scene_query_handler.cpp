@@ -39,7 +39,7 @@ Result<QList<SceneDTO>> GetAllSceneQueryHandler::handleImpl(QPromise<Result<void
     // do
     auto sceneResult = m_repository->getAll();
 
-    if (Q_UNLIKELY(!sceneResult.isError()))
+    if (Q_UNLIKELY(sceneResult.isError()))
     {
         return Result<QList<SceneDTO>>(sceneResult.error());
     }

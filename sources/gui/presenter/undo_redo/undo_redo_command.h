@@ -47,6 +47,8 @@ class UndoRedoCommand : public QObject
 
     void setObsolete(bool newObsolete);
 
+    virtual bool mergeWith(const UndoRedoCommand *other) const;
+
   signals:
     void finished();
     /*!
@@ -59,8 +61,8 @@ class UndoRedoCommand : public QObject
     void progressTextChanged(const QString &progressText);
     void progressValueChanged(int progressValue);
 
-    void undoing(Scope scope, bool active);
-    void redoing(Scope scope, bool active);
+    void undoing(Presenter::UndoRedo::Scope scope, bool active);
+    void redoing(Presenter::UndoRedo::Scope scope, bool active);
 
   private slots:
     void onFinished();

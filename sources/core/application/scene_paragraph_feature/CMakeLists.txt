@@ -15,8 +15,6 @@ set(SRC
     scene_paragraph/queries/get_scene_paragraph_query_handler.h
     scene_paragraph/queries/get_all_scene_paragraph_query_handler.cpp
     scene_paragraph/queries/get_all_scene_paragraph_query_handler.h
-
-
     application_scene_paragraph_export.h
 )
 qt_add_library(${PROJECT_NAME} SHARED ${SRC})

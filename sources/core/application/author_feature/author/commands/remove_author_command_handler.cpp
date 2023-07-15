@@ -55,7 +55,7 @@ Result<int> RemoveAuthorCommandHandler::handleImpl(QPromise<Result<void>> &progr
 {
     Result<Domain::Author> authorResult = m_repository->get(request.id);
 
-    if (Q_UNLIKELY(!authorResult.hasError()))
+    if (Q_UNLIKELY(authorResult.hasError()))
     {
         qDebug() << "Error getting author from repository:" << authorResult.error().message();
         return Result<int>(authorResult.error());
@@ -87,7 +87,7 @@ Result<int> RemoveAuthorCommandHandler::restoreImpl()
     // Add the author to the repository
     auto authorResult = m_repository->add(std::move(m_oldState));
 
-    if (Q_UNLIKELY(!authorResult.hasError()))
+    if (Q_UNLIKELY(authorResult.hasError()))
     {
         return Result<int>(authorResult.error());
     }

@@ -40,7 +40,7 @@ Result<SceneParagraphDTO> GetSceneParagraphQueryHandler::handleImpl(QPromise<Res
     // do
     auto sceneParagraphResult = m_repository->get(query.id);
 
-    if (Q_UNLIKELY(!sceneParagraphResult.isError()))
+    if (Q_UNLIKELY(sceneParagraphResult.isError()))
     {
         return Result<SceneParagraphDTO>(sceneParagraphResult.error());
     }

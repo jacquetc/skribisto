@@ -75,10 +75,10 @@ void UndoRedoCommand::onFinished()
         emit errorSent(result.error());
     }
     m_status = Status::Finished;
-    emit progressFinished();
-    emit finished();
     emit redoing(m_scope, false);
     emit undoing(m_scope, false);
+    emit progressFinished();
+    emit finished();
 }
 
 /*!
@@ -96,6 +96,15 @@ bool UndoRedoCommand::obsolete() const
 void UndoRedoCommand::setObsolete(bool newObsolete)
 {
     m_obsolete = newObsolete;
+}
+
+/*!
+ * \brief Merge with another command. Redo of current command must becomes the equivalent of both redoes. Same for
+ * undoes.  Returns true if the command can be merged with \a other, otherwise false. To be implemented if needed.
+ */
+bool UndoRedoCommand::mergeWith(const UndoRedoCommand *other) const
+{
+    return false;
 }
 
 /*!

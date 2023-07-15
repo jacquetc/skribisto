@@ -39,7 +39,7 @@ Result<QList<{{ entity_mappable_with_pascal }}DTO> >GetAll{{ entity_mappable_wit
     // do
     auto {{ entity_mappable_with_camel }}Result = m_repository->getAll();
 
-    if (Q_UNLIKELY(!{{ entity_mappable_with_camel }}Result.isError()))
+    if (Q_UNLIKELY({{ entity_mappable_with_camel }}Result.isError()))
     {
         return Result<QList<{{ entity_mappable_with_pascal }}DTO> >({{ entity_mappable_with_camel }}Result.error());
     }

@@ -54,7 +54,7 @@ Result<int>Remove{{ entity_mappable_with_pascal }}CommandHandler::handleImpl(QPr
 {   
     Result<Domain::{{ entity_mappable_with_pascal }}> {{ entity_mappable_with_camel }}Result = m_repository->get(request.id);
 
-    if (Q_UNLIKELY(!{{ entity_mappable_with_camel }}Result.hasError()))
+    if (Q_UNLIKELY({{ entity_mappable_with_camel }}Result.hasError()))
     {
         qDebug() << "Error getting {{ entity_mappable_with_camel }} from repository:" << {{ entity_mappable_with_camel }}Result.error().message();
         return Result<int>({{ entity_mappable_with_camel }}Result.error());
@@ -86,7 +86,7 @@ Result<int>Remove{{ entity_mappable_with_pascal }}CommandHandler::restoreImpl()
     // Add the {{ entity_mappable_with_camel }} to the repository
     auto {{ entity_mappable_with_camel }}Result = m_repository->add(std::move(m_oldState));
 
-    if (Q_UNLIKELY(!{{ entity_mappable_with_camel }}Result.hasError()))
+    if (Q_UNLIKELY({{ entity_mappable_with_camel }}Result.hasError()))
     {
         return Result<int>({{ entity_mappable_with_camel }}Result.error());
     }

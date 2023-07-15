@@ -60,7 +60,7 @@ Result<{{ entity_mappable_with_pascal }}DTO>Update{{ entity_mappable_with_pascal
     auto validator               = Update{{ entity_mappable_with_pascal }}CommandValidator(m_repository);
     Result<void> validatorResult = validator.validate(request.req);
 
-    if (Q_UNLIKELY(!validatorResult.hasError()))
+    if (Q_UNLIKELY(validatorResult.hasError()))
     {
         return Result<{{ entity_mappable_with_pascal }}DTO>(validatorResult.error());
     }
@@ -117,7 +117,7 @@ Result<{{ entity_mappable_with_pascal }}DTO>Update{{ entity_mappable_with_pascal
     // do
     auto {{ entity_mappable_with_camel }}Result = m_repository->update(std::move({{ entity_mappable_with_camel }}));
 
-    if (Q_UNLIKELY(!{{ entity_mappable_with_camel }}Result.hasError()))
+    if (Q_UNLIKELY({{ entity_mappable_with_camel }}Result.hasError()))
     {
         return Result<{{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}Result.error());
     }

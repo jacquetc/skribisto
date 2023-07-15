@@ -37,7 +37,7 @@ Result<SceneDTO> GetSceneQueryHandler::handleImpl(QPromise<Result<void>> &progre
     // do
     auto sceneResult = m_repository->get(query.id);
 
-    if (Q_UNLIKELY(!sceneResult.isError()))
+    if (Q_UNLIKELY(sceneResult.isError()))
     {
         return Result<SceneDTO>(sceneResult.error());
     }

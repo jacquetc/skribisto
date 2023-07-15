@@ -39,6 +39,7 @@ Result<MoveSceneReplyDTO> MoveSceneCommandHandler::handle(QPromise<Result<void>>
 
 Result<MoveSceneReplyDTO> MoveSceneCommandHandler::restore()
 {
+
     Result<MoveSceneReplyDTO> result;
 
     try

@@ -47,7 +47,7 @@ Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::hand
     auto validator               = {{ query.pascal_name }}QueryValidator(m_repository);
     Result<void> validatorResult = validator.validate(request.req);
 
-    if (Q_UNLIKELY(!validatorResult.hasError()))
+    if (Q_UNLIKELY(validatorResult.hasError()))
     {
         return Result<{{ query.dto_out_pascal_name }}>(validatorResult.error());
     }

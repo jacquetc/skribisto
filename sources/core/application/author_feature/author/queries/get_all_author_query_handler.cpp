@@ -39,7 +39,7 @@ Result<QList<AuthorDTO>> GetAllAuthorQueryHandler::handleImpl(QPromise<Result<vo
     // do
     auto authorResult = m_repository->getAll();
 
-    if (Q_UNLIKELY(!authorResult.isError()))
+    if (Q_UNLIKELY(authorResult.isError()))
     {
         return Result<QList<AuthorDTO>>(authorResult.error());
     }

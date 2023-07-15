@@ -38,7 +38,7 @@ Result<AuthorDTO> GetAuthorQueryHandler::handleImpl(QPromise<Result<void>> &prog
     // do
     auto authorResult = m_repository->get(query.id);
 
-    if (Q_UNLIKELY(!authorResult.isError()))
+    if (Q_UNLIKELY(authorResult.isError()))
     {
         return Result<AuthorDTO>(authorResult.error());
     }

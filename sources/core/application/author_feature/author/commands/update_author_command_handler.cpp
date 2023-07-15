@@ -61,7 +61,7 @@ Result<AuthorDTO> UpdateAuthorCommandHandler::handleImpl(QPromise<Result<void>> 
     auto validator = UpdateAuthorCommandValidator(m_repository);
     Result<void> validatorResult = validator.validate(request.req);
 
-    if (Q_UNLIKELY(!validatorResult.hasError()))
+    if (Q_UNLIKELY(validatorResult.hasError()))
     {
         return Result<AuthorDTO>(validatorResult.error());
     }
@@ -118,7 +118,7 @@ Result<AuthorDTO> UpdateAuthorCommandHandler::restoreImpl()
     // do
     auto authorResult = m_repository->update(std::move(author));
 
-    if (Q_UNLIKELY(!authorResult.hasError()))
+    if (Q_UNLIKELY(authorResult.hasError()))
     {
         return Result<AuthorDTO>(authorResult.error());
     }

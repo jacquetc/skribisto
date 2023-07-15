@@ -55,7 +55,7 @@ Result<int> RemoveChapterCommandHandler::handleImpl(QPromise<Result<void>> &prog
 {
     Result<Domain::Chapter> chapterResult = m_repository->get(request.id);
 
-    if (Q_UNLIKELY(!chapterResult.hasError()))
+    if (Q_UNLIKELY(chapterResult.hasError()))
     {
         qDebug() << "Error getting chapter from repository:" << chapterResult.error().message();
         return Result<int>(chapterResult.error());
@@ -87,7 +87,7 @@ Result<int> RemoveChapterCommandHandler::restoreImpl()
     // Add the chapter to the repository
     auto chapterResult = m_repository->add(std::move(m_oldState));
 
-    if (Q_UNLIKELY(!chapterResult.hasError()))
+    if (Q_UNLIKELY(chapterResult.hasError()))
     {
         return Result<int>(chapterResult.error());
     }

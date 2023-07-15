@@ -40,7 +40,7 @@ Result<QList<SceneParagraphDTO>> GetAllSceneParagraphQueryHandler::handleImpl(QP
     // do
     auto sceneParagraphResult = m_repository->getAll();
 
-    if (Q_UNLIKELY(!sceneParagraphResult.isError()))
+    if (Q_UNLIKELY(sceneParagraphResult.isError()))
     {
         return Result<QList<SceneParagraphDTO>>(sceneParagraphResult.error());
     }
