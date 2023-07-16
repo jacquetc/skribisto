@@ -1,0 +1,223 @@
+erDiagram
+    ATELIER {
+    }
+    ATELIER ||--|| BOOK : contains
+    ATELIER ||--|| BINDER : contains
+    ATELIER ||--o{ USER-DICTIONARY : has
+    ATELIER ||--o{ WORD-REPLACEMENT : has
+    ATELIER ||--o{ BACKUP : has
+    
+    BOOK {
+        string title
+        string genre
+        string synopsis
+        int wordCount
+        int wordCountGoal
+        date deadline
+    }
+    BOOK ||--|| AUTHOR : written_by
+    BOOK ||--o{ CHAPTER : contains
+
+
+
+    REMINDER {
+        string uuid
+        string content
+        date reminderDate
+        bool completed
+        date creationDate
+        date modificationDate
+    }
+    BOOK ||--o{ REMINDER : has
+
+%%{`Statistics`}%%
+
+    WORD-COUNT-PROGRESS {
+        int totalWordCount
+        int wordCountGoal
+        date countDate
+    }
+    BOOK ||--o{ WORD-COUNT-PROGRESS : tracks
+
+    CHAPTER-PROGRESS {
+        bool completed
+        date completionDate
+    }
+    CHAPTER ||--o{ CHAPTER-PROGRESS : tracks
+
+    DAILY-PROGRESS {
+        int wordsWritten
+        date writingDate
+    }
+    BOOK ||--o{ DAILY-PROGRESS : tracks
+
+    MILESTONE {
+        string description
+        date deadline
+        bool completed
+    }
+    BOOK ||--o{ MILESTONE : tracks
+
+%%{`Author`}%%
+
+
+    AUTHOR {
+        string name
+    }
+
+%%{`Chapter`}%%
+
+    CHAPTER {
+        string title
+        string synopsis
+        int wordCount
+        int wordCountGoal
+        date deadline
+        bool active
+
+    }
+    CHAPTER ||--o| CHAPTER-COMMENT : has
+    CHAPTER ||--o{ SCENE : contains
+    CHAPTER ||--|| CHAPTER-STATE : has
+    CHAPTER ||--o{ CHAPTER-VERSION : has_versions
+
+    CHAPTER-COMMENT {
+        string commentText
+        date commentDate
+        bool active
+    }
+    
+    SCENE {
+        string sceneTitle
+        string sceneContent
+        int wordCount
+        int wordCountGoal
+        date deadline
+        bool active
+
+    }
+    SCENE ||--o| SCENE-COMMENT : has
+    SCENE ||--o{ SCENE-PARAGRAPH : contains
+    SCENE ||--o{ SCENE-VERSION : has_versions
+    
+    SCENE-PARAGRAPH {
+        string content
+        int wordCount
+        bool active
+    }
+
+    SCENE-PARAGRAPH ||--o{ SCENE-PARAGRAPH-COMMENT : has
+    SCENE-PARAGRAPH ||--o{ SCENE-PARAGRAPH-VERSION : has_versions
+
+    ANNOTATION {
+        string uuid
+        string content
+        int startPosition
+        int endPosition
+        string annotationType
+        date creationDate
+        date modificationDate
+    }
+    SCENE-PARAGRAPH ||--o{ ANNOTATION : includes
+
+%%{`Binder`}%%
+
+    BINDER {
+        string binderName
+    }
+    BINDER ||--o{ DIVIDER : contains
+
+    DIVIDER {
+        string dividerName
+        bool active
+    }
+    DIVIDER ||--o{ SUB-DIVIDER : contains
+
+    SUB-DIVIDER {
+        string subDividerName
+        bool active
+    }
+    SUB-DIVIDER ||--o{ NOTE : contains
+    SUB-DIVIDER ||--o{ NOTE-LINK : contains
+    SUB-DIVIDER ||--o{ NOTE-IMAGE : contains
+
+    USER-DICTIONARY {
+        string word
+    }
+    WORD-REPLACEMENT {
+        string originalWord
+        string replacementWord
+    }
+    BACKUP {
+        date backupDate
+        string location
+    }
+    CHAPTER-STATE {
+        string stateName
+    }
+    CHAPTER-VERSION {
+        string versionName
+        date versionDate
+    }
+    SCENE-COMMENT {
+        string commentText
+    }
+    SCENE-VERSION {
+        string versionName
+        date versionDate
+    }
+    SCENE-PARAGRAPH-COMMENT {
+        string commentText
+    }
+
+
+    SCENE-PARAGRAPH-VERSION {
+        string versionName
+        date versionDate
+    }
+    NOTE {
+        string noteContent
+        date noteDate
+        bool active
+    }
+    NOTE ||--o{ NOTE-PARAGRAPH : contains
+    NOTE ||--o| NOTE-COMMENT : has
+
+    NOTE-PARAGRAPH {
+        string content
+        bool active
+    }
+
+    NOTE-PARAGRAPH ||--o| NOTE-PARAGRAPH-COMMENT : has
+
+
+    NOTE-COMMENT {
+        string commentText
+    }
+
+    NOTE-PARAGRAPH-COMMENT {
+        string commentText
+    }
+
+    NOTE-LINK {
+        string linkURL
+        bool active
+    }
+
+    NOTE-LINK ||--o| NOTE-LINK-COMMENT : has
+
+    NOTE-LINK-COMMENT {
+        string commentText
+    }
+
+    NOTE-IMAGE {
+        string imageURL
+        bool active
+    }
+
+    NOTE-IMAGE ||--o| NOTE-IMAGE-COMMENT : has
+
+    NOTE-IMAGE-COMMENT {
+        string commentText
+    }
+

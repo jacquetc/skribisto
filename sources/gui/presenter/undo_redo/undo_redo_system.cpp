@@ -333,8 +333,9 @@ void UndoRedoSystem::executeNextCommand(const ScopeFlag &scopeFlag)
         connect(command.data(), &UndoRedoCommand::redoing, this, &UndoRedoSystem::redoing, Qt::UniqueConnection);
     }
 
-    // keep in general command queue only the true AlterCommands, not QueryCommand, and only if it's allowed to run
-    if (qSharedPointerDynamicCast<QueryCommand>(command).isNull() && allowedToRun)
+    // keep in general command queue only the true AlterCommands, not QueryCommand, and only if it's allowed to run.
+    // If the command is a system command, it mustn't be added to the general command queue
+    if (qSharedPointerDynamicCast<QueryCommand>(command).isNull() && allowedToRun && !command->isSystem())
     {
 
         // Remove any redo commands that are after the current index

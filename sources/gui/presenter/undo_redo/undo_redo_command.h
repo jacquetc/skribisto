@@ -49,6 +49,9 @@ class UndoRedoCommand : public QObject
 
     virtual bool mergeWith(const UndoRedoCommand *other) const;
 
+    bool isSystem() const;
+    void setIsSystem(bool newIsSystem);
+
   signals:
     void finished();
     /*!
@@ -70,6 +73,8 @@ class UndoRedoCommand : public QObject
   private:
     QFutureWatcher<Result<void>> *m_watcher;
     bool m_obsolete; /*!< A boolean representing the obsolete state of the command. */
+    bool m_isSystem =
+        false;       /*!< A boolean representing the command is a system command (true) or a user command (false). */
     QString m_text;  /*!< A QString representing the text description of the command. */
     Scope m_scope;   /*!< The command's scope as an UndoRedoCommand::Scope enumeration value. */
     Status m_status; /*!< An enum representing the state of the command. */

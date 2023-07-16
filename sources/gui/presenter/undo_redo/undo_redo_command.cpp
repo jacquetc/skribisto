@@ -81,6 +81,16 @@ void UndoRedoCommand::onFinished()
     emit finished();
 }
 
+bool UndoRedoCommand::isSystem() const
+{
+    return m_isSystem;
+}
+
+void UndoRedoCommand::setIsSystem(bool newIsSystem)
+{
+    m_isSystem = newIsSystem;
+}
+
 /*!
  * \brief Returns true if the command is obsolete, otherwise false.
  * The command will then be deleted from the stack.
