@@ -67,7 +67,7 @@ Result<int>Remove{{ entity_mappable_with_pascal }}CommandHandler::handleImpl(QPr
 
     auto deleteResult = m_repository->remove({{ entity_mappable_with_camel }}Id);
 
-    if (Q_UNLIKELY(!deleteResult.hasError()))
+    if (Q_UNLIKELY(deleteResult.hasError()))
     {
         qDebug() << "Error deleting {{ entity_mappable_with_camel }} from repository:" << deleteResult.error().message();
         return Result<int>(deleteResult.error());

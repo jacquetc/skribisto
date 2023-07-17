@@ -3,7 +3,7 @@
 #include "{{ export_header }}"
 #include "{{ feature_snake_name }}/{{ query.dto_out_snake_name }}.h"
 #include "{{ feature_snake_name }}/queries/{{ query.snake_name }}_query.h"
-{% for repository in command.repositories %}
+{% for repository in query.repositories %}
 #include "persistence/interface_{{ repository.snake_name}}_repository.h"{% endfor %}
 #include "result.h"
 #include <QPromise>

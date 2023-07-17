@@ -7,7 +7,7 @@
 using namespace Contracts::DTO::{{ feature_pascal_name }};
 using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::{{ feature_pascal_name }}::Validators;
-using namespace Application::Features::{{ feature_pascal_name }}::Querys;
+using namespace Application::Features::{{ feature_pascal_name }}::Queries;
 
 {{ query.pascal_name }}QueryHandler::{{ query.pascal_name }}QueryHandler({% for repository in query.repositories %}
 QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository {% if not loop.last %},{% endif %}{% endfor %})
@@ -44,7 +44,7 @@ Result<{{ query.dto_out_pascal_name }}>{{ query.pascal_name }}QueryHandler::hand
     Domain::{{ feature_pascal_name }} {{ feature_snake_name }};
 {% if validator_enabled %}
     // Validate the query using the validator
-    auto validator               = {{ query.pascal_name }}QueryValidator(m_repository);
+    auto validator               = {{ query.pascal_name }}QueryValidator({% for repository in command.repositories %}m_{{ repository.camel_name }}Repository{% if not loop.last %},{% endif %}{% endfor %});
     Result<void> validatorResult = validator.validate(request.req);
 
     if (Q_UNLIKELY(validatorResult.hasError()))

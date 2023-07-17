@@ -323,6 +323,9 @@ application:
                   name: destinationChapterId
                 - type: int
                   name: scenePositionAtDestination
+
+
+
     - name: SceneParagraph
       DTO:
         id_field: id
@@ -331,30 +334,167 @@ application:
           generate: true
           entity_mappable_with: SceneParagraph
       CRUD:
-        enabled: true
-        entity_mappable_with: SceneParagraph
-        get:
-          enabled: true
-          generate: true
-        get_all: 
-          enabled: true
-          generate: true
-        get_with_details: 
-          enabled: true
-          generate: true
-        create: 
-          enabled: true
-          generate: true
-          undo: True
-        remove: 
-          enabled: true
-          generate: true
-          undo: True
-        update: 
-          enabled: true
-          generate: true
-          undo: True
+        enabled: false
 
+    - name: Writing
+      DTO:
+        id_field: id
+        dto_identical_to_entity:
+          enabled: false
+      CRUD:
+        enabled: false
+      commands:
+        - name: UpdateMultipleSceneParagraphs
+          generate: true
+          entities:
+            - Scene
+            - SceneParagraph
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          undo: True
+          dto:
+            in:
+              type_prefix: UpdateMultipleSceneParagraphs
+              generate: True
+              fields:
+                - type: int
+                  name: sceneId
+                - type: int
+                  name: parapgraphIndex
+                - type: QList<int>
+                  name: paragraphIdList
+                - type: QList<QUuid>
+                  name: paragraphUuidList
+                - type: QList<QUuid>
+                  name: uuidListToDelete
+                - type: QList<QString>
+                  name: texts
+            out:
+              type_prefix: MultipleSceneParagraphsChanged
+              generate: True
+              fields:
+                - type: int
+                  name: sceneId
+                - type: int
+                  name: parapgraphIndex
+                - type: QList<int>
+                  name: paragraphIdList
+                - type: QList<QUuid>
+                  name: paragraphUuidList
+                - type: QList<QUuid>
+                  name: uuidListToDelete
+                - type: QList<QString>
+                  name: texts
+        - name: UpdateSceneParagraph
+          generate: true
+          entities:
+            - Scene
+            - SceneParagraph
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          undo: True
+          dto:
+            in:
+              type_prefix: UpdateSceneParagraph
+              generate: True
+              fields:
+                - type: int
+                  name: paragraphId
+                - type: QUuid
+                  name: paragraphUuid
+                - type: QString
+                  name: text
+            out:
+              type_prefix: SceneParagraphChanged
+              generate: True
+              fields:
+                - type: int
+                  name: paragraphId
+                - type: QUuid
+                  name: paragraphUuid
+                - type: QString
+                  name: text
+      queries:
+        - name: GetAllSceneParagraphs
+          generate: true
+          entities:
+            - Scene
+            - SceneParagraph
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          dto:
+            in:
+              type_prefix: GetAllSceneParagraphs
+              generate: True
+              fields:
+                - type: int
+                  name: sceneId
+            out:
+              type_prefix: GetAllSceneParagraphsReply
+              generate: True
+              fields:
+                - type: int
+                  name: sceneId
+                - type: QList<int>
+                  name: paragraphIdList
+                - type: QList<QUuid>
+                  name: paragraphUuidList
+                - type: QList<QString>
+                  name: texts
+        - name: GetSceneParagraph
+          generate: true
+          entities:
+            - SceneParagraph
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          dto:
+            in:
+              type_prefix: GetSceneParagraph
+              generate: True
+              fields:
+                - type: int
+                  name: paragraphId
+            out:
+              type_prefix: GetSceneParagraphReply
+              generate: True
+              fields:
+                - type: int
+                  name: paragraphId
+                - type: QUuid
+                  name: paragraphUuid
+                - type: QString
+                  name: text
+        - name: GetSceneParagraphId
+          generate: true
+          entities:
+            - SceneParagraph
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          dto:
+            in:
+              type_prefix: GetSceneParagraphId
+              generate: True
+              fields:
+                - type: QUuid
+                  name: paragraphUuid
+            out:
+              type_prefix: GetSceneParagraphIdReply
+              generate: True
+              fields:
+                - type: int
+                  name: paragraphId
+                - type: QUuid
+                  name: paragraphUuid
     - name: System
       DTO:
         id_field: id

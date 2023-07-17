@@ -20,10 +20,12 @@ def get_generation_dict(
         feature_snake_name = stringcase.snakecase(feature_name)
         feature_pascal_name = stringcase.pascalcase(feature_name)
         feature_spinal_name = stringcase.spinalcase(feature_name)
+        feature_camel_name = stringcase.camelcase(feature_name)
         generation_dict[feature_pascal_name] = {
             "feature_snake_name": feature_snake_name,
             "feature_pascal_name": feature_pascal_name,
             "feature_spinal_name": feature_spinal_name,
+            "feature_camel_name": feature_camel_name,
         }
         # add export_header
         export_header = f"application_{feature_snake_name}_export.h"
@@ -707,7 +709,7 @@ def generate_custom_query_handler(
                     feature_camel_name=feature["feature_camel_name"],
                     query=handler,
                     export=handler["export"],
-                    export_header_file=handler["export_header_file"],
+                    export_header=handler["export_header"],
                     validator_enabled=handler.get("validator", {}).get(
                         "enabled", False
                     ),

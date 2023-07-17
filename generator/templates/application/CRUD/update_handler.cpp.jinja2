@@ -79,7 +79,7 @@ Result<{{ entity_mappable_with_pascal }}DTO>Update{{ entity_mappable_with_pascal
     {
         Result<Domain::{{ entity_mappable_with_pascal }}> saveResult = m_repository->get(request.req.id());
 
-        if (Q_UNLIKELY(!saveResult.hasError()))
+        if (Q_UNLIKELY(saveResult.hasError()))
         {
             qDebug() << "Error getting {{ entity_mappable_with_camel }} from repository:" << saveResult.error().message();
             return Result<{{ entity_mappable_with_pascal }}DTO>(saveResult.error());

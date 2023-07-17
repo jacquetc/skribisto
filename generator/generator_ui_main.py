@@ -478,25 +478,39 @@ class MainWindow(QMainWindow):
     def generate_all(self):
         file_list = []
         file_list.extend(
-            entities_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+            entities_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         )
         file_list.extend(
-            dto_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+            dto_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         )
         file_list.extend(
-            repositories_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+            repositories_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         )
         file_list.extend(
-            cqrs_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+            cqrs_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         )
         file_list.extend(
-            controller_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+            controller_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         )
         file_list.extend(
-            application_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+            application_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         )
         file_list.extend(
-            qml_generator.get_files_to_be_generated(self.temp_manifest_file, self.file_list_view.fetch_file_states())
+            qml_generator.get_files_to_be_generated(
+                self.temp_manifest_file, self.file_list_view.fetch_file_states()
+            )
         )
 
         if self.display_overwrite_confirmation(file_list):
@@ -536,7 +550,6 @@ class MainWindow(QMainWindow):
                 self.file_list_view.fetch_file_states(),
                 self.uncrustify_config_file,
             )
-
 
             self.text_box.setPlainText("All files generated")
 
@@ -816,20 +829,21 @@ class MainWindow(QMainWindow):
     def display_overwrite_confirmation(self, files: list):
         existing_files = [file for file in files if os.path.isfile(file)]
 
-
         # format the file list as a string for display
         fileList = "\n".join(existing_files)
 
-        dialog = QDialog()  
+        dialog = QDialog()
         layout = QVBoxLayout(dialog)
         if existing_files:  # if the list has something in it
             label = QLabel()
-            label.setText(f"The following files exist and will be overwritten:\nAre you sure you want to continue?")
+            label.setText(
+                f"The following files exist and will be overwritten:\nAre you sure you want to continue?"
+            )
 
             layout.addWidget(label)
-        
+
             dialog.setWindowTitle("Overwrite Confirmation")
-    
+
             # add the plain text edit to the dialog
             textEdit = QPlainTextEdit()
             textEdit.setReadOnly(True)
@@ -841,9 +855,9 @@ class MainWindow(QMainWindow):
             label.setText(f"Are you sure you want to continue?\n")
 
             layout.addWidget(label)
-        
+
             label.setWindowTitle("Confirmation")
-                
+
         # create Ok and Cancel buttons
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(dialog.accept)
@@ -1006,15 +1020,17 @@ class MainWindow(QMainWindow):
             return
 
         # Apply the saved state to self.data
+
         for path, value in saved_generate_items:
-            item = self.data
             for key in path[:-1]:
                 try:
-                    item = item[key]
+                    item = self.data[key]
                 except KeyError:
                     break
+                except IndexError:
+                    break
 
-            item[path[-1]] = value
+            self.data[path[-1]] = value
 
         # Update self.temp_manifest_file
         with open(self.temp_manifest_file, "w") as file:

@@ -78,7 +78,7 @@ Result<{{ command.dto_out_pascal_name }}>{{ command.pascal_name }}CommandHandler
         auto validator               = {{ command.pascal_name }}CommandValidator({% for repository in command.repositories %}m_{{ repository.camel_name }}Repository{% if not loop.last %},{% endif %}{% endfor %});
         Result<void> validatorResult = validator.validate(request.req);
 
-        if (Q_UNLIKELY(!validatorResult.hasError()))
+        if (Q_UNLIKELY(validatorResult.hasError()))
         {
             return Result<{{ command.dto_out_pascal_name }}>(validatorResult.error());
         }

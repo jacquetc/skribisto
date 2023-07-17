@@ -308,7 +308,7 @@ def get_cqrs_dict(
                         feature_name_snake + "_cqrs",
                         feature_name_snake,
                         "validators",
-                        custom_query_snake_name + "_command_validator.h",
+                        custom_query_snake_name + "_query_validator.h",
                     ),
                     "name": custom_query_pascal_name + "QueryValidator",
                     "dto_pascal": stringcase.pascalcase(dto_in_type_prefix + "DTO"),

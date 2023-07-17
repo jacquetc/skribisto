@@ -119,7 +119,7 @@ def get_dto_dict_and_feature_ordered_dict(
         # create DTO entry without foreign DTOs
 
         if generate_dto_identical_to_entity:
-            dto_type_name = f"{stringcase.pascalcase(feature['name'])}DTO"
+            dto_type_name = f"{stringcase.pascalcase(entity_mappable_with)}DTO"
 
             dto_dict[dto_type_name] = {
                 "feature_name": stringcase.pascalcase(feature["name"]),
