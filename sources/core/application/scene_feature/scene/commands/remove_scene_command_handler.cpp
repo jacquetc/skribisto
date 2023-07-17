@@ -68,7 +68,7 @@ Result<int> RemoveSceneCommandHandler::handleImpl(QPromise<Result<void>> &progre
 
     auto deleteResult = m_repository->remove(sceneId);
 
-    if (Q_UNLIKELY(!deleteResult.hasError()))
+    if (Q_UNLIKELY(deleteResult.hasError()))
     {
         qDebug() << "Error deleting scene from repository:" << deleteResult.error().message();
         return Result<int>(deleteResult.error());

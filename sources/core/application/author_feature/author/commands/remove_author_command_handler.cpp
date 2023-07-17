@@ -68,7 +68,7 @@ Result<int> RemoveAuthorCommandHandler::handleImpl(QPromise<Result<void>> &progr
 
     auto deleteResult = m_repository->remove(authorId);
 
-    if (Q_UNLIKELY(!deleteResult.hasError()))
+    if (Q_UNLIKELY(deleteResult.hasError()))
     {
         qDebug() << "Error deleting author from repository:" << deleteResult.error().message();
         return Result<int>(deleteResult.error());

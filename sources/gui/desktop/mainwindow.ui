@@ -68,6 +68,9 @@
     <item>
      <widget class="QListWidget" name="listWidget"/>
     </item>
+    <item>
+     <widget class="QTextEdit" name="textEdit"/>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -76,7 +79,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>24</height>
+     <height>37</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

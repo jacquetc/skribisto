@@ -1895,22 +1895,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/desktop/mainwindow.ui" line="84"/>
+        <location filename="../../sources/gui/desktop/mainwindow.ui" line="87"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/desktop/mainwindow.ui" line="95"/>
+        <location filename="../../sources/gui/desktop/mainwindow.ui" line="98"/>
         <source>load</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/desktop/mainwindow.ui" line="100"/>
+        <location filename="../../sources/gui/desktop/mainwindow.ui" line="103"/>
         <source>save as</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/desktop/mainwindow.ui" line="105"/>
+        <location filename="../../sources/gui/desktop/mainwindow.ui" line="108"/>
         <source>save</source>
         <translation type="unfinished"></translation>
     </message>

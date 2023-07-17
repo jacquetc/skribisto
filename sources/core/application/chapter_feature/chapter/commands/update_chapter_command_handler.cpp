@@ -80,7 +80,7 @@ Result<ChapterDTO> UpdateChapterCommandHandler::handleImpl(QPromise<Result<void>
     {
         Result<Domain::Chapter> saveResult = m_repository->get(request.req.id());
 
-        if (Q_UNLIKELY(!saveResult.hasError()))
+        if (Q_UNLIKELY(saveResult.hasError()))
         {
             qDebug() << "Error getting chapter from repository:" << saveResult.error().message();
             return Result<ChapterDTO>(saveResult.error());

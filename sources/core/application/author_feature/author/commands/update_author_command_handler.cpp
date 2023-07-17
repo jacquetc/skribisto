@@ -80,7 +80,7 @@ Result<AuthorDTO> UpdateAuthorCommandHandler::handleImpl(QPromise<Result<void>> 
     {
         Result<Domain::Author> saveResult = m_repository->get(request.req.id());
 
-        if (Q_UNLIKELY(!saveResult.hasError()))
+        if (Q_UNLIKELY(saveResult.hasError()))
         {
             qDebug() << "Error getting author from repository:" << saveResult.error().message();
             return Result<AuthorDTO>(saveResult.error());

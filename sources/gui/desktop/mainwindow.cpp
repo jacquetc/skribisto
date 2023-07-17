@@ -144,6 +144,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             }
         }
     });
+
+    // document:
+
+    QTextDocument *document = new QTextDocument(this);
+    ui->textEdit->setDocument(document);
+
+    connect(document, &QTextDocument::contentsChange, this, [=](int position, int charsRemoved, int charsAdded) {
+        qDebug() << "contentsChange" << document->blockCount();
+        qDebug() << "contentsChange" << position << charsRemoved << charsAdded;
+    });
+
+    connect(document, &QTextDocument::blockCountChanged, this,
+            [=](int newBlockCount) { qDebug() << "blockCountChanged" << newBlockCount; });
 }
 
 MainWindow::~MainWindow()

@@ -68,7 +68,7 @@ Result<MoveChapterReplyDTO> MoveChapterCommandHandler::handleImpl(QPromise<Resul
         auto validator = MoveChapterCommandValidator(m_bookRepository, m_chapterRepository);
         Result<void> validatorResult = validator.validate(request.req);
 
-        if (Q_UNLIKELY(!validatorResult.hasError()))
+        if (Q_UNLIKELY(validatorResult.hasError()))
         {
             return Result<MoveChapterReplyDTO>(validatorResult.error());
         }

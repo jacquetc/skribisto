@@ -61,6 +61,7 @@ add_dependencies(skribisto-contracts skribisto-contracts-dto-chapter)
 add_dependencies(skribisto-contracts skribisto-contracts-dto-scene-paragraph)
 add_dependencies(skribisto-contracts skribisto-contracts-dto-scene)
 add_dependencies(skribisto-contracts skribisto-contracts-dto-author)
+add_dependencies(skribisto-contracts skribisto-contracts-dto-writing)
 
 
 
@@ -71,6 +72,7 @@ target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-author)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-scene-paragraph)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-scene)
 target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-chapter)
+target_link_libraries(skribisto-contracts PUBLIC skribisto-contracts-dto-writing)
 
 target_link_libraries(skribisto-contracts PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql)
 

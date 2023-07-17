@@ -68,7 +68,7 @@ Result<MoveSceneReplyDTO> MoveSceneCommandHandler::handleImpl(QPromise<Result<vo
         auto validator = MoveSceneCommandValidator(m_chapterRepository, m_sceneRepository);
         Result<void> validatorResult = validator.validate(request.req);
 
-        if (Q_UNLIKELY(!validatorResult.hasError()))
+        if (Q_UNLIKELY(validatorResult.hasError()))
         {
             return Result<MoveSceneReplyDTO>(validatorResult.error());
         }

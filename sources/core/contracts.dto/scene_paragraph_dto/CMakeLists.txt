@@ -6,8 +6,6 @@ set(SRC
 
     
     scene_paragraph/scene_paragraph_dto.h
-    scene_paragraph/create_scene_paragraph_dto.h
-    scene_paragraph/update_scene_paragraph_dto.h
 )
 qt_add_library(${PROJECT_NAME} STATIC ${SRC})
 

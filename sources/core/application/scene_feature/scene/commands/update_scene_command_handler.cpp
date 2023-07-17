@@ -80,7 +80,7 @@ Result<SceneDTO> UpdateSceneCommandHandler::handleImpl(QPromise<Result<void>> &p
     {
         Result<Domain::Scene> saveResult = m_repository->get(request.req.id());
 
-        if (Q_UNLIKELY(!saveResult.hasError()))
+        if (Q_UNLIKELY(saveResult.hasError()))
         {
             qDebug() << "Error getting scene from repository:" << saveResult.error().message();
             return Result<SceneDTO>(saveResult.error());

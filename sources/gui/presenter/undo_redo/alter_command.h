@@ -25,6 +25,11 @@ template <class Handler, class Request> class AlterCommand : public UndoRedoComm
         progressPromise.addResult(Result<void>(m_handler->handle(progressPromise, m_request).error()));
     }
 
+    bool mergeWith(const UndoRedoCommand *other) override
+    {
+        // Nothing to do
+    }
+
   private:
     Handler *m_handler;
     Request m_request;

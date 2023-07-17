@@ -47,7 +47,7 @@ class UndoRedoCommand : public QObject
 
     void setObsolete(bool newObsolete);
 
-    virtual bool mergeWith(const UndoRedoCommand *other) const;
+    virtual bool mergeWith(const UndoRedoCommand *other);
 
     bool isSystem() const;
     void setIsSystem(bool newIsSystem);

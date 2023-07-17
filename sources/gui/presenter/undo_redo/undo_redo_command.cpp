@@ -112,7 +112,7 @@ void UndoRedoCommand::setObsolete(bool newObsolete)
  * \brief Merge with another command. Redo of current command must becomes the equivalent of both redoes. Same for
  * undoes.  Returns true if the command can be merged with \a other, otherwise false. To be implemented if needed.
  */
-bool UndoRedoCommand::mergeWith(const UndoRedoCommand *other) const
+bool UndoRedoCommand::mergeWith(const UndoRedoCommand *other)
 {
     return false;
 }

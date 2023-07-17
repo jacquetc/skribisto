@@ -68,7 +68,7 @@ Result<int> RemoveChapterCommandHandler::handleImpl(QPromise<Result<void>> &prog
 
     auto deleteResult = m_repository->remove(chapterId);
 
-    if (Q_UNLIKELY(!deleteResult.hasError()))
+    if (Q_UNLIKELY(deleteResult.hasError()))
     {
         qDebug() << "Error deleting chapter from repository:" << deleteResult.error().message();
         return Result<int>(deleteResult.error());
