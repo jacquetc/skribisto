@@ -122,12 +122,13 @@ void ThreadedUndoRedoSystem::redo()
 /*!
  * \brief Adds a new command to the command history with the specified \a scope.
  */
-void ThreadedUndoRedoSystem::push(UndoRedoCommand *command, const QString &commandScope)
+void ThreadedUndoRedoSystem::push(UndoRedoCommand *command, const QString &commandScope, const QUuid &stackId)
 {
     QMutexLocker locker(&m_mutex);
     command->moveToThread(m_undoRedoSystem->thread());
     QMetaObject::invokeMethod(m_undoRedoSystem, "push", Qt::QueuedConnection,
-                              Q_ARG(Presenter::UndoRedo::UndoRedoCommand *, command), Q_ARG(QString, commandScope));
+                              Q_ARG(Presenter::UndoRedo::UndoRedoCommand *, command), Q_ARG(QString, commandScope),
+                              Q_ARG(QUuid, stackId));
 }
 
 /*!
@@ -197,6 +198,44 @@ QString ThreadedUndoRedoSystem::redoText() const
     QMutexLocker locker(&m_mutex);
     QString result;
     QMetaObject::invokeMethod(m_undoRedoSystem, "redoText", Qt::QueuedConnection, Q_RETURN_ARG(QString, result));
+    return result;
+}
+
+QStringList ThreadedUndoRedoSystem::undoRedoTextList() const
+{
+    QMutexLocker locker(&m_mutex);
+    QStringList result;
+    QMetaObject::invokeMethod(m_undoRedoSystem, "undoRedoTextList", Qt::QueuedConnection,
+                              Q_RETURN_ARG(QStringList, result));
+    return result;
+}
+
+int ThreadedUndoRedoSystem::currentIndex() const
+{
+    QMutexLocker locker(&m_mutex);
+    int result = 0;
+    QMetaObject::invokeMethod(m_undoRedoSystem, "currentIndex", Qt::QueuedConnection, Q_RETURN_ARG(int, result));
+    return result;
+}
+
+void ThreadedUndoRedoSystem::setCurrentIndex(int index, const QUuid &stackId)
+{
+    QMutexLocker locker(&m_mutex);
+    QMetaObject::invokeMethod(m_undoRedoSystem, "setCurrentIndex", Qt::QueuedConnection, Q_ARG(int, index),
+                              Q_ARG(QUuid, stackId));
+}
+
+void ThreadedUndoRedoSystem::setActiveStack(const QUuid &stackId)
+{
+    QMutexLocker locker(&m_mutex);
+    QMetaObject::invokeMethod(m_undoRedoSystem, "setActiveStack", Qt::QueuedConnection, Q_ARG(QUuid, stackId));
+}
+
+QUuid ThreadedUndoRedoSystem::activeStackId() const
+{
+    QMutexLocker locker(&m_mutex);
+    QUuid result;
+    QMetaObject::invokeMethod(m_undoRedoSystem, "activeStackId", Qt::QueuedConnection, Q_RETURN_ARG(QUuid, result));
     return result;
 }
 

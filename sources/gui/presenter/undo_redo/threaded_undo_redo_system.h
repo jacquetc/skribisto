@@ -26,7 +26,7 @@ class SKR_PRESENTER_EXPORT ThreadedUndoRedoSystem : public QObject
 
     void redo();
 
-    void push(UndoRedoCommand *command, const QString &commandScope);
+    void push(UndoRedoCommand *command, const QString &commandScope, const QUuid &stackId = QUuid());
 
     void clear();
 
@@ -37,6 +37,17 @@ class SKR_PRESENTER_EXPORT ThreadedUndoRedoSystem : public QObject
     QString undoText() const;
 
     QString redoText() const;
+
+    QStringList undoRedoTextList() const;
+
+    int currentIndex() const;
+
+    void setCurrentIndex(int index, const QUuid &stackId = QUuid());
+
+    void setActiveStack(const QUuid &stackId = QUuid());
+
+    QUuid activeStackId() const;
+
     QAction *createUndoAction(QObject *parent, const QString &prefix = QString()) const;
     QAction *createRedoAction(QObject *parent, const QString &prefix = QString()) const;
   signals:

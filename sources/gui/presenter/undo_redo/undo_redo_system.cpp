@@ -275,7 +275,19 @@ void UndoRedoSystem::setCurrentIndex(int index, const QUuid &stackId)
 
 void UndoRedoSystem::setActiveStack(const QUuid &stackId)
 {
-    m_activeStack = m_stackHash.value(stackId);
+    // if stackId is not in the stack hash, create one
+    if (!m_stackHash.contains(stackId))
+    {
+        m_stackHash.insert(stackId, QSharedPointer<UndoRedoStack>(new UndoRedoStack(this, stackId)));
+    }
+
+    if (m_activeStack->id() != stackId)
+    {
+        m_activeStack = m_stackHash.value(stackId);
+
+        // to reinit the undo redo actions
+        emit stateChanged();
+    }
 }
 
 QUuid UndoRedoSystem::activeStackId() const
