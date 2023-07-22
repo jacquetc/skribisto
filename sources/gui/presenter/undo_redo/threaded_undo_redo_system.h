@@ -42,7 +42,7 @@ class SKR_PRESENTER_EXPORT ThreadedUndoRedoSystem : public QObject
 
     int currentIndex() const;
 
-    void setCurrentIndex(int index, const QUuid &stackId = QUuid());
+    void setCurrentIndex(int index);
 
     void setActiveStack(const QUuid &stackId = QUuid());
 

@@ -218,11 +218,10 @@ int ThreadedUndoRedoSystem::currentIndex() const
     return result;
 }
 
-void ThreadedUndoRedoSystem::setCurrentIndex(int index, const QUuid &stackId)
+void ThreadedUndoRedoSystem::setCurrentIndex(int index)
 {
     QMutexLocker locker(&m_mutex);
-    QMetaObject::invokeMethod(m_undoRedoSystem, "setCurrentIndex", Qt::QueuedConnection, Q_ARG(int, index),
-                              Q_ARG(QUuid, stackId));
+    QMetaObject::invokeMethod(m_undoRedoSystem, "setCurrentIndex", Qt::QueuedConnection, Q_ARG(int, index));
 }
 
 void ThreadedUndoRedoSystem::setActiveStack(const QUuid &stackId)

@@ -44,7 +44,7 @@ class UndoRedoSystem : public QObject
 
     Q_INVOKABLE int currentIndex() const;
 
-    Q_INVOKABLE void setCurrentIndex(int index, const QUuid &stackId = QUuid());
+    Q_INVOKABLE void setCurrentIndex(int index);
 
     Q_INVOKABLE void setActiveStack(const QUuid &stackId = QUuid());
 
@@ -53,6 +53,8 @@ class UndoRedoSystem : public QObject
     QStringList queuedCommandTextListByScope(const QString &scopeFlagString) const;
     bool isRunning() const;
   private slots:
+    void executeNextCommandUndo();
+    void executeNextCommandRedo();
     void onCommandDoFinished(bool isSuccessful);
 
     void onCommandUndoFinished(bool isSuccessful);
@@ -82,6 +84,8 @@ class UndoRedoSystem : public QObject
     Scopes m_scopes;
     QSharedPointer<UndoRedoStack> m_activeStack;
     QHash<QUuid, QSharedPointer<UndoRedoStack>> m_stackHash;
+    QQueue<QSharedPointer<UndoRedoCommand>> m_setIndexCommandQueue;
+    bool m_readyAfterSettingIndex = true;
 
     QHash<ScopeFlag, QQueue<QSharedPointer<UndoRedoCommand>>> m_scopedCommandQueueHash;
     QHash<ScopeFlag, QSharedPointer<UndoRedoCommand>> m_currentCommandHash;

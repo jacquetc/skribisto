@@ -2,6 +2,7 @@
 #include "undo_redo/query_command.h"
 
 #include <QEventLoop>
+#include <QTimer>
 
 using namespace Presenter::UndoRedo;
 /*!
@@ -262,15 +263,122 @@ int UndoRedoSystem::currentIndex() const
  *
  *
  */
-void UndoRedoSystem::setCurrentIndex(int index, const QUuid &stackId)
+void UndoRedoSystem::setCurrentIndex(int index)
 {
     // since undo redo is asynchronous, each undo or redo much wait for the previous one to finish
     // so we can't just set the current index to the new index
-    // instead we need to undo or redo until we reach the desired index
-    // if the desired index is less than the current index, we undo until we reach the desired index, waiting for the
-    // undo to finish each time if the desired index is greater than the current index, we redo until we reach the
-    // desired index waiting for the redo to finish each time if the desired index is equal to the current index, we do
-    // nothing
+    // instead we need to undo or redo until we reach the desired index.
+    // If the desired index is less than the current index, we undo until we reach the desired index, waiting for the
+    // undo to finish each time.
+    // If the desired index is greater than the current index, we redo until we reach the
+    // desired index waiting for the redo to finish each time.
+    // If the desired index is equal to the current index, we do nothing.
+
+    if (index == m_activeStack->currentIndex())
+        return;
+
+    if (index >= m_activeStack->queue().size())
+    {
+        qWarning() << "UndoRedoSystem::setCurrentIndex: index out of range, setting to last index";
+        index = m_activeStack->queue().size() - 1;
+    }
+
+    if (index < 0)
+    {
+        qWarning() << "UndoRedoSystem::setCurrentIndex: index out of range, setting to 0";
+        index = 0;
+    }
+
+    if (!m_readyAfterSettingIndex)
+    {
+        qWarning() << "UndoRedoSystem::setCurrentIndex: not ready after setting index, using a delay system";
+
+        // we need to wait for the system to be ready using QEvenLoop
+
+        QTimer timer;
+        QEventLoop loop;
+
+        connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+        timer.start(200); // 200ms
+        loop.exec();
+
+        if (!m_readyAfterSettingIndex)
+        {
+            qFatal() << "UndoRedoSystem::setCurrentIndex: not ready after setting index, aborting";
+            return;
+        }
+    }
+
+    m_readyAfterSettingIndex = false;
+
+    int movingIndex = m_activeStack->currentIndex();
+
+    if (index < m_activeStack->currentIndex())
+    {
+        // we append the command to a undo queue
+        // when the command is done, it will emit a signal
+        // we will then undo the next command in the queue
+
+        while (movingIndex > index)
+        {
+            auto command = m_activeStack->queue()[movingIndex];
+            connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::executeNextCommandUndo,
+                    Qt::SingleShotConnection);
+            m_setIndexCommandQueue.enqueue(command);
+            movingIndex--;
+        }
+
+        // execute the first command
+        executeNextCommandUndo();
+    }
+    else if (index > m_activeStack->currentIndex())
+    {
+        while (movingIndex < index)
+        {
+            movingIndex++;
+            auto command = m_activeStack->queue()[movingIndex];
+            connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::executeNextCommandRedo,
+                    Qt::SingleShotConnection);
+            m_setIndexCommandQueue.enqueue(command);
+        }
+
+        // execute the first command
+        executeNextCommandRedo();
+    }
+}
+
+void UndoRedoSystem::executeNextCommandUndo()
+{
+    if (m_setIndexCommandQueue.isEmpty())
+    {
+        m_readyAfterSettingIndex = true;
+    }
+    // if there are commands in the queue, undo the next one
+    else
+    {
+        qInfo() << "UndoRedoSystem::executeNextCommandUndo";
+        auto command = m_setIndexCommandQueue.dequeue();
+        command->asyncUndo();
+        m_activeStack->decrementCurrentIndex();
+        qInfo() << m_activeStack->currentIndex();
+    }
+}
+
+void UndoRedoSystem::executeNextCommandRedo()
+{
+    if (m_setIndexCommandQueue.isEmpty())
+    {
+        m_readyAfterSettingIndex = true;
+    }
+    // if there are commands in the queue, redo the next one
+    else
+    {
+        qInfo() << "UndoRedoSystem::executeNextCommandRedo";
+        auto command = m_setIndexCommandQueue.dequeue();
+        command->asyncRedo();
+        m_activeStack->incrementCurrentIndex();
+        qInfo() << m_activeStack->currentIndex();
+    }
 }
 
 void UndoRedoSystem::setActiveStack(const QUuid &stackId)
@@ -323,6 +431,11 @@ bool UndoRedoSystem::isRunning() const
                 return true;
             }
         }
+    }
+
+    if (!m_readyAfterSettingIndex)
+    {
+        return true;
     }
 
     return false;

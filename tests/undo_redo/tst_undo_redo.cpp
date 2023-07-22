@@ -217,6 +217,81 @@ class UndoRedoSystemTest : public QObject
         QCOMPARE(system.queuedCommandTextListByScope("author"), QStringList());
         QCOMPARE(system.queuedCommandTextListByScope("document"), QStringList());
     }
+
+    void testSetCurrentIndex()
+    {
+        Scopes scopes(QStringList() << "author");
+        UndoRedoSystem system(nullptr, scopes);
+
+        QSignalSpy spy(&system, &UndoRedoSystem::stateChanged);
+
+        // Push three general commands
+        system.push(new DummyCommand("Author Command 1"), "author");
+        system.push(new DummyCommand("Author Command 2"), "author");
+        system.push(new DummyCommand("Author Command 3"), "author");
+
+        // Verify that the system is not running
+        QTRY_COMPARE_WITH_TIMEOUT(system.currentIndex(), 2, 500);
+        QCOMPARE(system.undoText(), QString("Author Command 3"));
+        QCOMPARE(system.redoText(), QString());
+        QCOMPARE(system.undoRedoTextList(), QStringList() << "Author Command 1"
+                                                          << "Author Command 2"
+                                                          << "Author Command 3");
+
+        // Set current index to 1
+        system.setCurrentIndex(1);
+        QTRY_COMPARE_WITH_TIMEOUT(system.currentIndex(), 1, 500);
+        QCOMPARE(system.undoText(), QString("Author Command 2"));
+        QCOMPARE(system.redoText(), QString("Author Command 3"));
+        QCOMPARE(system.undoRedoTextList(), QStringList() << "Author Command 1"
+                                                          << "Author Command 2"
+                                                          << "Author Command 3");
+
+        // Set current index to 0
+        system.setCurrentIndex(0);
+        QTRY_COMPARE_WITH_TIMEOUT(system.currentIndex(), 0, 500);
+        QCOMPARE(system.undoText(), QString("Author Command 1"));
+        QCOMPARE(system.redoText(), QString("Author Command 2"));
+        QCOMPARE(system.undoRedoTextList(), QStringList() << "Author Command 1"
+                                                          << "Author Command 2"
+                                                          << "Author Command 3");
+
+        // Set current index to 2, increasing by 2
+        system.setCurrentIndex(2);
+        QTRY_COMPARE_WITH_TIMEOUT(system.currentIndex(), 2, 500);
+        QCOMPARE(system.undoText(), QString("Author Command 3"));
+        QCOMPARE(system.redoText(), QString());
+        QCOMPARE(system.undoRedoTextList(), QStringList() << "Author Command 1"
+                                                          << "Author Command 2"
+                                                          << "Author Command 3");
+
+        // Set current index to 0, decreasing by 2
+        system.setCurrentIndex(0);
+        QTRY_COMPARE_WITH_TIMEOUT(system.currentIndex(), 0, 500);
+        QCOMPARE(system.undoText(), QString("Author Command 1"));
+        QCOMPARE(system.redoText(), QString("Author Command 2"));
+        QCOMPARE(system.undoRedoTextList(), QStringList() << "Author Command 1"
+                                                          << "Author Command 2"
+                                                          << "Author Command 3");
+
+        // Set current index to 3
+        system.setCurrentIndex(3);
+        QTRY_COMPARE_WITH_TIMEOUT(system.currentIndex(), 2, 500);
+        QCOMPARE(system.undoText(), QString("Author Command 3"));
+        QCOMPARE(system.redoText(), QString());
+        QCOMPARE(system.undoRedoTextList(), QStringList() << "Author Command 1"
+                                                          << "Author Command 2"
+                                                          << "Author Command 3");
+
+        // Set current index to -1
+        system.setCurrentIndex(-1);
+        QTRY_COMPARE_WITH_TIMEOUT(system.currentIndex(), 0, 500);
+        QCOMPARE(system.undoText(), QString("Author Command 1"));
+        QCOMPARE(system.redoText(), QString("Author Command 2"));
+        QCOMPARE(system.undoRedoTextList(), QStringList() << "Author Command 1"
+                                                          << "Author Command 2"
+                                                          << "Author Command 3");
+    }
 };
 QTEST_GUILESS_MAIN(UndoRedoSystemTest)
 
