@@ -21,12 +21,8 @@ class DummyCommand : public UndoRedoCommand
     void redo(QPromise<Result<void>> &progressPromise) override
     {
 
-        int waitTime = 0;
-
-        while (waitTime < 5000000)
-        {
-            waitTime++;
-        }
+        // wait 100ms
+        QThread::msleep(100);
 
         progressPromise.addResult(m_redoReturn);
     }

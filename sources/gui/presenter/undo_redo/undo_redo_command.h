@@ -52,8 +52,11 @@ class UndoRedoCommand : public QObject
     bool isSystem() const;
     void setIsSystem(bool newIsSystem);
 
+    QUuid stackId() const;
+    void setStackId(const QUuid &newStackId);
+
   signals:
-    void finished();
+    void finished(bool isSuccessful);
     /*!
      * \brief A signal that is emitted when a command results in an error.
      * actions.
@@ -78,5 +81,6 @@ class UndoRedoCommand : public QObject
     QString m_text;  /*!< A QString representing the text description of the command. */
     Scope m_scope;   /*!< The command's scope as an UndoRedoCommand::Scope enumeration value. */
     Status m_status; /*!< An enum representing the state of the command. */
+    QUuid m_stackId; /*!< A QUuid representing the id of the stack the command is in. */
 };
 } // namespace Presenter::UndoRedo

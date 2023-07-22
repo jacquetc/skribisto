@@ -29,6 +29,7 @@ set(presenter_SRCS
     undo_redo/query_command.h undo_redo/query_command.cpp
     undo_redo/alter_command.h
     undo_redo/undo_redo_scopes.h
+    undo_redo/undo_redo_stack.h undo_redo/undo_redo_stack.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${presenter_SRCS})

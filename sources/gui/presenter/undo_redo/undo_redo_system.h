@@ -1,6 +1,7 @@
 #pragma once
 
 #include "undo_redo_command.h"
+#include "undo_redo_stack.h"
 #include <QAction>
 #include <QHash>
 #include <QObject>
@@ -26,7 +27,8 @@ class UndoRedoSystem : public QObject
 
     Q_INVOKABLE void redo();
 
-    Q_INVOKABLE void push(Presenter::UndoRedo::UndoRedoCommand *command, const QString &commandScope);
+    Q_INVOKABLE void push(Presenter::UndoRedo::UndoRedoCommand *command, const QString &commandScope,
+                          const QUuid &stackId = QUuid());
 
     Q_INVOKABLE void clear();
 
@@ -42,11 +44,19 @@ class UndoRedoSystem : public QObject
 
     Q_INVOKABLE int currentIndex() const;
 
+    Q_INVOKABLE void setCurrentIndex(int index, const QUuid &stackId = QUuid());
+
+    Q_INVOKABLE void setActiveStack(const QUuid &stackId = QUuid());
+
+    Q_INVOKABLE QUuid activeStackId() const;
+
     QStringList queuedCommandTextListByScope(const QString &scopeFlagString) const;
     bool isRunning() const;
   private slots:
-    void onCommandFinished();
+    void onCommandDoFinished(bool isSuccessful);
 
+    void onCommandUndoFinished(bool isSuccessful);
+    void onCommandRedoFinished(bool isSuccessful);
   signals:
 
     void stateChanged();
@@ -65,14 +75,14 @@ class UndoRedoSystem : public QObject
     void undoing(Scope scope, bool active);
 
   private:
-    void executeNextCommand(const ScopeFlag &scopeFlag);
+    void executeNextCommandDo(const ScopeFlag &scopeFlag, const QUuid &stackId);
     bool isCommandAllowedToRun(QSharedPointer<UndoRedoCommand> command, const ScopeFlag &currentScopeFlag);
 
-    int m_undoLimit;    /*!< The maximum number of undo commands that can be stored in the undo-redo system. */
-    int m_currentIndex; /*!< The current index in the command history. */
+    int m_undoLimit; /*!< The maximum number of undo commands that can be stored in the undo-redo system. */
     Scopes m_scopes;
+    QSharedPointer<UndoRedoStack> m_activeStack;
+    QHash<QUuid, QSharedPointer<UndoRedoStack>> m_stackHash;
 
-    QQueue<QSharedPointer<UndoRedoCommand>> m_generalCommandQueue;
     QHash<ScopeFlag, QQueue<QSharedPointer<UndoRedoCommand>>> m_scopedCommandQueueHash;
     QHash<ScopeFlag, QSharedPointer<UndoRedoCommand>> m_currentCommandHash;
 };

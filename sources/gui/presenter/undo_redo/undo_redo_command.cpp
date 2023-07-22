@@ -78,7 +78,17 @@ void UndoRedoCommand::onFinished()
     emit redoing(m_scope, false);
     emit undoing(m_scope, false);
     emit progressFinished();
-    emit finished();
+    emit finished(result.isOk());
+}
+
+QUuid UndoRedoCommand::stackId() const
+{
+    return m_stackId;
+}
+
+void UndoRedoCommand::setStackId(const QUuid &newStackId)
+{
+    m_stackId = newStackId;
 }
 
 bool UndoRedoCommand::isSystem() const

@@ -13,10 +13,13 @@ using namespace Presenter::UndoRedo;
 /*!
  * \brief Constructs an UndoRedoSystem with the specified \a parent.
  */
-UndoRedoSystem::UndoRedoSystem(QObject *parent, Scopes scopes)
-    : QObject(parent), m_currentIndex(-1), m_undoLimit(10), m_scopes(scopes)
+UndoRedoSystem::UndoRedoSystem(QObject *parent, Scopes scopes) : QObject(parent), m_undoLimit(10), m_scopes(scopes)
 {
     qRegisterMetaType<Presenter::UndoRedo::Scope>();
+
+    // Create the main stack
+    m_stackHash.insert(QUuid(), QSharedPointer<UndoRedoStack>(new UndoRedoStack(this)));
+    m_activeStack = m_stackHash[QUuid()];
 }
 
 /*!
@@ -40,7 +43,7 @@ void UndoRedoSystem::run()
 bool UndoRedoSystem::canUndo() const
 {
     bool hasACommandRunning = false;
-    for (const auto &command : m_generalCommandQueue)
+    for (const auto &command : m_activeStack->queue())
     {
         if (command->isRunning())
         {
@@ -48,8 +51,7 @@ bool UndoRedoSystem::canUndo() const
             break;
         }
     }
-
-    return m_currentIndex >= 0 && !hasACommandRunning;
+    return m_activeStack->currentIndex() >= 0 && !hasACommandRunning;
 }
 
 /*!
@@ -57,7 +59,8 @@ bool UndoRedoSystem::canUndo() const
  */
 bool UndoRedoSystem::canRedo() const
 {
-    return m_currentIndex < m_generalCommandQueue.size() - 1 && !m_generalCommandQueue[m_currentIndex + 1]->isRunning();
+    return m_activeStack->currentIndex() < m_activeStack->queue().size() - 1 &&
+           !m_activeStack->queue()[m_activeStack->currentIndex() + 1]->isRunning();
 }
 
 /*!
@@ -67,7 +70,22 @@ void UndoRedoSystem::undo()
 {
     if (canUndo())
     {
-        m_generalCommandQueue[m_currentIndex--]->asyncUndo();
+        auto command = m_activeStack->queue()[m_activeStack->currentIndex()];
+        m_activeStack->decrementCurrentIndex();
+        // Connect the finished signal to the onCommandUndoFinished slot,  single shot connection to avoid unwanted
+        // signal
+        connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::onCommandUndoFinished,
+                Qt::SingleShotConnection);
+
+        for (ScopeFlag scopeFlag : command->scope().flags())
+        {
+            if (!m_scopedCommandQueueHash[scopeFlag].isEmpty())
+            {
+                m_currentCommandHash.insert(scopeFlag, command);
+            }
+        }
+
+        command->asyncUndo();
         emit stateChanged();
     }
 }
@@ -79,8 +97,22 @@ void UndoRedoSystem::redo()
 {
     if (canRedo())
     {
+        m_activeStack->incrementCurrentIndex();
+        auto command = m_activeStack->queue()[m_activeStack->currentIndex()];
+        // Connect the finished signal to the onCommandRedoFinished slot,  single shot connection to avoid unwanted
+        // signal
+        connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::onCommandRedoFinished,
+                Qt::SingleShotConnection);
 
-        m_generalCommandQueue[++m_currentIndex]->asyncRedo();
+        for (ScopeFlag scopeFlag : command->scope().flags())
+        {
+            if (!m_scopedCommandQueueHash[scopeFlag].isEmpty())
+            {
+                m_currentCommandHash.insert(scopeFlag, command);
+            }
+        }
+
+        command->asyncRedo();
         emit stateChanged();
     }
 }
@@ -88,14 +120,21 @@ void UndoRedoSystem::redo()
 /*!
  * \brief Adds an \a command to the UndoRedoSystem with the specified \a scope.
  */
-void UndoRedoSystem::push(UndoRedoCommand *command, const QString &commandScope)
+void UndoRedoSystem::push(UndoRedoCommand *command, const QString &commandScope, const QUuid &stackId)
 {
     command->setParent(this);
 
     Scope scope = m_scopes.createScopeFromString(commandScope);
     command->setScope(scope);
+    command->setStackId(stackId);
 
     auto commandSharedPointer = QSharedPointer<UndoRedoCommand>(command);
+
+    // ensure the stack exists, else create it
+    if (!m_stackHash.contains(stackId))
+    {
+        m_stackHash.insert(stackId, QSharedPointer<UndoRedoStack>(new UndoRedoStack(this, stackId)));
+    }
 
     // Add the command to the appropriate queues
     for (ScopeFlag scopeFlag : m_scopes.flags())
@@ -109,7 +148,7 @@ void UndoRedoSystem::push(UndoRedoCommand *command, const QString &commandScope)
             // command
             if (m_currentCommandHash[scopeFlag].isNull())
             {
-                executeNextCommand(scopeFlag);
+                executeNextCommandDo(scopeFlag, stackId);
             }
         }
     }
@@ -124,9 +163,18 @@ void UndoRedoSystem::push(UndoRedoCommand *command, const QString &commandScope)
 void UndoRedoSystem::clear()
 {
     // Clear the general command queue, not the scoped command queue
-    this->m_generalCommandQueue.clear();
+
+    for (auto stack : m_stackHash.values())
+    {
+        stack->queue().clear();
+    }
+
     // Set the current index to -1
-    this->m_currentIndex = -1;
+
+    for (auto stack : m_stackHash.values())
+    {
+        stack->setCurrentIndex(-1);
+    }
     // Emit the stateChanged signal
     emit stateChanged();
 }
@@ -138,11 +186,15 @@ void UndoRedoSystem::setUndoLimit(int limit)
 {
     m_undoLimit = limit;
     // Remove excess commands from the general command queue if necessary
-    while (m_generalCommandQueue.size() > m_undoLimit)
+    for (auto stack : m_stackHash.values())
     {
-        m_generalCommandQueue.dequeue();
-        m_currentIndex--;
+        while (stack->queue().size() > m_undoLimit)
+        {
+            stack->queue().dequeue();
+            stack->decrementCurrentIndex();
+        }
     }
+
     // Emit the stateChanged signal
     emit stateChanged();
 }
@@ -160,9 +212,9 @@ int UndoRedoSystem::undoLimit() const
  */
 QString UndoRedoSystem::undoText() const
 {
-    if (m_currentIndex >= 0)
+    if (m_activeStack->currentIndex() >= 0)
     {
-        return m_generalCommandQueue[m_currentIndex]->text();
+        return m_activeStack->queue()[m_activeStack->currentIndex()]->text();
     }
     else
     {
@@ -176,9 +228,9 @@ QString UndoRedoSystem::undoText() const
  */
 QString UndoRedoSystem::redoText() const
 {
-    if (m_currentIndex < m_generalCommandQueue.size() - 1)
+    if (m_activeStack->currentIndex() < m_activeStack->queue().size() - 1)
     {
-        return m_generalCommandQueue[m_currentIndex + 1]->text();
+        return m_activeStack->queue()[m_activeStack->currentIndex() + 1]->text();
     }
     else
     {
@@ -190,7 +242,7 @@ QStringList UndoRedoSystem::undoRedoTextList() const
 {
     QStringList resultList;
 
-    for (const auto &command : m_generalCommandQueue)
+    for (const auto &command : m_activeStack->queue())
     {
         if (!command.isNull())
             resultList << command->text();
@@ -200,7 +252,35 @@ QStringList UndoRedoSystem::undoRedoTextList() const
 
 int UndoRedoSystem::currentIndex() const
 {
-    return m_currentIndex;
+    return m_activeStack->currentIndex();
+}
+
+/*!
+ * \brief UndoRedoSystem::setCurrentIndex
+ * \param index
+ * \param stackId
+ *
+ *
+ */
+void UndoRedoSystem::setCurrentIndex(int index, const QUuid &stackId)
+{
+    // since undo redo is asynchronous, each undo or redo much wait for the previous one to finish
+    // so we can't just set the current index to the new index
+    // instead we need to undo or redo until we reach the desired index
+    // if the desired index is less than the current index, we undo until we reach the desired index, waiting for the
+    // undo to finish each time if the desired index is greater than the current index, we redo until we reach the
+    // desired index waiting for the redo to finish each time if the desired index is equal to the current index, we do
+    // nothing
+}
+
+void UndoRedoSystem::setActiveStack(const QUuid &stackId)
+{
+    m_activeStack = m_stackHash.value(stackId);
+}
+
+QUuid UndoRedoSystem::activeStackId() const
+{
+    return m_activeStack->id();
 }
 
 bool UndoRedoSystem::isRunning() const
@@ -221,11 +301,15 @@ bool UndoRedoSystem::isRunning() const
         }
     }
 
-    for (const auto &command : m_generalCommandQueue)
+    for (auto stack : m_stackHash.values())
     {
-        if (command->isRunning())
+
+        for (const auto &command : stack->queue())
         {
-            return true;
+            if (command->isRunning())
+            {
+                return true;
+            }
         }
     }
 
@@ -246,10 +330,7 @@ QStringList UndoRedoSystem::queuedCommandTextListByScope(const QString &scopeFla
     return resultList;
 }
 
-/*!
- * \brief Handles the finished() signal from an UndoRedoCommand and updates the UndoRedoSystem state.
- */
-void UndoRedoSystem::onCommandFinished()
+void UndoRedoSystem::onCommandUndoFinished(bool isSuccessful)
 {
     auto *senderObject = QObject::sender();
     auto *command = dynamic_cast<UndoRedoCommand *>(senderObject);
@@ -258,31 +339,102 @@ void UndoRedoSystem::onCommandFinished()
         qFatal("Command pointer is null!");
     }
     const Scope &commandScope = command->scope();
+    const QUuid &stackId = command->stackId();
+    auto stack = m_stackHash.value(stackId, QSharedPointer<UndoRedoStack>());
 
-    // Set the current command to nullptr
-
+    // Remove the command from the current command hash
     for (const ScopeFlag &scopeFlag : commandScope.flags())
     {
 
         m_currentCommandHash.insert(scopeFlag, QSharedPointer<UndoRedoCommand>());
     }
 
-    if (nullptr == qobject_cast<QueryCommand *>(QObject::sender()))
+    if (!isSuccessful)
     {
-        if (command->obsolete())
-        {
-            m_generalCommandQueue.removeLast();
-            m_currentIndex--;
-        }
+        // Remove any redo commands that are after the current index
+        stack->queue().erase(stack->queue().begin() + stack->currentIndex(), stack->queue().end());
+    }
+
+    // Emit the stateChanged signal
+    emit stateChanged();
+}
+
+void UndoRedoSystem::onCommandRedoFinished(bool isSuccessful)
+{
+    auto *senderObject = QObject::sender();
+    auto *command = dynamic_cast<UndoRedoCommand *>(senderObject);
+    if (command == nullptr)
+    {
+        qFatal("Command pointer is null!");
+    }
+    const Scope &commandScope = command->scope();
+    const QUuid &stackId = command->stackId();
+    auto stack = m_stackHash.value(stackId, QSharedPointer<UndoRedoStack>());
+
+    // Remove the command from the current command hash
+    for (const ScopeFlag &scopeFlag : commandScope.flags())
+    {
+
+        m_currentCommandHash.insert(scopeFlag, QSharedPointer<UndoRedoCommand>());
+    }
+
+    if (!isSuccessful)
+    {
+        // Remove any redo commands that are after the current index
+        stack->queue().erase(stack->queue().begin() + stack->currentIndex() + 1, stack->queue().end());
+    }
+
+    // Emit the stateChanged signal
+    emit stateChanged();
+}
+
+/*!
+ * \brief Handles the finished() signal from an UndoRedoCommand when it's doing a task after being pushed and updates
+ * the UndoRedoSystem state.
+ */
+void UndoRedoSystem::onCommandDoFinished(bool isSuccessful)
+{
+    auto *senderObject = QObject::sender();
+    auto *command = dynamic_cast<UndoRedoCommand *>(senderObject);
+    if (command == nullptr)
+    {
+        qFatal("Command pointer is null!");
+    }
+    const Scope &commandScope = command->scope();
+    const QUuid &stackId = command->stackId();
+    auto stack = m_stackHash.value(stackId, QSharedPointer<UndoRedoStack>());
+
+    // Remove the command from the current command hash
+    for (const ScopeFlag &scopeFlag : commandScope.flags())
+    {
+
+        m_currentCommandHash.insert(scopeFlag, QSharedPointer<UndoRedoCommand>());
+    }
+
+    // If the command is a query command, remove it from the general command queue
+    if (nullptr != qobject_cast<QueryCommand *>(QObject::sender()) || command->obsolete())
+    {
+        stack->queue().removeLast();
+        m_activeStack->decrementCurrentIndex();
     }
 
     // If there are commands in the queue, execute the next one
-
-    for (ScopeFlag scopeFlag : commandScope.flags())
+    if (isSuccessful)
     {
-        if (!m_scopedCommandQueueHash[scopeFlag].isEmpty())
+        for (ScopeFlag scopeFlag : commandScope.flags())
         {
-            executeNextCommand(scopeFlag);
+            if (!m_scopedCommandQueueHash[scopeFlag].isEmpty())
+            {
+                executeNextCommandDo(scopeFlag, stackId);
+            }
+        }
+    }
+    else // if execution was unsuccessful, clear the command queue
+    {
+        // empties the command scope queue
+        for (ScopeFlag scopeFlag : commandScope.flags())
+        {
+            m_scopedCommandQueueHash[scopeFlag].clear();
         }
     }
 
@@ -293,7 +445,7 @@ void UndoRedoSystem::onCommandFinished()
 /*!
  * \brief Executes the next command in the queue for the specified \a scope.
  */
-void UndoRedoSystem::executeNextCommand(const ScopeFlag &scopeFlag)
+void UndoRedoSystem::executeNextCommandDo(const ScopeFlag &scopeFlag, const QUuid &stackId)
 {
     // Dequeue the next command
     QQueue<QSharedPointer<UndoRedoCommand>> &queue = m_scopedCommandQueueHash[scopeFlag];
@@ -302,12 +454,15 @@ void UndoRedoSystem::executeNextCommand(const ScopeFlag &scopeFlag)
     m_currentCommandHash.insert(scopeFlag, command);
     bool allowedToRun = isCommandAllowedToRun(command, scopeFlag);
 
+    // get stack
+    QSharedPointer<UndoRedoStack> stack = m_stackHash.value(stackId);
+
     // if not already running (from another scope)
     if (allowedToRun)
     {
-        // Connect the finished signal to the onCommandFinished slot
-        connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::onCommandFinished,
-                Qt::UniqueConnection);
+        // Connect the finished signal to the onCommandDoFinished slot,  single shot connection to avoid unwanted signal
+        connect(command.data(), &UndoRedoCommand::finished, this, &UndoRedoSystem::onCommandDoFinished,
+                Qt::SingleShotConnection);
 
         // Connect the errorSent signal to the errorSent signal
         connect(command.data(), &UndoRedoCommand::errorSent, this, &UndoRedoSystem::errorSent, Qt::UniqueConnection);
@@ -316,14 +471,14 @@ void UndoRedoSystem::executeNextCommand(const ScopeFlag &scopeFlag)
         command->asyncRedo();
 
         // merge with previous command if possible
-        if (!m_generalCommandQueue.isEmpty() && m_currentIndex > 0)
+        if (!stack->queue().isEmpty() && stack->currentIndex() > 0)
         {
-            QSharedPointer<UndoRedoCommand> previousCommand = m_generalCommandQueue[m_currentIndex - 1];
+            QSharedPointer<UndoRedoCommand> previousCommand = stack->queue()[stack->currentIndex() - 1];
             if (previousCommand->mergeWith(command.data()))
             {
                 previousCommand->setObsolete(true);
-                m_generalCommandQueue.removeLast();
-                m_currentIndex--;
+                stack->queue().removeLast();
+                m_activeStack->decrementCurrentIndex();
             }
         }
 
@@ -339,21 +494,21 @@ void UndoRedoSystem::executeNextCommand(const ScopeFlag &scopeFlag)
     {
 
         // Remove any redo commands that are after the current index
-        m_generalCommandQueue.erase(m_generalCommandQueue.begin() + m_currentIndex + 1, m_generalCommandQueue.end());
+        stack->queue().erase(stack->queue().begin() + stack->currentIndex() + 1, stack->queue().end());
 
         // Add the new command to the end of the list if not already there:
 
-        if (!m_generalCommandQueue.contains(command))
+        if (!stack->queue().contains(command))
         {
-            m_generalCommandQueue.enqueue(command);
+            stack->queue().enqueue(command);
             // Increment the current index
-            m_currentIndex++;
+            stack->incrementCurrentIndex();
 
             // Remove excess commands from the general command queue if necessary
-            while (m_generalCommandQueue.size() > m_undoLimit)
+            while (stack->queue().size() > m_undoLimit)
             {
-                m_generalCommandQueue.dequeue();
-                m_currentIndex--;
+                stack->queue().dequeue();
+                m_activeStack->decrementCurrentIndex();
             }
         }
     }
