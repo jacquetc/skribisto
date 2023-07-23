@@ -3341,14 +3341,14 @@
 <context>
     <name>Presenter::UndoRedo::ThreadedUndoRedoSystem</name>
     <message>
-        <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="219"/>
-        <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="228"/>
+        <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="257"/>
+        <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="266"/>
         <source>Redo %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="257"/>
-        <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="267"/>
+        <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="295"/>
+        <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="305"/>
         <source>Undo %1</source>
         <translation type="unfinished"></translation>
     </message>

@@ -371,6 +371,8 @@ application:
                   name: uuidListToDelete
                 - type: QList<QString>
                   name: texts
+                - type: int
+                  name: cursorPosition
             out:
               type_prefix: MultipleSceneParagraphsChanged
               generate: True
@@ -387,6 +389,8 @@ application:
                   name: uuidListToDelete
                 - type: QList<QString>
                   name: texts
+                - type: int
+                  name: cursorPosition
         - name: UpdateSceneParagraph
           generate: true
           entities:
@@ -408,6 +412,8 @@ application:
                   name: paragraphUuid
                 - type: QString
                   name: text
+                - type: int
+                  name: cursorPosition
             out:
               type_prefix: SceneParagraphChanged
               generate: True
@@ -418,6 +424,8 @@ application:
                   name: paragraphUuid
                 - type: QString
                   name: text
+                - type: int
+                  name: cursorPosition
       queries:
         - name: GetAllSceneParagraphs
           generate: true

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QString>
 #include <QUuid>
 
 namespace Contracts::DTO::Writing
@@ -16,11 +17,12 @@ class UpdateMultipleSceneParagraphsDTO
     Q_PROPERTY(QList<QUuid> paragraphUuidList READ paragraphUuidList WRITE setParagraphUuidList)
     Q_PROPERTY(QList<QUuid> uuidListToDelete READ uuidListToDelete WRITE setUuidListToDelete)
     Q_PROPERTY(QList<QString> texts READ texts WRITE setTexts)
+    Q_PROPERTY(int cursorPosition READ cursorPosition WRITE setCursorPosition)
 
   public:
     UpdateMultipleSceneParagraphsDTO()
         : m_sceneId(0), m_parapgraphIndex(0), m_paragraphIdList({}), m_paragraphUuidList({}), m_uuidListToDelete({}),
-          m_texts({})
+          m_texts({}), m_cursorPosition(0)
     {
     }
 
@@ -30,16 +32,17 @@ class UpdateMultipleSceneParagraphsDTO
 
     UpdateMultipleSceneParagraphsDTO(int sceneId, int parapgraphIndex, const QList<int> &paragraphIdList,
                                      const QList<QUuid> &paragraphUuidList, const QList<QUuid> &uuidListToDelete,
-                                     const QList<QString> &texts)
+                                     const QList<QString> &texts, int cursorPosition)
         : m_sceneId(sceneId), m_parapgraphIndex(parapgraphIndex), m_paragraphIdList(paragraphIdList),
-          m_paragraphUuidList(paragraphUuidList), m_uuidListToDelete(uuidListToDelete), m_texts(texts)
+          m_paragraphUuidList(paragraphUuidList), m_uuidListToDelete(uuidListToDelete), m_texts(texts),
+          m_cursorPosition(cursorPosition)
     {
     }
 
     UpdateMultipleSceneParagraphsDTO(const UpdateMultipleSceneParagraphsDTO &other)
         : m_sceneId(other.m_sceneId), m_parapgraphIndex(other.m_parapgraphIndex),
           m_paragraphIdList(other.m_paragraphIdList), m_paragraphUuidList(other.m_paragraphUuidList),
-          m_uuidListToDelete(other.m_uuidListToDelete), m_texts(other.m_texts)
+          m_uuidListToDelete(other.m_uuidListToDelete), m_texts(other.m_texts), m_cursorPosition(other.m_cursorPosition)
     {
     }
 
@@ -53,6 +56,7 @@ class UpdateMultipleSceneParagraphsDTO
             m_paragraphUuidList = other.m_paragraphUuidList;
             m_uuidListToDelete = other.m_uuidListToDelete;
             m_texts = other.m_texts;
+            m_cursorPosition = other.m_cursorPosition;
         }
         return *this;
     }
@@ -133,6 +137,18 @@ class UpdateMultipleSceneParagraphsDTO
         m_texts = texts;
     }
 
+    // ------ cursorPosition : -----
+
+    int cursorPosition() const
+    {
+        return m_cursorPosition;
+    }
+
+    void setCursorPosition(int cursorPosition)
+    {
+        m_cursorPosition = cursorPosition;
+    }
+
   private:
     int m_sceneId;
     int m_parapgraphIndex;
@@ -140,6 +156,7 @@ class UpdateMultipleSceneParagraphsDTO
     QList<QUuid> m_paragraphUuidList;
     QList<QUuid> m_uuidListToDelete;
     QList<QString> m_texts;
+    int m_cursorPosition;
 };
 
 inline bool operator==(const UpdateMultipleSceneParagraphsDTO &lhs, const UpdateMultipleSceneParagraphsDTO &rhs)
@@ -147,7 +164,8 @@ inline bool operator==(const UpdateMultipleSceneParagraphsDTO &lhs, const Update
 
     return lhs.m_sceneId == rhs.m_sceneId && lhs.m_parapgraphIndex == rhs.m_parapgraphIndex &&
            lhs.m_paragraphIdList == rhs.m_paragraphIdList && lhs.m_paragraphUuidList == rhs.m_paragraphUuidList &&
-           lhs.m_uuidListToDelete == rhs.m_uuidListToDelete && lhs.m_texts == rhs.m_texts;
+           lhs.m_uuidListToDelete == rhs.m_uuidListToDelete && lhs.m_texts == rhs.m_texts &&
+           lhs.m_cursorPosition == rhs.m_cursorPosition;
 }
 
 inline uint qHash(const UpdateMultipleSceneParagraphsDTO &dto, uint seed = 0) noexcept
@@ -161,6 +179,7 @@ inline uint qHash(const UpdateMultipleSceneParagraphsDTO &dto, uint seed = 0) no
     hash ^= ::qHash(dto.m_paragraphUuidList, seed);
     hash ^= ::qHash(dto.m_uuidListToDelete, seed);
     hash ^= ::qHash(dto.m_texts, seed);
+    hash ^= ::qHash(dto.m_cursorPosition, seed);
 
     return hash;
 }

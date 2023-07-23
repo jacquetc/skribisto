@@ -9,7 +9,10 @@ qt6_add_qml_module(writing
 
     document_handler.h
     document_handler.cpp
+    from_markdown.h
+    to_markdown.h
 )
+target_include_directories(writing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_dependencies(writing skribisto-presenter)
 
