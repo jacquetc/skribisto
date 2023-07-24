@@ -434,6 +434,8 @@ application:
                   name: paragraphId
                 - type: QUuid
                   name: paragraphUuid
+                - type: int
+                  name: sceneId
                 - type: QUuid
                   name: sceneUuid
                 - type: int

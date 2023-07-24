@@ -46,11 +46,13 @@ void DocumentHandler::onContentsChange(int position, int charsRemoved, int chars
     //    cursor.insertText(markdown);
 
     UpdateSceneParagraphDTO dto;
+    dto.setSceneId(m_uuid);
     dto.setSceneUuid(m_uuidList.at(m_uuid));
     dto.setParagraphId(m_uuid);
     dto.setParagraphUuid(m_uuidList.at(m_uuid));
     dto.setText(markdown);
-    dto.setCursorPosition(position);
+    dto.setOldCursorPosition(position);
+    dto.setNewCursorPosition(position + charsAdded);
 
     Writing::WritingController::instance()->updateSceneParagraph(dto);
 }
