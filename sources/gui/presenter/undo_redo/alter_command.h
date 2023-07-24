@@ -28,6 +28,8 @@ template <class Handler, class Request> class AlterCommand : public UndoRedoComm
     bool mergeWith(const UndoRedoCommand *other) override
     {
         // Nothing to do
+
+        return false;
     }
 
   private:

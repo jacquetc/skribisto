@@ -540,7 +540,7 @@ void UndoRedoSystem::onCommandDoFinished(bool isSuccessful)
     if (nullptr != qobject_cast<QueryCommand *>(QObject::sender()) || command->obsolete())
     {
         stack->queue().removeLast();
-        m_activeStack->decrementCurrentIndex();
+        stack->decrementCurrentIndex();
     }
 
     // If there are commands in the queue, execute the next one
@@ -595,6 +595,7 @@ void UndoRedoSystem::executeNextCommandDo(const ScopeFlag &scopeFlag, const QUui
         // Execute the command asynchronously
         command->asyncRedo();
 
+
         // merge with previous command if possible
         if (!stack->queue().isEmpty() && stack->currentIndex() > 0)
         {
@@ -603,7 +604,7 @@ void UndoRedoSystem::executeNextCommandDo(const ScopeFlag &scopeFlag, const QUui
             {
                 previousCommand->setObsolete(true);
                 stack->queue().removeLast();
-                m_activeStack->decrementCurrentIndex();
+                stack->decrementCurrentIndex();
             }
         }
 
@@ -633,7 +634,7 @@ void UndoRedoSystem::executeNextCommandDo(const ScopeFlag &scopeFlag, const QUui
             while (stack->queue().size() > m_undoLimit)
             {
                 stack->queue().dequeue();
-                m_activeStack->decrementCurrentIndex();
+                stack->decrementCurrentIndex();
             }
         }
     }

@@ -51,6 +51,7 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
     Domain::Author m_updateEntity;
     bool m_exists;
     QMap<QString, QList<QVariantHash>> m_save;
+    QList<int>  m_relatedForeignIds;
 
     // InterfaceForeignEntity interface
   public:
@@ -60,10 +61,13 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
 
 inline Result<QList<int>> DummyDatabase::getRelatedForeignIds(const Domain::Author &entity, const QString &propertyName)
 {
+    return Result<QList<int>>(m_relatedForeignIds);
 }
 
 inline Result<QList<int>> DummyDatabase::getRelatedForeignIds(int entityId, const QString &propertyName)
 {
+    return Result<QList<int>>(m_relatedForeignIds);
+
 }
 
 inline void DummyDatabase::fillGet(const Domain::Author &entity)
