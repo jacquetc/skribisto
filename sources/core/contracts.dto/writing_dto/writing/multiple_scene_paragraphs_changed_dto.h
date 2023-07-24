@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QObject>
-#include <QString>
 #include <QUuid>
 
 namespace Contracts::DTO::Writing
@@ -12,6 +11,7 @@ class MultipleSceneParagraphsChangedDTO
     Q_GADGET
 
     Q_PROPERTY(int sceneId READ sceneId WRITE setSceneId)
+    Q_PROPERTY(QUuid sceneUuid READ sceneUuid WRITE setSceneUuid)
     Q_PROPERTY(int parapgraphIndex READ parapgraphIndex WRITE setParapgraphIndex)
     Q_PROPERTY(QList<int> paragraphIdList READ paragraphIdList WRITE setParagraphIdList)
     Q_PROPERTY(QList<QUuid> paragraphUuidList READ paragraphUuidList WRITE setParagraphUuidList)
@@ -21,8 +21,8 @@ class MultipleSceneParagraphsChangedDTO
 
   public:
     MultipleSceneParagraphsChangedDTO()
-        : m_sceneId(0), m_parapgraphIndex(0), m_paragraphIdList({}), m_paragraphUuidList({}), m_uuidListToDelete({}),
-          m_texts({}), m_cursorPosition(0)
+        : m_sceneId(0), m_sceneUuid(QUuid()), m_parapgraphIndex(0), m_paragraphIdList({}), m_paragraphUuidList({}),
+          m_uuidListToDelete({}), m_texts({}), m_cursorPosition(0)
     {
     }
 
@@ -30,17 +30,18 @@ class MultipleSceneParagraphsChangedDTO
     {
     }
 
-    MultipleSceneParagraphsChangedDTO(int sceneId, int parapgraphIndex, const QList<int> &paragraphIdList,
-                                      const QList<QUuid> &paragraphUuidList, const QList<QUuid> &uuidListToDelete,
-                                      const QList<QString> &texts, int cursorPosition)
-        : m_sceneId(sceneId), m_parapgraphIndex(parapgraphIndex), m_paragraphIdList(paragraphIdList),
-          m_paragraphUuidList(paragraphUuidList), m_uuidListToDelete(uuidListToDelete), m_texts(texts),
-          m_cursorPosition(cursorPosition)
+    MultipleSceneParagraphsChangedDTO(int sceneId, const QUuid &sceneUuid, int parapgraphIndex,
+                                      const QList<int> &paragraphIdList, const QList<QUuid> &paragraphUuidList,
+                                      const QList<QUuid> &uuidListToDelete, const QList<QString> &texts,
+                                      int cursorPosition)
+        : m_sceneId(sceneId), m_sceneUuid(sceneUuid), m_parapgraphIndex(parapgraphIndex),
+          m_paragraphIdList(paragraphIdList), m_paragraphUuidList(paragraphUuidList),
+          m_uuidListToDelete(uuidListToDelete), m_texts(texts), m_cursorPosition(cursorPosition)
     {
     }
 
     MultipleSceneParagraphsChangedDTO(const MultipleSceneParagraphsChangedDTO &other)
-        : m_sceneId(other.m_sceneId), m_parapgraphIndex(other.m_parapgraphIndex),
+        : m_sceneId(other.m_sceneId), m_sceneUuid(other.m_sceneUuid), m_parapgraphIndex(other.m_parapgraphIndex),
           m_paragraphIdList(other.m_paragraphIdList), m_paragraphUuidList(other.m_paragraphUuidList),
           m_uuidListToDelete(other.m_uuidListToDelete), m_texts(other.m_texts), m_cursorPosition(other.m_cursorPosition)
     {
@@ -51,6 +52,7 @@ class MultipleSceneParagraphsChangedDTO
         if (this != &other)
         {
             m_sceneId = other.m_sceneId;
+            m_sceneUuid = other.m_sceneUuid;
             m_parapgraphIndex = other.m_parapgraphIndex;
             m_paragraphIdList = other.m_paragraphIdList;
             m_paragraphUuidList = other.m_paragraphUuidList;
@@ -75,6 +77,18 @@ class MultipleSceneParagraphsChangedDTO
     void setSceneId(int sceneId)
     {
         m_sceneId = sceneId;
+    }
+
+    // ------ sceneUuid : -----
+
+    QUuid sceneUuid() const
+    {
+        return m_sceneUuid;
+    }
+
+    void setSceneUuid(const QUuid &sceneUuid)
+    {
+        m_sceneUuid = sceneUuid;
     }
 
     // ------ parapgraphIndex : -----
@@ -151,6 +165,7 @@ class MultipleSceneParagraphsChangedDTO
 
   private:
     int m_sceneId;
+    QUuid m_sceneUuid;
     int m_parapgraphIndex;
     QList<int> m_paragraphIdList;
     QList<QUuid> m_paragraphUuidList;
@@ -162,10 +177,10 @@ class MultipleSceneParagraphsChangedDTO
 inline bool operator==(const MultipleSceneParagraphsChangedDTO &lhs, const MultipleSceneParagraphsChangedDTO &rhs)
 {
 
-    return lhs.m_sceneId == rhs.m_sceneId && lhs.m_parapgraphIndex == rhs.m_parapgraphIndex &&
-           lhs.m_paragraphIdList == rhs.m_paragraphIdList && lhs.m_paragraphUuidList == rhs.m_paragraphUuidList &&
-           lhs.m_uuidListToDelete == rhs.m_uuidListToDelete && lhs.m_texts == rhs.m_texts &&
-           lhs.m_cursorPosition == rhs.m_cursorPosition;
+    return lhs.m_sceneId == rhs.m_sceneId && lhs.m_sceneUuid == rhs.m_sceneUuid &&
+           lhs.m_parapgraphIndex == rhs.m_parapgraphIndex && lhs.m_paragraphIdList == rhs.m_paragraphIdList &&
+           lhs.m_paragraphUuidList == rhs.m_paragraphUuidList && lhs.m_uuidListToDelete == rhs.m_uuidListToDelete &&
+           lhs.m_texts == rhs.m_texts && lhs.m_cursorPosition == rhs.m_cursorPosition;
 }
 
 inline uint qHash(const MultipleSceneParagraphsChangedDTO &dto, uint seed = 0) noexcept
@@ -174,6 +189,7 @@ inline uint qHash(const MultipleSceneParagraphsChangedDTO &dto, uint seed = 0) n
 
     // Combine with this class's properties
     hash ^= ::qHash(dto.m_sceneId, seed);
+    hash ^= ::qHash(dto.m_sceneUuid, seed);
     hash ^= ::qHash(dto.m_parapgraphIndex, seed);
     hash ^= ::qHash(dto.m_paragraphIdList, seed);
     hash ^= ::qHash(dto.m_paragraphUuidList, seed);

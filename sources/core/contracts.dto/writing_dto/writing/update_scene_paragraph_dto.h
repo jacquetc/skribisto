@@ -13,11 +13,13 @@ class UpdateSceneParagraphDTO
 
     Q_PROPERTY(int paragraphId READ paragraphId WRITE setParagraphId)
     Q_PROPERTY(QUuid paragraphUuid READ paragraphUuid WRITE setParagraphUuid)
+    Q_PROPERTY(QUuid sceneUuid READ sceneUuid WRITE setSceneUuid)
     Q_PROPERTY(QString text READ text WRITE setText)
     Q_PROPERTY(int cursorPosition READ cursorPosition WRITE setCursorPosition)
 
   public:
-    UpdateSceneParagraphDTO() : m_paragraphId(0), m_paragraphUuid(QUuid()), m_text(QString()), m_cursorPosition(0)
+    UpdateSceneParagraphDTO()
+        : m_paragraphId(0), m_paragraphUuid(QUuid()), m_sceneUuid(QUuid()), m_text(QString()), m_cursorPosition(0)
     {
     }
 
@@ -25,14 +27,16 @@ class UpdateSceneParagraphDTO
     {
     }
 
-    UpdateSceneParagraphDTO(int paragraphId, const QUuid &paragraphUuid, const QString &text, int cursorPosition)
-        : m_paragraphId(paragraphId), m_paragraphUuid(paragraphUuid), m_text(text), m_cursorPosition(cursorPosition)
+    UpdateSceneParagraphDTO(int paragraphId, const QUuid &paragraphUuid, const QUuid &sceneUuid, const QString &text,
+                            int cursorPosition)
+        : m_paragraphId(paragraphId), m_paragraphUuid(paragraphUuid), m_sceneUuid(sceneUuid), m_text(text),
+          m_cursorPosition(cursorPosition)
     {
     }
 
     UpdateSceneParagraphDTO(const UpdateSceneParagraphDTO &other)
-        : m_paragraphId(other.m_paragraphId), m_paragraphUuid(other.m_paragraphUuid), m_text(other.m_text),
-          m_cursorPosition(other.m_cursorPosition)
+        : m_paragraphId(other.m_paragraphId), m_paragraphUuid(other.m_paragraphUuid), m_sceneUuid(other.m_sceneUuid),
+          m_text(other.m_text), m_cursorPosition(other.m_cursorPosition)
     {
     }
 
@@ -42,6 +46,7 @@ class UpdateSceneParagraphDTO
         {
             m_paragraphId = other.m_paragraphId;
             m_paragraphUuid = other.m_paragraphUuid;
+            m_sceneUuid = other.m_sceneUuid;
             m_text = other.m_text;
             m_cursorPosition = other.m_cursorPosition;
         }
@@ -76,6 +81,18 @@ class UpdateSceneParagraphDTO
         m_paragraphUuid = paragraphUuid;
     }
 
+    // ------ sceneUuid : -----
+
+    QUuid sceneUuid() const
+    {
+        return m_sceneUuid;
+    }
+
+    void setSceneUuid(const QUuid &sceneUuid)
+    {
+        m_sceneUuid = sceneUuid;
+    }
+
     // ------ text : -----
 
     QString text() const
@@ -103,6 +120,7 @@ class UpdateSceneParagraphDTO
   private:
     int m_paragraphId;
     QUuid m_paragraphUuid;
+    QUuid m_sceneUuid;
     QString m_text;
     int m_cursorPosition;
 };
@@ -111,7 +129,8 @@ inline bool operator==(const UpdateSceneParagraphDTO &lhs, const UpdateScenePara
 {
 
     return lhs.m_paragraphId == rhs.m_paragraphId && lhs.m_paragraphUuid == rhs.m_paragraphUuid &&
-           lhs.m_text == rhs.m_text && lhs.m_cursorPosition == rhs.m_cursorPosition;
+           lhs.m_sceneUuid == rhs.m_sceneUuid && lhs.m_text == rhs.m_text &&
+           lhs.m_cursorPosition == rhs.m_cursorPosition;
 }
 
 inline uint qHash(const UpdateSceneParagraphDTO &dto, uint seed = 0) noexcept
@@ -121,6 +140,7 @@ inline uint qHash(const UpdateSceneParagraphDTO &dto, uint seed = 0) noexcept
     // Combine with this class's properties
     hash ^= ::qHash(dto.m_paragraphId, seed);
     hash ^= ::qHash(dto.m_paragraphUuid, seed);
+    hash ^= ::qHash(dto.m_sceneUuid, seed);
     hash ^= ::qHash(dto.m_text, seed);
     hash ^= ::qHash(dto.m_cursorPosition, seed);
 

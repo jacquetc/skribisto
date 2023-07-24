@@ -1733,13 +1733,38 @@
 <context>
     <name>MainScreenForm.ui</name>
     <message>
-        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="48"/>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="51"/>
         <source>Hello Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="58"/>
-        <source>Butto</source>
+        <source>Button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="62"/>
+        <source>Undo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="66"/>
+        <source>Redo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="78"/>
+        <source>Text Area</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="84"/>
+        <source>Text Area Bis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sources/gui/touch/content/MainScreenForm.ui.qml" line="95"/>
+        <source>Text Area Other</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3350,6 +3375,14 @@
         <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="295"/>
         <location filename="../../sources/gui/presenter/undo_redo/threaded_undo_redo_system.cpp" line="305"/>
         <source>Undo %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Presenter::Writing::WritingController</name>
+    <message>
+        <location filename="../../sources/gui/presenter/writing/writing_controller.cpp" line="46"/>
+        <source>Update scene paragraph</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

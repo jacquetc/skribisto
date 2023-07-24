@@ -361,6 +361,8 @@ application:
               fields:
                 - type: int
                   name: sceneId
+                - type: QUuid
+                  name: sceneUuid
                 - type: int
                   name: parapgraphIndex
                 - type: QList<int>
@@ -379,6 +381,8 @@ application:
               fields:
                 - type: int
                   name: sceneId
+                - type: QUuid
+                  name: sceneUuid
                 - type: int
                   name: parapgraphIndex
                 - type: QList<int>
@@ -410,6 +414,8 @@ application:
                   name: paragraphId
                 - type: QUuid
                   name: paragraphUuid
+                - type: QUuid
+                  name: sceneUuid
                 - type: QString
                   name: text
                 - type: int
@@ -422,6 +428,8 @@ application:
                   name: paragraphId
                 - type: QUuid
                   name: paragraphUuid
+                - type: QUuid
+                  name: sceneUuid
                 - type: QString
                   name: text
                 - type: int

@@ -2,6 +2,6 @@ import QtQuick
 
 QtObject {
 
-    property var textDocument
+    property var quickTextDocument
 
 }

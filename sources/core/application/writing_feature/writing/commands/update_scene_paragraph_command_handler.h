@@ -28,7 +28,7 @@ class SKRIBISTO_APPLICATION_WRITING_EXPORT UpdateSceneParagraphCommandHandler : 
     Result<SceneParagraphChangedDTO> restore();
 
   signals:
-    void updateSceneParagraphChanged(Contracts::DTO::Writing::SceneParagraphChangedDTO sceneParagraphChangedDto);
+    void sceneParagraphChanged(Contracts::DTO::Writing::SceneParagraphChangedDTO sceneParagraphChangedDto);
 
   private:
     QSharedPointer<InterfaceSceneRepository> m_sceneRepository;

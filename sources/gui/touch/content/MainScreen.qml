@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import Presenter
 import Models
+import Writing
 
 MainScreenForm {
 
@@ -25,5 +26,20 @@ MainScreenForm {
 
             ChapterController.create(dto)
         }
+    }
+
+    DocumentHandler {
+        quickTextDocument: textArea.textDocument
+        uuid: 1
+    }
+
+    DocumentHandler {
+        quickTextDocument: textAreaBis.textDocument
+        uuid: 1
+    }
+
+    DocumentHandler {
+        quickTextDocument: textAreaOther.textDocument
+        uuid: 2
     }
 }

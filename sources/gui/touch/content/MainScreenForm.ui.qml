@@ -16,6 +16,9 @@ Rectangle {
     height: Constants.height
 
     color: Constants.backgroundColor
+    property alias textAreaOther: textAreaOther
+    property alias textAreaBis: textAreaBis
+    property alias textArea: textArea
     property alias listView: listView
     property alias button: button
 
@@ -46,15 +49,51 @@ Rectangle {
 
         Text {
             text: qsTr("Hello Skribisto")
-            anchors.centerIn: parent
             font.family: Constants.font.family
         }
-    }
+        ColumnLayout {
+            Layout.fillHeight: true
+            Button {
+                id: button
+                text: qsTr("Button")
+            }
+            Button {
+                id: undoButton
+                text: qsTr("Undo")
+            }
+            Button {
+                id: redoButton
+                text: qsTr("Redo")
+            }
+        }
 
-    Button {
-        id: button
-        x: 280
-        y: 31
-        text: qsTr("Butto")
+        ColumnLayout {
+            id: columnLayout
+            Layout.minimumWidth: 340
+            Layout.fillHeight: true
+            TextArea {
+                id: textArea
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                placeholderText: qsTr("Text Area")
+            }
+            TextArea {
+                id: textAreaBis
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                placeholderText: qsTr("Text Area Bis")
+            }
+        }
+        ColumnLayout {
+            id: columnLayout2
+            Layout.minimumWidth: 340
+            Layout.fillHeight: true
+            TextArea {
+                id: textAreaOther
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                placeholderText: qsTr("Text Area Other")
+            }
+        }
     }
 }

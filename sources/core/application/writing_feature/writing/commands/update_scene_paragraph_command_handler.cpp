@@ -100,7 +100,7 @@ Result<SceneParagraphChangedDTO> UpdateSceneParagraphCommandHandler::handleImpl(
     m_newState = Result<SceneParagraphChangedDTO>(sceneParagraphChangedDTO);
 
     // emit signal
-    emit updateSceneParagraphChanged(sceneParagraphChangedDTO);
+    emit sceneParagraphChanged(sceneParagraphChangedDTO);
 
     // Return
     return Result<SceneParagraphChangedDTO>(sceneParagraphChangedDTO);
@@ -114,7 +114,7 @@ Result<SceneParagraphChangedDTO> UpdateSceneParagraphCommandHandler::restoreImpl
     // SceneParagraphChangedDTO>(m_newState);
     Q_UNIMPLEMENTED();
 
-    emit updateSceneParagraphChanged(sceneParagraphChangedDTO);
+    emit sceneParagraphChanged(sceneParagraphChangedDTO);
 
     return Result<SceneParagraphChangedDTO>(sceneParagraphChangedDTO);
 }

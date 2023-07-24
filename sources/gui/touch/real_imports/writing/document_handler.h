@@ -21,10 +21,15 @@ class DocumentHandler : public QObject
 
     Q_PROPERTY(QQuickTextDocument *quickTextDocument READ quickTextDocument WRITE setQuickTextDocument NOTIFY
                    quickTextDocumentChanged)
+    Q_PROPERTY(int uuid READ uuid WRITE setUuid) // temporary
 
   public:
+    explicit DocumentHandler(QObject *parent = nullptr);
     QQuickTextDocument *quickTextDocument() const;
     void setQuickTextDocument(QQuickTextDocument *quickTextDocument);
+
+    int uuid() const;
+    void setUuid(int newUuid);
 
   signals:
     void quickTextDocumentChanged();
@@ -35,4 +40,6 @@ class DocumentHandler : public QObject
   private:
     QQuickTextDocument *m_quickTextDocument;
     QTextDocument *m_textDocument;
+    int m_uuid; // temporary
+    QList<QUuid> m_uuidList;
 };

@@ -32,7 +32,8 @@ set(presenter_SRCS
     undo_redo/undo_redo_stack.h undo_redo/undo_redo_stack.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC ${presenter_SRCS})
+add_library(${PROJECT_NAME} STATIC ${presenter_SRCS}
+    writing/writing_controller.h writing/writing_controller.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -43,6 +44,7 @@ add_dependencies(${PROJECT_NAME} skribisto-application-feature-scene)
 add_dependencies(${PROJECT_NAME} skribisto-application-feature-chapter)
 add_dependencies(${PROJECT_NAME} skribisto-application-feature-author)
 add_dependencies(${PROJECT_NAME} skribisto-application-feature-system)
+add_dependencies(${PROJECT_NAME} skribisto-application-feature-writing)
 add_dependencies(${PROJECT_NAME} skribisto-infrastructure)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts)
@@ -50,6 +52,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application-feature-scene
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application-feature-chapter)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application-feature-author)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application-feature-system)
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-application-feature-writing)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-infrastructure)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
