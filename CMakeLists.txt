@@ -22,6 +22,15 @@ set(VERSION 0.2)
 
 project(skribisto VERSION ${SKR_VERSION} LANGUAGES CXX)
 
+
+# options
+
+option(SKR_BUILD_TESTS "Build tests" OFF)
+option(SKR_BUILD_DESKTOP "Build desktop" ON)
+option(SKR_BUILD_TOUCH "Build touch" ON)
+option(SKR_BUILD_TRANSLATIONS "Build translations" OFF)
+
+
 message("------------------CMAKE_SYSTEM_NAME---------------------")
 message("${CMAKE_SYSTEM_NAME}")
 
@@ -43,7 +52,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core)
 qt_standard_project_setup()
 set(CMAKE_AUTORCC ON)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR SKR_BUILD_TESTS)
   set(SKR_DEBUG true)
   add_compile_definitions(SKR_DEBUG=true)
   add_subdirectory(tests)
@@ -62,17 +71,25 @@ add_subdirectory(sources/core/infrastructure)
 add_subdirectory(sources/core/application)
 add_subdirectory(sources/gui/presenter)
 add_subdirectory(sources/gui/desktop)
-add_subdirectory(sources/gui/touch)
+if(SKR_BUILD_DESKTOP)
+  add_subdirectory(sources/gui/desktop)
+endif(SKR_BUILD_DESKTOP)
+if(SKR_BUILD_TOUCH)
+  add_subdirectory(sources/gui/touch)
+endif(SKR_BUILD_TOUCH)
 
 # temporary
-add_subdirectory(src/libskribisto-data/src)
-add_subdirectory(src/libskribisto-backend/src)
-add_subdirectory(src/libskribisto-common/src)
-add_subdirectory(src/libskribisto-exporter/src)
-add_subdirectory(src/libskribisto-importer/src)
-add_subdirectory(src/libskribisto-desktop-common/src)
-add_subdirectory(src/desktopapp)
-add_subdirectory(src/translations)
+#add_subdirectory(src/libskribisto-data/src)
+#add_subdirectory(src/libskribisto-backend/src)
+#add_subdirectory(src/libskribisto-common/src)
+#add_subdirectory(src/libskribisto-exporter/src)
+#add_subdirectory(src/libskribisto-importer/src)
+#add_subdirectory(src/libskribisto-desktop-common/src)
+#add_subdirectory(src/desktopapp)
+
+if(SKR_BUILD_TRANSLATIONS)
+  add_subdirectory(src/translations)
+endif(SKR_BUILD_TRANSLATIONS)
 
 # generate documentation
 find_program(QDOC_EXECUTABLE qdoc)

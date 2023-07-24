@@ -414,12 +414,18 @@ application:
                   name: paragraphId
                 - type: QUuid
                   name: paragraphUuid
+                - type: int
+                  name: sceneId
                 - type: QUuid
                   name: sceneUuid
+                - type: int
+                  name: paragraphIndexInScene
                 - type: QString
                   name: text
                 - type: int
-                  name: cursorPosition
+                  name: oldCursorPosition
+                - type: int
+                  name: newCursorPosition
             out:
               type_prefix: SceneParagraphChanged
               generate: True
@@ -430,10 +436,14 @@ application:
                   name: paragraphUuid
                 - type: QUuid
                   name: sceneUuid
+                - type: int
+                  name: paragraphIndexInScene
                 - type: QString
                   name: text
                 - type: int
-                  name: cursorPosition
+                  name: oldCursorPosition
+                - type: int
+                  name: newCursorPosition
       queries:
         - name: GetAllSceneParagraphs
           generate: true
