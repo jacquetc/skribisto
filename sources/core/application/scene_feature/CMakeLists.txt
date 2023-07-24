@@ -21,15 +21,17 @@ set(SRC
     scene/commands/move_scene_command_handler.cpp
     application_scene_export.h
 )
-qt_add_library(${PROJECT_NAME} SHARED ${SRC})
+qt_add_library(${PROJECT_NAME} STATIC ${SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC SKRIBISTO_APPLICATION_SCENE_LIBRARY)
 
+add_dependencies(${PROJECT_NAME} skribisto-domain)
 add_dependencies(${PROJECT_NAME} skribisto-contracts)
 add_dependencies(${PROJECT_NAME} skribisto-contracts-cqrs-scene)
 
+target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-domain)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts)
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-contracts-cqrs-scene)
 

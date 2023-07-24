@@ -16,7 +16,7 @@ set(infrastructure_SRCS
     skrib/skrib_file_configuration.h
 )
 
-add_library(${PROJECT_NAME} SHARED ${infrastructure_SRCS})
+add_library(${PROJECT_NAME} STATIC ${infrastructure_SRCS})
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC SKRIBISTO_INFRASTRUCTURE_LIBRARY)

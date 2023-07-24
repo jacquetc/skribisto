@@ -46,5 +46,5 @@ void WritingController::updateSceneParagraph(const UpdateSceneParagraphDTO &dto)
         WritingController::tr("Update scene paragraph"), handler, request);
 
     // push command
-    s_undo_redo_system->push(command, "sceneParagraph", dto.sceneUuid());
+    s_undo_redo_system->push(command, "scene", dto.sceneUuid());
 }

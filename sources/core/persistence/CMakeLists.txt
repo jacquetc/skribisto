@@ -35,13 +35,15 @@ file(READ "repositories.txt" repositories_files)
 # Convert the new-line separated paths into a CMake list
 string(REPLACE "\n" ";" repositories_files "${repositories_files}")
 
-add_library(skribisto-persistence SHARED ${persistence_SRCS} ${repositories_files})
+add_library(skribisto-persistence STATIC ${persistence_SRCS} ${repositories_files})
 target_include_directories(skribisto-persistence PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_compile_definitions(skribisto-persistence PUBLIC SKRIBISTO_PERSISTENCE_LIBRARY)
 
+add_dependencies(skribisto-persistence skribisto-domain)
 add_dependencies(skribisto-persistence skribisto-contracts)
 
+target_link_libraries(skribisto-persistence PRIVATE skribisto-domain)
 target_link_libraries(skribisto-persistence PUBLIC skribisto-contracts)
 target_link_libraries(skribisto-persistence PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql)
 

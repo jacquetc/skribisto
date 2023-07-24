@@ -18,10 +18,11 @@ file(READ "entities.txt" header_files)
 # Convert the new-line separated paths into a CMake list
 string(REPLACE "\n" ";" header_files "${header_files}")
 
-add_library(skribisto-domain SHARED ${domain_SRCS} ${header_files})
-target_include_directories(skribisto-domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(skribisto-domain STATIC ${domain_SRCS} ${header_files})
 
+target_include_directories(skribisto-domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(skribisto-domain PUBLIC SKRIBISTO_DOMAIN_LIBRARY)
+
 target_link_libraries(skribisto-domain PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 
 # ---------------------------------

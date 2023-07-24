@@ -61,6 +61,7 @@ template <class T> QStringList ForeignEntityTools<T>::getRelationshipTableColumn
     columns << "id" << getRelationshipEntityIdColumnName()
             << getRelationshipOtherEntityIdColumnName(otherEntityClassName) << "previous"
             << "next";
+    return columns;
 }
 
 //--------------------------------------------

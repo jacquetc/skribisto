@@ -38,7 +38,7 @@ file(READ "repositories.txt" repositories_files)
 # Convert the new-line separated paths into a CMake list
 string(REPLACE "\n" ";" repositories_files "${repositories_files}")
 
-add_library(skribisto-contracts SHARED ${contracts_SRCS} ${repositories_files}
+add_library(skribisto-contracts STATIC ${contracts_SRCS} ${repositories_files}
     automapper/automapper.cpp)
 
 

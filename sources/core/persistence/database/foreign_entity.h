@@ -534,7 +534,7 @@ template <class T> Result<void> ForeignEntity<T>::manageAfterTableClearing()
     return Result<void>();
 }
 
-inline template <class T> Result<SaveData> ForeignEntity<T>::save(const QList<int> &idList)
+template <class T> Result<SaveData> ForeignEntity<T>::save(const QList<int> &idList)
 {
     QMap<QString, QList<QVariantHash>> resultMap;
 
