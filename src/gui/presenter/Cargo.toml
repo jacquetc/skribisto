@@ -15,10 +15,10 @@ crate-type = ["staticlib"]
 
 
 cxx = "1.0.102"
-cxx-qt = "0.5.3"
-cxx-qt-lib = "0.5.3"
+cxx-qt = { path = "../../../cxx-qt" }
+cxx-qt-lib = { path = "../../../cxx-qt" }
 
 # cxx-qt-build generates C++ code from the `#[cxx_qt::bridge]` module
 # and compiles it together with the Rust static library
 [build-dependencies]
-cxx-qt-build = "0.5.3"
+cxx-qt-build = { path = "../../../cxx-qt" }
