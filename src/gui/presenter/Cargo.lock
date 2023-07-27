@@ -63,7 +63,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "scratch",
- "syn 2.0.27",
+ "syn",
 ]
 
 [[package]]
@@ -75,27 +75,23 @@ dependencies = [
  "codespan-reporting",
  "proc-macro2",
  "quote",
- "syn 2.0.27",
+ "syn",
 ]
 
 [[package]]
 name = "cxx-qt"
 version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2002fa000d687f8cf21abce76d85d4eceef638dcd2a146dc3f61b47e67d89220"
 dependencies = [
- "cxx-qt-gen",
- "proc-macro2",
- "syn 1.0.109",
+ "cxx",
+ "cxx-qt-macro",
 ]
 
 [[package]]
 name = "cxx-qt-build"
 version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e83a15e8f8f39677d2f9e62850bb79218db25d7a352b0f2134932bf5eb3fdff2"
 dependencies = [
  "cc",
+ "codespan-reporting",
  "convert_case",
  "cxx-gen",
  "cxx-qt-gen",
@@ -103,27 +99,24 @@ dependencies = [
  "proc-macro2",
  "qt-build-utils",
  "quote",
+ "version_check",
 ]
 
 [[package]]
 name = "cxx-qt-gen"
 version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "389cd0e44b265d2a23124006c2100571040bda5c0b74e98e9a3740f9abf309db"
 dependencies = [
  "clang-format",
  "convert_case",
  "indoc",
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn",
 ]
 
 [[package]]
 name = "cxx-qt-lib"
 version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cee7ccaf5fc9f0a4562aae0dcd387756dda0772571e0b9d0f255f542a970b50"
 dependencies = [
  "cxx",
  "cxx-build",
@@ -134,8 +127,15 @@ dependencies = [
 [[package]]
 name = "cxx-qt-lib-headers"
 version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7fa7bf31bd520d00536d27b9e26a265a1cba6d84ec544175f254c755406110c"
+
+[[package]]
+name = "cxx-qt-macro"
+version = "0.5.3"
+dependencies = [
+ "cxx-qt-gen",
+ "proc-macro2",
+ "syn",
+]
 
 [[package]]
 name = "cxxbridge-flags"
@@ -151,7 +151,7 @@ checksum = "b8fcfa71f66c8563c4fa9dd2bb68368d50267856f831ac5d85367e0805f9606c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.27",
+ "syn",
 ]
 
 [[package]]
@@ -183,6 +183,12 @@ checksum = "936cfd212a0155903bcbc060e316fb6cc7cbf2e1907329391ebadc1fe0ce77c2"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
@@ -235,6 +241,7 @@ dependencies = [
  "cxx-qt",
  "cxx-qt-build",
  "cxx-qt-lib",
+ "lazy_static",
 ]
 
 [[package]]
@@ -249,9 +256,8 @@ dependencies = [
 [[package]]
 name = "qt-build-utils"
 version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5ce806205819a87696bb9275c831be88a79592f035d4cc17d01625395cbe1da"
 dependencies = [
+ "cc",
  "thiserror",
  "versions",
 ]
@@ -270,17 +276,6 @@ name = "scratch"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3cf7c11c38cb994f3d40e8a8cde3bbd1f72a435e4c49e85d6553d8312306152"
-
-[[package]]
-name = "syn"
-version = "1.0.109"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
-dependencies = [
- "proc-macro2",
- "quote",
- "unicode-ident",
-]
 
 [[package]]
 name = "syn"
@@ -319,7 +314,7 @@ checksum = "090198534930841fab3a5d1bb637cde49e339654e606195f8d9c76eeb081dc96"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.27",
+ "syn",
 ]
 
 [[package]]
@@ -339,6 +334,12 @@ name = "unicode-width"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0edd1e5b14653f783770bce4a4dabb4a5108a5370a5f5d8cfe8710c361f6c8b"
+
+[[package]]
+name = "version_check"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "versions"

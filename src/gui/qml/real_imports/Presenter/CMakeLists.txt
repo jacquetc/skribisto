@@ -15,7 +15,7 @@ qt6_add_qml_module(foreign_presenter
 
 add_dependencies(foreign_presenter presenter_lib)
 
-target_link_libraries(foreign_presenter INTERFACE presenter_lib)
+target_link_libraries(foreign_presenter PRIVATE presenter_lib)
 
 target_link_libraries(foreign_presenter
     PRIVATE Qt6::Quick Qt6::Core Qt6::Qml

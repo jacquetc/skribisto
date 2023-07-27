@@ -13,12 +13,17 @@ crate-type = ["staticlib"]
 #tools = { path = "../core/tools" }
 #contracts-dto = { path = "../core/contracts-dto" }
 
+lazy_static = "1.4.0"
 
 cxx = "1.0.102"
-cxx-qt = { path = "../../../cxx-qt" }
-cxx-qt-lib = { path = "../../../cxx-qt" }
+cxx-qt = { path = "../../../../cxx-qt/crates/cxx-qt" }
+cxx-qt-lib = { path = "../../../../cxx-qt/crates/cxx-qt-lib" }
 
 # cxx-qt-build generates C++ code from the `#[cxx_qt::bridge]` module
 # and compiles it together with the Rust static library
 [build-dependencies]
-cxx-qt-build = { path = "../../../cxx-qt" }
+cxx-qt-build = { path = "../../../../cxx-qt/crates/cxx-qt-build" }
+
+[features]
+# This feature must be enabled for `cargo test` when linking Qt 6 statically.
+link_qt_object_files = [ "cxx-qt-build/link_qt_object_files" ]

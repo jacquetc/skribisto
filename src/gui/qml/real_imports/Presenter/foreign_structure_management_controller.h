@@ -1,5 +1,5 @@
 #pragma once
-#include "presenter_controller.h"
+#include "cxx-qt-gen/structure_management_controller.cxxqt.h"
 #include <QQmlEngine>
 
 struct StructureManagementController
@@ -12,11 +12,11 @@ struct StructureManagementController
   public:
     // Initialize this singleton instance with the given engine.
 
-    inline static Presenter::Author::AuthorController *s_singletonInstance = nullptr;
+    inline static presenter::structure_management::StructureManagementController *s_singletonInstance = nullptr;
 
-    static Presenter::Author::AuthorController *create(QQmlEngine *, QJSEngine *engine)
+    static presenter::structure_management::StructureManagementController *create(QQmlEngine *, QJSEngine *engine)
     {
-        s_singletonInstance = Presenter::Author::AuthorController::instance();
+        s_singletonInstance = presenter::structure_management::StructureManagementController::instance();
 
         // The instance has to exist before it is used. We cannot replace it.
         Q_ASSERT(s_singletonInstance);

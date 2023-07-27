@@ -1,6 +1,12 @@
-#[cxx_qt::bridge(namespace = "presenter::structure_management")]
+use lazy_static::lazy_static;
+
+#[cxx_qt::bridge(
+    cxx_file_stem = "structure_management_controller",
+    namespace = "presenter::structure_management"
+)]
 pub mod qobject {
 
+    #[namespace = ""]
     unsafe extern "C++" {
         include!("cxx-qt-lib/qstring.h");
         type QString = cxx_qt_lib::QString;
@@ -15,10 +21,12 @@ pub mod qobject {
 
     unsafe extern "RustQt" {
         #[qinvokable]
-        fn increment_number(self: Pin<&mut MyObject>);
+        fn increment_number(self: Pin<&mut StructureManagementController>);
 
         #[qinvokable]
-        fn say_hi(self: &MyObject, string: &QString, number: i32);
+        fn say_hi(self: &StructureManagementController, string: &QString, number: i32);
+
+        fn instance() -> Pin<Box<StructureManagementController>>;
     }
 }
 
@@ -47,5 +55,14 @@ impl qobject::StructureManagementController {
 
     pub fn say_hi(&self, string: &QString, number: i32) {
         println!("Hi from Rust! String is '{string}' and number is {number}");
+    }
+
+    fn instance() -> Pin<Box<Self>> {
+        lazy_static! {
+            static ref INSTANCE: Pin<Box<StructureManagementControllerRust>> =
+                Box::pin(StructureManagementControllerRust::default());
+        }
+
+        INSTANCE.clone()
     }
 }
