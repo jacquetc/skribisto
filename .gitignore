@@ -10,6 +10,9 @@ __pycache__/
 # C extensions
 *.so
 
+# rust
+target/
+
 cmake/build-*
 
 # Distribution / packaging
@@ -117,3 +120,7 @@ build-dir/
 
 #vscode
 .vscode/
+
+#skribisto
+build/
+vcpkg_installed/

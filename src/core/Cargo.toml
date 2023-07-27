@@ -1,0 +1,4 @@
+[workspace]
+members = [
+    "tools", "application" , "domain", "infrastructure", "contracts", "contracts-dto", "contracts-cqrs"
+    ]

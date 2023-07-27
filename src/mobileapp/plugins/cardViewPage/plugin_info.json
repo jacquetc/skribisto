@@ -1,9 +1,0 @@
-{
-    "type" :            "page",
-    "shortname" :       "CardViewPage",
-    "longname" :        "Skribisto Card View Page",
-    "version" :         "1.0",
-    "mandatory" :    false,
-    "activatedByDefault" :    true,
-    "dependencies" :    []
-}

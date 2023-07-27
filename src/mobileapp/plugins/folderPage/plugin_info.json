@@ -1,9 +1,0 @@
-{
-    "type" :            "page",
-    "shortname" :       "FolderPage",
-    "longname" :        "Skribisto Folder Page",
-    "version" :         "1.0",
-    "mandatory" :    true,
-    "activatedByDefault" :    true,
-    "dependencies" :    []
-}

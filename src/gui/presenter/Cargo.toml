@@ -1,0 +1,24 @@
+[package]
+name = "presenter"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+#application = { path = "../core/application" }
+#tools = { path = "../core/tools" }
+#contracts-dto = { path = "../core/contracts-dto" }
+
+
+cxx = "1.0.102"
+cxx-qt = "0.5.3"
+cxx-qt-lib = "0.5.3"
+
+# cxx-qt-build generates C++ code from the `#[cxx_qt::bridge]` module
+# and compiles it together with the Rust static library
+[build-dependencies]
+cxx-qt-build = "0.5.3"
