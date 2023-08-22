@@ -1,4 +1,3 @@
-use lazy_static::lazy_static;
 
 #[cxx_qt::bridge(
     cxx_file_stem = "structure_management_controller",
@@ -13,7 +12,7 @@ pub mod qobject {
     }
 
     unsafe extern "RustQt" {
-        #[cxx_qt::qobject]
+        #[qobject]
         #[qproperty(i32, number)]
         #[qproperty(QString, string)]
         type StructureManagementController = super::StructureManagementControllerRust;
@@ -26,7 +25,6 @@ pub mod qobject {
         #[qinvokable]
         fn say_hi(self: &StructureManagementController, string: &QString, number: i32);
 
-        fn instance() -> Pin<Box<StructureManagementController>>;
     }
 }
 
@@ -55,14 +53,5 @@ impl qobject::StructureManagementController {
 
     pub fn say_hi(&self, string: &QString, number: i32) {
         println!("Hi from Rust! String is '{string}' and number is {number}");
-    }
-
-    fn instance() -> Pin<Box<Self>> {
-        lazy_static! {
-            static ref INSTANCE: Pin<Box<StructureManagementControllerRust>> =
-                Box::pin(StructureManagementControllerRust::default());
-        }
-
-        INSTANCE.clone()
     }
 }

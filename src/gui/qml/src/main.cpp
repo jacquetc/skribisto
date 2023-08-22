@@ -3,8 +3,6 @@
 
 #include "app_environment.h"
 #include "import_qml_plugins.h"
-#include "persistence_registration.h"
-#include "presenter_registration.h"
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -13,9 +11,6 @@ int main(int argc, char *argv[])
 {
     set_qt_environment();
     QGuiApplication app(argc, argv);
-
-    auto persistence = new Persistence::PersistenceRegistration(&app);
-    new Presenter::PresenterRegistration(&app, persistence->repositoryProvider());
 
     QQmlApplicationEngine engine;
 

@@ -79,7 +79,7 @@ target_link_libraries(presenter_lib INTERFACE
 )
 
 # Link to the Rust library
-target_link_libraries(${PROJECT_NAME} PRIVATE presenter_lib)
+# target_link_libraries(${PROJECT_NAME} PRIVATE presenter_lib)
 
 # If we are using a statically linked Qt then we need to import any qml plugins
 qt_import_qml_plugins(${PROJECT_NAME})

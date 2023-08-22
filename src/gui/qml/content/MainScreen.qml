@@ -1,45 +1,47 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import Presenter
-import Models
-import Writing
 
 MainScreenForm {
 
-    listView.model: ChapterListModel
+    button.text: StructureManagementController.number
 
-    Connections {
-        target: ChapterController
-        function onChapterCreated(dto) {
-            var chapterDto = dto
-            console.log("dto", chapterDto)
-            console.log("dto.title", chapterDto.title)
-            button.text = chapterDto.title
-        }
-    }
+//    listView.model: ChapterListModel
 
-    Connections {
+//    Connections {
+//        target: ChapterController
+//        function onChapterCreated(dto) {
+//            var chapterDto = dto
+//            console.log("dto", chapterDto)
+//            console.log("dto.title", chapterDto.title)
+//            button.text = chapterDto.title
+//        }
+//    }
+
+   Connections {
         target: button
         onClicked: {
-            var dto = ChapterController.getCreateChapterDTO()
-            dto.title = "test chapter"
+            console.log(StructureManagementController.sayHi("a", 2))
+            StructureManagementController.incrementNumber()
+//            var dto = ChapterController.getCreateChapterDTO()
+//            dto.title = "test chapter"
 
-            ChapterController.create(dto)
+//            ChapterController.create(dto)
         }
     }
 
-    DocumentHandler {
-        quickTextDocument: textArea.textDocument
-        uuid: 1
-    }
+//    DocumentHandler {
+//        quickTextDocument: textArea.textDocument
+//        uuid: 1
+//    }
 
-    DocumentHandler {
-        quickTextDocument: textAreaBis.textDocument
-        uuid: 1
-    }
+//    DocumentHandler {
+//        quickTextDocument: textAreaBis.textDocument
+//        uuid: 1
+//    }
 
-    DocumentHandler {
-        quickTextDocument: textAreaOther.textDocument
-        uuid: 2
-    }
+//    DocumentHandler {
+//        quickTextDocument: textAreaOther.textDocument
+//        uuid: 2
+//    }
 }
