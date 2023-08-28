@@ -1,29 +1,32 @@
 #pragma once
 
 #include "{{ snake_name }}.h"
+{% for foreign_repository_header in foreign_repository_header_list %}
+#include {{ foreign_repository_header }}
+{% endfor %}
 #include "database/interface_database_table.h"
 #include "generic_repository.h"
 #include "persistence/interface_{{ snake_name }}_repository.h"
 #include "{{ export_header_file }}"
-#include <QObject>
+
+using namespace Contracts::Persistence;
 
 namespace Repository
 {
-class {{ export }} {{ name }}Repository : public QObject,
-                                          public Repository::GenericRepository<Domain::{{ name }}>,
+
+class {{ export }} {{ name }}Repository : public Repository::GenericRepository<Domain::{{ name }}>,
                                           public Contracts::Persistence::Interface{{ name }}Repository
 {
-    Q_OBJECT
-    Q_INTERFACES(Contracts::Persistence::Interface{{ name }}Repository)
   public:
-    explicit {{ name }}Repository(InterfaceDatabaseTable<Domain::{{ name }}> *{{ camel_name }}Database{{ foreign_database_table_constructor_arguments_string }});
+    explicit {{ name }}Repository(Domain::EntitySchema *entitySchema, InterfaceDatabaseTable<Domain::{{ name }}> *{{ camel_name }}Database{{ foreign_repository_constructor_arguments_string }});
 
     {% for loader_function in loader_function_list %}
     {{ loader_function }}
     {% endfor %}
+    QHash<int, QList<int>> removeInCascade(QList<int> ids) override;
 
-   private:
-    InterfaceDatabaseTable<Domain::{{ name }}> *m_{{ camel_name }}Database;
+  private:
+    Domain::EntitySchema *m_entitySchema;
     {% for loader_private_member in loader_private_member_list %}
     {{ loader_private_member }}
     {% endfor %}

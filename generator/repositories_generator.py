@@ -109,9 +109,25 @@ def generate_repository_files(
                 value["type_camel_name"] = stringcase.camelcase(key)
 
             if value["is_list"]:
-                value["type_name_only"] = key.split("<")[1].split(">")[0].strip()
+                value["type_name_only"] = stringcase.pascalcase(
+                    key.split("<")[1].split(">")[0].strip()
+                )
             else:
-                value["type_name_only"] = stringcase.camelcase(key)
+                value["type_name_only"] = stringcase.pascalcase(key)
+
+            if value["is_list"]:
+                value["type_pascal_name"] = stringcase.pascalcase(
+                    key.split("<")[1].split(">")[0].strip()
+                )
+            else:
+                value["type_pascal_name"] = stringcase.pascalcase(key)
+
+            if value["is_list"]:
+                value["type_snake_name"] = stringcase.snakecase(
+                    key.split("<")[1].split(">")[0].strip()
+                )
+            else:
+                value["type_snake_name"] = stringcase.snakecase(key)
 
             for field in entities_by_name[name]["fields"]:
                 field_type = field["type"]
@@ -121,27 +137,35 @@ def generate_repository_files(
                         field["name"]
                     )
 
-        foreign_database_table_constructor_arguments = []
+        foreign_repository_constructor_arguments = []
         if generate_lazy_loaders:
             for key, value in foreign_entities.items():
-                foreign_database_table_constructor_arguments.append(
-                    f"InterfaceDatabaseTable<Domain::{value['type_name_only']}> *{value['type_camel_name']}Database"
+                foreign_repository_constructor_arguments.append(
+                    f"Interface{value['type_pascal_name']}Repository *{value['type_camel_name']}Repository"
                 )
-        foreign_database_table_constructor_arguments_string = ", ".join(
-            foreign_database_table_constructor_arguments
+        foreign_repository_constructor_arguments_string = ", ".join(
+            foreign_repository_constructor_arguments
         )
-        foreign_database_table_constructor_arguments_string = (
-            ", " + foreign_database_table_constructor_arguments_string
-            if foreign_database_table_constructor_arguments
-            else foreign_database_table_constructor_arguments_string
+        foreign_repository_constructor_arguments_string = (
+            ", " + foreign_repository_constructor_arguments_string
+            if foreign_repository_constructor_arguments
+            else foreign_repository_constructor_arguments_string
         )
 
         loader_private_member_list = []
         if generate_lazy_loaders:
             for key, value in foreign_entities.items():
                 loader_private_member_list.append(
-                    f"InterfaceDatabaseTable<Domain::{value['type_name_only']}> *m_{value['type_camel_name']}Database;"
+                    f"Interface{value['type_pascal_name']}Repository *m_{value['type_camel_name']}Repository;"
                 )
+
+        foreign_repository_header_list = []
+        if generate_lazy_loaders:
+            for key, value in foreign_entities.items():
+                foreign_repository_header_list.append(
+                    f"\"persistence/interface_{value['type_snake_name']}_repository.h\""
+                )
+
         # loader functions like     Domain::Book::ChaptersLoader fetchChaptersLoader();
 
         loader_function_list = []
@@ -157,11 +181,12 @@ def generate_repository_files(
             pascal_name=pascal_name,
             snake_name=snake_name,
             camel_name=camel_name,
-            foreign_database_table_constructor_arguments_string=foreign_database_table_constructor_arguments_string,
+            foreign_repository_constructor_arguments_string=foreign_repository_constructor_arguments_string,
             loader_private_member_list=loader_private_member_list,
             loader_function_list=loader_function_list,
             export=export,
             export_header_file=export_header_file,
+            foreign_repository_header_list=foreign_repository_header_list,
         )
         output_file = os.path.join(path, f"{snake_name}_repository.h")
 
@@ -182,7 +207,7 @@ def generate_repository_files(
 
         fields_init_values = ", ".join(
             [
-                f"m_{value['type_camel_name']}Database({value['type_camel_name']}Database)"
+                f"m_{value['type_camel_name']}Repository({value['type_camel_name']}Repository)"
                 for key, value in foreign_entities.items()
             ]
         )
@@ -197,7 +222,7 @@ def generate_repository_files(
             snake_name=snake_name,
             camel_name=camel_name,
             foreign_entities=foreign_entities,
-            foreign_database_table_constructor_arguments_string=foreign_database_table_constructor_arguments_string,
+            foreign_repository_constructor_arguments_string=foreign_repository_constructor_arguments_string,
             fields_init_values=fields_init_values,
         )
         output_file = os.path.join(path, f"{snake_name}_repository.cpp")

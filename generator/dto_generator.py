@@ -205,6 +205,52 @@ def get_dto_dict_and_feature_ordered_dict(
                     if field["name"] != "id"
                 ]
 
+                # add owner id
+                if entities_by_name[entity_mappable_with].get("owner", False):
+                    owner_name_pascal = stringcase.pascalcase(
+                        entities_by_name[entity_mappable_with]["owner"].get("name", "")
+                    )
+                    owner_name_camel = stringcase.camelcase(
+                        entities_by_name[entity_mappable_with]["owner"].get("name", "")
+                    )
+                    dto_dict[dto_type_name]["fields"].append(
+                        {
+                            "name": f"{owner_name_camel}Id",
+                            "type": "int",
+                            "pascal_name": f"{owner_name_pascal}Id",
+                            "is_foreign": False,
+                        }
+                    )
+
+                    # add position if it has an owner and the field of owner entity is a QList
+                    owner = (
+                        entities_by_name[entity_mappable_with]
+                        .get("owner", {})
+                        .get("name", "")
+                    )
+                    owner_field = (
+                        entities_by_name[entity_mappable_with]
+                        .get("owner", {})
+                        .get("field", "")
+                    )
+
+                    owner_field_list = entities_by_name[owner].get("fields", [])
+                    owner_field_type = ""
+                    for field in owner_field_list:
+                        if field.get("name", "") == owner_field:
+                            owner_field_type = field.get("type", "")
+                            break
+
+                    if owner_field_type.count("QList") > 0:
+                        dto_dict[dto_type_name]["fields"].append(
+                            {
+                                "name": "position",
+                                "type": "int",
+                                "pascal_name": "Position",
+                                "is_foreign": False,
+                            }
+                        )
+
                 dto_dict[dto_type_name][
                     "dto_dependencies"
                 ] = determine_dto_dependencies_from_fields(

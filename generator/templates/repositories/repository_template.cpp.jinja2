@@ -1,40 +1,56 @@
 #include "{{ snake_name }}_repository.h"
+#ifdef QT_DEBUG
+#include <QObject>
+#include <QDebug>
+#endif
 
 using namespace Repository;
+using namespace Contracts::Persistence;
 
-{{ name }}Repository::{{ name }}Repository(InterfaceDatabaseTable<Domain::{{ name }}> *{{ camel_name }}Database{{ foreign_database_table_constructor_arguments_string }})
-    : QObject(nullptr), Repository::GenericRepository<Domain::{{ name }}>({{ camel_name }}Database){{ fields_init_values}}
+{{ name }}Repository::{{ name }}Repository(Domain::EntitySchema *entitySchema, InterfaceDatabaseTable<Domain::{{ name }}> *{{ camel_name }}Database{{ foreign_repository_constructor_arguments_string }})
+    : m_entitySchema(entitySchema), Repository::GenericRepository<Domain::{{ name }}>({{ camel_name }}Database){{ fields_init_values}}
 {
 }
 
 {% for key, value in foreign_entities.items() %}
 Domain::{{ name }}::{{ value["related_field_pascal_name"] }}Loader {{ name }}Repository::fetch{{ value["related_field_pascal_name"] }}Loader()
 {
+#ifdef QT_DEBUG
+  // verify the presence of "{{ value["related_field_name"] }}" property in the entity {{ name }} using staticMetaObject
+    int propertyIndex = Domain::{{ name }}::staticMetaObject.indexOfProperty("{{ value["related_field_name"] }}");
+    if (propertyIndex == -1)
+    {
+        qCritical() << "The entity {{ name }} doesn't have a property named {{ value["related_field_name"] }}";
+        qFatal("The application will now exit");
+    }
+#endif
+
+
     return [this](int entityId) {
-        auto result = m_{{ camel_name }}Database->getRelatedForeignIds(entityId, "{{ value["related_field_name"] }}");
+        auto result = this->databaseTable()->getRelatedForeignIds(entityId, "{{ value["related_field_name"] }}");
         if (result.isError())
         {
             qCritical() << result.error().code() << result.error().message() << result.error().data();
             {% if value["is_list"] %}
-            return QList<Domain::{{ value["type_name_only"] }}>();
+            return QList<Domain::{{ value["type_pascal_name"] }}>();
             {% else %}
-            return Domain::{{ value["type_name_only"] }}();
+            return Domain::{{ value["type_pascal_name"] }}();
             {% endif %}
         }
 
         QList<int> foreignIds = result.value();
         {% if value["is_list"] %}   
-        QList<Domain::{{ value["type_name_only"] }}> foreignEntities;
+        QList<Domain::{{ value["type_pascal_name"] }}> foreignEntities;
         for (int foreignId : foreignIds)
         {
-            foreignEntities.append(m_{{ value["type_camel_name"] }}Database->get(foreignId).value());
+            foreignEntities.append(m_{{ value["type_camel_name"] }}Repository->get(foreignId).value());
         }
         return foreignEntities;
         {% else %}
-        Domain::{{ value["type_name_only"] }} foreignEntity;
+        Domain::{{ value["type_pascal_name"] }} foreignEntity;
         if (foreignIds.size() > 0)
         {
-            foreignEntity = m_{{ value["type_camel_name"] }}Database->get(foreignIds[0]).value();
+            foreignEntity = m_{{ value["type_camel_name"] }}Repository->get(foreignIds[0]).value();
         }
         return foreignEntity;
         {% endif %}
@@ -45,3 +61,46 @@ Domain::{{ name }}::{{ value["related_field_pascal_name"] }}Loader {{ name }}Rep
 
 
 
+QHash<int, QList<int>> {{ name }}Repository::removeInCascade(QList<int> ids)
+{
+    QHash<int, QList<int>> returnedHashOfEntityWithRemovedIds;
+
+    {% for key, value in foreign_entities.items() %}
+           // remove the {{ value["related_field_name"] }} in cascade
+
+    Domain::EntitySchema::EntitySchemaRelationship {{ value["type_camel_name"] }}Relationship =
+        m_entitySchema->relationship(Domain::{{ name }}::enumValue(), "{{ value["related_field_name"] }}");
+
+    for (int entityId : ids)
+    {
+        if ({{ value["type_camel_name"] }}Relationship.dependency == Domain::EntitySchema::Strong)
+        {
+            {% if value["is_list"] %}
+            QList<Domain::{{ value["type_pascal_name"] }}> foreign{{ value["related_field_pascal_name"] }} = this->fetch{{ value["related_field_pascal_name"] }}Loader().operator()(entityId);            
+            {% else %}
+            Domain::{{ value["type_pascal_name"] }} foreign{{ value["related_field_pascal_name"] }} = this->fetch{{ value["related_field_pascal_name"] }}Loader().operator()(entityId);
+            {% endif %}
+
+            QList<int> foreignIds;
+
+            {% if value["is_list"] %}
+            for (const auto &{{ value["type_camel_name"] }} : foreign{{ value["related_field_pascal_name"] }})
+            {
+                foreignIds.append({{ value["type_camel_name"] }}.id());
+            }
+            {% else %}
+                foreignIds.append(foreign{{ value["related_field_pascal_name"] }}.id());
+            {% endif %}
+
+            returnedHashOfEntityWithRemovedIds.insert(m_{{ value["type_camel_name"] }}Repository->removeInCascade(foreignIds));
+        }
+    }
+    {% endfor %}
+
+           // finally remove the entites of this repository
+
+    Result<QList<int>> removedIds =  this->databaseTable()->remove(ids);
+    returnedHashOfEntityWithRemovedIds.insert(Domain::Entities::{{ name }}, removedIds.value());
+
+    return returnedHashOfEntityWithRemovedIds;
+}

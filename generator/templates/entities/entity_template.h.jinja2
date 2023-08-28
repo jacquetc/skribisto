@@ -5,6 +5,7 @@
 #include {{ header }}
 {% endfor %}
 #include {{ parent_header }}
+#include "entities.h"
 
 namespace Domain
 {
@@ -35,6 +36,11 @@ class {{ export }} {{ name }} : public {{ parent }}
 
     {{ name }}(const {{ name }} &other) : {{ parent }}(other){% for field in fields %}, m_{{ field.name }}(other.m_{{ field.name }}){% if field.need_lazy_loader %}, m_{{ field.name }}Loaded(other.m_{{ field.name }}Loaded){% endif %}{% endfor %}
     {
+    }
+
+    static Domain::Entities::EntityEnum enumValue()
+    {
+        return Domain::Entities::EntityEnum::{{ name }};
     }
 
     {{ name }} &operator=(const {{ name }} &other)

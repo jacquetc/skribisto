@@ -4,6 +4,7 @@
 #include "{{ contracts_export_header_file }}" 
 #include "interface_generic_repository.h"
 #include "interface_repository.h"
+#include "entity_schema.h"
 
 namespace Contracts::Persistence
 {
@@ -19,6 +20,8 @@ class {{ contracts_export }} Interface{{ name }}Repository
     {% for loader_function in loader_function_list_for_interface %}
     {{ loader_function }}
     {% endfor %}
+    virtual QHash<int, QList<int>> removeInCascade(QList<int> ids) = 0;
+
 };
 } // namespace Contracts::Persistence
 #define Interface{{ name }}Repository_iid "{{ inverted_app_domain }}.Contracts.Persistence.Interface{{ name }}Repository"

@@ -20,12 +20,18 @@ entities:
           name: updateDate
     - name: SceneParagraph
       parent: Entity
+      owner: 
+        name: Scene
+        field: paragraphs
       generate: true
       fields:
         - type: QString
           name: content
     - name: Scene
       parent: Entity
+      owner: 
+        name: Chapter
+        field: scenes
       generate: true
       fields:
         - type: QString
@@ -34,6 +40,9 @@ entities:
           name: paragraphs
     - name: Chapter
       parent: Entity
+      owner: 
+        name: Book
+        field: chapters
       generate: true
       fields:
         - type: QString
@@ -42,12 +51,17 @@ entities:
           name: scenes
     - name: Book
       parent: Entity
+      owner: 
+        name: Atelier
+        field: books
       generate: true
       fields:
         - type: QString
           name: title
         - type: QList<Chapter>
           name: chapters
+        - type: Author
+          name: author
     - name: Atelier
       parent: Entity
       generate: true
@@ -58,6 +72,9 @@ entities:
           name: books
     - name: Author
       parent: Entity
+      owner: 
+        name: Book
+        field: author
       generate: True
       fields:
         - type: QString
@@ -335,6 +352,205 @@ application:
           entity_mappable_with: SceneParagraph
       CRUD:
         enabled: false
+
+    - name: StructureManagement
+      DTO:
+        id_field: id
+        dto_identical_to_entity:
+          enabled: false
+      CRUD:
+        enabled: false
+      commands:
+        - name: CreateChapter
+          generate: true
+          entities:
+            - Book
+            - Chapter
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          undo: True
+          dto:
+            in:
+              type_prefix: CreateChapter
+              generate: True
+              fields:
+                - type: int
+                  name: bookId
+                - type: QString
+                  name: title
+                - type: int
+                  name: position
+            out:
+              type_prefix: ChapterCreated
+              generate: True
+              fields: 
+                - type: int
+                  name: bookId
+                - type: int
+                  name: chapterId
+                - type: QString
+                  name: title
+                - type: int
+                  name: position
+        - name: CreateScene
+          generate: true
+          entities:
+            - Chapter
+            - Scene
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          undo: True
+          dto:
+            in:
+              type_prefix: CreateScene
+              generate: True
+              fields:
+                - type: int
+                  name: chapterId
+                - type: QString
+                  name: title
+                - type: int
+                  name: position
+            out:
+              type_prefix: SceneCreated
+              generate: True
+              fields: 
+                - type: int
+                  name: chapterId
+                - type: int
+                  name: sceneId
+                - type: QString
+                  name: title
+                - type: int
+                  name: position
+        - name:  trashChapters
+          generate: true
+          entities:
+            - Book
+            - Chapter
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          undo: True
+          dto:
+            in:
+              type_prefix: trashChapters
+              generate: True
+              fields:
+                - type: int
+                  name: bookId
+                - type: QList<int>
+                  name: chapterIds
+            out:
+              type_prefix: ChaptersActiveStateChanged
+              generate: True
+              fields: 
+                - type: int
+                  name: bookId
+                - type: QList<int>
+                  name: chapterIds
+        - name:  trashScenes
+          generate: true
+          entities:
+            - Chapter
+            - Scene
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          undo: True
+          dto:
+            in:
+              type_prefix: trashScenes
+              generate: True
+              fields:
+                - type: int
+                  name: chapterId
+                - type: QList<int>
+                  name: sceneIds
+            out:
+              type_prefix: ScenesActiveStateChanged
+              generate: True
+              fields: 
+                - type: int
+                  name: chapterId
+                - type: QList<int>
+                  name: sceneIds
+        - name: moveChapters
+          generate: true
+          entities:
+            - Book
+            - Chapter
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          undo: True
+          dto:
+            in:
+              type_prefix: moveChapters
+              generate: True
+              fields:
+                - type: int
+                  name: originBookId
+                - type: QList<int>
+                  name: chapterIds
+                - type: int
+                  name: destinationBookId
+                - type: int
+                  name: position
+            out:
+              type_prefix: ChaptersMoved
+              generate: True
+              fields: 
+                - type: int
+                  name: originBookId
+                - type: QList<int>
+                  name: chapterIds
+                - type: int
+                  name: destinationBookId
+                - type: int
+                  name: position
+        - name: moveScenes
+          generate: true
+          entities:
+            - Chapter
+            - Scene
+          validator:
+            enabled: True
+            generate: True
+            check_if_exists: False
+          undo: True
+          dto:
+            in:
+              type_prefix: moveScenes
+              generate: True
+              fields:
+                - type: int
+                  name: originChapterId
+                - type: QList<int>
+                  name: sceneIds
+                - type: int
+                  name: destinationChapterId
+                - type: int
+                  name: position
+            out:
+              type_prefix: ScenesMoved
+              generate: True
+              fields: 
+                - type: int
+                  name: originChapterId
+                - type: QList<int>
+                  name: sceneIds
+                - type: int
+                  name: destinationChapterId
+                - type: int
+                  name: position
 
     - name: Writing
       DTO:

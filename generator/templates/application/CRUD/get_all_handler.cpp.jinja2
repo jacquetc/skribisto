@@ -4,7 +4,7 @@
 
 using namespace Application::Features::{{ feature_pascal_name }}::Queries;
 
-GetAll{{ entity_mappable_with_pascal }}QueryHandler::GetAll{{ entity_mappable_with_pascal }}QueryHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository>repository)
+GetAll{{ entity_mappable_with_pascal }}QueryHandler::GetAll{{ entity_mappable_with_pascal }}QueryHandler(Interface{{ entity_mappable_with_pascal }}Repository *repository)
     : m_repository(repository)
 {
     if (!s_mappingRegistered)

@@ -10,7 +10,7 @@ using namespace Contracts::CQRS::{{ feature_pascal_name }}::Validators;
 using namespace Application::Features::{{ feature_pascal_name }}::Commands;
 
 {{ command.pascal_name }}CommandHandler::{{ command.pascal_name }}CommandHandler({% for repository in command.repositories %}
-QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository {% if not loop.last %},{% endif %}{% endfor %})
+Interface{{ repository.pascal_name }}Repository *{{ repository.camel_name }}Repository {% if not loop.last %},{% endif %}{% endfor %})
     {% for repository in command.repositories %}{% if loop.first %}: {% endif %} m_{{ repository.camel_name }}Repository({{ repository.camel_name }}Repository){% if not loop.last %},{% endif %}{% endfor %}
 {
     if (!s_mappingRegistered)

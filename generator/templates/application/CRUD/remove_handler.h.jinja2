@@ -18,7 +18,7 @@ class {{ export }} Remove{{ entity_mappable_with_pascal }}CommandHandler : publ
 {
     Q_OBJECT
   public:
-    Remove{{ entity_mappable_with_pascal }}CommandHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> repository);
+    Remove{{ entity_mappable_with_pascal }}CommandHandler(Interface{{ entity_mappable_with_pascal }}Repository *repository);
     Result<int> handle(QPromise<Result<void>> &progressPromise, const Remove{{ entity_mappable_with_pascal }}Command &request);
     Result<int> restore();
 
@@ -27,7 +27,7 @@ class {{ export }} Remove{{ entity_mappable_with_pascal }}CommandHandler : publ
     void {{ entity_mappable_with_camel }}Removed(int id);
 
   private:
-    QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> m_repository;
+    Interface{{ entity_mappable_with_pascal }}Repository *m_repository;
     Result<int> handleImpl(QPromise<Result<void> >   & progressPromise, const Remove{{ entity_mappable_with_pascal }}Command &request);
     Result<int> restoreImpl();
     Domain::{{ entity_mappable_with_pascal }} m_oldState;

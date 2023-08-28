@@ -8,8 +8,8 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::{{ feature_pascal_name }}::Validators;
 using namespace Application::Features::{{ feature_pascal_name }}::Commands;
 
-Create{{ entity_mappable_with_pascal }}CommandHandler::Create{{ entity_mappable_with_pascal }}CommandHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository>repository)
-    : m_repository(repository)
+Create{{ entity_mappable_with_pascal }}CommandHandler::Create{{ entity_mappable_with_pascal }}CommandHandler(Interface{{ entity_mappable_with_pascal }}Repository *repository{% if has_owner %}, {% endif %} Interface{{ owner_name_pascal }}Repository *ownerRepository)
+    : m_repository(repository), m_ownerRepository(ownerRepository)
 {
     if (!s_mappingRegistered)
     {
@@ -56,8 +56,9 @@ Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal
 {
     qDebug() << "Create{{ entity_mappable_with_pascal }}CommandHandler::handleImpl called";
     Domain::{{ entity_mappable_with_pascal }} {{ entity_mappable_with_camel }};
+    Domain::{{ owner_name_pascal }} ownerEntity;
 
-    if (m_newState.isEmpty())
+    if (m_newEntity.isEmpty())
     {
         // Validate the create {{ entity_mappable_with_pascal }} command using the validator
         auto validator               = Create{{ entity_mappable_with_pascal }}CommandValidator(m_repository);
@@ -68,9 +69,11 @@ Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal
             return Result<{{ entity_mappable_with_pascal }}DTO>(validatorResult.error());
         }
 
+        Create{{ entity_mappable_with_pascal }}DTO createDTO = request.req;
+
         // Map the create {{ entity_mappable_with_pascal }} command to a domain {{ entity_mappable_with_pascal }} object and
         // generate a UUID
-        {{ entity_mappable_with_camel }} = AutoMapper::AutoMapper::map<Create{{ entity_mappable_with_pascal }}DTO, Domain::{{ entity_mappable_with_pascal }}>(request.req);
+        {{ entity_mappable_with_camel }} = AutoMapper::AutoMapper::map<Create{{ entity_mappable_with_pascal }}DTO, Domain::{{ entity_mappable_with_pascal }}>(createDTO);
 
         // allow for forcing the uuid
         if ({{ entity_mappable_with_camel }}.uuid().isNull())
@@ -81,13 +84,53 @@ Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal
         // Set the creation and update timestamps to the current date and time
         {{ entity_mappable_with_camel }}.setCreationDate(QDateTime::currentDateTime());
         {{ entity_mappable_with_camel }}.setUpdateDate(QDateTime::currentDateTime());
-    }
-    else
-    {
-        // Map the create {{ entity_mappable_with_camel }} command to a domain {{ entity_mappable_with_camel }} object and
-        // generate a UUID
-        {{ entity_mappable_with_camel }} = AutoMapper::AutoMapper::map<{{ entity_mappable_with_pascal }}DTO, Domain::{{ entity_mappable_with_pascal }}>(m_newState.value());
-    }
+
+        {% if has_owner %}
+        // Get the owner entity
+        int ownerId = createDTO.{{ owner_name_camel }}Id();
+
+        auto originalOwnerEntityResult = m_ownerRepository->get(ownerId);
+        if (Q_UNLIKELY(originalOwnerEntityResult.hasError()))
+        {
+            return Result<{{ entity_mappable_with_pascal }}DTO>(originalOwnerEntityResult.error());
+        }
+        auto originalOwnerEntity = originalOwnerEntityResult.value();
+        originalOwnerEntity.set{{ owner_field_pascal }}Loader(m_ownerRepository->fetch{{ owner_field_pascal }}Loader());
+
+        // force the fetching before saving the owner entity
+        auto {{ owner_field_camel }} = originalOwnerEntity.{{ owner_field_camel }}();
+
+        // save
+        m_oldOwnerEntity = originalOwnerEntity;
+
+        {% if owner_field_is_list %}
+        // Insert to the right position
+
+        int position = createDTO.position();
+        if(position == -1){
+            position = {{ owner_field_camel }}.count();
+        }
+        if(position > {{ owner_field_camel }}.count()){
+            position = {{ owner_field_camel }}.count();
+        }
+        else if(position < 0){
+            position = 0;
+        }
+
+        {{ owner_field_camel }}.insert(position, {{ entity_mappable_with_camel }});
+
+        {% endif %}
+        // Add the {{ entity_mappable_with_camel }} to the owner entity
+        originalOwnerEntity.set{{ owner_field_pascal }}({{ entity_mappable_with_camel }});
+    
+        {% endif %}
+        m_ownerEntityNewState = originalOwnerEntity;
+        ownerEntity = originalOwnerEntity;
+  }
+  else {
+    {{ entity_mappable_with_camel }} = m_newEntity.value();
+    ownerEntity = m_ownerEntityNewState;
+  }
 
     // Add the {{ entity_mappable_with_camel }} to the repository
 
@@ -99,12 +142,25 @@ Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal
         m_repository->cancelChanges();
         return Result<{{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}Result.error());
     }
+
+    {% if has_owner %}
+    // Apply the addition of the new entity to the owner entity
+
+    auto updatedOwnerEntityResult = m_ownerRepository->update(std::move(ownerEntity));
+
+    if (Q_UNLIKELY(updatedOwnerEntityResult.hasError()))
+    {
+        m_repository->cancelChanges();
+        return Result<{{ entity_mappable_with_pascal }}DTO>(updatedOwnerEntityResult.error());
+    }
+    {% endif %}
+
     m_repository->saveChanges();
 
+
+    m_newEntity = {{ entity_mappable_with_camel }}Result;
+
     auto {{ entity_mappable_with_camel }}DTO = AutoMapper::AutoMapper::map<Domain::{{ entity_mappable_with_pascal }}, {{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}Result.value());
-
-    m_newState = Result<{{ entity_mappable_with_pascal }}DTO>({{ entity_mappable_with_camel }}DTO);
-
     emit {{ entity_mappable_with_camel }}Created({{ entity_mappable_with_camel }}DTO);
 
     qDebug() << "{{ entity_mappable_with_pascal }} added:" << {{ entity_mappable_with_camel }}DTO.id();
@@ -116,7 +172,7 @@ Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal
 Result<{{ entity_mappable_with_pascal }}DTO>Create{{ entity_mappable_with_pascal }}CommandHandler::restoreImpl()
 {
 
-    auto deleteResult = m_repository->remove(m_newState.value().id());
+    auto deleteResult = m_repository->remove(m_newEntity.value().id());
 
     if (Q_UNLIKELY(deleteResult.hasError()))
     {

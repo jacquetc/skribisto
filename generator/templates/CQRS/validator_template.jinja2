@@ -18,7 +18,7 @@ namespace Contracts::CQRS::{{ validator.feature_name_pascal }}::Validators
 class {{ validator.name }}
 {
   public:
-    {{ validator.name }}({% for repository in validator.repositories %}QSharedPointer<Interface{{ repository.pascal_name }}Repository> {{ repository.camel_name }}Repository{% if not loop.last %},{% endif %}{% endfor %})
+    {{ validator.name }}({% for repository in validator.repositories %}Interface{{ repository.pascal_name }}Repository *{{ repository.camel_name }}Repository{% if not loop.last %},{% endif %}{% endfor %})
         {% for repository in validator.repositories %}{% if loop.first %}: {% endif %} m_{{ repository.camel_name }}Repository({{ repository.camel_name }}Repository){% if not loop.last %},{% endif %}{% endfor %}
     {
     }
@@ -50,7 +50,7 @@ class {{ validator.name }}
 
   private:
 {% for repository in validator.repositories %}
-    QSharedPointer<Interface{{ repository.pascal_name }}Repository> m_{{ repository.camel_name }}Repository;
+    Interface{{ repository.pascal_name }}Repository *m_{{ repository.camel_name }}Repository;
 {% endfor %}
 };
 } // namespace Contracts::CQRS::{{ validator.feature_name_pascal }}::Validators

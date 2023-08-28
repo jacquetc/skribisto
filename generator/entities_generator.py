@@ -230,14 +230,14 @@ def generate_entity_files(
 
     output_file = os.path.join(path, "domain_registration.h")
 
-    if files_to_be_generated.get(output_file, False):
+    # if files_to_be_generated.get(output_file, False):
 
-        # Add the generated file to the list
-        generated_files.append(output_file)
+        # # Add the generated file to the list
+        # generated_files.append(output_file)
 
-        with open(output_file, "w") as fh:
-            fh.write(rendered_template)
-            print(f"Successfully wrote file {output_file}")
+        # with open(output_file, "w") as fh:
+            # fh.write(rendered_template)
+            # print(f"Successfully wrote file {output_file}")
 
     if files_to_be_generated.get(entities_list_file, False):
         # After the loop, write the list of generated files to a file

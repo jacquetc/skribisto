@@ -17,11 +17,11 @@ class {{ export }} Get{{ entity_mappable_with_pascal }}QueryHandler  : public Q
 {
     Q_OBJECT
   public:
-    Get{{ entity_mappable_with_pascal }}QueryHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> repository);
+    Get{{ entity_mappable_with_pascal }}QueryHandler(Interface{{ entity_mappable_with_pascal }}Repository *repository);
     Result<{{ entity_mappable_with_pascal }}DTO> handle(QPromise<Result<void>> &progressPromise, const Get{{ entity_mappable_with_pascal }}Query &query);
 
   private:
-    QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> m_repository;
+    Interface{{ entity_mappable_with_pascal }}Repository *m_repository;
     Result<{{ entity_mappable_with_pascal }}DTO> handleImpl(QPromise<Result<void> >   & progressPromise, const Get{{ entity_mappable_with_pascal }}Query &query);
     static bool s_mappingRegistered;
     void registerMappings();

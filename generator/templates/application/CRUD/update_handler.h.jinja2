@@ -19,7 +19,7 @@ class {{ export }} Update{{ entity_mappable_with_pascal }}CommandHandler : publ
 {
     Q_OBJECT
   public:
-    Update{{ entity_mappable_with_pascal }}CommandHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> repository);
+    Update{{ entity_mappable_with_pascal }}CommandHandler(Interface{{ entity_mappable_with_pascal }}Repository *repository);
     Result<{{ entity_mappable_with_pascal }}DTO> handle(QPromise<Result<void>> &progressPromise, const Update{{ entity_mappable_with_pascal }}Command &request);
     Result<{{ entity_mappable_with_pascal }}DTO> restore();
 
@@ -27,7 +27,7 @@ class {{ export }} Update{{ entity_mappable_with_pascal }}CommandHandler : publ
     void {{ entity_mappable_with_camel }}Updated(Contracts::DTO::{{ entity_mappable_with_pascal }}::{{ entity_mappable_with_pascal }}DTO {{ entity_mappable_with_camel }}Dto);
 
   private:
-    QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> m_repository;
+    Interface{{ entity_mappable_with_pascal }}Repository *m_repository;
     Result<{{ entity_mappable_with_pascal }}DTO> handleImpl(QPromise<Result<void> >   & progressPromise, const Update{{ entity_mappable_with_pascal }}Command &request);
     Result<{{ entity_mappable_with_pascal }}DTO> restoreImpl();
     Result<{{ entity_mappable_with_pascal }}DTO> saveOldState();

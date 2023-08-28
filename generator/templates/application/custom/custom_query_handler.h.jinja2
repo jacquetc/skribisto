@@ -19,7 +19,7 @@ class {{ export }} {{ query.pascal_name }}QueryHandler : public QObject
     Q_OBJECT
   public:
     {{ query.pascal_name }}QueryHandler({% for repository in query.repositories %}
-QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.camel_name }}Repository {% if not loop.last %},{% endif %}{% endfor %});
+Interface{{ repository.pascal_name }}Repository *{{ repository.camel_name }}Repository {% if not loop.last %},{% endif %}{% endfor %});
 
     Result<{{ query.dto_out_pascal_name }}> handle(QPromise<Result<void>> &progressPromise, const {{ query.pascal_name }}Query &request);
 
@@ -28,7 +28,7 @@ QSharedPointer<Interface{{ repository.pascal_name }}Repository>{{ repository.cam
 
   private:
   {% for repository in query.repositories %}
-    QSharedPointer<Interface{{ repository.pascal_name }}Repository> m_{{ repository.camel_name }}Repository;
+    Interface{{ repository.pascal_name }}Repository *m_{{ repository.camel_name }}Repository;
   {%- endfor %}
     Result<{{ query.dto_out_pascal_name }}> handleImpl(QPromise<Result<void> >   & progressPromise, const {{ query.pascal_name }}Query &request);
     static bool s_mappingRegistered;

@@ -7,7 +7,7 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::{{ feature_pascal_name }}::Commands;
 using namespace Application::Features::{{ feature_pascal_name }}::Commands;
 
-Remove{{ entity_mappable_with_pascal }}CommandHandler::Remove{{ entity_mappable_with_pascal }}CommandHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository>repository)
+Remove{{ entity_mappable_with_pascal }}CommandHandler::Remove{{ entity_mappable_with_pascal }}CommandHandler(Interface{{ entity_mappable_with_pascal }}Repository *repository)
     : m_repository(repository)
 {
     if (!s_mappingRegistered)

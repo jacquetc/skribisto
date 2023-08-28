@@ -4,6 +4,9 @@
 #include "{{ feature_snake_name }}/{{ entity_mappable_with_snake }}_dto.h"
 #include "{{ feature_snake_name }}/commands/create_{{ entity_mappable_with_snake }}_command.h"
 #include "persistence/interface_{{ entity_mappable_with_snake }}_repository.h"
+{% if has_owner %} 
+#include "persistence/interface_{{ owner_name_snake }}_repository.h"
+{% endif %}
 #include "result.h"
 #include <QPromise>
 
@@ -17,7 +20,7 @@ class {{ export }} Create{{ entity_mappable_with_pascal }}CommandHandler : publ
 {
     Q_OBJECT
   public:
-    Create{{ entity_mappable_with_pascal }}CommandHandler(QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> repository);
+    Create{{ entity_mappable_with_pascal }}CommandHandler(Interface{{ entity_mappable_with_pascal }}Repository *repository{% if has_owner %}, {% endif %} Interface{{ owner_name_pascal }}Repository *ownerRepository);
 
     Result<{{ entity_mappable_with_pascal }}DTO> handle(QPromise<Result<void>> &progressPromise, const Create{{ entity_mappable_with_pascal }}Command &request);
     Result<{{ entity_mappable_with_pascal }}DTO> restore();
@@ -27,10 +30,13 @@ class {{ export }} Create{{ entity_mappable_with_pascal }}CommandHandler : publ
     void {{ entity_mappable_with_camel }}Removed(int id);
 
   private:
-    QSharedPointer<Interface{{ entity_mappable_with_pascal }}Repository> m_repository; // A pointer to the interface repositories object.
+    Interface{{ entity_mappable_with_pascal }}Repository *m_repository;
+    Interface{{ owner_name_pascal }}Repository *m_ownerRepository; 
     Result<{{ entity_mappable_with_pascal }}DTO> handleImpl(QPromise<Result<void> >   & progressPromise, const Create{{ entity_mappable_with_pascal }}Command &request);
     Result<{{ entity_mappable_with_pascal }}DTO> restoreImpl();
-    Result<{{ entity_mappable_with_pascal }}DTO> m_newState;
+    Domain::{{ owner_name_pascal }} m_oldOwnerEntity;
+    Result<Domain::{{ entity_mappable_with_pascal }}> m_newEntity;
+    Domain::{{ owner_name_pascal }} m_ownerEntityNewState;
     static bool s_mappingRegistered;
     void registerMappings();
 };

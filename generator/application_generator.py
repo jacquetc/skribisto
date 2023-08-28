@@ -56,6 +56,21 @@ def get_generation_dict(
         if crud_data.get("enabled", False):
             create_data = crud_data.get("create", {})
             if create_data.get("enabled", False) and create_data.get("generate", True):
+                # find out if the owner field is a list
+                owner_fields = entities_by_name.get(
+                    entities_by_name[entity_mappable_with_pascal]
+                    .get("owner", {})
+                    .get("name", ""),
+                    {},
+                ).get("fields", [])
+                for owner_field in owner_fields:
+                    if owner_field.get("type", "").count("QList<") > 0:
+                        owner_field_is_list = True
+                        break
+                    else:
+                        owner_field_is_list = False
+
+                # fill crud_handlers for create
                 crud_handlers["create"] = {
                     "generate": True,
                     "templates": [
@@ -83,6 +98,43 @@ def get_generation_dict(
                     "entity_mappable_with_camel": stringcase.camelcase(
                         entity_mappable_with
                     ),
+                    # unique to create : need to add the new entity to the owner entity
+                    "has_owner": True
+                    if entities_by_name[entity_mappable_with_pascal]
+                    .get("owner", {})
+                    .get("name", None)
+                    else False,
+                    "owner_name_snake": stringcase.snakecase(
+                        entities_by_name[entity_mappable_with_pascal]
+                        .get("owner", {})
+                        .get("name", None)
+                    ),
+                    "owner_name_pascal": stringcase.pascalcase(
+                        entities_by_name[entity_mappable_with_pascal]
+                        .get("owner", {})
+                        .get("name", None)
+                    ),
+                    "owner_name_camel": stringcase.camelcase(
+                        entities_by_name[entity_mappable_with_pascal]
+                        .get("owner", {})
+                        .get("name", None)
+                    ),
+                    "owner_field_snake": stringcase.snakecase(
+                        entities_by_name[entity_mappable_with_pascal]
+                        .get("owner", {})
+                        .get("field", None)
+                    ),
+                    "owner_field_pascal": stringcase.pascalcase(
+                        entities_by_name[entity_mappable_with_pascal]
+                        .get("owner", {})
+                        .get("field", None)
+                    ),
+                    "owner_field_camel": stringcase.camelcase(
+                        entities_by_name[entity_mappable_with_pascal]
+                        .get("owner", {})
+                        .get("field", None)
+                    ),
+                    "owner_field_is_list": owner_field_is_list,
                 }
             remove_data = crud_data.get("remove", {})
             if remove_data.get("enabled", False) and remove_data.get("generate", True):
@@ -632,6 +684,13 @@ def generate_crud_handler(
                     entity_mappable_with_snake=handler["entity_mappable_with_snake"],
                     entity_mappable_with_camel=handler["entity_mappable_with_camel"],
                     lazy_load_pascal_fields=handler.get("lazy_load_pascal_fields", []),
+                    has_owner=handler.get("has_owner", False),
+                    owner_name_snake=handler.get("owner_name_snake", ""),
+                    owner_name_pascal=handler.get("owner_name_pascal", ""),
+                    owner_name_camel=handler.get("owner_name_camel", ""),
+                    owner_field_snake=handler.get("owner_field_snake", ""),
+                    owner_field_pascal=handler.get("owner_field_pascal", ""),
+                    owner_field_camel=handler.get("owner_field_camel", ""),
                 )
             )
             print(f"Successfully wrote file {file_path}")
