@@ -3,7 +3,6 @@
     "name": "skribisto",
     "version": "0.0.1",
     "dependencies": [
-      "hunspell",
       "vulkan-headers"
     ]
 

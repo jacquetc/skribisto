@@ -19,9 +19,8 @@ class SKRIBISTO_APPLICATION_WRITING_EXPORT UpdateMultipleSceneParagraphsCommandH
 {
     Q_OBJECT
   public:
-    UpdateMultipleSceneParagraphsCommandHandler(
-        QSharedPointer<InterfaceSceneRepository> sceneRepository,
-        QSharedPointer<InterfaceSceneParagraphRepository> sceneParagraphRepository);
+    UpdateMultipleSceneParagraphsCommandHandler(InterfaceSceneRepository *sceneRepository,
+                                                InterfaceSceneParagraphRepository *sceneParagraphRepository);
 
     Result<MultipleSceneParagraphsChangedDTO> handle(QPromise<Result<void>> &progressPromise,
                                                      const UpdateMultipleSceneParagraphsCommand &request);

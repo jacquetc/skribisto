@@ -20,7 +20,8 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Test Core REQUIRED)
 #qt_add_resources(RESOURCES ${QRC})
 
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp ${RESOURCES}
-    dummy_author_repository.h)
+    dummy_author_repository.h
+    dummy_book_repository.h)
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
 
 add_dependencies(${PROJECT_NAME} skribisto-contracts-dto-author)

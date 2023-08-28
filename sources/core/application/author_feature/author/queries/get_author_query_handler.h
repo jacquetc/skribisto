@@ -17,11 +17,11 @@ class SKRIBISTO_APPLICATION_AUTHOR_EXPORT GetAuthorQueryHandler : public QObject
 {
     Q_OBJECT
   public:
-    GetAuthorQueryHandler(QSharedPointer<InterfaceAuthorRepository> repository);
+    GetAuthorQueryHandler(InterfaceAuthorRepository *repository);
     Result<AuthorDTO> handle(QPromise<Result<void>> &progressPromise, const GetAuthorQuery &query);
 
   private:
-    QSharedPointer<InterfaceAuthorRepository> m_repository;
+    InterfaceAuthorRepository *m_repository;
     Result<AuthorDTO> handleImpl(QPromise<Result<void>> &progressPromise, const GetAuthorQuery &query);
     static bool s_mappingRegistered;
     void registerMappings();

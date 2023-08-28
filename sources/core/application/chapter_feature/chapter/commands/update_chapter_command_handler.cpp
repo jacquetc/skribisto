@@ -9,7 +9,7 @@ using namespace Contracts::CQRS::Chapter::Commands;
 using namespace Contracts::CQRS::Chapter::Validators;
 using namespace Application::Features::Chapter::Commands;
 
-UpdateChapterCommandHandler::UpdateChapterCommandHandler(QSharedPointer<InterfaceChapterRepository> repository)
+UpdateChapterCommandHandler::UpdateChapterCommandHandler(InterfaceChapterRepository *repository)
     : m_repository(repository)
 {
     if (!s_mappingRegistered)

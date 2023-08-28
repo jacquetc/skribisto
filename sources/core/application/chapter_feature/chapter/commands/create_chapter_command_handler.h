@@ -17,7 +17,7 @@ class SKRIBISTO_APPLICATION_CHAPTER_EXPORT CreateChapterCommandHandler : public 
 {
     Q_OBJECT
   public:
-    CreateChapterCommandHandler(QSharedPointer<InterfaceChapterRepository> repository);
+    CreateChapterCommandHandler(InterfaceChapterRepository *repository);
 
     Result<ChapterDTO> handle(QPromise<Result<void>> &progressPromise, const CreateChapterCommand &request);
     Result<ChapterDTO> restore();
@@ -27,7 +27,7 @@ class SKRIBISTO_APPLICATION_CHAPTER_EXPORT CreateChapterCommandHandler : public 
     void chapterRemoved(int id);
 
   private:
-    QSharedPointer<InterfaceChapterRepository> m_repository; // A pointer to the interface repositories object.
+    InterfaceChapterRepository *m_repository; // A pointer to the interface repositories object.
     Result<ChapterDTO> handleImpl(QPromise<Result<void>> &progressPromise, const CreateChapterCommand &request);
     Result<ChapterDTO> restoreImpl();
     Result<ChapterDTO> m_newState;

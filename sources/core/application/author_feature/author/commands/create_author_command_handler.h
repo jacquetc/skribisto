@@ -4,6 +4,9 @@
 #include "author/author_dto.h"
 #include "author/commands/create_author_command.h"
 #include "persistence/interface_author_repository.h"
+
+#include "persistence/interface_book_repository.h"
+
 #include "result.h"
 #include <QPromise>
 
@@ -17,7 +20,7 @@ class SKRIBISTO_APPLICATION_AUTHOR_EXPORT CreateAuthorCommandHandler : public QO
 {
     Q_OBJECT
   public:
-    CreateAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository> repository);
+    CreateAuthorCommandHandler(InterfaceAuthorRepository *repository, InterfaceBookRepository *ownerRepository);
 
     Result<AuthorDTO> handle(QPromise<Result<void>> &progressPromise, const CreateAuthorCommand &request);
     Result<AuthorDTO> restore();
@@ -27,10 +30,13 @@ class SKRIBISTO_APPLICATION_AUTHOR_EXPORT CreateAuthorCommandHandler : public QO
     void authorRemoved(int id);
 
   private:
-    QSharedPointer<InterfaceAuthorRepository> m_repository; // A pointer to the interface repositories object.
+    InterfaceAuthorRepository *m_repository;
+    InterfaceBookRepository *m_ownerRepository;
     Result<AuthorDTO> handleImpl(QPromise<Result<void>> &progressPromise, const CreateAuthorCommand &request);
     Result<AuthorDTO> restoreImpl();
-    Result<AuthorDTO> m_newState;
+    Domain::Book m_oldOwnerEntity;
+    Result<Domain::Author> m_newEntity;
+    Domain::Book m_ownerEntityNewState;
     static bool s_mappingRegistered;
     void registerMappings();
 };

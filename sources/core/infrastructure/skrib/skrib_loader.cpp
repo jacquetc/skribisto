@@ -9,9 +9,10 @@ using namespace Infrastructure::Skrib;
 using namespace Contracts::Persistence;
 
 SkribLoader::SkribLoader(InterfaceRepositoryProvider *repositoryProvider) : m_repositoryProvider(repositoryProvider)
-{}
+{
+}
 
-Result<void>SkribLoader::load(QPromise<Result<void> >& progressPromise, const LoadSystemDTO& dto)
+Result<void> SkribLoader::load(QPromise<Result<void>> &progressPromise, const LoadSystemDTO &dto)
 {
     QString databaseName;
 
@@ -51,8 +52,8 @@ Result<void>SkribLoader::load(QPromise<Result<void> >& progressPromise, const Lo
     return Result<void>();
 }
 
-Result<void>SkribLoader::loadDatabase(QPromise<Result<void> >& progressPromise, const QUrl& fileName,
-                                      QString& databaseName)
+Result<void> SkribLoader::loadDatabase(QPromise<Result<void>> &progressPromise, const QUrl &fileName,
+                                       QString &databaseName)
 {
     progressPromise.setProgressValueAndText(0, "loading file");
 
@@ -120,7 +121,7 @@ Result<void>SkribLoader::loadDatabase(QPromise<Result<void> >& progressPromise, 
     return Result<void>();
 }
 
-Result<void>SkribLoader::updateDatabase(QPromise<Result<void> >& progressPromise, QString& databaseName)
+Result<void> SkribLoader::updateDatabase(QPromise<Result<void>> &progressPromise, QString &databaseName)
 {
     progressPromise.setProgressValueAndText(5, "updating");
 
@@ -136,7 +137,7 @@ Result<void>SkribLoader::updateDatabase(QPromise<Result<void> >& progressPromise
     // query
     sqlDb.transaction();
 
-    for (const QString& string : qAsConst(optimization))
+    for (const QString &string : qAsConst(optimization))
     {
         QSqlQuery query(sqlDb);
 
@@ -159,11 +160,11 @@ Result<void>SkribLoader::updateDatabase(QPromise<Result<void> >& progressPromise
     return Result<void>();
 }
 
-Result<void>SkribLoader::fillRepositories(QPromise<Result<void> >& progressPromise,
-                                          InterfaceRepositoryProvider *repositoryProvider, QString& databaseName)
+Result<void> SkribLoader::fillRepositories(QPromise<Result<void>> &progressPromise,
+                                           InterfaceRepositoryProvider *repositoryProvider, QString &databaseName)
 {
     progressPromise.setProgressValueAndText(10, "loading content");
-    int progressIndex   = 1;
+    int progressIndex = 1;
     int repositoryCount = 3;
 
     QSqlDatabase sqlDb = QSqlDatabase::database(databaseName);
@@ -172,8 +173,7 @@ Result<void>SkribLoader::fillRepositories(QPromise<Result<void> >& progressPromi
     // author
     // -----------------------------------
 
-    auto authorRepository = qSharedPointerCast<InterfaceAuthorRepository>(
-        repositoryProvider->repository("author"));
+    auto authorRepository = static_cast<InterfaceAuthorRepository *>(repositoryProvider->repository("author"));
 
     QSqlQuery query(sqlDb);
     query.prepare("SELECT * FROM author");
@@ -183,11 +183,11 @@ Result<void>SkribLoader::fillRepositories(QPromise<Result<void> >& progressPromi
 
     while (query.next())
     {
-        int       id           = query.value("id").toInt();
-        QUuid     uuid         = query.value("uuid").toUuid();
-        QString   name         = query.value("name").toString();
+        int id = query.value("id").toInt();
+        QUuid uuid = query.value("uuid").toUuid();
+        QString name = query.value("name").toString();
         QDateTime creationDate = query.value("creationDate").toDateTime();
-        QDateTime updateDate   = query.value("updateDate").toDateTime();
+        QDateTime updateDate = query.value("updateDate").toDateTime();
 
         Domain::Author author(id, uuid, creationDate, updateDate, name);
         Result<Domain::Author> addResult = authorRepository->add(std::move(author));
@@ -230,11 +230,11 @@ Result<void>SkribLoader::fillRepositories(QPromise<Result<void> >& progressPromi
     return Result<void>();
 }
 
-Result<void>SkribLoader::closeDatabase(QPromise<Result<void> >& progressPromise, QString& databaseName)
+Result<void> SkribLoader::closeDatabase(QPromise<Result<void>> &progressPromise, QString &databaseName)
 {
     QSqlDatabase::removeDatabase(databaseName);
     QFile file(databaseName);
-    bool  removalResult = file.remove();
+    bool removalResult = file.remove();
 
     if (!removalResult)
     {

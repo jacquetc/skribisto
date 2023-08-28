@@ -17,8 +17,7 @@ namespace Contracts::CQRS::Chapter::Validators
 class MoveChapterCommandValidator
 {
   public:
-    MoveChapterCommandValidator(QSharedPointer<InterfaceBookRepository> bookRepository,
-                                QSharedPointer<InterfaceChapterRepository> chapterRepository)
+    MoveChapterCommandValidator(InterfaceBookRepository *bookRepository, InterfaceChapterRepository *chapterRepository)
         : m_bookRepository(bookRepository), m_chapterRepository(chapterRepository)
     {
     }
@@ -32,8 +31,8 @@ class MoveChapterCommandValidator
     }
 
   private:
-    QSharedPointer<InterfaceBookRepository> m_bookRepository;
+    InterfaceBookRepository *m_bookRepository;
 
-    QSharedPointer<InterfaceChapterRepository> m_chapterRepository;
+    InterfaceChapterRepository *m_chapterRepository;
 };
 } // namespace Contracts::CQRS::Chapter::Validators

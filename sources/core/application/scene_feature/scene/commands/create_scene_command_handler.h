@@ -17,7 +17,7 @@ class SKRIBISTO_APPLICATION_SCENE_EXPORT CreateSceneCommandHandler : public QObj
 {
     Q_OBJECT
   public:
-    CreateSceneCommandHandler(QSharedPointer<InterfaceSceneRepository> repository);
+    CreateSceneCommandHandler(InterfaceSceneRepository *repository);
 
     Result<SceneDTO> handle(QPromise<Result<void>> &progressPromise, const CreateSceneCommand &request);
     Result<SceneDTO> restore();
@@ -27,7 +27,7 @@ class SKRIBISTO_APPLICATION_SCENE_EXPORT CreateSceneCommandHandler : public QObj
     void sceneRemoved(int id);
 
   private:
-    QSharedPointer<InterfaceSceneRepository> m_repository; // A pointer to the interface repositories object.
+    InterfaceSceneRepository *m_repository; // A pointer to the interface repositories object.
     Result<SceneDTO> handleImpl(QPromise<Result<void>> &progressPromise, const CreateSceneCommand &request);
     Result<SceneDTO> restoreImpl();
     Result<SceneDTO> m_newState;

@@ -18,7 +18,7 @@ class SKRIBISTO_APPLICATION_AUTHOR_EXPORT RemoveAuthorCommandHandler : public QO
 {
     Q_OBJECT
   public:
-    RemoveAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository> repository);
+    RemoveAuthorCommandHandler(InterfaceAuthorRepository *repository);
     Result<int> handle(QPromise<Result<void>> &progressPromise, const RemoveAuthorCommand &request);
     Result<int> restore();
 
@@ -27,7 +27,7 @@ class SKRIBISTO_APPLICATION_AUTHOR_EXPORT RemoveAuthorCommandHandler : public QO
     void authorRemoved(int id);
 
   private:
-    QSharedPointer<InterfaceAuthorRepository> m_repository;
+    InterfaceAuthorRepository *m_repository;
     Result<int> handleImpl(QPromise<Result<void>> &progressPromise, const RemoveAuthorCommand &request);
     Result<int> restoreImpl();
     Domain::Author m_oldState;

@@ -7,8 +7,7 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::Author::Commands;
 using namespace Application::Features::Author::Commands;
 
-RemoveAuthorCommandHandler::RemoveAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository> repository)
-    : m_repository(repository)
+RemoveAuthorCommandHandler::RemoveAuthorCommandHandler(InterfaceAuthorRepository *repository) : m_repository(repository)
 {
     if (!s_mappingRegistered)
     {

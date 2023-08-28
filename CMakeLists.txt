@@ -26,7 +26,7 @@ project(skribisto VERSION ${SKR_VERSION} LANGUAGES CXX)
 # options
 
 option(SKR_BUILD_TESTS "Build tests" OFF)
-option(SKR_BUILD_DESKTOP "Build desktop" ON)
+option(SKR_BUILD_DESKTOP "Build desktop" OFF)
 option(SKR_BUILD_TOUCH "Build touch" ON)
 option(SKR_BUILD_TRANSLATIONS "Build translations" OFF)
 

@@ -1,5 +1,5 @@
 add_subdirectory(author_feature)
 add_subdirectory(chapter_feature)
 add_subdirectory(scene_feature)
-add_subdirectory(system_feature)
 add_subdirectory(writing_feature)
+add_subdirectory(system_feature)

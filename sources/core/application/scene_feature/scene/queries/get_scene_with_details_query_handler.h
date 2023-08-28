@@ -17,11 +17,11 @@ class SKRIBISTO_APPLICATION_SCENE_EXPORT GetSceneWithDetailsQueryHandler : publi
 {
     Q_OBJECT
   public:
-    GetSceneWithDetailsQueryHandler(QSharedPointer<InterfaceSceneRepository> repository);
+    GetSceneWithDetailsQueryHandler(InterfaceSceneRepository *repository);
     Result<SceneWithDetailsDTO> handle(QPromise<Result<void>> &progressPromise, const GetSceneQuery &query);
 
   private:
-    QSharedPointer<InterfaceSceneRepository> m_repository;
+    InterfaceSceneRepository *m_repository;
     Result<SceneWithDetailsDTO> handleImpl(QPromise<Result<void>> &progressPromise, const GetSceneQuery &query);
     static bool s_mappingRegistered;
     void registerMappings();

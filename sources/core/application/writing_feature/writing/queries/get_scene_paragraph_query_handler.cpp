@@ -10,7 +10,7 @@ using namespace Contracts::CQRS::Writing::Validators;
 using namespace Application::Features::Writing::Queries;
 
 GetSceneParagraphQueryHandler::GetSceneParagraphQueryHandler(
-    QSharedPointer<InterfaceSceneParagraphRepository> sceneParagraphRepository)
+    InterfaceSceneParagraphRepository *sceneParagraphRepository)
     : m_sceneParagraphRepository(sceneParagraphRepository)
 {
     if (!s_mappingRegistered)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "event_dispatcher.h"
 #include "persistence/interface_repository_provider.h"
 #include "presenter_global.h"
 #include "system/load_system_dto.h"
@@ -18,16 +19,17 @@ class SKR_PRESENTER_EXPORT SystemController : public QObject
 {
     Q_OBJECT
   public:
-    SystemController(InterfaceRepositoryProvider *repositoryProvider);
+    SystemController(QObject *parent, InterfaceRepositoryProvider *repositoryProvider,
+                     ThreadedUndoRedoSystem *undo_redo_system, EventDispatcher *eventDispatcher);
     static SystemController *instance();
 
-    static void loadSystem(const LoadSystemDTO &dto);
+    void loadSystem(const LoadSystemDTO &dto);
 
-    static void saveSystem();
+    void saveSystem();
 
-    static void saveSystemAs(const SaveSystemAsDTO &dto);
+    void saveSystemAs(const SaveSystemAsDTO &dto);
 
-    static void closeSystem();
+    void closeSystem();
 
   signals:
     void loadSystemProgressFinished();
@@ -40,8 +42,9 @@ class SKR_PRESENTER_EXPORT SystemController : public QObject
 
   private:
     static QScopedPointer<SystemController> s_instance;
-    static InterfaceRepositoryProvider *s_repositoryProvider;
-    static ThreadedUndoRedoSystem *s_undo_redo_system;
+    InterfaceRepositoryProvider *m_repositoryProvider;
+    ThreadedUndoRedoSystem *m_undo_redo_system;
+    EventDispatcher *m_eventDispatcher;
     SystemController() = delete;
     SystemController(const SystemController &) = delete;
     SystemController &operator=(const SystemController &) = delete;

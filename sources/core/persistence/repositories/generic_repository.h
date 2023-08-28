@@ -24,8 +24,9 @@ class SKR_PERSISTENCE_EXPORT GenericRepository : public virtual Contracts::Persi
     // InterfaceGenericRepository interface
 
   public:
-    GenericRepository(InterfaceDatabaseTable<T> *databaseTable) : m_databaseTable(databaseTable)
+    GenericRepository(InterfaceDatabaseTable<T> *databaseTable)
     {
+        m_databaseTable.reset(databaseTable);
     }
 
     virtual Result<T> get(const QUuid &uuid) override;
@@ -35,6 +36,7 @@ class SKR_PERSISTENCE_EXPORT GenericRepository : public virtual Contracts::Persi
     Result<QList<T>> getAll(const QHash<QString, QVariant> &filters) override;
 
     virtual Result<int> remove(int id) override;
+    virtual Result<QList<int>> remove(QList<int> ids) override;
 
     virtual Result<T> add(T &&entity) override;
 
@@ -54,7 +56,7 @@ class SKR_PERSISTENCE_EXPORT GenericRepository : public virtual Contracts::Persi
     InterfaceDatabaseTable<T> *databaseTable() const;
 
   private:
-    InterfaceDatabaseTable<T> *m_databaseTable;
+    QScopedPointer<InterfaceDatabaseTable<T>> m_databaseTable;
     QReadWriteLock m_lock;
 
   public:
@@ -63,101 +65,107 @@ class SKR_PERSISTENCE_EXPORT GenericRepository : public virtual Contracts::Persi
 template <class T> Result<T> GenericRepository<T>::get(const QUuid &uuid)
 {
     QReadLocker locker(&m_lock);
-    return m_databaseTable->get(uuid);
+    return databaseTable()->get(uuid);
 }
 
 template <class T> Result<T> GenericRepository<T>::get(const int &id)
 {
     QReadLocker locker(&m_lock);
-    return m_databaseTable->get(id);
+    return databaseTable()->get(id);
 }
 
 template <class T> Result<QList<T>> GenericRepository<T>::getAll()
 {
     QReadLocker locker(&m_lock);
-    return m_databaseTable->getAll();
+    return databaseTable()->getAll();
 }
 
 template <class T> Result<QList<T>> GenericRepository<T>::getAll(const QHash<QString, QVariant> &filters)
 {
     QReadLocker locker(&m_lock);
-    return m_databaseTable->getAll(filters);
+    return databaseTable()->getAll(filters);
 }
 
 template <class T> Result<int> GenericRepository<T>::remove(int id)
 {
     QWriteLocker locker(&m_lock);
-    return m_databaseTable->remove(id);
+    return databaseTable()->remove(id);
+}
+
+template <class T> Result<QList<int>> GenericRepository<T>::remove(QList<int> ids)
+{
+    QWriteLocker locker(&m_lock);
+    return databaseTable()->remove(ids);
 }
 
 template <class T> Result<T> GenericRepository<T>::add(T &&entity)
 {
     QWriteLocker locker(&m_lock);
 
-    return m_databaseTable->add(std::move(entity));
+    return databaseTable()->add(std::move(entity));
 }
 
 template <class T> Result<T> GenericRepository<T>::update(T &&entity)
 {
     QWriteLocker locker(&m_lock);
 
-    return m_databaseTable->update(std::move(entity));
+    return databaseTable()->update(std::move(entity));
 }
 
 template <class T> Result<bool> GenericRepository<T>::exists(const QUuid &uuid)
 {
     QReadLocker locker(&m_lock);
-    return m_databaseTable->exists(uuid);
+    return databaseTable()->exists(uuid);
 }
 
 template <class T> Result<bool> GenericRepository<T>::exists(int id)
 {
 
     QReadLocker locker(&m_lock);
-    return m_databaseTable->exists(id);
+    return databaseTable()->exists(id);
 }
 
 template <class T> Result<void> GenericRepository<T>::clear()
 {
     QReadLocker locker(&m_lock);
 
-    return m_databaseTable->clear();
+    return databaseTable()->clear();
 }
 
 template <class T> Result<SaveData> GenericRepository<T>::save(const QList<int> &idList)
 {
     QWriteLocker locker(&m_lock);
-    return m_databaseTable->save(idList);
+    return databaseTable()->save(idList);
 }
 
 template <class T> Result<void> GenericRepository<T>::restore(const SaveData &saveData)
 
 {
     QWriteLocker locker(&m_lock);
-    return m_databaseTable->restore(saveData);
+    return databaseTable()->restore(saveData);
 }
 
 template <class T> Result<void> GenericRepository<T>::beginChanges()
 {
     QWriteLocker locker(&m_lock);
-    return m_databaseTable->beginTransaction();
+    return databaseTable()->beginTransaction();
 }
 
 template <class T> Result<void> GenericRepository<T>::saveChanges()
 {
     QWriteLocker locker(&m_lock);
-    return m_databaseTable->commit();
+    return databaseTable()->commit();
 }
 
 template <class T> Result<void> GenericRepository<T>::cancelChanges()
 {
     QWriteLocker locker(&m_lock);
-    return m_databaseTable->rollback();
+    return databaseTable()->rollback();
 }
 
 template <class T> InterfaceDatabaseTable<T> *GenericRepository<T>::databaseTable() const
 {
-    return m_databaseTable;
+    return m_databaseTable.get();
 }
 
 } // namespace Repository

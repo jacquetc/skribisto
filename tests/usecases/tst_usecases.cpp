@@ -4,6 +4,7 @@
 #include "author/queries/get_author_query_handler.h"
 #include "automapper/automapper.h"
 #include "dummy_author_repository.h"
+#include "dummy_book_repository.h"
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
@@ -72,7 +73,7 @@ void UseCases::cleanup()
 
 void UseCases::getAuthor()
 {
-    QSharedPointer<DummyAuthorRepository> repository(new DummyAuthorRepository(this));
+    DummyAuthorRepository *repository(new DummyAuthorRepository(this));
 
     QUuid uuid = QUuid::createUuid();
     Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
@@ -102,12 +103,20 @@ void UseCases::getAuthor()
 
 void UseCases::addAuthor()
 {
-    QSharedPointer<DummyAuthorRepository> repository(new DummyAuthorRepository(this));
+    DummyAuthorRepository *repository(new DummyAuthorRepository(this));
+    DummyBookRepository *ownerRepository(new DummyBookRepository(this));
+
+    Domain::Book book(0, QUuid::createUuid(), QDateTime(), QDateTime(), "test", QList<Domain::Chapter>(),
+                      Domain::Author());
+
+    ownerRepository->fillGet(book);
+    ownerRepository->fillAuthor(Domain::Author());
 
     // Create an AuthorDTO to add
     CreateAuthorDTO dto;
 
     dto.setName("new author");
+    dto.setBookId(0);
 
     // prefill the dummy repo:
     auto author = AutoMapper::AutoMapper::map<CreateAuthorDTO, Domain::Author>(dto);
@@ -115,8 +124,12 @@ void UseCases::addAuthor()
     repository->fillAdd(author);
     repository->fillGetAll(QList<Domain::Author>() << author);
 
+    Domain::Book book2(0, QUuid::createUuid(), QDateTime(), QDateTime(), "test", QList<Domain::Chapter>(), author);
+
+    ownerRepository->fillUpdate(book2);
+
     // Invoke the CreateAuthorCommandHandler with the DTO
-    CreateAuthorCommandHandler handler(repository);
+    CreateAuthorCommandHandler handler(repository, ownerRepository);
     CreateAuthorCommand command;
     command.req = dto;
 
@@ -134,7 +147,7 @@ void UseCases::addAuthor()
 
 void UseCases::removeAuthor()
 {
-    QSharedPointer<DummyAuthorRepository> repository(new DummyAuthorRepository(this));
+    DummyAuthorRepository *repository(new DummyAuthorRepository(this));
 
     // Add an author to the repository
     AuthorDTO dto;

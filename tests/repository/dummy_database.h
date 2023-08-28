@@ -17,6 +17,7 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
     void fillGetAll(const QList<Domain::Author> &list);
     void fillGetAllFiltered(const QList<Domain::Author> &list);
     void fillRemove(int id);
+    void fillRemove(QList<int> ids);
     void fillAdd(const Domain::Author &entity);
     void fillUpdate(const Domain::Author &entity);
     void fillExists(bool value);
@@ -31,6 +32,7 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
     Result<QList<Domain::Author>> getAll() override;
     Result<QList<Domain::Author>> getAll(const QHash<QString, QVariant> &filters) override;
     Result<int> remove(int id) override;
+    Result<QList<int>> remove(QList<int> ids) override;
     Result<Domain::Author> add(Domain::Author &&entity) override;
     Result<Domain::Author> update(Domain::Author &&entity) override;
     Result<bool> exists(const QUuid &uuid) override;
@@ -47,11 +49,12 @@ class DummyDatabase : public Contracts::Database::InterfaceDatabaseTable<Domain:
     QList<Domain::Author> m_getAllList;
     QList<Domain::Author> m_getAllFilteredList;
     int m_removeEntityId;
+    QList<int> m_removeEntityIds;
     Domain::Author m_addEntity;
     Domain::Author m_updateEntity;
     bool m_exists;
     QMap<QString, QList<QVariantHash>> m_save;
-    QList<int>  m_relatedForeignIds;
+    QList<int> m_relatedForeignIds;
 
     // InterfaceForeignEntity interface
   public:
@@ -67,7 +70,6 @@ inline Result<QList<int>> DummyDatabase::getRelatedForeignIds(const Domain::Auth
 inline Result<QList<int>> DummyDatabase::getRelatedForeignIds(int entityId, const QString &propertyName)
 {
     return Result<QList<int>>(m_relatedForeignIds);
-
 }
 
 inline void DummyDatabase::fillGet(const Domain::Author &entity)
@@ -88,6 +90,11 @@ inline void DummyDatabase::fillGetAllFiltered(const QList<Domain::Author> &list)
 inline void DummyDatabase::fillRemove(int entityId)
 {
     m_removeEntityId = entityId;
+}
+
+inline void DummyDatabase::fillRemove(QList<int> entityIds)
+{
+    m_removeEntityIds = entityIds;
 }
 
 inline void DummyDatabase::fillAdd(const Domain::Author &entity)
@@ -128,6 +135,11 @@ Result<QList<Domain::Author>> DummyDatabase::getAll(const QHash<QString, QVarian
 inline Result<int> DummyDatabase::remove(int id)
 {
     return Result<int>(m_removeEntityId);
+}
+
+inline Result<QList<int>> DummyDatabase::remove(QList<int> ids)
+{
+    return Result<QList<int>>(m_removeEntityIds);
 }
 
 inline Result<Domain::Author> DummyDatabase::add(Domain::Author &&entity)

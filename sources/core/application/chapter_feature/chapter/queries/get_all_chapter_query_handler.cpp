@@ -4,8 +4,7 @@
 
 using namespace Application::Features::Chapter::Queries;
 
-GetAllChapterQueryHandler::GetAllChapterQueryHandler(QSharedPointer<InterfaceChapterRepository> repository)
-    : m_repository(repository)
+GetAllChapterQueryHandler::GetAllChapterQueryHandler(InterfaceChapterRepository *repository) : m_repository(repository)
 {
     if (!s_mappingRegistered)
     {

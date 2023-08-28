@@ -1,8 +1,8 @@
-#include "QtConcurrent/qtconcurrentrun.h"
 #include "author/author_controller.h"
 #include "author/author_dto.h"
 #include "automapper/automapper.h"
 #include "dummy_author_repository.h"
+#include "dummy_book_repository.h"
 #include "dummy_repository_provider.h"
 #include <QDate>
 #include <QDateTime>
@@ -40,8 +40,10 @@ class PresenterTest : public QObject
 
   private:
     DummyRepositoryProvider *m_repositoryProvider;
-    QSharedPointer<DummyAuthorRepository> m_repository;
+    DummyAuthorRepository *m_repository;
+    DummyBookRepository *m_ownerRepository;
     AuthorController *m_authorController;
+    EventDispatcher *m_eventDispatcher;
 };
 
 PresenterTest::PresenterTest()
@@ -55,12 +57,14 @@ PresenterTest::~PresenterTest()
 
 void PresenterTest::initTestCase()
 {
-    m_repository.reset(new DummyAuthorRepository(this));
+    m_repository = new DummyAuthorRepository(this);
+    m_ownerRepository = new DummyBookRepository(this);
     m_repositoryProvider->registerRepository("Author", m_repository);
+    m_repositoryProvider->registerRepository("Book", m_ownerRepository);
 
     Scopes scopes(QStringList() << "author");
-    new UndoRedo::ThreadedUndoRedoSystem(this, scopes);
-    m_authorController = new AuthorController(m_repositoryProvider);
+    auto *undoRedoSystem = new UndoRedo::ThreadedUndoRedoSystem(this, scopes);
+    m_authorController = new AuthorController(this, m_repositoryProvider, undoRedoSystem, m_eventDispatcher);
 
     AutoMapper::AutoMapper::registerMapping<Domain::Author, AuthorDTO>(true);
     AutoMapper::AutoMapper::registerMapping<CreateAuthorDTO, Domain::Author>();
@@ -97,7 +101,7 @@ void PresenterTest::getAuthorAsync()
     QSignalSpy spy(m_authorController, &AuthorController::getReplied);
     QVERIFY(spy.isValid());
 
-    AuthorController::get(dto.id());
+    AuthorController::instance()->get(dto.id());
 
     QVERIFY(spy.wait(5000));
     QCOMPARE(spy.count(), 1);
@@ -129,7 +133,7 @@ void PresenterTest::getAuthorAsync_aLot()
     {
         for (int i = 1; i <= 100; i++)
         {
-            AuthorController::get(dto.id());
+            AuthorController::instance()->get(dto.id());
         }
         QTest::qWait(500);
     }
@@ -148,18 +152,23 @@ void PresenterTest::addAuthorAsync()
     CreateAuthorDTO dto;
 
     dto.setName("new author");
+    dto.setBookId(1);
 
     // prefill the dummy repo:
     auto author = AutoMapper::AutoMapper::map<CreateAuthorDTO, Domain::Author>(dto);
     author.setUuid(QUuid::createUuid());
     m_repository->fillAdd(author);
+    Domain::Book book(1, QUuid::createUuid(), QDateTime(), QDateTime(), "test", QList<Domain::Chapter>(),
+                      Domain::Author());
+    m_ownerRepository->fillGet(book);
+    m_ownerRepository->fillAuthor(Domain::Author());
 
     // invoke
 
     QSignalSpy spy(m_authorController, &AuthorController::authorCreated);
     QVERIFY(spy.isValid());
 
-    AuthorController::create(dto);
+    AuthorController::instance()->create(dto);
 
     QVERIFY(spy.wait(5000));
     QCOMPARE(spy.count(), 1);

@@ -4,6 +4,7 @@
 #include "chapter/chapter_with_details_dto.h"
 #include "chapter/create_chapter_dto.h"
 #include "chapter/update_chapter_dto.h"
+#include "event_dispatcher.h"
 #include "persistence/interface_repository_provider.h"
 #include "presenter_global.h"
 #include "undo_redo/threaded_undo_redo_system.h"
@@ -20,23 +21,24 @@ class SKR_PRESENTER_EXPORT ChapterController : public QObject
     Q_OBJECT
 
   public:
-    ChapterController(InterfaceRepositoryProvider *repositoryProvider);
+    ChapterController(QObject *parent, InterfaceRepositoryProvider *repositoryProvider,
+                      ThreadedUndoRedoSystem *undo_redo_system, EventDispatcher *eventDispatcher);
 
     static ChapterController *instance();
 
   public slots:
 
-    static void get(int id);
+    void get(int id);
 
-    static void getWithDetails(int id);
+    void getWithDetails(int id);
 
-    static void getAll();
+    void getAll();
 
-    static void create(const CreateChapterDTO &dto);
+    void create(const CreateChapterDTO &dto);
 
-    static void update(const UpdateChapterDTO &dto);
+    void update(const UpdateChapterDTO &dto);
 
-    static void remove(int id);
+    void remove(int id);
 
     static Contracts::DTO::Chapter::CreateChapterDTO getCreateChapterDTO();
 
@@ -51,8 +53,9 @@ class SKR_PRESENTER_EXPORT ChapterController : public QObject
 
   private:
     static QScopedPointer<ChapterController> s_instance;
-    static InterfaceRepositoryProvider *s_repositoryProvider;
-    static ThreadedUndoRedoSystem *s_undo_redo_system;
+    InterfaceRepositoryProvider *m_repositoryProvider;
+    ThreadedUndoRedoSystem *m_undo_redo_system;
+    EventDispatcher *m_eventDispatcher;
     ChapterController() = delete;
     ChapterController(const ChapterController &) = delete;
     ChapterController &operator=(const ChapterController &) = delete;

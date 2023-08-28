@@ -3,6 +3,7 @@
 #include "domain_global.h"
 #include <QString>
 
+#include "entities.h"
 #include "entity.h"
 
 namespace Domain
@@ -31,6 +32,11 @@ class SKR_DOMAIN_EXPORT Author : public Entity
 
     Author(const Author &other) : Entity(other), m_name(other.m_name)
     {
+    }
+
+    static Domain::Entities::EntityEnum enumValue()
+    {
+        return Domain::Entities::EntityEnum::Author;
     }
 
     Author &operator=(const Author &other)

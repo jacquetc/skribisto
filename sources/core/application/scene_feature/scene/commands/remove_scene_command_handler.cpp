@@ -7,8 +7,7 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::Scene::Commands;
 using namespace Application::Features::Scene::Commands;
 
-RemoveSceneCommandHandler::RemoveSceneCommandHandler(QSharedPointer<InterfaceSceneRepository> repository)
-    : m_repository(repository)
+RemoveSceneCommandHandler::RemoveSceneCommandHandler(InterfaceSceneRepository *repository) : m_repository(repository)
 {
     if (!s_mappingRegistered)
     {

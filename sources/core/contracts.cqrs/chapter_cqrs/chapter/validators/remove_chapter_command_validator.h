@@ -11,7 +11,7 @@ namespace Contracts::CQRS::Chapter::Validators
 class RemoveChapterCommandValidator
 {
   public:
-    RemoveChapterCommandValidator(QSharedPointer<InterfaceChapterRepository> chapterRepository)
+    RemoveChapterCommandValidator(InterfaceChapterRepository *chapterRepository)
         : m_chapterRepository(chapterRepository)
     {
     }
@@ -32,6 +32,6 @@ class RemoveChapterCommandValidator
     }
 
   private:
-    QSharedPointer<InterfaceChapterRepository> m_chapterRepository;
+    InterfaceChapterRepository *m_chapterRepository;
 };
 } // namespace Contracts::CQRS::Chapter::Validators

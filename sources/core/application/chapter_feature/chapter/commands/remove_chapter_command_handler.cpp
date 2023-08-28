@@ -7,7 +7,7 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::Chapter::Commands;
 using namespace Application::Features::Chapter::Commands;
 
-RemoveChapterCommandHandler::RemoveChapterCommandHandler(QSharedPointer<InterfaceChapterRepository> repository)
+RemoveChapterCommandHandler::RemoveChapterCommandHandler(InterfaceChapterRepository *repository)
     : m_repository(repository)
 {
     if (!s_mappingRegistered)

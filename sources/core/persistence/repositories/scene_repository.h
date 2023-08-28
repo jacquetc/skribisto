@@ -1,31 +1,34 @@
 #pragma once
 
 #include "scene.h"
+
+#include "persistence/interface_scene_paragraph_repository.h"
+
 #include "database/interface_database_table.h"
 #include "generic_repository.h"
 #include "persistence/interface_scene_repository.h"
 #include "persistence_global.h"
-#include <QObject>
 
-namespace Repository {
-class SKR_PERSISTENCE_EXPORT SceneRepository : public QObject,
-                                               public Repository::GenericRepository<Domain::Scene>,
-                                               public Contracts::Persistence::InterfaceSceneRepository {
-    Q_OBJECT
-    Q_INTERFACES(Contracts::Persistence::InterfaceSceneRepository)
+using namespace Contracts::Persistence;
 
-public:
+namespace Repository
+{
 
-    explicit SceneRepository(InterfaceDatabaseTable<Domain::Scene>          *sceneDatabase,
-                             InterfaceDatabaseTable<Domain::SceneParagraph> *sceneParagraphDatabase);
-
+class SKR_PERSISTENCE_EXPORT SceneRepository : public Repository::GenericRepository<Domain::Scene>,
+                                               public Contracts::Persistence::InterfaceSceneRepository
+{
+  public:
+    explicit SceneRepository(Domain::EntitySchema *entitySchema, InterfaceDatabaseTable<Domain::Scene> *sceneDatabase,
+                             InterfaceSceneParagraphRepository *sceneParagraphRepository);
 
     Domain::Scene::ParagraphsLoader fetchParagraphsLoader() override;
 
-private:
+    QHash<int, QList<int>> removeInCascade(QList<int> ids) override;
 
-    InterfaceDatabaseTable<Domain::Scene> *m_sceneDatabase;
+  private:
+    Domain::EntitySchema *m_entitySchema;
 
-    InterfaceDatabaseTable<Domain::SceneParagraph> *m_sceneParagraphDatabase;
+    InterfaceSceneParagraphRepository *m_sceneParagraphRepository;
 };
+
 } // namespace Repository

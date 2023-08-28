@@ -1,35 +1,22 @@
 #pragma once
 
-#include "domain_global.h"
-#include "entity.h"
-#include "scene.h"
-#include "chapter.h"
-#include "book.h"
-#include "atelier.h"
-#include "author.h"
-#include "entity_base.h"
-
+#include "entity_schema.h"
 #include <QObject>
 
-namespace Domain {
+namespace Domain
+{
 
-class SKR_DOMAIN_EXPORT DomainRegistration : public QObject
+class DomainRegistration : public QObject
 {
     Q_OBJECT
   public:
-    explicit DomainRegistration(QObject *parent)
-    {
-        
-        qRegisterMetaType<Domain::Entity>();
-        qRegisterMetaType<Domain::Scene>();
-        qRegisterMetaType<Domain::Chapter>();
-        qRegisterMetaType<Domain::Book>();
-        qRegisterMetaType<Domain::Atelier>();
-        qRegisterMetaType<Domain::Author>();
-        qRegisterMetaType<Domain::SceneParagraph>();
-        qRegisterMetaType<Domain::EntityBase>();
+    explicit DomainRegistration(QObject *parent = nullptr);
 
-    }
+    EntitySchema *entitySchema() const;
+
+  signals:
+
+  private:
+    EntitySchema *m_entitySchema;
 };
-
 } // namespace Domain

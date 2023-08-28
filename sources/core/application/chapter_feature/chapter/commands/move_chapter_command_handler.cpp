@@ -9,8 +9,8 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::Chapter::Validators;
 using namespace Application::Features::Chapter::Commands;
 
-MoveChapterCommandHandler::MoveChapterCommandHandler(QSharedPointer<InterfaceBookRepository> bookRepository,
-                                                     QSharedPointer<InterfaceChapterRepository> chapterRepository)
+MoveChapterCommandHandler::MoveChapterCommandHandler(InterfaceBookRepository *bookRepository,
+                                                     InterfaceChapterRepository *chapterRepository)
     : m_bookRepository(bookRepository), m_chapterRepository(chapterRepository)
 {
     if (!s_mappingRegistered)

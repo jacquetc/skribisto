@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0
 
 #include "app_environment.h"
+#include "domain_registration.h"
 #include "import_qml_plugins.h"
 #include "persistence_registration.h"
 #include "presenter_registration.h"
@@ -14,10 +15,10 @@ int main(int argc, char *argv[])
     set_qt_environment();
     QGuiApplication app(argc, argv);
 
-    auto persistence = new Persistence::PersistenceRegistration(&app);
-    new Presenter::PresenterRegistration(&app, persistence->repositoryProvider());
-
     QQmlApplicationEngine engine;
+    auto *domainRegistration = new Domain::DomainRegistration(&engine);
+    auto persistence = new Persistence::PersistenceRegistration(&engine, domainRegistration->entitySchema());
+    new Presenter::PresenterRegistration(&engine, persistence->repositoryProvider());
 
     const QUrl url(u"qrc:Main/main.qml"_qs);
     QObject::connect(

@@ -4,8 +4,7 @@
 
 using namespace Application::Features::Author::Queries;
 
-GetAuthorQueryHandler::GetAuthorQueryHandler(QSharedPointer<InterfaceAuthorRepository> repository)
-    : m_repository(repository)
+GetAuthorQueryHandler::GetAuthorQueryHandler(InterfaceAuthorRepository *repository) : m_repository(repository)
 {
     if (!s_mappingRegistered)
     {

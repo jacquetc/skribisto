@@ -15,7 +15,7 @@ namespace Contracts::CQRS::Chapter::Validators
 class UpdateChapterCommandValidator
 {
   public:
-    UpdateChapterCommandValidator(QSharedPointer<InterfaceChapterRepository> chapterRepository)
+    UpdateChapterCommandValidator(InterfaceChapterRepository *chapterRepository)
         : m_chapterRepository(chapterRepository)
     {
     }
@@ -36,6 +36,6 @@ class UpdateChapterCommandValidator
     }
 
   private:
-    QSharedPointer<InterfaceChapterRepository> m_chapterRepository;
+    InterfaceChapterRepository *m_chapterRepository;
 };
 } // namespace Contracts::CQRS::Chapter::Validators

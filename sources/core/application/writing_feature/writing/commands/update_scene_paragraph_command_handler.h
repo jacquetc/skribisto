@@ -20,8 +20,8 @@ class SKRIBISTO_APPLICATION_WRITING_EXPORT UpdateSceneParagraphCommandHandler : 
 {
     Q_OBJECT
   public:
-    UpdateSceneParagraphCommandHandler(QSharedPointer<InterfaceSceneRepository> sceneRepository,
-                                       QSharedPointer<InterfaceSceneParagraphRepository> sceneParagraphRepository);
+    UpdateSceneParagraphCommandHandler(InterfaceSceneRepository *sceneRepository,
+                                       InterfaceSceneParagraphRepository *sceneParagraphRepository);
 
     Result<SceneParagraphChangedDTO> handle(QPromise<Result<void>> &progressPromise,
                                             const UpdateSceneParagraphCommand &request);

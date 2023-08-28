@@ -7,25 +7,24 @@
 #include <QHash>
 #include <QMutex>
 #include <QObject>
-#include <QSharedPointer>
 #include <type_traits>
 
 using namespace Contracts::Persistence;
 
-namespace Repository {
+namespace Repository
+{
 class SKR_PERSISTENCE_EXPORT RepositoryProvider : public QObject,
-                                                  public Contracts::Persistence::InterfaceRepositoryProvider {
+                                                  public Contracts::Persistence::InterfaceRepositoryProvider
+{
     Q_OBJECT
 
-public:
-
-    static RepositoryProvider* instance();
+  public:
+    static RepositoryProvider *instance();
 
     // InterfaceRepositoryProvider interface
 
-public:
-
-    void registerRepository(const QString& name, QSharedPointer<InterfaceRepository>repository) override
+  public:
+    void registerRepository(const QString &name, InterfaceRepository *repository) override
     {
         QMutexLocker locker(&m_mutex);
 
@@ -37,7 +36,7 @@ public:
         m_repositories.insert(name.toCaseFolded(), repository);
     }
 
-    QSharedPointer<InterfaceRepository>repository(const QString& name) override
+    InterfaceRepository *repository(const QString &name) override
     {
         QMutexLocker locker(&m_mutex);
         auto repository = m_repositories.value(name.toCaseFolded(), nullptr);
@@ -49,14 +48,13 @@ public:
         return repository;
     }
 
-private:
+  private:
+    RepositoryProvider() = default;
+    RepositoryProvider(const RepositoryProvider &) = delete;
+    RepositoryProvider &operator=(const RepositoryProvider &) = delete;
 
-    RepositoryProvider()                                     = default;
-    RepositoryProvider(const RepositoryProvider&)            = delete;
-    RepositoryProvider& operator=(const RepositoryProvider&) = delete;
-
-    QHash<QString, QSharedPointer<InterfaceRepository> >m_repositories;
+    QHash<QString, InterfaceRepository *> m_repositories;
     QMutex m_mutex;
-    static QScopedPointer<RepositoryProvider>s_instance;
+    static QScopedPointer<RepositoryProvider> s_instance;
 };
 } // namespace Repository

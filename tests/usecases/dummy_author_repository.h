@@ -17,6 +17,7 @@ class DummyAuthorRepository : public QObject, public Contracts::Persistence::Int
     void fillGet(const Domain::Author &entity);
     void fillGetAll(const QList<Domain::Author> &list);
     void fillRemove(int id);
+    void fillRemove(QList<int> ids);
     void fillAdd(const Domain::Author &entity);
     void fillUpdate(const Domain::Author &entity);
     void fillExists(bool value);
@@ -30,6 +31,7 @@ class DummyAuthorRepository : public QObject, public Contracts::Persistence::Int
     Result<QList<Domain::Author>> getAll() override;
     Result<QList<Domain::Author>> getAll(const QHash<QString, QVariant> &filters) override;
     Result<int> remove(int id) override;
+    Result<QList<int>> remove(QList<int> ids) override;
     Result<Domain::Author> add(Domain::Author &&entity) override;
     Result<Domain::Author> update(Domain::Author &&entity) override;
     Result<bool> exists(const QUuid &uuid) override;
@@ -45,11 +47,21 @@ class DummyAuthorRepository : public QObject, public Contracts::Persistence::Int
     Domain::Author m_getEntity;
     QList<Domain::Author> m_getAllList;
     int m_removeEntityId;
+    QList<int> m_removeEntityIds;
     Domain::Author m_addEntity;
     Domain::Author m_updateEntity;
     bool m_exists;
     SaveData m_save;
+
+    // InterfaceAuthorRepository interface
+  public:
+    QHash<int, QList<int>> removeInCascade(QList<int> ids) override;
 };
+
+inline QHash<int, QList<int>> DummyAuthorRepository::removeInCascade(QList<int> ids)
+{
+    return QHash<int, QList<int>>();
+}
 
 inline void DummyAuthorRepository::fillGet(const Domain::Author &entity)
 {
@@ -64,6 +76,11 @@ inline void DummyAuthorRepository::fillGetAll(const QList<Domain::Author> &list)
 inline void DummyAuthorRepository::fillRemove(int id)
 {
     m_removeEntityId = id;
+}
+
+inline void DummyAuthorRepository::fillRemove(QList<int> entityIds)
+{
+    m_removeEntityIds = entityIds;
 }
 
 inline void DummyAuthorRepository::fillAdd(const Domain::Author &entity)
@@ -109,6 +126,12 @@ inline Result<QList<Domain::Author>> DummyAuthorRepository::getAll(const QHash<Q
 inline Result<int> DummyAuthorRepository::remove(int id)
 {
     return Result<int>(m_removeEntityId);
+}
+
+inline Result<QList<int>> DummyAuthorRepository::remove(QList<int> ids)
+{
+
+    return Result<QList<int>>(m_removeEntityIds);
 }
 
 inline Result<Domain::Author> DummyAuthorRepository::add(Domain::Author &&entity)

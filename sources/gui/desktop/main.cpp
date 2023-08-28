@@ -1,3 +1,4 @@
+#include "domain_registration.h"
 #include "mainwindow.h"
 
 #include "persistence_registration.h"
@@ -54,7 +55,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    auto persistence = new Persistence::PersistenceRegistration(&app);
+    auto *domainRegistration = new Domain::DomainRegistration(&app);
+    auto persistence = new Persistence::PersistenceRegistration(&app, domainRegistration->entitySchema());
     new Presenter::PresenterRegistration(&app, persistence->repositoryProvider());
 
     MainWindow w;

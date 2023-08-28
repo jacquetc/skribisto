@@ -19,7 +19,7 @@ class SKRIBISTO_APPLICATION_SCENE_EXPORT UpdateSceneCommandHandler : public QObj
 {
     Q_OBJECT
   public:
-    UpdateSceneCommandHandler(QSharedPointer<InterfaceSceneRepository> repository);
+    UpdateSceneCommandHandler(InterfaceSceneRepository *repository);
     Result<SceneDTO> handle(QPromise<Result<void>> &progressPromise, const UpdateSceneCommand &request);
     Result<SceneDTO> restore();
 
@@ -27,7 +27,7 @@ class SKRIBISTO_APPLICATION_SCENE_EXPORT UpdateSceneCommandHandler : public QObj
     void sceneUpdated(Contracts::DTO::Scene::SceneDTO sceneDto);
 
   private:
-    QSharedPointer<InterfaceSceneRepository> m_repository;
+    InterfaceSceneRepository *m_repository;
     Result<SceneDTO> handleImpl(QPromise<Result<void>> &progressPromise, const UpdateSceneCommand &request);
     Result<SceneDTO> restoreImpl();
     Result<SceneDTO> saveOldState();

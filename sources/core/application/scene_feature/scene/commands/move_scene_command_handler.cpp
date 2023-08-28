@@ -9,8 +9,8 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::Scene::Validators;
 using namespace Application::Features::Scene::Commands;
 
-MoveSceneCommandHandler::MoveSceneCommandHandler(QSharedPointer<InterfaceChapterRepository> chapterRepository,
-                                                 QSharedPointer<InterfaceSceneRepository> sceneRepository)
+MoveSceneCommandHandler::MoveSceneCommandHandler(InterfaceChapterRepository *chapterRepository,
+                                                 InterfaceSceneRepository *sceneRepository)
     : m_chapterRepository(chapterRepository), m_sceneRepository(sceneRepository)
 {
     if (!s_mappingRegistered)
@@ -109,6 +109,7 @@ Result<MoveSceneReplyDTO> MoveSceneCommandHandler::restoreImpl()
 
     MoveSceneReplyDTO moveSceneReplyDTO;
     // auto moveSceneReplyDTO = AutoMapper::AutoMapper::map<Domain::Scene, MoveSceneReplyDTO>(m_newState);
+    Q_UNIMPLEMENTED();
 
     emit moveSceneChanged(moveSceneReplyDTO);
 

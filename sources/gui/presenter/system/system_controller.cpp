@@ -1,4 +1,5 @@
 #include "system_controller.h"
+#include "event_dispatcher.h"
 #include "skrib/skrib_loader.h"
 #include "system/commands/close_system_command.h"
 #include "system/commands/close_system_command_handler.h"
@@ -12,13 +13,14 @@ using namespace Contracts::CQRS::System::Commands;
 using namespace Application::Features::System::Commands;
 
 QScopedPointer<SystemController> SystemController::s_instance = QScopedPointer<SystemController>(nullptr);
-InterfaceRepositoryProvider *SystemController::s_repositoryProvider;
-ThreadedUndoRedoSystem *SystemController::s_undo_redo_system;
 
-SystemController::SystemController(InterfaceRepositoryProvider *repositoryProvider) : QObject(nullptr)
+SystemController::SystemController(QObject *parent, InterfaceRepositoryProvider *repositoryProvider,
+                                   ThreadedUndoRedoSystem *undo_redo_system, EventDispatcher *eventDispatcher)
+    : QObject(parent)
 {
-    s_repositoryProvider = repositoryProvider;
-    s_undo_redo_system = ThreadedUndoRedoSystem::instance();
+    m_repositoryProvider = repositoryProvider;
+    m_undo_redo_system = undo_redo_system;
+    m_eventDispatcher = eventDispatcher;
 
     s_instance.reset(this);
 }
@@ -33,7 +35,7 @@ void SystemController::loadSystem(const LoadSystemDTO &dto)
     LoadSystemCommand request;
 
     request.req = dto;
-    auto *skribLoader = new Infrastructure::Skrib::SkribLoader(s_repositoryProvider);
+    auto *skribLoader = new Infrastructure::Skrib::SkribLoader(m_repositoryProvider);
     auto *handler = new LoadSystemCommandHandler(skribLoader);
 
     // connect
@@ -54,8 +56,8 @@ void SystemController::loadSystem(const LoadSystemDTO &dto)
             &SystemController::loadSystemProgressValueChanged);
 
     // push command
-    s_undo_redo_system->push(command, "all");
-    s_undo_redo_system->clear();
+    m_undo_redo_system->push(command, "all");
+    m_undo_redo_system->clear();
 }
 
 void SystemController::saveSystem()
@@ -85,6 +87,6 @@ void SystemController::closeSystem()
                                                                                    handler, request);
 
     // push command
-    s_undo_redo_system->push(command, "all");
-    s_undo_redo_system->clear();
+    m_undo_redo_system->push(command, "all");
+    m_undo_redo_system->clear();
 }

@@ -19,7 +19,7 @@ class SKRIBISTO_APPLICATION_AUTHOR_EXPORT UpdateAuthorCommandHandler : public QO
 {
     Q_OBJECT
   public:
-    UpdateAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository> repository);
+    UpdateAuthorCommandHandler(InterfaceAuthorRepository *repository);
     Result<AuthorDTO> handle(QPromise<Result<void>> &progressPromise, const UpdateAuthorCommand &request);
     Result<AuthorDTO> restore();
 
@@ -27,7 +27,7 @@ class SKRIBISTO_APPLICATION_AUTHOR_EXPORT UpdateAuthorCommandHandler : public QO
     void authorUpdated(Contracts::DTO::Author::AuthorDTO authorDto);
 
   private:
-    QSharedPointer<InterfaceAuthorRepository> m_repository;
+    InterfaceAuthorRepository *m_repository;
     Result<AuthorDTO> handleImpl(QPromise<Result<void>> &progressPromise, const UpdateAuthorCommand &request);
     Result<AuthorDTO> restoreImpl();
     Result<AuthorDTO> saveOldState();

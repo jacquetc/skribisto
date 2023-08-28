@@ -15,8 +15,7 @@ namespace Contracts::CQRS::Scene::Validators
 class CreateSceneCommandValidator
 {
   public:
-    CreateSceneCommandValidator(QSharedPointer<InterfaceSceneRepository> sceneRepository)
-        : m_sceneRepository(sceneRepository)
+    CreateSceneCommandValidator(InterfaceSceneRepository *sceneRepository) : m_sceneRepository(sceneRepository)
     {
     }
 
@@ -29,6 +28,6 @@ class CreateSceneCommandValidator
     }
 
   private:
-    QSharedPointer<InterfaceSceneRepository> m_sceneRepository;
+    InterfaceSceneRepository *m_sceneRepository;
 };
 } // namespace Contracts::CQRS::Scene::Validators

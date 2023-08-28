@@ -4,6 +4,7 @@
 #include "domain_global.h"
 #include <QString>
 
+#include "entities.h"
 #include "entity.h"
 
 namespace Domain
@@ -37,6 +38,11 @@ class SKR_DOMAIN_EXPORT Atelier : public Entity
     Atelier(const Atelier &other)
         : Entity(other), m_name(other.m_name), m_books(other.m_books), m_booksLoaded(other.m_booksLoaded)
     {
+    }
+
+    static Domain::Entities::EntityEnum enumValue()
+    {
+        return Domain::Entities::EntityEnum::Atelier;
     }
 
     Atelier &operator=(const Atelier &other)

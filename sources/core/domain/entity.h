@@ -4,6 +4,7 @@
 #include <QDateTime>
 #include <QUuid>
 
+#include "entities.h"
 #include "entity_base.h"
 
 namespace Domain
@@ -37,6 +38,11 @@ class SKR_DOMAIN_EXPORT Entity : public EntityBase
         : EntityBase(other), m_uuid(other.m_uuid), m_creationDate(other.m_creationDate),
           m_updateDate(other.m_updateDate)
     {
+    }
+
+    static Domain::Entities::EntityEnum enumValue()
+    {
+        return Domain::Entities::EntityEnum::Entity;
     }
 
     Entity &operator=(const Entity &other)

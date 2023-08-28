@@ -19,8 +19,8 @@ class SKRIBISTO_APPLICATION_WRITING_EXPORT GetAllSceneParagraphsQueryHandler : p
 {
     Q_OBJECT
   public:
-    GetAllSceneParagraphsQueryHandler(QSharedPointer<InterfaceSceneRepository> sceneRepository,
-                                      QSharedPointer<InterfaceSceneParagraphRepository> sceneParagraphRepository);
+    GetAllSceneParagraphsQueryHandler(InterfaceSceneRepository *sceneRepository,
+                                      InterfaceSceneParagraphRepository *sceneParagraphRepository);
 
     Result<GetAllSceneParagraphsReplyDTO> handle(QPromise<Result<void>> &progressPromise,
                                                  const GetAllSceneParagraphsQuery &request);

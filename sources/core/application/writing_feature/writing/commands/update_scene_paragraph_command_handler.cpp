@@ -10,8 +10,7 @@ using namespace Contracts::CQRS::Writing::Validators;
 using namespace Application::Features::Writing::Commands;
 
 UpdateSceneParagraphCommandHandler::UpdateSceneParagraphCommandHandler(
-    QSharedPointer<InterfaceSceneRepository> sceneRepository,
-    QSharedPointer<InterfaceSceneParagraphRepository> sceneParagraphRepository)
+    InterfaceSceneRepository *sceneRepository, InterfaceSceneParagraphRepository *sceneParagraphRepository)
     : m_sceneRepository(sceneRepository), m_sceneParagraphRepository(sceneParagraphRepository)
 {
     if (!s_mappingRegistered)

@@ -33,7 +33,11 @@ set(presenter_SRCS
 )
 
 add_library(${PROJECT_NAME} STATIC ${presenter_SRCS}
-    writing/writing_controller.h writing/writing_controller.cpp)
+    writing/writing_controller.h writing/writing_controller.cpp
+    event_dispatcher.h event_dispatcher.cpp
+    entities/chapter_signals.h
+    entities/scene_signals.h
+    entities/scene_paragraph_signals.h)
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 

@@ -1,31 +1,40 @@
 #pragma once
 
 #include "book.h"
+
+#include "persistence/interface_chapter_repository.h"
+
+#include "persistence/interface_author_repository.h"
+
 #include "database/interface_database_table.h"
 #include "generic_repository.h"
 #include "persistence/interface_book_repository.h"
 #include "persistence_global.h"
-#include <QObject>
 
-namespace Repository {
-class SKR_PERSISTENCE_EXPORT BookRepository : public QObject,
-                                              public Repository::GenericRepository<Domain::Book>,
-                                              public Contracts::Persistence::InterfaceBookRepository {
-    Q_OBJECT
-    Q_INTERFACES(Contracts::Persistence::InterfaceBookRepository)
+using namespace Contracts::Persistence;
 
-public:
+namespace Repository
+{
 
-    explicit BookRepository(InterfaceDatabaseTable<Domain::Book>    *bookDatabase,
-                            InterfaceDatabaseTable<Domain::Chapter> *chapterDatabase);
-
+class SKR_PERSISTENCE_EXPORT BookRepository : public Repository::GenericRepository<Domain::Book>,
+                                              public Contracts::Persistence::InterfaceBookRepository
+{
+  public:
+    explicit BookRepository(Domain::EntitySchema *entitySchema, InterfaceDatabaseTable<Domain::Book> *bookDatabase,
+                            InterfaceChapterRepository *chapterRepository, InterfaceAuthorRepository *authorRepository);
 
     Domain::Book::ChaptersLoader fetchChaptersLoader() override;
 
-private:
+    Domain::Book::AuthorLoader fetchAuthorLoader() override;
 
-    InterfaceDatabaseTable<Domain::Book> *m_bookDatabase;
+    QHash<int, QList<int>> removeInCascade(QList<int> ids) override;
 
-    InterfaceDatabaseTable<Domain::Chapter> *m_chapterDatabase;
+  private:
+    Domain::EntitySchema *m_entitySchema;
+
+    InterfaceChapterRepository *m_chapterRepository;
+
+    InterfaceAuthorRepository *m_authorRepository;
 };
+
 } // namespace Repository

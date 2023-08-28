@@ -15,11 +15,11 @@ class SKRIBISTO_APPLICATION_CHAPTER_EXPORT GetAllChapterQueryHandler : public QO
 {
     Q_OBJECT
   public:
-    GetAllChapterQueryHandler(QSharedPointer<InterfaceChapterRepository> repository);
+    GetAllChapterQueryHandler(InterfaceChapterRepository *repository);
     Result<QList<ChapterDTO>> handle(QPromise<Result<void>> &progressPromise);
 
   private:
-    QSharedPointer<InterfaceChapterRepository> m_repository;
+    InterfaceChapterRepository *m_repository;
     Result<QList<ChapterDTO>> handleImpl(QPromise<Result<void>> &progressPromise);
     static bool s_mappingRegistered;
     void registerMappings();

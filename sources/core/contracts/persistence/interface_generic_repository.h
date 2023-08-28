@@ -24,6 +24,7 @@ template <class T> class SKR_CONTRACTS_EXPORT InterfaceGenericRepository
     virtual Result<QList<T>> getAll(const QHash<QString, QVariant> &filters) = 0;
 
     virtual Result<int> remove(int id) = 0;
+    virtual Result<QList<int>> remove(QList<int> ids) = 0;
     virtual Result<T> add(T &&entity) = 0;
     virtual Result<T> update(T &&entity) = 0;
     virtual Result<bool> exists(int id) = 0;

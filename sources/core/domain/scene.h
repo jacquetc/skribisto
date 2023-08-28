@@ -4,6 +4,7 @@
 #include "scene_paragraph.h"
 #include <QString>
 
+#include "entities.h"
 #include "entity.h"
 
 namespace Domain
@@ -38,6 +39,11 @@ class SKR_DOMAIN_EXPORT Scene : public Entity
         : Entity(other), m_title(other.m_title), m_paragraphs(other.m_paragraphs),
           m_paragraphsLoaded(other.m_paragraphsLoaded)
     {
+    }
+
+    static Domain::Entities::EntityEnum enumValue()
+    {
+        return Domain::Entities::EntityEnum::Scene;
     }
 
     Scene &operator=(const Scene &other)

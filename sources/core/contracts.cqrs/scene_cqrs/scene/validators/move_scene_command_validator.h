@@ -17,8 +17,7 @@ namespace Contracts::CQRS::Scene::Validators
 class MoveSceneCommandValidator
 {
   public:
-    MoveSceneCommandValidator(QSharedPointer<InterfaceChapterRepository> chapterRepository,
-                              QSharedPointer<InterfaceSceneRepository> sceneRepository)
+    MoveSceneCommandValidator(InterfaceChapterRepository *chapterRepository, InterfaceSceneRepository *sceneRepository)
         : m_chapterRepository(chapterRepository), m_sceneRepository(sceneRepository)
     {
     }
@@ -32,8 +31,8 @@ class MoveSceneCommandValidator
     }
 
   private:
-    QSharedPointer<InterfaceChapterRepository> m_chapterRepository;
+    InterfaceChapterRepository *m_chapterRepository;
 
-    QSharedPointer<InterfaceSceneRepository> m_sceneRepository;
+    InterfaceSceneRepository *m_sceneRepository;
 };
 } // namespace Contracts::CQRS::Scene::Validators

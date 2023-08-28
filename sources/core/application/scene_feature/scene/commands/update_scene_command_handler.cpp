@@ -9,8 +9,7 @@ using namespace Contracts::CQRS::Scene::Commands;
 using namespace Contracts::CQRS::Scene::Validators;
 using namespace Application::Features::Scene::Commands;
 
-UpdateSceneCommandHandler::UpdateSceneCommandHandler(QSharedPointer<InterfaceSceneRepository> repository)
-    : m_repository(repository)
+UpdateSceneCommandHandler::UpdateSceneCommandHandler(InterfaceSceneRepository *repository) : m_repository(repository)
 {
     if (!s_mappingRegistered)
     {

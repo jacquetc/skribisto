@@ -9,8 +9,7 @@ using namespace Contracts::CQRS::Author::Commands;
 using namespace Contracts::CQRS::Author::Validators;
 using namespace Application::Features::Author::Commands;
 
-UpdateAuthorCommandHandler::UpdateAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository> repository)
-    : m_repository(repository)
+UpdateAuthorCommandHandler::UpdateAuthorCommandHandler(InterfaceAuthorRepository *repository) : m_repository(repository)
 {
     if (!s_mappingRegistered)
     {

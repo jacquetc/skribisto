@@ -18,7 +18,10 @@ file(READ "entities.txt" header_files)
 # Convert the new-line separated paths into a CMake list
 string(REPLACE "\n" ";" header_files "${header_files}")
 
-add_library(skribisto-domain STATIC ${domain_SRCS} ${header_files})
+add_library(skribisto-domain STATIC ${domain_SRCS} ${header_files}
+    entities.h
+    entity_schema.h entity_schema.cpp
+    domain_registration.h domain_registration.cpp)
 
 target_include_directories(skribisto-domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(skribisto-domain PUBLIC SKRIBISTO_DOMAIN_LIBRARY)

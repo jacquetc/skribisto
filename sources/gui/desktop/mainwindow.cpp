@@ -73,7 +73,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             [progressDialog](int progressValue) { progressDialog->setValue(progressValue); });
 
     connect(ui->loadSystemPushButton, &QPushButton::clicked, this, [=]() {
-        SystemController::closeSystem();
+        SystemController::instance()->closeSystem();
 
         Contracts::DTO::System::LoadSystemDTO dto;
         dto.setFileName(QUrl("qrc:/test_clean.skrib"));
@@ -112,7 +112,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     auto authorController = AuthorController::instance();
 
     connect(ui->addAsyncPushButton, &QPushButton::clicked, this, [=]() {
-        Contracts::DTO::Author::CreateAuthorDTO dto(QUuid(), QDateTime(), QDateTime(), "test");
+        Contracts::DTO::Author::CreateAuthorDTO dto(QUuid(), QDateTime(), QDateTime(), "test", 0);
 
         authorController->create(dto);
     });

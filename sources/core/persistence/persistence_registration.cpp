@@ -14,7 +14,7 @@ using namespace Repository;
 using namespace Database;
 using namespace Persistence;
 
-PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{parent}
+PersistenceRegistration::PersistenceRegistration(QObject *parent, Domain::EntitySchema *entitySchema) : QObject{parent}
 {
     auto *context = new DatabaseContext();
 
@@ -61,15 +61,14 @@ PersistenceRegistration::PersistenceRegistration(QObject *parent) : QObject{pare
     auto atelierDatabaseTable = new DatabaseTable<Domain::Atelier>(context);
 
     // repositories:
-    QSharedPointer<AuthorRepository> authorRepository(new AuthorRepository(authorDatabaseTable));
-    QSharedPointer<SceneParagraphRepository> sceneParagraphRepository(
-        new SceneParagraphRepository(sceneParagraphDatabaseTable));
-    QSharedPointer<SceneRepository> sceneRepository(
-        new SceneRepository(sceneDatabaseTable, sceneParagraphDatabaseTable));
-    QSharedPointer<ChapterRepository> chapterRepository(
-        new ChapterRepository(chapterDatabaseTable, sceneDatabaseTable));
-    QSharedPointer<BookRepository> bookRepository(new BookRepository(bookDatabaseTable, chapterDatabaseTable));
-    QSharedPointer<AtelierRepository> atelierRepository(new AtelierRepository(atelierDatabaseTable, bookDatabaseTable));
+    AuthorRepository *authorRepository = new AuthorRepository(entitySchema, authorDatabaseTable);
+    SceneParagraphRepository *sceneParagraphRepository =
+        new SceneParagraphRepository(entitySchema, sceneParagraphDatabaseTable);
+    SceneRepository *sceneRepository = new SceneRepository(entitySchema, sceneDatabaseTable, sceneParagraphRepository);
+    ChapterRepository *chapterRepository = new ChapterRepository(entitySchema, chapterDatabaseTable, sceneRepository);
+    BookRepository *bookRepository =
+        new BookRepository(entitySchema, bookDatabaseTable, chapterRepository, authorRepository);
+    AtelierRepository *atelierRepository = new AtelierRepository(entitySchema, atelierDatabaseTable, bookRepository);
 
     // register repositories:
     Repository::RepositoryProvider::instance()->registerRepository("author", authorRepository);

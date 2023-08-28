@@ -1,31 +1,35 @@
 #pragma once
 
 #include "atelier.h"
+
+#include "persistence/interface_book_repository.h"
+
 #include "database/interface_database_table.h"
 #include "generic_repository.h"
 #include "persistence/interface_atelier_repository.h"
 #include "persistence_global.h"
-#include <QObject>
 
-namespace Repository {
-class SKR_PERSISTENCE_EXPORT AtelierRepository : public QObject,
-                                                 public Repository::GenericRepository<Domain::Atelier>,
-                                                 public Contracts::Persistence::InterfaceAtelierRepository {
-    Q_OBJECT
-    Q_INTERFACES(Contracts::Persistence::InterfaceAtelierRepository)
+using namespace Contracts::Persistence;
 
-public:
+namespace Repository
+{
 
-    explicit AtelierRepository(InterfaceDatabaseTable<Domain::Atelier> *atelierDatabase,
-                               InterfaceDatabaseTable<Domain::Book>    *bookDatabase);
-
+class SKR_PERSISTENCE_EXPORT AtelierRepository : public Repository::GenericRepository<Domain::Atelier>,
+                                                 public Contracts::Persistence::InterfaceAtelierRepository
+{
+  public:
+    explicit AtelierRepository(Domain::EntitySchema *entitySchema,
+                               InterfaceDatabaseTable<Domain::Atelier> *atelierDatabase,
+                               InterfaceBookRepository *bookRepository);
 
     Domain::Atelier::BooksLoader fetchBooksLoader() override;
 
-private:
+    QHash<int, QList<int>> removeInCascade(QList<int> ids) override;
 
-    InterfaceDatabaseTable<Domain::Atelier> *m_atelierDatabase;
+  private:
+    Domain::EntitySchema *m_entitySchema;
 
-    InterfaceDatabaseTable<Domain::Book> *m_bookDatabase;
+    InterfaceBookRepository *m_bookRepository;
 };
+
 } // namespace Repository

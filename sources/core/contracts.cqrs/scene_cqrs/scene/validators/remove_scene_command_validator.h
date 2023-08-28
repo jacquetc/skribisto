@@ -11,8 +11,7 @@ namespace Contracts::CQRS::Scene::Validators
 class RemoveSceneCommandValidator
 {
   public:
-    RemoveSceneCommandValidator(QSharedPointer<InterfaceSceneRepository> sceneRepository)
-        : m_sceneRepository(sceneRepository)
+    RemoveSceneCommandValidator(InterfaceSceneRepository *sceneRepository) : m_sceneRepository(sceneRepository)
     {
     }
 
@@ -32,6 +31,6 @@ class RemoveSceneCommandValidator
     }
 
   private:
-    QSharedPointer<InterfaceSceneRepository> m_sceneRepository;
+    InterfaceSceneRepository *m_sceneRepository;
 };
 } // namespace Contracts::CQRS::Scene::Validators

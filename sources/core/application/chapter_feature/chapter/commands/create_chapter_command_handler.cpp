@@ -8,7 +8,7 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::Chapter::Validators;
 using namespace Application::Features::Chapter::Commands;
 
-CreateChapterCommandHandler::CreateChapterCommandHandler(QSharedPointer<InterfaceChapterRepository> repository)
+CreateChapterCommandHandler::CreateChapterCommandHandler(InterfaceChapterRepository *repository)
     : m_repository(repository)
 {
     if (!s_mappingRegistered)

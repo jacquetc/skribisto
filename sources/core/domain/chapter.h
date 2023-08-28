@@ -4,6 +4,7 @@
 #include "scene.h"
 #include <QString>
 
+#include "entities.h"
 #include "entity.h"
 
 namespace Domain
@@ -37,6 +38,11 @@ class SKR_DOMAIN_EXPORT Chapter : public Entity
     Chapter(const Chapter &other)
         : Entity(other), m_title(other.m_title), m_scenes(other.m_scenes), m_scenesLoaded(other.m_scenesLoaded)
     {
+    }
+
+    static Domain::Entities::EntityEnum enumValue()
+    {
+        return Domain::Entities::EntityEnum::Chapter;
     }
 
     Chapter &operator=(const Chapter &other)

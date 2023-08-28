@@ -9,13 +9,14 @@ using namespace Contracts::CQRS::Writing::Commands;
 using namespace Application::Features::Writing::Commands;
 
 QScopedPointer<WritingController> WritingController::s_instance = QScopedPointer<WritingController>(nullptr);
-InterfaceRepositoryProvider *WritingController::s_repositoryProvider;
-ThreadedUndoRedoSystem *WritingController::s_undo_redo_system;
 
-WritingController::WritingController(InterfaceRepositoryProvider *repositoryProvider) : QObject(nullptr)
+WritingController::WritingController(QObject *parent, InterfaceRepositoryProvider *repositoryProvider,
+                                     ThreadedUndoRedoSystem *undo_redo_system, EventDispatcher *eventDispatcher)
+    : QObject(parent)
 {
-    s_repositoryProvider = repositoryProvider;
-    s_undo_redo_system = ThreadedUndoRedoSystem::instance();
+    m_repositoryProvider = repositoryProvider;
+    m_undo_redo_system = ThreadedUndoRedoSystem::instance();
+    m_eventDispatcher = eventDispatcher;
 
     s_instance.reset(this);
 }
@@ -31,9 +32,9 @@ void WritingController::updateSceneParagraph(const UpdateSceneParagraphDTO &dto)
 
     request.req = dto;
 
-    auto sceneRepository = qSharedPointerCast<InterfaceSceneRepository>(s_repositoryProvider->repository("Scene"));
+    auto sceneRepository = static_cast<InterfaceSceneRepository *>(m_repositoryProvider->repository("Scene"));
     auto sceneParagraphRepository =
-        qSharedPointerCast<InterfaceSceneParagraphRepository>(s_repositoryProvider->repository("SceneParagraph"));
+        static_cast<InterfaceSceneParagraphRepository *>(m_repositoryProvider->repository("SceneParagraph"));
 
     auto *handler = new UpdateSceneParagraphCommandHandler(sceneRepository, sceneParagraphRepository);
 
@@ -46,5 +47,5 @@ void WritingController::updateSceneParagraph(const UpdateSceneParagraphDTO &dto)
         WritingController::tr("Update scene paragraph"), handler, request);
 
     // push command
-    s_undo_redo_system->push(command, "scene", dto.sceneUuid());
+    m_undo_redo_system->push(command, "scene", dto.sceneUuid());
 }

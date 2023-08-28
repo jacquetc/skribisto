@@ -8,8 +8,7 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::Scene::Validators;
 using namespace Application::Features::Scene::Commands;
 
-CreateSceneCommandHandler::CreateSceneCommandHandler(QSharedPointer<InterfaceSceneRepository> repository)
-    : m_repository(repository)
+CreateSceneCommandHandler::CreateSceneCommandHandler(InterfaceSceneRepository *repository) : m_repository(repository)
 {
     if (!s_mappingRegistered)
     {

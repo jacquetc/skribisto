@@ -55,6 +55,7 @@ class SKR_PERSISTENCE_EXPORT DatabaseTable : public virtual InterfaceDatabaseTab
     Result<QList<T>> getAll(const QHash<QString, QVariant> &filters) override;
 
     Result<int> remove(int id) override;
+    Result<QList<int>> remove(QList<int> ids) override;
 
     Result<T> add(T &&entity) override;
 
@@ -399,6 +400,52 @@ template <class T> Result<int> DatabaseTable<T>::remove(int id)
         }
     }
     return Result<int>(Error(Q_FUNC_INFO, Error::Fatal, "normaly_unreacheable", ""));
+}
+
+//--------------------------------------------
+
+template <class T> Result<QList<int>> DatabaseTable<T>::remove(QList<int> ids)
+{
+    const QString &entityName = m_tableName;
+    QSqlDatabase database = m_databaseContext->getConnection();
+
+    // Generate the SQL DELETE statement
+    QString queryStr = "DELETE FROM " + entityName + " WHERE id IN (:ids)";
+
+    {
+        QSqlQuery query(database);
+        if (!query.prepare(queryStr))
+        {
+            return Result<QList<int>>(
+                Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
+        }
+
+        QString idsString;
+        for (int id : ids)
+        {
+            idsString += QString::number(id) + ",";
+            idsString.chop(1);
+        }
+        query.bindValue(":id", idsString);
+
+        // Execute the DELETE statement with the entity ID
+        if (!query.exec())
+        {
+            return Result<QList<int>>(
+                Error(Q_FUNC_INFO, Error::Critical, "sql_error", query.lastError().text(), queryStr));
+        }
+
+        // Return an appropriate Result object based on the query execution result
+        if (query.numRowsAffected() == ids.count())
+        {
+            return Result<QList<int>>(ids);
+        }
+        else
+        {
+            return Result<QList<int>>(Error(Q_FUNC_INFO, Error::Critical, "sql_delete_failed",
+                                            "Failed to delete row from database", QString::number(ids.count())));
+        }
+    }
 }
 
 //--------------------------------------------

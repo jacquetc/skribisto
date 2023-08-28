@@ -6,16 +6,12 @@
 
 using namespace Contracts::Persistence;
 
-using namespace Contracts::DTO::Author;
-
 namespace Contracts::CQRS::Author::Validators
 {
 class RemoveAuthorCommandValidator
 {
   public:
-    RemoveAuthorCommandValidator(QSharedPointer<InterfaceAuthorRepository> authorRepository)
-        : m_authorRepository(authorRepository)
-
+    RemoveAuthorCommandValidator(InterfaceAuthorRepository *authorRepository) : m_authorRepository(authorRepository)
     {
     }
 
@@ -35,6 +31,6 @@ class RemoveAuthorCommandValidator
     }
 
   private:
-    QSharedPointer<InterfaceAuthorRepository> m_authorRepository;
+    InterfaceAuthorRepository *m_authorRepository;
 };
 } // namespace Contracts::CQRS::Author::Validators

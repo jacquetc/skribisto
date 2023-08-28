@@ -1,21 +1,23 @@
 #pragma once
 
+#include "entity_schema.h"
 #include "persistence_global.h"
-#include <QObject>
 #include "repositories/repository_provider.h"
+#include <QObject>
 
-namespace Persistence {
-class SKR_PERSISTENCE_EXPORT PersistenceRegistration : public QObject {
+namespace Persistence
+{
+class SKR_PERSISTENCE_EXPORT PersistenceRegistration : public QObject
+{
     Q_OBJECT
 
-public:
+  public:
+    explicit PersistenceRegistration(QObject *parent, Domain::EntitySchema *entitySchema);
 
-    explicit PersistenceRegistration(QObject *parent);
+    Repository::RepositoryProvider *repositoryProvider();
 
-  Repository::RepositoryProvider* repositoryProvider();
+  signals:
 
-signals:
-
-private:
+  private:
 };
 } // namespace Persistence

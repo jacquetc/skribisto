@@ -19,8 +19,7 @@ class SKRIBISTO_APPLICATION_SCENE_EXPORT MoveSceneCommandHandler : public QObjec
 {
     Q_OBJECT
   public:
-    MoveSceneCommandHandler(QSharedPointer<InterfaceChapterRepository> chapterRepository,
-                            QSharedPointer<InterfaceSceneRepository> sceneRepository);
+    MoveSceneCommandHandler(InterfaceChapterRepository *chapterRepository, InterfaceSceneRepository *sceneRepository);
 
     Result<MoveSceneReplyDTO> handle(QPromise<Result<void>> &progressPromise, const MoveSceneCommand &request);
 
@@ -30,8 +29,8 @@ class SKRIBISTO_APPLICATION_SCENE_EXPORT MoveSceneCommandHandler : public QObjec
     void moveSceneChanged(Contracts::DTO::Scene::MoveSceneReplyDTO moveSceneReplyDto);
 
   private:
-    QSharedPointer<InterfaceChapterRepository> m_chapterRepository;
-    QSharedPointer<InterfaceSceneRepository> m_sceneRepository;
+    InterfaceChapterRepository *m_chapterRepository;
+    InterfaceSceneRepository *m_sceneRepository;
     Result<MoveSceneReplyDTO> handleImpl(QPromise<Result<void>> &progressPromise, const MoveSceneCommand &request);
 
     Result<MoveSceneReplyDTO> restoreImpl();

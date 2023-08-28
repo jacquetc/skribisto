@@ -36,6 +36,7 @@ class RepositoryTest : public QObject
     void getAllAuthors();
 
   private:
+    Domain::EntitySchema *m_entitySchema;
 };
 
 RepositoryTest::RepositoryTest()
@@ -48,6 +49,7 @@ RepositoryTest::~RepositoryTest()
 
 void RepositoryTest::initTestCase()
 {
+    m_entitySchema = new Domain::EntitySchema(this);
 }
 
 void RepositoryTest::cleanupTestCase()
@@ -68,7 +70,7 @@ void RepositoryTest::getAuthor()
 {
 
     auto database = new DummyDatabase;
-    Repository::AuthorRepository repository(database);
+    Repository::AuthorRepository repository(m_entitySchema, database);
 
     QUuid uuid = QUuid::createUuid();
     Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
@@ -85,7 +87,7 @@ void RepositoryTest::getAuthor()
 void RepositoryTest::addAuthor()
 {
     auto database = new DummyDatabase;
-    Repository::AuthorRepository repository(database);
+    Repository::AuthorRepository repository(m_entitySchema, database);
 
     QUuid uuid = QUuid::createUuid();
     Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
@@ -101,7 +103,7 @@ void RepositoryTest::addAuthor()
 void RepositoryTest::removeAuthor()
 {
     auto database = new DummyDatabase;
-    Repository::AuthorRepository repository(database);
+    Repository::AuthorRepository repository(m_entitySchema, database);
 
     QUuid uuid = QUuid::createUuid();
     Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
@@ -120,7 +122,7 @@ void RepositoryTest::removeAuthor()
 void RepositoryTest::updateAuthor()
 {
     auto database = new DummyDatabase;
-    Repository::AuthorRepository repository(database);
+    Repository::AuthorRepository repository(m_entitySchema, database);
 
     QUuid uuid = QUuid::createUuid();
     Domain::Author author(1, uuid, QDateTime(), QDateTime(), "test");
@@ -139,7 +141,7 @@ void RepositoryTest::updateAuthor()
 void RepositoryTest::authorExists()
 {
     auto database = new DummyDatabase;
-    Repository::AuthorRepository repository(database);
+    Repository::AuthorRepository repository(m_entitySchema, database);
 
     QUuid uuid = QUuid::createUuid();
     database->fillExists(true);
@@ -156,7 +158,7 @@ void RepositoryTest::authorExists()
 void RepositoryTest::getAllAuthors()
 {
     auto database = new DummyDatabase;
-    Repository::AuthorRepository repository(database);
+    Repository::AuthorRepository repository(m_entitySchema, database);
 
     Domain::Author author1(1, QUuid::createUuid(), QDateTime(), QDateTime(), "test1");
     Domain::Author author2(2, QUuid::createUuid(), QDateTime(), QDateTime(), "test2");

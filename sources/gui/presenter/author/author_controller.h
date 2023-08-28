@@ -3,6 +3,7 @@
 #include "author/author_dto.h"
 #include "author/create_author_dto.h"
 #include "author/update_author_dto.h"
+#include "event_dispatcher.h"
 #include "persistence/interface_repository_provider.h"
 #include "presenter_global.h"
 #include "undo_redo/threaded_undo_redo_system.h"
@@ -19,19 +20,20 @@ class SKR_PRESENTER_EXPORT AuthorController : public QObject
 {
     Q_OBJECT
   public:
-    AuthorController(InterfaceRepositoryProvider *repositoryProvider);
+    AuthorController(QObject *parent, InterfaceRepositoryProvider *repositoryProvider,
+                     ThreadedUndoRedoSystem *undo_redo_system, EventDispatcher *eventDispatcher);
 
     static AuthorController *instance();
 
-    static void get(int id);
+    void get(int id);
 
-    static void getAll();
+    void getAll();
 
-    static void create(const CreateAuthorDTO &dto);
+    void create(const CreateAuthorDTO &dto);
 
-    static void update(const UpdateAuthorDTO &dto);
+    void update(const UpdateAuthorDTO &dto);
 
-    static void remove(int id);
+    void remove(int id);
 
   signals:
     void getReplied(Contracts::DTO::Author::AuthorDTO dto);
@@ -42,8 +44,9 @@ class SKR_PRESENTER_EXPORT AuthorController : public QObject
 
   private:
     static QScopedPointer<AuthorController> s_instance;
-    static InterfaceRepositoryProvider *s_repositoryProvider;
-    static ThreadedUndoRedoSystem *s_undo_redo_system;
+    InterfaceRepositoryProvider *m_repositoryProvider;
+    ThreadedUndoRedoSystem *m_undo_redo_system;
+    EventDispatcher *m_eventDispatcher;
     AuthorController() = delete;
     AuthorController(const AuthorController &) = delete;
     AuthorController &operator=(const AuthorController &) = delete;

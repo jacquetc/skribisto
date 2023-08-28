@@ -10,6 +10,7 @@ qt6_add_qml_module(presenter
     foreign_author_controller.h
     foreign_chapter_controller.h
     foreign_system_controller.h
+    SOURCES foreign_event_dispatcher.h
 
 )
 

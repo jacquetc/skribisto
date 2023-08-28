@@ -4,8 +4,7 @@
 
 using namespace Application::Features::Scene::Queries;
 
-GetAllSceneQueryHandler::GetAllSceneQueryHandler(QSharedPointer<InterfaceSceneRepository> repository)
-    : m_repository(repository)
+GetAllSceneQueryHandler::GetAllSceneQueryHandler(InterfaceSceneRepository *repository) : m_repository(repository)
 {
     if (!s_mappingRegistered)
     {

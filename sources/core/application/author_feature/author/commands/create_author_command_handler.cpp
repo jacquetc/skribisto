@@ -8,8 +8,9 @@ using namespace Contracts::Persistence;
 using namespace Contracts::CQRS::Author::Validators;
 using namespace Application::Features::Author::Commands;
 
-CreateAuthorCommandHandler::CreateAuthorCommandHandler(QSharedPointer<InterfaceAuthorRepository> repository)
-    : m_repository(repository)
+CreateAuthorCommandHandler::CreateAuthorCommandHandler(InterfaceAuthorRepository *repository,
+                                                       InterfaceBookRepository *ownerRepository)
+    : m_repository(repository), m_ownerRepository(ownerRepository)
 {
     if (!s_mappingRegistered)
     {
@@ -56,8 +57,9 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(QPromise<Result<void>> 
 {
     qDebug() << "CreateAuthorCommandHandler::handleImpl called";
     Domain::Author author;
+    Domain::Book ownerEntity;
 
-    if (m_newState.isEmpty())
+    if (m_newEntity.isEmpty())
     {
         // Validate the create Author command using the validator
         auto validator = CreateAuthorCommandValidator(m_repository);
@@ -68,9 +70,11 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(QPromise<Result<void>> 
             return Result<AuthorDTO>(validatorResult.error());
         }
 
+        CreateAuthorDTO createDTO = request.req;
+
         // Map the create Author command to a domain Author object and
         // generate a UUID
-        author = AutoMapper::AutoMapper::map<CreateAuthorDTO, Domain::Author>(request.req);
+        author = AutoMapper::AutoMapper::map<CreateAuthorDTO, Domain::Author>(createDTO);
 
         // allow for forcing the uuid
         if (author.uuid().isNull())
@@ -81,12 +85,34 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(QPromise<Result<void>> 
         // Set the creation and update timestamps to the current date and time
         author.setCreationDate(QDateTime::currentDateTime());
         author.setUpdateDate(QDateTime::currentDateTime());
+
+        // Get the owner entity
+        int ownerId = createDTO.bookId();
+
+        auto originalOwnerEntityResult = m_ownerRepository->get(ownerId);
+        if (Q_UNLIKELY(originalOwnerEntityResult.hasError()))
+        {
+            return Result<AuthorDTO>(originalOwnerEntityResult.error());
+        }
+        auto originalOwnerEntity = originalOwnerEntityResult.value();
+        originalOwnerEntity.setAuthorLoader(m_ownerRepository->fetchAuthorLoader());
+
+        // force the fetching before saving the owner entity
+        auto author = originalOwnerEntity.author();
+
+        // save
+        m_oldOwnerEntity = originalOwnerEntity;
+
+        // Add the author to the owner entity
+        originalOwnerEntity.setAuthor(author);
+
+        m_ownerEntityNewState = originalOwnerEntity;
+        ownerEntity = originalOwnerEntity;
     }
     else
     {
-        // Map the create author command to a domain author object and
-        // generate a UUID
-        author = AutoMapper::AutoMapper::map<AuthorDTO, Domain::Author>(m_newState.value());
+        author = m_newEntity.value();
+        ownerEntity = m_ownerEntityNewState;
     }
 
     // Add the author to the repository
@@ -99,12 +125,22 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(QPromise<Result<void>> 
         m_repository->cancelChanges();
         return Result<AuthorDTO>(authorResult.error());
     }
+
+    // Apply the addition of the new entity to the owner entity
+
+    auto updatedOwnerEntityResult = m_ownerRepository->update(std::move(ownerEntity));
+
+    if (Q_UNLIKELY(updatedOwnerEntityResult.hasError()))
+    {
+        m_repository->cancelChanges();
+        return Result<AuthorDTO>(updatedOwnerEntityResult.error());
+    }
+
     m_repository->saveChanges();
 
+    m_newEntity = authorResult;
+
     auto authorDTO = AutoMapper::AutoMapper::map<Domain::Author, AuthorDTO>(authorResult.value());
-
-    m_newState = Result<AuthorDTO>(authorDTO);
-
     emit authorCreated(authorDTO);
 
     qDebug() << "Author added:" << authorDTO.id();
@@ -116,7 +152,7 @@ Result<AuthorDTO> CreateAuthorCommandHandler::handleImpl(QPromise<Result<void>> 
 Result<AuthorDTO> CreateAuthorCommandHandler::restoreImpl()
 {
 
-    auto deleteResult = m_repository->remove(m_newState.value().id());
+    auto deleteResult = m_repository->remove(m_newEntity.value().id());
 
     if (Q_UNLIKELY(deleteResult.hasError()))
     {

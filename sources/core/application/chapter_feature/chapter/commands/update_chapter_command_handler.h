@@ -19,7 +19,7 @@ class SKRIBISTO_APPLICATION_CHAPTER_EXPORT UpdateChapterCommandHandler : public 
 {
     Q_OBJECT
   public:
-    UpdateChapterCommandHandler(QSharedPointer<InterfaceChapterRepository> repository);
+    UpdateChapterCommandHandler(InterfaceChapterRepository *repository);
     Result<ChapterDTO> handle(QPromise<Result<void>> &progressPromise, const UpdateChapterCommand &request);
     Result<ChapterDTO> restore();
 
@@ -27,7 +27,7 @@ class SKRIBISTO_APPLICATION_CHAPTER_EXPORT UpdateChapterCommandHandler : public 
     void chapterUpdated(Contracts::DTO::Chapter::ChapterDTO chapterDto);
 
   private:
-    QSharedPointer<InterfaceChapterRepository> m_repository;
+    InterfaceChapterRepository *m_repository;
     Result<ChapterDTO> handleImpl(QPromise<Result<void>> &progressPromise, const UpdateChapterCommand &request);
     Result<ChapterDTO> restoreImpl();
     Result<ChapterDTO> saveOldState();

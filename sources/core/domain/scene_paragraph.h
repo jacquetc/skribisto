@@ -3,6 +3,7 @@
 #include "domain_global.h"
 #include <QString>
 
+#include "entities.h"
 #include "entity.h"
 
 namespace Domain
@@ -31,6 +32,11 @@ class SKR_DOMAIN_EXPORT SceneParagraph : public Entity
 
     SceneParagraph(const SceneParagraph &other) : Entity(other), m_content(other.m_content)
     {
+    }
+
+    static Domain::Entities::EntityEnum enumValue()
+    {
+        return Domain::Entities::EntityEnum::SceneParagraph;
     }
 
     SceneParagraph &operator=(const SceneParagraph &other)

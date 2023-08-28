@@ -15,11 +15,11 @@ class SKRIBISTO_APPLICATION_SCENE_EXPORT GetAllSceneQueryHandler : public QObjec
 {
     Q_OBJECT
   public:
-    GetAllSceneQueryHandler(QSharedPointer<InterfaceSceneRepository> repository);
+    GetAllSceneQueryHandler(InterfaceSceneRepository *repository);
     Result<QList<SceneDTO>> handle(QPromise<Result<void>> &progressPromise);
 
   private:
-    QSharedPointer<InterfaceSceneRepository> m_repository;
+    InterfaceSceneRepository *m_repository;
     Result<QList<SceneDTO>> handleImpl(QPromise<Result<void>> &progressPromise);
     static bool s_mappingRegistered;
     void registerMappings();

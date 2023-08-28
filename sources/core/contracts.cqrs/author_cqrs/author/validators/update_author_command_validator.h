@@ -15,9 +15,7 @@ namespace Contracts::CQRS::Author::Validators
 class UpdateAuthorCommandValidator
 {
   public:
-    UpdateAuthorCommandValidator(QSharedPointer<InterfaceAuthorRepository> authorRepository)
-        : m_authorRepository(authorRepository)
-
+    UpdateAuthorCommandValidator(InterfaceAuthorRepository *authorRepository) : m_authorRepository(authorRepository)
     {
     }
 
@@ -37,6 +35,6 @@ class UpdateAuthorCommandValidator
     }
 
   private:
-    QSharedPointer<InterfaceAuthorRepository> m_authorRepository;
+    InterfaceAuthorRepository *m_authorRepository;
 };
 } // namespace Contracts::CQRS::Author::Validators
