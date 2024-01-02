@@ -1,5 +1,5 @@
-import QtQuick 2.15
+import QtQuick 
 
 SideScreenForm {
-    button.onClicked: console.log("Button Pressed")
+
 }

@@ -2,28 +2,12 @@ import QtQuick
 import QtQuick.Controls 
 import Controller
 import Models
-import Skribisto
 import Writing
 
-MainScreenForm {
+OverviewPageForm {
     clip: true
-
-    Connections{
-        target: UiSignals
-        function onChapterCalledFromSideList(chapterId) {
-            stack.push(sceneSynopsisPage, {chapterId: chapterId})
-        }
-
-    }
-
-    Component {
-        id: sceneSynopsisPage
-        SceneSynopsisPage{
-
-        }
-    }
-
-
+    BookChaptersListModel { id: bookChaptersListModel}
+    listView.model: bookChaptersListModel
 
 //    Connections {
 //        target: EventDispatcher.chapter()

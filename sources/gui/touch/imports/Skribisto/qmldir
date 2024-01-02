@@ -1,6 +1,9 @@
 Module Skribisto
 singleton Constants 1.0 Constants.qml
+singleton UiSignals 1.0 UiSignals.qml
 EventListSimulator 1.0 EventListSimulator.qml
 EventListModel 1.0 EventListModel.qml
 DirectoryFontLoader 1.0 DirectoryFontLoader.qml
+OverlayTextEdit 1.0 OverlayTextEdit.qml
+SideChapterList 1.0 SideChapterList.qml
 
