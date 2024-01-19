@@ -1,12 +1,75 @@
 erDiagram
-    ATELIER {
+
+
+    ROOT{
+
     }
-    ATELIER ||--|| BOOK : contains
-    ATELIER ||--|| BINDER : contains
-    ATELIER ||--o{ USER-DICTIONARY : has
-    ATELIER ||--o{ WORD-REPLACEMENT : has
-    ATELIER ||--o{ BACKUP : has
-    
+
+    ROOT ||--o| ATELIER : has
+    ROOT ||--o{ RECENT-ATELIER : has
+    ROOT ||--o| USER-SETTINGS : has
+    ROOT ||--o| USER : has
+
+    RECENT-ATELIER {
+        string path
+        bool isReachable
+    }
+
+    USER-SETTINGS {
+        int width
+        int height
+        int x
+        int y
+    }
+
+    USER {
+        string name
+        string email
+    }
+    USER ||--o{ USER-ALIAS : has
+
+    USER-ALIAS {
+        string name
+        string email
+        string atelier
+    }
+
+
+    ATELIER {
+        string path
+        string remoteGitRepository
+    }
+    ATELIER ||--|{ WORKSPACE : contains    
+
+    WORKSPACE{
+        bool isMain
+        bool userOwned
+        string commitHash
+
+    }
+    WORKSPACE ||--|| BOOK : contains
+    WORKSPACE ||--|| BINDER : contains
+    WORKSPACE ||--o{ ATELIER-DICTIONARY : has
+    WORKSPACE ||--o{ WORD-REPLACEMENT : has
+    WORKSPACE ||--o{ BACKUP : has
+    WORKSPACE ||--o| WORKSPACE-USER-SETTINGS : has
+
+    WORKSPACE-USER-SETTINGS {
+
+    }
+    WORKSPACE-USER-SETTINGS ||--o{ WORKSPACE-USER-WINDOWS : has
+
+    WORKSPACE-USER-WINDOWS {
+        int width
+        int height
+        int x
+        int y
+        bool isMainWindow
+    }
+    WORKSPACE-USER-WINDOWS ||--o| NOTE : refers_to
+    WORKSPACE-USER-WINDOWS ||--o| CHAPTER : refers_to
+
+
     BOOK {
         string title
         string genre
@@ -30,7 +93,7 @@ erDiagram
     }
     BOOK ||--o{ REMINDER : has
 
-%%{`Statistics`}%%
+%% Statistics
 
     WORD-COUNT-PROGRESS {
         int totalWordCount
@@ -58,18 +121,18 @@ erDiagram
     }
     BOOK ||--o{ MILESTONE : tracks
 
-%%{`Author`}%%
+%% Author
 
 
     AUTHOR {
         string name
     }
 
-%%{`Chapter`}%%
+%% Chapter
 
     CHAPTER {
         string title
-        string synopsis
+        string label
         int wordCount
         int wordCountGoal
         date deadline
@@ -88,10 +151,9 @@ erDiagram
     }
     
     SCENE {
-        string sceneTitle
-        string sceneContent
+        string title
+        string label
         int wordCount
-        int wordCountGoal
         date deadline
         bool active
 
@@ -120,7 +182,7 @@ erDiagram
     }
     SCENE-PARAGRAPH ||--o{ ANNOTATION : includes
 
-%%{`Binder`}%%
+%% Binder
 
     BINDER {
         string binderName
@@ -141,7 +203,7 @@ erDiagram
     SUB-DIVIDER ||--o{ NOTE-LINK : contains
     SUB-DIVIDER ||--o{ NOTE-IMAGE : contains
 
-    USER-DICTIONARY {
+    ATELIER-DICTIONARY {
         string word
     }
     WORD-REPLACEMENT {
@@ -170,13 +232,12 @@ erDiagram
         string commentText
     }
 
-
     SCENE-PARAGRAPH-VERSION {
         string versionName
         date versionDate
     }
     NOTE {
-        string noteContent
+        string title
         date noteDate
         bool active
     }
