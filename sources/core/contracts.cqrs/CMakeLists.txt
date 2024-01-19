@@ -1,5 +1,0 @@
-add_subdirectory(author_cqrs)
-add_subdirectory(chapter_cqrs)
-add_subdirectory(scene_cqrs)
-add_subdirectory(writing_cqrs)
-add_subdirectory(system_cqrs)

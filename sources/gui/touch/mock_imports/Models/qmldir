@@ -1,5 +1,0 @@
-Module Models
-BookChaptersListModel 1.0 BookChaptersListModel.qml
-SceneListModelFromChapterScenes 1.0 SceneListModelFromChapterScenes.qml
-DividerListModelFromBinderDividers 1.0 DividerListModelFromBinderDividers.qml
-NoteListModelFromDividerNotes 1.0 NoteListModelFromDividerNotes.qml

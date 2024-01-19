@@ -1,6 +1,0 @@
-add_subdirectory(author_dto)
-add_subdirectory(scene_paragraph_dto)
-add_subdirectory(scene_dto)
-add_subdirectory(chapter_dto)
-add_subdirectory(system_dto)
-add_subdirectory(writing_dto)

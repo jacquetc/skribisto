@@ -1,8 +1,0 @@
-<RCC>
-    <qresource prefix="/plugins/AntidotePageToolbox">
-        <file>icons/boutonCorrecteur.png</file>
-        <file>icons/boutonDictionnaires.png</file>
-        <file>icons/boutonGuides.png</file>
-        <file>icons/AntidoteIcone.png</file>
-    </qresource>
-</RCC>

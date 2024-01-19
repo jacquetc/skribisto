@@ -1,7 +1,0 @@
-add_subdirectory(real_imports)
-
-target_link_libraries(SkribistoApp PRIVATE
-presenterplugin
-modelplugin
-writingplugin
-)
