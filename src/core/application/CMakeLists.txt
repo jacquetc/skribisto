@@ -1,0 +1,8 @@
+add_subdirectory(user_feature)
+add_subdirectory(book_feature)
+add_subdirectory(workspace_feature)
+add_subdirectory(atelier_feature)
+add_subdirectory(chapter_feature)
+add_subdirectory(scene_feature)
+add_subdirectory(scene_paragraph_feature)
+add_subdirectory(system_feature)

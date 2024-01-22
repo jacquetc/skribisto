@@ -1,0 +1,31 @@
+# This file was generated automatically by Qleany's generator, edit at your own risk! 
+# If you do, be careful to not overwrite it when you run the generator again.
+set(CONTROLLER_LIST
+    user/user_controller.h
+    user/user_controller.cpp
+    user/user_signals.h
+    book/book_controller.h
+    book/book_controller.cpp
+    book/book_signals.h
+    workspace/workspace_controller.h
+    workspace/workspace_controller.cpp
+    workspace/workspace_signals.h
+    atelier/atelier_controller.h
+    atelier/atelier_controller.cpp
+    atelier/atelier_signals.h
+    chapter/chapter_controller.h
+    chapter/chapter_controller.cpp
+    chapter/chapter_signals.h
+    scene/scene_controller.h
+    scene/scene_controller.cpp
+    scene/scene_signals.h
+    scene_paragraph/scene_paragraph_controller.h
+    scene_paragraph/scene_paragraph_controller.cpp
+    scene_paragraph/scene_paragraph_signals.h
+    system/system_controller.h
+    system/system_controller.cpp
+    system/system_signals.h
+    undo_redo/undo_redo_controller.h
+    undo_redo/undo_redo_controller.cpp
+    undo_redo/undo_redo_signals.h
+)

@@ -19,19 +19,6 @@ entities:
           name: creationDate
         - type: QDateTime
           name: updateDate
-    - name: Root
-      parent: Entity
-      fields:
-        - type: QList<RecentAtelier>
-          name: recentAteliers
-          ordered: false
-          strong: true
-        - type: User
-          name: user
-          strong: true
-        - type: Atelier
-          name: atelier
-          strong: true
     - name: RecentAtelier
       parent: Entity
       fields:
@@ -56,6 +43,7 @@ entities:
         - type: Git
           name: git
           strong: true
+          hidden: true
         - type: QList<Workspace>
           name: workspaces
           ordered: false
@@ -80,6 +68,7 @@ entities:
           name: isCommonWorkSpace
         - type: QList<File>
           name: files
+          hidden: true
     - name: File
       parent: Entity
       fields:
@@ -131,11 +120,11 @@ entities:
 
 repositories:
   list:
-    - entity_name: Root
-      lazy_loaders: false
     - entity_name: RecentAtelier
       lazy_loaders: true
     - entity_name: Atelier
+      lazy_loaders: true
+    - entity_name: User
       lazy_loaders: true
     - entity_name: Git
       lazy_loaders: true
@@ -180,15 +169,15 @@ application:
         get_all:
           enabled: false
         get_with_details:
-          enabled: true
+          enabled: false
         create: 
-          enabled: true
+          enabled: false
         remove: 
           enabled: false
         update:
           enabled: true
         insert_relation: 
-          enabled: true
+          enabled: false
     - name: Book
       DTO:
         dto_identical_to_entity:
@@ -211,6 +200,50 @@ application:
           enabled: true
         insert_relation: 
           enabled: true
+    - name: Workspace
+      DTO:
+        dto_identical_to_entity:
+          enabled: true
+          entity_mappable_with: Workspace
+      CRUD:
+        enabled: true       
+        entity_mappable_with: Workspace
+        get:
+          enabled: true
+        get_all:
+          enabled: true
+        get_with_details:
+          enabled: true
+        create: 
+          enabled: false
+        remove: 
+          enabled: false
+        update:
+          enabled: false
+        insert_relation: 
+          enabled: true
+    - name: Atelier
+      DTO:
+        dto_identical_to_entity:
+          enabled: true
+          entity_mappable_with: Atelier
+      CRUD:
+        enabled: true       
+        entity_mappable_with: Atelier
+        get:
+          enabled: true
+        get_all:
+          enabled: true
+        get_with_details:
+          enabled: true
+        create: 
+          enabled: false
+        remove: 
+          enabled: false
+        update:
+          enabled: false
+        insert_relation: 
+          enabled: false
     - name: Chapter
       DTO:
         dto_identical_to_entity:
@@ -268,7 +301,7 @@ application:
         get_all:
           enabled: false
         get_with_details:
-          enabled: true
+          enabled: false
         create: 
           enabled: true
         remove: 
@@ -276,7 +309,7 @@ application:
         update:
           enabled: true
         insert_relation: 
-          enabled: true
+          enabled: false
     - name: System
       DTO:
         dto_identical_to_entity:
@@ -286,7 +319,6 @@ application:
       commands:
         - name: CreateNewAtelier
           entities:
-            - Root
             - RecentAtelier
             - Atelier
             - Git
@@ -313,7 +345,6 @@ application:
               enabled: false
         - name: LoadAtelier
           entities:
-            - Root
             - RecentAtelier
             - Atelier
             - Git
@@ -336,7 +367,6 @@ application:
               enabled: false
         - name: SaveAtelier
           entities:
-            - Root
             - RecentAtelier
             - Atelier
             - Git
@@ -357,7 +387,6 @@ application:
               enabled: false
         - name: CloseAtelier
           entities:
-            - Root
             - RecentAtelier
             - Atelier
             - Git
@@ -412,9 +441,8 @@ presenter:
     - name: auto
       entity: User
     - name: auto
-      entity: Git
-    - name: auto
       entity: Atelier
+      read_only: true
   list_models:
     - name: auto
       entity: Chapter
@@ -424,6 +452,7 @@ presenter:
     - name: auto
       entity: Workspace  
       displayed_field: name
+      read_only: true
     - name: auto
       entity: Scene
       displayed_field: title
@@ -432,5 +461,4 @@ presenter:
 
 
 qml:
-  mock_imports_folder_path: src/gui/qml/mock_imports/
-  real_imports_folder_path: src/gui/qml/real_imports/
+  folder_path: src/gui/qml

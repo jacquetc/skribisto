@@ -1,0 +1,6 @@
+# This file was generated automatically by Qleany's generator, edit at your own risk! 
+# If you do, be careful to not overwrite it when you run the generator again.
+Module Models
+ChapterListModelFromBookChapters 1.0 ChapterListModelFromBookChapters.qml
+WorkspaceListModel 1.0 WorkspaceListModel.qml
+SceneListModelFromChapterScenes 1.0 SceneListModelFromChapterScenes.qml

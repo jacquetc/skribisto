@@ -1,0 +1,25 @@
+# This file was generated automatically by Qleany's generator, edit at your own risk! 
+# If you do, be careful to not overwrite it when you run the generator again.
+Module Controllers
+singleton UserController 1.0 UserController.qml
+singleton UserSignals 1.0 UserSignals.qml
+singleton BookController 1.0 BookController.qml
+singleton BookSignals 1.0 BookSignals.qml
+singleton WorkspaceController 1.0 WorkspaceController.qml
+singleton WorkspaceSignals 1.0 WorkspaceSignals.qml
+singleton AtelierController 1.0 AtelierController.qml
+singleton AtelierSignals 1.0 AtelierSignals.qml
+singleton ChapterController 1.0 ChapterController.qml
+singleton ChapterSignals 1.0 ChapterSignals.qml
+singleton SceneController 1.0 SceneController.qml
+singleton SceneSignals 1.0 SceneSignals.qml
+singleton SceneParagraphController 1.0 SceneParagraphController.qml
+singleton SceneParagraphSignals 1.0 SceneParagraphSignals.qml
+singleton SystemController 1.0 SystemController.qml
+singleton SystemSignals 1.0 SystemSignals.qml
+singleton UndoRedoController 1.0 UndoRedoController.qml
+singleton UndoRedoSignals 1.0 UndoRedoSignals.qml
+singleton ProgressSignals 1.0 ProgressSignals.qml
+singleton ErrorSignals 1.0 ErrorSignals.qml
+singleton EventDispatcher 1.0 EventDispatcher.qml
+QCoroQmlTask 1.0 QCoroQmlTask.qml

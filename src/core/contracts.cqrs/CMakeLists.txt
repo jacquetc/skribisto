@@ -1,0 +1,8 @@
+add_subdirectory(user_cqrs)
+add_subdirectory(book_cqrs)
+add_subdirectory(workspace_cqrs)
+add_subdirectory(atelier_cqrs)
+add_subdirectory(chapter_cqrs)
+add_subdirectory(scene_cqrs)
+add_subdirectory(scene_paragraph_cqrs)
+add_subdirectory(system_cqrs)

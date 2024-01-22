@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.18)
+
+# Compiler settings
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++11  -pedantic -Wno-deprecated-declarations -fstrict-aliasing -pedantic-errors -Wno-unused-variable")
@@ -20,8 +24,19 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdpa
 set(SKR_VERSION 0.2)
 set(VERSION 0.2)
 
-project(skribisto VERSION ${SKR_VERSION} LANGUAGES CXX)
+project(Skribisto VERSION ${SKR_VERSION} LANGUAGES CXX)
 
+
+# Set necessary compiler flags to enable coroutine support
+find_package(QCoro6 REQUIRED COMPONENTS Core)
+qcoro_enable_coroutines()
+
+find_package(qleany CONFIG REQUIRED)
+add_compile_definitions(QLEANY_BUILD_WITH_QT_GUI=true)
+
+# Add Qt components
+find_package(Qt6 COMPONENTS Core REQUIRED)
+qt_standard_project_setup()
 
 # options
 
@@ -60,22 +75,22 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR SKR_BUILD_TESTS)
 else()
   set(SKR_DEBUG false)
   add_compile_definitions(SKR_DEBUG=false)
-endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug" OR SKR_BUILD_TESTS)
 
-#add_subdirectory(sources/core/domain)
-#add_subdirectory(sources/core/contracts)
-#add_subdirectory(sources/core/contracts.dto)
-#add_subdirectory(sources/core/contracts.cqrs)
-#add_subdirectory(sources/core/persistence)
-#add_subdirectory(sources/core/infrastructure)
-#add_subdirectory(sources/core/application)
-#add_subdirectory(sources/gui/presenter)
-#add_subdirectory(sources/gui/desktop)
+add_subdirectory(src/core/domain)
+add_subdirectory(src/core/contracts)
+add_subdirectory(src/core/contracts.dto)
+add_subdirectory(src/core/contracts.cqrs)
+add_subdirectory(src/core/persistence)
+add_subdirectory(src/core/application)
+add_subdirectory(src/core/controller)
+add_subdirectory(src/gui/presenter)
+add_subdirectory(src/gui/qml)
 if(SKR_BUILD_DESKTOP)
-  #add_subdirectory(sources/gui/desktop)
+  #add_subdirectory(src/gui/desktop)
 endif(SKR_BUILD_DESKTOP)
 if(SKR_BUILD_TOUCH)
-  #add_subdirectory(sources/gui/touch)
+  #add_subdirectory(src/gui/qml)
 endif(SKR_BUILD_TOUCH)
 
 # temporary

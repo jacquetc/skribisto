@@ -1,0 +1,8 @@
+add_subdirectory(user_dto)
+add_subdirectory(workspace_dto)
+add_subdirectory(atelier_dto)
+add_subdirectory(scene_paragraph_dto)
+add_subdirectory(scene_dto)
+add_subdirectory(chapter_dto)
+add_subdirectory(book_dto)
+add_subdirectory(system_dto)
