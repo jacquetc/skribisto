@@ -1,6 +1,6 @@
 find_package(Qt6 COMPONENTS Core REQUIRED)
 
-set(LIBRARY_NAME skribisto-direct-common)
+set(LIBRARY_NAME skribisto-direct-access)
 
 option(BUILD_SHARED_LIBS "Build libraries as shared libraries" ON)
 
@@ -13,29 +13,29 @@ endif()
 set(SRCS
 
 )
-set(ENTITIES_LIST
-        entities/root.h
-        entities/author.h
-)
 
-
-set(DIRECT_ACCESS_LIST
-        direct_access/root/root_repository.cpp
-        direct_access/root/root_repository.h
-        direct_access/root/root_table.cpp
-        direct_access/root/root_table.h
-        direct_access/author/author_repository.cpp
-        direct_access/author/author_repository.h
-        direct_access/author/author_table.cpp
-        direct_access/author/author_table.h
+set(ROOT_LIST
+        root/root_controller.cpp
+        root/root_controller.h
+        root/dtos.h
+        root/use_cases/create_uc.cpp
+        root/use_cases/create_uc.h
+        root/use_cases/remove_uc.cpp
+        root/use_cases/remove_uc.h
+        root/use_cases/get_uc.cpp
+        root/use_cases/get_uc.hh
+        root/use_cases/get_relationship.cpp
+        root/use_cases/get_relationship.h
+        root/use_cases/update_uc.cpp
+        root/use_cases/update_uc.h
 )
 
 set(AUTHOR_LIST
 )
 
 qt_add_library(${LIBRARY_NAME} ${LIB_TYPE} ${SRCS}
-        ${ENTITIES_LIST}
-        ${DIRECT_ACCESS_LIST}
+        ${ROOT_LIST}
+        ${AUTHOR_LIST}
 )
 
 include(GenerateExportHeader)
