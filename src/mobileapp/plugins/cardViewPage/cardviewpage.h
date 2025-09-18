@@ -18,8 +18,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef CARDVIEWPAGE_H
-#define CARDVIEWPAGE_H
+#pragma once
+
 
 #include <QObject>
 #include "skrprojectpageinterface.h"
@@ -101,4 +101,4 @@ signals:
 private:
 };
 
-#endif // CARDVIEWPAGE_H
+

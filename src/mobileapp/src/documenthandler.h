@@ -20,8 +20,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef DOCUMENTHANDLER_H
-#define DOCUMENTHANDLER_H
+#pragma once
+
 
 #include <QObject>
 #include <QQuickTextDocument>
@@ -259,4 +259,4 @@ private:
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(DocumentHandler::FindFlags)
 
-#endif // DOCUMENTHANDLER_H
+

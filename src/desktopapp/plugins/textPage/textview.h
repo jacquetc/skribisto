@@ -1,5 +1,5 @@
-#ifndef TEXTVIEW_H
-#define TEXTVIEW_H
+#pragma once
+
 
 #include "skrwordmeter.h"
 #include "view.h"
@@ -53,4 +53,4 @@ class TextView : public View
     QVariantMap addOtherViewParametersBeforeSplit() override;
 };
 
-#endif // TEXTVIEW_H
+

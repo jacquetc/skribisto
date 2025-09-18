@@ -1,5 +1,5 @@
-#ifndef BASICSETTINGSPANEL_H
-#define BASICSETTINGSPANEL_H
+#pragma once
+
 
 #include <QWidget>
 #include "skribisto_desktop_common_global.h"
@@ -20,4 +20,4 @@ signals:
 
 };
 
-#endif // BASICSETTINGSPANEL_H
+

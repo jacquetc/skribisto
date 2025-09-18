@@ -1,5 +1,5 @@
-#ifndef SELECTIONEXPORTWIZARD_H
-#define SELECTIONEXPORTWIZARD_H
+#pragma once
+
 
 #include <QCloseEvent>
 #include <QWizard>
@@ -36,4 +36,4 @@ protected:
     }
 };
 
-#endif // SELECTIONEXPORTWIZARD_H
+

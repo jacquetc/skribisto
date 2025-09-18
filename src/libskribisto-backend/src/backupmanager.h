@@ -1,5 +1,5 @@
-#ifndef BACKUPMANAGER_H
-#define BACKUPMANAGER_H
+#pragma once
+
 
 #include <QObject>
 #include <QTimer>
@@ -42,4 +42,4 @@ private:
     QDateTime m_nextPeriodicalBackup;
 };
 
-#endif // BACKUPMANAGER_H
+

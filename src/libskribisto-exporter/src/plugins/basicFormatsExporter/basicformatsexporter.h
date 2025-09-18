@@ -17,8 +17,8 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef BASICFORMATSEXPORTER_H
-#define BASICFORMATSEXPORTER_H
+#pragma once
+
 
 #include "interfaces/exporterinterface.h"
 #include <QObject>
@@ -65,4 +65,4 @@ public:
   QString pluginSelectionGroup() const override { return "Mandatory"; }
 };
 
-#endif // BASICFORMATSEXPORTER_H
+

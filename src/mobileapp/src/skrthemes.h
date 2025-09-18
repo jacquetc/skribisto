@@ -1,5 +1,5 @@
-#ifndef SKRTHEMES_H
-#define SKRTHEMES_H
+#pragma once
+
 
 #include <QHash>
 #include <QObject>
@@ -160,4 +160,4 @@ private:
     QVariantMap m_selectedColorsMap;
 };
 
-#endif // SKRTHEMES_H
+

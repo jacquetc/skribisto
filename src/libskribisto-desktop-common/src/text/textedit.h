@@ -1,5 +1,5 @@
-#ifndef TEXTEDIT_H
-#define TEXTEDIT_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include "text/highlighter.h"
@@ -89,4 +89,4 @@ class SKRDESKTOPCOMMONEXPORT TextEdit : public QTextEdit
     void insertFromMimeData(const QMimeData *source) override;
 };
 
-#endif // TEXTEDIT_H
+

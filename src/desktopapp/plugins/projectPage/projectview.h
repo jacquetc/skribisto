@@ -1,5 +1,5 @@
-#ifndef PROJECTVIEW_H
-#define PROJECTVIEW_H
+#pragma once
+
 
 #include <QWidget>
 #include "view.h"
@@ -27,4 +27,4 @@ private:
 
 };
 
-#endif // PROJECTVIEW_H
+

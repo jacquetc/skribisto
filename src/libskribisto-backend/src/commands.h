@@ -1,5 +1,5 @@
-#ifndef COMMANDS_H
-#define COMMANDS_H
+#pragma once
+
 
 #include <QHash>
 #include <QObject>
@@ -35,4 +35,4 @@ private:
 };
 
 
-#endif // COMMANDS_H
+

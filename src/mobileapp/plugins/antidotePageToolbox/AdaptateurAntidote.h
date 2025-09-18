@@ -10,8 +10,8 @@
  * before re-generating it.
  */
 
-#ifndef ADAPTATEURANTIDOTE_H
-#define ADAPTATEURANTIDOTE_H
+#pragma once
+
 
 #include <QStringList>
 #include <QtCore/QObject>

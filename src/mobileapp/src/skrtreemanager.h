@@ -19,8 +19,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRTREEMANAGER_H
-#define SKRTREEMANAGER_H
+#pragma once
+
 
 #include <QObject>
 #include <QQmlComponent>
@@ -65,4 +65,4 @@ private:
 signals:
 };
 
-#endif // SKRTREEMANAGER_H
+

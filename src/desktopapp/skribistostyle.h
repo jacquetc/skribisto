@@ -1,5 +1,5 @@
-#ifndef SKRIBISTOSTYLE_H
-#define SKRIBISTOSTYLE_H
+#pragma once
+
 
 #include <QObject>
 #include <QApplication>
@@ -37,4 +37,4 @@ public:
     QPixmap generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap, const QStyleOption *opt) const override;
 };
 
-#endif // SKRIBISTOSTYLE_H
+

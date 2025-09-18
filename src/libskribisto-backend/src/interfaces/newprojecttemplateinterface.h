@@ -19,8 +19,8 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef NEWPROJECTTEMPLATEINTERFACE_H
-#define NEWPROJECTTEMPLATEINTERFACE_H
+#pragma once
+
 
 #include "interfaces/skrcoreinterface.h"
 #include <QString>
@@ -47,4 +47,4 @@ protected:
 Q_DECLARE_INTERFACE(NewProjectTemplateInterface,
                     NewProjectTemplateInterface_iid)
 
-#endif // NEWPROJECTTEMPLATEINTERFACE_H
+

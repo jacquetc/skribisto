@@ -1,5 +1,5 @@
-#ifndef PROJECTDICTDIALOG_H
-#define PROJECTDICTDIALOG_H
+#pragma once
+
 
 #include <QDialog>
 
@@ -27,4 +27,4 @@ class ProjectDictDialog : public QDialog
     QStringList m_originalWords;
 };
 
-#endif // PROJECTDICTDIALOG_H
+

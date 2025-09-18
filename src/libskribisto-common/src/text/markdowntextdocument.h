@@ -1,5 +1,5 @@
-#ifndef MARKDOWNTEXTDOCUMENT_H
-#define MARKDOWNTEXTDOCUMENT_H
+#pragma once
+
 
 #include <QTextDocument>
 #include "skribisto_common_global.h"
@@ -37,4 +37,4 @@ protected:
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(MarkdownTextDocument::CharFormats)
 
-#endif // MARKDOWNTEXTDOCUMENT_H
+

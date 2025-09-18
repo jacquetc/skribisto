@@ -1,5 +1,5 @@
-#ifndef EXPORTERINTERFACE_H
-#define EXPORTERINTERFACE_H
+#pragma once
+
 
 #include "skrresult.h"
 #include <QString>
@@ -34,4 +34,4 @@ public:
 
 Q_DECLARE_INTERFACE(ExporterInterface, ExporterInterface_iid)
 
-#endif // EXPORTERINTERFACE_H
+

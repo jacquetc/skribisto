@@ -1,5 +1,5 @@
-#ifndef SKRPLUGINLOADER_H
-#define SKRPLUGINLOADER_H
+#pragma once
+
 
 
 #include <QList>
@@ -232,4 +232,4 @@ private:
 };
 
 
-#endif // PLUGINLOADER_H
+

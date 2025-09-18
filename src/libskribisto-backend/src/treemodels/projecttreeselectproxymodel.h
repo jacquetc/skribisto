@@ -1,5 +1,5 @@
-#ifndef PROJECTTREESELECTPROXYMODEL_H
-#define PROJECTTREESELECTPROXYMODEL_H
+#pragma once
+
 
 #include <QSortFilterProxyModel>
 #include "skribisto_backend_global.h"
@@ -36,4 +36,4 @@ public:
     void checkNone();
 };
 
-#endif // PROJECTTREESELECTPROXYMODEL_H
+

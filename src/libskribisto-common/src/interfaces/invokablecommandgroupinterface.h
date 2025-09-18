@@ -1,5 +1,5 @@
-#ifndef INVOKABLECOMMANDGROUPINTERFACE_H
-#define INVOKABLECOMMANDGROUPINTERFACE_H
+#pragma once
+
 
 #include <QString>
 #include <QObject>
@@ -24,4 +24,4 @@ public:
 
 Q_DECLARE_INTERFACE(InvokableCommandGroupInterface, InvokableCommandGroupInterface_iid)
 
-#endif // INVOKABLECOMMANDGROUPINTERFACE_H
+

@@ -1,5 +1,5 @@
-#ifndef PROJECTTREEMODEL_H
-#define PROJECTTREEMODEL_H
+#pragma once
+
 
 #include "interfaces/pageinterface.h"
 #include "projecttreeitem.h"
@@ -274,4 +274,4 @@ private:
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 
-#endif // PROJECTTREEMODEL_H
+

@@ -18,8 +18,8 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef PROJECTPAGE_H
-#define PROJECTPAGE_H
+#pragma once
+
 
 #include "interfaces/itemexporterinterface.h"
 #include "interfaces/pageinterface.h"
@@ -89,4 +89,4 @@ private:
   // PageInterface interface
 };
 
-#endif // PROJECTPAGE_H
+

@@ -19,8 +19,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef WRITINGGAMESPAGETOOLBOX_H
-#define WRITINGGAMESPAGETOOLBOX_H
+#pragma once
+
 
 #include <QObject>
 #include "skrpagetoolboxinterface.h"
@@ -77,4 +77,4 @@ signals:
 private:
 };
 
-#endif // WRITINGGAMESPAGETOOLBOX_H
+

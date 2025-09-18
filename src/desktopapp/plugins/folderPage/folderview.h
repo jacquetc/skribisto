@@ -1,5 +1,5 @@
-#ifndef FOLDERVIEW_H
-#define FOLDERVIEW_H
+#pragma once
+
 
 #include <QWidget>
 #include "view.h"
@@ -24,4 +24,4 @@ private:
     Ui::FolderView *centralWidgetUi;
 };
 
-#endif // FOLDERVIEW_H
+

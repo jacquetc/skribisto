@@ -1,5 +1,5 @@
-#ifndef TEXTBRIDGE_H
-#define TEXTBRIDGE_H
+#pragma once
+
 
 #include "QtWidgets/qapplication.h"
 #include "text/markdowntextdocument.h"
@@ -96,4 +96,4 @@ private:
   QList<SyncDocument> m_syncDocList;
 };
 
-#endif // TEXTBRIDGE_H
+

@@ -1,5 +1,5 @@
-#ifndef BACKUPSETTINGSPANEL_H
-#define BACKUPSETTINGSPANEL_H
+#pragma once
+
 
 #include "basicsettingspanel.h"
 #include <QWidget>
@@ -28,4 +28,4 @@ private:
     QHash<QString, QVariant> m_defaultValuesHash;
 };
 
-#endif // BACKUPSETTINGSPANEL_H
+

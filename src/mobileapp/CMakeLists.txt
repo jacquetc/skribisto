@@ -220,7 +220,7 @@ endif(IOS)
 
 # ---------------------------------
 target_link_libraries(SkribistoApp
-    PRIVATE skribisto-data Qt6::Quick Qt6::Gui Qt6::Core Qt6::Qml Qt6::Network Qt6::Widgets Qt6::Svg Qt6::QuickControls2
+    PRIVATE skribisto-data skribisto-common Qt6::Quick Qt6::Gui Qt6::Core Qt6::Qml Qt6::Network Qt6::Widgets Qt6::Svg Qt6::QuickControls2
     ${PRINT}
 )
 
@@ -240,6 +240,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/qmlmodules)
 include(${CMAKE_CURRENT_SOURCE_DIR}/realqmlmodules)
 
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-common/src/")
 
 # ---------------------------------
 add_subdirectory(plugins)

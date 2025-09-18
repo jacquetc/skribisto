@@ -1,5 +1,5 @@
-#ifndef SKRCLIPBOARD_H
-#define SKRCLIPBOARD_H
+#pragma once
+
 
 #include <QObject>
 #include <QTextBlockFormat>
@@ -57,4 +57,4 @@ private:
 
 };
 
-#endif // SKRCLIPBOARD_H
+

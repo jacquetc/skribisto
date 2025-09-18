@@ -1,5 +1,5 @@
-#ifndef VIEWHOLDER_H
-#define VIEWHOLDER_H
+#pragma once
+
 
 #include "view.h"
 
@@ -97,4 +97,4 @@ private:
 
 };
 
-#endif // VIEWHOLDER_H
+

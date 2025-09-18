@@ -1,5 +1,5 @@
-#ifndef STATUSBAR_H
-#define STATUSBAR_H
+#pragma once
+
 
 #include <QWidget>
 
@@ -21,4 +21,4 @@ private slots:
     void init();
 };
 
-#endif // STATUSBAR_H
+

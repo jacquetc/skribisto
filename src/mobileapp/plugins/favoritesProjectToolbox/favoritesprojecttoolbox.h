@@ -19,8 +19,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef FAVORITESPROJECTTOOLBOX_H
-#define FAVORITESPROJECTTOOLBOX_H
+#pragma once
+
 
 #include <QObject>
 #include "skrprojecttoolboxinterface.h"
@@ -70,4 +70,4 @@ signals:
 private:
 };
 
-#endif // FAVORITESPROJECTTOOLBOX_H
+

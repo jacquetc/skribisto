@@ -20,8 +20,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SKREDITMENUSIGNALHUB_H
-#define SKREDITMENUSIGNALHUB_H
+#pragma once
+
 
 #include <QObject>
 
@@ -57,4 +57,4 @@ private:
     QStringList m_subscribedList;
 };
 
-#endif // SKREDITMENUSIGNALHUB_H
+

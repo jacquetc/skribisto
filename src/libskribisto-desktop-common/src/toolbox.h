@@ -1,5 +1,5 @@
-#ifndef TOOLBOX_H
-#define TOOLBOX_H
+#pragma once
+
 
 #include "desktopapplication.h"
 #include "skribisto_desktop_common_global.h"
@@ -61,4 +61,4 @@ inline TreeItemAddress Toolbox::treeItemAddress() const
     return m_treeItemAddress;
 }
 
-#endif // TOOLBOX_H
+

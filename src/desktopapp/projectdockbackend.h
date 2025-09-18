@@ -1,5 +1,5 @@
-#ifndef PROJECTDOCKBACKEND_H
-#define PROJECTDOCKBACKEND_H
+#pragma once
+
 
 #include "dock.h"
 
@@ -15,4 +15,4 @@ signals:
 
 };
 
-#endif // PROJECTDOCKBACKEND_H
+

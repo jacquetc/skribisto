@@ -1,5 +1,5 @@
-#ifndef CREATIONPARAMETERSWIDGET_H
-#define CREATIONPARAMETERSWIDGET_H
+#pragma once
+
 
 #include <QWidget>
 #include "treeitemcreationparameterswidget.h"
@@ -22,4 +22,4 @@ private:
     Ui::CreationParametersWidget *ui;
 };
 
-#endif // CREATIONPARAMETERSWIDGET_H
+

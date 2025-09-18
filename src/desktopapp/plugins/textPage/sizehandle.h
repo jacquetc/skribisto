@@ -1,5 +1,5 @@
-#ifndef SIZEHANDLE_H
-#define SIZEHANDLE_H
+#pragma once
+
 
 #include <QMouseEvent>
 #include <QWidget>
@@ -31,4 +31,4 @@ protected:
     void leaveEvent(QEvent *event) override;
 };
 
-#endif // SIZEHANDLE_H
+

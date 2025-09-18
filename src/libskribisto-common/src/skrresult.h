@@ -18,8 +18,7 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRRESULT_H
-#define SKRRESULT_H
+#pragma once
 
 #include <QObject>
 #include <QString>
@@ -110,5 +109,3 @@ private:
     QList<QHash<QString, QVariant> >m_dataHashList;
     SKRResult::Status               m_status;
 };
-
-#endif // SKRRESULT_H

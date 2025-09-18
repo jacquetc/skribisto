@@ -1,5 +1,5 @@
-#ifndef TREEITEMCREATIONPARAMETERSWIDGET_H
-#define TREEITEMCREATIONPARAMETERSWIDGET_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include <QWidget>
@@ -19,4 +19,4 @@ public:
 signals:
 };
 
-#endif // TREEITEMCREATIONPARAMETERSWIDGET_H
+

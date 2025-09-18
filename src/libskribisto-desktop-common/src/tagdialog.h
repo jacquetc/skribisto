@@ -1,5 +1,5 @@
-#ifndef TAGDIALOG_H
-#define TAGDIALOG_H
+#pragma once
+
 
 #include <QDialog>
 #include "skribisto_desktop_common_global.h"
@@ -28,4 +28,4 @@ private:
     void setColors(const QString &color, const QString &textColor);
 };
 
-#endif // TAGDIALOG_H
+

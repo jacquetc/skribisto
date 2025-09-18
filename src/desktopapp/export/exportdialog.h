@@ -1,5 +1,5 @@
-#ifndef EXPORTDIALOG_H
-#define EXPORTDIALOG_H
+#pragma once
+
 
 #include <QDialog>
 
@@ -20,4 +20,4 @@ private:
     bool m_enablePrint;
 };
 
-#endif // EXPORTDIALOG_H
+

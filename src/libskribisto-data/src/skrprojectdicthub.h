@@ -1,5 +1,5 @@
-#ifndef SKRPROJECTDICTHUB_H
-#define SKRPROJECTDICTHUB_H
+#pragma once
+
 
 #include <QObject>
 #include <QString>
@@ -49,4 +49,4 @@ private:
     SKRResult m_error;
 };
 
-#endif // SKRPROJECTDICTHUB_H
+

@@ -1,5 +1,5 @@
-#ifndef INSTALLNEWDICTWIZARD_H
-#define INSTALLNEWDICTWIZARD_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include <QWizard>
@@ -19,4 +19,4 @@ private:
   Ui::InstallNewDictWizard *ui;
 };
 
-#endif // INSTALLNEWDICTWIZARD_H
+

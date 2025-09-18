@@ -1,5 +1,5 @@
-#ifndef COMBOBOX_H
-#define COMBOBOX_H
+#pragma once
+
 
 #include <QComboBox>
 #include <QTimer>
@@ -26,4 +26,4 @@ protected:
     void showEvent(QShowEvent *event) override;
 };
 
-#endif // COMBOBOX_H
+

@@ -1,5 +1,5 @@
-#ifndef SKRSTATHUB_H
-#define SKRSTATHUB_H
+#pragma once
+
 
 #include <QObject>
 #include "interfaces/pageinterface.h"
@@ -49,4 +49,4 @@ private:
     QSet<TreeItemAddress> m_countPropertiesToSet;
 };
 
-#endif // SKRSTATHUB_H
+

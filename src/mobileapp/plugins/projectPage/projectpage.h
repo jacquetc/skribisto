@@ -18,8 +18,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PROJECTPAGE_H
-#define PROJECTPAGE_H
+#pragma once
+
 
 #include <QObject>
 #include "skrpageinterface.h"
@@ -107,4 +107,4 @@ signals:
 private:
 };
 
-#endif // PROJECTPAGE_H
+

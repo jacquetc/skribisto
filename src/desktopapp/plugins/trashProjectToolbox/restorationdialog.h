@@ -1,5 +1,5 @@
-#ifndef RESTORATIONDIALOG_H
-#define RESTORATIONDIALOG_H
+#pragma once
+
 
 #include <QDialog>
 #include <QSortFilterProxyModel>
@@ -74,4 +74,4 @@ public:
     int columnCount(const QModelIndex &parent) const override;
 };
 
-#endif // RESTORATIONDIALOG_H
+

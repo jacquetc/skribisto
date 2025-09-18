@@ -1,5 +1,5 @@
-#ifndef PROJECTTREEITEM_H
-#define PROJECTTREEITEM_H
+#pragma once
+
 
 #include <QObject>
 #include <QPersistentModelIndex>
@@ -101,4 +101,4 @@ private:
 };
 
 
-#endif // PROJECTTREEITEM_H
+

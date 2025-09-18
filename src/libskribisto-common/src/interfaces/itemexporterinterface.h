@@ -18,8 +18,8 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef ITEMEXPORTERINTERFACE_H
-#define ITEMEXPORTERINTERFACE_H
+#pragma once
+
 
 #include <QString>
 #include <QTextDocumentFragment>
@@ -70,4 +70,4 @@ inline QTextBlockFormat ItemExporterInterface::blockFormat() const
 Q_DECLARE_INTERFACE(ItemExporterInterface, ItemExporterInterface_iid)
 
 
-#endif // ITEMEXPORTERINTERFACE_H
+

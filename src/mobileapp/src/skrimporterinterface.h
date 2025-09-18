@@ -20,8 +20,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SKRIMPORTERINTERFACE_H
-#define SKRIMPORTERINTERFACE_H
+#pragma once
+
 
 #include <QString>
 #include "skrresult.h"
@@ -47,4 +47,4 @@ public:
 
 Q_DECLARE_INTERFACE(SKRImporterInterface, SKRImporterInterface_iid)
 
-#endif // SKRIMPORTERINTERFACE_H
+

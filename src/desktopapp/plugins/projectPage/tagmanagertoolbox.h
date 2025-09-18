@@ -1,5 +1,5 @@
-#ifndef TAGMANAGERTOOLBOX_H
-#define TAGMANAGERTOOLBOX_H
+#pragma once
+
 
 #include <QWidget>
 #include "toolbox.h"
@@ -41,4 +41,4 @@ public:
 };
 
 
-#endif // TAGMANAGERTOOLBOX_H
+

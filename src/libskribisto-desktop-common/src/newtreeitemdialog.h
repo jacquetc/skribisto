@@ -1,5 +1,5 @@
-#ifndef NEWTREEITEMDIALOG_H
-#define NEWTREEITEMDIALOG_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include "treeitemaddress.h"
@@ -57,4 +57,4 @@ public:
   void reset() {}
 };
 
-#endif // NEWTREEITEMDIALOG_H
+

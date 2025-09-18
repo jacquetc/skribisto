@@ -1,5 +1,5 @@
-#ifndef SHORTCUTBACKEND_H
-#define SHORTCUTBACKEND_H
+#pragma once
+
 
 #include <QObject>
 #include <QQmlEngine>
@@ -74,4 +74,4 @@ private:
 
 };
 
-#endif // SHORTCUTBACKEND_H
+

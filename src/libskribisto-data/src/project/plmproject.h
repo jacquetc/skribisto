@@ -19,8 +19,8 @@
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 
-#ifndef PLMDATABASE_H
-#define PLMDATABASE_H
+#pragma once
+
 
 #include <QHash>
 #include <QObject>
@@ -64,4 +64,4 @@ private:
   QUrl m_fileName;
 };
 
-#endif // PLMDATABASE_H
+

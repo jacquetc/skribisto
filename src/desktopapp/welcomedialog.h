@@ -1,5 +1,5 @@
-#ifndef WELCOMEDIALOG_H
-#define WELCOMEDIALOG_H
+#pragma once
+
 
 #include <QWidget>
 
@@ -23,4 +23,4 @@ class WelcomeDialog : public QWidget
     void populateRecentProjects();
 };
 
-#endif // WELCOMEDIALOG_H
+

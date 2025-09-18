@@ -1,5 +1,5 @@
-#ifndef TAGMANAGERTOOLBOX_H
-#define TAGMANAGERTOOLBOX_H
+#pragma once
+
 
 #include "toolbox.h"
 #include <QWidget>
@@ -33,4 +33,4 @@ public:
   void initialize() override;
 };
 
-#endif // TAGMANAGERTOOLBOX_H
+

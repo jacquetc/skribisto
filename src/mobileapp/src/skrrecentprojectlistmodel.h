@@ -19,8 +19,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRRECENTPROJECTLISTMODEL_H
-#define SKRRECENTPROJECTLISTMODEL_H
+#pragma once
+
 
 #include <QAbstractListModel>
 #include <QDateTime>
@@ -85,4 +85,4 @@ private:
     QList<PLMProjectItem *>m_allRecentProjects;
 };
 
-#endif // SKRRECENTPROJECTLISTMODEL_H
+

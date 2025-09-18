@@ -1,5 +1,4 @@
-#ifndef SKRWORDMETER_H
-#define SKRWORDMETER_H
+#pragma once
 
 #include <QObject>
 #include "skr.h"
@@ -63,5 +62,3 @@ private:
 
     QThread m_workerThread;
 };
-
-#endif // SKRWORDMETER_H

@@ -1,5 +1,5 @@
-#ifndef IMPORTER_H
-#define IMPORTER_H
+#pragma once
+
 
 #include <QObject>
 #include "skribisto_importer_global.h"
@@ -19,4 +19,4 @@ signals:
 
 };
 
-#endif // IMPORTER_H
+

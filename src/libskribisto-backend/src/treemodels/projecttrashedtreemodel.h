@@ -1,5 +1,5 @@
-#ifndef PROJECTTRASHEDTREEMODEL_H
-#define PROJECTTRASHEDTREEMODEL_H
+#pragma once
+
 
 #include "projecttreeitem.h"
 #include "skribisto_backend_global.h"
@@ -78,4 +78,4 @@ private:
 
 
 
-#endif // PROJECTTRASHEDTREEMODEL_H
+

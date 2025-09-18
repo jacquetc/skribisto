@@ -15,6 +15,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(QT_MIN_VERSION "6.2.2")
 set(QT_DEFAULT_MAJOR_VERSION 6)
 
+option(SKR_MOBILE_APP "Enable the touch GUI" OFF)
+option(SKR_BUILD_TESTS "Enable the touch GUI" OFF)
+
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH})
 
 # git tag for version :
@@ -60,7 +63,7 @@ include(CMakePackageConfigHelpers)
 add_subdirectory(src/libskribisto-data/src)
 add_subdirectory(src/libskribisto-backend/src)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR SKR_BUILD_TESTS)
     set(SKR_DEBUG true)
     add_compile_definitions(SKR_DEBUG=true)
 
@@ -73,7 +76,7 @@ else()
     add_compile_definitions(SKR_DEBUG=false)
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-if(IOS)
+if(IOS OR SKR_MOBILE_APP)
     add_subdirectory(src/mobileapp)
 endif()
 

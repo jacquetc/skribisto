@@ -1,5 +1,5 @@
-#ifndef APPEARANCESETTINGSPANEL_H
-#define APPEARANCESETTINGSPANEL_H
+#pragma once
+
 
 #include "basicsettingspanel.h"
 #include <QWidget>
@@ -22,4 +22,4 @@ private:
     Ui::AppearanceSettingsPanel *ui;
 };
 
-#endif // APPEARANCESETTINGSPANEL_H
+

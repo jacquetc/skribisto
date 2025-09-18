@@ -1,5 +1,5 @@
-#ifndef SKRUSERSETTINGS_H
-#define SKRUSERSETTINGS_H
+#pragma once
+
 
 #include <QObject>
 #include <QSettings>
@@ -58,4 +58,4 @@ private:
     static QHash<QString, QVariant>deserializingHash(QByteArray hashArray);
 };
 
-#endif // SKRUSERSETTINGS_H
+

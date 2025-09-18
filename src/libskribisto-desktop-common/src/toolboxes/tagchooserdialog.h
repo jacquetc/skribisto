@@ -1,5 +1,5 @@
-#ifndef TAGCHOOSERDIALOG_H
-#define TAGCHOOSERDIALOG_H
+#pragma once
+
 
 #include "treeitemaddress.h"
 #include <QDialog>
@@ -28,4 +28,4 @@ private:
 
 };
 
-#endif // TAGCHOOSERDIALOG_H
+

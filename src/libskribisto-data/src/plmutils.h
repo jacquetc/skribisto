@@ -18,8 +18,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMUTILS_H
-#define PLMUTILS_H
+#pragma once
+
 
 #include <QString>
 #include <QStringList>
@@ -134,4 +134,4 @@ private:
 };
 }
 
-#endif // PLMUTILS_H
+

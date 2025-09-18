@@ -1,5 +1,5 @@
-#ifndef DOCK_H
-#define DOCK_H
+#pragma once
+
 
 #include "toolbox.h"
 
@@ -92,4 +92,4 @@ private:
 
 
 };
-#endif // DOCK_H
+

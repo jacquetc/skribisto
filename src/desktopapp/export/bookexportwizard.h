@@ -1,5 +1,5 @@
-#ifndef BOOKEXPORTWIZARD_H
-#define BOOKEXPORTWIZARD_H
+#pragma once
+
 
 #include <QCloseEvent>
 #include <QWizard>
@@ -47,4 +47,4 @@ private:
 
 };
 
-#endif // BOOKEXPORTWIZARD_H
+

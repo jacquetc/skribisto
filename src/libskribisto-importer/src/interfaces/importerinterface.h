@@ -1,5 +1,5 @@
-#ifndef IMPORTERINTERFACE_H
-#define IMPORTERINTERFACE_H
+#pragma once
+
 
 #include "skrresult.h"
 #include <QString>
@@ -28,4 +28,4 @@ public:
 
 Q_DECLARE_INTERFACE(ImporterInterface, ImporterInterface_iid)
 
-#endif // IMPORTERINTERFACE_H
+

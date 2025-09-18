@@ -66,17 +66,27 @@ include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-importer/src/")
 
 
 # --------------HUNSPELL --------------------
-if(${SKR_DEV})
-    set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/../build_skribisto_Release/3rdparty)
-    set(PKG_HUNSPELL_LIBRARY_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/lib)
-    set(PKG_HUNSPELL_INCLUDE_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/include)
-endif(${SKR_DEV})
+# if(${SKR_DEV})
+#     set(EXTERNAL_INSTALL_LOCATION ${CMAKE_SOURCE_DIR}/src/Desktop_Qt_6_8_3-Debug/3rdparty)
+#     set(PKG_HUNSPELL_LIBRARY_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/lib)
+#     set(PKG_HUNSPELL_INCLUDE_DIRS ${EXTERNAL_INSTALL_LOCATION}/hunspell/include)
+# endif(${SKR_DEV})
 
-find_package(hunspell REQUIRED)
-target_include_directories( skribisto-backend SYSTEM PRIVATE ${HUNSPELL_INCLUDE_DIRS})
-target_link_libraries( skribisto-backend PRIVATE ${HUNSPELL_LIBRARY})
+# find_package(hunspell REQUIRED)
+# target_include_directories( skribisto-backend SYSTEM PRIVATE ${HUNSPELL_INCLUDE_DIRS})
+# target_link_libraries( skribisto-backend PRIVATE ${HUNSPELL_LIBRARY})
 
+find_library(HUNSPELL_LIBRARY
+    NAMES hunspell.so hunspell hunspell-1.7.so hunspell-1.7
+    PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu
+    NO_DEFAULT_PATH
+)
 
+# Or if using pkg-config:
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(HUNSPELL REQUIRED hunspell)
+
+target_link_libraries(skribisto-backend PRIVATE ${HUNSPELL_LIBRARIES})
 
 # ---------------------------------
 add_subdirectory(plugins)

@@ -1,5 +1,5 @@
-#ifndef SKRPLUGINGETTER_H
-#define SKRPLUGINGETTER_H
+#pragma once
+
 
 #include <QObject>
 
@@ -24,4 +24,4 @@ public:
 signals:
 };
 
-#endif // SKRPLUGINGETTER_H
+

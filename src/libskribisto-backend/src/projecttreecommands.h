@@ -1,5 +1,5 @@
-#ifndef PROJECTTREECOMMANDS_H
-#define PROJECTTREECOMMANDS_H
+#pragma once
+
 
 #include "treemodels/projecttreemodel.h"
 #include "skribisto_backend_global.h"
@@ -79,4 +79,4 @@ QString address() const override
 Command *getCommand(const QString &action, const QVariantMap &parameters) override;
 };
 
-#endif // PROJECTTREECOMMANDS_H
+

@@ -1,5 +1,5 @@
-#ifndef PLMPROJECTMANAGER_H
-#define PLMPROJECTMANAGER_H
+#pragma once
+
 
 #include <QObject>
 
@@ -37,4 +37,4 @@ private:
     int m_projectIdIncrement;
 };
 
-#endif // PLMPROJECTMANAGER_H
+

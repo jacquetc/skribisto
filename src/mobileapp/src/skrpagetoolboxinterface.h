@@ -20,12 +20,12 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SKRPAGETOOLBOXINTERFACE_H
-#define SKRPAGETOOLBOXINTERFACE_H
+#pragma once
+
 
 #include <QString>
 #include "skrresult.h"
-#include "skrcoreinterface.h"
+#include "interfaces/skrcoreinterface.h"
 
 
 class SKRPageToolboxInterface : public SKRCoreInterface  {
@@ -45,4 +45,4 @@ public:
 
 Q_DECLARE_INTERFACE(SKRPageToolboxInterface, SKRPageToolboxInterface_iid)
 
-#endif // SKRPAGETOOLBOXINTERFACE_H
+

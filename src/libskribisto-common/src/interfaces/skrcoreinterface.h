@@ -19,8 +19,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRCOREINTERFACE_H
-#define SKRCOREINTERFACE_H
+#pragma once
+
 
 
 #include <QString>
@@ -37,4 +37,4 @@ public:
 
 Q_DECLARE_INTERFACE(SKRCoreInterface, SKRCoreInterface_iid)
 
-#endif // SKRCOREINTERFACE_H
+

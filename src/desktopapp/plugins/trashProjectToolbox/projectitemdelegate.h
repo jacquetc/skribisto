@@ -1,5 +1,5 @@
-#ifndef PROJECTITEMDELEGATE_H
-#define PROJECTITEMDELEGATE_H
+#pragma once
+
 
 #include <QStyledItemDelegate>
 
@@ -11,4 +11,4 @@ public:
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
-#endif // PROJECTITEMDELEGATE_H
+

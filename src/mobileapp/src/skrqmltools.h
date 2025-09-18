@@ -18,8 +18,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRQMLTOOLS_H
-#define SKRQMLTOOLS_H
+#pragma once
+
 
 
 #include <QAccessibleEvent>
@@ -79,4 +79,4 @@ public:
     }
 };
 
-#endif // SKRQMLTOOLS_H
+

@@ -1,5 +1,5 @@
-#ifndef SKRSHORTCUTMANAGER_H
-#define SKRSHORTCUTMANAGER_H
+#pragma once
+
 
 #include <QObject>
 #include <QKeySequence>
@@ -84,4 +84,4 @@ private:
     QStringList convertStandardKeyToList(QKeySequence::StandardKey key);
 };
 
-#endif // SKRSHORTCUTMANAGER_H
+

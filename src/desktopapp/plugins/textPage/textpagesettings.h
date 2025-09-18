@@ -1,5 +1,5 @@
-#ifndef TEXTPAGESETTINGS_H
-#define TEXTPAGESETTINGS_H
+#pragma once
+
 
 #include <QWidget>
 #include "settingssubpanel.h"
@@ -30,4 +30,4 @@ public slots:
 
 };
 
-#endif // TEXTPAGESETTINGS_H
+

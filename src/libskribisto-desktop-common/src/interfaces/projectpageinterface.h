@@ -19,8 +19,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PROJECTPAGEINTERFACE_H
-#define PROJECTPAGEINTERFACE_H
+#pragma once
+
 
 #include <QString>
 #include "interfaces/pageinterface.h"
@@ -59,4 +59,4 @@ public:
 
 Q_DECLARE_INTERFACE(ProjectPageInterface, ProjectPageInterface_iid)
 
-#endif // PROJECTPAGEINTERFACE_H
+

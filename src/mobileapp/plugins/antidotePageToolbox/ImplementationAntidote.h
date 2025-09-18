@@ -1,5 +1,5 @@
-#ifndef IMPLEMENTATIONANTIDOTE_H
-#define IMPLEMENTATIONANTIDOTE_H
+#pragma once
+
 
 #include <QtCore>
 #include <QtGui>
@@ -132,4 +132,4 @@ private:
     int m_textIndent;
 };
 
-#endif // IMPLEMENTATIONANTIDOTE_H
+

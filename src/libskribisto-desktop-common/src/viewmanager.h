@@ -1,5 +1,5 @@
-#ifndef VIEWMANAGER_H
-#define VIEWMANAGER_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include "view.h"
@@ -90,4 +90,4 @@ private:
 };
 
 
-#endif // VIEWMANAGER_H
+

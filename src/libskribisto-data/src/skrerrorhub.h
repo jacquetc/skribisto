@@ -18,8 +18,7 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRRESULTHUB_H
-#define SKRRESULTHUB_H
+#pragma once
 
 #include "skrresult.h"
 
@@ -122,5 +121,3 @@ private:
 
     QList<SKRResult>m_resultList;
 };
-
-#endif // SKRRESULTHUB_H

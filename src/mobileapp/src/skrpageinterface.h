@@ -19,13 +19,13 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef SKRPAGEINTERFACE_H
-#define SKRPAGEINTERFACE_H
+#pragma once
+
 
 #include <QString>
 #include <QVariantMap>
 #include "skrresult.h"
-#include "skrcoreinterface.h"
+#include "interfaces/skrcoreinterface.h"
 
 
 class SKRPageInterface : public SKRCoreInterface {
@@ -67,4 +67,4 @@ protected:
 
 Q_DECLARE_INTERFACE(SKRPageInterface, SKRPageInterface_iid)
 
-#endif // SKRPAGEINTERFACE_H
+

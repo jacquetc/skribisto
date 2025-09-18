@@ -1,5 +1,5 @@
-#ifndef PAGETYPEICONINTERFACE_H
-#define PAGETYPEICONINTERFACE_H
+#pragma once
+
 
 #include "command.h"
 #include "treeitemaddress.h"
@@ -19,4 +19,4 @@ public:
 
 Q_DECLARE_INTERFACE(PageTypeIconInterface, PageTypeIconInterface_iid)
 
-#endif // PAGETYPEICONINTERFACE_H
+

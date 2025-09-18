@@ -1,5 +1,5 @@
-#ifndef EMPTYVIEW_H
-#define EMPTYVIEW_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include "view.h"
@@ -24,4 +24,4 @@ private:
   Ui::EmptyView *centralWidgetUi;
 };
 
-#endif // EMPTYVIEW_H
+

@@ -1,5 +1,5 @@
-#ifndef SKRTEXTBRIDGE_H
-#define SKRTEXTBRIDGE_H
+#pragma once
+
 
 #include <QObject>
 #include <QQuickTextDocument>
@@ -89,4 +89,4 @@ private:
     QList<SKRSyncDocument>m_syncDocList;
 };
 
-#endif // SKRTEXTBRIDGE_H
+

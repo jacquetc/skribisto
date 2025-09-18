@@ -1,5 +1,5 @@
-#ifndef EXPORTER_H
-#define EXPORTER_H
+#pragma once
+
 
 #include <QObject>
 #include <QTextDocument>
@@ -25,4 +25,4 @@ signals:
 
 };
 
-#endif // EXPORTER_H
+

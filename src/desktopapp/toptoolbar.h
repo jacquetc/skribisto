@@ -1,5 +1,5 @@
-#ifndef TOPTOOLBAR_H
-#define TOPTOOLBAR_H
+#pragma once
+
 
 #include <QToolBar>
 #include <QWidget>
@@ -25,4 +25,4 @@ private:
     QToolBar *m_rightToolBar;
 };
 
-#endif // TOPTOOLBAR_H
+

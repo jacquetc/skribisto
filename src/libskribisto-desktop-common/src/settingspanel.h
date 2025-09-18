@@ -1,5 +1,5 @@
-#ifndef SETTINGSPAGE_H
-#define SETTINGSPAGE_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include <QListWidgetItem>
@@ -33,4 +33,4 @@ private:
                  NOTIFY settingsGroupChanged)
 };
 
-#endif // SETTINGSPAGE_H
+

@@ -1,5 +1,5 @@
-#ifndef SKREXPORTER_H
-#define SKREXPORTER_H
+#pragma once
+
 
 #include <QObject>
 #include <QUrl>
@@ -133,4 +133,4 @@ private:
 
 };
 
-#endif // SKREXPORTER_H
+

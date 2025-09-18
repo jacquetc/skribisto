@@ -1,5 +1,5 @@
-#ifndef OVERVIEWVIEW_H
-#define OVERVIEWVIEW_H
+#pragma once
+
 
 #include <QWidget>
 #include "view.h"
@@ -47,4 +47,4 @@ private:
     void openInAnotherView(const QModelIndex &index);
 };
 
-#endif // OVERVIEWVIEW_H
+

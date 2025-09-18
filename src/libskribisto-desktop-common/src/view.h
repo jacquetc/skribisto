@@ -1,5 +1,5 @@
-#ifndef VIEW_H
-#define VIEW_H
+#pragma once
+
 
 #include "toolbox.h"
 
@@ -84,4 +84,4 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override;
 };
 
-#endif // VIEW_H
+

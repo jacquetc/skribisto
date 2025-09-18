@@ -1,5 +1,5 @@
-#ifndef SKRFONTFAMILYLISTMODEL_H
-#define SKRFONTFAMILYLISTMODEL_H
+#pragma once
+
 
 #include <QObject>
 #include <QAbstractListModel>
@@ -63,4 +63,4 @@ private:
     QStringList m_allFontFamilies;
 };
 
-#endif // SKRFONTFAMILYLISTMODEL_H
+

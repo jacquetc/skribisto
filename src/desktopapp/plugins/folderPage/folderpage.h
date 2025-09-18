@@ -18,8 +18,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef FOLDERPAGE_H
-#define FOLDERPAGE_H
+#pragma once
+
 
 #include <QObject>
 #include "interfaces/itemexporterinterface.h"
@@ -104,4 +104,4 @@ signals:
 private:
 };
 
-#endif // FOLDERPAGE_H
+

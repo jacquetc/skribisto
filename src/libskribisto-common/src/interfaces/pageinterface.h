@@ -19,8 +19,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PAGEINTERFACE_H
-#define PAGEINTERFACE_H
+#pragma once
+
 
 #include <QString>
 #include <QVariantMap>
@@ -53,4 +53,4 @@ protected:
 
 Q_DECLARE_INTERFACE(PageInterface, PageInterface_iid)
 
-#endif // PAGEINTERFACE_H
+

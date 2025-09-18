@@ -20,8 +20,8 @@
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 
-#ifndef SETTINGSPANELINTERFACE_H
-#define SETTINGSPANELINTERFACE_H
+#pragma once
+
 
 #include "skrresult.h"
 #include "settingssubpanel.h"
@@ -43,4 +43,4 @@ public:
 
 Q_DECLARE_INTERFACE(SettingsPanelInterface, SettingsPanelInterface_iid)
 
-#endif // SETTINGSPANELINTERFACE_H
+

@@ -18,8 +18,8 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef SKRIMPORTER_H
-#define SKRIMPORTER_H
+#pragma once
+
 
 #include "interfaces/importerinterface.h"
 #include <QObject>
@@ -80,4 +80,4 @@ public:
     QString importProject(const QUrl &url, const QVariantMap &parameters, SKRResult &result) const override;
 };
 
-#endif // SKRIMPORTER_H
+

@@ -1,5 +1,5 @@
-#ifndef WINDOWMANAGER_H
-#define WINDOWMANAGER_H
+#pragma once
+
 
 #include "mainwindow.h"
 
@@ -52,4 +52,4 @@ private:
 
 };
 
-#endif // WINDOWMANAGER_H
+

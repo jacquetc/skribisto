@@ -1,5 +1,5 @@
-#ifndef DESKTOPAPPLICATION_H
-#define DESKTOPAPPLICATION_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include <QApplication>
@@ -15,4 +15,4 @@ class SKRDESKTOPCOMMONEXPORT DesktopApplication : public QApplication
     void settingsChanged(QHash<QString, QVariant>);
 };
 
-#endif // DESKTOPAPPLICATION_H
+

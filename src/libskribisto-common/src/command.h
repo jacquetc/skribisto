@@ -1,5 +1,5 @@
-#ifndef COMMAND_H
-#define COMMAND_H
+#pragma once
+
 
 #include <QObject>
 #include <QUndoCommand>
@@ -13,4 +13,4 @@ public:
 
 };
 
-#endif // COMMAND_H
+

@@ -18,8 +18,8 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef UPGRADER_H
-#define UPGRADER_H
+#pragma once
+
 
 #include <QObject>
 #include <QSqlDatabase>
@@ -50,4 +50,4 @@ private:
   static SKRResult moveTrashedItemsToTrashFolder_2_0(QSqlDatabase sqlDb);
 };
 
-#endif // UPGRADER_H
+

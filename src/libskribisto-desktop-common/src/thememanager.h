@@ -1,5 +1,5 @@
-#ifndef THEMEMANAGER_H
-#define THEMEMANAGER_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include <QApplication>
@@ -90,4 +90,4 @@ private:
   QJsonDocument loadThemeJson(const QString &themeName) const;
 };
 
-#endif // THEMEMANAGER_H
+

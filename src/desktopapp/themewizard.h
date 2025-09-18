@@ -1,5 +1,5 @@
-#ifndef THEMEWIZARD_H
-#define THEMEWIZARD_H
+#pragma once
+
 
 #include <QPaintEvent>
 #include <QStyledItemDelegate>
@@ -39,4 +39,4 @@ public slots:
 
 
 
-#endif // THEMEWIZARD_H
+

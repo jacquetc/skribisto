@@ -1,5 +1,5 @@
-#ifndef CSTANTIDOTEAPI_H
-#define CSTANTIDOTEAPI_H
+#pragma once
+
 
 namespace AntidoteAPI
 {
@@ -50,4 +50,4 @@ static const char* kGuideHistorique						= "G_Historique";				//	guide Historiqu
 static const char* kGuidePointsDeLangue				= "G_PointsDeLangue";		//	guide Points de langue																											--	Language Matters guide
 }
 
-#endif // CSTAPIANTIDOTE_H
+

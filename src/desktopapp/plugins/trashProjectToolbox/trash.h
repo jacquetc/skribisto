@@ -1,5 +1,5 @@
-#ifndef TRASH_H
-#define TRASH_H
+#pragma once
+
 
 #include "toolbox.h"
 #include <QModelIndex>
@@ -60,4 +60,4 @@ public:
     void initialize() override;
 };
 
-#endif // TRASH_H
+

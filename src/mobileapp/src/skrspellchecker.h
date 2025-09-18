@@ -19,8 +19,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SKRSPELLCHECKER_H
-#define SKRSPELLCHECKER_H
+#pragma once
+
 
 #include <QString>
 #include <QObject>
@@ -96,4 +96,4 @@ private:
     QString m_encodingFix, m_dictionaryPath;
 };
 
-#endif // SKRSPELLCHECKER_H
+

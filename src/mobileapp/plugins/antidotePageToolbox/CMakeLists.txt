@@ -56,8 +56,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT
 target_link_libraries(${PROJECT_NAME} PUBLIC skribisto-data)
 
 
-include_directories("${CMAKE_SOURCE_DIR}/src/app/src/")
-include_directories("${CMAKE_SOURCE_DIR}/src/app/src/qml/")
+include_directories("${CMAKE_SOURCE_DIR}/src/mobileapp/src/")
+include_directories("${CMAKE_SOURCE_DIR}/src/mobileapp/src/qml/")
 include_directories("${CMAKE_SOURCE_DIR}/src/libskribisto-data/src/")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")

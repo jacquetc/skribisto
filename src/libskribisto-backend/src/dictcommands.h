@@ -1,5 +1,5 @@
-#ifndef DICTCOMMANDS_H
-#define DICTCOMMANDS_H
+#pragma once
+
 
 #include "interfaces/invokablecommandgroupinterface.h"
 #include "skribisto_backend_global.h"
@@ -65,4 +65,4 @@ class DeleteWordFromProjectDictCommand : public Command
     QString m_word;
     int m_projectId;
 };
-#endif // DICTCOMMANDS_H
+

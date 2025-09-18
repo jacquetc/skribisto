@@ -20,8 +20,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SKRPROJECTTEMPLATEINTERFACE_H
-#define SKRPROJECTTEMPLATEINTERFACE_H
+#pragma once
+
 
 #include <QString>
 #include "skrresult.h"
@@ -47,4 +47,4 @@ public:
 
 Q_DECLARE_INTERFACE(SKRProjectTemplateInterface, SKRProjectTemplateInterface_iid)
 
-#endif // SKRPROJECTTEMPLATEINTERFACE_H
+

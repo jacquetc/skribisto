@@ -1,5 +1,5 @@
-#ifndef TREEITEMADDRESS_H
-#define TREEITEMADDRESS_H
+#pragma once
+
 
 #include <QDebug>
 #include <QObject>
@@ -52,5 +52,5 @@ inline size_t qHash(const TreeItemAddress &key, size_t seed)
     return qHashMulti(seed, key.projectId, key.itemId);
 }
 
-#endif // TREEITEMADDRESS_H
+
 

@@ -1,5 +1,5 @@
-#ifndef PROJECTTREEPROXYMODEL_H
-#define PROJECTTREEPROXYMODEL_H
+#pragma once
+
 
 #include <QIdentityProxyModel>
 #include "interfaces/pagetypeiconinterface.h"
@@ -30,4 +30,4 @@ public:
         Qt::DropActions supportedDragActions() const override;
 };
 
-#endif // PROJECTTREEPROXYMODEL_H
+

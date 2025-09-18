@@ -1,5 +1,5 @@
-#ifndef SECTIONVIEW_H
-#define SECTIONVIEW_H
+#pragma once
+
 
 #include <QWidget>
 #include "view.h"
@@ -24,4 +24,4 @@ private:
     Ui::SectionView *centralWidgetUi;
 };
 
-#endif // SECTIONVIEW_H
+

@@ -19,8 +19,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef NAVIGATIONPROJECTTOOLBOX_H
-#define NAVIGATIONPROJECTTOOLBOX_H
+#pragma once
+
 
 #include <QObject>
 #include "interfaces/projecttoolboxinterface.h"
@@ -68,4 +68,4 @@ signals:
 private:
 };
 
-#endif // NAVIGATIONPROJECTTOOLBOX_H
+

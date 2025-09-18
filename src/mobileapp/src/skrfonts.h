@@ -1,5 +1,5 @@
-#ifndef SKRFONTS_H
-#define SKRFONTS_H
+#pragma once
+
 
 #include <QObject>
 #include <QFontDatabase>
@@ -21,4 +21,4 @@ private:
     QStringList families;
 };
 
-#endif // SKRFONTS_H
+

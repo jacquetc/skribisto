@@ -1,5 +1,5 @@
-#ifndef OUTLINETOOLBOX_H
-#define OUTLINETOOLBOX_H
+#pragma once
+
 
 #include <QWheelEvent>
 #include <QWidget>
@@ -47,4 +47,4 @@ private:
 
 };
 
-#endif // OUTLINETOOLBOX_H
+

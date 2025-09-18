@@ -1,5 +1,5 @@
-#ifndef MARKDOWNTEXTDOCUMENTPROXY_H
-#define MARKDOWNTEXTDOCUMENTPROXY_H
+#pragma once
+
 
 #include "text/markdowntextdocument.h"
 
@@ -37,4 +37,4 @@ public:
 
 };
 
-#endif // MARKDOWNTEXTDOCUMENTPROXY_H
+

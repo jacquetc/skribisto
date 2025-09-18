@@ -1,5 +1,5 @@
-#ifndef NAVIGATION_H
-#define NAVIGATION_H
+#pragma once
+
 
 #include "toolbox.h"
 #include <QModelIndex>
@@ -79,4 +79,4 @@ public:
 };
 
 
-#endif // NAVIGATION_H
+

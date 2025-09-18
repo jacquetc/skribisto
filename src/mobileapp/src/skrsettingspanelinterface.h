@@ -20,8 +20,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SKRSETTINGSPANELINTERFACE_H
-#define SKRSETTINGSPANELINTERFACE_H
+#pragma once
+
 
 #include <QString>
 #include "skrresult.h"
@@ -46,4 +46,4 @@ public:
 
 Q_DECLARE_INTERFACE(SKRSettingsPanelInterface, SKRSettingsPanelInterface_iid)
 
-#endif // SKRSETTINGSPANELINTERFACE_H
+

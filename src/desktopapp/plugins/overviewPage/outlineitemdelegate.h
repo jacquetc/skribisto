@@ -1,5 +1,5 @@
-#ifndef OUTLINEITEMDELEGATE_H
-#define OUTLINEITEMDELEGATE_H
+#pragma once
+
 
 #include <QStyledItemDelegate>
 #include <QObject>
@@ -36,4 +36,4 @@ signals:
     void editFinished(const QModelIndex &index) const;
 };
 
-#endif // OUTLINEITEMDELEGATE_H
+

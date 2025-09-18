@@ -1,5 +1,5 @@
-#ifndef SETTINGSSUBPANEL_H
-#define SETTINGSSUBPANEL_H
+#pragma once
+
 
 #include "skribisto_desktop_common_global.h"
 #include <QWidget>
@@ -26,4 +26,4 @@ private:
   Ui::SettingsSubPanel *ui;
 };
 
-#endif // SETTINGSSUBPANEL_H
+

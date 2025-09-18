@@ -19,8 +19,8 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef PAGEDESKTOPINTERFACE_H
-#define PAGEDESKTOPINTERFACE_H
+#pragma once
+
 
 #include "interfaces/skrcoreinterface.h"
 #include "treeitemcreationparameterswidget.h"
@@ -47,4 +47,4 @@ protected:
 
 Q_DECLARE_INTERFACE(PageDesktopInterface, PageDesktopInterface_iid)
 
-#endif // PAGEDESKTOPINTERFACE_H
+

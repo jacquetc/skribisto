@@ -18,8 +18,8 @@
  *  You should have received a copy of the GNU General Public License      *
  *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
-#ifndef SKRIBFORMAT_H
-#define SKRIBFORMAT_H
+#pragma once
+
 
 #include "interfaces/newprojectformatinterface.h"
 #include <QObject>
@@ -69,4 +69,4 @@ public:
   QString finalFileName(const QString &path, const QString &fileBaseName) const override;
 };
 
-#endif // SKRIBFORMAT_H
+

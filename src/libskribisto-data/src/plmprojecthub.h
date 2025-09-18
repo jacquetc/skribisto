@@ -18,8 +18,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef PLMPROJECTHUB_H
-#define PLMPROJECTHUB_H
+#pragma once
+
 
 #include <QObject>
 #include <QString>
@@ -143,4 +143,4 @@ private:
     int m_isProjectToBeClosed;
 };
 
-#endif // PLMPROJECTHUB_H
+

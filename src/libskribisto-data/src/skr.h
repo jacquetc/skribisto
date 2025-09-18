@@ -1,5 +1,5 @@
-#ifndef SKR_H
-#define SKR_H
+#pragma once
+
 
 #include <QtCore>
 #include <QObject>
@@ -14,4 +14,4 @@ public:
 };
 
 
-#endif // SKR_H
+

@@ -1,5 +1,5 @@
-#ifndef SKRDOWNLOAD_H
-#define SKRDOWNLOAD_H
+#pragma once
+
 
 #include <QObject>
 
@@ -117,4 +117,4 @@ private:
     void stopSaveFile();
 };
 
-#endif // SKRDOWNLOAD_H
+

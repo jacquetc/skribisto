@@ -1,5 +1,5 @@
-#ifndef OVERVIEWPROXYMODEL_H
-#define OVERVIEWPROXYMODEL_H
+#pragma once
+
 
 #include "treeitemaddress.h"
 #include <QSortFilterProxyModel>
@@ -36,4 +36,4 @@ private:
 
 };
 
-#endif // OVERVIEWPROXYMODEL_H
+

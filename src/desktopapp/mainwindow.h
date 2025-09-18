@@ -1,5 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
+
 
 #include <QMainWindow>
 #include "thememanager.h"
@@ -54,4 +54,4 @@ private:
     void openSaveAsDialog(int projectId);
     void setupMenuActions();
 };
-#endif // MAINWINDOW_H
+

@@ -1,5 +1,5 @@
-#ifndef TAGCOMMANDS_H
-#define TAGCOMMANDS_H
+#pragma once
+
 
 #include <QColor>
 #include <QObject>
@@ -157,4 +157,4 @@ private:
     int m_tagId;
 };
 
-#endif // TAGCOMMANDS_H
+

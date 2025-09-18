@@ -19,8 +19,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SKRHIGHLIGHTER_H
-#define SKRHIGHLIGHTER_H
+#pragma once
+
 
 #include <QSyntaxHighlighter>
 #include "skrspellchecker.h"
@@ -117,4 +117,4 @@ private:
     QString m_otherHighlightColor_3;
 };
 
-#endif // SKRHIGHLIGHTER_H
+

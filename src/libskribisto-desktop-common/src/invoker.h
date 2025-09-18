@@ -1,5 +1,5 @@
-#ifndef INVOKER_H
-#define INVOKER_H
+#pragma once
+
 
 #include <QString>
 #include <QWidget>
@@ -11,4 +11,4 @@
 }
 
 
-#endif // INVOKER_H
+

@@ -1,5 +1,5 @@
-#ifndef TAGITEMDELEGATE_H
-#define TAGITEMDELEGATE_H
+#pragma once
+
 
 #include <QStyledItemDelegate>
 #include <QObject>
@@ -17,4 +17,4 @@ public:
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };
 
-#endif // TAGITEMDELEGATE_H
+

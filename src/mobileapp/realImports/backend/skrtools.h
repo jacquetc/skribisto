@@ -19,8 +19,8 @@
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
 
-#ifndef SKRTOOLS_H
-#define SKRTOOLS_H
+#pragma once
+
 
 #include <QObject>
 #include <QString>
@@ -85,4 +85,4 @@ private:
     static QString trimStyle(const QString &styleValue) ;
 };
 
-#endif // SKRTOOLS_H
+

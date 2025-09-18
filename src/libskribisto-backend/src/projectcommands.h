@@ -1,5 +1,5 @@
-#ifndef PROJECTCOMMANDS_H
-#define PROJECTCOMMANDS_H
+#pragma once
+
 
 #include <QObject>
 #include <QTextDocument>
@@ -99,4 +99,4 @@ private:
     int m_projectId;
 };
 
-#endif // PROJECTCOMMANDS_H
+

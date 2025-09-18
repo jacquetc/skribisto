@@ -1,5 +1,5 @@
-#ifndef NEWPROJECTWIZARD_H
-#define NEWPROJECTWIZARD_H
+#pragma once
+
 
 #include <QUrl>
 #include <QWizard>
@@ -53,4 +53,4 @@ public slots:
     void reject() override;
 };
 
-#endif // NEWPROJECTWIZARD_H
+

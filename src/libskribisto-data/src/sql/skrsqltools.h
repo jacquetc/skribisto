@@ -1,5 +1,5 @@
-#ifndef SKRSQLTOOLS_H
-#define SKRSQLTOOLS_H
+#pragma once
+
 
 
 #include <QFile>
@@ -33,4 +33,4 @@ public:
 signals:
 };
 
-#endif // SKRSQLTOOLS_H
+

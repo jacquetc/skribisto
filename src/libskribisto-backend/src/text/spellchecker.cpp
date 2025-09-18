@@ -11,7 +11,7 @@
 #ifdef Q_OS_IOS
 #include "../../hunspell/src/hunspell/hunspell.hxx"
 #else
-#include <hunspell.hxx>
+#include <hunspell/hunspell.hxx>
 #endif // Q_OS_IOS
 
 #include "plmutils.h"

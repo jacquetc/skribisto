@@ -18,8 +18,8 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>. *
 ***************************************************************************/
-#ifndef TOOLS_H
-#define TOOLS_H
+#pragma once
+
 
 #include <QHash>
 #include <QVariant>
@@ -126,4 +126,3 @@ Q_DECL_UNUSED QList<int>convertToInt(const QList<QVariant>& list) {
 }
 }
 }
-#endif // TOOLS_H
