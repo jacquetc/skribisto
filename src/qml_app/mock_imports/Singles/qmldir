@@ -1,0 +1,7 @@
+# This file was generated automatically by Qleany's generator, edit at your own risk! 
+# If you do, be careful to not overwrite it when you run the generator again.
+Module Singles
+SingleCar 1.0 SingleCar.qml
+SingleBrand 1.0 SingleBrand.qml
+SinglePassenger 1.0 SinglePassenger.qml
+SingleClient 1.0 SingleClient.qml

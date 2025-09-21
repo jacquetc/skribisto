@@ -1,0 +1,73 @@
+/******************************************************************************
+ Copyright (C) 2025 by Cyril Jacquet                                          *
+ cyril.jacquet@skribisto.eu                                                   *
+                                                                              *
+ This file is part of Skribisto.                                              *
+                                                                              *
+ Skribisto is free software: you can redistribute it and/or modify            *
+ it under the terms of the GNU General Public License as published by         *
+ the Free Software Foundation, either version 3 of the License, or            *
+ (at your option) any later version.                                          *
+                                                                              *
+ Skribisto is distributed in the hope that it will be useful,                 *
+ but WITHOUT ANY WARRANTY; without even the implied warranty of               *
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
+ GNU General Public License for more details.                                 *
+                                                                              *
+ You should have received a copy of the GNU General Public License            *
+ along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
+ ******************************************************************************/
+
+#pragma once
+
+#include "entities/root.h"
+#include "root/dtos.h"
+
+#include <QList>
+#include <utility>
+
+namespace Skribisto::DirectAccess::Root
+{
+class DtoMapper
+{
+  public:
+    DtoMapper() = delete;
+    ~DtoMapper() = delete;
+    DtoMapper(const DtoMapper &) = delete;
+    DtoMapper &operator=(const DtoMapper &) = delete;
+    DtoMapper(DtoMapper &&) = delete;
+    DtoMapper &operator=(DtoMapper &&) = delete;
+
+    static Skribisto::Common::Entities::Root toEntity(const CreateRootDto &dto)
+    {
+        return Skribisto::Common::Entities::Root(0, dto.creationDate, dto.updateDate, dto.projects, dto.recentProjects);
+    }
+
+    static RootDto toDto(const Skribisto::Common::Entities::Root &entity)
+    {
+        return RootDto{entity.id, entity.creationDate, entity.updateDate, entity.projects, entity.recentProjects};
+    }
+
+    static QList<Skribisto::Common::Entities::Root> toEntityList(const QList<CreateRootDto> &dtos)
+    {
+        QList<Skribisto::Common::Entities::Root> entities;
+        entities.reserve(dtos.size());
+        for (const auto &dto : dtos)
+        {
+            entities.append(toEntity(dto));
+        }
+        return entities;
+    }
+
+    static QList<RootDto> toDtoList(const QList<Skribisto::Common::Entities::Root> &entities)
+    {
+        QList<RootDto> dtos;
+        dtos.reserve(entities.size());
+        for (const auto &entity : entities)
+        {
+            dtos.append(toDto(entity));
+        }
+        return dtos;
+    }
+};
+} // namespace Skribisto::DirectAccess::Root
