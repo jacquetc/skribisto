@@ -1,0 +1,42 @@
+{
+  "name": "Qt 6 Development - Fedora 42",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "runArgs": [
+    "--privileged",
+    "--net=host",
+    "-e",
+    "DISPLAY=${localEnv:DISPLAY}",
+    "-e",
+    "XAUTHORITY=${localEnv:XAUTHORITY}",
+    "-e",
+    "QT_X11_NO_MITSHM=1",
+    "-v",
+    "/tmp/.X11-unix:/tmp/.X11-unix:rw",
+    "-v",
+    "${localEnv:XAUTHORITY}:${localEnv:XAUTHORITY}:rw",
+    "--gpu=all"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake",
+        "ms-vscode.cpptools"
+      ]
+    }
+  },
+  "containerEnv": {
+    "QT_X11_NO_MITSHM": "1",
+    "QT_QPA_PLATFORM": "xcb",
+    "QT_LOGGING_RULES": "*.debug=true;qt.qml.debug=true;js.debug=true",
+    "QT_ASSUME_STDERR_HAS_CONSOLE": "1",
+    "QT_FORCE_STDERR_LOGGING": "1",
+    "QML_CONSOLE_INHERIT": "1"
+  },
+  "forwardPorts": [],
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "shutdownAction": "none"
+}
