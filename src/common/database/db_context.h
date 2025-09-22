@@ -93,35 +93,49 @@ class DbContext
     // map id -> connectionName
     QHash<int, QString> m_connections;
 };
-
 struct DbSubContext
 {
     explicit DbSubContext(DbContext &parentDbContext) : m_parentDbContext(parentDbContext)
     {
-        m_dbId = m_parentDbContext.createDatabaseConnection();
+        // Don't create connection here - defer until needed
     }
+
     DbSubContext(const DbSubContext &) = delete;
     DbSubContext &operator=(const DbSubContext &) = delete;
 
     ~DbSubContext()
     {
-        m_parentDbContext.closeDatabaseConnection(m_dbId);
+        // Only close if connection was created
+        if (m_dbId != -1)
+        {
+            m_parentDbContext.closeDatabaseConnection(m_dbId);
+        }
     }
 
-    [[nodiscard]] QSqlDatabase getConnection() const
+    [[nodiscard]] QSqlDatabase getConnection()
     {
+        // Lazy initialization - create connection on first use
+        if (m_dbId == -1)
+        {
+            m_dbId = m_parentDbContext.createDatabaseConnection();
+        }
         return m_parentDbContext.getConnection(m_dbId);
     }
 
-    [[nodiscard]] int getDbId() const
+    [[nodiscard]] int getDbId()
     {
+        // Ensure connection exists before returning ID
+        if (m_dbId == -1)
+        {
+            m_dbId = m_parentDbContext.createDatabaseConnection();
+        }
         return m_dbId;
     }
 
-    // Transaction API
-    void beginTransaction() const
+    // Transaction API - all methods need to ensure connection exists
+    void beginTransaction()
     {
-        QSqlDatabase db = m_parentDbContext.getConnection(m_dbId);
+        QSqlDatabase db = getConnection(); // This will create connection if needed
         if (!db.isValid())
             return;
         if (!db.transaction())
@@ -130,9 +144,9 @@ struct DbSubContext
         }
     }
 
-    void commit() const
+    void commit()
     {
-        QSqlDatabase db = m_parentDbContext.getConnection(m_dbId);
+        QSqlDatabase db = getConnection();
         if (!db.isValid())
             return;
         if (!db.commit())
@@ -141,15 +155,14 @@ struct DbSubContext
         }
     }
 
-    void endTransaction() const
+    void endTransaction()
     {
-        // In SQLite, END TRANSACTION is equivalent to COMMIT.
         commit();
     }
 
-    void rollback() const
+    void rollback()
     {
-        QSqlDatabase db = m_parentDbContext.getConnection(m_dbId);
+        QSqlDatabase db = getConnection();
         if (!db.isValid())
             return;
         if (!db.rollback())
@@ -160,13 +173,13 @@ struct DbSubContext
 
     void createSavepoint()
     {
-        if (not m_savepointName.isEmpty())
+        if (!m_savepointName.isEmpty())
         {
             qCritical() << "RootUnitOfWork::createSavepoint - savepoint already exists";
             return;
         }
 
-        QSqlDatabase db = m_parentDbContext.getConnection(m_dbId);
+        QSqlDatabase db = getConnection();
         if (!db.isValid())
             return;
         QSqlQuery q(db);
@@ -179,7 +192,7 @@ struct DbSubContext
         m_savepointName = name;
     }
 
-    void rollbackToSavepoint() const
+    void rollbackToSavepoint()
     {
         if (m_savepointName.isEmpty())
         {
@@ -187,7 +200,7 @@ struct DbSubContext
             return;
         }
 
-        QSqlDatabase db = m_parentDbContext.getConnection(m_dbId);
+        QSqlDatabase db = getConnection();
         if (!db.isValid())
             return;
         QSqlQuery q(db);
@@ -197,7 +210,7 @@ struct DbSubContext
         }
     }
 
-    void releaseSavepoint() const
+    void releaseSavepoint()
     {
         if (m_savepointName.isEmpty())
         {
@@ -205,7 +218,7 @@ struct DbSubContext
             return;
         }
 
-        QSqlDatabase db = m_parentDbContext.getConnection(m_dbId);
+        QSqlDatabase db = getConnection();
         if (!db.isValid())
             return;
         QSqlQuery q(db);
@@ -217,7 +230,7 @@ struct DbSubContext
 
   private:
     DbContext &m_parentDbContext;
-    int m_dbId;
+    int m_dbId = -1; // Initialize to invalid ID
     QString m_savepointName;
 };
 
