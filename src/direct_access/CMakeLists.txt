@@ -28,16 +28,16 @@ set(ROOT_LIST
         root/use_cases/create_uc.cpp
         root/use_cases/create_uc.h
         root/use_cases/common/dto_mapper.h
-        #        root/use_cases/remove_uc.cpp
-        #        root/use_cases/remove_uc.h
+        root/use_cases/remove_uc.cpp
+        root/use_cases/remove_uc.h
         root/use_cases/get_uc.cpp
         root/use_cases/get_uc.h
         #        root/use_cases/get_relationship.cpp
         #        root/use_cases/get_relationship.h
         #        root/use_cases/set_relationship.cpp
         #        root/use_cases/set_relationship.h
-        #        root/use_cases/update_uc.cpp
-        #        root/use_cases/update_uc.h
+        root/use_cases/update_uc.cpp
+        root/use_cases/update_uc.h
 )
 
 set(AUTHOR_LIST

@@ -20,47 +20,34 @@
 
 #pragma once
 
-#include "direct_access/root/i_root_repository.h"
-#include "direct_access/root/root_repository.h"
-#include "dtos.h"
-#include <QCoro/QCoroTask>
-
-#include <QPointer>
-
-namespace Skribisto::Common::UndoRedo
-{
-class UndoRedoSystem;
-}
+#include "common/dto_mapper.h"
+#include "entities/root.h"
+#include "i_root_unit_of_work.h"
+#include "undo_redo/undo_redo_command.h"
+#include <memory>
 
 namespace Skribisto::DirectAccess::Root
 {
-namespace SCDatabase = Skribisto::Common::Database;
+namespace SCE = Common::Entities;
+namespace SCU = Common::UndoRedo;
 
-class RootController : public QObject
+class UpdateRootUseCase
 {
-    Q_OBJECT
   public:
-    RootController(const RootController &) = delete;
-    RootController &operator=(const RootController &) = delete;
-    RootController(RootController &&) = delete;
-    RootController &operator=(RootController &&) = delete;
-    explicit RootController(QObject *parent = nullptr);
-    QCoro::Task<QList<RootDto>> create(const QList<CreateRootDto> &roots);
-    static CreateRootDto getCreateDto()
+    explicit UpdateRootUseCase(std::unique_ptr<IRootUnitOfWork> uow) : m_uow(std::move(uow))
     {
-        return {};
     }
-    QCoro::Task<QList<RootDto>> get(const QList<int> &rootIds);
-    QCoro::Task<QList<RootDto>> update(const QList<RootDto> &roots);
-    QCoro::Task<QList<int>> remove(const QList<int> &rootIds);
-    // QCoro::Task<QList<int>> getRelationship(int rootId, RootRelationshipField relationship);
-    // void setRelationship(int rootId, RootRelationshipField relationship,
-    //                       QList<int> relatedIds);
+    ~UpdateRootUseCase() = default;
+
+    QList<RootDto> execute(const QList<RootDto> &roots);
+    SCU::Result<void> undo();
+    SCU::Result<void> redo();
 
   private:
-    void resolveDependencies();
-    SCDatabase::DbContext *m_dbContext = nullptr;
-    QPointer<Common::DirectAccess::EventRegistry> m_eventRegistry;
-    QPointer<Common::UndoRedo::UndoRedoSystem> m_undoRedoSystem;
+    std::unique_ptr<IRootUnitOfWork> m_uow;
+    QList<RootDto> m_originalRoots;
+    QList<RootDto> m_updatedRoots;
+    bool m_hasExecuted = false;
 };
+
 } // namespace Skribisto::DirectAccess::Root

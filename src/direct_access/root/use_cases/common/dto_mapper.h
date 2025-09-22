@@ -28,8 +28,11 @@
 
 namespace Skribisto::DirectAccess::Root
 {
+namespace SCE = Skribisto::Common::Entities;
+
 class DtoMapper
 {
+
   public:
     DtoMapper() = delete;
     ~DtoMapper() = delete;
@@ -38,19 +41,24 @@ class DtoMapper
     DtoMapper(DtoMapper &&) = delete;
     DtoMapper &operator=(DtoMapper &&) = delete;
 
-    static Skribisto::Common::Entities::Root toEntity(const CreateRootDto &dto)
+    static SCE::Root toEntity(const CreateRootDto &dto)
     {
-        return Skribisto::Common::Entities::Root(0, dto.creationDate, dto.updateDate, dto.projects, dto.recentProjects);
+        return {0, dto.creationDate, dto.updateDate, dto.projects, dto.recentProjects};
     }
 
-    static RootDto toDto(const Skribisto::Common::Entities::Root &entity)
+    static SCE::Root toEntity(const RootDto &dto)
+    {
+        return {0, dto.creationDate, dto.updateDate, dto.projects, dto.recentProjects};
+    }
+
+    static RootDto toDto(const SCE::Root &entity)
     {
         return RootDto{entity.id, entity.creationDate, entity.updateDate, entity.projects, entity.recentProjects};
     }
 
-    static QList<Skribisto::Common::Entities::Root> toEntityList(const QList<CreateRootDto> &dtos)
+    static QList<SCE::Root> toEntityList(const QList<CreateRootDto> &dtos)
     {
-        QList<Skribisto::Common::Entities::Root> entities;
+        QList<SCE::Root> entities;
         entities.reserve(dtos.size());
         for (const auto &dto : dtos)
         {
@@ -59,7 +67,18 @@ class DtoMapper
         return entities;
     }
 
-    static QList<RootDto> toDtoList(const QList<Skribisto::Common::Entities::Root> &entities)
+    static QList<SCE::Root> toEntityList(const QList<RootDto> &dtos)
+    {
+        QList<SCE::Root> entities;
+        entities.reserve(dtos.size());
+        for (const auto &dto : dtos)
+        {
+            entities.append(toEntity(dto));
+        }
+        return entities;
+    }
+
+    static QList<RootDto> toDtoList(const QList<SCE::Root> &entities)
     {
         QList<RootDto> dtos;
         dtos.reserve(entities.size());

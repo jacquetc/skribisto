@@ -24,6 +24,8 @@
 #include "service_locator.h"
 #include "use_cases/create_uc.h"
 #include "use_cases/get_uc.h"
+#include "use_cases/remove_uc.h"
+#include "use_cases/update_uc.h"
 #include <QCoro/QCoroTask>
 #include <QCoro/QCoroTimer>
 
@@ -112,17 +114,96 @@ QCoro::Task<QList<RootDto>> RootController::get(const QList<int> &rootIds)
     auto result = co_await m_undoRedoSystem->executeQueryAsync(query);
     co_return result;
 }
-// QList<RootDto> RootController::update(const QList<RootDto> &roots)
-// {
-// }
-// QList<int> RootController::remove(const QList<int> &rootIds)
-// {
-// }
-// QList<int> RootController::getRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField
+QCoro::Task<QList<RootDto>> RootController::update(const QList<RootDto> &roots)
+{
+    if (!m_undoRedoSystem)
+    {
+        qCritical() << "UndoRedo system not available";
+        co_return QList<RootDto>();
+    }
+
+    // Create use case that will be owned by the command
+    std::unique_ptr<IRootUnitOfWork> uow = std::make_unique<RootUnitOfWork>(*m_dbContext, m_eventRegistry);
+    auto useCase = std::make_shared<UpdateRootUseCase>(std::move(uow));
+    // use case will live as long as the command lives thanks to shared_ptr ownership in the command lambdas
+    // this is important for undo/redo to work correctly
+
+    // Create command that owns the use case
+    auto command = std::make_shared<Common::UndoRedo::UndoRedoCommand>("Update Roots Command"_L1);
+    QList<RootDto> result;
+
+    // Prepare lambda for execute
+    command->setExecuteFunction([useCase, roots, &result](auto &) { result = useCase->execute(roots); });
+    // Prepare lambda for redo
+    command->setRedoFunction([useCase]() { return useCase->redo(); });
+    // Prepare lambda for undo
+    command->setUndoFunction([useCase]() -> Common::UndoRedo::Result<void> { return useCase->undo(); });
+
+    // Execute command asynchronously using QCoro integration
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "root_update"_L1);
+
+    if (!success.has_value())
+    {
+        qWarning() << "Update root command execution timed out";
+        co_return QList<RootDto>();
+    }
+
+    if (!success.value())
+    {
+        qWarning() << "Failed to execute update root command";
+        co_return QList<RootDto>();
+    }
+
+    co_return result;
+}
+QCoro::Task<QList<int>> RootController::remove(const QList<int> &rootIds)
+{
+    if (!m_undoRedoSystem)
+    {
+        qCritical() << "UndoRedo system not available";
+        co_return QList<int>();
+    }
+
+    // Create use case that will be owned by the command
+    std::unique_ptr<IRootUnitOfWork> uow = std::make_unique<RootUnitOfWork>(*m_dbContext, m_eventRegistry);
+    auto useCase = std::make_shared<RemoveRootUseCase>(std::move(uow));
+    // use case will live as long as the command lives thanks to shared_ptr ownership in the command lambdas
+    // this is important for undo/redo to work correctly
+
+    // Create command that owns the use case
+    auto command = std::make_shared<Common::UndoRedo::UndoRedoCommand>("Remove Roots Command"_L1);
+    QList<int> result;
+
+    // Prepare lambda for execute
+    command->setExecuteFunction([useCase, rootIds, &result](auto &) { result = useCase->execute(rootIds); });
+    // Prepare lambda for redo
+    command->setRedoFunction([useCase]() { return useCase->redo(); });
+    // Prepare lambda for undo
+    command->setUndoFunction([useCase]() -> Common::UndoRedo::Result<void> { return useCase->undo(); });
+
+    // Execute command asynchronously using QCoro integration
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "root_remove"_L1);
+
+    if (!success.has_value())
+    {
+        qWarning() << "Remove root command execution timed out";
+        co_return QList<int>();
+    }
+
+    if (!success.value())
+    {
+        qWarning() << "Failed to execute remove root command";
+        co_return QList<int>();
+    }
+
+    co_return result;
+}
+// QCoro::Task<QList<int>> RootController::getRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField
 // relationship)
 // {
 // }
-// void RootController::setRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship,
+// QCoro::Task<void> RootController::setRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField
+// relationship,
 //                                      QList<int> relatedIds)
 // {
 // }
