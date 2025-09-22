@@ -23,11 +23,13 @@
 #include "common/dto_mapper.h"
 #include "entities/root.h"
 #include "i_root_unit_of_work.h"
+#include "undo_redo/undo_redo_command.h"
 #include <memory>
 
 namespace Skribisto::DirectAccess::Root
 {
 namespace SCE = Common::Entities;
+namespace SCU = Common::UndoRedo;
 
 class CreateRootUseCase
 {
@@ -38,9 +40,14 @@ class CreateRootUseCase
     ~CreateRootUseCase() = default;
 
     QList<RootDto> execute(const QList<CreateRootDto> &roots);
+    SCU::Result<void> undo();
+    SCU::Result<void> redo();
 
   private:
     std::unique_ptr<IRootUnitOfWork> m_uow;
+    QList<CreateRootDto> m_originalRoots;
+    QList<RootDto> m_createdRoots;
+    bool m_hasExecuted = false;
 };
 
 } // namespace Skribisto::DirectAccess::Root

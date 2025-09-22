@@ -1,4 +1,8 @@
-find_package(Qt6 COMPONENTS Core Sql REQUIRED)
+find_package(Qt6 COMPONENTS Core Sql Concurrent REQUIRED)
+find_package(QCoro6 REQUIRED COMPONENTS Core)
+
+# Enable coroutines automatically
+qcoro_enable_coroutines()
 
 set(LIBRARY_NAME skribisto-common)
 
@@ -28,16 +32,20 @@ set(SRCS
 )
 
 set(UNDO_REDO_LIST
-        #        undo_redo_old/alter_command.h
-        #        undo_redo_old/query_command.cpp
-        #        undo_redo_old/query_command.h
-        #        undo_redo_old/undo_redo_command.cpp
-        #        undo_redo_old/undo_redo_command.h
-        #        undo_redo_old/undo_redo_controller.cpp
-        #        undo_redo_old/undo_redo_controller.h
-        #        undo_redo_old/undo_redo_scopes.cpp
-        #        undo_redo_old/undo_redo_scopes.h
-        #        undo_redo_old/undo_redo_events.h
+        undo_redo/undo_redo_command.h
+        undo_redo/undo_redo_command.cpp
+        undo_redo/undo_redo_stack.h
+        undo_redo/undo_redo_stack.cpp
+        undo_redo/undo_redo_scopes.h
+        undo_redo/undo_redo_scopes.cpp
+        undo_redo/undo_redo_manager.h
+        undo_redo/undo_redo_manager.cpp
+        undo_redo/group_command.h
+        undo_redo/group_command.cpp
+        undo_redo/query_handler.h
+        undo_redo/query_handler.cpp
+        undo_redo/undo_redo_system.h
+        undo_redo/undo_redo_system.cpp
 )
 
 set(ENTITIES_LIST
@@ -110,7 +118,7 @@ target_include_directories(${LIBRARY_NAME} PUBLIC
 )
 
 target_link_libraries(${LIBRARY_NAME}
-        PRIVATE Qt6::Core Qt6::Sql
+        PRIVATE Qt6::Core Qt6::Sql Qt6::Concurrent QCoro::Core
 )
 
 if (IOS)

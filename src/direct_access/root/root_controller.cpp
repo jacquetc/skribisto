@@ -24,7 +24,8 @@
 #include "service_locator.h"
 #include "use_cases/create_uc.h"
 #include "use_cases/get_uc.h"
-#include <QCoroTimer>
+#include <QCoro/QCoroTask>
+#include <QCoro/QCoroTimer>
 
 #include <memory>
 
@@ -46,31 +47,69 @@ void RootController::resolveDependencies()
     }
     m_dbContext = locator->dbContext();
     m_eventRegistry = locator->eventRegistry();
-    // TODO: add undo redo
+    m_undoRedoSystem = locator->undoRedoSystem();
 }
 
 QCoro::Task<QList<RootDto>> RootController::create(const QList<CreateRootDto> &roots)
 {
-    // TODO: add undo redo support
-    std::unique_ptr<IRootUnitOfWork> uow = std::make_unique<RootUnitOfWork>(*m_dbContext, m_eventRegistry);
-    auto useCase = std::make_unique<CreateRootUseCase>(std::move(uow));
-    auto result = useCase->execute(roots);
+    if (!m_undoRedoSystem)
+    {
+        qCritical() << "UndoRedo system not available";
+        co_return QList<RootDto>();
+    }
 
-    // placeholder for async
-    co_await QCoro::sleepFor(std::chrono::milliseconds(100));
+    // Create use case that will be owned by the command
+    std::unique_ptr<IRootUnitOfWork> uow = std::make_unique<RootUnitOfWork>(*m_dbContext, m_eventRegistry);
+    auto useCase = std::make_shared<CreateRootUseCase>(std::move(uow));
+    // use case will live as long as the command lives thanks to shared_ptr ownership in the command lambdas
+    // this is important for undo/redo to work correctly
+
+    // Create command that owns the use case
+    auto command = std::make_shared<Common::UndoRedo::UndoRedoCommand>("Create Roots Command"_L1);
+    QList<RootDto> result;
+
+    // Prepare lambda for execute
+    command->setExecuteFunction([useCase, roots, &result](auto &) { result = useCase->execute(roots); });
+    // Prepare lambda for redo
+    command->setRedoFunction([useCase]() { return useCase->redo(); });
+    // Prepare lambda for undo
+    command->setUndoFunction([useCase]() -> Common::UndoRedo::Result<void> { return useCase->undo(); });
+
+    // Execute command asynchronously using QCoro integration
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "root_create"_L1);
+
+    if (!success.has_value())
+    {
+        qWarning() << "Create root command execution timed out";
+        co_return QList<RootDto>();
+    }
+
+    if (!success.value())
+    {
+        qWarning() << "Failed to execute create root command";
+        co_return QList<RootDto>();
+    }
 
     co_return result;
 }
 QCoro::Task<QList<RootDto>> RootController::get(const QList<int> &rootIds)
 {
-    // TODO: add undo redo support, but for a query
-    std::unique_ptr<IRootUnitOfWork> uow = std::make_unique<RootUnitOfWork>(*m_dbContext, m_eventRegistry);
-    auto useCase = std::make_unique<GetRootUseCase>(std::move(uow));
-    auto result = useCase->execute(rootIds);
+    // Use undo/redo query system with QCoro integration
+    if (!m_undoRedoSystem)
+    {
+        qCritical() << "UndoRedo system not available";
+        co_return QList<RootDto>();
+    }
 
-    // placeholder for async
-    co_await QCoro::sleepFor(std::chrono::milliseconds(100));
+    auto query = m_undoRedoSystem->createQuery<QList<RootDto>>("Get Roots Query"_L1);
+    query->setQueryFunction([this, rootIds]() -> QList<RootDto> {
+        std::unique_ptr<IRootUnitOfWork> uow = std::make_unique<RootUnitOfWork>(*m_dbContext, m_eventRegistry);
+        auto useCase = std::make_unique<GetRootUseCase>(std::move(uow));
+        return useCase->execute(rootIds);
+    });
 
+    // Execute query asynchronously using QCoro integration
+    auto result = co_await m_undoRedoSystem->executeQueryAsync(query);
     co_return result;
 }
 // QList<RootDto> RootController::update(const QList<RootDto> &roots)

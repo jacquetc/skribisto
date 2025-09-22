@@ -18,46 +18,52 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-#pragma once
+#include "query_handler.h"
 
-#include "direct_access/root/i_root_repository.h"
-#include "direct_access/root/root_repository.h"
-#include "dtos.h"
-#include <QCoro/QCoroTask>
-
-#include <QPointer>
-
-namespace Skribisto::Common::UndoRedo { class UndoRedoSystem; }
-
-namespace Skribisto::DirectAccess::Root
+namespace Skribisto::Common::UndoRedo
 {
-namespace SCDatabase = Skribisto::Common::Database;
 
-class RootController : public QObject
+QueryBase::QueryBase(const QString &description, QObject *parent)
+    : QObject(parent)
+    , m_description(description)
 {
-    Q_OBJECT
-  public:
-    RootController(const RootController &) = delete;
-    RootController &operator=(const RootController &) = delete;
-    RootController(RootController &&) = delete;
-    RootController &operator=(RootController &&) = delete;
-    explicit RootController(QObject *parent = nullptr);
-    QCoro::Task<QList<RootDto>> create(const QList<CreateRootDto> &roots);
-    static CreateRootDto getCreateDto()
-    {
-        return {};
+}
+
+QString QueryBase::description() const
+{
+    return m_description;
+}
+
+QueryHandler::QueryHandler(QObject *parent)
+    : QObject(parent)
+{
+}
+
+void QueryHandler::executeQuery(std::shared_ptr<QueryBase> query)
+{
+    if (!query) {
+        return;
     }
-    QCoro::Task<QList<RootDto>> get(const QList<int> &rootIds);
-    // QList<RootDto> update(const QList<RootDto> &roots);
-    // QList<int> remove(const QList<int> &rootIds);
-    // QList<int> getRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship);
-    // void setRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship,
-    //                      QList<int> relatedIds);
+    
+    m_currentQuery = query;
+    
+    // Connect to query finished signal
+    connect(query.get(), &QueryBase::finished,
+            this, &QueryHandler::onQueryFinished, Qt::UniqueConnection);
+    
+    // Execute query asynchronously
+    query->asyncExecute();
+}
 
-  private:
-    void resolveDependencies();
-    SCDatabase::DbContext *m_dbContext = nullptr;
-    QPointer<Common::DirectAccess::EventRegistry> m_eventRegistry;
-    QPointer<Common::UndoRedo::UndoRedoSystem> m_undoRedoSystem;
-};
-} // namespace Skribisto::DirectAccess::Root
+void QueryHandler::onQueryFinished(bool success)
+{
+    if (m_currentQuery) {
+        auto query = m_currentQuery;
+        m_currentQuery.reset();
+        Q_EMIT queryFinished(query, success);
+    }
+}
+
+} // namespace Skribisto::Common::UndoRedo
+
+#include "query_handler.moc"

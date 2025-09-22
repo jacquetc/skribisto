@@ -1,0 +1,96 @@
+/******************************************************************************
+ Copyright (C) 2025 by Cyril Jacquet                                          *
+ cyril.jacquet@skribisto.eu                                                   *
+                                                                              *
+ This file is part of Skribisto.                                              *
+                                                                              *
+ Skribisto is free software: you can redistribute it and/or modify            *
+ it under the terms of the GNU General Public License as published by         *
+ the Free Software Foundation, either version 3 of the License, or            *
+ (at your option) any later version.                                          *
+                                                                              *
+ Skribisto is distributed in the hope that it will be useful,                 *
+ but WITHOUT ANY WARRANTY; without even the implied warranty of               *
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
+ GNU General Public License for more details.                                 *
+                                                                              *
+ You should have received a copy of the GNU General Public License            *
+ along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
+ ******************************************************************************/
+
+#pragma once
+
+#include "query_handler.h"
+#include "undo_redo_manager.h"
+#include <QCoro/QCoroSignal>
+#include <QCoro/QCoroTask>
+#include <QObject>
+#include <memory>
+
+using namespace Qt::StringLiterals;
+
+namespace Skribisto::Common::UndoRedo
+{
+
+class UndoRedoSystem : public QObject
+{
+    Q_OBJECT
+
+  public:
+    explicit UndoRedoSystem(QObject *parent = nullptr);
+
+    // Manager access
+    UndoRedoManager *manager() const;
+
+    // Query handler access
+    QueryHandler *queryHandler() const;
+
+    // Convenience methods for command operations
+    void executeCommand(std::shared_ptr<UndoRedoCommand> command, const QString &scope = "default"_L1);
+    QCoro::Task<std::optional<bool>> executeCommandAsync(std::shared_ptr<UndoRedoCommand> command,
+                                                         int millisecondsTimeout = 500,
+                                                         const QString &scope = "default"_L1);
+
+    // Convenience methods for query operations
+    template <typename T> std::shared_ptr<Query<T>> createQuery(const QString &description);
+
+    void executeQuery(std::shared_ptr<QueryBase> query);
+
+    template <typename T> QCoro::Task<T> executeQueryAsync(std::shared_ptr<Query<T>> query);
+
+  Q_SIGNALS:
+    void commandExecuted(const QString &scope, bool success);
+    void queryExecuted(std::shared_ptr<QueryBase> query, bool success);
+
+  private Q_SLOTS:
+    void onCommandFinished(const QString &scope, bool success);
+    void onQueryFinished(std::shared_ptr<QueryBase> query, bool success);
+
+  private:
+    std::unique_ptr<UndoRedoManager> m_manager;
+    std::unique_ptr<QueryHandler> m_queryHandler;
+};
+
+// Template implementation
+template <typename T> std::shared_ptr<Query<T>> UndoRedoSystem::createQuery(const QString &description)
+{
+    return m_queryHandler->createQuery<T>(description);
+}
+
+template <typename T> QCoro::Task<T> UndoRedoSystem::executeQueryAsync(std::shared_ptr<Query<T>> query)
+{
+    if (!query)
+    {
+        co_return T{};
+    }
+
+    // Execute query asynchronously
+    m_queryHandler->executeQuery(query);
+
+    // Wait for query finished signal using QCoro
+    co_await qCoro(m_queryHandler.get(), &QueryHandler::queryFinished);
+
+    co_return query->typedResult();
+}
+
+} // namespace Skribisto::Common::UndoRedo

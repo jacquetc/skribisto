@@ -26,12 +26,70 @@ namespace SCE = Common::Entities;
 
 QList<RootDto> CreateRootUseCase::execute(const QList<CreateRootDto> &roots)
 {
+    if (m_hasExecuted) {
+        // If already executed, return cached results
+        return m_createdRoots;
+    }
+    
+    // Store original data for undo/redo
+    m_originalRoots = roots;
+    
     m_uow->beginTransaction();
     auto mappedEntities = DtoMapper::toEntityList(roots);
     auto createdEntities = m_uow->createRoot(mappedEntities);
     m_uow->commit();
 
-    return DtoMapper::toDtoList(createdEntities);
+    m_createdRoots = DtoMapper::toDtoList(createdEntities);
+    m_hasExecuted = true;
+    
+    return m_createdRoots;
+}
+
+SCU::Result<void> CreateRootUseCase::undo()
+{
+    if (!m_hasExecuted || m_createdRoots.isEmpty()) {
+        return SCU::Result<void>("Cannot undo: no roots were created"_L1);
+    }
+    
+    try {
+        m_uow->beginTransaction();
+        
+        // Remove the created roots by their IDs
+        QList<int> idsToRemove;
+        for (const auto& root : m_createdRoots) {
+            idsToRemove.append(root.id);
+        }
+        
+        // Use the unit of work to remove the created roots
+        m_uow->removeRoot(idsToRemove);
+        m_uow->commit();
+        
+        return SCU::Result<void>();
+    } catch (const std::exception& e) {
+        m_uow->rollback();
+        return SCU::Result<void>("Undo failed: "_L1 + QString::fromStdString(e.what()));
+    }
+}
+
+SCU::Result<void> CreateRootUseCase::redo()
+{
+    if (!m_hasExecuted) {
+        return SCU::Result<void>("Cannot redo: execute() must be called first"_L1);
+    }
+    
+    try {
+        m_uow->beginTransaction();
+        auto mappedEntities = DtoMapper::toEntityList(m_originalRoots);
+        auto createdEntities = m_uow->createRoot(mappedEntities);
+        m_uow->commit();
+
+        m_createdRoots = DtoMapper::toDtoList(createdEntities);
+        
+        return SCU::Result<void>();
+    } catch (const std::exception& e) {
+        m_uow->rollback();
+        return SCU::Result<void>("Redo failed: "_L1 + QString::fromStdString(e.what()));
+    }
 }
 
 } // namespace Skribisto::DirectAccess::Root

@@ -20,44 +20,54 @@
 
 #pragma once
 
-#include "direct_access/root/i_root_repository.h"
-#include "direct_access/root/root_repository.h"
-#include "dtos.h"
-#include <QCoro/QCoroTask>
+#include "undo_redo_command.h"
+#include <QMutex>
+#include <QObject>
+#include <QStack>
+#include <memory>
 
-#include <QPointer>
+using namespace Qt::StringLiterals;
 
-namespace Skribisto::Common::UndoRedo { class UndoRedoSystem; }
-
-namespace Skribisto::DirectAccess::Root
+namespace Skribisto::Common::UndoRedo
 {
-namespace SCDatabase = Skribisto::Common::Database;
 
-class RootController : public QObject
+class UndoRedoStack : public QObject
 {
     Q_OBJECT
+
   public:
-    RootController(const RootController &) = delete;
-    RootController &operator=(const RootController &) = delete;
-    RootController(RootController &&) = delete;
-    RootController &operator=(RootController &&) = delete;
-    explicit RootController(QObject *parent = nullptr);
-    QCoro::Task<QList<RootDto>> create(const QList<CreateRootDto> &roots);
-    static CreateRootDto getCreateDto()
-    {
-        return {};
-    }
-    QCoro::Task<QList<RootDto>> get(const QList<int> &rootIds);
-    // QList<RootDto> update(const QList<RootDto> &roots);
-    // QList<int> remove(const QList<int> &rootIds);
-    // QList<int> getRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship);
-    // void setRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship,
-    //                      QList<int> relatedIds);
+    explicit UndoRedoStack(QObject *parent = nullptr);
+
+    void push(std::shared_ptr<UndoRedoCommand> command);
+    bool canUndo() const;
+    bool canRedo() const;
+    void execute();
+    void undo();
+    void redo();
+    void clear();
+
+    int undoCount() const;
+    int redoCount() const;
+    QString undoText() const;
+    QString redoText() const;
+
+  Q_SIGNALS:
+    void canUndoChanged(bool canUndo);
+    void canRedoChanged(bool canRedo);
+    void undoTextChanged(const QString &undoText);
+    void redoTextChanged(const QString &redoText);
+    void commandFinished(bool success);
+
+  private Q_SLOTS:
+    void onCommandFinished(bool success);
 
   private:
-    void resolveDependencies();
-    SCDatabase::DbContext *m_dbContext = nullptr;
-    QPointer<Common::DirectAccess::EventRegistry> m_eventRegistry;
-    QPointer<Common::UndoRedo::UndoRedoSystem> m_undoRedoSystem;
+    void updateState();
+
+    mutable QMutex m_mutex;
+    QStack<std::shared_ptr<UndoRedoCommand>> m_undoStack;
+    QStack<std::shared_ptr<UndoRedoCommand>> m_redoStack;
+    std::shared_ptr<UndoRedoCommand> m_currentCommand;
 };
-} // namespace Skribisto::DirectAccess::Root
+
+} // namespace Skribisto::Common::UndoRedo

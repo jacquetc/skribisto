@@ -1,6 +1,7 @@
 # This file was generated automatically by Qleany's generator, edit at your own risk! 
 # If you do, be careful to not overwrite it when you run the generator again.
 find_package(Qt6 COMPONENTS Core Quick Qml REQUIRED)
+find_package(QCoro6 REQUIRED COMPONENTS Core Qml)
 
 set(PLUGIN_NAME skribisto-qml-app)
 
@@ -20,3 +21,4 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE skribisto-common)
 target_link_libraries(${PLUGIN_NAME}
         PRIVATE Qt6::Quick Qt6::Core Qt6::Qml
 )
+target_link_libraries(${PLUGIN_NAME} PRIVATE QCoro::Core QCoro::Qml)

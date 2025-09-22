@@ -61,12 +61,12 @@ int main(int argc, char *argv[])
     //                                                          << "binder"_L1
     //                                                          << "binder_items"_L1
     //                                                          << "tags"_L1);
-    // auto *urs = new Skribisto::Common::UndoRedo::ThreadedUndoRedoSystem(&app, scopes);
+    auto *urs = new Skribisto::Common::UndoRedo::UndoRedoSystem(&app);
 
     auto *locator = new Skribisto::Common::ServiceLocator(&app);
     locator->setDbContext(db);
     locator->setEventRegistry(ev);
-    // locator->setUndoRedoSystem(urs);
+    locator->setUndoRedoSystem(urs);
     Skribisto::Common::ServiceLocator::setInstance(locator);
 
 #endif

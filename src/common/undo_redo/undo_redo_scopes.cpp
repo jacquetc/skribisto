@@ -18,42 +18,94 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-#include "undo_redo/undo_redo_scopes.h"
-#include <QRegularExpression>
+#include "undo_redo_scopes.h"
 
-Skribisto::Common::UndoRedo::Scopes::Scopes(const QStringList &scopeList)
+namespace Skribisto::Common::UndoRedo
 {
-    // Initialize the bit flags to 0x01, which is equivalent to 1
-    int n = 0x01;
 
-    // Loop through the list of scopes
-    for (const auto &scope : scopeList)
-    {
-        // If the scope is "all", and exit the loop
-        if (scope.toLower() == QString::fromLatin1("all"))
-        {
-            qFatal("do not add All to scopes");
-        }
+UndoRedoScope::UndoRedoScope(UndoRedoScopeType type, const QString &name, int id)
+    : m_type(type), m_name(name), m_id(id)
+{
+}
 
-        // Add the scope to the list and map its flag value
-        m_scopeList.append(scope);
-        m_scopeHash.insert(scope, n);
-        m_scopeMap.insert(n, scope);
-        m_flags += n;
+UndoRedoScopeType UndoRedoScope::type() const
+{
+    return m_type;
+}
 
-        // Increment the bit flag to the next power of 2
-        n <<= 1;
+QString UndoRedoScope::name() const
+{
+    return m_name;
+}
+
+int UndoRedoScope::id() const
+{
+    return m_id;
+}
+
+QString UndoRedoScope::scopeKey() const
+{
+    QString typeStr;
+    switch (m_type) {
+    case UndoRedoScopeType::Root:
+        typeStr = "Root"_L1;
+        break;
+    case UndoRedoScopeType::Project:
+        typeStr = "Project"_L1;
+        break;
+    case UndoRedoScopeType::Content:
+        typeStr = "Content"_L1;
+        break;
+    case UndoRedoScopeType::Settings:
+        typeStr = "Settings"_L1;
+        break;
+    case UndoRedoScopeType::Custom:
+        typeStr = "Custom"_L1;
+        break;
+    }
+    
+    if (m_id >= 0) {
+        return QString("%1_%2"_L1).arg(typeStr, QString::number(m_id));
+    } else if (!m_name.isEmpty()) {
+        return QString("%1_%2"_L1).arg(typeStr, m_name);
+    } else {
+        return typeStr;
     }
 }
 
-Skribisto::Common::UndoRedo::Scopes::Scopes(const QString &scopeList)
-    : Scopes(scopeList.split(QRegularExpression(QString::fromLatin1("[\\s|,]+")), Qt::SkipEmptyParts))
+bool UndoRedoScope::operator==(const UndoRedoScope &other) const
 {
+    return m_type == other.m_type && m_name == other.m_name && m_id == other.m_id;
 }
 
-Skribisto::Common::UndoRedo::Scope Skribisto::Common::UndoRedo::Scopes::createScopeFromString(
-    const QString &scopeString)
+bool UndoRedoScope::operator!=(const UndoRedoScope &other) const
 {
-    static auto expr = QRegularExpression(QString::fromLatin1("[\\s|,]+"));
-    return createScopeFromString(scopeString.split(expr, Qt::SkipEmptyParts));
+    return !(*this == other);
 }
+
+UndoRedoScope UndoRedoScope::rootScope()
+{
+    return UndoRedoScope(UndoRedoScopeType::Root);
+}
+
+UndoRedoScope UndoRedoScope::projectScope(int projectId)
+{
+    return UndoRedoScope(UndoRedoScopeType::Project, QString(), projectId);
+}
+
+UndoRedoScope UndoRedoScope::contentScope(int contentId)
+{
+    return UndoRedoScope(UndoRedoScopeType::Content, QString(), contentId);
+}
+
+UndoRedoScope UndoRedoScope::settingsScope()
+{
+    return UndoRedoScope(UndoRedoScopeType::Settings);
+}
+
+UndoRedoScope UndoRedoScope::customScope(const QString &name)
+{
+    return UndoRedoScope(UndoRedoScopeType::Custom, name);
+}
+
+} // namespace Skribisto::Common::UndoRedo

@@ -20,44 +20,59 @@
 
 #pragma once
 
-#include "direct_access/root/i_root_repository.h"
-#include "direct_access/root/root_repository.h"
-#include "dtos.h"
-#include <QCoro/QCoroTask>
+#include "undo_redo_command.h"
+#include <QList>
+#include <QObject>
+#include <memory>
 
-#include <QPointer>
+using namespace Qt::StringLiterals;
 
-namespace Skribisto::Common::UndoRedo { class UndoRedoSystem; }
-
-namespace Skribisto::DirectAccess::Root
+namespace Skribisto::Common::UndoRedo
 {
-namespace SCDatabase = Skribisto::Common::Database;
 
-class RootController : public QObject
+class GroupCommand : public UndoRedoCommand
 {
     Q_OBJECT
+
   public:
-    RootController(const RootController &) = delete;
-    RootController &operator=(const RootController &) = delete;
-    RootController(RootController &&) = delete;
-    RootController &operator=(RootController &&) = delete;
-    explicit RootController(QObject *parent = nullptr);
-    QCoro::Task<QList<RootDto>> create(const QList<CreateRootDto> &roots);
-    static CreateRootDto getCreateDto()
-    {
-        return {};
-    }
-    QCoro::Task<QList<RootDto>> get(const QList<int> &rootIds);
-    // QList<RootDto> update(const QList<RootDto> &roots);
-    // QList<int> remove(const QList<int> &rootIds);
-    // QList<int> getRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship);
-    // void setRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship,
-    //                      QList<int> relatedIds);
+    explicit GroupCommand(const QString &text, QObject *parent = nullptr);
+
+    void addCommand(std::shared_ptr<UndoRedoCommand> command);
+    void insertCommand(int index, std::shared_ptr<UndoRedoCommand> command);
+    void removeCommand(int index);
+    void clearCommands();
+
+    int commandCount() const;
+    std::shared_ptr<UndoRedoCommand> command(int index) const;
+    QList<std::shared_ptr<UndoRedoCommand>> commands() const;
+
+    // Override base class methods
+    void asyncExecute() override;
+    void asyncUndo() override;
+    void asyncRedo() override;
+
+  private Q_SLOTS:
+    void onChildCommandFinished(bool success);
 
   private:
-    void resolveDependencies();
-    SCDatabase::DbContext *m_dbContext = nullptr;
-    QPointer<Common::DirectAccess::EventRegistry> m_eventRegistry;
-    QPointer<Common::UndoRedo::UndoRedoSystem> m_undoRedoSystem;
+    enum class ExecutionState
+    {
+        Idle,
+        Executing,
+        Undoing,
+        Redoing
+    };
+
+    void executeNextExecuteCommand();
+    void executeNextRedoCommand();
+    void executeNextUndoCommand();
+    void finishExecution(bool success);
+
+    QList<std::shared_ptr<UndoRedoCommand>> m_commands;
+    int m_currentCommandIndex;
+    bool m_executionInProgress;
+    int m_successfulCommands;
+    ExecutionState m_executionState = ExecutionState::Idle;
 };
-} // namespace Skribisto::DirectAccess::Root
+
+} // namespace Skribisto::Common::UndoRedo

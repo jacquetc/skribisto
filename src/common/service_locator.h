@@ -22,7 +22,7 @@
 #pragma once
 #include "database/db_context.h"
 #include "direct_access/event_registry.h"
-// #include "undo_redo/undo_redo_system.h"
+#include "undo_redo/undo_redo_system.h"
 
 #include <QObject>
 #include <QPointer>
@@ -38,15 +38,15 @@ class ServiceLocator : public QObject
 
     void setDbContext(Database::DbContext *db);
     void setEventRegistry(DirectAccess::EventRegistry *ev);
-    //   void setUndoRedoSystem(UndoRedo::UndoRedoSystem *urs);
+    void setUndoRedoSystem(UndoRedo::UndoRedoSystem *urs);
 
     Q_INVOKABLE QObject *dbContextObj() const;
     Q_INVOKABLE QObject *eventRegistryObj() const;
-    // Q_INVOKABLE QObject *undoRedoSystemObj() const;
+    Q_INVOKABLE QObject *undoRedoSystemObj() const;
 
     Database::DbContext *dbContext() const;
     QPointer<DirectAccess::EventRegistry> eventRegistry() const;
-    //   QPointer<UndoRedo::UndoRedoSystem> undoRedoSystem() const;
+    QPointer<UndoRedo::UndoRedoSystem> undoRedoSystem() const;
 
     static void setInstance(ServiceLocator *locator);
     static ServiceLocator *instance();
@@ -55,7 +55,7 @@ class ServiceLocator : public QObject
     inline static ServiceLocator *s_instance = nullptr;
     Database::DbContext *m_dbContext;
     QPointer<DirectAccess::EventRegistry> m_eventRegistry;
-    //   QPointer<UndoRedo::UndoRedoSystem> m_undoRedoSystem;
+    QPointer<UndoRedo::UndoRedoSystem> m_undoRedoSystem;
 };
 
 } // namespace Skribisto::Common
