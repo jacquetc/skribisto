@@ -20,6 +20,7 @@
 
 #include "undo_redo_system.h"
 #include <QCoro/QCoroSignal>
+#include <QElapsedTimer>
 
 namespace Skribisto::Common::UndoRedo
 {
@@ -84,17 +85,29 @@ QCoro::Task<std::optional<bool>> UndoRedoSystem::executeCommandAsync(std::shared
         millisecondsTimeout = 20000;
     }
 
+    // Start timing for performance monitoring
+    QElapsedTimer timer;
+    timer.start();
+    
     auto undoRedoScope = UndoRedoScope::customScope(scope);
     m_manager->pushCommand(command, undoRedoScope);
+    
+    // Emit stack size change signal
+    Q_EMIT stackSizeChanged(scope, m_manager->undoCount(undoRedoScope), m_manager->redoCount(undoRedoScope));
+    
     m_manager->execute(undoRedoScope);
 
     // Wait for the specific command to finish using QCoro
     auto success =
         co_await qCoro(command.get(), &UndoRedoCommand::finished, std::chrono::milliseconds(millisecondsTimeout));
+    
+    // Emit execution time signal
+    qint64 executionTime = timer.elapsed();
+    Q_EMIT commandExecutionTime(command->text(), executionTime);
+    
     if (!success)
     {
         qWarning() << "Timeout reached while waiting for command to finish:" << command->text();
-
         qDebug() << "The command could not be completed in the allotted time.";
     }
 

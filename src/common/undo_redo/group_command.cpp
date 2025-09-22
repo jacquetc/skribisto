@@ -79,6 +79,18 @@ QList<std::shared_ptr<UndoRedoCommand>> GroupCommand::commands() const
 {
     return m_commands;
 }
+
+void GroupCommand::setFailureStrategy(FailureStrategy strategy)
+{
+    if (!m_executionInProgress) {
+        m_failureStrategy = strategy;
+    }
+}
+
+FailureStrategy GroupCommand::failureStrategy() const
+{
+    return m_failureStrategy;
+}
 void GroupCommand::asyncExecute()
 {
     m_executionState = ExecutionState::Executing;
@@ -229,12 +241,59 @@ void GroupCommand::executeNextUndoCommand()
 void GroupCommand::finishExecution(bool success)
 {
     m_executionInProgress = false;
-    m_currentCommandIndex = -1;
-
+    
     // Consider success if we executed all commands successfully
     bool allSuccess = success && (m_successfulCommands == m_commands.size());
-
+    
+    // Handle cleanup strategy for failed executions
+    if (!allSuccess) {
+        handleFailureCleanup();
+    }
+    
+    m_currentCommandIndex = -1;
     Q_EMIT finished(allSuccess);
+}
+
+void GroupCommand::handleFailureCleanup()
+{
+    switch (m_failureStrategy) {
+    case FailureStrategy::StopOnFailure:
+        // Default behavior: just stop, no additional cleanup needed
+        break;
+        
+    case FailureStrategy::ContinueOnFailure:
+        // Continue with remaining commands (handled in onChildCommandFinished)
+        break;
+        
+    case FailureStrategy::RollbackAll:
+        // Rollback all successfully executed commands
+        rollbackSuccessfulCommands();
+        break;
+        
+    case FailureStrategy::RollbackPartial:
+        // Rollback only partially executed commands (if applicable)
+        rollbackPartialCommands();
+        break;
+    }
+}
+
+void GroupCommand::rollbackSuccessfulCommands()
+{
+    // Rollback commands in reverse order
+    for (int i = m_successfulCommands - 1; i >= 0; --i) {
+        if (i < m_commands.size()) {
+            auto command = m_commands.at(i);
+            // Note: This is synchronous rollback for simplicity
+            // In a more sophisticated implementation, this could be made async
+            command->asyncUndo();
+        }
+    }
+}
+
+void GroupCommand::rollbackPartialCommands()
+{
+    // For now, same as rollback all - could be refined based on specific needs
+    rollbackSuccessfulCommands();
 }
 
 } // namespace Skribisto::Common::UndoRedo

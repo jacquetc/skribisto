@@ -20,10 +20,9 @@
 
 #pragma once
 
+#include "group_command.h"
 #include "undo_redo_command.h"
-#include <QMutex>
-#include <QObject>
-#include <QStack>
+#include <QString>
 #include <memory>
 
 using namespace Qt::StringLiterals;
@@ -31,51 +30,25 @@ using namespace Qt::StringLiterals;
 namespace Skribisto::Common::UndoRedo
 {
 
-class UndoRedoStack : public QObject
+class GroupCommandBuilder
 {
-    Q_OBJECT
-
-  public:
-    explicit UndoRedoStack(QObject *parent = nullptr);
-
-    void push(std::shared_ptr<UndoRedoCommand> command);
-    bool canUndo() const;
-    bool canRedo() const;
-    void execute();
-    void undo();
-    void redo();
-    void clear();
-
-    int undoCount() const;
-    int redoCount() const;
-    QString undoText() const;
-    QString redoText() const;
-
-    // Stack size management
-    void setMaxStackSize(int maxSize);
-    int maxStackSize() const;
-    void setAutoCleanupEnabled(bool enabled);
-    bool isAutoCleanupEnabled() const;
-
-  Q_SIGNALS:
-    void canUndoChanged(bool canUndo);
-    void canRedoChanged(bool canRedo);
-    void undoTextChanged(const QString &undoText);
-    void redoTextChanged(const QString &redoText);
-    void commandFinished(bool success);
-
-  private Q_SLOTS:
-    void onCommandFinished(bool success);
-
-  private:
-    void updateState();
-
-    mutable QMutex m_mutex;
-    QStack<std::shared_ptr<UndoRedoCommand>> m_undoStack;
-    QStack<std::shared_ptr<UndoRedoCommand>> m_redoStack;
-    std::shared_ptr<UndoRedoCommand> m_currentCommand;
-    int m_maxStackSize = -1; // -1 means unlimited
-    bool m_autoCleanupEnabled = false;
+public:
+    explicit GroupCommandBuilder(const QString &text);
+    
+    // Fluent API methods
+    GroupCommandBuilder& addCommand(std::shared_ptr<UndoRedoCommand> command);
+    GroupCommandBuilder& insertCommand(int index, std::shared_ptr<UndoRedoCommand> command);
+    GroupCommandBuilder& onFailure(FailureStrategy strategy);
+    GroupCommandBuilder& setParent(QObject *parent);
+    
+    // Build method
+    std::shared_ptr<GroupCommand> build();
+    
+private:
+    QString m_text;
+    QList<std::shared_ptr<UndoRedoCommand>> m_commands;
+    FailureStrategy m_failureStrategy = FailureStrategy::StopOnFailure;
+    QObject *m_parent = nullptr;
 };
 
 } // namespace Skribisto::Common::UndoRedo

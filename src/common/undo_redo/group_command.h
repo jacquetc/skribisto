@@ -30,6 +30,14 @@ using namespace Qt::StringLiterals;
 namespace Skribisto::Common::UndoRedo
 {
 
+enum class FailureStrategy
+{
+    ContinueOnFailure,  // Continue executing remaining commands even if one fails
+    StopOnFailure,      // Stop execution on first failure (default behavior)
+    RollbackAll,        // Rollback all successfully executed commands on any failure
+    RollbackPartial     // Rollback only the partially executed commands
+};
+
 class GroupCommand : public UndoRedoCommand
 {
     Q_OBJECT
@@ -45,6 +53,10 @@ class GroupCommand : public UndoRedoCommand
     int commandCount() const;
     std::shared_ptr<UndoRedoCommand> command(int index) const;
     QList<std::shared_ptr<UndoRedoCommand>> commands() const;
+
+    // Failure strategy
+    void setFailureStrategy(FailureStrategy strategy);
+    FailureStrategy failureStrategy() const;
 
     // Override base class methods
     void asyncExecute() override;
@@ -67,12 +79,16 @@ class GroupCommand : public UndoRedoCommand
     void executeNextRedoCommand();
     void executeNextUndoCommand();
     void finishExecution(bool success);
+    void handleFailureCleanup();
+    void rollbackSuccessfulCommands();
+    void rollbackPartialCommands();
 
     QList<std::shared_ptr<UndoRedoCommand>> m_commands;
     int m_currentCommandIndex;
     bool m_executionInProgress;
     int m_successfulCommands;
     ExecutionState m_executionState = ExecutionState::Idle;
+    FailureStrategy m_failureStrategy = FailureStrategy::StopOnFailure;
 };
 
 } // namespace Skribisto::Common::UndoRedo

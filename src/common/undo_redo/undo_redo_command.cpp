@@ -21,6 +21,7 @@
 #include "undo_redo_command.h"
 #include <QDebug>
 #include <QFutureWatcher>
+#include <QPointer>
 #include <QtConcurrent/QtConcurrentRun>
 
 namespace Skribisto::Common::UndoRedo
@@ -61,10 +62,24 @@ void UndoRedoCommand::asyncExecute()
 
     if (m_executeFunction)
     {
-        auto future = QtConcurrent::run([this]() {
-            QPromise<Result<void>> promise;
-            m_executeFunction(promise);
-            return Result<void>(); // Success by default
+        // Use QPointer to prevent use-after-free
+        QPointer<UndoRedoCommand> safeThis(this);
+        auto executeFunction = m_executeFunction; // Copy function to avoid capture issues
+        
+        auto future = QtConcurrent::run([safeThis, executeFunction]() -> Result<void> {
+            if (safeThis.isNull()) {
+                return Result<void>("Command object destroyed during execution"_L1, ErrorCategory::ExecutionError);
+            }
+            
+            try {
+                QPromise<Result<void>> promise;
+                executeFunction(promise);
+                return Result<void>(); // Success by default
+            } catch (const std::exception& e) {
+                return Result<void>(QString::fromStdString(e.what()), ErrorCategory::ExecutionError);
+            } catch (...) {
+                return Result<void>("Unknown exception during command execution"_L1, ErrorCategory::UnknownError);
+            }
         });
         m_executeWatcher->setFuture(future);
         m_wasAlreadyExecuted = true;
@@ -87,7 +102,22 @@ void UndoRedoCommand::asyncUndo()
 
     if (m_undoFunction)
     {
-        auto future = QtConcurrent::run([this]() { return m_undoFunction(); });
+        QPointer<UndoRedoCommand> safeThis(this);
+        auto undoFunction = m_undoFunction;
+        
+        auto future = QtConcurrent::run([safeThis, undoFunction]() -> Result<void> {
+            if (safeThis.isNull()) {
+                return Result<void>("Command object destroyed during undo"_L1, ErrorCategory::ExecutionError);
+            }
+            
+            try {
+                return undoFunction();
+            } catch (const std::exception& e) {
+                return Result<void>(QString::fromStdString(e.what()), ErrorCategory::ExecutionError);
+            } catch (...) {
+                return Result<void>("Unknown exception during command undo"_L1, ErrorCategory::UnknownError);
+            }
+        });
         m_undoWatcher->setFuture(future);
     }
     else
@@ -108,7 +138,22 @@ void UndoRedoCommand::asyncRedo()
 
     if (m_redoFunction)
     {
-        auto future = QtConcurrent::run([this]() { return m_redoFunction(); });
+        QPointer<UndoRedoCommand> safeThis(this);
+        auto redoFunction = m_redoFunction;
+        
+        auto future = QtConcurrent::run([safeThis, redoFunction]() -> Result<void> {
+            if (safeThis.isNull()) {
+                return Result<void>("Command object destroyed during redo"_L1, ErrorCategory::ExecutionError);
+            }
+            
+            try {
+                return redoFunction();
+            } catch (const std::exception& e) {
+                return Result<void>(QString::fromStdString(e.what()), ErrorCategory::ExecutionError);
+            } catch (...) {
+                return Result<void>("Unknown exception during command redo"_L1, ErrorCategory::UnknownError);
+            }
+        });
         m_redoWatcher->setFuture(future);
     }
     else

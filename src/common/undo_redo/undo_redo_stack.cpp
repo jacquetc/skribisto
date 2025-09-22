@@ -55,6 +55,18 @@ void UndoRedoStack::push(std::shared_ptr<UndoRedoCommand> command)
     // If merging is not possible, push the new command
     m_undoStack.push(command);
 
+    // Enforce stack size limit if set
+    if (m_maxStackSize > 0 && m_undoStack.size() > m_maxStackSize) {
+        m_undoStack.removeFirst();
+    }
+
+    // Perform auto-cleanup if enabled (remove old commands beyond a reasonable limit)
+    if (m_autoCleanupEnabled && m_undoStack.size() > 100) { // Default cleanup at 100 commands
+        while (m_undoStack.size() > 50) { // Keep last 50 commands
+            m_undoStack.removeFirst();
+        }
+    }
+
     updateState();
 }
 
@@ -179,6 +191,38 @@ QString UndoRedoStack::redoText() const
     }
 
     return m_redoStack.top()->text();
+}
+
+void UndoRedoStack::setMaxStackSize(int maxSize)
+{
+    QMutexLocker locker(&m_mutex);
+    m_maxStackSize = maxSize;
+    
+    // Apply stack size limit immediately if enabled
+    if (m_maxStackSize > 0) {
+        while (m_undoStack.size() > m_maxStackSize) {
+            m_undoStack.removeFirst();
+        }
+        updateState();
+    }
+}
+
+int UndoRedoStack::maxStackSize() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_maxStackSize;
+}
+
+void UndoRedoStack::setAutoCleanupEnabled(bool enabled)
+{
+    QMutexLocker locker(&m_mutex);
+    m_autoCleanupEnabled = enabled;
+}
+
+bool UndoRedoStack::isAutoCleanupEnabled() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_autoCleanupEnabled;
 }
 
 void UndoRedoStack::onCommandFinished(bool success)

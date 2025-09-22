@@ -24,6 +24,7 @@
 #include <QObject>
 #include <QPromise>
 #include <QString>
+#include <QVariant>
 #include <functional>
 #include <memory>
 
@@ -32,13 +33,29 @@ using namespace Qt::StringLiterals;
 namespace Skribisto::Common::UndoRedo
 {
 
+enum class ErrorCategory
+{
+    None,
+    ValidationError,
+    ExecutionError,
+    DatabaseError,
+    NetworkError,
+    TimeoutError,
+    PermissionError,
+    SystemError,
+    UserCancelledError,
+    UnknownError
+};
+
 template <typename T> class Result
 {
   public:
-    Result() : m_success(true)
+    Result() : m_success(true), m_category(ErrorCategory::None)
     {
     }
-    explicit Result(const QString &error) : m_success(false), m_error(error)
+    
+    explicit Result(const QString &error, ErrorCategory category = ErrorCategory::UnknownError, const QVariant &errorData = QVariant()) 
+        : m_success(false), m_error(error), m_category(category), m_errorData(errorData)
     {
     }
 
@@ -46,14 +63,27 @@ template <typename T> class Result
     {
         return m_success;
     }
+    
     QString error() const
     {
         return m_error;
+    }
+    
+    ErrorCategory category() const
+    {
+        return m_category;
+    }
+    
+    QVariant errorData() const
+    {
+        return m_errorData;
     }
 
   private:
     bool m_success;
     QString m_error;
+    ErrorCategory m_category;
+    QVariant m_errorData;
 };
 
 class UndoRedoCommand : public QObject

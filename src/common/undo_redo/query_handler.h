@@ -140,9 +140,17 @@ template<typename T>
 void Query<T>::onQueryFinished()
 {
     if (m_watcher->isFinished()) {
-        m_result = m_watcher->result();
-        m_hasResult = true;
-        Q_EMIT finished(true);
+        try {
+            m_result = m_watcher->result();
+            m_hasResult = true;
+            Q_EMIT finished(true);
+        } catch (const std::exception& e) {
+            qCritical() << "Exception in query execution:" << QString::fromStdString(e.what());
+            Q_EMIT finished(false);
+        } catch (...) {
+            qCritical() << "Unknown exception in query execution";
+            Q_EMIT finished(false);
+        }
     }
 }
 

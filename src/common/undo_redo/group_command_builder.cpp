@@ -18,64 +18,57 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-#pragma once
-
-#include "undo_redo_command.h"
-#include <QMutex>
-#include <QObject>
-#include <QStack>
-#include <memory>
-
-using namespace Qt::StringLiterals;
+#include "group_command_builder.h"
 
 namespace Skribisto::Common::UndoRedo
 {
 
-class UndoRedoStack : public QObject
+GroupCommandBuilder::GroupCommandBuilder(const QString &text)
+    : m_text(text)
 {
-    Q_OBJECT
+}
 
-  public:
-    explicit UndoRedoStack(QObject *parent = nullptr);
+GroupCommandBuilder& GroupCommandBuilder::addCommand(std::shared_ptr<UndoRedoCommand> command)
+{
+    if (command) {
+        m_commands.append(command);
+    }
+    return *this;
+}
 
-    void push(std::shared_ptr<UndoRedoCommand> command);
-    bool canUndo() const;
-    bool canRedo() const;
-    void execute();
-    void undo();
-    void redo();
-    void clear();
+GroupCommandBuilder& GroupCommandBuilder::insertCommand(int index, std::shared_ptr<UndoRedoCommand> command)
+{
+    if (command && index >= 0 && index <= m_commands.size()) {
+        m_commands.insert(index, command);
+    }
+    return *this;
+}
 
-    int undoCount() const;
-    int redoCount() const;
-    QString undoText() const;
-    QString redoText() const;
+GroupCommandBuilder& GroupCommandBuilder::onFailure(FailureStrategy strategy)
+{
+    m_failureStrategy = strategy;
+    return *this;
+}
 
-    // Stack size management
-    void setMaxStackSize(int maxSize);
-    int maxStackSize() const;
-    void setAutoCleanupEnabled(bool enabled);
-    bool isAutoCleanupEnabled() const;
+GroupCommandBuilder& GroupCommandBuilder::setParent(QObject *parent)
+{
+    m_parent = parent;
+    return *this;
+}
 
-  Q_SIGNALS:
-    void canUndoChanged(bool canUndo);
-    void canRedoChanged(bool canRedo);
-    void undoTextChanged(const QString &undoText);
-    void redoTextChanged(const QString &redoText);
-    void commandFinished(bool success);
-
-  private Q_SLOTS:
-    void onCommandFinished(bool success);
-
-  private:
-    void updateState();
-
-    mutable QMutex m_mutex;
-    QStack<std::shared_ptr<UndoRedoCommand>> m_undoStack;
-    QStack<std::shared_ptr<UndoRedoCommand>> m_redoStack;
-    std::shared_ptr<UndoRedoCommand> m_currentCommand;
-    int m_maxStackSize = -1; // -1 means unlimited
-    bool m_autoCleanupEnabled = false;
-};
+std::shared_ptr<GroupCommand> GroupCommandBuilder::build()
+{
+    auto groupCommand = std::make_shared<GroupCommand>(m_text, m_parent);
+    
+    // Add all commands to the group
+    for (const auto& command : m_commands) {
+        groupCommand->addCommand(command);
+    }
+    
+    // Set failure strategy (we'll need to extend GroupCommand to support this)
+    groupCommand->setFailureStrategy(m_failureStrategy);
+    
+    return groupCommand;
+}
 
 } // namespace Skribisto::Common::UndoRedo

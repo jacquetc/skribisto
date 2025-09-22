@@ -46,6 +46,8 @@ set(UNDO_REDO_LIST
         undo_redo/query_handler.cpp
         undo_redo/undo_redo_system.h
         undo_redo/undo_redo_system.cpp
+        undo_redo/group_command_builder.h
+        undo_redo/group_command_builder.cpp
 )
 
 set(ENTITIES_LIST

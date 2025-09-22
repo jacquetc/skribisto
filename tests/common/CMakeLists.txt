@@ -78,3 +78,23 @@ target_link_libraries(
         ${ROOT_UNDO_TEST_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Test Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Gui
 )
 target_link_libraries(${ROOT_UNDO_TEST_NAME} PRIVATE skribisto-common skribisto-direct-access)
+
+# -----------------------------------------------------------------------------------
+
+set(ROOT_UNDO_TEST_NAME "tst_enhanced_undo_redo")
+
+project(${ROOT_UNDO_TEST_NAME} CXX)
+
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 20)
+
+enable_testing()
+qt_add_executable(
+        ${ROOT_UNDO_TEST_NAME} ${ROOT_UNDO_TEST_NAME}.cpp ${RESOURCES})
+add_test(NAME ${ROOT_UNDO_TEST_NAME} COMMAND ${ROOT_UNDO_TEST_NAME})
+
+target_link_libraries(
+        ${ROOT_UNDO_TEST_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Test Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Gui
+)
+target_link_libraries(${ROOT_UNDO_TEST_NAME} PRIVATE skribisto-common skribisto-direct-access)
+target_link_libraries(${ROOT_UNDO_TEST_NAME} PRIVATE QCoro::Core QCoro::Test)

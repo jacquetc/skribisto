@@ -61,6 +61,10 @@ class UndoRedoSystem : public QObject
   Q_SIGNALS:
     void commandExecuted(const QString &scope, bool success);
     void queryExecuted(std::shared_ptr<QueryBase> query, bool success);
+    
+    // Performance monitoring signals
+    void commandExecutionTime(const QString& commandName, qint64 milliseconds);
+    void stackSizeChanged(const QString& scope, int undoCount, int redoCount);
 
   private Q_SLOTS:
     void onCommandFinished(const QString &scope, bool success);
