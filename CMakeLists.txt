@@ -1,37 +1,5 @@
-cmake_minimum_required(VERSION 3.18)
-
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 20)
-
-# forbid some old things
-add_definitions(-DQT_NO_FOREACH)
-
-# Find includes in corresponding build directories
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-set(QT_MIN_VERSION "6.2.2")
-set(QT_DEFAULT_MAJOR_VERSION 6)
-
-option(SKR_MOBILE_APP "Enable the touch GUI" OFF)
-option(SKR_BUILD_TESTS "Build tests" ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH})
-
-add_compile_definitions(
-        QT_NO_KEYWORDS
-        QT_NO_CAST_TO_ASCII
-        QT_NO_CAST_FROM_ASCII
-        QT_NO_CAST_FROM_BYTEARRAY
-        QT_NO_KEYWORDS
-        QT_NO_FOREACH
-        QT_STRICT_ITERATORS
-        QT_USE_QSTRINGBUILDER
-        QT_NO_NARROWING_CONVERSIONS_IN_CONNECT
-        QT_NO_URL_CAST_FROM_STRING)
-
 # git tag for version :
 include(VersionFromGit)
 version_from_git(
@@ -53,7 +21,40 @@ set(SKR_VERSION_MINOR ${VERSION_MINOR})
 add_compile_definitions(SKR_VERSION_PATCH=${VERSION_PATCH})
 set(SKR_VERSION_PATCH ${VERSION_PATCH})
 
+
 project(skribisto VERSION ${SKR_VERSION} LANGUAGES CXX)
+
+cmake_minimum_required(VERSION 3.18)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 20)
+
+
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(QT_DEFAULT_MAJOR_VERSION 6)
+set(QT_MIN_VERSION "6.4.0")
+
+option(SKR_MOBILE_APP "Enable the touch GUI" OFF)
+option(SKR_BUILD_TESTS "Build tests" OFF)
+
+# forbid some old things
+add_definitions(-DQT_NO_FOREACH)
+add_compile_definitions(
+        QT_NO_KEYWORDS
+        QT_NO_CAST_TO_ASCII
+        QT_NO_CAST_FROM_ASCII
+        QT_NO_CAST_FROM_BYTEARRAY
+        QT_NO_KEYWORDS
+        QT_NO_FOREACH
+        QT_STRICT_ITERATORS
+        QT_USE_QSTRINGBUILDER
+        QT_NO_NARROWING_CONVERSIONS_IN_CONNECT
+        QT_NO_URL_CAST_FROM_STRING)
+
 
 message("------------------CMAKE_SYSTEM_NAME---------------------")
 message("${CMAKE_SYSTEM_NAME}")

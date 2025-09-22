@@ -33,10 +33,10 @@ void SC::ServiceLocator::setEventRegistry(SC::DirectAccess::EventRegistry *ev)
 {
     m_eventRegistry = ev;
 }
-void SC::ServiceLocator::setUndoRedoSystem(SC::UndoRedo::ThreadedUndoRedoSystem *urs)
-{
-    m_undoRedoSystem = urs;
-}
+// void SC::ServiceLocator::setUndoRedoSystem(SC::UndoRedo::UndoRedoSystem *urs)
+// {
+//     m_undoRedoSystem = urs;
+// }
 
 QObject *SC::ServiceLocator::dbContextObj() const
 {
@@ -46,10 +46,10 @@ QObject *SC::ServiceLocator::eventRegistryObj() const
 {
     return m_eventRegistry;
 }
-QObject *SC::ServiceLocator::undoRedoSystemObj() const
-{
-    return m_undoRedoSystem;
-}
+// QObject *SC::ServiceLocator::undoRedoSystemObj() const
+// {
+//     return m_undoRedoSystem;
+// }
 
 SC::Database::DbContext *SC::ServiceLocator::dbContext() const
 {
@@ -59,10 +59,10 @@ QPointer<SC::DirectAccess::EventRegistry> SC::ServiceLocator::eventRegistry() co
 {
     return m_eventRegistry;
 }
-QPointer<SC::UndoRedo::ThreadedUndoRedoSystem> SC::ServiceLocator::undoRedoSystem() const
-{
-    return m_undoRedoSystem;
-}
+// QPointer<SC::UndoRedo::UndoRedoSystem> SC::ServiceLocator::undoRedoSystem() const
+// {
+//     return m_undoRedoSystem;
+// }
 void SC::ServiceLocator::setInstance(ServiceLocator *locator)
 {
     s_instance = locator;

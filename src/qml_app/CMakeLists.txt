@@ -8,8 +8,11 @@ set(CMAKE_AUTOMOC ON)
 
 option(BUILD_WITH_MOCKS "Build with mocks" OFF)
 
-find_package(Qt6 COMPONENTS Core Gui Qml Quick Concurrent Sql)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Concurrent Sql)
 find_package(QCoro6 REQUIRED COMPONENTS Core Qml)
+
+# Set necessary compiler flags to enable coroutine support
+qcoro_enable_coroutines()
 
 if (Qt6_VERSION VERSION_GREATER_EQUAL 6.3)
     qt_standard_project_setup()
@@ -27,6 +30,7 @@ target_link_libraries(
         PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Qml
         Qt${QT_VERSION_MAJOR}::Concurrent Qt${QT_VERSION_MAJOR}::Sql)
+target_link_libraries(${APP_NAME} PRIVATE QCoro::Core QCoro::Qml)
 target_link_libraries(${APP_NAME} PRIVATE skribisto-common)
 
 

@@ -24,6 +24,7 @@
 #include "service_locator.h"
 #include "use_cases/create_uc.h"
 #include "use_cases/get_uc.h"
+#include <QCoroTimer>
 
 #include <memory>
 
@@ -45,39 +46,45 @@ void RootController::resolveDependencies()
     }
     m_dbContext = locator->dbContext();
     m_eventRegistry = locator->eventRegistry();
+    // TODO: add undo redo
 }
 
-QList<RootDto> RootController::create(const QList<CreateRootDto> &roots)
+QCoro::Task<QList<RootDto>> RootController::create(const QList<CreateRootDto> &roots)
 {
+    // TODO: add undo redo support
     std::unique_ptr<IRootUnitOfWork> uow = std::make_unique<RootUnitOfWork>(*m_dbContext, m_eventRegistry);
     auto useCase = std::make_unique<CreateRootUseCase>(std::move(uow));
     auto result = useCase->execute(roots);
 
-    return result;
+    // placeholder for async
+    co_await QCoro::sleepFor(std::chrono::milliseconds(100));
+
+    co_return result;
 }
-QList<RootDto> RootController::get(const QList<int> &rootIds)
+QCoro::Task<QList<RootDto>> RootController::get(const QList<int> &rootIds)
 {
+    // TODO: add undo redo support, but for a query
     std::unique_ptr<IRootUnitOfWork> uow = std::make_unique<RootUnitOfWork>(*m_dbContext, m_eventRegistry);
     auto useCase = std::make_unique<GetRootUseCase>(std::move(uow));
     auto result = useCase->execute(rootIds);
 
-    return result;
+    // placeholder for async
+    co_await QCoro::sleepFor(std::chrono::milliseconds(100));
+
+    co_return result;
 }
-QList<RootDto> RootController::update(const QList<RootDto> &roots)
-{
-}
-QList<int> RootController::remove(const QList<int> &rootIds)
-{
-}
-QList<int> RootController::getRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship)
-{
-}
-void RootController::setRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship,
-                                     QList<int> relatedIds)
-{
-}
-CreateRootDto RootController::getCreateDto()
-{
-    return {};
-}
+// QList<RootDto> RootController::update(const QList<RootDto> &roots)
+// {
+// }
+// QList<int> RootController::remove(const QList<int> &rootIds)
+// {
+// }
+// QList<int> RootController::getRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField
+// relationship)
+// {
+// }
+// void RootController::setRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship,
+//                                      QList<int> relatedIds)
+// {
+// }
 } // namespace Skribisto::DirectAccess::Root

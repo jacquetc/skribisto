@@ -1,4 +1,4 @@
-find_package(Qt6 COMPONENTS Core Gui REQUIRED)
+find_package(Qt6 COMPONENTS Core REQUIRED)
 find_package(QCoro6 REQUIRED COMPONENTS Core)
 
 set(LIBRARY_NAME skribisto-direct-access)
@@ -61,9 +61,9 @@ target_include_directories(${LIBRARY_NAME} PUBLIC
 target_link_libraries(${LIBRARY_NAME} PRIVATE skribisto-common)
 
 target_link_libraries(${LIBRARY_NAME}
-        PRIVATE Qt6::Core Qt6::Gui
+        PRIVATE Qt6::Core
 )
-target_link_libraries(${LIBRARY_NAME} PRIVATE QCoro::Coro)
+target_link_libraries(${LIBRARY_NAME} PRIVATE QCoro::Core)
 
 
 if (IOS)

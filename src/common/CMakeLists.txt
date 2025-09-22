@@ -1,4 +1,4 @@
-find_package(Qt6 COMPONENTS Core Sql Gui REQUIRED)
+find_package(Qt6 COMPONENTS Core Sql REQUIRED)
 
 set(LIBRARY_NAME skribisto-common)
 
@@ -110,7 +110,7 @@ target_include_directories(${LIBRARY_NAME} PUBLIC
 )
 
 target_link_libraries(${LIBRARY_NAME}
-        PRIVATE Qt6::Core Qt6::Gui Qt6::Sql
+        PRIVATE Qt6::Core Qt6::Sql
 )
 
 if (IOS)

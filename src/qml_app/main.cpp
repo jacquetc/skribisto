@@ -26,6 +26,7 @@
 #include "service_locator.h"
 
 #include <QGuiApplication>
+#include <QLoggingCategory>
 #include <QQmlApplicationEngine>
 
 using namespace Qt::StringLiterals;
@@ -36,6 +37,13 @@ int main(int argc, char *argv[])
     qputenv("QT_QUICK_CONTROLS_CONF", ":/qtquickcontrols2.conf");
     qputenv("QML_COMPAT_RESOLVE_URLS_ON_ASSIGNMENT", "1");
     qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
+
+    QLoggingCategory::setFilterRules("default.debug=true\n"
+                                     "qt.qml.debug=true\n"
+                                     "qml.debug=true\n"
+                                     "js.debug=true\n"
+                                     "qt.qml.console.debug=true\n"
+                                     "qml.console.debug=true"_L1);
 
     QGuiApplication app(argc, argv);
     app.setApplicationName("FrontEndsExample"_L1);
@@ -48,17 +56,17 @@ int main(int argc, char *argv[])
     auto *db = new Skribisto::Common::Database::DbContext();
     auto *ev = new Skribisto::Common::DirectAccess::EventRegistry(&app);
     // Undo Redo System
-    Skribisto::Common::UndoRedo::Scopes scopes(QStringList() << "root"_L1
-                                                             << "project"_L1
-                                                             << "binder"_L1
-                                                             << "binder_items"_L1
-                                                             << "tags"_L1);
-    auto *urs = new Skribisto::Common::UndoRedo::ThreadedUndoRedoSystem(&app, scopes);
+    // Skribisto::Common::UndoRedo::Scopes scopes(QStringList() << "root"_L1
+    //                                                          << "project"_L1
+    //                                                          << "binder"_L1
+    //                                                          << "binder_items"_L1
+    //                                                          << "tags"_L1);
+    // auto *urs = new Skribisto::Common::UndoRedo::ThreadedUndoRedoSystem(&app, scopes);
 
     auto *locator = new Skribisto::Common::ServiceLocator(&app);
     locator->setDbContext(db);
     locator->setEventRegistry(ev);
-    locator->setUndoRedoSystem(urs);
+    // locator->setUndoRedoSystem(urs);
     Skribisto::Common::ServiceLocator::setInstance(locator);
 
 #endif

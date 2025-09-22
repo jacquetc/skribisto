@@ -23,6 +23,7 @@
 #include "direct_access/root/i_root_repository.h"
 #include "direct_access/root/root_repository.h"
 #include "dtos.h"
+#include <QCoroTask>
 
 #include <QPointer>
 
@@ -39,14 +40,17 @@ class RootController : public QObject
     RootController(RootController &&) = delete;
     RootController &operator=(RootController &&) = delete;
     explicit RootController(QObject *parent = nullptr);
-    Q_INVOKABLE QList<RootDto> create(const QList<CreateRootDto> &roots);
-    Q_INVOKABLE QList<RootDto> get(const QList<int> &rootIds);
-    QList<RootDto> update(const QList<RootDto> &roots);
-    QList<int> remove(const QList<int> &rootIds);
-    QList<int> getRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship);
-    void setRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship,
-                         QList<int> relatedIds);
-    Q_INVOKABLE static Skribisto::DirectAccess::Root::CreateRootDto getCreateDto();
+    QCoro::Task<QList<RootDto>> create(const QList<CreateRootDto> &roots);
+    static CreateRootDto getCreateDto()
+    {
+        return {};
+    }
+    QCoro::Task<QList<RootDto>> get(const QList<int> &rootIds);
+    // QList<RootDto> update(const QList<RootDto> &roots);
+    // QList<int> remove(const QList<int> &rootIds);
+    // QList<int> getRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship);
+    // void setRelationship(int rootId, Common::DirectAccess::Root::RootRelationshipField relationship,
+    //                      QList<int> relatedIds);
 
   private:
     void resolveDependencies();

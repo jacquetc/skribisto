@@ -22,15 +22,46 @@
 // If you do, be careful to not overwrite it when you run the generator again.
 #pragma once
 #include "root/root_controller.h"
+#include <QCoroQml>
+#include <QCoroQmlTask>
 #include <QQmlEngine>
 
-class ForeignRootController : public QObject
+struct ForeignRootController : public QObject
 {
     Q_OBJECT
-    QML_FOREIGN(Skribisto::DirectAccess::Root::RootController)
     QML_NAMED_ELEMENT(RootController)
+
   public:
-    explicit ForeignRootController(QObject *parent = nullptr) : QObject(parent)
+    explicit ForeignRootController(QObject *parent = nullptr)
+        : QObject(parent), m_controller(new Skribisto::DirectAccess::Root::RootController(this))
+
     {
     }
+    Q_INVOKABLE QCoro::QmlTask get(const QList<int> &ids)
+    {
+        return m_controller->get(ids);
+    }
+
+    Q_INVOKABLE static Skribisto::DirectAccess::Root::CreateRootDto getCreateDto()
+    {
+        return Skribisto::DirectAccess::Root::RootController::getCreateDto();
+    }
+
+    Q_INVOKABLE QCoro::QmlTask create(const QList<Skribisto::DirectAccess::Root::CreateRootDto> &dto)
+    {
+        return m_controller->create(dto);
+    }
+
+    // Q_INVOKABLE QCoro::QmlTask update(const QList<Skribisto::DirectAccess::Root::RootDto> &dtos)
+    // {
+    //     return m_controller->update(dtos);
+    // }
+    //
+    // Q_INVOKABLE QCoro::QmlTask remove(const QList<int> &ids)
+    // {
+    //     return m_controller->remove(ids);
+    // }
+
+  private:
+    Skribisto::DirectAccess::Root::RootController *m_controller;
 };

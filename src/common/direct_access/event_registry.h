@@ -23,7 +23,7 @@
 #include "direct_access/binder/binder_events.h"
 #include "direct_access/project/project_events.h"
 #include "direct_access/root/root_events.h"
-#include "undo_redo/undo_redo_events.h"
+// #include "undo_redo/undo_redo_events.h"
 #include <QPointer>
 
 namespace Skribisto::Common::DirectAccess
@@ -36,8 +36,9 @@ class EventRegistry : public QObject
   public:
     explicit EventRegistry(QObject *parent = nullptr)
         : QObject(parent), m_projectEvents(new Project::ProjectEvents(parent)),
-          m_binderEvents(new Binder::BinderEvents(parent)), m_rootEvents(new Root::RootEvents(parent)),
-          m_undoRedoEvents(new UndoRedo::UndoRedoEvents(parent))
+          m_binderEvents(new Binder::BinderEvents(parent)), m_rootEvents(new Root::RootEvents(parent))
+
+    //    , m_undoRedoEvents(new UndoRedo::UndoRedoEvents(parent))
     {
     }
 
@@ -48,7 +49,7 @@ class EventRegistry : public QObject
     QPointer<Project::ProjectEvents> m_projectEvents;
     QPointer<Binder::BinderEvents> m_binderEvents;
     QPointer<Root::RootEvents> m_rootEvents;
-    QPointer<UndoRedo::UndoRedoEvents> m_undoRedoEvents;
+    // QPointer<UndoRedo::UndoRedoEvents> m_undoRedoEvents;
 };
 
 // Template specializations for each event type
@@ -67,9 +68,9 @@ template <> inline QPointer<Root::RootEvents> EventRegistry::getEvents<Root::Roo
     return m_rootEvents;
 }
 
-template <> inline QPointer<UndoRedo::UndoRedoEvents> EventRegistry::getEvents<UndoRedo::UndoRedoEvents>() const
-{
-    return m_undoRedoEvents;
-}
+// template <> inline QPointer<UndoRedo::UndoRedoEvents> EventRegistry::getEvents<UndoRedo::UndoRedoEvents>() const
+// {
+//     return m_undoRedoEvents;
+// }
 
 } // namespace Skribisto::Common::DirectAccess
