@@ -87,7 +87,8 @@ QList<SCE::Binder> SCDBinder::BinderTable::createMany(const QList<SCE::Binder> &
 
         if (!q.exec())
         {
-            qCritical() << "Failed to insert binder:" << q.lastError().text();
+            qCritical() << "Failed to insert binder:" << q.lastError().text() << " SQL:" << sqlString;
+
             // If insert fails, skip this row
             continue;
         }

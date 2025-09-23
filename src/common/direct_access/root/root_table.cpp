@@ -85,7 +85,7 @@ QList<SCE::Root> SCDRoot::RootTable::createMany(const QList<SCE::Root> &roots)
         q.bindValue(":updated_at"_L1, r.updatedAt.toString(Qt::ISODate));
         if (!q.exec())
         {
-            qCritical() << "Failed to insert root:" << q.lastError().text();
+            qCritical() << "Failed to insert root:" << q.lastError().text() << " SQL:" << sqlString;
             // If insert fails, skip this row
             continue;
         }

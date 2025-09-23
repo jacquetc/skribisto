@@ -22,24 +22,26 @@
 // If you do, be careful to not overwrite it when you run the generator again.
 #pragma once
 
-#include "event_dispatcher.h"
+#include "direct_access/event_registry.h"
+#include "service_locator.h"
 #include <QQmlEngine>
 
 struct ForeignEventDispatcher
 {
     Q_GADGET
-    QML_FOREIGN(Skribisto::Common::EventDispatcher)
+    QML_FOREIGN(Skribisto::Common::DirectAccess::EventRegistry)
     QML_SINGLETON
     QML_NAMED_ELEMENT(EventDispatcher)
 
   public:
     // Initialize this singleton instance with the given engine.
 
-    inline static Skribisto::Common::EventDispatcher *s_singletonInstance = nullptr;
+    inline static Skribisto::Common::DirectAccess::EventRegistry *s_singletonInstance = nullptr;
 
-    static Skribisto::Common::EventDispatcher *create(QQmlEngine *, QJSEngine *engine)
+    static Skribisto::Common::DirectAccess::EventRegistry *create(QQmlEngine *, QJSEngine *engine)
     {
-        s_singletonInstance = Skribisto::Common::EventDispatcher::instance();
+        s_singletonInstance = Skribisto::Common::ServiceLocator::instance()->eventRegistry();
+        ;
 
         // The instance has to exist before it is used. We cannot replace it.
         Q_ASSERT(s_singletonInstance);
@@ -58,6 +60,31 @@ struct ForeignEventDispatcher
         QJSEngine::setObjectOwnership(s_singletonInstance, QJSEngine::CppOwnership);
 
         return s_singletonInstance;
+    }
+
+    Q_INVOKABLE Skribisto::Common::DirectAccess::Root::RootEvents *getRootEvents() const
+    {
+        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::Root::RootEvents>();
+    }
+
+    Q_INVOKABLE Skribisto::Common::DirectAccess::Project::ProjectEvents *getProjectEvents() const
+    {
+        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::Project::ProjectEvents>();
+    }
+
+    Q_INVOKABLE Skribisto::Common::DirectAccess::Binder::BinderEvents *getBinderEvents() const
+    {
+        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::Binder::BinderEvents>();
+    }
+
+    Q_INVOKABLE Skribisto::Common::DirectAccess::BinderItem::BinderItemEvents *getBinderItemEvents() const
+    {
+        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::BinderItem::BinderItemEvents>();
+    }
+
+    Q_INVOKABLE Skribisto::Common::DirectAccess::RecentProject::RecentProjectEvents *getRecentProjectEvents() const
+    {
+        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::RecentProject::RecentProjectEvents>();
     }
 
   private:

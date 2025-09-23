@@ -16,7 +16,8 @@ qt6_add_qml_module(${PLUGIN_NAME}
         SOURCES
 
         foreign_root_controller.h
-        #foreign_event_dispatcher.h
+        foreign_project_controller.h
+        foreign_event_dispatcher.h
         #foreign_undo_redo_controller.h
 
 )

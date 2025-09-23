@@ -63,30 +63,72 @@ ApplicationWindow {
             RootController {
                 id: rootController
             }
+            ProjectController {
+                id: projectController
+            }
             // Button
             Button {
-                id: getButton
+                id: createProjectButton
+                text: "Create Project"
+                onClicked: {
+                    console.log("Create button clicked")
+                    var dto = projectController.getCreateDto()
+                    dto.title = "My Project "
+
+                    projectController.create([dto]).then(function (result) {
+                        console.log("Async project creation result :", result)
+                    })
+                }
+            }
+            // Button
+            Button {
+                id: createRootButton
+                text: "Create Root"
+                onClicked: {
+                    console.log("Create button clicked")
+                    var dto = rootController.getCreateDto()
+                    dto.projects = [1]
+
+                    rootController.create([dto]).then(function (result) {
+                        console.log("Async root creation result :", result)
+                    })
+                }
+            }
+            // Button
+            Button {
+                id: getRootButton
 
                 text: "Get Root 1"
                 onClicked: {
                     console.log("Get Root 1 button clicked")
 
                     rootController.get([1]).then(function (res) {
-                        console.log("Async get result (from nested then):", res)
+                        console.log("Async get root result :", res)
+                    })
+                }
+            }
+            // Button
+            Button {
+                id: getProjectButton
+
+                text: "Get Project 1"
+                onClicked: {
+                    console.log("Get Root 1 button clicked")
+
+                    projectController.get([1]).then(function (res) {
+                        console.log("Async get project result :", res)
                     })
                 }
             }
 
-            // Button
             Button {
-                id: createButton
-                text: "Create Root"
+                id: removeRootButton
+                text: "Remove Root 1"
                 onClicked: {
-                    console.log("Create button clicked")
-                    var dto = rootController.getCreateDto()
+                    console.log("remove root 1 clicked")
 
-                    rootController.create([dto]).then(function (result) {
-                        console.log("Async creation result (from then):", result)
+                    rootController.remove([1]).then(function (result) {
+                        console.log("Async root removal result :", result)
                     })
                 }
             }

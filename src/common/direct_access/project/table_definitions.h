@@ -33,8 +33,8 @@ inline QString getSqlTableDefinition()
         "    id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT UNIQUE ON CONFLICT ROLLBACK NOT NULL,"
         "    created_at TEXT NOT NULL,"
         "    updated_at TEXT NOT NULL,"
-        "    title TEXT NOT NULL DEFAULT '',"
-        "    dict_language TEXT NOT NULL DEFAULT ''"
+        "    title TEXT NOT NULL DEFAULT 'no title',"
+        "    dict_language TEXT "
         ");");
 }
 

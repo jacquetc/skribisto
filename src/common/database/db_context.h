@@ -206,7 +206,8 @@ struct DbSubContext
         if (!db.isValid())
             return;
         QSqlQuery q(db);
-        const QString name = QStringLiteral("sp_%1").arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+        const QString name =
+            QStringLiteral("sp_%1").arg(QUuid::createUuid().toString(QUuid::WithoutBraces).remove("-"_L1));
 
         if (!q.exec(QStringLiteral("SAVEPOINT %1").arg(name)))
         {

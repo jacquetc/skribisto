@@ -70,7 +70,7 @@ QList<SCE::Project> SCDProject::ProjectTable::createMany(const QList<SCE::Projec
 
         valuePlaceholders << ":created_at"_L1 << ":updated_at"_L1 << ":title"_L1 << ":dict_language"_L1;
         QString sqlString =
-            "INSERT INTO root (%1) VALUES (%2)"_L1.arg(columnNames.join(","_L1), valuePlaceholders.join(","_L1));
+            "INSERT INTO project (%1) VALUES (%2)"_L1.arg(columnNames.join(","_L1), valuePlaceholders.join(","_L1));
 
         q.prepare(sqlString);
 
@@ -88,6 +88,7 @@ QList<SCE::Project> SCDProject::ProjectTable::createMany(const QList<SCE::Projec
         q.bindValue(":dict_language"_L1, r.dictLanguage);
         if (!q.exec())
         {
+            qCritical() << "Failed to insert Project:" << q.lastError().text() << " SQL:" << sqlString;
             // If insert fails, skip this row
             continue;
         }

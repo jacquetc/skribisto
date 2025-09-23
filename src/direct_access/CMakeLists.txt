@@ -46,11 +46,40 @@ set(ROOT_LIST
         root/use_cases/get_relationship_ids_in_range_uc.h
 )
 
+set(PROJECT_LIST
+        project/project_controller.cpp
+        project/project_controller.h
+        project/project_unit_of_work.cpp
+        project/project_unit_of_work.h
+        project/dtos.h
+        project/use_cases/i_project_unit_of_work.h
+        project/use_cases/create_uc.cpp
+        project/use_cases/create_uc.h
+        project/use_cases/common/dto_mapper.h
+        project/use_cases/remove_uc.cpp
+        project/use_cases/remove_uc.h
+        project/use_cases/get_uc.cpp
+        project/use_cases/get_uc.h
+        project/use_cases/update_uc.cpp
+        project/use_cases/update_uc.h
+        project/use_cases/set_relationship_ids_uc.cpp
+        project/use_cases/set_relationship_ids_uc.h
+        project/use_cases/get_relationship_ids_uc.cpp
+        project/use_cases/get_relationship_ids_uc.h
+        project/use_cases/get_relationship_ids_many_uc.cpp
+        project/use_cases/get_relationship_ids_many_uc.h
+        project/use_cases/get_relationship_ids_count_uc.cpp
+        project/use_cases/get_relationship_ids_count_uc.h
+        project/use_cases/get_relationship_ids_in_range_uc.cpp
+        project/use_cases/get_relationship_ids_in_range_uc.h
+)
+
 set(AUTHOR_LIST
 )
 
 qt_add_library(${LIBRARY_NAME} ${LIB_TYPE} ${SRCS}
         ${ROOT_LIST}
+        ${PROJECT_LIST}
         ${AUTHOR_LIST}
 )
 
