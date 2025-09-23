@@ -21,6 +21,7 @@
 #include "binder_table.h"
 #include "database/db_context.h"
 #include "database/junction_table_ops/ordered_one_to_many.h"
+#include "database/table_cache.h"
 #include "entities/binder.h"
 
 #include <QDateTime>
@@ -50,16 +51,43 @@ QList<SCE::Binder> SCDBinder::BinderTable::createMany(const QList<SCE::Binder> &
 
     QSqlDatabase db = m_dbSubContext.getConnection();
     QSqlQuery q(db);
-    const QString now = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
 
     for (SCE::Binder b : binders)
     {
-        q.prepare("INSERT INTO binder (creation_date, update_date, name) VALUES (:c, :u, :n)"_L1);
-        q.bindValue(":c"_L1, now);
-        q.bindValue(":u"_L1, now);
-        q.bindValue(":n"_L1, b.name);
+        QStringList columnNames;
+        QStringList valuePlaceholders;
+        // Conditionally include id only if > 0
+        if (b.id > 0)
+        {
+            columnNames << "id"_L1;
+            valuePlaceholders << ":id"_L1;
+        }
+
+        columnNames << "created_at"_L1
+                    << "updated_at"_L1
+                    << "name"_L1;
+
+        valuePlaceholders << ":created_at"_L1 << ":updated_at"_L1 << ":name"_L1;
+        QString sqlString =
+            "INSERT INTO binder (%1) VALUES (%2)"_L1.arg(columnNames.join(","_L1), valuePlaceholders.join(","_L1));
+
+        q.prepare(sqlString);
+
+        // Set timestamps if not provided
+        if (b.createdAt.isNull())
+            b.createdAt = QDateTime::currentDateTimeUtc();
+        if (b.updatedAt.isNull())
+            b.updatedAt = b.createdAt;
+
+        if (b.id > 0)
+            q.bindValue(":id"_L1, b.id);
+        q.bindValue(":created_at"_L1, b.createdAt.toString(Qt::ISODate));
+        q.bindValue(":updated_at"_L1, b.updatedAt.toString(Qt::ISODate));
+        q.bindValue(":name"_L1, b.name);
+
         if (!q.exec())
         {
+            qCritical() << "Failed to insert binder:" << q.lastError().text();
             // If insert fails, skip this row
             continue;
         }
@@ -80,6 +108,18 @@ QList<SCE::Binder> SCDBinder::BinderTable::createMany(const QList<SCE::Binder> &
         }
     }
 
+    // Invalidate cache for created entities
+    if (!created.isEmpty())
+    {
+        QList<int> createdIds;
+        createdIds.reserve(created.size());
+        for (const auto &binder : created)
+            createdIds.append(binder.id);
+
+        using BinderCache = Database::TableCache<SCE::Binder, BinderRelationshipField>;
+        BinderCache::instance().invalidateEntities(createdIds);
+    }
+
     return created;
 }
 
@@ -90,14 +130,23 @@ QList<SCE::Binder> SCDBinder::BinderTable::updateMany(const QList<SCE::Binder> &
 
     QSqlDatabase db = m_dbSubContext.getConnection();
     QSqlQuery q(db);
-    const QString now = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+
+    QStringList columnNames;
+    columnNames << "id = :id"_L1
+                << "created_at = :created_at"_L1
+                << "updated_at = :updated_at"_L1
+                << "name = :name"_L1;
+
+    QString sqlString = "UPDATE binder SET %1 WHERE id = :id"_L1.arg(columnNames.join(","_L1));
 
     for (const SCE::Binder &b : binders)
     {
-        q.prepare("UPDATE binder SET update_date = :u, name = :n WHERE id = :id"_L1);
-        q.bindValue(":u"_L1, now);
-        q.bindValue(":n"_L1, b.name);
+        q.prepare(sqlString);
         q.bindValue(":id"_L1, b.id);
+        q.bindValue(":created_at"_L1, b.createdAt.toString(Qt::ISODate));
+        q.bindValue(":updated_at"_L1, b.updatedAt.toString(Qt::ISODate));
+        q.bindValue(":name"_L1, b.name);
+
         if (q.exec() && q.numRowsAffected() > 0)
         {
             // Handle junction table relationships
@@ -106,6 +155,20 @@ QList<SCE::Binder> SCDBinder::BinderTable::updateMany(const QList<SCE::Binder> &
             updated.append(b);
         }
     }
+
+    // Invalidate cache for updated entities
+    if (!updated.isEmpty())
+    {
+        QList<int> updatedIds;
+        updatedIds.reserve(updated.size());
+        for (const auto &binder : updated)
+            updatedIds.append(binder.id);
+
+        using BinderCache = Database::TableCache<SCE::Binder, BinderRelationshipField>;
+        BinderCache::instance().invalidateEntities(updatedIds);
+        BinderCache::instance().invalidateRelationships(updatedIds);
+    }
+
     return updated;
 }
 
@@ -114,16 +177,30 @@ QList<SCE::Binder> SCDBinder::BinderTable::findMany(const QList<int> &ids) const
     QList<SCE::Binder> result;
     result.reserve(ids.size());
 
-    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
-
     if (ids.isEmpty())
         return result;
 
+    // Try cache first
+    using BinderCache = Database::TableCache<SCE::Binder, BinderRelationshipField>;
+    if (BinderCache::instance().getCachedEntities(ids, result))
+    {
+        return result;
+    }
+
+    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
+
+    // Build placeholder for SELECT fields
+    QStringList selectPlaceholders;
+    selectPlaceholders << "id"_L1
+                       << "created_at"_L1
+                       << "updated_at"_L1
+                       << "name"_L1;
+
     // Build a dynamic IN clause
-    QStringList placeholders;
-    placeholders.fill("?"_L1, ids.size());
-    const QString sql = QStringLiteral("SELECT id, creation_date, update_date, name FROM binder WHERE id IN (%1)")
-                            .arg(placeholders.join(","_L1));
+    QStringList inPlaceholders;
+    inPlaceholders.fill("?"_L1, ids.size());
+    const QString sql = QStringLiteral("SELECT %1 FROM binder WHERE id IN (%2)")
+                            .arg(selectPlaceholders.join(","_L1), inPlaceholders.join(","_L1));
 
     QSqlQuery q(db);
     q.prepare(sql);
@@ -136,13 +213,13 @@ QList<SCE::Binder> SCDBinder::BinderTable::findMany(const QList<int> &ids) const
         QHash<int, SCE::Binder> binderMap;
         while (q.next())
         {
-            int id = q.value(0).toInt();
-            QDateTime creationDate = QDateTime::fromString(q.value(1).toString(), Qt::ISODate);
-            QDateTime updateDate = QDateTime::fromString(q.value(2).toString(), Qt::ISODate);
-            QString name = q.value(3).toString();
-
-            foundIds.append(id);
-            binderMap[id] = SCE::Binder(id, creationDate, updateDate, name);
+            foundIds.append(q.value(0).toInt());
+            SCE::Binder binder;
+            binder.id = q.value(0).toInt();
+            binder.createdAt = QDateTime::fromString(q.value(1).toString(), Qt::ISODate);
+            binder.updatedAt = QDateTime::fromString(q.value(2).toString(), Qt::ISODate);
+            binder.name = q.value(3).toString();
+            result.append(binder);
         }
 
         // Get relationship data for all found IDs
@@ -150,12 +227,13 @@ QList<SCE::Binder> SCDBinder::BinderTable::findMany(const QList<int> &ids) const
             JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, foundIds, BINDER_BINDER_ITEMS_JUNCTION);
 
         // Build result with relationships populated
-        for (int id : foundIds)
+        for (auto &binder : result)
         {
-            SCE::Binder binder = binderMap[id];
-            binder.binderItems = binderItemsMap.value(id);
-            result.append(binder);
+            binder.binderItems = binderItemsMap.value(binder.id);
         }
+
+        // Cache the result
+        BinderCache::instance().setCachedEntities(ids, result);
     }
     return result;
 }
@@ -169,10 +247,10 @@ QList<int> SCDBinder::BinderTable::removeMany(const QList<int> &ids)
     QSqlQuery q(db);
 
     // Clean up junction table relationships first
-    JunctionTableOps::OrderedOneToMany::removeLeftIdsMany(db, ids, BINDER_BINDER_ITEMS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, BINDER_BINDER_ITEMS_JUNCTION);
     // Clean up junction backward table relationships
     auto leftIds = JunctionTableOps::OrderedOneToMany::getLeftIdMany(db, PROJECT_BINDERS_JUNCTION, ids);
-    JunctionTableOps::OrderedOneToMany::removeRightIdsMany(db, leftIds.values(), PROJECT_BINDERS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, leftIds.values(), PROJECT_BINDERS_JUNCTION);
 
     for (int id : ids)
     {
@@ -182,10 +260,19 @@ QList<int> SCDBinder::BinderTable::removeMany(const QList<int> &ids)
             removed.append(id);
     }
 
+    // Invalidate cache for removed entities
+    if (!removed.isEmpty())
+    {
+        using BinderCache = Database::TableCache<SCE::Binder, BinderRelationshipField>;
+        BinderCache::instance().invalidateEntities(removed);
+        BinderCache::instance().invalidateRelationships(removed);
+    }
+
     return removed;
 }
 
-void SCDBinder::BinderTable::setRelationship(int binderId, BinderRelationshipField relationship, QList<int> relatedId)
+void SCDBinder::BinderTable::setRelationshipIds(int binderId, BinderRelationshipField relationship,
+                                                QList<int> relatedId)
 {
     QSqlDatabase db = m_dbSubContext.getConnection();
 
@@ -195,13 +282,25 @@ void SCDBinder::BinderTable::setRelationship(int binderId, BinderRelationshipFie
         JunctionTableOps::OrderedOneToMany::upsertRightIds(db, binderId, BINDER_BINDER_ITEMS_JUNCTION, relatedId);
         break;
     }
+
+    // Invalidate cache for relationship changes
+    using BinderCache = Database::TableCache<SCE::Binder, BinderRelationshipField>;
+    BinderCache::instance().invalidateEntity(binderId);
+    BinderCache::instance().invalidateRelationships(binderId);
 }
 
-QHash<int, QList<int>> SCDBinder::BinderTable::getRelationshipMany(const QList<int> &binderIds,
-                                                                   BinderRelationshipField relationship) const
+QHash<int, QList<int>> SCDBinder::BinderTable::getRelationshipIdsMany(const QList<int> &binderIds,
+                                                                      BinderRelationshipField relationship) const
 {
-    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
+    // Try cache first
+    using BinderCache = Database::TableCache<SCE::Binder, BinderRelationshipField>;
     QHash<int, QList<int>> result;
+    if (BinderCache::instance().getCachedRelationshipData(binderIds, relationship, result))
+    {
+        return result;
+    }
+
+    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
 
     switch (relationship)
     {
@@ -210,6 +309,45 @@ QHash<int, QList<int>> SCDBinder::BinderTable::getRelationshipMany(const QList<i
         break;
     default:
 
+        throw std::invalid_argument("Unhandled relationship type");
+    }
+
+    // Cache the result
+    BinderCache::instance().setCachedRelationshipData(binderIds, relationship, result);
+
+    return result;
+}
+
+int SCDBinder::BinderTable::getRelationshipIdsCount(int binderId, BinderRelationshipField relationship)
+{
+    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    int result;
+
+    switch (relationship)
+    {
+    case BinderRelationshipField::BinderItems:
+        result = JunctionTableOps::OrderedOneToMany::getRightIdsCount(db, binderId, BINDER_BINDER_ITEMS_JUNCTION);
+        break;
+    default:
+
+        throw std::invalid_argument("Unhandled relationship type");
+    }
+    return result;
+}
+QList<int> SCDBinder::BinderTable::getRelationshipIdsInRange(int binderId, BinderRelationshipField relationship,
+                                                             int offset, int limit)
+{
+    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QList<int> result;
+
+    switch (relationship)
+    {
+    case BinderRelationshipField::BinderItems:
+        result = JunctionTableOps::OrderedOneToMany::getRightIdsInRange(db, binderId, BINDER_BINDER_ITEMS_JUNCTION,
+                                                                        offset, limit);
+        break;
+
+    default:
         throw std::invalid_argument("Unhandled relationship type");
     }
 

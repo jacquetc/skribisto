@@ -45,6 +45,12 @@ QList<RootDto> UpdateRootUseCase::execute(const QList<RootDto> &roots)
 
     // Perform the update
     auto mappedEntities = DtoMapper::toEntityList(roots);
+
+    // Update the updatedAt timestamp
+    QDateTime currentTime = QDateTime::currentDateTimeUtc();
+    for (auto &entity : mappedEntities)
+        entity.updatedAt = currentTime;
+
     auto updatedEntities = m_uow->updateRoot(mappedEntities);
     m_uow->commit();
 

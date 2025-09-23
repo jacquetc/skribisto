@@ -30,16 +30,16 @@ namespace Skribisto::Common::Entities
 struct RecentProject
 {
     int id = 0;
-    QDateTime creationDate;
-    QDateTime updateDate;
+    QDateTime createdAt;
+    QDateTime updatedAt;
     QString title;
     QString absolutePath;
 
     // Constructeurs optionnels
     RecentProject() = default;
-    RecentProject(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &title,
+    RecentProject(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                   const QString &absolutePath)
-        : id(id), creationDate(creationDate), updateDate(updateDate), title(title), absolutePath(absolutePath)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), absolutePath(absolutePath)
     {
     }
 };

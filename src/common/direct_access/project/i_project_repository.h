@@ -46,12 +46,15 @@ class IProjectRepository
     virtual QList<int> remove(const QList<int> &projectIds) = 0;
     // Relationship setters/getters
     // Set the relationship value for a given Project id (e.g., set project id)
-    virtual void setRelationship(int projectId, ProjectRelationshipField relationship, QList<int> relatedId) = 0;
+    virtual void setRelationshipIds(int projectId, ProjectRelationshipField relationship, QList<int> relatedId) = 0;
 
     // Get the relationship value for a given Project id (e.g., get project id)
-    virtual QList<int> getRelationship(int projectId, ProjectRelationshipField relationship) = 0;
-    virtual QHash<int, QList<int>> getRelationshipMany(const QList<int> &projectIds,
-                                                       ProjectRelationshipField relationship) = 0;
+    virtual QList<int> getRelationshipIds(int projectId, ProjectRelationshipField relationship) = 0;
+    virtual QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &projectIds,
+                                                          ProjectRelationshipField relationship) = 0;
+    virtual int getRelationshipIdsCount(int rootId, ProjectRelationshipField relationship) = 0;
+    virtual QList<int> getRelationshipIdsInRange(int rootId, ProjectRelationshipField relationship, int offset,
+                                                 int limit) = 0;
 };
 
 } // namespace Skribisto::Common::DirectAccess::Project

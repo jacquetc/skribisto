@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "direct_access/root/i_root_repository.h"
 #include "entities/root.h"
 #include "root/dtos.h"
 
@@ -29,6 +30,7 @@
 namespace Skribisto::DirectAccess::Root
 {
 namespace SCE = Skribisto::Common::Entities;
+namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
 
 class DtoMapper
 {
@@ -43,17 +45,17 @@ class DtoMapper
 
     static SCE::Root toEntity(const CreateRootDto &dto)
     {
-        return {0, dto.creationDate, dto.updateDate, dto.projects, dto.recentProjects};
+        return {0, dto.createdAt, dto.updatedAt, dto.projects, dto.recentProjects};
     }
 
     static SCE::Root toEntity(const RootDto &dto)
     {
-        return {0, dto.creationDate, dto.updateDate, dto.projects, dto.recentProjects};
+        return {0, dto.createdAt, dto.updatedAt, dto.projects, dto.recentProjects};
     }
 
     static RootDto toDto(const SCE::Root &entity)
     {
-        return RootDto{entity.id, entity.creationDate, entity.updateDate, entity.projects, entity.recentProjects};
+        return RootDto{entity.id, entity.createdAt, entity.updatedAt, entity.projects, entity.recentProjects};
     }
 
     static QList<SCE::Root> toEntityList(const QList<CreateRootDto> &dtos)
@@ -87,6 +89,18 @@ class DtoMapper
             dtos.append(toDto(entity));
         }
         return dtos;
+    }
+
+    static SCDRoot::RootRelationshipField toCommonRelationshipField(RootRelationshipField field)
+    {
+        switch (field)
+        {
+        case RootRelationshipField::Projects:
+            return SCDRoot::RootRelationshipField::Projects;
+        case RootRelationshipField::RecentProjects:
+            return SCDRoot::RootRelationshipField::RecentProjects;
+        }
+        return SCDRoot::RootRelationshipField::Projects; // fallback
     }
 };
 } // namespace Skribisto::DirectAccess::Root

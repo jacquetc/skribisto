@@ -27,16 +27,17 @@ namespace SCDProject = Skribisto::Common::DirectAccess::Project;
 namespace SCE = Skribisto::Common::Entities;
 
 // Original constructor for backward compatibility
-SCDProject::ProjectRepository::ProjectRepository(IProjectTable &table, Database::DbSubContext &dbSubContext,
+SCDProject::ProjectRepository::ProjectRepository(std::unique_ptr<IProjectTable> table,
+                                                 Database::DbSubContext &dbSubContext,
                                                  QPointer<EventRegistry> eventRegistry)
-    : m_table(table), m_eventRegistry(std::move(eventRegistry)), m_dbSubContext(dbSubContext)
+    : m_table(std::move(table)), m_eventRegistry(std::move(eventRegistry)), m_dbSubContext(dbSubContext)
 {
     m_events = m_eventRegistry ? m_eventRegistry->getEvents<Project::ProjectEvents>() : nullptr;
 }
 
 QList<SCE::Project> SCDProject::ProjectRepository::create(const QList<SCE::Project> &projects)
 {
-    auto created = m_table.createMany(projects);
+    auto created = m_table->createMany(projects);
     QList<int> ids;
     ids.reserve(created.size());
     for (const auto &r : created)
@@ -47,7 +48,7 @@ QList<SCE::Project> SCDProject::ProjectRepository::create(const QList<SCE::Proje
 
 QList<SCE::Project> SCDProject::ProjectRepository::get(const QList<int> &projectIds)
 {
-    return m_table.findMany(projectIds);
+    return m_table->findMany(projectIds);
 }
 
 QList<SCE::Project> SCDProject::ProjectRepository::update(const QList<SCE::Project> &projects)
@@ -57,7 +58,7 @@ QList<SCE::Project> SCDProject::ProjectRepository::update(const QList<SCE::Proje
     ids.reserve(projects.size());
     for (const auto &r : projects)
         ids.append(r.id);
-    auto existing = m_table.findMany(ids);
+    auto existing = m_table->findMany(ids);
     QSet<int> existingIds;
     existingIds.reserve(existing.size());
     for (const auto &e : existing)
@@ -69,7 +70,7 @@ QList<SCE::Project> SCDProject::ProjectRepository::update(const QList<SCE::Proje
         if (existingIds.contains(r.id))
             toUpdate.append(r);
 
-    auto updated = m_table.updateMany(toUpdate);
+    auto updated = m_table->updateMany(toUpdate);
     QList<int> updatedIds;
     updatedIds.reserve(updated.size());
     for (const auto &r : updated)
@@ -81,7 +82,8 @@ QList<SCE::Project> SCDProject::ProjectRepository::update(const QList<SCE::Proje
 QList<int> SCDProject::ProjectRepository::remove(const QList<int> &projectIds)
 {
     // cascade deletion on binders
-    QHash<int, QList<int>> leftIdToProjectIdsHash = getRelationshipMany(projectIds, ProjectRelationshipField::Binders);
+    QHash<int, QList<int>> leftIdToProjectIdsHash =
+        getRelationshipIdsMany(projectIds, ProjectRelationshipField::Binders);
     // concatenate all rightIds
     QSet<int> binderIds; // renamed to avoid shadowing
     binderIds.reserve(leftIdToProjectIdsHash.size());
@@ -90,33 +92,49 @@ QList<int> SCDProject::ProjectRepository::remove(const QList<int> &projectIds)
         QSet<int> idsSet(ids.begin(), ids.end());
         binderIds.unite(idsSet); // use unite to combine sets
     }
-    RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry).remove(binderIds.values());
+
+    if (!binderIds.isEmpty())
+    {
+        auto binderRepository = RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+        binderRepository->remove(binderIds.values());
+    }
 
     // Remove projects and emit events only for the explicitly removed projects
-    auto removed = m_table.removeMany(projectIds);
+    auto removed = m_table->removeMany(projectIds);
     emitRemoved(removed);
     return removed;
 }
 
-void SCDProject::ProjectRepository::setRelationship(int projectId, ProjectRelationshipField relationship,
-                                                    QList<int> relatedIds)
+void SCDProject::ProjectRepository::setRelationshipIds(int projectId, ProjectRelationshipField relationship,
+                                                       QList<int> relatedIds)
 {
-    m_table.setRelationship(projectId, relationship, relatedIds);
+    m_table->setRelationshipIds(projectId, relationship, relatedIds);
 
     emitRelationshipChanged(projectId, relationship, relatedIds);
     emitUpdated(QList<int>{projectId});
 }
 
-QList<int> SCDProject::ProjectRepository::getRelationship(int projectId, ProjectRelationshipField relationship)
+QList<int> SCDProject::ProjectRepository::getRelationshipIds(int projectId, ProjectRelationshipField relationship)
 {
-    auto rels = getRelationshipMany(QList<int>{projectId}, relationship);
+    auto rels = getRelationshipIdsMany(QList<int>{projectId}, relationship);
     return rels.value(projectId, QList<int>{});
 }
 
-QHash<int, QList<int>> SCDProject::ProjectRepository::getRelationshipMany(const QList<int> &projectIds,
-                                                                          ProjectRelationshipField relationship)
+QHash<int, QList<int>> SCDProject::ProjectRepository::getRelationshipIdsMany(const QList<int> &projectIds,
+                                                                             ProjectRelationshipField relationship)
 {
-    return m_table.getRelationshipMany(projectIds, relationship);
+    return m_table->getRelationshipIdsMany(projectIds, relationship);
+}
+
+int SCDProject::ProjectRepository::getRelationshipIdsCount(int rootId, ProjectRelationshipField relationship)
+{
+    return m_table->getRelationshipIdsCount(rootId, relationship);
+}
+
+QList<int> SCDProject::ProjectRepository::getRelationshipIdsInRange(int rootId, ProjectRelationshipField relationship,
+                                                                    int offset, int limit)
+{
+    return m_table->getRelationshipIdsInRange(rootId, relationship, offset, limit);
 }
 
 void SCDProject::ProjectRepository::emitCreated(const QList<int> &ids) const

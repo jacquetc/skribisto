@@ -65,19 +65,25 @@ void UndoRedoCommand::asyncExecute()
         // Use QPointer to prevent use-after-free
         QPointer<UndoRedoCommand> safeThis(this);
         auto executeFunction = m_executeFunction; // Copy function to avoid capture issues
-        
+
         auto future = QtConcurrent::run([safeThis, executeFunction]() -> Result<void> {
-            if (safeThis.isNull()) {
+            if (safeThis.isNull())
+            {
                 return Result<void>("Command object destroyed during execution"_L1, ErrorCategory::ExecutionError);
             }
-            
-            try {
+
+            try
+            {
                 QPromise<Result<void>> promise;
                 executeFunction(promise);
                 return Result<void>(); // Success by default
-            } catch (const std::exception& e) {
+            }
+            catch (const std::exception &e)
+            {
                 return Result<void>(QString::fromStdString(e.what()), ErrorCategory::ExecutionError);
-            } catch (...) {
+            }
+            catch (...)
+            {
                 return Result<void>("Unknown exception during command execution"_L1, ErrorCategory::UnknownError);
             }
         });
@@ -104,17 +110,23 @@ void UndoRedoCommand::asyncUndo()
     {
         QPointer<UndoRedoCommand> safeThis(this);
         auto undoFunction = m_undoFunction;
-        
+
         auto future = QtConcurrent::run([safeThis, undoFunction]() -> Result<void> {
-            if (safeThis.isNull()) {
+            if (safeThis.isNull())
+            {
                 return Result<void>("Command object destroyed during undo"_L1, ErrorCategory::ExecutionError);
             }
-            
-            try {
+
+            try
+            {
                 return undoFunction();
-            } catch (const std::exception& e) {
+            }
+            catch (const std::exception &e)
+            {
                 return Result<void>(QString::fromStdString(e.what()), ErrorCategory::ExecutionError);
-            } catch (...) {
+            }
+            catch (...)
+            {
                 return Result<void>("Unknown exception during command undo"_L1, ErrorCategory::UnknownError);
             }
         });
@@ -140,17 +152,23 @@ void UndoRedoCommand::asyncRedo()
     {
         QPointer<UndoRedoCommand> safeThis(this);
         auto redoFunction = m_redoFunction;
-        
+
         auto future = QtConcurrent::run([safeThis, redoFunction]() -> Result<void> {
-            if (safeThis.isNull()) {
+            if (safeThis.isNull())
+            {
                 return Result<void>("Command object destroyed during redo"_L1, ErrorCategory::ExecutionError);
             }
-            
-            try {
+
+            try
+            {
                 return redoFunction();
-            } catch (const std::exception& e) {
+            }
+            catch (const std::exception &e)
+            {
                 return Result<void>(QString::fromStdString(e.what()), ErrorCategory::ExecutionError);
-            } catch (...) {
+            }
+            catch (...)
+            {
                 return Result<void>("Unknown exception during command redo"_L1, ErrorCategory::UnknownError);
             }
         });
@@ -171,6 +189,24 @@ QString UndoRedoCommand::text() const
 void UndoRedoCommand::setText(const QString &newText)
 {
     m_text = newText;
+}
+
+void UndoRedoCommand::cancel()
+{
+    if (m_executeWatcher && m_executeWatcher->isRunning())
+    {
+        m_executeWatcher->cancel();
+    }
+
+    if (m_undoWatcher && m_undoWatcher->isRunning())
+    {
+        m_undoWatcher->cancel();
+    }
+
+    if (m_redoWatcher && m_redoWatcher->isRunning())
+    {
+        m_redoWatcher->cancel();
+    }
 }
 
 bool UndoRedoCommand::canMergeWith(const std::shared_ptr<UndoRedoCommand> &other) const
@@ -213,5 +249,3 @@ void UndoRedoCommand::onUndoFinished()
 }
 
 } // namespace Skribisto::Common::UndoRedo
-
-#include "undo_redo_command.moc"

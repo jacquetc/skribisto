@@ -47,23 +47,22 @@ class IProjectTable
     virtual QList<int> removeMany(const QList<int> &ids) = 0;
     // Relationship setters/getters
     // Set the relationship value for a given Project id (e.g., set project id)
-    virtual void setRelationship(int projectId, ProjectRelationshipField relationship, QList<int> relatedId) = 0;
+    virtual void setRelationshipIds(int projectId, ProjectRelationshipField relationship, QList<int> relatedId) = 0;
 
     // Get the relationship value for a given Project id (e.g., get project id)
-    [[nodiscard]] virtual QHash<int, QList<int>> getRelationshipMany(const QList<int> &projectIds,
-                                                                     ProjectRelationshipField relationship) const = 0;
+    [[nodiscard]] virtual QHash<int, QList<int>> getRelationshipIdsMany(
+        const QList<int> &projectIds, ProjectRelationshipField relationship) const = 0;
+    virtual int getRelationshipIdsCount(int rootId, ProjectRelationshipField relationship) = 0;
+    virtual QList<int> getRelationshipIdsInRange(int rootId, ProjectRelationshipField relationship, int offset,
+                                                 int limit) = 0;
 };
 
 class ProjectRepository : public IProjectRepository
 {
   public:
     // Original constructor for backward compatibility
-    ProjectRepository(IProjectTable &table, Database::DbSubContext &dbSubContext,
+    ProjectRepository(std::unique_ptr<IProjectTable> table, Database::DbSubContext &dbSubContext,
                       QPointer<EventRegistry> eventRegistry);
-
-    // New constructor that accepts EventRegistry for cascade operations
-    ProjectRepository(IProjectTable &table, QPointer<ProjectEvents> events, Database::DbContext &db, int dbId,
-                      const EventRegistry *eventRegistry = nullptr);
 
     ~ProjectRepository() override = default;
 
@@ -74,13 +73,16 @@ class ProjectRepository : public IProjectRepository
     QList<int> remove(const QList<int> &projectIds) override;
 
     // Relationships
-    void setRelationship(int projectId, ProjectRelationshipField relationship, QList<int> relatedId) override;
-    QList<int> getRelationship(int projectId, ProjectRelationshipField relationship) override;
-    QHash<int, QList<int>> getRelationshipMany(const QList<int> &projectIds,
-                                               ProjectRelationshipField relationship) override;
+    void setRelationshipIds(int projectId, ProjectRelationshipField relationship, QList<int> relatedId) override;
+    QList<int> getRelationshipIds(int projectId, ProjectRelationshipField relationship) override;
+    QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &projectIds,
+                                                  ProjectRelationshipField relationship) override;
+    int getRelationshipIdsCount(int rootId, ProjectRelationshipField relationship) override;
+    QList<int> getRelationshipIdsInRange(int rootId, ProjectRelationshipField relationship, int offset,
+                                         int limit) override;
 
   private:
-    IProjectTable &m_table;
+    std::unique_ptr<IProjectTable> m_table;
     QPointer<ProjectEvents> m_events;        // not owned
     QPointer<EventRegistry> m_eventRegistry; // not owned
 

@@ -214,6 +214,26 @@ int UndoRedoManager::redoCount(const UndoRedoScope &scope) const
     auto it = m_stacks.find(scope);
     return it != m_stacks.end() ? it.value()->redoCount() : 0;
 }
+void UndoRedoManager::cancelAllCommands()
+{
+    QMutexLocker locker(&m_mutex);
+
+    // Cancel all running commands in all stacks
+    for (auto it = m_stacks.begin(); it != m_stacks.end(); ++it)
+    {
+        auto stack = it.value();
+        if (stack && stack->m_currentCommand)
+        {
+            // Cancel the currently executing command
+            stack->m_currentCommand->cancel();
+            // Clear the current command reference
+            stack->m_currentCommand.reset();
+        }
+
+        // Clear both undo and redo stacks
+        stack->clear();
+    }
+}
 
 void UndoRedoManager::onStackCanUndoChanged(bool canUndo)
 {
@@ -335,5 +355,3 @@ void UndoRedoManager::updateCurrentScopeSignals()
 }
 
 } // namespace Skribisto::Common::UndoRedo
-
-#include "undo_redo_manager.moc"

@@ -49,5 +49,10 @@ class IRootUnitOfWork
     virtual QList<int> getRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship) = 0;
     virtual void setRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship,
                                      QList<int> relatedIds) = 0;
+    virtual QHash<int, QList<int>> getRootRelationshipMany(const QList<int> &rootIds,
+                                                          SCDRoot::RootRelationshipField relationship) = 0;
+    virtual int getRootRelationshipCount(int rootId, SCDRoot::RootRelationshipField relationship) = 0;
+    virtual QList<int> getRootRelationshipInRange(int rootId, SCDRoot::RootRelationshipField relationship,
+                                                  int offset, int limit) = 0;
 };
 } // namespace Skribisto::DirectAccess::Root

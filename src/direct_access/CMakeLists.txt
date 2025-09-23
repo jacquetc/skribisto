@@ -32,12 +32,18 @@ set(ROOT_LIST
         root/use_cases/remove_uc.h
         root/use_cases/get_uc.cpp
         root/use_cases/get_uc.h
-        #        root/use_cases/get_relationship.cpp
-        #        root/use_cases/get_relationship.h
-        #        root/use_cases/set_relationship.cpp
-        #        root/use_cases/set_relationship.h
         root/use_cases/update_uc.cpp
         root/use_cases/update_uc.h
+        root/use_cases/set_relationship_ids_uc.cpp
+        root/use_cases/set_relationship_ids_uc.h
+        root/use_cases/get_relationship_ids_uc.cpp
+        root/use_cases/get_relationship_ids_uc.h
+        root/use_cases/get_relationship_ids_many_uc.cpp
+        root/use_cases/get_relationship_ids_many_uc.h
+        root/use_cases/get_relationship_ids_count_uc.cpp
+        root/use_cases/get_relationship_ids_count_uc.h
+        root/use_cases/get_relationship_ids_in_range_uc.cpp
+        root/use_cases/get_relationship_ids_in_range_uc.h
 )
 
 set(AUTHOR_LIST

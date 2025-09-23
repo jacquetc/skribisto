@@ -24,6 +24,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QCoro 0
 
 // Components
 import Skribisto.App
@@ -59,25 +60,38 @@ ApplicationWindow {
                 Layout.fillWidth: true
             }
 
+            RootController {
+                id: rootController
+            }
             // Button
             Button {
-                RootController {
-                    id: rootController
-                }
+                id: getButton
 
-                text: "Click me"
+                text: "Get Root 1"
                 onClicked: {
-                    console.log("Button clicked")
-                    // Example of usage of a controller
-                    var dto = rootController.getCreateDto()
+                    console.log("Get Root 1 button clicked")
 
-                    var result = rootController.create([dto])
-                    console.log("Creation result:", result)
-                    var result = rootController.get([1])
-                    console.log("Get result:", result)
-
+                    rootController.get([1]).then(function (res) {
+                        console.log("Async get result (from nested then):", res)
+                    })
                 }
             }
+
+            // Button
+            Button {
+                id: createButton
+                text: "Create Root"
+                onClicked: {
+                    console.log("Create button clicked")
+                    var dto = rootController.getCreateDto()
+
+                    rootController.create([dto]).then(function (result) {
+                        console.log("Async creation result (from then):", result)
+                    })
+                }
+            }
+
+
         }
 
         // Content

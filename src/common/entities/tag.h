@@ -28,14 +28,14 @@ namespace Skribisto::Common::Entities
 struct Tag
 {
     int id = 0;
-    QDateTime creationDate;
-    QDateTime updateDate;
+    QDateTime createdAt;
+    QDateTime updatedAt;
     QString name;
     QString color;
 
     Tag() = default;
-    Tag(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &name, const QString &color)
-        : id(id), creationDate(creationDate), updateDate(updateDate), name(name), color(color)
+    Tag(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name, const QString &color)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), color(color)
     {
     }
 };

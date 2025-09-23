@@ -22,6 +22,7 @@
 #include "database/db_context.h"
 #include "database/junction_table_ops/ordered_one_to_many.h"
 #include "database/junction_table_ops/unordered_one_to_many.h"
+#include "database/table_cache.h"
 #include "entities/root.h"
 
 #include <QDateTime>
@@ -49,13 +50,39 @@ QList<SCE::Root> SCDRoot::RootTable::createMany(const QList<SCE::Root> &roots)
 
     QSqlDatabase db = m_dbSubContext.getConnection();
     QSqlQuery q(db);
-    const QString now = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
 
     for (SCE::Root r : roots)
     {
-        q.prepare("INSERT INTO root (creation_date, update_date) VALUES (:c, :u)"_L1);
-        q.bindValue(":c"_L1, now);
-        q.bindValue(":u"_L1, now);
+
+        // Set timestamps if not provided
+        if (r.createdAt.isNull())
+            r.createdAt = QDateTime::currentDateTimeUtc();
+        if (r.updatedAt.isNull())
+            r.updatedAt = r.createdAt;
+
+        QStringList columnNames;
+        QStringList valuePlaceholders;
+
+        // Conditionally include id only if > 0
+        if (r.id > 0)
+        {
+            columnNames << "id"_L1;
+            valuePlaceholders << ":id"_L1;
+        }
+
+        columnNames << "created_at"_L1
+                    << "updated_at"_L1;
+        valuePlaceholders << ":created_at"_L1 << ":updated_at"_L1;
+
+        QString sqlString =
+            "INSERT INTO root (%1) VALUES (%2)"_L1.arg(columnNames.join(","_L1), valuePlaceholders.join(","_L1));
+
+        q.prepare(sqlString);
+
+        if (r.id > 0)
+            q.bindValue(":id"_L1, r.id);
+        q.bindValue(":created_at"_L1, r.createdAt.toString(Qt::ISODate));
+        q.bindValue(":updated_at"_L1, r.updatedAt.toString(Qt::ISODate));
         if (!q.exec())
         {
             qCritical() << "Failed to insert root:" << q.lastError().text();
@@ -83,6 +110,18 @@ QList<SCE::Root> SCDRoot::RootTable::createMany(const QList<SCE::Root> &roots)
         }
     }
 
+    // Invalidate cache for created entities
+    if (!created.isEmpty())
+    {
+        QList<int> createdIds;
+        createdIds.reserve(created.size());
+        for (const auto &root : created)
+            createdIds.append(root.id);
+
+        using RootCache = Database::TableCache<SCE::Root, RootRelationshipField>;
+        RootCache::instance().invalidateEntities(createdIds);
+    }
+
     return created;
 }
 
@@ -93,13 +132,21 @@ QList<SCE::Root> SCDRoot::RootTable::updateMany(const QList<SCE::Root> &roots)
 
     QSqlDatabase db = m_dbSubContext.getConnection();
     QSqlQuery q(db);
-    const QString now = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+
+    QStringList columnNames;
+    columnNames << "id = :id"_L1
+                << "created_at = :created_at"_L1
+                << "updated_at = :updated_at"_L1;
+
+    QString sqlString = "UPDATE root SET %1 WHERE id = :id"_L1.arg(columnNames.join(","_L1));
 
     for (const SCE::Root &r : roots)
     {
-        q.prepare("UPDATE root SET update_date = :u WHERE id = :id"_L1);
-        q.bindValue(":u"_L1, now);
+        q.prepare(sqlString);
         q.bindValue(":id"_L1, r.id);
+        q.bindValue(":created_at"_L1, r.createdAt.toString(Qt::ISODate));
+        q.bindValue(":updated_at"_L1, r.updatedAt.toString(Qt::ISODate));
+
         if (q.exec() && q.numRowsAffected() > 0)
         {
             // Handle junction table relationships
@@ -110,6 +157,20 @@ QList<SCE::Root> SCDRoot::RootTable::updateMany(const QList<SCE::Root> &roots)
             updated.append(r);
         }
     }
+
+    // Invalidate cache for updated entities
+    if (!updated.isEmpty())
+    {
+        QList<int> updatedIds;
+        updatedIds.reserve(updated.size());
+        for (const auto &root : updated)
+            updatedIds.append(root.id);
+
+        using RootCache = Database::TableCache<SCE::Root, RootRelationshipField>;
+        RootCache::instance().invalidateEntities(updatedIds);
+        RootCache::instance().invalidateRelationships(updatedIds);
+    }
+
     return updated;
 }
 
@@ -118,15 +179,28 @@ QList<SCE::Root> SCDRoot::RootTable::findMany(const QList<int> &ids) const
     QList<SCE::Root> result;
     result.reserve(ids.size());
 
-    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
-
     if (ids.isEmpty())
         return result;
 
+    // Try cache first
+    using RootCache = Database::TableCache<SCE::Root, RootRelationshipField>;
+    if (RootCache::instance().getCachedEntities(ids, result))
+    {
+        return result;
+    }
+
+    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
+
+    // Build placeholder for SELECT fields
+    QStringList selectPlaceholders;
+    selectPlaceholders << "id"_L1
+                       << "created_at"_L1
+                       << "updated_at"_L1;
     // Build a dynamic IN clause
-    QStringList placeholders;
-    placeholders.fill("?"_L1, ids.size());
-    const QString sql = QStringLiteral("SELECT id FROM root WHERE id IN (%1)").arg(placeholders.join(","_L1));
+    QStringList inPlaceholders;
+    inPlaceholders.fill("?"_L1, ids.size());
+    const QString sql = QStringLiteral("SELECT %1 FROM root WHERE id IN (%2)")
+                            .arg(selectPlaceholders.join(","_L1), inPlaceholders.join(","_L1));
 
     QSqlQuery q(db);
     q.prepare(sql);
@@ -139,6 +213,11 @@ QList<SCE::Root> SCDRoot::RootTable::findMany(const QList<int> &ids) const
         while (q.next())
         {
             foundIds.append(q.value(0).toInt());
+            SCE::Root root;
+            root.id = q.value(0).toInt();
+            root.createdAt = QDateTime::fromString(q.value(1).toString(), Qt::ISODate);
+            root.updatedAt = QDateTime::fromString(q.value(2).toString(), Qt::ISODate);
+            result.append(root);
         }
 
         // Get relationship data for all found IDs
@@ -148,11 +227,14 @@ QList<SCE::Root> SCDRoot::RootTable::findMany(const QList<int> &ids) const
             JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, foundIds, ROOT_RECENT_PROJECTS_JUNCTION);
 
         // Build result with relationships populated
-        for (int id : foundIds)
+        for (auto &root : result)
         {
-            SCE::Root root(id, projectsMap.value(id), recentProjectsMap.value(id));
-            result.append(root);
+            root.projects = projectsMap[root.id];
+            root.recentProjects = recentProjectsMap[root.id];
         }
+
+        // Cache the result
+        RootCache::instance().setCachedEntities(ids, result);
     }
     return result;
 }
@@ -166,8 +248,8 @@ QList<int> SCDRoot::RootTable::removeMany(const QList<int> &ids)
     QSqlQuery q(db);
 
     // Clean up junction table relationships first
-    JunctionTableOps::UnorderedOneToMany::removeLeftIdsMany(db, ids, ROOT_PROJECTS_JUNCTION);
-    JunctionTableOps::OrderedOneToMany::removeLeftIdsMany(db, ids, ROOT_RECENT_PROJECTS_JUNCTION);
+    JunctionTableOps::UnorderedOneToMany::removeWithLeftIdsMany(db, ids, ROOT_PROJECTS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, ROOT_RECENT_PROJECTS_JUNCTION);
 
     for (int id : ids)
     {
@@ -177,9 +259,17 @@ QList<int> SCDRoot::RootTable::removeMany(const QList<int> &ids)
             removed.append(id);
     }
 
+    // Invalidate cache for removed entities
+    if (!removed.isEmpty())
+    {
+        using RootCache = Database::TableCache<SCE::Root, RootRelationshipField>;
+        RootCache::instance().invalidateEntities(removed);
+        RootCache::instance().invalidateRelationships(removed);
+    }
+
     return removed;
 }
-void SCDRoot::RootTable::setRelationship(int rootId, RootRelationshipField relationship, QList<int> relatedId)
+void SCDRoot::RootTable::setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedId)
 {
     QSqlDatabase db = m_dbSubContext.getConnection();
 
@@ -192,13 +282,25 @@ void SCDRoot::RootTable::setRelationship(int rootId, RootRelationshipField relat
         JunctionTableOps::OrderedOneToMany::upsertRightIds(db, rootId, ROOT_RECENT_PROJECTS_JUNCTION, relatedId);
         break;
     }
+
+    // Invalidate cache for relationship changes
+    using RootCache = Database::TableCache<SCE::Root, RootRelationshipField>;
+    RootCache::instance().invalidateEntity(rootId);
+    RootCache::instance().invalidateRelationships(rootId);
 }
 
-QHash<int, QList<int>> SCDRoot::RootTable::getRelationshipMany(const QList<int> &rootIds,
-                                                               RootRelationshipField relationship) const
+QHash<int, QList<int>> SCDRoot::RootTable::getRelationshipIdsMany(const QList<int> &rootIds,
+                                                                  RootRelationshipField relationship) const
 {
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    // Try cache first
+    using RootCache = Database::TableCache<SCE::Root, RootRelationshipField>;
     QHash<int, QList<int>> result;
+    if (RootCache::instance().getCachedRelationshipData(rootIds, relationship, result))
+    {
+        return result;
+    }
+
+    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
 
     switch (relationship)
     {
@@ -211,6 +313,53 @@ QHash<int, QList<int>> SCDRoot::RootTable::getRelationshipMany(const QList<int> 
 
     default:
 
+        throw std::invalid_argument("Unhandled relationship type");
+    }
+
+    // Cache the result
+    RootCache::instance().setCachedRelationshipData(rootIds, relationship, result);
+
+    return result;
+}
+
+int SCDRoot::RootTable::getRelationshipIdsCount(int rootId, RootRelationshipField relationship)
+{
+    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    int result;
+
+    switch (relationship)
+    {
+    case RootRelationshipField::Projects:
+        result = JunctionTableOps::UnorderedOneToMany::getRightIdsCount(db, rootId, ROOT_PROJECTS_JUNCTION);
+        break;
+    case RootRelationshipField::RecentProjects:
+        result = JunctionTableOps::OrderedOneToMany::getRightIdsCount(db, rootId, ROOT_RECENT_PROJECTS_JUNCTION);
+        break;
+
+    default:
+
+        throw std::invalid_argument("Unhandled relationship type");
+    }
+    return result;
+}
+QList<int> SCDRoot::RootTable::getRelationshipIdsInRange(int rootId, RootRelationshipField relationship, int offset,
+                                                         int limit)
+{
+    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QList<int> result;
+
+    switch (relationship)
+    {
+    case RootRelationshipField::Projects:
+        result =
+            JunctionTableOps::UnorderedOneToMany::getRightIdsInRange(db, rootId, ROOT_PROJECTS_JUNCTION, offset, limit);
+        break;
+    case RootRelationshipField::RecentProjects:
+        result = JunctionTableOps::OrderedOneToMany::getRightIdsInRange(db, rootId, ROOT_RECENT_PROJECTS_JUNCTION,
+                                                                        offset, limit);
+        break;
+
+    default:
         throw std::invalid_argument("Unhandled relationship type");
     }
 

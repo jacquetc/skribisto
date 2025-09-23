@@ -47,12 +47,15 @@ class IRootRepository
     virtual QList<int> remove(const QList<int> &rootIds) = 0;
     // Relationship setters/getters
     // Set the relationship value for a given Root id (e.g., set project id)
-    virtual void setRelationship(int rootId, RootRelationshipField relationship, QList<int> relatedId) = 0;
+    virtual void setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedId) = 0;
 
     // Get the relationship value for a given Root id (e.g., get project id)
-    virtual QList<int> getRelationship(int rootId, RootRelationshipField relationship) = 0;
-    virtual QHash<int, QList<int>> getRelationshipMany(const QList<int> &rootIds,
-                                                       RootRelationshipField relationship) = 0;
+    virtual QList<int> getRelationshipIds(int rootId, RootRelationshipField relationship) = 0;
+    virtual QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &rootIds,
+                                                          RootRelationshipField relationship) = 0;
+    virtual int getRelationshipIdsCount(int rootId, RootRelationshipField relationship) = 0;
+    virtual QList<int> getRelationshipIdsInRange(int rootId, RootRelationshipField relationship, int offset,
+                                                 int limit) = 0;
 };
 
 } // namespace Skribisto::Common::DirectAccess::Root

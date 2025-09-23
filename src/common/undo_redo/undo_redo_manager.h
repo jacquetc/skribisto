@@ -75,6 +75,9 @@ class UndoRedoManager : public QObject
     int undoCount(const UndoRedoScope &scope) const;
     int redoCount(const UndoRedoScope &scope) const;
 
+    // Cancel all running commands in all stacks
+    void cancelAllCommands();
+
   Q_SIGNALS:
     void currentScopeChanged(const UndoRedoScope &scope);
     void canUndoChanged(bool canUndo);

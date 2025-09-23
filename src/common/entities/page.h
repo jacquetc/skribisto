@@ -30,8 +30,8 @@ namespace Skribisto::Common::Entities
 struct Page
 {
     int id = 0;
-    QDateTime creationDate;
-    QDateTime updateDate;
+    QDateTime createdAt;
+    QDateTime updatedAt;
     QString name;
     QString subName;
     QList<int> childPages;
@@ -41,17 +41,17 @@ struct Page
     QString dictLang;
 
     Page() = default;
-    Page(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &name,
-         const QString &subName, const QList<int> &childPages, const QString &pageType, const QString &dictLang)
-        : id(id), creationDate(creationDate), updateDate(updateDate), name(name), subName(subName),
-          childPages(childPages), pageType(pageType), dictLang(dictLang)
+    Page(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name, const QString &subName,
+         const QList<int> &childPages, const QString &pageType, const QString &dictLang)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), subName(subName), childPages(childPages),
+          pageType(pageType), dictLang(dictLang)
     {
     }
-    Page(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &name,
-         const QString &subName, const QList<int> &childPages, const std::optional<int> &parentPage,
-         const QString &pageType, const std::optional<QList<int>> &contents, const QString &dictLang)
-        : id(id), creationDate(creationDate), updateDate(updateDate), name(name), subName(subName),
-          childPages(childPages), parentPage(parentPage), pageType(pageType), contents(contents), dictLang(dictLang)
+    Page(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name, const QString &subName,
+         const QList<int> &childPages, const std::optional<int> &parentPage, const QString &pageType,
+         const std::optional<QList<int>> &contents, const QString &dictLang)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), subName(subName), childPages(childPages),
+          parentPage(parentPage), pageType(pageType), contents(contents), dictLang(dictLang)
     {
     }
 };

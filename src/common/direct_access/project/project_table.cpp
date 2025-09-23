@@ -22,6 +22,7 @@
 #include "database/db_context.h"
 #include "database/junction_table_ops/ordered_one_to_many.h"
 #include "database/junction_table_ops/unordered_one_to_many.h"
+#include "database/table_cache.h"
 #include "entities/project.h"
 
 #include <QDateTime>
@@ -50,15 +51,41 @@ QList<SCE::Project> SCDProject::ProjectTable::createMany(const QList<SCE::Projec
 
     QSqlDatabase db = m_dbSubContext.getConnection();
     QSqlQuery q(db);
-    const QString now = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
-
     for (SCE::Project r : projects)
     {
-        q.prepare("INSERT INTO project (creation_date, update_date, title, dict_language) VALUES (:c, :u, :t, :d)"_L1);
-        q.bindValue(":c"_L1, now);
-        q.bindValue(":u"_L1, now);
-        q.bindValue(":t"_L1, r.title);
-        q.bindValue(":d"_L1, r.dictLanguage);
+        QStringList columnNames;
+        QStringList valuePlaceholders;
+
+        // Conditionally include id only if > 0
+        if (r.id > 0)
+        {
+            columnNames << "id"_L1;
+            valuePlaceholders << ":id"_L1;
+        }
+
+        columnNames << "created_at"_L1
+                    << "updated_at"_L1
+                    << "title"_L1
+                    << "dict_language"_L1;
+
+        valuePlaceholders << ":created_at"_L1 << ":updated_at"_L1 << ":title"_L1 << ":dict_language"_L1;
+        QString sqlString =
+            "INSERT INTO root (%1) VALUES (%2)"_L1.arg(columnNames.join(","_L1), valuePlaceholders.join(","_L1));
+
+        q.prepare(sqlString);
+
+        // Set timestamps if not provided
+        if (r.createdAt.isNull())
+            r.createdAt = QDateTime::currentDateTimeUtc();
+        if (r.updatedAt.isNull())
+            r.updatedAt = r.createdAt;
+
+        if (r.id > 0)
+            q.bindValue(":id"_L1, r.id);
+        q.bindValue(":created_at"_L1, r.createdAt.toString(Qt::ISODate));
+        q.bindValue(":updated_at"_L1, r.updatedAt.toString(Qt::ISODate));
+        q.bindValue(":title"_L1, r.title);
+        q.bindValue(":dict_language"_L1, r.dictLanguage);
         if (!q.exec())
         {
             // If insert fails, skip this row
@@ -80,6 +107,18 @@ QList<SCE::Project> SCDProject::ProjectTable::createMany(const QList<SCE::Projec
         }
     }
 
+    // Invalidate cache for created entities
+    if (!created.isEmpty())
+    {
+        QList<int> createdIds;
+        createdIds.reserve(created.size());
+        for (const auto &project : created)
+            createdIds.append(project.id);
+
+        using ProjectCache = Database::TableCache<SCE::Project, ProjectRelationshipField>;
+        ProjectCache::instance().invalidateEntities(createdIds);
+    }
+
     return created;
 }
 
@@ -90,15 +129,25 @@ QList<SCE::Project> SCDProject::ProjectTable::updateMany(const QList<SCE::Projec
 
     QSqlDatabase db = m_dbSubContext.getConnection();
     QSqlQuery q(db);
-    const QString now = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+
+    QStringList columnNames;
+    columnNames << "id = :id"_L1
+                << "created_at = :created_at"_L1
+                << "updated_at = :updated_at"_L1
+                << "title = :title"_L1
+                << "dict_language = :dict_language"_L1;
+
+    QString sqlString = "UPDATE binder_item SET %1 WHERE id = :id"_L1.arg(columnNames.join(","_L1));
 
     for (const SCE::Project &r : projects)
     {
-        q.prepare("UPDATE project SET update_date = :u, title = :t, dict_language = :d WHERE id = :id"_L1);
-        q.bindValue(":u"_L1, now);
-        q.bindValue(":t"_L1, r.title);
-        q.bindValue(":d"_L1, r.dictLanguage);
+        q.prepare(sqlString);
         q.bindValue(":id"_L1, r.id);
+        q.bindValue(":created_at"_L1, r.createdAt.toString(Qt::ISODate));
+        q.bindValue(":updated_at"_L1, r.updatedAt.toString(Qt::ISODate));
+        q.bindValue(":title"_L1, r.title);
+        q.bindValue(":dict_language"_L1, r.dictLanguage);
+
         if (q.exec() && q.numRowsAffected() > 0)
         {
             // Handle junction table relationships
@@ -107,6 +156,20 @@ QList<SCE::Project> SCDProject::ProjectTable::updateMany(const QList<SCE::Projec
             updated.append(r);
         }
     }
+
+    // Invalidate cache for updated entities
+    if (!updated.isEmpty())
+    {
+        QList<int> updatedIds;
+        updatedIds.reserve(updated.size());
+        for (const auto &project : updated)
+            updatedIds.append(project.id);
+
+        using ProjectCache = Database::TableCache<SCE::Project, ProjectRelationshipField>;
+        ProjectCache::instance().invalidateEntities(updatedIds);
+        ProjectCache::instance().invalidateRelationships(updatedIds);
+    }
+
     return updated;
 }
 
@@ -115,17 +178,31 @@ QList<SCE::Project> SCDProject::ProjectTable::findMany(const QList<int> &ids) co
     QList<SCE::Project> result;
     result.reserve(ids.size());
 
-    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
-
     if (ids.isEmpty())
         return result;
 
+    // Try cache first
+    using ProjectCache = Database::TableCache<SCE::Project, ProjectRelationshipField>;
+    if (ProjectCache::instance().getCachedEntities(ids, result))
+    {
+        return result;
+    }
+
+    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
+
+    // Build placeholder for SELECT fields
+    QStringList selectPlaceholders;
+    selectPlaceholders << "id"_L1
+                       << "created_at"_L1
+                       << "updated_at"_L1
+                       << "title"_L1
+                       << "dict_language"_L1;
+
     // Build a dynamic IN clause
-    QStringList placeholders;
-    placeholders.fill("?"_L1, ids.size());
-    const QString sql =
-        QStringLiteral("SELECT id, creation_date, update_date, title, dict_language FROM project WHERE id IN (%1)")
-            .arg(placeholders.join(","_L1));
+    QStringList inPlaceholders;
+    inPlaceholders.fill("?"_L1, ids.size());
+    const QString sql = QStringLiteral("SELECT %1 FROM binder_item WHERE id IN (%2)")
+                            .arg(selectPlaceholders.join(","_L1), inPlaceholders.join(","_L1));
 
     QSqlQuery q(db);
     q.prepare(sql);
@@ -138,19 +215,14 @@ QList<SCE::Project> SCDProject::ProjectTable::findMany(const QList<int> &ids) co
         QHash<int, SCE::Project> projectMap;
         while (q.next())
         {
-            int id = q.value(0).toInt();
-            QDateTime creationDate = QDateTime::fromString(q.value(1).toString(), Qt::ISODate);
-            QDateTime updateDate = QDateTime::fromString(q.value(2).toString(), Qt::ISODate);
-            QString title = q.value(3).toString();
-            QString dictLanguage = q.value(4).toString();
-
-            foundIds.append(id);
-            projectMap[id] = SCE::Project();
-            projectMap[id].id = id;
-            projectMap[id].creationDate = creationDate;
-            projectMap[id].updateDate = updateDate;
-            projectMap[id].title = title;
-            projectMap[id].dictLanguage = dictLanguage;
+            foundIds.append(q.value(0).toInt());
+            SCE::Project project;
+            project.id = q.value(0).toInt();
+            project.createdAt = QDateTime::fromString(q.value(1).toString(), Qt::ISODate);
+            project.updatedAt = QDateTime::fromString(q.value(2).toString(), Qt::ISODate);
+            project.title = q.value(3).toString();
+            project.dictLanguage = q.value(4).toString();
+            result.append(project);
         }
 
         // Get relationship data for all found IDs
@@ -158,12 +230,13 @@ QList<SCE::Project> SCDProject::ProjectTable::findMany(const QList<int> &ids) co
             JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, foundIds, PROJECT_BINDERS_JUNCTION);
 
         // Build result with relationships populated
-        for (int id : foundIds)
+        for (auto &project : result)
         {
-            SCE::Project project = projectMap[id];
-            project.binders = bindersMap.value(id);
-            result.append(project);
+            project.binders = bindersMap.value(project.id);
         }
+
+        // Cache the result
+        ProjectCache::instance().setCachedEntities(ids, result);
     }
     return result;
 }
@@ -177,10 +250,10 @@ QList<int> SCDProject::ProjectTable::removeMany(const QList<int> &ids)
     QSqlQuery q(db);
 
     // Clean up junction table relationships first
-    JunctionTableOps::OrderedOneToMany::removeLeftIdsMany(db, ids, PROJECT_BINDERS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, PROJECT_BINDERS_JUNCTION);
     // Clean up junction backward table relationships
-    auto rightAndleftIds = JunctionTableOps::OrderedOneToMany::getLeftIdMany(db, ROOT_PROJECTS_JUNCTION, ids);
-    JunctionTableOps::OrderedOneToMany::removeRightIdsMany(db, rightAndleftIds.values(), ROOT_PROJECTS_JUNCTION);
+    auto rightAndLeftIds = JunctionTableOps::OrderedOneToMany::getLeftIdMany(db, ROOT_PROJECTS_JUNCTION, ids);
+    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, rightAndLeftIds.values(), ROOT_PROJECTS_JUNCTION);
 
     for (int id : ids)
     {
@@ -190,10 +263,18 @@ QList<int> SCDProject::ProjectTable::removeMany(const QList<int> &ids)
             removed.append(id);
     }
 
+    // Invalidate cache for removed entities
+    if (!removed.isEmpty())
+    {
+        using ProjectCache = Database::TableCache<SCE::Project, ProjectRelationshipField>;
+        ProjectCache::instance().invalidateEntities(removed);
+        ProjectCache::instance().invalidateRelationships(removed);
+    }
+
     return removed;
 }
-void SCDProject::ProjectTable::setRelationship(int projectId, ProjectRelationshipField relationship,
-                                               QList<int> relatedId)
+void SCDProject::ProjectTable::setRelationshipIds(int projectId, ProjectRelationshipField relationship,
+                                                  QList<int> relatedId)
 {
     QSqlDatabase db = m_dbSubContext.getConnection();
 
@@ -203,13 +284,25 @@ void SCDProject::ProjectTable::setRelationship(int projectId, ProjectRelationshi
         JunctionTableOps::OrderedOneToMany::upsertRightIds(db, projectId, PROJECT_BINDERS_JUNCTION, relatedId);
         break;
     }
+
+    // Invalidate cache for relationship changes
+    using ProjectCache = Database::TableCache<SCE::Project, ProjectRelationshipField>;
+    ProjectCache::instance().invalidateEntity(projectId);
+    ProjectCache::instance().invalidateRelationships(projectId);
 }
 
-QHash<int, QList<int>> SCDProject::ProjectTable::getRelationshipMany(const QList<int> &projectIds,
-                                                                     ProjectRelationshipField relationship) const
+QHash<int, QList<int>> SCDProject::ProjectTable::getRelationshipIdsMany(const QList<int> &projectIds,
+                                                                        ProjectRelationshipField relationship) const
 {
-    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
+    // Try cache first
+    using ProjectCache = Database::TableCache<SCE::Project, ProjectRelationshipField>;
     QHash<int, QList<int>> result;
+    if (ProjectCache::instance().getCachedRelationshipData(projectIds, relationship, result))
+    {
+        return result;
+    }
+
+    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
 
     switch (relationship)
     {
@@ -218,6 +311,45 @@ QHash<int, QList<int>> SCDProject::ProjectTable::getRelationshipMany(const QList
         break;
     default:
 
+        throw std::invalid_argument("Unhandled relationship type");
+    }
+
+    // Cache the result
+    ProjectCache::instance().setCachedRelationshipData(projectIds, relationship, result);
+
+    return result;
+}
+
+int SCDProject::ProjectTable::getRelationshipIdsCount(int projectId, ProjectRelationshipField relationship)
+{
+    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    int result;
+
+    switch (relationship)
+    {
+    case ProjectRelationshipField::Binders:
+        result = JunctionTableOps::OrderedOneToMany::getRightIdsCount(db, projectId, PROJECT_BINDERS_JUNCTION);
+        break;
+    default:
+
+        throw std::invalid_argument("Unhandled relationship type");
+    }
+    return result;
+}
+QList<int> SCDProject::ProjectTable::getRelationshipIdsInRange(int projectId, ProjectRelationshipField relationship,
+                                                               int offset, int limit)
+{
+    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QList<int> result;
+
+    switch (relationship)
+    {
+    case ProjectRelationshipField::Binders:
+        result = JunctionTableOps::OrderedOneToMany::getRightIdsInRange(db, projectId, PROJECT_BINDERS_JUNCTION, offset,
+                                                                        limit);
+        break;
+
+    default:
         throw std::invalid_argument("Unhandled relationship type");
     }
 

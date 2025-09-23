@@ -39,9 +39,12 @@ class BinderTable final : public IBinderTable
     QList<SCE::Binder> updateMany(const QList<SCE::Binder> &binders) override;
     [[nodiscard]] QList<SCE::Binder> findMany(const QList<int> &ids) const override;
     QList<int> removeMany(const QList<int> &ids) override;
-    void setRelationship(int binderId, BinderRelationshipField relationship, QList<int> relatedId) override;
-    [[nodiscard]] QHash<int, QList<int>> getRelationshipMany(const QList<int> &binderIds,
-                                                             BinderRelationshipField relationship) const override;
+    void setRelationshipIds(int binderId, BinderRelationshipField relationship, QList<int> relatedId) override;
+    [[nodiscard]] QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &binderIds,
+                                                                BinderRelationshipField relationship) const override;
+    int getRelationshipIdsCount(int rootId, BinderRelationshipField relationship) override;
+    QList<int> getRelationshipIdsInRange(int rootId, BinderRelationshipField relationship, int offset,
+                                         int limit) override;
 
   private:
     Database::DbSubContext &m_dbSubContext;

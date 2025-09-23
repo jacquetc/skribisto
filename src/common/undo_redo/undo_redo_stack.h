@@ -76,6 +76,7 @@ class UndoRedoStack : public QObject
     std::shared_ptr<UndoRedoCommand> m_currentCommand;
     int m_maxStackSize = -1; // -1 means unlimited
     bool m_autoCleanupEnabled = false;
+    friend class UndoRedoManager;
 };
 
 } // namespace Skribisto::Common::UndoRedo

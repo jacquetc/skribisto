@@ -29,8 +29,8 @@ namespace Skribisto::Common::Entities
 struct Project
 {
     int id = 0;
-    QDateTime creationDate;
-    QDateTime updateDate;
+    QDateTime createdAt;
+    QDateTime updatedAt;
     QString title;
     QString dictLanguage;
     QList<int> binders;
@@ -42,9 +42,9 @@ struct Project
     Project(int id, const QString &title, const QList<int> &binders) : id(id), title(title), binders(binders)
     {
     }
-    Project(int id, const QString &title, const QList<int> &binders, const QDateTime &creationDate,
-            const QDateTime &updateDate)
-        : id(id), title(title), binders(binders), creationDate(creationDate), updateDate(updateDate)
+    Project(int id, const QString &title, const QList<int> &binders, const QDateTime &createdAt,
+            const QDateTime &updatedAt)
+        : id(id), title(title), binders(binders), createdAt(createdAt), updatedAt(updatedAt)
     {
     }
 };

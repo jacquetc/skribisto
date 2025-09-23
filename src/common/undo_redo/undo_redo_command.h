@@ -53,8 +53,9 @@ template <typename T> class Result
     Result() : m_success(true), m_category(ErrorCategory::None)
     {
     }
-    
-    explicit Result(const QString &error, ErrorCategory category = ErrorCategory::UnknownError, const QVariant &errorData = QVariant()) 
+
+    explicit Result(const QString &error, ErrorCategory category = ErrorCategory::UnknownError,
+                    const QVariant &errorData = QVariant())
         : m_success(false), m_error(error), m_category(category), m_errorData(errorData)
     {
     }
@@ -63,17 +64,17 @@ template <typename T> class Result
     {
         return m_success;
     }
-    
+
     QString error() const
     {
         return m_error;
     }
-    
+
     ErrorCategory category() const
     {
         return m_category;
     }
-    
+
     QVariant errorData() const
     {
         return m_errorData;
@@ -107,7 +108,8 @@ class UndoRedoCommand : public QObject
 
     QString text() const;
     void setText(const QString &newText);
-
+    // Cancel any running async operations
+    void cancel();
   Q_SIGNALS:
     void finished(bool isSuccessful);
 

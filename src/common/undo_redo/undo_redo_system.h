@@ -58,13 +58,16 @@ class UndoRedoSystem : public QObject
 
     template <typename T> QCoro::Task<T> executeQueryAsync(std::shared_ptr<Query<T>> query);
 
+    // Shutdown method to cancel all pending operations
+    void shutdown();
+
   Q_SIGNALS:
     void commandExecuted(const QString &scope, bool success);
     void queryExecuted(std::shared_ptr<QueryBase> query, bool success);
-    
+
     // Performance monitoring signals
-    void commandExecutionTime(const QString& commandName, qint64 milliseconds);
-    void stackSizeChanged(const QString& scope, int undoCount, int redoCount);
+    void commandExecutionTime(const QString &commandName, qint64 milliseconds);
+    void stackSizeChanged(const QString &scope, int undoCount, int redoCount);
 
   private Q_SLOTS:
     void onCommandFinished(const QString &scope, bool success);
@@ -73,8 +76,9 @@ class UndoRedoSystem : public QObject
   private:
     std::unique_ptr<UndoRedoManager> m_manager;
     std::unique_ptr<QueryHandler> m_queryHandler;
+    std::atomic<bool> m_isShuttingDown{false};
+    std::atomic<int> m_activeOperations{0};
 };
-
 // Template implementation
 template <typename T> std::shared_ptr<Query<T>> UndoRedoSystem::createQuery(const QString &description)
 {
@@ -83,10 +87,22 @@ template <typename T> std::shared_ptr<Query<T>> UndoRedoSystem::createQuery(cons
 
 template <typename T> QCoro::Task<T> UndoRedoSystem::executeQueryAsync(std::shared_ptr<Query<T>> query)
 {
+    // Check if shutting down - block new queries
+    if (m_isShuttingDown.load())
+    {
+        qDebug() << "UndoRedoSystem: Rejecting new query during shutdown:" << query->description();
+        co_return T{};
+    }
+
     if (!query)
     {
         co_return T{};
     }
+
+    // Increment active operations counter
+    ++m_activeOperations;
+    // Ensure we decrement the counter when done
+    auto decrementOnExit = qScopeGuard([this]() { --m_activeOperations; });
 
     // Execute query asynchronously
     m_queryHandler->executeQuery(query);
@@ -94,6 +110,7 @@ template <typename T> QCoro::Task<T> UndoRedoSystem::executeQueryAsync(std::shar
     // Wait for query finished signal using QCoro
     co_await qCoro(m_queryHandler.get(), &QueryHandler::queryFinished);
 
+    // decrementOnExit will automatically decrement m_activeOperations
     co_return query->typedResult();
 }
 

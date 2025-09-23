@@ -48,17 +48,21 @@ class IBinderTable
 
     // Relationship setters/getters
     // Set the relationship value for a given Binder id (e.g., set binder item id)
-    virtual void setRelationship(int binderId, BinderRelationshipField relationship, QList<int> relatedId) = 0;
+    virtual void setRelationshipIds(int binderId, BinderRelationshipField relationship, QList<int> relatedId) = 0;
 
     // Get the relationship value for a given Binder id (e.g., get binder item id)
-    [[nodiscard]] virtual QHash<int, QList<int>> getRelationshipMany(const QList<int> &binderIds,
-                                                                     BinderRelationshipField relationship) const = 0;
+    [[nodiscard]] virtual QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &binderIds,
+                                                                        BinderRelationshipField relationship) const = 0;
+    virtual int getRelationshipIdsCount(int rootId, BinderRelationshipField relationship) = 0;
+    virtual QList<int> getRelationshipIdsInRange(int rootId, BinderRelationshipField relationship, int offset,
+                                                 int limit) = 0;
 };
 
 class BinderRepository : public IBinderRepository
 {
   public:
-    BinderRepository(IBinderTable &table, Database::DbSubContext &dbSubContext, QPointer<EventRegistry> eventRegistry);
+    BinderRepository(std::unique_ptr<IBinderTable> table, Database::DbSubContext &dbSubContext,
+                     QPointer<EventRegistry> eventRegistry);
     ~BinderRepository() override = default;
 
     // CRUD
@@ -68,13 +72,16 @@ class BinderRepository : public IBinderRepository
     QList<int> remove(const QList<int> &binderIds) override;
 
     // Relationships
-    void setRelationship(int binderId, BinderRelationshipField relationship, QList<int> relatedId) override;
-    QList<int> getRelationship(int binderId, BinderRelationshipField relationship) override;
-    QHash<int, QList<int>> getRelationshipMany(const QList<int> &binderIds,
-                                               BinderRelationshipField relationship) override;
+    void setRelationshipIds(int binderId, BinderRelationshipField relationship, QList<int> relatedId) override;
+    QList<int> getRelationshipIds(int binderId, BinderRelationshipField relationship) override;
+    QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &binderIds,
+                                                  BinderRelationshipField relationship) override;
+    int getRelationshipIdsCount(int rootId, BinderRelationshipField relationship) override;
+    QList<int> getRelationshipIdsInRange(int rootId, BinderRelationshipField relationship, int offset,
+                                         int limit) override;
 
   private:
-    IBinderTable &m_table;
+    std::unique_ptr<IBinderTable> m_table;
     QPointer<BinderEvents> m_events;         // not owned
     QPointer<EventRegistry> m_eventRegistry; // not owned
 

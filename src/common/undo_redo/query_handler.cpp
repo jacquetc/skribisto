@@ -23,9 +23,7 @@
 namespace Skribisto::Common::UndoRedo
 {
 
-QueryBase::QueryBase(const QString &description, QObject *parent)
-    : QObject(parent)
-    , m_description(description)
+QueryBase::QueryBase(const QString &description, QObject *parent) : QObject(parent), m_description(description)
 {
 }
 
@@ -34,30 +32,46 @@ QString QueryBase::description() const
     return m_description;
 }
 
-QueryHandler::QueryHandler(QObject *parent)
-    : QObject(parent)
+QueryHandler::QueryHandler(QObject *parent) : QObject(parent)
 {
 }
 
 void QueryHandler::executeQuery(std::shared_ptr<QueryBase> query)
 {
-    if (!query) {
+    if (!query || m_isShuttingDown.load())
+    {
         return;
     }
-    
+
     m_currentQuery = query;
-    
+
     // Connect to query finished signal
-    connect(query.get(), &QueryBase::finished,
-            this, &QueryHandler::onQueryFinished, Qt::UniqueConnection);
-    
+    connect(query.get(), &QueryBase::finished, this, &QueryHandler::onQueryFinished, Qt::UniqueConnection);
+
     // Execute query asynchronously
     query->asyncExecute();
+}
+void QueryHandler::cancelAllQueries()
+{
+    m_isShuttingDown = true;
+    if (m_currentQuery)
+    {
+        // Try to cancel the current query if it's still running
+        if (auto query = std::dynamic_pointer_cast<Query<QVariant>>(m_currentQuery))
+        {
+            if (query->m_watcher && query->m_watcher->isRunning())
+            {
+                query->m_watcher->cancel();
+            }
+        }
+        m_currentQuery.reset();
+    }
 }
 
 void QueryHandler::onQueryFinished(bool success)
 {
-    if (m_currentQuery) {
+    if (m_currentQuery)
+    {
         auto query = m_currentQuery;
         m_currentQuery.reset();
         Q_EMIT queryFinished(query, success);
@@ -65,5 +79,3 @@ void QueryHandler::onQueryFinished(bool success)
 }
 
 } // namespace Skribisto::Common::UndoRedo
-
-#include "query_handler.moc"

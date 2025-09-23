@@ -47,13 +47,16 @@ class IBinderRepository
 
     // Relationship setters/getters
     // Set the relationship value for a given Binder id (e.g., set binder item id)
-    virtual void setRelationship(int binderId, BinderRelationshipField relationship, QList<int> relatedId) = 0;
+    virtual void setRelationshipIds(int binderId, BinderRelationshipField relationship, QList<int> relatedId) = 0;
 
     // Get the relationship value for a given Binder id (e.g., get binder item id)
-    virtual QList<int> getRelationship(int binderId, BinderRelationshipField relationship) = 0;
+    virtual QList<int> getRelationshipIds(int binderId, BinderRelationshipField relationship) = 0;
 
-    virtual QHash<int, QList<int>> getRelationshipMany(const QList<int> &binderIds,
-                                                       BinderRelationshipField relationship) = 0;
+    virtual QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &binderIds,
+                                                          BinderRelationshipField relationship) = 0;
+    virtual int getRelationshipIdsCount(int rootId, BinderRelationshipField relationship) = 0;
+    virtual QList<int> getRelationshipIdsInRange(int rootId, BinderRelationshipField relationship, int offset,
+                                                 int limit) = 0;
 };
 
 } // namespace Skribisto::Common::DirectAccess::Binder

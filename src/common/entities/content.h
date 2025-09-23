@@ -28,15 +28,14 @@ namespace Skribisto::Common::Entities
 struct Content
 {
     int id = 0;
-    QDateTime creationDate;
-    QDateTime updateDate;
+    QDateTime createdAt;
+    QDateTime updatedAt;
     QString name;
     QString data;
 
     Content() = default;
-    Content(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &name,
-            const QString &data)
-        : id(id), creationDate(creationDate), updateDate(updateDate), name(name), data(data)
+    Content(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name, const QString &data)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), data(data)
     {
     }
 };
@@ -50,19 +49,19 @@ struct Content
 struct Binder
 {
     int id = 0;
-    QDateTime creationDate;
-    QDateTime updateDate;
+    QDateTime createdAt;
+    QDateTime updatedAt;
     QString name;
     std::optional<QList<int>> pages;
 
     Binder() = default;
-    Binder(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &name)
-        : id(id), creationDate(creationDate), updateDate(updateDate), name(name)
+    Binder(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name)
     {
     }
-    Binder(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &name,
+    Binder(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name,
            const std::optional<QList<int>> &pages)
-        : id(id), creationDate(creationDate), updateDate(updateDate), name(name), pages(pages)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), pages(pages)
     {
     }
 };

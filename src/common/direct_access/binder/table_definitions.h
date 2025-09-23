@@ -31,8 +31,8 @@ inline QString getSqlTableDefinition()
     return QStringLiteral(
         "CREATE TABLE IF NOT EXISTS binder ("
         "    id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT UNIQUE ON CONFLICT ROLLBACK NOT NULL,"
-        "    creation_date TEXT NOT NULL,"
-        "    update_date TEXT NOT NULL,"
+        "    created_at TEXT NOT NULL,"
+        "    updated_at TEXT NOT NULL,"
         "    name TEXT NOT NULL"
         ");");
 }

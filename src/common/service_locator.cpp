@@ -25,6 +25,15 @@ namespace SC = Skribisto::Common;
 SC::ServiceLocator::ServiceLocator(QObject *parent) : QObject(parent)
 {
 }
+
+Skribisto::Common::ServiceLocator::~ServiceLocator()
+{
+    // destroy in the reverse order of creation
+    m_undoRedoSystem = nullptr;
+    m_eventRegistry = nullptr;
+    m_dbContext = nullptr;
+}
+
 void SC::ServiceLocator::setDbContext(SC::Database::DbContext *db)
 {
     m_dbContext = db;

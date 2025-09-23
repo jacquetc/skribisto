@@ -28,8 +28,8 @@ namespace Skribisto::Common::Entities
 struct Root
 {
     int id = 0;
-    QDateTime creationDate;
-    QDateTime updateDate;
+    QDateTime createdAt;
+    QDateTime updatedAt;
     QList<int> projects;
     QList<int> recentProjects;
 
@@ -47,10 +47,9 @@ struct Root
     }
 
     // Constructor with creation and update dates
-    Root(const int id, const QDateTime &creationDate, const QDateTime &updateDate, const QList<int> &projectIds,
+    Root(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QList<int> &projectIds,
          const QList<int> &recentProjects)
-        : id(id), creationDate(creationDate), updateDate(updateDate), projects(projectIds),
-          recentProjects(recentProjects)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), projects(projectIds), recentProjects(recentProjects)
     {
     }
 };

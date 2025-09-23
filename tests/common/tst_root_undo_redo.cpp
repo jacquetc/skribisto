@@ -128,6 +128,30 @@ class MockRootUnitOfWork : public SDAR::IRootUnitOfWork
     {
         return m_inTransaction;
     }
+    QHash<int, QList<int>> getRootRelationshipMany(
+        const QList<int> &rootIds, Skribisto::Common::DirectAccess::Root::RootRelationshipField relationship) override
+    {
+        Q_UNUSED(rootIds)
+        Q_UNUSED(relationship)
+        return {};
+    }
+    int getRootRelationshipCount(int rootId,
+                                 Skribisto::Common::DirectAccess::Root::RootRelationshipField relationship) override
+    {
+        Q_UNUSED(rootId)
+        Q_UNUSED(relationship)
+        return 0;
+    }
+    QList<int> getRootRelationshipInRange(int rootId,
+                                          Skribisto::Common::DirectAccess::Root::RootRelationshipField relationship,
+                                          int offset, int limit) override
+    {
+        Q_UNUSED(rootId)
+        Q_UNUSED(relationship)
+        Q_UNUSED(offset)
+        Q_UNUSED(limit)
+        return {};
+    }
 
   private:
     QList<Skribisto::Common::Entities::Root> m_createdRoots;

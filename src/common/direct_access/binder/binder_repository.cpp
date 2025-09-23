@@ -19,8 +19,7 @@
  ******************************************************************************/
 
 #include "direct_access/binder/binder_repository.h"
-
-#include "direct_access/event_registry.h"
+#include "direct_access/repository_factory.h"
 
 #include <QSet>
 #include <utility>
@@ -28,16 +27,16 @@
 namespace SCDBinder = Skribisto::Common::DirectAccess::Binder;
 namespace SCE = Skribisto::Common::Entities;
 
-SCDBinder::BinderRepository::BinderRepository(IBinderTable &table, Database::DbSubContext &dbSubContext,
+SCDBinder::BinderRepository::BinderRepository(std::unique_ptr<IBinderTable> table, Database::DbSubContext &dbSubContext,
                                               QPointer<EventRegistry> eventRegistry)
-    : m_table(table), m_eventRegistry(std::move(eventRegistry)), m_dbSubContext(dbSubContext)
+    : m_table(std::move(table)), m_eventRegistry(std::move(eventRegistry)), m_dbSubContext(dbSubContext)
 {
     m_events = m_eventRegistry ? m_eventRegistry->getEvents<Binder::BinderEvents>() : nullptr;
 }
 
 QList<SCE::Binder> SCDBinder::BinderRepository::create(const QList<SCE::Binder> &binders)
 {
-    auto created = m_table.createMany(binders);
+    auto created = m_table->createMany(binders);
     QList<int> ids;
     ids.reserve(created.size());
     for (const auto &b : created)
@@ -48,7 +47,7 @@ QList<SCE::Binder> SCDBinder::BinderRepository::create(const QList<SCE::Binder> 
 
 QList<SCE::Binder> SCDBinder::BinderRepository::get(const QList<int> &binderIds)
 {
-    return m_table.findMany(binderIds);
+    return m_table->findMany(binderIds);
 }
 
 QList<SCE::Binder> SCDBinder::BinderRepository::update(const QList<SCE::Binder> &binders)
@@ -58,7 +57,7 @@ QList<SCE::Binder> SCDBinder::BinderRepository::update(const QList<SCE::Binder> 
     ids.reserve(binders.size());
     for (const auto &b : binders)
         ids.append(b.id);
-    auto existing = m_table.findMany(ids);
+    auto existing = m_table->findMany(ids);
     QSet<int> existingIds;
     existingIds.reserve(existing.size());
     for (const auto &e : existing)
@@ -70,7 +69,7 @@ QList<SCE::Binder> SCDBinder::BinderRepository::update(const QList<SCE::Binder> 
         if (existingIds.contains(b.id))
             toUpdate.append(b);
 
-    auto updated = m_table.updateMany(toUpdate);
+    auto updated = m_table->updateMany(toUpdate);
     QList<int> updatedIds;
     updatedIds.reserve(updated.size());
     for (const auto &b : updated)
@@ -80,31 +79,60 @@ QList<SCE::Binder> SCDBinder::BinderRepository::update(const QList<SCE::Binder> 
 }
 
 QList<int> SCDBinder::BinderRepository::remove(const QList<int> &binderIds)
-{
-    auto removed = m_table.removeMany(binderIds);
+{ // cascade deletion on binderItems
+    QHash<int, QList<int>> leftIdToBinderItemIdsHash =
+        getRelationshipIdsMany(binderIds, BinderRelationshipField::BinderItems);
+    // concatenate all rightIds
+    QSet<int> binderItemIds;
+    binderItemIds.reserve(leftIdToBinderItemIdsHash.size());
+    for (const auto &ids : leftIdToBinderItemIdsHash)
+    {
+        QSet<int> idsSet(ids.begin(), ids.end());
+        binderItemIds.unite(idsSet); // use unite to combine sets
+    }
+
+    if (!binderItemIds.isEmpty())
+    {
+        auto binderItemRepository = RepositoryFactory::createBinderItemRepository(m_dbSubContext, m_eventRegistry);
+        binderItemRepository->remove(binderItemIds.values());
+    }
+
+    auto removed = m_table->removeMany(binderIds);
     emitRemoved(removed);
     return removed;
 }
 
-void SCDBinder::BinderRepository::setRelationship(int binderId, BinderRelationshipField relationship,
-                                                  QList<int> relatedIds)
+void SCDBinder::BinderRepository::setRelationshipIds(int binderId, BinderRelationshipField relationship,
+                                                     QList<int> relatedIds)
 {
-    m_table.setRelationship(binderId, relationship, relatedIds);
+    m_table->setRelationshipIds(binderId, relationship, relatedIds);
 
     emitRelationshipChanged(binderId, relationship, relatedIds);
     emitUpdated(QList<int>{binderId});
 }
 
-QList<int> SCDBinder::BinderRepository::getRelationship(int binderId, BinderRelationshipField relationship)
+QList<int> SCDBinder::BinderRepository::getRelationshipIds(int binderId, BinderRelationshipField relationship)
 {
-    auto rels = getRelationshipMany(QList<int>{binderId}, relationship);
+    auto rels = getRelationshipIdsMany(QList<int>{binderId}, relationship);
     return rels.value(binderId, QList<int>{});
 }
 
-QHash<int, QList<int>> SCDBinder::BinderRepository::getRelationshipMany(const QList<int> &binderIds,
-                                                                        BinderRelationshipField relationship)
+QHash<int, QList<int>> SCDBinder::BinderRepository::getRelationshipIdsMany(const QList<int> &binderIds,
+                                                                           BinderRelationshipField relationship)
 {
-    return m_table.getRelationshipMany(binderIds, relationship);
+    return m_table->getRelationshipIdsMany(binderIds, relationship);
+}
+
+int Skribisto::Common::DirectAccess::Binder::BinderRepository::getRelationshipIdsCount(
+    int binderId, BinderRelationshipField relationship)
+{
+    return m_table->getRelationshipIdsCount(binderId, relationship);
+}
+
+QList<int> Skribisto::Common::DirectAccess::Binder::BinderRepository::getRelationshipIdsInRange(
+    int binderId, BinderRelationshipField relationship, int offset, int limit)
+{
+    return m_table->getRelationshipIdsInRange(binderId, relationship, offset, limit);
 }
 
 void SCDBinder::BinderRepository::emitCreated(const QList<int> &ids) const

@@ -47,17 +47,21 @@ class IRootTable
     virtual QList<int> removeMany(const QList<int> &ids) = 0;
     // Relationship setters/getters
     // Set the relationship value for a given Root id (e.g., set project id)
-    virtual void setRelationship(int rootId, RootRelationshipField relationship, QList<int> relatedId) = 0;
+    virtual void setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedId) = 0;
 
     // Get the relationship value for a given Root id (e.g., get project id)
-    [[nodiscard]] virtual QHash<int, QList<int>> getRelationshipMany(const QList<int> &rootIds,
-                                                                     RootRelationshipField relationship) const = 0;
+    [[nodiscard]] virtual QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &rootIds,
+                                                                        RootRelationshipField relationship) const = 0;
+    virtual int getRelationshipIdsCount(int rootId, RootRelationshipField relationship) = 0;
+    virtual QList<int> getRelationshipIdsInRange(int rootId, RootRelationshipField relationship, int offset,
+                                                 int limit) = 0;
 };
 
 class RootRepository : public IRootRepository
 {
   public:
-    RootRepository(IRootTable &table, Database::DbSubContext &dbSubContext, QPointer<EventRegistry> eventRegistry);
+    RootRepository(std::unique_ptr<IRootTable> table, Database::DbSubContext &dbSubContext,
+                   QPointer<EventRegistry> eventRegistry);
 
     ~RootRepository() override = default;
 
@@ -68,12 +72,16 @@ class RootRepository : public IRootRepository
     QList<int> remove(const QList<int> &rootIds) override;
 
     // Relationships
-    void setRelationship(int rootId, RootRelationshipField relationship, QList<int> relatedId) override;
-    QList<int> getRelationship(int rootId, RootRelationshipField relationship) override;
-    QHash<int, QList<int>> getRelationshipMany(const QList<int> &rootIds, RootRelationshipField relationship) override;
+    void setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedId) override;
+    QList<int> getRelationshipIds(int rootId, RootRelationshipField relationship) override;
+    QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &rootIds,
+                                                  RootRelationshipField relationship) override;
+    int getRelationshipIdsCount(int rootId, RootRelationshipField relationship) override;
+    QList<int> getRelationshipIdsInRange(int rootId, RootRelationshipField relationship, int offset,
+                                         int limit) override;
 
   private:
-    IRootTable &m_table;
+    std::unique_ptr<IRootTable> m_table;
     QPointer<RootEvents> m_events;           // not owned
     QPointer<EventRegistry> m_eventRegistry; // not owned
 

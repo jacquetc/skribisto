@@ -53,9 +53,11 @@ class RootController : public QObject
     QCoro::Task<QList<RootDto>> get(const QList<int> &rootIds);
     QCoro::Task<QList<RootDto>> update(const QList<RootDto> &roots);
     QCoro::Task<QList<int>> remove(const QList<int> &rootIds);
-    // QCoro::Task<QList<int>> getRelationship(int rootId, RootRelationshipField relationship);
-    // void setRelationship(int rootId, RootRelationshipField relationship,
-    //                       QList<int> relatedIds);
+    QCoro::Task<QList<int>> getRelationshipIds(int rootId, RootRelationshipField relationship);
+    QCoro::Task<void> setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedIds);
+    QCoro::Task<QHash<int, QList<int>>> getRelationshipIdsMany(const QList<int> &rootIds, RootRelationshipField relationship);
+    QCoro::Task<int> getRelationshipIdsCount(int rootId, RootRelationshipField relationship);
+    QCoro::Task<QList<int>> getRelationshipIdsInRange(int rootId, RootRelationshipField relationship, int offset, int limit);
 
   private:
     void resolveDependencies();

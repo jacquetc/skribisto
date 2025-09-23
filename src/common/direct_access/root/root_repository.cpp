@@ -27,16 +27,16 @@
 namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
 namespace SCE = Skribisto::Common::Entities;
 
-SCDRoot::RootRepository::RootRepository(IRootTable &table, Database::DbSubContext &dbSubContext,
+SCDRoot::RootRepository::RootRepository(std::unique_ptr<IRootTable> table, Database::DbSubContext &dbSubContext,
                                         QPointer<EventRegistry> eventRegistry)
-    : m_table(table), m_eventRegistry(std::move(eventRegistry)), m_dbSubContext(dbSubContext)
+    : m_table(std::move(table)), m_eventRegistry(std::move(eventRegistry)), m_dbSubContext(dbSubContext)
 {
     m_events = m_eventRegistry ? m_eventRegistry->getEvents<Root::RootEvents>() : nullptr;
 }
 
 QList<SCE::Root> SCDRoot::RootRepository::create(const QList<SCE::Root> &roots)
 {
-    auto created = m_table.createMany(roots);
+    auto created = m_table->createMany(roots);
     QList<int> ids;
     ids.reserve(created.size());
     for (const auto &r : created)
@@ -47,7 +47,7 @@ QList<SCE::Root> SCDRoot::RootRepository::create(const QList<SCE::Root> &roots)
 
 QList<SCE::Root> SCDRoot::RootRepository::get(const QList<int> &rootIds)
 {
-    return m_table.findMany(rootIds);
+    return m_table->findMany(rootIds);
 }
 
 QList<SCE::Root> SCDRoot::RootRepository::update(const QList<SCE::Root> &roots)
@@ -57,7 +57,7 @@ QList<SCE::Root> SCDRoot::RootRepository::update(const QList<SCE::Root> &roots)
     ids.reserve(roots.size());
     for (const auto &r : roots)
         ids.append(r.id);
-    auto existing = m_table.findMany(ids);
+    auto existing = m_table->findMany(ids);
     QSet<int> existingIds;
     existingIds.reserve(existing.size());
     for (const auto &e : existing)
@@ -69,7 +69,7 @@ QList<SCE::Root> SCDRoot::RootRepository::update(const QList<SCE::Root> &roots)
         if (existingIds.contains(r.id))
             toUpdate.append(r);
 
-    auto updated = m_table.updateMany(toUpdate);
+    auto updated = m_table->updateMany(toUpdate);
     QList<int> updatedIds;
     updatedIds.reserve(updated.size());
     for (const auto &r : updated)
@@ -81,7 +81,7 @@ QList<SCE::Root> SCDRoot::RootRepository::update(const QList<SCE::Root> &roots)
 QList<int> SCDRoot::RootRepository::remove(const QList<int> &rootIds)
 {
     // cascade deletion on projects
-    QHash<int, QList<int>> leftIdToProjectIdsHash = getRelationshipMany(rootIds, RootRelationshipField::Projects);
+    QHash<int, QList<int>> leftIdToProjectIdsHash = getRelationshipIdsMany(rootIds, RootRelationshipField::Projects);
     // concatenate all rightIds
     QSet<int> projectIds;
     projectIds.reserve(leftIdToProjectIdsHash.size());
@@ -90,11 +90,16 @@ QList<int> SCDRoot::RootRepository::remove(const QList<int> &rootIds)
         QSet<int> idsSet(ids.begin(), ids.end());
         projectIds.unite(idsSet); // use unite to combine sets
     }
-    RepositoryFactory::createProjectRepository(m_dbSubContext, m_eventRegistry).remove(projectIds.values());
+
+    if (!projectIds.isEmpty())
+    {
+        auto projectRepository = RepositoryFactory::createProjectRepository(m_dbSubContext, m_eventRegistry);
+        projectRepository->remove(projectIds.values());
+    }
 
     // cascade deletion on recent projects
     QHash<int, QList<int>> leftIdToRecentProjectIdsHash =
-        getRelationshipMany(rootIds, RootRelationshipField::RecentProjects);
+        getRelationshipIdsMany(rootIds, RootRelationshipField::RecentProjects);
     // concatenate all rightIds
     QSet<int> recentProjectIds;
     recentProjectIds.reserve(leftIdToRecentProjectIdsHash.size());
@@ -103,32 +108,47 @@ QList<int> SCDRoot::RootRepository::remove(const QList<int> &rootIds)
         QSet<int> idsSet(ids.begin(), ids.end());
         recentProjectIds.unite(idsSet); // use unite to combine sets
     }
-    // RepositoryFactory::createRecentProjectRepository(m_dbSubContext, m_eventRegistry)
-    //     .remove(recentProjectIds.values());
 
-    auto removed = m_table.removeMany(rootIds);
+    // if (!recentProjectIds.isEmpty()) {
+    //     auto projectRepository = RepositoryFactory::createProjectRepository(m_dbSubContext, m_eventRegistry);
+    //     projectRepository->remove(recentProjectIds.values());
+    // }
+
+    auto removed = m_table->removeMany(rootIds);
     emitRemoved(removed);
     return removed;
 }
 
-void SCDRoot::RootRepository::setRelationship(int rootId, RootRelationshipField relationship, QList<int> relatedIds)
+void SCDRoot::RootRepository::setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedIds)
 {
-    m_table.setRelationship(rootId, relationship, relatedIds);
+    m_table->setRelationshipIds(rootId, relationship, relatedIds);
 
     emitRelationshipChanged(rootId, relationship, relatedIds);
     emitUpdated(QList<int>{rootId});
 }
 
-QList<int> SCDRoot::RootRepository::getRelationship(int rootId, RootRelationshipField relationship)
+QList<int> SCDRoot::RootRepository::getRelationshipIds(int rootId, RootRelationshipField relationship)
 {
-    auto rels = getRelationshipMany(QList<int>{rootId}, relationship);
+    auto rels = getRelationshipIdsMany(QList<int>{rootId}, relationship);
     return rels.value(rootId, QList<int>{});
 }
 
-QHash<int, QList<int>> SCDRoot::RootRepository::getRelationshipMany(const QList<int> &rootIds,
-                                                                    RootRelationshipField relationship)
+QHash<int, QList<int>> SCDRoot::RootRepository::getRelationshipIdsMany(const QList<int> &rootIds,
+                                                                       RootRelationshipField relationship)
 {
-    return m_table.getRelationshipMany(rootIds, relationship);
+    return m_table->getRelationshipIdsMany(rootIds, relationship);
+}
+
+int Skribisto::Common::DirectAccess::Root::RootRepository::getRelationshipIdsCount(int rootId,
+                                                                                   RootRelationshipField relationship)
+{
+    return m_table->getRelationshipIdsCount(rootId, relationship);
+}
+
+QList<int> Skribisto::Common::DirectAccess::Root::RootRepository::getRelationshipIdsInRange(
+    int rootId, RootRelationshipField relationship, int offset, int limit)
+{
+    return m_table->getRelationshipIdsInRange(rootId, relationship, offset, limit);
 }
 
 void SCDRoot::RootRepository::emitCreated(const QList<int> &ids) const

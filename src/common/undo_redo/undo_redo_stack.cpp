@@ -56,13 +56,16 @@ void UndoRedoStack::push(std::shared_ptr<UndoRedoCommand> command)
     m_undoStack.push(command);
 
     // Enforce stack size limit if set
-    if (m_maxStackSize > 0 && m_undoStack.size() > m_maxStackSize) {
+    if (m_maxStackSize > 0 && m_undoStack.size() > m_maxStackSize)
+    {
         m_undoStack.removeFirst();
     }
 
     // Perform auto-cleanup if enabled (remove old commands beyond a reasonable limit)
-    if (m_autoCleanupEnabled && m_undoStack.size() > 100) { // Default cleanup at 100 commands
-        while (m_undoStack.size() > 50) { // Keep last 50 commands
+    if (m_autoCleanupEnabled && m_undoStack.size() > 100)
+    { // Default cleanup at 100 commands
+        while (m_undoStack.size() > 50)
+        { // Keep last 50 commands
             m_undoStack.removeFirst();
         }
     }
@@ -195,12 +198,15 @@ QString UndoRedoStack::redoText() const
 
 void UndoRedoStack::setMaxStackSize(int maxSize)
 {
+    // TODO: add access to this method from UndoRedoManager and UndoRedoSystem
     QMutexLocker locker(&m_mutex);
     m_maxStackSize = maxSize;
-    
+
     // Apply stack size limit immediately if enabled
-    if (m_maxStackSize > 0) {
-        while (m_undoStack.size() > m_maxStackSize) {
+    if (m_maxStackSize > 0)
+    {
+        while (m_undoStack.size() > m_maxStackSize)
+        {
             m_undoStack.removeFirst();
         }
         updateState();
@@ -245,5 +251,3 @@ void UndoRedoStack::updateState()
 }
 
 } // namespace Skribisto::Common::UndoRedo
-
-#include "undo_redo_stack.moc"

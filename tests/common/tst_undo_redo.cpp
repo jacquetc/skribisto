@@ -240,6 +240,8 @@ void TestUndoRedo::testStackUndoRedo()
 
     // Test undo
     stack.undo();
+    QTest::qSleep(50); // Give some time for async execution
+
     QVERIFY(commandFinishedSpy.wait(1000));
     QCOMPARE(value, 1); // Command2 undo executed
     QCOMPARE(stack.undoCount(), 1);
@@ -664,6 +666,7 @@ void TestUndoRedo::testCommandMerging()
     // Redo should add merged text
     commandFinishedSpy.clear();
     stack.redo();
+    QTest::qSleep(50); // Give some time for async execution
     QVERIFY(commandFinishedSpy.wait(1000));
     QCOMPARE(text, "Hello Wo"_L1); // Should add the merged " Wo"
 

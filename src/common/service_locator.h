@@ -35,6 +35,7 @@ class ServiceLocator : public QObject
     Q_OBJECT
   public:
     explicit ServiceLocator(QObject *parent = nullptr);
+    ~ServiceLocator();
 
     void setDbContext(Database::DbContext *db);
     void setEventRegistry(DirectAccess::EventRegistry *ev);

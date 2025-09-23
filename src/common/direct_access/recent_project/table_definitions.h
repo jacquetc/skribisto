@@ -30,8 +30,8 @@ inline QString getSqlTableDefinition()
 {
     return QStringLiteral("CREATE TABLE IF NOT EXISTS recent_project ("
                           "    id INTEGER PRIMARY KEY,"
-                          "    creation_date TEXT NOT NULL,"
-                          "    update_date TEXT NOT NULL,"
+                          "    created_at TEXT NOT NULL,"
+                          "    updated_at TEXT NOT NULL,"
                           "    title TEXT NOT NULL,"
                           "    absolute_path TEXT NOT NULL"
                           ");");

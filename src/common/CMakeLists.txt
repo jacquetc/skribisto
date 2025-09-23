@@ -18,6 +18,7 @@ set(SRCS
         error.h
         result.h
         database/db_context.h
+        database/table_cache.h
         direct_access/repository_factory.h
         direct_access/repository_factory.cpp
         direct_access/event_registry.h
@@ -60,6 +61,7 @@ set(ENTITIES_LIST
         entities/binder.h
         entities/content.h
         entities/recent_project.h
+        entities/binder_item.h
 )
 
 
@@ -73,6 +75,15 @@ set(DIRECT_ACCESS_LIST
         direct_access/root/table_definitions.h
         direct_access/root/root_events.h
         direct_access/root/root_events.cpp
+        # recent project
+        direct_access/recent_project/i_recent_project_repository.h
+        direct_access/recent_project/recent_project_repository.cpp
+        direct_access/recent_project/recent_project_repository.h
+        direct_access/recent_project/recent_project_table.cpp
+        direct_access/recent_project/recent_project_table.h
+        direct_access/recent_project/table_definitions.h
+        direct_access/recent_project/recent_project_events.h
+        direct_access/recent_project/recent_project_events.cpp
         # project
         direct_access/project/i_project_repository.h
         direct_access/project/project_repository.cpp
@@ -91,6 +102,15 @@ set(DIRECT_ACCESS_LIST
         direct_access/binder/table_definitions.h
         direct_access/binder/binder_events.h
         direct_access/binder/binder_events.cpp
+        # binder item
+        direct_access/binder_item/i_binder_item_repository.h
+        direct_access/binder_item/binder_item_repository.cpp
+        direct_access/binder_item/binder_item_repository.h
+        direct_access/binder_item/binder_item_table.cpp
+        direct_access/binder_item/binder_item_table.h
+        direct_access/binder_item/table_definitions.h
+        direct_access/binder_item/binder_item_events.h
+        direct_access/binder_item/binder_item_events.cpp
 
 
         #        direct_access/author/i_author_repository.cpp

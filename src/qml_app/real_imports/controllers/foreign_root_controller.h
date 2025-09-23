@@ -22,8 +22,8 @@
 // If you do, be careful to not overwrite it when you run the generator again.
 #pragma once
 #include "root/root_controller.h"
-#include <QCoroQml>
-#include <QCoroQmlTask>
+#include <QCoro/QCoroQml>
+#include <QCoro/QCoroQmlTask>
 #include <QQmlEngine>
 
 struct ForeignRootController : public QObject
@@ -52,15 +52,46 @@ struct ForeignRootController : public QObject
         return m_controller->create(dto);
     }
 
-    // Q_INVOKABLE QCoro::QmlTask update(const QList<Skribisto::DirectAccess::Root::RootDto> &dtos)
-    // {
-    //     return m_controller->update(dtos);
-    // }
-    //
-    // Q_INVOKABLE QCoro::QmlTask remove(const QList<int> &ids)
-    // {
-    //     return m_controller->remove(ids);
-    // }
+    Q_INVOKABLE QCoro::QmlTask update(const QList<Skribisto::DirectAccess::Root::RootDto> &dtos)
+    {
+        return m_controller->update(dtos);
+    }
+
+    Q_INVOKABLE QCoro::QmlTask remove(const QList<int> &ids)
+    {
+        return m_controller->remove(ids);
+    }
+
+    Q_INVOKABLE QCoro::QmlTask getRelationshipIds(int rootId,
+                                                  Skribisto::DirectAccess::Root::RootRelationshipField relationship)
+    {
+        return m_controller->getRelationshipIds(rootId, relationship);
+    }
+
+    Q_INVOKABLE QCoro::QmlTask setRelationshipIds(int rootId,
+                                                  Skribisto::DirectAccess::Root::RootRelationshipField relationship,
+                                                  const QList<int> &relatedIds)
+    {
+        return m_controller->setRelationshipIds(rootId, relationship, relatedIds);
+    }
+
+    Q_INVOKABLE QCoro::QmlTask getRelationshipIdsMany(const QList<int> &rootIds,
+                                                      Skribisto::DirectAccess::Root::RootRelationshipField relationship)
+    {
+        return m_controller->getRelationshipIdsMany(rootIds, relationship);
+    }
+
+    Q_INVOKABLE QCoro::QmlTask getRelationshipIdsCount(
+        int rootId, Skribisto::DirectAccess::Root::RootRelationshipField relationship)
+    {
+        return m_controller->getRelationshipIdsCount(rootId, relationship);
+    }
+
+    Q_INVOKABLE QCoro::QmlTask getRelationshipIdsInRange(
+        int rootId, Skribisto::DirectAccess::Root::RootRelationshipField relationship, int offset, int limit)
+    {
+        return m_controller->getRelationshipIdsInRange(rootId, relationship, offset, limit);
+    }
 
   private:
     Skribisto::DirectAccess::Root::RootController *m_controller;

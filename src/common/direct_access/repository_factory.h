@@ -22,8 +22,10 @@
 
 #include "database/db_context.h"
 #include "direct_access/binder/binder_repository.h"
+#include "direct_access/binder_item/binder_item_repository.h"
 #include "direct_access/event_registry.h"
 #include "direct_access/project/project_repository.h"
+#include "direct_access/recent_project/recent_project_repository.h"
 #include "direct_access/root/root_repository.h"
 
 #include <QPointer>
@@ -31,13 +33,21 @@
 namespace Skribisto::Common::DirectAccess::RepositoryFactory
 {
 namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
+namespace SCDProject = Skribisto::Common::DirectAccess::Project;
+namespace SCDBinder = Skribisto::Common::DirectAccess::Binder;
+namespace SCDBinderItem = Skribisto::Common::DirectAccess::BinderItem;
+namespace SCDRecentProject = Skribisto::Common::DirectAccess::RecentProject;
 
 // Original methods with individual event pointers
-SCDRoot::RootRepository createRootRepository(Database::DbSubContext &dbSubContext,
-                                             QPointer<EventRegistry> eventRegistry);
-Project::ProjectRepository createProjectRepository(Database::DbSubContext &dbSubContext,
-                                                   QPointer<EventRegistry> eventRegistry);
-Binder::BinderRepository createBinderRepository(Database::DbSubContext &dbSubContext,
-                                                QPointer<EventRegistry> eventRegistry);
+std::unique_ptr<SCDRoot::RootRepository> createRootRepository(Database::DbSubContext &dbSubContext,
+                                                              QPointer<EventRegistry> eventRegistry);
+std::unique_ptr<SCDProject::ProjectRepository> createProjectRepository(Database::DbSubContext &dbSubContext,
+                                                                       QPointer<EventRegistry> eventRegistry);
+std::unique_ptr<SCDBinder::BinderRepository> createBinderRepository(Database::DbSubContext &dbSubContext,
+                                                                    QPointer<EventRegistry> eventRegistry);
+std::unique_ptr<SCDBinderItem::BinderItemRepository> createBinderItemRepository(Database::DbSubContext &dbSubContext,
+                                                                                QPointer<EventRegistry> eventRegistry);
+std::unique_ptr<SCDRecentProject::RecentProjectRepository> createRecentProjectRepository(
+    Database::DbSubContext &dbSubContext, QPointer<EventRegistry> eventRegistry);
 
 } // namespace Skribisto::Common::DirectAccess::RepositoryFactory

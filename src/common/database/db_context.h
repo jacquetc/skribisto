@@ -37,14 +37,34 @@
 namespace Skribisto::Common::Database
 {
 
-class DbContext
+class DbContext : public QObject
 {
+    Q_OBJECT
   public:
-    DbContext()
+    DbContext(QObject *parent = nullptr) : QObject(parent)
     {
         m_databaseName = DbBuilder::buildDatabase();
     }
-    ~DbContext() = default;
+
+    ~DbContext()
+    {
+        // Close all connections
+        QWriteLocker guard(&m_lock);
+        for (const QString &connName : m_connections)
+        {
+            QSqlDatabase::removeDatabase(connName);
+        }
+        m_connections.clear();
+
+        // Delete the temporary database file
+        if (!m_databaseName.isEmpty() && QFile::exists(m_databaseName))
+        {
+            if (!QFile::remove(m_databaseName))
+            {
+                qWarning() << "DbContext: failed to remove temporary database file:" << m_databaseName;
+            }
+        }
+    }
 
     // Connection pool management
     int createDatabaseConnection()
@@ -62,7 +82,7 @@ class DbContext
         return id;
     }
 
-    void closeDatabaseConnection(const int dbId) const
+    void closeDatabaseConnection(const int dbId)
     {
         QWriteLocker guard(&m_lock);
         const auto it = m_connections.constFind(dbId);
@@ -71,7 +91,9 @@ class DbContext
             qCritical() << "DbContext::closeDatabaseConnection - unknown dbId" << dbId;
             return;
         }
-        QSqlDatabase db = QSqlDatabase::database(it.value());
+
+        QSqlDatabase::removeDatabase(it.value());
+        m_connections.erase(it);
     }
 
     QSqlDatabase getConnection(const int dbId) const
@@ -93,6 +115,7 @@ class DbContext
     // map id -> connectionName
     QHash<int, QString> m_connections;
 };
+
 struct DbSubContext
 {
     explicit DbSubContext(DbContext &parentDbContext) : m_parentDbContext(parentDbContext)

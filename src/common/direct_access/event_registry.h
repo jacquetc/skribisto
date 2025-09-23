@@ -21,8 +21,11 @@
 #pragma once
 
 #include "direct_access/binder/binder_events.h"
+#include "direct_access/binder_item/binder_item_events.h"
 #include "direct_access/project/project_events.h"
+#include "direct_access/recent_project/recent_project_events.h"
 #include "direct_access/root/root_events.h"
+
 // #include "undo_redo/undo_redo_events.h"
 #include <QPointer>
 
@@ -36,7 +39,9 @@ class EventRegistry : public QObject
   public:
     explicit EventRegistry(QObject *parent = nullptr)
         : QObject(parent), m_projectEvents(new Project::ProjectEvents(parent)),
-          m_binderEvents(new Binder::BinderEvents(parent)), m_rootEvents(new Root::RootEvents(parent))
+          m_binderEvents(new Binder::BinderEvents(parent)), m_rootEvents(new Root::RootEvents(parent)),
+          m_binderItemEvents(new BinderItem::BinderItemEvents(parent)),
+          m_recentProjectEvents(new RecentProject::RecentProjectEvents(parent))
 
     //    , m_undoRedoEvents(new UndoRedo::UndoRedoEvents(parent))
     {
@@ -49,6 +54,8 @@ class EventRegistry : public QObject
     QPointer<Project::ProjectEvents> m_projectEvents;
     QPointer<Binder::BinderEvents> m_binderEvents;
     QPointer<Root::RootEvents> m_rootEvents;
+    QPointer<BinderItem::BinderItemEvents> m_binderItemEvents;
+    QPointer<RecentProject::RecentProjectEvents> m_recentProjectEvents;
     // QPointer<UndoRedo::UndoRedoEvents> m_undoRedoEvents;
 };
 
@@ -66,6 +73,17 @@ template <> inline QPointer<Binder::BinderEvents> EventRegistry::getEvents<Binde
 template <> inline QPointer<Root::RootEvents> EventRegistry::getEvents<Root::RootEvents>() const
 {
     return m_rootEvents;
+}
+
+template <> inline QPointer<BinderItem::BinderItemEvents> EventRegistry::getEvents<BinderItem::BinderItemEvents>() const
+{
+    return m_binderItemEvents;
+}
+
+template <>
+inline QPointer<RecentProject::RecentProjectEvents> EventRegistry::getEvents<RecentProject::RecentProjectEvents>() const
+{
+    return m_recentProjectEvents;
 }
 
 // template <> inline QPointer<UndoRedo::UndoRedoEvents> EventRegistry::getEvents<UndoRedo::UndoRedoEvents>() const

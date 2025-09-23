@@ -19,6 +19,7 @@
  ******************************************************************************/
 
 #pragma once
+#include "junction_cache.h"
 #include <QHash>
 #include <QList>
 #include <QSqlDatabase>
@@ -48,9 +49,9 @@ inline QHash<int, std::optional<int>> getRightIdMany(QSqlDatabase &db, const QLi
 
     // Build dynamic IN clause
     QStringList placeholders;
-    placeholders.fill("?", leftIds.size());
+    placeholders.fill("?"_L1, leftIds.size());
     const QString sql = QStringLiteral("SELECT left_id, right_id FROM %1 WHERE left_id IN (%2)")
-                            .arg(junctionTableName, placeholders.join(","));
+                            .arg(junctionTableName, placeholders.join(","_L1));
 
     QSqlQuery query(db);
     query.prepare(sql);
@@ -78,7 +79,8 @@ inline std::optional<int> getRightId(QSqlDatabase &db, int leftId, const QString
     return result.value(leftId, std::nullopt);
 }
 
-inline QHash<int, bool> removeRightIdMany(QSqlDatabase &db, const QList<int> &leftIds, const QString &junctionTableName)
+inline QHash<int, bool> removeWithLeftIdMany(QSqlDatabase &db, const QList<int> &leftIds,
+                                             const QString &junctionTableName)
 {
     QHash<int, bool> result;
 
@@ -87,11 +89,17 @@ inline QHash<int, bool> removeRightIdMany(QSqlDatabase &db, const QList<int> &le
         return result;
     }
 
+    // Invalidate cache for affected left IDs
+    for (int leftId : leftIds)
+    {
+        JunctionCache::instance().invalidateLeftId(junctionTableName, leftId);
+    }
+
     // Build dynamic IN clause for efficient bulk delete
     QStringList placeholders;
-    placeholders.fill("?", leftIds.size());
+    placeholders.fill("?"_L1, leftIds.size());
     const QString sql =
-        QStringLiteral("DELETE FROM %1 WHERE left_id IN (%2)").arg(junctionTableName, placeholders.join(","));
+        QStringLiteral("DELETE FROM %1 WHERE left_id IN (%2)").arg(junctionTableName, placeholders.join(","_L1));
 
     QSqlQuery query(db);
     query.prepare(sql);
@@ -111,9 +119,9 @@ inline QHash<int, bool> removeRightIdMany(QSqlDatabase &db, const QList<int> &le
     return result;
 }
 
-inline bool removeRightId(QSqlDatabase &db, int leftId, const QString &junctionTableName)
+inline bool removeWithLeftId(QSqlDatabase &db, int leftId, const QString &junctionTableName)
 {
-    QHash<int, bool> result = removeRightIdMany(db, {leftId}, junctionTableName);
+    QHash<int, bool> result = removeWithLeftIdMany(db, {leftId}, junctionTableName);
     return result.value(leftId, false);
 }
 
@@ -125,6 +133,13 @@ inline QHash<int, QList<int>> upsertRightIdMany(QSqlDatabase &db, const QHash<in
     if (leftIdToRightId.isEmpty())
     {
         return result;
+    }
+
+    // Invalidate cache for affected left IDs
+    QList<int> leftIds = leftIdToRightId.keys();
+    for (int leftId : leftIds)
+    {
+        JunctionCache::instance().invalidateLeftId(junctionTableName, leftId);
     }
 
     // Process each left_id to right_id mapping
@@ -168,7 +183,7 @@ inline QHash<int, QList<int>> upsertRightIdMany(QSqlDatabase &db, const QHash<in
 
         if (!rightId.has_value())
         {
-            removeRightId(db, leftId, junctionTableName);
+            removeWithLeftId(db, leftId, junctionTableName);
             result[leftId] = {};
         }
         else
@@ -212,9 +227,9 @@ inline QHash<int, int> getLeftIdMany(QSqlDatabase &db, const QString &junctionTa
 
     // Build dynamic IN clause
     QStringList placeholders;
-    placeholders.fill("?", rightIds.size());
+    placeholders.fill("?"_L1, rightIds.size());
     const QString sql = QStringLiteral("SELECT right_id, left_id FROM %1 WHERE right_id IN (%2)")
-                            .arg(junctionTableName, placeholders.join(","));
+                            .arg(junctionTableName, placeholders.join(","_L1));
 
     QSqlQuery query(db);
     query.prepare(sql);
@@ -240,5 +255,72 @@ inline int getLeftId(QSqlDatabase &db, const QString &junctionTableName, int rig
 {
     QHash<int, int> result = getLeftIdMany(db, junctionTableName, {rightId});
     return result.value(rightId, -1);
+}
+
+inline int getRightIdCount(QSqlDatabase &db, int leftId, const QString &junctionTableName)
+{
+    int cachedResult;
+    if (JunctionCache::instance().getCachedRightIdsCount(junctionTableName, leftId, cachedResult))
+    {
+        return cachedResult;
+    }
+
+    const QString sql = QStringLiteral("SELECT COUNT(right_id) FROM %1 WHERE left_id = ?").arg(junctionTableName);
+
+    QSqlQuery query(db);
+    query.prepare(sql);
+    query.addBindValue(leftId);
+
+    int count = 0;
+    if (query.exec() && query.next())
+    {
+        count = query.value(0).toInt();
+    }
+
+    // Cache the result
+    JunctionCache::instance().setCachedRightIdsCount(junctionTableName, leftId, count);
+
+    return count;
+}
+
+inline QList<int> getRightIdInRange(QSqlDatabase &db, int leftId, const QString &junctionTableName)
+{
+    QList<int> cachedResult;
+    if (JunctionCache::instance().getCachedRightIdsInRange(junctionTableName, leftId, 0, 1, cachedResult))
+    {
+        return cachedResult;
+    }
+
+    std::optional<int> result;
+
+    const QString sql = QStringLiteral("SELECT right_id FROM %1 WHERE left_id = ?").arg(junctionTableName);
+
+    QSqlQuery query(db);
+    query.prepare(sql);
+    query.addBindValue(leftId);
+
+    if (query.exec())
+    {
+        if (query.next())
+        {
+            result = query.value(0).toInt();
+        }
+    }
+
+    if (!result.has_value())
+    {
+        return {};
+    }
+
+    QList<int> finalResult;
+    if (result.has_value())
+    {
+        finalResult.append(result.value());
+    }
+
+    // Cache the result
+    JunctionCache::instance().setCachedRightIdsInRange(junctionTableName, leftId, 0, 1, finalResult);
+
+    return finalResult;
 }
 } // namespace Skribisto::Common::Database::JunctionTableOps::OneToOne

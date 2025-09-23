@@ -1,0 +1,487 @@
+/******************************************************************************
+ Copyright (C) 2025 by Cyril Jacquet                                          *
+ cyril.jacquet@skribisto.eu                                                   *
+                                                                              *
+ This file is part of Skribisto.                                              *
+                                                                              *
+ Skribisto is free software: you can redistribute it and/or modify            *
+ it under the terms of the GNU General Public License as published by         *
+ the Free Software Foundation, either version 3 of the License, or            *
+ (at your option) any later version.                                          *
+                                                                              *
+ Skribisto is distributed in the hope that it will be useful,                 *
+ but WITHOUT ANY WARRANTY; without even the implied warranty of               *
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
+ GNU General Public License for more details.                                 *
+                                                                              *
+ You should have received a copy of the GNU General Public License            *
+ along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
+ ******************************************************************************/
+
+#pragma once
+
+#include <QHash>
+#include <QList>
+#include <QString>
+#include <QMutex>
+#include <QDateTime>
+#include <QSet>
+
+namespace Skribisto::Common::Database
+{
+
+/**
+ * @brief Generic thread-safe cache template for table operations
+ * 
+ * This template provides caching functionality for any table type with CRUD operations.
+ * It caches entities, relationship data, counts, and range queries.
+ * 
+ * @tparam EntityType The entity type (e.g., Root, Project, Binder)
+ * @tparam RelationshipFieldType The relationship field enum type (e.g., RootRelationshipField)
+ */
+template<typename EntityType, typename RelationshipFieldType>
+class TableCache
+{
+public:
+    struct EntityCacheKey
+    {
+        QList<int> ids;
+        
+        bool operator==(const EntityCacheKey &other) const
+        {
+            return ids == other.ids;
+        }
+    };
+    
+    struct RelationshipCacheKey
+    {
+        QList<int> entityIds;
+        RelationshipFieldType relationshipType;
+        QString operation; // "getMany", "getCount", "getRange"
+        int entityId = 0;    // for single operations
+        int offset = 0;    // for range queries
+        int limit = 0;     // for range queries
+        
+        bool operator==(const RelationshipCacheKey &other) const
+        {
+            return entityIds == other.entityIds && relationshipType == other.relationshipType && 
+                   operation == other.operation && entityId == other.entityId && 
+                   offset == other.offset && limit == other.limit;
+        }
+    };
+    
+    struct EntityCacheValue
+    {
+        QList<EntityType> entities;
+        QDateTime timestamp;
+        bool isValid = false;
+    };
+    
+    struct RelationshipCacheValue
+    {
+        QHash<int, QList<int>> relationshipData;
+        QList<int> rangeData;
+        int count = 0;
+        QDateTime timestamp;
+        bool isValid = false;
+    };
+
+    static TableCache& instance()
+    {
+        static TableCache cache;
+        return cache;
+    }
+
+    // Entity caching methods
+    bool getCachedEntities(const QList<int> &ids, QList<EntityType> &result)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        // Sort IDs for consistent cache key
+        QList<int> sortedIds = ids;
+        std::sort(sortedIds.begin(), sortedIds.end());
+        
+        EntityCacheKey key;
+        key.ids = sortedIds;
+        
+        uint hash = qHash(key);
+        auto it = m_entityCache.find(hash);
+        
+        if (it != m_entityCache.end() && it->isValid && !isExpired(it->timestamp, 30))
+        {
+            result = it->entities;
+            return true;
+        }
+        
+        return false;
+    }
+
+    void setCachedEntities(const QList<int> &ids, const QList<EntityType> &entities)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        // Sort IDs for consistent cache key
+        QList<int> sortedIds = ids;
+        std::sort(sortedIds.begin(), sortedIds.end());
+        
+        EntityCacheKey key;
+        key.ids = sortedIds;
+        
+        EntityCacheValue value;
+        value.entities = entities;
+        value.timestamp = QDateTime::currentDateTimeUtc();
+        value.isValid = true;
+        
+        uint hash = qHash(key);
+        m_entityCache[hash] = value;
+    }
+
+    // Relationship caching methods
+    bool getCachedRelationshipData(const QList<int> &entityIds, RelationshipFieldType relationshipType, 
+                                   QHash<int, QList<int>> &result)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        // Sort entity IDs for consistent cache key
+        QList<int> sortedEntityIds = entityIds;
+        std::sort(sortedEntityIds.begin(), sortedEntityIds.end());
+        
+        RelationshipCacheKey key;
+        key.entityIds = sortedEntityIds;
+        key.relationshipType = relationshipType;
+        key.operation = "getMany"_L1;
+        
+        uint hash = qHash(key);
+        auto it = m_relationshipCache.find(hash);
+        
+        if (it != m_relationshipCache.end() && it->isValid && !isExpired(it->timestamp, 30))
+        {
+            result = it->relationshipData;
+            return true;
+        }
+        
+        return false;
+    }
+
+    void setCachedRelationshipData(const QList<int> &entityIds, RelationshipFieldType relationshipType,
+                                   const QHash<int, QList<int>> &relationshipData)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        // Sort entity IDs for consistent cache key
+        QList<int> sortedEntityIds = entityIds;
+        std::sort(sortedEntityIds.begin(), sortedEntityIds.end());
+        
+        RelationshipCacheKey key;
+        key.entityIds = sortedEntityIds;
+        key.relationshipType = relationshipType;
+        key.operation = "getMany"_L1;
+        
+        RelationshipCacheValue value;
+        value.relationshipData = relationshipData;
+        value.timestamp = QDateTime::currentDateTimeUtc();
+        value.isValid = true;
+        
+        uint hash = qHash(key);
+        m_relationshipCache[hash] = value;
+    }
+
+    bool getCachedRelationshipCount(int entityId, RelationshipFieldType relationshipType, int &result)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        RelationshipCacheKey key;
+        key.entityId = entityId;
+        key.relationshipType = relationshipType;
+        key.operation = "getCount"_L1;
+        
+        uint hash = qHash(key);
+        auto it = m_relationshipCache.find(hash);
+        
+        if (it != m_relationshipCache.end() && it->isValid && !isExpired(it->timestamp, 30))
+        {
+            result = it->count;
+            return true;
+        }
+        
+        return false;
+    }
+
+    void setCachedRelationshipCount(int entityId, RelationshipFieldType relationshipType, int count)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        RelationshipCacheKey key;
+        key.entityId = entityId;
+        key.relationshipType = relationshipType;
+        key.operation = "getCount"_L1;
+        
+        RelationshipCacheValue value;
+        value.count = count;
+        value.timestamp = QDateTime::currentDateTimeUtc();
+        value.isValid = true;
+        
+        uint hash = qHash(key);
+        m_relationshipCache[hash] = value;
+    }
+
+    bool getCachedRelationshipRange(int entityId, RelationshipFieldType relationshipType, 
+                                    int offset, int limit, QList<int> &result)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        RelationshipCacheKey key;
+        key.entityId = entityId;
+        key.relationshipType = relationshipType;
+        key.operation = "getRange"_L1;
+        key.offset = offset;
+        key.limit = limit;
+        
+        uint hash = qHash(key);
+        auto it = m_relationshipCache.find(hash);
+        
+        if (it != m_relationshipCache.end() && it->isValid && !isExpired(it->timestamp, 30))
+        {
+            result = it->rangeData;
+            return true;
+        }
+        
+        return false;
+    }
+
+    void setCachedRelationshipRange(int entityId, RelationshipFieldType relationshipType, 
+                                    int offset, int limit, const QList<int> &rangeData)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        RelationshipCacheKey key;
+        key.entityId = entityId;
+        key.relationshipType = relationshipType;
+        key.operation = "getRange"_L1;
+        key.offset = offset;
+        key.limit = limit;
+        
+        RelationshipCacheValue value;
+        value.rangeData = rangeData;
+        value.timestamp = QDateTime::currentDateTimeUtc();
+        value.isValid = true;
+        
+        uint hash = qHash(key);
+        m_relationshipCache[hash] = value;
+    }
+
+    // Invalidation methods
+    void invalidateEntity(int entityId)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        // Remove all entity cache entries that contain this entityId
+        auto it = m_entityCache.begin();
+        while (it != m_entityCache.end())
+        {
+            EntityCacheKey key = entityKeyFromHash(it.key());
+            if (key.ids.contains(entityId))
+            {
+                m_entityKeyMap.remove(it.key());
+                it = m_entityCache.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    void invalidateEntities(const QList<int> &entityIds)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        QSet<int> entityIdSet(entityIds.begin(), entityIds.end());
+        
+        // Remove all entity cache entries that contain any of these entityIds
+        auto it = m_entityCache.begin();
+        while (it != m_entityCache.end())
+        {
+            EntityCacheKey key = entityKeyFromHash(it.key());
+            bool hasOverlap = false;
+            for (int id : key.ids)
+            {
+                if (entityIdSet.contains(id))
+                {
+                    hasOverlap = true;
+                    break;
+                }
+            }
+            
+            if (hasOverlap)
+            {
+                m_entityKeyMap.remove(it.key());
+                it = m_entityCache.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    void invalidateRelationships(int entityId)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        // Remove all relationship cache entries for this entityId
+        auto it = m_relationshipCache.begin();
+        while (it != m_relationshipCache.end())
+        {
+            RelationshipCacheKey key = relationshipKeyFromHash(it.key());
+            if (key.entityId == entityId || key.entityIds.contains(entityId))
+            {
+                m_relationshipKeyMap.remove(it.key());
+                it = m_relationshipCache.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    void invalidateRelationships(const QList<int> &entityIds)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        QSet<int> entityIdSet(entityIds.begin(), entityIds.end());
+        
+        // Remove all relationship cache entries for these entityIds
+        auto it = m_relationshipCache.begin();
+        while (it != m_relationshipCache.end())
+        {
+            RelationshipCacheKey key = relationshipKeyFromHash(it.key());
+            bool hasMatch = entityIdSet.contains(key.entityId);
+            
+            if (!hasMatch)
+            {
+                for (int id : key.entityIds)
+                {
+                    if (entityIdSet.contains(id))
+                    {
+                        hasMatch = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasMatch)
+            {
+                m_relationshipKeyMap.remove(it.key());
+                it = m_relationshipCache.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    void invalidateAll()
+    {
+        QMutexLocker locker(&m_mutex);
+        m_entityCache.clear();
+        m_relationshipCache.clear();
+        m_entityKeyMap.clear();
+        m_relationshipKeyMap.clear();
+    }
+
+    // Cleanup methods
+    void cleanupExpired(int maxAgeMinutes = 30)
+    {
+        QMutexLocker locker(&m_mutex);
+        
+        // Clean up expired entity cache entries
+        auto entityIt = m_entityCache.begin();
+        while (entityIt != m_entityCache.end())
+        {
+            if (isExpired(entityIt->timestamp, maxAgeMinutes))
+            {
+                m_entityKeyMap.remove(entityIt.key());
+                entityIt = m_entityCache.erase(entityIt);
+            }
+            else
+            {
+                ++entityIt;
+            }
+        }
+        
+        // Clean up expired relationship cache entries
+        auto relationshipIt = m_relationshipCache.begin();
+        while (relationshipIt != m_relationshipCache.end())
+        {
+            if (isExpired(relationshipIt->timestamp, maxAgeMinutes))
+            {
+                m_relationshipKeyMap.remove(relationshipIt.key());
+                relationshipIt = m_relationshipCache.erase(relationshipIt);
+            }
+            else
+            {
+                ++relationshipIt;
+            }
+        }
+    }
+
+    void clear()
+    {
+        invalidateAll();
+    }
+
+private:
+    QHash<uint, EntityCacheValue> m_entityCache;
+    QHash<uint, RelationshipCacheValue> m_relationshipCache;
+    QMutex m_mutex;
+    QHash<uint, EntityCacheKey> m_entityKeyMap;
+    QHash<uint, RelationshipCacheKey> m_relationshipKeyMap;
+    
+    EntityCacheKey entityKeyFromHash(uint hash) const
+    {
+        return m_entityKeyMap.value(hash);
+    }
+    
+    RelationshipCacheKey relationshipKeyFromHash(uint hash) const
+    {
+        return m_relationshipKeyMap.value(hash);
+    }
+    
+    uint qHash(const EntityCacheKey &key)
+    {
+        uint hash = 0;
+        for (int id : key.ids)
+        {
+            hash ^= ::qHash(id);
+        }
+        
+        m_entityKeyMap[hash] = key;
+        return hash;
+    }
+    
+    uint qHash(const RelationshipCacheKey &key)
+    {
+        uint hash = ::qHash(static_cast<int>(key.relationshipType)) ^ ::qHash(key.operation) ^ 
+                    ::qHash(key.entityId) ^ ::qHash(key.offset) ^ ::qHash(key.limit);
+        
+        for (int id : key.entityIds)
+        {
+            hash ^= ::qHash(id);
+        }
+        
+        m_relationshipKeyMap[hash] = key;
+        return hash;
+    }
+    
+    bool isExpired(const QDateTime &timestamp, int maxAgeMinutes) const
+    {
+        return timestamp.addSecs(maxAgeMinutes * 60) < QDateTime::currentDateTimeUtc();
+    }
+};
+
+// Note: Specific cache type definitions are created as needed in the implementation files
+
+} // namespace Skribisto::Common::Database

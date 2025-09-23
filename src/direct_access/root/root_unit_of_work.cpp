@@ -67,31 +67,48 @@ void SDRoot::RootUnitOfWork::releaseSavepoint()
 QList<Skribisto::Common::Entities::Root> SDRoot::RootUnitOfWork::createRoot(QList<SCE::Root> roots)
 {
     auto repository = SCD::RepositoryFactory::createRootRepository(m_dbSubContext, m_eventRegistry);
-    return repository.create(roots);
+    return repository->create(roots);
 }
 QList<Skribisto::Common::Entities::Root> SDRoot::RootUnitOfWork::getRoot(QList<int> rootIds)
 {
     auto repository = SCD::RepositoryFactory::createRootRepository(m_dbSubContext, m_eventRegistry);
-    return repository.get(rootIds);
+    return repository->get(rootIds);
 }
 QList<Skribisto::Common::Entities::Root> SDRoot::RootUnitOfWork::updateRoot(QList<SCE::Root> roots)
 {
     auto repository = SCD::RepositoryFactory::createRootRepository(m_dbSubContext, m_eventRegistry);
-    return repository.update(roots);
+    return repository->update(roots);
 }
 QList<int> SDRoot::RootUnitOfWork::removeRoot(QList<int> rootIds)
 {
     auto repository = SCD::RepositoryFactory::createRootRepository(m_dbSubContext, m_eventRegistry);
-    return repository.remove(rootIds);
+    return repository->remove(rootIds);
 }
 QList<int> SDRoot::RootUnitOfWork::getRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship)
 {
     auto repository = SCD::RepositoryFactory::createRootRepository(m_dbSubContext, m_eventRegistry);
-    return repository.getRelationship(rootId, relationship);
+    return repository->getRelationshipIds(rootId, relationship);
 }
 void SDRoot::RootUnitOfWork::setRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship,
                                                  QList<int> relatedIds)
 {
     auto repository = SCD::RepositoryFactory::createRootRepository(m_dbSubContext, m_eventRegistry);
-    repository.setRelationship(rootId, relationship, relatedIds);
+    repository->setRelationshipIds(rootId, relationship, relatedIds);
+}
+QHash<int, QList<int>> SDRoot::RootUnitOfWork::getRootRelationshipMany(const QList<int> &rootIds,
+                                                                       SCDRoot::RootRelationshipField relationship)
+{
+    auto repository = SCD::RepositoryFactory::createRootRepository(m_dbSubContext, m_eventRegistry);
+    return repository->getRelationshipIdsMany(rootIds, relationship);
+}
+int SDRoot::RootUnitOfWork::getRootRelationshipCount(int rootId, SCDRoot::RootRelationshipField relationship)
+{
+    auto repository = SCD::RepositoryFactory::createRootRepository(m_dbSubContext, m_eventRegistry);
+    return repository->getRelationshipIdsCount(rootId, relationship);
+}
+QList<int> SDRoot::RootUnitOfWork::getRootRelationshipInRange(int rootId, SCDRoot::RootRelationshipField relationship,
+                                                              int offset, int limit)
+{
+    auto repository = SCD::RepositoryFactory::createRootRepository(m_dbSubContext, m_eventRegistry);
+    return repository->getRelationshipIdsInRange(rootId, relationship, offset, limit);
 }

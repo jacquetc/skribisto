@@ -28,13 +28,13 @@ namespace Skribisto::Common::Entities
 struct DictWord
 {
     int id = 0;
-    QDateTime creationDate;
-    QDateTime updateDate;
+    QDateTime createdAt;
+    QDateTime updatedAt;
     QString word;
 
     DictWord() = default;
-    DictWord(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &word)
-        : id(id), creationDate(creationDate), updateDate(updateDate), word(word)
+    DictWord(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &word)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), word(word)
     {
     }
 };

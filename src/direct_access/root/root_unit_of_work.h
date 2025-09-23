@@ -53,6 +53,11 @@ class RootUnitOfWork final : public IRootUnitOfWork
     QList<int> removeRoot(QList<int> rootIds) override;
     QList<int> getRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship) override;
     void setRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship, QList<int> relatedIds) override;
+    QHash<int, QList<int>> getRootRelationshipMany(const QList<int> &rootIds,
+                                                  SCDRoot::RootRelationshipField relationship) override;
+    int getRootRelationshipCount(int rootId, SCDRoot::RootRelationshipField relationship) override;
+    QList<int> getRootRelationshipInRange(int rootId, SCDRoot::RootRelationshipField relationship,
+                                         int offset, int limit) override;
 
   private:
     SCDatabase::DbSubContext m_dbSubContext;

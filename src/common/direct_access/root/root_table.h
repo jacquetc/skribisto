@@ -39,9 +39,12 @@ class RootTable final : public IRootTable
     QList<SCE::Root> updateMany(const QList<SCE::Root> &roots) override;
     [[nodiscard]] QList<SCE::Root> findMany(const QList<int> &ids) const override;
     QList<int> removeMany(const QList<int> &ids) override;
-    void setRelationship(int rootId, RootRelationshipField relationship, QList<int> relatedId) override;
-    [[nodiscard]] QHash<int, QList<int>> getRelationshipMany(const QList<int> &rootIds,
-                                                             RootRelationshipField relationship) const override;
+    void setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedId) override;
+    [[nodiscard]] QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &rootIds,
+                                                                RootRelationshipField relationship) const override;
+    int getRelationshipIdsCount(int rootId, RootRelationshipField relationship) override;
+    QList<int> getRelationshipIdsInRange(int rootId, RootRelationshipField relationship, int offset,
+                                         int limit) override;
 
   private:
     Database::DbSubContext &m_dbSubContext;

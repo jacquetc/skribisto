@@ -30,19 +30,19 @@ namespace Skribisto::Common::Entities
 struct Binder
 {
     int id = 0;
-    QDateTime creationDate;
-    QDateTime updateDate;
+    QDateTime createdAt;
+    QDateTime updatedAt;
     QString name;
     QList<int> binderItems;
 
     Binder() = default;
-    Binder(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &name)
-        : id(id), creationDate(creationDate), updateDate(updateDate), name(name)
+    Binder(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name)
     {
     }
-    Binder(int id, const QDateTime &creationDate, const QDateTime &updateDate, const QString &name,
+    Binder(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name,
            const QList<int> &binderItems)
-        : id(id), creationDate(creationDate), updateDate(updateDate), name(name), binderItems(binderItems)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), binderItems(binderItems)
     {
     }
 };

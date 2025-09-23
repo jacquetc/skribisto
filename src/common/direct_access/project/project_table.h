@@ -39,9 +39,12 @@ class ProjectTable final : public IProjectTable
     QList<SCE::Project> updateMany(const QList<SCE::Project> &projects) override;
     [[nodiscard]] QList<SCE::Project> findMany(const QList<int> &ids) const override;
     QList<int> removeMany(const QList<int> &ids) override;
-    void setRelationship(int projectId, ProjectRelationshipField relationship, QList<int> relatedId) override;
-    [[nodiscard]] QHash<int, QList<int>> getRelationshipMany(const QList<int> &projectIds,
-                                                             ProjectRelationshipField relationship) const override;
+    void setRelationshipIds(int projectId, ProjectRelationshipField relationship, QList<int> relatedId) override;
+    [[nodiscard]] QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &projectIds,
+                                                                ProjectRelationshipField relationship) const override;
+    int getRelationshipIdsCount(int rootId, ProjectRelationshipField relationship) override;
+    QList<int> getRelationshipIdsInRange(int rootId, ProjectRelationshipField relationship, int offset,
+                                         int limit) override;
 
   private:
     Database::DbSubContext &m_dbSubContext;
