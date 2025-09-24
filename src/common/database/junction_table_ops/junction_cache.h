@@ -22,21 +22,23 @@
 
 #include <QHash>
 #include <QList>
-#include <QString>
 #include <QMutex>
+#include <QString>
+
+using namespace Qt::StringLiterals;
 
 namespace Skribisto::Common::Database::JunctionTableOps
 {
 
 /**
  * @brief Thread-safe cache for junction table operations
- * 
+ *
  * This cache stores query results for junction table operations to improve performance.
  * It uses a key-value structure where keys are composed of table name, left ID, and operation type.
  */
 class JunctionCache
 {
-public:
+  public:
     struct CacheKey
     {
         QString tableName;
@@ -44,14 +46,14 @@ public:
         QString operation; // "getRightIds", "getRightIdsCount", "getRightIdsInRange"
         int offset = 0;    // for range queries
         int limit = 0;     // for range queries
-        
+
         bool operator==(const CacheKey &other) const
         {
-            return tableName == other.tableName && leftId == other.leftId && 
-                   operation == other.operation && offset == other.offset && limit == other.limit;
+            return tableName == other.tableName && leftId == other.leftId && operation == other.operation &&
+                   offset == other.offset && limit == other.limit;
         }
     };
-    
+
     struct CacheValue
     {
         QList<int> rightIds;
@@ -59,7 +61,7 @@ public:
         bool isValid = false;
     };
 
-    static JunctionCache& instance()
+    static JunctionCache &instance()
     {
         static JunctionCache cache;
         return cache;
@@ -70,7 +72,7 @@ public:
     {
         QMutexLocker locker(&m_mutex);
         CacheKey key{tableName, leftId, "getRightIds"_L1, 0, 0};
-        
+
         auto it = m_cache.find(qHash(key));
         if (it != m_cache.end() && it->isValid)
         {
@@ -97,7 +99,7 @@ public:
     {
         QMutexLocker locker(&m_mutex);
         CacheKey key{tableName, leftId, "getRightIdsCount"_L1, 0, 0};
-        
+
         auto it = m_cache.find(qHash(key));
         if (it != m_cache.end() && it->isValid)
         {
@@ -123,7 +125,7 @@ public:
     {
         QMutexLocker locker(&m_mutex);
         CacheKey key{tableName, leftId, "getRightIdsInRange"_L1, offset, limit};
-        
+
         auto it = m_cache.find(qHash(key));
         if (it != m_cache.end() && it->isValid)
         {
@@ -134,7 +136,8 @@ public:
     }
 
     // Cache range results
-    void setCachedRightIdsInRange(const QString &tableName, int leftId, int offset, int limit, const QList<int> &rightIds)
+    void setCachedRightIdsInRange(const QString &tableName, int leftId, int offset, int limit,
+                                  const QList<int> &rightIds)
     {
         QMutexLocker locker(&m_mutex);
         CacheKey key{tableName, leftId, "getRightIdsInRange"_L1, offset, limit};
@@ -190,19 +193,20 @@ public:
         m_cache.clear();
     }
 
-private:
+  private:
     QHash<uint, CacheValue> m_cache;
     QMutex m_mutex;
     QHash<uint, CacheKey> m_keyMap; // To reverse lookup keys from hash
-    
+
     CacheKey keyFromHash(uint hash) const
     {
         return m_keyMap.value(hash);
     }
-    
+
     uint qHash(const CacheKey &key)
     {
-        uint hash = ::qHash(key.tableName) ^ ::qHash(key.leftId) ^ ::qHash(key.operation) ^ ::qHash(key.offset) ^ ::qHash(key.limit);
+        uint hash = ::qHash(key.tableName) ^ ::qHash(key.leftId) ^ ::qHash(key.operation) ^ ::qHash(key.offset) ^
+                    ::qHash(key.limit);
         m_keyMap[hash] = key; // Store reverse lookup
         return hash;
     }

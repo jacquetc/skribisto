@@ -60,14 +60,17 @@ inline QHash<int, std::optional<int>> getRightIdMany(QSqlDatabase &db, const QLi
         query.addBindValue(leftId);
     }
 
-    if (query.exec())
+    if (!query.exec())
     {
-        while (query.next())
-        {
-            int leftId = query.value(0).toInt();
-            int rightId = query.value(1).toInt();
-            result[leftId] = rightId;
-        }
+        qWarning() << "Failed to execute getRightIdMany query:" << query.lastError().text();
+        return result;
+    }
+    
+    while (query.next())
+    {
+        int leftId = query.value(0).toInt();
+        int rightId = query.value(1).toInt();
+        result[leftId] = rightId;
     }
 
     return result;
@@ -109,6 +112,11 @@ inline QHash<int, bool> removeWithLeftIdMany(QSqlDatabase &db, const QList<int> 
     }
 
     bool success = query.exec();
+    
+    if (!success)
+    {
+        qWarning() << "Failed to execute removeWithLeftIdMany query:" << query.lastError().text();
+    }
 
     // Initialize all results based on success
     for (int leftId : leftIds)
@@ -157,11 +165,20 @@ inline QHash<int, QList<int>> upsertRightIdMany(QSqlDatabase &db, const QHash<in
 
         if (!query.exec() || query.numRowsAffected() == 0)
         {
+            // If the update failed due to SQL error, log it
+            if (query.lastError().isValid())
+            {
+                qWarning() << "Failed to execute upsertRightIdMany update query:" << query.lastError().text();
+            }
+            
             // If no rows were affected, insert new record
             query.prepare(QStringLiteral("INSERT INTO %1 (left_id, right_id) VALUES (?, ?)").arg(junctionTableName));
             query.addBindValue(leftId);
             query.addBindValue(rightId);
-            query.exec();
+            if (!query.exec())
+            {
+                qWarning() << "Failed to execute upsertRightIdMany insert query:" << query.lastError().text();
+            }
         }
 
         result[leftId] = QList<int>{rightId};
@@ -238,14 +255,17 @@ inline QHash<int, int> getLeftIdMany(QSqlDatabase &db, const QString &junctionTa
         query.addBindValue(rightId);
     }
 
-    if (query.exec())
+    if (!query.exec())
     {
-        while (query.next())
-        {
-            int rightId = query.value(0).toInt();
-            int leftId = query.value(1).toInt();
-            result[rightId] = leftId;
-        }
+        qWarning() << "Failed to execute getLeftIdMany query:" << query.lastError().text();
+        return result;
+    }
+    
+    while (query.next())
+    {
+        int rightId = query.value(0).toInt();
+        int leftId = query.value(1).toInt();
+        result[rightId] = leftId;
     }
 
     return result;
@@ -272,7 +292,13 @@ inline int getRightIdCount(QSqlDatabase &db, int leftId, const QString &junction
     query.addBindValue(leftId);
 
     int count = 0;
-    if (query.exec() && query.next())
+    if (!query.exec())
+    {
+        qWarning() << "Failed to execute getRightIdCount query:" << query.lastError().text();
+        return count;
+    }
+    
+    if (query.next())
     {
         count = query.value(0).toInt();
     }
@@ -299,12 +325,15 @@ inline QList<int> getRightIdInRange(QSqlDatabase &db, int leftId, const QString 
     query.prepare(sql);
     query.addBindValue(leftId);
 
-    if (query.exec())
+    if (!query.exec())
     {
-        if (query.next())
-        {
-            result = query.value(0).toInt();
-        }
+        qWarning() << "Failed to execute getRightIdInRange query:" << query.lastError().text();
+        return {};
+    }
+    
+    if (query.next())
+    {
+        result = query.value(0).toInt();
     }
 
     if (!result.has_value())
