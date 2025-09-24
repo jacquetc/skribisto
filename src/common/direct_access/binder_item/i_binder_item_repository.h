@@ -28,7 +28,6 @@ namespace Skribisto::Common::DirectAccess::BinderItem
 {
 
 // Relationships for BinderItem entity derived from its relational fields
-// Currently, BinderItem has a single relationship field: `projects`
 enum class BinderItemRelationshipField
 {
     Contents,

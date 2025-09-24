@@ -28,7 +28,6 @@ namespace Skribisto::Common::DirectAccess::RecentProject
 {
 
 // Relationships for RecentProject entity derived from its relational fields
-// Currently, RecentProject has a single relationship field: `projects`
 enum class RecentProjectRelationshipField
 {
 };

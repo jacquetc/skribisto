@@ -25,17 +25,19 @@
 
 namespace Skribisto::Common::Entities
 {
-struct Tag
+struct BinderTag
 {
     int id = 0;
     QDateTime createdAt;
     QDateTime updatedAt;
     QString name;
     QString color;
+    QString textColor;
 
-    Tag() = default;
-    Tag(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name, const QString &color)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), color(color)
+    BinderTag() = default;
+    BinderTag(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name, const QString &color,
+              const QString &textColor)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), color(color), textColor(textColor)
     {
     }
 };

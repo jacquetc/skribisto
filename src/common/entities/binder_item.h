@@ -37,16 +37,16 @@ struct BinderItem
     QString title;
     QString subTitle;
     QString role;
-    QString text;
-    QString dict;
+    QString dictLanguage;
     QList<int> contents;
     QList<int> binderItems;
     std::optional<int> parent;
 
     BinderItem() = default;
     BinderItem(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
-               const QString &subTitle, const QString &role, const QString &text)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), subTitle(subTitle), role(role), text(text)
+               const QString &subTitle, const QString &role, const QString &dictLanguage)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), subTitle(subTitle), role(role),
+          dictLanguage(dictLanguage)
 
     {
     }

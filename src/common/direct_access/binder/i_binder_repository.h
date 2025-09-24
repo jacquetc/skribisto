@@ -28,7 +28,6 @@ namespace Skribisto::Common::DirectAccess::Binder
 {
 
 // Relationships for Binder entity derived from its relational fields
-// Currently, Binder has a single relationship field: `binderItems`
 enum class BinderRelationshipField
 {
     BinderItems,

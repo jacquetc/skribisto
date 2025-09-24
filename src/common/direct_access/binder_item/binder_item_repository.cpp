@@ -93,11 +93,29 @@ QList<int> SCDBinderItem::BinderItemRepository::remove(const QList<int> &binderI
         contentIds.unite(idsSet); // use unite to combine sets
     }
 
-    // if (!contentIds.isEmpty())
-    // {
-    //     auto contentRepository = RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
-    //     contentRepository->remove(contentIds.values());
-    // }
+    if (!contentIds.isEmpty())
+    {
+        auto contentRepository = RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
+        contentRepository->remove(contentIds.values());
+    }
+
+    // cascade deletion on binder items . It's special because on binder items we have a parent-child relationship
+    QHash<int, QList<int>> leftIdToBinderItemIdsHash =
+        getRelationshipIdsMany(binderItemIds, BinderItemRelationshipField::BinderItems);
+    // concatenate all rightIds
+    QSet<int> childBinderItemIds;
+    childBinderItemIds.reserve(leftIdToBinderItemIdsHash.size());
+    for (const auto &ids : leftIdToBinderItemIdsHash)
+    {
+        QSet<int> idsSet(ids.begin(), ids.end());
+        childBinderItemIds.unite(idsSet); // use unite to combine sets
+    }
+
+    if (!childBinderItemIds.isEmpty())
+    {
+        auto binderItemRepository = RepositoryFactory::createBinderItemRepository(m_dbSubContext, m_eventRegistry);
+        binderItemRepository->remove(childBinderItemIds.values());
+    }
 
     auto removed = m_table->removeMany(binderItemIds);
     emitRemoved(removed);

@@ -32,7 +32,8 @@ inline QString getSqlTableDefinition()
         "CREATE TABLE IF NOT EXISTS root ("
         "    id INTEGER PRIMARY KEY ON CONFLICT ROLLBACK AUTOINCREMENT UNIQUE ON CONFLICT ROLLBACK NOT NULL,"
         "    created_at TEXT NOT NULL,"
-        "    updated_at TEXT NOT NULL"
+        "    updated_at TEXT NOT NULL,"
+        "    author_name TEXT"
         ");");
 }
 

@@ -53,9 +53,7 @@ set(UNDO_REDO_LIST
 
 set(ENTITIES_LIST
         entities/root.h
-        entities/author.h
-        entities/tag.h
-        entities/page.h
+        entities/binder_tag.h
         entities/project.h
         entities/dict_word.h
         entities/binder.h
@@ -111,6 +109,24 @@ set(DIRECT_ACCESS_LIST
         direct_access/binder_item/table_definitions.h
         direct_access/binder_item/binder_item_events.h
         direct_access/binder_item/binder_item_events.cpp
+        # content
+        direct_access/content/i_content_repository.h
+        direct_access/content/content_repository.cpp
+        direct_access/content/content_repository.h
+        direct_access/content/content_table.cpp
+        direct_access/content/content_table.h
+        direct_access/content/table_definitions.h
+        direct_access/content/content_events.h
+        direct_access/content/content_events.cpp
+        # binder tag
+        direct_access/binder_tag/i_binder_tag_repository.h
+        direct_access/binder_tag/binder_tag_repository.cpp
+        direct_access/binder_tag/binder_tag_repository.h
+        direct_access/binder_tag/binder_tag_table.cpp
+        direct_access/binder_tag/binder_tag_table.h
+        direct_access/binder_tag/table_definitions.h
+        direct_access/binder_tag/binder_tag_events.h
+        direct_access/binder_tag/binder_tag_events.cpp
 
 
         #        direct_access/author/i_author_repository.cpp

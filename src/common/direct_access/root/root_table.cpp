@@ -71,8 +71,9 @@ QList<SCE::Root> SCDRoot::RootTable::createMany(const QList<SCE::Root> &roots)
         }
 
         columnNames << "created_at"_L1
-                    << "updated_at"_L1;
-        valuePlaceholders << ":created_at"_L1 << ":updated_at"_L1;
+                    << "updated_at"_L1
+                    << "author_name"_L1;
+        valuePlaceholders << ":created_at"_L1 << ":updated_at"_L1 << ":author_name"_L1;
 
         QString sqlString =
             "INSERT INTO root (%1) VALUES (%2)"_L1.arg(columnNames.join(","_L1), valuePlaceholders.join(","_L1));
@@ -83,6 +84,7 @@ QList<SCE::Root> SCDRoot::RootTable::createMany(const QList<SCE::Root> &roots)
             q.bindValue(":id"_L1, r.id);
         q.bindValue(":created_at"_L1, r.createdAt.toString(Qt::ISODate));
         q.bindValue(":updated_at"_L1, r.updatedAt.toString(Qt::ISODate));
+        q.bindValue(":author_name"_L1, r.authorName);
         if (!q.exec())
         {
             qCritical() << "Failed to insert root:" << q.lastError().text() << " SQL:" << sqlString;
@@ -136,7 +138,8 @@ QList<SCE::Root> SCDRoot::RootTable::updateMany(const QList<SCE::Root> &roots)
     QStringList columnNames;
     columnNames << "id = :id"_L1
                 << "created_at = :created_at"_L1
-                << "updated_at = :updated_at"_L1;
+                << "updated_at = :updated_at"_L1
+                << "author_name = :author_name"_L1;
 
     QString sqlString = "UPDATE root SET %1 WHERE id = :id"_L1.arg(columnNames.join(","_L1));
 
@@ -146,6 +149,7 @@ QList<SCE::Root> SCDRoot::RootTable::updateMany(const QList<SCE::Root> &roots)
         q.bindValue(":id"_L1, r.id);
         q.bindValue(":created_at"_L1, r.createdAt.toString(Qt::ISODate));
         q.bindValue(":updated_at"_L1, r.updatedAt.toString(Qt::ISODate));
+        q.bindValue(":author_name"_L1, r.authorName);
 
         if (q.exec() && q.numRowsAffected() > 0)
         {
@@ -195,7 +199,8 @@ QList<SCE::Root> SCDRoot::RootTable::findMany(const QList<int> &ids) const
     QStringList selectPlaceholders;
     selectPlaceholders << "id"_L1
                        << "created_at"_L1
-                       << "updated_at"_L1;
+                       << "updated_at"_L1
+                       << "author_name"_L1;
     // Build a dynamic IN clause
     QStringList inPlaceholders;
     inPlaceholders.fill("?"_L1, ids.size());
@@ -217,6 +222,7 @@ QList<SCE::Root> SCDRoot::RootTable::findMany(const QList<int> &ids) const
             root.id = q.value(0).toInt();
             root.createdAt = QDateTime::fromString(q.value(1).toString(), Qt::ISODate);
             root.updatedAt = QDateTime::fromString(q.value(2).toString(), Qt::ISODate);
+            root.authorName = q.value(3).toString();
             result.append(root);
         }
 

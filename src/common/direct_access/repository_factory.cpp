@@ -21,6 +21,8 @@
 #include "repository_factory.h"
 #include "binder/binder_table.h"
 #include "binder_item/binder_item_table.h"
+#include "binder_tag/binder_tag_table.h"
+#include "content/content_table.h"
 #include "project/project_table.h"
 #include "recent_project/recent_project_table.h"
 #include "root/root_table.h"
@@ -34,6 +36,8 @@ namespace SCDProject = Skribisto::Common::DirectAccess::Project;
 namespace SCDBinder = Skribisto::Common::DirectAccess::Binder;
 namespace SCDBinderItem = Skribisto::Common::DirectAccess::BinderItem;
 namespace SCDRecentProject = Skribisto::Common::DirectAccess::RecentProject;
+namespace SCDContent = Skribisto::Common::DirectAccess::Content;
+namespace SCDBinderTag = Skribisto::Common::DirectAccess::BinderTag;
 
 // Original factory methods with individual event pointers
 std::unique_ptr<SCDRoot::RootRepository> createRootRepository(Database::DbSubContext &dbSubContext,
@@ -70,6 +74,21 @@ std::unique_ptr<SCDRecentProject::RecentProjectRepository> createRecentProjectRe
     auto table = std::make_unique<SCD::RecentProject::RecentProjectTable>(dbSubContext);
     return std::make_unique<SCDRecentProject::RecentProjectRepository>(std::move(table), dbSubContext,
                                                                        std::move(eventRegistry));
+}
+
+std::unique_ptr<SCDContent::ContentRepository> createContentRepository(Database::DbSubContext &dbSubContext,
+                                                                       QPointer<EventRegistry> eventRegistry)
+{
+    auto table = std::make_unique<SCD::Content::ContentTable>(dbSubContext);
+    return std::make_unique<SCD::Content::ContentRepository>(std::move(table), dbSubContext, std::move(eventRegistry));
+}
+
+std::unique_ptr<SCDBinderTag::BinderTagRepository> createBinderTagRepository(Database::DbSubContext &dbSubContext,
+                                                                             QPointer<EventRegistry> eventRegistry)
+{
+    auto table = std::make_unique<SCD::BinderTag::BinderTagTable>(dbSubContext);
+    return std::make_unique<SCDBinderTag::BinderTagRepository>(std::move(table), dbSubContext,
+                                                               std::move(eventRegistry));
 }
 
 } // namespace Skribisto::Common::DirectAccess::RepositoryFactory

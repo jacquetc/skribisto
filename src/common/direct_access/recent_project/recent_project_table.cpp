@@ -66,10 +66,11 @@ QList<SCE::RecentProject> SCDRecentProject::RecentProjectTable::createMany(
 
         columnNames << "created_at"_L1
                     << "updated_at"_L1
-                    << "title"_L1
+                    << "title"_L1 << "last_opened_at"_L1
                     << "absolute_path"_L1;
 
-        valuePlaceholders << ":created_at"_L1 << ":updated_at"_L1 << ":title"_L1 << ":absolute_path"_L1;
+        valuePlaceholders << ":created_at"_L1 << ":updated_at"_L1 << ":title"_L1 << ":last_opened_at"_L1
+                          << ":absolute_path"_L1;
 
         QString sqlString = "INSERT INTO recent_project (%1) VALUES (%2)"_L1.arg(columnNames.join(","_L1),
                                                                                  valuePlaceholders.join(","_L1));
@@ -87,6 +88,7 @@ QList<SCE::RecentProject> SCDRecentProject::RecentProjectTable::createMany(
         q.bindValue(":created_at"_L1, r.createdAt.toString(Qt::ISODate));
         q.bindValue(":updated_at"_L1, r.updatedAt.toString(Qt::ISODate));
         q.bindValue(":title"_L1, r.title);
+        q.bindValue(":last_opened_at"_L1, r.lastOpenedAt.toString(Qt::ISODate));
         q.bindValue(":absolute_path"_L1, r.absolutePath);
         if (!q.exec())
         {
@@ -132,7 +134,7 @@ QList<SCE::RecentProject> SCDRecentProject::RecentProjectTable::updateMany(
     columnNames << "id = :id"_L1
                 << "created_at = :created_at"_L1
                 << "updated_at = :updated_at"_L1
-                << "title = :title"_L1
+                << "title = :title"_L1 << "last_opened_at = :last_opened_at"_L1
                 << "absolute_path = :absolute_path"_L1;
 
     QString sqlString = "UPDATE recent_project SET %1 WHERE id = :id"_L1.arg(columnNames.join(","_L1));
@@ -144,6 +146,7 @@ QList<SCE::RecentProject> SCDRecentProject::RecentProjectTable::updateMany(
         q.bindValue(":created_at"_L1, r.createdAt.toString(Qt::ISODate));
         q.bindValue(":updated_at"_L1, r.updatedAt.toString(Qt::ISODate));
         q.bindValue(":title"_L1, r.title);
+        q.bindValue(":last_opened_at"_L1, r.lastOpenedAt.toString(Qt::ISODate));
         q.bindValue(":absolute_path"_L1, r.absolutePath);
 
         if (q.exec() && q.numRowsAffected() > 0)
@@ -191,6 +194,7 @@ QList<SCE::RecentProject> SCDRecentProject::RecentProjectTable::findMany(const Q
                        << "created_at"_L1
                        << "updated_at"_L1
                        << "title"_L1
+                       << "last_opened_at"_L1
                        << "absolute_path"_L1;
 
     // Build a dynamic IN clause
@@ -215,7 +219,8 @@ QList<SCE::RecentProject> SCDRecentProject::RecentProjectTable::findMany(const Q
             recentProject.createdAt = QDateTime::fromString(q.value(1).toString(), Qt::ISODate);
             recentProject.updatedAt = QDateTime::fromString(q.value(2).toString(), Qt::ISODate);
             recentProject.title = q.value(3).toString();
-            recentProject.absolutePath = q.value(4).toString();
+            recentProject.lastOpenedAt = QDateTime::fromString(q.value(4).toString(), Qt::ISODate);
+            recentProject.absolutePath = q.value(5).toString();
             result.append(recentProject);
         }
 
@@ -234,9 +239,7 @@ QList<int> SCDRecentProject::RecentProjectTable::removeMany(const QList<int> &id
     QSqlQuery q(db);
 
     // Clean up junction backward table relationships
-    auto rightAndLeftIds = JunctionTableOps::OrderedOneToMany::getLeftIdMany(db, ROOT_RECENT_PROJECTS_JUNCTION, ids);
-    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, rightAndLeftIds.values(),
-                                                               ROOT_RECENT_PROJECTS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, ids, ROOT_RECENT_PROJECTS_JUNCTION);
 
     for (int id : ids)
     {

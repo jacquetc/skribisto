@@ -250,8 +250,7 @@ QList<int> SCDBinder::BinderTable::removeMany(const QList<int> &ids)
     // Clean up junction table relationships first
     JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, BINDER_BINDER_ITEMS_JUNCTION);
     // Clean up junction backward table relationships
-    auto leftIds = JunctionTableOps::OrderedOneToMany::getLeftIdMany(db, PROJECT_BINDERS_JUNCTION, ids);
-    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, leftIds.values(), PROJECT_BINDERS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, ids, PROJECT_BINDERS_JUNCTION);
 
     for (int id : ids)
     {

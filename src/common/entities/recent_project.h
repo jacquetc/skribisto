@@ -33,13 +33,15 @@ struct RecentProject
     QDateTime createdAt;
     QDateTime updatedAt;
     QString title;
+    QDateTime lastOpenedAt;
     QString absolutePath;
 
     // Constructeurs optionnels
     RecentProject() = default;
     RecentProject(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                   const QString &absolutePath)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), absolutePath(absolutePath)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), lastOpenedAt(createdAt),
+          absolutePath(absolutePath)
     {
     }
 };

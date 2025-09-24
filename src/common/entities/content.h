@@ -30,38 +30,12 @@ struct Content
     int id = 0;
     QDateTime createdAt;
     QDateTime updatedAt;
-    QString name;
+    QString role;
     QString data;
 
     Content() = default;
-    Content(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name, const QString &data)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), data(data)
-    {
-    }
-};
-#pragma once
-
-#include <QDateTime>
-#include <QList>
-#include <QString>
-#include <optional>
-
-struct Binder
-{
-    int id = 0;
-    QDateTime createdAt;
-    QDateTime updatedAt;
-    QString name;
-    std::optional<QList<int>> pages;
-
-    Binder() = default;
-    Binder(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name)
-    {
-    }
-    Binder(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name,
-           const std::optional<QList<int>> &pages)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), pages(pages)
+    Content(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &role, const QString &data)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), role(role), data(data)
     {
     }
 };

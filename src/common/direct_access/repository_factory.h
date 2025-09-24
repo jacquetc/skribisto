@@ -23,6 +23,8 @@
 #include "database/db_context.h"
 #include "direct_access/binder/binder_repository.h"
 #include "direct_access/binder_item/binder_item_repository.h"
+#include "direct_access/binder_tag/binder_tag_repository.h"
+#include "direct_access/content/content_repository.h"
 #include "direct_access/event_registry.h"
 #include "direct_access/project/project_repository.h"
 #include "direct_access/recent_project/recent_project_repository.h"
@@ -36,7 +38,9 @@ namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
 namespace SCDProject = Skribisto::Common::DirectAccess::Project;
 namespace SCDBinder = Skribisto::Common::DirectAccess::Binder;
 namespace SCDBinderItem = Skribisto::Common::DirectAccess::BinderItem;
+namespace SCDBinderTag = Skribisto::Common::DirectAccess::BinderTag;
 namespace SCDRecentProject = Skribisto::Common::DirectAccess::RecentProject;
+namespace SCDContent = Skribisto::Common::DirectAccess::Content;
 
 // Original methods with individual event pointers
 std::unique_ptr<SCDRoot::RootRepository> createRootRepository(Database::DbSubContext &dbSubContext,
@@ -47,7 +51,11 @@ std::unique_ptr<SCDBinder::BinderRepository> createBinderRepository(Database::Db
                                                                     QPointer<EventRegistry> eventRegistry);
 std::unique_ptr<SCDBinderItem::BinderItemRepository> createBinderItemRepository(Database::DbSubContext &dbSubContext,
                                                                                 QPointer<EventRegistry> eventRegistry);
+std::unique_ptr<SCDBinderTag::BinderTagRepository> createBinderTagRepository(Database::DbSubContext &dbSubContext,
+                                                                             QPointer<EventRegistry> eventRegistry);
 std::unique_ptr<SCDRecentProject::RecentProjectRepository> createRecentProjectRepository(
     Database::DbSubContext &dbSubContext, QPointer<EventRegistry> eventRegistry);
+std::unique_ptr<SCDContent::ContentRepository> createContentRepository(Database::DbSubContext &dbSubContext,
+                                                                       QPointer<EventRegistry> eventRegistry);
 
 } // namespace Skribisto::Common::DirectAccess::RepositoryFactory

@@ -28,7 +28,6 @@ namespace Skribisto::Common::DirectAccess::Root
 {
 
 // Relationships for Root entity derived from its relational fields
-// Currently, Root has a single relationship field: `projects`
 enum class RootRelationshipField
 {
     Projects,

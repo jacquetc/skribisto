@@ -42,6 +42,7 @@ const QString BINDER_ITEM_BINDER_ITEMS_JUNCTION = "binder_item_binder_items_to_b
 const QString BINDER_ITEM_PARENT_ITEM_JUNCTION = "binder_item_parent_item_to_content_junction"_L1;
 // backward relationship junction tables
 const QString BINDER_BINDER_ITEMS_JUNCTION = "binder_binder_items_to_binder_item_junction"_L1;
+const QString BINDER_ITEM_BINDER_ITEMS_JUNCTION_BACKWARD = "binder_item_binder_items_to_binder_item_junction"_L1;
 
 SCDBinderItem::BinderItemTable::BinderItemTable(DbSubContext &dbSubContext) : m_dbSubContext(dbSubContext)
 {
@@ -71,10 +72,10 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::createMany(const QList<SC
                     << "title"_L1
                     << "sub_title"_L1
                     << "role"_L1
-                    << "dict"_L1;
+                    << "dict_language"_L1;
 
         valuePlaceholders << ":created_at"_L1 << ":updated_at"_L1 << ":title"_L1 << ":sub_title"_L1
-                          << ":role"_L1 << ":dict"_L1;
+                          << ":role"_L1 << ":dict_language"_L1;
         QString sqlString =
             "INSERT INTO binder_item (%1) VALUES (%2)"_L1.arg(columnNames.join(","_L1), valuePlaceholders.join(","_L1));
 
@@ -93,7 +94,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::createMany(const QList<SC
         q.bindValue(":title"_L1, r.title);
         q.bindValue(":sub_title"_L1, r.subTitle);
         q.bindValue(":role"_L1, r.role);
-        q.bindValue(":dict"_L1, r.dict);
+        q.bindValue(":dict_language"_L1, r.dictLanguage);
 
         if (!q.exec())
         {
@@ -171,7 +172,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::updateMany(const QList<SC
         q.bindValue(":title"_L1, r.title);
         q.bindValue(":sub_title"_L1, r.subTitle);
         q.bindValue(":role"_L1, r.role);
-        q.bindValue(":dict"_L1, r.dict);
+        q.bindValue(":dict"_L1, r.dictLanguage);
 
         if (q.exec() && q.numRowsAffected() > 0)
         {
@@ -226,7 +227,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::findMany(const QList<int>
                        << "title"_L1
                        << "sub_title"_L1
                        << "role"_L1
-                       << "dict"_L1;
+                       << "dict_language"_L1;
     // Build a dynamic IN clause
     QStringList inPlaceholders;
     inPlaceholders.fill("?"_L1, ids.size());
@@ -251,7 +252,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::findMany(const QList<int>
             binderItem.title = q.value(3).toString();
             binderItem.subTitle = q.value(4).toString();
             binderItem.role = q.value(5).toString();
-            binderItem.dict = q.value(6).toString();
+            binderItem.dictLanguage = q.value(6).toString();
             result.append(binderItem);
         }
 
@@ -291,9 +292,8 @@ QList<int> SCDBinderItem::BinderItemTable::removeMany(const QList<int> &ids)
     JunctionTableOps::OneToOne::removeWithLeftIdMany(db, ids, BINDER_ITEM_PARENT_ITEM_JUNCTION);
 
     // Clean up junction backward table relationships
-    auto rightAndLeftIds = JunctionTableOps::OrderedOneToMany::getLeftIdMany(db, BINDER_BINDER_ITEMS_JUNCTION, ids);
-    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, rightAndLeftIds.values(),
-                                                               BINDER_BINDER_ITEMS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, ids, BINDER_BINDER_ITEMS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, ids, BINDER_ITEM_BINDER_ITEMS_JUNCTION_BACKWARD);
 
     for (int id : ids)
     {
@@ -343,6 +343,9 @@ void SCDBinderItem::BinderItemTable::setRelationshipIds(int binderItemId, Binder
                                                       std::make_optional(relatedId.first()));
         }
         break;
+
+    default:
+        throw std::invalid_argument("Unhandled relationship type");
     }
 
     // Invalidate cache for relationship changes

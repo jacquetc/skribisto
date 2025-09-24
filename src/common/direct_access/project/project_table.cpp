@@ -138,7 +138,7 @@ QList<SCE::Project> SCDProject::ProjectTable::updateMany(const QList<SCE::Projec
                 << "title = :title"_L1
                 << "dict_language = :dict_language"_L1;
 
-    QString sqlString = "UPDATE binder_item SET %1 WHERE id = :id"_L1.arg(columnNames.join(","_L1));
+    QString sqlString = "UPDATE project SET %1 WHERE id = :id"_L1.arg(columnNames.join(","_L1));
 
     for (const SCE::Project &r : projects)
     {
@@ -202,7 +202,7 @@ QList<SCE::Project> SCDProject::ProjectTable::findMany(const QList<int> &ids) co
     // Build a dynamic IN clause
     QStringList inPlaceholders;
     inPlaceholders.fill("?"_L1, ids.size());
-    const QString sql = QStringLiteral("SELECT %1 FROM binder_item WHERE id IN (%2)")
+    const QString sql = QStringLiteral("SELECT %1 FROM project WHERE id IN (%2)")
                             .arg(selectPlaceholders.join(","_L1), inPlaceholders.join(","_L1));
 
     QSqlQuery q(db);
@@ -253,8 +253,7 @@ QList<int> SCDProject::ProjectTable::removeMany(const QList<int> &ids)
     // Clean up junction table relationships first
     JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, PROJECT_BINDERS_JUNCTION);
     // Clean up junction backward table relationships
-    auto rightAndLeftIds = JunctionTableOps::OrderedOneToMany::getLeftIdMany(db, ROOT_PROJECTS_JUNCTION, ids);
-    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, rightAndLeftIds.values(), ROOT_PROJECTS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, ids, ROOT_PROJECTS_JUNCTION);
 
     for (int id : ids)
     {

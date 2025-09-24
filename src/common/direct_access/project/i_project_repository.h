@@ -28,7 +28,6 @@ namespace Skribisto::Common::DirectAccess::Project
 {
 
 // Relationships for Project entity derived from its relational fields
-// Currently, Project has a single relationship field: `projects`
 enum class ProjectRelationshipField
 {
     Binders,
