@@ -180,7 +180,7 @@ void TestRootUndoRedo::testCreateUseCaseExecuteUndoRedo()
 
     QList<SDAR::CreateRootDto> createDtos;
     SDAR::CreateRootDto dto1;
-    dto1.creationDate = QDateTime::currentDateTime();
+    dto1.createdAt = QDateTime::currentDateTime();
     createDtos.append(dto1);
 
     // Act - Execute
@@ -215,7 +215,7 @@ void TestRootUndoRedo::testCreateUseCaseWithCommand()
 
     QList<SDAR::CreateRootDto> createDtos;
     SDAR::CreateRootDto dto1;
-    dto1.creationDate = QDateTime::currentDateTime();
+    dto1.createdAt = QDateTime::currentDateTime();
     createDtos.append(dto1);
 
     auto command = std::make_shared<SCU::UndoRedoCommand>("Test Create Command"_L1);
