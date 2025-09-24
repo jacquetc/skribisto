@@ -45,17 +45,18 @@ class DtoMapper
 
     static SCE::Root toEntity(const CreateRootDto &dto)
     {
-        return {0, dto.createdAt, dto.updatedAt, dto.projects, dto.recentProjects};
+        return {0, dto.createdAt, dto.updatedAt, dto.authorName, dto.projects, dto.recentProjects};
     }
 
     static SCE::Root toEntity(const RootDto &dto)
     {
-        return {0, dto.createdAt, dto.updatedAt, dto.projects, dto.recentProjects};
+        return {0, dto.createdAt, dto.updatedAt, dto.authorName, dto.projects, dto.recentProjects};
     }
 
     static RootDto toDto(const SCE::Root &entity)
     {
-        return RootDto{entity.id, entity.createdAt, entity.updatedAt, entity.projects, entity.recentProjects};
+        return RootDto{entity.id,         entity.createdAt, entity.updatedAt,
+                       entity.authorName, entity.projects,  entity.recentProjects};
     }
 
     static QList<SCE::Root> toEntityList(const QList<CreateRootDto> &dtos)

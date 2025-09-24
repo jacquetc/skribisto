@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "direct_access/project/i_project_repository.h"
-#include "direct_access/project/project_repository.h"
+#include "database/db_context.h"
+#include "direct_access/event_registry.h"
 #include "dtos.h"
 #include <QCoro/QCoroTask>
 

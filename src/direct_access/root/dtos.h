@@ -47,12 +47,14 @@ struct RootDto
     int id = 0;
     QDateTime createdAt;
     QDateTime updatedAt;
+    QString authorName;
     QList<int> projects = {};
     QList<int> recentProjects = {};
     RootDto() = default;
-    RootDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QList<int> &projects,
-            const QList<int> &recent_projects)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), projects(projects), recentProjects(recent_projects)
+    RootDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &authorName,
+            const QList<int> &projects, const QList<int> &recentProjects)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), projects(projects),
+          recentProjects(recentProjects)
     {
     }
 };
@@ -62,18 +64,21 @@ struct CreateRootDto
     Q_GADGET
     Q_PROPERTY(QDateTime createdAt MEMBER createdAt)
     Q_PROPERTY(QDateTime updatedAt MEMBER updatedAt)
+    Q_PROPERTY(QString authorName MEMBER authorName)
     Q_PROPERTY(QList<int> projects MEMBER projects)
     Q_PROPERTY(QList<int> recentProjects MEMBER recentProjects)
 
   public:
     QDateTime createdAt;
     QDateTime updatedAt;
+    QString authorName;
     QList<int> projects = {};
     QList<int> recentProjects = {};
     CreateRootDto() = default;
-    CreateRootDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QList<int> &projects,
-                  const QList<int> &recent_projects)
-        : createdAt(createdAt), updatedAt(updatedAt), projects(projects), recentProjects(recent_projects)
+    CreateRootDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &authorName,
+                  const QList<int> &projects, const QList<int> &recentProjects)
+        : createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), projects(projects),
+          recentProjects(recentProjects)
     {
     }
 };
