@@ -19,19 +19,30 @@
  ******************************************************************************/
 
 #pragma once
-
+#include <QList>
 #include <QString>
+#include <QStringLiteral>
 
-namespace Skribisto::Common::Entities
+namespace Skribisto::Common::DirectAccess::BinderTag
 {
-struct Author
-{
-    int id = 0;
-    QString name;
 
-    Author() = default;
-    Author(int id, const QString &name) : id(id), name(name)
-    {
-    }
-};
-} // namespace Skribisto::Common::Entities
+inline QString getSqlTableDefinition()
+{
+    return QStringLiteral("CREATE TABLE IF NOT EXISTS binder_tag ("
+                          "    id INTEGER PRIMARY KEY,"
+                          "    created_at TEXT NOT NULL,"
+                          "    updated_at TEXT NOT NULL,"
+                          "    name TEXT NOT NULL,"
+                          "   color TEXT NOT NULL,"
+                          "   text_color TEXT NOT NULL"
+                          ");");
+}
+
+inline QList<QString> getSqlJunctionTableDefinitions()
+{
+    QList<QString> definitions;
+
+    return definitions;
+}
+
+} // namespace Skribisto::Common::DirectAccess::BinderTag

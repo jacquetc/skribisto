@@ -20,39 +20,34 @@
 
 #pragma once
 
-#include <QDateTime>
+#include "database/db_context.h"
+#include "direct_access/binder_tag/binder_tag_repository.h"
+#include "entities/binder_tag.h"
+
 #include <QList>
-#include <QString>
-#include <optional>
 
-namespace Skribisto::Common::Entities
+namespace Skribisto::Common::DirectAccess::BinderTag
 {
-struct Page
-{
-    int id = 0;
-    QDateTime createdAt;
-    QDateTime updatedAt;
-    QString name;
-    QString subName;
-    QList<int> childPages;
-    std::optional<int> parentPage;
-    QString pageType;
-    std::optional<QList<int>> contents;
-    QString dictLang;
+namespace SCE = Skribisto::Common::Entities;
 
-    Page() = default;
-    Page(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name, const QString &subName,
-         const QList<int> &childPages, const QString &pageType, const QString &dictLang)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), subName(subName), childPages(childPages),
-          pageType(pageType), dictLang(dictLang)
-    {
-    }
-    Page(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name, const QString &subName,
-         const QList<int> &childPages, const std::optional<int> &parentPage, const QString &pageType,
-         const std::optional<QList<int>> &contents, const QString &dictLang)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), subName(subName), childPages(childPages),
-          parentPage(parentPage), pageType(pageType), contents(contents), dictLang(dictLang)
-    {
-    }
+class BinderTagTable final : public IBinderTagTable
+{
+  public:
+    explicit BinderTagTable(Database::DbSubContext &dbSubContext);
+
+    QList<SCE::BinderTag> createMany(const QList<SCE::BinderTag> &binderTags) override;
+    QList<SCE::BinderTag> updateMany(const QList<SCE::BinderTag> &binderTags) override;
+    [[nodiscard]] QList<SCE::BinderTag> findMany(const QList<int> &ids) const override;
+    QList<int> removeMany(const QList<int> &ids) override;
+    void setRelationshipIds(int binderTagId, BinderTagRelationshipField relationship, QList<int> relatedId) override;
+    [[nodiscard]] QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &binderTagIds,
+                                                                BinderTagRelationshipField relationship) const override;
+    int getRelationshipIdsCount(int binderTagId, BinderTagRelationshipField relationship) override;
+    QList<int> getRelationshipIdsInRange(int binderTagId, BinderTagRelationshipField relationship, int offset,
+                                         int limit) override;
+
+  private:
+    Database::DbSubContext &m_dbSubContext;
 };
-} // namespace Skribisto::Common::Entities
+
+} // namespace Skribisto::Common::DirectAccess::BinderTag
