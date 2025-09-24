@@ -31,7 +31,7 @@ struct ForeignEventDispatcher
     Q_GADGET
     QML_FOREIGN(Skribisto::Common::DirectAccess::EventRegistry)
     QML_SINGLETON
-    QML_NAMED_ELEMENT(EventDispatcher)
+    QML_NAMED_ELEMENT(EventRegistry)
 
   public:
     // Initialize this singleton instance with the given engine.
@@ -85,6 +85,16 @@ struct ForeignEventDispatcher
     Q_INVOKABLE Skribisto::Common::DirectAccess::RecentProject::RecentProjectEvents *getRecentProjectEvents() const
     {
         return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::RecentProject::RecentProjectEvents>();
+    }
+
+    Q_INVOKABLE Skribisto::Common::DirectAccess::Content::ContentEvents *getContentEvents() const
+    {
+        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::Content::ContentEvents>();
+    }
+
+    Q_INVOKABLE Skribisto::Common::DirectAccess::BinderTag::BinderTagEvents *getBinderTagEvents() const
+    {
+        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::BinderTag::BinderTagEvents>();
     }
 
   private:

@@ -25,19 +25,62 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import QCoro 0
-
+import QtQml
+import QtQuick.Controls.Basic
 // Components
 import Skribisto.App
-import Controllers
+import Skribisto.Controllers
 // import Models
 // import Singles
 
 ApplicationWindow {
+    id: applicationWindow
     visible: true
     width: 640
     height: 480
     title: "FrontEndsExample"
+    // palette: customPalette
+    // ColorGroup {
+    //     id: activeCG
+    //     window: Qt.color("#ffffff")
+    //     button: Qt.color("#dddddd")
+    //     buttonText: Qt.color("#000000")
+    //     text: Qt.color("#705890")
+    // }
+    // ColorGroup {
+    //     id: inactiveCG
+    //     window: Qt.color("#ffffff")
+    //     button: Qt.color("#f85aaa")
+    //     buttonText: Qt.color("#000000")
+    //     text: Qt.color("#705890")
+    // }
+    // Palette {
+    //     id: customPalette
+    //     active: activeCG
+    //     inactive: inactiveCG
+    // }
+    palette {
+        active {
+            buttonText: "#3700B3"
+        }
+        inactive {
+            buttonText: "yellow"
+        }
+        disabled {
+            buttonText: colors.buttonText
+        }
+    }
 
+    QtObject {
+        id: colors
+        property string buttonText: "salmon"
+        property string primaryVariant: "#3700B3"
+
+        // onButtonTextChanged: {
+        //     console.log("Button text color changed to:", buttonText)
+        //     applicationWindow.palette.disabled.butonText = buttonText
+        // }
+    }
 
     // Main layout
     ColumnLayout {
@@ -71,6 +114,8 @@ ApplicationWindow {
                 id: createProjectButton
                 text: "Create Project"
                 onClicked: {
+                    colors.buttonText = "blue"
+                    testDialog.open()
                     console.log("Create button clicked")
                     var dto = projectController.getCreateDto()
                     dto.title = "My Project "
@@ -83,9 +128,11 @@ ApplicationWindow {
             // Button
             Button {
                 id: createRootButton
+                enabled: false
                 text: "Create Root"
                 onClicked: {
                     console.log("Create button clicked")
+
                     var dto = rootController.getCreateDto()
                     dto.projects = [1]
 

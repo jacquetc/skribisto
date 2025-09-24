@@ -27,10 +27,4 @@ import content
 App {
 
 
-    Component.onCompleted: {
-        console.log("QML Debug message")     // Might be filtered
-        console.info("QML Info message")     // Usually shows
-        console.warn("QML Warning message")  // Shows as "qml: ..."
-        console.error("QML Error message")   // Shows as "qml: ..."
-    }
 }

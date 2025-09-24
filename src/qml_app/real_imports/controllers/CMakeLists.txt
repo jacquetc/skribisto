@@ -11,13 +11,18 @@ set(PLUGIN_NAME skribisto-qml-controllers)
 qt_add_library(${PLUGIN_NAME} STATIC)
 
 qt6_add_qml_module(${PLUGIN_NAME}
-        URI "Controllers"
+        URI "Skribisto.Controllers"
         VERSION 1.0
         SOURCES
 
+        foreign_event_registry.h
         foreign_root_controller.h
         foreign_project_controller.h
-        foreign_event_dispatcher.h
+        foreign_recent_project_controller.h
+        foreign_binder_controller.h
+        foreign_binder_tag_controller.h
+        foreign_binder_item_controller.h
+        foreign_content_controller.h
         #foreign_undo_redo_controller.h
 
 )
