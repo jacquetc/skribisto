@@ -75,6 +75,7 @@ include(CMakePackageConfigHelpers)
 
 add_subdirectory(src/common)
 add_subdirectory(src/direct_access)
+add_subdirectory(src/work_management)
 add_subdirectory(src/qml_app)
 
 
