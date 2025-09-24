@@ -46,10 +46,10 @@ class IContentTable
     [[nodiscard]] virtual QList<SCE::Content> findMany(const QList<int> &ids) const = 0;
     virtual QList<int> removeMany(const QList<int> &ids) = 0;
     // Relationship setters/getters
-    // Set the relationship value for a given Content id (e.g., set project id)
+    // Set the relationship value for a given Content id (e.g., set work id)
     virtual void setRelationshipIds(int contentId, ContentRelationshipField relationship, QList<int> relatedId) = 0;
 
-    // Get the relationship value for a given Content id (e.g., get project id)
+    // Get the relationship value for a given Content id (e.g., get work id)
     [[nodiscard]] virtual QHash<int, QList<int>> getRelationshipIdsMany(
         const QList<int> &contentIds, ContentRelationshipField relationship) const = 0;
     virtual int getRelationshipIdsCount(int contentId, ContentRelationshipField relationship) = 0;

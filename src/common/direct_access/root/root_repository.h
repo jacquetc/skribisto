@@ -46,10 +46,10 @@ class IRootTable
     [[nodiscard]] virtual QList<SCE::Root> findMany(const QList<int> &ids) const = 0;
     virtual QList<int> removeMany(const QList<int> &ids) = 0;
     // Relationship setters/getters
-    // Set the relationship value for a given Root id (e.g., set project id)
+    // Set the relationship value for a given Root id (e.g., set work id)
     virtual void setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedId) = 0;
 
-    // Get the relationship value for a given Root id (e.g., get project id)
+    // Get the relationship value for a given Root id (e.g., get work id)
     [[nodiscard]] virtual QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &rootIds,
                                                                         RootRelationshipField relationship) const = 0;
     virtual int getRelationshipIdsCount(int rootId, RootRelationshipField relationship) = 0;

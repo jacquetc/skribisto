@@ -46,10 +46,10 @@ class IBinderTagTable
     [[nodiscard]] virtual QList<SCE::BinderTag> findMany(const QList<int> &ids) const = 0;
     virtual QList<int> removeMany(const QList<int> &ids) = 0;
     // Relationship setters/getters
-    // Set the relationship value for a given BinderTag id (e.g., set project id)
+    // Set the relationship value for a given BinderTag id (e.g., set work id)
     virtual void setRelationshipIds(int binderTagId, BinderTagRelationshipField relationship, QList<int> relatedId) = 0;
 
-    // Get the relationship value for a given BinderTag id (e.g., get project id)
+    // Get the relationship value for a given BinderTag id (e.g., get work id)
     [[nodiscard]] virtual QHash<int, QList<int>> getRelationshipIdsMany(
         const QList<int> &binderTagIds, BinderTagRelationshipField relationship) const = 0;
     virtual int getRelationshipIdsCount(int binderTagId, BinderTagRelationshipField relationship) = 0;

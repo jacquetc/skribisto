@@ -54,11 +54,11 @@ set(UNDO_REDO_LIST
 set(ENTITIES_LIST
         entities/root.h
         entities/binder_tag.h
-        entities/project.h
+        entities/work.h
         entities/dict_word.h
         entities/binder.h
         entities/content.h
-        entities/recent_project.h
+        entities/recent_work.h
         entities/binder_item.h
 )
 
@@ -73,24 +73,24 @@ set(DIRECT_ACCESS_LIST
         direct_access/root/table_definitions.h
         direct_access/root/root_events.h
         direct_access/root/root_events.cpp
-        # recent project
-        direct_access/recent_project/i_recent_project_repository.h
-        direct_access/recent_project/recent_project_repository.cpp
-        direct_access/recent_project/recent_project_repository.h
-        direct_access/recent_project/recent_project_table.cpp
-        direct_access/recent_project/recent_project_table.h
-        direct_access/recent_project/table_definitions.h
-        direct_access/recent_project/recent_project_events.h
-        direct_access/recent_project/recent_project_events.cpp
-        # project
-        direct_access/project/i_project_repository.h
-        direct_access/project/project_repository.cpp
-        direct_access/project/project_repository.h
-        direct_access/project/project_table.cpp
-        direct_access/project/project_table.h
-        direct_access/project/table_definitions.h
-        direct_access/project/project_events.h
-        direct_access/project/project_events.cpp
+        # recent work
+        direct_access/recent_work/i_recent_work_repository.h
+        direct_access/recent_work/recent_work_repository.cpp
+        direct_access/recent_work/recent_work_repository.h
+        direct_access/recent_work/recent_work_table.cpp
+        direct_access/recent_work/recent_work_table.h
+        direct_access/recent_work/table_definitions.h
+        direct_access/recent_work/recent_work_events.h
+        direct_access/recent_work/recent_work_events.cpp
+        # work
+        direct_access/work/i_work_repository.h
+        direct_access/work/work_repository.cpp
+        direct_access/work/work_repository.h
+        direct_access/work/work_table.cpp
+        direct_access/work/work_table.h
+        direct_access/work/table_definitions.h
+        direct_access/work/work_events.h
+        direct_access/work/work_events.cpp
         # binder
         direct_access/binder/i_binder_repository.h
         direct_access/binder/binder_repository.cpp

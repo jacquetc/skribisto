@@ -23,8 +23,7 @@
 namespace Skribisto::Common::UndoRedo
 {
 
-UndoRedoScope::UndoRedoScope(UndoRedoScopeType type, const QString &name, int id)
-    : m_type(type), m_name(name), m_id(id)
+UndoRedoScope::UndoRedoScope(UndoRedoScopeType type, const QString &name, int id) : m_type(type), m_name(name), m_id(id)
 {
 }
 
@@ -46,12 +45,13 @@ int UndoRedoScope::id() const
 QString UndoRedoScope::scopeKey() const
 {
     QString typeStr;
-    switch (m_type) {
+    switch (m_type)
+    {
     case UndoRedoScopeType::Root:
         typeStr = "Root"_L1;
         break;
-    case UndoRedoScopeType::Project:
-        typeStr = "Project"_L1;
+    case UndoRedoScopeType::Work:
+        typeStr = "Work"_L1;
         break;
     case UndoRedoScopeType::Content:
         typeStr = "Content"_L1;
@@ -63,12 +63,17 @@ QString UndoRedoScope::scopeKey() const
         typeStr = "Custom"_L1;
         break;
     }
-    
-    if (m_id >= 0) {
+
+    if (m_id >= 0)
+    {
         return QString("%1_%2"_L1).arg(typeStr, QString::number(m_id));
-    } else if (!m_name.isEmpty()) {
+    }
+    else if (!m_name.isEmpty())
+    {
         return QString("%1_%2"_L1).arg(typeStr, m_name);
-    } else {
+    }
+    else
+    {
         return typeStr;
     }
 }
@@ -88,9 +93,9 @@ UndoRedoScope UndoRedoScope::rootScope()
     return UndoRedoScope(UndoRedoScopeType::Root);
 }
 
-UndoRedoScope UndoRedoScope::projectScope(int projectId)
+UndoRedoScope UndoRedoScope::workScope(int workId)
 {
-    return UndoRedoScope(UndoRedoScopeType::Project, QString(), projectId);
+    return UndoRedoScope(UndoRedoScopeType::Work, QString(), workId);
 }
 
 UndoRedoScope UndoRedoScope::contentScope(int contentId)

@@ -23,6 +23,8 @@
 //
 
 #pragma once
+#include <QString>
+#include <qobjectdefs.h>
 
 namespace Skribisto::WorkManagement
 {

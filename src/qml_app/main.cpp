@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     auto *ev = new Skribisto::Common::DirectAccess::EventRegistry(&app);
     // Undo Redo System
     // Skribisto::Common::UndoRedo::Scopes scopes(QStringList() << "root"_L1
-    //                                                          << "project"_L1
+    //                                                          << "work"_L1
     //                                                          << "binder"_L1
     //                                                          << "binder_items"_L1
     //                                                          << "tags"_L1);

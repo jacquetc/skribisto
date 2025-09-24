@@ -278,8 +278,8 @@ void TestUndoRedo::testMultiScopeManager()
     SCU::UndoRedoManager manager;
 
     // Create different scopes
-    auto projectScope1 = SCU::UndoRedoScope::projectScope(1);
-    auto projectScope2 = SCU::UndoRedoScope::projectScope(2);
+    auto projectScope1 = SCU::UndoRedoScope::workScope(1);
+    auto projectScope2 = SCU::UndoRedoScope::workScope(2);
     auto contentScope1 = SCU::UndoRedoScope::contentScope(10);
 
     // Test initial state
@@ -383,7 +383,7 @@ void TestUndoRedo::testScopeIsolation()
     //  Arrange
     SCU::UndoRedoManager manager;
 
-    auto scope1 = SCU::UndoRedoScope::projectScope(100);
+    auto scope1 = SCU::UndoRedoScope::workScope(100);
     auto scope2 = SCU::UndoRedoScope::contentScope(200);
 
     // Create isolated variables for each scope

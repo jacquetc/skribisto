@@ -1,0 +1,84 @@
+/******************************************************************************
+ Copyright (C) 2025 by Cyril Jacquet                                          *
+ cyril.jacquet@skribisto.eu                                                   *
+                                                                              *
+ This file is part of Skribisto.                                              *
+                                                                              *
+ Skribisto is free software: you can redistribute it and/or modify            *
+ it under the terms of the GNU General Public License as published by         *
+ the Free Software Foundation, either version 3 of the License, or            *
+ (at your option) any later version.                                          *
+                                                                              *
+ Skribisto is distributed in the hope that it will be useful,                 *
+ but WITHOUT ANY WARRANTY; without even the implied warranty of               *
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
+ GNU General Public License for more details.                                 *
+                                                                              *
+ You should have received a copy of the GNU General Public License            *
+ along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
+ ******************************************************************************/
+
+//
+// Created by cyril on 15/09/2025.
+//
+
+#pragma once
+#include <QDateTime>
+#include <QList>
+#include <QObject>
+#include <QString>
+
+namespace Skribisto::DirectAccess::Work
+{
+enum class WorkRelationshipField
+{
+    Binders,
+};
+struct WorkDto
+{
+    Q_GADGET
+    Q_PROPERTY(int id MEMBER id)
+    Q_PROPERTY(QDateTime createdAt MEMBER createdAt)
+    Q_PROPERTY(QDateTime updatedAt MEMBER updatedAt)
+    Q_PROPERTY(QString title MEMBER title)
+    Q_PROPERTY(QString dictLanguage MEMBER dictLanguage)
+    Q_PROPERTY(QList<int> binders MEMBER binders)
+
+  public:
+    int id = 0;
+    QDateTime createdAt;
+    QDateTime updatedAt;
+    QString title;
+    QString dictLanguage;
+    QList<int> binders = {};
+    WorkDto() = default;
+    WorkDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
+            const QString &dictLanguage, const QList<int> &binders)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), dictLanguage(dictLanguage), binders(binders)
+    {
+    }
+};
+
+struct CreateWorkDto
+{
+    Q_GADGET
+    Q_PROPERTY(QDateTime createdAt MEMBER createdAt)
+    Q_PROPERTY(QDateTime updatedAt MEMBER updatedAt)
+    Q_PROPERTY(QString title MEMBER title)
+    Q_PROPERTY(QString dictLanguage MEMBER dictLanguage)
+    Q_PROPERTY(QList<int> binders MEMBER binders)
+
+  public:
+    QDateTime createdAt;
+    QDateTime updatedAt;
+    QString title;
+    QString dictLanguage;
+    QList<int> binders = {};
+    CreateWorkDto() = default;
+    CreateWorkDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
+                  const QString &dictLanguage, const QList<int> &binders)
+        : createdAt(createdAt), updatedAt(updatedAt), title(title), dictLanguage(dictLanguage), binders(binders)
+    {
+    }
+};
+} // namespace Skribisto::DirectAccess::Work

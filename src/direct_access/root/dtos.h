@@ -31,8 +31,8 @@ namespace Skribisto::DirectAccess::Root
 {
 enum class RootRelationshipField
 {
-    Projects,
-    RecentProjects,
+    Works,
+    RecentWorks,
 };
 struct RootDto
 {
@@ -40,21 +40,21 @@ struct RootDto
     Q_PROPERTY(int id MEMBER id)
     Q_PROPERTY(QDateTime createdAt MEMBER createdAt)
     Q_PROPERTY(QDateTime updatedAt MEMBER updatedAt)
-    Q_PROPERTY(QList<int> projects MEMBER projects)
-    Q_PROPERTY(QList<int> recentProjects MEMBER recentProjects)
+    Q_PROPERTY(QList<int> works MEMBER works)
+    Q_PROPERTY(QList<int> recentWorks MEMBER recentWorks)
 
   public:
     int id = 0;
     QDateTime createdAt;
     QDateTime updatedAt;
     QString authorName;
-    QList<int> projects = {};
-    QList<int> recentProjects = {};
+    QList<int> works = {};
+    QList<int> recentWorks = {};
     RootDto() = default;
     RootDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &authorName,
-            const QList<int> &projects, const QList<int> &recentProjects)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), projects(projects),
-          recentProjects(recentProjects)
+            const QList<int> &works, const QList<int> &recentWorks)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), works(works),
+          recentWorks(recentWorks)
     {
     }
 };
@@ -65,20 +65,19 @@ struct CreateRootDto
     Q_PROPERTY(QDateTime createdAt MEMBER createdAt)
     Q_PROPERTY(QDateTime updatedAt MEMBER updatedAt)
     Q_PROPERTY(QString authorName MEMBER authorName)
-    Q_PROPERTY(QList<int> projects MEMBER projects)
-    Q_PROPERTY(QList<int> recentProjects MEMBER recentProjects)
+    Q_PROPERTY(QList<int> works MEMBER works)
+    Q_PROPERTY(QList<int> recentWorks MEMBER recentWorks)
 
   public:
     QDateTime createdAt;
     QDateTime updatedAt;
     QString authorName;
-    QList<int> projects = {};
-    QList<int> recentProjects = {};
+    QList<int> works = {};
+    QList<int> recentWorks = {};
     CreateRootDto() = default;
     CreateRootDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &authorName,
-                  const QList<int> &projects, const QList<int> &recentProjects)
-        : createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), projects(projects),
-          recentProjects(recentProjects)
+                  const QList<int> &works, const QList<int> &recentWorks)
+        : createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), works(works), recentWorks(recentWorks)
     {
     }
 };

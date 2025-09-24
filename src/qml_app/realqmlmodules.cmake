@@ -3,8 +3,8 @@
 
 add_subdirectory(real_imports)
 
-# For integration in QT Design Studio project, you may have to replace
-# ${APP_NAME} by ${CMAKE_PROJECT_NAME} or by the name of your project
+# For integration in QT Design Studio work, you may have to replace
+# ${APP_NAME} by ${CMAKE_WORK_NAME} or by the name of your work
 target_link_libraries(${APP_NAME} PRIVATE
         skribisto-qml-appplugin
         skribisto-qml-controllersplugin

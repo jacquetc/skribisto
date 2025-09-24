@@ -19,14 +19,16 @@
  ******************************************************************************/
 
 #pragma once
+#include "database/db_context.h"
+#include "direct_access/root/i_root_repository.h"
 #include "dtos.h"
 #include "entities/binder.h"
 #include "entities/binder_item.h"
 #include "entities/binder_tag.h"
 #include "entities/content.h"
-#include "entities/project.h"
-#include "entities/recent_project.h"
+#include "entities/recent_work.h"
 #include "entities/root.h"
+#include "entities/work.h"
 #include <QList>
 #include <memory>
 
@@ -34,6 +36,7 @@ namespace Skribisto::WorkManagement
 {
 
 namespace SCE = Common::Entities;
+namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
 
 class ILoadWorkUnitOfWork
 {
@@ -48,7 +51,10 @@ class ILoadWorkUnitOfWork
     virtual void rollbackToSavepoint() = 0;
     virtual void releaseSavepoint() = 0;
 
-    virtual QList<SCE::Content> createContent(QList<SCE::Content> contents) = 0;
+    // virtual QList<SCE::Content> createContent(QList<SCE::Content> contents) = 0;
+    virtual QList<SCE::Root> createRoot(QList<SCE::Root> roots) = 0;
+    virtual void setRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship,
+                                     QList<int> relatedIds) = 0;
 };
 
 class LoadWork

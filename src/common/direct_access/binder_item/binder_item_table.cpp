@@ -257,7 +257,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::findMany(const QList<int>
         }
 
         // Get relationship data for all found IDs
-        QHash<int, QList<int>> projectsMap =
+        QHash<int, QList<int>> worksMap =
             JunctionTableOps::UnorderedOneToMany::getRightIdsMany(db, foundIds, BINDER_ITEM_CONTENTS_JUNCTION);
         QHash<int, QList<int>> binderItemsMap =
             JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, foundIds, BINDER_ITEM_BINDER_ITEMS_JUNCTION);
@@ -267,7 +267,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::findMany(const QList<int>
         // Build result with relationships populated
         for (auto &binderItem : result)
         {
-            binderItem.contents = projectsMap.value(binderItem.id);
+            binderItem.contents = worksMap.value(binderItem.id);
             binderItem.binderItems = binderItemsMap.value(binderItem.id);
             binderItem.parent = parentMap.value(binderItem.id);
         }

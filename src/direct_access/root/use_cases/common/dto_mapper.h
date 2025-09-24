@@ -45,18 +45,18 @@ class DtoMapper
 
     static SCE::Root toEntity(const CreateRootDto &dto)
     {
-        return {0, dto.createdAt, dto.updatedAt, dto.authorName, dto.projects, dto.recentProjects};
+        return {0, dto.createdAt, dto.updatedAt, dto.authorName, dto.works, dto.recentWorks};
     }
 
     static SCE::Root toEntity(const RootDto &dto)
     {
-        return {0, dto.createdAt, dto.updatedAt, dto.authorName, dto.projects, dto.recentProjects};
+        return {0, dto.createdAt, dto.updatedAt, dto.authorName, dto.works, dto.recentWorks};
     }
 
     static RootDto toDto(const SCE::Root &entity)
     {
         return RootDto{entity.id,         entity.createdAt, entity.updatedAt,
-                       entity.authorName, entity.projects,  entity.recentProjects};
+                       entity.authorName, entity.works,     entity.recentWorks};
     }
 
     static QList<SCE::Root> toEntityList(const QList<CreateRootDto> &dtos)
@@ -96,12 +96,12 @@ class DtoMapper
     {
         switch (field)
         {
-        case RootRelationshipField::Projects:
-            return SCDRoot::RootRelationshipField::Projects;
-        case RootRelationshipField::RecentProjects:
-            return SCDRoot::RootRelationshipField::RecentProjects;
+        case RootRelationshipField::Works:
+            return SCDRoot::RootRelationshipField::Works;
+        case RootRelationshipField::RecentWorks:
+            return SCDRoot::RootRelationshipField::RecentWorks;
         }
-        return SCDRoot::RootRelationshipField::Projects; // fallback
+        return SCDRoot::RootRelationshipField::Works; // fallback
     }
 };
 } // namespace Skribisto::DirectAccess::Root

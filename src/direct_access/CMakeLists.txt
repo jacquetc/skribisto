@@ -22,12 +22,12 @@ set(ALL_SOURCE_FILES
         # empty. To be filled by file_list.cmake in each module
 )
 # Include file lists from submodules
-include(project/file_list.cmake)
+include(work/file_list.cmake)
 include(binder_item/file_list.cmake)
 include(content/file_list.cmake)
 include(binder_tag/file_list.cmake)
 include(binder/file_list.cmake)
-include(recent_project/file_list.cmake)
+include(recent_work/file_list.cmake)
 include(root/file_list.cmake)
 
 

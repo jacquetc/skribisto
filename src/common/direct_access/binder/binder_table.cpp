@@ -38,7 +38,7 @@ namespace SCE = Skribisto::Common::Entities;
 const QString BINDER_BINDER_ITEMS_JUNCTION = "binder_binder_items_to_binder_item_junction"_L1;
 
 // backward relationship junction tables
-const QString PROJECT_BINDERS_JUNCTION = "project_binders_to_binder_junction"_L1;
+const QString WORK_BINDERS_JUNCTION = "work_binders_to_binder_junction"_L1;
 
 SCDBinder::BinderTable::BinderTable(DbSubContext &dbSubContext) : m_dbSubContext(dbSubContext)
 {
@@ -250,7 +250,7 @@ QList<int> SCDBinder::BinderTable::removeMany(const QList<int> &ids)
     // Clean up junction table relationships first
     JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, BINDER_BINDER_ITEMS_JUNCTION);
     // Clean up junction backward table relationships
-    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, ids, PROJECT_BINDERS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, ids, WORK_BINDERS_JUNCTION);
 
     for (int id : ids)
     {

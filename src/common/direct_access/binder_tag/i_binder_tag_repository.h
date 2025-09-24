@@ -43,10 +43,10 @@ class IBinderTagRepository
     virtual QList<Entities::BinderTag> update(const QList<Entities::BinderTag> &binderTags) = 0;
     virtual QList<int> remove(const QList<int> &binderTagIds) = 0;
     // Relationship setters/getters
-    // Set the relationship value for a given BinderTag id (e.g., set project id)
+    // Set the relationship value for a given BinderTag id (e.g., set work id)
     virtual void setRelationshipIds(int binderTagId, BinderTagRelationshipField relationship, QList<int> relatedId) = 0;
 
-    // Get the relationship value for a given BinderTag id (e.g., get project id)
+    // Get the relationship value for a given BinderTag id (e.g., get work id)
     virtual QList<int> getRelationshipIds(int binderTagId, BinderTagRelationshipField relationship) = 0;
     virtual QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &binderTagIds,
                                                           BinderTagRelationshipField relationship) = 0;

@@ -21,8 +21,8 @@
 #include "event_registry.h"
 
 #include "direct_access/binder/binder_events.h"
-#include "direct_access/project/project_events.h"
 #include "direct_access/root/root_events.h"
+#include "direct_access/work/work_events.h"
 #include "undo_redo/undo_redo_events.h"
 
 namespace SCD = Skribisto::Common::DirectAccess;

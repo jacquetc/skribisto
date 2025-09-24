@@ -80,38 +80,38 @@ QList<SCE::Root> SCDRoot::RootRepository::update(const QList<SCE::Root> &roots)
 
 QList<int> SCDRoot::RootRepository::remove(const QList<int> &rootIds)
 {
-    // cascade deletion on projects
-    QHash<int, QList<int>> leftIdToProjectIdsHash = getRelationshipIdsMany(rootIds, RootRelationshipField::Projects);
+    // cascade deletion on works
+    QHash<int, QList<int>> leftIdToWorkIdsHash = getRelationshipIdsMany(rootIds, RootRelationshipField::Works);
     // concatenate all rightIds
-    QSet<int> projectIds;
-    projectIds.reserve(leftIdToProjectIdsHash.size());
-    for (const auto &ids : leftIdToProjectIdsHash)
+    QSet<int> workIds;
+    workIds.reserve(leftIdToWorkIdsHash.size());
+    for (const auto &ids : leftIdToWorkIdsHash)
     {
         QSet<int> idsSet(ids.begin(), ids.end());
-        projectIds.unite(idsSet); // use unite to combine sets
+        workIds.unite(idsSet); // use unite to combine sets
     }
 
-    if (!projectIds.isEmpty())
+    if (!workIds.isEmpty())
     {
-        auto projectRepository = RepositoryFactory::createProjectRepository(m_dbSubContext, m_eventRegistry);
-        projectRepository->remove(projectIds.values());
+        auto workRepository = RepositoryFactory::createWorkRepository(m_dbSubContext, m_eventRegistry);
+        workRepository->remove(workIds.values());
     }
 
-    // cascade deletion on recent projects
-    QHash<int, QList<int>> leftIdToRecentProjectIdsHash =
-        getRelationshipIdsMany(rootIds, RootRelationshipField::RecentProjects);
+    // cascade deletion on recent works
+    QHash<int, QList<int>> leftIdToRecentWorkIdsHash =
+        getRelationshipIdsMany(rootIds, RootRelationshipField::RecentWorks);
     // concatenate all rightIds
-    QSet<int> recentProjectIds;
-    recentProjectIds.reserve(leftIdToRecentProjectIdsHash.size());
-    for (const auto &ids : leftIdToRecentProjectIdsHash)
+    QSet<int> recentWorkIds;
+    recentWorkIds.reserve(leftIdToRecentWorkIdsHash.size());
+    for (const auto &ids : leftIdToRecentWorkIdsHash)
     {
         QSet<int> idsSet(ids.begin(), ids.end());
-        recentProjectIds.unite(idsSet); // use unite to combine sets
+        recentWorkIds.unite(idsSet); // use unite to combine sets
     }
 
-    // if (!recentProjectIds.isEmpty()) {
-    //     auto projectRepository = RepositoryFactory::createProjectRepository(m_dbSubContext, m_eventRegistry);
-    //     projectRepository->remove(recentProjectIds.values());
+    // if (!recentWorkIds.isEmpty()) {
+    //     auto workRepository = RepositoryFactory::createWorkRepository(m_dbSubContext, m_eventRegistry);
+    //     workRepository->remove(recentWorkIds.values());
     // }
 
     auto removed = m_table->removeMany(rootIds);

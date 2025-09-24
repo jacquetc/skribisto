@@ -17,8 +17,8 @@ qt6_add_qml_module(${PLUGIN_NAME}
 
         foreign_event_registry.h
         foreign_root_controller.h
-        foreign_project_controller.h
-        foreign_recent_project_controller.h
+        foreign_work_controller.h
+        foreign_recent_work_controller.h
         foreign_binder_controller.h
         foreign_binder_tag_controller.h
         foreign_binder_item_controller.h

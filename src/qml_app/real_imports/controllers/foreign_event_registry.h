@@ -67,9 +67,9 @@ struct ForeignEventDispatcher
         return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::Root::RootEvents>();
     }
 
-    Q_INVOKABLE Skribisto::Common::DirectAccess::Project::ProjectEvents *getProjectEvents() const
+    Q_INVOKABLE Skribisto::Common::DirectAccess::Work::WorkEvents *getWorkEvents() const
     {
-        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::Project::ProjectEvents>();
+        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::Work::WorkEvents>();
     }
 
     Q_INVOKABLE Skribisto::Common::DirectAccess::Binder::BinderEvents *getBinderEvents() const
@@ -82,9 +82,9 @@ struct ForeignEventDispatcher
         return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::BinderItem::BinderItemEvents>();
     }
 
-    Q_INVOKABLE Skribisto::Common::DirectAccess::RecentProject::RecentProjectEvents *getRecentProjectEvents() const
+    Q_INVOKABLE Skribisto::Common::DirectAccess::RecentWork::RecentWorkEvents *getRecentWorkEvents() const
     {
-        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::RecentProject::RecentProjectEvents>();
+        return s_singletonInstance->getEvents<Skribisto::Common::DirectAccess::RecentWork::RecentWorkEvents>();
     }
 
     Q_INVOKABLE Skribisto::Common::DirectAccess::Content::ContentEvents *getContentEvents() const

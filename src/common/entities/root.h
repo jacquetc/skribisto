@@ -31,14 +31,14 @@ struct Root
     QDateTime createdAt;
     QDateTime updatedAt;
     QString authorName;
-    QList<int> projects;
-    QList<int> recentProjects;
+    QList<int> works;
+    QList<int> recentWorks;
 
     // Default constructor
     Root() = default;
 
-    Root(const int id, const QList<int> &projectIds, const QList<int> &recentProjects)
-        : id(id), projects(projectIds), recentProjects(recentProjects)
+    Root(const int id, const QList<int> &workIds, const QList<int> &recentWorks)
+        : id(id), works(workIds), recentWorks(recentWorks)
     {
     }
 
@@ -49,9 +49,9 @@ struct Root
 
     // Constructor with creation and update dates
     Root(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &authorName,
-         const QList<int> &projectIds, const QList<int> &recentProjects)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), projects(projectIds),
-          recentProjects(recentProjects)
+         const QList<int> &workIds, const QList<int> &recentWorks)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), works(workIds),
+          recentWorks(recentWorks)
     {
     }
 };

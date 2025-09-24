@@ -20,7 +20,7 @@
 
 #pragma once
 #include "direct_access/binder/table_definitions.h"
-#include "direct_access/project/table_definitions.h"
+#include "direct_access/work/table_definitions.h"
 
 #include <QDir>
 #include <QString>
@@ -62,7 +62,7 @@ class DbBuilder
             QSqlQuery query(db);
             QList<QString> tableDefs;
             tableDefs << Skribisto::Common::DirectAccess::Root::getSqlTableDefinition();
-            tableDefs << Skribisto::Common::DirectAccess::Project::getSqlTableDefinition();
+            tableDefs << Skribisto::Common::DirectAccess::Work::getSqlTableDefinition();
             tableDefs << Skribisto::Common::DirectAccess::Binder::getSqlTableDefinition();
             for (const auto &sql : tableDefs)
             {
@@ -78,7 +78,7 @@ class DbBuilder
             QSqlQuery query(db);
             QList<QString> defs;
             defs << Skribisto::Common::DirectAccess::Root::getSqlJunctionTableDefinitions();
-            defs << Skribisto::Common::DirectAccess::Project::getSqlJunctionTableDefinitions();
+            defs << Skribisto::Common::DirectAccess::Work::getSqlJunctionTableDefinitions();
             defs << Skribisto::Common::DirectAccess::Binder::getSqlJunctionTableDefinitions();
             for (const auto &sql : defs)
             {

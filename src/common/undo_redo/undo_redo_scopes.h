@@ -31,7 +31,7 @@ namespace Skribisto::Common::UndoRedo
 enum class UndoRedoScopeType
 {
     Root,
-    Project,
+    Work,
     Content,
     Settings,
     Custom
@@ -52,7 +52,7 @@ class UndoRedoScope
 
     // Predefined scopes
     static UndoRedoScope rootScope();
-    static UndoRedoScope projectScope(int projectId);
+    static UndoRedoScope workScope(int workId);
     static UndoRedoScope contentScope(int contentId);
     static UndoRedoScope settingsScope();
     static UndoRedoScope customScope(const QString &name);

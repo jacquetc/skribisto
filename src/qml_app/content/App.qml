@@ -30,15 +30,18 @@ import QtQuick.Controls.Basic
 // Components
 import Skribisto.App
 import Skribisto.Controllers
+
 // import Models
 // import Singles
 
 ApplicationWindow {
     id: applicationWindow
-    visible: true
-    width: 640
+
     height: 480
     title: "FrontEndsExample"
+    visible: true
+    width: 640
+
     // palette: customPalette
     // ColorGroup {
     //     id: activeCG
@@ -70,9 +73,9 @@ ApplicationWindow {
             buttonText: colors.buttonText
         }
     }
-
     QtObject {
         id: colors
+
         property string buttonText: "salmon"
         property string primaryVariant: "#3700B3"
 
@@ -94,51 +97,56 @@ ApplicationWindow {
 
             // Title
             Text {
-                text: "Hello World"
                 font.pixelSize: 20
+                text: "Hello World"
             }
 
             // Spacer
             Item {
                 Layout.fillWidth: true
             }
-
             RootController {
                 id: rootController
+
             }
-            ProjectController {
-                id: projectController
+            WorkController {
+                id: workController
+
             }
             // Button
             Button {
-                id: createProjectButton
-                text: "Create Project"
-                onClicked: {
-                    colors.buttonText = "blue"
-                    testDialog.open()
-                    console.log("Create button clicked")
-                    var dto = projectController.getCreateDto()
-                    dto.title = "My Project "
+                id: createWorkButton
 
-                    projectController.create([dto]).then(function (result) {
-                        console.log("Async project creation result :", result)
-                    })
+                text: "Create Work"
+
+                onClicked: {
+                    colors.buttonText = "blue";
+                    testDialog.open();
+                    console.log("Create button clicked");
+                    var dto = workController.getCreateDto();
+                    dto.title = "My Work ";
+
+                    workController.create([dto]).then(function (result) {
+                        console.log("Async work creation result :", result);
+                    });
                 }
             }
             // Button
             Button {
                 id: createRootButton
+
                 enabled: false
                 text: "Create Root"
-                onClicked: {
-                    console.log("Create button clicked")
 
-                    var dto = rootController.getCreateDto()
-                    dto.projects = [1]
+                onClicked: {
+                    console.log("Create button clicked");
+
+                    var dto = rootController.getCreateDto();
+                    dto.works = [1];
 
                     rootController.create([dto]).then(function (result) {
-                        console.log("Async root creation result :", result)
-                    })
+                        console.log("Async root creation result :", result);
+                    });
                 }
             }
             // Button
@@ -146,41 +154,42 @@ ApplicationWindow {
                 id: getRootButton
 
                 text: "Get Root 1"
+
                 onClicked: {
-                    console.log("Get Root 1 button clicked")
+                    console.log("Get Root 1 button clicked");
 
                     rootController.get([1]).then(function (res) {
-                        console.log("Async get root result :", res)
-                    })
+                        console.log("Async get root result :", res);
+                    });
                 }
             }
             // Button
             Button {
-                id: getProjectButton
+                id: getWorkButton
 
-                text: "Get Project 1"
+                text: "Get Work 1"
+
                 onClicked: {
-                    console.log("Get Root 1 button clicked")
+                    console.log("Get Root 1 button clicked");
 
-                    projectController.get([1]).then(function (res) {
-                        console.log("Async get project result :", res)
-                    })
+                    workController.get([1]).then(function (res) {
+                        console.log("Async get work result :", res);
+                    });
                 }
             }
-
             Button {
                 id: removeRootButton
+
                 text: "Remove Root 1"
+
                 onClicked: {
-                    console.log("remove root 1 clicked")
+                    console.log("remove root 1 clicked");
 
                     rootController.remove([1]).then(function (result) {
-                        console.log("Async root removal result :", result)
-                    })
+                        console.log("Async root removal result :", result);
+                    });
                 }
             }
-
-
         }
 
         // Content

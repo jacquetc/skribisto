@@ -30,8 +30,8 @@ namespace Skribisto::Common::DirectAccess::Root
 // Relationships for Root entity derived from its relational fields
 enum class RootRelationshipField
 {
-    Projects,
-    RecentProjects,
+    Works,
+    RecentWorks,
 };
 
 class IRootRepository
@@ -45,10 +45,10 @@ class IRootRepository
     virtual QList<Entities::Root> update(const QList<Entities::Root> &roots) = 0;
     virtual QList<int> remove(const QList<int> &rootIds) = 0;
     // Relationship setters/getters
-    // Set the relationship value for a given Root id (e.g., set project id)
+    // Set the relationship value for a given Root id (e.g., set work id)
     virtual void setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedId) = 0;
 
-    // Get the relationship value for a given Root id (e.g., get project id)
+    // Get the relationship value for a given Root id (e.g., get work id)
     virtual QList<int> getRelationshipIds(int rootId, RootRelationshipField relationship) = 0;
     virtual QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &rootIds,
                                                           RootRelationshipField relationship) = 0;

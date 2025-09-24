@@ -41,14 +41,14 @@ inline QList<QString> getSqlJunctionTableDefinitions()
 {
     QList<QString> definitions;
 
-    // unordered one-to-many junction table for projects
-    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS root_projects_to_project_junction ("
+    // unordered one-to-many junction table for works
+    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS root_works_to_work_junction ("
                                   "    left_id INTEGER NOT NULL,"
                                   "    right_id INTEGER NOT NULL,"
                                   "    PRIMARY KEY (left_id, right_id)"
                                   ");");
-    // ordered one-to-many junction table for recent_projects
-    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS root_recent_projects_to_recent_project_junction ("
+    // ordered one-to-many junction table for recent_works
+    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS root_recent_works_to_recent_work_junction ("
                                   "    left_id INTEGER NOT NULL,"
                                   "    right_id INTEGER NOT NULL,"
                                   "    \"order\" INTEGER NOT NULL,"

@@ -36,8 +36,8 @@ using namespace Skribisto::Common::Database;
 namespace SCE = Skribisto::Common::Entities;
 
 // forward relationship junction tables
-const QString ROOT_PROJECTS_JUNCTION = "root_projects_to_project_junction"_L1;
-const QString ROOT_RECENT_PROJECTS_JUNCTION = "root_recent_projects_to_recent_project_junction"_L1;
+const QString ROOT_WORKS_JUNCTION = "root_works_to_work_junction"_L1;
+const QString ROOT_RECENT_WORKS_JUNCTION = "root_recent_works_to_recent_work_junction"_L1;
 
 SCDRoot::RootTable::RootTable(DbSubContext &dbSubContext) : m_dbSubContext(dbSubContext)
 {
@@ -98,14 +98,13 @@ QList<SCE::Root> SCDRoot::RootTable::createMany(const QList<SCE::Root> &roots)
             r.id = idq.value(0).toInt();
 
             // Handle junction table relationships
-            if (!r.projects.isEmpty())
+            if (!r.works.isEmpty())
             {
-                JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, r.id, ROOT_PROJECTS_JUNCTION, r.projects);
+                JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, r.id, ROOT_WORKS_JUNCTION, r.works);
             }
-            if (!r.recentProjects.isEmpty())
+            if (!r.recentWorks.isEmpty())
             {
-                JunctionTableOps::OrderedOneToMany::upsertRightIds(db, r.id, ROOT_RECENT_PROJECTS_JUNCTION,
-                                                                   r.recentProjects);
+                JunctionTableOps::OrderedOneToMany::upsertRightIds(db, r.id, ROOT_RECENT_WORKS_JUNCTION, r.recentWorks);
             }
 
             created.append(r);
@@ -154,9 +153,8 @@ QList<SCE::Root> SCDRoot::RootTable::updateMany(const QList<SCE::Root> &roots)
         if (q.exec() && q.numRowsAffected() > 0)
         {
             // Handle junction table relationships
-            JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, r.id, ROOT_PROJECTS_JUNCTION, r.projects);
-            JunctionTableOps::OrderedOneToMany::upsertRightIds(db, r.id, ROOT_RECENT_PROJECTS_JUNCTION,
-                                                               r.recentProjects);
+            JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, r.id, ROOT_WORKS_JUNCTION, r.works);
+            JunctionTableOps::OrderedOneToMany::upsertRightIds(db, r.id, ROOT_RECENT_WORKS_JUNCTION, r.recentWorks);
 
             updated.append(r);
         }
@@ -227,16 +225,16 @@ QList<SCE::Root> SCDRoot::RootTable::findMany(const QList<int> &ids) const
         }
 
         // Get relationship data for all found IDs
-        QHash<int, QList<int>> projectsMap =
-            JunctionTableOps::UnorderedOneToMany::getRightIdsMany(db, foundIds, ROOT_PROJECTS_JUNCTION);
-        QHash<int, QList<int>> recentProjectsMap =
-            JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, foundIds, ROOT_RECENT_PROJECTS_JUNCTION);
+        QHash<int, QList<int>> worksMap =
+            JunctionTableOps::UnorderedOneToMany::getRightIdsMany(db, foundIds, ROOT_WORKS_JUNCTION);
+        QHash<int, QList<int>> recentWorksMap =
+            JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, foundIds, ROOT_RECENT_WORKS_JUNCTION);
 
         // Build result with relationships populated
         for (auto &root : result)
         {
-            root.projects = projectsMap[root.id];
-            root.recentProjects = recentProjectsMap[root.id];
+            root.works = worksMap[root.id];
+            root.recentWorks = recentWorksMap[root.id];
         }
 
         // Cache the result
@@ -254,8 +252,8 @@ QList<int> SCDRoot::RootTable::removeMany(const QList<int> &ids)
     QSqlQuery q(db);
 
     // Clean up junction table relationships first
-    JunctionTableOps::UnorderedOneToMany::removeWithLeftIdsMany(db, ids, ROOT_PROJECTS_JUNCTION);
-    JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, ROOT_RECENT_PROJECTS_JUNCTION);
+    JunctionTableOps::UnorderedOneToMany::removeWithLeftIdsMany(db, ids, ROOT_WORKS_JUNCTION);
+    JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, ROOT_RECENT_WORKS_JUNCTION);
 
     for (int id : ids)
     {
@@ -281,11 +279,11 @@ void SCDRoot::RootTable::setRelationshipIds(int rootId, RootRelationshipField re
 
     switch (relationship)
     {
-    case RootRelationshipField::Projects:
-        JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, rootId, ROOT_PROJECTS_JUNCTION, relatedId);
+    case RootRelationshipField::Works:
+        JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, rootId, ROOT_WORKS_JUNCTION, relatedId);
         break;
-    case RootRelationshipField::RecentProjects:
-        JunctionTableOps::OrderedOneToMany::upsertRightIds(db, rootId, ROOT_RECENT_PROJECTS_JUNCTION, relatedId);
+    case RootRelationshipField::RecentWorks:
+        JunctionTableOps::OrderedOneToMany::upsertRightIds(db, rootId, ROOT_RECENT_WORKS_JUNCTION, relatedId);
         break;
     }
 
@@ -310,11 +308,11 @@ QHash<int, QList<int>> SCDRoot::RootTable::getRelationshipIdsMany(const QList<in
 
     switch (relationship)
     {
-    case RootRelationshipField::Projects:
-        result = JunctionTableOps::UnorderedOneToMany::getRightIdsMany(db, rootIds, ROOT_PROJECTS_JUNCTION);
+    case RootRelationshipField::Works:
+        result = JunctionTableOps::UnorderedOneToMany::getRightIdsMany(db, rootIds, ROOT_WORKS_JUNCTION);
         break;
-    case RootRelationshipField::RecentProjects:
-        result = JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, rootIds, ROOT_RECENT_PROJECTS_JUNCTION);
+    case RootRelationshipField::RecentWorks:
+        result = JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, rootIds, ROOT_RECENT_WORKS_JUNCTION);
         break;
 
     default:
@@ -335,11 +333,11 @@ int SCDRoot::RootTable::getRelationshipIdsCount(int rootId, RootRelationshipFiel
 
     switch (relationship)
     {
-    case RootRelationshipField::Projects:
-        result = JunctionTableOps::UnorderedOneToMany::getRightIdsCount(db, rootId, ROOT_PROJECTS_JUNCTION);
+    case RootRelationshipField::Works:
+        result = JunctionTableOps::UnorderedOneToMany::getRightIdsCount(db, rootId, ROOT_WORKS_JUNCTION);
         break;
-    case RootRelationshipField::RecentProjects:
-        result = JunctionTableOps::OrderedOneToMany::getRightIdsCount(db, rootId, ROOT_RECENT_PROJECTS_JUNCTION);
+    case RootRelationshipField::RecentWorks:
+        result = JunctionTableOps::OrderedOneToMany::getRightIdsCount(db, rootId, ROOT_RECENT_WORKS_JUNCTION);
         break;
 
     default:
@@ -356,13 +354,13 @@ QList<int> SCDRoot::RootTable::getRelationshipIdsInRange(int rootId, RootRelatio
 
     switch (relationship)
     {
-    case RootRelationshipField::Projects:
+    case RootRelationshipField::Works:
         result =
-            JunctionTableOps::UnorderedOneToMany::getRightIdsInRange(db, rootId, ROOT_PROJECTS_JUNCTION, offset, limit);
+            JunctionTableOps::UnorderedOneToMany::getRightIdsInRange(db, rootId, ROOT_WORKS_JUNCTION, offset, limit);
         break;
-    case RootRelationshipField::RecentProjects:
-        result = JunctionTableOps::OrderedOneToMany::getRightIdsInRange(db, rootId, ROOT_RECENT_PROJECTS_JUNCTION,
-                                                                        offset, limit);
+    case RootRelationshipField::RecentWorks:
+        result = JunctionTableOps::OrderedOneToMany::getRightIdsInRange(db, rootId, ROOT_RECENT_WORKS_JUNCTION, offset,
+                                                                        limit);
         break;
 
     default:

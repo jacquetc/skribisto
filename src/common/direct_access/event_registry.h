@@ -24,9 +24,9 @@
 #include "direct_access/binder_item/binder_item_events.h"
 #include "direct_access/binder_tag/binder_tag_events.h"
 #include "direct_access/content/content_events.h"
-#include "direct_access/project/project_events.h"
-#include "direct_access/recent_project/recent_project_events.h"
+#include "direct_access/recent_work/recent_work_events.h"
 #include "direct_access/root/root_events.h"
+#include "direct_access/work/work_events.h"
 
 // #include "undo_redo/undo_redo_events.h"
 #include <QPointer>
@@ -40,10 +40,9 @@ class EventRegistry : public QObject
     Q_OBJECT
   public:
     explicit EventRegistry(QObject *parent = nullptr)
-        : QObject(parent), m_projectEvents(new Project::ProjectEvents(parent)),
-          m_binderEvents(new Binder::BinderEvents(parent)), m_rootEvents(new Root::RootEvents(parent)),
-          m_binderItemEvents(new BinderItem::BinderItemEvents(parent)),
-          m_recentProjectEvents(new RecentProject::RecentProjectEvents(parent)),
+        : QObject(parent), m_workEvents(new Work::WorkEvents(parent)), m_binderEvents(new Binder::BinderEvents(parent)),
+          m_rootEvents(new Root::RootEvents(parent)), m_binderItemEvents(new BinderItem::BinderItemEvents(parent)),
+          m_recentWorkEvents(new RecentWork::RecentWorkEvents(parent)),
           m_contentEvents(new Content::ContentEvents(parent)), m_binderTagEvents(new BinderTag::BinderTagEvents(parent))
 
     //    , m_undoRedoEvents(new UndoRedo::UndoRedoEvents(parent))
@@ -54,20 +53,20 @@ class EventRegistry : public QObject
     template <typename T> QPointer<T> getEvents() const;
 
   private:
-    QPointer<Project::ProjectEvents> m_projectEvents;
+    QPointer<Work::WorkEvents> m_workEvents;
     QPointer<Binder::BinderEvents> m_binderEvents;
     QPointer<Root::RootEvents> m_rootEvents;
     QPointer<BinderItem::BinderItemEvents> m_binderItemEvents;
-    QPointer<RecentProject::RecentProjectEvents> m_recentProjectEvents;
+    QPointer<RecentWork::RecentWorkEvents> m_recentWorkEvents;
     QPointer<Content::ContentEvents> m_contentEvents;
     QPointer<BinderTag::BinderTagEvents> m_binderTagEvents;
     // QPointer<UndoRedo::UndoRedoEvents> m_undoRedoEvents;
 };
 
 // Template specializations for each event type
-template <> inline QPointer<Project::ProjectEvents> EventRegistry::getEvents<Project::ProjectEvents>() const
+template <> inline QPointer<Work::WorkEvents> EventRegistry::getEvents<Work::WorkEvents>() const
 {
-    return m_projectEvents;
+    return m_workEvents;
 }
 
 template <> inline QPointer<Binder::BinderEvents> EventRegistry::getEvents<Binder::BinderEvents>() const
@@ -85,10 +84,9 @@ template <> inline QPointer<BinderItem::BinderItemEvents> EventRegistry::getEven
     return m_binderItemEvents;
 }
 
-template <>
-inline QPointer<RecentProject::RecentProjectEvents> EventRegistry::getEvents<RecentProject::RecentProjectEvents>() const
+template <> inline QPointer<RecentWork::RecentWorkEvents> EventRegistry::getEvents<RecentWork::RecentWorkEvents>() const
 {
-    return m_recentProjectEvents;
+    return m_recentWorkEvents;
 }
 
 template <> inline QPointer<Content::ContentEvents> EventRegistry::getEvents<Content::ContentEvents>() const

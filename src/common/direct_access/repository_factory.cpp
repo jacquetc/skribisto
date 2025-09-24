@@ -23,19 +23,19 @@
 #include "binder_item/binder_item_table.h"
 #include "binder_tag/binder_tag_table.h"
 #include "content/content_table.h"
-#include "project/project_table.h"
-#include "recent_project/recent_project_table.h"
+#include "recent_work/recent_work_table.h"
 #include "root/root_table.h"
+#include "work/work_table.h"
 
 namespace Skribisto::Common::DirectAccess::RepositoryFactory
 {
 
 namespace SCD = Skribisto::Common::DirectAccess;
 namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
-namespace SCDProject = Skribisto::Common::DirectAccess::Project;
+namespace SCDWork = Skribisto::Common::DirectAccess::Work;
 namespace SCDBinder = Skribisto::Common::DirectAccess::Binder;
 namespace SCDBinderItem = Skribisto::Common::DirectAccess::BinderItem;
-namespace SCDRecentProject = Skribisto::Common::DirectAccess::RecentProject;
+namespace SCDRecentWork = Skribisto::Common::DirectAccess::RecentWork;
 namespace SCDContent = Skribisto::Common::DirectAccess::Content;
 namespace SCDBinderTag = Skribisto::Common::DirectAccess::BinderTag;
 
@@ -47,11 +47,11 @@ std::unique_ptr<SCDRoot::RootRepository> createRootRepository(Database::DbSubCon
     return std::make_unique<SCD::Root::RootRepository>(std::move(table), dbSubContext, std::move(eventRegistry));
 }
 
-std::unique_ptr<SCDProject::ProjectRepository> createProjectRepository(Database::DbSubContext &dbSubContext,
-                                                                       QPointer<EventRegistry> eventRegistry)
+std::unique_ptr<SCDWork::WorkRepository> createWorkRepository(Database::DbSubContext &dbSubContext,
+                                                              QPointer<EventRegistry> eventRegistry)
 {
-    auto table = std::make_unique<SCD::Project::ProjectTable>(dbSubContext);
-    return std::make_unique<SCD::Project::ProjectRepository>(std::move(table), dbSubContext, std::move(eventRegistry));
+    auto table = std::make_unique<SCD::Work::WorkTable>(dbSubContext);
+    return std::make_unique<SCD::Work::WorkRepository>(std::move(table), dbSubContext, std::move(eventRegistry));
 }
 
 std::unique_ptr<SCDBinder::BinderRepository> createBinderRepository(Database::DbSubContext &dbSubContext,
@@ -68,12 +68,12 @@ std::unique_ptr<SCDBinderItem::BinderItemRepository> createBinderItemRepository(
     return std::make_unique<SCDBinderItem::BinderItemRepository>(std::move(table), dbSubContext,
                                                                  std::move(eventRegistry));
 }
-std::unique_ptr<SCDRecentProject::RecentProjectRepository> createRecentProjectRepository(
-    Database::DbSubContext &dbSubContext, QPointer<EventRegistry> eventRegistry)
+std::unique_ptr<SCDRecentWork::RecentWorkRepository> createRecentWorkRepository(Database::DbSubContext &dbSubContext,
+                                                                                QPointer<EventRegistry> eventRegistry)
 {
-    auto table = std::make_unique<SCD::RecentProject::RecentProjectTable>(dbSubContext);
-    return std::make_unique<SCDRecentProject::RecentProjectRepository>(std::move(table), dbSubContext,
-                                                                       std::move(eventRegistry));
+    auto table = std::make_unique<SCD::RecentWork::RecentWorkTable>(dbSubContext);
+    return std::make_unique<SCDRecentWork::RecentWorkRepository>(std::move(table), dbSubContext,
+                                                                 std::move(eventRegistry));
 }
 
 std::unique_ptr<SCDContent::ContentRepository> createContentRepository(Database::DbSubContext &dbSubContext,

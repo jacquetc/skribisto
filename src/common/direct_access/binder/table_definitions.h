@@ -42,7 +42,7 @@ inline QList<QString> getSqlJunctionTableDefinitions()
     QList<QString> definitions;
 
     // ordered one-to-many junction table for binder_items
-    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS project_binder_items_to_binder_item_junction ("
+    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS work_binder_items_to_binder_item_junction ("
                                   "    left_id INTEGER NOT NULL,"
                                   "    right_id INTEGER NOT NULL,"
                                   "    \"order\" INTEGER NOT NULL,"

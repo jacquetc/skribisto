@@ -44,10 +44,10 @@ class IContentRepository
     virtual QList<Entities::Content> update(const QList<Entities::Content> &contents) = 0;
     virtual QList<int> remove(const QList<int> &contentIds) = 0;
     // Relationship setters/getters
-    // Set the relationship value for a given Content id (e.g., set project id)
+    // Set the relationship value for a given Content id (e.g., set work id)
     virtual void setRelationshipIds(int contentId, ContentRelationshipField relationship, QList<int> relatedId) = 0;
 
-    // Get the relationship value for a given Content id (e.g., get project id)
+    // Get the relationship value for a given Content id (e.g., get work id)
     virtual QList<int> getRelationshipIds(int contentId, ContentRelationshipField relationship) = 0;
     virtual QHash<int, QList<int>> getRelationshipIdsMany(const QList<int> &contentIds,
                                                           ContentRelationshipField relationship) = 0;
