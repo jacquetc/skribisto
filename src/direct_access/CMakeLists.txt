@@ -18,69 +18,22 @@ set(SRCS
 
 )
 
-set(ROOT_LIST
-        root/root_controller.cpp
-        root/root_controller.h
-        root/root_unit_of_work.cpp
-        root/root_unit_of_work.h
-        root/dtos.h
-        root/use_cases/i_root_unit_of_work.h
-        root/use_cases/create_uc.cpp
-        root/use_cases/create_uc.h
-        root/use_cases/common/dto_mapper.h
-        root/use_cases/remove_uc.cpp
-        root/use_cases/remove_uc.h
-        root/use_cases/get_uc.cpp
-        root/use_cases/get_uc.h
-        root/use_cases/update_uc.cpp
-        root/use_cases/update_uc.h
-        root/use_cases/set_relationship_ids_uc.cpp
-        root/use_cases/set_relationship_ids_uc.h
-        root/use_cases/get_relationship_ids_uc.cpp
-        root/use_cases/get_relationship_ids_uc.h
-        root/use_cases/get_relationship_ids_many_uc.cpp
-        root/use_cases/get_relationship_ids_many_uc.h
-        root/use_cases/get_relationship_ids_count_uc.cpp
-        root/use_cases/get_relationship_ids_count_uc.h
-        root/use_cases/get_relationship_ids_in_range_uc.cpp
-        root/use_cases/get_relationship_ids_in_range_uc.h
+set(ALL_SOURCE_FILES
+        # empty. To be filled by file_list.cmake in each module
 )
+# Include file lists from submodules
+include(project/file_list.cmake)
+include(binder_item/file_list.cmake)
+include(content/file_list.cmake)
+include(binder_tag/file_list.cmake)
+include(binder/file_list.cmake)
+include(recent_project/file_list.cmake)
+include(root/file_list.cmake)
 
-set(PROJECT_LIST
-        project/project_controller.cpp
-        project/project_controller.h
-        project/project_unit_of_work.cpp
-        project/project_unit_of_work.h
-        project/dtos.h
-        project/use_cases/i_project_unit_of_work.h
-        project/use_cases/create_uc.cpp
-        project/use_cases/create_uc.h
-        project/use_cases/common/dto_mapper.h
-        project/use_cases/remove_uc.cpp
-        project/use_cases/remove_uc.h
-        project/use_cases/get_uc.cpp
-        project/use_cases/get_uc.h
-        project/use_cases/update_uc.cpp
-        project/use_cases/update_uc.h
-        project/use_cases/set_relationship_ids_uc.cpp
-        project/use_cases/set_relationship_ids_uc.h
-        project/use_cases/get_relationship_ids_uc.cpp
-        project/use_cases/get_relationship_ids_uc.h
-        project/use_cases/get_relationship_ids_many_uc.cpp
-        project/use_cases/get_relationship_ids_many_uc.h
-        project/use_cases/get_relationship_ids_count_uc.cpp
-        project/use_cases/get_relationship_ids_count_uc.h
-        project/use_cases/get_relationship_ids_in_range_uc.cpp
-        project/use_cases/get_relationship_ids_in_range_uc.h
-)
-
-set(AUTHOR_LIST
-)
 
 qt_add_library(${LIBRARY_NAME} ${LIB_TYPE} ${SRCS}
-        ${ROOT_LIST}
-        ${PROJECT_LIST}
-        ${AUTHOR_LIST}
+        ${ALL_SOURCE_FILES}
+
 )
 
 include(GenerateExportHeader)
