@@ -32,7 +32,7 @@
 using namespace Qt::StringLiterals;
 
 namespace SCU = Skribisto::Common::Database;
-namespace JUNCTIONOPS = Skribisto::Common::Database::JunctionTableOps::UnorderedManyToMany;
+namespace JUNCTIONOPS = Skribisto::Common::Database::JunctionTableOps;
 
 class TestUnorderedManyToManyJunction : public QObject
 {
@@ -50,7 +50,7 @@ class TestUnorderedManyToManyJunction : public QObject
     void testGetRightIdsEmpty();
     void testGetRightIdsNonExistent();
 
-    // Test cases for removeWithLeftIds functions  
+    // Test cases for removeWithLeftIds functions
     void testRemoveWithLeftIds();
     void testRemoveWithLeftIdsMany();
     void testRemoveWithLeftIdsEmpty();
@@ -94,7 +94,7 @@ class TestUnorderedManyToManyJunction : public QObject
                                         "    PRIMARY KEY (left_id, right_id)"
                                         ");"_L1;
     QSqlDatabase m_db;
-    
+
     void setupDatabase();
     void insertTestData(const QList<QPair<int, int>> &data);
     void clearJunctionTable();
@@ -120,7 +120,7 @@ void TestUnorderedManyToManyJunction::cleanup()
 {
     // Clear the junction cache to ensure test isolation
     SCU::JunctionTableOps::JunctionCache::instance().clear();
-    
+
     if (m_db.isOpen())
     {
         m_db.close();
@@ -133,12 +133,12 @@ void TestUnorderedManyToManyJunction::setupDatabase()
     // Create unique in-memory database for each test
     static int counter = 0;
     QString connectionName = QStringLiteral("test_connection_%1").arg(++counter);
-    
+
     m_db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
     m_db.setDatabaseName(QStringLiteral(":memory:"));
-    
+
     QVERIFY(m_db.open());
-    
+
     // Create junction table
     QSqlQuery query(m_db);
     QVERIFY(query.exec(m_junctionTableDefinition));
@@ -148,7 +148,7 @@ void TestUnorderedManyToManyJunction::insertTestData(const QList<QPair<int, int>
 {
     QSqlQuery query(m_db);
     query.prepare(QStringLiteral("INSERT INTO %1 (left_id, right_id) VALUES (?, ?)").arg(m_junctionTableName));
-    
+
     for (const auto &pair : data)
     {
         query.addBindValue(pair.first);
@@ -168,9 +168,9 @@ void TestUnorderedManyToManyJunction::testGetRightIds()
 {
     // Insert test data: left_id 1 -> right_ids [10, 20, 30]
     insertTestData({{1, 10}, {1, 20}, {1, 30}});
-    
-    QList<int> result = JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName);
-    
+
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName);
+
     QCOMPARE(result.size(), 3);
     QVERIFY(result.contains(10));
     QVERIFY(result.contains(20));
@@ -179,14 +179,15 @@ void TestUnorderedManyToManyJunction::testGetRightIds()
 
 void TestUnorderedManyToManyJunction::testGetRightIdsMany()
 {
-    // Insert test data: 
+    // Insert test data:
     // left_id 1 -> right_ids [10, 20]
     // left_id 2 -> right_ids [30]
     // left_id 3 -> right_ids [] (no relationships)
     insertTestData({{1, 10}, {1, 20}, {2, 30}});
-    
-    QHash<int, QList<int>> result = JUNCTIONOPS::getRightIdsMany(m_db, {1, 2, 3}, m_junctionTableName);
-    
+
+    QHash<int, QList<int>> result =
+        JUNCTIONOPS::UnorderedManyToMany::getRightIdsMany(m_db, {1, 2, 3}, m_junctionTableName);
+
     QCOMPARE(result.size(), 3);
     QCOMPARE(result[1].size(), 2);
     QVERIFY(result[1].contains(10));
@@ -198,18 +199,19 @@ void TestUnorderedManyToManyJunction::testGetRightIdsMany()
 
 void TestUnorderedManyToManyJunction::testGetRightIdsEmpty()
 {
-    QList<int> result = JUNCTIONOPS::getRightIds(m_db, 999, m_junctionTableName);
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 999, m_junctionTableName);
     QVERIFY(result.isEmpty());
-    
-    QHash<int, QList<int>> resultMany = JUNCTIONOPS::getRightIdsMany(m_db, {}, m_junctionTableName);
+
+    QHash<int, QList<int>> resultMany =
+        JUNCTIONOPS::UnorderedManyToMany::getRightIdsMany(m_db, {}, m_junctionTableName);
     QVERIFY(resultMany.isEmpty());
 }
 
 void TestUnorderedManyToManyJunction::testGetRightIdsNonExistent()
 {
     insertTestData({{1, 10}});
-    
-    QList<int> result = JUNCTIONOPS::getRightIds(m_db, 999, m_junctionTableName);
+
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 999, m_junctionTableName);
     QVERIFY(result.isEmpty());
 }
 
@@ -217,16 +219,16 @@ void TestUnorderedManyToManyJunction::testGetRightIdsNonExistent()
 void TestUnorderedManyToManyJunction::testRemoveWithLeftIds()
 {
     insertTestData({{1, 10}, {1, 20}, {2, 30}});
-    
-    bool result = JUNCTIONOPS::removeWithLeftIds(m_db, 1, m_junctionTableName);
+
+    bool result = JUNCTIONOPS::UnorderedManyToMany::removeWithLeftIds(m_db, 1, m_junctionTableName);
     QVERIFY(result);
-    
+
     // Verify removal
-    QList<int> remaining = JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName);
+    QList<int> remaining = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName);
     QVERIFY(remaining.isEmpty());
-    
+
     // Verify other data is untouched
-    QList<int> untouched = JUNCTIONOPS::getRightIds(m_db, 2, m_junctionTableName);
+    QList<int> untouched = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 2, m_junctionTableName);
     QCOMPARE(untouched.size(), 1);
     QVERIFY(untouched.contains(30));
 }
@@ -234,34 +236,35 @@ void TestUnorderedManyToManyJunction::testRemoveWithLeftIds()
 void TestUnorderedManyToManyJunction::testRemoveWithLeftIdsMany()
 {
     insertTestData({{1, 10}, {1, 20}, {2, 30}, {3, 40}});
-    
-    QHash<int, bool> result = JUNCTIONOPS::removeWithLeftIdsMany(m_db, {1, 2}, m_junctionTableName);
-    
+
+    QHash<int, bool> result =
+        JUNCTIONOPS::UnorderedManyToMany::removeWithLeftIdsMany(m_db, {1, 2}, m_junctionTableName);
+
     QCOMPARE(result.size(), 2);
     QVERIFY(result[1]);
     QVERIFY(result[2]);
-    
+
     // Verify removals
-    QVERIFY(JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName).isEmpty());
-    QVERIFY(JUNCTIONOPS::getRightIds(m_db, 2, m_junctionTableName).isEmpty());
-    
+    QVERIFY(JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName).isEmpty());
+    QVERIFY(JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 2, m_junctionTableName).isEmpty());
+
     // Verify untouched data
-    QList<int> untouched = JUNCTIONOPS::getRightIds(m_db, 3, m_junctionTableName);
+    QList<int> untouched = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 3, m_junctionTableName);
     QCOMPARE(untouched.size(), 1);
     QVERIFY(untouched.contains(40));
 }
 
 void TestUnorderedManyToManyJunction::testRemoveWithLeftIdsEmpty()
 {
-    QHash<int, bool> result = JUNCTIONOPS::removeWithLeftIdsMany(m_db, {}, m_junctionTableName);
+    QHash<int, bool> result = JUNCTIONOPS::UnorderedManyToMany::removeWithLeftIdsMany(m_db, {}, m_junctionTableName);
     QVERIFY(result.isEmpty());
 }
 
 void TestUnorderedManyToManyJunction::testRemoveWithLeftIdsNonExistent()
 {
     insertTestData({{1, 10}});
-    
-    bool result = JUNCTIONOPS::removeWithLeftIds(m_db, 999, m_junctionTableName);
+
+    bool result = JUNCTIONOPS::UnorderedManyToMany::removeWithLeftIds(m_db, 999, m_junctionTableName);
     QVERIFY(result); // Should still return true even if nothing was removed
 }
 
@@ -269,14 +272,14 @@ void TestUnorderedManyToManyJunction::testRemoveWithLeftIdsNonExistent()
 void TestUnorderedManyToManyJunction::testRemoveWithRightIds()
 {
     insertTestData({{1, 10}, {2, 10}, {1, 20}});
-    
-    bool result = JUNCTIONOPS::removeWithRightIds(m_db, 10, m_junctionTableName);
+
+    bool result = JUNCTIONOPS::UnorderedManyToMany::removeWithRightIds(m_db, 10, m_junctionTableName);
     QVERIFY(result);
-    
+
     // Verify removal - both (1,10) and (2,10) should be gone
-    QList<int> remaining1 = JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName);
-    QList<int> remaining2 = JUNCTIONOPS::getRightIds(m_db, 2, m_junctionTableName);
-    
+    QList<int> remaining1 = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName);
+    QList<int> remaining2 = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 2, m_junctionTableName);
+
     QVERIFY(!remaining1.contains(10));
     QVERIFY(!remaining2.contains(10));
     QVERIFY(remaining1.contains(20)); // (1,20) should remain
@@ -285,17 +288,18 @@ void TestUnorderedManyToManyJunction::testRemoveWithRightIds()
 void TestUnorderedManyToManyJunction::testRemoveWithRightIdsMany()
 {
     insertTestData({{1, 10}, {1, 20}, {2, 10}, {2, 30}});
-    
-    QHash<int, bool> result = JUNCTIONOPS::removeWithRightIdsMany(m_db, {10, 20}, m_junctionTableName);
-    
+
+    QHash<int, bool> result =
+        JUNCTIONOPS::UnorderedManyToMany::removeWithRightIdsMany(m_db, {10, 20}, m_junctionTableName);
+
     QCOMPARE(result.size(), 2);
     QVERIFY(result[10]);
     QVERIFY(result[20]);
-    
+
     // Verify removals
-    QList<int> remaining1 = JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName);
-    QList<int> remaining2 = JUNCTIONOPS::getRightIds(m_db, 2, m_junctionTableName);
-    
+    QList<int> remaining1 = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName);
+    QList<int> remaining2 = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 2, m_junctionTableName);
+
     QVERIFY(remaining1.isEmpty()); // All relationships for left_id 1 removed
     QCOMPARE(remaining2.size(), 1);
     QVERIFY(remaining2.contains(30)); // Only (2,30) remains
@@ -303,15 +307,15 @@ void TestUnorderedManyToManyJunction::testRemoveWithRightIdsMany()
 
 void TestUnorderedManyToManyJunction::testRemoveWithRightIdsEmpty()
 {
-    QHash<int, bool> result = JUNCTIONOPS::removeWithRightIdsMany(m_db, {}, m_junctionTableName);
+    QHash<int, bool> result = JUNCTIONOPS::UnorderedManyToMany::removeWithRightIdsMany(m_db, {}, m_junctionTableName);
     QVERIFY(result.isEmpty());
 }
 
 void TestUnorderedManyToManyJunction::testRemoveWithRightIdsNonExistent()
 {
     insertTestData({{1, 10}});
-    
-    bool result = JUNCTIONOPS::removeWithRightIds(m_db, 999, m_junctionTableName);
+
+    bool result = JUNCTIONOPS::UnorderedManyToMany::removeWithRightIds(m_db, 999, m_junctionTableName);
     QVERIFY(result); // Should still return true even if nothing was removed
 }
 
@@ -320,12 +324,12 @@ void TestUnorderedManyToManyJunction::testUpsertRightIds()
 {
     // Test initial insert
     QList<int> rightIds = {10, 20, 30};
-    QList<int> result = JUNCTIONOPS::upsertRightIds(m_db, 1, m_junctionTableName, rightIds);
-    
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::upsertRightIds(m_db, 1, m_junctionTableName, rightIds);
+
     QCOMPARE(result, rightIds);
-    
+
     // Verify insertion
-    QList<int> retrieved = JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName);
+    QList<int> retrieved = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName);
     QCOMPARE(retrieved.size(), 3);
     for (int id : rightIds)
     {
@@ -338,17 +342,18 @@ void TestUnorderedManyToManyJunction::testUpsertRightIdsMany()
     QHash<int, QList<int>> input;
     input[1] = {10, 20};
     input[2] = {30, 40};
-    
-    QHash<int, QList<int>> result = JUNCTIONOPS::upsertRightIdsMany(m_db, input, m_junctionTableName);
-    
+
+    QHash<int, QList<int>> result =
+        JUNCTIONOPS::UnorderedManyToMany::upsertRightIdsMany(m_db, input, m_junctionTableName);
+
     QCOMPARE(result.size(), 2);
     QCOMPARE(result[1], QList<int>({10, 20}));
     QCOMPARE(result[2], QList<int>({30, 40}));
-    
+
     // Verify insertion
-    QList<int> retrieved1 = JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName);
-    QList<int> retrieved2 = JUNCTIONOPS::getRightIds(m_db, 2, m_junctionTableName);
-    
+    QList<int> retrieved1 = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName);
+    QList<int> retrieved2 = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 2, m_junctionTableName);
+
     QCOMPARE(retrieved1.size(), 2);
     QCOMPARE(retrieved2.size(), 2);
     QVERIFY(retrieved1.contains(10) && retrieved1.contains(20));
@@ -359,27 +364,28 @@ void TestUnorderedManyToManyJunction::testUpsertRightIdsOptional()
 {
     // Test with valid optional
     std::optional<QList<int>> rightIds = QList<int>({10, 20});
-    QList<int> result = JUNCTIONOPS::upsertRightIds(m_db, 1, m_junctionTableName, rightIds);
-    
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::upsertRightIds(m_db, 1, m_junctionTableName, rightIds);
+
     QCOMPARE(result.size(), 2);
     QVERIFY(result.contains(10) && result.contains(20));
-    
+
     // Test with empty optional - should remove all relationships
     std::optional<QList<int>> emptyOptional;
-    QList<int> emptyResult = JUNCTIONOPS::upsertRightIds(m_db, 1, m_junctionTableName, emptyOptional);
-    
+    QList<int> emptyResult =
+        JUNCTIONOPS::UnorderedManyToMany::upsertRightIds(m_db, 1, m_junctionTableName, emptyOptional);
+
     QVERIFY(emptyResult.isEmpty());
-    QList<int> retrieved = JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName);
+    QList<int> retrieved = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName);
     QVERIFY(retrieved.isEmpty());
 }
 
 void TestUnorderedManyToManyJunction::testUpsertRightIdsEmpty()
 {
     QList<int> emptyList;
-    QList<int> result = JUNCTIONOPS::upsertRightIds(m_db, 1, m_junctionTableName, emptyList);
-    
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::upsertRightIds(m_db, 1, m_junctionTableName, emptyList);
+
     QVERIFY(result.isEmpty());
-    QList<int> retrieved = JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName);
+    QList<int> retrieved = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName);
     QVERIFY(retrieved.isEmpty());
 }
 
@@ -387,15 +393,15 @@ void TestUnorderedManyToManyJunction::testUpsertRightIdsOverwrite()
 {
     // Insert initial data
     insertTestData({{1, 10}, {1, 20}});
-    
+
     // Overwrite with new data
     QList<int> newRightIds = {30, 40, 50};
-    QList<int> result = JUNCTIONOPS::upsertRightIds(m_db, 1, m_junctionTableName, newRightIds);
-    
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::upsertRightIds(m_db, 1, m_junctionTableName, newRightIds);
+
     QCOMPARE(result, newRightIds);
-    
+
     // Verify old data is gone and new data is present
-    QList<int> retrieved = JUNCTIONOPS::getRightIds(m_db, 1, m_junctionTableName);
+    QList<int> retrieved = JUNCTIONOPS::UnorderedManyToMany::getRightIds(m_db, 1, m_junctionTableName);
     QCOMPARE(retrieved.size(), 3);
     QVERIFY(!retrieved.contains(10) && !retrieved.contains(20));
     QVERIFY(retrieved.contains(30) && retrieved.contains(40) && retrieved.contains(50));
@@ -406,9 +412,9 @@ void TestUnorderedManyToManyJunction::testGetLeftIds()
 {
     // Insert test data: right_id 10 <- left_ids [1, 2, 3]
     insertTestData({{1, 10}, {2, 10}, {3, 10}});
-    
-    QList<int> result = JUNCTIONOPS::getLeftIds(m_db, m_junctionTableName, 10);
-    
+
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getLeftIds(m_db, m_junctionTableName, 10);
+
     QCOMPARE(result.size(), 3);
     QVERIFY(result.contains(1));
     QVERIFY(result.contains(2));
@@ -422,9 +428,10 @@ void TestUnorderedManyToManyJunction::testGetLeftIdsMany()
     // right_id 20 <- left_ids [3]
     // right_id 30 <- left_ids [] (no relationships)
     insertTestData({{1, 10}, {2, 10}, {3, 20}});
-    
-    QMap<int, QList<int>> result = JUNCTIONOPS::getLeftIdsMany(m_db, m_junctionTableName, {10, 20, 30});
-    
+
+    QMap<int, QList<int>> result =
+        JUNCTIONOPS::UnorderedManyToMany::getLeftIdsMany(m_db, m_junctionTableName, {10, 20, 30});
+
     QCOMPARE(result.size(), 3);
     QCOMPARE(result[10].size(), 2);
     QVERIFY(result[10].contains(1));
@@ -436,18 +443,18 @@ void TestUnorderedManyToManyJunction::testGetLeftIdsMany()
 
 void TestUnorderedManyToManyJunction::testGetLeftIdsEmpty()
 {
-    QList<int> result = JUNCTIONOPS::getLeftIds(m_db, m_junctionTableName, 999);
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getLeftIds(m_db, m_junctionTableName, 999);
     QVERIFY(result.isEmpty());
-    
-    QMap<int, QList<int>> resultMany = JUNCTIONOPS::getLeftIdsMany(m_db, m_junctionTableName, {});
+
+    QMap<int, QList<int>> resultMany = JUNCTIONOPS::UnorderedManyToMany::getLeftIdsMany(m_db, m_junctionTableName, {});
     QVERIFY(resultMany.isEmpty());
 }
 
 void TestUnorderedManyToManyJunction::testGetLeftIdsNonExistent()
 {
     insertTestData({{1, 10}});
-    
-    QList<int> result = JUNCTIONOPS::getLeftIds(m_db, m_junctionTableName, 999);
+
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getLeftIds(m_db, m_junctionTableName, 999);
     QVERIFY(result.isEmpty());
 }
 
@@ -455,10 +462,10 @@ void TestUnorderedManyToManyJunction::testGetLeftIdsNonExistent()
 void TestUnorderedManyToManyJunction::testGetRightIdsCount()
 {
     insertTestData({{1, 10}, {1, 20}, {1, 30}, {2, 40}});
-    
-    int count1 = JUNCTIONOPS::getRightIdsCount(m_db, 1, m_junctionTableName);
-    int count2 = JUNCTIONOPS::getRightIdsCount(m_db, 2, m_junctionTableName);
-    
+
+    int count1 = JUNCTIONOPS::UnorderedManyToMany::getRightIdsCount(m_db, 1, m_junctionTableName);
+    int count2 = JUNCTIONOPS::UnorderedManyToMany::getRightIdsCount(m_db, 2, m_junctionTableName);
+
     QCOMPARE(count1, 3);
     QCOMPARE(count2, 1);
 }
@@ -466,14 +473,14 @@ void TestUnorderedManyToManyJunction::testGetRightIdsCount()
 void TestUnorderedManyToManyJunction::testGetRightIdsCountZero()
 {
     insertTestData({{1, 10}});
-    
-    int count = JUNCTIONOPS::getRightIdsCount(m_db, 2, m_junctionTableName);
+
+    int count = JUNCTIONOPS::UnorderedManyToMany::getRightIdsCount(m_db, 2, m_junctionTableName);
     QCOMPARE(count, 0);
 }
 
 void TestUnorderedManyToManyJunction::testGetRightIdsCountNonExistent()
 {
-    int count = JUNCTIONOPS::getRightIdsCount(m_db, 999, m_junctionTableName);
+    int count = JUNCTIONOPS::UnorderedManyToMany::getRightIdsCount(m_db, 999, m_junctionTableName);
     QCOMPARE(count, 0);
 }
 
@@ -481,9 +488,9 @@ void TestUnorderedManyToManyJunction::testGetRightIdsCountNonExistent()
 void TestUnorderedManyToManyJunction::testGetRightIdsInRange()
 {
     insertTestData({{1, 10}, {1, 20}, {1, 30}, {1, 40}, {1, 50}});
-    
-    QList<int> result = JUNCTIONOPS::getRightIdsInRange(m_db, 1, m_junctionTableName, 0, 3);
-    
+
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getRightIdsInRange(m_db, 1, m_junctionTableName, 0, 3);
+
     QCOMPARE(result.size(), 3);
     // Note: Order is not guaranteed in unordered many-to-many, so we just check count
 }
@@ -491,26 +498,26 @@ void TestUnorderedManyToManyJunction::testGetRightIdsInRange()
 void TestUnorderedManyToManyJunction::testGetRightIdsInRangeOffset()
 {
     insertTestData({{1, 10}, {1, 20}, {1, 30}, {1, 40}, {1, 50}});
-    
-    QList<int> result = JUNCTIONOPS::getRightIdsInRange(m_db, 1, m_junctionTableName, 2, 2);
-    
+
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getRightIdsInRange(m_db, 1, m_junctionTableName, 2, 2);
+
     QCOMPARE(result.size(), 2);
 }
 
 void TestUnorderedManyToManyJunction::testGetRightIdsInRangeLimit()
 {
     insertTestData({{1, 10}, {1, 20}});
-    
+
     // Request more than available
-    QList<int> result = JUNCTIONOPS::getRightIdsInRange(m_db, 1, m_junctionTableName, 0, 5);
-    
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getRightIdsInRange(m_db, 1, m_junctionTableName, 0, 5);
+
     QCOMPARE(result.size(), 2);
 }
 
 void TestUnorderedManyToManyJunction::testGetRightIdsInRangeEmpty()
 {
-    QList<int> result = JUNCTIONOPS::getRightIdsInRange(m_db, 999, m_junctionTableName, 0, 10);
-    
+    QList<int> result = JUNCTIONOPS::UnorderedManyToMany::getRightIdsInRange(m_db, 999, m_junctionTableName, 0, 10);
+
     QVERIFY(result.isEmpty());
 }
 

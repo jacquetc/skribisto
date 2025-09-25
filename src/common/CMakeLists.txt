@@ -23,9 +23,14 @@ set(SRCS
         direct_access/repository_factory.cpp
         direct_access/event_registry.h
         database/junction_table_ops/ordered_one_to_many.h
+        database/junction_table_ops/ordered_one_to_many.cpp
         database/junction_table_ops/unordered_many_to_many.h
+        database/junction_table_ops/unordered_many_to_many.cpp
         database/junction_table_ops/unordered_one_to_many.h
+        database/junction_table_ops/unordered_one_to_many.cpp
         database/junction_table_ops/one_to_one.h
+        database/junction_table_ops/one_to_one.cpp
+        database/junction_table_ops/junction_cache.h
         service_locator.cpp
         service_locator.h
 
@@ -144,6 +149,17 @@ qt_add_library(${LIBRARY_NAME} ${LIB_TYPE} ${SRCS} ${UNDO_REDO_LIST}
         ${ENTITIES_LIST}
         ${DIRECT_ACCESS_LIST}
 )
+target_compile_definitions(${LIBRARY_NAME} PRIVATE
+        QT_NO_KEYWORDS
+        QT_NO_CAST_TO_ASCII
+        QT_NO_CAST_FROM_ASCII
+        QT_NO_CAST_FROM_BYTEARRAY
+        QT_NO_KEYWORDS
+        QT_NO_FOREACH
+        QT_STRICT_ITERATORS
+        QT_USE_QSTRINGBUILDER
+        QT_NO_NARROWING_CONVERSIONS_IN_CONNECT
+        QT_NO_URL_CAST_FROM_STRING)
 
 include(GenerateExportHeader)
 generate_export_header(${LIBRARY_NAME}
