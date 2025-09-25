@@ -23,12 +23,14 @@ qt6_add_qml_module(${PLUGIN_NAME}
         foreign_binder_tag_controller.h
         foreign_binder_item_controller.h
         foreign_content_controller.h
+        foreign_work_management_controller.h
         #foreign_undo_redo_controller.h
 
 )
 
 target_link_libraries(${PLUGIN_NAME} PRIVATE skribisto-direct-access)
 target_link_libraries(${PLUGIN_NAME} PRIVATE skribisto-common)
+target_link_libraries(${PLUGIN_NAME} PRIVATE skribisto-work-management)
 target_link_libraries(${PLUGIN_NAME} PRIVATE QCoro::Core QCoro::Qml)
 
 target_link_libraries(${PLUGIN_NAME}

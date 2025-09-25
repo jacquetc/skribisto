@@ -105,9 +105,29 @@ ApplicationWindow {
                 id: rootController
 
             }
+            WorkManagementController {
+                id: workManagementController
+
+            }
             WorkController {
                 id: workController
 
+            }
+            // Button
+            Button {
+                id: savekButton
+
+                text: "Save"
+
+                onClicked: {
+                    console.log("Save button clicked");
+                    let dto = workManagementController.getSaveWorkDto();
+                    dto.fileName = "/tmp/mywork.skr";
+
+                    workManagementController.saveWork(dto).then(function (result) {
+                        console.log("Async save result :", result);
+                    });
+                }
             }
             // Button
             Button {
