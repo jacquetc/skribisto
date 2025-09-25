@@ -67,52 +67,52 @@ void SDBinder::BinderUnitOfWork::releaseSavepoint()
 }
 QList<Skribisto::Common::Entities::Binder> SDBinder::BinderUnitOfWork::createBinder(QList<SCE::Binder> binders)
 {
-    auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
     return repository->create(binders);
 }
 QList<Skribisto::Common::Entities::Binder> SDBinder::BinderUnitOfWork::getBinder(QList<int> binderIds)
 {
-    auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
     return repository->get(binderIds);
 }
 QList<Skribisto::Common::Entities::Binder> SDBinder::BinderUnitOfWork::updateBinder(QList<SCE::Binder> binders)
 {
-    auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
     return repository->update(binders);
 }
 QList<int> SDBinder::BinderUnitOfWork::removeBinder(QList<int> binderIds)
 {
-    auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
     return repository->remove(binderIds);
 }
 QList<int> SDBinder::BinderUnitOfWork::getBinderRelationship(int binderId,
                                                              SCDBinder::BinderRelationshipField relationship)
 {
-    auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
     return repository->getRelationshipIds(binderId, relationship);
 }
 void SDBinder::BinderUnitOfWork::setBinderRelationship(int binderId, SCDBinder::BinderRelationshipField relationship,
                                                        QList<int> relatedIds)
 {
-    auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
     repository->setRelationshipIds(binderId, relationship, relatedIds);
 }
 QHash<int, QList<int>> SDBinder::BinderUnitOfWork::getBinderRelationshipMany(
     const QList<int> &binderIds, SCDBinder::BinderRelationshipField relationship)
 {
-    auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
     return repository->getRelationshipIdsMany(binderIds, relationship);
 }
 int SDBinder::BinderUnitOfWork::getBinderRelationshipCount(int binderId,
                                                            SCDBinder::BinderRelationshipField relationship)
 {
-    auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
     return repository->getRelationshipIdsCount(binderId, relationship);
 }
 QList<int> SDBinder::BinderUnitOfWork::getBinderRelationshipInRange(int binderId,
                                                                     SCDBinder::BinderRelationshipField relationship,
                                                                     int offset, int limit)
 {
-    auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderRepository(m_dbSubContext, m_eventRegistry);
     return repository->getRelationshipIdsInRange(binderId, relationship, offset, limit);
 }

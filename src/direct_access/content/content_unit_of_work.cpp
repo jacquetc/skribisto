@@ -67,21 +67,21 @@ void SDContent::ContentUnitOfWork::releaseSavepoint()
 }
 QList<Skribisto::Common::Entities::Content> SDContent::ContentUnitOfWork::createContent(QList<SCE::Content> contents)
 {
-    auto repository = SCD::RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
     return repository->create(contents);
 }
 QList<Skribisto::Common::Entities::Content> SDContent::ContentUnitOfWork::getContent(QList<int> contentIds)
 {
-    auto repository = SCD::RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
     return repository->get(contentIds);
 }
 QList<Skribisto::Common::Entities::Content> SDContent::ContentUnitOfWork::updateContent(QList<SCE::Content> contents)
 {
-    auto repository = SCD::RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
     return repository->update(contents);
 }
 QList<int> SDContent::ContentUnitOfWork::removeContent(QList<int> contentIds)
 {
-    auto repository = SCD::RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);
     return repository->remove(contentIds);
 }

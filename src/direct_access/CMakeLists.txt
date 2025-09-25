@@ -36,6 +36,18 @@ qt_add_library(${LIBRARY_NAME} ${LIB_TYPE} ${SRCS}
 
 )
 
+target_compile_definitions(${LIBRARY_NAME} PRIVATE
+        QT_NO_KEYWORDS
+        QT_NO_CAST_TO_ASCII
+        QT_NO_CAST_FROM_ASCII
+        QT_NO_CAST_FROM_BYTEARRAY
+        QT_NO_KEYWORDS
+        QT_NO_FOREACH
+        QT_STRICT_ITERATORS
+        QT_USE_QSTRINGBUILDER
+        QT_NO_NARROWING_CONVERSIONS_IN_CONNECT
+        QT_NO_URL_CAST_FROM_STRING)
+
 include(GenerateExportHeader)
 generate_export_header(${LIBRARY_NAME}
         BASE_NAME skribisto_direct_access

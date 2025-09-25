@@ -68,22 +68,22 @@ void SDBinderTag::BinderTagUnitOfWork::releaseSavepoint()
 QList<Skribisto::Common::Entities::BinderTag> SDBinderTag::BinderTagUnitOfWork::createBinderTag(
     QList<SCE::BinderTag> binderTags)
 {
-    auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
     return repository->create(binderTags);
 }
 QList<Skribisto::Common::Entities::BinderTag> SDBinderTag::BinderTagUnitOfWork::getBinderTag(QList<int> binderTagIds)
 {
-    auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
     return repository->get(binderTagIds);
 }
 QList<Skribisto::Common::Entities::BinderTag> SDBinderTag::BinderTagUnitOfWork::updateBinderTag(
     QList<SCE::BinderTag> binderTags)
 {
-    auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
     return repository->update(binderTags);
 }
 QList<int> SDBinderTag::BinderTagUnitOfWork::removeBinderTag(QList<int> binderTagIds)
 {
-    auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
     return repository->remove(binderTagIds);
 }

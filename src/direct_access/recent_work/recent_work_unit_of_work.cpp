@@ -68,23 +68,23 @@ void SDRecentWork::RecentWorkUnitOfWork::releaseSavepoint()
 QList<Skribisto::Common::Entities::RecentWork> SDRecentWork::RecentWorkUnitOfWork::createRecentWork(
     QList<SCE::RecentWork> recentWorks)
 {
-    auto repository = SCD::RepositoryFactory::createRecentWorkRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createRecentWorkRepository(m_dbSubContext, m_eventRegistry);
     return repository->create(recentWorks);
 }
 QList<Skribisto::Common::Entities::RecentWork> SDRecentWork::RecentWorkUnitOfWork::getRecentWork(
     QList<int> recentWorkIds)
 {
-    auto repository = SCD::RepositoryFactory::createRecentWorkRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createRecentWorkRepository(m_dbSubContext, m_eventRegistry);
     return repository->get(recentWorkIds);
 }
 QList<Skribisto::Common::Entities::RecentWork> SDRecentWork::RecentWorkUnitOfWork::updateRecentWork(
     QList<SCE::RecentWork> recentWorks)
 {
-    auto repository = SCD::RepositoryFactory::createRecentWorkRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createRecentWorkRepository(m_dbSubContext, m_eventRegistry);
     return repository->update(recentWorks);
 }
 QList<int> SDRecentWork::RecentWorkUnitOfWork::removeRecentWork(QList<int> recentWorkIds)
 {
-    auto repository = SCD::RepositoryFactory::createRecentWorkRepository(m_dbSubContext, m_eventRegistry);
+    const auto repository = SCD::RepositoryFactory::createRecentWorkRepository(m_dbSubContext, m_eventRegistry);
     return repository->remove(recentWorkIds);
 }
