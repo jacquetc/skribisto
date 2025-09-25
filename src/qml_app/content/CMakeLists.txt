@@ -1,6 +1,8 @@
 # This file was generated automatically by Qleany's generator, edit at your own risk! 
 # If you do, be careful to not overwrite it when you run the generator again.
-find_package(QCoro6 REQUIRED COMPONENTS Core Qml)
+if (NOT SKR_BUILD_WITH_MOCKS)
+    find_package(QCoro6 REQUIRED COMPONENTS Core Qml)
+endif ()
 
 qt_add_library(content STATIC)
 qt6_add_qml_module(content
@@ -10,4 +12,7 @@ qt6_add_qml_module(content
         QML_FILES
         App.qml
 )
-target_link_libraries(content PRIVATE QCoro::Core QCoro::Qml)
+
+if (NOT SKR_BUILD_WITH_MOCKS)
+    target_link_libraries(content PRIVATE QCoro::Core QCoro::Qml)
+endif ()

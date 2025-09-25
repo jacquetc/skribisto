@@ -1,13 +1,10 @@
 // This file was generated automatically by Qleany's generator, edit at your own risk!
 // If you do, be careful to not overwrite it when you run the generator again.
-pragma Singleton
 
 import QtQuick
 
 QtObject {
     id: controller
-
-    signal brandRemoved(int id)
 
     function create(dto) {
         // create random id
@@ -21,7 +18,7 @@ QtObject {
             task.setValue(dto);
             task.setDelay(50);
             task.setSignalFn(function () {
-                EventDispatcher.brand().created(dto);
+                EventRegistry.work().created(dto);
             });
         }
 
@@ -35,24 +32,7 @@ QtObject {
             task.setValue(dto);
             task.setDelay(50);
             task.setSignalFn(function () {
-                EventDispatcher.brand().getReplied(id);
-            });
-        }
-
-        return task;
-    }
-    function getAll() {
-        // fill it with whatever you want to return
-        var dtos = [];
-
-        // mocking QCoro::Task
-        var component = Qt.createComponent("QCoroQmlTask.qml");
-        if (component.status === Component.Ready) {
-            var task = component.createObject(controller);
-            task.setValue(dtos);
-            task.setDelay(50);
-            task.setSignalFn(function () {
-                EventDispatcher.brand().getAllReplied(dtos);
+                EventRegistry.work().getReplied(id);
             });
         }
 
@@ -62,9 +42,8 @@ QtObject {
         return {
             "createdAt": "",
             "updatedAt": "",
-            "authorName": "",
-            "works": "",
-            "recentWorks": ""
+            "name": "",
+            "binders": []
         };
     }
     function remove(id) {
@@ -75,7 +54,7 @@ QtObject {
             task.setValue(dto);
             task.setDelay(50);
             task.setSignalFn(function () {
-                EventDispatcher.brand().removed(id);
+                EventRegistry.work().removed(id);
             });
         }
 
@@ -90,8 +69,8 @@ QtObject {
             task.setValue(dto);
             task.setDelay(50);
             task.setSignalFn(function () {
-                EventDispatcher.brand().updated(dto);
-                EventDispatcher.brand().allRelationsInvalidated(dto.id);
+                EventRegistry.work().updated(dto);
+                EventRegistry.work().allRelationsInvalidated(dto.id);
             });
         }
 

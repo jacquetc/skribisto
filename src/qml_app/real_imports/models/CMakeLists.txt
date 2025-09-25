@@ -3,24 +3,23 @@
 find_package(Qt6 COMPONENTS Core Quick Qml REQUIRED)
 find_package(QCoro6 REQUIRED COMPONENTS Core Qml)
 
-set(PLUGIN_NAME front-ends-example-qml-models)
+set(PLUGIN_NAME skribisto-qml--models)
 
 qt_add_library(${PLUGIN_NAME} STATIC)
 
 qt6_add_qml_module(${PLUGIN_NAME}
-    URI "Models"
-    VERSION 1.0
-    RESOURCE_PREFIX "/models"
-    SOURCES
-    
-    foreign_passenger_list_model_from_car_passengers.h
-    foreign_car_list_model.h
+        URI "Skr.Models"
+        VERSION 1.0
+        RESOURCE_PREFIX "/models"
+        SOURCES
+
+        foreign_binder_item_list_model_from_binder_binder_items.h
 
 )
 
-target_link_libraries(${PLUGIN_NAME} PRIVATE front-ends-example-presenter)
+target_link_libraries(${PLUGIN_NAME} PRIVATE skribisto-direct-access)
 target_link_libraries(${PLUGIN_NAME} PRIVATE QCoro::Core QCoro::Qml)
 
 target_link_libraries(${PLUGIN_NAME}
-    PRIVATE Qt6::Quick Qt6::Core Qt6::Qml
+        PRIVATE Qt6::Quick Qt6::Core Qt6::Qml
 )

@@ -11,7 +11,7 @@ set(PLUGIN_NAME skribisto-qml-controllers)
 qt_add_library(${PLUGIN_NAME} STATIC)
 
 qt6_add_qml_module(${PLUGIN_NAME}
-        URI "Skribisto.Controllers"
+        URI "Skr.Controllers"
         VERSION 1.0
         SOURCES
 

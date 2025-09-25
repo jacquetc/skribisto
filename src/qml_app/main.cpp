@@ -21,12 +21,14 @@
 // This file was generated automatically by Qleany's generator, edit at your own risk!// If you do, be careful to not
 // overwrite it when you run the generator again.
 
+#ifndef BUILD_WITH_MOCKS
 #include "database/db_context.h"
 #include "direct_access/event_registry.h"
 #include "service_locator.h"
-
 #include <QCoroQml>
 #include <QCoroQmlTask>
+#endif
+
 #include <QGuiApplication>
 #include <QLoggingCategory>
 #include <QQmlApplicationEngine>
@@ -74,9 +76,8 @@ int main(int argc, char *argv[])
     locator->setUndoRedoSystem(urs);
     Skribisto::Common::ServiceLocator::setInstance(locator);
 
-#endif
-
     QCoro::Qml::registerTypes();
+#endif
 
     QQmlApplicationEngine engine;
     const QUrl url(u"qrc:/qt/qml/Main/main.qml"_s);
@@ -91,7 +92,7 @@ int main(int argc, char *argv[])
     engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml"_L1);
     engine.addImportPath(":/"_L1);
 #if defined(BUILD_WITH_MOCKS)
-    engine.addImportPath(QCoreApplication::applicationDirPath() + "/mock_imports"_L1);
+    engine.addImportPath(QString(QML_IMPORT_PATH));
 #endif
 
     engine.load(url);
@@ -101,6 +102,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+#ifndef BUILD_WITH_MOCKS
     // Ensure proper shutdown of async operations before app termination
     auto cleanup = [&]() {
         auto *locator = Skribisto::Common::ServiceLocator::instance();
@@ -118,6 +120,7 @@ int main(int argc, char *argv[])
 
     // Connect to aboutToQuit to ensure cleanup happens before QCoreApplication destruction
     QObject::connect(&app, &QGuiApplication::aboutToQuit, cleanup);
+#endif
 
     return app.exec();
 }

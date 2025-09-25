@@ -18,18 +18,14 @@
  * along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// This file was generated automatically by Qleany's generator, edit at your own risk!
-// If you do, be careful to not overwrite it when you run the generator again.
-
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import QCoro 0
+//import QCoro 0
 import QtQml
 import QtQuick.Controls.Basic
 // Components
-import Skribisto.App
-import Skribisto.Controllers
+import Skr.Controllers
 
 // import Models
 // import Singles
@@ -121,7 +117,6 @@ ApplicationWindow {
 
                 onClicked: {
                     colors.buttonText = "blue";
-                    testDialog.open();
                     console.log("Create button clicked");
                     var dto = workController.getCreateDto();
                     dto.title = "My Work ";
@@ -135,7 +130,7 @@ ApplicationWindow {
             Button {
                 id: createRootButton
 
-                enabled: false
+                enabled: true
                 text: "Create Root"
 
                 onClicked: {
@@ -170,7 +165,7 @@ ApplicationWindow {
                 text: "Get Work 1"
 
                 onClicked: {
-                    console.log("Get Root 1 button clicked");
+                    console.log("Get Work 1 button clicked");
 
                     workController.get([1]).then(function (res) {
                         console.log("Async get work result :", res);

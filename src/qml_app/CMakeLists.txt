@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.21)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
-option(BUILD_WITH_MOCKS "Build with mocks" OFF)
+#option(SKR_BUILD_WITH_MOCKS "Build with mocks" OFF)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Concurrent Sql QuickControls2)
 find_package(QCoro6 REQUIRED COMPONENTS Core Qml)
@@ -30,8 +30,10 @@ target_link_libraries(
         PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Qml Qt${QT_VERSION_MAJOR}::QuickControls2
         Qt${QT_VERSION_MAJOR}::Concurrent Qt${QT_VERSION_MAJOR}::Sql)
-target_link_libraries(${APP_NAME} PRIVATE QCoro::Core QCoro::Qml)
-target_link_libraries(${APP_NAME} PRIVATE skribisto-common)
+if (NOT SKR_BUILD_WITH_MOCKS)
+    target_link_libraries(${APP_NAME} PRIVATE QCoro::Core QCoro::Qml)
+    target_link_libraries(${APP_NAME} PRIVATE skribisto-common)
+endif ()
 
 
 qt6_add_qml_module(${APP_NAME}
@@ -49,11 +51,12 @@ target_link_libraries(${APP_NAME} PRIVATE
         contentplugin
 )
 
-if (BUILD_WITH_MOCKS)
-    # copy mock_imports in binary folder
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/mock_imports
-            DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+if (SKR_BUILD_WITH_MOCKS)
+
     target_compile_definitions(${APP_NAME} PRIVATE BUILD_WITH_MOCKS)
+
+    target_compile_definitions(${APP_NAME} PRIVATE QML_IMPORT_PATH="${CMAKE_CURRENT_SOURCE_DIR}/mock_imports")
+    message("Using mock imports from: ${CMAKE_CURRENT_SOURCE_DIR}/mock_imports")
 else ()
     include(${CMAKE_CURRENT_SOURCE_DIR}/realqmlmodules.cmake)
 endif ()

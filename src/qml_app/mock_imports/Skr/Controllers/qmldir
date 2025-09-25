@@ -1,7 +1,9 @@
 # This file was generated automatically by Qleany's generator, edit at your own risk! 
 # If you do, be careful to not overwrite it when you run the generator again.
-Module Controllers
+module Skr.Controllers
 RootController 1.0 RootController.qml
 singleton RootEvents 1.0 RootEvents.qml
+WorkController 1.0 WorkController.qml
+singleton WorkEvents 1.0 WorkEvents.qml
 singleton EventRegistry 1.0 EventRegistry.qml
 QCoroQmlTask 1.0 QCoroQmlTask.qml
