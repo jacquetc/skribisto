@@ -34,6 +34,8 @@
 
 #include "database/db_builder.h"
 
+using namespace Qt::Literals::StringLiterals;
+
 namespace Skribisto::Common::Database
 {
 
@@ -108,6 +110,65 @@ class DbContext : public QObject
         return QSqlDatabase::database(it.value());
     }
 
+    QString getDatabaseName() const
+    {
+        QReadLocker guard(&m_lock);
+        return m_databaseName;
+    }
+
+    // WAL management methods
+    bool performPassiveCheckpoint()
+    {
+        QReadLocker guard(&m_lock);
+        if (m_connections.isEmpty())
+            return false;
+
+        // Use first available connection for checkpoint
+        auto it = m_connections.cbegin();
+        QSqlDatabase db = QSqlDatabase::database(it.value());
+        if (!db.isValid())
+            return false;
+
+        QSqlQuery query(db);
+        return query.exec(QStringLiteral("PRAGMA wal_checkpoint(PASSIVE);"));
+    }
+
+    bool performTruncateCheckpoint()
+    {
+        QReadLocker guard(&m_lock);
+        if (m_connections.isEmpty())
+            return false;
+
+        // Use first available connection for checkpoint
+        auto it = m_connections.cbegin();
+        QSqlDatabase db = QSqlDatabase::database(it.value());
+        if (!db.isValid())
+            return false;
+
+        QSqlQuery query(db);
+        return query.exec(QStringLiteral("PRAGMA wal_checkpoint(TRUNCATE);"));
+    }
+
+    QPair<int, int> getWalInfo()
+    {
+        QReadLocker guard(&m_lock);
+        if (m_connections.isEmpty())
+            return {-1, -1};
+
+        // Use first available connection to get WAL info
+        auto it = m_connections.cbegin();
+        QSqlDatabase db = QSqlDatabase::database(it.value());
+        if (!db.isValid())
+            return {-1, -1};
+
+        QSqlQuery query(db);
+        if (query.exec(QStringLiteral("PRAGMA wal_checkpoint;")) && query.next())
+        {
+            return {query.value(0).toInt(), query.value(1).toInt()};
+        }
+        return {-1, -1};
+    }
+
   private:
     mutable QReadWriteLock m_lock;
     QString m_databaseName;
@@ -133,6 +194,16 @@ struct DbSubContext
         {
             m_parentDbContext.closeDatabaseConnection(m_dbId);
         }
+    }
+
+    /**
+     *  Only for very specific use cases where direct access to the database is needed, like saving,
+     *  without going through the UnitOfWork API. Use with caution.
+     * @return
+     */
+    [[nodiscard]] QString getDatabaseName() const
+    {
+        return m_parentDbContext.getDatabaseName();
     }
 
     [[nodiscard]] QSqlDatabase getConnection()
