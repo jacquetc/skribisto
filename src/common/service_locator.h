@@ -41,10 +41,6 @@ class ServiceLocator : public QObject
     void setEventRegistry(DirectAccess::EventRegistry *ev);
     void setUndoRedoSystem(UndoRedo::UndoRedoSystem *urs);
 
-    Q_INVOKABLE QObject *dbContextObj() const;
-    Q_INVOKABLE QObject *eventRegistryObj() const;
-    Q_INVOKABLE QObject *undoRedoSystemObj() const;
-
     Database::DbContext *dbContext() const;
     QPointer<DirectAccess::EventRegistry> eventRegistry() const;
     QPointer<UndoRedo::UndoRedoSystem> undoRedoSystem() const;

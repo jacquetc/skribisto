@@ -67,7 +67,6 @@ target/
 .directory
 
 #cx_Freeze
-build/
 build
 
 #gedit
@@ -89,7 +88,7 @@ CMakeLists.txt.user
 # QML
 *.qmlc
 *.jsc
-
+**/.qmlls.ini
 #plume
 .~lock.*
 

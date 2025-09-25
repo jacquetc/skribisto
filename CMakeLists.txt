@@ -40,20 +40,10 @@ set(QT_MIN_VERSION "6.4.0")
 
 option(SKR_MOBILE_APP "Enable the touch GUI" OFF)
 option(SKR_BUILD_TESTS "Build tests" OFF)
+option(SKR_BUILD_WITH_MOCKS "Build with mocks" OFF)
 
 # forbid some old things
 add_definitions(-DQT_NO_FOREACH)
-add_compile_definitions(
-        QT_NO_KEYWORDS
-        QT_NO_CAST_TO_ASCII
-        QT_NO_CAST_FROM_ASCII
-        QT_NO_CAST_FROM_BYTEARRAY
-        QT_NO_KEYWORDS
-        QT_NO_FOREACH
-        QT_STRICT_ITERATORS
-        QT_USE_QSTRINGBUILDER
-        QT_NO_NARROWING_CONVERSIONS_IN_CONNECT
-        QT_NO_URL_CAST_FROM_STRING)
 
 
 message("------------------CMAKE_SYSTEM_NAME---------------------")
@@ -73,10 +63,15 @@ endif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 include(CMakePackageConfigHelpers)
 
-add_subdirectory(src/common)
-add_subdirectory(src/direct_access)
-add_subdirectory(src/work_management)
+if (NOT SKR_BUILD_WITH_MOCKS)
+    message("Not building with mocks")
+    add_subdirectory(src/common)
+    add_subdirectory(src/direct_access)
+    add_subdirectory(src/work_management)
+endif (NOT SKR_BUILD_WITH_MOCKS)
+
 add_subdirectory(src/qml_app)
+#add_subdirectory(src/touch_gui)
 
 
 # Subdirectories that contain CMakeLists.txt for the framework tests and example

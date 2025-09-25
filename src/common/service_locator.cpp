@@ -47,19 +47,6 @@ void SC::ServiceLocator::setUndoRedoSystem(SC::UndoRedo::UndoRedoSystem *urs)
     m_undoRedoSystem = urs;
 }
 
-QObject *SC::ServiceLocator::dbContextObj() const
-{
-    return reinterpret_cast<QObject *>(m_dbContext);
-}
-QObject *SC::ServiceLocator::eventRegistryObj() const
-{
-    return m_eventRegistry;
-}
-QObject *SC::ServiceLocator::undoRedoSystemObj() const
-{
-    return m_undoRedoSystem;
-}
-
 SC::Database::DbContext *SC::ServiceLocator::dbContext() const
 {
     return m_dbContext;
