@@ -19,18 +19,31 @@
  ******************************************************************************/
 
 #pragma once
+#include "../use_cases/i_load_work_uow.h"
 #include "database/db_context.h"
 #include "direct_access/event_registry.h"
-#include "use_cases/load_work.h"
+#include "entities/binder.h"
+#include "entities/binder_item.h"
+#include "entities/binder_tag.h"
+#include "entities/content.h"
+#include "entities/recent_work.h"
+#include "entities/root.h"
+#include "entities/work.h"
 
 #include <QPointer>
 
 namespace Skribisto::WorkManagement
 {
-namespace SCE = Common::Entities;
 namespace SCDatabase = Skribisto::Common::Database;
-namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
 namespace SCD = Skribisto::Common::DirectAccess;
+namespace SCE = Common::Entities;
+namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
+namespace SCDWork = Skribisto::Common::DirectAccess::Work;
+namespace SCDBinder = Skribisto::Common::DirectAccess::Binder;
+namespace SCDBinderItem = Skribisto::Common::DirectAccess::BinderItem;
+namespace SCDBinderTag = Skribisto::Common::DirectAccess::BinderTag;
+namespace SCDContent = Skribisto::Common::DirectAccess::Content;
+namespace SCDRecentWork = Skribisto::Common::DirectAccess::RecentWork;
 
 class LoadWorkUnitOfWork final : public ILoadWorkUnitOfWork
 {
@@ -48,6 +61,19 @@ class LoadWorkUnitOfWork final : public ILoadWorkUnitOfWork
     void releaseSavepoint() override;
     QList<SCE::Root> createRoot(QList<SCE::Root> roots) override;
     void setRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship, QList<int> relatedIds) override;
+    QList<SCE::Work> createWork(QList<SCE::Work> works) override;
+    void setWorkRelationship(int workId, SCDWork::WorkRelationshipField relationship, QList<int> relatedIds) override;
+    QList<SCE::Binder> createBinder(QList<SCE::Binder> binders) override;
+    void setBinderRelationship(int binderId, SCDBinder::BinderRelationshipField relationship,
+                               QList<int> relatedIds) override;
+    QList<SCE::BinderItem> createBinderItem(QList<SCE::BinderItem> binderItems) override;
+    void setBinderItemRelationship(int binderItemId, SCDBinderItem::BinderItemRelationshipField relationship,
+                                   QList<int> relatedIds) override;
+    QList<SCE::BinderTag> createBinderTag(QList<SCE::BinderTag> binderTags) override;
+    void setBinderTagRelationship(int binderTagId, SCDBinderTag::BinderTagRelationshipField relationship,
+                                  QList<int> relatedIds) override;
+    QList<SCE::Content> createContent(QList<SCE::Content> contents) override;
+    QList<SCE::RecentWork> createRecentWork(QList<SCE::RecentWork> recentWorks) override;
 
   private:
     SCDatabase::DbSubContext m_dbSubContext;

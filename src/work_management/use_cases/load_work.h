@@ -29,33 +29,12 @@
 #include "entities/recent_work.h"
 #include "entities/root.h"
 #include "entities/work.h"
+#include "i_load_work_uow.h"
 #include <QList>
 #include <memory>
 
 namespace Skribisto::WorkManagement
 {
-
-namespace SCE = Common::Entities;
-namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
-
-class ILoadWorkUnitOfWork
-{
-  public:
-    virtual ~ILoadWorkUnitOfWork() = default;
-    virtual void beginTransaction() = 0;
-    virtual void commit() = 0;
-    virtual void endTransaction() = 0;
-    virtual void rollback() = 0;
-
-    virtual void createSavepoint() = 0;
-    virtual void rollbackToSavepoint() = 0;
-    virtual void releaseSavepoint() = 0;
-
-    // virtual QList<SCE::Content> createContent(QList<SCE::Content> contents) = 0;
-    virtual QList<SCE::Root> createRoot(QList<SCE::Root> roots) = 0;
-    virtual void setRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship,
-                                     QList<int> relatedIds) = 0;
-};
 
 class LoadWork
 {

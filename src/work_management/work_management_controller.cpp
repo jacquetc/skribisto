@@ -44,6 +44,9 @@ QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWork
         qCritical() << "UndoRedo system not available";
         co_return false;
     }
+    // clear undo redo
+    m_undoRedoSystem->manager()->clearAllScopes();
+
     // Create use case that will be owned by the command
     std::unique_ptr<ILoadWorkUnitOfWork> uow = std::make_unique<LoadWorkUnitOfWork>(*m_dbContext, m_eventRegistry);
     auto useCase = std::make_shared<LoadWork>(std::move(uow));

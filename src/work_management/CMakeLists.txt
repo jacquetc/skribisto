@@ -18,8 +18,9 @@ set(SRCS
         dtos.h
         work_management_controller.cpp
         work_management_controller.h
-        units_of_work/load_work_unit_of_work.cpp
-        units_of_work/load_work_unit_of_work.h
+        units_of_work/load_work_uow.cpp
+        units_of_work/load_work_uow.h
+        use_cases/i_load_work_uow.h
         use_cases/load_work.cpp
         use_cases/load_work.h
 )
@@ -27,6 +28,18 @@ set(SRCS
 
 qt_add_library(${LIBRARY_NAME} ${LIB_TYPE} ${SRCS}
 )
+
+target_compile_definitions(${LIBRARY_NAME} PRIVATE
+        QT_NO_KEYWORDS
+        QT_NO_CAST_TO_ASCII
+        QT_NO_CAST_FROM_ASCII
+        QT_NO_CAST_FROM_BYTEARRAY
+        QT_NO_KEYWORDS
+        QT_NO_FOREACH
+        QT_STRICT_ITERATORS
+        QT_USE_QSTRINGBUILDER
+        QT_NO_NARROWING_CONVERSIONS_IN_CONNECT
+        QT_NO_URL_CAST_FROM_STRING)
 
 include(GenerateExportHeader)
 generate_export_header(${LIBRARY_NAME}
