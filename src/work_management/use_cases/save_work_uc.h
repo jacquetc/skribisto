@@ -18,28 +18,24 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-//
-// Created by cyril on 15/09/2025.
-//
-
 #pragma once
-#include <QString>
-#include <qobjectdefs.h>
+#include "database/db_context.h"
+#include "i_save_work_uow.h"
+#include "work_management_dtos.h"
+#include <QList>
+#include <memory>
 
 namespace Skribisto::WorkManagement
 {
 
-struct LoadWorkDto
+class SaveWorkUseCase
 {
-    Q_GADGET
-    Q_PROPERTY(QString fileName MEMBER fileName)
-
   public:
-    QString fileName;
-    LoadWorkDto() = default;
-    explicit LoadWorkDto(const QString &fileName) : fileName(fileName)
-    {
-    }
+    SaveWorkUseCase(std::unique_ptr<ISaveWorkUnitOfWork> uow);
+    bool execute(const SaveWorkDto &saveWorkDto);
+
+  private:
+    std::unique_ptr<ISaveWorkUnitOfWork> m_uow;
 };
 
 } // namespace Skribisto::WorkManagement

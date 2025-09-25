@@ -15,14 +15,19 @@ endif ()
 qcoro_enable_coroutines()
 
 set(SRCS
-        dtos.h
+        work_management_dtos.h
         work_management_controller.cpp
         work_management_controller.h
         units_of_work/load_work_uow.cpp
         units_of_work/load_work_uow.h
         use_cases/i_load_work_uow.h
-        use_cases/load_work.cpp
-        use_cases/load_work.h
+        use_cases/load_work_uc.cpp
+        use_cases/load_work_uc.h
+        units_of_work/save_work_uow.cpp
+        units_of_work/save_work_uow.h
+        use_cases/i_save_work_uow.h
+        use_cases/save_work_uc.cpp
+        use_cases/save_work_uc.h
 )
 
 

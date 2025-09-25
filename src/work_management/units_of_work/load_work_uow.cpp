@@ -123,13 +123,6 @@ QList<SCE::BinderTag> LoadWorkUnitOfWork::createBinderTag(QList<SCE::BinderTag> 
     auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
     return repository->create(binderTags);
 }
-void LoadWorkUnitOfWork::setBinderTagRelationship(int binderTagId,
-                                                  SCDBinderTag::BinderTagRelationshipField relationship,
-                                                  QList<int> relatedIds)
-{
-    auto repository = SCD::RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
-    repository->setRelationshipIds(binderTagId, relationship, relatedIds);
-}
 QList<SCE::Content> LoadWorkUnitOfWork::createContent(QList<SCE::Content> contents)
 {
     auto repository = SCD::RepositoryFactory::createContentRepository(m_dbSubContext, m_eventRegistry);

@@ -21,8 +21,10 @@
 #include "work_management_controller.h"
 
 #include "service_locator.h"
-#include "units_of_work/load_work_unit_of_work.h"
-#include "use_cases/load_work.h"
+#include "units_of_work/load_work_uow.h"
+#include "units_of_work/save_work_uow.h"
+#include "use_cases/load_work_uc.h"
+#include "use_cases/save_work_uc.h"
 
 #include <QCoro/QCoroTask>
 
@@ -30,12 +32,24 @@
 
 namespace Skribisto::WorkManagement
 {
-namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
 
 WorkManagementController::WorkManagementController(QObject *parent) : QObject(parent)
 {
     resolveDependencies();
 }
+void WorkManagementController::resolveDependencies()
+{
+    auto *locator = Common::ServiceLocator::instance(); // set by provider
+    if (!locator)
+    {
+        qCritical() << "ServiceLocator not initialized";
+        return;
+    }
+    m_dbContext = locator->dbContext();
+    m_eventRegistry = locator->eventRegistry();
+    m_undoRedoSystem = locator->undoRedoSystem();
+}
+
 QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWorkDto)
 {
 
@@ -49,7 +63,7 @@ QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWork
 
     // Create use case that will be owned by the command
     std::unique_ptr<ILoadWorkUnitOfWork> uow = std::make_unique<LoadWorkUnitOfWork>(*m_dbContext, m_eventRegistry);
-    auto useCase = std::make_shared<LoadWork>(std::move(uow));
+    auto useCase = std::make_shared<LoadWorkUseCase>(std::move(uow));
 
     // Create command that owns the use case
     auto command = std::make_shared<Common::UndoRedo::UndoRedoCommand>("Load Work Command"_L1);
@@ -58,7 +72,7 @@ QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWork
 
     command->setExecuteFunction([useCase, &result, loadWorkDto](auto &) { result = useCase->execute(loadWorkDto); });
 
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "load_work"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 1000, "load_work"_L1);
 
     if (!success.has_value())
     {
@@ -74,17 +88,42 @@ QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWork
 
     co_return result;
 }
-void WorkManagementController::resolveDependencies()
+QCoro::Task<bool> WorkManagementController::saveWork(const SaveWorkDto &saveWorkDto)
 {
-    auto *locator = Common::ServiceLocator::instance(); // set by provider
-    if (!locator)
-    {
-        qCritical() << "ServiceLocator not initialized";
-        return;
-    }
-    m_dbContext = locator->dbContext();
-    m_eventRegistry = locator->eventRegistry();
-    m_undoRedoSystem = locator->undoRedoSystem();
-}
 
+    if (!m_undoRedoSystem)
+    {
+        qCritical() << "UndoRedo system not available";
+        co_return false;
+    }
+    // clear undo redo
+    m_undoRedoSystem->manager()->clearAllScopes();
+
+    // Create use case that will be owned by the command
+    std::unique_ptr<ISaveWorkUnitOfWork> uow = std::make_unique<SaveWorkUnitOfWork>(*m_dbContext, m_eventRegistry);
+    auto useCase = std::make_shared<SaveWorkUseCase>(std::move(uow));
+
+    // Create command that owns the use case
+    auto command = std::make_shared<Common::UndoRedo::UndoRedoCommand>("Save Work Command"_L1);
+
+    bool result = false;
+
+    command->setExecuteFunction([useCase, &result, saveWorkDto](auto &) { result = useCase->execute(saveWorkDto); });
+
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 1000, "save_work"_L1);
+
+    if (!success.has_value())
+    {
+        qWarning() << "Save work command execution timed out";
+        co_return false;
+    }
+
+    if (!success.value())
+    {
+        qWarning() << "Failed to execute save work command";
+        co_return false;
+    }
+
+    co_return result;
+}
 } // namespace Skribisto::WorkManagement

@@ -18,44 +18,44 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-#pragma once
-
-#include "database/db_context.h"
-#include "direct_access/event_registry.h"
-#include "undo_redo/undo_redo_system.h"
-#include "work_management_dtos.h"
-#include <QCoro/QCoroTask>
-
-#include <QPointer>
+#include "save_work_uc.h"
 
 namespace Skribisto::WorkManagement
 {
-namespace SCDatabase = Skribisto::Common::Database;
-
-class WorkManagementController : public QObject
+SaveWorkUseCase::SaveWorkUseCase(std::unique_ptr<ISaveWorkUnitOfWork> uow) : m_uow(std::move(uow))
 {
-    Q_OBJECT
-  public:
-    WorkManagementController(const WorkManagementController &) = delete;
-    WorkManagementController &operator=(const WorkManagementController &) = delete;
-    WorkManagementController(WorkManagementController &&) = delete;
-    WorkManagementController &operator=(WorkManagementController &&) = delete;
-    explicit WorkManagementController(QObject *parent = nullptr);
-    static LoadWorkDto getLoadWorkDto()
-    {
-        return {};
-    }
-    QCoro::Task<bool> loadWork(const LoadWorkDto &loadWorkDto);
-    static SaveWorkDto getSaveWorkDto()
-    {
-        return {};
-    }
-    QCoro::Task<bool> saveWork(const SaveWorkDto &saveWorkDto);
+}
+bool SaveWorkUseCase::execute(const SaveWorkDto &saveWorkDto)
+{
+    // check if it is writable
 
-  private:
-    void resolveDependencies();
-    SCDatabase::DbContext *m_dbContext = nullptr;
-    QPointer<Common::DirectAccess::EventRegistry> m_eventRegistry;
-    QPointer<Common::UndoRedo::UndoRedoSystem> m_undoRedoSystem;
-};
+    // save to file
+    m_uow->beginTransaction();
+    m_uow->saveDatabaseToFile(saveWorkDto.fileName);
+    // m_uow->endTransaction();
+    {
+        // remove root and recent_project tables from the new file database
+        QSqlDatabase savedDb = QSqlDatabase::addDatabase("QSQLITE"_L1, "cleanup_connection"_L1);
+        savedDb.setDatabaseName(saveWorkDto.fileName);
+
+        if (savedDb.open())
+        {
+            {
+                QSqlQuery query(savedDb);
+
+                // Drop root table and its junction tables
+                query.exec("DROP TABLE IF EXISTS root;"_L1);
+                query.exec("DROP TABLE IF EXISTS root_works_to_work_junction;"_L1);
+                query.exec("DROP TABLE IF EXISTS root_recent_works_to_recent_work_junction;"_L1);
+
+                // Drop recent_project table if it exists
+                query.exec("DROP TABLE IF EXISTS recent_project;"_L1);
+            }
+            savedDb.close();
+        }
+    }
+    QSqlDatabase::removeDatabase("cleanup_connection"_L1);
+
+    return true;
+}
 } // namespace Skribisto::WorkManagement

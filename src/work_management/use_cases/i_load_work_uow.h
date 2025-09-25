@@ -22,7 +22,10 @@
 
 #pragma once
 #include "database/db_context.h"
+#include "direct_access/binder/i_binder_repository.h"
+#include "direct_access/binder_item/i_binder_item_repository.h"
 #include "direct_access/root/i_root_repository.h"
+#include "direct_access/work/i_work_repository.h"
 #include "entities/binder.h"
 #include "entities/binder_item.h"
 #include "entities/binder_tag.h"
@@ -40,9 +43,6 @@ namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
 namespace SCDWork = Skribisto::Common::DirectAccess::Work;
 namespace SCDBinder = Skribisto::Common::DirectAccess::Binder;
 namespace SCDBinderItem = Skribisto::Common::DirectAccess::BinderItem;
-namespace SCDBinderTag = Skribisto::Common::DirectAccess::BinderTag;
-namespace SCDContent = Skribisto::Common::DirectAccess::Content;
-namespace SCDRecentWork = Skribisto::Common::DirectAccess::RecentWork;
 
 class ILoadWorkUnitOfWork
 {
@@ -72,7 +72,5 @@ class ILoadWorkUnitOfWork
     virtual QList<SCE::BinderTag> createBinderTag(QList<SCE::BinderTag> binderTags) = 0;
     virtual QList<SCE::RecentWork> createRecentWork(QList<SCE::RecentWork> recentWorks) = 0;
     virtual QList<SCE::Content> createContent(QList<SCE::Content> contents) = 0;
-    virtual void setContentRelationship(int contentId, SCDContent::ContentRelationshipField relationship,
-                                        QList<int> relatedIds) = 0;
 };
 } // namespace Skribisto::WorkManagement

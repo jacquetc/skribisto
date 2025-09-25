@@ -19,43 +19,31 @@
  ******************************************************************************/
 
 #pragma once
-
 #include "database/db_context.h"
-#include "direct_access/event_registry.h"
-#include "undo_redo/undo_redo_system.h"
+#include "direct_access/root/i_root_repository.h"
+#include "entities/binder.h"
+#include "entities/binder_item.h"
+#include "entities/binder_tag.h"
+#include "entities/content.h"
+#include "entities/recent_work.h"
+#include "entities/root.h"
+#include "entities/work.h"
+#include "i_load_work_uow.h"
 #include "work_management_dtos.h"
-#include <QCoro/QCoroTask>
-
-#include <QPointer>
+#include <QList>
+#include <memory>
 
 namespace Skribisto::WorkManagement
 {
-namespace SCDatabase = Skribisto::Common::Database;
 
-class WorkManagementController : public QObject
+class LoadWorkUseCase
 {
-    Q_OBJECT
   public:
-    WorkManagementController(const WorkManagementController &) = delete;
-    WorkManagementController &operator=(const WorkManagementController &) = delete;
-    WorkManagementController(WorkManagementController &&) = delete;
-    WorkManagementController &operator=(WorkManagementController &&) = delete;
-    explicit WorkManagementController(QObject *parent = nullptr);
-    static LoadWorkDto getLoadWorkDto()
-    {
-        return {};
-    }
-    QCoro::Task<bool> loadWork(const LoadWorkDto &loadWorkDto);
-    static SaveWorkDto getSaveWorkDto()
-    {
-        return {};
-    }
-    QCoro::Task<bool> saveWork(const SaveWorkDto &saveWorkDto);
+    LoadWorkUseCase(std::unique_ptr<ILoadWorkUnitOfWork> uow);
+    bool execute(const LoadWorkDto &loadWorkDto);
 
   private:
-    void resolveDependencies();
-    SCDatabase::DbContext *m_dbContext = nullptr;
-    QPointer<Common::DirectAccess::EventRegistry> m_eventRegistry;
-    QPointer<Common::UndoRedo::UndoRedoSystem> m_undoRedoSystem;
+    std::unique_ptr<ILoadWorkUnitOfWork> m_uow;
 };
+
 } // namespace Skribisto::WorkManagement

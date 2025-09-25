@@ -18,15 +18,26 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-#include "load_work.h"
+#pragma once
+
+#include <QString>
 
 namespace Skribisto::WorkManagement
 {
-LoadWork::LoadWork(std::unique_ptr<ILoadWorkUnitOfWork> uow) : m_uow(std::move(uow))
+
+class ISaveWorkUnitOfWork
 {
-}
-bool LoadWork::execute(const LoadWorkDto &loadWorkDto)
-{
-    Q_UNIMPLEMENTED();
-}
+  public:
+    virtual ~ISaveWorkUnitOfWork() = default;
+    virtual void beginTransaction() = 0;
+    virtual void commit() = 0;
+    virtual void endTransaction() = 0;
+    virtual void rollback() = 0;
+
+    virtual void createSavepoint() = 0;
+    virtual void rollbackToSavepoint() = 0;
+    virtual void releaseSavepoint() = 0;
+
+    virtual bool saveDatabaseToFile(const QString &filePath) = 0;
+};
 } // namespace Skribisto::WorkManagement

@@ -18,44 +18,15 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-#pragma once
-
-#include "database/db_context.h"
-#include "direct_access/event_registry.h"
-#include "undo_redo/undo_redo_system.h"
-#include "work_management_dtos.h"
-#include <QCoro/QCoroTask>
-
-#include <QPointer>
+#include "load_work_uc.h"
 
 namespace Skribisto::WorkManagement
 {
-namespace SCDatabase = Skribisto::Common::Database;
-
-class WorkManagementController : public QObject
+LoadWorkUseCase::LoadWorkUseCase(std::unique_ptr<ILoadWorkUnitOfWork> uow) : m_uow(std::move(uow))
 {
-    Q_OBJECT
-  public:
-    WorkManagementController(const WorkManagementController &) = delete;
-    WorkManagementController &operator=(const WorkManagementController &) = delete;
-    WorkManagementController(WorkManagementController &&) = delete;
-    WorkManagementController &operator=(WorkManagementController &&) = delete;
-    explicit WorkManagementController(QObject *parent = nullptr);
-    static LoadWorkDto getLoadWorkDto()
-    {
-        return {};
-    }
-    QCoro::Task<bool> loadWork(const LoadWorkDto &loadWorkDto);
-    static SaveWorkDto getSaveWorkDto()
-    {
-        return {};
-    }
-    QCoro::Task<bool> saveWork(const SaveWorkDto &saveWorkDto);
-
-  private:
-    void resolveDependencies();
-    SCDatabase::DbContext *m_dbContext = nullptr;
-    QPointer<Common::DirectAccess::EventRegistry> m_eventRegistry;
-    QPointer<Common::UndoRedo::UndoRedoSystem> m_undoRedoSystem;
-};
+}
+bool LoadWorkUseCase::execute(const LoadWorkDto &loadWorkDto)
+{
+    Q_UNIMPLEMENTED();
+}
 } // namespace Skribisto::WorkManagement

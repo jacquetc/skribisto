@@ -18,20 +18,10 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-#pragma once
-#include "../use_cases/i_load_work_uow.h"
+#include "save_work_uow.h"
+
 #include "database/db_context.h"
-#include "direct_access/event_registry.h"
-#include "entities/binder.h"
-#include "entities/binder_item.h"
-#include "entities/binder_tag.h"
-#include "entities/content.h"
-#include "entities/recent_work.h"
-#include "entities/root.h"
-#include "entities/work.h"
-
-#include <QPointer>
-
+#include "direct_access/repository_factory.h"
 namespace Skribisto::WorkManagement
 {
 namespace SCDatabase = Skribisto::Common::Database;
@@ -45,36 +35,71 @@ namespace SCDBinderTag = Skribisto::Common::DirectAccess::BinderTag;
 namespace SCDContent = Skribisto::Common::DirectAccess::Content;
 namespace SCDRecentWork = Skribisto::Common::DirectAccess::RecentWork;
 
-class LoadWorkUnitOfWork final : public ILoadWorkUnitOfWork
+SaveWorkUnitOfWork::SaveWorkUnitOfWork(SCDatabase::DbContext &dbContext, QPointer<SCD::EventRegistry> eventRegistry)
+    : m_dbSubContext(SCDatabase::DbSubContext(dbContext)), m_eventRegistry(std::move(eventRegistry))
 {
+}
+SaveWorkUnitOfWork::~SaveWorkUnitOfWork()
+{
+    // connection is closed automatically when DbSubContext is destroyed
+}
+void SaveWorkUnitOfWork::beginTransaction()
+{
+    m_dbSubContext.beginTransaction();
+}
+void SaveWorkUnitOfWork::commit()
+{
+    m_dbSubContext.commit();
+}
+void SaveWorkUnitOfWork::endTransaction()
+{
+    m_dbSubContext.endTransaction();
+}
+void SaveWorkUnitOfWork::rollback()
+{
+    m_dbSubContext.rollback();
+}
+void SaveWorkUnitOfWork::createSavepoint()
+{
+    m_dbSubContext.createSavepoint();
+}
+void SaveWorkUnitOfWork::rollbackToSavepoint()
+{
+    m_dbSubContext.rollbackToSavepoint();
+}
+void SaveWorkUnitOfWork::releaseSavepoint()
+{
+    m_dbSubContext.releaseSavepoint();
+}
+bool SaveWorkUnitOfWork::saveDatabaseToFile(const QString &filePath)
+{
+    QSqlDatabase internalDb = m_dbSubContext.getConnection();
+    const QString internalDbPath = m_dbSubContext.getDatabaseName();
 
-  public:
-    LoadWorkUnitOfWork(SCDatabase::DbContext &dbContext, QPointer<SCD::EventRegistry> eventRegistry);
+    // Checkpoint internal database to consolidate WAL data
 
-    ~LoadWorkUnitOfWork() override;
-    void beginTransaction() override;
-    void commit() override;
-    void endTransaction() override;
-    void rollback() override;
-    void createSavepoint() override;
-    void rollbackToSavepoint() override;
-    void releaseSavepoint() override;
-    QList<SCE::Root> createRoot(QList<SCE::Root> roots) override;
-    void setRootRelationship(int rootId, SCDRoot::RootRelationshipField relationship, QList<int> relatedIds) override;
-    QList<SCE::Work> createWork(QList<SCE::Work> works) override;
-    void setWorkRelationship(int workId, SCDWork::WorkRelationshipField relationship, QList<int> relatedIds) override;
-    QList<SCE::Binder> createBinder(QList<SCE::Binder> binders) override;
-    void setBinderRelationship(int binderId, SCDBinder::BinderRelationshipField relationship,
-                               QList<int> relatedIds) override;
-    QList<SCE::BinderItem> createBinderItem(QList<SCE::BinderItem> binderItems) override;
-    void setBinderItemRelationship(int binderItemId, SCDBinderItem::BinderItemRelationshipField relationship,
-                                   QList<int> relatedIds) override;
-    QList<SCE::BinderTag> createBinderTag(QList<SCE::BinderTag> binderTags) override;
-    QList<SCE::Content> createContent(QList<SCE::Content> contents) override;
-    QList<SCE::RecentWork> createRecentWork(QList<SCE::RecentWork> recentWorks) override;
+    if (internalDb.open())
+    {
+        QSqlQuery query(internalDb);
+        // Consolidate all WAL data into main database file
+        if (!query.exec("PRAGMA wal_checkpoint(TRUNCATE);"_L1))
+        {
+            qWarning() << "Checkpoint failed during export:" << query.lastError();
+            return false;
+        }
 
-  private:
-    SCDatabase::DbSubContext m_dbSubContext;
-    QPointer<SCD::EventRegistry> m_eventRegistry;
-};
+        // Now internal database file contains all data in single file
+        internalDb.close();
+    }
+    else
+    {
+        qWarning() << "Failed to open internal database for checkpoint:" << internalDb.lastError();
+        return false;
+    }
+
+    QFile::remove(filePath); // Remove existing file if any
+
+    // Copy/export the consolidated database to user's project file
+    return QFile::copy(internalDbPath, filePath);
+}
 } // namespace Skribisto::WorkManagement
