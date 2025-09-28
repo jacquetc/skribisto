@@ -25,7 +25,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # set(QRC ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc)
 # qt_add_resources(RESOURCES ${QRC})
-enable_testing()
 qt_add_executable(
         ${TEST_NAME} ${TEST_NAME}.cpp ${RESOURCES})
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
@@ -49,7 +48,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 qcoro_enable_coroutines()
 
-enable_testing()
+
 qt_add_executable(
         ${QCORO_TEST_NAME} ${QCORO_TEST_NAME}.cpp ${RESOURCES})
 add_test(NAME ${QCORO_TEST_NAME} COMMAND ${QCORO_TEST_NAME})
@@ -69,7 +68,6 @@ project(${ROOT_UNDO_TEST_NAME} CXX)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 
-enable_testing()
 qt_add_executable(
         ${ROOT_UNDO_TEST_NAME} ${ROOT_UNDO_TEST_NAME}.cpp ${RESOURCES})
 add_test(NAME ${ROOT_UNDO_TEST_NAME} COMMAND ${ROOT_UNDO_TEST_NAME})
@@ -88,7 +86,6 @@ project(${ROOT_UNDO_TEST_NAME} CXX)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 
-enable_testing()
 qt_add_executable(
         ${ROOT_UNDO_TEST_NAME} ${ROOT_UNDO_TEST_NAME}.cpp ${RESOURCES})
 add_test(NAME ${ROOT_UNDO_TEST_NAME} COMMAND ${ROOT_UNDO_TEST_NAME})

@@ -86,8 +86,13 @@ class TestOneToOneJunction : public QObject
 
   private:
     QSqlDatabase m_db;
+    QString m_junctionTableDefinition = QStringLiteral("CREATE TABLE IF NOT EXISTS test_junction ("
+                                                       "left_id INTEGER NOT NULL, "
+                                                       "right_id INTEGER NOT NULL, "
+                                                       "UNIQUE(left_id), "
+                                                       "UNIQUE(right_id)"
+                                                       ")");
     QString m_junctionTableName = QStringLiteral("test_junction");
-    QString m_connectionName;
 
     void setupDatabase();
     void insertTestData(const QList<QPair<int, int>> &data);
@@ -96,16 +101,13 @@ class TestOneToOneJunction : public QObject
 
 void TestOneToOneJunction::initTestCase()
 {
-    m_connectionName = QStringLiteral("test_connection_%1").arg(reinterpret_cast<quintptr>(QThread::currentThread()));
-    m_db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), m_connectionName);
-    m_db.setDatabaseName(QStringLiteral(":memory:"));
-    QVERIFY(m_db.open());
+    std::string duration("20000"); // 20 secondes
+    QByteArray timeoutDuration(duration.c_str(), static_cast<int>(duration.length()));
+    qputenv("QTEST_FUNCTION_TIMEOUT", timeoutDuration);
 }
 
 void TestOneToOneJunction::cleanupTestCase()
 {
-    m_db.close();
-    QSqlDatabase::removeDatabase(m_connectionName);
 }
 
 void TestOneToOneJunction::init()
@@ -115,26 +117,38 @@ void TestOneToOneJunction::init()
 
 void TestOneToOneJunction::cleanup()
 {
-    clearJunctionTable();
-    // Drop the table to ensure clean state
-    QSqlQuery query(m_db);
-    query.exec(QStringLiteral("DROP TABLE IF EXISTS %1").arg(m_junctionTableName));
-    // Clear cache to ensure test isolation
-    Skribisto::Common::Database::JunctionTableOps::JunctionCache::instance().clear();
+    if (m_db.isOpen())
+    {
+        QString connectionName = m_db.connectionName();
+        clearJunctionTable();
+        {
+            QSqlDatabase db = m_db;
+            m_db = QSqlDatabase(); // Reset member to avoid dangling reference
+
+            // Clear junction cache
+            Skribisto::Common::Database::JunctionTableOps::JunctionCache::instance().clear();
+
+            // Close and remove the database connection
+            db.close();
+        }
+        QSqlDatabase::removeDatabase(connectionName);
+    }
 }
 
 void TestOneToOneJunction::setupDatabase()
 {
-    QSqlQuery query(m_db);
-    QString createTableSql = QStringLiteral("CREATE TABLE IF NOT EXISTS %1 ("
-                                            "left_id INTEGER NOT NULL, "
-                                            "right_id INTEGER NOT NULL, "
-                                            "UNIQUE(left_id), "
-                                            "UNIQUE(right_id)"
-                                            ")")
-                                 .arg(m_junctionTableName);
+    // Create unique in-memory database for each test
+    static int counter = 0;
+    QString connectionName = QStringLiteral("test_connection_%1").arg(++counter);
 
-    QVERIFY2(query.exec(createTableSql), query.lastError().text().toUtf8().data());
+    m_db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
+    m_db.setDatabaseName(QStringLiteral(":memory:"));
+
+    QVERIFY(m_db.open());
+
+    // Create junction table
+    QSqlQuery query(m_db);
+    QVERIFY(query.exec(m_junctionTableDefinition));
 }
 
 void TestOneToOneJunction::insertTestData(const QList<QPair<int, int>> &data)

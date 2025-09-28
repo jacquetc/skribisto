@@ -132,14 +132,18 @@ void TestOrderedOneToManyJunction::cleanup()
 {
     if (m_db.isOpen())
     {
-        clearJunctionTable();
-
-        // Clear junction cache
-        SCU::JunctionTableOps::JunctionCache::instance().clear();
-
-        // Close and remove the database connection
         QString connectionName = m_db.connectionName();
-        m_db.close();
+        clearJunctionTable();
+        {
+            QSqlDatabase db = m_db;
+            m_db = QSqlDatabase(); // Reset member to avoid dangling reference
+
+            // Clear junction cache
+            SCU::JunctionTableOps::JunctionCache::instance().clear();
+
+            // Close and remove the database connection
+            db.close();
+        }
         QSqlDatabase::removeDatabase(connectionName);
     }
 }
@@ -185,7 +189,7 @@ void TestOrderedOneToManyJunction::testGetRightIds()
     // Test data: left_id=1 should return right_ids [10, 20, 30] in order
     insertTestData({{1, {10, 0}}, {1, {20, 1000}}, {1, {30, 2000}}});
 
-    QList<int> result = JUNCTIONOPS::OrderedOneToMany::OrderedOneToMany::getRightIds(m_db, 1, m_junctionTableName);
+    QList<int> result = JUNCTIONOPS::OrderedOneToMany::getRightIds(m_db, 1, m_junctionTableName);
     QList<int> expected = {10, 20, 30};
     QCOMPARE(result, expected);
 }

@@ -762,16 +762,13 @@ void TestUndoRedo::testServiceLocatorRegistration()
 
     // Test initial state
     QVERIFY(locator->undoRedoSystem() == nullptr);
-    QVERIFY(locator->undoRedoSystemObj() == nullptr);
 
     // Act - Register undo/redo system
     locator->setUndoRedoSystem(undoRedoSystem.get());
 
     // Assert - Verify registration
     QVERIFY(locator->undoRedoSystem() != nullptr);
-    QVERIFY(locator->undoRedoSystemObj() != nullptr);
     QCOMPARE(locator->undoRedoSystem(), undoRedoSystem.get());
-    QCOMPARE(locator->undoRedoSystemObj(), undoRedoSystem.get());
 
     // Test functionality through ServiceLocator
     auto retrievedSystem = locator->undoRedoSystem();

@@ -118,14 +118,22 @@ void TestUnorderedManyToManyJunction::init()
 
 void TestUnorderedManyToManyJunction::cleanup()
 {
-    // Clear the junction cache to ensure test isolation
-    SCU::JunctionTableOps::JunctionCache::instance().clear();
-
     if (m_db.isOpen())
     {
-        m_db.close();
+        QString connectionName = m_db.connectionName();
+        clearJunctionTable();
+        {
+            QSqlDatabase db = m_db;
+            m_db = QSqlDatabase(); // Reset member to avoid dangling reference
+
+            // Clear junction cache
+            SCU::JunctionTableOps::JunctionCache::instance().clear();
+
+            // Close and remove the database connection
+            db.close();
+        }
+        QSqlDatabase::removeDatabase(connectionName);
     }
-    QSqlDatabase::removeDatabase(m_db.connectionName());
 }
 
 void TestUnorderedManyToManyJunction::setupDatabase()
