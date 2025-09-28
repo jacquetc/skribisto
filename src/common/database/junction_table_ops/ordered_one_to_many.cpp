@@ -47,7 +47,7 @@ QHash<int, QList<int>> OrderedOneToMany::getRightIdsMany(QSqlDatabase &db, const
     QStringList placeholders;
     placeholders.fill("?"_L1, leftIds.size());
     const QString sql =
-        QStringLiteral("SELECT left_id, right_id FROM %1 WHERE left_id IN (%2) ORDER BY left_id, \"order\"")
+        QStringLiteral("SELECT left_id, right_id FROM %1 WHERE left_id IN (%2) ORDER BY left_id, order_")
             .arg(junctionTableName, placeholders.join(","_L1));
 
     QSqlQuery query(db);
@@ -55,7 +55,6 @@ QHash<int, QList<int>> OrderedOneToMany::getRightIdsMany(QSqlDatabase &db, const
     for (int leftId : leftIds)
     {
         query.addBindValue(leftId);
-        qDebug() << "Binding leftId:" << leftId;
     }
 
     if (!query.exec())
@@ -211,10 +210,6 @@ QHash<int, QList<int>> OrderedOneToMany::upsertRightIdsMany(QSqlDatabase &db,
     removeWithLeftIdsMany(db, leftIds, junctionTableName);
 
     // Then insert new relationships with proper ordering
-    QSqlQuery insertQuery(db);
-    insertQuery.prepare(
-        QStringLiteral("INSERT INTO %1 (left_id, right_id, \"order\") VALUES (?, ?, ?)").arg(junctionTableName));
-
     for (auto it = leftIdToRightIds.begin(); it != leftIdToRightIds.end(); ++it)
     {
         int leftId = it.key();
@@ -222,6 +217,9 @@ QHash<int, QList<int>> OrderedOneToMany::upsertRightIdsMany(QSqlDatabase &db,
 
         for (qsizetype i = 0; i < rightIds.size(); ++i)
         {
+            QSqlQuery insertQuery(db);
+            insertQuery.prepare(
+                QStringLiteral("INSERT INTO %1 (left_id, right_id, order_) VALUES (?, ?, ?)").arg(junctionTableName));
             insertQuery.addBindValue(leftId);
             insertQuery.addBindValue(rightIds[i]);
             insertQuery.addBindValue(static_cast<int>(i) * ORDER_GAP);
@@ -345,7 +343,7 @@ QList<int> OrderedOneToMany::getRightIdsInRange(QSqlDatabase &db, int leftId, co
 
     QList<int> result;
 
-    const QString sql = QStringLiteral("SELECT right_id FROM %1 WHERE left_id = ? ORDER BY \"order\" LIMIT ? OFFSET ?")
+    const QString sql = QStringLiteral("SELECT right_id FROM %1 WHERE left_id = ? ORDER BY order_ LIMIT ? OFFSET ?")
                             .arg(junctionTableName);
 
     QSqlQuery query(db);

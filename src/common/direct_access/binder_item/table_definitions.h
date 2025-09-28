@@ -35,7 +35,7 @@ inline QString getSqlTableDefinition()
                           "    title TEXT NOT NULL,"
                           "    sub_title TEXT,"
                           "    role TEXT NOT NULL,"
-                          "    dict_language TEXT,"
+                          "    dict_language TEXT"
                           ");");
 }
 
