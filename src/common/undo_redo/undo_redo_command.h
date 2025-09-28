@@ -25,6 +25,8 @@
 #include <QPromise>
 #include <QString>
 #include <QVariant>
+#include <QDateTime>
+#include <QElapsedTimer>
 #include <functional>
 #include <memory>
 
@@ -47,37 +49,59 @@ enum class ErrorCategory
     UnknownError
 };
 
+enum class ErrorSeverity
+{
+    Info,
+    Warning,
+    Error,
+    Critical,
+    Fatal
+};
+
 template <typename T> class Result
 {
   public:
-    Result() : m_success(true), m_category(ErrorCategory::None)
+    Result() : m_success(true), m_category(ErrorCategory::None), m_severity(ErrorSeverity::Info),
+               m_errorCode(0), m_timestamp(QDateTime::currentDateTimeUtc())
     {
     }
 
     explicit Result(const QString &error, ErrorCategory category = ErrorCategory::UnknownError,
-                    const QVariant &errorData = QVariant())
-        : m_success(false), m_error(error), m_category(category), m_errorData(errorData)
+                    const QVariant &errorData = QVariant(), ErrorSeverity severity = ErrorSeverity::Error,
+                    int errorCode = 0, const QString &context = QString(), const QString &sourceLocation = QString())
+        : m_success(false), m_error(error), m_category(category), m_errorData(errorData), 
+          m_severity(severity), m_errorCode(errorCode), m_context(context), 
+          m_sourceLocation(sourceLocation), m_timestamp(QDateTime::currentDateTimeUtc())
     {
     }
 
-    bool isSuccess() const
-    {
-        return m_success;
-    }
+    bool isSuccess() const { return m_success; }
+    QString error() const { return m_error; }
+    ErrorCategory category() const { return m_category; }
+    QVariant errorData() const { return m_errorData; }
+    ErrorSeverity severity() const { return m_severity; }
+    int errorCode() const { return m_errorCode; }
+    QString context() const { return m_context; }
+    QString sourceLocation() const { return m_sourceLocation; }
+    QDateTime timestamp() const { return m_timestamp; }
+    qint64 executionTimeMs() const { return m_executionTimeMs; }
 
-    QString error() const
-    {
-        return m_error;
-    }
+    void setExecutionTime(qint64 milliseconds) { m_executionTimeMs = milliseconds; }
+    void setSeverity(ErrorSeverity severity) { m_severity = severity; }
+    void setContext(const QString &context) { m_context = context; }
+    void setSourceLocation(const QString &sourceLocation) { m_sourceLocation = sourceLocation; }
 
-    ErrorCategory category() const
+    // Convenience method to get a detailed error description
+    QString detailedError() const
     {
-        return m_category;
-    }
-
-    QVariant errorData() const
-    {
-        return m_errorData;
+        if (m_success) return "Success"_L1;
+        
+        QString details = m_error;
+        if (!m_context.isEmpty()) details += QString(" [Context: %1]").arg(m_context);
+        if (m_errorCode != 0) details += QString(" [Code: %1]").arg(m_errorCode);
+        if (!m_sourceLocation.isEmpty()) details += QString(" [Location: %1]").arg(m_sourceLocation);
+        if (m_executionTimeMs > 0) details += QString(" [Duration: %1ms]").arg(m_executionTimeMs);
+        return details;
     }
 
   private:
@@ -85,6 +109,12 @@ template <typename T> class Result
     QString m_error;
     ErrorCategory m_category;
     QVariant m_errorData;
+    ErrorSeverity m_severity;
+    int m_errorCode;
+    QString m_context;
+    QString m_sourceLocation;
+    QDateTime m_timestamp;
+    qint64 m_executionTimeMs = 0;
 };
 
 class UndoRedoCommand : public QObject
@@ -112,6 +142,7 @@ class UndoRedoCommand : public QObject
     void cancel();
   Q_SIGNALS:
     void finished(bool isSuccessful);
+    void finishedWithResult(const Result<void> &result);
 
   private Q_SLOTS:
     void onExecuteFinished();

@@ -226,7 +226,19 @@ void UndoRedoCommand::onExecuteFinished()
     if (m_executeWatcher->isFinished())
     {
         auto result = m_executeWatcher->result();
+        
+        // Log detailed error information if operation failed
+        if (!result.isSuccess())
+        {
+            qWarning() << "Command execution failed:" << result.error()
+                      << "Category:" << static_cast<int>(result.category())
+                      << "Severity:" << static_cast<int>(result.severity())
+                      << "Context:" << result.context()
+                      << "Error Code:" << result.errorCode();
+        }
+        
         Q_EMIT finished(result.isSuccess());
+        Q_EMIT finishedWithResult(result);
     }
 }
 
@@ -235,7 +247,19 @@ void UndoRedoCommand::onRedoFinished()
     if (m_redoWatcher->isFinished())
     {
         auto result = m_redoWatcher->result();
+        
+        // Log detailed error information if operation failed
+        if (!result.isSuccess())
+        {
+            qWarning() << "Command redo failed:" << result.error()
+                      << "Category:" << static_cast<int>(result.category())
+                      << "Severity:" << static_cast<int>(result.severity())
+                      << "Context:" << result.context()
+                      << "Error Code:" << result.errorCode();
+        }
+        
         Q_EMIT finished(result.isSuccess());
+        Q_EMIT finishedWithResult(result);
     }
 }
 
@@ -244,7 +268,19 @@ void UndoRedoCommand::onUndoFinished()
     if (m_undoWatcher->isFinished())
     {
         auto result = m_undoWatcher->result();
+        
+        // Log detailed error information if operation failed
+        if (!result.isSuccess())
+        {
+            qWarning() << "Command undo failed:" << result.error()
+                      << "Category:" << static_cast<int>(result.category())
+                      << "Severity:" << static_cast<int>(result.severity())
+                      << "Context:" << result.context()
+                      << "Error Code:" << result.errorCode();
+        }
+        
         Q_EMIT finished(result.isSuccess());
+        Q_EMIT finishedWithResult(result);
     }
 }
 

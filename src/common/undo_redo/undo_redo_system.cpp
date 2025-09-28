@@ -207,4 +207,14 @@ void UndoRedoSystem::onQueryFinished(std::shared_ptr<QueryBase> query, bool succ
     Q_EMIT queryExecuted(query, success);
 }
 
+void UndoRedoSystem::onCommandFinishedWithResult(const QString &scope, const Result<void> &result)
+{
+    Q_EMIT commandExecutedWithResult(scope, result);
+    
+    if (!result.isSuccess())
+    {
+        Q_EMIT commandErrorOccurred(scope, result.error(), result.category(), result.severity());
+    }
+}
+
 } // namespace Skribisto::Common::UndoRedo

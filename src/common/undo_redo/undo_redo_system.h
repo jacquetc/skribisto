@@ -22,6 +22,7 @@
 
 #include "query_handler.h"
 #include "undo_redo_manager.h"
+#include "undo_redo_command.h"
 #include <QCoro/QCoroSignal>
 #include <QCoro/QCoroTask>
 #include <QObject>
@@ -64,6 +65,10 @@ class UndoRedoSystem : public QObject
   Q_SIGNALS:
     void commandExecuted(const QString &scope, bool success);
     void queryExecuted(std::shared_ptr<QueryBase> query, bool success);
+    
+    // Enhanced signals with detailed error information
+    void commandExecutedWithResult(const QString &scope, const Result<void> &result);
+    void commandErrorOccurred(const QString &scope, const QString &error, ErrorCategory category, ErrorSeverity severity);
 
     // Performance monitoring signals
     void commandExecutionTime(const QString &commandName, qint64 milliseconds);
@@ -71,6 +76,7 @@ class UndoRedoSystem : public QObject
 
   private Q_SLOTS:
     void onCommandFinished(const QString &scope, bool success);
+    void onCommandFinishedWithResult(const QString &scope, const Result<void> &result);
     void onQueryFinished(std::shared_ptr<QueryBase> query, bool success);
 
   private:

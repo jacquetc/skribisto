@@ -15,8 +15,6 @@ else ()
 endif ()
 
 set(SRCS
-        error.h
-        result.h
         database/db_context.h
         database/table_cache.h
         direct_access/repository_factory.h
