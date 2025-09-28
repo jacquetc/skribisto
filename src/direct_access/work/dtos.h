@@ -30,10 +30,14 @@
 
 namespace Skribisto::DirectAccess::Work
 {
+Q_NAMESPACE
+
 enum class WorkRelationshipField
 {
     Binders,
 };
+Q_ENUM_NS(WorkRelationshipField)
+
 struct WorkDto
 {
     Q_GADGET
@@ -52,6 +56,9 @@ struct WorkDto
     QString dictLanguage;
     QList<int> binders = {};
     WorkDto() = default;
+    ~WorkDto() = default;
+    WorkDto(const WorkDto &) = default;
+    WorkDto &operator=(const WorkDto &) = default;
     WorkDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
             const QString &dictLanguage, const QList<int> &binders)
         : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), dictLanguage(dictLanguage), binders(binders)
@@ -75,6 +82,9 @@ struct CreateWorkDto
     QString dictLanguage;
     QList<int> binders = {};
     CreateWorkDto() = default;
+    ~CreateWorkDto() = default;
+    CreateWorkDto(const CreateWorkDto &) = default;
+    CreateWorkDto &operator=(const CreateWorkDto &) = default;
     CreateWorkDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                   const QString &dictLanguage, const QList<int> &binders)
         : createdAt(createdAt), updatedAt(updatedAt), title(title), dictLanguage(dictLanguage), binders(binders)
@@ -82,3 +92,5 @@ struct CreateWorkDto
     }
 };
 } // namespace Skribisto::DirectAccess::Work
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::Work::WorkDto)
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::Work::CreateWorkDto)

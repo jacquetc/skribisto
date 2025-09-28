@@ -29,11 +29,15 @@
 
 namespace Skribisto::DirectAccess::Root
 {
+Q_NAMESPACE
+
 enum class RootRelationshipField
 {
     Works,
     RecentWorks,
 };
+Q_ENUM_NS(RootRelationshipField)
+
 struct RootDto
 {
     Q_GADGET
@@ -51,6 +55,9 @@ struct RootDto
     QList<int> works = {};
     QList<int> recentWorks = {};
     RootDto() = default;
+    ~RootDto() = default;
+    RootDto(const RootDto &) = default;
+    RootDto &operator=(const RootDto &) = default;
     RootDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &authorName,
             const QList<int> &works, const QList<int> &recentWorks)
         : id(id), createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), works(works),
@@ -75,6 +82,9 @@ struct CreateRootDto
     QList<int> works = {};
     QList<int> recentWorks = {};
     CreateRootDto() = default;
+    ~CreateRootDto() = default;
+    CreateRootDto(const CreateRootDto &) = default;
+    CreateRootDto &operator=(const CreateRootDto &) = default;
     CreateRootDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &authorName,
                   const QList<int> &works, const QList<int> &recentWorks)
         : createdAt(createdAt), updatedAt(updatedAt), authorName(authorName), works(works), recentWorks(recentWorks)
@@ -82,3 +92,5 @@ struct CreateRootDto
     }
 };
 } // namespace Skribisto::DirectAccess::Root
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::Root::RootDto)
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::Root::CreateRootDto)

@@ -30,6 +30,7 @@
 
 namespace Skribisto::DirectAccess::Content
 {
+Q_NAMESPACE
 
 struct ContentDto
 {
@@ -47,6 +48,9 @@ struct ContentDto
     QString role;
     QString data;
     ContentDto() = default;
+    ~ContentDto() = default;
+    ContentDto(const ContentDto &) = default;
+    ContentDto &operator=(const ContentDto &) = default;
     ContentDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &role,
                const QString &data)
         : id(id), createdAt(createdAt), updatedAt(updatedAt), role(role), data(data)
@@ -68,10 +72,14 @@ struct CreateContentDto
     QString role;
     QString data;
     CreateContentDto() = default;
-    CreateContentDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &role,
-                     const QString &data)
+    ~CreateContentDto() = default;
+    CreateContentDto(const CreateContentDto &) = default;
+    CreateContentDto &operator=(const CreateContentDto &) = default;
+    CreateContentDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &role, const QString &data)
         : createdAt(createdAt), updatedAt(updatedAt), role(role), data(data)
     {
     }
 };
 } // namespace Skribisto::DirectAccess::Content
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::Content::ContentDto)
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::Content::CreateContentDto)

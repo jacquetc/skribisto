@@ -18,10 +18,6 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-//
-// Created by cyril on 15/09/2025.
-//
-
 #pragma once
 #include <QDateTime>
 #include <QList>
@@ -30,10 +26,14 @@
 
 namespace Skribisto::DirectAccess::Binder
 {
+Q_NAMESPACE
+
 enum class BinderRelationshipField
 {
     BinderItems,
 };
+Q_ENUM_NS(BinderRelationshipField)
+
 struct BinderDto
 {
     Q_GADGET
@@ -50,6 +50,9 @@ struct BinderDto
     QString name;
     QList<int> binderItems = {};
     BinderDto() = default;
+    ~BinderDto() = default;
+    BinderDto(const BinderDto &) = default;
+    BinderDto &operator=(const BinderDto &) = default;
     BinderDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name,
               const QList<int> &binderItems)
         : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), binderItems(binderItems)
@@ -71,6 +74,9 @@ struct CreateBinderDto
     QString name;
     QList<int> binderItems = {};
     CreateBinderDto() = default;
+    ~CreateBinderDto() = default;
+    CreateBinderDto(const CreateBinderDto &) = default;
+    CreateBinderDto &operator=(const CreateBinderDto &) = default;
     CreateBinderDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name,
                     const QList<int> &binderItems)
         : createdAt(createdAt), updatedAt(updatedAt), name(name), binderItems(binderItems)
@@ -78,3 +84,5 @@ struct CreateBinderDto
     }
 };
 } // namespace Skribisto::DirectAccess::Binder
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::Binder::BinderDto)
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::Binder::CreateBinderDto)

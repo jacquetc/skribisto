@@ -30,12 +30,16 @@
 
 namespace Skribisto::DirectAccess::BinderItem
 {
+Q_NAMESPACE
+
 enum class BinderItemRelationshipField
 {
     Contents,
     BinderItems,
     ParentItem,
 };
+Q_ENUM_NS(BinderItemRelationshipField)
+
 struct BinderItemDto
 {
     Q_GADGET
@@ -62,6 +66,9 @@ struct BinderItemDto
     QList<int> binderItems = {};
     int parent = 0;
     BinderItemDto() = default;
+    ~BinderItemDto() = default;
+    BinderItemDto(const BinderItemDto &) = default;
+    BinderItemDto &operator=(const BinderItemDto &) = default;
     BinderItemDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                   const QString &subTitle, const QString &role, const QString &dictLanguage, const QList<int> &contents,
                   const QList<int> &binderItems, const int parent)
@@ -95,6 +102,9 @@ struct CreateBinderItemDto
     QList<int> binderItems = {};
     int parent = 0;
     CreateBinderItemDto() = default;
+    ~CreateBinderItemDto() = default;
+    CreateBinderItemDto(const CreateBinderItemDto &) = default;
+    CreateBinderItemDto &operator=(const CreateBinderItemDto &) = default;
     CreateBinderItemDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                         const QString &subTitle, const QString &role, const QString &dictLanguage,
                         const QList<int> &contents, const QList<int> &binderItems, const int parent)
@@ -104,3 +114,5 @@ struct CreateBinderItemDto
     }
 };
 } // namespace Skribisto::DirectAccess::BinderItem
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::BinderItem::BinderItemDto)
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::BinderItem::CreateBinderItemDto)

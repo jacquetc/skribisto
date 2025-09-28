@@ -30,6 +30,7 @@
 
 namespace Skribisto::DirectAccess::BinderTag
 {
+Q_NAMESPACE
 
 struct BinderTagDto
 {
@@ -49,6 +50,9 @@ struct BinderTagDto
     QString color;
     QString textColor;
     BinderTagDto() = default;
+    ~BinderTagDto() = default;
+    BinderTagDto(const BinderTagDto &) = default;
+    BinderTagDto &operator=(const BinderTagDto &) = default;
     BinderTagDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name,
                  const QString &color, const QString &textColor)
         : id(id), createdAt(createdAt), updatedAt(updatedAt), name(name), color(color), textColor(textColor)
@@ -72,6 +76,9 @@ struct CreateBinderTagDto
     QString color;
     QString textColor;
     CreateBinderTagDto() = default;
+    ~CreateBinderTagDto() = default;
+    CreateBinderTagDto(const CreateBinderTagDto &) = default;
+    CreateBinderTagDto &operator=(const CreateBinderTagDto &) = default;
     CreateBinderTagDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &name,
                        const QString &color, const QString &textColor)
         : createdAt(createdAt), updatedAt(updatedAt), name(name), color(color), textColor(textColor)
@@ -79,3 +86,5 @@ struct CreateBinderTagDto
     }
 };
 } // namespace Skribisto::DirectAccess::BinderTag
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::BinderTag::BinderTagDto)
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::BinderTag::CreateBinderTagDto)

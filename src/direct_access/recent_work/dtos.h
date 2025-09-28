@@ -30,6 +30,7 @@
 
 namespace Skribisto::DirectAccess::RecentWork
 {
+Q_NAMESPACE
 
 struct RecentWorkDto
 {
@@ -49,6 +50,9 @@ struct RecentWorkDto
     QDateTime lastOpenedAt;
     QString absolutePath;
     RecentWorkDto() = default;
+    ~RecentWorkDto() = default;
+    RecentWorkDto(const RecentWorkDto &) = default;
+    RecentWorkDto &operator=(const RecentWorkDto &) = default;
     RecentWorkDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                   const QDateTime &lastOpenedAt, const QString &absolutePath)
         : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), lastOpenedAt(lastOpenedAt),
@@ -73,6 +77,9 @@ struct CreateRecentWorkDto
     QDateTime lastOpenedAt;
     QString absolutePath;
     CreateRecentWorkDto() = default;
+    ~CreateRecentWorkDto() = default;
+    CreateRecentWorkDto(const CreateRecentWorkDto &) = default;
+    CreateRecentWorkDto &operator=(const CreateRecentWorkDto &) = default;
     CreateRecentWorkDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                         const QDateTime &lastOpenedAt, const QString &absolutePath)
         : createdAt(createdAt), updatedAt(updatedAt), title(title), lastOpenedAt(lastOpenedAt),
@@ -81,3 +88,5 @@ struct CreateRecentWorkDto
     }
 };
 } // namespace Skribisto::DirectAccess::RecentWork
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::RecentWork::RecentWorkDto)
+Q_DECLARE_METATYPE(Skribisto::DirectAccess::RecentWork::CreateRecentWorkDto)
