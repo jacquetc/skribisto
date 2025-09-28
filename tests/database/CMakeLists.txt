@@ -25,7 +25,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # set(QRC ${CMAKE_SOURCE_DIR}/resources/test/testfiles.qrc)
 # qt_add_resources(RESOURCES ${QRC})
-enable_testing()
+
 qt_add_executable(
         ${TEST_NAME} ${TEST_NAME}.cpp ${RESOURCES})
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
@@ -54,7 +54,6 @@ qcoro_enable_coroutines()
 # includes there:
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-enable_testing()
 qt_add_executable(
         ${ORD_ONE_TO_MANY_TEST_NAME} ${ORD_ONE_TO_MANY_TEST_NAME}.cpp ${RESOURCES})
 add_test(NAME ${ORD_ONE_TO_MANY_TEST_NAME} COMMAND ${ORD_ONE_TO_MANY_TEST_NAME})
@@ -83,7 +82,6 @@ qcoro_enable_coroutines()
 # includes there:
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-enable_testing()
 qt_add_executable(
         ${UNORD_ONE_TO_MANY_TEST_NAME} ${UNORD_ONE_TO_MANY_TEST_NAME}.cpp ${RESOURCES})
 add_test(NAME ${UNORD_ONE_TO_MANY_TEST_NAME} COMMAND ${UNORD_ONE_TO_MANY_TEST_NAME})
@@ -112,7 +110,6 @@ qcoro_enable_coroutines()
 # includes there:
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-enable_testing()
 qt_add_executable(
         ${ONE_TO_ONE_TEST_NAME} ${ONE_TO_ONE_TEST_NAME}.cpp ${RESOURCES})
 add_test(NAME ${ONE_TO_ONE_TEST_NAME} COMMAND ${ONE_TO_ONE_TEST_NAME})

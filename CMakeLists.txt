@@ -73,6 +73,7 @@ endif (NOT SKR_BUILD_WITH_MOCKS)
 add_subdirectory(src/qml_app)
 #add_subdirectory(src/touch_gui)
 
+enable_testing()
 
 # Subdirectories that contain CMakeLists.txt for the framework tests and example
 if (SKR_BUILD_TESTS)
