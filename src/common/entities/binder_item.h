@@ -40,7 +40,7 @@ struct BinderItem
     QString dictLanguage;
     QList<int> contents;
     QList<int> binderItems;
-    std::optional<int> parent;
+    std::optional<int> parentItem;
 
     BinderItem() = default;
     BinderItem(int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,

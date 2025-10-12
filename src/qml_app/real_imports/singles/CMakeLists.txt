@@ -12,7 +12,8 @@ qt6_add_qml_module(${PLUGIN_NAME}
         VERSION 1.0
         SOURCES
 
-        foreign_single_content.h
+        #foreign_single_content.h
+        foreign_single_binder_item.h
 
 )
 

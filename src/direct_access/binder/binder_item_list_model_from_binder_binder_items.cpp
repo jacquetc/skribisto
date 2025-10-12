@@ -120,7 +120,7 @@ QVariant BinderItemListModelFromBinderBinderItems::data(const QModelIndex &index
         return list;
     }
     case ParentRole:
-        return binderItem.parent;
+        return binderItem.parentItem;
     }
 
     return QVariant();
@@ -269,7 +269,7 @@ void BinderItemListModelFromBinderBinderItems::refreshData()
             m_binderItems.clear();
             for (const BinderItem::BinderItemDto &dto : result)
             {
-                if (dto.parent == 0) // Only top-level items
+                if (dto.parentItem == 0) // Only top-level items
                     m_binderItems.append(dto);
             }
             endResetModel();

@@ -55,7 +55,7 @@ class DtoMapper
         binderItem.dictLanguage = dto.dictLanguage;
         binderItem.contents = dto.contents;
         binderItem.binderItems = dto.binderItems;
-        binderItem.parent = (dto.parent == 0) ? std::nullopt : std::make_optional(dto.parent);
+        binderItem.parentItem = (dto.parentItem == 0) ? std::nullopt : std::make_optional(dto.parentItem);
         return binderItem;
     }
 
@@ -71,7 +71,7 @@ class DtoMapper
         binderItem.dictLanguage = dto.dictLanguage;
         binderItem.contents = dto.contents;
         binderItem.binderItems = dto.binderItems;
-        binderItem.parent = (dto.parent == 0) ? std::nullopt : std::make_optional(dto.parent);
+        binderItem.parentItem = (dto.parentItem == 0) ? std::nullopt : std::make_optional(dto.parentItem);
         return binderItem;
     }
 
@@ -81,7 +81,7 @@ class DtoMapper
                              entity.updatedAt,    entity.title,
                              entity.subTitle,     entity.role,
                              entity.dictLanguage, entity.contents,
-                             entity.binderItems,  entity.parent.has_value() ? entity.parent.value() : 0};
+                             entity.binderItems,  entity.parentItem.has_value() ? entity.parentItem.value() : 0};
     }
 
     static QList<SCE::BinderItem> toEntityList(const QList<CreateBinderItemDto> &dtos)

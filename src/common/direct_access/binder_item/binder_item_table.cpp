@@ -120,9 +120,10 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::createMany(const QList<SC
                                                                    r.binderItems);
             }
 
-            if (r.parent.has_value())
+            if (r.parentItem.has_value())
             {
-                JunctionTableOps::OneToOne::upsertRightId(db, r.id, BINDER_ITEM_PARENT_ITEM_JUNCTION, r.parent.value());
+                JunctionTableOps::OneToOne::upsertRightId(db, r.id, BINDER_ITEM_PARENT_ITEM_JUNCTION,
+                                                          r.parentItem.value());
             }
 
             created.append(r);
@@ -180,7 +181,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::updateMany(const QList<SC
             JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, r.id, BINDER_ITEM_CONTENTS_JUNCTION, r.contents);
             JunctionTableOps::OrderedOneToMany::upsertRightIds(db, r.id, BINDER_ITEM_BINDER_ITEMS_JUNCTION,
                                                                r.binderItems);
-            JunctionTableOps::OneToOne::upsertRightId(db, r.id, BINDER_ITEM_PARENT_ITEM_JUNCTION, r.parent);
+            JunctionTableOps::OneToOne::upsertRightId(db, r.id, BINDER_ITEM_PARENT_ITEM_JUNCTION, r.parentItem);
 
             updated.append(r);
         }
@@ -269,7 +270,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::findMany(const QList<int>
         {
             binderItem.contents = worksMap.value(binderItem.id);
             binderItem.binderItems = binderItemsMap.value(binderItem.id);
-            binderItem.parent = parentMap.value(binderItem.id);
+            binderItem.parentItem = parentMap.value(binderItem.id);
         }
 
         // Cache the result

@@ -24,6 +24,9 @@ set(FILE_LIST
         use_cases/get_relationship_ids_count_uc.h
         use_cases/get_relationship_ids_in_range_uc.cpp
         use_cases/get_relationship_ids_in_range_uc.h
+        # models
+        single_binder_item.cpp
+        single_binder_item.h
 )
 
 foreach (file_path IN LISTS FILE_LIST)

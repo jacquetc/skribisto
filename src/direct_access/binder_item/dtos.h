@@ -52,7 +52,7 @@ struct BinderItemDto
     Q_PROPERTY(QString dictLanguage MEMBER dictLanguage)
     Q_PROPERTY(QList<int> contents MEMBER contents)
     Q_PROPERTY(QList<int> binderItems MEMBER binderItems)
-    Q_PROPERTY(int parent MEMBER parent)
+    Q_PROPERTY(int parentItem MEMBER parentItem)
 
   public:
     int id = 0;
@@ -64,16 +64,16 @@ struct BinderItemDto
     QString dictLanguage;
     QList<int> contents = {};
     QList<int> binderItems = {};
-    int parent = 0;
+    int parentItem = 0;
     BinderItemDto() = default;
     ~BinderItemDto() = default;
     BinderItemDto(const BinderItemDto &) = default;
     BinderItemDto &operator=(const BinderItemDto &) = default;
     BinderItemDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                   const QString &subTitle, const QString &role, const QString &dictLanguage, const QList<int> &contents,
-                  const QList<int> &binderItems, const int parent)
+                  const QList<int> &binderItems, const int parentItem)
         : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), subTitle(subTitle), role(role),
-          dictLanguage(dictLanguage), contents(contents), binderItems(binderItems), parent(parent)
+          dictLanguage(dictLanguage), contents(contents), binderItems(binderItems), parentItem(parentItem)
     {
     }
 };
@@ -89,7 +89,7 @@ struct CreateBinderItemDto
     Q_PROPERTY(QString dictLanguage MEMBER dictLanguage)
     Q_PROPERTY(QList<int> contents MEMBER contents)
     Q_PROPERTY(QList<int> binderItems MEMBER binderItems)
-    Q_PROPERTY(int parent MEMBER parent)
+    Q_PROPERTY(int parentItem MEMBER parentItem)
 
   public:
     QDateTime createdAt;
@@ -100,16 +100,16 @@ struct CreateBinderItemDto
     QString dictLanguage;
     QList<int> contents = {};
     QList<int> binderItems = {};
-    int parent = 0;
+    int parentItem = 0;
     CreateBinderItemDto() = default;
     ~CreateBinderItemDto() = default;
     CreateBinderItemDto(const CreateBinderItemDto &) = default;
     CreateBinderItemDto &operator=(const CreateBinderItemDto &) = default;
     CreateBinderItemDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                         const QString &subTitle, const QString &role, const QString &dictLanguage,
-                        const QList<int> &contents, const QList<int> &binderItems, const int parent)
+                        const QList<int> &contents, const QList<int> &binderItems, const int parentItem)
         : createdAt(createdAt), updatedAt(updatedAt), title(title), subTitle(subTitle), role(role),
-          dictLanguage(dictLanguage), contents(contents), binderItems(binderItems), parent(parent)
+          dictLanguage(dictLanguage), contents(contents), binderItems(binderItems), parentItem(parentItem)
     {
     }
 };

@@ -28,7 +28,7 @@ import QtQuick.Controls.Basic
 import Skr.Controllers
 
 // import Models
-// import Singles
+import Skr.Singles
 
 ApplicationWindow {
     id: applicationWindow
@@ -112,6 +112,11 @@ ApplicationWindow {
             WorkController {
                 id: workController
 
+            }
+            SingleBinderItem {
+                id: binderItem1
+
+                itemId: 1
             }
             // Button
             Button {
