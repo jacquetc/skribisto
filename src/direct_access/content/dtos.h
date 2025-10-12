@@ -75,8 +75,8 @@ struct CreateContentDto
     ~CreateContentDto() = default;
     CreateContentDto(const CreateContentDto &) = default;
     CreateContentDto &operator=(const CreateContentDto &) = default;
-    CreateContentDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &role, const QString &data)
-        : createdAt(createdAt), updatedAt(updatedAt), role(role), data(data)
+    CreateContentDto(QDateTime createdAt, QDateTime updatedAt, QString role, QString data)
+        : createdAt(std::move(createdAt)), updatedAt(std::move(updatedAt)), role(std::move(role)), data(std::move(data))
     {
     }
 };
