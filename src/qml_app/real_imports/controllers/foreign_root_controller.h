@@ -47,9 +47,9 @@ struct ForeignRootController : public QObject
         return Skribisto::DirectAccess::Root::RootController::getCreateDto();
     }
 
-    Q_INVOKABLE QCoro::QmlTask create(const QList<Skribisto::DirectAccess::Root::CreateRootDto> &dto)
+    Q_INVOKABLE QCoro::QmlTask create(const QList<Skribisto::DirectAccess::Root::CreateRootDto> &dtos)
     {
-        return m_controller->create(dto);
+        return m_controller->create(dtos);
     }
 
     Q_INVOKABLE QCoro::QmlTask update(const QList<Skribisto::DirectAccess::Root::RootDto> &dtos)

@@ -47,9 +47,9 @@ struct ForeignContentController : public QObject
         return Skribisto::DirectAccess::Content::ContentController::getCreateDto();
     }
 
-    Q_INVOKABLE QCoro::QmlTask create(const QList<Skribisto::DirectAccess::Content::CreateContentDto> &dto)
+    Q_INVOKABLE QCoro::QmlTask create(const QList<Skribisto::DirectAccess::Content::CreateContentDto> &dtos)
     {
-        return m_controller->create(dto);
+        return m_controller->create(dtos);
     }
 
     Q_INVOKABLE QCoro::QmlTask update(const QList<Skribisto::DirectAccess::Content::ContentDto> &dtos)

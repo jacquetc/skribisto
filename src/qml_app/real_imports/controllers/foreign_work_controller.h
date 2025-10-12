@@ -47,9 +47,9 @@ struct ForeignWorkController : public QObject
         return Skribisto::DirectAccess::Work::WorkController::getCreateDto();
     }
 
-    Q_INVOKABLE QCoro::QmlTask create(const QList<Skribisto::DirectAccess::Work::CreateWorkDto> &dto)
+    Q_INVOKABLE QCoro::QmlTask create(const QList<Skribisto::DirectAccess::Work::CreateWorkDto> &dtos)
     {
-        return m_controller->create(dto);
+        return m_controller->create(dtos);
     }
 
     Q_INVOKABLE QCoro::QmlTask update(const QList<Skribisto::DirectAccess::Work::WorkDto> &dtos)
@@ -62,21 +62,21 @@ struct ForeignWorkController : public QObject
         return m_controller->remove(ids);
     }
 
-    Q_INVOKABLE QCoro::QmlTask getRelationshipIds(
-        int workId, Skribisto::DirectAccess::Work::WorkRelationshipField relationship)
+    Q_INVOKABLE QCoro::QmlTask getRelationshipIds(int workId,
+                                                  Skribisto::DirectAccess::Work::WorkRelationshipField relationship)
     {
         return m_controller->getRelationshipIds(workId, relationship);
     }
 
-    Q_INVOKABLE QCoro::QmlTask setRelationshipIds(
-        int workId, Skribisto::DirectAccess::Work::WorkRelationshipField relationship,
-        const QList<int> &relatedIds)
+    Q_INVOKABLE QCoro::QmlTask setRelationshipIds(int workId,
+                                                  Skribisto::DirectAccess::Work::WorkRelationshipField relationship,
+                                                  const QList<int> &relatedIds)
     {
         return m_controller->setRelationshipIds(workId, relationship, relatedIds);
     }
 
-    Q_INVOKABLE QCoro::QmlTask getRelationshipIdsMany(
-        const QList<int> &workIds, Skribisto::DirectAccess::Work::WorkRelationshipField relationship)
+    Q_INVOKABLE QCoro::QmlTask getRelationshipIdsMany(const QList<int> &workIds,
+                                                      Skribisto::DirectAccess::Work::WorkRelationshipField relationship)
     {
         return m_controller->getRelationshipIdsMany(workIds, relationship);
     }

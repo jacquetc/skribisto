@@ -47,9 +47,9 @@ struct ForeignBinderTagController : public QObject
         return Skribisto::DirectAccess::BinderTag::BinderTagController::getCreateDto();
     }
 
-    Q_INVOKABLE QCoro::QmlTask create(const QList<Skribisto::DirectAccess::BinderTag::CreateBinderTagDto> &dto)
+    Q_INVOKABLE QCoro::QmlTask create(const QList<Skribisto::DirectAccess::BinderTag::CreateBinderTagDto> &dtos)
     {
-        return m_controller->create(dto);
+        return m_controller->create(dtos);
     }
 
     Q_INVOKABLE QCoro::QmlTask update(const QList<Skribisto::DirectAccess::BinderTag::BinderTagDto> &dtos)
