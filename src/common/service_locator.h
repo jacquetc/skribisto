@@ -22,6 +22,7 @@
 #pragma once
 #include "database/db_context.h"
 #include "direct_access/event_registry.h"
+#include "features/feature_event_registry.h"
 #include "undo_redo/undo_redo_system.h"
 
 #include <QObject>
@@ -39,10 +40,12 @@ class ServiceLocator : public QObject
 
     void setDbContext(Database::DbContext *db);
     void setEventRegistry(DirectAccess::EventRegistry *ev);
+    void setFeatureEventRegistry(Features::FeatureEventRegistry *fev);
     void setUndoRedoSystem(UndoRedo::UndoRedoSystem *urs);
 
     Database::DbContext *dbContext() const;
     QPointer<DirectAccess::EventRegistry> eventRegistry() const;
+    QPointer<Features::FeatureEventRegistry> featureEventRegistry() const;
     QPointer<UndoRedo::UndoRedoSystem> undoRedoSystem() const;
 
     static void setInstance(ServiceLocator *locator);
@@ -52,6 +55,7 @@ class ServiceLocator : public QObject
     inline static ServiceLocator *s_instance = nullptr;
     Database::DbContext *m_dbContext;
     QPointer<DirectAccess::EventRegistry> m_eventRegistry;
+    QPointer<Features::FeatureEventRegistry> m_featureEventRegistry;
     QPointer<UndoRedo::UndoRedoSystem> m_undoRedoSystem;
 };
 

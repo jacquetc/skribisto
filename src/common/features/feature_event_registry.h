@@ -18,61 +18,39 @@
  along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
  ******************************************************************************/
 
-#include "service_locator.h"
+#pragma once
 
-namespace SC = Skribisto::Common;
+#include "features/work_management_events.h"
 
-SC::ServiceLocator::ServiceLocator(QObject *parent) : QObject(parent)
+#include <QPointer>
+
+namespace Skribisto::Common::Features
 {
+
+// Composite events structure that holds all event instances
+class FeatureEventRegistry : public QObject
+{
+    Q_OBJECT
+  public:
+    explicit FeatureEventRegistry(QObject *parent = nullptr)
+        : QObject(parent), m_workManagementEvents(new Features::WorkManagementEvents(parent))
+
+    //    , m_undoRedoEvents(new UndoRedo::UndoRedoEvents(parent))
+    {
+    }
+
+    // Helper to get appropriate events by type
+    template <typename T> QPointer<T> getEvents() const;
+
+  private:
+    QPointer<Features::WorkManagementEvents> m_workManagementEvents;
+};
+
+// Template specializations for each event type
+template <>
+inline QPointer<Features::WorkManagementEvents> FeatureEventRegistry::getEvents<Features::WorkManagementEvents>() const
+{
+    return m_workManagementEvents;
 }
 
-Skribisto::Common::ServiceLocator::~ServiceLocator()
-{
-    // destroy in the reverse order of creation
-    m_undoRedoSystem = nullptr;
-    m_eventRegistry = nullptr;
-    m_featureEventRegistry = nullptr;
-    m_dbContext = nullptr;
-}
-
-void SC::ServiceLocator::setDbContext(SC::Database::DbContext *db)
-{
-    m_dbContext = db;
-}
-void SC::ServiceLocator::setEventRegistry(SC::DirectAccess::EventRegistry *ev)
-{
-    m_eventRegistry = ev;
-}
-void SC::ServiceLocator::setFeatureEventRegistry(SC::Features::FeatureEventRegistry *fev)
-{
-    m_featureEventRegistry = fev;
-}
-void SC::ServiceLocator::setUndoRedoSystem(SC::UndoRedo::UndoRedoSystem *urs)
-{
-    m_undoRedoSystem = urs;
-}
-
-SC::Database::DbContext *SC::ServiceLocator::dbContext() const
-{
-    return m_dbContext;
-}
-QPointer<SC::DirectAccess::EventRegistry> SC::ServiceLocator::eventRegistry() const
-{
-    return m_eventRegistry;
-}
-QPointer<SC::Features::FeatureEventRegistry> SC::ServiceLocator::featureEventRegistry() const
-{
-    return m_featureEventRegistry;
-}
-QPointer<SC::UndoRedo::UndoRedoSystem> SC::ServiceLocator::undoRedoSystem() const
-{
-    return m_undoRedoSystem;
-}
-void SC::ServiceLocator::setInstance(ServiceLocator *locator)
-{
-    s_instance = locator;
-}
-SC::ServiceLocator *SC::ServiceLocator::instance()
-{
-    return s_instance;
-}
+} // namespace Skribisto::Common::Features

@@ -35,8 +35,10 @@ namespace SCDBinderTag = Skribisto::Common::DirectAccess::BinderTag;
 namespace SCDContent = Skribisto::Common::DirectAccess::Content;
 namespace SCDRecentWork = Skribisto::Common::DirectAccess::RecentWork;
 
-LoadWorkUnitOfWork::LoadWorkUnitOfWork(SCDatabase::DbContext &dbContext, QPointer<SCD::EventRegistry> eventRegistry)
-    : m_dbSubContext(SCDatabase::DbSubContext(dbContext)), m_eventRegistry(std::move(eventRegistry))
+LoadWorkUnitOfWork::LoadWorkUnitOfWork(SCDatabase::DbContext &dbContext, QPointer<SCD::EventRegistry> eventRegistry,
+                                       QPointer<SCF::FeatureEventRegistry> featureEventRegistry)
+    : m_dbSubContext(SCDatabase::DbSubContext(dbContext)), m_eventRegistry(std::move(eventRegistry)),
+      m_featureEventRegistry(std::move(featureEventRegistry))
 {
 }
 LoadWorkUnitOfWork::~LoadWorkUnitOfWork()
@@ -132,5 +134,9 @@ QList<SCE::RecentWork> LoadWorkUnitOfWork::createRecentWork(QList<SCE::RecentWor
 {
     auto repository = SCD::RepositoryFactory::createRecentWorkRepository(m_dbSubContext, m_eventRegistry);
     return repository->create(recentWorks);
+}
+void LoadWorkUnitOfWork::publishWorkLoaded(int workId)
+{
+    m_featureEventRegistry->getEvents<SCF::WorkManagementEvents>()->publishWorkLoaded(workId);
 }
 } // namespace Skribisto::WorkManagement

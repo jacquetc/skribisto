@@ -108,7 +108,7 @@ SKRResult &SKRResult::operator=(const SKRResult &iResult)
 
     if (iResult.getStatus() == SKRResult::Critical || iResult.getStatus() == SKRResult::Fatal)
     {
-        qFatal("");
+        qFatal("A SKRResult with status Critical or Fatal cannot be assigned to another SKRResult.");
     }
 
     return *this;

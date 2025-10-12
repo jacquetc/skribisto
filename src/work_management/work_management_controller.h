@@ -22,8 +22,10 @@
 
 #include "database/db_context.h"
 #include "direct_access/event_registry.h"
+#include "features/feature_event_registry.h"
 #include "undo_redo/undo_redo_system.h"
 #include "work_management_dtos.h"
+
 #include <QCoro/QCoroTask>
 
 #include <QPointer>
@@ -56,6 +58,7 @@ class WorkManagementController : public QObject
     void resolveDependencies();
     SCDatabase::DbContext *m_dbContext = nullptr;
     QPointer<Common::DirectAccess::EventRegistry> m_eventRegistry;
+    QPointer<Common::Features::FeatureEventRegistry> m_featureEventRegistry;
     QPointer<Common::UndoRedo::UndoRedoSystem> m_undoRedoSystem;
 };
 } // namespace Skribisto::WorkManagement

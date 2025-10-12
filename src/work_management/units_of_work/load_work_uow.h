@@ -29,6 +29,7 @@
 #include "entities/recent_work.h"
 #include "entities/root.h"
 #include "entities/work.h"
+#include "features/feature_event_registry.h"
 
 #include <QPointer>
 
@@ -36,6 +37,7 @@ namespace Skribisto::WorkManagement
 {
 namespace SCDatabase = Skribisto::Common::Database;
 namespace SCD = Skribisto::Common::DirectAccess;
+namespace SCF = Skribisto::Common::Features;
 namespace SCE = Common::Entities;
 namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
 namespace SCDWork = Skribisto::Common::DirectAccess::Work;
@@ -49,7 +51,8 @@ class LoadWorkUnitOfWork final : public ILoadWorkUnitOfWork
 {
 
   public:
-    LoadWorkUnitOfWork(SCDatabase::DbContext &dbContext, QPointer<SCD::EventRegistry> eventRegistry);
+    LoadWorkUnitOfWork(SCDatabase::DbContext &dbContext, QPointer<SCD::EventRegistry> eventRegistry,
+                       QPointer<SCF::FeatureEventRegistry> featureEventRegistry);
 
     ~LoadWorkUnitOfWork() override;
     void beginTransaction() override;
@@ -72,9 +75,12 @@ class LoadWorkUnitOfWork final : public ILoadWorkUnitOfWork
     QList<SCE::BinderTag> createBinderTag(QList<SCE::BinderTag> binderTags) override;
     QList<SCE::Content> createContent(QList<SCE::Content> contents) override;
     QList<SCE::RecentWork> createRecentWork(QList<SCE::RecentWork> recentWorks) override;
+    // signals
+    void publishWorkLoaded(int workId);
 
   private:
     SCDatabase::DbSubContext m_dbSubContext;
     QPointer<SCD::EventRegistry> m_eventRegistry;
+    QPointer<SCF::FeatureEventRegistry> m_featureEventRegistry;
 };
 } // namespace Skribisto::WorkManagement

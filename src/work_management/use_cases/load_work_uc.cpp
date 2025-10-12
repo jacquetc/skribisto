@@ -58,6 +58,7 @@ bool LoadWorkUseCase::execute(const LoadWorkDto &loadWorkDto)
 
     qInfo() << "Database upgraded successfully to the latest version.";
 
+    m_uow->publishWorkLoaded(0);
     return true;
 }
 } // namespace Skribisto::WorkManagement

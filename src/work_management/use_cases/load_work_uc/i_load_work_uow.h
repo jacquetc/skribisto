@@ -72,5 +72,7 @@ class ILoadWorkUnitOfWork
     virtual QList<SCE::BinderTag> createBinderTag(QList<SCE::BinderTag> binderTags) = 0;
     virtual QList<SCE::RecentWork> createRecentWork(QList<SCE::RecentWork> recentWorks) = 0;
     virtual QList<SCE::Content> createContent(QList<SCE::Content> contents) = 0;
+    // signals
+    virtual void publishWorkLoaded(int workId) = 0;
 };
 } // namespace Skribisto::WorkManagement

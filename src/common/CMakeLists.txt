@@ -142,9 +142,15 @@ set(DIRECT_ACCESS_LIST
         #        direct_access/binder/binder_table.cpp
         #        direct_access/binder/binder_table.h
 )
+set(FEATURES_LIST
+        features/feature_event_registry.cpp
+        features/feature_event_registry.h
+        features/work_management_events.cpp
+        features/work_management_events.h
+)
 
 qt_add_library(${LIBRARY_NAME} ${LIB_TYPE} ${SRCS} ${UNDO_REDO_LIST}
-        ${ENTITIES_LIST}
+        ${ENTITIES_LIST} ${FEATURES_LIST}
         ${DIRECT_ACCESS_LIST}
 )
 target_compile_definitions(${LIBRARY_NAME} PRIVATE

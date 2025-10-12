@@ -49,6 +49,7 @@ void WorkManagementController::resolveDependencies()
     m_dbContext = locator->dbContext();
     m_eventRegistry = locator->eventRegistry();
     m_undoRedoSystem = locator->undoRedoSystem();
+    m_featureEventRegistry = locator->featureEventRegistry();
 }
 
 QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWorkDto)
@@ -63,7 +64,8 @@ QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWork
     m_undoRedoSystem->manager()->clearAllScopes();
 
     // Create use case that will be owned by the command
-    std::unique_ptr<ILoadWorkUnitOfWork> uow = std::make_unique<LoadWorkUnitOfWork>(*m_dbContext, m_eventRegistry);
+    std::unique_ptr<ILoadWorkUnitOfWork> uow =
+        std::make_unique<LoadWorkUnitOfWork>(*m_dbContext, m_eventRegistry, m_featureEventRegistry);
     std::unique_ptr<LoadWorkUseCaseModule::LegacyUpgraderModule::ILegacyUpgrader> legacyUpgrader =
         std::make_unique<LoadWorkUseCaseModule::LegacyUpgraderModule::LegacyUpgrader>();
     auto useCase = std::make_shared<LoadWorkUseCase>(std::move(uow), std::move(legacyUpgrader));

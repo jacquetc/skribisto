@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
 
     auto *db = new Skribisto::Common::Database::DbContext(&app);
     auto *ev = new Skribisto::Common::DirectAccess::EventRegistry(&app);
+    auto *fev = new Skribisto::Common::Features::FeatureEventRegistry(&app);
     // Undo Redo System
     // Skribisto::Common::UndoRedo::Scopes scopes(QStringList() << "root"_L1
     //                                                          << "work"_L1
@@ -73,6 +74,7 @@ int main(int argc, char *argv[])
     auto *locator = new Skribisto::Common::ServiceLocator(&app);
     locator->setDbContext(db);
     locator->setEventRegistry(ev);
+    locator->setFeatureEventRegistry(fev);
     locator->setUndoRedoSystem(urs);
     Skribisto::Common::ServiceLocator::setInstance(locator);
 
