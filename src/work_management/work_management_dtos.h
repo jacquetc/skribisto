@@ -33,6 +33,9 @@ struct LoadWorkDto
   public:
     QString fileName;
     LoadWorkDto() = default;
+    ~LoadWorkDto() = default;
+    LoadWorkDto(const LoadWorkDto &) = default;
+    LoadWorkDto &operator=(const LoadWorkDto &) = default;
     explicit LoadWorkDto(const QString &fileName) : fileName(fileName)
     {
     }
@@ -48,8 +51,13 @@ struct SaveWorkDto
     QString fileName;
     bool overwrite = false;
     SaveWorkDto() = default;
+    ~SaveWorkDto() = default;
+    SaveWorkDto(const SaveWorkDto &) = default;
+    SaveWorkDto &operator=(const SaveWorkDto &) = default;
     SaveWorkDto(const QString &fileName, bool overwrite = false) : fileName(fileName), overwrite(overwrite)
     {
     }
 };
 } // namespace Skribisto::WorkManagement
+Q_DECLARE_METATYPE(Skribisto::WorkManagement::LoadWorkDto)
+Q_DECLARE_METATYPE(Skribisto::WorkManagement::SaveWorkDto)

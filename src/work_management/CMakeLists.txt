@@ -1,4 +1,4 @@
-find_package(Qt6 COMPONENTS Core Sql REQUIRED)
+find_package(Qt6 COMPONENTS Core Sql Gui REQUIRED)
 find_package(QCoro6 REQUIRED COMPONENTS Core)
 
 set(LIBRARY_NAME skribisto-work-management)
@@ -18,11 +18,26 @@ set(SRCS
         work_management_dtos.h
         work_management_controller.cpp
         work_management_controller.h
+
+        # load
         units_of_work/load_work_uow.cpp
         units_of_work/load_work_uow.h
-        use_cases/i_load_work_uow.h
+        use_cases/load_work_uc/i_load_work_uow.h
         use_cases/load_work_uc.cpp
         use_cases/load_work_uc.h
+        # legacy upgrader
+        use_cases/load_work_uc/i_legacy_upgrader.h
+        use_cases/load_work_uc/legacy_upgrader/legacy_upgrader.h
+        use_cases/load_work_uc/legacy_upgrader/legacy_upgrader.cpp
+        use_cases/load_work_uc/legacy_upgrader/markdowntextdocument.cpp
+        use_cases/load_work_uc/legacy_upgrader/markdowntextdocument.h
+        use_cases/load_work_uc/legacy_upgrader/skrresult.cpp
+        use_cases/load_work_uc/legacy_upgrader/skrresult.h
+        use_cases/load_work_uc/legacy_upgrader/skrsqltools.cpp
+        use_cases/load_work_uc/legacy_upgrader/skrsqltools.h
+        use_cases/load_work_uc/legacy_upgrader/upgrader.cpp
+        use_cases/load_work_uc/legacy_upgrader/upgrader.h
+        # save
         units_of_work/save_work_uow.cpp
         units_of_work/save_work_uow.h
         use_cases/i_save_work_uow.h
@@ -59,7 +74,7 @@ target_include_directories(${LIBRARY_NAME} PUBLIC
 target_link_libraries(${LIBRARY_NAME} PRIVATE skribisto-common)
 
 target_link_libraries(${LIBRARY_NAME}
-        PRIVATE Qt6::Core Qt6::Sql
+        PRIVATE Qt6::Core Qt6::Sql Qt6::Gui
 )
 target_link_libraries(${LIBRARY_NAME} PRIVATE QCoro::Core)
 

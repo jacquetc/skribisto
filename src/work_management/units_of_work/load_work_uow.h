@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 #pragma once
-#include "../use_cases/i_load_work_uow.h"
+#include "../use_cases/load_work_uc/i_load_work_uow.h"
 #include "database/db_context.h"
 #include "direct_access/event_registry.h"
 #include "entities/binder.h"

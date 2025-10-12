@@ -22,11 +22,42 @@
 
 namespace Skribisto::WorkManagement
 {
-LoadWorkUseCase::LoadWorkUseCase(std::unique_ptr<ILoadWorkUnitOfWork> uow) : m_uow(std::move(uow))
+LoadWorkUseCase::LoadWorkUseCase(
+    std::unique_ptr<ILoadWorkUnitOfWork> uow,
+    std::unique_ptr<LoadWorkUseCaseModule::LegacyUpgraderModule::ILegacyUpgrader> legacyUpgrader)
+    : m_uow(std::move(uow)), m_legacyUpgrader(std::move(legacyUpgrader))
 {
 }
 bool LoadWorkUseCase::execute(const LoadWorkDto &loadWorkDto)
 {
-    Q_UNIMPLEMENTED();
+    // first check if the file exists and is readable
+    QFileInfo fileInfo(loadWorkDto.fileName);
+    if (!fileInfo.exists() || !fileInfo.isReadable())
+        return false;
+
+    // then check if the database needs to be upgraded with the legacy upgrader
+    if (m_legacyUpgrader->isUpgradeNeeded(loadWorkDto.fileName))
+    {
+        // if upgrade is needed, do a backup of the file
+        QFile::copy(loadWorkDto.fileName, loadWorkDto.fileName + ".bak"_L1);
+
+        // then do the upgrade
+
+        if (!m_legacyUpgrader->upgradeSQLite(loadWorkDto.fileName))
+        {
+            qCritical() << "Error while upgrading the database";
+
+            // if upgrade fails, restore the backup and return false
+
+            QFile::remove(loadWorkDto.fileName);
+            QFile::rename(loadWorkDto.fileName + ".bak"_L1, loadWorkDto.fileName);
+            return false;
+        }
+    }
+    qInfo() << "Database upgraded successfully from legacy Skribisto project version.";
+
+    qInfo() << "Database upgraded successfully to the latest version.";
+
+    return true;
 }
 } // namespace Skribisto::WorkManagement

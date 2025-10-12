@@ -24,6 +24,7 @@
 #include "units_of_work/load_work_uow.h"
 #include "units_of_work/save_work_uow.h"
 #include "use_cases/load_work_uc.h"
+#include "use_cases/load_work_uc/legacy_upgrader/legacy_upgrader.h"
 #include "use_cases/save_work_uc.h"
 
 #include <QCoro/QCoroTask>
@@ -63,7 +64,9 @@ QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWork
 
     // Create use case that will be owned by the command
     std::unique_ptr<ILoadWorkUnitOfWork> uow = std::make_unique<LoadWorkUnitOfWork>(*m_dbContext, m_eventRegistry);
-    auto useCase = std::make_shared<LoadWorkUseCase>(std::move(uow));
+    std::unique_ptr<LoadWorkUseCaseModule::LegacyUpgraderModule::ILegacyUpgrader> legacyUpgrader =
+        std::make_unique<LoadWorkUseCaseModule::LegacyUpgraderModule::LegacyUpgrader>();
+    auto useCase = std::make_shared<LoadWorkUseCase>(std::move(uow), std::move(legacyUpgrader));
 
     // Create command that owns the use case
     auto command = std::make_shared<Common::UndoRedo::UndoRedoCommand>("Load Work Command"_L1);

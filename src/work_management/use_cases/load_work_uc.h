@@ -28,22 +28,26 @@
 #include "entities/recent_work.h"
 #include "entities/root.h"
 #include "entities/work.h"
-#include "i_load_work_uow.h"
+#include "load_work_uc/i_legacy_upgrader.h"
+#include "load_work_uc/i_load_work_uow.h"
 #include "work_management_dtos.h"
 #include <QList>
 #include <memory>
 
 namespace Skribisto::WorkManagement
 {
+namespace LegacyUpgrader = Skribisto::WorkManagement::LoadWorkUseCaseModule::LegacyUpgraderModule;
 
 class LoadWorkUseCase
 {
   public:
-    LoadWorkUseCase(std::unique_ptr<ILoadWorkUnitOfWork> uow);
+    LoadWorkUseCase(std::unique_ptr<ILoadWorkUnitOfWork> uow,
+                    std::unique_ptr<LegacyUpgrader::ILegacyUpgrader> legacyUpgrader);
     bool execute(const LoadWorkDto &loadWorkDto);
 
   private:
     std::unique_ptr<ILoadWorkUnitOfWork> m_uow;
+    std::unique_ptr<LegacyUpgrader::ILegacyUpgrader> m_legacyUpgrader;
 };
 
 } // namespace Skribisto::WorkManagement
