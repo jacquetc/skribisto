@@ -705,7 +705,7 @@ SKRResult Upgrader::upgradeSQLite(const QString &sqlDbConnectionName)
 
         QTextDocument *textDocument = new QTextDocument();
 
-        for (int treeItemId : qAsConst(textIdList))
+        for (int treeItemId : textIdList)
         {
             // convert TEXT markdown content into HTML
 
@@ -1066,7 +1066,7 @@ SKRResult Upgrader::upgradeSQLite(const QString &sqlDbConnectionName)
 
         MarkdownTextDocument *textDocument = new MarkdownTextDocument();
 
-        for (int treeItemId : qAsConst(textIdList))
+        for (int treeItemId : textIdList)
         {
             // convert TEXT HTML content into markdown
 
@@ -1137,7 +1137,7 @@ SKRResult Upgrader::upgradeSQLite(const QString &sqlDbConnectionName)
 
             MarkdownTextDocument *textDocument = new MarkdownTextDocument();
 
-            for (int treeItemId : qAsConst(textIdList))
+            for (int treeItemId : textIdList)
             {
                 // convert TEXT HTML content into markdown
 

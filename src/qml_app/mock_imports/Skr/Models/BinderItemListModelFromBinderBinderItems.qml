@@ -1,7 +1,8 @@
 import QtQuick
 
 ListModel {
-    property int workId: 1
+    property int binderId: 1
+    property int parentId: 1
 
     ListElement {
         binderTags: [1, 2, 3]
