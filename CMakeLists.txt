@@ -7,9 +7,6 @@ version_from_git(
         TIMESTAMP "%Y%m%d%H%M%S"
 )
 
-add_definitions(-DSKR_VERSION=${VERSION})
-add_definitions(-DSKR_SEMANTIC_VERSION=${SEMVER})
-add_definitions(-DSKR_GIT_TAG=${GIT_TAG})
 add_compile_definitions(SKR_VERSION=${VERSION})
 set(SKR_VERSION ${VERSION})
 add_compile_definitions(SKR_SEMANTIC_VERSION=${SEMVER})
@@ -24,7 +21,7 @@ set(SKR_VERSION_PATCH ${VERSION_PATCH})
 
 project(skribisto VERSION ${SKR_VERSION} LANGUAGES CXX)
 
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.21)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)

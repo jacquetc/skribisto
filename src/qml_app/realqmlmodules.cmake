@@ -7,6 +7,6 @@ add_subdirectory(real_imports)
 # ${APP_NAME} by ${CMAKE_WORK_NAME} or by the name of your work
 target_link_libraries(${APP_NAME} PRIVATE
         skribisto-qml-controllersplugin
-        #skribisto-qml--modelsplugin
-        #skribisto-qml--singlesplugin
+        #skribisto-qml-modelsplugin
+        #skribisto-qml-singlesplugin
 )

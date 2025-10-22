@@ -3,7 +3,7 @@
 find_package(Qt6 COMPONENTS Core Quick Qml REQUIRED)
 find_package(QCoro6 REQUIRED COMPONENTS Core Qml)
 
-set(PLUGIN_NAME skribisto-qml--models)
+set(PLUGIN_NAME skribisto-qml-models)
 
 qt_add_library(${PLUGIN_NAME} STATIC)
 
