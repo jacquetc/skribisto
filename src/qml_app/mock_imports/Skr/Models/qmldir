@@ -3,3 +3,6 @@
 Module Models
 BinderItemListModelFromBinderBinderItems 1.0 BinderItemListModelFromBinderBinderItems.qml
 BinderListModelFromWorkBinders 1.0 BinderListModelFromWorkBinders.qml
+BinderTagListModelFromWorkTags 1.0 BinderTagListModelFromWorkTags.qml
+BinderTagListModelFromBinderItemTags 1.0 BinderTagListModelFromBinderItemTags.qml
+RecentWorkListModelFromRootRecentWorks 1.0 RecentWorkListModelFromRootRecentWorks.qml
