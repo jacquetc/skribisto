@@ -58,7 +58,7 @@ target_include_directories(${LIBRARY_NAME} PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-target_link_libraries(${LIBRARY_NAME} PRIVATE skribisto-common)
+target_link_libraries(${LIBRARY_NAME} PUBLIC skribisto-common)
 
 target_link_libraries(${LIBRARY_NAME}
         PRIVATE Qt6::Core
