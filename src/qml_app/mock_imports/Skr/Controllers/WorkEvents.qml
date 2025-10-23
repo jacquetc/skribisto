@@ -5,7 +5,8 @@ pragma Singleton
 import QtQuick
 
 QtObject {
-    signal created(list<int> newIds)
-    signal removed(list<int> removedIds)
-    signal updated(list<int> updatedIds)
+    signal created(var dtos)
+    signal relationshipChanged(int id, int relationship, var relatedIds)
+    signal removed(var ids)
+    signal updated(var dtos)
 }

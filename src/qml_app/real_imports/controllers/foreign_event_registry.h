@@ -41,7 +41,6 @@ struct ForeignEventDispatcher
     static Skribisto::Common::DirectAccess::EventRegistry *create(QQmlEngine *, QJSEngine *engine)
     {
         s_singletonInstance = Skribisto::Common::ServiceLocator::instance()->eventRegistry();
-        ;
 
         // The instance has to exist before it is used. We cannot replace it.
         Q_ASSERT(s_singletonInstance);

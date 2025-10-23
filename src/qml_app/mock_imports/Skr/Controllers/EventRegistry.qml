@@ -33,4 +33,7 @@ QtObject {
         return RecentWorkEvents;
     }
 
+    function dictWord() {
+        return DictWordEvents;
+    }
 }

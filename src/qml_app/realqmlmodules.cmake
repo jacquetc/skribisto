@@ -8,5 +8,5 @@ add_subdirectory(real_imports)
 target_link_libraries(${APP_NAME} PRIVATE
         skribisto-qml-controllersplugin
         #skribisto-qml-modelsplugin
-        #skribisto-qml-singlesplugin
+        skribisto-qml-singlesplugin
 )

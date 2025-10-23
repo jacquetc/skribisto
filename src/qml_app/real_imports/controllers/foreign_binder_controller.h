@@ -75,12 +75,6 @@ struct ForeignBinderController : public QObject
         return m_controller->setRelationshipIds(binderId, relationship, relatedIds);
     }
 
-    Q_INVOKABLE QCoro::QmlTask getRelationshipIdsMany(
-        const QList<int> &binderIds, Skribisto::DirectAccess::Binder::BinderRelationshipField relationship)
-    {
-        return m_controller->getRelationshipIdsMany(binderIds, relationship);
-    }
-
     Q_INVOKABLE QCoro::QmlTask getRelationshipIdsCount(
         int binderId, Skribisto::DirectAccess::Binder::BinderRelationshipField relationship)
     {

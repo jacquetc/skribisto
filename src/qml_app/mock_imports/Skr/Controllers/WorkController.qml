@@ -6,34 +6,48 @@ import QtQuick
 QtObject {
     id: controller
 
-    function create(dto) {
-        // create random id
-        var newId = Math.floor(Math.random() * 1000000);
-        dto["id"] = newId;
+    function create(dtos) {
+        for (var i = 0; i < dtos.length; i++) {
+            const dto = dtos[i];
+            // create random id
+            dto["id"] = Math.floor(Math.random() * 1000000);
+        }
 
         // mocking QCoro::Task
+        let task;
         var component = Qt.createComponent("QCoroQmlTask.qml");
         if (component.status === Component.Ready) {
-            var task = component.createObject(controller);
-            task.setValue(dto);
+            task = component.createObject(controller);
+            task.setValue(dtos);
             task.setDelay(50);
             task.setSignalFn(function () {
-                EventRegistry.work().created(dto);
+                EventRegistry.work().created(dtos);
             });
         }
 
         return task;
     }
-    function get(id) {
+    function get(ids) {
+        let dtos = [];
+        for (var i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            let dto = {};
+            dto["id"] = id;
+            dto["createdAt"] = "2023-10-01T12:00:00Z";
+            dto["updatedAt"] = "2023-10-01T12:00:00Z";
+            dto["title"] = "Work " + id;
+            dto["dictLanguage"] = "en_US";
+            dto["binders"] = [];
+            dto["tags"] = [];
+            dtos.push(dto);
+        }
         // mocking QCoro::Task
+        let task;
         var component = Qt.createComponent("QCoroQmlTask.qml");
         if (component.status === Component.Ready) {
-            var task = component.createObject(controller);
-            task.setValue(dto);
+            task = component.createObject(controller);
+            task.setValue(dtos);
             task.setDelay(50);
-            task.setSignalFn(function () {
-                EventRegistry.work().getReplied(id);
-            });
         }
 
         return task;
@@ -42,35 +56,43 @@ QtObject {
         return {
             "createdAt": "",
             "updatedAt": "",
-            "name": "",
-            "binders": []
+            "title": "",
+            "dictLanguage": "",
+            "binders": [],
+            "tags": []
         };
     }
-    function remove(id) {
+    function remove(ids) {
         // mocking QCoro::Task
+        let task;
         var component = Qt.createComponent("QCoroQmlTask.qml");
         if (component.status === Component.Ready) {
-            var task = component.createObject(controller);
-            task.setValue(dto);
+            task = component.createObject(controller);
+            task.setValue(ids);
             task.setDelay(50);
             task.setSignalFn(function () {
-                EventRegistry.work().removed(id);
+                EventRegistry.work().removed(ids);
             });
         }
 
         return task;
     }
-    function update(dto) {
-
+    function update(dtos) {
         // mocking QCoro::Task
+        let task;
         var component = Qt.createComponent("QCoroQmlTask.qml");
         if (component.status === Component.Ready) {
-            var task = component.createObject(controller);
-            task.setValue(dto);
+            task = component.createObject(controller);
+            task.setValue(dtos);
             task.setDelay(50);
             task.setSignalFn(function () {
-                EventRegistry.work().updated(dto);
-                EventRegistry.work().allRelationsInvalidated(dto.id);
+                EventRegistry.work().updated(dtos);
+                for (var i = 0; i < dtos.length; i++) {
+                    const dto = dtos[i];
+                    if (dto && dto.id !== undefined) {
+                        EventRegistry.work().allRelationsInvalidated(dto.id);
+                    }
+                }
             });
         }
 

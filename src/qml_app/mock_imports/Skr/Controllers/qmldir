@@ -5,5 +5,17 @@ RootController 1.0 RootController.qml
 singleton RootEvents 1.0 RootEvents.qml
 WorkController 1.0 WorkController.qml
 singleton WorkEvents 1.0 WorkEvents.qml
+BinderController 1.0 BinderController.qml
+singleton BinderEvents 1.0 BinderEvents.qml
+BinderItemController 1.0 BinderItemController.qml
+singleton BinderItemEvents 1.0 BinderItemEvents.qml
+BinderTagController 1.0 BinderTagController.qml
+singleton BinderTagEvents 1.0 BinderTagEvents.qml
+ContentController 1.0 ContentController.qml
+singleton ContentEvents 1.0 ContentEvents.qml
+DictWordController 1.0 DictWordController.qml
+singleton DictWordEvents 1.0 DictWordEvents.qml
+RecentWorkController 1.0 RecentWorkController.qml
+singleton RecentWorkEvents 1.0 RecentWorkEvents.qml
 singleton EventRegistry 1.0 EventRegistry.qml
 QCoroQmlTask 1.0 QCoroQmlTask.qml

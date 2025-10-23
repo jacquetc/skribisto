@@ -75,12 +75,6 @@ struct ForeignWorkController : public QObject
         return m_controller->setRelationshipIds(workId, relationship, relatedIds);
     }
 
-    Q_INVOKABLE QCoro::QmlTask getRelationshipIdsMany(const QList<int> &workIds,
-                                                      Skribisto::DirectAccess::Work::WorkRelationshipField relationship)
-    {
-        return m_controller->getRelationshipIdsMany(workIds, relationship);
-    }
-
     Q_INVOKABLE QCoro::QmlTask getRelationshipIdsCount(
         int workId, Skribisto::DirectAccess::Work::WorkRelationshipField relationship)
     {

@@ -75,12 +75,6 @@ struct ForeignRootController : public QObject
         return m_controller->setRelationshipIds(rootId, relationship, relatedIds);
     }
 
-    Q_INVOKABLE QCoro::QmlTask getRelationshipIdsMany(const QList<int> &rootIds,
-                                                      Skribisto::DirectAccess::Root::RootRelationshipField relationship)
-    {
-        return m_controller->getRelationshipIdsMany(rootIds, relationship);
-    }
-
     Q_INVOKABLE QCoro::QmlTask getRelationshipIdsCount(
         int rootId, Skribisto::DirectAccess::Root::RootRelationshipField relationship)
     {
