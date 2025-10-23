@@ -65,6 +65,13 @@ inline QList<QString> getSqlJunctionTableDefinitions()
                                   "    PRIMARY KEY (left_id, right_id)"
                                   ");");
 
+    // weak unordered :many-to-many junction table for tags
+    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS binder_item_tags_to_binder_tag_junction ("
+                                  "    left_id INTEGER NOT NULL,"
+                                  "    right_id INTEGER NOT NULL,"
+                                  "    PRIMARY KEY (left_id, right_id)"
+                                  ");");
+
     return definitions;
 }
 

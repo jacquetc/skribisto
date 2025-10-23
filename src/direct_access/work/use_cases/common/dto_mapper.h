@@ -52,6 +52,7 @@ class DtoMapper
         work.title = dto.title;
         work.dictLanguage = dto.dictLanguage;
         work.binders = dto.binders;
+        work.tags = dto.tags;
         return work;
     }
 
@@ -64,13 +65,14 @@ class DtoMapper
         work.title = dto.title;
         work.dictLanguage = dto.dictLanguage;
         work.binders = dto.binders;
+        work.tags = dto.tags;
         return work;
     }
 
     static WorkDto toDto(const SCE::Work &entity)
     {
-        return WorkDto{entity.id,    entity.createdAt,    entity.updatedAt,
-                       entity.title, entity.dictLanguage, entity.binders};
+        return WorkDto{entity.id,           entity.createdAt, entity.updatedAt, entity.title,
+                       entity.dictLanguage, entity.binders,   entity.tags};
     }
 
     static QList<SCE::Work> toEntityList(const QList<CreateWorkDto> &dtos)
@@ -112,7 +114,10 @@ class DtoMapper
         {
         case WorkRelationshipField::Binders:
             return SCDWork::WorkRelationshipField::Binders;
+        case WorkRelationshipField::Tags:
+            return SCDWork::WorkRelationshipField::Tags;
         }
+
         return SCDWork::WorkRelationshipField::Binders; // fallback
     }
 };

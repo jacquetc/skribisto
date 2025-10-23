@@ -35,6 +35,7 @@ Q_NAMESPACE
 enum class WorkRelationshipField
 {
     Binders,
+    Tags
 };
 Q_ENUM_NS(WorkRelationshipField)
 
@@ -47,6 +48,7 @@ struct WorkDto
     Q_PROPERTY(QString title MEMBER title)
     Q_PROPERTY(QString dictLanguage MEMBER dictLanguage)
     Q_PROPERTY(QList<int> binders MEMBER binders)
+    Q_PROPERTY(QList<int> tags MEMBER tags)
 
   public:
     int id = 0;
@@ -55,13 +57,15 @@ struct WorkDto
     QString title;
     QString dictLanguage;
     QList<int> binders = {};
+    QList<int> tags = {};
     WorkDto() = default;
     ~WorkDto() = default;
     WorkDto(const WorkDto &) = default;
     WorkDto &operator=(const WorkDto &) = default;
     WorkDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
-            const QString &dictLanguage, const QList<int> &binders)
-        : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), dictLanguage(dictLanguage), binders(binders)
+            const QString &dictLanguage, const QList<int> &binders, const QList<int> &tags)
+        : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), dictLanguage(dictLanguage),
+          binders(binders), tags(tags)
     {
     }
 };
@@ -74,6 +78,7 @@ struct CreateWorkDto
     Q_PROPERTY(QString title MEMBER title)
     Q_PROPERTY(QString dictLanguage MEMBER dictLanguage)
     Q_PROPERTY(QList<int> binders MEMBER binders)
+    Q_PROPERTY(QList<int> tags MEMBER tags)
 
   public:
     QDateTime createdAt;
@@ -81,13 +86,15 @@ struct CreateWorkDto
     QString title;
     QString dictLanguage;
     QList<int> binders = {};
+    QList<int> tags = {};
     CreateWorkDto() = default;
     ~CreateWorkDto() = default;
     CreateWorkDto(const CreateWorkDto &) = default;
     CreateWorkDto &operator=(const CreateWorkDto &) = default;
     CreateWorkDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
-                  const QString &dictLanguage, const QList<int> &binders)
-        : createdAt(createdAt), updatedAt(updatedAt), title(title), dictLanguage(dictLanguage), binders(binders)
+                  const QString &dictLanguage, const QList<int> &binders, const QList<int> &tags)
+        : createdAt(createdAt), updatedAt(updatedAt), title(title), dictLanguage(dictLanguage), binders(binders),
+          tags(tags)
     {
     }
 };

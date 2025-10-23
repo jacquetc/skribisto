@@ -37,6 +37,7 @@ enum class BinderItemRelationshipField
     Contents,
     BinderItems,
     ParentItem,
+    Tags
 };
 Q_ENUM_NS(BinderItemRelationshipField)
 
@@ -53,6 +54,7 @@ struct BinderItemDto
     Q_PROPERTY(QList<int> contents MEMBER contents)
     Q_PROPERTY(QList<int> binderItems MEMBER binderItems)
     Q_PROPERTY(int parentItem MEMBER parentItem)
+    Q_PROPERTY(QList<int> tags MEMBER tags)
 
   public:
     int id = 0;
@@ -64,6 +66,7 @@ struct BinderItemDto
     QString dictLanguage;
     QList<int> contents = {};
     QList<int> binderItems = {};
+    QList<int> tags = {};
     int parentItem = 0;
     BinderItemDto() = default;
     ~BinderItemDto() = default;
@@ -71,9 +74,9 @@ struct BinderItemDto
     BinderItemDto &operator=(const BinderItemDto &) = default;
     BinderItemDto(const int id, const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                   const QString &subTitle, const QString &role, const QString &dictLanguage, const QList<int> &contents,
-                  const QList<int> &binderItems, const int parentItem)
+                  const QList<int> &binderItems, const int parentItem, const QList<int> &tags)
         : id(id), createdAt(createdAt), updatedAt(updatedAt), title(title), subTitle(subTitle), role(role),
-          dictLanguage(dictLanguage), contents(contents), binderItems(binderItems), parentItem(parentItem)
+          dictLanguage(dictLanguage), contents(contents), binderItems(binderItems), parentItem(parentItem), tags(tags)
     {
     }
 };
@@ -90,6 +93,7 @@ struct CreateBinderItemDto
     Q_PROPERTY(QList<int> contents MEMBER contents)
     Q_PROPERTY(QList<int> binderItems MEMBER binderItems)
     Q_PROPERTY(int parentItem MEMBER parentItem)
+    Q_PROPERTY(QList<int> tags MEMBER tags)
 
   public:
     QDateTime createdAt;
@@ -100,6 +104,7 @@ struct CreateBinderItemDto
     QString dictLanguage;
     QList<int> contents = {};
     QList<int> binderItems = {};
+    QList<int> tags = {};
     int parentItem = 0;
     CreateBinderItemDto() = default;
     ~CreateBinderItemDto() = default;
@@ -107,9 +112,10 @@ struct CreateBinderItemDto
     CreateBinderItemDto &operator=(const CreateBinderItemDto &) = default;
     CreateBinderItemDto(const QDateTime &createdAt, const QDateTime &updatedAt, const QString &title,
                         const QString &subTitle, const QString &role, const QString &dictLanguage,
-                        const QList<int> &contents, const QList<int> &binderItems, const int parentItem)
+                        const QList<int> &contents, const QList<int> &binderItems, const int parentItem,
+                        const QList<int> &tags)
         : createdAt(createdAt), updatedAt(updatedAt), title(title), subTitle(subTitle), role(role),
-          dictLanguage(dictLanguage), contents(contents), binderItems(binderItems), parentItem(parentItem)
+          dictLanguage(dictLanguage), contents(contents), binderItems(binderItems), parentItem(parentItem), tags(tags)
     {
     }
 };

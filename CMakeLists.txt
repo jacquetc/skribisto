@@ -40,7 +40,7 @@ option(SKR_BUILD_TESTS "Build tests" OFF)
 option(SKR_BUILD_WITH_MOCKS "Build with mocks" OFF)
 
 # forbid some old things
-add_definitions(-DQT_NO_FOREACH)
+add_compile_definitions(QT_NO_FOREACH)
 
 
 message("------------------CMAKE_SYSTEM_NAME---------------------")

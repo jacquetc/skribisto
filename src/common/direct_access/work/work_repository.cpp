@@ -97,6 +97,22 @@ QList<int> SCDWork::WorkRepository::remove(const QList<int> &workIds)
         binderRepository->remove(binderIds.values());
     }
 
+    // cascade deletion on tags
+    QHash<int, QList<int>> leftIdToTagIdsHash = getRelationshipIdsMany(workIds, WorkRelationshipField::Tags);
+    // concatenate all rightIds
+    QSet<int> tagIds; // renamed to avoid shadowing
+    tagIds.reserve(leftIdToTagIdsHash.size());
+    for (const auto &ids : leftIdToTagIdsHash)
+    {
+        QSet<int> idsSet(ids.begin(), ids.end());
+        tagIds.unite(idsSet); // use unite to combine sets
+    }
+    if (!tagIds.isEmpty())
+    {
+        auto tagRepository = RepositoryFactory::createBinderTagRepository(m_dbSubContext, m_eventRegistry);
+        tagRepository->remove(tagIds.values());
+    }
+
     // Remove works and emit events only for the explicitly removed works
     auto removed = m_table->removeMany(workIds);
     emitRemoved(removed);

@@ -50,15 +50,8 @@ inline QList<QString> getSqlJunctionTableDefinitions()
                                   "    PRIMARY KEY (left_id, right_id)"
                                   ");");
 
-    // one-to-one junction table for author
-    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS work_author_to_author_junction ("
-                                  "    left_id INTEGER NOT NULL,"
-                                  "    right_id INTEGER NOT NULL,"
-                                  "    PRIMARY KEY (left_id, right_id)"
-                                  ");");
-
     // unordered one-to-many junction table for tags
-    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS work_tags_to_tag_junction ("
+    definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS work_tags_to_binder_tag_junction ("
                                   "    left_id INTEGER NOT NULL,"
                                   "    right_id INTEGER NOT NULL,"
                                   "    PRIMARY KEY (left_id, right_id)"

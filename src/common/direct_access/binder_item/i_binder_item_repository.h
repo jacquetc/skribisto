@@ -33,6 +33,7 @@ enum class BinderItemRelationshipField
     Contents,
     BinderItems,
     ParentItem,
+    Tags
 };
 
 class IBinderItemRepository

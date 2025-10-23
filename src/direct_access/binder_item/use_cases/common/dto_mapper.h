@@ -56,6 +56,7 @@ class DtoMapper
         binderItem.contents = dto.contents;
         binderItem.binderItems = dto.binderItems;
         binderItem.parentItem = (dto.parentItem == 0) ? std::nullopt : std::make_optional(dto.parentItem);
+        binderItem.tags = dto.tags;
         return binderItem;
     }
 
@@ -72,6 +73,7 @@ class DtoMapper
         binderItem.contents = dto.contents;
         binderItem.binderItems = dto.binderItems;
         binderItem.parentItem = (dto.parentItem == 0) ? std::nullopt : std::make_optional(dto.parentItem);
+        binderItem.tags = dto.tags;
         return binderItem;
     }
 
@@ -81,7 +83,8 @@ class DtoMapper
                              entity.updatedAt,    entity.title,
                              entity.subTitle,     entity.role,
                              entity.dictLanguage, entity.contents,
-                             entity.binderItems,  entity.parentItem.has_value() ? entity.parentItem.value() : 0};
+                             entity.binderItems,  entity.parentItem.has_value() ? entity.parentItem.value() : 0,
+                             entity.tags};
     }
 
     static QList<SCE::BinderItem> toEntityList(const QList<CreateBinderItemDto> &dtos)
@@ -127,6 +130,8 @@ class DtoMapper
             return SCDBinderItem::BinderItemRelationshipField::BinderItems;
         case BinderItemRelationshipField::ParentItem:
             return SCDBinderItem::BinderItemRelationshipField::ParentItem;
+        case BinderItemRelationshipField::Tags:
+            return SCDBinderItem::BinderItemRelationshipField::Tags;
         }
         return SCDBinderItem::BinderItemRelationshipField::Contents; // fallback
     }

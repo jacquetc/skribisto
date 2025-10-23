@@ -37,7 +37,8 @@ namespace SCE = Skribisto::Common::Entities;
 
 // forward relationship junction tables
 const QString WORK_BINDERS_JUNCTION = "work_binders_to_binder_junction"_L1;
-// backward relationship junction tables
+const QString WORK_TAGS_JUNCTION = "work_tags_to_binder_tag_junction"_L1;
+//  backward relationship junction tables
 const QString ROOT_WORKS_JUNCTION = "root_works_to_work_junction"_L1;
 
 SCDWork::WorkTable::WorkTable(DbSubContext &dbSubContext) : m_dbSubContext(dbSubContext)
@@ -103,6 +104,10 @@ QList<SCE::Work> SCDWork::WorkTable::createMany(const QList<SCE::Work> &works)
             {
                 JunctionTableOps::OrderedOneToMany::upsertRightIds(db, r.id, WORK_BINDERS_JUNCTION, r.binders);
             }
+            if (!r.tags.isEmpty())
+            {
+                JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, r.id, WORK_TAGS_JUNCTION, r.tags);
+            }
 
             created.append(r);
         }
@@ -153,6 +158,7 @@ QList<SCE::Work> SCDWork::WorkTable::updateMany(const QList<SCE::Work> &works)
         {
             // Handle junction table relationships
             JunctionTableOps::OrderedOneToMany::upsertRightIds(db, r.id, WORK_BINDERS_JUNCTION, r.binders);
+            JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, r.id, WORK_TAGS_JUNCTION, r.tags);
 
             updated.append(r);
         }
@@ -229,11 +235,14 @@ QList<SCE::Work> SCDWork::WorkTable::findMany(const QList<int> &ids) const
         // Get relationship data for all found IDs
         QHash<int, QList<int>> bindersMap =
             JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, foundIds, WORK_BINDERS_JUNCTION);
+        QHash<int, QList<int>> tagsMap =
+            JunctionTableOps::UnorderedOneToMany::getRightIdsMany(db, foundIds, WORK_TAGS_JUNCTION);
 
         // Build result with relationships populated
         for (auto &work : result)
         {
             work.binders = bindersMap.value(work.id);
+            work.tags = tagsMap.value(work.id);
         }
 
         // Cache the result
@@ -252,6 +261,7 @@ QList<int> SCDWork::WorkTable::removeMany(const QList<int> &ids)
 
     // Clean up junction table relationships first
     JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, WORK_BINDERS_JUNCTION);
+    JunctionTableOps::UnorderedOneToMany::removeWithLeftIdsMany(db, ids, WORK_TAGS_JUNCTION);
     // Clean up junction backward table relationships
     JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, ids, ROOT_WORKS_JUNCTION);
 
@@ -282,6 +292,9 @@ void SCDWork::WorkTable::setRelationshipIds(int workId, WorkRelationshipField re
     case WorkRelationshipField::Binders:
         JunctionTableOps::OrderedOneToMany::upsertRightIds(db, workId, WORK_BINDERS_JUNCTION, relatedId);
         break;
+    case WorkRelationshipField::Tags:
+        JunctionTableOps::UnorderedOneToMany::upsertRightIds(db, workId, WORK_TAGS_JUNCTION, relatedId);
+        break;
     }
 
     // Invalidate cache for relationship changes
@@ -308,6 +321,11 @@ QHash<int, QList<int>> SCDWork::WorkTable::getRelationshipIdsMany(const QList<in
     case WorkRelationshipField::Binders:
         result = JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, workIds, WORK_BINDERS_JUNCTION);
         break;
+
+    case WorkRelationshipField::Tags:
+        result = JunctionTableOps::UnorderedOneToMany::getRightIdsMany(db, workIds, WORK_TAGS_JUNCTION);
+        break;
+
     default:
 
         throw std::invalid_argument("Unhandled relationship type");
@@ -329,6 +347,11 @@ int SCDWork::WorkTable::getRelationshipIdsCount(int workId, WorkRelationshipFiel
     case WorkRelationshipField::Binders:
         result = JunctionTableOps::OrderedOneToMany::getRightIdsCount(db, workId, WORK_BINDERS_JUNCTION);
         break;
+
+    case WorkRelationshipField::Tags:
+        result = JunctionTableOps::UnorderedOneToMany::getRightIdsCount(db, workId, WORK_TAGS_JUNCTION);
+        break;
+
     default:
 
         throw std::invalid_argument("Unhandled relationship type");
@@ -346,6 +369,11 @@ QList<int> SCDWork::WorkTable::getRelationshipIdsInRange(int workId, WorkRelatio
     case WorkRelationshipField::Binders:
         result =
             JunctionTableOps::OrderedOneToMany::getRightIdsInRange(db, workId, WORK_BINDERS_JUNCTION, offset, limit);
+        break;
+
+    case WorkRelationshipField::Tags:
+        result =
+            JunctionTableOps::UnorderedOneToMany::getRightIdsInRange(db, workId, WORK_TAGS_JUNCTION, offset, limit);
         break;
 
     default:

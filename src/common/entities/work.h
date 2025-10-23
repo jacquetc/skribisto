@@ -34,6 +34,7 @@ struct Work
     QString title;
     QString dictLanguage;
     QList<int> binders;
+    QList<int> tags;
     // Constructeurs optionnels
     Work() = default;
     Work(int id, const QString &title) : id(id), title(title)

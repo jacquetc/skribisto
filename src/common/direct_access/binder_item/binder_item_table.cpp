@@ -22,6 +22,7 @@
 #include "database/db_context.h"
 #include "database/junction_table_ops/one_to_one.h"
 #include "database/junction_table_ops/ordered_one_to_many.h"
+#include "database/junction_table_ops/unordered_many_to_many.h"
 #include "database/junction_table_ops/unordered_one_to_many.h"
 #include "database/table_cache.h"
 #include "entities/binder_item.h"
@@ -40,6 +41,7 @@ namespace SCE = Skribisto::Common::Entities;
 const QString BINDER_ITEM_CONTENTS_JUNCTION = "binder_item_contents_to_content_junction"_L1;
 const QString BINDER_ITEM_BINDER_ITEMS_JUNCTION = "binder_item_binder_items_to_binder_item_junction"_L1;
 const QString BINDER_ITEM_PARENT_ITEM_JUNCTION = "binder_item_parent_item_to_content_junction"_L1;
+const QString BINDER_ITEM_TAGS_JUNCTION = "binder_item_tags_to_binder_tag_junction"_L1;
 // backward relationship junction tables
 const QString BINDER_BINDER_ITEMS_JUNCTION = "binder_binder_items_to_binder_item_junction"_L1;
 const QString BINDER_ITEM_BINDER_ITEMS_JUNCTION_BACKWARD = "binder_item_binder_items_to_binder_item_junction"_L1;
@@ -126,6 +128,11 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::createMany(const QList<SC
                                                           r.parentItem.value());
             }
 
+            if (!r.tags.isEmpty())
+            {
+                JunctionTableOps::UnorderedManyToMany::upsertRightIds(db, r.id, BINDER_ITEM_TAGS_JUNCTION, r.tags);
+            }
+
             created.append(r);
         }
     }
@@ -182,6 +189,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::updateMany(const QList<SC
             JunctionTableOps::OrderedOneToMany::upsertRightIds(db, r.id, BINDER_ITEM_BINDER_ITEMS_JUNCTION,
                                                                r.binderItems);
             JunctionTableOps::OneToOne::upsertRightId(db, r.id, BINDER_ITEM_PARENT_ITEM_JUNCTION, r.parentItem);
+            JunctionTableOps::UnorderedManyToMany::upsertRightIds(db, r.id, BINDER_ITEM_TAGS_JUNCTION, r.tags);
 
             updated.append(r);
         }
@@ -264,6 +272,8 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::findMany(const QList<int>
             JunctionTableOps::OrderedOneToMany::getRightIdsMany(db, foundIds, BINDER_ITEM_BINDER_ITEMS_JUNCTION);
         QHash<int, std::optional<int>> parentMap =
             JunctionTableOps::OneToOne::getRightIdMany(db, foundIds, BINDER_ITEM_PARENT_ITEM_JUNCTION);
+        QHash<int, QList<int>> tagsMap =
+            JunctionTableOps::UnorderedManyToMany::getRightIdsMany(db, foundIds, BINDER_ITEM_TAGS_JUNCTION);
 
         // Build result with relationships populated
         for (auto &binderItem : result)
@@ -271,6 +281,7 @@ QList<SCE::BinderItem> SCDBinderItem::BinderItemTable::findMany(const QList<int>
             binderItem.contents = worksMap.value(binderItem.id);
             binderItem.binderItems = binderItemsMap.value(binderItem.id);
             binderItem.parentItem = parentMap.value(binderItem.id);
+            binderItem.tags = tagsMap.value(binderItem.id);
         }
 
         // Cache the result
@@ -291,6 +302,7 @@ QList<int> SCDBinderItem::BinderItemTable::removeMany(const QList<int> &ids)
     JunctionTableOps::UnorderedOneToMany::removeWithLeftIdsMany(db, ids, BINDER_ITEM_CONTENTS_JUNCTION);
     JunctionTableOps::OrderedOneToMany::removeWithLeftIdsMany(db, ids, BINDER_ITEM_BINDER_ITEMS_JUNCTION);
     JunctionTableOps::OneToOne::removeWithLeftIdMany(db, ids, BINDER_ITEM_PARENT_ITEM_JUNCTION);
+    JunctionTableOps::UnorderedManyToMany::removeWithLeftIdsMany(db, ids, BINDER_ITEM_TAGS_JUNCTION);
 
     // Clean up junction backward table relationships
     JunctionTableOps::OrderedOneToMany::removeWithRightIdsMany(db, ids, BINDER_BINDER_ITEMS_JUNCTION);
@@ -345,6 +357,10 @@ void SCDBinderItem::BinderItemTable::setRelationshipIds(int binderItemId, Binder
         }
         break;
 
+    case BinderItemRelationshipField::Tags:
+        JunctionTableOps::UnorderedManyToMany::upsertRightIds(db, binderItemId, BINDER_ITEM_TAGS_JUNCTION, relatedId);
+        break;
+
     default:
         throw std::invalid_argument("Unhandled relationship type");
     }
@@ -396,6 +412,10 @@ QHash<int, QList<int>> SCDBinderItem::BinderItemTable::getRelationshipIdsMany(
     }
     break;
 
+    case BinderItemRelationshipField::Tags:
+        result = JunctionTableOps::UnorderedManyToMany::getRightIdsMany(db, binderItemIds, BINDER_ITEM_TAGS_JUNCTION);
+        break;
+
     default:
 
         throw std::invalid_argument("Unhandled relationship type");
@@ -425,7 +445,9 @@ int SCDBinderItem::BinderItemTable::getRelationshipIdsCount(int binderItemId, Bi
     case BinderItemRelationshipField::ParentItem:
         result = JunctionTableOps::OneToOne::getRightIdCount(db, binderItemId, BINDER_ITEM_PARENT_ITEM_JUNCTION);
         break;
-
+    case BinderItemRelationshipField::Tags:
+        result = JunctionTableOps::UnorderedManyToMany::getRightIdsCount(db, binderItemId, BINDER_ITEM_TAGS_JUNCTION);
+        break;
     default:
 
         throw std::invalid_argument("Unhandled relationship type");
@@ -452,7 +474,10 @@ QList<int> SCDBinderItem::BinderItemTable::getRelationshipIdsInRange(int binderI
     case BinderItemRelationshipField::ParentItem:
         result = JunctionTableOps::OneToOne::getRightIdInRange(db, binderItemId, BINDER_ITEM_PARENT_ITEM_JUNCTION);
         break;
-
+    case BinderItemRelationshipField::Tags:
+        result = JunctionTableOps::UnorderedManyToMany::getRightIdsInRange(db, binderItemId, BINDER_ITEM_TAGS_JUNCTION,
+                                                                           offset, limit);
+        break;
     default:
         throw std::invalid_argument("Unhandled relationship type");
     }

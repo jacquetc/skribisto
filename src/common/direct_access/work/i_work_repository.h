@@ -31,6 +31,7 @@ namespace Skribisto::Common::DirectAccess::Work
 enum class WorkRelationshipField
 {
     Binders,
+    Tags
 };
 
 class IWorkRepository
