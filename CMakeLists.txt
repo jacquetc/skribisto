@@ -1,4 +1,6 @@
 
+cmake_minimum_required(VERSION 3.21)
+
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/ ${CMAKE_SOURCE_DIR}/cmake/3rdparty/ ${CMAKE_MODULE_PATH})
 # git tag for version :
 include(VersionFromGit)
@@ -7,21 +9,31 @@ version_from_git(
         TIMESTAMP "%Y%m%d%H%M%S"
 )
 
-add_compile_definitions(SKR_VERSION=${VERSION})
+project(skribisto VERSION ${VERSION} LANGUAGES CXX)
+
 set(SKR_VERSION ${VERSION})
-add_compile_definitions(SKR_SEMANTIC_VERSION=${SEMVER})
-add_compile_definitions(SKR_GIT_TAG=${GIT_TAG})
-add_compile_definitions(SKR_VERSION_MAJOR=${VERSION_MAJOR})
 set(SKR_VERSION_MAJOR ${VERSION_MAJOR})
-add_compile_definitions(SKR_VERSION_MINOR=${VERSION_MINOR})
 set(SKR_VERSION_MINOR ${VERSION_MINOR})
-add_compile_definitions(SKR_VERSION_PATCH=${VERSION_PATCH})
 set(SKR_VERSION_PATCH ${VERSION_PATCH})
 
+add_library(project_options INTERFACE)
+target_compile_definitions(project_options INTERFACE
+        SKR_VERSION="${SKR_VERSION}"
+        SKR_SEMANTIC_VERSION="${SEMVER}"
+        SKR_GIT_TAG="${GIT_TAG}"
+        SKR_VERSION_MAJOR=${SKR_VERSION_MAJOR}
+        SKR_VERSION_MINOR=${SKR_VERSION_MINOR}
+        SKR_VERSION_PATCH=${SKR_VERSION_PATCH}
+        QT_NO_FOREACH
+)
 
-project(skribisto VERSION ${SKR_VERSION} LANGUAGES CXX)
-
-cmake_minimum_required(VERSION 3.21)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(SKR_DEBUG true)
+    target_compile_definitions(project_options INTERFACE SKR_DEBUG=true)
+else ()
+    set(SKR_DEBUG false)
+    target_compile_definitions(project_options INTERFACE SKR_DEBUG=false)
+endif ()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
@@ -29,19 +41,17 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 
-
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(QT_DEFAULT_MAJOR_VERSION 6)
 set(QT_MIN_VERSION "6.4.0")
 
+find_package(Qt6 ${QT_MIN_VERSION} COMPONENTS Core Sql Concurrent Gui Qml Quick QuickControls2 REQUIRED)
+find_package(QCoro6 REQUIRED COMPONENTS Core Qml)
+
 option(SKR_MOBILE_APP "Enable the touch GUI" OFF)
 option(SKR_BUILD_TESTS "Build tests" OFF)
 option(SKR_BUILD_WITH_MOCKS "Build with mocks" OFF)
-
-# forbid some old things
-add_compile_definitions(QT_NO_FOREACH)
-
 
 message("------------------CMAKE_SYSTEM_NAME---------------------")
 message("${CMAKE_SYSTEM_NAME}")
@@ -59,6 +69,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 include(CMakePackageConfigHelpers)
+include(cmake/InstallHelpers.cmake)
 
 if (NOT SKR_BUILD_WITH_MOCKS)
     message("Not building with mocks")
@@ -79,19 +90,6 @@ endif (SKR_BUILD_TESTS)
 
 #add_subdirectory(src/libskribisto-data/src)
 #add_subdirectory(src/libskribisto-backend/src)
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(SKR_DEBUG true)
-    add_compile_definitions(SKR_DEBUG=true)
-
-    #    add_subdirectory(src/libskribisto-common/tests)
-    #    add_subdirectory(src/libskribisto-data/tests)
-
-    # add_subdirectory(src/mobileapp/tests)
-else ()
-    set(SKR_DEBUG false)
-    add_compile_definitions(SKR_DEBUG=false)
-endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 if (IOS OR SKR_MOBILE_APP)
     #    add_subdirectory(src/mobileapp)

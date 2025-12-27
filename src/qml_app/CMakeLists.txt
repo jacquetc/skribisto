@@ -1,40 +1,24 @@
 # This file was generated automatically by Qleany's generator, edit at your own risk! 
 # If you do, be careful to not overwrite it when you run the generator again.
 
-cmake_minimum_required(VERSION 3.21)
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
-
-#option(SKR_BUILD_WITH_MOCKS "Build with mocks" OFF)
-
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Concurrent Sql QuickControls2)
-find_package(QCoro6 REQUIRED COMPONENTS Core Qml)
-
-# Set necessary compiler flags to enable coroutine support
-qcoro_enable_coroutines()
-
-if (Qt6_VERSION VERSION_GREATER_EQUAL 6.3)
-    qt_standard_project_setup()
-endif ()
-
 set(APP_NAME Skribisto)
 qt_add_executable(${APP_NAME} main.cpp)
+
+target_link_libraries(${APP_NAME} PRIVATE project_options)
 
 qt_add_resources(${APP_NAME} "configuration" PREFIX "/" FILES
         qtquickcontrols2.conf)
 
-
 target_link_libraries(
         ${APP_NAME}
-        PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui
-        Qt${QT_VERSION_MAJOR}::Quick Qt${QT_VERSION_MAJOR}::Qml Qt${QT_VERSION_MAJOR}::QuickControls2
-        Qt${QT_VERSION_MAJOR}::Concurrent Qt${QT_VERSION_MAJOR}::Sql)
+        PRIVATE Qt6::Core Qt6::Gui
+        Qt6::Quick Qt6::Qml Qt6::QuickControls2
+        Qt6::Concurrent Qt6::Sql)
+
 if (NOT SKR_BUILD_WITH_MOCKS)
     target_link_libraries(${APP_NAME} PRIVATE QCoro::Core QCoro::Qml)
     target_link_libraries(${APP_NAME} PRIVATE skribisto-common)
 endif ()
-
 
 qt6_add_qml_module(${APP_NAME}
         URI "Main"
@@ -45,25 +29,23 @@ qt6_add_qml_module(${APP_NAME}
 )
 
 add_subdirectory(content)
-
+add_subdirectory(Skr)
 
 target_link_libraries(${APP_NAME} PRIVATE
         contentplugin
 )
 
 if (SKR_BUILD_WITH_MOCKS)
-
     target_compile_definitions(${APP_NAME} PRIVATE BUILD_WITH_MOCKS)
-
     target_compile_definitions(${APP_NAME} PRIVATE QML_IMPORT_PATH="${CMAKE_CURRENT_SOURCE_DIR}/mock_imports")
     message("Using mock imports from: ${CMAKE_CURRENT_SOURCE_DIR}/mock_imports")
 else ()
-    include(${CMAKE_CURRENT_SOURCE_DIR}/realqmlmodules.cmake)
+    add_subdirectory(real_imports)
+    target_link_libraries(${APP_NAME} PRIVATE
+            skribisto-qml-controllersplugin
+            #skribisto-qml-modelsplugin
+            skribisto-qml-singlesplugin
+    )
 endif ()
 
-include(GNUInstallDirs)
-install(
-        TARGETS ${APP_NAME}
-        BUNDLE DESTINATION .
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+skr_install_target(${APP_NAME})

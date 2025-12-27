@@ -1,4 +1,4 @@
-set(FILE_LIST
+target_sources(${LIBRARY_NAME} PRIVATE
         recent_work_controller.cpp
         recent_work_controller.h
         recent_work_unit_of_work.cpp
@@ -15,6 +15,3 @@ set(FILE_LIST
         use_cases/update_uc.cpp
         use_cases/update_uc.h
 )
-foreach (file_path IN LISTS FILE_LIST)
-    list(APPEND ALL_SOURCE_FILES "recent_work/${file_path}")
-endforeach ()

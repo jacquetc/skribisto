@@ -1,10 +1,10 @@
-set(FILE_LIST
-        work_controller.cpp
-        work_controller.h
-        work_unit_of_work.cpp
-        work_unit_of_work.h
+target_sources(${LIBRARY_NAME} PRIVATE
+        binder_item_controller.cpp
+        binder_item_controller.h
+        binder_item_unit_of_work.cpp
+        binder_item_unit_of_work.h
         dtos.h
-        use_cases/i_work_unit_of_work.h
+        use_cases/i_binder_item_unit_of_work.h
         use_cases/create_uc.cpp
         use_cases/create_uc.h
         use_cases/common/dto_mapper.h
@@ -24,8 +24,7 @@ set(FILE_LIST
         use_cases/get_relationship_ids_count_uc.h
         use_cases/get_relationship_ids_in_range_uc.cpp
         use_cases/get_relationship_ids_in_range_uc.h
+        # models
+        single_binder_item.cpp
+        single_binder_item.h
 )
-
-foreach (file_path IN LISTS FILE_LIST)
-    list(APPEND ALL_SOURCE_FILES "work/${file_path}")
-endforeach ()

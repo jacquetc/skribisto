@@ -1,6 +1,3 @@
-find_package(Qt6 COMPONENTS Core Sql Concurrent REQUIRED)
-find_package(QCoro6 REQUIRED COMPONENTS Core)
-
 # Enable coroutines automatically
 qcoro_enable_coroutines()
 
@@ -153,13 +150,12 @@ qt_add_library(${LIBRARY_NAME} ${LIB_TYPE} ${SRCS} ${UNDO_REDO_LIST}
         ${ENTITIES_LIST} ${FEATURES_LIST}
         ${DIRECT_ACCESS_LIST}
 )
+target_link_libraries(${LIBRARY_NAME} PRIVATE project_options)
 target_compile_definitions(${LIBRARY_NAME} PRIVATE
         QT_NO_KEYWORDS
         QT_NO_CAST_TO_ASCII
         QT_NO_CAST_FROM_ASCII
         QT_NO_CAST_FROM_BYTEARRAY
-        QT_NO_KEYWORDS
-        QT_NO_FOREACH
         QT_STRICT_ITERATORS
         QT_USE_QSTRINGBUILDER
         QT_NO_NARROWING_CONVERSIONS_IN_CONNECT
@@ -171,24 +167,12 @@ generate_export_header(${LIBRARY_NAME}
 )
 
 target_include_directories(${LIBRARY_NAME} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_BINARY_DIR}
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
 target_link_libraries(${LIBRARY_NAME}
         PRIVATE Qt6::Core Qt6::Sql Qt6::Concurrent QCoro::Core
 )
 
-if (IOS)
-    install(TARGETS ${LIBRARY_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-endif (IOS)
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    install(TARGETS ${LIBRARY_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-endif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    install(TARGETS ${LIBRARY_NAME}
-            RUNTIME DESTINATION ${BINDIR}
-            LIBRARY DESTINATION ${LIBDIR})
-endif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+skr_install_target(${LIBRARY_NAME})
