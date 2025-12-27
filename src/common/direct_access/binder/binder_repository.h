@@ -47,6 +47,7 @@ class IBinderTable
     virtual QList<int> removeMany(const QList<int> &ids) = 0;
 
     // Relationship setters/getters
+
     // Set the relationship value for a given Binder id (e.g., set binder item id)
     virtual void setRelationshipIds(int binderId, BinderRelationshipField relationship, QList<int> relatedId) = 0;
 

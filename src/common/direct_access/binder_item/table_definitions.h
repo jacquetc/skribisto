@@ -54,7 +54,7 @@ inline QList<QString> getSqlJunctionTableDefinitions()
     definitions << QStringLiteral("CREATE TABLE IF NOT EXISTS binder_item_binder_items_to_binder_item_junction ("
                                   "    left_id INTEGER NOT NULL,"
                                   "    right_id INTEGER NOT NULL,"
-                                  "    \"order\" INTEGER NOT NULL,"
+                                  "    order_ INTEGER NOT NULL,"
                                   "    PRIMARY KEY (left_id, right_id)"
                                   ");");
 
