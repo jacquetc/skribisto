@@ -20,6 +20,7 @@
 
 #include "ordered_one_to_many.h"
 #include "junction_cache.h"
+#include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
 
@@ -151,6 +152,18 @@ QHash<int, bool> OrderedOneToMany::removeWithRightIdsMany(QSqlDatabase &db, cons
     if (rightIds.isEmpty())
     {
         return result;
+    }
+
+    // Invalidate cache for affected left IDs
+    QMap<int, int> leftIdsMap = getLeftIdMany(db, junctionTableName, rightIds);
+    QSet<int> uniqueLeftIds;
+    for (int leftId : leftIdsMap.values())
+    {
+        uniqueLeftIds.insert(leftId);
+    }
+    for (int leftId : uniqueLeftIds)
+    {
+        JunctionCache::instance().invalidateLeftId(junctionTableName, leftId);
     }
 
     // Build dynamic IN clause for efficient bulk delete
