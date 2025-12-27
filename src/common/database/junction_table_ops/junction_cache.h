@@ -158,6 +158,7 @@ class JunctionCache
             CacheKey key = keyFromHash(it.key());
             if (key.tableName == tableName && key.leftId == leftId)
             {
+                m_keyMap.remove(it.key());
                 it = m_cache.erase(it);
             }
             else
@@ -177,6 +178,7 @@ class JunctionCache
             CacheKey key = keyFromHash(it.key());
             if (key.tableName == tableName)
             {
+                m_keyMap.remove(it.key());
                 it = m_cache.erase(it);
             }
             else
@@ -191,6 +193,7 @@ class JunctionCache
     {
         QMutexLocker locker(&m_mutex);
         m_cache.clear();
+        m_keyMap.clear();
     }
 
   private:
