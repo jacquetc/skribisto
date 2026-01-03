@@ -188,6 +188,24 @@ void GroupCommand::onChildCommandFinished(bool success)
             finishExecution(success);
         }
         break;
+
+    case ExecutionState::RollingBack:
+        // We're rolling back - continue in reverse order until we reach target
+        // For RollbackAll: target is -1, meaning we go all the way to index 0
+        // For RollbackPartial: target equals the index we started at, so we stop after one
+        if (m_currentCommandIndex > 0 && m_currentCommandIndex - 1 >= m_rollbackTargetIndex &&
+            m_rollbackTargetIndex != m_currentCommandIndex)
+        {
+            m_currentCommandIndex--;
+            executeNextRollbackCommand();
+        }
+        else
+        {
+            // Rollback complete, finish with failure status
+            finishExecution(false);
+        }
+        break;
+
     default:
         qCritical() << "GroupCommand::onChildCommandFinished: Unknown execution state.";
         break;
@@ -241,18 +259,25 @@ void GroupCommand::executeNextUndoCommand()
 
 void GroupCommand::finishExecution(bool success)
 {
-    m_executionInProgress = false;
-
     // Consider success if we executed all commands successfully
     bool allSuccess = success && (m_successfulCommands == m_commands.size());
 
     // Handle cleanup strategy for failed executions
-    if (!allSuccess)
+    if (!allSuccess && !m_hadFailure)
     {
+        m_hadFailure = true;
         handleFailureCleanup();
+        // If rollback was started, don't emit finished yet - wait for rollback to complete
+        if (m_executionState == ExecutionState::RollingBack)
+        {
+            return;
+        }
     }
 
+    m_executionInProgress = false;
     m_currentCommandIndex = -1;
+    m_rollbackTargetIndex = -1;
+    m_hadFailure = false;
     Q_EMIT finished(allSuccess);
 }
 
@@ -291,16 +316,31 @@ void GroupCommand::handleFailureCleanup()
 
 void GroupCommand::startRollback(int fromIndex)
 {
-    // Rollback commands in reverse order
-    for (int i = m_successfulCommands - 1; i >= 0; --i)
+    if (fromIndex < 0 || fromIndex >= m_commands.size())
     {
-        if (i < m_commands.size())
-        {
-            auto command = m_commands.at(i);
-            // Note: This is synchronous rollback for simplicity
-            // In a more sophisticated implementation, this could be made async
-            command->asyncUndo();
-        }
+        return;
+    }
+
+    m_executionState = ExecutionState::RollingBack;
+    m_currentCommandIndex = fromIndex;
+    m_rollbackTargetIndex = -1; // Default: rollback all the way to index 0
+
+    executeNextRollbackCommand();
+}
+
+void GroupCommand::executeNextRollbackCommand()
+{
+    if (m_currentCommandIndex >= 0 && m_currentCommandIndex < m_commands.size())
+    {
+        auto command = m_commands.at(m_currentCommandIndex);
+        connect(command.get(), &UndoRedoCommand::finished, this, &GroupCommand::onChildCommandFinished,
+                Qt::UniqueConnection);
+        command->asyncUndo();
+    }
+    else
+    {
+        // Rollback complete, now finish with failure status
+        finishExecution(false);
     }
 }
 

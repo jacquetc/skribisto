@@ -78,9 +78,10 @@ class GroupCommand : public UndoRedoCommand
     void executeNextExecuteCommand();
     void executeNextRedoCommand();
     void executeNextUndoCommand();
+    void executeNextRollbackCommand();
     void finishExecution(bool success);
     void handleFailureCleanup();
-    void rollbackPartialCommands();
+    void startRollback(int fromIndex);
 
     QList<std::shared_ptr<UndoRedoCommand>> m_commands;
     int m_currentCommandIndex;
