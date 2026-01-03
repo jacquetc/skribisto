@@ -214,6 +214,59 @@ int UndoRedoManager::redoCount(const UndoRedoScope &scope) const
     auto it = m_stacks.find(scope);
     return it != m_stacks.end() ? it.value()->redoCount() : 0;
 }
+
+void UndoRedoManager::setMaxStackSize(int maxSize)
+{
+    QMutexLocker locker(&m_mutex);
+    setMaxStackSize(m_currentScope, maxSize);
+}
+
+int UndoRedoManager::maxStackSize() const
+{
+    QMutexLocker locker(&m_mutex);
+    return maxStackSize(m_currentScope);
+}
+
+void UndoRedoManager::setAutoCleanupEnabled(bool enabled)
+{
+    QMutexLocker locker(&m_mutex);
+    setAutoCleanupEnabled(m_currentScope, enabled);
+}
+
+bool UndoRedoManager::isAutoCleanupEnabled() const
+{
+    QMutexLocker locker(&m_mutex);
+    return isAutoCleanupEnabled(m_currentScope);
+}
+
+void UndoRedoManager::setMaxStackSize(const UndoRedoScope &scope, int maxSize)
+{
+    QMutexLocker locker(&m_mutex);
+    auto *stack = getOrCreateStack(scope);
+    stack->setMaxStackSize(maxSize);
+}
+
+int UndoRedoManager::maxStackSize(const UndoRedoScope &scope) const
+{
+    QMutexLocker locker(&m_mutex);
+    auto it = m_stacks.find(scope);
+    return it != m_stacks.end() ? it.value()->maxStackSize() : -1;
+}
+
+void UndoRedoManager::setAutoCleanupEnabled(const UndoRedoScope &scope, bool enabled)
+{
+    QMutexLocker locker(&m_mutex);
+    auto *stack = getOrCreateStack(scope);
+    stack->setAutoCleanupEnabled(enabled);
+}
+
+bool UndoRedoManager::isAutoCleanupEnabled(const UndoRedoScope &scope) const
+{
+    QMutexLocker locker(&m_mutex);
+    auto it = m_stacks.find(scope);
+    return it != m_stacks.end() ? it.value()->isAutoCleanupEnabled() : false;
+}
+
 void UndoRedoManager::cancelAllCommands()
 {
     QMutexLocker locker(&m_mutex);

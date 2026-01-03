@@ -75,6 +75,18 @@ class UndoRedoManager : public QObject
     int undoCount(const UndoRedoScope &scope) const;
     int redoCount(const UndoRedoScope &scope) const;
 
+    // Stack size management for current scope
+    void setMaxStackSize(int maxSize);
+    int maxStackSize() const;
+    void setAutoCleanupEnabled(bool enabled);
+    bool isAutoCleanupEnabled() const;
+
+    // Stack size management for specific scope
+    void setMaxStackSize(const UndoRedoScope &scope, int maxSize);
+    int maxStackSize(const UndoRedoScope &scope) const;
+    void setAutoCleanupEnabled(const UndoRedoScope &scope, bool enabled);
+    bool isAutoCleanupEnabled(const UndoRedoScope &scope) const;
+
     // Cancel all running commands in all stacks
     void cancelAllCommands();
 

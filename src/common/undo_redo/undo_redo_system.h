@@ -59,6 +59,12 @@ class UndoRedoSystem : public QObject
 
     template <typename T> QCoro::Task<T> executeQueryAsync(std::shared_ptr<Query<T>> query);
 
+    // Stack size management (affects current scope)
+    void setMaxStackSize(int maxSize);
+    int maxStackSize() const;
+    void setAutoCleanupEnabled(bool enabled);
+    bool isAutoCleanupEnabled() const;
+
     // Shutdown method to cancel all pending operations
     void shutdown();
 

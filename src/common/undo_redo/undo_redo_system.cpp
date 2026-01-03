@@ -69,6 +69,26 @@ void UndoRedoSystem::executeQuery(std::shared_ptr<QueryBase> query)
     m_queryHandler->executeQuery(query);
 }
 
+void UndoRedoSystem::setMaxStackSize(int maxSize)
+{
+    m_manager->setMaxStackSize(maxSize);
+}
+
+int UndoRedoSystem::maxStackSize() const
+{
+    return m_manager->maxStackSize();
+}
+
+void UndoRedoSystem::setAutoCleanupEnabled(bool enabled)
+{
+    m_manager->setAutoCleanupEnabled(enabled);
+}
+
+bool UndoRedoSystem::isAutoCleanupEnabled() const
+{
+    return m_manager->isAutoCleanupEnabled();
+}
+
 void UndoRedoSystem::shutdown()
 {
     qDebug() << "UndoRedoSystem: Starting graceful shutdown. Active operations:" << m_activeOperations.load();
