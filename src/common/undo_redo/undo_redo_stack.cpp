@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 #include "undo_redo_stack.h"
-#include <QMutexLocker>
+#include <QRecursiveMutex>
 
 namespace Skribisto::Common::UndoRedo
 {
@@ -198,7 +198,6 @@ QString UndoRedoStack::redoText() const
 
 void UndoRedoStack::setMaxStackSize(int maxSize)
 {
-    // TODO: add access to this method from UndoRedoManager and UndoRedoSystem
     QMutexLocker locker(&m_mutex);
     m_maxStackSize = maxSize;
 

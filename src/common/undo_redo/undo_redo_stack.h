@@ -21,7 +21,7 @@
 #pragma once
 
 #include "undo_redo_command.h"
-#include <QMutex>
+#include <QRecursiveMutex>
 #include <QObject>
 #include <QStack>
 #include <memory>
@@ -70,7 +70,7 @@ class UndoRedoStack : public QObject
   private:
     void updateState();
 
-    mutable QMutex m_mutex;
+    mutable QRecursiveMutex m_mutex;
     QStack<std::shared_ptr<UndoRedoCommand>> m_undoStack;
     QStack<std::shared_ptr<UndoRedoCommand>> m_redoStack;
     std::shared_ptr<UndoRedoCommand> m_currentCommand;
