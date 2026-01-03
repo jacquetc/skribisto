@@ -33,6 +33,16 @@ import Skr.Singles
 ApplicationWindow {
     id: applicationWindow
 
+    // Detect mobile mode
+    readonly property bool isMobileMode: {
+        // Ubuntu Touch desktop mode detection
+        if (Qt.platform.os === "linux" && Screen.count > 1) {
+            return false;
+        }
+        // Else normal detection
+        return width < 800 || Qt.platform.os === "android";
+    }
+
     height: 480
     title: "FrontEndsExample"
     visible: true
@@ -215,6 +225,32 @@ ApplicationWindow {
         // Content
         Text {
             text: "Hello, Skribisto!"
+        }
+    }
+    Loader {
+        id: uiLoader
+
+        anchors.fill: parent
+        asynchronous: false  // load synchronously to avoid flicker
+
+        source: applicationWindow.isMobileMode ? "../Skr/Mobile/MainView.qml" : "../Skr/Desktop/MainWindow.qml"
+
+        // Transition fade
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 150
+            }
+        }
+
+        onLoaded: {
+            // Setup then fade in
+            //item.restoreState();
+
+            opacity = 1;
+        }
+        onSourceChanged: {
+            // Fade out avant de changer
+            opacity = 0;
         }
     }
 }
