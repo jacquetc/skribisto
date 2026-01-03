@@ -28,7 +28,7 @@ LoadWorkUseCase::LoadWorkUseCase(
     : m_uow(std::move(uow)), m_legacyUpgrader(std::move(legacyUpgrader))
 {
 }
-bool LoadWorkUseCase::execute(const LoadWorkDto &loadWorkDto)
+bool LoadWorkUseCase::execute(const LoadWorkDto &loadWorkDto) const
 {
     // first check if the file exists and is readable
     QFileInfo fileInfo(loadWorkDto.fileName);
@@ -58,7 +58,7 @@ bool LoadWorkUseCase::execute(const LoadWorkDto &loadWorkDto)
 
     qInfo() << "Database upgraded successfully to the latest version.";
 
-    m_uow->publishWorkLoaded(0);
+    m_uow->publishWorkLoaded(0); // TODO: change 0 to a valid work ID
     return true;
 }
 } // namespace Skribisto::WorkManagement

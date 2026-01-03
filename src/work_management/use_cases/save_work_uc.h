@@ -32,7 +32,7 @@ class SaveWorkUseCase
 {
   public:
     SaveWorkUseCase(std::unique_ptr<ISaveWorkUnitOfWork> uow);
-    bool execute(const SaveWorkDto &saveWorkDto);
+    bool execute(const SaveWorkDto &saveWorkDto) const;
 
   private:
     std::unique_ptr<ISaveWorkUnitOfWork> m_uow;

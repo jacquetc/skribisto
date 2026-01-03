@@ -25,7 +25,7 @@ namespace Skribisto::WorkManagement
 SaveWorkUseCase::SaveWorkUseCase(std::unique_ptr<ISaveWorkUnitOfWork> uow) : m_uow(std::move(uow))
 {
 }
-bool SaveWorkUseCase::execute(const SaveWorkDto &saveWorkDto)
+bool SaveWorkUseCase::execute(const SaveWorkDto &saveWorkDto) const
 {
     // check if it is writable
 

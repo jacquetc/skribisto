@@ -43,7 +43,7 @@ class LoadWorkUseCase
   public:
     LoadWorkUseCase(std::unique_ptr<ILoadWorkUnitOfWork> uow,
                     std::unique_ptr<LegacyUpgrader::ILegacyUpgrader> legacyUpgrader);
-    bool execute(const LoadWorkDto &loadWorkDto);
+    bool execute(const LoadWorkDto &loadWorkDto) const;
 
   private:
     std::unique_ptr<ILoadWorkUnitOfWork> m_uow;
