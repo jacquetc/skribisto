@@ -155,6 +155,13 @@ void GroupCommand::onChildCommandFinished(bool success)
             m_currentCommandIndex++;
             executeNextExecuteCommand();
         }
+        else if (!success && m_failureStrategy == FailureStrategy::ContinueOnFailure &&
+                 m_currentCommandIndex < m_commands.size() - 1)
+        {
+            // Continue to next command despite failure
+            m_currentCommandIndex++;
+            executeNextExecuteCommand();
+        }
         else
         {
             // Finished or failed
