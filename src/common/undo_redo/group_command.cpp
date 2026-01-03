@@ -277,8 +277,14 @@ void GroupCommand::handleFailureCleanup()
         break;
 
     case FailureStrategy::RollbackPartial:
-        // Rollback only partially executed commands (if applicable)
-        rollbackPartialCommands();
+        // Only rollback the failed command (which may have partially executed)
+        // Unlike RollbackAll, successful commands remain intact
+        if (m_currentCommandIndex >= 0 && m_currentCommandIndex < m_commands.size())
+        {
+            // Set target to current index so we only undo this one command
+            startRollback(m_currentCommandIndex);
+            m_rollbackTargetIndex = m_currentCommandIndex; // Stop after this one
+        }
         break;
     }
 }
@@ -296,12 +302,6 @@ void GroupCommand::startRollback(int fromIndex)
             command->asyncUndo();
         }
     }
-}
-
-void GroupCommand::rollbackPartialCommands()
-{
-    // For now, same as rollback all - could be refined based on specific needs
-    rollbackSuccessfulCommands();
 }
 
 } // namespace Skribisto::Common::UndoRedo
