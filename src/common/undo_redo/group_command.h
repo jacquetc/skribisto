@@ -72,7 +72,8 @@ class GroupCommand : public UndoRedoCommand
         Idle,
         Executing,
         Undoing,
-        Redoing
+        Redoing,
+        RollingBack
     };
 
     void executeNextExecuteCommand();
