@@ -269,8 +269,11 @@ void GroupCommand::handleFailureCleanup()
         break;
 
     case FailureStrategy::RollbackAll:
-        // Rollback all successfully executed commands
-        rollbackSuccessfulCommands();
+        // Rollback all successfully executed commands in reverse order
+        if (m_successfulCommands > 0)
+        {
+            startRollback(m_successfulCommands - 1);
+        }
         break;
 
     case FailureStrategy::RollbackPartial:
@@ -280,7 +283,7 @@ void GroupCommand::handleFailureCleanup()
     }
 }
 
-void GroupCommand::rollbackSuccessfulCommands()
+void GroupCommand::startRollback(int fromIndex)
 {
     // Rollback commands in reverse order
     for (int i = m_successfulCommands - 1; i >= 0; --i)

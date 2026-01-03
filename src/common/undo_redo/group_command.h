@@ -80,13 +80,14 @@ class GroupCommand : public UndoRedoCommand
     void executeNextUndoCommand();
     void finishExecution(bool success);
     void handleFailureCleanup();
-    void rollbackSuccessfulCommands();
     void rollbackPartialCommands();
 
     QList<std::shared_ptr<UndoRedoCommand>> m_commands;
     int m_currentCommandIndex;
     bool m_executionInProgress;
     int m_successfulCommands;
+    int m_rollbackTargetIndex = -1; // Target index to rollback to (-1 = rollback all successful, else specific index)
+    bool m_hadFailure = false;      // Track if we had a failure that triggered rollback
     ExecutionState m_executionState = ExecutionState::Idle;
     FailureStrategy m_failureStrategy = FailureStrategy::StopOnFailure;
 };
