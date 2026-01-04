@@ -24,4 +24,7 @@ target_sources(${LIBRARY_NAME} PRIVATE
         use_cases/get_relationship_ids_count_uc.h
         use_cases/get_relationship_ids_in_range_uc.cpp
         use_cases/get_relationship_ids_in_range_uc.h
+        # models
+        recent_work_list_model_from_root_recent_works.h
+        recent_work_list_model_from_root_recent_works.cpp
 )

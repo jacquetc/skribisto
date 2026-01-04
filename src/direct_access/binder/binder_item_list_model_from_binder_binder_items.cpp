@@ -57,14 +57,14 @@ void BinderItemListModelFromBinderBinderItems::resolveDependencies()
     // Connect to events
     if (m_eventRegistry)
     {
-        auto binderItemEvents = m_eventRegistry->getEvents<Common::DirectAccess::BinderItem::BinderItemEvents>();
+        const auto binderItemEvents = m_eventRegistry->getEvents<Common::DirectAccess::BinderItem::BinderItemEvents>();
         if (binderItemEvents)
         {
             connect(binderItemEvents.data(), SIGNAL(updated(QList<int>)), this,
                     SLOT(onBinderItemEventsUpdated(QList<int>)));
         }
 
-        auto binderEvents = m_eventRegistry->getEvents<Common::DirectAccess::Binder::BinderEvents>();
+        const auto binderEvents = m_eventRegistry->getEvents<Common::DirectAccess::Binder::BinderEvents>();
         if (binderEvents)
         {
             connect(binderEvents.data(), SIGNAL(updated(QList<int>)), this, SLOT(onBinderEventsUpdated(QList<int>)));
@@ -83,7 +83,7 @@ int BinderItemListModelFromBinderBinderItems::rowCount(const QModelIndex &parent
 QVariant BinderItemListModelFromBinderBinderItems::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || index.row() >= m_binderItems.size())
-        return QVariant();
+        return {};
 
     const auto &binderItem = m_binderItems.at(index.row());
 
@@ -113,7 +113,7 @@ QVariant BinderItemListModelFromBinderBinderItems::data(const QModelIndex &index
     }
     case BinderItemsRole: {
         QVariantList list;
-        for (int id : binderItem.binderItems)
+        for (const int id : binderItem.binderItems)
         {
             list.append(id);
         }
@@ -121,9 +121,10 @@ QVariant BinderItemListModelFromBinderBinderItems::data(const QModelIndex &index
     }
     case ParentRole:
         return binderItem.parentItem;
+    default:;
     }
 
-    return QVariant();
+    return {};
 }
 
 bool BinderItemListModelFromBinderBinderItems::setData(const QModelIndex &index, const QVariant &value, int role)
@@ -164,6 +165,7 @@ bool BinderItemListModelFromBinderBinderItems::setData(const QModelIndex &index,
             changed = true;
         }
         break;
+    default:;
     }
 
     if (changed)
@@ -345,7 +347,7 @@ void BinderItemListModelFromBinderBinderItems::onBinderEventsUpdated(const QList
             if (result.isEmpty())
                 return;
 
-            auto binder = result.first();
+            const auto &binder = result.first();
 
             QList<int> currentItemIds;
             for (const auto &item : m_binderItems)
