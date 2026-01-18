@@ -23,7 +23,6 @@
 #include "undo_redo/query_handler.h"
 #include "undo_redo/undo_redo_command.h"
 #include "undo_redo/undo_redo_manager.h"
-#include "undo_redo/undo_redo_scopes.h"
 #include "undo_redo/undo_redo_stack.h"
 #include "undo_redo/undo_redo_system.h"
 #include <QObject>
@@ -277,21 +276,21 @@ void TestUndoRedo::testMultiScopeManager()
     //   Arrange
     SCU::UndoRedoManager manager;
 
-    // Create different scopes
-    auto projectScope1 = SCU::UndoRedoScope::workScope(1);
-    auto projectScope2 = SCU::UndoRedoScope::workScope(2);
-    auto contentScope1 = SCU::UndoRedoScope::contentScope(10);
+    // Create different stack IDs
+    int stackId1 = 1;
+    int stackId2 = 2;
+    int stackId3 = 10;
 
     // Test initial state
-    QCOMPARE(manager.currentScope(), SCU::UndoRedoScope::rootScope());
+    QCOMPARE(manager.currentStackId(), 0);
     QVERIFY(!manager.canUndo());
     QVERIFY(!manager.canRedo());
-    QVERIFY(manager.activeScopes().isEmpty());
+    QVERIFY(manager.activeStackIds().isEmpty());
 
-    // Create commands for different scopes
+    // Create commands for different stacks
     int value1 = 0, value2 = 0, value3 = 0;
 
-    auto cmd1 = std::make_shared<SCU::UndoRedoCommand>("Project1 Command"_L1);
+    auto cmd1 = std::make_shared<SCU::UndoRedoCommand>("Stack1 Command"_L1);
     cmd1->setExecuteFunction([&value1](auto &) { value1++; });
     cmd1->setRedoFunction([&value1]() {
         value1++;
@@ -302,7 +301,7 @@ void TestUndoRedo::testMultiScopeManager()
         return SCU::Result<void>();
     });
 
-    auto cmd2 = std::make_shared<SCU::UndoRedoCommand>("Project2 Command"_L1);
+    auto cmd2 = std::make_shared<SCU::UndoRedoCommand>("Stack2 Command"_L1);
     cmd2->setExecuteFunction([&value2](auto &) { value2++; });
     cmd2->setRedoFunction([&value2]() {
         value2++;
@@ -313,7 +312,7 @@ void TestUndoRedo::testMultiScopeManager()
         return SCU::Result<void>();
     });
 
-    auto cmd3 = std::make_shared<SCU::UndoRedoCommand>("Content1 Command"_L1);
+    auto cmd3 = std::make_shared<SCU::UndoRedoCommand>("Stack3 Command"_L1);
     cmd3->setExecuteFunction([&value3](auto &) { value3++; });
     cmd3->setRedoFunction([&value3]() {
         value3++;
@@ -324,57 +323,57 @@ void TestUndoRedo::testMultiScopeManager()
         return SCU::Result<void>();
     });
 
-    // Push commands to different scopes
-    manager.pushCommand(cmd1, projectScope1);
-    manager.pushCommand(cmd2, projectScope2);
-    manager.pushCommand(cmd3, contentScope1);
+    // Push commands to different stacks
+    manager.pushCommand(cmd1, stackId1);
+    manager.pushCommand(cmd2, stackId2);
+    manager.pushCommand(cmd3, stackId3);
 
-    // Verify active scopes
-    auto activeScopes = manager.activeScopes();
-    QCOMPARE(activeScopes.size(), 3);
-    QVERIFY(activeScopes.contains(projectScope1));
-    QVERIFY(activeScopes.contains(projectScope2));
-    QVERIFY(activeScopes.contains(contentScope1));
+    // Verify active stacks
+    auto activeStackIds = manager.activeStackIds();
+    QCOMPARE(activeStackIds.size(), 3);
+    QVERIFY(activeStackIds.contains(stackId1));
+    QVERIFY(activeStackIds.contains(stackId2));
+    QVERIFY(activeStackIds.contains(stackId3));
 
-    // Verify each scope has commands
-    QVERIFY(manager.canUndo(projectScope1));
-    QVERIFY(manager.canUndo(projectScope2));
-    QVERIFY(manager.canUndo(contentScope1));
-    QCOMPARE(manager.undoCount(projectScope1), 1);
-    QCOMPARE(manager.undoCount(projectScope2), 1);
-    QCOMPARE(manager.undoCount(contentScope1), 1);
+    // Verify each stack has commands
+    QVERIFY(manager.canUndo(stackId1));
+    QVERIFY(manager.canUndo(stackId2));
+    QVERIFY(manager.canUndo(stackId3));
+    QCOMPARE(manager.undoCount(stackId1), 1);
+    QCOMPARE(manager.undoCount(stackId2), 1);
+    QCOMPARE(manager.undoCount(stackId3), 1);
 
-    // Test switching current scope
-    QSignalSpy currentScopeSpy(&manager, &SCU::UndoRedoManager::currentScopeChanged);
-    manager.setCurrentScope(projectScope1);
-    QVERIFY(currentScopeSpy.count() == 1);
-    QCOMPARE(manager.currentScope(), projectScope1);
-    QVERIFY(manager.canUndo()); // Current scope method
-    QCOMPARE(manager.undoText(), "Project1 Command"_L1);
+    // Test switching current stack
+    QSignalSpy currentStackIdSpy(&manager, &SCU::UndoRedoManager::currentStackIdChanged);
+    manager.setCurrentStackId(stackId1);
+    QVERIFY(currentStackIdSpy.count() == 1);
+    QCOMPARE(manager.currentStackId(), stackId1);
+    QVERIFY(manager.canUndo()); // Current stack method
+    QCOMPARE(manager.undoText(), "Stack1 Command"_L1);
 
-    // Test scope isolation without command execution
-    // Each scope should have independent state
-    QCOMPARE(manager.undoText(projectScope1), "Project1 Command"_L1);
-    QCOMPARE(manager.undoText(projectScope2), "Project2 Command"_L1);
-    QCOMPARE(manager.undoText(contentScope1), "Content1 Command"_L1);
+    // Test stack isolation without command execution
+    // Each stack should have independent state
+    QCOMPARE(manager.undoText(stackId1), "Stack1 Command"_L1);
+    QCOMPARE(manager.undoText(stackId2), "Stack2 Command"_L1);
+    QCOMPARE(manager.undoText(stackId3), "Stack3 Command"_L1);
 
-    // Verify each scope can independently track commands
-    QVERIFY(manager.canUndo(projectScope1));
-    QVERIFY(manager.canUndo(projectScope2));
-    QVERIFY(manager.canUndo(contentScope1));
-    QVERIFY(!manager.canRedo(projectScope1));
-    QVERIFY(!manager.canRedo(projectScope2));
-    QVERIFY(!manager.canRedo(contentScope1));
+    // Verify each stack can independently track commands
+    QVERIFY(manager.canUndo(stackId1));
+    QVERIFY(manager.canUndo(stackId2));
+    QVERIFY(manager.canUndo(stackId3));
+    QVERIFY(!manager.canRedo(stackId1));
+    QVERIFY(!manager.canRedo(stackId2));
+    QVERIFY(!manager.canRedo(stackId3));
 
-    // Test clearing specific scope
-    manager.clearScope(projectScope2);
-    QVERIFY(!manager.canUndo(projectScope2));
-    QVERIFY(!manager.canRedo(projectScope2));
-    QCOMPARE(manager.undoCount(projectScope2), 0);
+    // Test clearing specific stack
+    manager.removeStack(stackId2);
+    QVERIFY(!manager.canUndo(stackId2));
+    QVERIFY(!manager.canRedo(stackId2));
+    QCOMPARE(manager.undoCount(stackId2), 0);
 
-    // Other scopes should remain unaffected
-    QVERIFY(manager.canUndo(projectScope1));
-    QVERIFY(manager.canUndo(contentScope1));
+    // Other stacks should remain unaffected
+    QVERIFY(manager.canUndo(stackId1));
+    QVERIFY(manager.canUndo(stackId3));
 }
 
 void TestUndoRedo::testScopeIsolation()
@@ -383,103 +382,103 @@ void TestUndoRedo::testScopeIsolation()
     //  Arrange
     SCU::UndoRedoManager manager;
 
-    auto scope1 = SCU::UndoRedoScope::workScope(100);
-    auto scope2 = SCU::UndoRedoScope::contentScope(200);
+    int stackId1 = 100;
+    int stackId2 = 200;
 
-    // Create isolated variables for each scope
-    int scope1Value = 10;
-    int scope2Value = 20;
+    // Create isolated variables for each stack
+    int stack1Value = 10;
+    int stack2Value = 20;
 
-    // Create commands for scope 1
-    auto scope1Cmd1 = std::make_shared<SCU::UndoRedoCommand>("Scope1 Increment"_L1);
-    scope1Cmd1->setExecuteFunction([&scope1Value](auto &) { scope1Value += 5; });
-    scope1Cmd1->setRedoFunction([&scope1Value]() {
-        scope1Value += 5;
+    // Create commands for stack 1
+    auto stack1Cmd1 = std::make_shared<SCU::UndoRedoCommand>("Stack1 Increment"_L1);
+    stack1Cmd1->setExecuteFunction([&stack1Value](auto &) { stack1Value += 5; });
+    stack1Cmd1->setRedoFunction([&stack1Value]() {
+        stack1Value += 5;
         return SCU::Result<void>();
     });
-    scope1Cmd1->setUndoFunction([&scope1Value]() {
-        scope1Value -= 5;
-        return SCU::Result<void>();
-    });
-
-    auto scope1Cmd2 = std::make_shared<SCU::UndoRedoCommand>("Scope1 Double"_L1);
-    scope1Cmd2->setExecuteFunction([&scope1Value](auto &) { scope1Value *= 2; });
-    scope1Cmd2->setRedoFunction([&scope1Value]() {
-        scope1Value *= 2;
-        return SCU::Result<void>();
-    });
-    scope1Cmd2->setUndoFunction([&scope1Value]() {
-        scope1Value /= 2;
+    stack1Cmd1->setUndoFunction([&stack1Value]() {
+        stack1Value -= 5;
         return SCU::Result<void>();
     });
 
-    // Create commands for scope 2
-    auto scope2Cmd1 = std::make_shared<SCU::UndoRedoCommand>("Scope2 Decrement"_L1);
-    scope2Cmd1->setExecuteFunction([&scope2Value](auto &) { scope2Value -= 3; });
-    scope2Cmd1->setRedoFunction([&scope2Value]() {
-        scope2Value -= 3;
-
+    auto stack1Cmd2 = std::make_shared<SCU::UndoRedoCommand>("Stack1 Double"_L1);
+    stack1Cmd2->setExecuteFunction([&stack1Value](auto &) { stack1Value *= 2; });
+    stack1Cmd2->setRedoFunction([&stack1Value]() {
+        stack1Value *= 2;
         return SCU::Result<void>();
     });
-    scope2Cmd1->setUndoFunction([&scope2Value]() {
-        scope2Value += 3;
+    stack1Cmd2->setUndoFunction([&stack1Value]() {
+        stack1Value /= 2;
         return SCU::Result<void>();
     });
 
-    auto scope2Cmd2 = std::make_shared<SCU::UndoRedoCommand>("Scope2 Multiply"_L1);
-    scope2Cmd2->setExecuteFunction([&scope2Value](auto &) { scope2Value *= 3; });
-    scope2Cmd2->setRedoFunction([&scope2Value]() {
-        scope2Value *= 3;
+    // Create commands for stack 2
+    auto stack2Cmd1 = std::make_shared<SCU::UndoRedoCommand>("Stack2 Decrement"_L1);
+    stack2Cmd1->setExecuteFunction([&stack2Value](auto &) { stack2Value -= 3; });
+    stack2Cmd1->setRedoFunction([&stack2Value]() {
+        stack2Value -= 3;
+
         return SCU::Result<void>();
     });
-    scope2Cmd2->setUndoFunction([&scope2Value]() {
-        scope2Value /= 3;
+    stack2Cmd1->setUndoFunction([&stack2Value]() {
+        stack2Value += 3;
+        return SCU::Result<void>();
+    });
+
+    auto stack2Cmd2 = std::make_shared<SCU::UndoRedoCommand>("Stack2 Multiply"_L1);
+    stack2Cmd2->setExecuteFunction([&stack2Value](auto &) { stack2Value *= 3; });
+    stack2Cmd2->setRedoFunction([&stack2Value]() {
+        stack2Value *= 3;
+        return SCU::Result<void>();
+    });
+    stack2Cmd2->setUndoFunction([&stack2Value]() {
+        stack2Value /= 3;
         return SCU::Result<void>();
     });
     QTest::qSleep(50); // Give some time for async execution
 
     // Verify initial isolation
-    QCOMPARE(scope1Value, 10);
-    QCOMPARE(scope2Value, 20);
+    QCOMPARE(stack1Value, 10);
+    QCOMPARE(stack2Value, 20);
 
-    // Push commands to their respective scopes, without executing them
-    manager.pushCommand(scope1Cmd1, scope1);
-    manager.pushCommand(scope1Cmd2, scope1);
-    manager.pushCommand(scope2Cmd1, scope2);
-    manager.pushCommand(scope2Cmd2, scope2);
+    // Push commands to their respective stacks, without executing them
+    manager.pushCommand(stack1Cmd1, stackId1);
+    manager.pushCommand(stack1Cmd2, stackId1);
+    manager.pushCommand(stack2Cmd1, stackId2);
+    manager.pushCommand(stack2Cmd2, stackId2);
 
-    // Verify scope counts
-    QCOMPARE(manager.undoCount(scope1), 2);
-    QCOMPARE(manager.undoCount(scope2), 2);
-    QCOMPARE(manager.redoCount(scope1), 0);
-    QCOMPARE(manager.redoCount(scope2), 0);
+    // Verify stack counts
+    QCOMPARE(manager.undoCount(stackId1), 2);
+    QCOMPARE(manager.undoCount(stackId2), 2);
+    QCOMPARE(manager.redoCount(stackId1), 0);
+    QCOMPARE(manager.redoCount(stackId2), 0);
 
-    // Test isolated scope state tracking (without execution)
-    // Verify scope isolation - commands are tracked independently
-    QCOMPARE(manager.undoText(scope1), "Scope1 Double"_L1);   // Last command pushed
-    QCOMPARE(manager.undoText(scope2), "Scope2 Multiply"_L1); // Last command pushed
+    // Test isolated stack state tracking (without execution)
+    // Verify stack isolation - commands are tracked independently
+    QCOMPARE(manager.undoText(stackId1), "Stack1 Double"_L1);   // Last command pushed
+    QCOMPARE(manager.undoText(stackId2), "Stack2 Multiply"_L1); // Last command pushed
 
-    // Each scope maintains independent command counts
-    QVERIFY(manager.canUndo(scope1));
-    QVERIFY(manager.canUndo(scope2));
-    QVERIFY(!manager.canRedo(scope1));
-    QVERIFY(!manager.canRedo(scope2));
+    // Each stack maintains independent command counts
+    QVERIFY(manager.canUndo(stackId1));
+    QVERIFY(manager.canUndo(stackId2));
+    QVERIFY(!manager.canRedo(stackId1));
+    QVERIFY(!manager.canRedo(stackId2));
 
     // Verify isolated text retrieval
-    QCOMPARE(manager.undoText(scope1), "Scope1 Double"_L1);
-    QCOMPARE(manager.undoText(scope2), "Scope2 Multiply"_L1);
+    QCOMPARE(manager.undoText(stackId1), "Stack1 Double"_L1);
+    QCOMPARE(manager.undoText(stackId2), "Stack2 Multiply"_L1);
 
-    // Test clearing one scope doesn't affect the other
-    manager.clearScope(scope1);
-    QCOMPARE(manager.undoCount(scope1), 0);
-    QCOMPARE(manager.redoCount(scope1), 0);
-    QCOMPARE(manager.undoCount(scope2), 2); // Still has commands
-    QCOMPARE(manager.redoCount(scope2), 0); // Still has commands
+    // Test clearing one stack doesn't affect the other
+    manager.removeStack(stackId1);
+    QCOMPARE(manager.undoCount(stackId1), 0);
+    QCOMPARE(manager.redoCount(stackId1), 0);
+    QCOMPARE(manager.undoCount(stackId2), 2); // Still has commands
+    QCOMPARE(manager.redoCount(stackId2), 0); // Still has commands
 
-    // Verify scope2 still works after scope1 cleared
-    QVERIFY(!manager.canUndo(scope1)); // scope1 cleared
-    QVERIFY(manager.canUndo(scope2));  // scope2 still has commands
-    QCOMPARE(manager.undoText(scope2), "Scope2 Multiply"_L1);
+    // Verify stack2 still works after stack1 removed
+    QVERIFY(!manager.canUndo(stackId1)); // stack1 removed
+    QVERIFY(manager.canUndo(stackId2));  // stack2 still has commands
+    QCOMPARE(manager.undoText(stackId2), "Stack2 Multiply"_L1);
 }
 
 void TestUndoRedo::testCommandGrouping()
@@ -790,13 +789,13 @@ void TestUndoRedo::testServiceLocatorRegistration()
     });
 
     // Execute command through the system retrieved from ServiceLocator
-    auto scope = SCU::UndoRedoScope::customScope("test"_L1);
-    retrievedSystem->manager()->pushCommand(command, scope);
+    int testStackId = 99;
+    retrievedSystem->manager()->pushCommand(command, testStackId);
 
     // Verify command is registered but not executed yet
     QCOMPARE(testValue, 0);
-    QVERIFY(retrievedSystem->manager()->canUndo(scope));
-    QCOMPARE(retrievedSystem->manager()->undoCount(scope), 1);
+    QVERIFY(retrievedSystem->manager()->canUndo(testStackId));
+    QCOMPARE(retrievedSystem->manager()->undoCount(testStackId), 1);
 
     // Test query execution through ServiceLocator
     auto query = retrievedSystem->queryHandler()->createQuery<QString>("ServiceLocator Test Query"_L1);

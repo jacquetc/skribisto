@@ -24,28 +24,52 @@
 namespace Skribisto::Common::UndoRedo
 {
 
-UndoRedoManager::UndoRedoManager(QObject *parent) : QObject(parent), m_currentScope(UndoRedoScope::rootScope())
+UndoRedoManager::UndoRedoManager(QObject *parent) : QObject(parent), m_currentStackId(0), m_nextStackId(1)
 {
 }
 
-void UndoRedoManager::setCurrentScope(const UndoRedoScope &scope)
+int UndoRedoManager::createStack()
+{
+    QMutexLocker locker(&m_mutex);
+    int newStackId = m_nextStackId++;
+    getOrCreateStack(newStackId);
+    return newStackId;
+}
+
+void UndoRedoManager::removeStack(int stackId)
+{
+    QMutexLocker locker(&m_mutex);
+    auto it = m_stacks.find(stackId);
+    if (it != m_stacks.end())
+    {
+        it.value()->clear();
+        m_stacks.erase(it);
+
+        if (stackId == m_currentStackId)
+        {
+            updateCurrentStackSignals();
+        }
+    }
+}
+
+void UndoRedoManager::setCurrentStackId(int stackId)
 {
     QMutexLocker locker(&m_mutex);
 
-    if (m_currentScope == scope)
+    if (m_currentStackId == stackId)
     {
         return;
     }
 
-    m_currentScope = scope;
-    updateCurrentScopeSignals();
-    Q_EMIT currentScopeChanged(scope);
+    m_currentStackId = stackId;
+    updateCurrentStackSignals();
+    Q_EMIT currentStackIdChanged(stackId);
 }
 
-UndoRedoScope UndoRedoManager::currentScope() const
+int UndoRedoManager::currentStackId() const
 {
     QMutexLocker locker(&m_mutex);
-    return m_currentScope;
+    return m_currentStackId;
 }
 
 void UndoRedoManager::pushCommand(std::shared_ptr<UndoRedoCommand> command)
@@ -56,11 +80,11 @@ void UndoRedoManager::pushCommand(std::shared_ptr<UndoRedoCommand> command)
         return;
     }
 
-    auto *stack = getOrCreateStack(m_currentScope);
+    auto *stack = getOrCreateStack(m_currentStackId);
     stack->push(command);
 }
 
-void UndoRedoManager::pushCommand(std::shared_ptr<UndoRedoCommand> command, const UndoRedoScope &scope)
+void UndoRedoManager::pushCommand(std::shared_ptr<UndoRedoCommand> command, int stackId)
 {
     if (!command)
     {
@@ -68,202 +92,202 @@ void UndoRedoManager::pushCommand(std::shared_ptr<UndoRedoCommand> command, cons
     }
 
     QMutexLocker locker(&m_mutex);
-    auto *stack = getOrCreateStack(scope);
+    auto *stack = getOrCreateStack(stackId);
     stack->push(command);
 }
 
 bool UndoRedoManager::canUndo() const
 {
     QMutexLocker locker(&m_mutex);
-    return canUndo(m_currentScope);
+    return canUndo(m_currentStackId);
 }
 
 bool UndoRedoManager::canRedo() const
 {
     QMutexLocker locker(&m_mutex);
-    return canRedo(m_currentScope);
+    return canRedo(m_currentStackId);
 }
 
 void UndoRedoManager::execute()
 {
     QMutexLocker locker(&m_mutex);
-    execute(m_currentScope);
+    execute(m_currentStackId);
 }
 
 void UndoRedoManager::undo()
 {
     QMutexLocker locker(&m_mutex);
-    undo(m_currentScope);
+    undo(m_currentStackId);
 }
 
 void UndoRedoManager::redo()
 {
     QMutexLocker locker(&m_mutex);
-    redo(m_currentScope);
+    redo(m_currentStackId);
 }
 
 QString UndoRedoManager::undoText() const
 {
     QMutexLocker locker(&m_mutex);
-    return undoText(m_currentScope);
+    return undoText(m_currentStackId);
 }
 
 QString UndoRedoManager::redoText() const
 {
     QMutexLocker locker(&m_mutex);
-    return redoText(m_currentScope);
+    return redoText(m_currentStackId);
 }
 
-bool UndoRedoManager::canUndo(const UndoRedoScope &scope) const
+bool UndoRedoManager::canUndo(int stackId) const
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     return it != m_stacks.end() ? it.value()->canUndo() : false;
 }
 
-bool UndoRedoManager::canRedo(const UndoRedoScope &scope) const
+bool UndoRedoManager::canRedo(int stackId) const
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     return it != m_stacks.end() ? it.value()->canRedo() : false;
 }
 
-void UndoRedoManager::execute(const UndoRedoScope &scope)
+void UndoRedoManager::execute(int stackId)
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     if (it != m_stacks.end())
     {
         it.value()->execute();
     }
 }
 
-void UndoRedoManager::undo(const UndoRedoScope &scope)
+void UndoRedoManager::undo(int stackId)
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     if (it != m_stacks.end())
     {
         it.value()->undo();
     }
 }
 
-void UndoRedoManager::redo(const UndoRedoScope &scope)
+void UndoRedoManager::redo(int stackId)
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     if (it != m_stacks.end())
     {
         it.value()->redo();
     }
 }
 
-QString UndoRedoManager::undoText(const UndoRedoScope &scope) const
+QString UndoRedoManager::undoText(int stackId) const
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     return it != m_stacks.end() ? it.value()->undoText() : QString();
 }
 
-QString UndoRedoManager::redoText(const UndoRedoScope &scope) const
+QString UndoRedoManager::redoText(int stackId) const
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     return it != m_stacks.end() ? it.value()->redoText() : QString();
 }
 
-void UndoRedoManager::clearScope(const UndoRedoScope &scope)
+void UndoRedoManager::clearStack(int stackId)
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     if (it != m_stacks.end())
     {
         it.value()->clear();
         m_stacks.erase(it);
 
-        if (scope == m_currentScope)
+        if (stackId == m_currentStackId)
         {
-            updateCurrentScopeSignals();
+            updateCurrentStackSignals();
         }
     }
 }
 
-void UndoRedoManager::clearAllScopes()
+void UndoRedoManager::clearAllStacks()
 {
     QMutexLocker locker(&m_mutex);
     m_stacks.clear();
-    updateCurrentScopeSignals();
+    updateCurrentStackSignals();
 }
 
-QList<UndoRedoScope> UndoRedoManager::activeScopes() const
+QList<int> UndoRedoManager::activeStackIds() const
 {
     QMutexLocker locker(&m_mutex);
     return m_stacks.keys();
 }
 
-int UndoRedoManager::undoCount(const UndoRedoScope &scope) const
+int UndoRedoManager::undoCount(int stackId) const
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     return it != m_stacks.end() ? it.value()->undoCount() : 0;
 }
 
-int UndoRedoManager::redoCount(const UndoRedoScope &scope) const
+int UndoRedoManager::redoCount(int stackId) const
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     return it != m_stacks.end() ? it.value()->redoCount() : 0;
 }
 
 void UndoRedoManager::setMaxStackSize(int maxSize)
 {
     QMutexLocker locker(&m_mutex);
-    setMaxStackSize(m_currentScope, maxSize);
+    setMaxStackSize(m_currentStackId, maxSize);
 }
 
 int UndoRedoManager::maxStackSize() const
 {
     QMutexLocker locker(&m_mutex);
-    return maxStackSize(m_currentScope);
+    return maxStackSize(m_currentStackId);
 }
 
 void UndoRedoManager::setAutoCleanupEnabled(bool enabled)
 {
     QMutexLocker locker(&m_mutex);
-    setAutoCleanupEnabled(m_currentScope, enabled);
+    setAutoCleanupEnabled(m_currentStackId, enabled);
 }
 
 bool UndoRedoManager::isAutoCleanupEnabled() const
 {
     QMutexLocker locker(&m_mutex);
-    return isAutoCleanupEnabled(m_currentScope);
+    return isAutoCleanupEnabled(m_currentStackId);
 }
 
-void UndoRedoManager::setMaxStackSize(const UndoRedoScope &scope, int maxSize)
+void UndoRedoManager::setMaxStackSize(int stackId, int maxSize)
 {
     QMutexLocker locker(&m_mutex);
-    auto *stack = getOrCreateStack(scope);
+    auto *stack = getOrCreateStack(stackId);
     stack->setMaxStackSize(maxSize);
 }
 
-int UndoRedoManager::maxStackSize(const UndoRedoScope &scope) const
+int UndoRedoManager::maxStackSize(int stackId) const
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     return it != m_stacks.end() ? it.value()->maxStackSize() : -1;
 }
 
-void UndoRedoManager::setAutoCleanupEnabled(const UndoRedoScope &scope, bool enabled)
+void UndoRedoManager::setAutoCleanupEnabled(int stackId, bool enabled)
 {
     QMutexLocker locker(&m_mutex);
-    auto *stack = getOrCreateStack(scope);
+    auto *stack = getOrCreateStack(stackId);
     stack->setAutoCleanupEnabled(enabled);
 }
 
-bool UndoRedoManager::isAutoCleanupEnabled(const UndoRedoScope &scope) const
+bool UndoRedoManager::isAutoCleanupEnabled(int stackId) const
 {
     QMutexLocker locker(&m_mutex);
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     return it != m_stacks.end() ? it.value()->isAutoCleanupEnabled() : false;
 }
 
@@ -297,7 +321,7 @@ void UndoRedoManager::onStackCanUndoChanged(bool canUndo)
     QMutexLocker locker(&m_mutex);
     for (auto it = m_stacks.begin(); it != m_stacks.end(); ++it)
     {
-        if (it.value().get() == stack && it.key() == m_currentScope)
+        if (it.value().get() == stack && it.key() == m_currentStackId)
         {
             Q_EMIT canUndoChanged(canUndo);
             break;
@@ -314,7 +338,7 @@ void UndoRedoManager::onStackCanRedoChanged(bool canRedo)
     QMutexLocker locker(&m_mutex);
     for (auto it = m_stacks.begin(); it != m_stacks.end(); ++it)
     {
-        if (it.value().get() == stack && it.key() == m_currentScope)
+        if (it.value().get() == stack && it.key() == m_currentStackId)
         {
             Q_EMIT canRedoChanged(canRedo);
             break;
@@ -331,7 +355,7 @@ void UndoRedoManager::onStackUndoTextChanged(const QString &undoText)
     QMutexLocker locker(&m_mutex);
     for (auto it = m_stacks.begin(); it != m_stacks.end(); ++it)
     {
-        if (it.value().get() == stack && it.key() == m_currentScope)
+        if (it.value().get() == stack && it.key() == m_currentStackId)
         {
             Q_EMIT undoTextChanged(undoText);
             break;
@@ -348,7 +372,7 @@ void UndoRedoManager::onStackRedoTextChanged(const QString &redoText)
     QMutexLocker locker(&m_mutex);
     for (auto it = m_stacks.begin(); it != m_stacks.end(); ++it)
     {
-        if (it.value().get() == stack && it.key() == m_currentScope)
+        if (it.value().get() == stack && it.key() == m_currentStackId)
         {
             Q_EMIT redoTextChanged(redoText);
             break;
@@ -361,15 +385,15 @@ void UndoRedoManager::onStackCommandFinished(bool success)
     Q_EMIT commandFinished(success);
 }
 
-UndoRedoStack *UndoRedoManager::getOrCreateStack(const UndoRedoScope &scope)
+UndoRedoStack *UndoRedoManager::getOrCreateStack(int stackId)
 {
     // Assumes mutex is already locked
-    auto it = m_stacks.find(scope);
+    auto it = m_stacks.find(stackId);
     if (it == m_stacks.end())
     {
         auto stack = std::make_shared<UndoRedoStack>(this);
         connectStackSignals(stack.get());
-        m_stacks[scope] = stack;
+        m_stacks[stackId] = stack;
         return stack.get();
     }
     return it.value().get();
@@ -387,10 +411,10 @@ void UndoRedoManager::connectStackSignals(UndoRedoStack *stack)
             Qt::QueuedConnection);
 }
 
-void UndoRedoManager::updateCurrentScopeSignals()
+void UndoRedoManager::updateCurrentStackSignals()
 {
     // Assumes mutex is already locked
-    auto it = m_stacks.find(m_currentScope);
+    auto it = m_stacks.find(m_currentStackId);
     if (it != m_stacks.end())
     {
         Q_EMIT canUndoChanged(it.value()->canUndo());

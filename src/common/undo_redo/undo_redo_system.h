@@ -21,8 +21,8 @@
 #pragma once
 
 #include "query_handler.h"
-#include "undo_redo_manager.h"
 #include "undo_redo_command.h"
+#include "undo_redo_manager.h"
 #include <QCoro/QCoroSignal>
 #include <QCoro/QCoroTask>
 #include <QObject>
@@ -47,10 +47,9 @@ class UndoRedoSystem : public QObject
     QueryHandler *queryHandler() const;
 
     // Convenience methods for command operations
-    void executeCommand(std::shared_ptr<UndoRedoCommand> command, const QString &scope = "default"_L1);
+    void executeCommand(std::shared_ptr<UndoRedoCommand> command, int stackId = 0);
     QCoro::Task<std::optional<bool>> executeCommandAsync(std::shared_ptr<UndoRedoCommand> command,
-                                                         int millisecondsTimeout = 500,
-                                                         const QString &scope = "default"_L1);
+                                                         int millisecondsTimeout = 500, int stackId = 0);
 
     // Convenience methods for query operations
     template <typename T> std::shared_ptr<Query<T>> createQuery(const QString &description);
@@ -59,7 +58,7 @@ class UndoRedoSystem : public QObject
 
     template <typename T> QCoro::Task<T> executeQueryAsync(std::shared_ptr<Query<T>> query);
 
-    // Stack size management (affects current scope)
+    // Stack size management (affects current stack)
     void setMaxStackSize(int maxSize);
     int maxStackSize() const;
     void setAutoCleanupEnabled(bool enabled);
@@ -69,20 +68,20 @@ class UndoRedoSystem : public QObject
     void shutdown();
 
   Q_SIGNALS:
-    void commandExecuted(const QString &scope, bool success);
+    void commandExecuted(int stackId, bool success);
     void queryExecuted(std::shared_ptr<QueryBase> query, bool success);
-    
+
     // Enhanced signals with detailed error information
-    void commandExecutedWithResult(const QString &scope, const Result<void> &result);
-    void commandErrorOccurred(const QString &scope, const QString &error, ErrorCategory category, ErrorSeverity severity);
+    void commandExecutedWithResult(int stackId, const Result<void> &result);
+    void commandErrorOccurred(int stackId, const QString &error, ErrorCategory category, ErrorSeverity severity);
 
     // Performance monitoring signals
     void commandExecutionTime(const QString &commandName, qint64 milliseconds);
-    void stackSizeChanged(const QString &scope, int undoCount, int redoCount);
+    void stackSizeChanged(int stackId, int undoCount, int redoCount);
 
   private Q_SLOTS:
-    void onCommandFinished(const QString &scope, bool success);
-    void onCommandFinishedWithResult(const QString &scope, const Result<void> &result);
+    void onCommandFinished(int stackId, bool success);
+    void onCommandFinishedWithResult(int stackId, const Result<void> &result);
     void onQueryFinished(std::shared_ptr<QueryBase> query, bool success);
 
   private:

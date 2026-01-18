@@ -20,13 +20,11 @@
 
 #pragma once
 
-#include "undo_redo_scopes.h"
 #include "undo_redo_stack.h"
 #include <QHash>
 #include <QMutex>
 #include <QObject>
 #include <memory>
-#include <pstl/glue_execution_defs.h>
 
 using namespace Qt::StringLiterals;
 
@@ -40,15 +38,17 @@ class UndoRedoManager : public QObject
   public:
     explicit UndoRedoManager(QObject *parent = nullptr);
 
-    // Scope management
-    void setCurrentScope(const UndoRedoScope &scope);
-    UndoRedoScope currentScope() const;
+    // Stack management
+    int createStack();
+    void removeStack(int stackId);
+    void setCurrentStackId(int stackId);
+    int currentStackId() const;
 
     // Command operations
     void pushCommand(std::shared_ptr<UndoRedoCommand> command);
-    void pushCommand(std::shared_ptr<UndoRedoCommand> command, const UndoRedoScope &scope);
+    void pushCommand(std::shared_ptr<UndoRedoCommand> command, int stackId);
 
-    // Undo/Redo operations for current scope
+    // Undo/Redo operations for current stack
     bool canUndo() const;
     bool canRedo() const;
     void execute();
@@ -57,41 +57,41 @@ class UndoRedoManager : public QObject
     QString undoText() const;
     QString redoText() const;
 
-    // Undo/Redo operations for specific scope
-    bool canUndo(const UndoRedoScope &scope) const;
-    bool canRedo(const UndoRedoScope &scope) const;
-    void execute(const UndoRedoScope &scope);
-    void undo(const UndoRedoScope &scope);
-    void redo(const UndoRedoScope &scope);
-    QString undoText(const UndoRedoScope &scope) const;
-    QString redoText(const UndoRedoScope &scope) const;
+    // Undo/Redo operations for specific stack
+    bool canUndo(int stackId) const;
+    bool canRedo(int stackId) const;
+    void execute(int stackId);
+    void undo(int stackId);
+    void redo(int stackId);
+    QString undoText(int stackId) const;
+    QString redoText(int stackId) const;
 
     // Stack management
-    void clearScope(const UndoRedoScope &scope);
-    void clearAllScopes();
+    void clearStack(int stackId);
+    void clearAllStacks();
 
     // Information
-    QList<UndoRedoScope> activeScopes() const;
-    int undoCount(const UndoRedoScope &scope) const;
-    int redoCount(const UndoRedoScope &scope) const;
+    QList<int> activeStackIds() const;
+    int undoCount(int stackId) const;
+    int redoCount(int stackId) const;
 
-    // Stack size management for current scope
+    // Stack size management for current stack
     void setMaxStackSize(int maxSize);
     int maxStackSize() const;
     void setAutoCleanupEnabled(bool enabled);
     bool isAutoCleanupEnabled() const;
 
-    // Stack size management for specific scope
-    void setMaxStackSize(const UndoRedoScope &scope, int maxSize);
-    int maxStackSize(const UndoRedoScope &scope) const;
-    void setAutoCleanupEnabled(const UndoRedoScope &scope, bool enabled);
-    bool isAutoCleanupEnabled(const UndoRedoScope &scope) const;
+    // Stack size management for specific stack
+    void setMaxStackSize(int stackId, int maxSize);
+    int maxStackSize(int stackId) const;
+    void setAutoCleanupEnabled(int stackId, bool enabled);
+    bool isAutoCleanupEnabled(int stackId) const;
 
     // Cancel all running commands in all stacks
     void cancelAllCommands();
 
   Q_SIGNALS:
-    void currentScopeChanged(const UndoRedoScope &scope);
+    void currentStackIdChanged(int stackId);
     void canUndoChanged(bool canUndo);
     void canRedoChanged(bool canRedo);
     void undoTextChanged(const QString &undoText);
@@ -106,13 +106,14 @@ class UndoRedoManager : public QObject
     void onStackCommandFinished(bool success);
 
   private:
-    UndoRedoStack *getOrCreateStack(const UndoRedoScope &scope);
+    UndoRedoStack *getOrCreateStack(int stackId);
     void connectStackSignals(UndoRedoStack *stack);
-    void updateCurrentScopeSignals();
+    void updateCurrentStackSignals();
 
     mutable QRecursiveMutex m_mutex;
-    QHash<UndoRedoScope, std::shared_ptr<UndoRedoStack>> m_stacks;
-    UndoRedoScope m_currentScope;
+    QHash<int, std::shared_ptr<UndoRedoStack>> m_stacks;
+    int m_currentStackId = 0; // Stack 0 is the global stack (default)
+    int m_nextStackId = 1;    // Next available stack ID for createStack()
 };
 
 } // namespace Skribisto::Common::UndoRedo

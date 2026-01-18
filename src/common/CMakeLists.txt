@@ -37,8 +37,6 @@ set(UNDO_REDO_LIST
         undo_redo/undo_redo_command.cpp
         undo_redo/undo_redo_stack.h
         undo_redo/undo_redo_stack.cpp
-        undo_redo/undo_redo_scopes.h
-        undo_redo/undo_redo_scopes.cpp
         undo_redo/undo_redo_manager.h
         undo_redo/undo_redo_manager.cpp
         undo_redo/group_command.h
@@ -99,7 +97,6 @@ set(DIRECT_ACCESS_LIST
         direct_access/binder/binder_table.h
         direct_access/binder/table_definitions.h
         direct_access/binder/binder_events.h
-        direct_access/binder/binder_events.cpp
         # binder item
         direct_access/binder_item/i_binder_item_repository.h
         direct_access/binder_item/binder_item_repository.cpp
@@ -140,9 +137,7 @@ set(DIRECT_ACCESS_LIST
         #        direct_access/binder/binder_table.h
 )
 set(FEATURES_LIST
-        features/feature_event_registry.cpp
         features/feature_event_registry.h
-        features/work_management_events.cpp
         features/work_management_events.h
 )
 

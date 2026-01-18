@@ -21,7 +21,7 @@
 #pragma once
 
 #include "undo_redo_command.h"
-#include <QList>
+#include <QList>a²
 #include <QObject>
 #include <memory>
 
@@ -32,10 +32,10 @@ namespace Skribisto::Common::UndoRedo
 
 enum class FailureStrategy
 {
-    ContinueOnFailure,  // Continue executing remaining commands even if one fails
-    StopOnFailure,      // Stop execution on first failure (default behavior)
-    RollbackAll,        // Rollback all successfully executed commands on any failure
-    RollbackPartial     // Rollback only the partially executed commands
+    ContinueOnFailure, // Continue executing remaining commands even if one fails
+    StopOnFailure,     // Stop execution on first failure (default behavior)
+    RollbackAll,       // Rollback all successfully executed commands on any failure
+    RollbackPartial    // Rollback only the partially executed commands
 };
 
 class GroupCommand : public UndoRedoCommand

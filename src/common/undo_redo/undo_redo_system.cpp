@@ -34,7 +34,7 @@ UndoRedoSystem::UndoRedoSystem(QObject *parent)
 {
     // Connect signals for forwarding
     connect(m_manager.get(), &UndoRedoManager::commandFinished, this,
-            [this](bool success) { Q_EMIT commandExecuted(m_manager->currentScope().name(), success); });
+            [this](bool success) { Q_EMIT commandExecuted(m_manager->currentStackId(), success); });
     connect(m_queryHandler.get(), &QueryHandler::queryFinished, this, &UndoRedoSystem::onQueryFinished);
 }
 
@@ -51,13 +51,12 @@ QueryHandler *UndoRedoSystem::queryHandler() const
 /** DO NOT USE THIS METHOD ! Use executeCommandAsync instead. This Undo Redo system is async by nature.
  *
  * @param command
- * @param scope
+ * @param stackId
  */
-void UndoRedoSystem::executeCommand(std::shared_ptr<UndoRedoCommand> command, const QString &scope)
+void UndoRedoSystem::executeCommand(std::shared_ptr<UndoRedoCommand> command, int stackId)
 {
-    auto undoRedoScope = UndoRedoScope::customScope(scope);
-    m_manager->pushCommand(command, undoRedoScope);
-    m_manager->execute(undoRedoScope);
+    m_manager->pushCommand(command, stackId);
+    m_manager->execute(stackId);
 }
 
 /** DO NOT USE THIS METHOD ! Use executeQueryAsync instead. This Undo Redo system is async by nature.
@@ -99,7 +98,7 @@ void UndoRedoSystem::shutdown()
     // Step 2: Clear all undo/redo stacks to release stored commands and their database connections
     if (m_manager)
     {
-        m_manager->clearAllScopes();
+        m_manager->clearAllStacks();
         qDebug() << "UndoRedoSystem: Cleared all undo/redo stacks";
     }
 
@@ -154,7 +153,7 @@ void UndoRedoSystem::shutdown()
 }
 
 QCoro::Task<std::optional<bool>> UndoRedoSystem::executeCommandAsync(std::shared_ptr<UndoRedoCommand> command,
-                                                                     int millisecondsTimeout, const QString &scope)
+                                                                     int millisecondsTimeout, int stackId)
 
 {
     // Check if shutting down - block new commands
@@ -191,13 +190,12 @@ QCoro::Task<std::optional<bool>> UndoRedoSystem::executeCommandAsync(std::shared
     QElapsedTimer timer;
     timer.start();
 
-    auto undoRedoScope = UndoRedoScope::customScope(scope);
-    m_manager->pushCommand(command, undoRedoScope);
+    m_manager->pushCommand(command, stackId);
 
     // Emit stack size change signal
-    Q_EMIT stackSizeChanged(scope, m_manager->undoCount(undoRedoScope), m_manager->redoCount(undoRedoScope));
+    Q_EMIT stackSizeChanged(stackId, m_manager->undoCount(stackId), m_manager->redoCount(stackId));
 
-    m_manager->execute(undoRedoScope);
+    m_manager->execute(stackId);
 
     // Wait for the specific command to finish using QCoro
     auto success =
@@ -217,9 +215,9 @@ QCoro::Task<std::optional<bool>> UndoRedoSystem::executeCommandAsync(std::shared
     co_return success;
 }
 
-void UndoRedoSystem::onCommandFinished(const QString &scope, bool success)
+void UndoRedoSystem::onCommandFinished(int stackId, bool success)
 {
-    Q_EMIT commandExecuted(scope, success);
+    Q_EMIT commandExecuted(stackId, success);
 }
 
 void UndoRedoSystem::onQueryFinished(std::shared_ptr<QueryBase> query, bool success)
@@ -227,13 +225,13 @@ void UndoRedoSystem::onQueryFinished(std::shared_ptr<QueryBase> query, bool succ
     Q_EMIT queryExecuted(query, success);
 }
 
-void UndoRedoSystem::onCommandFinishedWithResult(const QString &scope, const Result<void> &result)
+void UndoRedoSystem::onCommandFinishedWithResult(int stackId, const Result<void> &result)
 {
-    Q_EMIT commandExecutedWithResult(scope, result);
-    
+    Q_EMIT commandExecutedWithResult(stackId, result);
+
     if (!result.isSuccess())
     {
-        Q_EMIT commandErrorOccurred(scope, result.error(), result.category(), result.severity());
+        Q_EMIT commandErrorOccurred(stackId, result.error(), result.category(), result.severity());
     }
 }
 

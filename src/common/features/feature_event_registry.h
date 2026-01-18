@@ -33,7 +33,7 @@ class FeatureEventRegistry : public QObject
     Q_OBJECT
   public:
     explicit FeatureEventRegistry(QObject *parent = nullptr)
-        : QObject(parent), m_workManagementEvents(new Features::WorkManagementEvents(parent))
+        : QObject(parent), m_workManagementEvents(new WorkManagementEvents(parent))
 
     //    , m_undoRedoEvents(new UndoRedo::UndoRedoEvents(parent))
     {
@@ -43,12 +43,11 @@ class FeatureEventRegistry : public QObject
     template <typename T> QPointer<T> getEvents() const;
 
   private:
-    QPointer<Features::WorkManagementEvents> m_workManagementEvents;
+    QPointer<WorkManagementEvents> m_workManagementEvents;
 };
 
 // Template specializations for each event type
-template <>
-inline QPointer<Features::WorkManagementEvents> FeatureEventRegistry::getEvents<Features::WorkManagementEvents>() const
+template <> inline QPointer<WorkManagementEvents> FeatureEventRegistry::getEvents<WorkManagementEvents>() const
 {
     return m_workManagementEvents;
 }
