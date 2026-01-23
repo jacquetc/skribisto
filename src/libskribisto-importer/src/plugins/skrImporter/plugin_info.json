@@ -1,9 +1,0 @@
-{
-    "type": "importer",
-    "shortname": "SkrImporter",
-    "longname": "Skribisto .skr importer",
-    "version": "1.0",
-    "mandatory": true,
-    "activatedByDefault": true,
-    "dependencies": []
-}

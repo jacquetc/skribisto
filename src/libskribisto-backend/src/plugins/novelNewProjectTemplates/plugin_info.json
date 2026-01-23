@@ -1,9 +1,0 @@
-{
-    "type": "newprojecttemplate",
-    "shortname": "NovelTemplates",
-    "longname": "Novel templates",
-    "version": "1.0",
-    "mandatory": true,
-    "activatedByDefault": true,
-    "dependencies": []
-}
