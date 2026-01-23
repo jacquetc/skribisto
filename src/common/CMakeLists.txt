@@ -25,6 +25,8 @@ set(SRCS
         database/junction_table_ops/unordered_one_to_many.cpp
         database/junction_table_ops/one_to_one.h
         database/junction_table_ops/one_to_one.cpp
+        database/junction_table_ops/many_to_one.h
+        database/junction_table_ops/many_to_one.cpp
         database/junction_table_ops/junction_cache.h
         service_locator.cpp
         service_locator.h
