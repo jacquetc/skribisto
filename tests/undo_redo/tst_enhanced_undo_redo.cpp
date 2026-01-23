@@ -532,16 +532,15 @@ void TestEnhancedUndoRedo::testMaxStackSizeViaManager()
     QCOMPARE(manager->maxStackSize(), 5);
 
     // Test with specific scope
-    auto workScope = UndoRedoScope::workScope(42);
-    manager->setMaxStackSize(workScope, 10);
-    QCOMPARE(manager->maxStackSize(workScope), 10);
+    manager->setMaxStackSize(10);
+    QCOMPARE(manager->maxStackSize(), 10);
 
     // Test auto cleanup
     manager->setAutoCleanupEnabled(true);
     QVERIFY(manager->isAutoCleanupEnabled());
 
-    manager->setAutoCleanupEnabled(workScope, true);
-    QVERIFY(manager->isAutoCleanupEnabled(workScope));
+    manager->setAutoCleanupEnabled(true);
+    QVERIFY(manager->isAutoCleanupEnabled());
 }
 
 void TestEnhancedUndoRedo::testMaxStackSizeViaSystem()

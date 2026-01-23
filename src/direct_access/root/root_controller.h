@@ -46,21 +46,21 @@ class RootController : public QObject
     RootController(RootController &&) = delete;
     RootController &operator=(RootController &&) = delete;
     explicit RootController(QObject *parent = nullptr);
-    QCoro::Task<QList<RootDto>> create(const QList<CreateRootDto> &roots);
+    QCoro::Task<QList<RootDto>> create(const QList<CreateRootDto> &roots, int stackId = 0);
     static CreateRootDto getCreateDto()
     {
         return {};
     }
-    QCoro::Task<QList<RootDto>> get(const QList<int> &rootIds);
-    QCoro::Task<QList<RootDto>> update(const QList<RootDto> &roots);
-    QCoro::Task<QList<int>> remove(const QList<int> &rootIds);
+    QCoro::Task<QList<RootDto>> get(const QList<int> &rootIds, int stackId = 0);
+    QCoro::Task<QList<RootDto>> update(const QList<RootDto> &roots, int stackId = 0);
+    QCoro::Task<QList<int>> remove(const QList<int> &rootIds, int stackId = 0);
     QCoro::Task<QList<int>> getRelationshipIds(int rootId, RootRelationshipField relationship);
-    QCoro::Task<void> setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedIds);
+    QCoro::Task<void> setRelationshipIds(int rootId, RootRelationshipField relationship, QList<int> relatedIds, int stackId = 0);
     QCoro::Task<QHash<int, QList<int>>> getRelationshipIdsMany(const QList<int> &rootIds,
-                                                               RootRelationshipField relationship);
-    QCoro::Task<int> getRelationshipIdsCount(int rootId, RootRelationshipField relationship);
+                                                               RootRelationshipField relationship, int stackId = 0);
+    QCoro::Task<int> getRelationshipIdsCount(int rootId, RootRelationshipField relationship, int stackId = 0);
     QCoro::Task<QList<int>> getRelationshipIdsInRange(int rootId, RootRelationshipField relationship, int offset,
-                                                      int limit);
+                                                      int limit, int stackId = 0);
 
   private:
     void resolveDependencies();

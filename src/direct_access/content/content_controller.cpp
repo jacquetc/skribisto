@@ -105,7 +105,7 @@ QCoro::Task<QList<ContentDto>> ContentController::create(const QList<CreateConte
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "content_create"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -193,7 +193,7 @@ QCoro::Task<QList<ContentDto>> ContentController::update(const QList<ContentDto>
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "content_update"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -261,7 +261,7 @@ QCoro::Task<QList<int>> ContentController::remove(const QList<int> &contentIds)
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "content_remove"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {

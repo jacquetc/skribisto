@@ -61,7 +61,7 @@ QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWork
         co_return false;
     }
     // clear undo redo
-    m_undoRedoSystem->manager()->clearAllScopes();
+    m_undoRedoSystem->manager()->clearAllStacks();
 
     // Create use case that will be owned by the command
     std::unique_ptr<ILoadWorkUnitOfWork> uow =
@@ -77,7 +77,7 @@ QCoro::Task<bool> WorkManagementController::loadWork(const LoadWorkDto &loadWork
 
     command->setExecuteFunction([useCase, &result, loadWorkDto](auto &) { result = useCase->execute(loadWorkDto); });
 
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 1000, "load_work"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 1000, 0);
 
     if (!success.has_value())
     {
@@ -102,7 +102,7 @@ QCoro::Task<bool> WorkManagementController::saveWork(const SaveWorkDto &saveWork
         co_return false;
     }
     // clear undo redo
-    m_undoRedoSystem->manager()->clearAllScopes();
+    m_undoRedoSystem->manager()->clearAllStacks();
 
     // Create use case that will be owned by the command
     std::unique_ptr<ISaveWorkUnitOfWork> uow = std::make_unique<SaveWorkUnitOfWork>(*m_dbContext, m_eventRegistry);
@@ -115,7 +115,7 @@ QCoro::Task<bool> WorkManagementController::saveWork(const SaveWorkDto &saveWork
 
     command->setExecuteFunction([useCase, &result, saveWorkDto](auto &) { result = useCase->execute(saveWorkDto); });
 
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 1000, "save_work"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 1000, 0);
 
     if (!success.has_value())
     {

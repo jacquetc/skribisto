@@ -77,7 +77,7 @@ void TestQCoroIntegration::testQCoroCommandExecution()
 
         // Act
         qDebug() << "Executing command asynchronously...";
-        std::optional<bool> success = co_await m_system->executeCommandAsync(command, 1000, "test_scope"_L1);
+        std::optional<bool> success = co_await m_system->executeCommandAsync(command, 1000, 0);
         qDebug() << "Command execution completed.";
 
         // Assert

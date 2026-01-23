@@ -105,7 +105,7 @@ QCoro::Task<QList<BinderTagDto>> BinderTagController::create(const QList<CreateB
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "binderTag_create"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -194,7 +194,7 @@ QCoro::Task<QList<BinderTagDto>> BinderTagController::update(const QList<BinderT
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "binderTag_update"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -262,7 +262,7 @@ QCoro::Task<QList<int>> BinderTagController::remove(const QList<int> &binderTagI
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "binderTag_remove"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {

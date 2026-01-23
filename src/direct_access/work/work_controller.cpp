@@ -110,7 +110,7 @@ QCoro::Task<QList<WorkDto>> WorkController::create(const QList<CreateWorkDto> &w
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "work_create"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -198,7 +198,7 @@ QCoro::Task<QList<WorkDto>> WorkController::update(const QList<WorkDto> &works)
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "work_update"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -266,7 +266,7 @@ QCoro::Task<QList<int>> WorkController::remove(const QList<int> &workIds)
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "work_remove"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -353,8 +353,7 @@ QCoro::Task<void> WorkController::setRelationshipIds(int workId, WorkRelationshi
     // This ensures the useCase stays alive as long as the command exists
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
-    std::optional<bool> success =
-        co_await m_undoRedoSystem->executeCommandAsync(command, 500, "work_set_relationship"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {

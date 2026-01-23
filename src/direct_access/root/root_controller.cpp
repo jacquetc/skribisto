@@ -22,7 +22,6 @@
 
 #include "root_unit_of_work.h"
 #include "service_locator.h"
-#include "use_cases/common/dto_mapper.h"
 #include "use_cases/create_uc.h"
 #include "use_cases/get_relationship_ids_count_uc.h"
 #include "use_cases/get_relationship_ids_in_range_uc.h"
@@ -58,7 +57,7 @@ void RootController::resolveDependencies()
     m_undoRedoSystem = locator->undoRedoSystem();
 }
 
-QCoro::Task<QList<RootDto>> RootController::create(const QList<CreateRootDto> &roots)
+QCoro::Task<QList<RootDto>> RootController::create(const QList<CreateRootDto> &roots, int stackId)
 {
     if (!m_undoRedoSystem)
     {
@@ -110,7 +109,7 @@ QCoro::Task<QList<RootDto>> RootController::create(const QList<CreateRootDto> &r
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "root_create"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, stackId);
 
     if (!success.has_value())
     {
@@ -126,7 +125,7 @@ QCoro::Task<QList<RootDto>> RootController::create(const QList<CreateRootDto> &r
 
     co_return result;
 }
-QCoro::Task<QList<RootDto>> RootController::get(const QList<int> &rootIds)
+QCoro::Task<QList<RootDto>> RootController::get(const QList<int> &rootIds, int stackId)
 {
     // Use undo/redo query system with QCoro integration
     if (!m_undoRedoSystem)
@@ -146,7 +145,7 @@ QCoro::Task<QList<RootDto>> RootController::get(const QList<int> &rootIds)
     auto result = co_await m_undoRedoSystem->executeQueryAsync(query);
     co_return result;
 }
-QCoro::Task<QList<RootDto>> RootController::update(const QList<RootDto> &roots)
+QCoro::Task<QList<RootDto>> RootController::update(const QList<RootDto> &roots, int stackId)
 {
     if (!m_undoRedoSystem)
     {
@@ -198,7 +197,7 @@ QCoro::Task<QList<RootDto>> RootController::update(const QList<RootDto> &roots)
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "root_update"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, stackId);
 
     if (!success.has_value())
     {
@@ -214,7 +213,7 @@ QCoro::Task<QList<RootDto>> RootController::update(const QList<RootDto> &roots)
 
     co_return result;
 }
-QCoro::Task<QList<int>> RootController::remove(const QList<int> &rootIds)
+QCoro::Task<QList<int>> RootController::remove(const QList<int> &rootIds, int stackId)
 {
     if (!m_undoRedoSystem)
     {
@@ -266,7 +265,7 @@ QCoro::Task<QList<int>> RootController::remove(const QList<int> &rootIds)
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "root_remove"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, stackId);
 
     if (!success.has_value())
     {
@@ -303,7 +302,7 @@ QCoro::Task<QList<int>> RootController::getRelationshipIds(int rootId, RootRelat
 }
 
 QCoro::Task<void> RootController::setRelationshipIds(int rootId, RootRelationshipField relationship,
-                                                     QList<int> relatedIds)
+                                                     QList<int> relatedIds, int stackId)
 {
     if (!m_undoRedoSystem)
     {
@@ -354,7 +353,7 @@ QCoro::Task<void> RootController::setRelationshipIds(int rootId, RootRelationshi
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     std::optional<bool> success =
-        co_await m_undoRedoSystem->executeCommandAsync(command, 500, "root_set_relationship"_L1);
+        co_await m_undoRedoSystem->executeCommandAsync(command, 500, stackId);
 
     if (!success.has_value())
     {
@@ -370,7 +369,7 @@ QCoro::Task<void> RootController::setRelationshipIds(int rootId, RootRelationshi
 }
 
 QCoro::Task<QHash<int, QList<int>>> RootController::getRelationshipIdsMany(const QList<int> &rootIds,
-                                                                           RootRelationshipField relationship)
+                                                                           RootRelationshipField relationship, int stackId)
 {
     if (!m_undoRedoSystem)
     {
@@ -389,7 +388,7 @@ QCoro::Task<QHash<int, QList<int>>> RootController::getRelationshipIdsMany(const
     co_return result;
 }
 
-QCoro::Task<int> RootController::getRelationshipIdsCount(int rootId, RootRelationshipField relationship)
+QCoro::Task<int> RootController::getRelationshipIdsCount(int rootId, RootRelationshipField relationship, int stackId)
 {
     if (!m_undoRedoSystem)
     {
@@ -409,7 +408,7 @@ QCoro::Task<int> RootController::getRelationshipIdsCount(int rootId, RootRelatio
 }
 
 QCoro::Task<QList<int>> RootController::getRelationshipIdsInRange(int rootId, RootRelationshipField relationship,
-                                                                  int offset, int limit)
+                                                                  int offset, int limit, int stackId)
 {
     if (!m_undoRedoSystem)
     {

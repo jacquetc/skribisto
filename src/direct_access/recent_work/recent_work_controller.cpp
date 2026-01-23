@@ -105,7 +105,7 @@ QCoro::Task<QList<RecentWorkDto>> RecentWorkController::create(const QList<Creat
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "recentWork_create"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -194,7 +194,7 @@ QCoro::Task<QList<RecentWorkDto>> RecentWorkController::update(const QList<Recen
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "recentWork_update"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -262,7 +262,7 @@ QCoro::Task<QList<int>> RecentWorkController::remove(const QList<int> &recentWor
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "recentWork_remove"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {

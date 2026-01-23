@@ -110,7 +110,7 @@ QCoro::Task<QList<BinderDto>> BinderController::create(const QList<CreateBinderD
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "binder_create"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -198,7 +198,7 @@ QCoro::Task<QList<BinderDto>> BinderController::update(const QList<BinderDto> &b
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "binder_update"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -266,7 +266,7 @@ QCoro::Task<QList<int>> BinderController::remove(const QList<int> &binderIds)
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
     // Execute command asynchronously using QCoro integration
-    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, "binder_remove"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
@@ -353,8 +353,7 @@ QCoro::Task<void> BinderController::setRelationshipIds(int binderId, BinderRelat
     // This ensures the useCase stays alive as long as the command exists
     command->setProperty("useCase", QVariant::fromValue(useCase));
 
-    std::optional<bool> success =
-        co_await m_undoRedoSystem->executeCommandAsync(command, 500, "binder_set_relationship"_L1);
+    std::optional<bool> success = co_await m_undoRedoSystem->executeCommandAsync(command, 500, 0);
 
     if (!success.has_value())
     {
