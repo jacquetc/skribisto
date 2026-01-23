@@ -41,6 +41,12 @@ class OneToOne
     static int getRightIdCount(QSqlDatabase &db, int leftId, const QString &junctionTableName);
 
     static QList<int> getRightIdInRange(QSqlDatabase &db, int leftId, const QString &junctionTableName);
+
+    // Validation function to check if left_id already exists with a different right_id
+    static bool validateUniqueLeftId(QSqlDatabase &db, int leftId, int rightId, const QString &junctionTableName);
+
+    // Validation function to check if right_id already exists with a different left_id
+    static bool validateUniqueRightId(QSqlDatabase &db, int leftId, int rightId, const QString &junctionTableName);
 };
 
 } // namespace Skribisto::Common::Database::JunctionTableOps

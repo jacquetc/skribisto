@@ -131,6 +131,19 @@ QHash<int, QList<int>> OneToOne::upsertRightIdMany(QSqlDatabase &db, const QHash
         int leftId = it.key();
         int rightId = it.value();
 
+        // Validate uniqueness constraints before attempting insert
+        if (!validateUniqueLeftId(db, leftId, rightId, junctionTableName))
+        {
+            // Validation failed, skip this mapping
+            continue;
+        }
+
+        if (!validateUniqueRightId(db, leftId, rightId, junctionTableName))
+        {
+            // Validation failed, skip this mapping
+            continue;
+        }
+
         QSqlQuery query(db);
 
         // First try to update existing record
@@ -325,6 +338,64 @@ QList<int> OneToOne::getRightIdInRange(QSqlDatabase &db, int leftId, const QStri
     JunctionCache::instance().setCachedRightIdsInRange(junctionTableName, leftId, 0, 1, finalResult);
 
     return finalResult;
+}
+
+bool OneToOne::validateUniqueLeftId(QSqlDatabase &db, int leftId, int rightId, const QString &junctionTableName)
+{
+    const QString sql = QStringLiteral("SELECT right_id FROM %1 WHERE left_id = ?").arg(junctionTableName);
+
+    QSqlQuery query(db);
+    query.prepare(sql);
+    query.addBindValue(leftId);
+
+    if (!query.exec())
+    {
+        qCritical() << "Failed to execute validateUniqueLeftId query:" << query.lastError().text();
+        return false;
+    }
+
+    if (query.next())
+    {
+        int existingRightId = query.value(0).toInt();
+        // If left_id exists with a different right_id, validation fails
+        if (existingRightId != rightId)
+        {
+            qWarning() << "OneToOne constraint violation: left_id" << leftId << "already exists with right_id"
+                       << existingRightId << "(attempting to set right_id" << rightId << ")";
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool OneToOne::validateUniqueRightId(QSqlDatabase &db, int leftId, int rightId, const QString &junctionTableName)
+{
+    const QString sql = QStringLiteral("SELECT left_id FROM %1 WHERE right_id = ?").arg(junctionTableName);
+
+    QSqlQuery query(db);
+    query.prepare(sql);
+    query.addBindValue(rightId);
+
+    if (!query.exec())
+    {
+        qCritical() << "Failed to execute validateUniqueRightId query:" << query.lastError().text();
+        return false;
+    }
+
+    if (query.next())
+    {
+        int existingLeftId = query.value(0).toInt();
+        // If right_id exists with a different left_id, validation fails
+        if (existingLeftId != leftId)
+        {
+            qWarning() << "OneToOne constraint violation: right_id" << rightId << "already exists with left_id"
+                       << existingLeftId << "(attempting to set left_id" << leftId << ")";
+            return false;
+        }
+    }
+
+    return true;
 }
 
 } // namespace Skribisto::Common::Database::JunctionTableOps

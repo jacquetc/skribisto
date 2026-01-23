@@ -21,7 +21,7 @@
 #pragma once
 
 #include "undo_redo_command.h"
-#include <QList>a²
+#include <QList>
 #include <QObject>
 #include <memory>
 

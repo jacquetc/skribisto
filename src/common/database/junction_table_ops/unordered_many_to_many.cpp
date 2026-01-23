@@ -19,6 +19,7 @@
  ******************************************************************************/
 
 #include "unordered_many_to_many.h"
+#include "junction_cache.h"
 #include <QSqlError>
 #include <QSqlQuery>
 
