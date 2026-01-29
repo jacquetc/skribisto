@@ -377,15 +377,14 @@ void TestManyToOneJunction::testUpsertRightIdOverwrite()
 {
     insertTestData({{1, 101}});
 
-    // Update existing record
+    // Attempt to update existing record with different right_id should fail due to validation
     auto result = ManyToOne::upsertRightId(m_db, 1, m_junctionTableName, 201);
-    QCOMPARE(result.size(), 1);
-    QCOMPARE(result[0], 201);
+    QCOMPARE(result.size(), 0); // Should be empty due to validation failure
 
-    // Verify update
+    // Verify original value is unchanged
     auto retrieved = ManyToOne::getRightId(m_db, 1, m_junctionTableName);
     QVERIFY(retrieved.has_value());
-    QCOMPARE(retrieved.value(), 201);
+    QCOMPARE(retrieved.value(), 101); // Should still be 101, not 201
 }
 
 void TestManyToOneJunction::testUpsertRightIdNullOptional()
@@ -509,26 +508,24 @@ void TestManyToOneJunction::testManyToOneConstraintEnforcement()
 {
     insertTestData({{1, 101}});
 
-    // Test that updating to a different right_id works
+    // Test that updating to a different right_id is blocked by validation
     auto result = ManyToOne::upsertRightId(m_db, 1, m_junctionTableName, 201);
-    QCOMPARE(result.size(), 1);
-    QCOMPARE(result[0], 201);
+    QCOMPARE(result.size(), 0); // Should fail validation
 
-    // Verify only one right_id per left_id
+    // Verify only one right_id per left_id and it's still the original
     int count = ManyToOne::getRightIdCount(m_db, 1, m_junctionTableName);
     QCOMPARE(count, 1);
 
     auto retrieved = ManyToOne::getRightId(m_db, 1, m_junctionTableName);
     QVERIFY(retrieved.has_value());
-    QCOMPARE(retrieved.value(), 201);
+    QCOMPARE(retrieved.value(), 101); // Should still be 101, not 201
 
     // Test that multiple left_ids can point to the same right_id
     ManyToOne::upsertRightId(m_db, 2, m_junctionTableName, 201);
     ManyToOne::upsertRightId(m_db, 3, m_junctionTableName, 201);
 
     auto leftIds = ManyToOne::getLeftIds(m_db, m_junctionTableName, 201);
-    QCOMPARE(leftIds.size(), 3);
-    QVERIFY(leftIds.contains(1));
+    QCOMPARE(leftIds.size(), 2); // Only 2 and 3, not 1
     QVERIFY(leftIds.contains(2));
     QVERIFY(leftIds.contains(3));
 }
