@@ -19,6 +19,8 @@ set(SRCS
         direct_access/event_registry.h
         database/junction_table_ops/ordered_one_to_many.h
         database/junction_table_ops/ordered_one_to_many.cpp
+        database/junction_table_ops/ordered_many_to_many.h
+        database/junction_table_ops/ordered_many_to_many.cpp
         database/junction_table_ops/unordered_many_to_many.h
         database/junction_table_ops/unordered_many_to_many.cpp
         database/junction_table_ops/unordered_one_to_many.h

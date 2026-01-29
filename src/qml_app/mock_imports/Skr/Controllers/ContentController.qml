@@ -45,6 +45,7 @@ QtObject {
 
         return task;
     }
+
     function get(ids) {
         let dtos = [];
         for (var i = 0; i < ids.length; i++) {
@@ -66,6 +67,7 @@ QtObject {
         }
         return task;
     }
+
     function getCreateDto() {
         return {
             "createdAt": "",
@@ -74,6 +76,7 @@ QtObject {
             "data": ""
         };
     }
+
     function remove(ids) {
         var task;
         var component = Qt.createComponent("QCoroQmlTask.qml");
@@ -87,6 +90,7 @@ QtObject {
         }
         return task;
     }
+
     function update(dtos) {
         var task;
         var component = Qt.createComponent("QCoroQmlTask.qml");
