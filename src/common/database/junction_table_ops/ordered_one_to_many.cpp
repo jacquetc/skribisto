@@ -21,6 +21,7 @@
 #include "ordered_one_to_many.h"
 #include "junction_cache.h"
 #include <QSet>
+#include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
 
@@ -212,6 +213,16 @@ QHash<int, QList<int>> OrderedOneToMany::upsertRightIdsMany(QSqlDatabase &db,
         return result;
     }
 
+    bool transactionStarted = false;
+    if (!db.driver()->hasFeature(QSqlDriver::Transactions) || !db.transaction())
+    {
+        qWarning() << "Failed to start transaction for upsertRightIdsMany";
+    }
+    else
+    {
+        transactionStarted = true;
+    }
+
     // Invalidate cache for affected left IDs
     QList<int> leftIds = leftIdToRightIds.keys();
     for (int leftId : leftIds)
@@ -223,6 +234,10 @@ QHash<int, QList<int>> OrderedOneToMany::upsertRightIdsMany(QSqlDatabase &db,
     removeWithLeftIdsMany(db, leftIds, junctionTableName);
 
     // Then insert new relationships with proper ordering
+    QSqlQuery insertQuery(db);
+    insertQuery.prepare(
+        QStringLiteral("INSERT INTO %1 (left_id, right_id, order_) VALUES (?, ?, ?)").arg(junctionTableName));
+
     for (auto it = leftIdToRightIds.begin(); it != leftIdToRightIds.end(); ++it)
     {
         int leftId = it.key();
@@ -230,9 +245,6 @@ QHash<int, QList<int>> OrderedOneToMany::upsertRightIdsMany(QSqlDatabase &db,
 
         for (qsizetype i = 0; i < rightIds.size(); ++i)
         {
-            QSqlQuery insertQuery(db);
-            insertQuery.prepare(
-                QStringLiteral("INSERT INTO %1 (left_id, right_id, order_) VALUES (?, ?, ?)").arg(junctionTableName));
             insertQuery.addBindValue(leftId);
             insertQuery.addBindValue(rightIds[i]);
             insertQuery.addBindValue(static_cast<int>(i) * ORDER_GAP);
@@ -243,6 +255,15 @@ QHash<int, QList<int>> OrderedOneToMany::upsertRightIdsMany(QSqlDatabase &db,
         }
 
         result[leftId] = rightIds;
+    }
+
+    if (transactionStarted)
+    {
+        if (!db.commit())
+        {
+            qCritical() << "Failed to commit transaction for upsertRightIdsMany:" << db.lastError().text();
+            db.rollback();
+        }
     }
 
     return result;

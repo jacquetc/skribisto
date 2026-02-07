@@ -1,5 +1,6 @@
 #include "one_to_one.h"
 #include "junction_cache.h"
+#include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
 
@@ -118,6 +119,16 @@ QHash<int, QList<int>> OneToOne::upsertRightIdMany(QSqlDatabase &db, const QHash
         return result;
     }
 
+    bool transactionStarted = false;
+    if (!db.driver()->hasFeature(QSqlDriver::Transactions) || !db.transaction())
+    {
+        qWarning() << "Failed to start transaction for upsertRightIdMany";
+    }
+    else
+    {
+        transactionStarted = true;
+    }
+
     // Invalidate cache for affected left IDs
     QList<int> leftIds = leftIdToRightId.keys();
     for (int leftId : leftIds)
@@ -125,51 +136,49 @@ QHash<int, QList<int>> OneToOne::upsertRightIdMany(QSqlDatabase &db, const QHash
         JunctionCache::instance().invalidateLeftId(junctionTableName, leftId);
     }
 
+    QSqlQuery updateQuery(db);
+    updateQuery.prepare(QStringLiteral("UPDATE %1 SET right_id = ? WHERE left_id = ?").arg(junctionTableName));
+
+    QSqlQuery insertQuery(db);
+    insertQuery.prepare(QStringLiteral("INSERT INTO %1 (left_id, right_id) VALUES (?, ?)").arg(junctionTableName));
+
     // Process each left_id to right_id mapping
     for (auto it = leftIdToRightId.begin(); it != leftIdToRightId.end(); ++it)
     {
         int leftId = it.key();
         int rightId = it.value();
 
-        // Validate uniqueness constraints before attempting insert
-        if (!validateUniqueLeftId(db, leftId, rightId, junctionTableName))
-        {
-            // Validation failed, skip this mapping
-            continue;
-        }
-
-        if (!validateUniqueRightId(db, leftId, rightId, junctionTableName))
-        {
-            // Validation failed, skip this mapping
-            continue;
-        }
-
-        QSqlQuery query(db);
-
         // First try to update existing record
-        query.prepare(QStringLiteral("UPDATE %1 SET right_id = ? WHERE left_id = ?").arg(junctionTableName));
-        query.addBindValue(rightId);
-        query.addBindValue(leftId);
+        updateQuery.addBindValue(rightId);
+        updateQuery.addBindValue(leftId);
 
-        if (!query.exec() || query.numRowsAffected() == 0)
+        if (!updateQuery.exec() || updateQuery.numRowsAffected() == 0)
         {
             // If the update failed due to SQL error, log it
-            if (query.lastError().isValid())
+            if (updateQuery.lastError().isValid())
             {
-                qCritical() << "Failed to execute upsertRightIdMany update query:" << query.lastError().text();
+                qCritical() << "Failed to execute upsertRightIdMany update query:" << updateQuery.lastError().text();
             }
 
             // If no rows were affected, insert new record
-            query.prepare(QStringLiteral("INSERT INTO %1 (left_id, right_id) VALUES (?, ?)").arg(junctionTableName));
-            query.addBindValue(leftId);
-            query.addBindValue(rightId);
-            if (!query.exec())
+            insertQuery.addBindValue(leftId);
+            insertQuery.addBindValue(rightId);
+            if (!insertQuery.exec())
             {
-                qCritical() << "Failed to execute upsertRightIdMany insert query:" << query.lastError().text();
+                qCritical() << "Failed to execute upsertRightIdMany insert query:" << insertQuery.lastError().text();
             }
         }
 
         result[leftId] = QList<int>{rightId};
+    }
+
+    if (transactionStarted)
+    {
+        if (!db.commit())
+        {
+            qCritical() << "Failed to commit transaction for upsertRightIdMany:" << db.lastError().text();
+            db.rollback();
+        }
     }
 
     return result;

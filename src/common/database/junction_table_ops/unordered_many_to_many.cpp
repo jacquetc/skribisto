@@ -20,6 +20,7 @@
 
 #include "unordered_many_to_many.h"
 #include "junction_cache.h"
+#include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
 
@@ -199,6 +200,16 @@ QHash<int, QList<int>> UnorderedManyToMany::upsertRightIdsMany(QSqlDatabase &db,
         return result;
     }
 
+    bool transactionStarted = false;
+    if (!db.driver()->hasFeature(QSqlDriver::Transactions) || !db.transaction())
+    {
+        qWarning() << "Failed to start transaction for upsertRightIdsMany";
+    }
+    else
+    {
+        transactionStarted = true;
+    }
+
     // Invalidate cache for affected left IDs
     QList<int> leftIds = leftIdToRightIds.keys();
     for (int leftId : leftIds)
@@ -230,6 +241,15 @@ QHash<int, QList<int>> UnorderedManyToMany::upsertRightIdsMany(QSqlDatabase &db,
         }
 
         result[leftId] = rightIds;
+    }
+
+    if (transactionStarted)
+    {
+        if (!db.commit())
+        {
+            qCritical() << "Failed to commit transaction for upsertRightIdsMany:" << db.lastError().text();
+            db.rollback();
+        }
     }
 
     return result;

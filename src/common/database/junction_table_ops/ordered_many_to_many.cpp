@@ -21,6 +21,7 @@
 #include "ordered_many_to_many.h"
 #include "junction_cache.h"
 #include <QSet>
+#include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
 
@@ -29,7 +30,7 @@ namespace Skribisto::Common::Database::JunctionTableOps
 constexpr int ORDER_GAP = 1000;
 
 QHash<int, QList<int>> OrderedManyToMany::getRightIdsMany(QSqlDatabase &db, const QList<int> &leftIds,
-                                                           const QString &junctionTableName)
+                                                          const QString &junctionTableName)
 {
     QHash<int, QList<int>> result;
 
@@ -92,7 +93,7 @@ QList<int> OrderedManyToMany::getRightIds(QSqlDatabase &db, int leftId, const QS
 }
 
 QHash<int, bool> OrderedManyToMany::removeWithLeftIdsMany(QSqlDatabase &db, const QList<int> &leftIds,
-                                                           const QString &junctionTableName)
+                                                          const QString &junctionTableName)
 {
     QHash<int, bool> result;
 
@@ -143,7 +144,7 @@ bool OrderedManyToMany::removeWithLeftIds(QSqlDatabase &db, int leftId, const QS
 }
 
 QHash<int, bool> OrderedManyToMany::removeWithRightIdsMany(QSqlDatabase &db, const QList<int> &rightIds,
-                                                            const QString &junctionTableName)
+                                                           const QString &junctionTableName)
 {
     QHash<int, bool> result;
 
@@ -203,14 +204,24 @@ bool OrderedManyToMany::removeWithRightIds(QSqlDatabase &db, int rightId, const 
 }
 
 QHash<int, QList<int>> OrderedManyToMany::upsertRightIdsMany(QSqlDatabase &db,
-                                                              const QHash<int, QList<int>> &leftIdToRightIds,
-                                                              const QString &junctionTableName)
+                                                             const QHash<int, QList<int>> &leftIdToRightIds,
+                                                             const QString &junctionTableName)
 {
     QHash<int, QList<int>> result;
 
     if (leftIdToRightIds.isEmpty())
     {
         return result;
+    }
+
+    bool transactionStarted = false;
+    if (!db.driver()->hasFeature(QSqlDriver::Transactions) || !db.transaction())
+    {
+        qWarning() << "Failed to start transaction for upsertRightIdsMany";
+    }
+    else
+    {
+        transactionStarted = true;
     }
 
     // Invalidate cache for affected left IDs
@@ -224,6 +235,10 @@ QHash<int, QList<int>> OrderedManyToMany::upsertRightIdsMany(QSqlDatabase &db,
     removeWithLeftIdsMany(db, leftIds, junctionTableName);
 
     // Then insert new relationships with proper ordering
+    QSqlQuery insertQuery(db);
+    insertQuery.prepare(
+        QStringLiteral("INSERT INTO %1 (left_id, right_id, order_) VALUES (?, ?, ?)").arg(junctionTableName));
+
     for (auto it = leftIdToRightIds.begin(); it != leftIdToRightIds.end(); ++it)
     {
         int leftId = it.key();
@@ -231,9 +246,6 @@ QHash<int, QList<int>> OrderedManyToMany::upsertRightIdsMany(QSqlDatabase &db,
 
         for (qsizetype i = 0; i < rightIds.size(); ++i)
         {
-            QSqlQuery insertQuery(db);
-            insertQuery.prepare(
-                QStringLiteral("INSERT INTO %1 (left_id, right_id, order_) VALUES (?, ?, ?)").arg(junctionTableName));
             insertQuery.addBindValue(leftId);
             insertQuery.addBindValue(rightIds[i]);
             insertQuery.addBindValue(static_cast<int>(i) * ORDER_GAP);
@@ -246,11 +258,20 @@ QHash<int, QList<int>> OrderedManyToMany::upsertRightIdsMany(QSqlDatabase &db,
         result[leftId] = rightIds;
     }
 
+    if (transactionStarted)
+    {
+        if (!db.commit())
+        {
+            qCritical() << "Failed to commit transaction for upsertRightIdsMany:" << db.lastError().text();
+            db.rollback();
+        }
+    }
+
     return result;
 }
 
 QList<int> OrderedManyToMany::upsertRightIds(QSqlDatabase &db, int leftId, const QString &junctionTableName,
-                                              const QList<int> &rightIds)
+                                             const QList<int> &rightIds)
 {
     QHash<int, QList<int>> input;
     input[leftId] = rightIds;
@@ -259,7 +280,7 @@ QList<int> OrderedManyToMany::upsertRightIds(QSqlDatabase &db, int leftId, const
 }
 
 QList<int> OrderedManyToMany::upsertRightIds(QSqlDatabase &db, int leftId, const QString &junctionTableName,
-                                              const std::optional<QList<int>> &rightIds)
+                                             const std::optional<QList<int>> &rightIds)
 {
     if (!rightIds.has_value())
     {
@@ -270,7 +291,7 @@ QList<int> OrderedManyToMany::upsertRightIds(QSqlDatabase &db, int leftId, const
 }
 
 QMap<int, QList<int>> OrderedManyToMany::getLeftIdsMany(QSqlDatabase &db, const QString &junctionTableName,
-                                                         const QList<int> &rightIds)
+                                                        const QList<int> &rightIds)
 {
     QMap<int, QList<int>> result;
 
@@ -288,8 +309,9 @@ QMap<int, QList<int>> OrderedManyToMany::getLeftIdsMany(QSqlDatabase &db, const 
     // Build dynamic IN clause with ORDER BY for ordered results from right to left
     QStringList placeholders;
     placeholders.fill("?"_L1, rightIds.size());
-    const QString sql = QStringLiteral("SELECT right_id, left_id FROM %1 WHERE right_id IN (%2) ORDER BY right_id, order_")
-                            .arg(junctionTableName, placeholders.join(","_L1));
+    const QString sql =
+        QStringLiteral("SELECT right_id, left_id FROM %1 WHERE right_id IN (%2) ORDER BY right_id, order_")
+            .arg(junctionTableName, placeholders.join(","_L1));
 
     QSqlQuery query(db);
     query.prepare(sql);
@@ -353,7 +375,7 @@ int OrderedManyToMany::getRightIdsCount(QSqlDatabase &db, int leftId, const QStr
 }
 
 QList<int> OrderedManyToMany::getRightIdsInRange(QSqlDatabase &db, int leftId, const QString &junctionTableName,
-                                                  int offset, int limit)
+                                                 int offset, int limit)
 {
     QList<int> cachedResult;
     if (JunctionCache::instance().getCachedRightIdsInRange(junctionTableName, leftId, offset, limit, cachedResult))
