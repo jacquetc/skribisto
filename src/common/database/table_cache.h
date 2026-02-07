@@ -50,6 +50,16 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         {
             return ids == other.ids;
         }
+
+        friend uint qHash(const EntityCacheKey &key, uint seed = 0)
+        {
+            uint hash = seed;
+            for (int id : key.ids)
+            {
+                hash = ::qHashMulti(hash, id);
+            }
+            return hash;
+        }
     };
 
     struct RelationshipCacheKey
@@ -66,6 +76,19 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
             return entityIds == other.entityIds && relationshipType == other.relationshipType &&
                    operation == other.operation && entityId == other.entityId && offset == other.offset &&
                    limit == other.limit;
+        }
+
+        friend uint qHash(const RelationshipCacheKey &key, uint seed = 0)
+        {
+            uint hash = ::qHashMulti(seed, static_cast<int>(key.relationshipType), key.operation, key.entityId,
+                                     key.offset, key.limit);
+
+            for (int id : key.entityIds)
+            {
+                hash = ::qHashMulti(hash, id);
+            }
+
+            return hash;
         }
     };
 
@@ -103,8 +126,7 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         EntityCacheKey key;
         key.ids = sortedIds;
 
-        uint hash = qHash(key);
-        auto it = m_entityCache.find(hash);
+        auto it = m_entityCache.find(key);
 
         if (it != m_entityCache.end() && it->isValid && !isExpired(it->timestamp, 30))
         {
@@ -131,8 +153,7 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         value.timestamp = QDateTime::currentDateTimeUtc();
         value.isValid = true;
 
-        uint hash = qHash(key);
-        m_entityCache[hash] = value;
+        m_entityCache[key] = value;
     }
 
     // Relationship caching methods
@@ -150,8 +171,7 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         key.relationshipType = relationshipType;
         key.operation = "getMany"_L1;
 
-        uint hash = qHash(key);
-        auto it = m_relationshipCache.find(hash);
+        auto it = m_relationshipCache.find(key);
 
         if (it != m_relationshipCache.end() && it->isValid && !isExpired(it->timestamp, 30))
         {
@@ -181,8 +201,7 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         value.timestamp = QDateTime::currentDateTimeUtc();
         value.isValid = true;
 
-        uint hash = qHash(key);
-        m_relationshipCache[hash] = value;
+        m_relationshipCache[key] = value;
     }
 
     bool getCachedRelationshipCount(int entityId, RelationshipFieldType relationshipType, int &result)
@@ -194,8 +213,7 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         key.relationshipType = relationshipType;
         key.operation = "getCount"_L1;
 
-        uint hash = qHash(key);
-        auto it = m_relationshipCache.find(hash);
+        auto it = m_relationshipCache.find(key);
 
         if (it != m_relationshipCache.end() && it->isValid && !isExpired(it->timestamp, 30))
         {
@@ -220,8 +238,7 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         value.timestamp = QDateTime::currentDateTimeUtc();
         value.isValid = true;
 
-        uint hash = qHash(key);
-        m_relationshipCache[hash] = value;
+        m_relationshipCache[key] = value;
     }
 
     bool getCachedRelationshipRange(int entityId, RelationshipFieldType relationshipType, int offset, int limit,
@@ -236,8 +253,7 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         key.offset = offset;
         key.limit = limit;
 
-        uint hash = qHash(key);
-        auto it = m_relationshipCache.find(hash);
+        auto it = m_relationshipCache.find(key);
 
         if (it != m_relationshipCache.end() && it->isValid && !isExpired(it->timestamp, 30))
         {
@@ -265,8 +281,7 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         value.timestamp = QDateTime::currentDateTimeUtc();
         value.isValid = true;
 
-        uint hash = qHash(key);
-        m_relationshipCache[hash] = value;
+        m_relationshipCache[key] = value;
     }
 
     // Invalidation methods
@@ -278,10 +293,8 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         auto it = m_entityCache.begin();
         while (it != m_entityCache.end())
         {
-            EntityCacheKey key = entityKeyFromHash(it.key());
-            if (key.ids.contains(entityId))
+            if (it.key().ids.contains(entityId))
             {
-                m_entityKeyMap.remove(it.key());
                 it = m_entityCache.erase(it);
             }
             else
@@ -301,9 +314,8 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         auto it = m_entityCache.begin();
         while (it != m_entityCache.end())
         {
-            EntityCacheKey key = entityKeyFromHash(it.key());
             bool hasOverlap = false;
-            for (int id : key.ids)
+            for (int id : it.key().ids)
             {
                 if (entityIdSet.contains(id))
                 {
@@ -314,7 +326,6 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
 
             if (hasOverlap)
             {
-                m_entityKeyMap.remove(it.key());
                 it = m_entityCache.erase(it);
             }
             else
@@ -332,10 +343,8 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         auto it = m_relationshipCache.begin();
         while (it != m_relationshipCache.end())
         {
-            RelationshipCacheKey key = relationshipKeyFromHash(it.key());
-            if (key.entityId == entityId || key.entityIds.contains(entityId))
+            if (it.key().entityId == entityId || it.key().entityIds.contains(entityId))
             {
-                m_relationshipKeyMap.remove(it.key());
                 it = m_relationshipCache.erase(it);
             }
             else
@@ -355,12 +364,11 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         auto it = m_relationshipCache.begin();
         while (it != m_relationshipCache.end())
         {
-            RelationshipCacheKey key = relationshipKeyFromHash(it.key());
-            bool hasMatch = entityIdSet.contains(key.entityId);
+            bool hasMatch = entityIdSet.contains(it.key().entityId);
 
             if (!hasMatch)
             {
-                for (int id : key.entityIds)
+                for (int id : it.key().entityIds)
                 {
                     if (entityIdSet.contains(id))
                     {
@@ -372,7 +380,6 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
 
             if (hasMatch)
             {
-                m_relationshipKeyMap.remove(it.key());
                 it = m_relationshipCache.erase(it);
             }
             else
@@ -387,8 +394,6 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         QMutexLocker locker(&m_mutex);
         m_entityCache.clear();
         m_relationshipCache.clear();
-        m_entityKeyMap.clear();
-        m_relationshipKeyMap.clear();
     }
 
     // Cleanup methods
@@ -402,7 +407,6 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         {
             if (isExpired(entityIt->timestamp, maxAgeMinutes))
             {
-                m_entityKeyMap.remove(entityIt.key());
                 entityIt = m_entityCache.erase(entityIt);
             }
             else
@@ -417,7 +421,6 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
         {
             if (isExpired(relationshipIt->timestamp, maxAgeMinutes))
             {
-                m_relationshipKeyMap.remove(relationshipIt.key());
                 relationshipIt = m_relationshipCache.erase(relationshipIt);
             }
             else
@@ -433,54 +436,14 @@ template <typename EntityType, typename RelationshipFieldType> class TableCache
     }
 
   private:
-    QHash<uint, EntityCacheValue> m_entityCache;
-    QHash<uint, RelationshipCacheValue> m_relationshipCache;
+    QHash<EntityCacheKey, EntityCacheValue> m_entityCache;
+    QHash<RelationshipCacheKey, RelationshipCacheValue> m_relationshipCache;
     QMutex m_mutex;
-    QHash<uint, EntityCacheKey> m_entityKeyMap;
-    QHash<uint, RelationshipCacheKey> m_relationshipKeyMap;
-
-    EntityCacheKey entityKeyFromHash(uint hash) const
-    {
-        return m_entityKeyMap.value(hash);
-    }
-
-    RelationshipCacheKey relationshipKeyFromHash(uint hash) const
-    {
-        return m_relationshipKeyMap.value(hash);
-    }
-
-    uint qHash(const EntityCacheKey &key)
-    {
-        uint hash = 0;
-        for (int id : key.ids)
-        {
-            hash ^= ::qHash(id);
-        }
-
-        m_entityKeyMap[hash] = key;
-        return hash;
-    }
-
-    uint qHash(const RelationshipCacheKey &key)
-    {
-        uint hash = ::qHash(static_cast<int>(key.relationshipType)) ^ ::qHash(key.operation) ^ ::qHash(key.entityId) ^
-                    ::qHash(key.offset) ^ ::qHash(key.limit);
-
-        for (int id : key.entityIds)
-        {
-            hash ^= ::qHash(id);
-        }
-
-        m_relationshipKeyMap[hash] = key;
-        return hash;
-    }
 
     bool isExpired(const QDateTime &timestamp, int maxAgeMinutes) const
     {
         return timestamp.addSecs(maxAgeMinutes * 60) < QDateTime::currentDateTimeUtc();
     }
 };
-
-// Note: Specific cache type definitions are created as needed in the implementation files
 
 } // namespace Skribisto::Common::Database

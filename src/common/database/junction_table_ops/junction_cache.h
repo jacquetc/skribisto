@@ -52,6 +52,11 @@ class JunctionCache
             return tableName == other.tableName && leftId == other.leftId && operation == other.operation &&
                    offset == other.offset && limit == other.limit;
         }
+
+        friend uint qHash(const CacheKey &key, uint seed = 0)
+        {
+            return ::qHashMulti(seed, key.tableName, key.leftId, key.operation, key.offset, key.limit);
+        }
     };
 
     struct CacheValue
@@ -73,7 +78,7 @@ class JunctionCache
         QMutexLocker locker(&m_mutex);
         CacheKey key{tableName, leftId, "getRightIds"_L1, 0, 0};
 
-        auto it = m_cache.find(qHash(key));
+        auto it = m_cache.find(key);
         if (it != m_cache.end() && it->isValid)
         {
             result = it->rightIds;
@@ -91,7 +96,7 @@ class JunctionCache
         value.rightIds = rightIds;
         value.count = rightIds.size();
         value.isValid = true;
-        m_cache[qHash(key)] = value;
+        m_cache[key] = value;
     }
 
     // Get cached count for a left ID
@@ -100,7 +105,7 @@ class JunctionCache
         QMutexLocker locker(&m_mutex);
         CacheKey key{tableName, leftId, "getRightIdsCount"_L1, 0, 0};
 
-        auto it = m_cache.find(qHash(key));
+        auto it = m_cache.find(key);
         if (it != m_cache.end() && it->isValid)
         {
             result = it->count;
@@ -117,7 +122,7 @@ class JunctionCache
         CacheValue value;
         value.count = count;
         value.isValid = true;
-        m_cache[qHash(key)] = value;
+        m_cache[key] = value;
     }
 
     // Get cached range results
@@ -126,7 +131,7 @@ class JunctionCache
         QMutexLocker locker(&m_mutex);
         CacheKey key{tableName, leftId, "getRightIdsInRange"_L1, offset, limit};
 
-        auto it = m_cache.find(qHash(key));
+        auto it = m_cache.find(key);
         if (it != m_cache.end() && it->isValid)
         {
             result = it->rightIds;
@@ -144,7 +149,7 @@ class JunctionCache
         CacheValue value;
         value.rightIds = rightIds;
         value.isValid = true;
-        m_cache[qHash(key)] = value;
+        m_cache[key] = value;
     }
 
     // Remove all cached data for a specific left ID
@@ -155,10 +160,8 @@ class JunctionCache
         auto it = m_cache.begin();
         while (it != m_cache.end())
         {
-            CacheKey key = keyFromHash(it.key());
-            if (key.tableName == tableName && key.leftId == leftId)
+            if (it.key().tableName == tableName && it.key().leftId == leftId)
             {
-                m_keyMap.remove(it.key());
                 it = m_cache.erase(it);
             }
             else
@@ -175,10 +178,8 @@ class JunctionCache
         auto it = m_cache.begin();
         while (it != m_cache.end())
         {
-            CacheKey key = keyFromHash(it.key());
-            if (key.tableName == tableName)
+            if (it.key().tableName == tableName)
             {
-                m_keyMap.remove(it.key());
                 it = m_cache.erase(it);
             }
             else
@@ -193,26 +194,11 @@ class JunctionCache
     {
         QMutexLocker locker(&m_mutex);
         m_cache.clear();
-        m_keyMap.clear();
     }
 
   private:
-    QHash<uint, CacheValue> m_cache;
+    QHash<CacheKey, CacheValue> m_cache;
     QMutex m_mutex;
-    QHash<uint, CacheKey> m_keyMap; // To reverse lookup keys from hash
-
-    CacheKey keyFromHash(uint hash) const
-    {
-        return m_keyMap.value(hash);
-    }
-
-    uint qHash(const CacheKey &key)
-    {
-        uint hash = ::qHash(key.tableName) ^ ::qHash(key.leftId) ^ ::qHash(key.operation) ^ ::qHash(key.offset) ^
-                    ::qHash(key.limit);
-        m_keyMap[hash] = key; // Store reverse lookup
-        return hash;
-    }
 };
 
 } // namespace Skribisto::Common::Database::JunctionTableOps
