@@ -206,7 +206,7 @@ struct DbSubContext
         return m_parentDbContext.getDatabaseName();
     }
 
-    [[nodiscard]] QSqlDatabase getConnection()
+    [[nodiscard]] QSqlDatabase getConnection() const
     {
         // Lazy initialization - create connection on first use
         if (m_dbId == -1)
@@ -216,7 +216,7 @@ struct DbSubContext
         return m_parentDbContext.getConnection(m_dbId);
     }
 
-    [[nodiscard]] int getDbId()
+    [[nodiscard]] int getDbId() const
     {
         // Ensure connection exists before returning ID
         if (m_dbId == -1)
@@ -325,7 +325,7 @@ struct DbSubContext
 
   private:
     DbContext &m_parentDbContext;
-    int m_dbId = -1; // Initialize to invalid ID
+    mutable int m_dbId = -1; // Initialize to invalid ID
     QString m_savepointName;
 };
 

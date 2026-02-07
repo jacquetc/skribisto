@@ -304,7 +304,7 @@ QHash<int, QList<int>> SCDRoot::RootTable::getRelationshipIdsMany(const QList<in
         return result;
     }
 
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
 
     switch (relationship)
     {
@@ -328,7 +328,7 @@ QHash<int, QList<int>> SCDRoot::RootTable::getRelationshipIdsMany(const QList<in
 
 int SCDRoot::RootTable::getRelationshipIdsCount(int rootId, RootRelationshipField relationship)
 {
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
     int result;
 
     switch (relationship)
@@ -349,7 +349,7 @@ int SCDRoot::RootTable::getRelationshipIdsCount(int rootId, RootRelationshipFiel
 QList<int> SCDRoot::RootTable::getRelationshipIdsInRange(int rootId, RootRelationshipField relationship, int offset,
                                                          int limit)
 {
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
     QList<int> result;
 
     switch (relationship)

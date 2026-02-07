@@ -279,7 +279,7 @@ QHash<int, QList<int>> SCDRecentWork::RecentWorkTable::getRelationshipIdsMany(
         return result;
     }
 
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
 
     switch (relationship)
     {
@@ -296,7 +296,7 @@ QHash<int, QList<int>> SCDRecentWork::RecentWorkTable::getRelationshipIdsMany(
 
 int SCDRecentWork::RecentWorkTable::getRelationshipIdsCount(int recentWorkId, RecentWorkRelationshipField relationship)
 {
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
     int result;
 
     switch (relationship)
@@ -311,7 +311,7 @@ QList<int> SCDRecentWork::RecentWorkTable::getRelationshipIdsInRange(int recentW
                                                                      RecentWorkRelationshipField relationship,
                                                                      int offset, int limit)
 {
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
     QList<int> result;
 
     switch (relationship)

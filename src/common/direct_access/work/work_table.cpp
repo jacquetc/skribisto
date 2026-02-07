@@ -195,7 +195,7 @@ QList<SCE::Work> SCDWork::WorkTable::findMany(const QList<int> &ids) const
         return result;
     }
 
-    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
 
     // Build placeholder for SELECT fields
     QStringList selectPlaceholders;
@@ -314,7 +314,7 @@ QHash<int, QList<int>> SCDWork::WorkTable::getRelationshipIdsMany(const QList<in
         return result;
     }
 
-    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
 
     switch (relationship)
     {
@@ -339,7 +339,7 @@ QHash<int, QList<int>> SCDWork::WorkTable::getRelationshipIdsMany(const QList<in
 
 int SCDWork::WorkTable::getRelationshipIdsCount(int workId, WorkRelationshipField relationship)
 {
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
     int result;
 
     switch (relationship)
@@ -361,7 +361,7 @@ int SCDWork::WorkTable::getRelationshipIdsCount(int workId, WorkRelationshipFiel
 QList<int> SCDWork::WorkTable::getRelationshipIdsInRange(int workId, WorkRelationshipField relationship, int offset,
                                                          int limit)
 {
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
     QList<int> result;
 
     switch (relationship)

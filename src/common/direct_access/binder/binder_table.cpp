@@ -188,7 +188,7 @@ QList<SCE::Binder> SCDBinder::BinderTable::findMany(const QList<int> &ids) const
         return result;
     }
 
-    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
 
     // Build placeholder for SELECT fields
     QStringList selectPlaceholders;
@@ -300,7 +300,7 @@ QHash<int, QList<int>> SCDBinder::BinderTable::getRelationshipIdsMany(const QLis
         return result;
     }
 
-    QSqlDatabase db = const_cast<DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
 
     switch (relationship)
     {
@@ -320,7 +320,7 @@ QHash<int, QList<int>> SCDBinder::BinderTable::getRelationshipIdsMany(const QLis
 
 int SCDBinder::BinderTable::getRelationshipIdsCount(int binderId, BinderRelationshipField relationship)
 {
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
     int result;
 
     switch (relationship)
@@ -337,7 +337,7 @@ int SCDBinder::BinderTable::getRelationshipIdsCount(int binderId, BinderRelation
 QList<int> SCDBinder::BinderTable::getRelationshipIdsInRange(int binderId, BinderRelationshipField relationship,
                                                              int offset, int limit)
 {
-    QSqlDatabase db = const_cast<Database::DbSubContext &>(m_dbSubContext).getConnection();
+    QSqlDatabase db = m_dbSubContext.getConnection();
     QList<int> result;
 
     switch (relationship)
