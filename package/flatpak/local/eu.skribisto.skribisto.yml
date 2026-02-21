@@ -1,11 +1,12 @@
 app-id: eu.skribisto.skribisto
 runtime: org.kde.Platform
-runtime-version: '6.2'
+runtime-version: '6.6'
 sdk: org.kde.Sdk
 command: skribisto
 finish-args:
   - --share=ipc
   - --share=network
+  - --socket=wayland
   - --socket=fallback-x11
   - --filesystem=home
   - --device=dri
