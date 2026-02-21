@@ -269,32 +269,46 @@
     <name>AppearanceSettingsPanel</name>
     <message>
         <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="118"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="118"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="20"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="119"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="119"/>
         <source>Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="29"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="120"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="120"/>
         <source>Day theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="39"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="121"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="121"/>
         <source>Night theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="55"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="122"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="122"/>
         <source>Modify theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="65"/>
         <location filename="../desktopapp/settings/appearancesettingspanel.ui" line="74"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="123"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="124"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="123"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_appearancesettingspanel.h" line="124"/>
         <source>Language</source>
         <translation type="unfinished"></translation>
     </message>
@@ -349,36 +363,50 @@
     <name>BackupSettingsPanel</name>
     <message>
         <location filename="../desktopapp/settings/backupsettingspanel.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="168"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="168"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/backupsettingspanel.ui" line="35"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="169"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="169"/>
         <source>Backup paths</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/backupsettingspanel.ui" line="43"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="170"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="170"/>
         <source>Remove backup path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/backupsettingspanel.ui" line="67"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="171"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="171"/>
         <source>Add backup path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/backupsettingspanel.ui" line="121"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="173"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="173"/>
         <source>Periodical backup:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/backupsettingspanel.ui" line="111"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="172"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="172"/>
         <source>Enable periodical backup:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/backupsettingspanel.ui" line="138"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="174"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_backupsettingspanel.h" line="174"/>
         <source>Back up once a day:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -448,71 +476,99 @@
     <name>BookExportWizard</name>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="227"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="227"/>
         <source>Wizard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="24"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="228"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="228"/>
         <source>Book selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="27"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="229"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="229"/>
         <source>Select a book or a chapter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="33"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="230"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="230"/>
         <source>Books</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="54"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="231"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="231"/>
         <source>Chapters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="93"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="232"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="232"/>
         <source>Choose an extension</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="104"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="233"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="233"/>
         <source>Destination:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="114"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="234"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="234"/>
         <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="133"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="235"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="235"/>
         <source>Font size:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="153"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="236"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="236"/>
         <source>Font family:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="169"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="237"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="237"/>
         <source>Paragraph top margin:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="179"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="238"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="238"/>
         <source>Paragraph&apos;s first line indent:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="189"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="239"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="239"/>
         <source>Space between lines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/bookexportwizard.ui" line="196"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="240"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_bookexportwizard.h" line="240"/>
         <source>%</source>
         <translation type="unfinished"></translation>
     </message>
@@ -532,7 +588,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/export/bookexportwizard.cpp" line="253"/>
+        <location filename="../desktopapp/export/bookexportwizard.cpp" line="261"/>
         <source>All</source>
         <translation type="unfinished"></translation>
     </message>
@@ -961,6 +1017,8 @@
     <name>CreationParametersWidget</name>
     <message>
         <location filename="../desktopapp/plugins/sectionPage/creationparameterswidget.ui" line="20"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/sectionPage/skribistoDesktopPluginSectionPage_autogen/include/ui_creationparameterswidget.h" line="47"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/sectionPage/skribistoDesktopPluginSectionPage_autogen/include/ui_creationparameterswidget.h" line="47"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1155,16 +1213,22 @@
     <name>EmptyView</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="17"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_emptyview.h" line="102"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_emptyview.h" line="102"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="45"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_emptyview.h" line="103"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_emptyview.h" line="103"/>
         <source>**Open a document**</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/emptyview.ui" line="107"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_emptyview.h" line="104"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_emptyview.h" line="104"/>
         <source>- Click on a page in Navigation
 - Drag and drop a page here</source>
         <translation type="unfinished"></translation>
@@ -1182,31 +1246,43 @@
     <name>ExportDialog</name>
     <message>
         <location filename="../desktopapp/export/exportdialog.ui" line="14"/>
-        <source>Dialog</source>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="99"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="99"/>
+        <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/exportdialog.ui" line="20"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="100"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="100"/>
         <source>Choose the way to export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/exportdialog.ui" line="29"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="101"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="101"/>
         <source>Selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/exportdialog.ui" line="46"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="102"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="102"/>
         <source>Book</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/exportdialog.ui" line="57"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="103"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="103"/>
         <source>Export a book or a chapter using &quot;Section&quot; items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/exportdialog.ui" line="67"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="104"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_exportdialog.h" line="104"/>
         <source>Select the items to export</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1635,6 +1711,8 @@
     <name>FolderView</name>
     <message>
         <location filename="../desktopapp/plugins/folderPage/folderview.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/folderPage/skribistoDesktopPluginFolderPage_autogen/include/ui_folderview.h" line="49"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/folderPage/skribistoDesktopPluginFolderPage_autogen/include/ui_folderview.h" line="49"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1682,6 +1760,8 @@
     <name>InstallNewDictWizard</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/installnewdictwizard.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_installnewdictwizard.h" line="44"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_installnewdictwizard.h" line="44"/>
         <source>Wizard</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1734,246 +1814,325 @@
     <name>MainWindow</name>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="277"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="277"/>
         <source>Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="41"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="318"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="318"/>
         <source>&amp;Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="61"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="319"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="319"/>
         <source>&amp;Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="68"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="320"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="320"/>
         <source>&amp;View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="83"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="321"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="321"/>
         <source>&amp;Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/mainwindow.ui" line="90"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="322"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="322"/>
         <source>&amp;Tools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="194"/>
+        <location filename="../desktopapp/mainwindow.ui" line="196"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="323"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="323"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="218"/>
+        <location filename="../desktopapp/mainwindow.ui" line="220"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="278"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="278"/>
         <source>New Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="221"/>
+        <location filename="../desktopapp/mainwindow.ui" line="223"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="280"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="280"/>
         <source>Ctrl+Shift+N</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="230"/>
+        <location filename="../desktopapp/mainwindow.ui" line="232"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="282"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="282"/>
         <source>Preferences</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="239"/>
+        <location filename="../desktopapp/mainwindow.ui" line="241"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="283"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="283"/>
         <source>Add Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="248"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="292"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="387"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="523"/>
+        <location filename="../desktopapp/mainwindow.ui" line="250"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="284"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="284"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="285"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="384"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="522"/>
         <source>Quit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="253"/>
+        <location filename="../desktopapp/mainwindow.ui" line="255"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="285"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="285"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="258"/>
+        <location filename="../desktopapp/mainwindow.ui" line="260"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="286"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="286"/>
         <source>About Qt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="263"/>
+        <location filename="../desktopapp/mainwindow.ui" line="265"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="287"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="287"/>
         <source>Disctraction Free</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="266"/>
+        <location filename="../desktopapp/mainwindow.ui" line="268"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="289"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="289"/>
         <source>Switch to disctraction free mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="278"/>
+        <location filename="../desktopapp/mainwindow.ui" line="280"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="291"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="291"/>
         <source>Show View Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="290"/>
+        <location filename="../desktopapp/mainwindow.ui" line="292"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="292"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="292"/>
         <source>Show Project Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="295"/>
+        <location filename="../desktopapp/mainwindow.ui" line="297"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="293"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="293"/>
         <source>Close All Views</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="298"/>
+        <location filename="../desktopapp/mainwindow.ui" line="300"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="295"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="295"/>
         <source>Close All View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="303"/>
+        <location filename="../desktopapp/mainwindow.ui" line="305"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="297"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="297"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="308"/>
+        <location filename="../desktopapp/mainwindow.ui" line="310"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="298"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="298"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="313"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="252"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="357"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="484"/>
+        <location filename="../desktopapp/mainwindow.ui" line="315"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="299"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="299"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="242"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="353"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="480"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="318"/>
+        <location filename="../desktopapp/mainwindow.ui" line="320"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="300"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="300"/>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="323"/>
+        <location filename="../desktopapp/mainwindow.ui" line="325"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="301"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="301"/>
         <source>Close project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="328"/>
+        <location filename="../desktopapp/mainwindow.ui" line="330"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="302"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="302"/>
         <source>Back up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="333"/>
+        <location filename="../desktopapp/mainwindow.ui" line="335"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="303"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="303"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="338"/>
+        <location filename="../desktopapp/mainwindow.ui" line="340"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="304"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="304"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="343"/>
+        <location filename="../desktopapp/mainwindow.ui" line="345"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="305"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="305"/>
         <source>Open Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="363"/>
+        <location filename="../desktopapp/mainwindow.ui" line="365"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="306"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="306"/>
         <source>Recent projects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="375"/>
+        <location filename="../desktopapp/mainwindow.ui" line="377"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="307"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="307"/>
         <source>Spell checking</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="378"/>
+        <location filename="../desktopapp/mainwindow.ui" line="380"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="309"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="309"/>
         <source>Shift+F7</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="383"/>
+        <location filename="../desktopapp/mainwindow.ui" line="385"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="311"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="311"/>
         <source>Go to Project Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="388"/>
+        <location filename="../desktopapp/mainwindow.ui" line="390"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="312"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="312"/>
         <source>Go to View Dock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="393"/>
+        <location filename="../desktopapp/mainwindow.ui" line="395"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="313"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="313"/>
         <source>Focus back on view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.ui" line="396"/>
+        <location filename="../desktopapp/mainwindow.ui" line="398"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="315"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="315"/>
         <source>Esc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="736"/>
+        <location filename="../desktopapp/mainwindow.ui" line="403"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="317"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_mainwindow.h" line="317"/>
+        <source>Welcome</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/mainwindow.cpp" line="715"/>
         <source>Switch to light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="409"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="406"/>
         <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="253"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="358"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="485"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="243"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="354"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="481"/>
         <source>Do you want to save changes to %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="292"/>
-        <location filename="../desktopapp/mainwindow.cpp" line="523"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="285"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="522"/>
         <source>Do you really want to quit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="324"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="316"/>
         <source>Save project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="388"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="385"/>
         <source>Do you really want to close %1?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="457"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="452"/>
         <source>Ctrl+E</source>
         <comment>export shortcut</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="571"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="562"/>
         <source>Ctrl+=</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="597"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="588"/>
         <source>Ctrl+`</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="653"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="639"/>
         <source>About Skribisto</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/mainwindow.cpp" line="733"/>
+        <location filename="../desktopapp/mainwindow.cpp" line="711"/>
         <source>Switch to dark theme</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1982,11 +2141,15 @@
     <name>Navigation</name>
     <message>
         <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/navigationProjectToolbox/skribistoDesktopPluginNavigationProjectToolbox_autogen/include/ui_navigation.h" line="94"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/navigationProjectToolbox/skribistoDesktopPluginNavigationProjectToolbox_autogen/include/ui_navigation.h" line="94"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.ui" line="69"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/navigationProjectToolbox/skribistoDesktopPluginNavigationProjectToolbox_autogen/include/ui_navigation.h" line="95"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/navigationProjectToolbox/skribistoDesktopPluginNavigationProjectToolbox_autogen/include/ui_navigation.h" line="95"/>
         <source>Navigation menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2006,43 +2169,43 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="98"/>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="110"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="97"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="109"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="110"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="109"/>
         <source>Enter a new title for the item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="122"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="121"/>
         <source>Add below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="139"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="138"/>
         <source>Add above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="154"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="153"/>
         <source>Add sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="181"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="180"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="213"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="212"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="228"/>
+        <location filename="../desktopapp/plugins/navigationProjectToolbox/navigation.cpp" line="227"/>
         <source>Set as the active project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2436,76 +2599,106 @@
     <name>NewProjectWizard</name>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="219"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="219"/>
         <source>Create a new project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="24"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="220"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="220"/>
         <source>Informations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="27"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="221"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="221"/>
         <source>Please fill the fields</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="33"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="222"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="222"/>
         <source>Project name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="46"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="223"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="223"/>
         <source>Author</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="59"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="224"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="224"/>
         <source>Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="92"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="227"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="227"/>
         <source>Choose a format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="138"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="228"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="228"/>
         <source>Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="163"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="229"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="229"/>
         <source>Select path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="224"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="233"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="233"/>
         <source>TextLabel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="83"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="225"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="225"/>
         <source>Format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="86"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="226"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="226"/>
         <source>Choose the way your project will be saved</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="173"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="230"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="230"/>
         <source>Created file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="190"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="231"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="231"/>
         <source>Template</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/newprojectwizard.ui" line="193"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="232"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_newprojectwizard.h" line="232"/>
         <source>Choose a template for your project</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2524,16 +2717,22 @@
     <name>NewTreeItemDialog</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/newtreeitemdialog.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_newtreeitemdialog.h" line="122"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_newtreeitemdialog.h" line="122"/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/newtreeitemdialog.ui" line="50"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_newtreeitemdialog.h" line="123"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_newtreeitemdialog.h" line="123"/>
         <source>Number to create:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/newtreeitemdialog.ui" line="64"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_newtreeitemdialog.h" line="124"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_newtreeitemdialog.h" line="124"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2706,6 +2905,8 @@
     <name>OutlineToolbox</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/outlinetoolbox.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_outlinetoolbox.h" line="56"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_outlinetoolbox.h" line="56"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2991,47 +3192,49 @@
     <name>OverviewView</name>
     <message>
         <location filename="../desktopapp/plugins/overviewPage/overviewview.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/overviewPage/skribistoDesktopPluginOverviewPage_autogen/include/ui_overviewview.h" line="68"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/overviewPage/skribistoDesktopPluginOverviewPage_autogen/include/ui_overviewview.h" line="68"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="71"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="90"/>
         <source>Open in another view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="82"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="101"/>
         <source>Open in a new window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="101"/>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="109"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="119"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="127"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="109"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="127"/>
         <source>Enter a new title for the item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="120"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="138"/>
         <source>Add below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="132"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="150"/>
         <source>Add above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="143"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="161"/>
         <source>Add sub-item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="164"/>
+        <location filename="../desktopapp/plugins/overviewPage/overviewview.cpp" line="182"/>
         <source>Send to trash</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3214,6 +3417,47 @@
     </message>
 </context>
 <context>
+    <name>ProjectDictDialog</name>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/projectdictdialog.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_projectdictdialog.h" line="108"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_projectdictdialog.h" line="108"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/projectdictdialog.ui" line="27"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_projectdictdialog.h" line="109"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_projectdictdialog.h" line="109"/>
+        <source>Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/projectdictdialog.ui" line="54"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_projectdictdialog.h" line="110"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_projectdictdialog.h" line="110"/>
+        <source>New</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/projectdictdialog.ui" line="61"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_projectdictdialog.h" line="111"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_projectdictdialog.h" line="111"/>
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/projectdictdialog.cpp" line="30"/>
+        <source>New word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/projectdictdialog.cpp" line="30"/>
+        <source>Add a new word to the user dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ProjectPage</name>
     <message>
         <location filename="../mobileapp/plugins/projectPage/ProjectPage.qml" line="261"/>
@@ -3350,32 +3594,51 @@
     <name>ProjectView</name>
     <message>
         <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="177"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="177"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="87"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="178"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="178"/>
         <source>**General**</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="102"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="179"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="179"/>
         <source>Project name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="119"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="180"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="180"/>
         <source>Author</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="167"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="181"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="181"/>
         <source>**Language**</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="182"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="182"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="182"/>
         <source>Dictionary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/plugins/projectPage/projectview.ui" line="197"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="183"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_projectview.h" line="183"/>
+        <source>User dictionary</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3405,7 +3668,7 @@
 <context>
     <name>QCoreApplication</name>
     <message>
-        <location filename="../desktopapp/main.cpp" line="61"/>
+        <location filename="../desktopapp/main.cpp" line="63"/>
         <source>Project to open</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3547,22 +3810,30 @@
     <name>RestorationDialog</name>
     <message>
         <location filename="../desktopapp/plugins/trashProjectToolbox/restorationdialog.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_restorationdialog.h" line="111"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_restorationdialog.h" line="111"/>
         <source>Restoration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/trashProjectToolbox/restorationdialog.ui" line="38"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_restorationdialog.h" line="112"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_restorationdialog.h" line="112"/>
         <source>These items couldn&apos;t be restored on their own.
 Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/trashProjectToolbox/restorationdialog.ui" line="46"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_restorationdialog.h" line="114"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_restorationdialog.h" line="114"/>
         <source>Next item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/trashProjectToolbox/restorationdialog.ui" line="53"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_restorationdialog.h" line="115"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_restorationdialog.h" line="115"/>
         <source>Apply to all items</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3696,6 +3967,65 @@ Please select the destination folder.</source>
 <context>
     <name>S:</name>
     <message>
+        <location filename="../../cmake/Superbuild/build/Desktop_Qt_6_9_2-Release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1189"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1189"/>
+        <location filename="../hunspell/src/tools/hunspell.cxx" line="1189"/>
+        <source></source>
+        <comment>the capital letters are shortcuts, mark one letter similarly in your translation and translate the standalone letter accordingly later</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/Superbuild/build/Desktop_Qt_6_9_2-Release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1299"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1299"/>
+        <location filename="../hunspell/src/tools/hunspell.cxx" line="1299"/>
+        <source></source>
+        <comment>translate this letter according to the shortcut letter used previously in the translation of &quot;R)epl&quot; before</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/Superbuild/build/Desktop_Qt_6_9_2-Release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1332"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1332"/>
+        <location filename="../hunspell/src/tools/hunspell.cxx" line="1332"/>
+        <source></source>
+        <comment>translate these letters according to the shortcut letter used previously in the translation of &quot;U)ncap&quot; and I)nsert before</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/Superbuild/build/Desktop_Qt_6_9_2-Release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1368"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1368"/>
+        <location filename="../hunspell/src/tools/hunspell.cxx" line="1368"/>
+        <source></source>
+        <comment>translate this letter according to the shortcut letter used previously in the translation of &quot;U)ncap&quot; and I)nsert before</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/Superbuild/build/Desktop_Qt_6_9_2-Release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1377"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1377"/>
+        <location filename="../hunspell/src/tools/hunspell.cxx" line="1377"/>
+        <source></source>
+        <comment>translate this letter according to the shortcut letter used previously in the translation of &quot;S)tem&quot; before</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/Superbuild/build/Desktop_Qt_6_9_2-Release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1490"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1490"/>
+        <location filename="../hunspell/src/tools/hunspell.cxx" line="1490"/>
+        <source></source>
+        <comment>translate this letter according to the shortcut letter used previously in the translation of &quot;e(X)it&quot; before</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/Superbuild/build/Desktop_Qt_6_9_2-Release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1496"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1496"/>
+        <location filename="../hunspell/src/tools/hunspell.cxx" line="1496"/>
+        <source></source>
+        <comment>translate this letter according to the shortcut letter used previously in the translation of &quot;Q)uit&quot; before</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../../cmake/Superbuild/build/Desktop_Qt_6_9_2-Release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1503"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/hunspell-prefix/src/hunspell/src/tools/hunspell.cxx" line="1503"/>
+        <location filename="../hunspell/src/tools/hunspell.cxx" line="1503"/>
         <source></source>
         <comment>translate this letter according to the shortcut * letter y)es</comment>
         <translation></translation>
@@ -4088,6 +4418,8 @@ Please select the destination folder.</source>
     <name>SectionView</name>
     <message>
         <location filename="../desktopapp/plugins/sectionPage/sectionview.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/sectionPage/skribistoDesktopPluginSectionPage_autogen/include/ui_sectionview.h" line="74"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/sectionPage/skribistoDesktopPluginSectionPage_autogen/include/ui_sectionview.h" line="74"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4116,76 +4448,106 @@ Please select the destination folder.</source>
     <name>SelectionExportWizard</name>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="206"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="206"/>
         <source>Wizard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="24"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="207"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="207"/>
         <source>Selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="27"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="208"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="208"/>
         <source>Select a book or items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="33"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="209"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="209"/>
         <source>Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="65"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="210"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="210"/>
         <source>Options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="68"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="211"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="211"/>
         <source>Select options and the destination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="74"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="212"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="212"/>
         <source>Choose an extension</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="85"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="213"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="213"/>
         <source>Destination:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="95"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="214"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="214"/>
         <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="114"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="215"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="215"/>
         <source>Font size:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="134"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="216"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="216"/>
         <source>Font family:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="150"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="217"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="217"/>
         <source>Paragraph top margin:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="160"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="218"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="218"/>
         <source>Paragraph&apos;s first line indent:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="170"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="219"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="219"/>
         <source>Space between lines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/export/selectionexportwizard.ui" line="177"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="220"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_selectionexportwizard.h" line="220"/>
         <source>%</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4209,36 +4571,50 @@ Please select the destination folder.</source>
     <name>SettingsDialog</name>
     <message>
         <location filename="../desktopapp/settings/settingsdialog.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="155"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="155"/>
         <source>Preferences</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/settingsdialog.ui" line="81"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="158"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="158"/>
         <source>Backup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/settingsdialog.ui" line="106"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="159"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="159"/>
         <source>pages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/settingsdialog.ui" line="119"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="160"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="160"/>
         <source>Go back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/settingsdialog.ui" line="132"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="161"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="161"/>
         <source>TextLabel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/settingsdialog.ui" line="32"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="156"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="156"/>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/settings/settingsdialog.ui" line="55"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="157"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_settingsdialog.h" line="157"/>
         <source>Pages</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4411,6 +4787,8 @@ Please select the destination folder.</source>
     <name>SettingsPanel</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/settingspanel.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_settingspanel.h" line="54"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_settingspanel.h" line="54"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4419,6 +4797,8 @@ Please select the destination folder.</source>
     <name>SettingsSubPanel</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/settingssubpanel.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_settingssubpanel.h" line="47"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_settingssubpanel.h" line="47"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4669,12 +5049,18 @@ Please select the destination folder.</source>
     <name>StatusBar</name>
     <message>
         <location filename="../desktopapp/statusbar.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_statusbar.h" line="70"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_statusbar.h" line="70"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/statusbar.ui" line="38"/>
         <location filename="../desktopapp/statusbar.ui" line="65"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_statusbar.h" line="71"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_statusbar.h" line="72"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_statusbar.h" line="71"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_statusbar.h" line="72"/>
         <source>Show project dock</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4683,42 +5069,60 @@ Please select the destination folder.</source>
     <name>TagChooserDialog</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="174"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="174"/>
         <source>Choose tags for this item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="22"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="175"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="175"/>
         <source>Available tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="33"/>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="60"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="176"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="177"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="176"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="177"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="104"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="179"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="179"/>
         <source>Add selected tags to item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="114"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="182"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="182"/>
         <source>Remove selected tags from item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="117"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="184"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="184"/>
         <source>&lt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="124"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="186"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="186"/>
         <source>Remove all tags from item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagchooserdialog.ui" line="127"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="188"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagchooserdialog.h" line="188"/>
         <source>&lt;&lt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4727,32 +5131,46 @@ Please select the destination folder.</source>
     <name>TagDialog</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="156"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="156"/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="23"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="157"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="157"/>
         <source>Tag name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="33"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="158"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="158"/>
         <source>Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="53"/>
         <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="86"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="159"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="161"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="159"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="161"/>
         <source>Change</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="63"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="160"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="160"/>
         <source>Text color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/tagdialog.ui" line="148"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="162"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagdialog.h" line="162"/>
         <source>Presets</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4771,17 +5189,25 @@ Please select the destination folder.</source>
     <name>TagManagerToolbox</name>
     <message>
         <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_tagmanagertoolbox.h" line="105"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_tagmanagertoolbox.h" line="105"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="53"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_tagmanagertoolbox.h" line="106"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_tagmanagertoolbox.h" line="106"/>
         <source>Project-wide tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="73"/>
         <location filename="../desktopapp/plugins/projectPage/tagmanagertoolbox.ui" line="87"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_tagmanagertoolbox.h" line="107"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_tagmanagertoolbox.h" line="108"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_tagmanagertoolbox.h" line="107"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/projectPage/skribistoDesktopPluginProjectPage_autogen/include/ui_tagmanagertoolbox.h" line="108"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4862,17 +5288,23 @@ Please select the destination folder.</source>
     <name>TagToolbox</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagtoolbox.h" line="97"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagtoolbox.h" line="97"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.ui" line="66"/>
         <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.ui" line="80"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagtoolbox.h" line="98"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagtoolbox.h" line="99"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagtoolbox.h" line="98"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_tagtoolbox.h" line="99"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.h" line="29"/>
+        <location filename="../libskribisto-desktop-common/src/toolboxes/tagtoolbox.h" line="28"/>
         <source>Tags</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4901,7 +5333,7 @@ Please select the destination folder.</source>
 <context>
     <name>TextEdit</name>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="30"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="31"/>
         <source>Italic</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4911,78 +5343,83 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="35"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="37"/>
         <source>Bold</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="37"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="39"/>
         <source>Ctrl+B</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="40"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="43"/>
         <source>Strikethrough</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="42"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="45"/>
         <source>Ctrl+T</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="46"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="49"/>
         <source>Underline</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="48"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="51"/>
         <source>Ctrl+U</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="51"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="55"/>
         <source>List</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="57"/>
+        <source></source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="62"/>
         <source>Center the cursor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="59"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="64"/>
         <source>Ctrl+Shift+C</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="396"/>
-        <source>Add to Dictionary</source>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="517"/>
+        <source>Add &quot;%1&quot; to Dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="399"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="455"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="404"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="458"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="408"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="460"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="412"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="462"/>
         <source>Paste without formatting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="416"/>
-        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="498"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="464"/>
+        <location filename="../libskribisto-desktop-common/src/text/textedit.cpp" line="546"/>
         <source>Create a note</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5009,7 +5446,7 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/textPage/textpage.h" line="115"/>
+        <location filename="../desktopapp/plugins/textPage/textpage.h" line="113"/>
         <location filename="../mobileapp/plugins/textPage/textpage.h" line="115"/>
         <source>Text page</source>
         <translation type="unfinished"></translation>
@@ -5087,32 +5524,52 @@ Please select the destination folder.</source>
     <name>TextPageSettings</name>
     <message>
         <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="126"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="126"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="20"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="127"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="127"/>
         <source>Font family:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="30"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="128"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="128"/>
         <source>First line indent:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="40"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="129"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="129"/>
         <source>Font point size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="54"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="130"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="130"/>
         <source>Paragraph top margin:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/textPage/textpagesettings.ui" line="82"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="131"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/textPage/skribistoDesktopPluginTextPage_autogen/include/ui_textpagesettings.h" line="131"/>
         <source>Always center the cursor:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TextView</name>
+    <message>
+        <location filename="../desktopapp/plugins/textPage/textview.cpp" line="121"/>
+        <source>%1 words</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5326,67 +5783,95 @@ Please select the destination folder.</source>
     <name>ThemeWizard</name>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="457"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="457"/>
         <source>Wizard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="30"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="458"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="458"/>
         <source>Choose theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="33"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="459"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="459"/>
         <source>Please select a theme to modify or duplicate an existing theme to create a new one.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="53"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="460"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="460"/>
         <source>Selected theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="69"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="461"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="461"/>
         <source>Info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="110"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="462"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="462"/>
         <source>Action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="116"/>
         <location filename="../desktopapp/themewizard.ui" line="149"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="463"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="465"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="463"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="465"/>
         <source>Modify</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="123"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="464"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="464"/>
         <source>Duplicate and modify</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="152"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="466"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="466"/>
         <source>Modify the selected theme.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="179"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="467"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="467"/>
         <source>Theme settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="185"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="468"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="468"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="195"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="469"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="469"/>
         <source>Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="248"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="500"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="500"/>
         <source>Side</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5407,53 +5892,115 @@ Please select the destination folder.</source>
         <location filename="../desktopapp/themewizard.ui" line="537"/>
         <location filename="../desktopapp/themewizard.ui" line="565"/>
         <location filename="../desktopapp/themewizard.ui" line="568"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="470"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="471"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="475"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="482"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="484"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="489"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="497"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="499"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="501"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="502"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="506"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="513"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="515"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="520"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="528"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="530"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="470"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="471"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="475"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="482"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="484"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="489"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="497"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="499"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="501"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="502"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="506"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="513"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="515"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="520"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="528"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="530"/>
         <source>Example</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="303"/>
         <location filename="../desktopapp/themewizard.ui" line="470"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="472"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="503"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="472"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="503"/>
         <source>This is a placeholder text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="312"/>
         <location filename="../desktopapp/themewizard.ui" line="479"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="473"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="504"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="473"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="504"/>
         <source>CheckBox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="325"/>
         <location filename="../desktopapp/themewizard.ui" line="492"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="477"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="508"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="477"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="508"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="342"/>
         <location filename="../desktopapp/themewizard.ui" line="509"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="478"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="509"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="478"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="509"/>
         <source>test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="347"/>
         <location filename="../desktopapp/themewizard.ui" line="514"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="479"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="510"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="479"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="510"/>
         <source>test 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="375"/>
         <location filename="../desktopapp/themewizard.ui" line="542"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="491"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="522"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="491"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="522"/>
         <source>Example 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="380"/>
         <location filename="../desktopapp/themewizard.ui" line="547"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="493"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="524"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="493"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="524"/>
         <source>Example 3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/themewizard.ui" line="418"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="531"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_themewizard.h" line="531"/>
         <source>Middle</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5610,6 +6157,8 @@ Please select the destination folder.</source>
     <name>TopToolBar</name>
     <message>
         <location filename="../desktopapp/toptoolbar.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_toptoolbar.h" line="42"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_toptoolbar.h" line="42"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5618,11 +6167,15 @@ Please select the destination folder.</source>
     <name>Trash</name>
     <message>
         <location filename="../desktopapp/plugins/trashProjectToolbox/trash.ui" line="14"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_trash.h" line="94"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_trash.h" line="94"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../desktopapp/plugins/trashProjectToolbox/trash.ui" line="69"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_trash.h" line="95"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/plugins/trashProjectToolbox/skribistoDesktopPluginTrashProjectToolbox_autogen/include/ui_trash.h" line="95"/>
         <source>Trash menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5637,35 +6190,35 @@ Please select the destination folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="90"/>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="97"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="89"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="96"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="97"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="96"/>
         <source>Enter a new title for the item</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="105"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="104"/>
         <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="147"/>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="154"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="146"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="153"/>
         <source>Empty trash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="154"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.cpp" line="153"/>
         <source>All trashed items will be deleted deinitively.
 This action isn&apos;t recoverable.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.h" line="23"/>
+        <location filename="../desktopapp/plugins/trashProjectToolbox/trash.h" line="24"/>
         <source>Trash</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5742,12 +6295,16 @@ This action isn&apos;t recoverable.</source>
 <context>
     <name>View</name>
     <message>
-        <location filename="../libskribisto-desktop-common/src/view.ui" line="130"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="136"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_view.h" line="173"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_view.h" line="173"/>
         <source>view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../libskribisto-desktop-common/src/view.ui" line="144"/>
+        <location filename="../libskribisto-desktop-common/src/view.ui" line="150"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_view.h" line="174"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_view.h" line="174"/>
         <source>close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5756,6 +6313,8 @@ This action isn&apos;t recoverable.</source>
     <name>ViewHolder</name>
     <message>
         <location filename="../libskribisto-desktop-common/src/viewholder.ui" line="17"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_viewholder.h" line="48"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/libskribisto-desktop-common/src/skribisto-desktop-common_autogen/include/ui_viewholder.h" line="48"/>
         <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5780,6 +6339,50 @@ This action isn&apos;t recoverable.</source>
     <message>
         <location filename="../libskribisto-desktop-common/src/viewmanager.cpp" line="91"/>
         <source>Go to next split</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WelcomeDialog</name>
+    <message>
+        <location filename="../desktopapp/welcomedialog.ui" line="17"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="141"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="141"/>
+        <source>Welcome</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/welcomedialog.ui" line="89"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="143"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="143"/>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/welcomedialog.ui" line="106"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="144"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="144"/>
+        <source>New</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/welcomedialog.ui" line="136"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="145"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="145"/>
+        <source>Show at startup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/welcomedialog.ui" line="143"/>
+        <location filename="../../build/Desktop_Qt_6_10_1-Debug/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="146"/>
+        <location filename="../../cmake/Superbuild/cmake-build-release/skribisto-prefix/src/skribisto-build/src/desktopapp/SkribistoDesktop_autogen/include/ui_welcomedialog.h" line="146"/>
+        <source>Always open the 
+last project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../desktopapp/welcomedialog.cpp" line="25"/>
+        <source>Skribisto project (*.skrib)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
