@@ -108,7 +108,8 @@ SKRResult &SKRResult::operator=(const SKRResult &iResult)
 
     if (iResult.getStatus() == SKRResult::Critical || iResult.getStatus() == SKRResult::Fatal)
     {
-        qFatal("A SKRResult with status Critical or Fatal cannot be assigned to another SKRResult.");
+        qCritical("SKRResult: assigning Critical/Fatal result — %s",
+                  qPrintable(iResult.getLastErrorCode()));
     }
 
     return *this;

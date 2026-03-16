@@ -27,7 +27,7 @@ class ILegacyUpgrader
 {
   public:
     virtual ~ILegacyUpgrader() = default;
-    virtual bool upgradeSQLite(const QString &sqlDbConnectionName) = 0;
-    virtual bool isUpgradeNeeded(const QString &sqlDbConnectionName) = 0;
+    virtual bool upgradeSQLite(const QString &filePath) = 0;
+    virtual bool isUpgradeNeeded(const QString &filePath) = 0;
 };
 } // namespace Skribisto::WorkManagement::LoadWorkUseCaseModule::LegacyUpgrader

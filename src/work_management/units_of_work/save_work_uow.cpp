@@ -1,105 +1,89 @@
-/******************************************************************************
- Copyright (C) 2025 by Cyril Jacquet                                          *
- cyril.jacquet@skribisto.eu                                                   *
-                                                                              *
- This file is part of Skribisto.                                              *
-                                                                              *
- Skribisto is free software: you can redistribute it and/or modify            *
- it under the terms of the GNU General Public License as published by         *
- the Free Software Foundation, either version 3 of the License, or            *
- (at your option) any later version.                                          *
-                                                                              *
- Skribisto is distributed in the hope that it will be useful,                 *
- but WITHOUT ANY WARRANTY; without even the implied warranty of               *
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                *
- GNU General Public License for more details.                                 *
-                                                                              *
- You should have received a copy of the GNU General Public License            *
- along with Skribisto.  If not, see <http://www.gnu.org/licenses/>.           *
- ******************************************************************************/
-
 #include "save_work_uow.h"
 
-#include "database/db_context.h"
-#include "direct_access/repository_factory.h"
+#include <QFile>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
+
+using namespace Qt::StringLiterals;
+
 namespace Skribisto::WorkManagement
 {
-namespace SCDatabase = Skribisto::Common::Database;
-namespace SCD = Skribisto::Common::DirectAccess;
-namespace SCE = Common::Entities;
-namespace SCDRoot = Skribisto::Common::DirectAccess::Root;
-namespace SCDWork = Skribisto::Common::DirectAccess::Work;
-namespace SCDBinder = Skribisto::Common::DirectAccess::Binder;
-namespace SCDBinderItem = Skribisto::Common::DirectAccess::BinderItem;
-namespace SCDBinderTag = Skribisto::Common::DirectAccess::BinderTag;
-namespace SCDContent = Skribisto::Common::DirectAccess::Content;
-namespace SCDRecentWork = Skribisto::Common::DirectAccess::RecentWork;
 
-SaveWorkUnitOfWork::SaveWorkUnitOfWork(SCDatabase::DbContext &dbContext, QPointer<SCD::EventRegistry> eventRegistry)
-    : m_dbSubContext(SCDatabase::DbSubContext(dbContext)), m_eventRegistry(std::move(eventRegistry))
-{
-}
-SaveWorkUnitOfWork::~SaveWorkUnitOfWork()
-{
-    // connection is closed automatically when DbSubContext is destroyed
-}
-void SaveWorkUnitOfWork::beginTransaction()
-{
-    m_dbSubContext.beginTransaction();
-}
-void SaveWorkUnitOfWork::commit()
-{
-    m_dbSubContext.commit();
-}
-void SaveWorkUnitOfWork::endTransaction()
-{
-    m_dbSubContext.endTransaction();
-}
-void SaveWorkUnitOfWork::rollback()
-{
-    m_dbSubContext.rollback();
-}
-void SaveWorkUnitOfWork::createSavepoint()
-{
-    m_dbSubContext.createSavepoint();
-}
-void SaveWorkUnitOfWork::rollbackToSavepoint()
-{
-    m_dbSubContext.rollbackToSavepoint();
-}
-void SaveWorkUnitOfWork::releaseSavepoint()
-{
-    m_dbSubContext.releaseSavepoint();
-}
 bool SaveWorkUnitOfWork::saveDatabaseToFile(const QString &filePath)
 {
-    QSqlDatabase internalDb = m_dbSubContext.getConnection();
     const QString internalDbPath = m_dbSubContext.getDatabaseName();
 
-    // Checkpoint internal database to consolidate WAL data
-
-    if (internalDb.open())
+    // Checkpoint internal database to consolidate WAL data into the main file.
+    // getConnection() returns an already-open connection; we don't close it.
     {
+        QSqlDatabase internalDb = m_dbSubContext.getConnection();
         QSqlQuery query(internalDb);
-        // Consolidate all WAL data into main database file
-        if (!query.exec("PRAGMA wal_checkpoint(TRUNCATE);"_L1))
+        if (!query.exec(u"PRAGMA wal_checkpoint(TRUNCATE);"_s))
         {
             qWarning() << "Checkpoint failed during export:" << query.lastError();
             return false;
         }
-
-        // Now internal database file contains all data in single file
-        internalDb.close();
     }
-    else
+
+    // Copy to a temporary file first, clean it up, then move to the final path.
+    // This avoids losing the user's file if the copy or cleanup fails.
+    const QString tempPath = filePath + u".tmp"_s;
+    QFile::remove(tempPath);
+
+    if (!QFile::copy(internalDbPath, tempPath))
     {
-        qWarning() << "Failed to open internal database for checkpoint:" << internalDb.lastError();
+        qWarning() << "Failed to copy database to" << tempPath;
+        QFile::remove(tempPath);
         return false;
     }
 
-    QFile::remove(filePath); // Remove existing file if any
+    // Remove Root, System, RecentWork, TrashInfo tables from the saved file.
+    // These are runtime-only data, not part of the project file.
+    {
+        QSqlDatabase savedDb = QSqlDatabase::addDatabase(u"QSQLITE"_s, u"save_cleanup_connection"_s);
+        savedDb.setDatabaseName(tempPath);
 
-    // Copy/export the consolidated database to user's project file
-    return QFile::copy(internalDbPath, filePath);
+        if (savedDb.open())
+        {
+            QSqlQuery query(savedDb);
+            query.exec(u"DROP TABLE IF EXISTS root;"_s);
+            query.exec(u"DROP TABLE IF EXISTS root_system_to_system_junction;"_s);
+            query.exec(u"DROP TABLE IF EXISTS root_works_to_work_junction;"_s);
+            query.exec(u"DROP TABLE IF EXISTS system;"_s);
+            query.exec(u"DROP TABLE IF EXISTS system_recent_works_to_recent_work_junction;"_s);
+            query.exec(u"DROP TABLE IF EXISTS system_trash_infos_to_trash_info_junction;"_s);
+            query.exec(u"DROP TABLE IF EXISTS recent_work;"_s);
+            query.exec(u"DROP TABLE IF EXISTS trash_info;"_s);
+            query.exec(u"DROP TABLE IF EXISTS trash_info_trashed_binder_to_binder_junction;"_s);
+            query.exec(u"DROP TABLE IF EXISTS trash_info_trashed_binder_item_to_binder_item_junction;"_s);
+
+            // Stamp the file format version
+            query.exec(u"ALTER TABLE work ADD COLUMN version INTEGER NOT NULL DEFAULT 3;"_s);
+
+            query.exec(u"VACUUM;"_s);
+            savedDb.close();
+        }
+        else
+        {
+            qWarning() << "Failed to open saved database for cleanup:" << savedDb.lastError();
+            QSqlDatabase::removeDatabase(u"save_cleanup_connection"_s);
+            QFile::remove(tempPath);
+            return false;
+        }
+    }
+    QSqlDatabase::removeDatabase(u"save_cleanup_connection"_s);
+
+    // Atomically replace the target file
+    QFile::remove(filePath);
+    if (!QFile::rename(tempPath, filePath))
+    {
+        qWarning() << "Failed to move temp file to" << filePath;
+        QFile::remove(tempPath);
+        return false;
+    }
+
+    return true;
 }
+
 } // namespace Skribisto::WorkManagement

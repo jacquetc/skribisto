@@ -31,35 +31,11 @@ namespace Skribisto::WorkManagement::LoadWorkUseCaseModule::LegacyUpgraderModule
 class LegacyUpgrader final : public ILegacyUpgrader
 {
   public:
-    bool upgradeSQLite(const QString &sqlDbConnectionName) override;
-    bool isUpgradeNeeded(const QString &sqlDbConnectionName) override;
+    bool upgradeSQLite(const QString &filePath) override;
+    bool isUpgradeNeeded(const QString &filePath) override;
+
+    // Public for testing — converts old tbl_tree schema to v3 Qleany tables.
+    // Expects a Qt SQL connection name for an already-open database.
+    static bool migrateToV3(const QString &connectionName);
 };
-
-using Upgrader = Skribisto::WorkManagement::LoadWorkUseCaseModule::LegacyUpgraderModule::Upgrader;
-inline bool upgradeSQLite(const QString &sqlDbConnectionName)
-{
-
-    if (const SKRResult result = Upgrader::upgradeSQLite(sqlDbConnectionName); !result)
-    {
-        qCritical() << "Error while upgrading the database:" << result.getLastErrorCode();
-        // make sure the result is propagated
-        try
-        {
-            throw std::runtime_error(result.getLastErrorCode().toStdString());
-        }
-        catch (...)
-        {
-        }
-
-        return false;
-    }
-    return true;
-}
-
-inline bool isUpgradeNeeded(const QString &sqlDbConnectionName)
-{
-    double dbVersion = SKRSqlTools::getProjectDBVersion(nullptr, sqlDbConnectionName);
-    // the latest version is 2.0
-    return dbVersion < 1.9;
-}
 } // namespace Skribisto::WorkManagement::LoadWorkUseCaseModule::LegacyUpgraderModule

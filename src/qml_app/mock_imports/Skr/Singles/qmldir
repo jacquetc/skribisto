@@ -1,6 +1,0 @@
-# This file was generated automatically by Qleany's generator, edit at your own risk! 
-# If you do, be careful to not overwrite it when you run the generator again.
-Module Singles
-SingleContent 1.0 SingleContent.qml
-SingleBinder 1.0 SingleBinder.qml
-SingleBinderItem 1.0 SingleBinderItem.qml
