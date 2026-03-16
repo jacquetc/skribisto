@@ -404,11 +404,10 @@ void BinderBinderItemsListModel::refreshData()
         m_binderItems.clear();
         for (const BinderItem::BinderItemDto &dto : result)
         {
-            m_binderItems.append(dto);
+            if (dto.activated)
+                m_binderItems.append(dto);
         }
         endResetModel();
-
-        qDebug() << "Refresh requested for binder ID:" << m_binderId;
     });
 }
 
@@ -429,16 +428,25 @@ void BinderBinderItemsListModel::onBinderItemUpdated(const QList<int> &ids)
         if (!m_binderController || !m_binderItemController)
             return;
 
-        // Update existing items
+        // Update existing items — remove if deactivated
         for (const BinderItem::BinderItemDto &dto : result)
         {
             for (int i = 0; i < m_binderItems.size(); ++i)
             {
                 if (m_binderItems[i].id == dto.id)
                 {
-                    m_binderItems[i] = dto;
-                    const QModelIndex idx = index(i);
-                    Q_EMIT dataChanged(idx, idx);
+                    if (!dto.activated)
+                    {
+                        beginRemoveRows(QModelIndex(), i, i);
+                        m_binderItems.removeAt(i);
+                        endRemoveRows();
+                    }
+                    else
+                    {
+                        m_binderItems[i] = dto;
+                        const QModelIndex idx = index(i);
+                        Q_EMIT dataChanged(idx, idx);
+                    }
                     break;
                 }
             }
@@ -485,7 +493,10 @@ void BinderBinderItemsListModel::onBinderItemCreated(const QList<int> &ids)
             // Build a lookup from id to fetched dto
             QHash<int, BinderItem::BinderItemDto> fetchedById;
             for (const BinderItem::BinderItemDto &dto : fetchResult)
-                fetchedById.insert(dto.id, dto);
+            {
+                if (dto.activated)
+                    fetchedById.insert(dto.id, dto);
+            }
 
             // Insert each new item at its correct position according to relatedIds ordering
             for (int targetPos = 0; targetPos < relatedIds.size(); ++targetPos)

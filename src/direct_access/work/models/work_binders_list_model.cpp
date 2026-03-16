@@ -260,11 +260,10 @@ void WorkBindersListModel::refreshData()
         m_binders.clear();
         for (const Binder::BinderDto &dto : result)
         {
-            m_binders.append(dto);
+            if (dto.activated)
+                m_binders.append(dto);
         }
         endResetModel();
-
-        qDebug() << "Refresh requested for work ID:" << m_workId;
     });
 }
 
@@ -285,16 +284,25 @@ void WorkBindersListModel::onBinderUpdated(const QList<int> &ids)
         if (!m_workController || !m_binderController)
             return;
 
-        // Update existing items
+        // Update existing items — remove if deactivated
         for (const Binder::BinderDto &dto : result)
         {
             for (int i = 0; i < m_binders.size(); ++i)
             {
                 if (m_binders[i].id == dto.id)
                 {
-                    m_binders[i] = dto;
-                    const QModelIndex idx = index(i);
-                    Q_EMIT dataChanged(idx, idx);
+                    if (!dto.activated)
+                    {
+                        beginRemoveRows(QModelIndex(), i, i);
+                        m_binders.removeAt(i);
+                        endRemoveRows();
+                    }
+                    else
+                    {
+                        m_binders[i] = dto;
+                        const QModelIndex idx = index(i);
+                        Q_EMIT dataChanged(idx, idx);
+                    }
                     break;
                 }
             }
@@ -340,7 +348,10 @@ void WorkBindersListModel::onBinderCreated(const QList<int> &ids)
             // Build a lookup from id to fetched dto
             QHash<int, Binder::BinderDto> fetchedById;
             for (const Binder::BinderDto &dto : fetchResult)
-                fetchedById.insert(dto.id, dto);
+            {
+                if (dto.activated)
+                    fetchedById.insert(dto.id, dto);
+            }
 
             // Insert each new item at its correct position according to relatedIds ordering
             for (int targetPos = 0; targetPos < relatedIds.size(); ++targetPos)
@@ -556,7 +567,8 @@ void WorkBindersListModel::onWorkRelationshipChanged(
         QHash<int, Binder::BinderDto> fetchedById;
         for (const Binder::BinderDto &dto : result)
         {
-            fetchedById.insert(dto.id, dto);
+            if (dto.activated)
+                fetchedById.insert(dto.id, dto);
         }
 
         // Insert each new item at its correct position according to relatedIds ordering
