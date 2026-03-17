@@ -286,6 +286,7 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
     {
         int id;
         QString title;
+        QString internalTitle;
         int indent;
         QString type;
         QByteArray primaryContent;
@@ -299,7 +300,8 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
     {
         QSqlQuery tq(db);
         tq.exec(u"SELECT l_tree_id, t_title, l_indent, t_type, "
-                "m_primary_content, m_secondary_content, dt_created, dt_updated, b_trashed "
+                "m_primary_content, m_secondary_content, dt_created, dt_updated, b_trashed, "
+                "t_internal_title "
                 "FROM tbl_tree WHERE l_indent > 0 ORDER BY l_sort_order"_s);
         while (tq.next())
         {
@@ -313,6 +315,7 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
             row.createdAt = tq.value(6).toString();
             row.updatedAt = tq.value(7).toString();
             row.trashed = tq.value(8).toBool();
+            row.internalTitle = tq.value(9).isNull() ? u""_s : tq.value(9).toString();
             allRows.append(row);
         }
     }
@@ -322,6 +325,7 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
     {
         TreeRow binderRow;
         bool isImplicit = false;
+        bool isNoteBinder = false;
         QList<TreeRow> items;
     };
 
@@ -336,7 +340,8 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
     {
         if (row.indent == 1 && row.type == u"FOLDER"_s)
         {
-            binderGroups.append({row, false, {}});
+            bool noteBinder = (row.internalTitle == u"note_folder"_s);
+            binderGroups.append({row, false, noteBinder, {}});
             currentGroup = &binderGroups.last();
         }
         else if (row.indent == 1)
@@ -364,7 +369,7 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
             implicitRow.createdAt = now;
             implicitRow.updatedAt = now;
             implicitRow.trashed = false;
-            binderGroups.append({implicitRow, true, {}});
+            binderGroups.append({implicitRow, true, false, {}});
         }
 
         for (auto &stray : strayTopLevel)
@@ -404,6 +409,38 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
         int itemOrder = 0;
         for (const auto &itemRow : group.items)
         {
+            // ── Map v1 section_type to v2 sub_role ──────────────
+            const QString v1SectionType = sectionTypes.value(itemRow.id, u""_s);
+
+            // Drop separator items — scene breaks are now content markup
+            if (itemRow.type == u"SECTION"_s && v1SectionType == u"separator"_s)
+                continue;
+
+            // ── Map v1 type to v2 role ──────────────────────────
+            QString role;
+            if (itemRow.type == u"FOLDER"_s)
+                role = u"folder"_s;
+            else
+                role = u"item"_s; // TEXT and SECTION both become "item"
+
+            // ── Map v1 section_type to v2 sub_role ──────────────
+            QString subRole;
+            if (itemRow.type == u"SECTION"_s)
+            {
+                if (v1SectionType == u"book-beginning"_s)
+                    subRole = u"book-begin"_s;
+                else if (v1SectionType == u"chapter"_s)
+                    subRole = u"chapter"_s;
+                else if (v1SectionType == u"book-end"_s)
+                    subRole = u"book-end"_s;
+                // Other/unknown section types: leave sub_role empty
+            }
+            else if (itemRow.type == u"TEXT"_s)
+            {
+                subRole = group.isNoteBinder ? u"note"_s : u"scene"_s;
+            }
+            // FOLDERs get no sub_role by default
+
             q.finish();
             q.prepare(u"INSERT INTO binder_item (created_at, updated_at, title, role, sub_role, "
                       "label, activated, is_printable, indent, dict_language) "
@@ -411,8 +448,8 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
             q.bindValue(u":ca"_s, itemRow.createdAt);
             q.bindValue(u":ua"_s, itemRow.updatedAt);
             q.bindValue(u":t"_s, itemRow.title);
-            q.bindValue(u":r"_s, itemRow.type);
-            q.bindValue(u":sr"_s, sectionTypes.value(itemRow.id, u""_s));
+            q.bindValue(u":r"_s, role);
+            q.bindValue(u":sr"_s, subRole);
             q.bindValue(u":l"_s, itemLabels.value(itemRow.id, u""_s));
             q.bindValue(u":a"_s, itemRow.trashed ? 0 : 1);
             q.bindValue(u":i"_s, itemRow.indent - 2); // binder is indent 1, items start at 0
@@ -429,16 +466,16 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
             q.bindValue(u":o"_s, itemOrder++);
             q.exec();
 
-            // Create Content for primary content
-            if (!itemRow.primaryContent.isEmpty())
-            {
+            // ── Helper lambda: insert a Content and link it to this item ──
+            auto insertContent = [&](const QString &contentRole, const QString &data) {
                 q.finish();
                 q.prepare(u"INSERT INTO content (created_at, updated_at, activated, role, data) "
-                          "VALUES (:ca, :ua, :a, 'primary', :d)"_s);
+                          "VALUES (:ca, :ua, :a, :r, :d)"_s);
                 q.bindValue(u":ca"_s, itemRow.createdAt);
                 q.bindValue(u":ua"_s, itemRow.updatedAt);
                 q.bindValue(u":a"_s, itemRow.trashed ? 0 : 1);
-                q.bindValue(u":d"_s, QString::fromUtf8(itemRow.primaryContent));
+                q.bindValue(u":r"_s, contentRole);
+                q.bindValue(u":d"_s, data);
                 q.exec();
                 int contentId = q.lastInsertId().toInt();
 
@@ -448,27 +485,29 @@ bool LegacyUpgrader::migrateToV3(const QString &sqlDbConnectionName)
                 q.bindValue(u":i"_s, itemId);
                 q.bindValue(u":c"_s, contentId);
                 q.exec();
+            };
+
+            // ── Create heading Content for structural markers ───
+            if (subRole == u"book-begin"_s && !itemRow.title.isEmpty())
+            {
+                insertContent(u"book-title"_s, itemRow.title);
+            }
+            else if (subRole == u"chapter"_s && !itemRow.title.isEmpty())
+            {
+                insertContent(u"chapter-title"_s, itemRow.title);
             }
 
-            // Create Content for secondary content
+            // ── Create Content for primary content ──────────────
+            if (!itemRow.primaryContent.isEmpty())
+            {
+                const QString primaryRole = group.isNoteBinder ? u"note-text"_s : u"scene-text"_s;
+                insertContent(primaryRole, QString::fromUtf8(itemRow.primaryContent));
+            }
+
+            // ── Create Content for secondary content (was the "notes" sidebar in v1) ──
             if (!itemRow.secondaryContent.isEmpty())
             {
-                q.finish();
-                q.prepare(u"INSERT INTO content (created_at, updated_at, activated, role, data) "
-                          "VALUES (:ca, :ua, :a, 'secondary', :d)"_s);
-                q.bindValue(u":ca"_s, itemRow.createdAt);
-                q.bindValue(u":ua"_s, itemRow.updatedAt);
-                q.bindValue(u":a"_s, itemRow.trashed ? 0 : 1);
-                q.bindValue(u":d"_s, QString::fromUtf8(itemRow.secondaryContent));
-                q.exec();
-                int contentId = q.lastInsertId().toInt();
-
-                q.finish();
-                q.prepare(u"INSERT INTO binder_item_contents_to_content_junction (left_id, right_id) "
-                          "VALUES (:i, :c)"_s);
-                q.bindValue(u":i"_s, itemId);
-                q.bindValue(u":c"_s, contentId);
-                q.exec();
+                insertContent(u"synopsis-text"_s, QString::fromUtf8(itemRow.secondaryContent));
             }
 
             // Tag junctions

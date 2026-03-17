@@ -195,9 +195,9 @@ class TestLegacyUpgrader : public QObject
         auto conn = openDb(m_tempFilePath);
         QVERIFY(!conn.isEmpty());
 
-        // 23 tree items (indent>0) - 2 indent-1 FOLDERs (became Binders) = 21 BinderItems
+        // 23 tree items (indent>0) - 2 indent-1 FOLDERs (became Binders) - 3 separators (skipped) = 18
         // (includes 1 stray "Part 1" at indent=1 TEXT, re-indented into first binder)
-        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item"_s), 21);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item"_s), 18);
 
         closeDb(conn);
     }
@@ -208,10 +208,14 @@ class TestLegacyUpgrader : public QObject
         auto conn = openDb(m_tempFilePath);
         QVERIFY(!conn.isEmpty());
 
-        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM content"_s), 10);
-        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM content WHERE role = 'primary'"_s), 6);
-        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM content WHERE role = 'secondary'"_s), 4);
-        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item_contents_to_content_junction"_s), 10);
+        // 4 headings (1 book-title + 3 chapter-title) + 3 scene-text + 3 note-text + 4 synopsis-text = 14
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM content"_s), 14);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM content WHERE role = 'book-title'"_s), 1);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM content WHERE role = 'chapter-title'"_s), 3);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM content WHERE role = 'scene-text'"_s), 3);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM content WHERE role = 'note-text'"_s), 3);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM content WHERE role = 'synopsis-text'"_s), 4);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item_contents_to_content_junction"_s), 14);
 
         closeDb(conn);
     }
@@ -271,17 +275,26 @@ class TestLegacyUpgrader : public QObject
         closeDb(conn);
     }
 
-    void testSectionTypes()
+    void testRolesAndSubRoles()
     {
         QVERIFY(runMigration());
         auto conn = openDb(m_tempFilePath);
         QVERIFY(!conn.isEmpty());
 
-        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role != ''"_s), 8);
-        QVERIFY(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'chapter'"_s) >= 1);
-        QVERIFY(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'separator'"_s) >= 1);
-        QVERIFY(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'book-beginning'"_s) >= 1);
-        QVERIFY(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'book-end'"_s) >= 1);
+        // Roles: FOLDER→"folder", TEXT/SECTION→"item"
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE role = 'folder'"_s), 3);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE role = 'item'"_s), 15);
+
+        // SubRoles: 15 items with non-empty sub_role (separators are skipped entirely)
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role != ''"_s), 15);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'book-begin'"_s), 1);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'chapter'"_s), 3);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'book-end'"_s), 1);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'scene'"_s), 7);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'note'"_s), 3);
+
+        // No separators should exist — they are dropped during migration
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE sub_role = 'separator'"_s), 0);
 
         closeDb(conn);
     }
@@ -320,10 +333,9 @@ class TestLegacyUpgrader : public QObject
         auto conn = openDb(m_tempFilePath);
         QVERIFY(!conn.isEmpty());
 
-        // 7 trashed tree items → 7 BinderItems with activated=0
-        // (none of the trashed items are indent-1 FOLDERs)
-        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE activated = 0"_s), 7);
-        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE activated = 1"_s), 14);
+        // 7 trashed tree items - 1 trashed separator (skipped) = 6 BinderItems with activated=0
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE activated = 0"_s), 6);
+        QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder_item WHERE activated = 1"_s), 12);
 
         // Both Binders active
         QCOMPARE(queryInt(conn, u"SELECT COUNT(*) FROM binder WHERE activated = 1"_s), 2);

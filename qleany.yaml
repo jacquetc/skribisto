@@ -1,6 +1,6 @@
+---
 schema:
   version: 5
-
 global:
   language: cpp-qt
   application_name: Skribisto
@@ -8,297 +8,395 @@ global:
     name: skribisto
     domain: skribisto.eu
   prefix_path: src
-
 entities:
-  - name: EntityBase
-    only_for_heritage: true
-    fields:
-      - name: id
-        type: uinteger
-      - name: created_at
-        type: datetime
-      - name: updated_at
-        type: datetime
-
-  # ── Non-undoable root ──────────────────────────────────────────
-  - name: Root
-    inherits_from: EntityBase
+- name: EntityBase
+  only_for_heritage: true
+  fields:
+  - name: id
+    type: uinteger
+  - name: created_at
+    type: datetime
+  - name: updated_at
+    type: datetime
+  undoable: true
+- name: Root
+  inherits_from: EntityBase
+  fields:
+  - name: system
+    type: entity
+    entity: System
+    relationship: one_to_one
+    strong: true
+  - name: works
+    type: entity
+    entity: Work
+    relationship: one_to_many
+    strong: true
+  undoable: false
+- name: System
+  inherits_from: EntityBase
+  fields:
+  - name: recent_works
+    type: entity
+    entity: RecentWork
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: title
+  - name: trash_infos
+    type: entity
+    entity: TrashInfo
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: trashed_at
+  - name: work_info
+    type: entity
+    entity: WorkInfo
+    relationship: one_to_one
+    strong: true
+  undoable: false
+- name: WorkInfo
+  inherits_from: EntityBase
+  fields:
+  - name: file_name
+    type: string
+    optional: true
+  undoable: false
+- name: RecentWork
+  inherits_from: EntityBase
+  fields:
+  - name: title
+    type: string
+  - name: last_opened_at
+    type: datetime
+  - name: absolute_path
+    type: string
+  undoable: false
+- name: Work
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  - name: title
+    type: string
+  - name: author_name
+    type: string
+  - name: dict_language
+    type: string
+  - name: binders
+    type: entity
+    entity: Binder
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: name
+  - name: tags
+    type: entity
+    entity: BinderTag
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: name
+  - name: dict_words
+    type: entity
+    entity: DictWord
+    relationship: one_to_many
+    strong: true
+  undoable: true
+- name: TrashInfo
+  inherits_from: EntityBase
+  fields:
+  - name: trashed_at
+    type: datetime
+  - name: origin_binder_id
+    type: integer
+  - name: trashed_binder
+    type: entity
+    entity: Binder
+    relationship: many_to_one
+    optional: true
+  - name: trashed_binder_item
+    type: entity
+    entity: BinderItem
+    relationship: many_to_one
+    optional: true
+  undoable: false
+- name: Binder
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  - name: name
+    type: string
+  - name: activated
+    type: boolean
+  - name: binder_items
+    type: entity
+    entity: BinderItem
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: title
+  undoable: true
+- name: BinderItem
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  - name: title
+    type: string
+  - name: sub_title
+    type: string
+  - name: role
+    type: string
+  - name: sub_role
+    type: string
+  - name: label
+    type: string
+  - name: activated
+    type: boolean
+  - name: is_favorite
+    type: boolean
+  - name: is_printable
+    type: boolean
+  - name: indent
+    type: integer
+  - name: word_count_goal
+    type: integer
+  - name: char_count_goal
+    type: integer
+  - name: dict_language
+    type: string
+  - name: contents
+    type: entity
+    entity: Content
+    relationship: one_to_many
+    strong: true
+  - name: references
+    type: entity
+    entity: BinderItem
+    relationship: many_to_many
+  - name: tags
+    type: entity
+    entity: BinderTag
+    relationship: many_to_many
+    list_model: true
+    list_model_displayed_field: name
+  undoable: true
+- name: BinderTag
+  inherits_from: EntityBase
+  fields:
+  - name: name
+    type: string
+  - name: color
+    type: string
+  - name: text_color
+    type: string
+  undoable: true
+- name: Content
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  - name: activated
+    type: boolean
+  - name: role
+    type: string
+  - name: data
+    type: string
+  undoable: true
+- name: DictWord
+  inherits_from: EntityBase
+  fields:
+  - name: word
+    type: string
+  undoable: true
+features:
+- name: work_management
+  use_cases:
+  - name: load_work
+    entities:
+    - Root
+    - System
+    - RecentWork
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
     undoable: false
-    fields:
-      - name: system
-        type: entity
-        entity: System
-        relationship: one_to_one
-        strong: true
-      - name: works
-        type: entity
-        entity: Work
-        relationship: one_to_many
-        strong: true
-
-  # ── Non-undoable trunk: system data ────────────────────────────
-  - name: System
-    inherits_from: EntityBase
+    dto_in:
+      name: LoadWorkDto
+      fields:
+      - name: file_name
+        type: string
+  - name: save_work
     undoable: false
-    fields:
-      - name: recent_works
-        type: entity
-        entity: RecentWork
-        relationship: ordered_one_to_many
-        strong: true
-        list_model: true
-        list_model_displayed_field: title
-      - name: trash_infos
-        type: entity
-        entity: TrashInfo
-        relationship: one_to_many
-        strong: true
-        list_model: true
-        list_model_displayed_field: trashed_at
-
-  - name: RecentWork
-    inherits_from: EntityBase
+    dto_in:
+      name: SaveWorkDto
+      fields:
+      - name: file_name
+        type: string
+      - name: overwrite
+        type: boolean
+  - name: close_work
+    entities:
+    - Work
+    - TrashInfo
     undoable: false
-    fields:
-      - name: title
-        type: string
-      - name: last_opened_at
-        type: datetime
-      - name: absolute_path
-        type: string
-
-  # ── Undoable trunk: work subtree ───────────────────────────────
-  - name: Work
-    inherits_from: EntityBase
-    undoable: true
-    single_model: true
-    fields:
-      - name: title
-        type: string
-      - name: author_name
-        type: string
-      - name: dict_language
-        type: string
-      - name: binders
-        type: entity
-        entity: Binder
-        relationship: ordered_one_to_many
-        strong: true
-        list_model: true
-        list_model_displayed_field: name
-      - name: tags
-        type: entity
-        entity: BinderTag
-        relationship: one_to_many
-        strong: true
-        list_model: true
-        list_model_displayed_field: name
-      - name: dict_words
-        type: entity
-        entity: DictWord
-        relationship: one_to_many
-        strong: true
-
-  - name: TrashInfo
-    inherits_from: EntityBase
+  - name: new_work
+    entities:
+    - Root
+    - Work
+    - Binder
+    - BinderItem
+    - Content
     undoable: false
-    fields:
-      - name: trashed_at
-        type: datetime
+    dto_in:
+      name: NewWorkDto
+      fields:
+      - name: file_name
+        type: string
+- name: export_management
+  use_cases:
+  - name: export_work
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: ExportWorkDto
+      fields:
+      - name: work_id
+        type: integer
+      - name: output_path
+        type: string
+      - name: format
+        type: string
+      - name: binder_item_ids
+        type: integer
+        is_list: true
+    dto_out:
+      name: ExportResultDto
+      fields:
+      - name: exported_count
+        type: integer
+      - name: output_path
+        type: string
+- name: trash_management
+  use_cases:
+  - name: trash_binder_items
+    entities:
+    - System
+    - TrashInfo
+    - BinderItem
+    - Content
+    undoable: false
+    dto_in:
+      name: TrashBinderItemsDto
+      fields:
+      - name: binder_item_ids
+        type: integer
+        is_list: true
       - name: origin_binder_id
         type: integer
-      - name: trashed_binder
-        type: entity
-        entity: Binder
-        relationship: many_to_one
+  - name: trash_binder
+    entities:
+    - System
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: false
+    dto_in:
+      name: TrashBinderDto
+      fields:
+      - name: binder_id
+        type: integer
+  - name: restore_items
+    entities:
+    - System
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: false
+    dto_in:
+      name: RestoreItemsDto
+      fields:
+      - name: trash_info_ids
+        type: integer
+        is_list: true
+    dto_out:
+      name: RestoreResultDto
+      fields:
+      - name: restored_count
+        type: integer
+      - name: orphaned
+        type: boolean
+  - name: empty_trash
+    entities:
+    - System
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: false
+- name: binder_item_management
+  use_cases:
+  - name: duplicate
+    entities:
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: DuplicateDto
+      fields:
+      - name: item_ids
+        type: uinteger
+        is_list: true
+    dto_out:
+      name: DuplicateReturnDto
+      fields:
+      - name: new_item_ids
+        type: uinteger
+        is_list: true
+  - name: move_items
+    entities:
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: MoveDto
+      fields:
+      - name: item_ids
+        type: uinteger
+        is_list: true
+      - name: target_id
+        type: uinteger
         optional: true
-      - name: trashed_binder_item
-        type: entity
-        entity: BinderItem
-        relationship: many_to_one
-        optional: true
-
-  # ── Undoable trunk: work subtree ───────────────────────────────
-  - name: Binder
-    inherits_from: EntityBase
-    undoable: true
-    single_model: true
-    fields:
-      - name: name
-        type: string
-      - name: activated
-        type: boolean
-      - name: binder_items
-        type: entity
-        entity: BinderItem
-        relationship: ordered_one_to_many
-        strong: true
-        list_model: true
-        list_model_displayed_field: title
-
-  - name: BinderItem
-    inherits_from: EntityBase
-    undoable: true
-    single_model: true
-    fields:
-      - name: title
-        type: string
-      - name: sub_title
-        type: string
-      - name: role
-        type: string
-      - name: sub_role
-        type: string
-      - name: label
-        type: string
-      - name: activated
-        type: boolean
-      - name: is_favorite
-        type: boolean
-      - name: is_printable
-        type: boolean
-      - name: indent
-        type: integer
-      - name: word_count_goal
-        type: integer
-      - name: char_count_goal
-        type: integer
-      - name: dict_language
-        type: string
-      - name: contents
-        type: entity
-        entity: Content
-        relationship: one_to_many
-        strong: true
-      - name: references
-        type: entity
-        entity: BinderItem
-        relationship: many_to_many
-      - name: tags
-        type: entity
-        entity: BinderTag
-        relationship: many_to_many
-        list_model: true
-        list_model_displayed_field: name
-
-  - name: BinderTag
-    inherits_from: EntityBase
-    undoable: true
-    fields:
-      - name: name
-        type: string
-      - name: color
-        type: string
-      - name: text_color
-        type: string
-
-  - name: Content
-    inherits_from: EntityBase
-    undoable: true
-    single_model: true
-    fields:
-      - name: activated
-        type: boolean
-      - name: role
-        type: string
-      - name: data
-        type: string
-
-  - name: DictWord
-    inherits_from: EntityBase
-    undoable: true
-    fields:
-      - name: word
-        type: string
-
-features:
-  - name: work_management
-    use_cases:
-      - name: load_work
-        undoable: false
-        entities: [ Root, System, Work, Binder, BinderItem, BinderTag, Content, RecentWork, DictWord, TrashInfo ]
-        dto_in:
-          name: LoadWorkDto
-          fields:
-            - name: file_name
-              type: string
-      - name: save_work
-        undoable: false
-        entities: [ ]
-        dto_in:
-          name: SaveWorkDto
-          fields:
-            - name: file_name
-              type: string
-            - name: overwrite
-              type: boolean
-
-  - name: export_management
-    use_cases:
-      - name: export_work
-        read_only: true
-        long_operation: true
-        entities: [ Work, Binder, BinderItem, Content, BinderTag ]
-        dto_in:
-          name: ExportWorkDto
-          fields:
-            - name: work_id
-              type: integer
-            - name: output_path
-              type: string
-            - name: format
-              type: string
-            - name: binder_item_ids
-              type: integer
-              is_list: true
-        dto_out:
-          name: ExportResultDto
-          fields:
-            - name: exported_count
-              type: integer
-            - name: output_path
-              type: string
-
-  - name: trash_management
-    use_cases:
-      - name: trash_binder_items
-        undoable: false
-        entities: [ System, TrashInfo, BinderItem, Content ]
-        dto_in:
-          name: TrashBinderItemsDto
-          fields:
-            - name: binder_item_ids
-              type: integer
-              is_list: true
-            - name: origin_binder_id
-              type: integer
-      - name: trash_binder
-        undoable: false
-        entities: [ System, TrashInfo, Binder, BinderItem, Content ]
-        dto_in:
-          name: TrashBinderDto
-          fields:
-            - name: binder_id
-              type: integer
-      - name: restore_items
-        undoable: false
-        entities: [ System, TrashInfo, BinderItem, Binder, Content ]
-        dto_in:
-          name: RestoreItemsDto
-          fields:
-            - name: trash_info_ids
-              type: integer
-              is_list: true
-        dto_out:
-          name: RestoreResultDto
-          fields:
-            - name: restored_count
-              type: integer
-            - name: orphaned
-              type: boolean
-      - name: empty_trash
-        undoable: false
-        entities: [ System, TrashInfo, BinderItem, Binder, Content ]
-
+      - name: move_place
+        type: enum
+        enum_name: MovePlace
+        enum_values:
+        - Before
+        - After
+        - Into
+- name: handling_app_lifecycle
+  use_cases:
+  - name: initialize_app
+    entities:
+    - Root
+    undoable: false
+  - name: clean_up_before_exit
+    entities:
+    - Root
+    undoable: false
 ui:
+  rust_cli: false
   cpp_qt_qtquick: true

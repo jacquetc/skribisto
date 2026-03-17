@@ -17,6 +17,11 @@ if (NOT SKR_BUILD_WITH_MOCKS)
     )
 endif()
 
+if (SKR_BUILD_WITH_MOCKS)
+    target_compile_definitions(${LIBRARY_NAME} PRIVATE SKR_BUILD_WITH_MOCKS)
+    target_compile_definitions(${LIBRARY_NAME} PRIVATE QML_IMPORT_PATH="${CMAKE_SOURCE_DIR}/src/presentation/mock_imports")
+endif()
+
 target_include_directories(${LIBRARY_NAME}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )

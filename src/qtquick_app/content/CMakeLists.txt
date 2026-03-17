@@ -12,6 +12,7 @@ qt6_add_qml_module(content
         App.qml
 )
 
+target_link_libraries(content PRIVATE skr skr-desktop skr-mobile)
 if (NOT SKR_BUILD_WITH_MOCKS)
     target_link_libraries(content PRIVATE QCoro::Core QCoro::Qml)
 endif ()

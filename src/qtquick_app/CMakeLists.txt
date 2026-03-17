@@ -34,6 +34,10 @@ add_subdirectory(Skr)
 
 target_link_libraries(${APP_NAME} PRIVATE
         contentplugin
+        skrplugin
+        skr-desktopplugin
+        skr-desktop-viewsplugin
+        skr-mobileplugin
 )
 
 if (SKR_BUILD_WITH_MOCKS)

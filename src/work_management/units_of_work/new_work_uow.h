@@ -1,0 +1,61 @@
+// Adapted for NewWork use case
+
+#pragma once
+
+#include "direct_access/event_registry.h"
+#include "direct_access/repository_factory.h"
+#include "features/feature_event_registry.h"
+#include "unit_of_work/unit_of_work.h"
+#include "use_cases/new_work_uc/i_new_work_uow.h"
+
+namespace Skribisto::WorkManagement
+{
+namespace SCE = Common::Entities;
+namespace SCD = Common::DirectAccess;
+namespace SCF = Common::Features;
+namespace SCDRoot = Common::DirectAccess::Root;
+namespace SCDSystem = Common::DirectAccess::System;
+namespace SCDWork = Common::DirectAccess::Work;
+namespace SCDBinder = Common::DirectAccess::Binder;
+namespace SCDBinderItem = Common::DirectAccess::BinderItem;
+
+class NewWorkUnitOfWork : public Common::UnitOfWork::UnitOfWorkBase, public INewWorkUnitOfWork
+{
+  public:
+    NewWorkUnitOfWork(SCDatabase::DbContext &db, QPointer<SCD::EventRegistry> eventRegistry,
+                      QPointer<SCF::FeatureEventRegistry> featureEventRegistry)
+        : UnitOfWorkBase(db, eventRegistry), m_featureEventRegistry(featureEventRegistry)
+    {
+    }
+
+    UOW_ENTITY_CREATE_ORPHANS(Root);
+    UOW_ENTITY_RELATIONSHIPS(Root, SCDRoot::RootRelationshipField);
+
+    UOW_ENTITY_CREATE_ORPHANS(System);
+    UOW_ENTITY_RELATIONSHIPS(System, SCDSystem::SystemRelationshipField);
+
+    UOW_ENTITY_CREATE_ORPHANS(WorkInfo);
+
+    UOW_ENTITY_CREATE_ORPHANS(Work);
+    UOW_ENTITY_RELATIONSHIPS(Work, SCDWork::WorkRelationshipField);
+
+    UOW_ENTITY_CREATE_ORPHANS(Binder);
+    UOW_ENTITY_RELATIONSHIPS(Binder, SCDBinder::BinderRelationshipField);
+
+    UOW_ENTITY_CREATE_ORPHANS(BinderItem);
+    UOW_ENTITY_RELATIONSHIPS(BinderItem, SCDBinderItem::BinderItemRelationshipField);
+
+    UOW_ENTITY_CREATE_ORPHANS(Content);
+
+    void publishNewWorkSignal() override;
+
+  private:
+    QPointer<SCF::FeatureEventRegistry> m_featureEventRegistry;
+};
+
+inline void NewWorkUnitOfWork::publishNewWorkSignal()
+{
+    m_featureEventRegistry->workManagementEvents()->publishNewWorkSignal();
+}
+
+} // namespace Skribisto::WorkManagement

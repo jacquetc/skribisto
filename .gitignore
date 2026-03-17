@@ -109,3 +109,26 @@ build-dir
 build-dir/
 
 .DS_Store
+
+#vscode
+.vscode/
+
+#vcpkg
+.vcpkg/
+.vcpkg_installed/
+
+# Added by cargo
+/target
+out/
+temp
+temp_*/
+
+bck/
+build*
+# LLM/AI tools
+.claude/
+.cursor/
+.copilot/
+.aider*
+.codeium/
+.continue/
