@@ -15,8 +15,7 @@
     "-v",
     "/tmp/.X11-unix:/tmp/.X11-unix:rw",
     "-v",
-    "${localEnv:XAUTHORITY}:${localEnv:XAUTHORITY}:rw",
-    "--gpu=all"
+    "${localEnv:XAUTHORITY}:${localEnv:XAUTHORITY}:rw"
   ],
   "customizations": {
     "vscode": {
@@ -24,7 +23,16 @@
         "ms-vscode.cpptools-extension-pack",
         "ms-vscode.cmake-tools",
         "twxs.cmake",
-        "ms-vscode.cpptools"
+        "ms-vscode.cpptools",
+        "tonka3000.qtvsctools",
+        "TheQtCompany.qt-core",
+        "TheQtCompany.qt-qml",
+        "TheQtCompany.qt-cpp",
+        "TheQtCompany.qt-ui",
+        "vector-wlc.qtconfigure",
+        "TheQtCompany.qt",
+        "TheQtCompany.qt-cpp-pack",
+        "hbenl.vscode-test-explorer"
       ]
     }
   },
