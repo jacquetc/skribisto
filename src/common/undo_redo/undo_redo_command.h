@@ -123,13 +123,13 @@ template <typename T> class Result
 
         QString details = m_error;
         if (!m_context.isEmpty())
-            details += QString(" [Context: %1]").arg(m_context);
+            details += QStringLiteral(" [Context: %1]").arg(m_context);
         if (m_errorCode != 0)
-            details += QString(" [Code: %1]").arg(m_errorCode);
+            details += QStringLiteral(" [Code: %1]").arg(m_errorCode);
         if (!m_sourceLocation.isEmpty())
-            details += QString(" [Location: %1]").arg(m_sourceLocation);
+            details += QStringLiteral(" [Location: %1]").arg(m_sourceLocation);
         if (m_executionTimeMs > 0)
-            details += QString(" [Duration: %1ms]").arg(m_executionTimeMs);
+            details += QStringLiteral(" [Duration: %1ms]").arg(m_executionTimeMs);
         return details;
     }
 

@@ -315,7 +315,22 @@ bool BinderBinderItemsListModel::setData(const QModelIndex &index, const QVarian
         // Update via controller
         if (m_binderItemController)
         {
-            auto dto = BinderItem::BinderItemDto(binderItem);
+            BinderItem::UpdateBinderItemDto dto;
+            dto.id = binderItem.id;
+            dto.createdAt = binderItem.createdAt;
+            dto.updatedAt = binderItem.updatedAt;
+            dto.title = binderItem.title;
+            dto.subTitle = binderItem.subTitle;
+            dto.role = binderItem.role;
+            dto.subRole = binderItem.subRole;
+            dto.label = binderItem.label;
+            dto.activated = binderItem.activated;
+            dto.isFavorite = binderItem.isFavorite;
+            dto.isPrintable = binderItem.isPrintable;
+            dto.indent = binderItem.indent;
+            dto.wordCountGoal = binderItem.wordCountGoal;
+            dto.charCountGoal = binderItem.charCountGoal;
+            dto.dictLanguage = binderItem.dictLanguage;
             // Use QTimer::singleShot for async update without coroutine in this context
             QCoro::Task<QList<BinderItem::BinderItemDto>> updateTask = m_binderItemController->update({dto});
 
