@@ -1,0 +1,25 @@
+[package]
+name = "bastyde_ui"
+description = "Bastyde desktop UI for Skribisto"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+readme = "../../README.md"
+publish = false
+
+[[bin]]
+name = "bastyde_ui"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+frontend = { workspace = true }
+bastyde = { path = "../../../bastyde/crates/bastyde" }
+
+[features]
+# Build-with-mocks: render the UI with fabricated data, no real backend needed.
+mocks = []
+
+[lints]
+workspace = true

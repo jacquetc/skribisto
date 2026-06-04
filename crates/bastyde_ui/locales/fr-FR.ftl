@@ -1,0 +1,9 @@
+open-project = Ouvrir un projet exemple
+settings = Paramètres
+language = Langue
+theme = Thème
+english = Anglais
+french = Français
+light = Clair
+dark = Sombre
+empty-hint = Aucun projet ouvert — cliquez sur « Ouvrir un projet exemple ».
