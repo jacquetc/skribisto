@@ -8,6 +8,8 @@ use frontend::commands::{
     binder_commands, binder_item_commands, content_commands, work_commands,
     work_management_commands,
 };
+use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+use skribisto_model::validate_item;
 use work_management::LoadWorkDto;
 
 fn fixture_path() -> String {
@@ -57,4 +59,24 @@ fn load_legacy_fixture_populates_store() {
 
     let contents = content_commands::get_all_content(&ctx).expect("get_all_content");
     assert!(!contents.is_empty(), "expected some content rows");
+
+    // Every migrated item must satisfy the writing-model constraint matrix:
+    // a valid (role, sub_role) pair carrying only permitted content roles.
+    for item in &items {
+        let content_ids = binder_item_commands::get_binder_item_relationship(
+            &ctx,
+            &item.id,
+            &BinderItemRelationshipField::Contents,
+        )
+        .expect("binder_item Contents relationship");
+        let content_roles: Vec<_> = content_commands::get_content_multi(&ctx, &content_ids)
+            .expect("get_content_multi")
+            .into_iter()
+            .flatten()
+            .map(|c| c.role)
+            .collect();
+        validate_item(&item.role, &item.sub_role, &content_roles).unwrap_or_else(|e| {
+            panic!("migrated item {:?} violates the writing model: {e}", item.title)
+        });
+    }
 }

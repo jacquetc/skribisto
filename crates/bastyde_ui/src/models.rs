@@ -10,6 +10,7 @@ use frontend::AppContext;
 use frontend::commands::{binder_commands, binder_item_commands, work_commands};
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
+use frontend::common::entities::BinderItemRole;
 use frontend::direct_access::BinderItemDto;
 
 /// One node in the navigation tree.
@@ -27,7 +28,12 @@ impl TreeNode {
         Self { title: name, label: String::new(), kind: "binder".to_string() }
     }
     fn from_item(dto: &BinderItemDto) -> Self {
-        Self { title: dto.title.clone(), label: dto.label.clone(), kind: dto.role.clone() }
+        let kind = match dto.role {
+            BinderItemRole::Folder => "folder",
+            BinderItemRole::Item => "item",
+        }
+        .to_string();
+        Self { title: dto.title.clone(), label: dto.label.clone(), kind }
     }
 }
 

@@ -146,9 +146,25 @@ entities:
   - name: sub_title
     type: string
   - name: role
-    type: string
+    type: enum
+    enum_name: BinderItemRole
+    enum_values:
+      - Item
+      - Folder
   - name: sub_role
-    type: string
+    type: enum
+    enum_name: BinderItemSubRole
+    enum_values:
+      - Text
+      - None
+      - Note
+      - Book
+      - Part
+      - Chapter
+      - Scene
+      - ChapterScene
+      - BookBegin
+      - BookEnd
   - name: label
     type: string
   - name: activated
@@ -198,7 +214,16 @@ entities:
   - name: activated
     type: boolean
   - name: role
-    type: string
+    type: enum
+    enum_name: ContentRole
+    enum_values:
+      - SceneText
+      - NoteText
+      - SynopsisText
+      - BookTitle
+      - BookSubtitle
+      - PartTitle
+      - ChapterTitle
   - name: data
     type: string
   undoable: true

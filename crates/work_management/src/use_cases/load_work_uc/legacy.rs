@@ -11,8 +11,10 @@
 //! are deferred to a later phase — they don't affect the navigation tree.
 
 use anyhow::{Context, Result, anyhow};
+use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use rusqlite::types::ValueRef;
 use rusqlite::{Connection, OpenFlags};
+use skribisto_model::content_allowed;
 use std::collections::HashMap;
 
 pub struct LegacyTag {
@@ -22,7 +24,7 @@ pub struct LegacyTag {
 }
 
 pub struct LegacyContent {
-    pub role: String,
+    pub role: ContentRole,
     pub data: String,
 }
 
@@ -30,8 +32,8 @@ pub struct LegacyItem {
     pub old_id: i64,
     pub title: String,
     pub sub_title: String,
-    pub role: String,
-    pub sub_role: String,
+    pub role: BinderItemRole,
+    pub sub_role: BinderItemSubRole,
     pub label: String,
     pub activated: bool,
     pub indent: i64,
@@ -82,12 +84,13 @@ fn value_to_string(v: ValueRef) -> String {
 }
 
 /// `section_type` property → `BinderItem.sub_role`.
-fn section_type_to_sub_role(section_type: &str) -> &'static str {
+fn section_type_to_sub_role(section_type: &str) -> BinderItemSubRole {
     match section_type {
-        "book-beginning" => "book-begin",
-        "chapter" => "chapter",
-        "book-end" => "book-end",
-        _ => "",
+        "book-beginning" => BinderItemSubRole::BookBegin,
+        "chapter" => BinderItemSubRole::Chapter,
+        "book-end" => BinderItemSubRole::BookEnd,
+        // Unknown section type → a plain text item (valid, keeps any content).
+        _ => BinderItemSubRole::Text,
     }
 }
 
@@ -249,35 +252,52 @@ pub fn read_project(path: &str) -> Result<LegacyProject> {
             return None;
         }
 
-        let role = if is_folder { "folder" } else { "item" }.to_string();
+        let role = if is_folder { BinderItemRole::Folder } else { BinderItemRole::Item };
         let sub_role = if is_folder {
-            String::new()
+            // Legacy folders are pure grouping — no compile semantics.
+            BinderItemSubRole::None
         } else if row.t_type == "SECTION" {
-            section_type_to_sub_role(section_type).to_string()
+            section_type_to_sub_role(section_type)
         } else if row.t_type == "TEXT" {
-            if is_note { "note" } else { "scene" }.to_string()
+            if is_note { BinderItemSubRole::Note } else { BinderItemSubRole::Scene }
         } else {
-            String::new()
+            // Unknown leaf → a plain scene so its content survives.
+            BinderItemSubRole::Scene
         };
 
-        let mut contents: Vec<LegacyContent> = Vec::new();
-        if sub_role == "book-begin" && !row.title.is_empty() {
-            contents.push(LegacyContent { role: "book-title".into(), data: row.title.clone() });
-        } else if sub_role == "chapter" && !row.title.is_empty() {
-            contents.push(LegacyContent { role: "chapter-title".into(), data: row.title.clone() });
+        // Build candidate content, then keep only what the (role, sub_role)
+        // permits — so the migration can never construct an invalid item.
+        let mut candidates: Vec<LegacyContent> = Vec::new();
+        if !row.title.is_empty() {
+            if sub_role == BinderItemSubRole::BookBegin {
+                candidates
+                    .push(LegacyContent { role: ContentRole::BookTitle, data: row.title.clone() });
+            } else if matches!(
+                &sub_role,
+                BinderItemSubRole::Chapter | BinderItemSubRole::ChapterScene
+            ) {
+                candidates.push(LegacyContent {
+                    role: ContentRole::ChapterTitle,
+                    data: row.title.clone(),
+                });
+            }
         }
         if !row.primary.is_empty() {
-            contents.push(LegacyContent {
-                role: if is_note { "note-text" } else { "scene-text" }.into(),
+            candidates.push(LegacyContent {
+                role: if is_note { ContentRole::NoteText } else { ContentRole::SceneText },
                 data: row.primary.clone(),
             });
         }
         if !row.secondary.is_empty() {
-            contents.push(LegacyContent {
-                role: "synopsis-text".into(),
+            candidates.push(LegacyContent {
+                role: ContentRole::SynopsisText,
                 data: row.secondary.clone(),
             });
         }
+        let contents: Vec<LegacyContent> = candidates
+            .into_iter()
+            .filter(|c| content_allowed(&role, &sub_role, &c.role))
+            .collect();
 
         Some(LegacyItem {
             old_id: row.old_id,

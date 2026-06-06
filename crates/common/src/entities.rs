@@ -142,8 +142,8 @@ pub struct BinderItem {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub title: String,
     pub sub_title: String,
-    pub role: String,
-    pub sub_role: String,
+    pub role: BinderItemRole,
+    pub sub_role: BinderItemSubRole,
     pub label: String,
     pub activated: bool,
     pub is_favorite: bool,
@@ -161,6 +161,26 @@ impl HasId for BinderItem {
     fn id(&self) -> EntityId {
         self.id
     }
+}
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum BinderItemRole {
+    #[default]
+    Item,
+    Folder,
+}
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum BinderItemSubRole {
+    #[default]
+    Text,
+    None,
+    Note,
+    Book,
+    Part,
+    Chapter,
+    Scene,
+    ChapterScene,
+    BookBegin,
+    BookEnd,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -189,7 +209,7 @@ pub struct Content {
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub activated: bool,
-    pub role: String,
+    pub role: ContentRole,
     pub data: String,
 }
 
@@ -197,6 +217,17 @@ impl HasId for Content {
     fn id(&self) -> EntityId {
         self.id
     }
+}
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum ContentRole {
+    #[default]
+    SceneText,
+    NoteText,
+    SynopsisText,
+    BookTitle,
+    BookSubtitle,
+    PartTitle,
+    ChapterTitle,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

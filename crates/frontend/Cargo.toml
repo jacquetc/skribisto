@@ -33,5 +33,10 @@ trash_management = { workspace = true }
 binder_item_management = { workspace = true }
 handling_app_lifecycle = { workspace = true }
 
+[dev-dependencies]
+# Used by the load_work integration test to assert the migration output
+# satisfies the writing-model constraint matrix.
+skribisto_model = { workspace = true }
+
 [lints]
 workspace = true
