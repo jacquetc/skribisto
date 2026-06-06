@@ -5,7 +5,7 @@
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_commands, binder_item_commands, content_commands, work_commands,
+    binder_commands, binder_item_commands, content_commands, trash_info_commands, work_commands,
     work_management_commands,
 };
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
@@ -35,19 +35,14 @@ fn load_legacy_fixture_populates_store() {
     let works = work_commands::get_all_work(&ctx).expect("get_all_work");
     assert_eq!(works.len(), 1, "expected exactly one Work, got {}", works.len());
 
-    // Two binders: the "Writings" folder and the "Notes" note_folder.
+    // Binders: the manuscript folder and the "Notes" note_folder. There is NO
+    // Trash binder — trashed items stay in place (activated=false), so the legacy
+    // Trash folder is not reproduced.
     let binders = binder_commands::get_all_binder(&ctx).expect("get_all_binder");
-    assert_eq!(
-        binders.len(),
-        2,
-        "expected two binders (Writings + Notes), got {}",
-        binders.len()
-    );
-    assert!(
-        binders.iter().any(|b| b.name == "Notes"),
-        "expected a 'Notes' binder, found: {:?}",
-        binders.iter().map(|b| &b.name).collect::<Vec<_>>()
-    );
+    let names: Vec<&str> = binders.iter().map(|b| b.name.as_str()).collect();
+    assert!(names.contains(&"Notes"), "expected a 'Notes' binder, found: {names:?}");
+    assert!(!names.contains(&"Trash"), "there should be no 'Trash' binder, found: {names:?}");
+    assert!(binders.len() >= 2, "expected at least 2 binders, got {names:?}");
 
     // Items and content rows were created (separators dropped, so just a lower bound).
     let items = binder_item_commands::get_all_binder_item(&ctx).expect("get_all_binder_item");
@@ -59,6 +54,37 @@ fn load_legacy_fixture_populates_store() {
 
     let contents = content_commands::get_all_content(&ctx).expect("get_all_content");
     assert!(!contents.is_empty(), "expected some content rows");
+
+    // The fixture is v1.8 (Qt HTML content). The 1.9→2.0 step must have converted
+    // it to Markdown via text-document — no Qt rich-text HTML should survive.
+    for c in &contents {
+        assert!(
+            !c.data.contains("<!DOCTYPE") && !c.data.contains("qrichtext") && !c.data.contains("<p "),
+            "content still looks like Qt HTML (HTML→Markdown did not run): {:?}",
+            &c.data[..c.data.len().min(80)]
+        );
+    }
+    assert!(
+        contents.iter().any(|c| !c.data.trim().is_empty()),
+        "expected at least one non-empty content row"
+    );
+
+    // Trashed entities are invisible (activated == false) and indexed by TrashInfo
+    // so a trash view can list them. The fixture has trashed rows, so there must be
+    // a one-to-one correspondence between activated=false items and TrashInfo rows.
+    let trashed_item_ids: std::collections::HashSet<_> =
+        items.iter().filter(|i| !i.activated).map(|i| i.id).collect();
+    assert!(
+        !trashed_item_ids.is_empty(),
+        "fixture contains trashed rows; expected some activated=false items"
+    );
+    let trash_infos = trash_info_commands::get_all_trash_info(&ctx).expect("get_all_trash_info");
+    let indexed_item_ids: std::collections::HashSet<_> =
+        trash_infos.iter().filter_map(|t| t.trashed_binder_item).collect();
+    assert_eq!(
+        indexed_item_ids, trashed_item_ids,
+        "every trashed BinderItem must have exactly one TrashInfo, and vice versa"
+    );
 
     // Every migrated item must satisfy the writing-model constraint matrix:
     // a valid (role, sub_role) pair carrying only permitted content roles.

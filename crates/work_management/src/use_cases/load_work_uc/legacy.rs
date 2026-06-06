@@ -1,19 +1,24 @@
-//! Reader for legacy Skribisto `.skrib` files (SQLite, `tbl_tree` schema).
+//! Reader for legacy Skribisto `.skrib` files (SQLite).
 //!
-//! This is the Rust port of the C++ `migrateToV3` mapping. It reads the legacy
-//! tables and returns plain data; the use case turns that into entities. Unlike
-//! the C++ path it does NOT write intermediate v3 SQLite tables — the in-memory
-//! HashMap store is the target.
+//! Two stages, mirroring the C++ `LegacyUpgrader`:
+//!   1. [`upgrader::upgrade_to_v2`] runs the in-schema version steps (1.0 → 2.0)
+//!      on a private in-memory copy — including the HTML→Markdown content
+//!      conversion (via `text-document`). The user's file is never mutated.
+//!   2. [`read_v2`] maps the resulting `tbl_tree` schema to plain data, which the
+//!      use case turns into entities. Unlike the C++ `migrateToV3`, no
+//!      intermediate v3 SQLite tables are written — the HashMap store is the
+//!      target, so the mapping builds structs directly.
 //!
-//! Scope note (milestone-1 slice): opens the file read-only and maps the current
-//! structure directly. Content blobs are stored verbatim (HTML in ≤2.0 files);
-//! the in-place version-step upgrades (1.0→2.0) and the HTML→Markdown conversion
-//! are deferred to a later phase — they don't affect the navigation tree.
+//! By the time `read_v2` runs, all content is Markdown (the 2.0 step converted
+//! it), so content blobs are taken verbatim.
+
+mod content;
+mod upgrader;
 
 use anyhow::{Context, Result, anyhow};
 use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use rusqlite::Connection;
 use rusqlite::types::ValueRef;
-use rusqlite::{Connection, OpenFlags};
 use skribisto_model::content_allowed;
 use std::collections::HashMap;
 
@@ -95,9 +100,25 @@ fn section_type_to_sub_role(section_type: &str) -> BinderItemSubRole {
 }
 
 pub fn read_project(path: &str) -> Result<LegacyProject> {
-    let conn = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)
-        .with_context(|| format!("opening SQLite file '{path}'"))?;
+    // Load a private, writable copy into memory; the user's `.skrib` is never
+    // touched. `restore` also validates that the file is a real SQLite database.
+    let mut conn = Connection::open_in_memory().context("opening in-memory database")?;
+    conn.restore(
+        rusqlite::DatabaseName::Main,
+        path,
+        None::<fn(rusqlite::backup::Progress)>,
+    )
+    .with_context(|| format!("loading '{path}'"))?;
 
+    // Stage 1: bring the schema up to v2.0 (version steps + HTML→Markdown).
+    upgrader::upgrade_to_v2(&conn).context("upgrading legacy schema")?;
+
+    // Stage 2: map the v2.0 tree to plain data.
+    read_v2(&conn, path)
+}
+
+/// Map a v2.0-schema `tbl_tree` database into a [`LegacyProject`].
+fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
     let has_tbl_tree: bool = conn
         .query_row(
             "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='tbl_tree'",
@@ -108,7 +129,7 @@ pub fn read_project(path: &str) -> Result<LegacyProject> {
         > 0;
     if !has_tbl_tree {
         return Err(anyhow!(
-            "'{path}' is not a legacy tbl_tree project; new-format reading is not implemented yet"
+            "'{path}' is not a Skribisto project (no tbl_tree after upgrade)"
         ));
     }
 

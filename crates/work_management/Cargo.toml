@@ -26,7 +26,8 @@ serde = "1.0"
 serde_json = "1.0"
 chrono = { workspace = true }
 uuid = { workspace = true }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+text-document = { path = "../../../text-document/crates/public_api" }
 
 [lints]
 workspace = true

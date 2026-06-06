@@ -116,11 +116,13 @@ impl CommandUnitOfWork for LoadWorkUnitOfWork {
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
 #[macros::uow_action(entity = "DictWord", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
+#[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "System", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Root", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
+#[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "Root", action = "SetRelationship")]
 impl LoadWorkUnitOfWorkTrait for LoadWorkUnitOfWork {
