@@ -3,8 +3,6 @@
 mod app;
 mod models;
 mod settings_panel;
-#[cfg(feature = "mocks")]
-mod mock;
 
 use std::rc::Rc;
 use std::sync::Arc;
