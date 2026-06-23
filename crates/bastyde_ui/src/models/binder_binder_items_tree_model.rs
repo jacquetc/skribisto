@@ -14,11 +14,13 @@ pub struct TreeNode {
     pub label: String,
     /// `"binder"` | `"folder"` | `"item"`.
     pub kind: String,
+    /// The `BinderItem` id (`None` for binder rows) — used to open its editor.
+    pub item_id: Option<u64>,
 }
 
 impl TreeNode {
     pub fn binder(name: String) -> Self {
-        Self { title: name, label: String::new(), kind: "binder".to_string() }
+        Self { title: name, label: String::new(), kind: "binder".to_string(), item_id: None }
     }
 }
 
@@ -121,7 +123,7 @@ mod imp {
             BinderItemRole::Item => "item",
         }
         .to_string();
-        TreeNode { title: dto.title.clone(), label: dto.label.clone(), kind }
+        TreeNode { title: dto.title.clone(), label: dto.label.clone(), kind, item_id: Some(dto.id) }
     }
 }
 
@@ -155,7 +157,12 @@ mod imp {
     }
 
     fn node(title: &str, label: &str, kind: &str) -> TreeNode {
-        TreeNode { title: title.to_string(), label: label.to_string(), kind: kind.to_string() }
+        TreeNode {
+            title: title.to_string(),
+            label: label.to_string(),
+            kind: kind.to_string(),
+            item_id: None,
+        }
     }
 
     fn populate(tree: &TreeModel<TreeNode>) {

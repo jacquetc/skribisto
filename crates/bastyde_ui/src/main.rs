@@ -1,6 +1,7 @@
 //! Skribisto desktop UI (Bastyde). Wires the Qleany backend to a Bastyde shell.
 
 mod app;
+mod editor_tab;
 mod models;
 mod settings_panel;
 
@@ -8,19 +9,37 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use bastyde::core::event_source::{EventSource, SubscriptionHandle};
+use bastyde::core::modal::ModalRequest;
 use bastyde::prelude::*;
 use bastyde::settings::{AppPaths, SettingsStore};
-use bastyde::widgets::{Expand, TextWidget, TitleBar, VStack, WindowFrame, framework_locales};
+use bastyde::widgets::{
+    CollapsePolicy, Expand, IconButtonSize, MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar,
+    Toast, VStack, WindowFrame, framework_locales,
+};
 
 use frontend::AppContext;
 use frontend::EventHubClient;
+use frontend::commands::work_management_commands;
 use frontend::common::event::{Event, Origin};
+use frontend::work_management::LoadWorkDto;
 
 use app::App;
+use settings_panel::SettingsPanel;
+
+/// Path to the bundled sample project (opened from the File menu).
+fn sample_project_path() -> String {
+    format!(
+        "{}/../../resources/test/skribisto_test_project.skrib",
+        env!("CARGO_MANIFEST_DIR")
+    )
+}
 
 /// Persisted-setting keys (also read at startup in `main`).
 pub const DARK_KEY: &str = "ui.dark";
 pub const LOCALE_KEY: &str = "ui.locale";
+/// Max width (px) of the centered main-text writing column.
+pub const EDITOR_WIDTH_KEY: &str = "editor.column_width";
+pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;
 
 /// Adapts the Qleany-generated `EventHubClient` to Bastyde's `EventSource`
 /// (orphan rule prevents implementing the trait directly on the client).
@@ -86,20 +105,57 @@ fn main() {
                 .root(move |tree, _state| {
                     let theme = tree.theme().clone();
 
-                    // Custom Bastyde title bar (falls back to a plain label on
-                    // any platform whose host is unavailable).
+                    // Custom Bastyde title bar with a model-driven hamburger menu
+                    // in the leading slot (falls back to a plain label on any
+                    // platform whose host is unavailable).
                     let title_bar = match tree.title_bar_host() {
-                        Some(host) => tree.add_boxed(Box::new(
-                            TitleBar::new(host)
-                                .height(38.0)
-                                .background(theme.colors.surface_pressed)
-                                .leading(
-                                    TextWidget::new(lit!("  Skribisto"))
-                                        .style(theme.typography.body_bold.clone())
-                                        .color(theme.colors.text_primary),
+                        Some(host) => {
+                            // Model-style menu, collapsed to a hamburger (☰).
+                            let menu_ctx = app_ctx_root.clone();
+                            let menu = MenuModel::new().menu(lit!("File"), move |m| {
+                                m.item(MenuEntry::new(lit!("Open Project")).on_activate(
+                                    move |ectx| {
+                                        if let Err(e) = work_management_commands::load_work(
+                                            &menu_ctx,
+                                            &LoadWorkDto { file_name: sample_project_path() },
+                                        ) {
+                                            ectx.show_toast(Toast::error(lit!(format!(
+                                                "Could not open project: {e}"
+                                            ))));
+                                        }
+                                    },
+                                ))
+                                .item(MenuEntry::new(lit!("Settings")).on_activate(|ectx| {
+                                    ectx.present_modal(
+                                        ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
+                                            .presentation(ModalPresentation::InTree)
+                                            .title("Settings")
+                                            .size(520, 320),
+                                    );
+                                }))
+                                .separator()
+                                .item(
+                                    MenuEntry::new(lit!("Quit"))
+                                        .on_activate(|ectx| ectx.close_window()),
                                 )
-                                .close_action(|ctx| ctx.close_window()),
-                        )),
+                            });
+                            let menubar = MenuBar::from_model(menu)
+                                .collapse_policy(CollapsePolicy::Always)
+                                .hamburger_size(IconButtonSize::Toolbar);
+
+                            tree.add_boxed(Box::new(
+                                TitleBar::new(host)
+                                    .height(38.0)
+                                    .background(theme.colors.surface_pressed)
+                                    .leading(menubar)
+                                    .center(
+                                        TextWidget::new(lit!("Skribisto"))
+                                            .style(theme.typography.body_bold.clone())
+                                            .color(theme.colors.text_primary),
+                                    )
+                                    .close_action(|ctx| ctx.close_window()),
+                            ))
+                        }
                         None => tree.add(TextWidget::new(lit!("Skribisto"))),
                     };
 

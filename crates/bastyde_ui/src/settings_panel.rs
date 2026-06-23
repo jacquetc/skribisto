@@ -8,9 +8,9 @@ use bastyde::core::styles::PanelVariant;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
-use bastyde::widgets::{Button, Divider, HStack, Panel, TextWidget, VStack};
+use bastyde::widgets::{Button, Divider, HStack, MinSize, Panel, Slider, TextWidget, VStack};
 
-use crate::{DARK_KEY, LOCALE_KEY};
+use crate::{DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, LOCALE_KEY};
 
 pub struct SettingsPanel {
     root_child: Option<WidgetId>,
@@ -30,8 +30,13 @@ impl std::fmt::Debug for SettingsPanel {
 
 impl Widget for SettingsPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Raised Panel gives the modal a solid, elevated card background that
-        // stands out over the scrim.
+        // Persisted, shared width of the centered editor column (bound to the
+        // slider below; every open editor reads the same signal and resizes live).
+        let column_width = ctx.settings().signal(EDITOR_WIDTH_KEY, EDITOR_WIDTH_DEFAULT);
+
+        // The raised Panel is the modal's card background. Its centered placement
+        // comes from `layout_response` reporting a fixed compact size (below) —
+        // the in-tree modal centers on the content's measured size.
         let root = bati!(ctx =>
             Panel {
                 variant: PanelVariant::Raised
@@ -76,6 +81,13 @@ impl Widget for SettingsPanel {
                             }
                         }
                     }
+                    Divider
+                    TextWidget::new(lit!("Text width"))
+                    MinSize::width(360.0) {
+                        Slider::new(column_width, 400.0, 1200.0) {
+                            step: 20.0
+                        }
+                    }
                 }
             }
         );
@@ -83,11 +95,12 @@ impl Widget for SettingsPanel {
         vec![root]
     }
 
-    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        self.root_child
-            .and_then(|id| ctx.child_size(id, proposal))
-            .map(LayoutResponse::from)
-            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+        // Report a fixed compact card size. The in-tree modal measures content
+        // with an *unspecified* proposal and centers on the result, so we must
+        // return a bounded size here rather than delegating to the (greedy)
+        // Panel — otherwise it spans the window and reads as "not centered".
+        Size::new(proposal.width.unwrap_or(480.0), proposal.height.unwrap_or(360.0)).into()
     }
 
     fn place_children(
