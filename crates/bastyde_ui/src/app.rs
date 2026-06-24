@@ -18,8 +18,8 @@ use bastyde::data::{FlatEntry, KeyedSelectionModel, ListModel, NodeId, Selection
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::widgets::{
-    DockOpenLocation, DockSide, DockWidget, DockWidgetId, DockingLayout, DockingModel, Expand,
-    HStack, IconButtonSize, NotificationArchiveModel, NotificationCenterButton, Spacer,
+    DockOpenLocation, DockRail, DockSide, DockWidget, DockWidgetId, DockingLayout, DockingModel,
+    Expand, HStack, IconButtonSize, NotificationArchiveModel, NotificationCenterButton, Spacer,
     StandardTreeItem, StatusBar, TabBarVisibility, TabHandle, TabId, TabInfo, TabWidget, TreeView,
     VStack,
 };
@@ -109,14 +109,20 @@ impl Widget for App {
             .dynamic_model(self.tabs.clone())
             .bar_visibility(TabBarVisibility::Always);
 
-        // ── Leading dock: the binder tree ────────────────────────────────────
+        // ── Leading dock: the binder tree, fronted by a VS Code-style activity
+        //    bar (icon rail) ──────────────────────────────────────────────────
         let docking = DockingModel::new();
         docking.set_side_size(DockSide::Leading, 280.0);
+        // A non-zero rail thickness switches the leading side to Rail
+        // presentation, so the side's tabs render as a `DockActivityBar` icon
+        // rail; the layout sizes the rail itself from the `DockRail` config.
+        docking.set_side_rail(DockSide::Leading, 48.0);
         let binder_dock = DockWidgetId::fresh();
         let tree_model = self.model.tree().clone();
         let tree_selection = self.tree_selection.clone();
 
         let layout = DockingLayout::new(docking.clone())
+            .rail(DockRail::new(DockSide::Leading))
             .center(center)
             .dock(
                 DockWidget::new(binder_dock, lit!("Binder"), move |_id| {
