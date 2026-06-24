@@ -146,12 +146,16 @@ fn main() {
                             tree.add_boxed(Box::new(
                                 TitleBar::new(host)
                                     .height(38.0)
-                                    .background(theme.colors.surface_raised)
+                                    // Use roles, not frozen `theme.colors.*`
+                                    // snapshots: roles resolve against the live
+                                    // theme at paint time, so the bar retints
+                                    // when `ctx.set_theme(...)` swaps light ↔ dark.
+                                    .background(SurfaceRole::Raised)
                                     .leading(menubar)
                                     .center(
                                         TextWidget::new(lit!("Skribisto"))
                                             .style(theme.typography.body_bold.clone())
-                                            .color(theme.colors.text_primary),
+                                            .color(TextRole::Primary),
                                     )
                                     .close_action(|ctx| ctx.close_window()),
                             ))
