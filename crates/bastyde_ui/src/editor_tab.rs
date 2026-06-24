@@ -6,13 +6,20 @@
 //! edits survive tab rebuilds and can later be read back via `to_markdown()` to
 //! save into the item's `Content` rows.
 
+use bastyde::core::Key::E;
 use bastyde::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::text_document::TextDocument;
 use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
-use bastyde::widgets::{Divider, Expand, MaxSize, Padding, RectWidget, TextWidget, VStack, ZStack};
+use bastyde::widgets::{
+    Divider, Expand, GroupHeader, HStack, MaxSize, Padding, Panel, RectWidget, Spacer, TextWidget, VStack, ZStack,
+};
+
+/// How much narrower (px, total across both margins) the synopsis column is than
+/// the main writing column, so it reads as the subordinate pane.
+const SYNOPSIS_WIDTH_INSET: f32 = 48.0;
 
 /// Per-tab editor state (the dynamic-tab payload). Owns the two live documents.
 pub struct EditorTab {
@@ -33,8 +40,15 @@ impl EditorTab {
         let main_doc = TextDocument::new();
         let _ = main_doc.set_markdown(main_md).and_then(|op| op.wait());
         let synopsis_doc = TextDocument::new();
-        let _ = synopsis_doc.set_markdown(synopsis_md).and_then(|op| op.wait());
-        Self { item_id, main_doc, synopsis_doc, column_width }
+        let _ = synopsis_doc
+            .set_markdown(synopsis_md)
+            .and_then(|op| op.wait());
+        Self {
+            item_id,
+            main_doc,
+            synopsis_doc,
+            column_width,
+        }
     }
 }
 
@@ -42,19 +56,6 @@ impl EditorTab {
 /// `dynamic_tab::<EditorTab>` factory; binds to the payload's documents so edits
 /// flow straight back into them.
 pub fn editor_pane(state: &EditorTab) -> Box<dyn Widget> {
-    // Multi-arg builders + no `BuildContext` here, so this reads cleaner as plain
-    // builder calls than `bati!`.
-    let synopsis = RichTextEditor::editor(state.synopsis_doc.clone())
-        .style(WritingEditorStyle)
-        .content_padding_symmetric(6.0, 10.0)
-        .min_lines(2)
-        .max_lines(6)
-        .v_scroll_policy(ScrollPolicy::Auto);
-    let main = RichTextEditor::editor(state.main_doc.clone())
-        .style(WritingEditorStyle)
-        .content_padding_symmetric(8.0, 12.0)
-        .v_scroll_policy(ScrollPolicy::Auto);
-
     // Centered, max-width writing column:
     //  - `CenterColumn` proposes the *bounded* available size to the capped
     //    child, so the column tracks the width setting when there's room and
@@ -63,29 +64,78 @@ pub fn editor_pane(state: &EditorTab) -> Box<dyn Widget> {
     //  - the inner `Expand` (fill mode) stretches the editor to the capped box:
     //    `RichTextEditor` sizes to its *content*, not greedily, so without this
     //    it collapses to a few content-sized pixels.
-    let column = CenterColumn::new(
-        MaxSize::width(state.column_width.get())
-            .bind_max_width(state.column_width.clone())
-            .child(Expand::new().child(main)),
-    );
+    //
+    // `CenterColumn` takes its child as a positional constructor arg (it has no
+    // `.child` method), so the capped column is built as a separate `bati!` value
+    // and handed in positionally.
+    let column = CenterColumn::new(bati!(
+        MaxSize::width(state.column_width.get()) {
+            bind_max_width: state.column_width.clone()
+            Expand {
+                RichTextEditor::editor(state.main_doc.clone()) {
+                    style: WritingEditorStyle
+                    content_padding_symmetric: 8.0, 12.0
+                    v_scroll_policy: ScrollPolicy::Auto
+                }
+            }
+        }
+    ));
 
-    Box::new(
-        VStack::new()
-            .spacing(4.0)
-            .child(
-                TextWidget::new(lit!("Synopsis"))
-                    .style(TextStyleRole::SmallBold)
-                    .color(TextRole::Secondary),
-            )
-            .child(synopsis)
-            .child(Divider::new())
-            .child(
-                TextWidget::new(lit!("Text"))
-                    .style(TextStyleRole::SmallBold)
-                    .color(TextRole::Secondary),
-            )
-            .child(Expand::new().child(column)),
-    )
+    // The synopsis tracks the *same* live settings width as the main column, but
+    // capped a touch narrower so it reads as the subordinate pane. `map` derives a
+    // read-only signal that re-fires whenever the slider moves, so both columns
+    // resize together.
+    let synopsis_width = state
+        .column_width
+        .map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
+
+    // A flat, square Content-surface backdrop behind the whole editor: the
+    // `TabWidget` doesn't paint a content background, so this Panel supplies one.
+    // `corner_radius: 0.0` keeps it edge-to-edge (no rounded card look) and
+    // `padding: 0.0` lets the columns own their own insets.
+    Box::new(bati!(
+        Panel {
+            background: SurfaceRole::Content
+            corner_radius: 0.0
+            padding: 0.0
+            VStack {
+                spacing: 4.0
+                GroupHeader::new(lit!("Synopsis")) {
+                    style: TextStyleRole::SmallBold
+                    color: TextRole::Secondary
+                }
+                HStack {
+                    Spacer
+                    MaxSize::width(synopsis_width.get()) {
+                        bind_max_width: synopsis_width.clone()
+                        Expand::horizontal {
+                            Panel {
+                                background: SurfaceRole::Content
+                                border_color: BorderRole::Default
+                                border_width: 1.0
+                                corner_radius: 6.0
+                                RichTextEditor::editor(state.synopsis_doc.clone()) {
+                                    style: WritingEditorStyle
+                                    content_padding_symmetric: 6.0, 30.0
+                                    min_lines: 1
+                                    max_lines: 6
+                                    v_scroll_policy: ScrollPolicy::Auto
+                                }
+                            }
+                        }
+                    }
+                    Spacer
+                }
+                GroupHeader::new(lit!("Text")) {
+                    style: TextStyleRole::SmallBold
+                    color: TextRole::Secondary
+                }
+                Expand {
+                    child: column
+                }
+            }
+        }
+    ))
 }
 
 /// Editor chrome with a **constant** border instead of the default recipe's
@@ -109,7 +159,7 @@ impl RichTextEditorStyle for WritingEditorStyle {
             RectWidget::new()
                 .background(SurfaceRole::Content)
                 .border_color(BorderRole::Default)
-                .border_width(1.0)
+                .border_width(0.0)
                 .corner_radius(CornerRadius::uniform(6.0)),
         );
         let (pt, pr, pb, pl) = cfg.content_padding.unwrap_or((8.0, 12.0, 8.0, 12.0));
@@ -132,7 +182,10 @@ struct CenterColumn {
 
 impl CenterColumn {
     fn new(child: impl Widget + 'static) -> Self {
-        Self { child_id: None, pending: Some(Box::new(child)) }
+        Self {
+            child_id: None,
+            pending: Some(Box::new(child)),
+        }
     }
 }
 
@@ -211,8 +264,16 @@ mod tests {
     fn caps_width_and_centers_when_pane_is_wide() {
         // avail 1000 > cap 400 → column is 400 wide, centered (x≈300), full height.
         let b = editor_bounds(400.0, 1000.0, 600.0);
-        assert!((b.width - 400.0).abs() < 0.5, "width capped at 400, got {}", b.width);
-        assert!((b.height - 600.0).abs() < 0.5, "height fills 600, got {}", b.height);
+        assert!(
+            (b.width - 400.0).abs() < 0.5,
+            "width capped at 400, got {}",
+            b.width
+        );
+        assert!(
+            (b.height - 600.0).abs() < 0.5,
+            "height fills 600, got {}",
+            b.height
+        );
         assert!((b.x - 300.0).abs() < 0.5, "centered at x=300, got {}", b.x);
     }
 
@@ -220,8 +281,20 @@ mod tests {
     fn shrinks_to_pane_when_narrower_than_cap() {
         // avail 250 < cap 400 → column shrinks to 250 wide, x≈0, full height.
         let b = editor_bounds(400.0, 250.0, 600.0);
-        assert!((b.width - 250.0).abs() < 0.5, "width shrinks to 250, got {}", b.width);
-        assert!((b.height - 600.0).abs() < 0.5, "height fills 600, got {}", b.height);
-        assert!(b.x.abs() < 0.5, "no left margin at full width, got x={}", b.x);
+        assert!(
+            (b.width - 250.0).abs() < 0.5,
+            "width shrinks to 250, got {}",
+            b.width
+        );
+        assert!(
+            (b.height - 600.0).abs() < 0.5,
+            "height fills 600, got {}",
+            b.height
+        );
+        assert!(
+            b.x.abs() < 0.5,
+            "no left margin at full width, got x={}",
+            b.x
+        );
     }
 }

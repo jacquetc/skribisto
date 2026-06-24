@@ -107,7 +107,11 @@ impl Widget for App {
         let center = TabWidget::new(self.selected_tab.clone())
             .dynamic_tab::<EditorTab>("editor", |_handle, state| editor_pane(state))
             .dynamic_model(self.tabs.clone())
-            .bar_visibility(TabBarVisibility::Always);
+            .bar_visibility(TabBarVisibility::Always)
+            .compact_bar()
+            .selected_tab_background(SurfaceRole::Content)
+            .tab_dividers()
+            .active_indicator(bastyde::widgets::TabIndicatorPosition::InnerEdge);
 
         // ── Leading dock: the binder tree, fronted by a VS Code-style activity
         //    bar (icon rail) ──────────────────────────────────────────────────
@@ -122,7 +126,7 @@ impl Widget for App {
         let tree_selection = self.tree_selection.clone();
 
         let layout = DockingLayout::new(docking.clone())
-            .rail(DockRail::new(DockSide::Leading).background(SurfaceRole::Main))
+            .rail(DockRail::new(DockSide::Leading).background(SurfaceRole::Main).divider())
             .center(center)
             .dock(
                 DockWidget::new(binder_dock, lit!("Binder"), move |_id| {

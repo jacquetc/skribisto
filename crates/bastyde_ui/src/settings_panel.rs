@@ -37,8 +37,7 @@ impl Widget for SettingsPanel {
         // The raised Panel is the modal's card background. Its centered placement
         // comes from `layout_response` reporting a fixed compact size (below) —
         // the in-tree modal centers on the content's measured size.
-        let root = bati!(ctx =>
-            Panel {
+        let root = bati!(ctx => Panel {
                 variant: PanelVariant::Raised
                 corner_radius: 8.0
                 padding: 16.0
