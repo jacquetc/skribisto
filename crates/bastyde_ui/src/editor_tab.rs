@@ -6,10 +6,13 @@
 //! edits survive tab rebuilds and can later be read back via `to_markdown()` to
 //! save into the item's `Content` rows.
 
+use bastyde::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
+use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::text_document::TextDocument;
+use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
-use bastyde::widgets::{Divider, Expand, HStack, MaxSize, Spacer, TextWidget, VStack};
+use bastyde::widgets::{Divider, Expand, MaxSize, Padding, RectWidget, TextWidget, VStack, ZStack};
 
 /// Per-tab editor state (the dynamic-tab payload). Owns the two live documents.
 pub struct EditorTab {
@@ -42,27 +45,29 @@ pub fn editor_pane(state: &EditorTab) -> Box<dyn Widget> {
     // Multi-arg builders + no `BuildContext` here, so this reads cleaner as plain
     // builder calls than `bati!`.
     let synopsis = RichTextEditor::editor(state.synopsis_doc.clone())
+        .style(WritingEditorStyle)
         .content_padding_symmetric(6.0, 10.0)
         .min_lines(2)
         .max_lines(6)
         .v_scroll_policy(ScrollPolicy::Auto);
     let main = RichTextEditor::editor(state.main_doc.clone())
+        .style(WritingEditorStyle)
         .content_padding_symmetric(8.0, 12.0)
         .v_scroll_policy(ScrollPolicy::Auto);
 
-    // Centered, max-width writing column: spacers push a width-capped column to
-    // the middle; the cap is a live, persisted setting. On windows narrower than
-    // the cap the spacers collapse and the column uses the full width.
-    let column = HStack::new()
-        .child(Spacer::new())
-        .child(
-            MaxSize::width(state.column_width.get())
-                .bind_max_width(state.column_width.clone())
-                // `Expand` makes the editor fill the column's width AND height;
-                // without it the greedy editor falls back to ~100px tall.
-                .child(Expand::new().child(main)),
-        )
-        .child(Spacer::new());
+    // Centered, max-width writing column:
+    //  - `CenterColumn` proposes the *bounded* available size to the capped
+    //    child, so the column tracks the width setting when there's room and
+    //    shrinks to the pane when there isn't (instead of overflowing).
+    //  - `MaxSize` caps the width (a live, persisted setting).
+    //  - the inner `Expand` (fill mode) stretches the editor to the capped box:
+    //    `RichTextEditor` sizes to its *content*, not greedily, so without this
+    //    it collapses to a few content-sized pixels.
+    let column = CenterColumn::new(
+        MaxSize::width(state.column_width.get())
+            .bind_max_width(state.column_width.clone())
+            .child(Expand::new().child(main)),
+    );
 
     Box::new(
         VStack::new()
@@ -81,4 +86,142 @@ pub fn editor_pane(state: &EditorTab) -> Box<dyn Widget> {
             )
             .child(Expand::new().child(column)),
     )
+}
+
+/// Editor chrome with a **constant** border instead of the default recipe's
+/// focus-aware one. The stock `RichTextEditorStyle` swaps the border to the
+/// accent focus ring while focused — and since a writing editor is almost
+/// always focused, that reads as a permanent accent frame. This keeps a quiet
+/// 1px `Default` border at all times. Mirrors the recipe's frame otherwise
+/// (content surface, padding from the widget's `content_padding`, rounded).
+#[derive(Debug, Default, Clone, Copy)]
+struct WritingEditorStyle;
+
+impl RichTextEditorStyle for WritingEditorStyle {
+    fn make_body(&self, cfg: &RichTextEditorStyleConfig, ctx: &mut BuildContext) -> WidgetId {
+        if cfg.is_read_only {
+            return match cfg.content_padding {
+                Some((t, r, b, l)) => ctx.add(Padding::new(t, r, b, l).child_id(cfg.viewport)),
+                None => cfg.viewport,
+            };
+        }
+        let bg = ctx.add(
+            RectWidget::new()
+                .background(SurfaceRole::Content)
+                .border_color(BorderRole::Default)
+                .border_width(1.0)
+                .corner_radius(CornerRadius::uniform(6.0)),
+        );
+        let (pt, pr, pb, pl) = cfg.content_padding.unwrap_or((8.0, 12.0, 8.0, 12.0));
+        let padded = ctx.add(Padding::new(pt, pr, pb, pl).child_id(cfg.viewport));
+        ctx.add(ZStack::new().add_child(bg).add_child(padded))
+    }
+}
+
+/// Fills the available space and centers its single child **horizontally**,
+/// proposing the *bounded* available size to it. Unlike `Center` (which measures
+/// the child with an unbounded proposal — so a `MaxSize` cap always reports its
+/// maximum), this lets a width-capped child shrink to the available width when
+/// the pane is narrower than the cap, so the writing column never overflows.
+/// Height fills.
+#[derive(Debug)]
+struct CenterColumn {
+    child_id: Option<WidgetId>,
+    pending: Option<Box<dyn Widget>>,
+}
+
+impl CenterColumn {
+    fn new(child: impl Widget + 'static) -> Self {
+        Self { child_id: None, pending: Some(Box::new(child)) }
+    }
+}
+
+impl Widget for CenterColumn {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if let Some(w) = self.pending.take() {
+            self.child_id = Some(ctx.add_boxed(w));
+        }
+        self.child_id.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+        // Claim all offered space; the child is sized + centered in place_children.
+        proposal.resolve(0.0, 0.0).into()
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            // Bounded proposal → a `MaxSize` child reports `min(available, cap)`
+            // rather than its full cap, so it shrinks to fit a narrow pane.
+            let size = ctx
+                .child_size(child.id, SizeProposal::exact(bounds.width, bounds.height))
+                .unwrap_or_else(|| bounds.size());
+            let dx = ((bounds.width - size.width) / 2.0).max(0.0);
+            child.origin = Point::new(bounds.x + dx, bounds.y);
+            child.size = size;
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    /// A content-sized leaf: reports a small fixed natural size and ignores the
+    /// proposal — like `RichTextEditor`, which sizes to its content, not to the
+    /// offered space. The inner `Expand` must stretch it to fill the column.
+    #[derive(Debug)]
+    struct ContentLeaf;
+    impl Widget for ContentLeaf {
+        fn layout_response(&self, _p: SizeProposal, _c: &LayoutContext) -> LayoutResponse {
+            Size::new(40.0, 12.0).into()
+        }
+    }
+
+    fn deepest(tree: &WidgetTree, mut id: WidgetId) -> WidgetId {
+        while let Some(&k) = tree.children(id).first() {
+            id = k;
+        }
+        id
+    }
+
+    /// Lay out the real writing-column composition and return the editor leaf's
+    /// final bounds.
+    fn editor_bounds(cap: f32, avail_w: f32, avail_h: f32) -> Rect {
+        let mut tree = WidgetTree::new();
+        let root = tree.add(Expand::new().child(CenterColumn::new(
+            MaxSize::width(cap).child(Expand::new().child(ContentLeaf)),
+        )));
+        tree.layout(SizeProposal::exact(avail_w, avail_h));
+        tree.bounds(deepest(&tree, root))
+    }
+
+    #[test]
+    fn caps_width_and_centers_when_pane_is_wide() {
+        // avail 1000 > cap 400 → column is 400 wide, centered (x≈300), full height.
+        let b = editor_bounds(400.0, 1000.0, 600.0);
+        assert!((b.width - 400.0).abs() < 0.5, "width capped at 400, got {}", b.width);
+        assert!((b.height - 600.0).abs() < 0.5, "height fills 600, got {}", b.height);
+        assert!((b.x - 300.0).abs() < 0.5, "centered at x=300, got {}", b.x);
+    }
+
+    #[test]
+    fn shrinks_to_pane_when_narrower_than_cap() {
+        // avail 250 < cap 400 → column shrinks to 250 wide, x≈0, full height.
+        let b = editor_bounds(400.0, 250.0, 600.0);
+        assert!((b.width - 250.0).abs() < 0.5, "width shrinks to 250, got {}", b.width);
+        assert!((b.height - 600.0).abs() < 0.5, "height fills 600, got {}", b.height);
+        assert!(b.x.abs() < 0.5, "no left margin at full width, got x={}", b.x);
+    }
 }

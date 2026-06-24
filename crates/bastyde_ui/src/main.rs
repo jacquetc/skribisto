@@ -146,7 +146,7 @@ fn main() {
                             tree.add_boxed(Box::new(
                                 TitleBar::new(host)
                                     .height(38.0)
-                                    .background(theme.colors.surface_pressed)
+                                    .background(theme.colors.surface_raised)
                                     .leading(menubar)
                                     .center(
                                         TextWidget::new(lit!("Skribisto"))
