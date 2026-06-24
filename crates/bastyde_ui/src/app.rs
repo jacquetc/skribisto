@@ -21,7 +21,7 @@ use bastyde::widgets::{
     DockOpenLocation, DockRail, DockSide, DockWidget, DockWidgetId, DockingLayout, DockingModel,
     Expand, HStack, IconButtonSize, NotificationArchiveModel, NotificationCenterButton, Spacer,
     StandardTreeItem, StatusBar, TabBarVisibility, TabHandle, TabId, TabInfo, TabWidget, TreeView,
-    VStack,
+    VStack, Divider
 };
 
 use frontend::AppContext;
@@ -122,7 +122,7 @@ impl Widget for App {
         let tree_selection = self.tree_selection.clone();
 
         let layout = DockingLayout::new(docking.clone())
-            .rail(DockRail::new(DockSide::Leading))
+            .rail(DockRail::new(DockSide::Leading).background(SurfaceRole::Main))
             .center(center)
             .dock(
                 DockWidget::new(binder_dock, lit!("Binder"), move |_id| {
@@ -138,7 +138,7 @@ impl Widget for App {
             .app_state::<Rc<NotificationArchiveModel>>()
             .cloned()
             .expect("install_toast_default registers the notification archive");
-        let status = StatusBar::new().child(
+        let status = StatusBar::new().background(SurfaceRole::Main).child(
             HStack::new().spacing(8.0).child(Spacer::new()).child(
                 NotificationCenterButton::new(archive).size(IconButtonSize::Compact),
             ),
@@ -147,6 +147,7 @@ impl Widget for App {
         let root = ctx.add(
             VStack::new()
                 .spacing(0.0)
+                .child(Divider::new())
                 .child(Expand::new().child(layout))
                 .child(status),
         );

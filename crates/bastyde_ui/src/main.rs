@@ -141,7 +141,7 @@ fn main() {
                             });
                             let menubar = MenuBar::from_model(menu)
                                 .collapse_policy(CollapsePolicy::Always)
-                                .hamburger_size(IconButtonSize::Toolbar);
+                                .hamburger_size(IconButtonSize::Large);
 
                             tree.add_boxed(Box::new(
                                 TitleBar::new(host)
@@ -150,7 +150,7 @@ fn main() {
                                     // snapshots: roles resolve against the live
                                     // theme at paint time, so the bar retints
                                     // when `ctx.set_theme(...)` swaps light ↔ dark.
-                                    .background(SurfaceRole::Raised)
+                                    .background(SurfaceRole::Main)
                                     .leading(menubar)
                                     .center(
                                         TextWidget::new(lit!("Skribisto"))
