@@ -7,7 +7,7 @@ use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Content, System, TrashInfo};
+use common::entities::{Binder, BinderItem, Content, System, TrashInfo, Work};
 use common::event::TrashManagementEvent::EmptyTrash;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -109,26 +109,24 @@ impl CommandUnitOfWork for EmptyTrashUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/empty_trash_uc.rs
 //
-#[macros::uow_action(entity = "System", action = "Get")]
-#[macros::uow_action(entity = "System", action = "GetMulti")]
-#[macros::uow_action(entity = "System", action = "Snapshot")]
-#[macros::uow_action(entity = "System", action = "Restore")]
-#[macros::uow_action(entity = "TrashInfo", action = "Get")]
-#[macros::uow_action(entity = "TrashInfo", action = "GetMulti")]
-#[macros::uow_action(entity = "TrashInfo", action = "Snapshot")]
-#[macros::uow_action(entity = "TrashInfo", action = "Restore")]
-#[macros::uow_action(entity = "Binder", action = "Get")]
-#[macros::uow_action(entity = "Binder", action = "GetMulti")]
+#[macros::uow_action(entity = "System", action = "GetAll")]
+#[macros::uow_action(entity = "System", action = "GetRelationship")]
+#[macros::uow_action(entity = "System", action = "SetRelationship")]
+#[macros::uow_action(entity = "TrashInfo", action = "GetRelationship")]
+#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Work", action = "GetAll")]
+#[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Work", action = "SetRelationship")]
+#[macros::uow_action(entity = "Binder", action = "GetRelationship")]
+#[macros::uow_action(entity = "Binder", action = "GetRelationshipsFromRightIds")]
+#[macros::uow_action(entity = "Binder", action = "SetRelationship")]
+#[macros::uow_action(entity = "Binder", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Binder", action = "Snapshot")]
 #[macros::uow_action(entity = "Binder", action = "Restore")]
-#[macros::uow_action(entity = "BinderItem", action = "Get")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
-#[macros::uow_action(entity = "BinderItem", action = "Snapshot")]
-#[macros::uow_action(entity = "BinderItem", action = "Restore")]
-#[macros::uow_action(entity = "Content", action = "Get")]
-#[macros::uow_action(entity = "Content", action = "GetMulti")]
-#[macros::uow_action(entity = "Content", action = "Snapshot")]
-#[macros::uow_action(entity = "Content", action = "Restore")]
+#[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
+#[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Content", action = "RemoveMulti")]
 impl EmptyTrashUnitOfWorkTrait for EmptyTrashUnitOfWork {
     fn publish_empty_trash_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

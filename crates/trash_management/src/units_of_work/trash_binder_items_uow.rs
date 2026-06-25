@@ -109,22 +109,16 @@ impl CommandUnitOfWork for TrashBinderItemsUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/trash_binder_items_uc.rs
 //
-#[macros::uow_action(entity = "System", action = "Get")]
-#[macros::uow_action(entity = "System", action = "GetMulti")]
-#[macros::uow_action(entity = "System", action = "Snapshot")]
-#[macros::uow_action(entity = "System", action = "Restore")]
-#[macros::uow_action(entity = "TrashInfo", action = "Get")]
-#[macros::uow_action(entity = "TrashInfo", action = "GetMulti")]
-#[macros::uow_action(entity = "TrashInfo", action = "Snapshot")]
-#[macros::uow_action(entity = "TrashInfo", action = "Restore")]
-#[macros::uow_action(entity = "BinderItem", action = "Get")]
+#[macros::uow_action(entity = "System", action = "GetAll")]
+#[macros::uow_action(entity = "System", action = "GetRelationship")]
+#[macros::uow_action(entity = "System", action = "SetRelationship")]
+#[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
+#[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
+#[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
+#[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "Snapshot")]
 #[macros::uow_action(entity = "BinderItem", action = "Restore")]
-#[macros::uow_action(entity = "Content", action = "Get")]
-#[macros::uow_action(entity = "Content", action = "GetMulti")]
-#[macros::uow_action(entity = "Content", action = "Snapshot")]
-#[macros::uow_action(entity = "Content", action = "Restore")]
 impl TrashBinderItemsUnitOfWorkTrait for TrashBinderItemsUnitOfWork {
     fn publish_trash_binder_items_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
