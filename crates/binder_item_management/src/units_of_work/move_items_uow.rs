@@ -108,13 +108,14 @@ impl CommandUnitOfWork for MoveItemsUnitOfWork {
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/move_items_uc.rs
 //
 #[macros::uow_action(entity = "Binder", action = "Get")]
-#[macros::uow_action(entity = "Binder", action = "GetMulti")]
+#[macros::uow_action(entity = "Binder", action = "GetRelationship")]
+#[macros::uow_action(entity = "Binder", action = "SetRelationship")]
+#[macros::uow_action(entity = "Binder", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "Binder", action = "Snapshot")]
 #[macros::uow_action(entity = "Binder", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "Get")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
-#[macros::uow_action(entity = "BinderItem", action = "Snapshot")]
-#[macros::uow_action(entity = "BinderItem", action = "Restore")]
+#[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
 impl MoveItemsUnitOfWorkTrait for MoveItemsUnitOfWork {
     fn publish_move_items_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
