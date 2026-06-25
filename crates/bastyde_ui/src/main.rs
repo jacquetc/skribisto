@@ -3,7 +3,9 @@
 mod app;
 mod editor_tab;
 mod models;
+mod recent_projects_button;
 mod settings_panel;
+mod view_models;
 
 use std::rc::Rc;
 use std::sync::Arc;
@@ -11,6 +13,8 @@ use std::sync::Arc;
 use bastyde::core::Key::H;
 use bastyde::widgets::{Center, HStack, ImageWidget};
 use bastyde::core::event_source::{EventSource, SubscriptionHandle};
+
+use recent_projects_button::RecentProjectsButton;
 use bastyde::core::modal::ModalRequest;
 use bastyde::prelude::*;
 use bastyde::settings::{AppPaths, SettingsStore};
@@ -160,11 +164,7 @@ fn main() {
                                                 size: 25.0, 25.0
                                                 a11y_hidden
                                             }
-                                            // Fill the width left of the logo, then center the
-                                            // title within it. The outer `Expand::horizontal`
-                                            // makes the whole row span the drag region; this
-                                            // inner one claims the post-logo slack so `Center`
-                                            // has real width to center inside.
+                                            RecentProjectsButton::new(app_ctx_root.clone())
                                             Expand::horizontal {
                                                 Center {
                                                     TextWidget::new(lit!("Skribisto")) {
