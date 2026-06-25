@@ -14,7 +14,8 @@ use bastyde::text_document::TextDocument;
 use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
-    Divider, Expand, GroupHeader, HStack, MaxSize, Padding, Panel, RectWidget, Spacer, TextWidget, VStack, ZStack,
+    Divider, Expand, FixedSize, GroupHeader, HStack, MaxSize, Padding, Panel, RectWidget, Spacer, TextWidget, VStack,
+    ZStack,
 };
 
 /// How much narrower (px, total across both margins) the synopsis column is than
@@ -99,7 +100,8 @@ pub fn editor_pane(state: &EditorTab) -> Box<dyn Widget> {
             corner_radius: 0.0
             padding: 0.0
             VStack {
-                spacing: 4.0
+                spacing: 5.0
+                FixedSize { bind_height: 10.0 }
                 GroupHeader::new(lit!("Synopsis")) {
                     style: TextStyleRole::SmallBold
                     color: TextRole::Secondary
@@ -120,12 +122,16 @@ pub fn editor_pane(state: &EditorTab) -> Box<dyn Widget> {
                                     min_lines: 1
                                     max_lines: 6
                                     v_scroll_policy: ScrollPolicy::Auto
+                                    text_color: TextRole::Secondary
                                 }
                             }
                         }
                     }
-                    Spacer
+                    Spacer {
+                        min_length: 4.0 
+                    }
                 }
+                FixedSize { bind_height: 10.0 }
                 GroupHeader::new(lit!("Text")) {
                     style: TextStyleRole::SmallBold
                     color: TextRole::Secondary
