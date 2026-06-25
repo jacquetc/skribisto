@@ -2,6 +2,7 @@
 
 mod app;
 mod editor_tab;
+mod intents;
 mod models;
 mod recent_projects_button;
 mod settings_panel;
@@ -32,6 +33,7 @@ use frontend::work_management::LoadWorkDto;
 
 use app::App;
 use settings_panel::SettingsPanel;
+use view_models::OutlineViewModel;
 
 /// Path to the bundled sample project (opened from the File menu).
 fn sample_project_path() -> String {
@@ -95,6 +97,10 @@ fn main() {
         .framework_locales(framework_locales());
 
     let app_ctx_root = app_ctx.clone();
+    // The outline view-model is created here (no settings dependency) so the
+    // title-bar menu can bind its reactive checkmark and the whole app can reach
+    // it via `ctx.app_state::<OutlineViewModel>()`.
+    let outline = OutlineViewModel::new_default(app_ctx.clone());
     BastydeAppBuilder::new()
         .theme(theme)
         .application("eu", "skribisto", "Skribisto")
@@ -103,6 +109,7 @@ fn main() {
         .install_inspector_in_debug()
         .install_toast_default()
         .event_source(EventHubSource { client })
+        .app_state(outline.clone())
         .initial_window(
             WindowConfig::new()
                 .id("main")
@@ -145,6 +152,20 @@ fn main() {
                                     MenuEntry::new(lit!("Quit"))
                                         .on_activate(|ectx| ectx.close_window()),
                                 )
+                            })
+                            .menu(lit!("View"), {
+                                // Reflect-only checkmark: mirrors the dock's truth
+                                // (`is_visible`) without writing it; the toggle is
+                                // driven by the `outline.toggle` intent (Ctrl+B).
+                                let outline = outline.clone();
+                                move |m| {
+                                    m.item(
+                                        MenuEntry::new(lit!("Outline"))
+                                            .checked(outline.is_visible())
+                                            .intent("outline.toggle")
+                                            .shortcut("outline.toggle"),
+                                    )
+                                }
                             });
                             let menubar = MenuBar::from_model(menu)
                                 .collapse_policy(CollapsePolicy::Always)
@@ -182,12 +203,15 @@ fn main() {
                         None => tree.add(TextWidget::new(lit!("Skribisto"))),
                     };
 
-                    let body = tree.add(Expand::new().child(App::new(app_ctx_root.clone())));
+                    let body =
+                        tree.add(Expand::new().child(App::new(app_ctx_root.clone(), outline.clone())));
                     let inner =
                         tree.add(VStack::new().spacing(0.0).add_child(title_bar).add_child(body));
 
                     // Add edge resize handles only where the host needs the app
                     // to drive them (skipped on macOS — NSWindow handles edges).
+                    // App-global commands reach the menu/shortcut via
+                    // `register_action_global` (no root wrapper needed).
                     match tree.title_bar_host() {
                         Some(host) if host.needs_custom_resize_handles() => {
                             tree.add(WindowFrame::new(host).thickness(6.0).content_id(inner))

@@ -13,47 +13,41 @@
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use bastyde::canvas::BlendMode::Lighten;
 use bastyde::core::widget::WidgetPlacement;
-use bastyde::data::{FlatEntry, KeyedSelectionModel, ListModel, NodeId, SelectionMode, TreeModel};
+use bastyde::data::{FlatEntry, KeyedSelectionModel, NodeId, TreeModel};
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
-use bastyde::tokens::SurfaceRole::{Hover, Raised, Sunken};
+use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    DockOpenLocation, DockRail, DockSide, DockWidget, DockWidgetId, DockingLayout, DockingModel,
-    Expand, HStack, IconButtonSize, NotificationArchiveModel, NotificationCenterButton, Spacer,
-    StandardTreeItem, StatusBar, TabBarVisibility, TabHandle, TabId, TabInfo, TabWidget, TreeView,
-    VStack, Divider
+    DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout, Divider, Expand, HStack,
+    IconButtonSize, NotificationArchiveModel, NotificationCenterButton, Spacer, StandardTreeItem,
+    StatusBar, TabBarVisibility, TabWidget, TreeView, VStack,
 };
 
 use frontend::AppContext;
-use frontend::commands::{binder_item_commands, content_commands};
-use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
-use frontend::common::entities::ContentRole;
 use frontend::common::event::{Event, Origin, WorkManagementEvent};
 
 use crate::editor_tab::{EditorTab, editor_pane};
-use crate::models::{BinderBinderItemsTreeModel, TreeNode};
-use crate::{EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY};
+use crate::intents::AppIntent;
+use crate::models::TreeNode;
+use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel};
 
 pub struct App {
     app_ctx: Rc<AppContext>,
-    model: BinderBinderItemsTreeModel,
-    tabs: ListModel<TabHandle>,
-    selected_tab: Signal<Option<TabId>>,
-    tree_selection: KeyedSelectionModel<NodeId>,
+    /// The outline view-model is created in `main` (the title-bar menu needs a
+    /// handle to it for the reactive checkmark) and shared with `App`.
+    outline: OutlineViewModel,
+    /// Created once on first build (its column-width signal needs `ctx.settings()`).
+    editors: Option<EditorsViewModel>,
     root_child: Option<WidgetId>,
 }
 
 impl App {
-    pub fn new(app_ctx: Rc<AppContext>) -> Self {
-        let model = BinderBinderItemsTreeModel::new(app_ctx.clone());
+    pub fn new(app_ctx: Rc<AppContext>, outline: OutlineViewModel) -> Self {
         Self {
             app_ctx,
-            model,
-            tabs: ListModel::from_vec(Vec::new()),
-            selected_tab: Signal::new(None),
-            tree_selection: KeyedSelectionModel::new(SelectionMode::Single),
+            outline,
+            editors: None,
             root_child: None,
         }
     }
@@ -67,48 +61,77 @@ impl std::fmt::Debug for App {
 
 impl Widget for App {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // ── Layer-B view-models: created once, then shared by clone ──────────
+        let settings = SettingsViewModel::new(ctx.settings());
+
+        let app_ctx = self.app_ctx.clone();
+        let column_width = settings.column_width();
+        let editors = self
+            .editors
+            .get_or_insert_with(|| EditorsViewModel::new(app_ctx, column_width))
+            .clone();
+
+        let outline = self.outline.clone();
+
+        // ── App-global commands (the scriptable surface) ─────────────────────
+        // Registered with `register_action_global` so they're reachable as a
+        // dispatch fallback regardless of where the intent originates — the
+        // title-bar menu (which renders in an overlay, NOT under `App`), a global
+        // shortcut anchored at the root, or any content handler. A plain
+        // `register_action` would only fire on `App`'s own source→root path,
+        // which the chrome-fired menu never touches.
+        ctx.register_shortcut_global(
+            Shortcut::new("outline.toggle")
+                .name("Toggle Outline")
+                .primary(KeyStroke::ctrl(Key::B))
+                .build(),
+        );
+        {
+            let outline = outline.clone();
+            ctx.register_action_global(
+                Action::new("outline.toggle").on_invoke(move |_i, _c| outline.toggle()),
+            );
+        }
+        {
+            let editors = editors.clone();
+            ctx.register_action_global(Action::new("editor.open_item").on_invoke(move |i, _c| {
+                if let Some(AppIntent::OpenItem { item_id, title }) = AppIntent::from_intent(i) {
+                    editors.open_or_focus(*item_id, title);
+                }
+            }));
+        }
+
         // On project load: rebuild the tree and drop now-stale editor tabs.
         {
-            let model = self.model.clone();
-            let tabs = self.tabs.clone();
-            let selected = self.selected_tab.clone();
+            let outline = outline.clone();
+            let editors = editors.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_event: &Event| {
-                    model.reload();
-                    while tabs.len() > 0 {
-                        tabs.remove(0);
-                    }
-                    selected.set(None);
+                    outline.reload();
+                    editors.close_all();
                 },
             );
         }
 
-        // Centered-editor column width — a persisted, shared settings signal.
-        let column_width = ctx.settings().signal(EDITOR_WIDTH_KEY, EDITOR_WIDTH_DEFAULT);
-
-        // Selecting a binder item opens (or focuses) its editor tab.
+        // App mediates the two peer view-models: selecting a binder item opens
+        // (or focuses) its editor tab. Neither view-model imports the other.
         {
-            let app_ctx = self.app_ctx.clone();
-            let tabs = self.tabs.clone();
-            let selected_tab = self.selected_tab.clone();
-            let tree = self.model.tree().clone();
-            let column_width = column_width.clone();
-            ctx.effect(&self.tree_selection.selection_signal(), move |sel: &HashSet<NodeId>| {
+            let outline_sel = outline.clone();
+            let editors = editors.clone();
+            ctx.effect(&outline.selection_signal(), move |sel: &HashSet<NodeId>| {
                 for node in sel.iter() {
-                    if let Some((Some(item_id), title)) =
-                        tree.with_item(*node, |n| (n.item_id, n.title.clone()))
-                    {
-                        open_item_tab(&app_ctx, &tabs, &selected_tab, item_id, &title, &column_width);
+                    if let Some((Some(item_id), title)) = outline_sel.node_item(*node) {
+                        editors.open_or_focus(item_id, &title);
                     }
                 }
             });
         }
 
         // ── Center: dynamic editor tabs ──────────────────────────────────────
-        let center = TabWidget::new(self.selected_tab.clone())
+        let center = TabWidget::new(editors.selected_tab())
             .dynamic_tab::<EditorTab>("editor", |_handle, state| editor_pane(state))
-            .dynamic_model(self.tabs.clone())
+            .dynamic_model(editors.tabs())
             .bar_visibility(TabBarVisibility::Always)
             .compact_bar()
             .selected_tab_background(SurfaceRole::Content)
@@ -117,28 +140,20 @@ impl Widget for App {
             .active_indicator(bastyde::widgets::TabIndicatorPosition::InnerEdge);
 
         // ── Leading dock: the binder tree, fronted by a VS Code-style activity
-        //    bar (icon rail) ──────────────────────────────────────────────────
-        let docking = DockingModel::new();
-        docking.set_side_size(DockSide::Leading, 280.0);
-        // A non-zero rail thickness switches the leading side to Rail
-        // presentation, so the side's tabs render as a `DockActivityBar` icon
-        // rail; the layout sizes the rail itself from the `DockRail` config.
-        docking.set_side_rail(DockSide::Leading, 48.0);
-        let binder_dock = DockWidgetId::fresh();
-        let tree_model = self.model.tree().clone();
-        let tree_selection = self.tree_selection.clone();
-
+        //    bar (icon rail). The OutlineViewModel owns the DockingModel. ──────
+        let docking = outline.docking();
+        let dock_outline = outline.clone();
         let layout = DockingLayout::new(docking.clone())
             .rail(DockRail::new(DockSide::Leading).background(SurfaceRole::Main).divider())
             .center(center)
             .dock(
-                DockWidget::new(binder_dock, lit!("Binder"), move |_id| {
-                    binder_tree(tree_model.clone(), tree_selection.clone())
+                DockWidget::new(outline.dock_id(), lit!("Binder"), move |_id| {
+                    binder_tree(dock_outline.tree(), dock_outline.selection())
                 })
                 .closable(false)
                 .default_location(DockOpenLocation::side(DockSide::Leading)),
             );
-        docking.open_dock(binder_dock, DockOpenLocation::side(DockSide::Leading));
+        outline.open_in_layout();
 
         // ── Status bar (thin) with the notification bell ─────────────────────
         let archive = ctx
@@ -213,55 +228,3 @@ fn binder_tree(
     .row_click_expands(false)
 }
 
-/// Open the editor tab for `item_id`, or focus it if already open.
-fn open_item_tab(
-    ctx: &AppContext,
-    tabs: &ListModel<TabHandle>,
-    selected_tab: &Signal<Option<TabId>>,
-    item_id: u64,
-    title: &str,
-    column_width: &Signal<f32>,
-) {
-    // Already open? Focus it.
-    for i in 0..tabs.len() {
-        let hit = tabs.with_item(i, |h| {
-            h.payload
-                .downcast_ref::<EditorTab>()
-                .filter(|e| e.item_id == item_id)
-                .map(|_| h.id)
-        });
-        if let Some(Some(tid)) = hit {
-            selected_tab.set(Some(tid));
-            return;
-        }
-    }
-
-    // Otherwise load its content and open a new tab.
-    let content_ids = binder_item_commands::get_binder_item_relationship(
-        ctx,
-        &item_id,
-        &BinderItemRelationshipField::Contents,
-    )
-    .unwrap_or_default();
-    let contents = content_commands::get_content_multi(ctx, &content_ids).unwrap_or_default();
-
-    let mut main_md = String::new();
-    let mut synopsis_md = String::new();
-    for c in contents.into_iter().flatten() {
-        match c.role {
-            ContentRole::SceneText | ContentRole::NoteText => main_md = c.data,
-            ContentRole::SynopsisText => synopsis_md = c.data,
-            _ => {}
-        }
-    }
-
-    let label = if title.is_empty() { "Untitled" } else { title };
-    let id = TabId::fresh();
-    tabs.push(TabHandle::dynamic(
-        id,
-        "editor",
-        TabInfo::new().title(lit!(label.to_string())).closable(true),
-        EditorTab::new(item_id, &main_md, &synopsis_md, column_width.clone()),
-    ));
-    selected_tab.set(Some(id));
-}

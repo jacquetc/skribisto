@@ -10,7 +10,7 @@ use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::widgets::{Button, Divider, HStack, MinSize, Panel, Slider, TextWidget, VStack};
 
-use crate::{DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, LOCALE_KEY};
+use crate::view_models::SettingsViewModel;
 
 pub struct SettingsPanel {
     root_child: Option<WidgetId>,
@@ -30,9 +30,14 @@ impl std::fmt::Debug for SettingsPanel {
 
 impl Widget for SettingsPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Persisted, shared width of the centered editor column (bound to the
-        // slider below; every open editor reads the same signal and resizes live).
-        let column_width = ctx.settings().signal(EDITOR_WIDTH_KEY, EDITOR_WIDTH_DEFAULT);
+        // All settings logic lives on the view-model; rebuilt here from the live
+        // store (same cached signals, so it shares state with every open editor).
+        let settings = SettingsViewModel::new(ctx.settings());
+        let column_width = settings.column_width();
+
+        // One clone per capturing button closure.
+        let (s_en, s_fr, s_light, s_dark) =
+            (settings.clone(), settings.clone(), settings.clone(), settings.clone());
 
         // The raised Panel is the modal's card background. Its centered placement
         // comes from `layout_response` reporting a fixed compact size (below) —
@@ -47,20 +52,10 @@ impl Widget for SettingsPanel {
                     HStack {
                         spacing: 8.0
                         Button::new(tr!(english())) {
-                            on_activate_fn: |ctx| {
-                                ctx.set_locale("en-US");
-                                ctx.settings()
-                                    .signal(LOCALE_KEY, "en-US".to_string())
-                                    .set("en-US".to_string());
-                            }
+                            on_activate_fn: move |ctx| s_en.set_locale(ctx, "en-US")
                         }
                         Button::new(tr!(french())) {
-                            on_activate_fn: |ctx| {
-                                ctx.set_locale("fr-FR");
-                                ctx.settings()
-                                    .signal(LOCALE_KEY, "en-US".to_string())
-                                    .set("fr-FR".to_string());
-                            }
+                            on_activate_fn: move |ctx| s_fr.set_locale(ctx, "fr-FR")
                         }
                     }
                     Divider
@@ -68,16 +63,10 @@ impl Widget for SettingsPanel {
                     HStack {
                         spacing: 8.0
                         Button::new(tr!(light())) {
-                            on_activate_fn: |ctx| {
-                                ctx.set_theme(intui::light());
-                                ctx.settings().signal(DARK_KEY, false).set(false);
-                            }
+                            on_activate_fn: move |ctx| s_light.set_dark(ctx, false)
                         }
                         Button::new(tr!(dark())) {
-                            on_activate_fn: |ctx| {
-                                ctx.set_theme(intui::dark());
-                                ctx.settings().signal(DARK_KEY, false).set(true);
-                            }
+                            on_activate_fn: move |ctx| s_dark.set_dark(ctx, true)
                         }
                     }
                     Divider
