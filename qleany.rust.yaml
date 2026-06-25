@@ -405,6 +405,8 @@ features:
       - name: target_id
         type: uinteger
         optional: true
+      - name: target_is_binder
+        type: boolean
       - name: move_place
         type: enum
         enum_name: MovePlace
