@@ -8,6 +8,8 @@ mod settings_panel;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use bastyde::core::Key::H;
+use bastyde::widgets::{Center, HStack, ImageWidget};
 use bastyde::core::event_source::{EventSource, SubscriptionHandle};
 use bastyde::core::modal::ModalRequest;
 use bastyde::prelude::*;
@@ -16,6 +18,7 @@ use bastyde::widgets::{
     CollapsePolicy, Expand, IconButtonSize, MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar,
     Toast, VStack, WindowFrame, framework_locales,
 };
+use bastyde::res;
 
 use frontend::AppContext;
 use frontend::EventHubClient;
@@ -143,22 +146,38 @@ fn main() {
                                 .collapse_policy(CollapsePolicy::Always)
                                 .hamburger_size(IconButtonSize::Large);
 
-                            tree.add_boxed(Box::new(
-                                TitleBar::new(host)
-                                    .height(38.0)
-                                    // Use roles, not frozen `theme.colors.*`
-                                    // snapshots: roles resolve against the live
-                                    // theme at paint time, so the bar retints
-                                    // when `ctx.set_theme(...)` swaps light ↔ dark.
-                                    .background(SurfaceRole::Main)
-                                    .leading(menubar)
-                                    .center(
-                                        TextWidget::new(lit!("Skribisto"))
-                                            .style(theme.typography.body_bold.clone())
-                                            .color(TextRole::Primary),
-                                    )
-                                    .close_action(|ctx| ctx.close_window()),
-                            ))
+                            tree.add_boxed(Box::new(bati!(
+
+                                TitleBar::new(host) {
+                                    background: SurfaceRole::Main
+                                    leading: menubar
+                                    center: Expand::horizontal {
+                                        HStack {
+                                            spacing: 5.0
+                                            alignment: bastyde::tokens::VAlignment::Center
+                                            ImageWidget::new(res!("../../resources/icons/skribisto.png")) {
+                                                alt: lit!("Skribisto")
+                                                size: 25.0, 25.0
+                                                a11y_hidden
+                                            }
+                                            // Fill the width left of the logo, then center the
+                                            // title within it. The outer `Expand::horizontal`
+                                            // makes the whole row span the drag region; this
+                                            // inner one claims the post-logo slack so `Center`
+                                            // has real width to center inside.
+                                            Expand::horizontal {
+                                                Center {
+                                                    TextWidget::new(lit!("Skribisto")) {
+                                                        style: theme.typography.body_bold.clone()
+                                                        color: TextRole::Primary
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    close_action: |ctx| ctx.close_window()
+                                }
+                            )))
                         }
                         None => tree.add(TextWidget::new(lit!("Skribisto"))),
                     };

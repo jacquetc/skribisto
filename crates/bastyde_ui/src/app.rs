@@ -13,10 +13,12 @@
 use std::collections::HashSet;
 use std::rc::Rc;
 
+use bastyde::canvas::BlendMode::Lighten;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::data::{FlatEntry, KeyedSelectionModel, ListModel, NodeId, SelectionMode, TreeModel};
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
+use bastyde::tokens::SurfaceRole::{Hover, Raised, Sunken};
 use bastyde::widgets::{
     DockOpenLocation, DockRail, DockSide, DockWidget, DockWidgetId, DockingLayout, DockingModel,
     Expand, HStack, IconButtonSize, NotificationArchiveModel, NotificationCenterButton, Spacer,
@@ -110,6 +112,7 @@ impl Widget for App {
             .bar_visibility(TabBarVisibility::Always)
             .compact_bar()
             .selected_tab_background(SurfaceRole::Content)
+            .hover_tab_background(Hover)
             .tab_dividers()
             .active_indicator(bastyde::widgets::TabIndicatorPosition::InnerEdge);
 
