@@ -9,7 +9,7 @@ readme = "../../README.md"
 publish = false
 
 [[bin]]
-name = "bastyde_ui"
+name = "skribisto"
 path = "src/main.rs"
 
 [dependencies]
