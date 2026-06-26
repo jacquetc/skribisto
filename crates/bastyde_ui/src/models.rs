@@ -9,4 +9,6 @@
 
 mod binder_binder_items_tree_model;
 
-pub use binder_binder_items_tree_model::{BinderBinderItemsTreeModel, TreeNode};
+pub use binder_binder_items_tree_model::{
+    BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeNode,
+};

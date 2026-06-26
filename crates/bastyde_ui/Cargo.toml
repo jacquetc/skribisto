@@ -15,6 +15,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 frontend = { workspace = true }
+skribisto_model = { workspace = true }
 bastyde = { path = "../../../bastyde/crates/bastyde" }
 
 [features]

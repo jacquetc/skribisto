@@ -12,6 +12,8 @@
 
 use bastyde::IntentKind; // derive macro
 
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+
 #[allow(dead_code)]
 #[derive(Debug, IntentKind)]
 pub enum AppIntent {
@@ -22,6 +24,33 @@ pub enum AppIntent {
     /// Open (or focus) the editor tab for a binder item.
     #[name = "editor.open_item"]
     OpenItem { item_id: u64, title: String },
+
+    /// Create a new binder item. A "folder" is just `role = Folder` — there is
+    /// no separate `NewFolder` (the *New Folder* affordance fires this with
+    /// `role = Folder`).
+    #[name = "binder.new_item"]
+    NewItem {
+        role: BinderItemRole,
+        sub_role: BinderItemSubRole,
+    },
+
+    /// Rename the selected binder/item (presents an input dialog).
+    #[name = "binder.rename"]
+    Rename,
+
+    /// Duplicate the selected item subtrees.
+    #[name = "binder.duplicate"]
+    Duplicate,
+
+    /// Move the selected binders/items to trash.
+    #[name = "binder.trash_selected"]
+    TrashSelected,
+
+    /// Indent / outdent the selected items.
+    #[name = "binder.indent"]
+    Indent,
+    #[name = "binder.outdent"]
+    Outdent,
 }
 
 #[cfg(test)]

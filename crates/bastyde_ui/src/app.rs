@@ -14,22 +14,22 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use bastyde::core::widget::WidgetPlacement;
-use bastyde::data::{FlatEntry, KeyedSelectionModel, NodeId, TreeModel};
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
     DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout, Divider, Expand, HStack,
-    IconButtonSize, NotificationArchiveModel, NotificationCenterButton, Spacer, StandardTreeItem,
-    StatusBar, TabBarVisibility, TabWidget, TreeView, VStack,
+    IconButtonSize, MenuItem, MenuList, NotificationArchiveModel, NotificationCenterButton, Spacer,
+    StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, TreeRow, TreeView, VStack,
 };
 
 use frontend::AppContext;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{Event, Origin, WorkManagementEvent};
 
 use crate::editor_tab::{EditorTab, editor_pane};
 use crate::intents::AppIntent;
-use crate::models::TreeNode;
+use crate::models::{BinderTreeKey, TreeNode};
 use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel};
 
 pub struct App {
@@ -101,13 +101,65 @@ impl Widget for App {
             }));
         }
 
-        // On project load: rebuild the tree and drop now-stale editor tabs.
+        // ── Binder-tree commands (the scriptable surface for the outline). ───
+        // Each drives an `OutlineViewModel` method; the context menu and key
+        // handlers below also call these methods directly.
+        {
+            let outline = outline.clone();
+            ctx.register_action_global(Action::new("binder.new_item").on_invoke(move |i, _c| {
+                if let Some(AppIntent::NewItem { role, sub_role }) = AppIntent::from_intent(i) {
+                    outline.new_item(role.clone(), sub_role.clone());
+                }
+            }));
+        }
+        {
+            let outline = outline.clone();
+            ctx.register_action_global(
+                Action::new("binder.rename").on_invoke(move |_i, c| outline.rename_selected(c)),
+            );
+        }
+        {
+            let outline = outline.clone();
+            ctx.register_action_global(
+                Action::new("binder.duplicate")
+                    .on_invoke(move |_i, _c| outline.duplicate_selected()),
+            );
+        }
+        {
+            let outline = outline.clone();
+            ctx.register_action_global(
+                Action::new("binder.trash_selected")
+                    .on_invoke(move |_i, _c| outline.trash_selected()),
+            );
+        }
+        {
+            let outline = outline.clone();
+            ctx.register_action_global(
+                Action::new("binder.indent").on_invoke(move |_i, _c| outline.indent_selected()),
+            );
+        }
+        {
+            let outline = outline.clone();
+            ctx.register_action_global(
+                Action::new("binder.outdent").on_invoke(move |_i, _c| outline.outdent_selected()),
+            );
+        }
+        ctx.register_shortcut_global(
+            Shortcut::new("binder.duplicate")
+                .name("Duplicate")
+                .primary(KeyStroke::ctrl(Key::D))
+                .build(),
+        );
+
+        // On project load: open the per-Work undo stack, rebuild the tree and
+        // drop now-stale editor tabs.
         {
             let outline = outline.clone();
             let editors = editors.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_event: &Event| {
+                    outline.init_stack();
                     outline.reload();
                     editors.close_all();
                 },
@@ -119,13 +171,16 @@ impl Widget for App {
         {
             let outline_sel = outline.clone();
             let editors = editors.clone();
-            ctx.effect(&outline.selection_signal(), move |sel: &HashSet<NodeId>| {
-                for node in sel.iter() {
-                    if let Some((Some(item_id), title)) = outline_sel.node_item(*node) {
-                        editors.open_or_focus(item_id, &title);
+            ctx.effect(
+                &outline.selection_signal(),
+                move |sel: &HashSet<BinderTreeKey>| {
+                    for key in sel.iter() {
+                        if let Some((Some(item_id), title)) = outline_sel.node_item(*key) {
+                            editors.open_or_focus(item_id, &title);
+                        }
                     }
-                }
-            });
+                },
+            );
         }
 
         // ── Center: dynamic editor tabs ──────────────────────────────────────
@@ -148,7 +203,7 @@ impl Widget for App {
             .center(center)
             .dock(
                 DockWidget::new(outline.dock_id(), lit!("Binder"), move |_id| {
-                    binder_tree(dock_outline.tree(), dock_outline.selection())
+                    binder_tree(dock_outline.clone())
                 })
                 .closable(false)
                 .default_location(DockOpenLocation::side(DockSide::Leading)),
@@ -202,29 +257,103 @@ impl Widget for App {
     }
 }
 
-/// The binder-item `TreeView` shown in the leading dock. `StandardTreeItem` gives
-/// the expand chevron and renders the user-note `label` as the subtitle. Rows are
-/// selected (not expanded) on click; selection is keyed by `NodeId` so the app
-/// can resolve a clicked row back to its item.
-fn binder_tree(
-    tree_model: TreeModel<TreeNode>,
-    selection: KeyedSelectionModel<NodeId>,
-) -> TreeView<TreeNode> {
-    TreeView::new_with_context(
-        tree_model,
-        |node: &TreeNode, entry: &FlatEntry, selected: bool, ctx| {
-            let mut row = StandardTreeItem::new(lit!(node.title.clone()))
-                .from_entry(entry)
+/// The binder-item tree shown in the leading dock, backed by the
+/// `OutlineViewModel`'s `TreeDataSource` (so it drag-reorders). `StandardTreeItem`
+/// gives the expand chevron and renders the user-note `label` as the subtitle.
+/// Rows select (not expand) on click; selection is keyed by `BinderTreeKey`.
+/// Each row carries a right-click context menu; the wrapping column handles
+/// Delete / F2 / Tab / Shift-Tab.
+fn binder_tree(outline: OutlineViewModel) -> impl Widget {
+    let menu_outline = outline.clone();
+    let tree = TreeView::from_source_keyed(
+        outline.model(),
+        outline.selection(),
+        move |node: &TreeNode, row: &TreeRow, selected: bool| {
+            let key = key_of(node);
+            let mut item = StandardTreeItem::new(lit!(node.title.clone()))
+                .depth(row.depth)
+                .has_children(row.has_children)
+                .is_expanded(row.is_expanded)
                 .selected(selected)
-                .on_toggle_rc(ctx.toggle_callback());
+                .on_toggle_rc(row.toggle_callback());
             if !node.label.is_empty() {
-                row = row.subtitle(lit!(node.label.clone()));
+                item = item.subtitle(lit!(node.label.clone()));
             }
-            Box::new(row) as Box<dyn Widget>
+            let cm = menu_outline.clone();
+            Box::new(item.context_menu(move |_pos, _ctx| {
+                // Target the right-clicked row, then offer the row actions.
+                cm.selection().select(key);
+                Some(Box::new(binder_context_menu(cm.clone(), key)) as Box<dyn Widget>)
+            })) as Box<dyn Widget>
         },
     )
     .item_height(40.0)
-    .keyed_selection(selection)
     .row_click_expands(false)
+    .reorderable(true);
+
+    let keys = outline.clone();
+    VStack::new()
+        .spacing(0.0)
+        .child(Expand::new().child(tree))
+        .on_key(move |ev, ctx| match ev {
+            WidgetEvent::KeyDown { key: Key::Delete, .. } => {
+                keys.trash_selected();
+                EventResponse::Handled
+            }
+            WidgetEvent::KeyDown { key: Key::F2, .. } => {
+                keys.rename_selected(ctx);
+                EventResponse::Handled
+            }
+            WidgetEvent::KeyDown { key: Key::Tab, modifiers, .. } if modifiers.shift() => {
+                keys.outdent_selected();
+                EventResponse::Handled
+            }
+            WidgetEvent::KeyDown { key: Key::Tab, .. } => {
+                keys.indent_selected();
+                EventResponse::Handled
+            }
+            _ => EventResponse::Ignored,
+        })
+}
+
+/// Reconstruct a row's `BinderTreeKey` from its `TreeNode` (the `from_source`
+/// delegate gives the node + flat metadata, not the key).
+fn key_of(node: &TreeNode) -> BinderTreeKey {
+    if node.kind == "binder" {
+        BinderTreeKey::Binder(node.binder_id.unwrap_or(0))
+    } else {
+        BinderTreeKey::Item(node.item_id.unwrap_or(0))
+    }
+}
+
+/// The per-row context menu: create / rename / duplicate / trash. *New Folder*
+/// is just `new_item(Folder, None)` — there is no separate folder command.
+fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
+    let new_item = outline.clone();
+    let new_folder = outline.clone();
+    let rename = outline.clone();
+    let duplicate = outline.clone();
+    let trash = outline;
+    MenuList::new()
+        .item(MenuItem::new(lit!("New Item")).on_activate_fn(move |_| {
+            new_item.new_item(BinderItemRole::Item, BinderItemSubRole::Text)
+        }))
+        .item(MenuItem::new(lit!("New Folder")).on_activate_fn(move |_| {
+            new_folder.new_item(BinderItemRole::Folder, BinderItemSubRole::None)
+        }))
+        .separator()
+        .item(
+            MenuItem::new(lit!("Rename"))
+                .on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
+        )
+        .item(
+            MenuItem::new(lit!("Duplicate"))
+                .on_activate_fn(move |_| duplicate.duplicate_selected()),
+        )
+        .separator()
+        .item(
+            MenuItem::new(lit!("Move to Trash"))
+                .on_activate_fn(move |_| trash.trash_selected()),
+        )
 }
 
