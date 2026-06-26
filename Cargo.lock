@@ -762,6 +762,7 @@ dependencies = [
  "anyhow",
  "bastyde",
  "skribisto-frontend",
+ "skribisto-model",
 ]
 
 [[package]]
