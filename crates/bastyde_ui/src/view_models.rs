@@ -313,10 +313,31 @@ impl OutlineViewModel {
     /// Create a new item/folder at the insertion point derived from selection.
     /// A "folder" is just `role = Folder`; there is no separate `new_folder`.
     pub fn new_item(&self, role: BinderItemRole, sub_role: BinderItemSubRole) {
+        let anchor = self.selection.selected_keys().first().copied();
+        self.create_item(anchor, role, sub_role);
+    }
+
+    /// Create a new item/folder anchored at a specific row (context-menu entry —
+    /// does not touch the selection, so it never opens an editor).
+    pub fn new_item_at(
+        &self,
+        anchor: BinderTreeKey,
+        role: BinderItemRole,
+        sub_role: BinderItemSubRole,
+    ) {
+        self.create_item(Some(anchor), role, sub_role);
+    }
+
+    fn create_item(
+        &self,
+        anchor: Option<BinderTreeKey>,
+        role: BinderItemRole,
+        sub_role: BinderItemSubRole,
+    ) {
         if skribisto_model::validate_item(&role, &sub_role, &[]).is_err() {
             return;
         }
-        let Some((binder, index, indent)) = self.insertion_point() else {
+        let Some((binder, index, indent)) = self.insertion_point(anchor) else {
             return;
         };
         let title = match role {
@@ -399,10 +420,16 @@ impl OutlineViewModel {
         }
     }
 
-    /// Move the selected items to trash (binders and items both supported).
+    /// Move the selected items to trash (the `binder.trash_selected` command).
     pub fn trash_selected(&self) {
-        let ctx = &*self.app_ctx;
         let sel = self.selection.selected_keys();
+        self.trash_keys(&sel);
+    }
+
+    /// Move the given keys to trash (binders and items both supported). Used by
+    /// the context menu (operates on the right-clicked row, not the selection).
+    pub fn trash_keys(&self, sel: &[BinderTreeKey]) {
+        let ctx = &*self.app_ctx;
         if sel.is_empty() {
             return;
         }
@@ -412,7 +439,7 @@ impl OutlineViewModel {
             let _ = undo_redo_commands::begin_composite(ctx, stack);
         }
         // Whole binders.
-        for key in &sel {
+        for key in sel {
             if let BinderTreeKey::Binder(b) = key {
                 let _ = trash_management_commands::trash_binder(
                     ctx,
@@ -423,7 +450,7 @@ impl OutlineViewModel {
         }
         // Items, grouped by their origin binder.
         let mut by_binder: HashMap<u64, Vec<i64>> = HashMap::new();
-        for key in &sel {
+        for key in sel {
             if let BinderTreeKey::Item(i) = key {
                 if let Some(b) = self.model.binder_of(key) {
                     by_binder.entry(b).or_default().push(*i as i64);
@@ -446,11 +473,16 @@ impl OutlineViewModel {
         self.reload();
     }
 
-    /// Duplicate the selected items (subtrees). Binder selections are ignored.
+    /// Duplicate the selected items (the `binder.duplicate` command).
     pub fn duplicate_selected(&self) {
-        let item_ids: Vec<u64> = self
-            .selection
-            .selected_keys()
+        let sel = self.selection.selected_keys();
+        self.duplicate_keys(&sel);
+    }
+
+    /// Duplicate the given keys' item subtrees (binder keys ignored). Used by the
+    /// context menu (operates on the right-clicked row, not the selection).
+    pub fn duplicate_keys(&self, keys: &[BinderTreeKey]) {
+        let item_ids: Vec<u64> = keys
             .iter()
             .filter_map(|k| match k {
                 BinderTreeKey::Item(i) => Some(*i),
@@ -485,10 +517,10 @@ impl OutlineViewModel {
 
     // ── private helpers ──
 
-    /// `(binder, insert_index, indent)` for a new item, from the selection.
-    fn insertion_point(&self) -> Option<(u64, usize, i64)> {
+    /// `(binder, insert_index, indent)` for a new item, relative to `anchor`.
+    fn insertion_point(&self, anchor: Option<BinderTreeKey>) -> Option<(u64, usize, i64)> {
         let ctx = &*self.app_ctx;
-        match self.selection.selected_keys().first().copied() {
+        match anchor {
             Some(BinderTreeKey::Binder(b)) => Some((b, 0, 0)),
             Some(BinderTreeKey::Item(i)) => {
                 let binder = self.model.binder_of(&BinderTreeKey::Item(i))?;

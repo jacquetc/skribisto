@@ -281,8 +281,10 @@ fn binder_tree(outline: OutlineViewModel) -> impl Widget {
             }
             let cm = menu_outline.clone();
             Box::new(item.context_menu(move |_pos, _ctx| {
-                // Target the right-clicked row, then offer the row actions.
-                cm.selection().select(key);
+                // Operate on the right-clicked row directly — do NOT mutate the
+                // selection here: selecting fires the open-editor effect AND
+                // rebuilds this row, destroying the menu's anchor (so the overlay
+                // would fall back to the top-left corner).
                 Some(Box::new(binder_context_menu(cm.clone(), key)) as Box<dyn Widget>)
             })) as Box<dyn Widget>
         },
@@ -336,10 +338,10 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
     let trash = outline;
     MenuList::new()
         .item(MenuItem::new(lit!("New Item")).on_activate_fn(move |_| {
-            new_item.new_item(BinderItemRole::Item, BinderItemSubRole::Text)
+            new_item.new_item_at(key, BinderItemRole::Item, BinderItemSubRole::Text)
         }))
         .item(MenuItem::new(lit!("New Folder")).on_activate_fn(move |_| {
-            new_folder.new_item(BinderItemRole::Folder, BinderItemSubRole::None)
+            new_folder.new_item_at(key, BinderItemRole::Folder, BinderItemSubRole::None)
         }))
         .separator()
         .item(
@@ -348,12 +350,12 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         )
         .item(
             MenuItem::new(lit!("Duplicate"))
-                .on_activate_fn(move |_| duplicate.duplicate_selected()),
+                .on_activate_fn(move |_| duplicate.duplicate_keys(&[key])),
         )
         .separator()
         .item(
             MenuItem::new(lit!("Move to Trash"))
-                .on_activate_fn(move |_| trash.trash_selected()),
+                .on_activate_fn(move |_| trash.trash_keys(&[key])),
         )
 }
 
