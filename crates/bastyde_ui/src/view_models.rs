@@ -69,6 +69,10 @@ pub struct EditorsViewModel {
     app_ctx: Rc<AppContext>,
     tabs: ListModel<TabHandle>,
     selected_tab: Signal<Option<TabId>>,
+    /// The `BinderItem` of the currently-active editor tab — the "open
+    /// document". Drives the binder's persistent open-item marker (independent
+    /// of selection/focus). Kept in sync with `selected_tab`.
+    active_item: Signal<Option<u64>>,
     column_width: Signal<f32>,
 }
 
@@ -78,6 +82,7 @@ impl EditorsViewModel {
             app_ctx,
             tabs: ListModel::from_vec(Vec::new()),
             selected_tab: Signal::new(None),
+            active_item: Signal::new(None),
             column_width,
         }
     }
@@ -90,6 +95,41 @@ impl EditorsViewModel {
     /// The selected-tab signal to hand to `TabWidget::new`.
     pub fn selected_tab(&self) -> Signal<Option<TabId>> {
         self.selected_tab.clone()
+    }
+
+    /// The currently-open item id (active editor tab). Bind a binder row's
+    /// "open document" accent to this.
+    pub fn active_item(&self) -> Signal<Option<u64>> {
+        self.active_item.clone()
+    }
+
+    /// Recompute `active_item` from the currently-selected tab. Call whenever
+    /// `selected_tab` changes (open, close, or a tab-bar click).
+    pub fn sync_active_item(&self) {
+        let active = self
+            .selected_tab
+            .get()
+            .and_then(|tab| self.item_of_tab(tab));
+        if self.active_item.get() != active {
+            self.active_item.set(active);
+        }
+    }
+
+    /// The `BinderItem` id behind a tab, if it's an editor tab.
+    fn item_of_tab(&self, tab: TabId) -> Option<u64> {
+        for i in 0..self.tabs.len() {
+            let hit = self.tabs.with_item(i, |h| {
+                if h.id == tab {
+                    h.payload.downcast_ref::<EditorTab>().map(|e| e.item_id)
+                } else {
+                    None
+                }
+            });
+            if let Some(Some(id)) = hit {
+                return Some(id);
+            }
+        }
+        None
     }
 
     /// Open the editor tab for `item_id`, or focus it if already open.

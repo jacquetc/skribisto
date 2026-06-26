@@ -10,17 +10,17 @@
 //! generic over closures, which the DSL doesn't express cleanly. See
 //! `settings_panel.rs` for the `bati!` style.
 
-use std::collections::HashSet;
 use std::rc::Rc;
 
 use bastyde::core::widget::WidgetPlacement;
+use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout, Divider, Expand, HStack,
-    IconButtonSize, MenuItem, MenuList, NotificationArchiveModel, NotificationCenterButton, Spacer,
-    StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, TreeRow, TreeView, VStack,
+    ActivateOn, DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout, Divider, Expand,
+    HStack, IconButtonSize, MenuItem, MenuList, NotificationArchiveModel, NotificationCenterButton,
+    Spacer, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, TreeRow, TreeView, VStack,
 };
 
 use frontend::AppContext;
@@ -166,22 +166,23 @@ impl Widget for App {
             );
         }
 
-        // App mediates the two peer view-models: selecting a binder item opens
-        // (or focuses) its editor tab. Neither view-model imports the other.
-        {
-            let outline_sel = outline.clone();
+        // App mediates the two peer view-models: *activating* a binder item
+        // (click or Enter — NOT arrow navigation, which only moves the selection)
+        // opens (or focuses) its editor tab. The tree fires this via
+        // `TreeView::on_activate`; App supplies the open callback so neither
+        // view-model imports the other.
+        let on_open: OpenItemFn = {
             let editors = editors.clone();
-            ctx.effect(
-                &outline.selection_signal(),
-                move |sel: &HashSet<BinderTreeKey>| {
-                    for key in sel.iter() {
-                        if let Some((Some(item_id), title)) = outline_sel.node_item(*key) {
-                            editors.open_or_focus(item_id, &title);
-                        }
-                    }
-                },
-            );
+            Rc::new(move |item_id, title| editors.open_or_focus(item_id, &title))
+        };
+
+        // Keep the "open document" id in sync with the active tab (open, close,
+        // or a tab-bar click), so the binder's open-item marker tracks it.
+        {
+            let editors = editors.clone();
+            ctx.effect(&editors.selected_tab(), move |_| editors.sync_active_item());
         }
+        let active_item = editors.active_item();
 
         // ── Center: dynamic editor tabs ──────────────────────────────────────
         let center = TabWidget::new(editors.selected_tab())
@@ -203,7 +204,7 @@ impl Widget for App {
             .center(center)
             .dock(
                 DockWidget::new(outline.dock_id(), lit!("Binder"), move |_id| {
-                    binder_tree(dock_outline.clone())
+                    binder_tree(dock_outline.clone(), on_open.clone(), active_item.clone())
                 })
                 .closable(false)
                 .default_location(DockOpenLocation::side(DockSide::Leading)),
@@ -263,8 +264,16 @@ impl Widget for App {
 /// Rows select (not expand) on click; selection is keyed by `BinderTreeKey`.
 /// Each row carries a right-click context menu; the wrapping column handles
 /// Delete / F2 / Tab / Shift-Tab.
-fn binder_tree(outline: OutlineViewModel) -> impl Widget {
+fn binder_tree(
+    outline: OutlineViewModel,
+    on_open: OpenItemFn,
+    active_item: Signal<Option<u64>>,
+) -> impl Widget {
     let menu_outline = outline.clone();
+    // Open on row *activation* (click or Enter), resolved from the flat index via
+    // the source — NOT on selection, so arrow-key navigation only moves the
+    // highlight and never spawns a tab.
+    let activate_model = outline.model();
     let tree = TreeView::from_source_keyed(
         outline.model(),
         outline.selection(),
@@ -279,19 +288,42 @@ fn binder_tree(outline: OutlineViewModel) -> impl Widget {
             if !node.label.is_empty() {
                 item = item.subtitle(lit!(node.label.clone()));
             }
+            // Persistent "open document" marker: the row whose item is the
+            // active editor tab shows an accent title — independent of selection
+            // and focus, so you can always see what's open. Reactive (no rebuild).
+            if let Some(item_id) = node.item_id {
+                let title_color = active_item.map(move |a| {
+                    if *a == Some(item_id) {
+                        TextRole::Accent
+                    } else {
+                        TextRole::Primary
+                    }
+                });
+                item = item.label_color(title_color);
+            }
             let cm = menu_outline.clone();
             Box::new(item.context_menu(move |_pos, _ctx| {
                 // Operate on the right-clicked row directly — do NOT mutate the
-                // selection here: selecting fires the open-editor effect AND
-                // rebuilds this row, destroying the menu's anchor (so the overlay
-                // would fall back to the top-left corner).
+                // selection here: selecting rebuilds this row, destroying the
+                // menu's anchor (the overlay would fall back to the corner).
                 Some(Box::new(binder_context_menu(cm.clone(), key)) as Box<dyn Widget>)
             })) as Box<dyn Widget>
         },
     )
     .item_height(40.0)
     .row_click_expands(false)
-    .reorderable(true);
+    .reorderable(true)
+    // Single-click to open (Scrivener convention) — arrow-key navigation only
+    // moves the highlight, so stepping through the binder never spawns tabs.
+    .activate_on(ActivateOn::SingleClick)
+    .on_activate(move |idx| {
+        if let Some(key) = activate_model.key_at(idx) {
+            // Binder rows have `item_id == None` and don't open an editor.
+            if let Some((Some(item_id), title)) = activate_model.node_of(&key) {
+                on_open(item_id, title);
+            }
+        }
+    });
 
     let keys = outline.clone();
     VStack::new()
@@ -306,17 +338,28 @@ fn binder_tree(outline: OutlineViewModel) -> impl Widget {
                 keys.rename_selected(ctx);
                 EventResponse::Handled
             }
-            WidgetEvent::KeyDown { key: Key::Tab, modifiers, .. } if modifiers.shift() => {
-                keys.outdent_selected();
+            // Indent / outdent via Ctrl+] / Ctrl+[ (the macOS Notes / outliner
+            // convention). Tab is deliberately NOT bound — it stays free for
+            // focus traversal out of the tree, so the keyboard isn't trapped.
+            WidgetEvent::KeyDown { key: Key::Character(']'), modifiers, .. }
+                if modifiers.ctrl() =>
+            {
+                keys.indent_selected();
                 EventResponse::Handled
             }
-            WidgetEvent::KeyDown { key: Key::Tab, .. } => {
-                keys.indent_selected();
+            WidgetEvent::KeyDown { key: Key::Character('['), modifiers, .. }
+                if modifiers.ctrl() =>
+            {
+                keys.outdent_selected();
                 EventResponse::Handled
             }
             _ => EventResponse::Ignored,
         })
 }
+
+/// Callback App supplies to the binder tree to open (or focus) an item's editor
+/// tab on activation — keeps the tree decoupled from `EditorsViewModel`.
+type OpenItemFn = Rc<dyn Fn(u64, String)>;
 
 /// Reconstruct a row's `BinderTreeKey` from its `TreeNode` (the `from_source`
 /// delegate gives the node + flat metadata, not the key).
