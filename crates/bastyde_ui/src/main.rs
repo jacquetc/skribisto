@@ -11,19 +11,18 @@ mod view_models;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use bastyde::core::Key::H;
-use bastyde::widgets::{Center, HStack, ImageWidget};
 use bastyde::core::event_source::{EventSource, SubscriptionHandle};
+use bastyde::widgets::{Center, HStack, ImageWidget};
 
-use recent_projects_button::RecentProjectsButton;
 use bastyde::core::modal::ModalRequest;
 use bastyde::prelude::*;
+use bastyde::res;
 use bastyde::settings::{AppPaths, SettingsStore};
 use bastyde::widgets::{
     CollapsePolicy, Expand, IconButtonSize, MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar,
     Toast, VStack, WindowFrame, framework_locales,
 };
-use bastyde::res;
+use recent_projects_button::RecentProjectsButton;
 
 use frontend::AppContext;
 use frontend::EventHubClient;

@@ -38,8 +38,8 @@ impl From<&WorkDto> for Work {
     fn from(dto: &WorkDto) -> Self {
         Work {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             title: dto.title.clone(),
             author_name: dto.author_name.clone(),
             dict_language: dto.dict_language.clone(),
@@ -98,8 +98,8 @@ impl From<&CreateWorkDto> for Work {
     fn from(dto: &CreateWorkDto) -> Self {
         Work {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             title: dto.title.clone(),
             author_name: dto.author_name.clone(),
             dict_language: dto.dict_language.clone(),
@@ -154,8 +154,8 @@ impl From<&UpdateWorkDto> for Work {
     fn from(dto: &UpdateWorkDto) -> Self {
         Work {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             title: dto.title.clone(),
             author_name: dto.author_name.clone(),
             dict_language: dto.dict_language.clone(),

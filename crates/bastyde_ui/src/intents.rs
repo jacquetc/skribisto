@@ -60,7 +60,11 @@ mod tests {
 
     #[test]
     fn open_item_round_trips_its_payload() {
-        let intent: Intent = AppIntent::OpenItem { item_id: 7, title: "Scene".into() }.into();
+        let intent: Intent = AppIntent::OpenItem {
+            item_id: 7,
+            title: "Scene".into(),
+        }
+        .into();
         match AppIntent::from_intent(&intent) {
             Some(AppIntent::OpenItem { item_id, title }) => {
                 assert_eq!(*item_id, 7);

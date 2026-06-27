@@ -84,45 +84,41 @@ impl EmptyTrashUseCase {
                 .next();
 
             if let Some(binder_id) = trashed_binder {
-                let items = uow
-                    .get_binder_relationship(&binder_id, &BinderRelationshipField::BinderItems)?;
+                let items =
+                    uow.get_binder_relationship(&binder_id, &BinderRelationshipField::BinderItems)?;
                 for it in &items {
-                    let cs = uow.get_binder_item_relationship(
-                        it,
-                        &BinderItemRelationshipField::Contents,
-                    )?;
+                    let cs = uow
+                        .get_binder_item_relationship(it, &BinderItemRelationshipField::Contents)?;
                     remove_contents.extend(cs);
                 }
                 remove_items.extend(items);
                 remove_binders.push(binder_id);
-            } else if let Some(item_id) = trashed_item {
-                if let Some((binder_id, _)) = uow
+            } else if let Some(item_id) = trashed_item
+                && let Some((binder_id, _)) = uow
                     .get_binder_relationships_from_right_ids(
                         &BinderRelationshipField::BinderItems,
                         &[item_id],
                     )?
                     .into_iter()
                     .next()
-                {
-                    let order = uow.get_binder_relationship(
-                        &binder_id,
-                        &BinderRelationshipField::BinderItems,
-                    )?;
-                    let mut indent: HashMap<EntityId, i64> = HashMap::new();
-                    for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
-                        indent.insert(it.id, it.indent);
-                    }
-                    let subtree = subtree_of(&order, &indent, item_id);
-                    for it in &subtree {
-                        let cs = uow.get_binder_item_relationship(
-                            it,
-                            &BinderItemRelationshipField::Contents,
-                        )?;
-                        remove_contents.extend(cs);
-                    }
-                    remove_items.extend(subtree.iter().copied());
-                    drop_from_binder.entry(binder_id).or_default().extend(subtree);
+            {
+                let order =
+                    uow.get_binder_relationship(&binder_id, &BinderRelationshipField::BinderItems)?;
+                let mut indent: HashMap<EntityId, i64> = HashMap::new();
+                for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
+                    indent.insert(it.id, it.indent);
                 }
+                let subtree = subtree_of(&order, &indent, item_id);
+                for it in &subtree {
+                    let cs = uow
+                        .get_binder_item_relationship(it, &BinderItemRelationshipField::Contents)?;
+                    remove_contents.extend(cs);
+                }
+                remove_items.extend(subtree.iter().copied());
+                drop_from_binder
+                    .entry(binder_id)
+                    .or_default()
+                    .extend(subtree);
             }
         }
 
@@ -131,8 +127,10 @@ impl EmptyTrashUseCase {
             let dropped_set: HashSet<EntityId> = dropped.iter().copied().collect();
             let order =
                 uow.get_binder_relationship(binder_id, &BinderRelationshipField::BinderItems)?;
-            let new: Vec<EntityId> =
-                order.into_iter().filter(|id| !dropped_set.contains(id)).collect();
+            let new: Vec<EntityId> = order
+                .into_iter()
+                .filter(|id| !dropped_set.contains(id))
+                .collect();
             uow.set_binder_relationship(binder_id, &BinderRelationshipField::BinderItems, &new)?;
         }
 

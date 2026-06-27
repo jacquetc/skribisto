@@ -7,8 +7,6 @@
 use super::recent_work_repository::RecentWorkTable;
 use super::recent_work_repository::RecentWorkTableRO;
 use crate::entities::RecentWork;
-use crate::error::RepositoryError;
-use crate::types::EntityId;
 
 crate::impl_leaf_entity_table!(
     entity: RecentWork,

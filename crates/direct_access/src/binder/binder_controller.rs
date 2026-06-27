@@ -250,6 +250,7 @@ pub fn set_relationship(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn move_relationship(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,

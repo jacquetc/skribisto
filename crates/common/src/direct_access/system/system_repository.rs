@@ -294,7 +294,7 @@ impl<'a> SystemRepository<'a> {
 
         let recent_works = entity.recent_works.clone();
         let trash_infos = entity.trash_infos.clone();
-        let work_info = entity.work_info.clone();
+        let work_info = entity.work_info;
 
         // remove all strong relationships, initiating a cascade remove
 

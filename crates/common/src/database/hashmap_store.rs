@@ -346,12 +346,12 @@ pub(crate) fn delete_from_backward_junction(
     let mut jn = junction.write().unwrap();
     let keys: Vec<EntityId> = jn.keys().copied().collect();
     for k in keys {
-        if let Some(right_ids) = jn.get(&k) {
-            if right_ids.contains(id) {
-                let filtered: Vec<EntityId> =
-                    right_ids.iter().copied().filter(|eid| eid != id).collect();
-                jn.insert(k, filtered);
-            }
+        if let Some(right_ids) = jn.get(&k)
+            && right_ids.contains(id)
+        {
+            let filtered: Vec<EntityId> =
+                right_ids.iter().copied().filter(|eid| eid != id).collect();
+            jn.insert(k, filtered);
         }
     }
 }

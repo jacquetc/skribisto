@@ -152,7 +152,7 @@ impl EditorsViewModel {
 
     /// Close every open tab (e.g. on project load).
     pub fn close_all(&self) {
-        while self.tabs.len() > 0 {
+        while !self.tabs.is_empty() {
             self.tabs.remove(0);
         }
         self.selected_tab.set(None);
@@ -408,19 +408,15 @@ impl OutlineViewModel {
 
     /// Begin a rename: present a modal `InputDialog`, applying `rename` on OK.
     pub fn begin_rename(&self, key: BinderTreeKey, ctx: &mut EventContext) {
-        let current = self
-            .model
-            .node_of(&key)
-            .map(|(_, t)| t)
-            .unwrap_or_default();
+        let current = self.model.node_of(&key).map(|(_, t)| t).unwrap_or_default();
         let vm = self.clone();
         InputDialog::new(lit!("Rename"))
             .default_text(current)
             .on_result(move |result, _ctx| {
-                if let Some(name) = result {
-                    if !name.trim().is_empty() {
-                        vm.rename(key, &name);
-                    }
+                if let Some(name) = result
+                    && !name.trim().is_empty()
+                {
+                    vm.rename(key, &name);
                 }
             })
             .present(ctx);
@@ -484,17 +480,19 @@ impl OutlineViewModel {
                 let _ = trash_management_commands::trash_binder(
                     ctx,
                     stack,
-                    &TrashBinderDto { binder_id: *b as i64 },
+                    &TrashBinderDto {
+                        binder_id: *b as i64,
+                    },
                 );
             }
         }
         // Items, grouped by their origin binder.
         let mut by_binder: HashMap<u64, Vec<i64>> = HashMap::new();
         for key in sel {
-            if let BinderTreeKey::Item(i) = key {
-                if let Some(b) = self.model.binder_of(key) {
-                    by_binder.entry(b).or_default().push(*i as i64);
-                }
+            if let BinderTreeKey::Item(i) = key
+                && let Some(b) = self.model.binder_of(key)
+            {
+                by_binder.entry(b).or_default().push(*i as i64);
             }
         }
         for (binder, ids) in by_binder {

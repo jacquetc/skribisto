@@ -12,13 +12,13 @@ use std::sync::Arc;
 pub fn initialize_app(db_context: &DbContext, event_hub: &Arc<EventHub>) -> Result<()> {
     let uow_context = InitializeAppUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = InitializeAppUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute()?;
-    Ok(return_dto)
+    uc.execute()?;
+    Ok(())
 }
 
 pub fn clean_up_before_exit(db_context: &DbContext, event_hub: &Arc<EventHub>) -> Result<()> {
     let uow_context = CleanUpBeforeExitUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = CleanUpBeforeExitUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute()?;
-    Ok(return_dto)
+    uc.execute()?;
+    Ok(())
 }

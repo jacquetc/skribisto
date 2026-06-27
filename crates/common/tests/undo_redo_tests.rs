@@ -184,7 +184,7 @@ fn test_composite_command() {
     let mut manager = UndoRedoManager::new();
 
     // Create a composite command
-    manager.begin_composite(None);
+    let _ = manager.begin_composite(None);
 
     // Add commands to the composite
     {
@@ -215,7 +215,7 @@ fn test_empty_composite() {
     let mut manager = UndoRedoManager::new();
 
     // Create an empty composite command
-    manager.begin_composite(None);
+    let _ = manager.begin_composite(None);
     manager.end_composite();
 
     // Nothing should be added to the undo stack
@@ -228,7 +228,7 @@ fn test_nested_composite() {
     let mut manager = UndoRedoManager::new();
 
     // Start outer composite
-    manager.begin_composite(None);
+    let _ = manager.begin_composite(None);
 
     // Add a command
     {
@@ -238,7 +238,7 @@ fn test_nested_composite() {
     }
 
     // Start inner composite (should be ignored and continue with outer composite)
-    manager.begin_composite(None);
+    let _ = manager.begin_composite(None);
 
     // Add another command
     {
@@ -399,7 +399,7 @@ fn test_clear_with_in_progress_composite() {
     let mut manager = UndoRedoManager::new();
 
     // Begin a composite command
-    manager.begin_composite(None);
+    let _ = manager.begin_composite(None);
 
     // Add commands to the composite
     {

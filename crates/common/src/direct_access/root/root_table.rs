@@ -4,9 +4,7 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 
-use crate::database::hashmap_store::{
-    HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
-};
+use crate::database::hashmap_store::{HashMapStore, junction_get, junction_remove, junction_set};
 use crate::entities::Root;
 use crate::error::RepositoryError;
 use crate::types::EntityId;

@@ -38,6 +38,7 @@ pub trait ExportWorkUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
 
 pub struct ExportWorkUseCase {
     uow_factory: Box<dyn ExportWorkUnitOfWorkFactoryTrait>,
+    #[allow(dead_code)]
     dto: ExportWorkDto,
 }
 
@@ -55,6 +56,7 @@ impl ExportWorkUseCase {
 impl LongOperation for ExportWorkUseCase {
     type Output = ExportResultDto;
 
+    #[allow(unreachable_code, unused_variables)]
     fn execute(
         &self,
         progress_callback: Box<dyn Fn(common::long_operation::OperationProgress) + Send>,

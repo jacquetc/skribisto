@@ -7,8 +7,6 @@
 use super::content_repository::ContentTable;
 use super::content_repository::ContentTableRO;
 use crate::entities::Content;
-use crate::error::RepositoryError;
-use crate::types::EntityId;
 
 crate::impl_leaf_entity_table!(
     entity: Content,

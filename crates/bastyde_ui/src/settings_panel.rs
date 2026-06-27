@@ -36,8 +36,12 @@ impl Widget for SettingsPanel {
         let column_width = settings.column_width();
 
         // One clone per capturing button closure.
-        let (s_en, s_fr, s_light, s_dark) =
-            (settings.clone(), settings.clone(), settings.clone(), settings.clone());
+        let (s_en, s_fr, s_light, s_dark) = (
+            settings.clone(),
+            settings.clone(),
+            settings.clone(),
+            settings.clone(),
+        );
 
         // The raised Panel is the modal's card background. Its centered placement
         // comes from `layout_response` reporting a fixed compact size (below) —
@@ -88,7 +92,11 @@ impl Widget for SettingsPanel {
         // with an *unspecified* proposal and centers on the result, so we must
         // return a bounded size here rather than delegating to the (greedy)
         // Panel — otherwise it spans the window and reads as "not centered".
-        Size::new(proposal.width.unwrap_or(480.0), proposal.height.unwrap_or(360.0)).into()
+        Size::new(
+            proposal.width.unwrap_or(480.0),
+            proposal.height.unwrap_or(360.0),
+        )
+        .into()
     }
 
     fn place_children(

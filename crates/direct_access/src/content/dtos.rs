@@ -33,9 +33,9 @@ impl From<&ContentDto> for Content {
     fn from(dto: &ContentDto) -> Self {
         Content {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            activated: dto.activated.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            activated: dto.activated,
             role: dto.role.clone(),
             data: dto.data.clone(),
         }
@@ -81,9 +81,9 @@ impl From<&CreateContentDto> for Content {
     fn from(dto: &CreateContentDto) -> Self {
         Content {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            activated: dto.activated.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            activated: dto.activated,
             role: dto.role.clone(),
             data: dto.data.clone(),
         }
@@ -128,9 +128,9 @@ impl From<&UpdateContentDto> for Content {
     fn from(dto: &UpdateContentDto) -> Self {
         Content {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            activated: dto.activated.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            activated: dto.activated,
             role: dto.role.clone(),
             data: dto.data.clone(),
         }

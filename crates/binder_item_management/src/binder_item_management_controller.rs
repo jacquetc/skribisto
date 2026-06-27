@@ -36,7 +36,7 @@ pub fn move_items(
 ) -> Result<()> {
     let uow_context = MoveItemsUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = MoveItemsUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
+    uc.execute(dto)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
-    Ok(return_dto)
+    Ok(())
 }

@@ -28,8 +28,8 @@ impl From<&WorkInfoDto> for WorkInfo {
     fn from(dto: &WorkInfoDto) -> Self {
         WorkInfo {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             file_name: dto.file_name.clone(),
         }
     }
@@ -68,8 +68,8 @@ impl From<&CreateWorkInfoDto> for WorkInfo {
     fn from(dto: &CreateWorkInfoDto) -> Self {
         WorkInfo {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             file_name: dto.file_name.clone(),
         }
     }
@@ -107,8 +107,8 @@ impl From<&UpdateWorkInfoDto> for WorkInfo {
     fn from(dto: &UpdateWorkInfoDto) -> Self {
         WorkInfo {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             file_name: dto.file_name.clone(),
         }
     }

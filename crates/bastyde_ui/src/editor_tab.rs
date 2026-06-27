@@ -6,7 +6,6 @@
 //! edits survive tab rebuilds and can later be read back via `to_markdown()` to
 //! save into the item's `Content` rows.
 
-use bastyde::core::Key::E;
 use bastyde::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
@@ -14,7 +13,7 @@ use bastyde::text_document::TextDocument;
 use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
-    Divider, Expand, FixedSize, GroupHeader, HStack, MaxSize, Padding, Panel, RectWidget, Spacer, TextWidget, VStack,
+    Expand, FixedSize, GroupHeader, HStack, MaxSize, Padding, Panel, RectWidget, Spacer, VStack,
     ZStack,
 };
 
@@ -101,7 +100,9 @@ pub fn editor_pane(state: &EditorTab) -> Box<dyn Widget> {
             padding: 0.0
             VStack {
                 spacing: 5.0
-                FixedSize { bind_height: 10.0 }
+                FixedSize {
+                    bind_height: 10.0
+                }
                 GroupHeader::new(lit!("Synopsis")) {
                     style: TextStyleRole::SmallBold
                     color: TextRole::Secondary
@@ -128,10 +129,12 @@ pub fn editor_pane(state: &EditorTab) -> Box<dyn Widget> {
                         }
                     }
                     Spacer {
-                        min_length: 4.0 
+                        min_length: 4.0
                     }
                 }
-                FixedSize { bind_height: 10.0 }
+                FixedSize {
+                    bind_height: 10.0
+                }
                 GroupHeader::new(lit!("Text")) {
                     style: TextStyleRole::SmallBold
                     color: TextRole::Secondary

@@ -207,8 +207,7 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
     // --- Tag relationships (item old id -> tag old ids) ---
     let mut item_tags: HashMap<i64, Vec<i64>> = HashMap::new();
     {
-        let mut stmt =
-            conn.prepare("SELECT l_tree_code, l_tag_code FROM tbl_tag_relationship")?;
+        let mut stmt = conn.prepare("SELECT l_tree_code, l_tag_code FROM tbl_tag_relationship")?;
         let rows = stmt.query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?)))?;
         for row in rows {
             let (tree, tag) = row?;
@@ -265,7 +264,10 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
                      labels: &HashMap<i64, String>,
                      item_tags: &HashMap<i64, Vec<i64>>|
      -> Option<LegacyItem> {
-        let section_type = section_types.get(&row.old_id).map(String::as_str).unwrap_or("");
+        let section_type = section_types
+            .get(&row.old_id)
+            .map(String::as_str)
+            .unwrap_or("");
         let is_folder = row.t_type == "FOLDER";
 
         // Drop separator sections entirely.
@@ -273,14 +275,22 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
             return None;
         }
 
-        let role = if is_folder { BinderItemRole::Folder } else { BinderItemRole::Item };
+        let role = if is_folder {
+            BinderItemRole::Folder
+        } else {
+            BinderItemRole::Item
+        };
         let sub_role = if is_folder {
             // Legacy folders are pure grouping — no compile semantics.
             BinderItemSubRole::None
         } else if row.t_type == "SECTION" {
             section_type_to_sub_role(section_type)
         } else if row.t_type == "TEXT" {
-            if is_note { BinderItemSubRole::Note } else { BinderItemSubRole::Scene }
+            if is_note {
+                BinderItemSubRole::Note
+            } else {
+                BinderItemSubRole::Scene
+            }
         } else {
             // Unknown leaf → a plain scene so its content survives.
             BinderItemSubRole::Scene
@@ -291,8 +301,10 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
         let mut candidates: Vec<LegacyContent> = Vec::new();
         if !row.title.is_empty() {
             if sub_role == BinderItemSubRole::BookBegin {
-                candidates
-                    .push(LegacyContent { role: ContentRole::BookTitle, data: row.title.clone() });
+                candidates.push(LegacyContent {
+                    role: ContentRole::BookTitle,
+                    data: row.title.clone(),
+                });
             } else if matches!(
                 &sub_role,
                 BinderItemSubRole::Chapter | BinderItemSubRole::ChapterScene
@@ -305,7 +317,11 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
         }
         if !row.primary.is_empty() {
             candidates.push(LegacyContent {
-                role: if is_note { ContentRole::NoteText } else { ContentRole::SceneText },
+                role: if is_note {
+                    ContentRole::NoteText
+                } else {
+                    ContentRole::SceneText
+                },
                 data: row.primary.clone(),
             });
         }
@@ -347,9 +363,14 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
             strays.push(row.clone());
         } else if let Some(binder) = binders.last_mut() {
             let is_note = binder.is_note;
-            if let Some(item) =
-                make_item(row, is_note, row.indent, &section_types, &labels, &item_tags)
-            {
+            if let Some(item) = make_item(
+                row,
+                is_note,
+                row.indent,
+                &section_types,
+                &labels,
+                &item_tags,
+            ) {
                 binder.items.push(item);
             }
         } else {

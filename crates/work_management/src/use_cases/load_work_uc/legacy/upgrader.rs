@@ -42,16 +42,46 @@ pub fn upgrade_to_v2(conn: &Connection) -> Result<()> {
         bail!("unsupported legacy database version {}", v as f64 / 10.0);
     }
 
-    if v < 11 { step_1_0_to_1_1(conn)?; v = set_version(conn, 11)?; }
-    if v < 12 { step_1_1_to_1_2(conn)?; v = set_version(conn, 12)?; }
-    if v < 13 { step_1_2_to_1_3(conn)?; v = set_version(conn, 13)?; }
-    if v < 14 { step_1_3_to_1_4(conn)?; v = set_version(conn, 14)?; }
-    if v < 15 { step_1_4_to_1_5(conn)?; v = set_version(conn, 15)?; }
-    if v < 16 { step_1_5_to_1_6(conn)?; v = set_version(conn, 16)?; }
-    if v < 17 { step_1_6_to_1_7(conn)?; v = set_version(conn, 17)?; }
-    if v < 18 { step_1_7_to_1_8(conn)?; v = set_version(conn, 18)?; }
-    if v < 19 { step_1_8_to_1_9(conn)?; v = set_version(conn, 19)?; }
-    if v < 20 { step_1_9_to_2_0(conn)?; set_version(conn, 20)?; }
+    if v < 11 {
+        step_1_0_to_1_1(conn)?;
+        v = set_version(conn, 11)?;
+    }
+    if v < 12 {
+        step_1_1_to_1_2(conn)?;
+        v = set_version(conn, 12)?;
+    }
+    if v < 13 {
+        step_1_2_to_1_3(conn)?;
+        v = set_version(conn, 13)?;
+    }
+    if v < 14 {
+        step_1_3_to_1_4(conn)?;
+        v = set_version(conn, 14)?;
+    }
+    if v < 15 {
+        step_1_4_to_1_5(conn)?;
+        v = set_version(conn, 15)?;
+    }
+    if v < 16 {
+        step_1_5_to_1_6(conn)?;
+        v = set_version(conn, 16)?;
+    }
+    if v < 17 {
+        step_1_6_to_1_7(conn)?;
+        v = set_version(conn, 17)?;
+    }
+    if v < 18 {
+        step_1_7_to_1_8(conn)?;
+        v = set_version(conn, 18)?;
+    }
+    if v < 19 {
+        step_1_8_to_1_9(conn)?;
+        v = set_version(conn, 19)?;
+    }
+    if v < 20 {
+        step_1_9_to_2_0(conn)?;
+        set_version(conn, 20)?;
+    }
 
     Ok(())
 }
@@ -59,7 +89,9 @@ pub fn upgrade_to_v2(conn: &Connection) -> Result<()> {
 /// Read `tbl_project.dbl_database_version` as integer tenths.
 fn detect_version(conn: &Connection) -> Result<i64> {
     let ver: f64 = conn
-        .query_row("SELECT dbl_database_version FROM tbl_project", [], |r| r.get(0))
+        .query_row("SELECT dbl_database_version FROM tbl_project", [], |r| {
+            r.get(0)
+        })
         .context("reading dbl_database_version (not a Skribisto project?)")?;
     Ok((ver * 10.0).round() as i64)
 }
@@ -226,7 +258,11 @@ fn move_paper_to_tree_1_5(conn: &Connection, kind: PaperKind) -> Result<()> {
 
     // Offset notes after sheets so the two paper streams don't collide.
     let starting: i64 = conn
-        .query_row("SELECT COALESCE(MAX(l_sort_order), 0) FROM tbl_tree", [], |r| r.get(0))
+        .query_row(
+            "SELECT COALESCE(MAX(l_sort_order), 0) FROM tbl_tree",
+            [],
+            |r| r.get(0),
+        )
         .unwrap_or(0);
 
     let paper_ids: Vec<i64> = {
@@ -277,10 +313,12 @@ fn move_paper_to_tree_1_5(conn: &Connection, kind: PaperKind) -> Result<()> {
             conn.execute(&pins, (new_tree_id, prop_id))?;
         }
 
-        let tag_update = format!("UPDATE tbl_tag_relationship SET l_tree_code = ?1 WHERE {prop_code} = ?2");
+        let tag_update =
+            format!("UPDATE tbl_tag_relationship SET l_tree_code = ?1 WHERE {prop_code} = ?2");
         conn.execute(&tag_update, (new_tree_id, paper_id))?;
 
-        let rel_update = format!("UPDATE tbl_sheet_note SET {tree_rel_code} = ?1 WHERE {prop_code} = ?2");
+        let rel_update =
+            format!("UPDATE tbl_sheet_note SET {tree_rel_code} = ?1 WHERE {prop_code} = ?2");
         conn.execute(&rel_update, (new_tree_id, paper_id))?;
     }
     Ok(())
@@ -292,8 +330,9 @@ fn move_paper_to_tree_1_5(conn: &Connection, kind: PaperKind) -> Result<()> {
 /// and push the item one level deeper.
 fn transform_parents_to_folder_1_5(conn: &Connection) -> Result<()> {
     let rows: Vec<(i64, i64, i64)> = {
-        let mut stmt =
-            conn.prepare("SELECT l_tree_id, l_indent, l_sort_order FROM tbl_tree ORDER BY l_sort_order")?;
+        let mut stmt = conn.prepare(
+            "SELECT l_tree_id, l_indent, l_sort_order FROM tbl_tree ORDER BY l_sort_order",
+        )?;
         let r = stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?;
         r.collect::<rusqlite::Result<_>>()?
     };
@@ -353,11 +392,8 @@ fn step_1_5_to_1_6(conn: &Connection) -> Result<()> {
     move_synopsis_to_secondary_1_6(conn)?;
 
     // Drop the now-meaningless b_synopsis flag from tree relationships.
-    conn.execute(
-        "DELETE FROM tbl_tree_relationship WHERE b_synopsis = 1",
-        [],
-    )
-    .ok(); // already consumed by the move above; tolerate absence
+    conn.execute("DELETE FROM tbl_tree_relationship WHERE b_synopsis = 1", [])
+        .ok(); // already consumed by the move above; tolerate absence
     renumber_tree_sort_order(conn)?;
     trim_orphans(conn)?;
     Ok(())
@@ -522,7 +558,9 @@ fn convert_column(
         // Content columns are BLOB affinity but legacy files store TEXT in them,
         // so read via `value_to_string` (handles Text/Blob/Null uniformly).
         let source: String = conn
-            .query_row(&select_one, [id], |r| Ok(super::value_to_string(r.get_ref(0)?)))
+            .query_row(&select_one, [id], |r| {
+                Ok(super::value_to_string(r.get_ref(0)?))
+            })
             .optional()?
             .unwrap_or_default();
         let converted = convert(&source)?;
@@ -586,7 +624,10 @@ mod tests {
         let tree_count: i64 = conn
             .query_row("SELECT COUNT(*) FROM tbl_tree", [], |r| r.get(0))
             .unwrap();
-        assert!(tree_count >= 4, "expected several tree rows, got {tree_count}");
+        assert!(
+            tree_count >= 4,
+            "expected several tree rows, got {tree_count}"
+        );
         let trash: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM tbl_tree WHERE t_internal_title = 'trash_folder'",
@@ -604,7 +645,10 @@ mod tests {
                 |r| r.get(0),
             )
             .unwrap();
-        assert!(with_secondary >= 1, "synopsis should move to secondary content");
+        assert!(
+            with_secondary >= 1,
+            "synopsis should move to secondary content"
+        );
 
         // End-to-end: the v3 mapping reads the upgraded tree.
         let project = super::super::read_v2(&conn, ":memory:").expect("read_v2");

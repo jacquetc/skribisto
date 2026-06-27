@@ -126,73 +126,75 @@ impl MoveItemsUseCase {
 
         // Resolve destination binder, the new base indent for the moved root,
         // and the anchor id to insert before (None = append at end).
-        let (dest_binder, base_indent, anchor_id): (EntityId, i64, Option<EntityId>) =
-            if dto.target_is_binder {
-                if uow.get_binder(&target_id)?.is_none() {
-                    return Err(anyhow!("move_items: target binder {target_id} not found"));
-                }
-                let dest_order = uow
-                    .get_binder_relationship(&target_id, &BinderRelationshipField::BinderItems)?;
-                // Into / Before a binder = top of the list; After = bottom.
-                let anchor = match dto.move_place {
-                    MovePlace::After => None,
-                    _ => dest_order.iter().copied().find(|id| !move_set.contains(id)),
-                };
-                (target_id, 0, anchor)
-            } else {
-                if move_set.contains(&target_id) {
-                    return Err(anyhow!("move_items: cannot move a subtree into itself"));
-                }
-                let target_item = uow
-                    .get_binder_item(&target_id)?
-                    .ok_or_else(|| anyhow!("move_items: target item {target_id} not found"))?;
-                let dest_binder = uow
-                    .get_binder_relationships_from_right_ids(
-                        &BinderRelationshipField::BinderItems,
-                        &[target_id],
-                    )?
-                    .into_iter()
-                    .next()
-                    .map(|(b, _)| b)
-                    .ok_or_else(|| anyhow!("move_items: target item has no binder"))?;
-                let dest_order = if dest_binder == src_binder {
-                    src_order.clone()
-                } else {
-                    let order = uow.get_binder_relationship(
-                        &dest_binder,
-                        &BinderRelationshipField::BinderItems,
-                    )?;
-                    for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
-                        indent.insert(it.id, it.indent);
-                    }
-                    order
-                };
-                let target_pos = dest_order
-                    .iter()
-                    .position(|&x| x == target_id)
-                    .ok_or_else(|| anyhow!("move_items: target not found in its binder order"))?;
-                let target_indent = target_item.indent;
-                let into_folder = matches!(dto.move_place, MovePlace::Into)
-                    && target_item.role == BinderItemRole::Folder;
-                // Into a leaf item is meaningless → fall back to After it.
-                let effective = match dto.move_place.clone() {
-                    MovePlace::Into if !into_folder => MovePlace::After,
-                    other => other,
-                };
-                let base_indent = if into_folder {
-                    target_indent + 1
-                } else {
-                    target_indent
-                };
-                let idx = match effective {
-                    MovePlace::Before => target_pos,
-                    MovePlace::After | MovePlace::Into => {
-                        subtree_end(&dest_order, &indent, target_pos, target_indent)
-                    }
-                };
-                let anchor = dest_order[idx..].iter().copied().find(|id| !move_set.contains(id));
-                (dest_binder, base_indent, anchor)
+        let (dest_binder, base_indent, anchor_id): (EntityId, i64, Option<EntityId>) = if dto
+            .target_is_binder
+        {
+            if uow.get_binder(&target_id)?.is_none() {
+                return Err(anyhow!("move_items: target binder {target_id} not found"));
+            }
+            let dest_order =
+                uow.get_binder_relationship(&target_id, &BinderRelationshipField::BinderItems)?;
+            // Into / Before a binder = top of the list; After = bottom.
+            let anchor = match dto.move_place {
+                MovePlace::After => None,
+                _ => dest_order.iter().copied().find(|id| !move_set.contains(id)),
             };
+            (target_id, 0, anchor)
+        } else {
+            if move_set.contains(&target_id) {
+                return Err(anyhow!("move_items: cannot move a subtree into itself"));
+            }
+            let target_item = uow
+                .get_binder_item(&target_id)?
+                .ok_or_else(|| anyhow!("move_items: target item {target_id} not found"))?;
+            let dest_binder = uow
+                .get_binder_relationships_from_right_ids(
+                    &BinderRelationshipField::BinderItems,
+                    &[target_id],
+                )?
+                .into_iter()
+                .next()
+                .map(|(b, _)| b)
+                .ok_or_else(|| anyhow!("move_items: target item has no binder"))?;
+            let dest_order = if dest_binder == src_binder {
+                src_order.clone()
+            } else {
+                let order = uow
+                    .get_binder_relationship(&dest_binder, &BinderRelationshipField::BinderItems)?;
+                for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
+                    indent.insert(it.id, it.indent);
+                }
+                order
+            };
+            let target_pos = dest_order
+                .iter()
+                .position(|&x| x == target_id)
+                .ok_or_else(|| anyhow!("move_items: target not found in its binder order"))?;
+            let target_indent = target_item.indent;
+            let into_folder = matches!(dto.move_place, MovePlace::Into)
+                && target_item.role == BinderItemRole::Folder;
+            // Into a leaf item is meaningless → fall back to After it.
+            let effective = match dto.move_place.clone() {
+                MovePlace::Into if !into_folder => MovePlace::After,
+                other => other,
+            };
+            let base_indent = if into_folder {
+                target_indent + 1
+            } else {
+                target_indent
+            };
+            let idx = match effective {
+                MovePlace::Before => target_pos,
+                MovePlace::After | MovePlace::Into => {
+                    subtree_end(&dest_order, &indent, target_pos, target_indent)
+                }
+            };
+            let anchor = dest_order[idx..]
+                .iter()
+                .copied()
+                .find(|id| !move_set.contains(id));
+            (dest_binder, base_indent, anchor)
+        };
 
         let delta = base_indent - root_old_indent;
 
@@ -215,8 +217,8 @@ impl MoveItemsUseCase {
                 &BinderRelationshipField::BinderItems,
                 &filtered_src,
             )?;
-            let dest_order = uow
-                .get_binder_relationship(&dest_binder, &BinderRelationshipField::BinderItems)?;
+            let dest_order =
+                uow.get_binder_relationship(&dest_binder, &BinderRelationshipField::BinderItems)?;
             let final_dest = insert_block(&dest_order, &full_move_ids, anchor_id);
             uow.set_binder_relationship(
                 &dest_binder,
@@ -228,7 +230,11 @@ impl MoveItemsUseCase {
         // Reindent the moved subtree (preserving its internal relative shape).
         if delta != 0 {
             let mut updated: Vec<BinderItem> = Vec::new();
-            for it in uow.get_binder_item_multi(&full_move_ids)?.into_iter().flatten() {
+            for it in uow
+                .get_binder_item_multi(&full_move_ids)?
+                .into_iter()
+                .flatten()
+            {
                 let mut it = it;
                 it.indent += delta;
                 updated.push(it);
@@ -266,11 +272,7 @@ fn subtree_end(
 
 /// Insert `block` into `base` immediately before `anchor` (or at the end when
 /// `anchor` is `None`). `block` ids are assumed absent from `base`.
-fn insert_block(
-    base: &[EntityId],
-    block: &[EntityId],
-    anchor: Option<EntityId>,
-) -> Vec<EntityId> {
+fn insert_block(base: &[EntityId], block: &[EntityId], anchor: Option<EntityId>) -> Vec<EntityId> {
     let mut out = Vec::with_capacity(base.len() + block.len());
     let mut inserted = false;
     for &id in base {

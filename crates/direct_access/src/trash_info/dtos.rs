@@ -34,12 +34,12 @@ impl From<&TrashInfoDto> for TrashInfo {
     fn from(dto: &TrashInfoDto) -> Self {
         TrashInfo {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            trashed_at: dto.trashed_at.clone(),
-            origin_binder_id: dto.origin_binder_id.clone(),
-            trashed_binder: dto.trashed_binder.clone(),
-            trashed_binder_item: dto.trashed_binder_item.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            trashed_at: dto.trashed_at,
+            origin_binder_id: dto.origin_binder_id,
+            trashed_binder: dto.trashed_binder,
+            trashed_binder_item: dto.trashed_binder_item,
         }
     }
 }
@@ -86,12 +86,12 @@ impl From<&CreateTrashInfoDto> for TrashInfo {
     fn from(dto: &CreateTrashInfoDto) -> Self {
         TrashInfo {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            trashed_at: dto.trashed_at.clone(),
-            origin_binder_id: dto.origin_binder_id.clone(),
-            trashed_binder: dto.trashed_binder.clone(),
-            trashed_binder_item: dto.trashed_binder_item.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            trashed_at: dto.trashed_at,
+            origin_binder_id: dto.origin_binder_id,
+            trashed_binder: dto.trashed_binder,
+            trashed_binder_item: dto.trashed_binder_item,
         }
     }
 }
@@ -135,10 +135,10 @@ impl From<&UpdateTrashInfoDto> for TrashInfo {
     fn from(dto: &UpdateTrashInfoDto) -> Self {
         TrashInfo {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            trashed_at: dto.trashed_at.clone(),
-            origin_binder_id: dto.origin_binder_id.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            trashed_at: dto.trashed_at,
+            origin_binder_id: dto.origin_binder_id,
             trashed_binder: Default::default(),
             trashed_binder_item: Default::default(),
         }

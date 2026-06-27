@@ -18,7 +18,7 @@ use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    ActivateOn, DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout, Divider, Expand,
+    ActivateOn, Divider, DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout, Expand,
     FocusScope, HStack, IconButtonSize, MenuItem, MenuList, NotificationArchiveModel,
     NotificationCenterButton, Spacer, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget,
     TraversalScopePolicy, TreeRow, TreeView, VStack,
@@ -201,7 +201,11 @@ impl Widget for App {
         let docking = outline.docking();
         let dock_outline = outline.clone();
         let layout = DockingLayout::new(docking.clone())
-            .rail(DockRail::new(DockSide::Leading).background(SurfaceRole::Main).divider())
+            .rail(
+                DockRail::new(DockSide::Leading)
+                    .background(SurfaceRole::Main)
+                    .divider(),
+            )
             .center(center)
             .dock(
                 DockWidget::new(outline.dock_id(), lit!("Binder"), move |_id| {
@@ -225,9 +229,10 @@ impl Widget for App {
             .cloned()
             .expect("install_toast_default registers the notification archive");
         let status = StatusBar::new().background(SurfaceRole::Main).child(
-            HStack::new().spacing(8.0).child(Spacer::new()).child(
-                NotificationCenterButton::new(archive).size(IconButtonSize::Compact),
-            ),
+            HStack::new()
+                .spacing(8.0)
+                .child(Spacer::new())
+                .child(NotificationCenterButton::new(archive).size(IconButtonSize::Compact)),
         );
 
         let root = ctx.add(
@@ -338,7 +343,9 @@ fn binder_tree(
         .spacing(0.0)
         .child(Expand::new().child(tree))
         .on_key(move |ev, ctx| match ev {
-            WidgetEvent::KeyDown { key: Key::Delete, .. } => {
+            WidgetEvent::KeyDown {
+                key: Key::Delete, ..
+            } => {
                 keys.trash_selected();
                 EventResponse::Handled
             }
@@ -349,15 +356,19 @@ fn binder_tree(
             // Indent / outdent via Ctrl+] / Ctrl+[ (the macOS Notes / outliner
             // convention). Tab is deliberately NOT bound — it stays free for
             // focus traversal out of the tree, so the keyboard isn't trapped.
-            WidgetEvent::KeyDown { key: Key::Character(']'), modifiers, .. }
-                if modifiers.ctrl() =>
-            {
+            WidgetEvent::KeyDown {
+                key: Key::Character(']'),
+                modifiers,
+                ..
+            } if modifiers.ctrl() => {
                 keys.indent_selected();
                 EventResponse::Handled
             }
-            WidgetEvent::KeyDown { key: Key::Character('['), modifiers, .. }
-                if modifiers.ctrl() =>
-            {
+            WidgetEvent::KeyDown {
+                key: Key::Character('['),
+                modifiers,
+                ..
+            } if modifiers.ctrl() => {
                 keys.outdent_selected();
                 EventResponse::Handled
             }
@@ -396,8 +407,7 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         }))
         .separator()
         .item(
-            MenuItem::new(lit!("Rename"))
-                .on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
+            MenuItem::new(lit!("Rename")).on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
         )
         .item(
             MenuItem::new(lit!("Duplicate"))
@@ -405,8 +415,6 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         )
         .separator()
         .item(
-            MenuItem::new(lit!("Move to Trash"))
-                .on_activate_fn(move |_| trash.trash_keys(&[key])),
+            MenuItem::new(lit!("Move to Trash")).on_activate_fn(move |_| trash.trash_keys(&[key])),
         )
 }
-

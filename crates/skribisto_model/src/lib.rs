@@ -33,20 +33,72 @@ struct Combination {
 /// special case (no such row exists).
 const COMBINATIONS: &[Combination] = &[
     // role = Item (leaf; the compile-stream markers live here)
-    Combination { role: Role::Item, sub_role: SubRole::BookBegin,    allowed: &[BookTitle, BookSubtitle] },
-    Combination { role: Role::Item, sub_role: SubRole::BookEnd,      allowed: &[] },
-    Combination { role: Role::Item, sub_role: SubRole::Scene,        allowed: &[SceneText, SynopsisText] },
-    Combination { role: Role::Item, sub_role: SubRole::ChapterScene, allowed: &[ChapterTitle, SceneText, SynopsisText] },
-    Combination { role: Role::Item, sub_role: SubRole::Part,         allowed: &[PartTitle, SynopsisText] },
-    Combination { role: Role::Item, sub_role: SubRole::Chapter,      allowed: &[ChapterTitle, SynopsisText] },
-    Combination { role: Role::Item, sub_role: SubRole::Note,         allowed: &[NoteText, SynopsisText] },
-    Combination { role: Role::Item, sub_role: SubRole::Text,         allowed: &[] },
+    Combination {
+        role: Role::Item,
+        sub_role: SubRole::BookBegin,
+        allowed: &[BookTitle, BookSubtitle],
+    },
+    Combination {
+        role: Role::Item,
+        sub_role: SubRole::BookEnd,
+        allowed: &[],
+    },
+    Combination {
+        role: Role::Item,
+        sub_role: SubRole::Scene,
+        allowed: &[SceneText, SynopsisText],
+    },
+    Combination {
+        role: Role::Item,
+        sub_role: SubRole::ChapterScene,
+        allowed: &[ChapterTitle, SceneText, SynopsisText],
+    },
+    Combination {
+        role: Role::Item,
+        sub_role: SubRole::Part,
+        allowed: &[PartTitle, SynopsisText],
+    },
+    Combination {
+        role: Role::Item,
+        sub_role: SubRole::Chapter,
+        allowed: &[ChapterTitle, SynopsisText],
+    },
+    Combination {
+        role: Role::Item,
+        sub_role: SubRole::Note,
+        allowed: &[NoteText, SynopsisText],
+    },
+    Combination {
+        role: Role::Item,
+        sub_role: SubRole::Text,
+        allowed: &[],
+    },
     // role = Folder (UI container; same subroles, expressed by extent not markers)
-    Combination { role: Role::Folder, sub_role: SubRole::None,    allowed: &[SynopsisText] },
-    Combination { role: Role::Folder, sub_role: SubRole::Chapter, allowed: &[ChapterTitle, SynopsisText] },
-    Combination { role: Role::Folder, sub_role: SubRole::Part,    allowed: &[PartTitle, SynopsisText] },
-    Combination { role: Role::Folder, sub_role: SubRole::Book,    allowed: &[BookTitle, BookSubtitle, SynopsisText] },
-    Combination { role: Role::Folder, sub_role: SubRole::Note,    allowed: &[SynopsisText] },
+    Combination {
+        role: Role::Folder,
+        sub_role: SubRole::None,
+        allowed: &[SynopsisText],
+    },
+    Combination {
+        role: Role::Folder,
+        sub_role: SubRole::Chapter,
+        allowed: &[ChapterTitle, SynopsisText],
+    },
+    Combination {
+        role: Role::Folder,
+        sub_role: SubRole::Part,
+        allowed: &[PartTitle, SynopsisText],
+    },
+    Combination {
+        role: Role::Folder,
+        sub_role: SubRole::Book,
+        allowed: &[BookTitle, BookSubtitle, SynopsisText],
+    },
+    Combination {
+        role: Role::Folder,
+        sub_role: SubRole::Note,
+        allowed: &[SynopsisText],
+    },
 ];
 
 /// Why a `(role, sub_role, content)` triple is rejected.
@@ -55,7 +107,11 @@ pub enum ModelError {
     /// The `(role, sub_role)` pair is not a valid combination.
     UnknownCombination { role: Role, sub_role: SubRole },
     /// The content role is not permitted for this `(role, sub_role)`.
-    DisallowedContent { role: Role, sub_role: SubRole, content: ContentRole },
+    DisallowedContent {
+        role: Role,
+        sub_role: SubRole,
+        content: ContentRole,
+    },
 }
 
 impl std::fmt::Display for ModelError {
@@ -64,8 +120,15 @@ impl std::fmt::Display for ModelError {
             ModelError::UnknownCombination { role, sub_role } => {
                 write!(f, "invalid combination: {role:?} / {sub_role:?}")
             }
-            ModelError::DisallowedContent { role, sub_role, content } => {
-                write!(f, "content {content:?} not allowed on {role:?} / {sub_role:?}")
+            ModelError::DisallowedContent {
+                role,
+                sub_role,
+                content,
+            } => {
+                write!(
+                    f,
+                    "content {content:?} not allowed on {role:?} / {sub_role:?}"
+                )
             }
         }
     }
@@ -74,7 +137,9 @@ impl std::fmt::Display for ModelError {
 impl std::error::Error for ModelError {}
 
 fn lookup(role: &Role, sub_role: &SubRole) -> Option<&'static Combination> {
-    COMBINATIONS.iter().find(|c| &c.role == role && &c.sub_role == sub_role)
+    COMBINATIONS
+        .iter()
+        .find(|c| &c.role == role && &c.sub_role == sub_role)
 }
 
 /// Whether `(role, sub_role)` is a valid combination of the writing model.
@@ -167,7 +232,6 @@ impl RoleExt for Role {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::entities::ContentRole::*;
 
     #[test]
     fn valid_combinations_pass() {

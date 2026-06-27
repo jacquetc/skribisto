@@ -233,13 +233,22 @@ fn move_before_sibling() {
         },
     )
     .expect("move");
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.c, fx.a, fx.a1, fx.a2, fx.b, fx.b1]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.c, fx.a, fx.a1, fx.a2, fx.b, fx.b1]
+    );
     assert_eq!(indent(&fx.ctx, fx.c), 0);
 
     undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
     undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.c, fx.a, fx.a1, fx.a2, fx.b, fx.b1]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.c, fx.a, fx.a1, fx.a2, fx.b, fx.b1]
+    );
 }
 
 #[test]
@@ -258,7 +267,10 @@ fn move_after_folder_lands_past_its_subtree() {
     )
     .expect("move");
     // After folder A (subtree A,A1,A2) → before B.
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.a, fx.a1, fx.a2, fx.c, fx.b, fx.b1]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.c, fx.b, fx.b1]
+    );
     assert_eq!(indent(&fx.ctx, fx.c), 0);
 }
 
@@ -277,7 +289,10 @@ fn move_into_folder_reindents() {
         },
     )
     .expect("move");
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.a, fx.a1, fx.a2, fx.c, fx.b, fx.b1]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.c, fx.b, fx.b1]
+    );
     assert_eq!(indent(&fx.ctx, fx.c), 1, "C becomes a child of folder A");
 }
 
@@ -296,8 +311,15 @@ fn move_into_leaf_redirects_to_after() {
         },
     )
     .expect("move");
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.a, fx.a1, fx.c, fx.a2, fx.b, fx.b1]);
-    assert_eq!(indent(&fx.ctx, fx.c), 1, "Into a leaf == After it (sibling indent)");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.c, fx.a2, fx.b, fx.b1]
+    );
+    assert_eq!(
+        indent(&fx.ctx, fx.c),
+        1,
+        "Into a leaf == After it (sibling indent)"
+    );
 }
 
 #[test]
@@ -316,7 +338,10 @@ fn move_into_folder_propagates_indent_delta_to_subtree() {
         },
     )
     .expect("move");
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.b, fx.b1, fx.a, fx.a1, fx.a2, fx.c]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.b, fx.b1, fx.a, fx.a1, fx.a2, fx.c]
+    );
     assert_eq!(indent(&fx.ctx, fx.a), 1);
     assert_eq!(indent(&fx.ctx, fx.a1), 2);
     assert_eq!(indent(&fx.ctx, fx.a2), 2);
@@ -344,7 +369,10 @@ fn move_folder_subtree_cross_binder_into_empty_binder() {
     assert_eq!(indent(&fx.ctx, fx.a1), 1);
 
     undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
     assert!(order(&fx.ctx, fx.binder2).is_empty());
 }
 
@@ -364,7 +392,10 @@ fn move_into_own_subtree_is_rejected() {
     );
     assert!(err.is_err(), "moving a subtree into itself must fail");
     // Tree unchanged.
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
 }
 
 // ─────────────────────────────── duplicate ───────────────────────────────
@@ -373,20 +404,26 @@ fn move_into_own_subtree_is_rejected() {
 fn duplicate_folder_subtree_clones_items_and_content() {
     let fx = make_fixture();
     add_content(&fx, fx.a1, ContentRole::SceneText, "hello scene");
-    let before_items = binder_item_commands::get_all_binder_item(&fx.ctx).unwrap().len();
+    let before_items = binder_item_commands::get_all_binder_item(&fx.ctx)
+        .unwrap()
+        .len();
     let before_contents = content_commands::get_all_content(&fx.ctx).unwrap().len();
 
     let stack = undo_redo_commands::create_new_stack(&fx.ctx);
     let ret = binder_item_management_commands::duplicate(
         &fx.ctx,
         Some(stack),
-        &DuplicateDto { item_ids: vec![fx.a] },
+        &DuplicateDto {
+            item_ids: vec![fx.a],
+        },
     )
     .expect("duplicate");
 
     assert_eq!(ret.new_item_ids.len(), 1, "one new subtree root");
     // 3 new items (A,A1,A2 clones) and 1 new content (A1's clone).
-    let after_items = binder_item_commands::get_all_binder_item(&fx.ctx).unwrap().len();
+    let after_items = binder_item_commands::get_all_binder_item(&fx.ctx)
+        .unwrap()
+        .len();
     let after_contents = content_commands::get_all_content(&fx.ctx).unwrap().len();
     assert_eq!(after_items, before_items + 3);
     assert_eq!(after_contents, before_contents + 1);
@@ -395,7 +432,11 @@ fn duplicate_folder_subtree_clones_items_and_content() {
     let ord = order(&fx.ctx, fx.binder1);
     let new_root = ret.new_item_ids[0];
     let src_end = ord.iter().position(|&x| x == fx.a2).unwrap();
-    assert_eq!(ord[src_end + 1], new_root, "clone follows the source subtree");
+    assert_eq!(
+        ord[src_end + 1],
+        new_root,
+        "clone follows the source subtree"
+    );
     // The clone's content is a *new* Content entity (not aliased).
     let new_a1 = ord[src_end + 2];
     let new_contents = binder_item_commands::get_binder_item_relationship(
@@ -411,14 +452,22 @@ fn duplicate_folder_subtree_clones_items_and_content() {
     )
     .unwrap();
     assert_eq!(new_contents.len(), 1);
-    assert_ne!(new_contents[0], orig_contents[0], "content must be deep-copied");
+    assert_ne!(
+        new_contents[0], orig_contents[0],
+        "content must be deep-copied"
+    );
 
     undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
     assert_eq!(
-        binder_item_commands::get_all_binder_item(&fx.ctx).unwrap().len(),
+        binder_item_commands::get_all_binder_item(&fx.ctx)
+            .unwrap()
+            .len(),
         before_items
     );
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
 }
 
 // ───────────────────────────────── trash ─────────────────────────────────
@@ -448,7 +497,10 @@ fn trash_items_cascades_and_indexes_trash_info() {
     assert!(activated(&fx.ctx, fx.b));
     assert!(activated(&fx.ctx, fx.c));
     // Items stay in place.
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]);
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
     // Exactly one TrashInfo, pointing at the root.
     let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
     assert_eq!(infos.len(), 1);
@@ -464,11 +516,20 @@ fn trash_items_cascades_and_indexes_trash_info() {
     undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
     assert!(activated(&fx.ctx, fx.a));
     assert!(activated(&fx.ctx, fx.a1));
-    assert!(trash_info_commands::get_all_trash_info(&fx.ctx).unwrap().is_empty());
+    assert!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .is_empty()
+    );
 
     undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
     assert!(!activated(&fx.ctx, fx.a));
-    assert_eq!(trash_info_commands::get_all_trash_info(&fx.ctx).unwrap().len(), 1);
+    assert_eq!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -490,7 +551,9 @@ fn restore_items_round_trip() {
     let res = trash_management_commands::restore_items(
         &fx.ctx,
         Some(s2),
-        &RestoreItemsDto { trash_info_ids: vec![info as i64] },
+        &RestoreItemsDto {
+            trash_info_ids: vec![info as i64],
+        },
     )
     .expect("restore");
     assert_eq!(res.restored_count, 1);
@@ -521,13 +584,20 @@ fn restore_reports_orphaned_when_binder_lost_the_item() {
     .expect("trash");
     let info = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap()[0].id;
     // Simulate the item's binder losing it (e.g. binder removed elsewhere).
-    wire_binder(&fx.ctx, fx.setup, fx.binder1, &[fx.a, fx.a1, fx.a2, fx.b, fx.b1]);
+    wire_binder(
+        &fx.ctx,
+        fx.setup,
+        fx.binder1,
+        &[fx.a, fx.a1, fx.a2, fx.b, fx.b1],
+    );
 
     let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
     let res = trash_management_commands::restore_items(
         &fx.ctx,
         Some(s2),
-        &RestoreItemsDto { trash_info_ids: vec![info as i64] },
+        &RestoreItemsDto {
+            trash_info_ids: vec![info as i64],
+        },
     )
     .expect("restore");
     assert!(res.orphaned, "an item with no binder is orphaned");
@@ -541,11 +611,18 @@ fn trash_binder_deactivates_binder_and_items() {
     trash_management_commands::trash_binder(
         &fx.ctx,
         Some(stack),
-        &TrashBinderDto { binder_id: fx.binder1 as i64 },
+        &TrashBinderDto {
+            binder_id: fx.binder1 as i64,
+        },
     )
     .expect("trash binder");
 
-    assert!(!binder_commands::get_binder(&fx.ctx, &fx.binder1).unwrap().unwrap().activated);
+    assert!(
+        !binder_commands::get_binder(&fx.ctx, &fx.binder1)
+            .unwrap()
+            .unwrap()
+            .activated
+    );
     assert!(!activated(&fx.ctx, fx.a));
     assert!(!activated(&fx.ctx, fx.c));
     let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
@@ -553,7 +630,12 @@ fn trash_binder_deactivates_binder_and_items() {
     assert_eq!(infos[0].trashed_binder, Some(fx.binder1));
 
     undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
-    assert!(binder_commands::get_binder(&fx.ctx, &fx.binder1).unwrap().unwrap().activated);
+    assert!(
+        binder_commands::get_binder(&fx.ctx, &fx.binder1)
+            .unwrap()
+            .unwrap()
+            .activated
+    );
     assert!(activated(&fx.ctx, fx.a));
 }
 
@@ -576,17 +658,40 @@ fn empty_trash_hard_removes_item_subtree_and_contents() {
     trash_management_commands::empty_trash(&fx.ctx, Some(s2)).expect("empty");
 
     // A subtree gone from the store and the binder order.
-    assert!(binder_item_commands::get_binder_item(&fx.ctx, &fx.a).unwrap().is_none());
-    assert!(binder_item_commands::get_binder_item(&fx.ctx, &fx.a1).unwrap().is_none());
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a1)
+            .unwrap()
+            .is_none()
+    );
     assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.b, fx.b1, fx.c]);
     // Their content gone too.
-    assert!(content_commands::get_all_content(&fx.ctx).unwrap().is_empty());
+    assert!(
+        content_commands::get_all_content(&fx.ctx)
+            .unwrap()
+            .is_empty()
+    );
     // Index cleared.
-    assert!(trash_info_commands::get_all_trash_info(&fx.ctx).unwrap().is_empty());
+    assert!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .is_empty()
+    );
 
     undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo empty");
-    assert!(binder_item_commands::get_binder_item(&fx.ctx, &fx.a).unwrap().is_some());
-    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]);
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a)
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
 }
 
 #[test]
@@ -596,19 +701,26 @@ fn empty_trash_removes_trashed_binder_from_work() {
     trash_management_commands::trash_binder(
         &fx.ctx,
         Some(s1),
-        &TrashBinderDto { binder_id: fx.binder2 as i64 },
+        &TrashBinderDto {
+            binder_id: fx.binder2 as i64,
+        },
     )
     .expect("trash binder");
 
     let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
     trash_management_commands::empty_trash(&fx.ctx, Some(s2)).expect("empty");
 
-    assert!(binder_commands::get_binder(&fx.ctx, &fx.binder2).unwrap().is_none());
-    let binders = work_commands::get_work_relationship(
-        &fx.ctx,
-        &fx.work,
-        &WorkRelationshipField::Binders,
-    )
-    .unwrap();
-    assert_eq!(binders, vec![fx.binder1], "trashed binder dropped from work");
+    assert!(
+        binder_commands::get_binder(&fx.ctx, &fx.binder2)
+            .unwrap()
+            .is_none()
+    );
+    let binders =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::Binders)
+            .unwrap();
+    assert_eq!(
+        binders,
+        vec![fx.binder1],
+        "trashed binder dropped from work"
+    );
 }

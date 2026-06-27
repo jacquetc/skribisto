@@ -77,9 +77,9 @@ impl Widget for RecentProjectsButton {
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
         // Most-recently-opened first; the head is the "current" project.
-        let mut recents = recent_work_commands::get_all_recent_work(&self.app_ctx)
-            .unwrap_or_default();
-        recents.sort_by(|a, b| b.last_opened_at.cmp(&a.last_opened_at));
+        let mut recents =
+            recent_work_commands::get_all_recent_work(&self.app_ctx).unwrap_or_default();
+        recents.sort_by_key(|b| std::cmp::Reverse(b.last_opened_at));
 
         let current_title = recents
             .first()
@@ -146,7 +146,9 @@ impl Widget for RecentProjectsButton {
                         ctx.dismiss_self_overlay_chain();
                         if let Err(e) = work_management_commands::load_work(
                             &app_ctx,
-                            &LoadWorkDto { file_name: path.clone() },
+                            &LoadWorkDto {
+                                file_name: path.clone(),
+                            },
                         ) {
                             ctx.show_toast(Toast::error(lit!(format!(
                                 "Could not open project: {e}"

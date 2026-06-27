@@ -143,7 +143,8 @@ impl BinderBinderItemsTreeModel {
     pub fn node_of(&self, key: &BinderTreeKey) -> Option<(Option<u64>, String)> {
         let rows = self.inner.rows.borrow();
         let idx = *self.inner.row_pos.borrow().get(key)?;
-        rows.get(idx).map(|r| (r.node.item_id, r.node.title.clone()))
+        rows.get(idx)
+            .map(|r| (r.node.item_id, r.node.title.clone()))
     }
 
     /// The owning binder id for any key.
@@ -205,7 +206,8 @@ impl BinderBinderItemsTreeModel {
                     if !it.activated {
                         continue; // trashed items (and trashed subtrees) are hidden
                     }
-                    while stack.len() > 1 && stack.last().map(|(i, _)| *i).unwrap_or(-1) >= it.indent
+                    while stack.len() > 1
+                        && stack.last().map(|(i, _)| *i).unwrap_or(-1) >= it.indent
                     {
                         stack.pop();
                     }
@@ -559,7 +561,9 @@ mod tests {
     fn same_view_sibling_drop_is_accepted() {
         let m = model();
         let q = DropQuery {
-            source: DragSource::SameView { key: BinderTreeKey::Item(102) },
+            source: DragSource::SameView {
+                key: BinderTreeKey::Item(102),
+            },
             target: BinderTreeKey::Item(106),
             position: DropPosition::Before,
         };
@@ -570,11 +574,16 @@ mod tests {
     fn into_a_leaf_redirects_to_after() {
         let m = model();
         let q = DropQuery {
-            source: DragSource::SameView { key: BinderTreeKey::Item(102) },
+            source: DragSource::SameView {
+                key: BinderTreeKey::Item(102),
+            },
             target: BinderTreeKey::Item(103), // a leaf item
             position: DropPosition::Into,
         };
-        assert_eq!(m.can_accept(&q), DropResponse::Redirect(DropPosition::After));
+        assert_eq!(
+            m.can_accept(&q),
+            DropResponse::Redirect(DropPosition::After)
+        );
     }
 
     #[test]
@@ -582,7 +591,9 @@ mod tests {
         let m = model();
         // Drag the "Chapter 1" folder onto its own child → cycle.
         let q = DropQuery {
-            source: DragSource::SameView { key: BinderTreeKey::Item(101) },
+            source: DragSource::SameView {
+                key: BinderTreeKey::Item(101),
+            },
             target: BinderTreeKey::Item(102),
             position: DropPosition::Into,
         };

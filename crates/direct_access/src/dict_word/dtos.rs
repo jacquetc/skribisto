@@ -28,8 +28,8 @@ impl From<&DictWordDto> for DictWord {
     fn from(dto: &DictWordDto) -> Self {
         DictWord {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             word: dto.word.clone(),
         }
     }
@@ -68,8 +68,8 @@ impl From<&CreateDictWordDto> for DictWord {
     fn from(dto: &CreateDictWordDto) -> Self {
         DictWord {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             word: dto.word.clone(),
         }
     }
@@ -107,8 +107,8 @@ impl From<&UpdateDictWordDto> for DictWord {
     fn from(dto: &UpdateDictWordDto) -> Self {
         DictWord {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             word: dto.word.clone(),
         }
     }

@@ -59,8 +59,7 @@ impl RestoreItemsUseCase {
                 orphaned: false,
             });
         }
-        let info_ids: Vec<EntityId> =
-            dto.trash_info_ids.iter().map(|&x| x as EntityId).collect();
+        let info_ids: Vec<EntityId> = dto.trash_info_ids.iter().map(|&x| x as EntityId).collect();
 
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;

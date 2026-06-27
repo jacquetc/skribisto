@@ -7,8 +7,6 @@
 use super::dict_word_repository::DictWordTable;
 use super::dict_word_repository::DictWordTableRO;
 use crate::entities::DictWord;
-use crate::error::RepositoryError;
-use crate::types::EntityId;
 
 crate::impl_leaf_entity_table!(
     entity: DictWord,

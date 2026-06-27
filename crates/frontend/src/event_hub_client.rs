@@ -117,12 +117,12 @@ impl Drop for SubscriptionToken {
     fn drop(&mut self) {
         // Best-effort removal. If another thread poisoned the mutex, skip
         // cleanup rather than double-panic during unwind.
-        if let Ok(mut subs) = self.subscribers.lock() {
-            if let Some(list) = subs.get_mut(&self.origin) {
-                list.retain(|(id, _)| *id != self.id);
-                if list.is_empty() {
-                    subs.remove(&self.origin);
-                }
+        if let Ok(mut subs) = self.subscribers.lock()
+            && let Some(list) = subs.get_mut(&self.origin)
+        {
+            list.retain(|(id, _)| *id != self.id);
+            if list.is_empty() {
+                subs.remove(&self.origin);
             }
         }
     }

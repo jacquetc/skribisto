@@ -6,13 +6,13 @@
 // writing directly into entities (no intermediate SQLite v3 tables).
 use crate::LoadWorkDto;
 use anyhow::{Context, Result};
+use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::root::RootRelationshipField;
 use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::database::CommandUnitOfWork;
 use common::entities::{
     Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, System, TrashInfo, Work,
 };
@@ -189,8 +189,10 @@ impl LoadWorkUseCase {
 
         // Many-to-many: item tags (resolve old tag ids -> new ids).
         for (item_id, old_tag_ids) in &item_tag_links {
-            let resolved: Vec<EntityId> =
-                old_tag_ids.iter().filter_map(|t| tag_map.get(t).copied()).collect();
+            let resolved: Vec<EntityId> = old_tag_ids
+                .iter()
+                .filter_map(|t| tag_map.get(t).copied())
+                .collect();
             if !resolved.is_empty() {
                 uow.set_binder_item_relationship(
                     item_id,
@@ -217,11 +219,7 @@ impl LoadWorkUseCase {
             uow.set_work_relationship(&work.id, &WorkRelationshipField::Tags, &tag_ids)?;
         }
         if !dict_word_ids.is_empty() {
-            uow.set_work_relationship(
-                &work.id,
-                &WorkRelationshipField::DictWords,
-                &dict_word_ids,
-            )?;
+            uow.set_work_relationship(&work.id, &WorkRelationshipField::DictWords, &dict_word_ids)?;
         }
 
         // System + RecentWork + Root (the non-undoable trunk).

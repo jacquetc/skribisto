@@ -8,7 +8,7 @@ use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
-use common::entities::{Binder, BinderItem, Content};
+use common::entities::{BinderItem, Content};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
@@ -72,7 +72,9 @@ impl DuplicateUseCase {
         let (binder, found_items) = groups.into_iter().next().unwrap();
         let found: HashSet<EntityId> = found_items.into_iter().collect();
         if dto.item_ids.iter().any(|id| !found.contains(id)) {
-            return Err(anyhow!("duplicate: some items are not in the source binder"));
+            return Err(anyhow!(
+                "duplicate: some items are not in the source binder"
+            ));
         }
 
         let order = uow.get_binder_relationship(&binder, &BinderRelationshipField::BinderItems)?;
@@ -121,8 +123,10 @@ impl DuplicateUseCase {
                 let src = maybe.ok_or_else(|| anyhow!("duplicate: source item vanished"))?;
 
                 // Copy the item's Content rows.
-                let content_ids = uow
-                    .get_binder_item_relationship(&src.id, &BinderItemRelationshipField::Contents)?;
+                let content_ids = uow.get_binder_item_relationship(
+                    &src.id,
+                    &BinderItemRelationshipField::Contents,
+                )?;
                 let mut new_content_ids: Vec<EntityId> = Vec::new();
                 for c in uow.get_content_multi(&content_ids)?.into_iter().flatten() {
                     let created = uow.create_orphan_content(&Content {
@@ -164,8 +168,8 @@ impl DuplicateUseCase {
                 }
 
                 // Copy tag links (shared M2M); references are intentionally NOT copied.
-                let tag_ids = uow
-                    .get_binder_item_relationship(&src.id, &BinderItemRelationshipField::Tags)?;
+                let tag_ids =
+                    uow.get_binder_item_relationship(&src.id, &BinderItemRelationshipField::Tags)?;
                 if !tag_ids.is_empty() {
                     uow.set_binder_item_relationship(
                         &created_item.id,

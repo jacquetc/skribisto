@@ -7,8 +7,6 @@
 use super::work_info_repository::WorkInfoTable;
 use super::work_info_repository::WorkInfoTableRO;
 use crate::entities::WorkInfo;
-use crate::error::RepositoryError;
-use crate::types::EntityId;
 
 crate::impl_leaf_entity_table!(
     entity: WorkInfo,

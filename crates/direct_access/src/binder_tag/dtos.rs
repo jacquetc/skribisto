@@ -32,8 +32,8 @@ impl From<&BinderTagDto> for BinderTag {
     fn from(dto: &BinderTagDto) -> Self {
         BinderTag {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             name: dto.name.clone(),
             color: dto.color.clone(),
             text_color: dto.text_color.clone(),
@@ -80,8 +80,8 @@ impl From<&CreateBinderTagDto> for BinderTag {
     fn from(dto: &CreateBinderTagDto) -> Self {
         BinderTag {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             name: dto.name.clone(),
             color: dto.color.clone(),
             text_color: dto.text_color.clone(),
@@ -127,8 +127,8 @@ impl From<&UpdateBinderTagDto> for BinderTag {
     fn from(dto: &UpdateBinderTagDto) -> Self {
         BinderTag {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             name: dto.name.clone(),
             color: dto.color.clone(),
             text_color: dto.text_color.clone(),

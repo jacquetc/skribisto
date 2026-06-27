@@ -32,10 +32,10 @@ impl From<&RecentWorkDto> for RecentWork {
     fn from(dto: &RecentWorkDto) -> Self {
         RecentWork {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             title: dto.title.clone(),
-            last_opened_at: dto.last_opened_at.clone(),
+            last_opened_at: dto.last_opened_at,
             absolute_path: dto.absolute_path.clone(),
         }
     }
@@ -80,10 +80,10 @@ impl From<&CreateRecentWorkDto> for RecentWork {
     fn from(dto: &CreateRecentWorkDto) -> Self {
         RecentWork {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             title: dto.title.clone(),
-            last_opened_at: dto.last_opened_at.clone(),
+            last_opened_at: dto.last_opened_at,
             absolute_path: dto.absolute_path.clone(),
         }
     }
@@ -127,10 +127,10 @@ impl From<&UpdateRecentWorkDto> for RecentWork {
     fn from(dto: &UpdateRecentWorkDto) -> Self {
         RecentWork {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             title: dto.title.clone(),
-            last_opened_at: dto.last_opened_at.clone(),
+            last_opened_at: dto.last_opened_at,
             absolute_path: dto.absolute_path.clone(),
         }
     }
