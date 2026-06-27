@@ -23,8 +23,8 @@ use std::rc::Rc;
 use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, FixedSize, HStack, IconWidget, MaxSize, MenuList, Padding,
-    PopoverButton, TextWidget, Toast, VStack,
+    Button, ButtonVariant, FixedSize, FocusScope, HStack, IconWidget, MaxSize, MenuList, Padding,
+    PopoverButton, TextWidget, Toast, TraversalScopePolicy, VStack,
 };
 
 use frontend::AppContext;
@@ -163,10 +163,13 @@ impl Widget for RecentProjectsButton {
             .text_style(TextStyleRole::BodyBold)
             .trailing(IconWidget::chevron_down(12.0));
 
+        // Trap Tab inside the popover: it is an anchored (not centered)
+        // overlay, so it isn't auto-confined — a Cycle scope keeps keyboard
+        // navigation on the recent-project rows until the popover dismisses.
         let root = ctx.add(
             PopoverButton::new(trigger)
                 .show_disclosure_caret(false)
-                .content(menu),
+                .content(FocusScope::new(TraversalScopePolicy::Cycle).child(menu)),
         );
         self.root_child = Some(root);
         vec![root]

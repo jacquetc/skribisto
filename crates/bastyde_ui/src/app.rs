@@ -19,8 +19,9 @@ use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
     ActivateOn, DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout, Divider, Expand,
-    HStack, IconButtonSize, MenuItem, MenuList, NotificationArchiveModel, NotificationCenterButton,
-    Spacer, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, TreeRow, TreeView, VStack,
+    FocusScope, HStack, IconButtonSize, MenuItem, MenuList, NotificationArchiveModel,
+    NotificationCenterButton, Spacer, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget,
+    TraversalScopePolicy, TreeRow, TreeView, VStack,
 };
 
 use frontend::AppContext;
@@ -204,7 +205,14 @@ impl Widget for App {
             .center(center)
             .dock(
                 DockWidget::new(outline.dock_id(), lit!("Binder"), move |_id| {
-                    binder_tree(dock_outline.clone(), on_open.clone(), active_item.clone())
+                    // Group the dock's Tab order: a Continue scope keeps the
+                    // binder's tab_index numbering from colliding with other
+                    // docks/regions while still letting Tab flow out at the ends.
+                    FocusScope::new(TraversalScopePolicy::Continue).child(binder_tree(
+                        dock_outline.clone(),
+                        on_open.clone(),
+                        active_item.clone(),
+                    ))
                 })
                 .closable(false)
                 .default_location(DockOpenLocation::side(DockSide::Leading)),
