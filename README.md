@@ -90,13 +90,13 @@ Short term goal is to rejoin its ancestor Plume Creator feature-wise. A few outs
 
 Skribisto will add to these features with :
 
-- **dynamic layouts adaptating to all devices (like a phone)**
+- **dynamic layouts adapting to all devices (like a phone)**
 - **tagging system**
 - **touch-friendly**
 - **navigating between notes**
 - **a text can have several notes in addition of the synopsis**
 - **manual save**
-- **backup with mutliple paths**
+- **backup with multiple paths**
 - **accessible for screen readers (NVDA or JAWS)**
 - **Open texts in a new window**
 - **Open texts in tabs**
@@ -114,7 +114,7 @@ Medium term goals are :
 - Sort of gallery to manage all external documents/images
 - Android support
 
-Other features will be implemented more for fun. Thanks to the plugin system, Skribisto can accomodate other goals than writing. I added the "Writing Games" plugin for fun.
+Other features will be implemented more for fun. Thanks to the plugin system, Skribisto can accommodate other goals than writing. I added the "Writing Games" plugin for fun.
 
 
 ## User manual
@@ -193,7 +193,7 @@ More and more, Skribisto allows to be extended with plugins. For now, plugins al
   - SKRProjectToolboxInterface, add a toolbox on the left dock which will always stay
 
 Plugin interfaces to come soon :
-- exemples
+- examples
 - project templates
 - import
 - export
@@ -412,7 +412,7 @@ If your language isn't listed and you want to translate it, please create an (is
 
 The source language is en_US (american english), the file is [src/translations/skribisto_en_US.ts](https://github.com/jacquetc/skribisto/blob/master/src/translations/skribisto_en_US.ts) from the "develop" branch. The en_US translation file is the only translation updated when a new to-be-translated sentence is added on the source code. 
 
-There is no need to manualy use Qt's lupdate or lrelease. Any push request with any translation file other than skribisto_en_US.ts will be rejected.
+There is no need to manually use Qt's lupdate or lrelease. Any push request with any translation file other than skribisto_en_US.ts will be rejected.
 
 Each time the project is built, skribisto_en_US.ts is automatically updated. Moreover, all the languages are compiled in ".qm" files at build time.
 

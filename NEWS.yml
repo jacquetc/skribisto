@@ -3,7 +3,7 @@ Date: 2023-02-15
 Type: stable
 Description:
 - "Add Welcome dialog"
-- "Add paste without formating"
+- "Add paste without formatting"
 - "Make HTML paste cleaner"
 - "Add user dictionary dialog"
 - "Fix words with apostrophe not spellchecked"
@@ -107,7 +107,7 @@ Type: stable
 Description:
 - "Fix slow scrolling in settings"
 - "Fix writing zone suddenly small"
-- "Fix Windows deployement script"
+- "Fix Windows deployment script"
 - "Faster plugins"
 - "Use Qt 6.2.4"
 ---

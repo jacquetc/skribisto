@@ -8,7 +8,7 @@
   <project_license>GPL-3.0</project_license>
   <developer_name>Cyril Jacquet</developer_name>
   <description>
-    <p>Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or write hundreds of notes. The tools are designed to be most unobstrusive, so you can write, write and write a bit more without too much distraction.</p>
+    <p>Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or write hundreds of notes. The tools are designed to be most unobtrusive, so you can write, write and write a bit more without too much distraction.</p>
   </description>
   <launchable type="desktop-id">eu.skribisto.skribisto.desktop</launchable>
   <url type="homepage">https://github.com/jacquetc/skribisto</url>
@@ -36,7 +36,7 @@
       <description>
         <ul>
           <li>Add Welcome dialog</li>
-          <li>Add paste without formating</li>
+          <li>Add paste without formatting</li>
           <li>Make HTML paste cleaner</li>
           <li>Add user dictionary dialog</li>
           <li>Fix words with apostrophe not spellchecked</li>
