@@ -323,7 +323,12 @@ fn binder_tree(
             })) as Box<dyn Widget>
         },
     )
-    .item_height(40.0)
+    // Adaptive row heights: each row measures to its content, so title-only
+    // rows collapse to the single-line minimum (28) while rows carrying a
+    // subtitle take the two-line height (44) — instead of every row paying the
+    // uniform two-line cost. (A flat `item_height(40.0)` also clipped the 44px
+    // subtitled rows.) The estimate seeds unrealized rows for scroll extent.
+    .auto_item_height(28.0)
     .row_click_expands(false)
     .reorderable(true)
     // Single-click to open (Scrivener convention) — arrow-key navigation only
