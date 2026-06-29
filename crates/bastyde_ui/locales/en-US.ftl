@@ -1,4 +1,4 @@
-open-project = Open sample project
+open-project = Open sample work
 settings = Settings
 language = Language
 theme = Theme
@@ -6,4 +6,4 @@ english = English
 french = French
 light = Light
 dark = Dark
-empty-hint = No project open — click "Open sample project".
+empty-hint = No work open — click "Open sample work".

@@ -12,10 +12,11 @@
 //! arbitrary widget tree, so we wrap it in a `PopoverButton` to reproduce the
 //! split-button affordance with rich rows.
 //!
-//! Recent works come from the Qleany backend (`recent_work_commands`), not a
+//! Recent works come from the Qleany backend via the reactive
+//! [`RecentWorkListModel`](crate::models::RecentWorkListModel) (Layer A), not a
 //! Bastyde `MruList`. The popover content is built once per `build()`, so the
-//! list is refreshed by rebuilding the whole widget: it subscribes once to
-//! `WorkManagementEvent::LoadWork` and bumps a `version` signal bound at
+//! list is refreshed by rebuilding the whole widget: the model self-subscribes
+//! to `LoadWork` and bumps a `version` signal this widget binds at
 //! `BindingLevel::Rebuild`.
 
 use std::rc::Rc;
@@ -28,29 +29,26 @@ use bastyde::widgets::{
 };
 
 use frontend::AppContext;
-use frontend::commands::{recent_work_commands, work_management_commands};
-use frontend::common::event::{Event, Origin, WorkManagementEvent};
+use frontend::commands::work_management_commands;
 use frontend::work_management::LoadWorkDto;
+
+use crate::models::RecentWorkListModel;
 
 /// Flat dropdown button listing recent projects; the main slot is the current
 /// project.
 pub struct RecentProjectsButton {
     app_ctx: Rc<AppContext>,
-    /// Bumped on every `LoadWork`; bound at `BindingLevel::Rebuild` so the
-    /// recent list + current item re-derive after a project loads.
-    version: Signal<u64>,
-    /// Guards against re-subscribing on every rebuild (subscriptions don't
-    /// auto-clean across builds).
-    subscribed: bool,
+    /// Reactive recent-projects list (Layer A); its `version` signal is bound at
+    /// `BindingLevel::Rebuild` so the list + current item re-derive on load.
+    model: RecentWorkListModel,
     root_child: Option<WidgetId>,
 }
 
 impl RecentProjectsButton {
     pub fn new(app_ctx: Rc<AppContext>) -> Self {
         Self {
+            model: RecentWorkListModel::new(app_ctx.clone()),
             app_ctx,
-            version: Signal::new(0),
-            subscribed: false,
             root_child: None,
         }
     }
@@ -64,34 +62,29 @@ impl std::fmt::Debug for RecentProjectsButton {
 
 impl Widget for RecentProjectsButton {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Subscribe exactly once; each project load refreshes the list.
-        if !self.subscribed {
-            self.subscribed = true;
-            let version = self.version.clone();
-            ctx.subscribe_event(
-                Origin::WorkManagement(WorkManagementEvent::LoadWork),
-                move |_event: &Event| version.set(version.get().wrapping_add(1)),
-            );
-        }
-        self.version
-            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        // The model subscribes once and bumps `version` on each load; bind it at
+        // Rebuild level so this widget re-derives the list then.
+        self.model.wire(ctx);
+        self.model.version_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
 
         // Most-recently-opened first; the head is the "current" project.
-        let mut recents =
-            recent_work_commands::get_all_recent_work(&self.app_ctx).unwrap_or_default();
-        recents.sort_by_key(|b| std::cmp::Reverse(b.last_opened_at));
+        let recents = self.model.items();
 
         let current_title = recents
             .first()
             .map(|r| r.title.clone())
-            .unwrap_or_else(|| "No project".to_string());
+            .unwrap_or_else(|| "No work".to_string());
 
         // Popover content: a MenuList of rich rows.
         let mut menu = MenuList::new().max_visible_items(10);
         if recents.is_empty() {
             menu = menu.item(
                 Padding::symmetric(8.0, 12.0).child(
-                    TextWidget::new(lit!("No recent projects"))
+                    TextWidget::new(lit!("No recent works"))
                         .style(TextStyleRole::Body)
                         .color(TextRole::Secondary),
                 ),
@@ -151,7 +144,7 @@ impl Widget for RecentProjectsButton {
                             },
                         ) {
                             ctx.show_toast(Toast::error(lit!(format!(
-                                "Could not open project: {e}"
+                                "Could not open work: {e}"
                             ))));
                         }
                     });

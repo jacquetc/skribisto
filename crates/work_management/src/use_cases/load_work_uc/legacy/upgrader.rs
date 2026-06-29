@@ -483,16 +483,16 @@ fn step_1_9_to_2_0(conn: &Connection) -> Result<()> {
         conn,
         "SELECT l_tree_id FROM tbl_tree WHERE t_type = 'TEXT'",
         "m_primary_content",
-        content::html_to_markdown,
+        content::html_to_djot,
     )
-    .context("step 1.9→2.0: primary html→markdown")?;
+    .context("step 1.9→2.0: primary html→djot")?;
     convert_column(
         conn,
         "SELECT l_tree_id FROM tbl_tree",
         "m_secondary_content",
-        content::html_to_markdown,
+        content::html_to_djot,
     )
-    .context("step 1.9→2.0: secondary html→markdown")?;
+    .context("step 1.9→2.0: secondary html→djot")?;
     Ok(())
 }
 
@@ -659,12 +659,12 @@ mod tests {
 
         let items: Vec<_> = project.binders.iter().flat_map(|b| &b.items).collect();
         assert!(!items.is_empty(), "expected binder items");
-        // Content is Markdown, never Qt HTML.
+        // Content is Djot, never Qt HTML.
         for item in &items {
             for content in &item.contents {
                 assert!(
                     !content.data.contains("<!DOCTYPE") && !content.data.contains("qrichtext"),
-                    "content should be Markdown, got: {:?}",
+                    "content should be Djot, got: {:?}",
                     content.data
                 );
             }

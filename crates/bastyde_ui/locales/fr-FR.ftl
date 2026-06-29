@@ -1,4 +1,4 @@
-open-project = Ouvrir un projet exemple
+open-project = Ouvrir une œuvre exemple
 settings = Paramètres
 language = Langue
 theme = Thème
@@ -6,4 +6,4 @@ english = Anglais
 french = Français
 light = Clair
 dark = Sombre
-empty-hint = Aucun projet ouvert — cliquez sur « Ouvrir un projet exemple ».
+empty-hint = Aucune œuvre ouverte — cliquez sur « Ouvrir une œuvre exemple ».

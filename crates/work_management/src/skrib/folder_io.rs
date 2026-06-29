@@ -1,0 +1,191 @@
+//! Exploded-folder read/write. Writes are atomic (tmp + rename), manifest-last
+//! (the `project.skrib` is the commit point), and **diff-minimal**: a blob is
+//! only touched when its bytes actually change, and orphaned blobs/dirs are
+//! pruned — so an exploded project under git shows a tight diff.
+
+use anyhow::{Context, Result};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
+use std::collections::BTreeSet;
+use std::fs;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use tempfile::NamedTempFile;
+
+use super::bundle::*;
+use super::shape::MANIFEST_NAME;
+use super::slug::binder_dir_name;
+
+fn to_ron<T: Serialize>(value: &T) -> Result<String> {
+    let cfg = ron::ser::PrettyConfig::new().struct_names(true);
+    let mut s = ron::ser::to_string_pretty(value, cfg)?;
+    s.push('\n');
+    Ok(s)
+}
+
+fn from_ron<T: DeserializeOwned>(text: &str, what: &str) -> Result<T> {
+    ron::from_str(text).with_context(|| format!("parsing {what}"))
+}
+
+/// Write `bytes` to `path` only if the on-disk content differs. Returns whether
+/// a write happened. Uses a same-dir temp file + atomic rename.
+fn write_if_changed(path: &Path, bytes: &[u8]) -> Result<bool> {
+    if let Ok(existing) = fs::read(path)
+        && existing == bytes
+    {
+        return Ok(false);
+    }
+    let parent = path
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("no parent dir for {}", path.display()))?;
+    fs::create_dir_all(parent)
+        .with_context(|| format!("creating {}", parent.display()))?;
+    let mut tmp = NamedTempFile::new_in(parent)
+        .with_context(|| format!("temp file in {}", parent.display()))?;
+    tmp.write_all(bytes)
+        .with_context(|| format!("writing {}", path.display()))?;
+    tmp.as_file().sync_all().ok();
+    tmp.persist(path)
+        .map_err(|e| anyhow::anyhow!("persisting {}: {}", path.display(), e))?;
+    Ok(true)
+}
+
+pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
+    fs::create_dir_all(root).with_context(|| format!("creating {}", root.display()))?;
+    let binders_dir = root.join("binders");
+    fs::create_dir_all(&binders_dir).ok();
+
+    // Work-level manifests.
+    write_if_changed(&root.join("tags.ron"), to_ron(&bundle.tags)?.as_bytes())?;
+    write_if_changed(&root.join("dictionary.ron"), to_ron(&bundle.dict_words)?.as_bytes())?;
+    write_if_changed(&root.join("trash.ron"), to_ron(&bundle.trash_infos)?.as_bytes())?;
+
+    let mut expected_binder_dirs: BTreeSet<String> = BTreeSet::new();
+
+    for (index, bb) in bundle.binders.iter().enumerate() {
+        let dir_name = binder_dir_name(index, &bb.binder.name);
+        expected_binder_dirs.insert(dir_name.clone());
+        let bdir = binders_dir.join(&dir_name);
+        let tdir = bdir.join("text");
+        fs::create_dir_all(&tdir)
+            .with_context(|| format!("creating {}", tdir.display()))?;
+
+        // Prose blobs + the set of expected `.djot` file names.
+        let mut expected_prose: BTreeSet<String> = BTreeSet::new();
+        for item in &bb.items {
+            for pr in &item.item.prose_refs {
+                let rel = Path::new(&pr.path);
+                let fname = rel
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .ok_or_else(|| anyhow::anyhow!("bad prose path '{}'", pr.path))?
+                    .to_string();
+                let data = item.prose.get(&pr.file_id).ok_or_else(|| {
+                    anyhow::anyhow!("missing prose blob for content {}", pr.file_id)
+                })?;
+                write_if_changed(&root.join(rel), data.as_bytes())?;
+                expected_prose.insert(fname);
+            }
+        }
+        prune_dir(&tdir, &expected_prose, "djot")?;
+
+        // items.ron (after its prose blobs exist).
+        let items_file = ItemsFile {
+            binder: bb.binder.clone(),
+            items: bb.items.iter().map(|i| i.item.clone()).collect(),
+        };
+        write_if_changed(&bdir.join("items.ron"), to_ron(&items_file)?.as_bytes())?;
+    }
+
+    prune_binder_dirs(&binders_dir, &expected_binder_dirs)?;
+
+    // Commit point — written last.
+    write_if_changed(&root.join(MANIFEST_NAME), to_ron(&bundle.manifest)?.as_bytes())?;
+    Ok(())
+}
+
+/// Remove files in `dir` with extension `ext` whose name is not in `keep`.
+fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str) -> Result<()> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Ok(());
+    };
+    for entry in entries.flatten() {
+        let p = entry.path();
+        if p.extension().and_then(|e| e.to_str()) == Some(ext)
+            && let Some(name) = p.file_name().and_then(|n| n.to_str())
+            && !keep.contains(name)
+        {
+            fs::remove_file(&p).ok();
+        }
+    }
+    Ok(())
+}
+
+fn prune_binder_dirs(binders_dir: &Path, keep: &BTreeSet<String>) -> Result<()> {
+    let Ok(entries) = fs::read_dir(binders_dir) else {
+        return Ok(());
+    };
+    for entry in entries.flatten() {
+        let p = entry.path();
+        if p.is_dir()
+            && let Some(name) = p.file_name().and_then(|n| n.to_str())
+            && !keep.contains(name)
+        {
+            fs::remove_dir_all(&p).ok();
+        }
+    }
+    Ok(())
+}
+
+pub fn read_folder(root: &Path) -> Result<WorkBundle> {
+    let manifest_text = fs::read_to_string(root.join(MANIFEST_NAME))
+        .with_context(|| format!("reading {}", root.join(MANIFEST_NAME).display()))?;
+    let manifest: ProjectManifest = from_ron(&manifest_text, "project.skrib")?;
+
+    let tags = read_ron_vec(&root.join("tags.ron"), "tags.ron")?;
+    let dict_words = read_ron_vec(&root.join("dictionary.ron"), "dictionary.ron")?;
+    let trash_infos = read_ron_vec(&root.join("trash.ron"), "trash.ron")?;
+
+    // Index every binder by its file id (dir names are cosmetic).
+    let mut by_id: std::collections::HashMap<u64, (ItemsFile, PathBuf)> =
+        std::collections::HashMap::new();
+    let binders_dir = root.join("binders");
+    if let Ok(entries) = fs::read_dir(&binders_dir) {
+        for entry in entries.flatten() {
+            let items_path = entry.path().join("items.ron");
+            if items_path.is_file() {
+                let text = fs::read_to_string(&items_path)
+                    .with_context(|| format!("reading {}", items_path.display()))?;
+                let itf: ItemsFile = from_ron(&text, "items.ron")?;
+                by_id.insert(itf.binder.file_id, (itf, entry.path()));
+            }
+        }
+    }
+
+    let mut binders = Vec::with_capacity(manifest.binder_order.len());
+    for bid in &manifest.binder_order {
+        let (itf, _dir) = by_id.remove(bid).ok_or_else(|| {
+            anyhow::anyhow!("binder {bid} listed in manifest but no items.ron found")
+        })?;
+        let mut items = Vec::with_capacity(itf.items.len());
+        for item in itf.items {
+            let mut prose = std::collections::BTreeMap::new();
+            for pr in &item.prose_refs {
+                let text = fs::read_to_string(root.join(&pr.path))
+                    .with_context(|| format!("reading prose {}", pr.path))?;
+                prose.insert(pr.file_id, text);
+            }
+            items.push(BundledItem { item, prose });
+        }
+        binders.push(BundledBinder { binder: itf.binder, items });
+    }
+
+    Ok(WorkBundle { manifest, tags, dict_words, trash_infos, binders })
+}
+
+fn read_ron_vec<T: DeserializeOwned>(path: &Path, what: &str) -> Result<Vec<T>> {
+    match fs::read_to_string(path) {
+        Ok(text) => from_ron(&text, what),
+        Err(_) => Ok(Vec::new()), // a missing optional manifest = empty
+    }
+}

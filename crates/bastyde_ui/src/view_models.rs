@@ -43,19 +43,24 @@ use bastyde::widgets::{
 use frontend::AppContext;
 use frontend::commands::{
     binder_commands, binder_item_commands, binder_item_management_commands, content_commands,
-    trash_management_commands, undo_redo_commands, work_commands,
+    trash_management_commands, undo_redo_commands, work_commands, work_management_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
-use frontend::direct_access::{CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto};
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+use frontend::direct_access::{
+    ContentDto, CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto,
+};
 
 use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
+use frontend::work_management::SaveWorkDto;
 
-use crate::editor_tab::EditorTab;
+use crate::app_ids::AppIds;
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, CommitMove};
+use crate::singles::{SingleBinder, SingleBinderItem};
+use crate::tabs::{self, ContentTab};
 use crate::{DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, LOCALE_KEY};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,16 +79,28 @@ pub struct EditorsViewModel {
     /// of selection/focus). Kept in sync with `selected_tab`.
     active_item: Signal<Option<u64>>,
     column_width: Signal<f32>,
+    /// The per-`Work` undo stack id — shared with `OutlineViewModel` so editor
+    /// write-back lands on the same Ctrl+Z history as tree edits. `App` wires it.
+    stack_id: Signal<Option<u64>>,
+    /// Reactive read handle re-pointed at an item when opening its tab — supplies
+    /// the `(role, sub_role)` that selects the tab layout (Layer A single).
+    item_probe: SingleBinderItem,
 }
 
 impl EditorsViewModel {
-    pub fn new(app_ctx: Rc<AppContext>, column_width: Signal<f32>) -> Self {
+    pub fn new(
+        app_ctx: Rc<AppContext>,
+        column_width: Signal<f32>,
+        stack_id: Signal<Option<u64>>,
+    ) -> Self {
         Self {
+            item_probe: SingleBinderItem::new(app_ctx.clone()),
             app_ctx,
             tabs: ListModel::from_vec(Vec::new()),
             selected_tab: Signal::new(None),
             active_item: Signal::new(None),
             column_width,
+            stack_id,
         }
     }
 
@@ -120,7 +137,7 @@ impl EditorsViewModel {
         for i in 0..self.tabs.len() {
             let hit = self.tabs.with_item(i, |h| {
                 if h.id == tab {
-                    h.payload.downcast_ref::<EditorTab>().map(|e| e.item_id)
+                    h.payload.downcast_ref::<ContentTab>().map(|e| e.item_id)
                 } else {
                     None
                 }
@@ -132,22 +149,94 @@ impl EditorsViewModel {
         None
     }
 
-    /// Open the editor tab for `item_id`, or focus it if already open.
+    /// Open the editor tab for `item_id`, or focus it if already open. The view
+    /// is chosen per `(role, sub_role)` — not every row is the prose editor.
     pub fn open_or_focus(&self, item_id: u64, title: &str) {
         if let Some(tid) = self.find_open(item_id) {
             self.selected_tab.set(Some(tid));
             return;
         }
-        let (main_md, synopsis_md) = self.load_markdown(item_id);
+        // Read the item's `(role, sub_role)` through the reactive single rather
+        // than an ad-hoc `get_binder_item` (Layer A).
+        self.item_probe.set_id(Some(item_id));
+        let Some(item) = self.item_probe.dto() else {
+            return;
+        };
+        let contents = self.load_contents(item_id, &item.role, &item.sub_role);
+        let tab = tabs::tab_for(
+            &self.app_ctx,
+            item_id,
+            &item.role,
+            &item.sub_role,
+            &contents,
+            self.column_width.clone(),
+        );
         let label = if title.is_empty() { "Untitled" } else { title };
         let id = TabId::fresh();
         self.tabs.push(TabHandle::dynamic(
             id,
             "editor",
             TabInfo::new().title(lit!(label.to_string())).closable(true),
-            EditorTab::new(item_id, &main_md, &synopsis_md, self.column_width.clone()),
+            tab,
         ));
         self.selected_tab.set(Some(id));
+    }
+
+    /// Persist every open tab's edits back to its `Content` rows (changed fields
+    /// only), through the per-Work undo stack.
+    pub fn flush_all(&self) {
+        let stack = self.stack_id.get();
+        for i in 0..self.tabs.len() {
+            self.tabs.with_item(i, |h| {
+                if let Some(t) = h.payload.downcast_ref::<ContentTab>() {
+                    let _ = t.flush(stack);
+                }
+            });
+        }
+    }
+
+    /// Save the tab with `tab_id` (if any) then remove it — the `TabWidget`'s
+    /// `on_close` hook, so closing never drops unsaved edits.
+    pub fn flush_and_close(&self, tab_id: TabId) {
+        let stack = self.stack_id.get();
+        let mut pos = None;
+        for i in 0..self.tabs.len() {
+            let hit = self.tabs.with_item(i, |h| {
+                if h.id == tab_id {
+                    if let Some(t) = h.payload.downcast_ref::<ContentTab>() {
+                        let _ = t.flush(stack);
+                    }
+                    true
+                } else {
+                    false
+                }
+            });
+            if hit == Some(true) {
+                pos = Some(i);
+                break;
+            }
+        }
+        if let Some(p) = pos {
+            self.tabs.remove(p);
+        }
+        if self.selected_tab.get() == Some(tab_id) {
+            let next = (0..self.tabs.len()).find_map(|i| self.tabs.with_item(i, |h| h.id));
+            self.selected_tab.set(next);
+        }
+    }
+
+    /// Flush all editors to the store, then write the project to disk
+    /// (`save_work`). The save is a long operation; we kick it and let the
+    /// long-operation manager run it.
+    pub fn save_to_disk(&self) {
+        self.flush_all();
+        let _ = work_management_commands::save_work(
+            &self.app_ctx,
+            &SaveWorkDto {
+                file_name: String::new(),
+                overwrite: true,
+            },
+        );
     }
 
     /// Close every open tab (e.g. on project load).
@@ -163,7 +252,7 @@ impl EditorsViewModel {
         for i in 0..self.tabs.len() {
             let hit = self.tabs.with_item(i, |h| {
                 h.payload
-                    .downcast_ref::<EditorTab>()
+                    .downcast_ref::<ContentTab>()
                     .filter(|e| e.item_id == item_id)
                     .map(|_| h.id)
             });
@@ -174,26 +263,29 @@ impl EditorsViewModel {
         None
     }
 
-    /// Pull an item's main + synopsis Markdown out of its `Content` rows.
-    fn load_markdown(&self, item_id: u64) -> (String, String) {
+    /// Read an item's content rows, keeping only the roles the constraint
+    /// matrix allows for its `(role, sub_role)`. `Content.data` is Djot (the
+    /// canonical store format).
+    fn load_contents(
+        &self,
+        item_id: u64,
+        role: &BinderItemRole,
+        sub_role: &BinderItemSubRole,
+    ) -> Vec<ContentDto> {
         let ctx = &*self.app_ctx;
+        let allowed = skribisto_model::allowed_content(role, sub_role);
         let content_ids = binder_item_commands::get_binder_item_relationship(
             ctx,
             &item_id,
             &BinderItemRelationshipField::Contents,
         )
         .unwrap_or_default();
-        let contents = content_commands::get_content_multi(ctx, &content_ids).unwrap_or_default();
-
-        let (mut main_md, mut synopsis_md) = (String::new(), String::new());
-        for c in contents.into_iter().flatten() {
-            match c.role {
-                ContentRole::SceneText | ContentRole::NoteText => main_md = c.data,
-                ContentRole::SynopsisText => synopsis_md = c.data,
-                _ => {}
-            }
-        }
-        (main_md, synopsis_md)
+        content_commands::get_content_multi(ctx, &content_ids)
+            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .filter(|c| allowed.contains(&c.role))
+            .collect()
     }
 }
 
@@ -212,9 +304,14 @@ pub struct OutlineViewModel {
     selection: KeyedSelectionModel<BinderTreeKey>,
     docking: DockingModel,
     dock_id: DockWidgetId,
-    /// Per-`Work` undo stack id, created on `LoadWork`. Every binder-tree
-    /// mutation runs on this stack so one Ctrl+Z history reverses them all.
-    stack_id: Signal<Option<u64>>,
+    /// The app's id-only global state (root/work/work-info/undo-stack ids).
+    /// Binder-tree mutations run on `ids.stack_id` so one Ctrl+Z history reverses
+    /// them all; shared by clone with `EditorsViewModel` and the singles.
+    ids: AppIds,
+    /// Reactive read handles (Layer A) re-pointed to fetch the current state of
+    /// the item/binder a mutation is about to update — replacing ad-hoc `get_*`.
+    item_probe: SingleBinderItem,
+    binder_probe: SingleBinder,
 }
 
 // The visibility / reveal / action methods are the feature's public API
@@ -224,35 +321,51 @@ pub struct OutlineViewModel {
 impl OutlineViewModel {
     pub fn new(
         app_ctx: Rc<AppContext>,
+        ids: AppIds,
         model: BinderBinderItemsTreeModel,
         docking: DockingModel,
         dock_id: DockWidgetId,
     ) -> Self {
         let vm = Self {
+            item_probe: SingleBinderItem::new(app_ctx.clone()),
+            binder_probe: SingleBinder::new(app_ctx.clone()),
             app_ctx,
             model,
             selection: KeyedSelectionModel::new(SelectionMode::Single),
             docking,
             dock_id,
-            stack_id: Signal::new(None),
+            ids,
         };
         vm.install_reorder();
         vm
+    }
+
+    /// The current `BinderItem` DTO, read through the reactive single (Layer A) —
+    /// the source of truth when a tree mutation builds its update.
+    fn item_dto(&self, id: u64) -> Option<frontend::direct_access::BinderItemDto> {
+        self.item_probe.set_id(Some(id));
+        self.item_probe.dto()
+    }
+
+    /// The current `Binder` DTO, read through the reactive single (Layer A).
+    fn binder_dto(&self, id: u64) -> Option<frontend::direct_access::BinderDto> {
+        self.binder_probe.set_id(Some(id));
+        self.binder_probe.dto()
     }
 
     /// Build the outline view-model with its standard leading-dock presentation
     /// (280 px side + 48 px activity rail). The single place that knows the
     /// outline's dock geometry — so `App` and the title-bar menu share one
     /// handle without either re-stating layout constants.
-    pub fn new_default(app_ctx: Rc<AppContext>) -> Self {
-        let model = BinderBinderItemsTreeModel::new(app_ctx.clone());
+    pub fn new_default(app_ctx: Rc<AppContext>, ids: AppIds) -> Self {
+        let model = BinderBinderItemsTreeModel::new(app_ctx.clone(), ids.work_id.clone());
         let docking = DockingModel::new();
         docking.set_side_size(DockSide::Leading, 280.0);
         // A non-zero rail thickness switches the leading side to Rail
         // presentation (a `DockActivityBar` icon rail); the layout sizes the
         // rail from the `DockRail` config.
         docking.set_side_rail(DockSide::Leading, 48.0);
-        Self::new(app_ctx, model, docking, DockWidgetId::fresh())
+        Self::new(app_ctx, ids, model, docking, DockWidgetId::fresh())
     }
 
     /// Inject the model's drag-reorder closure. **Cycle-safety:** it captures
@@ -261,7 +374,7 @@ impl OutlineViewModel {
     /// model, the `Rc` cycle the designer deliberately avoids).
     fn install_reorder(&self) {
         let app_ctx = self.app_ctx.clone();
-        let stack_id = self.stack_id.clone();
+        let stack_id = self.ids.stack_id.clone();
         let commit: CommitMove = Rc::new(move |dragged, target, place| {
             apply_move(&app_ctx, stack_id.get(), dragged, target, place).is_ok()
         });
@@ -341,11 +454,15 @@ impl OutlineViewModel {
 
     /// Create the per-`Work` undo stack. Call on `LoadWork`.
     pub fn init_stack(&self) {
-        let id = undo_redo_commands::create_new_stack(&self.app_ctx);
-        self.stack_id.set(Some(id));
+        self.ids.open_stack(&self.app_ctx);
     }
     fn stack(&self) -> Option<u64> {
-        self.stack_id.get()
+        self.ids.stack_id.get()
+    }
+    /// The shared undo-stack signal, handed to `EditorsViewModel` so editor
+    /// write-back lands on the same Ctrl+Z history as tree edits.
+    pub fn stack_id_signal(&self) -> Signal<Option<u64>> {
+        self.ids.stack_id.clone()
     }
 
     // ── actions (each: backend command on the undo stack, then reload) ──
@@ -427,7 +544,7 @@ impl OutlineViewModel {
         let ctx = &*self.app_ctx;
         match key {
             BinderTreeKey::Binder(b) => {
-                if let Ok(Some(binder)) = binder_commands::get_binder(ctx, &b) {
+                if let Some(binder) = self.binder_dto(b) {
                     let dto = UpdateBinderDto {
                         id: b,
                         created_at: binder.created_at,
@@ -439,7 +556,7 @@ impl OutlineViewModel {
                 }
             }
             BinderTreeKey::Item(i) => {
-                if let Ok(Some(it)) = binder_item_commands::get_binder_item(ctx, &i) {
+                if let Some(it) = self.item_dto(i) {
                     let mut dto = update_item_dto(&it);
                     dto.title = title.to_string();
                     let _ = binder_item_commands::update_binder_item(ctx, self.stack(), &dto);
@@ -569,7 +686,7 @@ impl OutlineViewModel {
                 )
                 .ok()?;
                 let pos = order.iter().position(|&x| x == i)?;
-                let it = binder_item_commands::get_binder_item(ctx, &i).ok()??;
+                let it = self.item_dto(i)?;
                 let indent = if it.role == BinderItemRole::Folder {
                     it.indent + 1 // first child of the folder
                 } else {
@@ -583,8 +700,9 @@ impl OutlineViewModel {
 
     fn first_binder(&self) -> Option<u64> {
         let ctx = &*self.app_ctx;
-        let work = work_commands::get_all_work(ctx).ok()?.into_iter().next()?;
-        work_commands::get_work_relationship(ctx, &work.id, &WorkRelationshipField::Binders)
+        // ids-only global state: the open Work's id is known; no `get_all_work`.
+        let work_id = self.ids.work_id.get()?;
+        work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
             .ok()?
             .into_iter()
             .next()
@@ -623,7 +741,7 @@ impl OutlineViewModel {
             let Some(pos) = order.iter().position(|&x| x == i) else {
                 continue;
             };
-            let Ok(Some(it)) = binder_item_commands::get_binder_item(ctx, &i) else {
+            let Some(it) = self.item_dto(i) else {
                 continue;
             };
             let new_indent = if delta > 0 {
@@ -632,9 +750,7 @@ impl OutlineViewModel {
                 let pred = if pos == 0 {
                     -1
                 } else {
-                    binder_item_commands::get_binder_item(ctx, &order[pos - 1])
-                        .ok()
-                        .flatten()
+                    self.item_dto(order[pos - 1])
                         .map(|p| p.indent)
                         .unwrap_or(-1)
                 };
@@ -774,18 +890,30 @@ mod tests {
     use super::*;
 
     fn editors() -> EditorsViewModel {
-        EditorsViewModel::new(Rc::new(AppContext::new()), Signal::new(700.0))
+        EditorsViewModel::new(
+            Rc::new(AppContext::new()),
+            Signal::new(700.0),
+            Signal::new(None),
+        )
     }
 
     /// Push an editor tab directly (bypassing the backend) so tab-management
     /// logic can be tested without a loaded project.
     fn push_tab(p: &EditorsViewModel, item_id: u64) -> TabId {
         let id = TabId::fresh();
+        let tab = tabs::tab_for(
+            &p.app_ctx,
+            item_id,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            p.column_width.clone(),
+        );
         p.tabs.push(TabHandle::dynamic(
             id,
             "editor",
             TabInfo::new().closable(true),
-            EditorTab::new(item_id, "", "", p.column_width.clone()),
+            tab,
         ));
         id
     }
@@ -814,18 +942,18 @@ mod tests {
 
     #[test]
     fn outline_init_stack_creates_a_stack_id() {
-        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()));
-        assert!(outline.stack_id.get().is_none());
+        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()), AppIds::default());
+        assert!(outline.stack_id_signal().get().is_none());
         outline.init_stack();
         assert!(
-            outline.stack_id.get().is_some(),
+            outline.stack_id_signal().get().is_some(),
             "init_stack opens the per-Work undo stack"
         );
     }
 
     #[test]
     fn outline_actions_on_empty_selection_are_noops() {
-        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()));
+        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()), AppIds::default());
         // No selection, no loaded Work — these must not panic and must do nothing.
         outline.trash_selected();
         outline.duplicate_selected();
@@ -835,7 +963,7 @@ mod tests {
 
     #[test]
     fn outline_show_hide_toggle_track_side_visibility() {
-        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()));
+        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()), AppIds::default());
         let visible = outline.is_visible();
 
         // Sides start hidden.

@@ -3,17 +3,20 @@
 //! **drag-reorder** it. The flat item stream nests via each item's `indent`;
 //! binders are the tree roots.
 //!
-//! Self-contained reference shape for a future Qleany tera template: the whole
-//! model lives in one file. The real vs mock split is localised to the
-//! `new()` / `reload()` bodies (`#[cfg(feature = "mocks")]`); the
-//! `TreeDataSource` impl — the bulk — is written once and shared, and **no
-//! `#[cfg]` ever leaks into consuming code**. Parity is enforced by building
-//! both feature modes.
+//! Self-contained reference shape for a future Qleany tera template. The public
+//! type and the whole `TreeDataSource` algorithm (visibility flattening,
+//! drag-drop resolution, projection) are written **once**; the only part that
+//! differs real-vs-mock is the *row source*, isolated behind two `#[cfg]`-gated
+//! [`rows`] modules exposing an identical `load(ctx, work_id) -> Vec<Row>`. So no
+//! `#[cfg]` leaks into consuming code and there is no duplicated tree logic to
+//! drift. (The small `singles/` handles use the fuller two-`mod imp` shape; this
+//! large shared-algorithm model gates only the seam — see the convention note in
+//! `models.rs`.) Parity is enforced by building both feature modes.
 //!
-//! Mutations are not applied here: drops route through an injected
-//! [`CommitMove`] closure (`set_reorder`) — exactly the designer's pattern — and
-//! the model re-reads itself afterwards. The view-model owns that closure and
-//! the undo stack.
+//! Rows are sourced for the **open Work only**, identified by the `work_id`
+//! signal from [`AppIds`](crate::app_ids) (ids-only global state) — no
+//! `get_all_work`. Mutations are not applied here: drops route through an
+//! injected [`CommitMove`] closure (`set_reorder`) and the model re-reads itself.
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -26,15 +29,6 @@ use bastyde::data::{
 use bastyde::prelude::Signal;
 
 use frontend::AppContext;
-
-#[cfg(not(feature = "mocks"))]
-use frontend::commands::{binder_commands, binder_item_commands, work_commands};
-#[cfg(not(feature = "mocks"))]
-use frontend::common::direct_access::binder::BinderRelationshipField;
-#[cfg(not(feature = "mocks"))]
-use frontend::common::direct_access::work::WorkRelationshipField;
-#[cfg(not(feature = "mocks"))]
-use frontend::common::entities::BinderItemRole;
 
 /// Stable per-row identity. Binders and items share the row space but live in
 /// disjoint id namespaces in the backend, so the key is tagged.
@@ -97,7 +91,9 @@ struct Inner {
     seen: RefCell<HashSet<BinderTreeKey>>,
     version: Signal<u64>,
     commit_move: RefCell<Option<CommitMove>>,
-    #[allow(dead_code)]
+    /// The open Work whose tree is shown (ids-only global state). Real `reload`
+    /// sources from it; the mock seam ignores it.
+    work_id: Signal<Option<u64>>,
     ctx: Rc<AppContext>,
 }
 
@@ -107,7 +103,7 @@ pub struct BinderBinderItemsTreeModel {
 }
 
 impl BinderBinderItemsTreeModel {
-    pub fn new(ctx: Rc<AppContext>) -> Self {
+    pub fn new(ctx: Rc<AppContext>, work_id: Signal<Option<u64>>) -> Self {
         let model = Self {
             inner: Rc::new(Inner {
                 rows: RefCell::new(Vec::new()),
@@ -118,12 +114,10 @@ impl BinderBinderItemsTreeModel {
                 seen: RefCell::new(HashSet::new()),
                 version: Signal::new(0),
                 commit_move: RefCell::new(None),
+                work_id,
                 ctx,
             }),
         };
-        #[cfg(feature = "mocks")]
-        model.populate_mock();
-        #[cfg(not(feature = "mocks"))]
         model.reload();
         model
     }
@@ -159,143 +153,10 @@ impl BinderBinderItemsTreeModel {
         }
     }
 
-    // ── reload (real: pull from backend / mock: static) ──
-
-    #[cfg(not(feature = "mocks"))]
+    /// Re-source the rows for the open Work (real: from the backend / mock:
+    /// static) and reproject. The data seam is the only real/mock difference.
     pub fn reload(&self) {
-        let ctx = &*self.inner.ctx;
-        let mut rows: Vec<Row> = Vec::new();
-
-        let works = work_commands::get_all_work(ctx).unwrap_or_default();
-        for work in &works {
-            let binder_ids = work_commands::get_work_relationship(
-                ctx,
-                &work.id,
-                &WorkRelationshipField::Binders,
-            )
-            .unwrap_or_default();
-            for binder_id in binder_ids {
-                let Ok(Some(binder)) = binder_commands::get_binder(ctx, &binder_id) else {
-                    continue;
-                };
-                if !binder.activated {
-                    continue; // trashed binders are hidden
-                }
-                let bkey = BinderTreeKey::Binder(binder_id);
-                rows.push(Row {
-                    key: bkey,
-                    node: TreeNode::binder(binder.name, binder_id),
-                    depth: 0,
-                    parent: None,
-                    has_children: false,
-                });
-
-                let item_ids = binder_commands::get_binder_relationship(
-                    ctx,
-                    &binder_id,
-                    &BinderRelationshipField::BinderItems,
-                )
-                .unwrap_or_default();
-                let items =
-                    binder_item_commands::get_binder_item_multi(ctx, &item_ids).unwrap_or_default();
-
-                // (indent, key) stack — a row's parent is the nearest ancestor
-                // with a strictly smaller indent; the binder is the (-1) base.
-                let mut stack: Vec<(i64, BinderTreeKey)> = vec![(-1, bkey)];
-                for it in items.into_iter().flatten() {
-                    if !it.activated {
-                        continue; // trashed items (and trashed subtrees) are hidden
-                    }
-                    while stack.len() > 1
-                        && stack.last().map(|(i, _)| *i).unwrap_or(-1) >= it.indent
-                    {
-                        stack.pop();
-                    }
-                    let parent = stack.last().map(|(_, k)| *k).unwrap_or(bkey);
-                    let key = BinderTreeKey::Item(it.id);
-                    let kind = match it.role {
-                        BinderItemRole::Folder => "folder",
-                        BinderItemRole::Item => "item",
-                    }
-                    .to_string();
-                    rows.push(Row {
-                        key,
-                        node: TreeNode {
-                            title: it.title,
-                            label: it.label,
-                            kind,
-                            item_id: Some(it.id),
-                            binder_id: Some(binder_id),
-                        },
-                        depth: (it.indent.max(0) as usize) + 1,
-                        parent: Some(parent),
-                        has_children: false,
-                    });
-                    stack.push((it.indent, key));
-                }
-            }
-        }
-
-        self.install_rows(rows);
-    }
-
-    #[cfg(feature = "mocks")]
-    pub fn reload(&self) {
-        // The mock tree is static; populated once in `new`.
-    }
-
-    #[cfg(feature = "mocks")]
-    fn populate_mock(&self) {
-        fn item(
-            id: u64,
-            binder: u64,
-            title: &str,
-            label: &str,
-            kind: &str,
-            depth: usize,
-            parent: BinderTreeKey,
-        ) -> Row {
-            Row {
-                key: BinderTreeKey::Item(id),
-                node: TreeNode {
-                    title: title.to_string(),
-                    label: label.to_string(),
-                    kind: kind.to_string(),
-                    item_id: Some(id),
-                    binder_id: Some(binder),
-                },
-                depth,
-                parent: Some(parent),
-                has_children: false,
-            }
-        }
-        let m = BinderTreeKey::Binder(1);
-        let n = BinderTreeKey::Binder(2);
-        let ch1 = BinderTreeKey::Item(101);
-        let ch2 = BinderTreeKey::Item(104);
-        let rows = vec![
-            Row {
-                key: m,
-                node: TreeNode::binder("Manuscript".into(), 1),
-                depth: 0,
-                parent: None,
-                has_children: false,
-            },
-            item(101, 1, "Chapter 1", "the setup", "folder", 1, m),
-            item(102, 1, "Opening scene", "1st plot point", "item", 2, ch1),
-            item(103, 1, "Inciting incident", "", "item", 2, ch1),
-            item(104, 1, "Chapter 2", "rising action", "folder", 1, m),
-            item(105, 1, "The journey begins", "", "item", 2, ch2),
-            Row {
-                key: n,
-                node: TreeNode::binder("Notes".into(), 2),
-                depth: 0,
-                parent: None,
-                has_children: false,
-            },
-            item(106, 2, "Protagonist", "wants freedom", "item", 1, n),
-            item(107, 2, "Antagonist", "", "item", 1, n),
-        ];
+        let rows = rows::load(&self.inner.ctx, &self.inner.work_id);
         self.install_rows(rows);
     }
 
@@ -524,6 +385,157 @@ impl TreeDataSource for BinderBinderItemsTreeModel {
     }
 }
 
+// ── The row-source seam: the only real/mock difference ──────────────────────
+
+/// Pull the binder/item rows for the open `Work` from the backend, nesting the
+/// flat item stream by `indent`. Trashed binders/items (and their subtrees) are
+/// omitted. Returns empty when no project is open.
+#[cfg(not(feature = "mocks"))]
+mod rows {
+    use bastyde::prelude::Signal;
+
+    use frontend::AppContext;
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::common::direct_access::binder::BinderRelationshipField;
+    use frontend::common::direct_access::work::WorkRelationshipField;
+    use frontend::common::entities::BinderItemRole;
+
+    use super::{BinderTreeKey, Row, TreeNode};
+
+    pub fn load(ctx: &AppContext, work_id: &Signal<Option<u64>>) -> Vec<Row> {
+        let mut rows: Vec<Row> = Vec::new();
+        let Some(work_id) = work_id.get() else {
+            return rows; // no project open
+        };
+        let binder_ids =
+            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
+                .unwrap_or_default();
+        for binder_id in binder_ids {
+            let Ok(Some(binder)) = binder_commands::get_binder(ctx, &binder_id) else {
+                continue;
+            };
+            if !binder.activated {
+                continue; // trashed binders are hidden
+            }
+            let bkey = BinderTreeKey::Binder(binder_id);
+            rows.push(Row {
+                key: bkey,
+                node: TreeNode::binder(binder.name, binder_id),
+                depth: 0,
+                parent: None,
+                has_children: false,
+            });
+
+            let item_ids = binder_commands::get_binder_relationship(
+                ctx,
+                &binder_id,
+                &BinderRelationshipField::BinderItems,
+            )
+            .unwrap_or_default();
+            let items =
+                binder_item_commands::get_binder_item_multi(ctx, &item_ids).unwrap_or_default();
+
+            // (indent, key) stack — a row's parent is the nearest ancestor with a
+            // strictly smaller indent; the binder is the (-1) base.
+            let mut stack: Vec<(i64, BinderTreeKey)> = vec![(-1, bkey)];
+            for it in items.into_iter().flatten() {
+                if !it.activated {
+                    continue; // trashed items (and trashed subtrees) are hidden
+                }
+                while stack.len() > 1 && stack.last().map(|(i, _)| *i).unwrap_or(-1) >= it.indent {
+                    stack.pop();
+                }
+                let parent = stack.last().map(|(_, k)| *k).unwrap_or(bkey);
+                let key = BinderTreeKey::Item(it.id);
+                let kind = match it.role {
+                    BinderItemRole::Folder => "folder",
+                    BinderItemRole::Item => "item",
+                }
+                .to_string();
+                rows.push(Row {
+                    key,
+                    node: TreeNode {
+                        title: it.title,
+                        label: it.label,
+                        kind,
+                        item_id: Some(it.id),
+                        binder_id: Some(binder_id),
+                    },
+                    depth: (it.indent.max(0) as usize) + 1,
+                    parent: Some(parent),
+                    has_children: false,
+                });
+                stack.push((it.indent, key));
+            }
+        }
+        rows
+    }
+}
+
+/// The static mock tree (no backend). `work_id` is ignored.
+#[cfg(feature = "mocks")]
+mod rows {
+    use bastyde::prelude::Signal;
+
+    use frontend::AppContext;
+
+    use super::{BinderTreeKey, Row, TreeNode};
+
+    fn item(
+        id: u64,
+        binder: u64,
+        title: &str,
+        label: &str,
+        kind: &str,
+        depth: usize,
+        parent: BinderTreeKey,
+    ) -> Row {
+        Row {
+            key: BinderTreeKey::Item(id),
+            node: TreeNode {
+                title: title.to_string(),
+                label: label.to_string(),
+                kind: kind.to_string(),
+                item_id: Some(id),
+                binder_id: Some(binder),
+            },
+            depth,
+            parent: Some(parent),
+            has_children: false,
+        }
+    }
+
+    pub fn load(_ctx: &AppContext, _work_id: &Signal<Option<u64>>) -> Vec<Row> {
+        let m = BinderTreeKey::Binder(1);
+        let n = BinderTreeKey::Binder(2);
+        let ch1 = BinderTreeKey::Item(101);
+        let ch2 = BinderTreeKey::Item(104);
+        vec![
+            Row {
+                key: m,
+                node: TreeNode::binder("Manuscript".into(), 1),
+                depth: 0,
+                parent: None,
+                has_children: false,
+            },
+            item(101, 1, "Chapter 1", "the setup", "folder", 1, m),
+            item(102, 1, "Opening scene", "1st plot point", "item", 2, ch1),
+            item(103, 1, "Inciting incident", "", "item", 2, ch1),
+            item(104, 1, "Chapter 2", "rising action", "folder", 1, m),
+            item(105, 1, "The journey begins", "", "item", 2, ch2),
+            Row {
+                key: n,
+                node: TreeNode::binder("Notes".into(), 2),
+                depth: 0,
+                parent: None,
+                has_children: false,
+            },
+            item(106, 2, "Protagonist", "wants freedom", "item", 1, n),
+            item(107, 2, "Antagonist", "", "item", 1, n),
+        ]
+    }
+}
+
 #[cfg(all(test, feature = "mocks"))]
 mod tests {
     use super::*;
@@ -531,7 +543,7 @@ mod tests {
     use frontend::AppContext;
 
     fn model() -> BinderBinderItemsTreeModel {
-        BinderBinderItemsTreeModel::new(Rc::new(AppContext::new()))
+        BinderBinderItemsTreeModel::new(Rc::new(AppContext::new()), Signal::new(None))
     }
 
     #[test]

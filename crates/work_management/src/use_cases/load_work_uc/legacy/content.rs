@@ -15,7 +15,7 @@ use anyhow::Result;
 use text_document::TextDocument;
 
 /// Convert Qt rich-text HTML to GFM Markdown. Blank input → empty string.
-pub fn html_to_markdown(html: &str) -> Result<String> {
+pub fn html_to_djot(html: &str) -> Result<String> {
     if html.trim().is_empty() {
         return Ok(String::new());
     }
@@ -25,7 +25,7 @@ pub fn html_to_markdown(html: &str) -> Result<String> {
     let cleaned = strip_block(&strip_block(html, "style"), "script");
     let doc = TextDocument::new();
     doc.set_html(&cleaned)?.wait()?;
-    Ok(doc.to_markdown()?)
+    Ok(doc.to_djot()?)
 }
 
 /// Remove every `<tag …>…</tag>` block (case-insensitive). Byte offsets line up

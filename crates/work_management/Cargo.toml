@@ -28,6 +28,10 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 rusqlite = { version = "0.32", features = ["bundled", "backup"] }
 text-document = { path = "../../../text-document/crates/public_api" }
+ron = "0.8"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+tempfile = "3"
+walkdir = "2"
 
 [lints]
 workspace = true

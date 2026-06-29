@@ -1,11 +1,13 @@
 //! Skribisto desktop UI (Bastyde). Wires the Qleany backend to a Bastyde shell.
 
 mod app;
-mod editor_tab;
+mod app_ids;
 mod intents;
 mod models;
 mod recent_projects_button;
 mod settings_panel;
+mod singles;
+mod tabs;
 mod view_models;
 
 use std::rc::Rc;
@@ -15,7 +17,7 @@ use bastyde::core::event_source::{EventSource, SubscriptionHandle};
 use bastyde::widgets::{Center, HStack, ImageWidget};
 
 use bastyde::core::modal::ModalRequest;
-use bastyde::prelude::*;
+use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
 use bastyde::res;
 use bastyde::settings::{AppPaths, SettingsStore};
 use bastyde::widgets::{
@@ -26,20 +28,86 @@ use recent_projects_button::RecentProjectsButton;
 
 use frontend::AppContext;
 use frontend::EventHubClient;
-use frontend::commands::work_management_commands;
+use frontend::commands::{work_info_commands, work_management_commands};
+use frontend::common::entities::WorkShape;
 use frontend::common::event::{Event, Origin};
-use frontend::work_management::LoadWorkDto;
+use frontend::work_management::{
+    BackupNowDto, LoadWorkDto, MigrateToSkribFileDto, MigrateToSkribFolderDto,
+};
 
 use app::App;
+use app_ids::AppIds;
 use settings_panel::SettingsPanel;
+use singles::{SingleWork, SingleWorkInfo};
 use view_models::OutlineViewModel;
 
-/// Path to the bundled sample project (opened from the File menu).
-fn sample_project_path() -> String {
-    format!(
-        "{}/../../resources/test/skribisto_test_project.skrib",
-        env!("CARGO_MANIFEST_DIR")
-    )
+/// The currently-open project's path (from `WorkInfo`), if any.
+fn current_project_path(ctx: &AppContext) -> Option<String> {
+    work_info_commands::get_all_work_info(ctx)
+        .ok()?
+        .into_iter()
+        .next()?
+        .file_name
+}
+
+/// The open work's base name (no extension), or `"work"` — pre-fills the
+/// "Save as" dialog's file name. A folder work's entry is `…/project.skrib`
+/// (the on-disk manifest name), so its directory name is used.
+fn project_stem(ctx: &AppContext) -> String {
+    use std::path::Path;
+    current_project_path(ctx)
+        .as_deref()
+        .map(|cur| {
+            let p = Path::new(cur);
+            let base = if p.file_name().and_then(|n| n.to_str()) == Some("project.skrib") {
+                p.parent().unwrap_or(p)
+            } else {
+                p
+            };
+            base.file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("work")
+                .to_string()
+        })
+        .unwrap_or_else(|| "work".to_string())
+}
+
+/// Sanitize a `Work` title into a folder name valid on Linux, Windows and macOS.
+///
+/// Replaces every character forbidden on *any* of the three (`/ \ : * ? " < > |`
+/// and NUL) with `_`, strips leading/trailing dots and spaces (Windows rejects
+/// them), rejects the Windows reserved device names, caps the length well under
+/// the 255-byte component limit, and falls back to `"work"` when nothing
+/// usable remains.
+fn sanitize_folder_name(raw: &str) -> String {
+    /// Reserved device names on Windows (case-insensitive, with or without an
+    /// extension); a folder named any of these is unusable there.
+    const WINDOWS_RESERVED: &[&str] = &[
+        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
+        "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    ];
+    let trim = |s: &str| {
+        s.trim_matches(|c: char| c == '.' || c == ' ' || c.is_whitespace())
+            .to_string()
+    };
+    let mut name: String = raw
+        .chars()
+        .map(|c| match c {
+            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+            c if (c as u32) < 0x20 => '_', // control chars incl. NUL
+            c => c,
+        })
+        .collect();
+    name = trim(&name);
+    // Cap to 200 chars (leaves headroom under the 255-byte NTFS/ext4 limit), then
+    // re-trim in case truncation exposed a trailing dot/space.
+    name = trim(&name.chars().take(200).collect::<String>());
+    // A reserved stem (the part before the first `.`) makes the whole name invalid.
+    let stem = name.split('.').next().unwrap_or("").to_ascii_uppercase();
+    if name.is_empty() || WINDOWS_RESERVED.contains(&stem.as_str()) {
+        return "work".to_string();
+    }
+    name
 }
 
 /// Persisted-setting keys (also read at startup in `main`).
@@ -96,18 +164,31 @@ fn main() {
         .framework_locales(framework_locales());
 
     let app_ctx_root = app_ctx.clone();
+    // The app's id-only global state (root/work/work-info/undo-stack ids). Created
+    // here, shared into the outline, the singles, and the title-bar menu, and
+    // registered as `app_state` so any widget can reach it.
+    let ids = AppIds::new();
+    // Reactive single-entity handles (Layer A). Created here so the title-bar menu
+    // can bind the project title (Bug 1) and shape (Bug 2); `App::build` wires
+    // their event subscriptions and re-points them on each `LoadWork`.
+    let single_work = SingleWork::new(app_ctx.clone());
+    let single_work_info = SingleWorkInfo::new(app_ctx.clone());
     // The outline view-model is created here (no settings dependency) so the
     // title-bar menu can bind its reactive checkmark and the whole app can reach
     // it via `ctx.app_state::<OutlineViewModel>()`.
-    let outline = OutlineViewModel::new_default(app_ctx.clone());
+    let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
     BastydeAppBuilder::new()
         .theme(theme)
         .application("eu", "skribisto", "Skribisto")
         .settings(SettingsBundle::new().with_window_state(true))
         .i18n(i18n)
         .install_inspector_in_debug()
+        .install_file_dialog()
         .install_toast_default()
         .event_source(EventHubSource { client })
+        .app_state(ids.clone())
+        .app_state(single_work.clone())
+        .app_state(single_work_info.clone())
         .app_state(outline.clone())
         .initial_window(
             WindowConfig::new()
@@ -125,19 +206,138 @@ fn main() {
                         Some(host) => {
                             // Model-style menu, collapsed to a hamburger (☰).
                             let menu_ctx = app_ctx_root.clone();
+                            let menu_work = single_work.clone();
+                            let menu_work_info = single_work_info.clone();
                             let menu = MenuModel::new().menu(lit!("File"), move |m| {
-                                m.item(MenuEntry::new(lit!("Open Project")).on_activate(
+                                let open_ctx = menu_ctx.clone();
+                                let file_ctx = menu_ctx.clone();
+                                let folder_ctx = menu_ctx.clone();
+                                let backup_ctx = menu_ctx.clone();
+                                let folder_work = menu_work.clone();
+                                // Bug 2: offer only the *other* shape — a zip project
+                                // shows "Save as folder", a folder project shows
+                                // "Save as single file". Both collapse when no
+                                // project is open (`shape` is `None`). Reactive via
+                                // the overlay menu's `visible_when`.
+                                let show_save_file =
+                                    menu_work_info.shape().map(|s| *s == Some(WorkShape::Folder));
+                                let show_save_folder =
+                                    menu_work_info.shape().map(|s| *s == Some(WorkShape::Zip));
+                                m.item(MenuEntry::new(lit!("Open Work…")).on_activate(
                                     move |ectx| {
-                                        if let Err(e) = work_management_commands::load_work(
-                                            &menu_ctx,
-                                            &LoadWorkDto { file_name: sample_project_path() },
+                                        let ctx = open_ctx.clone();
+                                        let req = FileDialogRequest::pick_file()
+                                            .title("Open Skribisto work")
+                                            .add_filter("Skribisto work", &["skrib"]);
+                                        let _ = ectx.pick_file(req, move |res, ectx2| {
+                                            if let FileDialogResult::File(Some(path)) = res {
+                                                let file = path.to_string_lossy().into_owned();
+                                                if let Err(e) = work_management_commands::load_work(
+                                                    &ctx,
+                                                    &LoadWorkDto { file_name: file },
+                                                ) {
+                                                    ectx2.show_toast(Toast::error(lit!(format!(
+                                                        "Could not open work: {e}"
+                                                    ))));
+                                                }
+                                            }
+                                        });
+                                    },
+                                ))
+                                .separator()
+                                // Flush editors to the store + write to disk (also Ctrl+S).
+                                .item(
+                                    MenuEntry::new(lit!("Save"))
+                                        .intent("editor.save")
+                                        .shortcut("editor.save"),
+                                )
+                                // Convert the open project to a single zipped `.skrib`
+                                // at a user-chosen location (native save dialog).
+                                .item(MenuEntry::new(lit!("Save as single file…")).visible(show_save_file).on_activate(
+                                    move |ectx| {
+                                        let ctx = file_ctx.clone();
+                                        let req = FileDialogRequest::save_file()
+                                            .title("Save as single .skrib file")
+                                            .default_file_name(format!("{}.skrib", project_stem(&ctx)))
+                                            .add_filter("Skribisto work", &["skrib"]);
+                                        let _ = ectx.save_file(req, move |res, ectx2| {
+                                            if let FileDialogResult::Saved(Some(path)) = res {
+                                                let target = path.to_string_lossy().into_owned();
+                                                match work_management_commands::migrate_to_skrib_file(
+                                                    &ctx,
+                                                    &MigrateToSkribFileDto {
+                                                        file_name: target.clone(),
+                                                    },
+                                                ) {
+                                                    Ok(_) => ectx2.show_toast(Toast::info(lit!(
+                                                        format!("Saving as {target}…")
+                                                    ))),
+                                                    Err(e) => ectx2.show_toast(Toast::error(lit!(
+                                                        format!("{e}")
+                                                    ))),
+                                                };
+                                            }
+                                        });
+                                    },
+                                ))
+                                // Convert the open project to an exploded folder at a
+                                // user-chosen directory (native folder picker).
+                                .item(MenuEntry::new(lit!("Save as folder…")).visible(show_save_folder).on_activate(
+                                    move |ectx| {
+                                        let ctx = folder_ctx.clone();
+                                        // Bug 1: the picked folder is the *parent* —
+                                        // write into a subfolder named after the Work
+                                        // title (sanitized), falling back to the
+                                        // project file stem when the title is empty.
+                                        let title = folder_work.title().get();
+                                        let raw = if title.trim().is_empty() {
+                                            project_stem(&ctx)
+                                        } else {
+                                            title
+                                        };
+                                        let name = sanitize_folder_name(&raw);
+                                        let req = FileDialogRequest::pick_folder()
+                                            .title("Choose a parent folder for the work");
+                                        let _ = ectx.pick_folder(req, move |res, ectx2| {
+                                            if let FileDialogResult::Folder(Some(path)) = res {
+                                                let target = path
+                                                    .join(&name)
+                                                    .to_string_lossy()
+                                                    .into_owned();
+                                                match work_management_commands::migrate_to_skrib_folder(
+                                                    &ctx,
+                                                    &MigrateToSkribFolderDto {
+                                                        folder_path: target.clone(),
+                                                    },
+                                                ) {
+                                                    Ok(_) => ectx2.show_toast(Toast::info(lit!(
+                                                        format!("Saving as {target}/…")
+                                                    ))),
+                                                    Err(e) => ectx2.show_toast(Toast::error(lit!(
+                                                        format!("{e}")
+                                                    ))),
+                                                };
+                                            }
+                                        });
+                                    },
+                                ))
+                                // Timestamped single-file backup next to the project.
+                                .item(MenuEntry::new(lit!("Back up now")).on_activate(
+                                    move |ectx| {
+                                        match work_management_commands::backup_now(
+                                            &backup_ctx,
+                                            &BackupNowDto { directory: String::new() },
                                         ) {
-                                            ectx.show_toast(Toast::error(lit!(format!(
-                                                "Could not open project: {e}"
-                                            ))));
+                                            Ok(_) => {
+                                                ectx.show_toast(Toast::info(lit!("Backing up…")));
+                                            }
+                                            Err(e) => {
+                                                ectx.show_toast(Toast::error(lit!(format!("{e}"))));
+                                            }
                                         }
                                     },
                                 ))
+                                .separator()
                                 .item(MenuEntry::new(lit!("Settings")).on_activate(|ectx| {
                                     ectx.present_modal(
                                         ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
@@ -239,5 +439,59 @@ fn read_prefs() -> (bool, String) {
             store.signal(LOCALE_KEY, "en-US".to_string()).get(),
         ),
         Err(_) => (false, "en-US".to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sanitize_folder_name;
+
+    #[test]
+    fn keeps_a_clean_title_verbatim() {
+        assert_eq!(sanitize_folder_name("My Novel"), "My Novel");
+        assert_eq!(sanitize_folder_name("Война и мир"), "Война и мир");
+    }
+
+    #[test]
+    fn replaces_cross_os_forbidden_chars() {
+        // `/ \ : * ? " < > |` and control chars → `_`.
+        assert_eq!(
+            sanitize_folder_name("a/b\\c:d*e?f\"g<h>i|j"),
+            "a_b_c_d_e_f_g_h_i_j"
+        );
+        assert_eq!(sanitize_folder_name("tab\there"), "tab_here");
+        // All-forbidden becomes underscores (a valid, if ugly, folder name) —
+        // the `project` fallback is only for empty/dots/reserved.
+        assert_eq!(sanitize_folder_name("///"), "___");
+    }
+
+    #[test]
+    fn strips_leading_and_trailing_dots_and_spaces() {
+        assert_eq!(sanitize_folder_name("  .hidden.  "), "hidden");
+        assert_eq!(sanitize_folder_name("trailing."), "trailing");
+    }
+
+    #[test]
+    fn rejects_windows_reserved_names() {
+        // Case-insensitive, with or without an extension.
+        assert_eq!(sanitize_folder_name("CON"), "work");
+        assert_eq!(sanitize_folder_name("nul"), "work");
+        assert_eq!(sanitize_folder_name("LPT1.txt"), "work");
+        // A reserved word as a substring is fine.
+        assert_eq!(sanitize_folder_name("Console"), "Console");
+    }
+
+    #[test]
+    fn falls_back_to_work_when_empty() {
+        assert_eq!(sanitize_folder_name(""), "work");
+        assert_eq!(sanitize_folder_name("   "), "work");
+        assert_eq!(sanitize_folder_name("..."), "work");
+    }
+
+    #[test]
+    fn caps_length_and_re_trims() {
+        let long = "a".repeat(500);
+        let out = sanitize_folder_name(&long);
+        assert_eq!(out.chars().count(), 200);
     }
 }

@@ -7,6 +7,7 @@ use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
     Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, System, TrashInfo, Work,
+    WorkInfo,
 };
 use common::event::WorkManagementEvent::LoadWork;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
@@ -116,6 +117,7 @@ impl CommandUnitOfWork for LoadWorkUnitOfWork {
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
 #[macros::uow_action(entity = "DictWord", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
+#[macros::uow_action(entity = "WorkInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "System", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Root", action = "CreateOrphan")]

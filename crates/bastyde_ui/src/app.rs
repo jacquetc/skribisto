@@ -28,9 +28,11 @@ use frontend::AppContext;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{Event, Origin, WorkManagementEvent};
 
-use crate::editor_tab::{EditorTab, editor_pane};
+use crate::app_ids::AppIds;
 use crate::intents::AppIntent;
 use crate::models::{BinderTreeKey, TreeNode};
+use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel};
 
 pub struct App {
@@ -67,12 +69,32 @@ impl Widget for App {
 
         let app_ctx = self.app_ctx.clone();
         let column_width = settings.column_width();
+        let stack_id = self.outline.stack_id_signal();
         let editors = self
             .editors
-            .get_or_insert_with(|| EditorsViewModel::new(app_ctx, column_width))
+            .get_or_insert_with(|| EditorsViewModel::new(app_ctx, column_width, stack_id))
             .clone();
 
         let outline = self.outline.clone();
+
+        // ── Layer-A singles: id-only global state + reactive entity handles ──
+        // Created in `main`, shared via `app_state`. `wire` installs each single's
+        // event subscriptions on this (process-lifetime) widget; they are
+        // re-pointed on `LoadWork` below.
+        let ids = ctx
+            .app_state::<AppIds>()
+            .cloned()
+            .expect("AppIds registered in main");
+        let single_work = ctx
+            .app_state::<SingleWork>()
+            .cloned()
+            .expect("SingleWork registered in main");
+        let single_work_info = ctx
+            .app_state::<SingleWorkInfo>()
+            .cloned()
+            .expect("SingleWorkInfo registered in main");
+        single_work.wire(ctx);
+        single_work_info.wire(ctx);
 
         // ── App-global commands (the scriptable surface) ─────────────────────
         // Registered with `register_action_global` so they're reachable as a
@@ -100,6 +122,19 @@ impl Widget for App {
                     editors.open_or_focus(*item_id, title);
                 }
             }));
+        }
+        // Ctrl+S: flush every editor to the store, then save the project to disk.
+        ctx.register_shortcut_global(
+            Shortcut::new("editor.save")
+                .name("Save")
+                .primary(KeyStroke::ctrl(Key::S))
+                .build(),
+        );
+        {
+            let editors = editors.clone();
+            ctx.register_action_global(
+                Action::new("editor.save").on_invoke(move |_i, _c| editors.save_to_disk()),
+            );
         }
 
         // ── Binder-tree commands (the scriptable surface for the outline). ───
@@ -152,17 +187,25 @@ impl Widget for App {
                 .build(),
         );
 
-        // On project load: open the per-Work undo stack, rebuild the tree and
-        // drop now-stale editor tabs.
+        // On project load: seed the id-only global state from the freshly-loaded
+        // project, open the per-Work undo stack, re-point the singles, rebuild the
+        // tree and drop now-stale editor tabs.
         {
+            let ids = ids.clone();
+            let app_ctx = self.app_ctx.clone();
             let outline = outline.clone();
             let editors = editors.clone();
+            let single_work = single_work.clone();
+            let single_work_info = single_work_info.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_event: &Event| {
-                    outline.init_stack();
+                    ids.seed(&app_ctx);
+                    ids.open_stack(&app_ctx);
                     outline.reload();
                     editors.close_all();
+                    single_work.set_id(ids.work_id.get());
+                    single_work_info.set_id(ids.work_info_id.get());
                 },
             );
         }
@@ -179,16 +222,25 @@ impl Widget for App {
 
         // Keep the "open document" id in sync with the active tab (open, close,
         // or a tab-bar click), so the binder's open-item marker tracks it.
+        // Switching tabs also flushes pending edits to the store — autosave on a
+        // natural boundary (changed fields only; clean tabs are a no-op).
         {
             let editors = editors.clone();
-            ctx.effect(&editors.selected_tab(), move |_| editors.sync_active_item());
+            ctx.effect(&editors.selected_tab(), move |_| {
+                editors.flush_all();
+                editors.sync_active_item();
+            });
         }
         let active_item = editors.active_item();
 
         // ── Center: dynamic editor tabs ──────────────────────────────────────
+        // Closing a tab saves it first (`on_close` is a pre-close intercept):
+        // never drop unsaved edits.
+        let close_editors = editors.clone();
         let center = TabWidget::new(editors.selected_tab())
-            .dynamic_tab::<EditorTab>("editor", |_handle, state| editor_pane(state))
+            .dynamic_tab::<ContentTab>("editor", |_handle, state| tab_pane(state))
             .dynamic_model(editors.tabs())
+            .on_close(move |tab_id, _ctx| close_editors.flush_and_close(tab_id))
             .bar_visibility(TabBarVisibility::Always)
             .compact_bar()
             .selected_tab_background(SurfaceRole::Content)

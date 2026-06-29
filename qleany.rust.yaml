@@ -62,6 +62,12 @@ entities:
   - name: file_name
     type: string
     optional: true
+  - name: shape
+    type: enum
+    enum_name: WorkShape
+    enum_values:
+      - Zip
+      - Folder
   undoable: false
 - name: RecentWork
   inherits_from: EntityBase
@@ -241,6 +247,7 @@ features:
     - Root
     - System
     - RecentWork
+    - WorkInfo
     - Work
     - TrashInfo
     - Binder
@@ -255,7 +262,18 @@ features:
       - name: file_name
         type: string
   - name: save_work
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
+    - TrashInfo
+    - WorkInfo
     undoable: false
+    read_only: true
+    long_operation: true
     dto_in:
       name: SaveWorkDto
       fields:
@@ -263,6 +281,71 @@ features:
         type: string
       - name: overwrite
         type: boolean
+    dto_out:
+      name: SaveResultDto
+      fields:
+      - name: output_path
+        type: string
+  - name: migrate_to_skrib_file
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
+    - TrashInfo
+    - WorkInfo
+    undoable: false
+    long_operation: true
+    dto_in:
+      name: MigrateToSkribFileDto
+      fields:
+      - name: file_name
+        type: string
+    dto_out:
+      name: MigrateFileResultDto
+      fields:
+      - name: output_path
+        type: string
+  - name: migrate_to_skrib_folder
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
+    - TrashInfo
+    - WorkInfo
+    undoable: false
+    long_operation: true
+    dto_in:
+      name: MigrateToSkribFolderDto
+      fields:
+      - name: folder_path
+        type: string
+    dto_out:
+      name: MigrateFolderResultDto
+      fields:
+      - name: output_path
+        type: string
+  - name: backup_now
+    entities:
+    - WorkInfo
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: BackupNowDto
+      fields:
+      - name: directory
+        type: string
+    dto_out:
+      name: BackupResultDto
+      fields:
+      - name: backup_path
+        type: string
   - name: close_work
     entities:
     - Work

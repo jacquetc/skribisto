@@ -1,0 +1,329 @@
+//! `SingleContent` — a reactive **read+write** handle over one `Content` row.
+//!
+//! Content rows are the only entity the UI edits *directly* (prose in the editor,
+//! titles in the heading/folder tabs), so — like [`SingleWork`](crate::singles::SingleWork)
+//! and unlike the read-singles [`SingleBinderItem`](crate::singles::SingleBinderItem) /
+//! [`SingleBinder`](crate::singles::SingleBinder) — it carries `data`/`dirty` and a
+//! `save(stack)` that **creates the row on first save** (a writing item may not have
+//! a row for an allowed role yet) and **updates** it thereafter, preserving
+//! `created_at`. One handle serves **every `ContentRole`** (SceneText, NoteText,
+//! SynopsisText, the four titles) — the editor tabs hold one per field.
+//!
+//! Two `mod imp` variants share one public surface. See [`crate::singles`].
+
+#[cfg(not(feature = "mocks"))]
+mod imp {
+    use std::cell::{Cell, RefCell};
+    use std::rc::Rc;
+
+    use bastyde::prelude::*;
+
+    use frontend::AppContext;
+    use frontend::commands::content_commands;
+    use frontend::common::entities::ContentRole;
+    use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
+    use frontend::direct_access::{ContentDto, CreateContentDto, UpdateContentDto};
+
+    use crate::singles::LoadingStatus;
+
+    struct Inner {
+        /// The owning `BinderItem` — needed to create the row if it doesn't exist.
+        item_id: Cell<Option<u64>>,
+        role: RefCell<ContentRole>,
+        id: Cell<Option<u64>>,
+        created_at: Cell<chrono::DateTime<chrono::Utc>>,
+        data: Signal<String>,
+        loading_status: Signal<LoadingStatus>,
+        error_message: Signal<String>,
+        dirty: Signal<bool>,
+        ctx: Rc<AppContext>,
+    }
+
+    #[derive(Clone)]
+    pub struct SingleContent {
+        inner: Rc<Inner>,
+    }
+
+    #[allow(dead_code)] // public reactive surface; wired to consumers incrementally
+    impl SingleContent {
+        /// A handle for the `(item_id, role)` content of an editor field. `existing`
+        /// seeds it from the row loaded at tab-open (id + data + `created_at`);
+        /// `None` means the row doesn't exist yet and is created on first `save`.
+        pub fn for_field(
+            ctx: Rc<AppContext>,
+            item_id: u64,
+            role: ContentRole,
+            existing: Option<&ContentDto>,
+        ) -> Self {
+            let (id, data, created_at) = match existing {
+                Some(c) => (Some(c.id), c.data.clone(), c.created_at),
+                None => (None, String::new(), chrono::Utc::now()),
+            };
+            let status = if id.is_some() {
+                LoadingStatus::Loaded
+            } else {
+                LoadingStatus::Unloaded
+            };
+            Self {
+                inner: Rc::new(Inner {
+                    item_id: Cell::new(Some(item_id)),
+                    role: RefCell::new(role),
+                    id: Cell::new(id),
+                    created_at: Cell::new(created_at),
+                    data: Signal::new(data),
+                    loading_status: Signal::new(status),
+                    error_message: Signal::new(String::new()),
+                    dirty: Signal::new(false),
+                    ctx,
+                }),
+            }
+        }
+
+        /// A handle bound to an existing `Content` row by id (read-oriented; `role`
+        /// and `item_id` are filled from the loaded row).
+        pub fn from_id(ctx: Rc<AppContext>, id: u64) -> Self {
+            let s = Self {
+                inner: Rc::new(Inner {
+                    item_id: Cell::new(None),
+                    role: RefCell::new(ContentRole::default()),
+                    id: Cell::new(Some(id)),
+                    created_at: Cell::new(chrono::Utc::now()),
+                    data: Signal::new(String::new()),
+                    loading_status: Signal::new(LoadingStatus::Unloaded),
+                    error_message: Signal::new(String::new()),
+                    dirty: Signal::new(false),
+                    ctx,
+                }),
+            };
+            s.refresh();
+            s
+        }
+
+        pub fn id(&self) -> Option<u64> {
+            self.inner.id.get()
+        }
+        pub fn role(&self) -> ContentRole {
+            self.inner.role.borrow().clone()
+        }
+        pub fn data(&self) -> Signal<String> {
+            self.inner.data.clone()
+        }
+        pub fn loading_status(&self) -> Signal<LoadingStatus> {
+            self.inner.loading_status.clone()
+        }
+        pub fn error_message(&self) -> Signal<String> {
+            self.inner.error_message.clone()
+        }
+        pub fn dirty(&self) -> Signal<bool> {
+            self.inner.dirty.clone()
+        }
+
+        /// Stage new content (e.g. the editor's `to_djot()` or a title field's
+        /// value). Marks dirty only on a genuine change.
+        pub fn set_data(&self, v: String) {
+            if self.inner.data.get() != v {
+                self.inner.dirty.set(true);
+                self.inner.data.set(v);
+            }
+        }
+
+        /// Persist staged content on the undo `stack` — **create** the row if it
+        /// has no id yet (remembering the new id + `created_at`), else **update**
+        /// it (preserving `created_at`). No-op when clean. Role-aware by
+        /// construction: a handle only ever writes its own `ContentRole`.
+        pub fn save(&self, stack: Option<u64>) -> anyhow::Result<()> {
+            if !self.inner.dirty.get() {
+                return Ok(());
+            }
+            let ctx = &*self.inner.ctx;
+            let now = chrono::Utc::now();
+            let role = self.inner.role.borrow().clone();
+            let data = self.inner.data.get();
+            match self.inner.id.get() {
+                Some(id) => {
+                    content_commands::update_content(
+                        ctx,
+                        stack,
+                        &UpdateContentDto {
+                            id,
+                            created_at: self.inner.created_at.get(),
+                            updated_at: now,
+                            activated: true,
+                            role,
+                            data,
+                        },
+                    )?;
+                }
+                None => {
+                    let Some(item_id) = self.inner.item_id.get() else {
+                        anyhow::bail!("cannot create a content row without an owning item");
+                    };
+                    let created = content_commands::create_content(
+                        ctx,
+                        stack,
+                        &CreateContentDto {
+                            created_at: now,
+                            updated_at: now,
+                            activated: true,
+                            role,
+                            data,
+                        },
+                        item_id,
+                        0,
+                    )?;
+                    self.inner.id.set(Some(created.id));
+                    self.inner.created_at.set(now);
+                }
+            }
+            self.inner.dirty.set(false);
+            self.inner.loading_status.set(LoadingStatus::Loaded);
+            Ok(())
+        }
+
+        /// Auto-refresh the persisted `data` when this row changes elsewhere. The
+        /// editor owns its live document, so it does NOT wire this for an open tab
+        /// (snapshot-at-open); read-only consumers do. Call once from a long-lived
+        /// widget's `build`.
+        pub fn wire(&self, ctx: &mut BuildContext) {
+            let s = self.clone();
+            ctx.subscribe_event(
+                Origin::DirectAccess(DirectAccessEntity::Content(EntityEvent::Updated)),
+                move |event: &Event| {
+                    if s.inner
+                        .id
+                        .get()
+                        .map(|id| event.ids.contains(&id))
+                        .unwrap_or(false)
+                    {
+                        s.refresh();
+                    }
+                },
+            );
+        }
+
+        fn refresh(&self) {
+            let Some(id) = self.inner.id.get() else {
+                return;
+            };
+            match content_commands::get_content(&self.inner.ctx, &id) {
+                Ok(Some(c)) => {
+                    *self.inner.role.borrow_mut() = c.role;
+                    self.inner.created_at.set(c.created_at);
+                    self.inner.data.set(c.data);
+                    self.inner.dirty.set(false);
+                    self.inner.error_message.set(String::new());
+                    self.inner.loading_status.set(LoadingStatus::Loaded);
+                }
+                Ok(None) => {
+                    self.inner.id.set(None);
+                    self.inner.loading_status.set(LoadingStatus::Unloaded);
+                }
+                Err(e) => {
+                    self.inner.error_message.set(e.to_string());
+                    self.inner.loading_status.set(LoadingStatus::Error);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(feature = "mocks")]
+mod imp {
+    use std::cell::{Cell, RefCell};
+    use std::rc::Rc;
+
+    use bastyde::prelude::*;
+
+    use frontend::AppContext;
+    use frontend::common::entities::ContentRole;
+    use frontend::direct_access::ContentDto;
+
+    use crate::singles::LoadingStatus;
+
+    struct Inner {
+        role: RefCell<ContentRole>,
+        id: Cell<Option<u64>>,
+        data: Signal<String>,
+        loading_status: Signal<LoadingStatus>,
+        error_message: Signal<String>,
+        dirty: Signal<bool>,
+    }
+
+    #[derive(Clone)]
+    pub struct SingleContent {
+        inner: Rc<Inner>,
+    }
+
+    #[allow(dead_code)] // identical surface to the real variant; some unused under mocks
+    impl SingleContent {
+        pub fn for_field(
+            _ctx: Rc<AppContext>,
+            _item_id: u64,
+            role: ContentRole,
+            existing: Option<&ContentDto>,
+        ) -> Self {
+            let (id, data) = match existing {
+                Some(c) => (Some(c.id), c.data.clone()),
+                None => (None, String::new()),
+            };
+            Self {
+                inner: Rc::new(Inner {
+                    role: RefCell::new(role),
+                    id: Cell::new(id),
+                    data: Signal::new(data),
+                    loading_status: Signal::new(LoadingStatus::Loaded),
+                    error_message: Signal::new(String::new()),
+                    dirty: Signal::new(false),
+                }),
+            }
+        }
+
+        pub fn from_id(_ctx: Rc<AppContext>, id: u64) -> Self {
+            Self {
+                inner: Rc::new(Inner {
+                    role: RefCell::new(ContentRole::default()),
+                    id: Cell::new(Some(id)),
+                    data: Signal::new("Mock content".to_string()),
+                    loading_status: Signal::new(LoadingStatus::Loaded),
+                    error_message: Signal::new(String::new()),
+                    dirty: Signal::new(false),
+                }),
+            }
+        }
+
+        pub fn id(&self) -> Option<u64> {
+            self.inner.id.get()
+        }
+        pub fn role(&self) -> ContentRole {
+            self.inner.role.borrow().clone()
+        }
+        pub fn data(&self) -> Signal<String> {
+            self.inner.data.clone()
+        }
+        pub fn loading_status(&self) -> Signal<LoadingStatus> {
+            self.inner.loading_status.clone()
+        }
+        pub fn error_message(&self) -> Signal<String> {
+            self.inner.error_message.clone()
+        }
+        pub fn dirty(&self) -> Signal<bool> {
+            self.inner.dirty.clone()
+        }
+
+        pub fn set_data(&self, v: String) {
+            if self.inner.data.get() != v {
+                self.inner.dirty.set(true);
+                self.inner.data.set(v);
+            }
+        }
+
+        pub fn save(&self, _stack: Option<u64>) -> anyhow::Result<()> {
+            self.inner.dirty.set(false);
+            Ok(())
+        }
+
+        pub fn wire(&self, _ctx: &mut BuildContext) {}
+    }
+}
+
+pub use imp::SingleContent;
