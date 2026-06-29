@@ -16,19 +16,12 @@ pub struct SaveResultDto {
     pub output_path: String,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct MigrateToSkribFileDto {
+pub struct SaveAsDto {
     pub file_name: String,
+    pub as_folder: bool,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct MigrateFileResultDto {
-    pub output_path: String,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct MigrateToSkribFolderDto {
-    pub folder_path: String,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct MigrateFolderResultDto {
+pub struct SaveAsResultDto {
     pub output_path: String,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

@@ -39,7 +39,8 @@ pub fn detect_shape(path: &str) -> Result<SkribShape> {
     let mut magic = [0u8; 16];
     let n = {
         let mut f = std::fs::File::open(p).with_context(|| format!("opening '{path}'"))?;
-        f.read(&mut magic).with_context(|| format!("reading '{path}'"))?
+        f.read(&mut magic)
+            .with_context(|| format!("reading '{path}'"))?
     };
     let head = &magic[..n];
 
@@ -59,7 +60,9 @@ pub fn folder_root(path: &str) -> PathBuf {
     if p.is_dir() {
         p.to_path_buf()
     } else if p.file_name().and_then(|n| n.to_str()) == Some(MANIFEST_NAME) {
-        p.parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."))
+        p.parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| PathBuf::from("."))
     } else {
         p.to_path_buf()
     }

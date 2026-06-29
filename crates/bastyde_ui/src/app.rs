@@ -40,16 +40,25 @@ pub struct App {
     /// The outline view-model is created in `main` (the title-bar menu needs a
     /// handle to it for the reactive checkmark) and shared with `App`.
     outline: OutlineViewModel,
+    /// Plain mirror of the persisted autosave setting, read by the title-bar menu
+    /// (outside `App`) to hide the manual "Save" item. `App::build` mirrors the
+    /// store-backed setting into it.
+    autosave_menu: Signal<bool>,
     /// Created once on first build (its column-width signal needs `ctx.settings()`).
     editors: Option<EditorsViewModel>,
     root_child: Option<WidgetId>,
 }
 
 impl App {
-    pub fn new(app_ctx: Rc<AppContext>, outline: OutlineViewModel) -> Self {
+    pub fn new(
+        app_ctx: Rc<AppContext>,
+        outline: OutlineViewModel,
+        autosave_menu: Signal<bool>,
+    ) -> Self {
         Self {
             app_ctx,
             outline,
+            autosave_menu,
             editors: None,
             root_child: None,
         }
@@ -210,6 +219,26 @@ impl Widget for App {
             );
         }
 
+        // On work close: forget the ids, empty the tree, drop the tabs, and clear
+        // the singles (the store no longer holds the work).
+        {
+            let ids = ids.clone();
+            let outline = outline.clone();
+            let editors = editors.clone();
+            let single_work = single_work.clone();
+            let single_work_info = single_work_info.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::CloseWork),
+                move |_event: &Event| {
+                    ids.clear();
+                    outline.reload();
+                    editors.close_all();
+                    single_work.set_id(None);
+                    single_work_info.set_id(None);
+                },
+            );
+        }
+
         // App mediates the two peer view-models: *activating* a binder item
         // (click or Enter — NOT arrow navigation, which only moves the selection)
         // opens (or focuses) its editor tab. The tree fires this via
@@ -230,6 +259,54 @@ impl Widget for App {
                 editors.flush_all();
                 editors.sync_active_item();
             });
+        }
+
+        // ── Autosave ─────────────────────────────────────────────────────────
+        // Mirror the persisted setting into the menu's plain signal (the title-bar
+        // menu lives outside `App` and can't read `ctx.settings()`).
+        {
+            self.autosave_menu.set(settings.autosave().get());
+            let menu = self.autosave_menu.clone();
+            ctx.effect(&settings.autosave(), move |a| menu.set(*a));
+        }
+        // Debounced autosave-to-disk: each edit (re)schedules a one-shot wake
+        // ~1.5 s out; when it fires (and autosave is still on) we save. `wake_at`
+        // keeps the loop asleep until the deadline (no 60 fps drain); the
+        // `frame_tick` effect only runs on the frames that actually pump.
+        {
+            use std::time::{Duration, Instant};
+            let deadline: Rc<std::cell::Cell<Option<Instant>>> =
+                Rc::new(std::cell::Cell::new(None));
+            let wake = ctx.wake_at_handle();
+            let autosave = settings.autosave();
+            {
+                let deadline = deadline.clone();
+                let wake = wake.clone();
+                let autosave = autosave.clone();
+                ctx.effect(&editors.edited_signal(), move |_| {
+                    if autosave.get() {
+                        let at = Instant::now() + Duration::from_millis(1500);
+                        deadline.set(Some(at));
+                        wake.set(Some(at));
+                    }
+                });
+            }
+            {
+                let editors = editors.clone();
+                let deadline = deadline.clone();
+                let tick = ctx.frame_tick();
+                ctx.effect(&tick, move |_| {
+                    let Some(at) = deadline.get() else { return };
+                    if Instant::now() >= at {
+                        deadline.set(None);
+                        if autosave.get() {
+                            editors.save_to_disk();
+                        }
+                    } else {
+                        wake.set(Some(at));
+                    }
+                });
+            }
         }
         let active_item = editors.active_item();
 

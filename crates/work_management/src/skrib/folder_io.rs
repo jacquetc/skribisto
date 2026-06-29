@@ -38,8 +38,7 @@ fn write_if_changed(path: &Path, bytes: &[u8]) -> Result<bool> {
     let parent = path
         .parent()
         .ok_or_else(|| anyhow::anyhow!("no parent dir for {}", path.display()))?;
-    fs::create_dir_all(parent)
-        .with_context(|| format!("creating {}", parent.display()))?;
+    fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
     let mut tmp = NamedTempFile::new_in(parent)
         .with_context(|| format!("temp file in {}", parent.display()))?;
     tmp.write_all(bytes)
@@ -57,8 +56,14 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
 
     // Work-level manifests.
     write_if_changed(&root.join("tags.ron"), to_ron(&bundle.tags)?.as_bytes())?;
-    write_if_changed(&root.join("dictionary.ron"), to_ron(&bundle.dict_words)?.as_bytes())?;
-    write_if_changed(&root.join("trash.ron"), to_ron(&bundle.trash_infos)?.as_bytes())?;
+    write_if_changed(
+        &root.join("dictionary.ron"),
+        to_ron(&bundle.dict_words)?.as_bytes(),
+    )?;
+    write_if_changed(
+        &root.join("trash.ron"),
+        to_ron(&bundle.trash_infos)?.as_bytes(),
+    )?;
 
     let mut expected_binder_dirs: BTreeSet<String> = BTreeSet::new();
 
@@ -67,8 +72,7 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         expected_binder_dirs.insert(dir_name.clone());
         let bdir = binders_dir.join(&dir_name);
         let tdir = bdir.join("text");
-        fs::create_dir_all(&tdir)
-            .with_context(|| format!("creating {}", tdir.display()))?;
+        fs::create_dir_all(&tdir).with_context(|| format!("creating {}", tdir.display()))?;
 
         // Prose blobs + the set of expected `.djot` file names.
         let mut expected_prose: BTreeSet<String> = BTreeSet::new();
@@ -100,7 +104,10 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
     prune_binder_dirs(&binders_dir, &expected_binder_dirs)?;
 
     // Commit point — written last.
-    write_if_changed(&root.join(MANIFEST_NAME), to_ron(&bundle.manifest)?.as_bytes())?;
+    write_if_changed(
+        &root.join(MANIFEST_NAME),
+        to_ron(&bundle.manifest)?.as_bytes(),
+    )?;
     Ok(())
 }
 
@@ -177,10 +184,19 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
             }
             items.push(BundledItem { item, prose });
         }
-        binders.push(BundledBinder { binder: itf.binder, items });
+        binders.push(BundledBinder {
+            binder: itf.binder,
+            items,
+        });
     }
 
-    Ok(WorkBundle { manifest, tags, dict_words, trash_infos, binders })
+    Ok(WorkBundle {
+        manifest,
+        tags,
+        dict_words,
+        trash_infos,
+        binders,
+    })
 }
 
 fn read_ron_vec<T: DeserializeOwned>(path: &Path, what: &str) -> Result<Vec<T>> {

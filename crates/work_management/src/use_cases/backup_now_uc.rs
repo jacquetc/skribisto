@@ -48,7 +48,10 @@ impl LongOperation for BackupNowUseCase {
 
         let uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        let work_info: Option<WorkInfo> = uow.get_all_work_info().ok().and_then(|v| v.into_iter().next());
+        let work_info: Option<WorkInfo> = uow
+            .get_all_work_info()
+            .ok()
+            .and_then(|v| v.into_iter().next());
         uow.end_transaction()?;
 
         let source = work_info
@@ -63,9 +66,7 @@ impl LongOperation for BackupNowUseCase {
 
         uow.publish_backup_now_event(vec![], None);
         progress_callback(OperationProgress::new(100.0, Some("completed".to_string())));
-        Ok(BackupResultDto {
-            backup_path,
-        })
+        Ok(BackupResultDto { backup_path })
     }
 }
 

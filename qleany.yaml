@@ -286,7 +286,7 @@ features:
       fields:
       - name: output_path
         type: string
-  - name: migrate_to_skrib_file
+  - name: save_as
     entities:
     - Work
     - Binder
@@ -299,34 +299,14 @@ features:
     undoable: false
     long_operation: true
     dto_in:
-      name: MigrateToSkribFileDto
+      name: SaveAsDto
       fields:
       - name: file_name
         type: string
+      - name: as_folder
+        type: boolean
     dto_out:
-      name: MigrateFileResultDto
-      fields:
-      - name: output_path
-        type: string
-  - name: migrate_to_skrib_folder
-    entities:
-    - Work
-    - Binder
-    - BinderItem
-    - BinderTag
-    - Content
-    - DictWord
-    - TrashInfo
-    - WorkInfo
-    undoable: false
-    long_operation: true
-    dto_in:
-      name: MigrateToSkribFolderDto
-      fields:
-      - name: folder_path
-        type: string
-    dto_out:
-      name: MigrateFolderResultDto
+      name: SaveAsResultDto
       fields:
       - name: output_path
         type: string
@@ -349,7 +329,13 @@ features:
   - name: close_work
     entities:
     - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
     - TrashInfo
+    - WorkInfo
     undoable: false
   - name: new_work
     entities:

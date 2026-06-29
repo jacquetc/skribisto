@@ -1,7 +1,7 @@
 //! Round-trip, validation, and diff-minimal tests for the `.skrib` serializer.
 
-use super::*;
 use super::bundle::{BinderWithItems, ItemWithContents};
+use super::*;
 use chrono::{DateTime, Utc};
 use common::entities::{
     Binder, BinderItem, BinderItemRole, BinderItemSubRole, BinderTag, Content, ContentRole,
@@ -51,7 +51,13 @@ fn prose_text(role: &ContentRole) -> String {
 
 /// Build a fixture covering every combination, with each item carrying exactly
 /// its allowed content roles. `content_id` is bumped to keep ids unique.
-fn sample_inputs() -> (Work, Vec<BinderTag>, Vec<DictWord>, Vec<TrashInfo>, Vec<BinderWithItems>) {
+fn sample_inputs() -> (
+    Work,
+    Vec<BinderTag>,
+    Vec<DictWord>,
+    Vec<TrashInfo>,
+    Vec<BinderWithItems>,
+) {
     let now = ts();
     let work = Work {
         id: 1,
@@ -65,12 +71,36 @@ fn sample_inputs() -> (Work, Vec<BinderTag>, Vec<DictWord>, Vec<TrashInfo>, Vec<
         binders: vec![100],
     };
     let tags = vec![
-        BinderTag { id: 10, created_at: now, updated_at: now, name: "Important".into(), color: "#f00".into(), text_color: "#fff".into() },
-        BinderTag { id: 11, created_at: now, updated_at: now, name: "Idea".into(), color: "#0f0".into(), text_color: "#000".into() },
+        BinderTag {
+            id: 10,
+            created_at: now,
+            updated_at: now,
+            name: "Important".into(),
+            color: "#f00".into(),
+            text_color: "#fff".into(),
+        },
+        BinderTag {
+            id: 11,
+            created_at: now,
+            updated_at: now,
+            name: "Idea".into(),
+            color: "#0f0".into(),
+            text_color: "#000".into(),
+        },
     ];
     let dict_words = vec![
-        DictWord { id: 20, created_at: now, updated_at: now, word: "Skribisto".into() },
-        DictWord { id: 21, created_at: now, updated_at: now, word: "Bastyde".into() },
+        DictWord {
+            id: 20,
+            created_at: now,
+            updated_at: now,
+            word: "Skribisto".into(),
+        },
+        DictWord {
+            id: 21,
+            created_at: now,
+            updated_at: now,
+            word: "Bastyde".into(),
+        },
     ];
 
     let mut items = Vec::new();
@@ -116,13 +146,36 @@ fn sample_inputs() -> (Work, Vec<BinderTag>, Vec<DictWord>, Vec<TrashInfo>, Vec<
     items[0].item.references = vec![301];
 
     let binders = vec![BinderWithItems {
-        binder: Binder { id: 100, created_at: now, updated_at: now, name: "Manuscript".into(), activated: true, binder_items: Vec::new() },
+        binder: Binder {
+            id: 100,
+            created_at: now,
+            updated_at: now,
+            name: "Manuscript".into(),
+            activated: true,
+            binder_items: Vec::new(),
+        },
         items,
     }];
 
     let trash = vec![
-        TrashInfo { id: 200, created_at: now, updated_at: now, trashed_at: now, origin_binder_id: 100, trashed_binder: Option::None, trashed_binder_item: Some(305) },
-        TrashInfo { id: 201, created_at: now, updated_at: now, trashed_at: now, origin_binder_id: 0, trashed_binder: Some(999), trashed_binder_item: Option::None },
+        TrashInfo {
+            id: 200,
+            created_at: now,
+            updated_at: now,
+            trashed_at: now,
+            origin_binder_id: 100,
+            trashed_binder: Option::None,
+            trashed_binder_item: Some(305),
+        },
+        TrashInfo {
+            id: 201,
+            created_at: now,
+            updated_at: now,
+            trashed_at: now,
+            origin_binder_id: 0,
+            trashed_binder: Some(999),
+            trashed_binder_item: Option::None,
+        },
     ];
 
     (work, tags, dict_words, trash, binders)
@@ -152,7 +205,12 @@ fn folder_save_creates_named_subfolder_not_parent() {
     let bundle = build_bundle(ShapeTag::Folder);
     let parent = tempfile::tempdir().unwrap();
     let target = parent.path().join("My Novel");
-    write_bundle(target.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    write_bundle(
+        target.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle,
+    )
+    .unwrap();
     assert!(
         target.join("project.skrib").exists(),
         "manifest must be in the named subfolder"
@@ -169,7 +227,10 @@ fn zip_round_trip_matches_folder() {
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("MyNovel.skrib");
     write_bundle(target.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
-    assert_eq!(detect_shape(target.to_str().unwrap()).unwrap(), SkribShape::ZipFile);
+    assert_eq!(
+        detect_shape(target.to_str().unwrap()).unwrap(),
+        SkribShape::ZipFile
+    );
     let read = read_bundle(target.to_str().unwrap()).unwrap();
     assert_eq!(bundle, read);
 }
@@ -187,7 +248,10 @@ fn every_item_validates() {
                 .chain(bi.item.prose_refs.iter().map(|p| p.role.clone()))
                 .collect();
             validate_item(&bi.item.role, &bi.item.sub_role, &present).unwrap_or_else(|e| {
-                panic!("{:?}/{:?} failed validation: {e:?}", bi.item.role, bi.item.sub_role)
+                panic!(
+                    "{:?}/{:?} failed validation: {e:?}",
+                    bi.item.role, bi.item.sub_role
+                )
             });
         }
     }
@@ -208,19 +272,54 @@ fn disallowed_content_is_dropped() {
         ..Default::default()
     };
     let contents = vec![
-        Content { id: 1, created_at: now, updated_at: now, activated: true, role: ContentRole::SceneText, data: "ok".into() },
-        Content { id: 2, created_at: now, updated_at: now, activated: true, role: ContentRole::NoteText, data: "illegal".into() },
+        Content {
+            id: 1,
+            created_at: now,
+            updated_at: now,
+            activated: true,
+            role: ContentRole::SceneText,
+            data: "ok".into(),
+        },
+        Content {
+            id: 2,
+            created_at: now,
+            updated_at: now,
+            activated: true,
+            role: ContentRole::NoteText,
+            data: "illegal".into(),
+        },
     ];
-    let work = Work { id: 1, created_at: now, updated_at: now, binders: vec![100], ..Default::default() };
+    let work = Work {
+        id: 1,
+        created_at: now,
+        updated_at: now,
+        binders: vec![100],
+        ..Default::default()
+    };
     let binders = vec![BinderWithItems {
-        binder: Binder { id: 100, created_at: now, updated_at: now, name: "M".into(), activated: true, binder_items: Vec::new() },
+        binder: Binder {
+            id: 100,
+            created_at: now,
+            updated_at: now,
+            name: "M".into(),
+            activated: true,
+            binder_items: Vec::new(),
+        },
         items: vec![ItemWithContents { item, contents }],
     }];
     let bundle = from_entities(&work, &[], &[], &[], &binders, ShapeTag::Folder);
     let f = &bundle.binders[0].items[0].item;
-    assert!(f.prose_refs.iter().all(|p| p.role == ContentRole::SceneText));
+    assert!(
+        f.prose_refs
+            .iter()
+            .all(|p| p.role == ContentRole::SceneText)
+    );
     assert!(f.inline_contents.is_empty());
-    assert_eq!(f.prose_refs.len(), 1, "NoteText must be dropped for a Scene");
+    assert_eq!(
+        f.prose_refs.len(),
+        1,
+        "NoteText must be dropped for a Scene"
+    );
 }
 
 /// Recursively snapshot every file's bytes + mtime under `root`.
@@ -229,9 +328,18 @@ fn snapshot(root: &Path) -> BTreeMap<String, (std::time::SystemTime, Vec<u8>)> {
     for entry in walkdir::WalkDir::new(root) {
         let entry = entry.unwrap();
         if entry.file_type().is_file() {
-            let rel = entry.path().strip_prefix(root).unwrap().to_str().unwrap().to_string();
+            let rel = entry
+                .path()
+                .strip_prefix(root)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
             let meta = entry.metadata().unwrap();
-            map.insert(rel, (meta.modified().unwrap(), fs::read(entry.path()).unwrap()));
+            map.insert(
+                rel,
+                (meta.modified().unwrap(), fs::read(entry.path()).unwrap()),
+            );
         }
     }
     map
@@ -251,11 +359,7 @@ fn writes_are_diff_minimal() {
     write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
     let after_noop = snapshot(&root);
     for (rel, (mtime, _)) in &before {
-        assert_eq!(
-            *mtime,
-            after_noop[rel].0,
-            "no-op save rewrote {rel}"
-        );
+        assert_eq!(*mtime, after_noop[rel].0, "no-op save rewrote {rel}");
     }
 
     // Edit exactly one scene's prose; only that .djot blob may change.
@@ -272,7 +376,11 @@ fn writes_are_diff_minimal() {
         .keys()
         .filter(|rel| before[*rel].1 != after_edit[*rel].1)
         .collect();
-    assert_eq!(changed.len(), 1, "exactly one file should change, got {changed:?}");
+    assert_eq!(
+        changed.len(),
+        1,
+        "exactly one file should change, got {changed:?}"
+    );
     assert!(
         changed[0].contains(&target_id.to_string()),
         "the changed file {} should be the edited scene's .djot",

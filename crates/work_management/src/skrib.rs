@@ -19,14 +19,14 @@ mod migration;
 mod reader;
 mod shape;
 mod slug;
-mod writer;
-mod zip_io;
 #[cfg(test)]
 mod tests;
+mod writer;
+mod zip_io;
 
-pub use bundle::{BinderWithItems, ItemWithContents, ShapeTag};
 #[cfg(test)]
 pub use bundle::WorkBundle;
+pub use bundle::{BinderWithItems, ItemWithContents, ShapeTag};
 pub use loaded::{LoadedBinder, LoadedItem, LoadedTrash, LoadedWork};
 pub use mapping::{bundle_to_loaded, from_entities};
 pub use reader::read_bundle;
@@ -52,7 +52,10 @@ impl From<SkribShape> for Option<ShapeTag> {
 pub fn copy_bundle(src: &str, dst: &str) -> Result<()> {
     match shape::detect_shape(src)? {
         SkribShape::ZipFile | SkribShape::LegacySqlite => {
-            if let Some(p) = Path::new(dst).parent().filter(|p| !p.as_os_str().is_empty()) {
+            if let Some(p) = Path::new(dst)
+                .parent()
+                .filter(|p| !p.as_os_str().is_empty())
+            {
                 std::fs::create_dir_all(p)?;
             }
             std::fs::copy(src, dst)?;

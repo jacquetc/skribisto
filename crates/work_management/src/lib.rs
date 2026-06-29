@@ -4,8 +4,8 @@
 pub mod dtos;
 mod skrib;
 mod units_of_work;
-mod work_io;
 pub(crate) mod use_cases;
+mod work_io;
 pub mod work_management_controller;
 
 #[cfg(test)]

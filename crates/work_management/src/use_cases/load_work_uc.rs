@@ -10,6 +10,7 @@
 // `create_trunk` builds the non-undoable System/RecentWork/WorkInfo/Root frame.
 use crate::LoadWorkDto;
 use crate::skrib::{self, LoadedWork, SkribShape};
+use crate::work_io::{self, WorkCloser};
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::database::CommandUnitOfWork;
@@ -51,8 +52,97 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "Root", action = "SetRelationship")]
+// Clearing actions: opening a work first closes the currently-open one (shared
+// with close_work via `work_io::close_current_work`).
+#[macros::uow_action(entity = "Work", action = "GetAll")]
+#[macros::uow_action(entity = "Work", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Binder", action = "GetAll")]
+#[macros::uow_action(entity = "Binder", action = "RemoveMulti")]
+#[macros::uow_action(entity = "BinderItem", action = "GetAll")]
+#[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]
+#[macros::uow_action(entity = "BinderTag", action = "GetAll")]
+#[macros::uow_action(entity = "BinderTag", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Content", action = "GetAll")]
+#[macros::uow_action(entity = "Content", action = "RemoveMulti")]
+#[macros::uow_action(entity = "DictWord", action = "GetAll")]
+#[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
+#[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
+#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
+#[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
+#[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 pub trait LoadWorkUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_load_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
+}
+
+impl<'a> WorkCloser for dyn LoadWorkUnitOfWorkTrait + 'a {
+    fn work_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self.get_all_work()?.into_iter().map(|e| e.id).collect())
+    }
+    fn binder_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self.get_all_binder()?.into_iter().map(|e| e.id).collect())
+    }
+    fn item_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_binder_item()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn content_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self.get_all_content()?.into_iter().map(|e| e.id).collect())
+    }
+    fn tag_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_binder_tag()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn dict_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_dict_word()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn trash_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_trash_info()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn work_info_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_work_info()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn remove_works(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_work_multi(ids)
+    }
+    fn remove_binders(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_binder_multi(ids)
+    }
+    fn remove_items(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_binder_item_multi(ids)
+    }
+    fn remove_contents(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_content_multi(ids)
+    }
+    fn remove_tags(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_binder_tag_multi(ids)
+    }
+    fn remove_dicts(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_dict_word_multi(ids)
+    }
+    fn remove_trashes(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_trash_info_multi(ids)
+    }
+    fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_work_info_multi(ids)
+    }
 }
 
 pub struct LoadWorkUseCase {
@@ -83,9 +173,13 @@ impl LoadWorkUseCase {
             }
         };
 
-        // Stage 2: materialise entities in a single transaction.
+        // Stage 2: materialise entities in a single transaction. First close the
+        // currently-open work (no-op on a fresh store) — opening a work replaces
+        // it. Shared helper, NOT a use-case call (use cases never call each other).
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
+
+        work_io::close_current_work(&*uow)?;
 
         let mat = materialize(&*uow, &loaded)?;
         create_trunk(&*uow, &loaded, &mat, &dto.file_name, shape, now)?;
@@ -266,7 +360,10 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
                 &[b],
             )?;
         }
-        if let Some(it) = t.trashed_binder_item.and_then(|i| item_map.get(&i).copied()) {
+        if let Some(it) = t
+            .trashed_binder_item
+            .and_then(|i| item_map.get(&i).copied())
+        {
             uow.set_trash_info_relationship(
                 &info.id,
                 &TrashInfoRelationshipField::TrashedBinderItem,
@@ -495,12 +592,12 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
     let references: Vec<(u64, u64)> = p
         .references
         .iter()
-        .filter_map(|(src, dst)| {
-            match (item_map.get(src).copied(), item_map.get(dst).copied()) {
+        .filter_map(
+            |(src, dst)| match (item_map.get(src).copied(), item_map.get(dst).copied()) {
                 (Some(s), Some(d)) => Some((s, d)),
                 _ => None,
-            }
-        })
+            },
+        )
         .collect();
 
     LoadedWork {

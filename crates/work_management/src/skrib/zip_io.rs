@@ -69,7 +69,8 @@ pub fn zip_dir(src_dir: &Path, target: &Path) -> Result<()> {
             zw.add_directory(format!("{name}/"), opts)?;
         } else {
             zw.start_file(name, opts)?;
-            let bytes = std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
+            let bytes =
+                std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
             zw.write_all(&bytes)?;
         }
     }

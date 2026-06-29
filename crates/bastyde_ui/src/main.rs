@@ -31,9 +31,7 @@ use frontend::EventHubClient;
 use frontend::commands::{work_info_commands, work_management_commands};
 use frontend::common::entities::WorkShape;
 use frontend::common::event::{Event, Origin};
-use frontend::work_management::{
-    BackupNowDto, LoadWorkDto, MigrateToSkribFileDto, MigrateToSkribFolderDto,
-};
+use frontend::work_management::{BackupNowDto, LoadWorkDto, SaveAsDto};
 
 use app::App;
 use app_ids::AppIds;
@@ -116,6 +114,8 @@ pub const LOCALE_KEY: &str = "ui.locale";
 /// Max width (px) of the centered main-text writing column.
 pub const EDITOR_WIDTH_KEY: &str = "editor.column_width";
 pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;
+/// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
+pub const AUTOSAVE_KEY: &str = "editor.autosave";
 
 /// Adapts the Qleany-generated `EventHubClient` to Bastyde's `EventSource`
 /// (orphan rule prevents implementing the trait directly on the client).
@@ -147,7 +147,7 @@ fn main() {
 
     // Read persisted UI prefs before constructing the app (same AppPaths the
     // builder will use via `.application(...)`).
-    let (dark, locale_str) = read_prefs();
+    let (dark, locale_str, autosave_init) = read_prefs();
 
     let theme = if dark { intui::dark() } else { intui::light() };
 
@@ -177,6 +177,10 @@ fn main() {
     // title-bar menu can bind its reactive checkmark and the whole app can reach
     // it via `ctx.app_state::<OutlineViewModel>()`.
     let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
+    // The title-bar menu lives outside `App` (no `ctx.settings()` there), so the
+    // autosave setting is mirrored into this plain signal by `App::build` and read
+    // by the menu to hide the "Save" item. Seeded from the persisted value.
+    let autosave_menu = Signal::new(autosave_init);
     BastydeAppBuilder::new()
         .theme(theme)
         .application("eu", "skribisto", "Skribisto")
@@ -208,12 +212,16 @@ fn main() {
                             let menu_ctx = app_ctx_root.clone();
                             let menu_work = single_work.clone();
                             let menu_work_info = single_work_info.clone();
+                            let menu_autosave = autosave_menu.clone();
                             let menu = MenuModel::new().menu(lit!("File"), move |m| {
                                 let open_ctx = menu_ctx.clone();
                                 let file_ctx = menu_ctx.clone();
                                 let folder_ctx = menu_ctx.clone();
                                 let backup_ctx = menu_ctx.clone();
+                                let close_ctx = menu_ctx.clone();
                                 let folder_work = menu_work.clone();
+                                // A work is open iff its WorkInfo shape is known.
+                                let show_open = menu_work_info.shape().map(|s| s.is_some());
                                 // Bug 2: offer only the *other* shape — a zip project
                                 // shows "Save as folder", a folder project shows
                                 // "Save as single file". Both collapse when no
@@ -223,6 +231,9 @@ fn main() {
                                     menu_work_info.shape().map(|s| *s == Some(WorkShape::Folder));
                                 let show_save_folder =
                                     menu_work_info.shape().map(|s| *s == Some(WorkShape::Zip));
+                                // Autosave hides the manual "Save" item (+ its Ctrl+S
+                                // accelerator); the save then runs on the debounce timer.
+                                let show_manual_save = menu_autosave.map(|a| !*a);
                                 m.item(MenuEntry::new(lit!("Open Work…")).on_activate(
                                     move |ectx| {
                                         let ctx = open_ctx.clone();
@@ -248,6 +259,7 @@ fn main() {
                                 // Flush editors to the store + write to disk (also Ctrl+S).
                                 .item(
                                     MenuEntry::new(lit!("Save"))
+                                        .visible(show_manual_save)
                                         .intent("editor.save")
                                         .shortcut("editor.save"),
                                 )
@@ -263,10 +275,11 @@ fn main() {
                                         let _ = ectx.save_file(req, move |res, ectx2| {
                                             if let FileDialogResult::Saved(Some(path)) = res {
                                                 let target = path.to_string_lossy().into_owned();
-                                                match work_management_commands::migrate_to_skrib_file(
+                                                match work_management_commands::save_as(
                                                     &ctx,
-                                                    &MigrateToSkribFileDto {
+                                                    &SaveAsDto {
                                                         file_name: target.clone(),
+                                                        as_folder: false,
                                                     },
                                                 ) {
                                                     Ok(_) => ectx2.show_toast(Toast::info(lit!(
@@ -304,10 +317,11 @@ fn main() {
                                                     .join(&name)
                                                     .to_string_lossy()
                                                     .into_owned();
-                                                match work_management_commands::migrate_to_skrib_folder(
+                                                match work_management_commands::save_as(
                                                     &ctx,
-                                                    &MigrateToSkribFolderDto {
-                                                        folder_path: target.clone(),
+                                                    &SaveAsDto {
+                                                        file_name: target.clone(),
+                                                        as_folder: true,
                                                     },
                                                 ) {
                                                     Ok(_) => ectx2.show_toast(Toast::info(lit!(
@@ -337,6 +351,21 @@ fn main() {
                                         }
                                     },
                                 ))
+                                // Close the open work (clears the in-memory store).
+                                .item(
+                                    MenuEntry::new(lit!("Close Work"))
+                                        .visible(show_open)
+                                        .on_activate(move |ectx| {
+                                            match work_management_commands::close_work(&close_ctx) {
+                                                Ok(_) => ectx.show_toast(Toast::info(lit!(
+                                                    "Work closed"
+                                                ))),
+                                                Err(e) => ectx.show_toast(Toast::error(lit!(
+                                                    format!("{e}")
+                                                ))),
+                                            };
+                                        }),
+                                )
                                 .separator()
                                 .item(MenuEntry::new(lit!("Settings")).on_activate(|ectx| {
                                     ectx.present_modal(
@@ -403,7 +432,11 @@ fn main() {
                     };
 
                     let body =
-                        tree.add(Expand::new().child(App::new(app_ctx_root.clone(), outline.clone())));
+                        tree.add(Expand::new().child(App::new(
+                            app_ctx_root.clone(),
+                            outline.clone(),
+                            autosave_menu.clone(),
+                        )));
                     let inner =
                         tree.add(VStack::new().spacing(0.0).add_child(title_bar).add_child(body));
 
@@ -425,9 +458,9 @@ fn main() {
 }
 
 /// Best-effort read of persisted theme/locale; defaults if anything is missing.
-fn read_prefs() -> (bool, String) {
+fn read_prefs() -> (bool, String, bool) {
     let Some(paths) = AppPaths::new("eu", "skribisto", "Skribisto") else {
-        return (false, "en-US".to_string());
+        return (false, "en-US".to_string(), false);
     };
     // `config_file` appends `.toml`, and the settings bundle opens its K/V
     // store under the name "general" (-> general.toml). Pass the bare name
@@ -437,8 +470,9 @@ fn read_prefs() -> (bool, String) {
         Ok(store) => (
             store.signal(DARK_KEY, false).get(),
             store.signal(LOCALE_KEY, "en-US".to_string()).get(),
+            store.signal(AUTOSAVE_KEY, false).get(),
         ),
-        Err(_) => (false, "en-US".to_string()),
+        Err(_) => (false, "en-US".to_string(), false),
     }
 }
 

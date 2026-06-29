@@ -67,7 +67,11 @@ impl QueryUnitOfWork for SaveWorkUnitOfWork {
 #[macros::uow_action(entity = "Binder", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipRO", thread_safe = true)]
 #[macros::uow_action(entity = "BinderItem", action = "GetMultiRO", thread_safe = true)]
-#[macros::uow_action(entity = "BinderItem", action = "GetRelationshipRO", thread_safe = true)]
+#[macros::uow_action(
+    entity = "BinderItem",
+    action = "GetRelationshipRO",
+    thread_safe = true
+)]
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO", thread_safe = true)]

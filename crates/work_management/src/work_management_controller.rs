@@ -3,26 +3,22 @@
 use crate::BackupNowDto;
 use crate::BackupResultDto;
 use crate::LoadWorkDto;
-use crate::MigrateFileResultDto;
-use crate::MigrateFolderResultDto;
-use crate::MigrateToSkribFileDto;
-use crate::MigrateToSkribFolderDto;
 use crate::NewWorkDto;
+use crate::SaveAsDto;
+use crate::SaveAsResultDto;
 use crate::SaveResultDto;
 use crate::SaveWorkDto;
 use crate::units_of_work::backup_now_uow::BackupNowUnitOfWorkFactory;
 use crate::units_of_work::close_work_uow::CloseWorkUnitOfWorkFactory;
 use crate::units_of_work::load_work_uow::LoadWorkUnitOfWorkFactory;
-use crate::units_of_work::migrate_to_skrib_file_uow::MigrateToSkribFileUnitOfWorkFactory;
-use crate::units_of_work::migrate_to_skrib_folder_uow::MigrateToSkribFolderUnitOfWorkFactory;
 use crate::units_of_work::new_work_uow::NewWorkUnitOfWorkFactory;
+use crate::units_of_work::save_as_uow::SaveAsUnitOfWorkFactory;
 use crate::units_of_work::save_work_uow::SaveWorkUnitOfWorkFactory;
 use crate::use_cases::backup_now_uc::BackupNowUseCase;
 use crate::use_cases::close_work_uc::CloseWorkUseCase;
 use crate::use_cases::load_work_uc::LoadWorkUseCase;
-use crate::use_cases::migrate_to_skrib_file_uc::MigrateToSkribFileUseCase;
-use crate::use_cases::migrate_to_skrib_folder_uc::MigrateToSkribFolderUseCase;
 use crate::use_cases::new_work_uc::NewWorkUseCase;
+use crate::use_cases::save_as_uc::SaveAsUseCase;
 use crate::use_cases::save_work_uc::SaveWorkUseCase;
 use anyhow::Result;
 
@@ -77,29 +73,29 @@ pub fn get_save_work_result(
     Ok(Some(result_dto))
 }
 
-pub fn migrate_to_skrib_file(
+pub fn save_as(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
     long_operation_manager: &mut LongOperationManager,
-    dto: &MigrateToSkribFileDto,
+    dto: &SaveAsDto,
 ) -> Result<String> {
-    let uow_context = MigrateToSkribFileUnitOfWorkFactory::new(db_context, event_hub);
-    let uc = MigrateToSkribFileUseCase::new(Box::new(uow_context), dto);
+    let uow_context = SaveAsUnitOfWorkFactory::new(db_context, event_hub);
+    let uc = SaveAsUseCase::new(Box::new(uow_context), dto);
     let operation_id = long_operation_manager.start_operation(uc);
     Ok(operation_id)
 }
 
-pub fn get_migrate_to_skrib_file_progress(
+pub fn get_save_as_progress(
     long_operation_manager: &LongOperationManager,
     operation_id: &str,
 ) -> Option<OperationProgress> {
     long_operation_manager.get_operation_progress(operation_id)
 }
 
-pub fn get_migrate_to_skrib_file_result(
+pub fn get_save_as_result(
     long_operation_manager: &LongOperationManager,
     operation_id: &str,
-) -> Result<Option<MigrateFileResultDto>> {
+) -> Result<Option<SaveAsResultDto>> {
     // Get the operation result as a JSON string
     let result_json = long_operation_manager.get_operation_result(operation_id);
 
@@ -107,44 +103,8 @@ pub fn get_migrate_to_skrib_file_result(
     if result_json.is_none() {
         return Ok(None);
     }
-    // Parse the JSON string into a MigrateFileResultDto
-    let result_dto: MigrateFileResultDto = serde_json::from_str(&result_json.unwrap())?;
-
-    Ok(Some(result_dto))
-}
-
-pub fn migrate_to_skrib_folder(
-    db_context: &DbContext,
-    event_hub: &Arc<EventHub>,
-    long_operation_manager: &mut LongOperationManager,
-    dto: &MigrateToSkribFolderDto,
-) -> Result<String> {
-    let uow_context = MigrateToSkribFolderUnitOfWorkFactory::new(db_context, event_hub);
-    let uc = MigrateToSkribFolderUseCase::new(Box::new(uow_context), dto);
-    let operation_id = long_operation_manager.start_operation(uc);
-    Ok(operation_id)
-}
-
-pub fn get_migrate_to_skrib_folder_progress(
-    long_operation_manager: &LongOperationManager,
-    operation_id: &str,
-) -> Option<OperationProgress> {
-    long_operation_manager.get_operation_progress(operation_id)
-}
-
-pub fn get_migrate_to_skrib_folder_result(
-    long_operation_manager: &LongOperationManager,
-    operation_id: &str,
-) -> Result<Option<MigrateFolderResultDto>> {
-    // Get the operation result as a JSON string
-    let result_json = long_operation_manager.get_operation_result(operation_id);
-
-    // If there's no result, return None
-    if result_json.is_none() {
-        return Ok(None);
-    }
-    // Parse the JSON string into a MigrateFolderResultDto
-    let result_dto: MigrateFolderResultDto = serde_json::from_str(&result_json.unwrap())?;
+    // Parse the JSON string into a SaveAsResultDto
+    let result_dto: SaveAsResultDto = serde_json::from_str(&result_json.unwrap())?;
 
     Ok(Some(result_dto))
 }

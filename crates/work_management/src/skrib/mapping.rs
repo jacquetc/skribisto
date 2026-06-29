@@ -3,9 +3,7 @@
 
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
-use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work,
-};
+use common::entities::{Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work};
 use skribisto_model::content_allowed;
 use std::collections::BTreeMap;
 
@@ -249,7 +247,11 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
             }
             for pr in &f.prose_refs {
                 let data = bi.prose.get(&pr.file_id).cloned().ok_or_else(|| {
-                    anyhow::anyhow!("missing prose blob for content {} ({})", pr.file_id, pr.path)
+                    anyhow::anyhow!(
+                        "missing prose blob for content {} ({})",
+                        pr.file_id,
+                        pr.path
+                    )
                 })?;
                 contents.push(Content {
                     id: pr.file_id,

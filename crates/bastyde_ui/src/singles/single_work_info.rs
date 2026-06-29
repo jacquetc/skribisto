@@ -90,18 +90,18 @@ mod imp {
                     }
                 },
             );
-            // A migrate rewrites WorkInfo.shape for the *same* id — re-read it so
-            // the "Save as…" menu flips immediately after a conversion.
-            for ev in [
-                WorkManagementEvent::MigrateToSkribFile,
-                WorkManagementEvent::MigrateToSkribFolder,
-            ] {
+            // A Save As rewrites WorkInfo.shape/file_name for the *same* id —
+            // re-read it so the "Save as…" menu flips immediately after a save.
+            {
                 let s = self.clone();
-                ctx.subscribe_event(Origin::WorkManagement(ev), move |_event: &Event| {
-                    if s.inner.id.get().is_some() {
-                        s.refresh();
-                    }
-                });
+                ctx.subscribe_event(
+                    Origin::WorkManagement(WorkManagementEvent::SaveAs),
+                    move |_event: &Event| {
+                        if s.inner.id.get().is_some() {
+                            s.refresh();
+                        }
+                    },
+                );
             }
         }
 

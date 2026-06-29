@@ -80,6 +80,9 @@ pub struct ContentTab {
     /// reactively from the editors' `on_change`; cleared by [`flush`](Self::flush).
     /// Drives autosave + the unsaved-state read.
     pub dirty: Signal<bool>,
+    /// Shared "an edit happened" counter (set by `EditorsViewModel` so every open
+    /// tab bumps the same signal) — drives the debounced autosave timer.
+    pub edited: Option<Signal<u64>>,
     pub column_width: Signal<f32>,
 }
 
@@ -147,6 +150,7 @@ pub fn tab_for(
         synopsis: None,
         segment: Signal::new(0),
         dirty: Signal::new(false),
+        edited: None,
         column_width,
     };
     for cr in skribisto_model::allowed_content(role, sub_role) {
@@ -208,7 +212,13 @@ impl ContentTab {
     /// time, so they don't need a change hook).
     pub fn mark_dirty_fn(&self) -> impl Fn() + 'static {
         let dirty = self.dirty.clone();
-        move || dirty.set(true)
+        let edited = self.edited.clone();
+        move || {
+            dirty.set(true);
+            if let Some(e) = &edited {
+                e.set(e.get().wrapping_add(1));
+            }
+        }
     }
 }
 

@@ -85,40 +85,103 @@ fn sample_bundle() -> WorkBundle {
         binders: vec![100, 101],
     };
     let tags = vec![
-        BinderTag { id: 10, created_at: ts(), updated_at: ts(), name: "Important".into(), color: "#f00".into(), text_color: "#fff".into() },
-        BinderTag { id: 11, created_at: ts(), updated_at: ts(), name: "Idea".into(), color: "#0f0".into(), text_color: "#000".into() },
+        BinderTag {
+            id: 10,
+            created_at: ts(),
+            updated_at: ts(),
+            name: "Important".into(),
+            color: "#f00".into(),
+            text_color: "#fff".into(),
+        },
+        BinderTag {
+            id: 11,
+            created_at: ts(),
+            updated_at: ts(),
+            name: "Idea".into(),
+            color: "#0f0".into(),
+            text_color: "#000".into(),
+        },
     ];
-    let dict_words = vec![DictWord { id: 20, created_at: ts(), updated_at: ts(), word: "Skribisto".into() }];
+    let dict_words = vec![DictWord {
+        id: 20,
+        created_at: ts(),
+        updated_at: ts(),
+        word: "Skribisto".into(),
+    }];
 
     let manuscript = BinderWithItems {
-        binder: Binder { id: 100, created_at: ts(), updated_at: ts(), name: "Manuscript".into(), activated: true, binder_items: Vec::new() },
+        binder: Binder {
+            id: 100,
+            created_at: ts(),
+            updated_at: ts(),
+            name: "Manuscript".into(),
+            activated: true,
+            binder_items: Vec::new(),
+        },
         items: vec![
-            item(300, "The Lighthouse", Folder, Book, vec![
-                content(400, BookTitle, "The Lighthouse"),
-                content(401, BookSubtitle, "A Novel"),
-                content(402, SynopsisText, "A keeper and a storm."),
-            ]),
-            item(301, "Chapter One", Folder, Chapter, vec![
-                content(410, ChapterTitle, "Chapter One"),
-                content(411, SynopsisText, "Arrival."),
-            ]),
-            item(302, "The ferry", Item, Scene, vec![
-                content(420, SceneText, "The ferry pitched in the swell."),
-                content(421, SynopsisText, "They cross."),
-            ]),
-            item(303, "Into the Dark", Item, ChapterScene, vec![
-                content(430, ChapterTitle, "Chapter Two"),
-                content(431, SceneText, "The light failed at midnight."),
-                content(432, SynopsisText, "The storm hits."),
-            ]),
+            item(
+                300,
+                "The Lighthouse",
+                Folder,
+                Book,
+                vec![
+                    content(400, BookTitle, "The Lighthouse"),
+                    content(401, BookSubtitle, "A Novel"),
+                    content(402, SynopsisText, "A keeper and a storm."),
+                ],
+            ),
+            item(
+                301,
+                "Chapter One",
+                Folder,
+                Chapter,
+                vec![
+                    content(410, ChapterTitle, "Chapter One"),
+                    content(411, SynopsisText, "Arrival."),
+                ],
+            ),
+            item(
+                302,
+                "The ferry",
+                Item,
+                Scene,
+                vec![
+                    content(420, SceneText, "The ferry pitched in the swell."),
+                    content(421, SynopsisText, "They cross."),
+                ],
+            ),
+            item(
+                303,
+                "Into the Dark",
+                Item,
+                ChapterScene,
+                vec![
+                    content(430, ChapterTitle, "Chapter Two"),
+                    content(431, SceneText, "The light failed at midnight."),
+                    content(432, SynopsisText, "The storm hits."),
+                ],
+            ),
         ],
     };
     let characters = BinderWithItems {
-        binder: Binder { id: 101, created_at: ts(), updated_at: ts(), name: "Characters".into(), activated: true, binder_items: Vec::new() },
-        items: vec![item(320, "Mara Vance", Item, Note, vec![
-            content(500, NoteText, "The keeper's daughter."),
-            content(501, SynopsisText, "Protagonist."),
-        ])],
+        binder: Binder {
+            id: 101,
+            created_at: ts(),
+            updated_at: ts(),
+            name: "Characters".into(),
+            activated: true,
+            binder_items: Vec::new(),
+        },
+        items: vec![item(
+            320,
+            "Mara Vance",
+            Item,
+            Note,
+            vec![
+                content(500, NoteText, "The keeper's daughter."),
+                content(501, SynopsisText, "Protagonist."),
+            ],
+        )],
     };
 
     let trash = vec![TrashInfo {
@@ -131,7 +194,14 @@ fn sample_bundle() -> WorkBundle {
         trashed_binder_item: Some(302),
     }];
 
-    skrib::from_entities(&work, &tags, &dict_words, &trash, &[manuscript, characters], ShapeTag::Folder)
+    skrib::from_entities(
+        &work,
+        &tags,
+        &dict_words,
+        &trash,
+        &[manuscript, characters],
+        ShapeTag::Folder,
+    )
 }
 
 // Id-free structural projection for comparison across the store round-trip.
@@ -250,14 +320,19 @@ fn save_load_round_trip_through_store() {
     work_management_controller::load_work(
         &db,
         &hub,
-        &LoadWorkDto { file_name: src.to_str().unwrap().to_string() },
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
     )
     .expect("load_work");
 
     // 3. Save the store back out to a different folder (run the long op inline).
     let uc = SaveWorkUseCase::new(
         Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
-        &SaveWorkDto { file_name: dst.to_str().unwrap().to_string(), overwrite: true },
+        &SaveWorkDto {
+            file_name: dst.to_str().unwrap().to_string(),
+            overwrite: true,
+        },
     );
     let result = uc
         .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))

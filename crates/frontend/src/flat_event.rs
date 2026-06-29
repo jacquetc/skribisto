@@ -59,8 +59,7 @@ pub enum FlatEventKind {
     // Per-feature use case events
     WorkManagementLoadWork,
     WorkManagementSaveWork,
-    WorkManagementMigrateToSkribFile,
-    WorkManagementMigrateToSkribFolder,
+    WorkManagementSaveAs,
     WorkManagementBackupNow,
     WorkManagementCloseWork,
     WorkManagementNewWork,
@@ -184,12 +183,7 @@ impl From<Event> for FlatEvent {
             Origin::WorkManagement(fe) => match fe {
                 WorkManagementEvent::LoadWork => FlatEventKind::WorkManagementLoadWork,
                 WorkManagementEvent::SaveWork => FlatEventKind::WorkManagementSaveWork,
-                WorkManagementEvent::MigrateToSkribFile => {
-                    FlatEventKind::WorkManagementMigrateToSkribFile
-                }
-                WorkManagementEvent::MigrateToSkribFolder => {
-                    FlatEventKind::WorkManagementMigrateToSkribFolder
-                }
+                WorkManagementEvent::SaveAs => FlatEventKind::WorkManagementSaveAs,
                 WorkManagementEvent::BackupNow => FlatEventKind::WorkManagementBackupNow,
                 WorkManagementEvent::CloseWork => FlatEventKind::WorkManagementCloseWork,
                 WorkManagementEvent::NewWork => FlatEventKind::WorkManagementNewWork,

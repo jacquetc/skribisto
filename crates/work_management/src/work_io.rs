@@ -42,6 +42,48 @@ pub struct Gathered {
     pub work_info: Option<WorkInfo>,
 }
 
+/// The write surface needed to clear the open work from the store: list every id
+/// of each entity type and remove them. Implemented per use case's
+/// `dyn …UnitOfWorkTrait` (the generated `get_all_*` / `remove_*_multi` names are
+/// identical), so [`close_current_work`] lives **once** and is reused by
+/// `close_work` AND inline at the top of `load_work` — opening a work closes the
+/// current one without one use case calling another.
+pub trait WorkCloser {
+    fn work_ids(&self) -> Result<Vec<EntityId>>;
+    fn binder_ids(&self) -> Result<Vec<EntityId>>;
+    fn item_ids(&self) -> Result<Vec<EntityId>>;
+    fn content_ids(&self) -> Result<Vec<EntityId>>;
+    fn tag_ids(&self) -> Result<Vec<EntityId>>;
+    fn dict_ids(&self) -> Result<Vec<EntityId>>;
+    fn trash_ids(&self) -> Result<Vec<EntityId>>;
+    fn work_info_ids(&self) -> Result<Vec<EntityId>>;
+    fn remove_works(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_binders(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_items(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_contents(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_tags(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_dicts(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_trashes(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()>;
+}
+
+/// Clear the open work from the in-memory store — every entity under `Root→Work`
+/// plus the System-side `WorkInfo`/`TrashInfo` — leaving `Root`, `System` and the
+/// `RecentWork` list intact. `remove_multi` cleans each parent's backward
+/// junction, so no dangling relationship remains. Children are removed before
+/// parents. A no-op when the store is empty (the first load).
+pub fn close_current_work<C: WorkCloser + ?Sized>(c: &C) -> Result<()> {
+    c.remove_contents(&c.content_ids()?)?;
+    c.remove_items(&c.item_ids()?)?;
+    c.remove_binders(&c.binder_ids()?)?;
+    c.remove_tags(&c.tag_ids()?)?;
+    c.remove_dicts(&c.dict_ids()?)?;
+    c.remove_trashes(&c.trash_ids()?)?;
+    c.remove_work_infos(&c.work_info_ids()?)?;
+    c.remove_works(&c.work_ids()?)?;
+    Ok(())
+}
+
 /// Read the single open Work, its tags/dict-words/trash, and every binder →
 /// item → content in order, hydrating each entity's relationship id vectors
 /// (which `get` does not populate). Honours `cancel`; reports `progress`.
@@ -80,7 +122,8 @@ pub fn gather<R: TreeReader + ?Sized>(
         let mut items = Vec::with_capacity(item_entities.len());
         for mut item in item_entities {
             item.contents = reader.item_rel(&item.id, &BinderItemRelationshipField::Contents)?;
-            item.references = reader.item_rel(&item.id, &BinderItemRelationshipField::References)?;
+            item.references =
+                reader.item_rel(&item.id, &BinderItemRelationshipField::References)?;
             item.tags = reader.item_rel(&item.id, &BinderItemRelationshipField::Tags)?;
             let contents = fetch_multi(&item.contents, |ids| reader.content_multi(ids))?;
             items.push(ItemWithContents { item, contents });

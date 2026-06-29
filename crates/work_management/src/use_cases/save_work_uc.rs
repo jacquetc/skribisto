@@ -11,7 +11,9 @@ use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work, WorkInfo};
+use common::entities::{
+    Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work, WorkInfo,
+};
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
 use std::sync::Arc;

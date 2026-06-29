@@ -61,7 +61,7 @@ use crate::app_ids::AppIds;
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, CommitMove};
 use crate::singles::{SingleBinder, SingleBinderItem};
 use crate::tabs::{self, ContentTab};
-use crate::{DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, LOCALE_KEY};
+use crate::{AUTOSAVE_KEY, DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, LOCALE_KEY};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EditorsViewModel — the open-editor tab set and the open/focus/close logic.
@@ -85,6 +85,9 @@ pub struct EditorsViewModel {
     /// Reactive read handle re-pointed at an item when opening its tab — supplies
     /// the `(role, sub_role)` that selects the tab layout (Layer A single).
     item_probe: SingleBinderItem,
+    /// Bumped by every open tab's editor `on_change` — the edit signal the
+    /// debounced autosave timer (in `App`) observes.
+    edited: Signal<u64>,
 }
 
 impl EditorsViewModel {
@@ -101,7 +104,13 @@ impl EditorsViewModel {
             active_item: Signal::new(None),
             column_width,
             stack_id,
+            edited: Signal::new(0),
         }
+    }
+
+    /// The "an edit happened" signal — bind the debounced autosave to it.
+    pub fn edited_signal(&self) -> Signal<u64> {
+        self.edited.clone()
     }
 
     /// The dynamic-tab model to hand to `TabWidget::dynamic_model`.
@@ -163,7 +172,7 @@ impl EditorsViewModel {
             return;
         };
         let contents = self.load_contents(item_id, &item.role, &item.sub_role);
-        let tab = tabs::tab_for(
+        let mut tab = tabs::tab_for(
             &self.app_ctx,
             item_id,
             &item.role,
@@ -171,6 +180,9 @@ impl EditorsViewModel {
             &contents,
             self.column_width.clone(),
         );
+        // Every tab bumps the shared edit signal, so the autosave timer sees edits
+        // from whichever tab is active.
+        tab.edited = Some(self.edited.clone());
         let label = if title.is_empty() { "Untitled" } else { title };
         let id = TabId::fresh();
         self.tabs.push(TabHandle::dynamic(
@@ -840,6 +852,7 @@ pub struct SettingsViewModel {
     dark: Signal<bool>,
     locale: Signal<String>,
     column_width: Signal<f32>,
+    autosave: Signal<bool>,
 }
 
 // Accessors/setters are the feature's public API; bound to widgets incrementally.
@@ -850,7 +863,14 @@ impl SettingsViewModel {
             dark: store.signal(DARK_KEY, false),
             locale: store.signal(LOCALE_KEY, "en-US".to_string()),
             column_width: store.signal(EDITOR_WIDTH_KEY, EDITOR_WIDTH_DEFAULT),
+            autosave: store.signal(AUTOSAVE_KEY, false),
         }
+    }
+
+    /// Whether to autosave to disk (hides the manual Save affordances when on).
+    /// Store-backed, so toggling it persists.
+    pub fn autosave(&self) -> Signal<bool> {
+        self.autosave.clone()
     }
 
     // ── reactive accessors for binding ──

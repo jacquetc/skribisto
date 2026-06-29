@@ -127,6 +127,22 @@ impl CommandUnitOfWork for LoadWorkUnitOfWork {
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "Root", action = "SetRelationship")]
+#[macros::uow_action(entity = "Work", action = "GetAll")]
+#[macros::uow_action(entity = "Work", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Binder", action = "GetAll")]
+#[macros::uow_action(entity = "Binder", action = "RemoveMulti")]
+#[macros::uow_action(entity = "BinderItem", action = "GetAll")]
+#[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]
+#[macros::uow_action(entity = "BinderTag", action = "GetAll")]
+#[macros::uow_action(entity = "BinderTag", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Content", action = "GetAll")]
+#[macros::uow_action(entity = "Content", action = "RemoveMulti")]
+#[macros::uow_action(entity = "DictWord", action = "GetAll")]
+#[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
+#[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
+#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
+#[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
+#[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 impl LoadWorkUnitOfWorkTrait for LoadWorkUnitOfWork {
     fn publish_load_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

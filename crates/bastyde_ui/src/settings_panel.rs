@@ -8,7 +8,9 @@ use bastyde::core::styles::PanelVariant;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
-use bastyde::widgets::{Button, Divider, HStack, MinSize, Panel, Slider, TextWidget, VStack};
+use bastyde::widgets::{
+    Button, Divider, HStack, MinSize, Panel, Slider, TextWidget, Toggle, VStack,
+};
 
 use crate::view_models::SettingsViewModel;
 
@@ -79,6 +81,10 @@ impl Widget for SettingsPanel {
                         Slider::new(column_width, 400.0, 1200.0) {
                             step: 20.0
                         }
+                    }
+                    Divider
+                    Toggle::new(settings.autosave()) {
+                        label: lit!("Autosave to disk")
                     }
                 }
             }

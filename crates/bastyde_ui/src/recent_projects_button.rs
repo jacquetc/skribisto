@@ -143,9 +143,7 @@ impl Widget for RecentProjectsButton {
                                 file_name: path.clone(),
                             },
                         ) {
-                            ctx.show_toast(Toast::error(lit!(format!(
-                                "Could not open work: {e}"
-                            ))));
+                            ctx.show_toast(Toast::error(lit!(format!("Could not open work: {e}"))));
                         }
                     });
 

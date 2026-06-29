@@ -62,6 +62,14 @@ impl AppIds {
         let id = undo_redo_commands::create_new_stack(ctx);
         self.stack_id.set(Some(id));
     }
+
+    /// Forget all ids — no work is open. Call on `CloseWork`.
+    pub fn clear(&self) {
+        self.root_id.set(None);
+        self.work_id.set(None);
+        self.work_info_id.set(None);
+        self.stack_id.set(None);
+    }
 }
 
 /// The id of the first element of a `get_all_*` result, if any.

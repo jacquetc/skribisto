@@ -3,7 +3,6 @@
 pub(crate) mod backup_now_uc;
 pub(crate) mod close_work_uc;
 pub(crate) mod load_work_uc;
-pub(crate) mod migrate_to_skrib_file_uc;
-pub(crate) mod migrate_to_skrib_folder_uc;
 pub(crate) mod new_work_uc;
+pub(crate) mod save_as_uc;
 pub(crate) mod save_work_uc;

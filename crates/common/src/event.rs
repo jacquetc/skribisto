@@ -59,8 +59,7 @@ pub enum DirectAccessEntity {
 pub enum WorkManagementEvent {
     LoadWork,
     SaveWork,
-    MigrateToSkribFile,
-    MigrateToSkribFolder,
+    SaveAs,
     BackupNow,
     CloseWork,
     NewWork,

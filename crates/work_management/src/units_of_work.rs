@@ -3,7 +3,6 @@
 pub(crate) mod backup_now_uow;
 pub(crate) mod close_work_uow;
 pub(crate) mod load_work_uow;
-pub(crate) mod migrate_to_skrib_file_uow;
-pub(crate) mod migrate_to_skrib_folder_uow;
 pub(crate) mod new_work_uow;
+pub(crate) mod save_as_uow;
 pub(crate) mod save_work_uow;

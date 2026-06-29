@@ -5,7 +5,9 @@ use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{TrashInfo, Work};
+use common::entities::{
+    Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work, WorkInfo,
+};
 use common::event::WorkManagementEvent::CloseWork;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -107,14 +109,22 @@ impl CommandUnitOfWork for CloseWorkUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/close_work_uc.rs
 //
-#[macros::uow_action(entity = "Work", action = "Get")]
-#[macros::uow_action(entity = "Work", action = "GetMulti")]
-#[macros::uow_action(entity = "Work", action = "Snapshot")]
-#[macros::uow_action(entity = "Work", action = "Restore")]
-#[macros::uow_action(entity = "TrashInfo", action = "Get")]
-#[macros::uow_action(entity = "TrashInfo", action = "GetMulti")]
-#[macros::uow_action(entity = "TrashInfo", action = "Snapshot")]
-#[macros::uow_action(entity = "TrashInfo", action = "Restore")]
+#[macros::uow_action(entity = "Work", action = "GetAll")]
+#[macros::uow_action(entity = "Work", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Binder", action = "GetAll")]
+#[macros::uow_action(entity = "Binder", action = "RemoveMulti")]
+#[macros::uow_action(entity = "BinderItem", action = "GetAll")]
+#[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]
+#[macros::uow_action(entity = "BinderTag", action = "GetAll")]
+#[macros::uow_action(entity = "BinderTag", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Content", action = "GetAll")]
+#[macros::uow_action(entity = "Content", action = "RemoveMulti")]
+#[macros::uow_action(entity = "DictWord", action = "GetAll")]
+#[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
+#[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
+#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
+#[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
+#[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 impl CloseWorkUnitOfWorkTrait for CloseWorkUnitOfWork {
     fn publish_close_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

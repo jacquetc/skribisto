@@ -5,9 +5,8 @@
 use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use work_management::{
-    BackupNowDto, BackupResultDto, LoadWorkDto, MigrateFileResultDto, MigrateFolderResultDto,
-    MigrateToSkribFileDto, MigrateToSkribFolderDto, NewWorkDto, SaveResultDto, SaveWorkDto,
-    work_management_controller,
+    BackupNowDto, BackupResultDto, LoadWorkDto, NewWorkDto, SaveAsDto, SaveAsResultDto,
+    SaveResultDto, SaveWorkDto, work_management_controller,
 };
 
 use common::long_operation::OperationProgress;
@@ -44,72 +43,32 @@ pub fn get_save_work_result(ctx: &AppContext, operation_id: &str) -> Result<Opti
     .context("getting save_work result")
 }
 
-/// migrate_to_skrib_file (long operation)
-pub fn migrate_to_skrib_file(ctx: &AppContext, dto: &MigrateToSkribFileDto) -> Result<String> {
-    work_management_controller::migrate_to_skrib_file(
+/// save_as (long operation)
+pub fn save_as(ctx: &AppContext, dto: &SaveAsDto) -> Result<String> {
+    work_management_controller::save_as(
         &ctx.db_context,
         &ctx.event_hub,
         &mut ctx.long_operation_manager.lock().unwrap(),
         dto,
     )
-    .context("migrate_to_skrib_file")
+    .context("save_as")
 }
 
-/// Get the progress of a migrate_to_skrib_file operation
-pub fn get_migrate_to_skrib_file_progress(
-    ctx: &AppContext,
-    operation_id: &str,
-) -> Option<OperationProgress> {
-    work_management_controller::get_migrate_to_skrib_file_progress(
+/// Get the progress of a save_as operation
+pub fn get_save_as_progress(ctx: &AppContext, operation_id: &str) -> Option<OperationProgress> {
+    work_management_controller::get_save_as_progress(
         &ctx.long_operation_manager.lock().unwrap(),
         operation_id,
     )
 }
 
-/// Get the result of a migrate_to_skrib_file operation
-pub fn get_migrate_to_skrib_file_result(
-    ctx: &AppContext,
-    operation_id: &str,
-) -> Result<Option<MigrateFileResultDto>> {
-    work_management_controller::get_migrate_to_skrib_file_result(
+/// Get the result of a save_as operation
+pub fn get_save_as_result(ctx: &AppContext, operation_id: &str) -> Result<Option<SaveAsResultDto>> {
+    work_management_controller::get_save_as_result(
         &ctx.long_operation_manager.lock().unwrap(),
         operation_id,
     )
-    .context("getting migrate_to_skrib_file result")
-}
-
-/// migrate_to_skrib_folder (long operation)
-pub fn migrate_to_skrib_folder(ctx: &AppContext, dto: &MigrateToSkribFolderDto) -> Result<String> {
-    work_management_controller::migrate_to_skrib_folder(
-        &ctx.db_context,
-        &ctx.event_hub,
-        &mut ctx.long_operation_manager.lock().unwrap(),
-        dto,
-    )
-    .context("migrate_to_skrib_folder")
-}
-
-/// Get the progress of a migrate_to_skrib_folder operation
-pub fn get_migrate_to_skrib_folder_progress(
-    ctx: &AppContext,
-    operation_id: &str,
-) -> Option<OperationProgress> {
-    work_management_controller::get_migrate_to_skrib_folder_progress(
-        &ctx.long_operation_manager.lock().unwrap(),
-        operation_id,
-    )
-}
-
-/// Get the result of a migrate_to_skrib_folder operation
-pub fn get_migrate_to_skrib_folder_result(
-    ctx: &AppContext,
-    operation_id: &str,
-) -> Result<Option<MigrateFolderResultDto>> {
-    work_management_controller::get_migrate_to_skrib_folder_result(
-        &ctx.long_operation_manager.lock().unwrap(),
-        operation_id,
-    )
-    .context("getting migrate_to_skrib_folder result")
+    .context("getting save_as result")
 }
 
 /// backup_now (long operation)
