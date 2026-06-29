@@ -2,12 +2,12 @@
 schema:
   version: 5
 global:
-  language: rust
+  language: cpp-qt
   application_name: Skribisto
   organisation:
     name: skribisto
     domain: skribisto.eu
-  prefix_path: crates
+  prefix_path: src
 entities:
 - name: EntityBase
   only_for_heritage: true
@@ -62,12 +62,6 @@ entities:
   - name: file_name
     type: string
     optional: true
-  - name: shape
-    type: enum
-    enum_name: WorkShape
-    enum_values:
-      - Zip
-      - Folder
   undoable: false
 - name: RecentWork
   inherits_from: EntityBase
@@ -152,25 +146,9 @@ entities:
   - name: sub_title
     type: string
   - name: role
-    type: enum
-    enum_name: BinderItemRole
-    enum_values:
-      - Item
-      - Folder
+    type: string
   - name: sub_role
-    type: enum
-    enum_name: BinderItemSubRole
-    enum_values:
-      - Text
-      - None
-      - Note
-      - Book
-      - Part
-      - Chapter
-      - Scene
-      - ChapterScene
-      - BookBegin
-      - BookEnd
+    type: string
   - name: label
     type: string
   - name: activated
@@ -220,16 +198,7 @@ entities:
   - name: activated
     type: boolean
   - name: role
-    type: enum
-    enum_name: ContentRole
-    enum_values:
-      - SceneText
-      - NoteText
-      - SynopsisText
-      - BookTitle
-      - BookSubtitle
-      - PartTitle
-      - ChapterTitle
+    type: string
   - name: data
     type: string
   undoable: true
@@ -247,7 +216,6 @@ features:
     - Root
     - System
     - RecentWork
-    - WorkInfo
     - Work
     - TrashInfo
     - Binder
@@ -262,18 +230,7 @@ features:
       - name: file_name
         type: string
   - name: save_work
-    entities:
-    - Work
-    - Binder
-    - BinderItem
-    - BinderTag
-    - Content
-    - DictWord
-    - TrashInfo
-    - WorkInfo
     undoable: false
-    read_only: true
-    long_operation: true
     dto_in:
       name: SaveWorkDto
       fields:
@@ -281,71 +238,6 @@ features:
         type: string
       - name: overwrite
         type: boolean
-    dto_out:
-      name: SaveResultDto
-      fields:
-      - name: output_path
-        type: string
-  - name: migrate_to_skrib_file
-    entities:
-    - Work
-    - Binder
-    - BinderItem
-    - BinderTag
-    - Content
-    - DictWord
-    - TrashInfo
-    - WorkInfo
-    undoable: false
-    long_operation: true
-    dto_in:
-      name: MigrateToSkribFileDto
-      fields:
-      - name: file_name
-        type: string
-    dto_out:
-      name: MigrateFileResultDto
-      fields:
-      - name: output_path
-        type: string
-  - name: migrate_to_skrib_folder
-    entities:
-    - Work
-    - Binder
-    - BinderItem
-    - BinderTag
-    - Content
-    - DictWord
-    - TrashInfo
-    - WorkInfo
-    undoable: false
-    long_operation: true
-    dto_in:
-      name: MigrateToSkribFolderDto
-      fields:
-      - name: folder_path
-        type: string
-    dto_out:
-      name: MigrateFolderResultDto
-      fields:
-      - name: output_path
-        type: string
-  - name: backup_now
-    entities:
-    - WorkInfo
-    undoable: false
-    read_only: true
-    long_operation: true
-    dto_in:
-      name: BackupNowDto
-      fields:
-      - name: directory
-        type: string
-    dto_out:
-      name: BackupResultDto
-      fields:
-      - name: backup_path
-        type: string
   - name: close_work
     entities:
     - Work
@@ -403,7 +295,7 @@ features:
     - TrashInfo
     - BinderItem
     - Content
-    undoable: true
+    undoable: false
     dto_in:
       name: TrashBinderItemsDto
       fields:
@@ -419,7 +311,7 @@ features:
     - Binder
     - BinderItem
     - Content
-    undoable: true
+    undoable: false
     dto_in:
       name: TrashBinderDto
       fields:
@@ -432,7 +324,7 @@ features:
     - Binder
     - BinderItem
     - Content
-    undoable: true
+    undoable: false
     dto_in:
       name: RestoreItemsDto
       fields:
@@ -453,7 +345,7 @@ features:
     - Binder
     - BinderItem
     - Content
-    undoable: true
+    undoable: false
 - name: binder_item_management
   use_cases:
   - name: duplicate
@@ -488,8 +380,6 @@ features:
       - name: target_id
         type: uinteger
         optional: true
-      - name: target_is_binder
-        type: boolean
       - name: move_place
         type: enum
         enum_name: MovePlace
@@ -509,3 +399,4 @@ features:
     undoable: false
 ui:
   rust_cli: false
+  cpp_qt_qtquick: true
