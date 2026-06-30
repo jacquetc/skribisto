@@ -21,8 +21,9 @@ use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/
 use bastyde::res;
 use bastyde::settings::{AppPaths, SettingsStore};
 use bastyde::widgets::{
-    CollapsePolicy, Expand, IconButtonSize, MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar,
-    Toast, VStack, WindowFrame, framework_locales,
+    CollapsePolicy, EventContextMessageBoxExt, Expand, IconButtonSize, MenuBar, MenuEntry,
+    MenuModel, MessageBox, MessageBoxButtons, StandardButton, TextWidget, TitleBar, Toast, VStack,
+    WindowFrame, framework_locales,
 };
 use recent_projects_button::RecentProjectsButton;
 
@@ -33,7 +34,7 @@ use frontend::common::entities::WorkShape;
 use frontend::common::event::{Event, Origin};
 use frontend::work_management::{BackupNowDto, LoadWorkDto, SaveAsDto};
 
-use app::App;
+use app::{App, PendingExit};
 use app_ids::AppIds;
 use settings_panel::SettingsPanel;
 use singles::{SingleWork, SingleWorkInfo};
@@ -181,6 +182,10 @@ fn main() {
     // autosave setting is mirrored into this plain signal by `App::build` and read
     // by the menu to hide the "Save" item. Seeded from the persisted value.
     let autosave_menu = Signal::new(autosave_init);
+    // Exit-guard state shared between the window close guard / Close Work menu and
+    // `App` (which maintains `unsaved` and performs the deferred close on save).
+    let unsaved = Signal::new(false);
+    let pending_exit = Signal::new(PendingExit::None);
     BastydeAppBuilder::new()
         .theme(theme)
         .application("eu", "skribisto", "Skribisto")
@@ -200,6 +205,39 @@ fn main() {
                 .title("Skribisto")
                 .size(1200, 800)
                 .decorations(DecorationsMode::CustomChrome)
+                // Unsaved-changes guard for every interactive close (title-bar X,
+                // Alt+F4, and the Quit menu — all route through `close_window()`).
+                // Autosave on: just ensure the save runs, then close (no prompt).
+                // Autosave off + unsaved: Save / Discard / Cancel. The save is
+                // async, so we veto now and `App` re-issues the close on SaveWork.
+                .on_close_requested({
+                    let unsaved = unsaved.clone();
+                    let autosave = autosave_menu.clone();
+                    let pending = pending_exit.clone();
+                    move |ctx| {
+                        if !unsaved.get() {
+                            return CloseResponse::Close;
+                        }
+                        if autosave.get() {
+                            pending.set(PendingExit::CloseWindow);
+                            return CloseResponse::Veto;
+                        }
+                        let pe = pending.clone();
+                        ctx.present_message_box(
+                            MessageBox::question(lit!("Save changes before closing?"))
+                                .text(lit!("This work has unsaved changes."))
+                                .buttons(MessageBoxButtons::SaveDiscardCancel)
+                                .default_button(StandardButton::Save)
+                                .escape_button(StandardButton::Cancel)
+                                .on_result(move |r, ctx| match r.button {
+                                    StandardButton::Save => pe.set(PendingExit::CloseWindow),
+                                    StandardButton::Discard => ctx.close_window_forced(),
+                                    _ => {}
+                                }),
+                        );
+                        CloseResponse::Veto
+                    }
+                })
                 .root(move |tree, _state| {
                     let theme = tree.theme().clone();
 
@@ -218,7 +256,6 @@ fn main() {
                                 let file_ctx = menu_ctx.clone();
                                 let folder_ctx = menu_ctx.clone();
                                 let backup_ctx = menu_ctx.clone();
-                                let close_ctx = menu_ctx.clone();
                                 let folder_work = menu_work.clone();
                                 // A work is open iff its WorkInfo shape is known.
                                 let show_open = menu_work_info.shape().map(|s| s.is_some());
@@ -351,20 +388,13 @@ fn main() {
                                         }
                                     },
                                 ))
-                                // Close the open work (clears the in-memory store).
+                                // Close the open work — routed through the guarded
+                                // `work.close` action (unsaved-changes prompt /
+                                // autosave-ensure live in `App`).
                                 .item(
                                     MenuEntry::new(lit!("Close Work"))
                                         .visible(show_open)
-                                        .on_activate(move |ectx| {
-                                            match work_management_commands::close_work(&close_ctx) {
-                                                Ok(_) => ectx.show_toast(Toast::info(lit!(
-                                                    "Work closed"
-                                                ))),
-                                                Err(e) => ectx.show_toast(Toast::error(lit!(
-                                                    format!("{e}")
-                                                ))),
-                                            };
-                                        }),
+                                        .intent("work.close"),
                                 )
                                 .separator()
                                 .item(MenuEntry::new(lit!("Settings")).on_activate(|ectx| {
@@ -436,6 +466,8 @@ fn main() {
                             app_ctx_root.clone(),
                             outline.clone(),
                             autosave_menu.clone(),
+                            unsaved.clone(),
+                            pending_exit.clone(),
                         )));
                     let inner =
                         tree.add(VStack::new().spacing(0.0).add_child(title_bar).add_child(body));

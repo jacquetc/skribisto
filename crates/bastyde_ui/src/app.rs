@@ -18,15 +18,19 @@ use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    ActivateOn, Divider, DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout, Expand,
-    FocusScope, HStack, IconButtonSize, MenuItem, MenuList, NotificationArchiveModel,
-    NotificationCenterButton, Spacer, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget,
-    TraversalScopePolicy, TreeRow, TreeView, VStack,
+    ActivateOn, Divider, DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout,
+    EventContextMessageBoxExt, Expand, FocusScope, HStack, IconButtonSize, MenuItem, MenuList,
+    MessageBox, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, Spacer,
+    StandardButton, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, TraversalScopePolicy,
+    TreeRow, TreeView, VStack,
 };
 
 use frontend::AppContext;
+use frontend::commands::work_management_commands;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
-use frontend::common::event::{Event, Origin, WorkManagementEvent};
+use frontend::common::event::{
+    DirectAccessEntity, EntityEvent, Event, Origin, WorkManagementEvent,
+};
 
 use crate::app_ids::AppIds;
 use crate::intents::AppIntent;
@@ -34,6 +38,19 @@ use crate::models::{BinderTreeKey, TreeNode};
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel};
+
+/// A close gesture deferred until the in-flight save finishes. The close guard
+/// (and the `work.close` action) sets this, `App` kicks the save, and the
+/// SaveWork-completion event performs the action — so the async save is awaited.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum PendingExit {
+    #[default]
+    None,
+    /// Close the window (Quit / title-bar X / Alt+F4) once saved.
+    CloseWindow,
+    /// Close the open work once saved.
+    CloseWork,
+}
 
 pub struct App {
     app_ctx: Rc<AppContext>,
@@ -44,6 +61,13 @@ pub struct App {
     /// (outside `App`) to hide the manual "Save" item. `App::build` mirrors the
     /// store-backed setting into it.
     autosave_menu: Signal<bool>,
+    /// `true` while the open work has edits not yet written to disk. Maintained by
+    /// `App` (set on mutations, cleared on SaveWork/LoadWork/CloseWork); read by
+    /// the close guard + `work.close` to decide whether to prompt.
+    unsaved: Signal<bool>,
+    /// A deferred close (set by the guard/menu, performed on SaveWork). Shared with
+    /// `main`'s window close guard.
+    pending_exit: Signal<PendingExit>,
     /// Created once on first build (its column-width signal needs `ctx.settings()`).
     editors: Option<EditorsViewModel>,
     root_child: Option<WidgetId>,
@@ -54,15 +78,46 @@ impl App {
         app_ctx: Rc<AppContext>,
         outline: OutlineViewModel,
         autosave_menu: Signal<bool>,
+        unsaved: Signal<bool>,
+        pending_exit: Signal<PendingExit>,
     ) -> Self {
         Self {
             app_ctx,
             outline,
             autosave_menu,
+            unsaved,
+            pending_exit,
             editors: None,
             root_child: None,
         }
     }
+}
+
+/// The backend mutation events that mark the work "unsaved" (and reschedule the
+/// autosave debounce). Editor *typing* is caught separately via the editors'
+/// `edited` signal; `Content` events (which fire only on flush) are excluded so a
+/// save's own flush doesn't loop the debounce.
+fn mutation_origins() -> Vec<Origin> {
+    use DirectAccessEntity::{Binder, BinderItem, BinderTag, DictWord, Work};
+    let mut v = Vec::new();
+    for ent in [
+        Work(EntityEvent::Updated),
+        BinderItem(EntityEvent::Created),
+        BinderItem(EntityEvent::Updated),
+        BinderItem(EntityEvent::Removed),
+        Binder(EntityEvent::Created),
+        Binder(EntityEvent::Updated),
+        Binder(EntityEvent::Removed),
+        BinderTag(EntityEvent::Created),
+        BinderTag(EntityEvent::Updated),
+        BinderTag(EntityEvent::Removed),
+        DictWord(EntityEvent::Created),
+        DictWord(EntityEvent::Updated),
+        DictWord(EntityEvent::Removed),
+    ] {
+        v.push(Origin::DirectAccess(ent));
+    }
+    v
 }
 
 impl std::fmt::Debug for App {
@@ -206,6 +261,7 @@ impl Widget for App {
             let editors = editors.clone();
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
+            let unsaved = self.unsaved.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_event: &Event| {
@@ -215,6 +271,7 @@ impl Widget for App {
                     editors.close_all();
                     single_work.set_id(ids.work_id.get());
                     single_work_info.set_id(ids.work_info_id.get());
+                    unsaved.set(false);
                 },
             );
         }
@@ -227,6 +284,7 @@ impl Widget for App {
             let editors = editors.clone();
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
+            let unsaved = self.unsaved.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::CloseWork),
                 move |_event: &Event| {
@@ -235,6 +293,7 @@ impl Widget for App {
                     editors.close_all();
                     single_work.set_id(None);
                     single_work_info.set_id(None);
+                    unsaved.set(false);
                 },
             );
         }
@@ -269,31 +328,45 @@ impl Widget for App {
             let menu = self.autosave_menu.clone();
             ctx.effect(&settings.autosave(), move |a| menu.set(*a));
         }
-        // Debounced autosave-to-disk: each edit (re)schedules a one-shot wake
-        // ~1.5 s out; when it fires (and autosave is still on) we save. `wake_at`
-        // keeps the loop asleep until the deadline (no 60 fps drain); the
-        // `frame_tick` effect only runs on the frames that actually pump.
+        // Dirty tracking + debounced autosave-to-disk. Every mutation (editor
+        // typing via the editors' `edited` signal, plus tree/metadata events)
+        // marks the work `unsaved` and — when autosave is on — (re)schedules a
+        // one-shot wake ~1.5 s out. `wake_at` keeps the loop asleep until the
+        // deadline (no 60 fps drain); the `frame_tick` effect only runs on the
+        // frames that actually pump, and fires the save when the deadline passes.
         {
             use std::time::{Duration, Instant};
             let deadline: Rc<std::cell::Cell<Option<Instant>>> =
                 Rc::new(std::cell::Cell::new(None));
             let wake = ctx.wake_at_handle();
             let autosave = settings.autosave();
-            {
+
+            let on_mutation = {
                 let deadline = deadline.clone();
                 let wake = wake.clone();
                 let autosave = autosave.clone();
-                ctx.effect(&editors.edited_signal(), move |_| {
+                let unsaved = self.unsaved.clone();
+                Rc::new(move || {
+                    unsaved.set(true);
                     if autosave.get() {
                         let at = Instant::now() + Duration::from_millis(1500);
                         deadline.set(Some(at));
                         wake.set(Some(at));
                     }
-                });
+                })
+            };
+            {
+                let oc = on_mutation.clone();
+                ctx.effect(&editors.edited_signal(), move |_| oc());
+            }
+            for origin in mutation_origins() {
+                let oc = on_mutation.clone();
+                ctx.subscribe_event(origin, move |_e: &Event| oc());
             }
             {
                 let editors = editors.clone();
                 let deadline = deadline.clone();
+                let autosave = autosave.clone();
                 let tick = ctx.frame_tick();
                 ctx.effect(&tick, move |_| {
                     let Some(at) = deadline.get() else { return };
@@ -307,6 +380,81 @@ impl Widget for App {
                     }
                 });
             }
+        }
+
+        // ── Exit guards (Close Work / Quit / window close) ───────────────────
+        // The window close guard (in `main`) and the `work.close` action set
+        // `pending_exit`; that kicks a disk save, and the SaveWork-completion event
+        // performs the deferred close — so the async save is awaited, never raced.
+        {
+            let editors = editors.clone();
+            ctx.effect(&self.pending_exit, move |pe| {
+                if *pe != PendingExit::None {
+                    editors.save_to_disk();
+                }
+            });
+        }
+        {
+            let unsaved = self.unsaved.clone();
+            let pending = self.pending_exit.clone();
+            let app_ctx2 = self.app_ctx.clone();
+            let window = ctx.window().cloned();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::SaveWork),
+                move |_e: &Event| {
+                    unsaved.set(false);
+                    let pe = pending.get();
+                    if pe != PendingExit::None {
+                        pending.set(PendingExit::None);
+                        match pe {
+                            PendingExit::CloseWindow => {
+                                if let Some(w) = &window {
+                                    w.close();
+                                }
+                            }
+                            PendingExit::CloseWork => {
+                                let _ = work_management_commands::close_work(&app_ctx2);
+                            }
+                            PendingExit::None => {}
+                        }
+                    }
+                },
+            );
+        }
+        // `work.close` — the Close Work menu command. Guards unsaved changes just
+        // like the window close: clean → close now; autosave → save then close;
+        // else prompt.
+        {
+            let app_ctx2 = self.app_ctx.clone();
+            let unsaved = self.unsaved.clone();
+            let autosave = settings.autosave();
+            let pending = self.pending_exit.clone();
+            ctx.register_action_global(Action::new("work.close").on_invoke(move |_i, ctx| {
+                if !unsaved.get() {
+                    let _ = work_management_commands::close_work(&app_ctx2);
+                    return;
+                }
+                if autosave.get() {
+                    pending.set(PendingExit::CloseWork);
+                    return;
+                }
+                let app_ctx3 = app_ctx2.clone();
+                let pe = pending.clone();
+                ctx.present_message_box(
+                    MessageBox::question(lit!("Save changes before closing the work?"))
+                        .text(lit!("This work has unsaved changes."))
+                        .buttons(MessageBoxButtons::SaveDiscardCancel)
+                        .default_button(StandardButton::Save)
+                        .escape_button(StandardButton::Cancel)
+                        .on_result(move |r, _ctx| match r.button {
+                            StandardButton::Save => pe.set(PendingExit::CloseWork),
+                            StandardButton::Discard => {
+                                let _ = work_management_commands::close_work(&app_ctx3);
+                            }
+                            _ => {}
+                        }),
+                );
+            }));
         }
         let active_item = editors.active_item();
 
