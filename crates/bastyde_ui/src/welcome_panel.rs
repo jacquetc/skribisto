@@ -14,9 +14,10 @@
 //! under the leading slot; only owning the layout lets the `Spacer` claim the
 //! slack).
 //!
-//! All business logic lives on [`WelcomeViewModel`]; this view is thin. Plain
-//! builders rather than `bati!` because `TabBar`/`Switcher` are generic over
-//! closures (same rationale as `app.rs`).
+//! All business logic lives on [`WelcomeViewModel`]; this view is thin. The
+//! layout is built with the `bati!` DSL; only the nav [`TabBar`] and the content
+//! [`Switcher`] stay as plain builders — they're generic over closures, which the
+//! DSL can't express (same rationale as `app.rs`).
 
 use std::rc::Rc;
 
@@ -96,33 +97,9 @@ impl WelcomePanel {
         let plus_icon =
             IconWidget::from_svg_icon(res!("assets/icons/welcome/plus.svg")).icon_size(16.0);
 
-        let header =
-            Padding::symmetric(12.0, 16.0).child(
-                HStack::new()
-                    .spacing(10.0)
-                    .child(Expand::horizontal().child(
-                        SearchField::new(self.search.clone()).placeholder(lit!("Search works")),
-                    ))
-                    .child(
-                        Button::new(lit!("Open"))
-                            .variant(ButtonVariant::Plain)
-                            .icon(open_icon, IconLocation::Leading)
-                            .on_activate_fn(move |ctx| open_vm.pick_open(ctx)),
-                    )
-                    .child(
-                        Button::new(lit!("New Work"))
-                            .variant(ButtonVariant::Filled)
-                            .icon(plus_icon, IconLocation::Leading)
-                            .on_activate_fn(move |ctx| new_vm.new_work(ctx)),
-                    ),
-            );
-
-        let section = Padding::symmetric(6.0, 16.0).child(
-            GroupHeader::new(lit!("Recent Works"))
-                .style(TextStyleRole::SmallBold)
-                .color(TextRole::Secondary),
-        );
-
+        // The recent-works list is data-driven (a loop over the live model
+        // building `work_row` helpers); kept as a plain builder and embedded
+        // into the bati! tree below via `child:`.
         let mut list = VStack::new().spacing(2.0);
         let recents = self.recents.items();
         if recents.is_empty() {
@@ -150,24 +127,50 @@ impl WelcomePanel {
             }
         }
 
-        VStack::new()
-            .spacing(0.0)
-            .child(header)
-            .child(section)
-            .child(
-                Expand::vertical()
-                    .child(ScrollArea::new().child(Padding::symmetric(6.0, 12.0).child(list))),
-            )
+        bati!(
+            VStack {
+                spacing: 0.0
+                Padding::symmetric(12.0, 16.0) {
+                    HStack {
+                        spacing: 10.0
+                        Expand::horizontal {
+                            SearchField::new(self.search.clone()) {
+                                placeholder: lit!("Search works")
+                            }
+                        }
+                        Button::new(lit!("Open")) {
+                            variant: ButtonVariant::Plain
+                            icon: open_icon, IconLocation::Leading
+                            on_activate_fn: move |ctx| open_vm.pick_open(ctx)
+                        }
+                        Button::new(lit!("New Work")) {
+                            variant: ButtonVariant::Filled
+                            icon: plus_icon, IconLocation::Leading
+                            on_activate_fn: move |ctx| new_vm.new_work(ctx)
+                        }
+                    }
+                }
+                Padding::symmetric(6.0, 16.0) {
+                    GroupHeader::new(lit!("Recent Works")) {
+                        style: TextStyleRole::SmallBold
+                        color: TextRole::Secondary
+                    }
+                }
+                Expand::vertical {
+                    ScrollArea {
+                        Padding::symmetric(6.0, 12.0) {
+                            child: list
+                        }
+                    }
+                }
+            }
+        )
     }
 
     /// Examples pane: the bundled example works (one today — Starforgers).
     fn examples_pane(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
-        let section = Padding::symmetric(12.0, 16.0).child(
-            GroupHeader::new(lit!("Examples"))
-                .style(TextStyleRole::SmallBold)
-                .color(TextRole::Secondary),
-        );
-
+        // Data-driven list (loop over the bundled examples); kept as a plain
+        // builder and embedded into the bati! tree below via `child:`.
         let mut list = VStack::new().spacing(2.0);
         for ex in self.examples.items() {
             let ex_vm = vm.clone();
@@ -184,9 +187,23 @@ impl WelcomePanel {
             ));
         }
 
-        VStack::new().spacing(0.0).child(section).child(
-            Expand::vertical()
-                .child(ScrollArea::new().child(Padding::symmetric(6.0, 12.0).child(list))),
+        bati!(
+            VStack {
+                spacing: 0.0
+                Padding::symmetric(12.0, 16.0) {
+                    GroupHeader::new(lit!("Examples")) {
+                        style: TextStyleRole::SmallBold
+                        color: TextRole::Secondary
+                    }
+                }
+                Expand::vertical {
+                    ScrollArea {
+                        Padding::symmetric(6.0, 12.0) {
+                            child: list
+                        }
+                    }
+                }
+            }
         )
     }
 }
@@ -202,54 +219,63 @@ fn work_row(
 ) -> impl Widget + 'static {
     // Surface the title as the row's accessible name (a bare HStack has none).
     let name = title.clone();
-    let chip = FixedSize::new()
-        .bind_width(36.0)
-        .bind_height(36.0)
-        .child(Center::new().child(icon));
-
-    let body = VStack::new()
-        .spacing(2.0)
-        .child(
-            TextWidget::new(lit!(title))
-                .style(TextStyleRole::BodyBold)
-                .color(TextRole::Primary)
-                .single_line()
-                .overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing)),
-        )
-        .child(
-            TextWidget::new(lit!(subtitle))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary)
-                .single_line()
-                .overflow(TextOverflow::Ellipsis(EllipsisMode::Middle)),
-        );
-
-    let mut row = HStack::new()
-        .spacing(12.0)
-        .child(chip)
-        .child(Expand::horizontal().child(body));
-    if let Some(t) = trailing {
-        row = row.child(
-            TextWidget::new(lit!(t))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        );
-    }
-
-    Padding::symmetric(8.0, 10.0).child(
-        row.cursor(CursorIcon::Pointer)
-            .focusable(true)
-            .access_label_literal(name)
-            .on_tap(move |_event, ctx| on_click(ctx)),
+    bati!(
+        Padding::symmetric(8.0, 10.0) {
+            HStack {
+                spacing: 12.0
+                // Whole row is the click target. These `WidgetBuilder` methods
+                // attach last regardless of source order (bati! reorders them).
+                cursor: CursorIcon::Pointer
+                focusable: true
+                access_label_literal: name
+                on_tap: move |_event, ctx| on_click(ctx)
+                // 36 dp icon chip.
+                FixedSize {
+                    bind_width: 36.0
+                    bind_height: 36.0
+                    Center {
+                        child: icon
+                    }
+                }
+                // Title / subtitle body, claiming the slack.
+                Expand::horizontal {
+                    VStack {
+                        spacing: 2.0
+                        TextWidget::new(lit!(title)) {
+                            style: TextStyleRole::BodyBold
+                            color: TextRole::Primary
+                            single_line
+                            overflow: TextOverflow::Ellipsis(EllipsisMode::Trailing)
+                        }
+                        TextWidget::new(lit!(subtitle)) {
+                            style: TextStyleRole::Small
+                            color: TextRole::Secondary
+                            single_line
+                            overflow: TextOverflow::Ellipsis(EllipsisMode::Middle)
+                        }
+                    }
+                }
+                // Optional trailing meta (e.g. last-opened date).
+                if let Some(t) = trailing {
+                    TextWidget::new(lit!(t)) {
+                        style: TextStyleRole::Small
+                        color: TextRole::Secondary
+                    }
+                }
+            }
+        }
     )
 }
 
 /// Centered muted placeholder for the not-yet-designed Learn/About panes.
 fn placeholder(text: &'static str) -> impl Widget + 'static {
-    Center::new().child(
-        TextWidget::new(lit!(text))
-            .style(TextStyleRole::Body)
-            .color(TextRole::Secondary),
+    bati!(
+        Center {
+            TextWidget::new(lit!(text)) {
+                style: TextStyleRole::Body
+                color: TextRole::Secondary
+            }
+        }
     )
 }
 
@@ -278,25 +304,25 @@ impl Widget for WelcomePanel {
         title_style.size = 22.0;
         let logo = IconWidget::from_raster(res!("../../resources/icons/skribisto.png"), 60.0)
             .mode(IconMode::FullColor);
-        let branding = Padding::symmetric(8.0, 4.0).child(
-            VStack::new()
-                .spacing(6.0)
-                .child(logo)
-                .child(
-                    TextWidget::new(lit!("Skribisto"))
-                        .style(title_style)
-                        .color(TextRole::Primary),
-                )
-                .child(
-                    TextWidget::new(lit!("Version 1.9.43 · Bastyde"))
-                        .style(TextStyleRole::Small)
-                        .color(TextRole::Secondary),
-                )
-                .child(
-                    TextWidget::new(lit!("A quiet place to write long things."))
-                        .style(TextStyleRole::Small)
-                        .color(TextRole::Secondary),
-                ),
+        let branding = bati!(
+            Padding::symmetric(8.0, 4.0) {
+                VStack {
+                    spacing: 6.0
+                    child: logo
+                    TextWidget::new(lit!("Skribisto")) {
+                        style: title_style
+                        color: TextRole::Primary
+                    }
+                    TextWidget::new(lit!("Version 1.9.43 · Bastyde")) {
+                        style: TextStyleRole::Small
+                        color: TextRole::Secondary
+                    }
+                    TextWidget::new(lit!("A quiet place to write long things.")) {
+                        style: TextStyleRole::Small
+                        color: TextRole::Secondary
+                    }
+                }
+            }
         );
 
         // ── Vertical nav TabBar (bottom of the sidebar) ─────────────────────
@@ -330,24 +356,9 @@ impl Widget for WelcomePanel {
         .show_overflow_dropdown(false)
         .access_label_literal("Welcome sections");
 
-        // Inline "show at startup" checkbox (binds the same persisted setting as
-        // the Settings panel toggle).
-        let startup = Padding::symmetric(8.0, 8.0)
-            .child(Checkbox::new(vm.show_welcome()).label(lit!("Show at startup")));
-
-        // A vertical TabBar's scroll area is greedily `Expand::vertical`, so
-        // next to a flexible `Spacer` it collapses to height 0 and its pills
-        // overflow. Pin it to its intrinsic extent (4 tabs × 34 dp) so the
-        // `Spacer` above can push the whole nav to the sidebar bottom.
-        let nav = FixedSize::new().bind_height(136.0).child(bar);
-        let sidebar = VStack::new()
-            .spacing(0.0)
-            .child(branding)
-            .child(Spacer::new())
-            .child(nav)
-            .child(startup);
-
         // ── Right pane: a Switcher keyed off the bar's selection ────────────
+        // `TabBar` and `Switcher` are generic over closures, so they stay plain
+        // builders and join the bati! tree below via `child:`.
         let ids_for_idx = self.tab_ids.clone();
         let switch_index = self.selected_tab.map(move |opt: &Option<TabId>| {
             (*opt)
@@ -368,83 +379,106 @@ impl Widget for WelcomePanel {
         // 503) so they fill it exactly and the sidebar's `Spacer` can push the
         // nav to the bottom.
         const BODY_H: f32 = 503.0;
-        let body = HStack::new()
-            .spacing(0.0)
-            .child(
-                FixedSize::new()
-                    .bind_width(264.0)
-                    .bind_height(BODY_H)
-                    // Left margin so the brand/nav don't hug the modal edge.
-                    .child(Padding::new(0.0, 0.0, 0.0, 16.0).child(sidebar)),
-            )
-            // Vertical rule between the sidebar and the content pane.
-            .child(
-                FixedSize::new()
-                    .bind_height(BODY_H)
-                    .child(Divider::vertical()),
-            )
-            .child(
-                Expand::horizontal().child(
-                    FixedSize::new().bind_height(BODY_H).child(
-                        // Two-tone: the card (Raised) is the lighter sidebar
-                        // surface; the content pane sits on a darker (Sunken)
-                        // base. A `Panel` stretches its child (unlike `ZStack`,
-                        // which centres and collapses the greedy content).
-                        Panel::new()
-                            .variant(PanelVariant::Sunken)
-                            .corner_radius(0.0)
-                            .padding(0.0)
-                            .child(content),
-                    ),
-                ),
-            );
-
-        // ── Header strip: title + close (full width, fixed 44 dp) ───────────
-        // `Expand::horizontal` claims the VStack's full width; the height-only
-        // `FixedSize` alone would leave the strip at its natural (collapsed)
-        // width and squash the title.
-        let header = Expand::horizontal().child(
-            FixedSize::new().bind_height(44.0).child(
-                Padding::symmetric(8.0, 14.0).child(
-                    HStack::new()
-                        .spacing(8.0)
-                        .child(
-                            Expand::horizontal().child(
-                                TextWidget::new(lit!("Welcome to Skribisto"))
-                                    .style(TextStyleRole::Small)
-                                    .color(TextRole::Secondary),
-                            ),
-                        )
-                        .child(
-                            IconButton::clear()
-                                .tooltip(lit!("Close"))
-                                .on_activate_fn(|ctx| ctx.dismiss_modal()),
-                        ),
-                ),
-            ),
-        );
-
-        let card = Panel::new()
-            .variant(PanelVariant::Raised)
-            .corner_radius(10.0)
-            .padding(0.0)
-            .child(
-                VStack::new()
-                    .spacing(0.0)
-                    .child(header)
-                    // Full-width rule between the title strip and the body.
-                    .child(Expand::horizontal().child(Divider::new()))
-                    .child(body),
-            );
 
         // Hard-bound the whole card to the modal size so the greedy inner
         // `Expand`s fill exactly 780×548 (otherwise they stretch to the window
         // height and the sidebar overflows below the card).
-        let root = ctx.add(
-            FixedSize::new()
-                .bind_width(780.0)
-                .bind_height(548.0)
-                .child(card),
+        let root = bati!(ctx =>
+            FixedSize {
+                bind_width: 780.0
+                bind_height: 548.0
+                // The Raised card is the modal's lighter surface.
+                Panel {
+                    variant: PanelVariant::Raised
+                    corner_radius: 10.0
+                    padding: 0.0
+                    VStack {
+                        spacing: 0.0
+                        // ── Header strip: title + close (full width, fixed 44 dp).
+                        // `Expand::horizontal` claims the VStack's full width; the
+                        // height-only `FixedSize` alone would leave the strip at its
+                        // natural (collapsed) width and squash the title.
+                        Expand::horizontal {
+                            FixedSize {
+                                bind_height: 44.0
+                                Padding::symmetric(8.0, 14.0) {
+                                    HStack {
+                                        spacing: 8.0
+                                        Expand::horizontal {
+                                            TextWidget::new(lit!("Welcome to Skribisto")) {
+                                                style: TextStyleRole::Small
+                                                color: TextRole::Secondary
+                                            }
+                                        }
+                                        IconButton::clear() {
+                                            tooltip: lit!("Close")
+                                            on_activate_fn: |ctx| ctx.dismiss_modal()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // Full-width rule between the title strip and the body.
+                        Expand::horizontal {
+                            Divider
+                        }
+                        // ── Body: sidebar · vertical rule · content pane.
+                        HStack {
+                            spacing: 0.0
+                            // Sidebar: brand block, a Spacer, the bottom-pinned nav,
+                            // then the startup checkbox.
+                            FixedSize {
+                                bind_width: 264.0
+                                bind_height: BODY_H
+                                // Left margin so the brand/nav don't hug the modal edge.
+                                Padding::new(0.0, 0.0, 0.0, 16.0) {
+                                    VStack {
+                                        spacing: 0.0
+                                        child: branding
+                                        Spacer
+                                        // A vertical TabBar's scroll area is greedily
+                                        // `Expand::vertical`, so next to a flexible
+                                        // `Spacer` it collapses to height 0 and its
+                                        // pills overflow. Pin it to its intrinsic
+                                        // extent (4 tabs × 34 dp) so the `Spacer` above
+                                        // can push the whole nav to the sidebar bottom.
+                                        FixedSize {
+                                            bind_height: 136.0
+                                            child: bar
+                                        }
+                                        // Inline "show at startup" checkbox (binds the
+                                        // same persisted setting as the Settings panel).
+                                        Padding::symmetric(8.0, 8.0) {
+                                            Checkbox::new(vm.show_welcome()) {
+                                                label: lit!("Show at startup")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            // Vertical rule between the sidebar and the content pane.
+                            FixedSize {
+                                bind_height: BODY_H
+                                Divider::vertical()
+                            }
+                            // Two-tone: the content pane sits on a darker (Sunken)
+                            // base. A `Panel` stretches its child (unlike `ZStack`,
+                            // which centres and collapses the greedy content).
+                            Expand::horizontal {
+                                FixedSize {
+                                    bind_height: BODY_H
+                                    Panel {
+                                        variant: PanelVariant::Sunken
+                                        corner_radius: 0.0
+                                        padding: 0.0
+                                        child: content
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         );
         self.root_child = Some(root);
         vec![root]
