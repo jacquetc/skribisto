@@ -27,6 +27,7 @@ use bastyde::widgets::{
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
+use frontend::work_management::LoadWorkDto;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{
     DirectAccessEntity, EntityEvent, Event, Origin, WorkManagementEvent,
@@ -68,6 +69,11 @@ pub struct App {
     /// A deferred close (set by the guard/menu, performed on SaveWork). Shared with
     /// `main`'s window close guard.
     pending_exit: Signal<PendingExit>,
+    /// A `.skrib` path given as the launch argument — opened once on first build
+    /// (after the `LoadWork` subscription is live so the full load flow runs).
+    initial_project: Option<String>,
+    /// One-shot guard so the launch project loads only on the first build.
+    initial_loaded: bool,
     /// Created once on first build (its column-width signal needs `ctx.settings()`).
     editors: Option<EditorsViewModel>,
     root_child: Option<WidgetId>,
@@ -80,6 +86,7 @@ impl App {
         autosave_menu: Signal<bool>,
         unsaved: Signal<bool>,
         pending_exit: Signal<PendingExit>,
+        initial_project: Option<String>,
     ) -> Self {
         Self {
             app_ctx,
@@ -87,6 +94,8 @@ impl App {
             autosave_menu,
             unsaved,
             pending_exit,
+            initial_project,
+            initial_loaded: false,
             editors: None,
             root_child: None,
         }
@@ -520,6 +529,24 @@ impl Widget for App {
                 .child(status),
         );
         self.root_child = Some(root);
+
+        // Open the launch project (argv[1]) exactly once — now that the `LoadWork`
+        // subscription above is live, so its handler runs the full load flow
+        // (seed ids, reload the tree, point the singles).
+        if !self.initial_loaded {
+            self.initial_loaded = true;
+            if let Some(path) = self.initial_project.clone() {
+                if let Err(e) = work_management_commands::load_work(
+                    &self.app_ctx,
+                    &LoadWorkDto {
+                        file_name: path.clone(),
+                    },
+                ) {
+                    eprintln!("skribisto: could not open '{path}': {e}");
+                }
+            }
+        }
+
         vec![root]
     }
 

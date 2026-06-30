@@ -545,6 +545,7 @@ name = "bastyde"
 version = "0.6.2"
 dependencies = [
  "bastyde-app",
+ "bastyde-automation",
  "bastyde-canvas",
  "bastyde-core",
  "bastyde-data",
@@ -564,6 +565,8 @@ dependencies = [
 name = "bastyde-app"
 version = "0.6.2"
 dependencies = [
+ "base64 0.22.1",
+ "bastyde-automation",
  "bastyde-canvas",
  "bastyde-core",
  "bastyde-i18n",
@@ -573,8 +576,21 @@ dependencies = [
  "bastyde-text",
  "bastyde-tokens",
  "bastyde-widgets",
+ "png",
  "pollster",
+ "serde_json",
+ "uuid",
  "winit",
+]
+
+[[package]]
+name = "bastyde-automation"
+version = "0.6.2"
+dependencies = [
+ "bastyde-canvas",
+ "bastyde-core",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

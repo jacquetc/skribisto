@@ -186,12 +186,16 @@ fn main() {
     // `App` (which maintains `unsaved` and performs the deferred close on save).
     let unsaved = Signal::new(false);
     let pending_exit = Signal::new(PendingExit::None);
+    // Optional `.skrib` path to open on launch (`skribisto <path>`); `App` opens it
+    // once on first build.
+    let initial_project = std::env::args().nth(1).filter(|s| !s.trim().is_empty());
     BastydeAppBuilder::new()
         .theme(theme)
         .application("eu", "skribisto", "Skribisto")
         .settings(SettingsBundle::new().with_window_state(true))
         .i18n(i18n)
         .install_inspector_in_debug()
+        .install_automation_bridge_in_debug()
         .install_file_dialog()
         .install_toast_default()
         .event_source(EventHubSource { client })
@@ -468,6 +472,7 @@ fn main() {
                             autosave_menu.clone(),
                             unsaved.clone(),
                             pending_exit.clone(),
+                            initial_project.clone(),
                         )));
                     let inner =
                         tree.add(VStack::new().spacing(0.0).add_child(title_bar).add_child(body));

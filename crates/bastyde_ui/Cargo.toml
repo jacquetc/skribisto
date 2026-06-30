@@ -17,7 +17,9 @@ anyhow = { workspace = true }
 chrono = { workspace = true }
 frontend = { workspace = true }
 skribisto_model = { workspace = true }
-bastyde = { path = "../../../bastyde/crates/bastyde" }
+# `automation` enables the debug-only in-app automation bridge
+# (`install_automation_bridge_in_debug()`); a no-op in release.
+bastyde = { path = "../../../bastyde/crates/bastyde", features = ["automation"] }
 
 [features]
 # Build-with-mocks: render the UI with fabricated data, no real backend needed.
