@@ -179,27 +179,22 @@ tabs = [n for n in s.nodes() if n.get("role") == "Tab"]
 tablists = [n for n in s.nodes() if n.get("role") == "TabList"]
 print(f"AT roles present: TabList x{len(tablists)}, Tab x{len(tabs)}")
 
-# Switch to the Examples tab and confirm the pane reveals the bundled example.
+# Switch to the Examples tab via the AccessKit *click* action and confirm the
+# pane reveals the bundled example. `invoke_action` REQUIRES an `action`
+# argument — omitting it errors and is a no-op (the bug this harness used to
+# paper over with an inject_pointer fallback). The AT click selects the tab and
+# the sibling Switcher swaps panes; no synthetic pointer needed.
 ex_tab = s.find("Examples", role="Tab") or s.find("Examples")
 if not ex_tab:
     fail("no 'Examples' tab node", s.app, s.mcp, s.log)
 print(f"Examples tab: id={ex_tab.get('id')} role={ex_tab.get('role')} "
       f"selected={ex_tab.get('selected')} actions={ex_tab.get('actions')} bounds={ex_tab.get('bounds')}")
-switched = False
-r, _ = s.call("invoke_action", {"node": ex_tab["id"]})
-time.sleep(0.6)
-if s.wait_label("starforgers", timeout=4):
-    switched = True
-if not switched and ex_tab.get("bounds"):  # fall back to a synthetic click
-    b = ex_tab["bounds"]
-    cx, cy = (b.get("x", 0) + b.get("width", 0) / 2, b.get("y", 0) + b.get("height", 0) / 2) \
-        if isinstance(b, dict) else (b[0] + b[2] / 2, b[1] + b[3] / 2)
-    print(f"-> inject_pointer click at ({cx:.0f},{cy:.0f})")
-    s.call("inject_pointer", {"x": cx, "y": cy, "kind": "click"})
-    time.sleep(0.6)
-    switched = s.wait_label("starforgers", timeout=4)
-if not switched:
-    fail("Examples pane did not reveal the bundled example (Starforgers)", s.app, s.mcp, s.log)
+res, _ = s.call("invoke_action", {"node": ex_tab["id"], "action": "click"})
+if res.get("isError"):
+    fail(f"invoke_action click on the Examples tab errored: {res}", s.app, s.mcp, s.log)
+if not s.wait_label("starforgers", timeout=5):
+    fail("Examples pane did not reveal the bundled example (Starforgers) after invoke_action click",
+         s.app, s.mcp, s.log)
 print("PASS: Examples tab switched the pane to the bundled example (Starforgers)")
 s.shot("/tmp/sk-welcome-shot.png")
 s.close()
