@@ -86,6 +86,9 @@ impl Widget for SettingsPanel {
                     Toggle::new(settings.autosave()) {
                         label: lit!("Autosave to disk")
                     }
+                    Toggle::new(settings.show_welcome()) {
+                        label: lit!("Show Welcome at startup")
+                    }
                 }
             }
         );

@@ -21,6 +21,12 @@ pub enum AppIntent {
     #[name = "outline.toggle"]
     ToggleOutline,
 
+    /// Show the Welcome modal (start screen). Fired at startup (unless a work
+    /// path was passed), from the File ▸ Welcome… menu, and from the brand
+    /// icon button. Consumed by a global `welcome.show` action in `App::build`.
+    #[name = "welcome.show"]
+    ShowWelcome,
+
     /// Open (or focus) the editor tab for a binder item.
     #[name = "editor.open_item"]
     OpenItem { item_id: u64, title: String },
@@ -80,6 +86,15 @@ mod tests {
         assert!(matches!(
             AppIntent::from_intent(&intent),
             Some(AppIntent::ToggleOutline)
+        ));
+    }
+
+    #[test]
+    fn show_welcome_unit_intent_bridges() {
+        let intent: Intent = AppIntent::ShowWelcome.into();
+        assert!(matches!(
+            AppIntent::from_intent(&intent),
+            Some(AppIntent::ShowWelcome)
         ));
     }
 }

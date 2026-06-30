@@ -14,6 +14,7 @@ use std::rc::Rc;
 
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::data::TreeDataSource;
+use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
@@ -39,6 +40,7 @@ use crate::models::{BinderTreeKey, TreeNode};
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel};
+use crate::welcome_panel::WelcomePanel;
 
 /// A close gesture deferred until the in-flight save finishes. The close guard
 /// (and the `work.close` action) sets this, `App` kicks the save, and the
@@ -208,6 +210,22 @@ impl Widget for App {
             ctx.register_action_global(
                 Action::new("editor.save").on_invoke(move |_i, _c| editors.save_to_disk()),
             );
+        }
+        // Welcome modal: presented at startup (gated below), and on demand from
+        // File ▸ Welcome… and the brand icon button — all dispatch `welcome.show`.
+        // Global so the title-bar overlay menu/button reach it (house rule).
+        {
+            let app_ctx = self.app_ctx.clone();
+            ctx.register_action_global(Action::new("welcome.show").on_invoke(move |_i, c| {
+                let app_ctx = app_ctx.clone();
+                c.present_modal(
+                    ModalRequest::deferred(move |t| t.add(WelcomePanel::new(app_ctx)))
+                        .presentation(ModalPresentation::InTree)
+                        .title("Welcome to Skribisto")
+                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                        .size(780, 548),
+                );
+            }));
         }
 
         // ── Binder-tree commands (the scriptable surface for the outline). ───
@@ -544,6 +562,21 @@ impl Widget for App {
                 ) {
                     eprintln!("skribisto: could not open '{path}': {e}");
                 }
+            } else if SettingsViewModel::new(ctx.settings()).show_welcome().get() {
+                // No work on the command line + "show at startup" on → pop the
+                // Welcome modal once the tree mounts. `present_modal` needs an
+                // `EventContext` (unavailable in `build`); `run_after_mount`
+                // supplies one, so we present directly here (no intent hop).
+                let app_ctx = self.app_ctx.clone();
+                ctx.run_after_mount(move |ectx| {
+                    ectx.present_modal(
+                        ModalRequest::deferred(move |t| t.add(WelcomePanel::new(app_ctx)))
+                            .presentation(ModalPresentation::InTree)
+                            .title("Welcome to Skribisto")
+                            .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                            .size(780, 548),
+                    );
+                });
             }
         }
 

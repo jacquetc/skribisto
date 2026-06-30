@@ -9,21 +9,23 @@ mod settings_panel;
 mod singles;
 mod tabs;
 mod view_models;
+mod welcome_panel;
 
 use std::rc::Rc;
 use std::sync::Arc;
 
 use bastyde::core::event_source::{EventSource, SubscriptionHandle};
-use bastyde::widgets::{Center, HStack, ImageWidget};
+use bastyde::widgets::{Center, HStack};
 
 use bastyde::core::modal::ModalRequest;
 use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
 use bastyde::res;
 use bastyde::settings::{AppPaths, SettingsStore};
+use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
-    CollapsePolicy, EventContextMessageBoxExt, Expand, IconButtonSize, MenuBar, MenuEntry,
-    MenuModel, MessageBox, MessageBoxButtons, StandardButton, TextWidget, TitleBar, Toast, VStack,
-    WindowFrame, framework_locales,
+    CollapsePolicy, EventContextMessageBoxExt, Expand, IconButton, IconButtonSize, IconWidget,
+    MenuBar, MenuEntry, MenuModel, MessageBox, MessageBoxButtons, StandardButton, TextWidget,
+    TitleBar, Toast, VStack, WindowFrame, framework_locales,
 };
 use recent_projects_button::RecentProjectsButton;
 
@@ -117,6 +119,10 @@ pub const EDITOR_WIDTH_KEY: &str = "editor.column_width";
 pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;
 /// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
 pub const AUTOSAVE_KEY: &str = "editor.autosave";
+/// When on (default), the Welcome modal pops at startup if no work was passed
+/// on the command line. Toggled in Settings and via the Welcome dialog's inline
+/// checkbox; both bind the same `SettingsStore` signal.
+pub const SHOW_WELCOME_KEY: &str = "ui.show_welcome";
 
 /// Adapts the Qleany-generated `EventHubClient` to Bastyde's `EventSource`
 /// (orphan rule prevents implementing the trait directly on the client).
@@ -401,6 +407,7 @@ fn main() {
                                         .intent("work.close"),
                                 )
                                 .separator()
+                                .item(MenuEntry::new(lit!("Welcome…")).intent("welcome.show"))
                                 .item(MenuEntry::new(lit!("Settings")).on_activate(|ectx| {
                                     ectx.present_modal(
                                         ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
@@ -442,10 +449,17 @@ fn main() {
                                         HStack {
                                             spacing: 5.0
                                             alignment: bastyde::tokens::VAlignment::Center
-                                            ImageWidget::new(res!("../../resources/icons/skribisto.png")) {
-                                                alt: lit!("Skribisto")
-                                                size: 25.0, 25.0
-                                                a11y_hidden
+                                            IconButton::new(
+                                                IconWidget::from_raster(
+                                                    res!("../../resources/icons/skribisto.png"),
+                                                    25.0,
+                                                )
+                                                .mode(IconMode::FullColor)
+                                            ) {
+                                                tooltip: lit!("Welcome")
+                                                size: IconButtonSize::Large
+                                                on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
+                                                
                                             }
                                             RecentProjectsButton::new(app_ctx_root.clone())
                                             Expand::horizontal {
