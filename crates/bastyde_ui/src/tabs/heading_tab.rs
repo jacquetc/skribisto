@@ -6,29 +6,29 @@
 use bastyde::prelude::*;
 use bastyde::widgets::VStack;
 
-use super::{ContentTab, parts};
+use super::{ContentTab, shared};
 
 pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
-    let mut col = VStack::new().spacing(8.0).child(parts::vspace(20.0));
+    let mut col = VStack::new().spacing(8.0).child(shared::vspace(20.0));
 
     if let Some(t) = &tab.title {
-        col = col.child(parts::centered(
-            parts::title_input(t, tr!(placeholder_title())),
+        col = col.child(shared::centered(
+            shared::title_input(t, tr!(placeholder_title())),
             &tab.column_width,
         ));
     }
     if let Some(st) = &tab.subtitle {
-        col = col.child(parts::centered(
-            parts::title_input(st, tr!(placeholder_subtitle())),
+        col = col.child(shared::centered(
+            shared::title_input(st, tr!(placeholder_subtitle())),
             &tab.column_width,
         ));
     }
     if let Some(s) = &tab.synopsis {
-        col = col.child(parts::vspace(8.0)).child(parts::synopsis_section(
+        col = col.child(shared::vspace(8.0)).child(shared::synopsis_section(
             &s.doc,
             &tab.column_width,
             tab.mark_dirty_fn(),
         ));
     }
-    parts::tab_backdrop(col)
+    shared::tab_backdrop(col)
 }

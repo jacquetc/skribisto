@@ -5,10 +5,10 @@
 use bastyde::prelude::*;
 use bastyde::widgets::{Center, TextWidget};
 
-use super::{ContentTab, parts};
+use super::{ContentTab, shared};
 
 pub fn render(_tab: &ContentTab) -> Box<dyn Widget> {
-    parts::tab_backdrop(bati!(
+    shared::tab_backdrop(bati!(
         Center {
             child: TextWidget::new(tr!(no_content())) {
                 color: TextRole::Secondary

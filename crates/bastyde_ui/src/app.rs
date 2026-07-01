@@ -585,7 +585,6 @@ impl Widget for App {
                         active_item.clone(),
                     ))
                 })
-                .closable(false)
                 .default_location(DockOpenLocation::side(DockSide::Leading)),
             );
         outline.open_in_layout();

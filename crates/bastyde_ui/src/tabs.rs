@@ -31,7 +31,7 @@ pub mod folder_part;
 pub mod heading_tab;
 pub mod item_scene_tab;
 pub mod no_content_tab;
-pub mod parts;
+mod shared;
 
 /// Which view a tab presents (selected from `(role, sub_role)`).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
