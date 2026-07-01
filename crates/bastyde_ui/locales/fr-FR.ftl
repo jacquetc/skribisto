@@ -85,3 +85,12 @@ saving-as-folder = Enregistrement sous { $target }/…
 save-error = Impossible d'enregistrer : { $error }
 backup-error = Impossible de sauvegarder : { $error }
 backing-up = Sauvegarde en cours…
+
+## Libellés des modèles de nouvelle œuvre (transmis au backend, qui ne fait pas d'i18n)
+new-work-manuscript = Manuscrit
+new-work-notes = Notes
+new-work-research = Recherche
+new-work-notebook = Carnet
+new-work-chapter = Chapitre
+new-work-scene = Scène
+new-work-note = Note

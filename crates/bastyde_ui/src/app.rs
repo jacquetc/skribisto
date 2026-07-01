@@ -28,7 +28,7 @@ use bastyde::widgets::{
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
-use frontend::work_management::{LoadWorkDto, NewWorkDto};
+use frontend::work_management::LoadWorkDto;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{
     DirectAccessEntity, EntityEvent, Event, Origin, WorkManagementEvent,
@@ -40,7 +40,7 @@ use crate::models::{BinderTreeKey, TreeNode};
 use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
-use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel};
+use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel, new_work_dto};
 use crate::welcome_panel::WelcomePanel;
 
 /// A close gesture deferred until the in-flight save finishes. The close guard
@@ -362,6 +362,37 @@ impl Widget for App {
                     single_work.set_id(ids.work_id.get());
                     single_work_info.set_id(ids.work_info_id.get());
                     unsaved.set(false);
+                },
+            );
+        }
+
+        // On new work: same seeding as load (a project is now open), then write
+        // the freshly-created project to the chosen path immediately — a
+        // create-and-save. `save_to_disk` resolves the target + shape from the
+        // `WorkInfo` the use case just set (from the picker path + is_folder).
+        // The new project isn't on disk yet, so it starts `unsaved = true`; the
+        // async save is a long op, and the SaveWork-completion handler clears
+        // `unsaved` only once the write actually lands — so an exit/close during
+        // the in-flight write is caught by the guards instead of dropping the file.
+        {
+            let ids = ids.clone();
+            let app_ctx = self.app_ctx.clone();
+            let outline = outline.clone();
+            let editors = editors.clone();
+            let single_work = single_work.clone();
+            let single_work_info = single_work_info.clone();
+            let unsaved = self.unsaved.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::NewWork),
+                move |_event: &Event| {
+                    ids.seed(&app_ctx);
+                    ids.open_stack(&app_ctx);
+                    outline.reload();
+                    editors.close_all();
+                    single_work.set_id(ids.work_id.get());
+                    single_work_info.set_id(ids.work_info_id.get());
+                    unsaved.set(true);
+                    editors.save_to_disk();
                 },
             );
         }
@@ -862,7 +893,7 @@ fn new_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
         if let FileDialogResult::Saved(Some(path)) = res {
             let file = path.to_string_lossy().into_owned();
             if let Err(e) =
-                work_management_commands::new_work(&app_ctx, &NewWorkDto { file_name: file })
+                work_management_commands::new_work(&app_ctx, &new_work_dto(file))
             {
                 ectx.show_toast(Toast::error(tr!(could_not_create_work(error = e.to_string()))));
             }

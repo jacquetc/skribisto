@@ -66,6 +66,7 @@ fn sample_inputs() -> (
         title: "My Novel".into(),
         author_name: "Jane".into(),
         dict_language: "en-US".into(),
+        unique_id: "test-unique-id-abc".into(),
         tags: vec![10, 11],
         dict_words: vec![20, 21],
         binders: vec![100],

@@ -1,5 +1,10 @@
 //! Forward migration chain for the on-disk format, keyed on `format_version`.
-//! v1 is the only version today; the seam is here for future steps.
+//!
+//! v1 → v2 added `WorkFile.unique_id`. That change is purely additive and RON is
+//! name-keyed, so a v1 manifest deserializes fine via `#[serde(default)]` (empty
+//! id) and the load path mints a fresh id when it's empty (see
+//! `load_work_uc::materialize`) — no structural transform step is required here;
+//! `migrate_bundle` just validates the range and normalizes the stamped version.
 
 use anyhow::Result;
 

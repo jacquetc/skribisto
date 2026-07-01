@@ -205,6 +205,13 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
         title: lw.title.clone(),
         author_name: lw.author_name.clone(),
         dict_language: lw.dict_language.clone(),
+        // Single heal point for every load (legacy + new-format): preserve the
+        // source's stable id, or mint a fresh one when it has none.
+        unique_id: if lw.unique_id.is_empty() {
+            crate::work_io::new_unique_id()
+        } else {
+            lw.unique_id.clone()
+        },
         ..Default::default()
     })?;
 
@@ -472,6 +479,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         title: p.title.clone(),
         author_name: p.author.clone(),
         dict_language: p.dict_language.clone(),
+        // Carry the legacy id through; empty → minted at `materialize`.
+        unique_id: p.unique_id.clone(),
         ..Default::default()
     };
 

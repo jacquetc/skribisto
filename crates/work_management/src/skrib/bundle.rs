@@ -19,7 +19,11 @@ use std::collections::BTreeMap;
 
 /// Current on-disk format version. Bump + add a `migration` step when the
 /// schema changes.
-pub const FORMAT_VERSION: u32 = 1;
+///
+/// v2 added `WorkFile.unique_id` (a stable project identity). It's
+/// `#[serde(default)]`, so v1 bundles still deserialize (empty id), and the
+/// load path mints a fresh id when it's empty — see `load_work_uc::materialize`.
+pub const FORMAT_VERSION: u32 = 2;
 
 /// The shape recorded in `project.skrib` (informational; the real shape is the
 /// physical layout). Mirrors `common::entities::WorkShape`.
@@ -49,6 +53,10 @@ pub struct WorkFile {
     pub dict_language: String,
     pub tag_ids: Vec<u64>,
     pub dict_word_ids: Vec<u64>,
+    /// Stable project identity (UUID v4, or a preserved legacy id). Added in v2;
+    /// `#[serde(default)]` keeps v1 bundles readable (empty → healed on load).
+    #[serde(default)]
+    pub unique_id: String,
 }
 
 /// `tags.ron`

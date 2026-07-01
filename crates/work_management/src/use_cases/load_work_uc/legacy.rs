@@ -57,6 +57,9 @@ pub struct LegacyProject {
     pub title: String,
     pub author: String,
     pub dict_language: String,
+    /// `tbl_project.t_project_unique_identifier` — the old project's stable id.
+    /// Empty if the (very old) file lacks the column; the load path then mints one.
+    pub unique_id: String,
     pub absolute_path: String,
     pub tags: Vec<(i64, LegacyTag)>,
     pub dict_words: Vec<String>,
@@ -138,12 +141,18 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
         .unwrap_or_else(|_| path.to_string());
 
     // --- Project metadata ---
-    let (title, author, dict_language) = conn
+    let (title, author, dict_language, unique_id) = conn
         .query_row(
-            "SELECT COALESCE(t_project_name,''), COALESCE(t_author,''), COALESCE(t_spell_check_lang,'') \
+            "SELECT COALESCE(t_project_name,''), COALESCE(t_author,''), COALESCE(t_spell_check_lang,''), \
+                    COALESCE(t_project_unique_identifier,'') \
              FROM tbl_project LIMIT 1",
             [],
-            |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?)),
+            |r| Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, String>(3)?,
+            )),
         )
         .unwrap_or_default();
 
@@ -402,6 +411,7 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
         title,
         author,
         dict_language,
+        unique_id,
         absolute_path,
         tags,
         dict_words,

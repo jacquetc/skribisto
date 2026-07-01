@@ -85,3 +85,12 @@ saving-as-folder = Saving as { $target }/…
 save-error = Could not save: { $error }
 backup-error = Could not back up: { $error }
 backing-up = Backing up…
+
+## New-work template labels (passed to the backend, which can't do i18n)
+new-work-manuscript = Manuscript
+new-work-notes = Notes
+new-work-research = Research
+new-work-notebook = Notebook
+new-work-chapter = Chapter
+new-work-scene = Scene
+new-work-note = Note

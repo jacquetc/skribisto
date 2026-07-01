@@ -578,8 +578,8 @@ mod tests {
     fn make_v1_4_db() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
-            "CREATE TABLE tbl_project (dbl_database_version REAL, t_project_name TEXT, t_author TEXT, t_spell_check_lang TEXT, dt_updated DATETIME);
-             INSERT INTO tbl_project (dbl_database_version, t_project_name, t_author, t_spell_check_lang) VALUES (1.4, 'My Novel', 'Jane', 'en');
+            "CREATE TABLE tbl_project (dbl_database_version REAL, t_project_name TEXT, t_author TEXT, t_spell_check_lang TEXT, t_project_unique_identifier TEXT, dt_updated DATETIME);
+             INSERT INTO tbl_project (dbl_database_version, t_project_name, t_author, t_spell_check_lang, t_project_unique_identifier) VALUES (1.4, 'My Novel', 'Jane', 'en', 'abc123XYZ000');
 
              CREATE TABLE tbl_sheet (l_sheet_id INTEGER PRIMARY KEY AUTOINCREMENT, t_title TEXT, l_sort_order INTEGER, l_indent INTEGER, m_content BLOB, dt_created DATETIME DEFAULT CURRENT_TIMESTAMP, dt_updated DATETIME DEFAULT CURRENT_TIMESTAMP, dt_trashed DATETIME, b_trashed BOOLEAN DEFAULT 0);
              CREATE TABLE tbl_sheet_property (l_property_id INTEGER PRIMARY KEY AUTOINCREMENT, l_sheet_code INTEGER, t_name TEXT, t_value TEXT, dt_created DATETIME DEFAULT CURRENT_TIMESTAMP, dt_updated DATETIME DEFAULT CURRENT_TIMESTAMP, b_system BOOLEAN DEFAULT 0);
@@ -654,6 +654,10 @@ mod tests {
         let project = super::super::read_v2(&conn, ":memory:").expect("read_v2");
         assert_eq!(project.title, "My Novel");
         assert_eq!(project.author, "Jane");
+        assert_eq!(
+            project.unique_id, "abc123XYZ000",
+            "legacy project unique id survives the 1.0→2.0 upgrade + read_v2"
+        );
         assert_eq!(project.dict_words, vec!["Skribisto".to_string()]);
         assert_eq!(project.tags.len(), 1, "the tag should carry over");
 

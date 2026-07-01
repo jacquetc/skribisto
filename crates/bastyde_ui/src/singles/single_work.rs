@@ -144,17 +144,21 @@ mod imp {
             }
             self.inner.loading_status.set(LoadingStatus::Loading);
             let ctx = &*self.inner.ctx;
-            let created_at = match work_commands::get_work(ctx, &id) {
-                Ok(Some(w)) => w.created_at,
+            // Fetch the stored Work to preserve fields this editor doesn't own
+            // (created_at, and especially the stable `unique_id` — a scalar
+            // update overwrites every field, so it must be carried through).
+            let existing = match work_commands::get_work(ctx, &id) {
+                Ok(Some(w)) => w,
                 _ => return self.fail("Work not found"),
             };
             let dto = UpdateWorkDto {
                 id,
-                created_at,
+                created_at: existing.created_at,
                 updated_at: chrono::Utc::now(),
                 title: self.inner.title.get(),
                 author_name: self.inner.author_name.get(),
                 dict_language: self.inner.dict_language.get(),
+                unique_id: existing.unique_id,
             };
             match work_commands::update_work(ctx, stack_id, &dto) {
                 Ok(_) => {

@@ -91,6 +91,7 @@ pub struct Work {
     pub title: String,
     pub author_name: String,
     pub dict_language: String,
+    pub unique_id: String,
     pub binders: Vec<EntityId>,
     pub tags: Vec<EntityId>,
     pub dict_words: Vec<EntityId>,

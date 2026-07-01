@@ -76,6 +76,12 @@ mod imp {
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_event: &Event| me.refresh(),
             );
+            // A new project also adds a RecentWork entry — refresh for it too.
+            let me = self.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::NewWork),
+                move |_event: &Event| me.refresh(),
+            );
         }
 
         /// The reactive model to bind a `ListView` to.

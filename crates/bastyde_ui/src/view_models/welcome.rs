@@ -14,9 +14,33 @@ use bastyde::widgets::Toast;
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
-use frontend::work_management::{LoadWorkDto, NewWorkDto};
+use frontend::work_management::{LoadWorkDto, NewWorkDto, NewWorkTemplate};
 
 use crate::SHOW_WELCOME_KEY;
+
+/// Build the `NewWorkDto` for the current UI flow.
+///
+/// Placeholder policy (until a real new-project wizard exists): save as a single
+/// file (`is_folder = false`) with the Novel template. The backend can't do
+/// i18n, so the template's human labels are resolved *here* and passed in, in the
+/// exact order `work_management`'s `TemplateLabels::from_list` reads them:
+/// `[Manuscript, Notes, Research, Notebook, Chapter, Scene, Note]`.
+pub(crate) fn new_work_dto(file_name: String) -> NewWorkDto {
+    NewWorkDto {
+        file_name,
+        is_folder: false,
+        template_kind: NewWorkTemplate::Novel,
+        labels: vec![
+            tr!(new_work_manuscript()).into(),
+            tr!(new_work_notes()).into(),
+            tr!(new_work_research()).into(),
+            tr!(new_work_notebook()).into(),
+            tr!(new_work_chapter()).into(),
+            tr!(new_work_scene()).into(),
+            tr!(new_work_note()).into(),
+        ],
+    }
+}
 
 #[derive(Clone)]
 pub struct WelcomeViewModel {
@@ -93,7 +117,7 @@ impl WelcomeViewModel {
                 ectx.dismiss_modal();
                 let file = path.to_string_lossy().into_owned();
                 if let Err(e) =
-                    work_management_commands::new_work(&app_ctx, &NewWorkDto { file_name: file })
+                    work_management_commands::new_work(&app_ctx, &new_work_dto(file))
                 {
                     ectx.show_toast(Toast::error(tr!(could_not_create_work(error = e.to_string()))));
                 }

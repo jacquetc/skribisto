@@ -132,6 +132,7 @@ pub fn from_entities(
                 dict_language: work.dict_language.clone(),
                 tag_ids: work.tags.clone(),
                 dict_word_ids: work.dict_words.clone(),
+                unique_id: work.unique_id.clone(),
             },
             binder_order: binders.iter().map(|b| b.binder.id).collect(),
         },
@@ -187,6 +188,8 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         title: m.work.title.clone(),
         author_name: m.work.author_name.clone(),
         dict_language: m.work.dict_language.clone(),
+        // Empty for pre-v2 bundles; healed (freshly minted) in `materialize`.
+        unique_id: m.work.unique_id.clone(),
         ..Default::default()
     };
 

@@ -89,6 +89,8 @@ entities:
     type: string
   - name: dict_language
     type: string
+  - name: unique_id
+    type: string
   - name: binders
     type: entity
     entity: Binder
@@ -340,6 +342,9 @@ features:
   - name: new_work
     entities:
     - Root
+    - System
+    - WorkInfo
+    - RecentWork
     - Work
     - Binder
     - BinderItem
@@ -350,6 +355,20 @@ features:
       fields:
       - name: file_name
         type: string
+      - name: is_folder
+        type: boolean
+      - name: template_kind
+        type: enum
+        enum_name: NewWorkTemplate
+        enum_values:
+        - None
+        - EmptyNovel
+        - LightNovel
+        - Novel
+        - NoteBook
+      - name: labels
+        type: string
+        is_list: true
 - name: export_management
   use_cases:
   - name: export_work

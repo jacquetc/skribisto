@@ -39,3 +39,4 @@ pub use editors::EditorsViewModel;
 pub use outline::OutlineViewModel;
 pub use settings::SettingsViewModel;
 pub use welcome::WelcomeViewModel;
+pub(crate) use welcome::new_work_dto;

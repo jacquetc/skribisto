@@ -35,4 +35,17 @@ pub struct BackupResultDto {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct NewWorkDto {
     pub file_name: String,
+    pub is_folder: bool,
+    pub template_kind: NewWorkTemplate,
+    pub labels: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum NewWorkTemplate {
+    #[default]
+    None,
+    EmptyNovel,
+    LightNovel,
+    Novel,
+    NoteBook,
 }
