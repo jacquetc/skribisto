@@ -700,9 +700,17 @@ fn binder_tree(
             if !node.label.is_empty() {
                 item = item.subtitle(lit!(node.label.clone()));
             }
+            // Leading icon chosen purely by sub_role (binder rows get the binder
+            // glyph); tint follows the theme via `TextRole::Primary`.
+            let mut icon = if node.kind == "binder" {
+                crate::binder_icons::binder_icon()
+            } else {
+                crate::binder_icons::sub_role_icon(&node.sub_role)
+            };
             // Persistent "open document" marker: the row whose item is the
-            // active editor tab shows an accent title — independent of selection
-            // and focus, so you can always see what's open. Reactive (no rebuild).
+            // active editor tab shows an accent title + icon — independent of
+            // selection and focus, so you can always see what's open. Reactive
+            // (no rebuild); the same signal drives both title and icon color.
             if let Some(item_id) = node.item_id {
                 let title_color = active_item.map(move |a| {
                     if *a == Some(item_id) {
@@ -711,8 +719,10 @@ fn binder_tree(
                         TextRole::Primary
                     }
                 });
-                item = item.label_color(title_color);
+                item = item.label_color(title_color.clone());
+                icon = icon.color(title_color);
             }
+            item = item.leading_slot(icon);
             let cm = menu_outline.clone();
             Box::new(item.context_menu(move |_pos, _ctx| {
                 // Operate on the right-clicked row directly — do NOT mutate the

@@ -29,6 +29,7 @@ use bastyde::data::{
 use bastyde::prelude::Signal;
 
 use frontend::AppContext;
+use frontend::common::entities::BinderItemSubRole;
 
 /// Stable per-row identity. Binders and items share the row space but live in
 /// disjoint id namespaces in the backend, so the key is tagged.
@@ -46,6 +47,9 @@ pub struct TreeNode {
     pub label: String,
     /// `"binder"` | `"folder"` | `"item"`.
     pub kind: String,
+    /// The item's structural sub-role — selects the leading icon. Binder rows
+    /// keep the default; their icon comes from the `kind == "binder"` branch.
+    pub sub_role: BinderItemSubRole,
     /// The `BinderItem` id (`None` for binder rows) — used to open its editor.
     pub item_id: Option<u64>,
     /// The owning `Binder` id (`Some` for binder rows and item rows alike).
@@ -58,6 +62,7 @@ impl TreeNode {
             title: name,
             label: String::new(),
             kind: "binder".to_string(),
+            sub_role: BinderItemSubRole::default(),
             item_id: None,
             binder_id: Some(binder_id),
         }
@@ -458,6 +463,7 @@ mod rows {
                         title: it.title,
                         label: it.label,
                         kind,
+                        sub_role: it.sub_role,
                         item_id: Some(it.id),
                         binder_id: Some(binder_id),
                     },
@@ -478,15 +484,18 @@ mod rows {
     use bastyde::prelude::Signal;
 
     use frontend::AppContext;
+    use frontend::common::entities::BinderItemSubRole;
 
     use super::{BinderTreeKey, Row, TreeNode};
 
+    #[allow(clippy::too_many_arguments)]
     fn item(
         id: u64,
         binder: u64,
         title: &str,
         label: &str,
         kind: &str,
+        sub_role: BinderItemSubRole,
         depth: usize,
         parent: BinderTreeKey,
     ) -> Row {
@@ -496,6 +505,7 @@ mod rows {
                 title: title.to_string(),
                 label: label.to_string(),
                 kind: kind.to_string(),
+                sub_role,
                 item_id: Some(id),
                 binder_id: Some(binder),
             },
@@ -505,10 +515,17 @@ mod rows {
         }
     }
 
+    // A tiny coherent book, arranged to exercise the full range of sub_role
+    // icons: binder / book / book-begin / scene / chapter / chapter-scene /
+    // note / text. (Structure kept stable — the model tests below assert the
+    // row/child counts.)
     pub fn load(_ctx: &AppContext, _work_id: &Signal<Option<u64>>) -> Vec<Row> {
+        // Import specific variants (not a glob — that would pull `None` in and
+        // shadow `Option::None` used for the binder rows' `parent`).
+        use BinderItemSubRole::{Book, BookBegin, Chapter, ChapterScene, Note, Scene, Text};
         let m = BinderTreeKey::Binder(1);
         let n = BinderTreeKey::Binder(2);
-        let ch1 = BinderTreeKey::Item(101);
+        let book = BinderTreeKey::Item(101);
         let ch2 = BinderTreeKey::Item(104);
         vec![
             Row {
@@ -518,11 +535,11 @@ mod rows {
                 parent: None,
                 has_children: false,
             },
-            item(101, 1, "Chapter 1", "the setup", "folder", 1, m),
-            item(102, 1, "Opening scene", "1st plot point", "item", 2, ch1),
-            item(103, 1, "Inciting incident", "", "item", 2, ch1),
-            item(104, 1, "Chapter 2", "rising action", "folder", 1, m),
-            item(105, 1, "The journey begins", "", "item", 2, ch2),
+            item(101, 1, "Book One", "the setup", "folder", Book, 1, m),
+            item(102, 1, "Opening", "1st plot point", "item", BookBegin, 2, book),
+            item(103, 1, "Scene at dawn", "", "item", Scene, 2, book),
+            item(104, 1, "Chapter Two", "rising action", "folder", Chapter, 1, m),
+            item(105, 1, "Confrontation", "", "item", ChapterScene, 2, ch2),
             Row {
                 key: n,
                 node: TreeNode::binder("Notes".into(), 2),
@@ -530,8 +547,8 @@ mod rows {
                 parent: None,
                 has_children: false,
             },
-            item(106, 2, "Protagonist", "wants freedom", "item", 1, n),
-            item(107, 2, "Antagonist", "", "item", 1, n),
+            item(106, 2, "Character sketch", "wants freedom", "item", Note, 1, n),
+            item(107, 2, "Random idea", "", "item", Text, 1, n),
         ]
     }
 }

@@ -2,6 +2,7 @@
 
 mod app;
 mod app_ids;
+mod binder_icons;
 mod intents;
 mod models;
 mod recent_projects_button;

@@ -140,11 +140,17 @@ impl EditorsViewModel {
         } else {
             lit!(title.to_string())
         };
+        // Leading icon by sub_role — matches the outline row's glyph. The
+        // factory is re-invoked per header build, so capture an owned sub_role.
+        let sub_role = item.sub_role.clone();
         let id = TabId::fresh();
         self.tabs.push(TabHandle::dynamic(
             id,
             "editor",
-            TabInfo::new().title(tab_title).closable(true),
+            TabInfo::new()
+                .title(tab_title)
+                .closable(true)
+                .icon(move || crate::binder_icons::sub_role_icon(&sub_role)),
             tab,
         ));
         self.selected_tab.set(Some(id));
