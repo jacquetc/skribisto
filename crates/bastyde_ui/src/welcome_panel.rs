@@ -21,7 +21,6 @@
 
 use std::rc::Rc;
 
-use bastyde::core::BindingLevel;
 use bastyde::core::styles::PanelVariant;
 use bastyde::data::ListModel;
 use bastyde::prelude::*;
@@ -29,9 +28,10 @@ use bastyde::res;
 use bastyde::widgets::GroupHeader;
 use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
-    Button, ButtonVariant, Center, Checkbox, Divider, Expand, FixedSize, HStack, IconButton,
-    IconLocation, IconWidget, Padding, Panel, ScrollArea, SearchField, Spacer, Switcher, TabBar,
-    TabDelegate, TabId, TabIndicatorPosition, TextWidget, VStack,
+    ActivateOn, Button, ButtonVariant, Center, Checkbox, Divider, Expand, FixedSize, HStack,
+    IconButton, IconLocation, IconWidget, ListView, Padding, Panel, SearchField, Spacer,
+    StandardListItem, Switcher, TabBar, TabDelegate, TabId, TabIndicatorPosition, TextWidget,
+    VStack,
 };
 
 use frontend::AppContext;
@@ -97,36 +97,6 @@ impl WelcomePanel {
         let plus_icon =
             IconWidget::from_svg_icon(res!("assets/icons/welcome/plus.svg")).icon_size(16.0);
 
-        // The recent-works list is data-driven (a loop over the live model
-        // building `work_row` helpers); kept as a plain builder and embedded
-        // into the bati! tree below via `child:`.
-        let mut list = VStack::new().spacing(2.0);
-        let recents = self.recents.items();
-        if recents.is_empty() {
-            list = list.child(
-                Padding::symmetric(8.0, 10.0).child(
-                    TextWidget::new(lit!("No recent works yet."))
-                        .style(TextStyleRole::Body)
-                        .color(TextRole::Secondary),
-                ),
-            );
-        } else {
-            for dto in recents {
-                let path = dto.absolute_path.clone();
-                let date = dto.last_opened_at.format("%Y-%m-%d").to_string();
-                let row_vm = vm.clone();
-                let icon =
-                    IconWidget::from_svg_icon(res!("assets/icons/binder/book.svg")).icon_size(20.0);
-                list = list.child(work_row(
-                    icon,
-                    dto.title.clone(),
-                    path.clone(),
-                    Some(date),
-                    move |ctx| row_vm.open_work(path.clone(), ctx),
-                ));
-            }
-        }
-
         bati!(
             VStack {
                 spacing: 0.0
@@ -157,36 +127,58 @@ impl WelcomePanel {
                     }
                 }
                 Expand::vertical {
-                    ScrollArea {
-                        Padding::symmetric(6.0, 12.0) {
-                            child: list
-                        }
-                    }
+                    child: self.recents_list(vm)
                 }
             }
         )
     }
 
-    /// Examples pane: the bundled example works (one today — Starforgers).
-    fn examples_pane(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
-        // Data-driven list (loop over the bundled examples); kept as a plain
-        // builder and embedded into the bati! tree below via `child:`.
-        let mut list = VStack::new().spacing(2.0);
-        for ex in self.examples.items() {
-            let ex_vm = vm.clone();
-            let file_name = ex.file_name;
-            let bytes = ex.bytes;
+    /// The recent-works region: a virtualized [`ListView`] of [`StandardListItem`]
+    /// rows — `Role::List`/`Role::ListItem` a11y, keyboard navigation and
+    /// type-ahead come for free — or a muted placeholder when there are none.
+    /// Both arms sit under a constant-index [`Switcher`] so the region resolves
+    /// to one widget type (only the active page is mounted).
+    fn recents_list(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
+        let model = self.recents.list_model();
+        let empty = model.is_empty();
+
+        // `on_activate` hands back only the row index, so the open path reads the
+        // file path back out of a second cheap-clone handle on the same model.
+        let open_model = model.clone();
+        let row_vm = vm.clone();
+        let list = ListView::new(model, |_i, dto, selected| {
             let icon =
                 IconWidget::from_svg_icon(res!("assets/icons/binder/book.svg")).icon_size(20.0);
-            list = list.child(work_row(
-                icon,
-                ex.title.to_string(),
-                ex.blurb.to_string(),
-                None,
-                move |ctx| ex_vm.open_example(file_name, bytes, ctx),
-            ));
-        }
+            let date = dto.last_opened_at.format("%Y-%m-%d").to_string();
+            Box::new(
+                StandardListItem::new(lit!(dto.title.clone()))
+                    .subtitle(lit!(dto.absolute_path.clone()))
+                    .leading_slot(icon)
+                    .trailing_slot(
+                        TextWidget::new(lit!(date))
+                            .style(TextStyleRole::Small)
+                            .color(TextRole::Secondary),
+                    )
+                    .selected(selected),
+            )
+        })
+        // Single-click to open (these rows are launch targets, not multi-select
+        // list items); arrow keys still move the highlight without opening.
+        .activate_on(ActivateOn::SingleClick)
+        .auto_item_height(52.0)
+        .on_activate(move |i, ctx| {
+            if let Some(path) = open_model.with_item(i, |d| d.absolute_path.clone()) {
+                row_vm.open_work(path, ctx);
+            }
+        });
 
+        Switcher::new(Signal::new(if empty { 0 } else { 1 }))
+            .child(empty_note("No recent works yet."))
+            .child(list)
+    }
+
+    /// Examples pane: the bundled example works (one today — Starforgers).
+    fn examples_pane(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
         bati!(
             VStack {
                 spacing: 0.0
@@ -197,71 +189,46 @@ impl WelcomePanel {
                     }
                 }
                 Expand::vertical {
-                    ScrollArea {
-                        Padding::symmetric(6.0, 12.0) {
-                            child: list
-                        }
-                    }
+                    child: self.examples_list(vm)
                 }
             }
         )
     }
+
+    /// The examples region — same [`ListView`] + [`StandardListItem`] shape as
+    /// [`recents_list`](Self::recents_list). Always non-empty (the bundled set),
+    /// so no placeholder branch.
+    fn examples_list(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
+        let model = self.examples.list_model();
+        let open_model = model.clone();
+        let ex_vm = vm.clone();
+        ListView::new(model, |_i, ex, selected| {
+            let icon =
+                IconWidget::from_svg_icon(res!("assets/icons/binder/book.svg")).icon_size(20.0);
+            Box::new(
+                StandardListItem::new(lit!(ex.title))
+                    .subtitle(lit!(ex.blurb))
+                    .leading_slot(icon)
+                    .selected(selected),
+            )
+        })
+        .activate_on(ActivateOn::SingleClick)
+        .auto_item_height(52.0)
+        .on_activate(move |i, ctx| {
+            if let Some((file_name, bytes)) = open_model.with_item(i, |e| (e.file_name, e.bytes)) {
+                ex_vm.open_example(file_name, bytes, ctx);
+            }
+        })
+    }
 }
 
-/// One recent/example row: 36 dp icon chip · (title / subtitle) · optional
-/// trailing meta. Whole row is the click target.
-fn work_row(
-    icon: IconWidget,
-    title: String,
-    subtitle: String,
-    trailing: Option<String>,
-    on_click: impl Fn(&mut EventContext) + 'static,
-) -> impl Widget + 'static {
-    // Surface the title as the row's accessible name (a bare HStack has none).
-    let name = title.clone();
+/// Muted top-aligned note shown in place of a list when it has no rows.
+fn empty_note(text: &'static str) -> impl Widget + 'static {
     bati!(
         Padding::symmetric(8.0, 10.0) {
-            HStack {
-                spacing: 12.0
-                // Whole row is the click target. These `WidgetBuilder` methods
-                // attach last regardless of source order (bati! reorders them).
-                cursor: CursorIcon::Pointer
-                focusable: true
-                access_label_literal: name
-                on_tap: move |_event, ctx| on_click(ctx)
-                // 36 dp icon chip.
-                FixedSize {
-                    bind_width: 36.0
-                    bind_height: 36.0
-                    Center {
-                        child: icon
-                    }
-                }
-                // Title / subtitle body, claiming the slack.
-                Expand::horizontal {
-                    VStack {
-                        spacing: 2.0
-                        TextWidget::new(lit!(title)) {
-                            style: TextStyleRole::BodyBold
-                            color: TextRole::Primary
-                            single_line
-                            overflow: TextOverflow::Ellipsis(EllipsisMode::Trailing)
-                        }
-                        TextWidget::new(lit!(subtitle)) {
-                            style: TextStyleRole::Small
-                            color: TextRole::Secondary
-                            single_line
-                            overflow: TextOverflow::Ellipsis(EllipsisMode::Middle)
-                        }
-                    }
-                }
-                // Optional trailing meta (e.g. last-opened date).
-                if let Some(t) = trailing {
-                    TextWidget::new(lit!(t)) {
-                        style: TextStyleRole::Small
-                        color: TextRole::Secondary
-                    }
-                }
+            TextWidget::new(lit!(text)) {
+                style: TextStyleRole::Body
+                color: TextRole::Secondary
             }
         }
     )
@@ -290,13 +257,10 @@ impl Widget for WelcomePanel {
         // All logic on the view-model; rebuilt here from the live store.
         let vm = WelcomeViewModel::new(ctx.settings(), self.app_ctx.clone());
 
-        // Refresh the recents list when a work loads (the model bumps `version`).
+        // The lists are reactive `ListView`s bound to Layer-A `ListModel`s, so
+        // they refresh themselves on `LoadWork` — no widget rebuild needed here.
+        // `wire` just subscribes each model to the backend (examples: a no-op).
         self.recents.wire(ctx);
-        self.recents.version_signal().bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Rebuild,
-        );
         self.examples.wire(ctx);
 
         // ── Brand block (top of the sidebar) ───────────────────────────────
