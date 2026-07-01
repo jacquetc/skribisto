@@ -1,5 +1,6 @@
 //! Skribisto desktop UI (Bastyde). Wires the Qleany backend to a Bastyde shell.
 
+mod activity_icons;
 mod app;
 mod app_ids;
 mod binder_icons;

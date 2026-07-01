@@ -616,6 +616,7 @@ impl Widget for App {
                         active_item.clone(),
                     ))
                 })
+                .icon(crate::activity_icons::outline_icon)
                 .default_location(DockOpenLocation::side(DockSide::Leading)),
             );
         outline.open_in_layout();
