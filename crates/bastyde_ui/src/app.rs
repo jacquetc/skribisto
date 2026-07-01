@@ -22,13 +22,13 @@ use bastyde::widgets::{
     ActivateOn, Divider, DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout,
     EventContextMessageBoxExt, Expand, FocusScope, HStack, IconButtonSize, MenuItem, MenuList,
     MessageBox, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, Spacer,
-    StandardButton, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, TraversalScopePolicy,
-    TreeRow, TreeView, VStack,
+    StandardButton, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, Toast,
+    TraversalScopePolicy, TreeRow, TreeView, VStack,
 };
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
-use frontend::work_management::LoadWorkDto;
+use frontend::work_management::{LoadWorkDto, NewWorkDto};
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{
     DirectAccessEntity, EntityEvent, Event, Origin, WorkManagementEvent,
@@ -37,6 +37,7 @@ use frontend::common::event::{
 use crate::app_ids::AppIds;
 use crate::intents::AppIntent;
 use crate::models::{BinderTreeKey, TreeNode};
+use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel};
@@ -211,6 +212,68 @@ impl Widget for App {
                 Action::new("editor.save").on_invoke(move |_i, _c| editors.save_to_disk()),
             );
         }
+        // ── File / app commands (the scriptable surface for the title bar). ──
+        // Global (not `register_action`/`register_shortcut`) so they're reached
+        // from the title-bar overlay menu — which renders as a sibling of `App`,
+        // NOT on `App`'s source→root path — as well as from their shortcuts.
+        // New Work (Ctrl+N): native save picker for the target `.skrib`, then create.
+        ctx.register_shortcut_global(
+            Shortcut::new("work.new")
+                .name("New Work")
+                .primary(KeyStroke::ctrl(Key::N))
+                .build(),
+        );
+        {
+            let app_ctx = self.app_ctx.clone();
+            ctx.register_action_global(
+                Action::new("work.new").on_invoke(move |_i, c| new_work_flow(app_ctx.clone(), c)),
+            );
+        }
+        // Open Work (Ctrl+O): native picker for an existing `.skrib`, then load.
+        ctx.register_shortcut_global(
+            Shortcut::new("work.open")
+                .name("Open Work")
+                .primary(KeyStroke::ctrl(Key::O))
+                .build(),
+        );
+        {
+            let app_ctx = self.app_ctx.clone();
+            ctx.register_action_global(
+                Action::new("work.open").on_invoke(move |_i, c| open_work_flow(app_ctx.clone(), c)),
+            );
+        }
+        // Close Work (Ctrl+W): the `work.close` *action* is registered further
+        // down (it shares the unsaved-changes guard with the window close); here
+        // we only add its global shortcut.
+        ctx.register_shortcut_global(
+            Shortcut::new("work.close")
+                .name("Close Work")
+                .primary(KeyStroke::ctrl(Key::W))
+                .build(),
+        );
+        // Settings (Ctrl+,): present the settings modal.
+        ctx.register_shortcut_global(
+            Shortcut::new("app.settings")
+                .name("Settings")
+                .primary(KeyStroke::ctrl(Key::Character(',')))
+                .build(),
+        );
+        ctx.register_action_global(Action::new("app.settings").on_invoke(|_i, c| {
+            c.present_modal(
+                ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
+                    .presentation(ModalPresentation::InTree)
+                    .title("Settings")
+                    .size(520, 320),
+            );
+        }));
+        // Quit (Ctrl+Q): routes through the window close guard (unsaved prompt).
+        ctx.register_shortcut_global(
+            Shortcut::new("app.quit")
+                .name("Quit")
+                .primary(KeyStroke::ctrl(Key::Q))
+                .build(),
+        );
+        ctx.register_action_global(Action::new("app.quit").on_invoke(|_i, c| c.close_window()));
         // Welcome modal: presented at startup (gated below), and on demand from
         // File ▸ Welcome… and the brand icon button — all dispatch `welcome.show`.
         // Global so the title-bar overlay menu/button reach it (house rule).
@@ -468,8 +531,8 @@ impl Widget for App {
                 let app_ctx3 = app_ctx2.clone();
                 let pe = pending.clone();
                 ctx.present_message_box(
-                    MessageBox::question(lit!("Save changes before closing the work?"))
-                        .text(lit!("This work has unsaved changes."))
+                    MessageBox::question(tr!(close_work_question()))
+                        .text(tr!(unsaved_changes()))
                         .buttons(MessageBoxButtons::SaveDiscardCancel)
                         .default_button(StandardButton::Save)
                         .escape_button(StandardButton::Cancel)
@@ -512,7 +575,7 @@ impl Widget for App {
             )
             .center(center)
             .dock(
-                DockWidget::new(outline.dock_id(), lit!("Binder"), move |_id| {
+                DockWidget::new(outline.dock_id(), tr!(binder()), move |_id| {
                     // Group the dock's Tab order: a Continue scope keeps the
                     // binder's tab_index numbering from colliding with other
                     // docks/regions while still letting Tab flow out at the ends.
@@ -741,22 +804,59 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
     let duplicate = outline.clone();
     let trash = outline;
     MenuList::new()
-        .item(MenuItem::new(lit!("New Item")).on_activate_fn(move |_| {
+        .item(MenuItem::new(tr!(ctx_new_item())).on_activate_fn(move |_| {
             new_item.new_item_at(key, BinderItemRole::Item, BinderItemSubRole::Text)
         }))
-        .item(MenuItem::new(lit!("New Folder")).on_activate_fn(move |_| {
+        .item(MenuItem::new(tr!(ctx_new_folder())).on_activate_fn(move |_| {
             new_folder.new_item_at(key, BinderItemRole::Folder, BinderItemSubRole::None)
         }))
         .separator()
         .item(
-            MenuItem::new(lit!("Rename")).on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
+            MenuItem::new(tr!(ctx_rename())).on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
         )
         .item(
-            MenuItem::new(lit!("Duplicate"))
+            MenuItem::new(tr!(ctx_duplicate()))
                 .on_activate_fn(move |_| duplicate.duplicate_keys(&[key])),
         )
         .separator()
         .item(
-            MenuItem::new(lit!("Move to Trash")).on_activate_fn(move |_| trash.trash_keys(&[key])),
+            MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |_| trash.trash_keys(&[key])),
         )
+}
+
+/// Present the native picker for an existing `.skrib` and load it. Backs the
+/// global `work.open` command (File ▸ Open Work… and Ctrl+O).
+fn open_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
+    let req = FileDialogRequest::pick_file()
+        .title("Open Skribisto work")
+        .add_filter("Skribisto work", &["skrib"]);
+    let _ = ctx.pick_file(req, move |res, ectx| {
+        if let FileDialogResult::File(Some(path)) = res {
+            let file = path.to_string_lossy().into_owned();
+            if let Err(e) =
+                work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: file })
+            {
+                ectx.show_toast(Toast::error(tr!(could_not_open_work(error = e.to_string()))));
+            }
+        }
+    });
+}
+
+/// Present the native save picker for a new `.skrib` and create it. Backs the
+/// global `work.new` command (File ▸ New Work and Ctrl+N).
+fn new_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
+    let req = FileDialogRequest::save_file()
+        .title("Create a new Skribisto work")
+        .default_file_name("Untitled.skrib")
+        .add_filter("Skribisto work", &["skrib"]);
+    let _ = ctx.save_file(req, move |res, ectx| {
+        if let FileDialogResult::Saved(Some(path)) = res {
+            let file = path.to_string_lossy().into_owned();
+            if let Err(e) =
+                work_management_commands::new_work(&app_ctx, &NewWorkDto { file_name: file })
+            {
+                ectx.show_toast(Toast::error(tr!(could_not_create_work(error = e.to_string()))));
+            }
+        }
+    });
 }

@@ -17,7 +17,6 @@ use std::sync::Arc;
 use bastyde::core::event_source::{EventSource, SubscriptionHandle};
 use bastyde::widgets::{Center, HStack};
 
-use bastyde::core::modal::ModalRequest;
 use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
 use bastyde::res;
 use bastyde::settings::{AppPaths, SettingsStore};
@@ -34,11 +33,10 @@ use frontend::EventHubClient;
 use frontend::commands::{work_info_commands, work_management_commands};
 use frontend::common::entities::WorkShape;
 use frontend::common::event::{Event, Origin};
-use frontend::work_management::{BackupNowDto, LoadWorkDto, SaveAsDto};
+use frontend::work_management::{BackupNowDto, SaveAsDto};
 
 use app::{App, PendingExit};
 use app_ids::AppIds;
-use settings_panel::SettingsPanel;
 use singles::{SingleWork, SingleWorkInfo};
 use view_models::OutlineViewModel;
 
@@ -234,8 +232,8 @@ fn main() {
                         }
                         let pe = pending.clone();
                         ctx.present_message_box(
-                            MessageBox::question(lit!("Save changes before closing?"))
-                                .text(lit!("This work has unsaved changes."))
+                            MessageBox::question(tr!(close_question()))
+                                .text(tr!(unsaved_changes()))
                                 .buttons(MessageBoxButtons::SaveDiscardCancel)
                                 .default_button(StandardButton::Save)
                                 .escape_button(StandardButton::Cancel)
@@ -261,8 +259,7 @@ fn main() {
                             let menu_work = single_work.clone();
                             let menu_work_info = single_work_info.clone();
                             let menu_autosave = autosave_menu.clone();
-                            let menu = MenuModel::new().menu(lit!("File"), move |m| {
-                                let open_ctx = menu_ctx.clone();
+                            let menu = MenuModel::new().menu(tr!(menu_file()), move |m| {
                                 let file_ctx = menu_ctx.clone();
                                 let folder_ctx = menu_ctx.clone();
                                 let backup_ctx = menu_ctx.clone();
@@ -281,38 +278,31 @@ fn main() {
                                 // Autosave hides the manual "Save" item (+ its Ctrl+S
                                 // accelerator); the save then runs on the debounce timer.
                                 let show_manual_save = menu_autosave.map(|a| !*a);
-                                m.item(MenuEntry::new(lit!("Open Work…")).on_activate(
-                                    move |ectx| {
-                                        let ctx = open_ctx.clone();
-                                        let req = FileDialogRequest::pick_file()
-                                            .title("Open Skribisto work")
-                                            .add_filter("Skribisto work", &["skrib"]);
-                                        let _ = ectx.pick_file(req, move |res, ectx2| {
-                                            if let FileDialogResult::File(Some(path)) = res {
-                                                let file = path.to_string_lossy().into_owned();
-                                                if let Err(e) = work_management_commands::load_work(
-                                                    &ctx,
-                                                    &LoadWorkDto { file_name: file },
-                                                ) {
-                                                    ectx2.show_toast(Toast::error(lit!(format!(
-                                                        "Could not open work: {e}"
-                                                    ))));
-                                                }
-                                            }
-                                        });
-                                    },
-                                ))
+                                // New / Open route through the global `work.new` /
+                                // `work.open` actions (registered in `App::build`), so
+                                // the same code path serves the menu and the Ctrl+N /
+                                // Ctrl+O shortcuts.
+                                m.item(
+                                    MenuEntry::new(tr!(menu_new_work()))
+                                        .intent("work.new")
+                                        .shortcut("work.new"),
+                                )
+                                .item(
+                                    MenuEntry::new(tr!(menu_open_work()))
+                                        .intent("work.open")
+                                        .shortcut("work.open"),
+                                )
                                 .separator()
                                 // Flush editors to the store + write to disk (also Ctrl+S).
                                 .item(
-                                    MenuEntry::new(lit!("Save"))
+                                    MenuEntry::new(tr!(menu_save()))
                                         .visible(show_manual_save)
                                         .intent("editor.save")
                                         .shortcut("editor.save"),
                                 )
                                 // Convert the open project to a single zipped `.skrib`
                                 // at a user-chosen location (native save dialog).
-                                .item(MenuEntry::new(lit!("Save as single file…")).visible(show_save_file).on_activate(
+                                .item(MenuEntry::new(tr!(menu_save_as_file())).visible(show_save_file).on_activate(
                                     move |ectx| {
                                         let ctx = file_ctx.clone();
                                         let req = FileDialogRequest::save_file()
@@ -329,12 +319,12 @@ fn main() {
                                                         as_folder: false,
                                                     },
                                                 ) {
-                                                    Ok(_) => ectx2.show_toast(Toast::info(lit!(
-                                                        format!("Saving as {target}…")
-                                                    ))),
-                                                    Err(e) => ectx2.show_toast(Toast::error(lit!(
-                                                        format!("{e}")
-                                                    ))),
+                                                    Ok(_) => ectx2.show_toast(Toast::info(
+                                                        tr!(saving_as_file(target = target)),
+                                                    )),
+                                                    Err(e) => ectx2.show_toast(Toast::error(
+                                                        tr!(save_error(error = e.to_string())),
+                                                    )),
                                                 };
                                             }
                                         });
@@ -342,7 +332,7 @@ fn main() {
                                 ))
                                 // Convert the open project to an exploded folder at a
                                 // user-chosen directory (native folder picker).
-                                .item(MenuEntry::new(lit!("Save as folder…")).visible(show_save_folder).on_activate(
+                                .item(MenuEntry::new(tr!(menu_save_as_folder())).visible(show_save_folder).on_activate(
                                     move |ectx| {
                                         let ctx = folder_ctx.clone();
                                         // Bug 1: the picked folder is the *parent* —
@@ -371,29 +361,31 @@ fn main() {
                                                         as_folder: true,
                                                     },
                                                 ) {
-                                                    Ok(_) => ectx2.show_toast(Toast::info(lit!(
-                                                        format!("Saving as {target}/…")
-                                                    ))),
-                                                    Err(e) => ectx2.show_toast(Toast::error(lit!(
-                                                        format!("{e}")
-                                                    ))),
+                                                    Ok(_) => ectx2.show_toast(Toast::info(
+                                                        tr!(saving_as_folder(target = target)),
+                                                    )),
+                                                    Err(e) => ectx2.show_toast(Toast::error(
+                                                        tr!(save_error(error = e.to_string())),
+                                                    )),
                                                 };
                                             }
                                         });
                                     },
                                 ))
                                 // Timestamped single-file backup next to the project.
-                                .item(MenuEntry::new(lit!("Back up now")).on_activate(
+                                .item(MenuEntry::new(tr!(menu_backup())).on_activate(
                                     move |ectx| {
                                         match work_management_commands::backup_now(
                                             &backup_ctx,
                                             &BackupNowDto { directory: String::new() },
                                         ) {
                                             Ok(_) => {
-                                                ectx.show_toast(Toast::info(lit!("Backing up…")));
+                                                ectx.show_toast(Toast::info(tr!(backing_up())));
                                             }
                                             Err(e) => {
-                                                ectx.show_toast(Toast::error(lit!(format!("{e}"))));
+                                                ectx.show_toast(Toast::error(tr!(backup_error(
+                                                    error = e.to_string()
+                                                ))));
                                             }
                                         }
                                     },
@@ -402,34 +394,33 @@ fn main() {
                                 // `work.close` action (unsaved-changes prompt /
                                 // autosave-ensure live in `App`).
                                 .item(
-                                    MenuEntry::new(lit!("Close Work"))
+                                    MenuEntry::new(tr!(menu_close_work()))
                                         .visible(show_open)
-                                        .intent("work.close"),
+                                        .intent("work.close")
+                                        .shortcut("work.close"),
                                 )
                                 .separator()
-                                .item(MenuEntry::new(lit!("Welcome…")).intent("welcome.show"))
-                                .item(MenuEntry::new(lit!("Settings")).on_activate(|ectx| {
-                                    ectx.present_modal(
-                                        ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
-                                            .presentation(ModalPresentation::InTree)
-                                            .title("Settings")
-                                            .size(520, 320),
-                                    );
-                                }))
+                                .item(MenuEntry::new(tr!(menu_welcome())).intent("welcome.show"))
+                                .item(
+                                    MenuEntry::new(tr!(menu_settings()))
+                                        .intent("app.settings")
+                                        .shortcut("app.settings"),
+                                )
                                 .separator()
                                 .item(
-                                    MenuEntry::new(lit!("Quit"))
-                                        .on_activate(|ectx| ectx.close_window()),
+                                    MenuEntry::new(tr!(menu_quit()))
+                                        .intent("app.quit")
+                                        .shortcut("app.quit"),
                                 )
                             })
-                            .menu(lit!("View"), {
+                            .menu(tr!(menu_view()), {
                                 // Reflect-only checkmark: mirrors the dock's truth
                                 // (`is_visible`) without writing it; the toggle is
                                 // driven by the `outline.toggle` intent (Ctrl+B).
                                 let outline = outline.clone();
                                 move |m| {
                                     m.item(
-                                        MenuEntry::new(lit!("Outline"))
+                                        MenuEntry::new(tr!(menu_outline()))
                                             .checked(outline.is_visible())
                                             .intent("outline.toggle")
                                             .shortcut("outline.toggle"),
@@ -456,7 +447,7 @@ fn main() {
                                                 )
                                                 .mode(IconMode::FullColor)
                                             ) {
-                                                tooltip: lit!("Welcome")
+                                                tooltip: tr!(tooltip_welcome())
                                                 size: IconButtonSize::Large
                                                 on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
                                                 

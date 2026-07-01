@@ -187,12 +187,18 @@ impl EditorsViewModel {
         // Every tab bumps the shared edit signal, so the autosave timer sees edits
         // from whichever tab is active.
         tab.edited = Some(self.edited.clone());
-        let label = if title.is_empty() { "Untitled" } else { title };
+        // The item's title (data), or a translated "Untitled" fallback for
+        // empty ones — locale-reactive so a language switch re-labels the tab.
+        let tab_title = if title.is_empty() {
+            tr!(untitled())
+        } else {
+            lit!(title.to_string())
+        };
         let id = TabId::fresh();
         self.tabs.push(TabHandle::dynamic(
             id,
             "editor",
-            TabInfo::new().title(lit!(label.to_string())).closable(true),
+            TabInfo::new().title(tab_title).closable(true),
             tab,
         ));
         self.selected_tab.set(Some(id));
@@ -543,7 +549,7 @@ impl OutlineViewModel {
     pub fn begin_rename(&self, key: BinderTreeKey, ctx: &mut EventContext) {
         let current = self.model.node_of(&key).map(|(_, t)| t).unwrap_or_default();
         let vm = self.clone();
-        InputDialog::new(lit!("Rename"))
+        InputDialog::new(tr!(dialog_rename()))
             .default_text(current)
             .on_result(move |result, _ctx| {
                 if let Some(name) = result
@@ -954,7 +960,7 @@ impl WelcomeViewModel {
         if let Err(e) =
             work_management_commands::load_work(&self.app_ctx, &LoadWorkDto { file_name: path })
         {
-            ctx.show_toast(Toast::error(lit!(format!("Could not open work: {e}"))));
+            ctx.show_toast(Toast::error(tr!(could_not_open_work(error = e.to_string()))));
         }
     }
 
@@ -965,7 +971,7 @@ impl WelcomeViewModel {
         match write_temp_example(file_name, bytes) {
             Ok(path) => self.open_work(path, ctx),
             Err(e) => {
-                ctx.show_toast(Toast::error(lit!(format!("Could not open example: {e}"))));
+                ctx.show_toast(Toast::error(tr!(could_not_open_example(error = e.to_string()))));
             }
         }
     }
@@ -983,7 +989,7 @@ impl WelcomeViewModel {
                 if let Err(e) =
                     work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: file })
                 {
-                    ectx.show_toast(Toast::error(lit!(format!("Could not open work: {e}"))));
+                    ectx.show_toast(Toast::error(tr!(could_not_open_work(error = e.to_string()))));
                 }
             }
         });
@@ -1003,7 +1009,7 @@ impl WelcomeViewModel {
                 if let Err(e) =
                     work_management_commands::new_work(&app_ctx, &NewWorkDto { file_name: file })
                 {
-                    ectx.show_toast(Toast::error(lit!(format!("Could not create work: {e}"))));
+                    ectx.show_toast(Toast::error(tr!(could_not_create_work(error = e.to_string()))));
                 }
             }
         });

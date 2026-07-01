@@ -64,8 +64,8 @@ pub fn synopsis_editor(doc: &TextDocument, on_change: impl Fn() + 'static) -> im
 }
 
 /// A one-line title input bound to `field.value`.
-pub fn title_input(field: &TitleField, placeholder: &str) -> impl Widget {
-    TextInput::new(field.value.clone()).placeholder(lit!(placeholder.to_string()))
+pub fn title_input(field: &TitleField, placeholder: impl Into<LocalizedString>) -> impl Widget {
+    TextInput::new(field.value.clone()).placeholder(placeholder)
 }
 
 /// "Synopsis" header + the centered, capped synopsis editor (a touch narrower
@@ -79,7 +79,7 @@ pub fn synopsis_section(
     bati!(
         VStack {
             spacing: 5.0
-            GroupHeader::new(lit!("Synopsis")) {
+            GroupHeader::new(tr!(synopsis())) {
                 style: TextStyleRole::SmallBold
                 color: TextRole::Secondary
             }
@@ -108,7 +108,7 @@ pub fn writing_section(
     bati!(
         VStack {
             spacing: 5.0
-            GroupHeader::new(lit!("Text")) {
+            GroupHeader::new(tr!(text_heading())) {
                 style: TextStyleRole::SmallBold
                 color: TextRole::Secondary
             }
@@ -161,10 +161,16 @@ pub fn centered(child: impl Widget + 'static, column_width: &Signal<f32>) -> imp
 pub fn folder_synopsis_pane(tab: &ContentTab) -> impl Widget {
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(t) = &tab.title {
-        col = col.child(centered(title_input(t, "Title…"), &tab.column_width));
+        col = col.child(centered(
+            title_input(t, tr!(placeholder_title())),
+            &tab.column_width,
+        ));
     }
     if let Some(st) = &tab.subtitle {
-        col = col.child(centered(title_input(st, "Subtitle…"), &tab.column_width));
+        col = col.child(centered(
+            title_input(st, tr!(placeholder_subtitle())),
+            &tab.column_width,
+        ));
     }
     if let Some(s) = &tab.synopsis {
         col = col.child(vspace(4.0)).child(synopsis_section(

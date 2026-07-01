@@ -13,13 +13,13 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
 
     if let Some(t) = &tab.title {
         col = col.child(parts::centered(
-            parts::title_input(t, "Title…"),
+            parts::title_input(t, tr!(placeholder_title())),
             &tab.column_width,
         ));
     }
     if let Some(st) = &tab.subtitle {
         col = col.child(parts::centered(
-            parts::title_input(st, "Subtitle…"),
+            parts::title_input(st, tr!(placeholder_subtitle())),
             &tab.column_width,
         ));
     }

@@ -76,7 +76,7 @@ impl Widget for SettingsPanel {
                         }
                     }
                     Divider
-                    TextWidget::new(lit!("Text width"))
+                    TextWidget::new(tr!(settings_text_width()))
                     MinSize::width(360.0) {
                         Slider::new(column_width, 400.0, 1200.0) {
                             step: 20.0
@@ -84,10 +84,10 @@ impl Widget for SettingsPanel {
                     }
                     Divider
                     Toggle::new(settings.autosave()) {
-                        label: lit!("Autosave to disk")
+                        label: tr!(settings_autosave())
                     }
                     Toggle::new(settings.show_welcome()) {
-                        label: lit!("Show Welcome at startup")
+                        label: tr!(settings_show_welcome())
                     }
                 }
             }

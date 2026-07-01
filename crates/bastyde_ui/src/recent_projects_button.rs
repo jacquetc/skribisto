@@ -74,17 +74,15 @@ impl Widget for RecentProjectsButton {
         // Most-recently-opened first; the head is the "current" project.
         let recents = self.model.items();
 
-        let current_title = recents
-            .first()
-            .map(|r| r.title.clone())
-            .unwrap_or_else(|| "No work".to_string());
+        // The current project's title (data), or a translated "No work" fallback.
+        let current_title = recents.first().map(|r| r.title.clone());
 
         // Popover content: a MenuList of rich rows.
         let mut menu = MenuList::new().max_visible_items(10);
         if recents.is_empty() {
             menu = menu.item(
                 Padding::symmetric(8.0, 12.0).child(
-                    TextWidget::new(lit!("No recent works"))
+                    TextWidget::new(tr!(no_recent_works()))
                         .style(TextStyleRole::Body)
                         .color(TextRole::Secondary),
                 ),
@@ -143,7 +141,9 @@ impl Widget for RecentProjectsButton {
                                 file_name: path.clone(),
                             },
                         ) {
-                            ctx.show_toast(Toast::error(lit!(format!("Could not open work: {e}"))));
+                            ctx.show_toast(Toast::error(tr!(could_not_open_work(
+                                error = e.to_string()
+                            ))));
                         }
                     });
 
@@ -151,7 +151,10 @@ impl Widget for RecentProjectsButton {
             }
         }
 
-        let trigger = Button::new(lit!(current_title))
+        let trigger = Button::new(match current_title {
+            Some(t) => lit!(t),
+            None => tr!(no_work()),
+        })
             .variant(ButtonVariant::Ghost)
             .text_style(TextStyleRole::BodyBold)
             .trailing(IconWidget::chevron_down(12.0));

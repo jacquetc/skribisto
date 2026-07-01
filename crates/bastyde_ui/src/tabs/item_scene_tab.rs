@@ -15,7 +15,7 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
     if let Some(t) = &tab.title {
         col = col
             .child(parts::centered(
-                parts::title_input(t, "Chapter title…"),
+                parts::title_input(t, tr!(placeholder_chapter_title())),
                 &tab.column_width,
             ))
             .child(parts::vspace(6.0));

@@ -10,7 +10,7 @@ use super::{ContentTab, parts};
 pub fn render(_tab: &ContentTab) -> Box<dyn Widget> {
     parts::tab_backdrop(bati!(
         Center {
-            child: TextWidget::new(lit!("This item has no editable content.")) {
+            child: TextWidget::new(tr!(no_content())) {
                 color: TextRole::Secondary
             }
         }

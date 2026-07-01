@@ -10,9 +10,9 @@ use super::{ContentTab, parts};
 
 pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
     let bar = SegmentedControl::new(tab.segment.clone())
-        .segment(Segment::new(lit!("Synopsis")))
-        .segment(Segment::new(lit!("Corkboard")).disabled(true))
-        .segment(Segment::new(lit!("Overview")).disabled(true));
+        .segment(Segment::new(tr!(synopsis())))
+        .segment(Segment::new(tr!(corkboard())).disabled(true))
+        .segment(Segment::new(tr!(overview())).disabled(true));
     let content = Switcher::new(tab.segment.clone()).child(parts::folder_synopsis_pane(tab));
 
     let col = VStack::new()

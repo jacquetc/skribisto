@@ -105,15 +105,15 @@ impl WelcomePanel {
                         spacing: 10.0
                         Expand::horizontal {
                             SearchField::new(self.search.clone()) {
-                                placeholder: lit!("Search works")
+                                placeholder: tr!(welcome_search())
                             }
                         }
-                        Button::new(lit!("Open")) {
+                        Button::new(tr!(welcome_open())) {
                             variant: ButtonVariant::Plain
                             icon: open_icon, IconLocation::Leading
                             on_activate_fn: move |ctx| open_vm.pick_open(ctx)
                         }
-                        Button::new(lit!("New Work")) {
+                        Button::new(tr!(welcome_new_work())) {
                             variant: ButtonVariant::Filled
                             icon: plus_icon, IconLocation::Leading
                             on_activate_fn: move |ctx| new_vm.new_work(ctx)
@@ -121,7 +121,7 @@ impl WelcomePanel {
                     }
                 }
                 Padding::symmetric(6.0, 16.0) {
-                    GroupHeader::new(lit!("Recent Works")) {
+                    GroupHeader::new(tr!(welcome_recent_works())) {
                         style: TextStyleRole::SmallBold
                         color: TextRole::Secondary
                     }
@@ -173,7 +173,7 @@ impl WelcomePanel {
         });
 
         Switcher::new(Signal::new(if empty { 0 } else { 1 }))
-            .child(empty_note("No recent works yet."))
+            .child(empty_note(tr!(welcome_empty_recents())))
             .child(list)
     }
 
@@ -183,7 +183,7 @@ impl WelcomePanel {
             VStack {
                 spacing: 0.0
                 Padding::symmetric(12.0, 16.0) {
-                    GroupHeader::new(lit!("Examples")) {
+                    GroupHeader::new(tr!(nav_examples())) {
                         style: TextStyleRole::SmallBold
                         color: TextRole::Secondary
                     }
@@ -223,10 +223,10 @@ impl WelcomePanel {
 }
 
 /// Muted top-aligned note shown in place of a list when it has no rows.
-fn empty_note(text: &'static str) -> impl Widget + 'static {
+fn empty_note(text: impl Into<LocalizedString>) -> impl Widget + 'static {
     bati!(
         Padding::symmetric(8.0, 10.0) {
-            TextWidget::new(lit!(text)) {
+            TextWidget::new(text) {
                 style: TextStyleRole::Body
                 color: TextRole::Secondary
             }
@@ -235,10 +235,10 @@ fn empty_note(text: &'static str) -> impl Widget + 'static {
 }
 
 /// Centered muted placeholder for the not-yet-designed Learn/About panes.
-fn placeholder(text: &'static str) -> impl Widget + 'static {
+fn placeholder(text: impl Into<LocalizedString>) -> impl Widget + 'static {
     bati!(
         Center {
-            TextWidget::new(lit!(text)) {
+            TextWidget::new(text) {
                 style: TextStyleRole::Body
                 color: TextRole::Secondary
             }
@@ -281,7 +281,7 @@ impl Widget for WelcomePanel {
                         style: TextStyleRole::Small
                         color: TextRole::Secondary
                     }
-                    TextWidget::new(lit!("A quiet place to write long things.")) {
+                    TextWidget::new(tr!(welcome_tagline())) {
                         style: TextStyleRole::Small
                         color: TextRole::Secondary
                     }
@@ -297,10 +297,10 @@ impl Widget for WelcomePanel {
             NavItem::About,
         ]);
         let delegate = TabDelegate::new(|_, item: &NavItem| match item {
-            NavItem::Works => lit!("Works"),
-            NavItem::Examples => lit!("Examples"),
-            NavItem::Learn => lit!("Learn"),
-            NavItem::About => lit!("About"),
+            NavItem::Works => tr!(nav_works()),
+            NavItem::Examples => tr!(nav_examples()),
+            NavItem::Learn => tr!(nav_learn()),
+            NavItem::About => tr!(nav_about()),
         })
         .icon(|_, item: &NavItem| Some(item.icon()));
 
@@ -332,10 +332,8 @@ impl Widget for WelcomePanel {
         let content = Switcher::new(switch_index)
             .child(self.works_pane(&vm))
             .child(self.examples_pane(&vm))
-            .child(placeholder("Guides and tips are coming soon."))
-            .child(placeholder(
-                "Skribisto — a Rust + Bastyde rewrite of the writing app.",
-            ));
+            .child(placeholder(tr!(welcome_learn_soon())))
+            .child(placeholder(tr!(welcome_about_blurb())));
 
         // Deterministic heights: `HStack` defaults to `VAlignment::Center` (no
         // stretch), so a content-sized sidebar would float in the middle. Both
@@ -369,13 +367,13 @@ impl Widget for WelcomePanel {
                                     HStack {
                                         spacing: 8.0
                                         Expand::horizontal {
-                                            TextWidget::new(lit!("Welcome to Skribisto")) {
+                                            TextWidget::new(tr!(welcome_title())) {
                                                 style: TextStyleRole::Small
                                                 color: TextRole::Secondary
                                             }
                                         }
                                         IconButton::clear() {
-                                            tooltip: lit!("Close")
+                                            tooltip: tr!(welcome_close())
                                             on_activate_fn: |ctx| ctx.dismiss_modal()
                                         }
                                     }
@@ -414,7 +412,7 @@ impl Widget for WelcomePanel {
                                         // same persisted setting as the Settings panel).
                                         Padding::symmetric(8.0, 8.0) {
                                             Checkbox::new(vm.show_welcome()) {
-                                                label: lit!("Show at startup")
+                                                label: tr!(welcome_show_at_startup())
                                             }
                                         }
                                     }
