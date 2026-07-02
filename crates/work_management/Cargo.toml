@@ -32,6 +32,7 @@ ron = "0.8"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 tempfile = "3"
 walkdir = "2"
+unicode-normalization = "0.1"
 
 [lints]
 workspace = true

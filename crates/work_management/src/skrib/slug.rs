@@ -1,17 +1,22 @@
 //! Path naming for the exploded form: binder directory names and prose file
-//! names. Slugs are cosmetic and diff-friendly; uniqueness is guaranteed by the
-//! numeric `file_id` prefix, so a plain ASCII fold (no Unicode-normalisation
-//! dependency) is enough.
+//! names. Slugs are cosmetic and diff-friendly, and keep the title's actual
+//! (non-ASCII) characters — titles are visible, git-tracked file names, so
+//! folding them away would make non-Latin-script books unreadable on disk.
+//! Uniqueness is guaranteed by the numeric `file_id` prefix, not the slug.
 
 use common::entities::ContentRole;
+use unicode_normalization::UnicodeNormalization;
 
-/// lowercase, ASCII-alphanumeric runs joined by `-`, trimmed; `"item"` when empty.
+/// lowercase alphanumeric runs (any script) joined by `-`, trimmed; `"item"` when empty.
+///
+/// Input is NFC-normalised first, so a decomposed (NFD) and precomposed (NFC)
+/// encoding of the same title always produce the same slug.
 pub fn slugify(input: &str) -> String {
     let mut out = String::new();
     let mut prev_dash = false;
-    for ch in input.chars() {
-        if ch.is_ascii_alphanumeric() {
-            out.push(ch.to_ascii_lowercase());
+    for ch in input.nfc() {
+        if ch.is_alphanumeric() {
+            out.extend(ch.to_lowercase());
             prev_dash = false;
         } else if !prev_dash && !out.is_empty() {
             out.push('-');
@@ -21,8 +26,8 @@ pub fn slugify(input: &str) -> String {
     while out.ends_with('-') {
         out.pop();
     }
-    if out.len() > 40 {
-        out.truncate(40);
+    if out.chars().count() > 40 {
+        out = out.chars().take(40).collect();
         while out.ends_with('-') {
             out.pop();
         }
@@ -62,4 +67,51 @@ pub fn prose_file_name(content_id: u64, item_title: &str, role: &ContentRole) ->
 /// Bundle-root-relative path of a prose file within a binder directory.
 pub fn prose_relpath(binder_dir: &str, file_name: &str) -> String {
     format!("binders/{binder_dir}/text/{file_name}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::slugify;
+
+    #[test]
+    fn empty_input_falls_back_to_item() {
+        assert_eq!(slugify(""), "item");
+    }
+
+    #[test]
+    fn no_alphanumeric_chars_falls_back_to_item() {
+        assert_eq!(slugify("!!! ... ???"), "item");
+    }
+
+    #[test]
+    fn ascii_is_lowercased_and_separator_collapsed() {
+        assert_eq!(slugify("  Hello   World!  "), "hello-world");
+    }
+
+    #[test]
+    fn accented_latin_is_preserved_not_dropped() {
+        assert_eq!(slugify("Café"), "café");
+        assert_eq!(slugify("Écriture"), "écriture");
+    }
+
+    #[test]
+    fn non_latin_scripts_are_preserved() {
+        assert_eq!(slugify("日本語のタイトル"), "日本語のタイトル");
+        assert_eq!(slugify("Заголовок"), "заголовок");
+    }
+
+    #[test]
+    fn long_multibyte_input_truncates_on_char_boundary() {
+        let title = "日".repeat(50);
+        let slug = slugify(&title);
+        assert_eq!(slug.chars().count(), 40);
+    }
+
+    #[test]
+    fn nfd_and_nfc_forms_of_the_same_title_produce_the_same_slug() {
+        let nfc = "Café"; // U+00E9 LATIN SMALL LETTER E WITH ACUTE
+        let nfd = "Cafe\u{0301}"; // 'e' + U+0301 COMBINING ACUTE ACCENT
+        assert_eq!(slugify(nfc), slugify(nfd));
+        assert_eq!(slugify(nfd), "café");
+    }
 }
