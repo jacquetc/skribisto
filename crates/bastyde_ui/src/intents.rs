@@ -27,6 +27,12 @@ pub enum AppIntent {
     #[name = "welcome.show"]
     ShowWelcome,
 
+    /// Create a new work — presents the New Work modal. Fired from File ▸ New
+    /// Work, Ctrl+N, and the Welcome panel's "New Work" button. Consumed by a
+    /// global `work.new` action in `App::build`.
+    #[name = "work.new"]
+    NewWork,
+
     /// Open (or focus) the editor tab for a binder item.
     #[name = "editor.open_item"]
     OpenItem { item_id: u64, title: String },

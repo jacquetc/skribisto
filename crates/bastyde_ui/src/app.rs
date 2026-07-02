@@ -37,10 +37,11 @@ use frontend::common::event::{
 use crate::app_ids::AppIds;
 use crate::intents::AppIntent;
 use crate::models::{BinderTreeKey, TreeNode};
+use crate::new_work_panel::NewWorkPanel;
 use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
-use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel, new_work_dto};
+use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel};
 use crate::welcome_panel::WelcomePanel;
 
 /// A close gesture deferred until the in-flight save finishes. The close guard
@@ -216,7 +217,8 @@ impl Widget for App {
         // Global (not `register_action`/`register_shortcut`) so they're reached
         // from the title-bar overlay menu — which renders as a sibling of `App`,
         // NOT on `App`'s source→root path — as well as from their shortcuts.
-        // New Work (Ctrl+N): native save picker for the target `.skrib`, then create.
+        // New Work (Ctrl+N): present the New Work modal (name/format/location/
+        // language/template), which creates the work on confirm.
         ctx.register_shortcut_global(
             Shortcut::new("work.new")
                 .name("New Work")
@@ -225,9 +227,16 @@ impl Widget for App {
         );
         {
             let app_ctx = self.app_ctx.clone();
-            ctx.register_action_global(
-                Action::new("work.new").on_invoke(move |_i, c| new_work_flow(app_ctx.clone(), c)),
-            );
+            ctx.register_action_global(Action::new("work.new").on_invoke(move |_i, c| {
+                let app_ctx = app_ctx.clone();
+                c.present_modal(
+                    ModalRequest::deferred(move |t| t.add(NewWorkPanel::new(app_ctx)))
+                        .presentation(ModalPresentation::InTree)
+                        .title("New Work")
+                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                        .size(600, 680),
+                );
+            }));
         }
         // Open Work (Ctrl+O): native picker for an existing `.skrib`, then load.
         ctx.register_shortcut_global(
@@ -883,21 +892,3 @@ fn open_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
     });
 }
 
-/// Present the native save picker for a new `.skrib` and create it. Backs the
-/// global `work.new` command (File ▸ New Work and Ctrl+N).
-fn new_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
-    let req = FileDialogRequest::save_file()
-        .title("Create a new Skribisto work")
-        .default_file_name("Untitled.skrib")
-        .add_filter("Skribisto work", &["skrib"]);
-    let _ = ctx.save_file(req, move |res, ectx| {
-        if let FileDialogResult::Saved(Some(path)) = res {
-            let file = path.to_string_lossy().into_owned();
-            if let Err(e) =
-                work_management_commands::new_work(&app_ctx, &new_work_dto(file))
-            {
-                ectx.show_toast(Toast::error(tr!(could_not_create_work(error = e.to_string()))));
-            }
-        }
-    });
-}

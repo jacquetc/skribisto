@@ -158,6 +158,15 @@ impl NewWorkUseCase {
     }
 
     pub fn execute(&mut self, dto: &NewWorkDto) -> Result<()> {
+        // A work must have a destination on disk — an empty path would create an
+        // in-memory work that the follow-up save silently drops (no file, no
+        // error). Reject it here so the caller sees a real failure. The UI also
+        // guards this (the New Work dialog disables "Create" until name +
+        // location are valid); this is the backend backstop for scripts/API.
+        if dto.file_name.trim().is_empty() {
+            anyhow::bail!("new work has no file name — choose a name and location");
+        }
+
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
@@ -173,6 +182,7 @@ impl NewWorkUseCase {
             created_at: now,
             updated_at: now,
             title: title.clone(),
+            dict_language: dto.language.clone(),
             unique_id: work_io::new_unique_id(),
             ..Default::default()
         })?;

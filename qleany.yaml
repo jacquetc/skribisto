@@ -369,6 +369,8 @@ features:
       - name: labels
         type: string
         is_list: true
+      - name: language
+        type: string
 - name: export_management
   use_cases:
   - name: export_work

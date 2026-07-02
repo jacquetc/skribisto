@@ -38,6 +38,7 @@ pub struct NewWorkDto {
     pub is_folder: bool,
     pub template_kind: NewWorkTemplate,
     pub labels: Vec<String>,
+    pub language: String,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]

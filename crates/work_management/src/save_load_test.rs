@@ -457,6 +457,7 @@ fn new_work(db: &DbContext, hub: &Arc<EventHub>, path: &str, is_folder: bool, t:
             is_folder,
             template_kind: t,
             labels: labels(),
+            language: "en-US".to_string(),
         },
     )
     .expect("new_work");
@@ -486,6 +487,8 @@ fn new_work_novel_builds_full_tree() {
     );
     // Title derived from the file stem.
     assert_eq!(b.manifest.work.title, "My Novel");
+    // The chosen default language is persisted as the work's dict_language.
+    assert_eq!(b.manifest.work.dict_language, "en-US");
     // Not saved as a folder.
     assert_eq!(b.manifest.shape, ShapeTag::Zip);
 

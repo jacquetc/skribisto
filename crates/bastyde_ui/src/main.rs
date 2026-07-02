@@ -6,6 +6,7 @@ mod app_ids;
 mod binder_icons;
 mod intents;
 mod models;
+mod new_work_panel;
 mod recent_projects_button;
 mod settings_panel;
 mod singles;

@@ -86,6 +86,44 @@ save-error = Impossible d'enregistrer : { $error }
 backup-error = Impossible de sauvegarder : { $error }
 backing-up = Sauvegarde en cours…
 
+## Boîte de dialogue Nouvelle œuvre
+new-work-title = Nouvelle œuvre
+new-work-close = Fermer
+new-work-name = Nom de l'œuvre
+new-work-name-placeholder = Sans titre
+new-work-format = Format
+new-work-single-file = Fichier unique
+new-work-bundle = Dossier
+new-work-convert-later = Vous pourrez convertir entre les formats plus tard.
+new-work-location = Emplacement
+new-work-will-create = Va créer
+new-work-language = Langue par défaut
+new-work-language-hint = Appliquée aux nouveaux textes & à la correction orthographique. Chaque texte peut être basculé vers une autre langue.
+new-work-template = Modèle
+new-work-template-none = Aucun
+new-work-template-empty-novel = Roman vide
+new-work-template-light-novel = Roman court
+new-work-template-novel = Roman
+new-work-template-notebook = Carnet
+new-work-cancel = Annuler
+new-work-create = Créer l'œuvre
+# Descriptions des tuiles de format
+new-work-single-file-desc = Une archive .skrib (zip). Portable, facile à sauvegarder.
+new-work-bundle-desc = Un dossier contenant chaque texte & ressource. Adapté au contrôle de version.
+# Décomptes des modèles
+new-work-template-none-count = classeur vide
+new-work-template-empty-novel-count = classeurs, sans chapitres
+new-work-template-light-novel-count = 15 chapitres
+new-work-template-novel-count = 20 chapitres
+new-work-template-notebook-count = notes libres
+# Validation des champs
+new-work-name-required = Saisissez un nom pour l'œuvre
+new-work-name-invalid = Ce nom ne contient aucun caractère utilisable
+new-work-location-required = Choisissez un emplacement
+new-work-location-missing = Ce dossier n'existe pas
+new-work-location-not-folder = Ce chemin n'est pas un dossier
+new-work-location-readonly = Ce dossier n'est pas accessible en écriture
+
 ## Libellés des modèles de nouvelle œuvre (transmis au backend, qui ne fait pas d'i18n)
 new-work-manuscript = Manuscrit
 new-work-notes = Notes
