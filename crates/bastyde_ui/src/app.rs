@@ -146,13 +146,42 @@ impl Widget for App {
 
         let app_ctx = self.app_ctx.clone();
         let column_width = settings.column_width();
+        let show_synopsis = settings.synopsis_pane();
         let stack_id = self.outline.stack_id_signal();
         let editors = self
             .editors
-            .get_or_insert_with(|| EditorsViewModel::new(app_ctx, column_width, stack_id))
+            .get_or_insert_with(|| {
+                EditorsViewModel::new(app_ctx, column_width, show_synopsis, stack_id)
+            })
             .clone();
 
         let outline = self.outline.clone();
+
+        // Persist live theme / interface-language changes into the keys the
+        // startup restore reads. The Settings window drives these via the
+        // framework's `ThemeSwitcher` / `LanguageSwitcher`, which apply the change
+        // live (`EventContext::set_theme` / `set_locale`) but do not themselves
+        // persist; these effects mirror the live value into `DARK_KEY` /
+        // `LOCALE_KEY` so it restores next launch (see `main::read_prefs`).
+        {
+            let dark = settings.dark();
+            let theme_sig = ctx.theme_signal().clone();
+            ctx.effect(&theme_sig, move |t| {
+                let is_dark = t.is_dark();
+                if dark.get() != is_dark {
+                    dark.set(is_dark);
+                }
+            });
+        }
+        if let Some(locale_sig) = bastyde::i18n::current_locale() {
+            let persisted = settings.locale();
+            ctx.effect(&locale_sig, move |l| {
+                let tag = l.to_string();
+                if persisted.get() != tag {
+                    persisted.set(tag);
+                }
+            });
+        }
 
         // ── Layer-A singles: id-only global state + reactive entity handles ──
         // Created in `main`, shared via `app_state`. `wire` installs each single's
@@ -272,7 +301,12 @@ impl Widget for App {
                 ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
                     .presentation(ModalPresentation::InTree)
                     .title("Settings")
-                    .size(520, 320),
+                    .size(920, 620)
+                    // Not easily dismissable — like a critical MessageBox. Only
+                    // the panel's own close button / Cancel / OK close it (each
+                    // calls `ctx.dismiss_modal()`); Escape and outside clicks do
+                    // not, so a mis-click never discards a settings session.
+                    .close_behavior(ModalCloseBehavior::Manual),
             );
         }));
         // Quit (Ctrl+Q): routes through the window close guard (unsaved prompt).

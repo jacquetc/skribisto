@@ -33,8 +33,56 @@ french = Français
 light = Clair
 dark = Sombre
 settings-text-width = Largeur du texte
-settings-autosave = Enregistrement automatique
-settings-show-welcome = Afficher l'accueil au démarrage
+settings-autosave = Enregistrement automatique sur le disque
+settings-show-welcome = Afficher l'écran d'accueil au démarrage
+
+## Fenêtre des paramètres — cadre
+settings-title = Paramètres
+settings-close = Fermer
+settings-search = Rechercher un paramètre
+settings-reset = Réinitialiser
+settings-done = Terminé
+settings-cancel = Annuler
+settings-apply = Appliquer
+settings-ok = OK
+settings-reset-confirm-title = Réinitialiser tous les paramètres ?
+settings-reset-confirm-body = Cela rétablit la valeur d'usine de chaque paramètre, sur toutes les pages. Cette action est irréversible.
+settings-empty-title = Aucun paramètre ici pour l'instant
+settings-empty-hint = Cette section proposera des options dans une prochaine mise à jour.
+
+## Fenêtre des paramètres — catégories
+settings-sec-appearance-behaviour = Apparence et comportement
+settings-sec-editor = Éditeur
+settings-sec-spelling = Orthographe
+settings-sec-backup = Sauvegarde et synchronisation
+settings-sec-compile = Compilation et export
+settings-page-appearance = Apparence
+settings-page-menus = Menus et barres d'outils
+settings-page-notifications = Notifications
+settings-page-manuscript = Manuscrit et polices
+settings-page-goals = Objectifs et nombre de mots
+settings-page-corkboard = Tableau de liège
+settings-page-dictionaries = Dictionnaires
+settings-page-autosave = Enregistrement automatique
+settings-page-export = Formats d'export
+settings-page-keymap = Raccourcis clavier
+
+## Fenêtre des paramètres — champs
+settings-group-manuscript-font = Police du manuscrit
+settings-group-writing-column = Colonne d'écriture
+settings-group-theme = Thème
+settings-group-language = Langue
+settings-group-startup = Démarrage
+settings-group-autosave = Enregistrement automatique
+settings-field-typeface = Police
+settings-field-size = Taille du texte
+settings-field-line-height = Interligne
+settings-field-editor-theme = Thème de l'éditeur
+settings-field-language = Langue de l'interface
+settings-synopsis-pane = Afficher le synopsis au-dessus du manuscrit
+settings-typewriter = Défilement machine à écrire (garder la ligne du curseur centrée)
+settings-highlight-sentence = Surligner la phrase courante
+settings-autosave-hint = Les modifications sont enregistrées automatiquement au fil de l'écriture.
 
 ## Accueil
 welcome-title = Bienvenue dans Skribisto

@@ -347,8 +347,8 @@ impl Widget for WelcomePanel {
         // height and the sidebar overflows below the card).
         let root = bati!(ctx =>
             FixedSize {
-                bind_width: 780.0
-                bind_height: 548.0
+                width: 780.0
+                height: 548.0
                 // The Raised card is the modal's lighter surface.
                 Panel {
                     variant: PanelVariant::Raised
@@ -362,7 +362,7 @@ impl Widget for WelcomePanel {
                         // natural (collapsed) width and squash the title.
                         Expand::horizontal {
                             FixedSize {
-                                bind_height: 44.0
+                                height: 44.0
                                 Padding::symmetric(8.0, 14.0) {
                                     HStack {
                                         spacing: 8.0
@@ -390,8 +390,8 @@ impl Widget for WelcomePanel {
                             // Sidebar: brand block, a Spacer, the bottom-pinned nav,
                             // then the startup checkbox.
                             FixedSize {
-                                bind_width: 264.0
-                                bind_height: BODY_H
+                                width: 264.0
+                                height: BODY_H
                                 // Left margin so the brand/nav don't hug the modal edge.
                                 Padding::new(0.0, 0.0, 0.0, 16.0) {
                                     VStack {
@@ -405,7 +405,7 @@ impl Widget for WelcomePanel {
                                         // extent (4 tabs × 34 dp) so the `Spacer` above
                                         // can push the whole nav to the sidebar bottom.
                                         FixedSize {
-                                            bind_height: 136.0
+                                            height: 136.0
                                             child: bar
                                         }
                                         // Inline "show at startup" checkbox (binds the
@@ -420,7 +420,7 @@ impl Widget for WelcomePanel {
                             }
                             // Vertical rule between the sidebar and the content pane.
                             FixedSize {
-                                bind_height: BODY_H
+                                height: BODY_H
                                 Divider::vertical()
                             }
                             // Two-tone: the content pane sits on a darker (Sunken)
@@ -428,7 +428,7 @@ impl Widget for WelcomePanel {
                             // which centres and collapses the greedy content).
                             Expand::horizontal {
                                 FixedSize {
-                                    bind_height: BODY_H
+                                    height: BODY_H
                                     Panel {
                                         variant: PanelVariant::Sunken
                                         corner_radius: 0.0

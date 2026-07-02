@@ -95,7 +95,7 @@ impl Widget for RecentProjectsButton {
                 let date = dto.last_opened_at.format("%Y-%m-%d %H:%M").to_string();
 
                 // 16px leading column — checkmark on the current project.
-                let mut marker = FixedSize::new().bind_width(16.0).bind_height(16.0);
+                let mut marker = FixedSize::new().width(16.0).height(16.0);
                 if is_current {
                     marker = marker.child(IconWidget::checkmark(14.0));
                 }

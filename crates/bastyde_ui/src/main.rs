@@ -125,6 +125,24 @@ pub const AUTOSAVE_KEY: &str = "editor.autosave";
 /// checkbox; both bind the same `SettingsStore` signal.
 pub const SHOW_WELCOME_KEY: &str = "ui.show_welcome";
 
+// ── Manuscript & Fonts (Settings ▸ Editor ▸ Manuscript & Fonts) ──────────────
+/// Manuscript typeface family (the writing-editor font). A persisted preference.
+pub const FONT_FAMILY_KEY: &str = "editor.font_family";
+pub const FONT_FAMILY_DEFAULT: &str = "Spectral";
+/// Manuscript line height (leading), as a multiple of the font size.
+pub const LINE_HEIGHT_KEY: &str = "editor.line_height";
+pub const LINE_HEIGHT_DEFAULT: f32 = 1.72;
+/// Show the synopsis pane above the manuscript in the dual-pane writing editor
+/// (Skribisto's signature layout). Consumed live by `item_scene_tab`.
+pub const SYNOPSIS_PANE_KEY: &str = "editor.synopsis_pane";
+pub const SYNOPSIS_PANE_DEFAULT: bool = true;
+/// Keep the caret line vertically centred while typing.
+pub const TYPEWRITER_KEY: &str = "editor.typewriter_scroll";
+pub const TYPEWRITER_DEFAULT: bool = true;
+/// Highlight the sentence the caret is in.
+pub const HIGHLIGHT_SENTENCE_KEY: &str = "editor.highlight_sentence";
+pub const HIGHLIGHT_SENTENCE_DEFAULT: bool = false;
+
 /// Adapts the Qleany-generated `EventHubClient` to Bastyde's `EventSource`
 /// (orphan rule prevents implementing the trait directly on the client).
 #[derive(Clone)]

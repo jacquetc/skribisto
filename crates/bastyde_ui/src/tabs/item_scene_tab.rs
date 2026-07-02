@@ -4,7 +4,7 @@
 //! `editor_tab.rs`; shared layout primitives live in [`super::shared`].
 
 use bastyde::prelude::*;
-use bastyde::widgets::VStack;
+use bastyde::widgets::{Switcher, VStack};
 
 use super::{ContentTab, shared};
 
@@ -21,11 +21,20 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
             .child(shared::vspace(6.0));
     }
     if let Some(s) = &tab.synopsis {
-        col = col.child(shared::synopsis_section(
-            &s.doc,
-            &tab.column_width,
-            tab.mark_dirty_fn(),
-        ));
+        // The synopsis pane is user-toggleable (Settings ▸ Manuscript & Fonts).
+        // A `Switcher` keeps the writing editor mounted while the (hidden)
+        // synopsis is dropped — only the active page is mounted, so the loaded
+        // synopsis document is preserved and re-shown on toggle-back.
+        let visible = tab.show_synopsis.map(|on| if *on { 1 } else { 0 });
+        col = col.child(
+            Switcher::new(visible)
+                .child(shared::vspace(0.0))
+                .child(shared::synopsis_section(
+                    &s.doc,
+                    &tab.column_width,
+                    tab.mark_dirty_fn(),
+                )),
+        );
     }
     if let Some(m) = &tab.main {
         col = col.child(shared::vspace(10.0)).child(shared::writing_section(

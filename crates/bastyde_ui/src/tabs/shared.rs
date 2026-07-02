@@ -28,7 +28,7 @@ pub fn writing_column(
 ) -> CenterColumn {
     CenterColumn::new(bati!(
         MaxSize::width(column_width.get()) {
-            bind_max_width: column_width.clone()
+            max_width: column_width.clone()
             Expand {
                 RichTextEditor::editor(doc.clone()) {
                     style: WritingEditorStyle
@@ -86,7 +86,7 @@ pub fn synopsis_section(
             HStack {
                 Spacer
                 MaxSize::width(synopsis_width.get()) {
-                    bind_max_width: synopsis_width.clone()
+                    max_width: synopsis_width.clone()
                     Expand::horizontal {
                         child: synopsis_editor(doc, on_change)
                     }
@@ -135,7 +135,7 @@ pub fn tab_backdrop(body: impl Widget + 'static) -> Box<dyn Widget> {
 /// A fixed vertical gap.
 pub fn vspace(height: f32) -> impl Widget {
     bati!(FixedSize {
-        bind_height: height
+        height: height
     })
 }
 
@@ -145,7 +145,7 @@ pub fn centered(child: impl Widget + 'static, column_width: &Signal<f32>) -> imp
         HStack {
             Spacer
             MaxSize::width(column_width.get()) {
-                bind_max_width: column_width.clone()
+                max_width: column_width.clone()
                 child: child
             }
             Spacer {

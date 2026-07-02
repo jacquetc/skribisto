@@ -13,7 +13,7 @@
 //! design's rich tile / radio-row variants are kept as comments for a later
 //! pass). Location uses a [`FilePickerField`] with its embedded browse
 //! affordance — no separate Browse button. The only runtime-computed string is
-//! the "Will create …/<slug>.skrib" path preview (`bind_text` on the VM's derived
+//! the "Will create …/<slug>.skrib" path preview (`text` on the VM's derived
 //! signal); every other string is `tr!`-localized.
 
 use std::collections::HashMap;
@@ -99,9 +99,9 @@ impl NewWorkPanel {
             )
             .child(
                 // The target path lives on the VM as a derived `Signal<String>`;
-                // this is the sole `lit!`/`bind_text` runtime string.
+                // this is the sole `lit!`/`text` runtime string.
                 TextWidget::new(lit!(""))
-                    .bind_text(self.vm.target_path())
+                    .text(self.vm.target_path())
                     .style(TextStyleRole::Small)
                     .color(TextRole::Accent),
             )
@@ -166,7 +166,7 @@ impl NewWorkPanel {
                 Self::field_label(tr!(new_work_language())),
                 VStack::new()
                     .spacing(6.0)
-                    .child(FixedSize::new().bind_width(240.0).child(self.language_combo()))
+                    .child(FixedSize::new().width(240.0).child(self.language_combo()))
                     .child(Self::hint(tr!(new_work_language_hint()))),
             )
             .full_width(Divider::new())
@@ -227,15 +227,15 @@ impl Widget for NewWorkPanel {
         let body = ScrollArea::new().child(Padding::symmetric(20.0, 22.0).child(self.form()));
 
         // The footer's "Create Work" — reactively disabled (greyed, unclickable)
-        // until the form is valid: `bind_enabled` tracks `can_create` (name +
+        // until the form is valid: `enabled` tracks `can_create` (name +
         // location valid).
         let create_vm = self.vm.clone();
         let create_can = self.vm.can_create();
 
         let root = bati!(ctx =>
             FixedSize {
-                bind_width: CARD_W
-                bind_height: CARD_H
+                width: CARD_W
+                height: CARD_H
                 Panel {
                     variant: PanelVariant::Raised
                     corner_radius: 10.0
@@ -245,7 +245,7 @@ impl Widget for NewWorkPanel {
                         // ── Header strip: title + close (mirrors Welcome). ──
                         Expand::horizontal {
                             FixedSize {
-                                bind_height: 44.0
+                                height: 44.0
                                 Padding::symmetric(8.0, 14.0) {
                                     HStack {
                                         spacing: 8.0
@@ -275,7 +275,7 @@ impl Widget for NewWorkPanel {
                         }
                         // ── Footer: Cancel · Create Work (right-aligned). ───
                         FixedSize {
-                            bind_height: 56.0
+                            height: 56.0
                             Padding::symmetric(10.0, 22.0) {
                                 HStack {
                                     spacing: 9.0
@@ -286,7 +286,7 @@ impl Widget for NewWorkPanel {
                                     }
                                     Button::new(tr!(new_work_create())) {
                                         variant: ButtonVariant::Filled
-                                        bind_enabled: create_can
+                                        enabled: create_can
                                         on_activate_fn: move |ctx| create_vm.create(ctx)
                                     }
                                 }

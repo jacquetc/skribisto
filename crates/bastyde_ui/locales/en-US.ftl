@@ -34,7 +34,55 @@ light = Light
 dark = Dark
 settings-text-width = Text width
 settings-autosave = Autosave to disk
-settings-show-welcome = Show Welcome at startup
+settings-show-welcome = Show the Welcome screen at startup
+
+## Settings window — chrome
+settings-title = Settings
+settings-close = Close
+settings-search = Search settings
+settings-reset = Reset to defaults
+settings-done = Done
+settings-cancel = Cancel
+settings-apply = Apply
+settings-ok = OK
+settings-reset-confirm-title = Reset all settings to defaults?
+settings-reset-confirm-body = This restores every setting on all pages to its factory value. It can't be undone.
+settings-empty-title = No settings here yet
+settings-empty-hint = This section will gain options in a future update.
+
+## Settings window — categories
+settings-sec-appearance-behaviour = Appearance & Behaviour
+settings-sec-editor = Editor
+settings-sec-spelling = Spelling
+settings-sec-backup = Backup & Sync
+settings-sec-compile = Compile & Export
+settings-page-appearance = Appearance
+settings-page-menus = Menus & Toolbars
+settings-page-notifications = Notifications
+settings-page-manuscript = Manuscript & Fonts
+settings-page-goals = Goals & Word Count
+settings-page-corkboard = Corkboard
+settings-page-dictionaries = Dictionaries
+settings-page-autosave = Autosave
+settings-page-export = Export Formats
+settings-page-keymap = Keymap
+
+## Settings window — fields
+settings-group-manuscript-font = Manuscript font
+settings-group-writing-column = Writing column
+settings-group-theme = Theme
+settings-group-language = Language
+settings-group-startup = Startup
+settings-group-autosave = Autosave
+settings-field-typeface = Typeface
+settings-field-size = Text size
+settings-field-line-height = Line height
+settings-field-editor-theme = Editor theme
+settings-field-language = Interface language
+settings-synopsis-pane = Show synopsis pane above the manuscript
+settings-typewriter = Typewriter scrolling (keep caret line centred)
+settings-highlight-sentence = Highlight the current sentence
+settings-autosave-hint = Changes are written to disk automatically as you write.
 
 ## Welcome
 welcome-title = Welcome to Skribisto

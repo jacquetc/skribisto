@@ -29,6 +29,9 @@ pub struct EditorsViewModel {
     /// of selection/focus). Kept in sync with `selected_tab`.
     active_item: Signal<Option<u64>>,
     column_width: Signal<f32>,
+    /// Persisted "show synopsis pane" setting, threaded into every opened tab so
+    /// the dual-pane editor shows/hides its synopsis live.
+    show_synopsis: Signal<bool>,
     /// The per-`Work` undo stack id — shared with `OutlineViewModel` so editor
     /// write-back lands on the same Ctrl+Z history as tree edits. `App` wires it.
     stack_id: Signal<Option<u64>>,
@@ -44,6 +47,7 @@ impl EditorsViewModel {
     pub fn new(
         app_ctx: Rc<AppContext>,
         column_width: Signal<f32>,
+        show_synopsis: Signal<bool>,
         stack_id: Signal<Option<u64>>,
     ) -> Self {
         Self {
@@ -53,6 +57,7 @@ impl EditorsViewModel {
             selected_tab: Signal::new(None),
             active_item: Signal::new(None),
             column_width,
+            show_synopsis,
             stack_id,
             edited: Signal::new(0),
         }
@@ -129,6 +134,7 @@ impl EditorsViewModel {
             &item.sub_role,
             &contents,
             self.column_width.clone(),
+            self.show_synopsis.clone(),
         );
         // Every tab bumps the shared edit signal, so the autosave timer sees edits
         // from whichever tab is active.
@@ -271,6 +277,7 @@ mod tests {
         EditorsViewModel::new(
             Rc::new(AppContext::new()),
             Signal::new(700.0),
+            Signal::new(true),
             Signal::new(None),
         )
     }
@@ -286,6 +293,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             p.column_width.clone(),
+            p.show_synopsis.clone(),
         );
         p.tabs.push(TabHandle::dynamic(
             id,
