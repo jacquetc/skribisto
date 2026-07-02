@@ -437,7 +437,7 @@ fn main() {
                             .menu(tr!(menu_view()), {
                                 // Reflect-only checkmark: mirrors the dock's truth
                                 // (`is_visible`) without writing it; the toggle is
-                                // driven by the `outline.toggle` intent (Ctrl+B).
+                                // driven by the `outline.toggle` intent (F9).
                                 let outline = outline.clone();
                                 move |m| {
                                     m.item(

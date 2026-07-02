@@ -209,10 +209,13 @@ impl Widget for App {
         // shortcut anchored at the root, or any content handler. A plain
         // `register_action` would only fire on `App`'s own source→root path,
         // which the chrome-fired menu never touches.
+        // F9, not Ctrl+B: Ctrl+B is the editor's built-in bold command, and a
+        // Global shortcut is resolved *before* the focused widget sees the raw
+        // key — so a Ctrl+B binding here would shadow `RichTextEditor`'s bold.
         ctx.register_shortcut_global(
             Shortcut::new("outline.toggle")
                 .name("Toggle Outline")
-                .primary(KeyStroke::ctrl(Key::B))
+                .primary(KeyStroke::new(Key::F9, Modifiers::NONE))
                 .build(),
         );
         {
