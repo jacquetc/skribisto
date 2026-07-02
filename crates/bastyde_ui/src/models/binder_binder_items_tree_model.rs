@@ -1,29 +1,27 @@
-//! Reactive model for the binder-item tree, implemented as a Bastyde
-//! [`TreeDataSource`] so a `TreeView` can render, navigate, expand and
+//! Reactive model for the binder-item tree, backed by a Bastyde
+//! [`TreeDataSlice`] so a `TreeView` can render, navigate, expand and
 //! **drag-reorder** it. The flat item stream nests via each item's `indent`;
 //! binders are the tree roots.
 //!
-//! Self-contained reference shape for a future Qleany tera template. The public
-//! type and the whole `TreeDataSource` algorithm (visibility flattening,
-//! drag-drop resolution, projection) are written **once**; the only part that
-//! differs real-vs-mock is the *row source*, isolated behind two `#[cfg]`-gated
-//! [`rows`] modules exposing an identical `load(ctx, work_id) -> Vec<Row>`. So no
-//! `#[cfg]` leaks into consuming code and there is no duplicated tree logic to
-//! drift. (The small `singles/` handles use the fuller two-`mod imp` shape; this
-//! large shared-algorithm model gates only the seam — see the convention note in
-//! `models.rs`.) Parity is enforced by building both feature modes.
+//! This type is now a thin **domain facade**: the whole tree algorithm
+//! (indent → tree derivation, per-view expand state, collapse-aware flattening,
+//! [`first_changed_index`](bastyde::data::TreeDataSource::first_changed_index)
+//! divergence, DnD cycle guard + plumbing) lives once in `bastyde_data`'s
+//! `TreeDataSlice`. Skribisto supplies only what is genuinely domain-specific:
+//! the tagged key ([`BinderTreeKey`]), the row payload ([`TreeNode`]), the row
+//! source ([`rows::load`], the sole real-vs-mock seam), the drag/drop policy,
+//! and the reorder command ([`CommitMove`], injected via `set_reorder`). The
+//! `TreeDataSource` impl is a straight delegation onto the slice.
 //!
 //! Rows are sourced for the **open Work only**, identified by the `work_id`
 //! signal from [`AppIds`](crate::app_ids) (ids-only global state) — no
-//! `get_all_work`. Mutations are not applied here: drops route through an
-//! injected [`CommitMove`] closure (`set_reorder`) and the model re-reads itself.
+//! `get_all_work`. Mutations are not applied here: drops route through the
+//! injected [`CommitMove`] closure and the slice re-reads itself.
 
-use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use bastyde::data::{
-    DragEligibility, DragSource, DropCommit, DropPosition, DropQuery, DropResponse, FlatEntry,
+    DragEligibility, DropCommit, DropPosition, DropQuery, DropResponse, FlatEntry, TreeDataSlice,
     TreeDataSource,
 };
 use bastyde::prelude::Signal;
@@ -39,8 +37,11 @@ pub enum BinderTreeKey {
     Item(u64),
 }
 
-/// One node in the navigation tree. Shared by both variants.
-#[derive(Clone, Debug, Default)]
+/// One node in the navigation tree. Shared by both variants. `PartialEq` powers
+/// the slice's divergence check (a content edit whose structure is unchanged is
+/// still detected, so a consumer caching row heights re-measures only the
+/// changed rows).
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct TreeNode {
     pub title: String,
     /// The user-written note shown under the title (`BinderItem.label`).
@@ -74,216 +75,78 @@ impl TreeNode {
 /// whether it took.
 pub type CommitMove = Rc<dyn Fn(BinderTreeKey, BinderTreeKey, DropPosition) -> bool>;
 
-struct Row {
-    key: BinderTreeKey,
-    node: TreeNode,
-    depth: usize,
-    parent: Option<BinderTreeKey>,
-    has_children: bool,
-}
-
-struct Inner {
-    rows: RefCell<Vec<Row>>,
-    /// Indices into `rows` that are currently visible (collapse-aware flatten).
-    visible: RefCell<Vec<usize>>,
-    /// key → position within `visible` (the flat index the view sees).
-    vis_pos: RefCell<HashMap<BinderTreeKey, usize>>,
-    /// key → index within `rows`.
-    row_pos: RefCell<HashMap<BinderTreeKey, usize>>,
-    expanded: RefCell<HashSet<BinderTreeKey>>,
-    /// Keys seen at least once — used to auto-expand newly-appearing nodes while
-    /// preserving the user's later collapses across reloads.
-    seen: RefCell<HashSet<BinderTreeKey>>,
-    version: Signal<u64>,
-    commit_move: RefCell<Option<CommitMove>>,
-    /// The open Work whose tree is shown (ids-only global state). Real `reload`
-    /// sources from it; the mock seam ignores it.
-    work_id: Signal<Option<u64>>,
-    ctx: Rc<AppContext>,
-}
-
 #[derive(Clone)]
 pub struct BinderBinderItemsTreeModel {
-    inner: Rc<Inner>,
+    slice: TreeDataSlice<BinderTreeKey, TreeNode>,
 }
 
 impl BinderBinderItemsTreeModel {
     pub fn new(ctx: Rc<AppContext>, work_id: Signal<Option<u64>>) -> Self {
-        let model = Self {
-            inner: Rc::new(Inner {
-                rows: RefCell::new(Vec::new()),
-                visible: RefCell::new(Vec::new()),
-                vis_pos: RefCell::new(HashMap::new()),
-                row_pos: RefCell::new(HashMap::new()),
-                expanded: RefCell::new(HashSet::new()),
-                seen: RefCell::new(HashSet::new()),
-                version: Signal::new(0),
-                commit_move: RefCell::new(None),
-                work_id,
-                ctx,
-            }),
-        };
-        model.reload();
-        model
+        let slice = TreeDataSlice::new();
+        // New nodes (e.g. a freshly-created scene) appear expanded; the user's
+        // later collapses survive reloads (the slice tracks a `seen` set).
+        slice.set_expand_new_nodes(true);
+        // The row source — the only real/mock seam (see the `rows` modules).
+        slice.set_source(move || rows::load(&ctx, &work_id));
+        // Domain policy: binders can't be dragged, items can.
+        slice.set_drag_policy(|key| match key {
+            BinderTreeKey::Binder(_) => DragEligibility::NoDrag,
+            BinderTreeKey::Item(_) => DragEligibility::CanDrag,
+        });
+        // Domain policy: a drop onto a binder → into it; `Into` a leaf item →
+        // `After` it. The slice's cycle guard (self / descendant) runs first.
+        slice.set_drop_resolver(|_dragged, target, target_item, position| match target {
+            BinderTreeKey::Binder(_) => Some(DropPosition::Into),
+            BinderTreeKey::Item(_) => match position {
+                DropPosition::Into if target_item.kind != "folder" => Some(DropPosition::After),
+                p => Some(p),
+            },
+        });
+        slice.reload();
+        Self { slice }
     }
 
-    /// Inject the reorder command (`dragged, target, position -> applied`).
+    /// Inject the reorder command (`dragged, target, position -> applied`). On a
+    /// successful move the slice re-sources itself.
     pub fn set_reorder(&self, commit: CommitMove) {
-        *self.inner.commit_move.borrow_mut() = Some(commit);
+        self.slice
+            .set_reorder(move |dragged, target, place| commit(dragged, target, place));
     }
 
     /// True when `key` still exists in the tree — used by the view-model to
     /// prune a stale selection after a reload.
     pub fn contains(&self, key: &BinderTreeKey) -> bool {
-        self.inner.row_pos.borrow().contains_key(key)
+        self.slice.contains_key(key)
     }
 
     /// Resolve a key to `(item_id, title)` (binder rows have `item_id == None`).
     pub fn node_of(&self, key: &BinderTreeKey) -> Option<(Option<u64>, String)> {
-        let rows = self.inner.rows.borrow();
-        let idx = *self.inner.row_pos.borrow().get(key)?;
-        rows.get(idx)
-            .map(|r| (r.node.item_id, r.node.title.clone()))
+        self.slice.with_key(key, |n| (n.item_id, n.title.clone()))
     }
 
     /// The owning binder id for any key.
     pub fn binder_of(&self, key: &BinderTreeKey) -> Option<u64> {
         match key {
             BinderTreeKey::Binder(id) => Some(*id),
-            BinderTreeKey::Item(_) => {
-                let rows = self.inner.rows.borrow();
-                let idx = *self.inner.row_pos.borrow().get(key)?;
-                rows.get(idx).and_then(|r| r.node.binder_id)
-            }
+            BinderTreeKey::Item(_) => self.slice.with_key(key, |n| n.binder_id).flatten(),
         }
     }
 
     /// Re-source the rows for the open Work (real: from the backend / mock:
     /// static) and reproject. The data seam is the only real/mock difference.
     pub fn reload(&self) {
-        let rows = rows::load(&self.inner.ctx, &self.inner.work_id);
-        self.install_rows(rows);
-    }
-
-    /// Finalise a freshly-built `rows`: derive `has_children`, auto-expand
-    /// newly-seen nodes, rebuild the visible projection, bump the version.
-    fn install_rows(&self, mut rows: Vec<Row>) {
-        let parents: HashSet<BinderTreeKey> = rows.iter().filter_map(|r| r.parent).collect();
-        for r in rows.iter_mut() {
-            r.has_children = parents.contains(&r.key);
-        }
-
-        {
-            let mut row_pos = self.inner.row_pos.borrow_mut();
-            row_pos.clear();
-            for (i, r) in rows.iter().enumerate() {
-                row_pos.insert(r.key, i);
-            }
-        }
-        {
-            let mut expanded = self.inner.expanded.borrow_mut();
-            let mut seen = self.inner.seen.borrow_mut();
-            for r in &rows {
-                if !seen.contains(&r.key) {
-                    seen.insert(r.key);
-                    expanded.insert(r.key); // new nodes start expanded
-                }
-            }
-        }
-
-        *self.inner.rows.borrow_mut() = rows;
-        self.rebuild_visible();
-        self.bump();
-    }
-
-    fn rebuild_visible(&self) {
-        let rows = self.inner.rows.borrow();
-        let expanded = self.inner.expanded.borrow();
-        let mut visible = Vec::with_capacity(rows.len());
-        let mut vis_pos = HashMap::with_capacity(rows.len());
-        let mut collapse_depth: Option<usize> = None;
-        for (i, row) in rows.iter().enumerate() {
-            if let Some(cd) = collapse_depth {
-                if row.depth > cd {
-                    continue; // hidden under a collapsed ancestor
-                }
-                collapse_depth = None;
-            }
-            vis_pos.insert(row.key, visible.len());
-            visible.push(i);
-            if row.has_children && !expanded.contains(&row.key) {
-                collapse_depth = Some(row.depth);
-            }
-        }
-        *self.inner.visible.borrow_mut() = visible;
-        *self.inner.vis_pos.borrow_mut() = vis_pos;
-    }
-
-    fn bump(&self) {
-        let v = self.inner.version.get().wrapping_add(1);
-        self.inner.version.set(v);
-    }
-
-    fn is_folder(&self, key: &BinderTreeKey) -> bool {
-        let rows = self.inner.rows.borrow();
-        self.inner
-            .row_pos
-            .borrow()
-            .get(key)
-            .and_then(|&i| rows.get(i))
-            .map(|r| r.node.kind == "folder")
-            .unwrap_or(false)
-    }
-
-    /// Is `maybe_descendant` inside the subtree rooted at `ancestor`?
-    fn is_descendant(&self, maybe_descendant: BinderTreeKey, ancestor: BinderTreeKey) -> bool {
-        let rows = self.inner.rows.borrow();
-        let row_pos = self.inner.row_pos.borrow();
-        let mut cur = maybe_descendant;
-        // Walk up the parent chain.
-        for _ in 0..rows.len() {
-            let Some(&idx) = row_pos.get(&cur) else {
-                return false;
-            };
-            let Some(parent) = rows[idx].parent else {
-                return false;
-            };
-            if parent == ancestor {
-                return true;
-            }
-            cur = parent;
-        }
-        false
-    }
-
-    /// Resolve a requested drop into its effective position, or `None` if
-    /// forbidden. A drop onto a binder → into the binder; `Into` a leaf item →
-    /// `After` it; self / cycle drops are rejected.
-    fn resolve(
-        &self,
-        dragged: BinderTreeKey,
-        target: BinderTreeKey,
-        position: DropPosition,
-    ) -> Option<DropPosition> {
-        if dragged == target || self.is_descendant(target, dragged) {
-            return None;
-        }
-        match target {
-            BinderTreeKey::Binder(_) => Some(DropPosition::Into),
-            BinderTreeKey::Item(_) => match position {
-                DropPosition::Into if !self.is_folder(&target) => Some(DropPosition::After),
-                p => Some(p),
-            },
-        }
+        self.slice.reload();
     }
 }
 
+/// Straight delegation onto the backing [`TreeDataSlice`] — all tree behaviour
+/// (flatten / expand / divergence / DnD) lives there.
 impl TreeDataSource for BinderBinderItemsTreeModel {
     type Item = TreeNode;
     type Key = BinderTreeKey;
 
     fn visible_count(&self) -> usize {
-        self.inner.visible.borrow().len()
+        self.slice.visible_count()
     }
 
     fn with_entry<R>(
@@ -291,112 +154,66 @@ impl TreeDataSource for BinderBinderItemsTreeModel {
         flat_index: usize,
         f: impl FnOnce(&Self::Item, &FlatEntry<Self::Key>) -> R,
     ) -> Option<R> {
-        let row_idx = *self.inner.visible.borrow().get(flat_index)?;
-        let rows = self.inner.rows.borrow();
-        let row = rows.get(row_idx)?;
-        let entry = FlatEntry {
-            node_id: row.key,
-            depth: row.depth,
-            has_children: row.has_children,
-            is_expanded: self.inner.expanded.borrow().contains(&row.key),
-        };
-        Some(f(&row.node, &entry))
+        self.slice.with_entry(flat_index, f)
     }
 
-    fn key_at(&self, flat_index: usize) -> Option<Self::Key> {
-        let row_idx = *self.inner.visible.borrow().get(flat_index)?;
-        self.inner.rows.borrow().get(row_idx).map(|r| r.key)
+    fn key_at(&self, flat_index: usize) -> Option<BinderTreeKey> {
+        self.slice.key_at(flat_index)
     }
 
-    fn flat_index_of(&self, key: &Self::Key) -> Option<usize> {
-        self.inner.vis_pos.borrow().get(key).copied()
+    fn flat_index_of(&self, key: &BinderTreeKey) -> Option<usize> {
+        self.slice.flat_index_of(key)
     }
 
-    fn parent(&self, key: &Self::Key) -> Option<Self::Key> {
-        let rows = self.inner.rows.borrow();
-        let idx = *self.inner.row_pos.borrow().get(key)?;
-        rows.get(idx).and_then(|r| r.parent)
+    fn parent(&self, key: &BinderTreeKey) -> Option<BinderTreeKey> {
+        self.slice.parent_of(key)
     }
 
-    fn child_keys(&self, key: &Self::Key) -> Vec<Self::Key> {
-        self.inner
-            .rows
-            .borrow()
-            .iter()
-            .filter(|r| r.parent == Some(*key))
-            .map(|r| r.key)
-            .collect()
+    fn child_keys(&self, key: &BinderTreeKey) -> Vec<BinderTreeKey> {
+        self.slice.child_keys_of(key)
     }
 
     fn version_signal(&self) -> Signal<u64> {
-        self.inner.version.clone()
+        self.slice.version_signal()
     }
 
-    fn is_expanded(&self, key: &Self::Key) -> bool {
-        self.inner.expanded.borrow().contains(key)
+    fn first_changed_index(&self) -> Option<usize> {
+        self.slice.first_changed_index()
     }
 
-    fn set_expanded(&self, key: &Self::Key, expanded: bool) {
-        {
-            let mut set = self.inner.expanded.borrow_mut();
-            if expanded {
-                set.insert(*key);
-            } else {
-                set.remove(key);
-            }
-        }
-        self.rebuild_visible();
-        self.bump();
+    fn contains_key(&self, key: &BinderTreeKey) -> bool {
+        self.slice.contains_key(key)
     }
 
-    fn contains_key(&self, key: &Self::Key) -> bool {
-        self.inner.row_pos.borrow().contains_key(key)
+    fn is_expanded(&self, key: &BinderTreeKey) -> bool {
+        self.slice.is_expanded(key)
     }
 
-    fn drag(&self, key: &Self::Key) -> DragEligibility {
-        match key {
-            BinderTreeKey::Binder(_) => DragEligibility::NoDrag,
-            BinderTreeKey::Item(_) => DragEligibility::CanDrag,
-        }
+    fn set_expanded(&self, key: &BinderTreeKey, expanded: bool) {
+        self.slice.set_expanded(key, expanded);
     }
 
-    fn can_accept(&self, query: &DropQuery<'_, Self::Key>) -> DropResponse {
-        let DragSource::SameView { key: dragged } = query.source else {
-            return DropResponse::Reject;
-        };
-        match self.resolve(dragged, query.target, query.position) {
-            Some(p) if p == query.position => DropResponse::Accept,
-            Some(p) => DropResponse::Redirect(p),
-            None => DropResponse::Reject,
-        }
+    fn drag(&self, key: &BinderTreeKey) -> DragEligibility {
+        self.slice.drag(key)
     }
 
-    fn accept_drop(&self, commit: DropCommit<'_, Self::Key>) -> bool {
-        let DragSource::SameView { key: dragged } = commit.source else {
-            return false;
-        };
-        let Some(place) = self.resolve(dragged, commit.target, commit.position) else {
-            return false;
-        };
-        let Some(commit_move) = self.inner.commit_move.borrow().clone() else {
-            return false;
-        };
-        if commit_move(dragged, commit.target, place) {
-            self.reload();
-            true
-        } else {
-            false
-        }
+    fn can_accept(&self, query: &DropQuery<'_, BinderTreeKey>) -> DropResponse {
+        self.slice.can_accept(query)
+    }
+
+    fn accept_drop(&self, commit: DropCommit<'_, BinderTreeKey>) -> bool {
+        self.slice.accept_drop(commit)
     }
 }
 
 // ── The row-source seam: the only real/mock difference ──────────────────────
 
-/// Pull the binder/item rows for the open `Work` from the backend, nesting the
-/// flat item stream by `indent`. Trashed binders/items (and their subtrees) are
-/// omitted. Returns empty when no project is open.
+/// Pull the binder/item rows for the open `Work` from the backend as an
+/// indent-ordered stream (the slice derives the tree from `depth`). Trashed
+/// binders/items are omitted. Returns empty when no project is open.
 #[cfg(not(feature = "mocks"))]
 mod rows {
+    use bastyde::data::TreeRow;
     use bastyde::prelude::Signal;
 
     use frontend::AppContext;
@@ -405,10 +222,13 @@ mod rows {
     use frontend::common::direct_access::work::WorkRelationshipField;
     use frontend::common::entities::BinderItemRole;
 
-    use super::{BinderTreeKey, Row, TreeNode};
+    use super::{BinderTreeKey, TreeNode};
 
-    pub fn load(ctx: &AppContext, work_id: &Signal<Option<u64>>) -> Vec<Row> {
-        let mut rows: Vec<Row> = Vec::new();
+    pub fn load(
+        ctx: &AppContext,
+        work_id: &Signal<Option<u64>>,
+    ) -> Vec<TreeRow<BinderTreeKey, TreeNode>> {
+        let mut rows: Vec<TreeRow<BinderTreeKey, TreeNode>> = Vec::new();
         let Some(work_id) = work_id.get() else {
             return rows; // no project open
         };
@@ -422,14 +242,11 @@ mod rows {
             if !binder.activated {
                 continue; // trashed binders are hidden
             }
-            let bkey = BinderTreeKey::Binder(binder_id);
-            rows.push(Row {
-                key: bkey,
-                node: TreeNode::binder(binder.name, binder_id),
-                depth: 0,
-                parent: None,
-                has_children: false,
-            });
+            rows.push(TreeRow::new(
+                BinderTreeKey::Binder(binder_id),
+                TreeNode::binder(binder.name, binder_id),
+                0,
+            ));
 
             let item_ids = binder_commands::get_binder_relationship(
                 ctx,
@@ -440,26 +257,20 @@ mod rows {
             let items =
                 binder_item_commands::get_binder_item_multi(ctx, &item_ids).unwrap_or_default();
 
-            // (indent, key) stack — a row's parent is the nearest ancestor with a
-            // strictly smaller indent; the binder is the (-1) base.
-            let mut stack: Vec<(i64, BinderTreeKey)> = vec![(-1, bkey)];
+            // The slice derives each item's parent from its indent depth (nearest
+            // preceding row of strictly smaller depth); binders are depth 0.
             for it in items.into_iter().flatten() {
                 if !it.activated {
                     continue; // trashed items (and trashed subtrees) are hidden
                 }
-                while stack.len() > 1 && stack.last().map(|(i, _)| *i).unwrap_or(-1) >= it.indent {
-                    stack.pop();
-                }
-                let parent = stack.last().map(|(_, k)| *k).unwrap_or(bkey);
-                let key = BinderTreeKey::Item(it.id);
                 let kind = match it.role {
                     BinderItemRole::Folder => "folder",
                     BinderItemRole::Item => "item",
                 }
                 .to_string();
-                rows.push(Row {
-                    key,
-                    node: TreeNode {
+                rows.push(TreeRow::new(
+                    BinderTreeKey::Item(it.id),
+                    TreeNode {
                         title: it.title,
                         label: it.label,
                         kind,
@@ -467,11 +278,8 @@ mod rows {
                         item_id: Some(it.id),
                         binder_id: Some(binder_id),
                     },
-                    depth: (it.indent.max(0) as usize) + 1,
-                    parent: Some(parent),
-                    has_children: false,
-                });
-                stack.push((it.indent, key));
+                    (it.indent.max(0) as usize) + 1,
+                ));
             }
         }
         rows
@@ -481,14 +289,14 @@ mod rows {
 /// The static mock tree (no backend). `work_id` is ignored.
 #[cfg(feature = "mocks")]
 mod rows {
+    use bastyde::data::TreeRow;
     use bastyde::prelude::Signal;
 
     use frontend::AppContext;
     use frontend::common::entities::BinderItemSubRole;
 
-    use super::{BinderTreeKey, Row, TreeNode};
+    use super::{BinderTreeKey, TreeNode};
 
-    #[allow(clippy::too_many_arguments)]
     fn item(
         id: u64,
         binder: u64,
@@ -497,11 +305,10 @@ mod rows {
         kind: &str,
         sub_role: BinderItemSubRole,
         depth: usize,
-        parent: BinderTreeKey,
-    ) -> Row {
-        Row {
-            key: BinderTreeKey::Item(id),
-            node: TreeNode {
+    ) -> TreeRow<BinderTreeKey, TreeNode> {
+        TreeRow::new(
+            BinderTreeKey::Item(id),
+            TreeNode {
                 title: title.to_string(),
                 label: label.to_string(),
                 kind: kind.to_string(),
@@ -510,45 +317,36 @@ mod rows {
                 binder_id: Some(binder),
             },
             depth,
-            parent: Some(parent),
-            has_children: false,
-        }
+        )
     }
 
     // A tiny coherent book, arranged to exercise the full range of sub_role
     // icons: binder / book / book-begin / scene / chapter / chapter-scene /
     // note / text. (Structure kept stable — the model tests below assert the
     // row/child counts.)
-    pub fn load(_ctx: &AppContext, _work_id: &Signal<Option<u64>>) -> Vec<Row> {
-        // Import specific variants (not a glob — that would pull `None` in and
-        // shadow `Option::None` used for the binder rows' `parent`).
+    pub fn load(
+        _ctx: &AppContext,
+        _work_id: &Signal<Option<u64>>,
+    ) -> Vec<TreeRow<BinderTreeKey, TreeNode>> {
         use BinderItemSubRole::{Book, BookBegin, Chapter, ChapterScene, Note, Scene, Text};
-        let m = BinderTreeKey::Binder(1);
-        let n = BinderTreeKey::Binder(2);
-        let book = BinderTreeKey::Item(101);
-        let ch2 = BinderTreeKey::Item(104);
         vec![
-            Row {
-                key: m,
-                node: TreeNode::binder("Manuscript".into(), 1),
-                depth: 0,
-                parent: None,
-                has_children: false,
-            },
-            item(101, 1, "Book One", "the setup", "folder", Book, 1, m),
-            item(102, 1, "Opening", "1st plot point", "item", BookBegin, 2, book),
-            item(103, 1, "Scene at dawn", "", "item", Scene, 2, book),
-            item(104, 1, "Chapter Two", "rising action", "folder", Chapter, 1, m),
-            item(105, 1, "Confrontation", "", "item", ChapterScene, 2, ch2),
-            Row {
-                key: n,
-                node: TreeNode::binder("Notes".into(), 2),
-                depth: 0,
-                parent: None,
-                has_children: false,
-            },
-            item(106, 2, "Character sketch", "wants freedom", "item", Note, 1, n),
-            item(107, 2, "Random idea", "", "item", Text, 1, n),
+            TreeRow::new(
+                BinderTreeKey::Binder(1),
+                TreeNode::binder("Manuscript".into(), 1),
+                0,
+            ),
+            item(101, 1, "Book One", "the setup", "folder", Book, 1),
+            item(102, 1, "Opening", "1st plot point", "item", BookBegin, 2),
+            item(103, 1, "Scene at dawn", "", "item", Scene, 2),
+            item(104, 1, "Chapter Two", "rising action", "folder", Chapter, 1),
+            item(105, 1, "Confrontation", "", "item", ChapterScene, 2),
+            TreeRow::new(
+                BinderTreeKey::Binder(2),
+                TreeNode::binder("Notes".into(), 2),
+                0,
+            ),
+            item(106, 2, "Character sketch", "wants freedom", "item", Note, 1),
+            item(107, 2, "Random idea", "", "item", Text, 1),
         ]
     }
 }
@@ -556,7 +354,7 @@ mod rows {
 #[cfg(all(test, feature = "mocks"))]
 mod tests {
     use super::*;
-    use bastyde::data::{DragSource, DropQuery};
+    use bastyde::data::DragSource;
     use frontend::AppContext;
 
     fn model() -> BinderBinderItemsTreeModel {
@@ -573,7 +371,7 @@ mod tests {
     #[test]
     fn collapsing_a_folder_hides_its_subtree() {
         let m = model();
-        m.set_expanded(&BinderTreeKey::Item(101), false); // "Chapter 1" (2 children)
+        m.set_expanded(&BinderTreeKey::Item(101), false); // "Book One" (2 children)
         assert_eq!(m.visible_count(), 7);
         m.set_expanded(&BinderTreeKey::Item(101), true);
         assert_eq!(m.visible_count(), 9);
@@ -618,7 +416,7 @@ mod tests {
     #[test]
     fn into_own_subtree_is_rejected() {
         let m = model();
-        // Drag the "Chapter 1" folder onto its own child → cycle.
+        // Drag the "Book One" folder onto its own child → cycle.
         let q = DropQuery {
             source: DragSource::SameView {
                 key: BinderTreeKey::Item(101),
@@ -627,5 +425,29 @@ mod tests {
             position: DropPosition::Into,
         };
         assert_eq!(m.can_accept(&q), DropResponse::Reject);
+    }
+
+    #[test]
+    fn node_of_and_binder_of_resolve_keys() {
+        let m = model();
+        // node_of: item → (Some(id), title); binder → (None, name).
+        assert_eq!(
+            m.node_of(&BinderTreeKey::Item(102)),
+            Some((Some(102), "Opening".to_string()))
+        );
+        assert_eq!(
+            m.node_of(&BinderTreeKey::Binder(1)),
+            Some((None, "Manuscript".to_string()))
+        );
+        // binder_of resolves an item to its owning binder, and a binder to itself.
+        assert_eq!(m.binder_of(&BinderTreeKey::Item(105)), Some(1));
+        assert_eq!(m.binder_of(&BinderTreeKey::Binder(2)), Some(2));
+    }
+
+    #[test]
+    fn contains_tracks_membership() {
+        let m = model();
+        assert!(m.contains(&BinderTreeKey::Item(101)));
+        assert!(!m.contains(&BinderTreeKey::Item(999)));
     }
 }
