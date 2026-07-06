@@ -189,7 +189,12 @@ impl NewWorkUseCase {
 
         // Template subtree: binders → items → content (already model-valid).
         let mut binder_ids: Vec<EntityId> = Vec::new();
-        for tb in build_template(dto.template_kind.clone(), &title, &labels) {
+        for tb in build_template(
+            dto.template_kind.clone(),
+            &title,
+            &labels,
+            dto.chapter_scene_mode,
+        ) {
             let binder = uow.create_orphan_binder(&Binder {
                 created_at: now,
                 updated_at: now,

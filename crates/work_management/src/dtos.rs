@@ -39,6 +39,7 @@ pub struct NewWorkDto {
     pub template_kind: NewWorkTemplate,
     pub labels: Vec<String>,
     pub language: String,
+    pub chapter_scene_mode: bool,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]

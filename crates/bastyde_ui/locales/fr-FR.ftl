@@ -164,6 +164,10 @@ new-work-template-empty-novel-count = classeurs, sans chapitres
 new-work-template-light-novel-count = 15 chapitres
 new-work-template-novel-count = 20 chapitres
 new-work-template-notebook-count = notes libres
+# Bascule ChapterScene (modèles de roman)
+new-work-chapter-scene = Écrire directement dans les chapitres
+new-work-chapter-scene-tip = Chaque chapitre devient une page unique où vous écrivez directement (un *ChapterScene*). Laissez désactivé pour la disposition classique — chaque chapitre est un dossier contenant une scène vide, préférable quand un chapitre compte plusieurs scènes.
+new-work-chapter-scene-tip-more = L'arborescence du classeur de Skribisto est purement organisationnelle : les deux dispositions produisent le même livre. Un *dossier* de chapitre est défini par les scènes qu'il contient ; un *ChapterScene* est l'équivalent à plat qui ouvre le chapitre et porte son texte en une seule ligne. Vous pouvez librement mélanger les deux par la suite.
 # Validation des champs
 new-work-name-required = Saisissez un nom pour l'œuvre
 new-work-name-invalid = Ce nom ne contient aucun caractère utilisable

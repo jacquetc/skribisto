@@ -458,6 +458,7 @@ fn new_work(db: &DbContext, hub: &Arc<EventHub>, path: &str, is_folder: bool, t:
             template_kind: t,
             labels: labels(),
             language: "en-US".to_string(),
+            chapter_scene_mode: false,
         },
     )
     .expect("new_work");

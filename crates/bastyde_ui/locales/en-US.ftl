@@ -164,6 +164,10 @@ new-work-template-empty-novel-count = binders, no chapters
 new-work-template-light-novel-count = 15 chapters
 new-work-template-novel-count = 20 chapters
 new-work-template-notebook-count = free-form notes
+# ChapterScene toggle (novel templates)
+new-work-chapter-scene = Write directly in chapters
+new-work-chapter-scene-tip = Each chapter becomes a single page you write straight into (a *ChapterScene*). Leave this off for the classic layout — every chapter is a folder holding one empty scene, better when a chapter has several scenes.
+new-work-chapter-scene-tip-more = Skribisto's binder tree is organisational only, so both layouts compile to the same book. A chapter *folder* is defined by the scenes inside it; a *ChapterScene* is the flat equivalent that opens the chapter and holds its prose in one row. You can mix the two freely later.
 # Field validation
 new-work-name-required = Enter a name for the work
 new-work-name-invalid = This name has no usable characters

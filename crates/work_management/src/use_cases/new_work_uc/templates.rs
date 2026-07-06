@@ -92,10 +92,21 @@ fn item(
 }
 
 /// The Manuscript binder shared by every novel-family template: a Book wrapping
-/// `chapters` chapters (each a Chapter folder with one Scene), then a BookEnd.
-fn manuscript_binder(title: &str, l: &TemplateLabels, chapters: usize) -> TemplateBinder {
+/// `chapters` chapters, then a BookEnd.
+///
+/// `chapter_scene` picks the per-chapter encoding: `false` (default) gives the
+/// classic layout — a `Folder/Chapter` holding one empty `Item/Scene`; `true`
+/// gives a single flat `Item/ChapterScene` per chapter (opens the chapter *and*
+/// carries its own prose), which the user writes straight into. Both compile to
+/// the same book — see the writing model in `skribisto_model`.
+fn manuscript_binder(
+    title: &str,
+    l: &TemplateLabels,
+    chapters: usize,
+    chapter_scene: bool,
+) -> TemplateBinder {
     use BinderItemRole::{Folder, Item};
-    use BinderItemSubRole::{Book, BookEnd, Chapter, Scene};
+    use BinderItemSubRole::{Book, BookEnd, Chapter, ChapterScene, Scene};
     use ContentRole::{BookTitle, ChapterTitle, SceneText, SynopsisText};
 
     let mut items = Vec::new();
@@ -110,22 +121,39 @@ fn manuscript_binder(title: &str, l: &TemplateLabels, chapters: usize) -> Templa
     ));
     for n in 1..=chapters {
         let chapter_title = format!("{} {}", l.chapter, n);
-        items.push(item(
-            Folder,
-            Chapter,
-            chapter_title.clone(),
-            1,
-            true,
-            vec![(ChapterTitle, chapter_title)],
-        ));
-        items.push(item(
-            Item,
-            Scene,
-            format!("{} 1", l.scene),
-            2,
-            true,
-            vec![(SceneText, String::new()), (SynopsisText, String::new())],
-        ));
+        if chapter_scene {
+            // One flat ChapterScene per chapter — no folder, no child scene.
+            items.push(item(
+                Item,
+                ChapterScene,
+                chapter_title.clone(),
+                1,
+                true,
+                vec![
+                    (ChapterTitle, chapter_title),
+                    (SceneText, String::new()),
+                    (SynopsisText, String::new()),
+                ],
+            ));
+        } else {
+            // Classic: a Chapter folder holding one empty Scene.
+            items.push(item(
+                Folder,
+                Chapter,
+                chapter_title.clone(),
+                1,
+                true,
+                vec![(ChapterTitle, chapter_title)],
+            ));
+            items.push(item(
+                Item,
+                Scene,
+                format!("{} 1", l.scene),
+                2,
+                true,
+                vec![(SceneText, String::new()), (SynopsisText, String::new())],
+            ));
+        }
     }
     // Closes the book (empty marker).
     items.push(item(Item, BookEnd, String::new(), 1, true, vec![]));
@@ -147,11 +175,14 @@ fn empty_binder(name: &str) -> TemplateBinder {
 }
 
 /// Build the full binder list for `template`. `title` is the project title
-/// (used as the book title); `l` supplies the translated labels.
+/// (used as the book title); `l` supplies the translated labels. `chapter_scene`
+/// selects the per-chapter encoding for the novel family (see
+/// [`manuscript_binder`]); it is ignored by the non-manuscript templates.
 pub fn build_template(
     template: NewWorkTemplate,
     title: &str,
     l: &TemplateLabels,
+    chapter_scene: bool,
 ) -> Vec<TemplateBinder> {
     match template {
         // Empty project: a single, empty Manuscript binder.
@@ -166,7 +197,7 @@ pub fn build_template(
                 _ => unreachable!(),
             };
             vec![
-                manuscript_binder(title, l, chapters),
+                manuscript_binder(title, l, chapters, chapter_scene),
                 empty_binder(&l.notes),
                 empty_binder(&l.research),
             ]
@@ -232,7 +263,7 @@ mod tests {
 
     #[test]
     fn none_is_one_empty_binder() {
-        let b = build_template(NewWorkTemplate::None, "My Book", &labels());
+        let b = build_template(NewWorkTemplate::None, "My Book", &labels(), false);
         assert_eq!(b.len(), 1);
         assert_eq!(b[0].name, "Manuscrit");
         assert!(b[0].items.is_empty());
@@ -245,7 +276,7 @@ mod tests {
             NewWorkTemplate::LightNovel,
             NewWorkTemplate::Novel,
         ] {
-            let b = build_template(t.clone(), "My Book", &labels());
+            let b = build_template(t.clone(), "My Book", &labels(), false);
             assert_eq!(b.len(), 3, "{t:?} should have 3 binders");
             assert_eq!(b[0].name, "Manuscrit");
             assert_eq!(b[1].name, "Notes");
@@ -259,7 +290,7 @@ mod tests {
     #[test]
     fn chapter_counts_match_template() {
         let count_chapters = |t| {
-            build_template(t, "T", &labels())[0]
+            build_template(t, "T", &labels(), false)[0]
                 .items
                 .iter()
                 .filter(|i| i.sub_role == BinderItemSubRole::Chapter)
@@ -272,7 +303,7 @@ mod tests {
 
     #[test]
     fn manuscript_has_book_scenes_and_bookend() {
-        let b = build_template(NewWorkTemplate::Novel, "My Book", &labels());
+        let b = build_template(NewWorkTemplate::Novel, "My Book", &labels(), false);
         let m = &b[0].items;
         // Opens with a Book folder carrying the title.
         assert_eq!(m[0].role, BinderItemRole::Folder);
@@ -293,7 +324,7 @@ mod tests {
 
     #[test]
     fn notebook_has_notes_folder_and_note() {
-        let b = build_template(NewWorkTemplate::NoteBook, "T", &labels());
+        let b = build_template(NewWorkTemplate::NoteBook, "T", &labels(), false);
         assert_eq!(b.len(), 1);
         assert_eq!(b[0].name, "Carnet");
         assert_eq!(b[0].items[0].sub_role, BinderItemSubRole::None);
@@ -307,6 +338,46 @@ mod tests {
         assert_eq!(l.manuscript, "Manuscript");
         assert_eq!(l.note, "Note");
         // No panic building with fallbacks.
-        assert_all_valid(&build_template(NewWorkTemplate::Novel, "T", &l));
+        assert_all_valid(&build_template(NewWorkTemplate::Novel, "T", &l, false));
+    }
+
+    #[test]
+    fn chapter_scene_mode_emits_chapterscenes() {
+        // With chapter_scene = true, each chapter is a single flat ChapterScene
+        // (no Chapter folder, no child Scene), carrying title + prose + synopsis.
+        let b = build_template(NewWorkTemplate::Novel, "My Book", &labels(), true);
+        let m = &b[0].items;
+
+        let chapter_scenes = m
+            .iter()
+            .filter(|i| i.sub_role == BinderItemSubRole::ChapterScene)
+            .count();
+        assert_eq!(chapter_scenes, 20, "one ChapterScene per chapter");
+        // The classic encoding is entirely absent.
+        assert!(
+            m.iter().all(|i| i.sub_role != BinderItemSubRole::Scene),
+            "no plain Scene items in ChapterScene mode"
+        );
+        assert!(
+            m.iter()
+                .all(|i| !(i.role == BinderItemRole::Folder
+                    && i.sub_role == BinderItemSubRole::Chapter)),
+            "no Chapter folders in ChapterScene mode"
+        );
+        // Every ChapterScene is flat (indent 1) and carries all three content rows.
+        for cs in m
+            .iter()
+            .filter(|i| i.sub_role == BinderItemSubRole::ChapterScene)
+        {
+            assert_eq!(cs.role, BinderItemRole::Item);
+            assert_eq!(cs.indent, 1);
+            let roles: Vec<_> = cs.contents.iter().map(|(cr, _)| cr.clone()).collect();
+            assert!(roles.contains(&ContentRole::ChapterTitle));
+            assert!(roles.contains(&ContentRole::SceneText));
+            assert!(roles.contains(&ContentRole::SynopsisText));
+        }
+        // Still bounded by a BookEnd, and still model-valid throughout.
+        assert_eq!(m.last().unwrap().sub_role, BinderItemSubRole::BookEnd);
+        assert_all_valid(&b);
     }
 }

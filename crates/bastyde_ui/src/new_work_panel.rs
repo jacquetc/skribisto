@@ -23,10 +23,11 @@ use bastyde::core::styles::PanelVariant;
 use bastyde::i18n::{LocalizedString, localized};
 use bastyde::prelude::*;
 use bastyde::res;
+use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{
     Button, ButtonVariant, ComboBox, Divider, Expand, FilePickerField, FilePickerKind, FixedSize,
     FormLayout, HStack, IconWidget, IconButton, Padding, Panel, RadioTile, RadioTileGroup,
-    ScrollArea, Spacer, TextInput, TextWidget, TileLayout, VStack,
+    ScrollArea, Spacer, TextInput, TextWidget, TileLayout, Toggle, VStack,
 };
 
 use frontend::AppContext;
@@ -207,6 +208,22 @@ impl NewWorkPanel {
                             .trailing(tr!(new_work_template_notebook_count())),
                     ),
             )
+            // ── ChapterScene mode: write directly in chapters (novel templates
+            // only; greyed otherwise). The rich tooltip explains both modes. ──
+            .full_width(
+                Toggle::new(vm.chapter_scene())
+                    .label(tr!(new_work_chapter_scene()))
+                    .enabled(vm.chapter_scene_applicable())
+                    .rich_tooltip_content(Self::chapter_scene_tooltip()),
+            )
+    }
+
+    /// The rich tooltip for the "write directly in chapters" toggle: a primary
+    /// body contrasting the two encodings, plus a `more` accordion with the
+    /// writing-model rationale. Inline content (no boot-time registry needed).
+    fn chapter_scene_tooltip() -> TooltipContent {
+        TooltipContent::new("new-work-chapter-scene", tr!(new_work_chapter_scene_tip()))
+            .with_more(tr!(new_work_chapter_scene_tip_more()))
     }
 
     /// A 16 dp tile icon (monochrome, follows the theme text color).

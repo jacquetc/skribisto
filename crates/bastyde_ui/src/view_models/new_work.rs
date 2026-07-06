@@ -28,6 +28,7 @@ pub(crate) fn new_work_dto(
     is_folder: bool,
     template_kind: NewWorkTemplate,
     language: String,
+    chapter_scene_mode: bool,
 ) -> NewWorkDto {
     NewWorkDto {
         file_name,
@@ -43,6 +44,7 @@ pub(crate) fn new_work_dto(
             tr!(new_work_note()).into(),
         ],
         language,
+        chapter_scene_mode,
     }
 }
 
@@ -176,6 +178,11 @@ pub struct NewWorkViewModel {
     language: Signal<Option<String>>,
     /// Template segment index (`0..=4`).
     template_idx: Signal<usize>,
+    /// When set (and a manuscript template is selected), generate one flat
+    /// `ChapterScene` per chapter — a chapter the user writes straight into —
+    /// instead of a `Chapter` folder holding an empty `Scene`. Ignored by the
+    /// non-manuscript templates. Defaults to `false` (the classic layout).
+    chapter_scene: Signal<bool>,
     app_ctx: Rc<AppContext>,
 }
 
@@ -188,6 +195,7 @@ impl NewWorkViewModel {
             location: Signal::new(default_location()),
             language: Signal::new(current_locale_tag()),
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
+            chapter_scene: Signal::new(false),
             app_ctx,
         }
     }
@@ -207,6 +215,17 @@ impl NewWorkViewModel {
     }
     pub fn template_idx(&self) -> Signal<usize> {
         self.template_idx.clone()
+    }
+    pub fn chapter_scene(&self) -> Signal<bool> {
+        self.chapter_scene.clone()
+    }
+
+    /// Whether the "write directly in chapters" toggle applies to the current
+    /// selection — true only for the three manuscript templates (Empty Novel,
+    /// Light Novel, Novel = indices 1/2/3). Drives the toggle's `enabled` state
+    /// so it greys out for None (0) / Notebook (4).
+    pub fn chapter_scene_applicable(&self) -> Signal<bool> {
+        self.template_idx.map(|i| matches!(*i, 1 | 2 | 3))
     }
 
     /// The reactive "Will create …" path — recomputes as name/location/format
@@ -255,6 +274,7 @@ impl NewWorkViewModel {
             self.format_idx.get() == 1,
             template_from_index(self.template_idx.get()),
             self.language.get().unwrap_or_default(),
+            self.chapter_scene.get(),
         )
     }
 
@@ -341,6 +361,7 @@ mod tests {
         vm.format_idx().set(1); // bundle
         vm.template_idx().set(1); // Empty Novel
         vm.language().set(Some("fr-FR".into()));
+        vm.chapter_scene().set(true);
 
         let dto = vm.dto();
         assert_eq!(dto.file_name, "~/Books/tidewrack");
@@ -348,5 +369,22 @@ mod tests {
         assert_eq!(dto.template_kind, NewWorkTemplate::EmptyNovel);
         assert_eq!(dto.language, "fr-FR");
         assert_eq!(dto.labels.len(), 7);
+        assert!(dto.chapter_scene_mode);
+    }
+
+    #[test]
+    fn chapter_scene_applies_only_to_manuscript_templates() {
+        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()));
+        let applicable = vm.chapter_scene_applicable();
+        // Manuscript templates (Empty Novel / Light Novel / Novel).
+        for idx in [1, 2, 3] {
+            vm.template_idx().set(idx);
+            assert!(applicable.get(), "idx {idx} should enable the toggle");
+        }
+        // None (0) and Notebook (4) grey it out.
+        for idx in [0, 4] {
+            vm.template_idx().set(idx);
+            assert!(!applicable.get(), "idx {idx} should disable the toggle");
+        }
     }
 }

@@ -371,6 +371,8 @@ features:
         is_list: true
       - name: language
         type: string
+      - name: chapter_scene_mode
+        type: boolean
 - name: export_management
   use_cases:
   - name: export_work
