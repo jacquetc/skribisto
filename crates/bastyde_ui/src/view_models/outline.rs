@@ -65,7 +65,10 @@ impl OutlineViewModel {
             binder_probe: SingleBinder::new(app_ctx.clone()),
             app_ctx,
             model,
-            selection: KeyedSelectionModel::new(SelectionMode::Single),
+            // Multi: Ctrl/Shift-click, Shift+arrow and Ctrl+A extend the set;
+            // the batch actions (trash/duplicate/indent) already act on the
+            // whole selection and `reload`'s `prune_missing` handles a multi-set.
+            selection: KeyedSelectionModel::new(SelectionMode::Multi),
             docking,
             dock_id,
             ids,

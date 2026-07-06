@@ -884,12 +884,27 @@ fn key_of(node: &TreeNode) -> BinderTreeKey {
 
 /// The per-row context menu: create / rename / duplicate / trash. *New Folder*
 /// is just `new_item(Folder, None)` — there is no separate folder command.
+///
+/// Multi-select convention for the **batch** actions (duplicate / trash): a
+/// right-click *inside* the current selection acts on the whole selection; a
+/// right-click on a row *outside* it acts on just that row (and, per the call
+/// site, without disturbing the selection). The single-target actions (new /
+/// rename) always anchor on the clicked row.
 fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
+    let selected = outline.selection().selected_keys();
+    let batch: Vec<BinderTreeKey> = if selected.contains(&key) {
+        selected
+    } else {
+        vec![key]
+    };
+
     let new_item = outline.clone();
     let new_folder = outline.clone();
     let rename = outline.clone();
     let duplicate = outline.clone();
+    let dup_batch = batch.clone();
     let trash = outline;
+    let trash_batch = batch;
     MenuList::new()
         .item(MenuItem::new(tr!(ctx_new_item())).on_activate_fn(move |_| {
             new_item.new_item_at(key, BinderItemRole::Item, BinderItemSubRole::Text)
@@ -903,11 +918,11 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         )
         .item(
             MenuItem::new(tr!(ctx_duplicate()))
-                .on_activate_fn(move |_| duplicate.duplicate_keys(&[key])),
+                .on_activate_fn(move |_| duplicate.duplicate_keys(&dup_batch)),
         )
         .separator()
         .item(
-            MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |_| trash.trash_keys(&[key])),
+            MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |_| trash.trash_keys(&trash_batch)),
         )
 }
 
