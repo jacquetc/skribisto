@@ -160,41 +160,53 @@ impl BinderBinderItemsTreeModel {
 
         // Live re-source on any filter change, with expand handling.
         //
-        // A "scoped" view (a binder is selected OR a query is active) narrows the
-        // row set. `TreeDataSlice::build` rebuilds the expand set from the
-        // *present* rows only (it prunes vanished keys), so a folder that leaves
-        // the row set would come back collapsed. We therefore treat scoping as a
-        // transient reveal: on entering scope we snapshot the unfiltered collapse
-        // state and flip `set_all_expanded(true)` (every scoped/searched row shows
-        // — matches are never hidden under a collapsed ancestor); on leaving scope
-        // we turn the reveal off and restore the snapshot exactly. Cycle-safe (cf.
-        // `install_reorder`): the closure captures the slice + signals + snapshot,
-        // never `self`. The observer handles (kept in `_filters`) own the closure.
+        // The reveal override (`set_all_expanded`) tracks the SEARCH query ONLY —
+        // a binder-scoped view is a normal, collapsible tree, so we must NOT force
+        // the override there (it would make the expand/collapse chevrons dead: the
+        // toggle flips the per-row state but the override keeps every row shown).
+        //
+        // Search: on entering, snapshot the collapse state and reveal every match
+        // (so a match is never hidden under a collapsed ancestor); on leaving,
+        // drop the reveal and restore the snapshot exactly.
+        //
+        // Binder scope (no search): `TreeDataSlice::build` prunes the expand state
+        // of rows that left the view, so a binder would otherwise return collapsed
+        // after a round-trip. We `expand_all()` the freshly-sourced subtree — a
+        // *persistent* expand, so the chevrons stay fully functional afterwards.
+        //
+        // Cycle-safe (cf. `install_reorder`): the closure captures the slice +
+        // signals + snapshot, never `self`. The observer handles (in `_filters`)
+        // own the closure.
         let saved_expand: Rc<RefCell<Option<Vec<BinderTreeKey>>>> = Rc::new(RefCell::new(None));
         let resource: Rc<dyn Fn()> = {
             let slice = slice.clone();
             let f = filters.clone();
             let saved = saved_expand.clone();
             Rc::new(move || {
-                let scoped = f.binder.get().is_some() || !f.query.get().trim().is_empty();
-                let has_snapshot = saved.borrow().is_some();
-                match (has_snapshot, scoped) {
+                let searching = !f.query.get().trim().is_empty();
+                let was_searching = saved.borrow().is_some();
+                match (was_searching, searching) {
                     (false, true) => {
-                        // Entering a scoped view: snapshot, then reveal everything.
+                        // Entering search: snapshot, then reveal every match.
                         *saved.borrow_mut() = Some(slice.expanded_keys());
                         slice.set_all_expanded(true);
                         slice.reload();
                     }
-                    (true, true) => slice.reload(), // still scoped (filter changed)
+                    (true, true) => slice.reload(), // still searching (query/scope changed)
                     (true, false) => {
-                        // Back to the unfiltered view: drop the reveal, re-source
-                        // the full tree, and restore the snapshotted collapse state.
+                        // Leaving search: drop the reveal, re-source, restore state.
                         let snapshot = saved.borrow_mut().take().unwrap_or_default();
                         slice.set_all_expanded(false);
                         slice.reload();
                         slice.set_expanded_keys(&snapshot);
                     }
-                    (false, false) => slice.reload(),
+                    (false, false) => {
+                        // A binder-scope change with no active search: re-source and
+                        // expand the newly-shown subtree so the switched-to binder
+                        // isn't left collapsed by `build`'s expand-state pruning.
+                        slice.reload();
+                        slice.expand_all();
+                    }
                 }
             })
         };
@@ -546,6 +558,21 @@ mod tests {
         // Clearing restores the full tree (and the persistent expand state).
         f.query.set(String::new());
         assert_eq!(m.visible_count(), 9);
+    }
+
+    #[test]
+    fn single_binder_view_allows_collapse() {
+        // Regression: a selected binder must be a *normal* collapsible tree — the
+        // reveal override (set_all_expanded) is for search only. Forcing it here
+        // made the expand/collapse chevrons dead (toggle flips per-row state but
+        // the override keeps every row shown).
+        let (m, f) = model_with_filters();
+        f.binder.set(Some(1)); // Manuscript: binder + 5 items, expanded → 6
+        assert_eq!(m.visible_count(), 6);
+        m.set_expanded(&BinderTreeKey::Item(101), false); // collapse "Book One" (2 kids)
+        assert_eq!(m.visible_count(), 4);
+        m.set_expanded(&BinderTreeKey::Item(101), true);
+        assert_eq!(m.visible_count(), 6);
     }
 
     #[test]
