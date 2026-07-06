@@ -21,8 +21,8 @@ use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
     ActivateOn, Divider, DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout,
     EventContextMessageBoxExt, Expand, FocusScope, HStack, IconButtonSize, MenuItem, MenuList,
-    MessageBox, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, Spacer,
-    StandardButton, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, Toast,
+    MessageBox, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, Padding,
+    Spacer, StandardButton, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, Toast,
     TraversalScopePolicy, TreeRow, TreeView, VStack,
 };
 
@@ -35,6 +35,7 @@ use frontend::common::event::{
 };
 
 use crate::app_ids::AppIds;
+use crate::binder_switcher_button::{BinderSwitcherButton, binder_search_button};
 use crate::intents::AppIntent;
 use crate::models::{BinderTreeKey, TreeNode};
 use crate::new_work_panel::NewWorkPanel;
@@ -369,6 +370,16 @@ impl Widget for App {
             );
         }
         {
+            // Trash one specific binder (id in the intent payload) — fired from
+            // the switcher popover's context menu after its confirmation.
+            let outline = outline.clone();
+            ctx.register_action_global(Action::new("binder.trash").on_invoke(move |i, _c| {
+                if let Some(AppIntent::TrashBinder { binder_id }) = AppIntent::from_intent(i) {
+                    outline.trash_binder(*binder_id as u64);
+                }
+            }));
+        }
+        {
             let outline = outline.clone();
             ctx.register_action_global(
                 Action::new("binder.indent").on_invoke(move |_i, _c| outline.indent_selected()),
@@ -403,6 +414,10 @@ impl Widget for App {
                 move |_event: &Event| {
                     ids.seed(&app_ctx);
                     ids.open_stack(&app_ctx);
+                    // Start the freshly-loaded Work unfiltered: a stale binder
+                    // filter or query from the previous Work would empty the tree.
+                    outline.set_binder_filter(None);
+                    outline.clear_search();
                     outline.reload();
                     editors.close_all();
                     single_work.set_id(ids.work_id.get());
@@ -433,6 +448,8 @@ impl Widget for App {
                 move |_event: &Event| {
                     ids.seed(&app_ctx);
                     ids.open_stack(&app_ctx);
+                    outline.set_binder_filter(None);
+                    outline.clear_search();
                     outline.reload();
                     editors.close_all();
                     single_work.set_id(ids.work_id.get());
@@ -456,6 +473,8 @@ impl Widget for App {
                 Origin::WorkManagement(WorkManagementEvent::CloseWork),
                 move |_event: &Event| {
                     ids.clear();
+                    outline.set_binder_filter(None);
+                    outline.clear_search();
                     outline.reload();
                     editors.close_all();
                     single_work.set_id(None);
@@ -644,6 +663,7 @@ impl Widget for App {
         //    bar (icon rail). The OutlineViewModel owns the DockingModel. ──────
         let docking = outline.docking();
         let dock_outline = outline.clone();
+        let dock_app_ctx = self.app_ctx.clone();
         let layout = DockingLayout::new(docking.clone())
             .rail(
                 DockRail::new(DockSide::Leading)
@@ -658,6 +678,7 @@ impl Widget for App {
                     // docks/regions while still letting Tab flow out at the ends.
                     FocusScope::new(TraversalScopePolicy::Continue).child(binder_tree(
                         dock_outline.clone(),
+                        dock_app_ctx.clone(),
                         on_open.clone(),
                         active_item.clone(),
                     ))
@@ -756,6 +777,7 @@ impl Widget for App {
 /// Delete / F2 / Tab / Shift-Tab.
 fn binder_tree(
     outline: OutlineViewModel,
+    app_ctx: Rc<AppContext>,
     on_open: OpenItemFn,
     active_item: Signal<Option<u64>>,
 ) -> impl Widget {
@@ -830,9 +852,20 @@ fn binder_tree(
         }
     });
 
+    // Header row above the tree: the binder switcher (fills) + the search
+    // button. Both drive the OutlineViewModel's filter signals; the tree model
+    // re-sources reactively.
+    let header = Padding::symmetric(8.0, 6.0).child(
+        HStack::new()
+            .spacing(4.0)
+            .child(Expand::horizontal().child(BinderSwitcherButton::new(outline.clone(), app_ctx)))
+            .child(binder_search_button(outline.clone())),
+    );
+
     let keys = outline.clone();
     VStack::new()
         .spacing(0.0)
+        .child(header)
         .child(Expand::new().child(tree))
         .on_key(move |ev, ctx| match ev {
             WidgetEvent::KeyDown {

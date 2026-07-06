@@ -117,6 +117,16 @@ binder = Binder
 no-work = No work
 no-recent-works = No recent works
 
+## Binder switcher + search
+binder-all = All Binders
+binder-show-all = Show all binders
+binder-new = New binder…
+binder-item-count = { $count } items
+binder-search-placeholder = Filter the outline…
+binder-search-scope = Search all binders
+binder-trash-confirm-title = Move binder to trash?
+binder-trash-confirm-text = “{ $name }” and all its items will be moved to the trash.
+
 ## Dialogs
 dialog-rename = Rename
 close-work-question = Save changes before closing the work?

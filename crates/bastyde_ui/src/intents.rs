@@ -58,6 +58,12 @@ pub enum AppIntent {
     #[name = "binder.trash_selected"]
     TrashSelected,
 
+    /// Move one specific binder to trash — fired from the switcher popover's
+    /// context menu (after a confirmation), carrying the binder id (not the
+    /// current selection). Consumed by the `binder.trash` global action.
+    #[name = "binder.trash"]
+    TrashBinder { binder_id: i64 },
+
     /// Indent / outdent the selected items.
     #[name = "binder.indent"]
     Indent,
@@ -83,6 +89,15 @@ mod tests {
                 assert_eq!(title, "Scene");
             }
             other => panic!("expected OpenItem, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn trash_binder_round_trips_its_payload() {
+        let intent: Intent = AppIntent::TrashBinder { binder_id: 42 }.into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::TrashBinder { binder_id }) => assert_eq!(*binder_id, 42),
+            other => panic!("expected TrashBinder, got {other:?}"),
         }
     }
 

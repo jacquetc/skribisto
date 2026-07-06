@@ -4,6 +4,7 @@ mod activity_icons;
 mod app;
 mod app_ids;
 mod binder_icons;
+mod binder_switcher_button;
 mod intents;
 mod models;
 mod new_work_panel;

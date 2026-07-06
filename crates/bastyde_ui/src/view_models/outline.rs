@@ -22,13 +22,15 @@ use frontend::commands::{
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
-use frontend::direct_access::{CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto};
+use frontend::direct_access::{
+    CreateBinderDto, CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto,
+};
 
 use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 
 use crate::app_ids::AppIds;
-use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, CommitMove};
+use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters};
 use crate::singles::{SingleBinder, SingleBinderItem};
 
 #[derive(Clone)]
@@ -46,6 +48,9 @@ pub struct OutlineViewModel {
     /// the item/binder a mutation is about to update — replacing ad-hoc `get_*`.
     item_probe: SingleBinderItem,
     binder_probe: SingleBinder,
+    /// The binder-switcher + search filter signals, shared (by clone) with the
+    /// tree model, which observes them and re-sources itself on change.
+    filters: TreeFilters,
 }
 
 // The visibility / reveal / action methods are the feature's public API
@@ -59,6 +64,7 @@ impl OutlineViewModel {
         model: BinderBinderItemsTreeModel,
         docking: DockingModel,
         dock_id: DockWidgetId,
+        filters: TreeFilters,
     ) -> Self {
         let vm = Self {
             item_probe: SingleBinderItem::new(app_ctx.clone()),
@@ -72,6 +78,7 @@ impl OutlineViewModel {
             docking,
             dock_id,
             ids,
+            filters,
         };
         vm.install_reorder();
         vm
@@ -95,14 +102,25 @@ impl OutlineViewModel {
     /// outline's dock geometry — so `App` and the title-bar menu share one
     /// handle without either re-stating layout constants.
     pub fn new_default(app_ctx: Rc<AppContext>, ids: AppIds) -> Self {
-        let model = BinderBinderItemsTreeModel::new(app_ctx.clone(), ids.work_id.clone());
+        // The switcher/search filter signals — the single source of truth, shared
+        // (by clone) into the tree model and read back by the header widgets.
+        let filters = TreeFilters {
+            binder: Signal::new(None),
+            query: Signal::new(String::new()),
+            all_binders: Signal::new(false),
+        };
+        let model = BinderBinderItemsTreeModel::new(
+            app_ctx.clone(),
+            ids.work_id.clone(),
+            filters.clone(),
+        );
         let docking = DockingModel::new();
         docking.set_side_size(DockSide::Leading, 280.0);
         // A non-zero rail thickness switches the leading side to Rail
         // presentation (a `DockActivityBar` icon rail); the layout sizes the
         // rail from the `DockRail` config.
         docking.set_side_rail(DockSide::Leading, 48.0);
-        Self::new(app_ctx, ids, model, docking, DockWidgetId::fresh())
+        Self::new(app_ctx, ids, model, docking, DockWidgetId::fresh(), filters)
     }
 
     /// Inject the model's drag-reorder closure. **Cycle-safety:** it captures
@@ -134,6 +152,33 @@ impl OutlineViewModel {
     }
     pub fn dock_id(&self) -> DockWidgetId {
         self.dock_id
+    }
+
+    // ── binder switcher + search filters (shared with the tree model) ──
+    /// Binder display scope — `None` = all binders, `Some(id)` = that binder.
+    /// Bind the switcher label to it; the tree model re-sources on change.
+    pub fn binder_filter_signal(&self) -> Signal<Option<u64>> {
+        self.filters.binder.clone()
+    }
+    /// The live text-search query — hand a clone to `SearchField::new`.
+    pub fn search_query_signal(&self) -> Signal<String> {
+        self.filters.query.clone()
+    }
+    /// Search scope toggle — `false` = current binder, `true` = all binders.
+    pub fn search_all_signal(&self) -> Signal<bool> {
+        self.filters.all_binders.clone()
+    }
+    /// Switch the displayed binder (the tree model observes this and re-sources).
+    pub fn set_binder_filter(&self, binder: Option<u64>) {
+        self.filters.binder.set(binder);
+    }
+    /// The open Work id — for models that key on it (e.g. the binder list).
+    pub fn work_id_signal(&self) -> Signal<Option<u64>> {
+        self.ids.work_id.clone()
+    }
+    /// Clear the text search (e.g. on project load).
+    pub fn clear_search(&self) {
+        self.filters.query.set(String::new());
     }
 
     /// Resolve a tree key to its `(item_id, title)` (binder rows: `item_id` None).
@@ -365,6 +410,39 @@ impl OutlineViewModel {
         self.reload();
     }
 
+    /// Create a new binder in the open Work, switch the switcher to it, and open
+    /// the rename dialog so the user names it. Backs the popover's "New binder…".
+    pub fn new_binder(&self, ctx: &mut EventContext) {
+        let Some(work_id) = self.ids.work_id.get() else {
+            return; // no project open
+        };
+        let dto = CreateBinderDto {
+            name: "New Binder".to_string(),
+            activated: true,
+            ..Default::default()
+        };
+        // `-1` appends to the Work's ordered binder list; undoable on the stack.
+        if let Ok(binder) =
+            binder_commands::create_binder(&self.app_ctx, self.stack(), &dto, work_id, -1)
+        {
+            // Show the new binder (this re-sources the tree so its row exists),
+            // then rename it in place — `begin_rename` reads the row's name.
+            self.set_binder_filter(Some(binder.id));
+            self.begin_rename(BinderTreeKey::Binder(binder.id), ctx);
+        }
+    }
+
+    /// Trash a whole binder by id — the switcher context-menu action, reached via
+    /// `AppIntent::TrashBinder` → the `binder.trash` global action. If it was the
+    /// displayed binder, revert to "all binders" so the tree isn't left filtered
+    /// to a now-trashed binder.
+    pub fn trash_binder(&self, id: u64) {
+        self.trash_keys(&[BinderTreeKey::Binder(id)]);
+        if self.filters.binder.get() == Some(id) {
+            self.set_binder_filter(None);
+        }
+    }
+
     /// Duplicate the selected items (the `binder.duplicate` command).
     pub fn duplicate_selected(&self) {
         let sel = self.selection.selected_keys();
@@ -567,6 +645,8 @@ pub(crate) fn apply_move(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "mocks")]
+    use bastyde::data::TreeDataSource; // brings `visible_count` into scope
 
     #[test]
     fn outline_init_stack_creates_a_stack_id() {
@@ -608,5 +688,30 @@ mod tests {
 
         outline.hide();
         assert!(!visible.get(), "hide() hides the side");
+    }
+
+    // The mock tree has content (2 binders, 7 items) so these assert the
+    // switcher/search signals drive the model's re-source end-to-end.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn set_binder_filter_scopes_the_tree() {
+        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()), AppIds::default());
+        let model = outline.model();
+        assert_eq!(model.visible_count(), 9); // all binders
+        outline.set_binder_filter(Some(1));
+        assert_eq!(model.visible_count(), 6); // Manuscript = binder + 5 items
+        outline.set_binder_filter(None);
+        assert_eq!(model.visible_count(), 9);
+    }
+
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn search_query_filters_the_tree() {
+        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()), AppIds::default());
+        let model = outline.model();
+        outline.search_query_signal().set("dawn".to_string());
+        assert_eq!(model.visible_count(), 3); // Manuscript > Book One > Scene at dawn
+        outline.clear_search();
+        assert_eq!(model.visible_count(), 9);
     }
 }

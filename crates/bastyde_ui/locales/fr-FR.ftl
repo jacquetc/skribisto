@@ -117,6 +117,16 @@ binder = Classeur
 no-work = Aucune œuvre
 no-recent-works = Aucune œuvre récente
 
+## Sélecteur de classeur + recherche
+binder-all = Tous les classeurs
+binder-show-all = Afficher tous les classeurs
+binder-new = Nouveau classeur…
+binder-item-count = { $count } éléments
+binder-search-placeholder = Filtrer le plan…
+binder-search-scope = Chercher dans tous les classeurs
+binder-trash-confirm-title = Mettre le classeur à la corbeille ?
+binder-trash-confirm-text = « { $name } » et tous ses éléments seront mis à la corbeille.
+
 ## Boîtes de dialogue
 dialog-rename = Renommer
 close-work-question = Enregistrer les modifications avant de fermer l'œuvre ?

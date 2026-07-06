@@ -18,11 +18,13 @@
 //! `get_all_work`. Mutations are not applied here: drops route through the
 //! injected [`CommitMove`] closure and the slice re-reads itself.
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
+use bastyde::core::ObserverHandle;
 use bastyde::data::{
     DragEligibility, DropCommit, DropPosition, DropQuery, DropResponse, FlatEntry, TreeDataSlice,
-    TreeDataSource,
+    TreeDataSource, TreeFilterMode, TreeRowFilter,
 };
 use bastyde::prelude::Signal;
 
@@ -75,19 +77,71 @@ impl TreeNode {
 /// whether it took.
 pub type CommitMove = Rc<dyn Fn(BinderTreeKey, BinderTreeKey, DropPosition) -> bool>;
 
+/// The reactive filter inputs that shape which rows the tree shows. Owned by
+/// [`OutlineViewModel`](crate::view_models::OutlineViewModel) and shared (by
+/// signal clone) into the tree model, which reads them in its row source and
+/// re-sources itself when any changes.
+#[derive(Clone)]
+pub struct TreeFilters {
+    /// Display scope: `None` = all binders (default); `Some(id)` = that binder
+    /// only (its root + items). Driven by the binder switcher.
+    pub binder: Signal<Option<u64>>,
+    /// Live text filter; empty = no text filtering. Driven by the search field.
+    pub query: Signal<String>,
+    /// Search scope: `false` = current binder, `true` = all binders. Only
+    /// meaningful while a query is active.
+    pub all_binders: Signal<bool>,
+}
+
 #[derive(Clone)]
 pub struct BinderBinderItemsTreeModel {
     slice: TreeDataSlice<BinderTreeKey, TreeNode>,
+    /// Keeps the filter-signal observers alive for the model's lifetime — an
+    /// `ObserverHandle` unsubscribes on drop. Shared across clones so the last
+    /// clone standing owns them.
+    _filters: Rc<Vec<ObserverHandle>>,
 }
 
 impl BinderBinderItemsTreeModel {
-    pub fn new(ctx: Rc<AppContext>, work_id: Signal<Option<u64>>) -> Self {
+    pub fn new(ctx: Rc<AppContext>, work_id: Signal<Option<u64>>, filters: TreeFilters) -> Self {
         let slice = TreeDataSlice::new();
         // New nodes (e.g. a freshly-created scene) appear expanded; the user's
         // later collapses survive reloads (the slice tracks a `seen` set).
         slice.set_expand_new_nodes(true);
-        // The row source — the only real/mock seam (see the `rows` modules).
-        slice.set_source(move || rows::load(&ctx, &work_id));
+        // The row source: binder-scoped rows from the backend (the real/mock
+        // seam, see the `rows` modules), then — when a query is active — a live
+        // text filter. `KeepAncestors` keeps a match's parent binder/folders so
+        // the match stays reachable; the reveal override (wired below) shows them.
+        {
+            let ctx = ctx.clone();
+            let work_id = work_id.clone();
+            let f = filters.clone();
+            slice.set_source(move || {
+                let q = f.query.get();
+                let searching = !q.trim().is_empty();
+                // An all-binders search broadens the view past the switcher's
+                // display scope so cross-binder matches show.
+                let scope = if searching && f.all_binders.get() {
+                    None
+                } else {
+                    f.binder.get()
+                };
+                let rows = rows::load(&ctx, &work_id, scope);
+                if !searching {
+                    return rows;
+                }
+                let needle = q.to_lowercase();
+                TreeRowFilter::new()
+                    .filter_mode(TreeFilterMode::KeepAncestors)
+                    .filter(move |n: &TreeNode| {
+                        // Match items only; binder rows survive as ancestors.
+                        n.kind != "binder"
+                            && (n.title.to_lowercase().contains(&needle)
+                                || n.label.to_lowercase().contains(&needle))
+                    })
+                    .apply(rows)
+            });
+        }
         // Domain policy: binders can't be dragged, items can.
         slice.set_drag_policy(|key| match key {
             BinderTreeKey::Binder(_) => DragEligibility::NoDrag,
@@ -103,7 +157,66 @@ impl BinderBinderItemsTreeModel {
             },
         });
         slice.reload();
-        Self { slice }
+
+        // Live re-source on any filter change, with expand handling.
+        //
+        // A "scoped" view (a binder is selected OR a query is active) narrows the
+        // row set. `TreeDataSlice::build` rebuilds the expand set from the
+        // *present* rows only (it prunes vanished keys), so a folder that leaves
+        // the row set would come back collapsed. We therefore treat scoping as a
+        // transient reveal: on entering scope we snapshot the unfiltered collapse
+        // state and flip `set_all_expanded(true)` (every scoped/searched row shows
+        // — matches are never hidden under a collapsed ancestor); on leaving scope
+        // we turn the reveal off and restore the snapshot exactly. Cycle-safe (cf.
+        // `install_reorder`): the closure captures the slice + signals + snapshot,
+        // never `self`. The observer handles (kept in `_filters`) own the closure.
+        let saved_expand: Rc<RefCell<Option<Vec<BinderTreeKey>>>> = Rc::new(RefCell::new(None));
+        let resource: Rc<dyn Fn()> = {
+            let slice = slice.clone();
+            let f = filters.clone();
+            let saved = saved_expand.clone();
+            Rc::new(move || {
+                let scoped = f.binder.get().is_some() || !f.query.get().trim().is_empty();
+                let has_snapshot = saved.borrow().is_some();
+                match (has_snapshot, scoped) {
+                    (false, true) => {
+                        // Entering a scoped view: snapshot, then reveal everything.
+                        *saved.borrow_mut() = Some(slice.expanded_keys());
+                        slice.set_all_expanded(true);
+                        slice.reload();
+                    }
+                    (true, true) => slice.reload(), // still scoped (filter changed)
+                    (true, false) => {
+                        // Back to the unfiltered view: drop the reveal, re-source
+                        // the full tree, and restore the snapshotted collapse state.
+                        let snapshot = saved.borrow_mut().take().unwrap_or_default();
+                        slice.set_all_expanded(false);
+                        slice.reload();
+                        slice.set_expanded_keys(&snapshot);
+                    }
+                    (false, false) => slice.reload(),
+                }
+            })
+        };
+        let observers = vec![
+            {
+                let r = resource.clone();
+                filters.query.observe(move |_| r())
+            },
+            {
+                let r = resource.clone();
+                filters.binder.observe(move |_| r())
+            },
+            {
+                let r = resource.clone();
+                filters.all_binders.observe(move |_| r())
+            },
+        ];
+
+        Self {
+            slice,
+            _filters: Rc::new(observers),
+        }
     }
 
     /// Inject the reorder command (`dragged, target, position -> applied`). On a
@@ -227,6 +340,7 @@ mod rows {
     pub fn load(
         ctx: &AppContext,
         work_id: &Signal<Option<u64>>,
+        scope: Option<u64>,
     ) -> Vec<TreeRow<BinderTreeKey, TreeNode>> {
         let mut rows: Vec<TreeRow<BinderTreeKey, TreeNode>> = Vec::new();
         let Some(work_id) = work_id.get() else {
@@ -236,6 +350,11 @@ mod rows {
             work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
                 .unwrap_or_default();
         for binder_id in binder_ids {
+            // Display scope: `Some(id)` shows only that binder (the switcher's
+            // current binder); `None` shows every binder.
+            if scope.is_some_and(|only| only != binder_id) {
+                continue;
+            }
             let Ok(Some(binder)) = binder_commands::get_binder(ctx, &binder_id) else {
                 continue;
             };
@@ -327,9 +446,10 @@ mod rows {
     pub fn load(
         _ctx: &AppContext,
         _work_id: &Signal<Option<u64>>,
+        scope: Option<u64>,
     ) -> Vec<TreeRow<BinderTreeKey, TreeNode>> {
         use BinderItemSubRole::{Book, BookBegin, Chapter, ChapterScene, Note, Scene, Text};
-        vec![
+        let rows = vec![
             TreeRow::new(
                 BinderTreeKey::Binder(1),
                 TreeNode::binder("Manuscript".into(), 1),
@@ -347,7 +467,16 @@ mod rows {
             ),
             item(106, 2, "Character sketch", "wants freedom", "item", Note, 1),
             item(107, 2, "Random idea", "", "item", Text, 1),
-        ]
+        ];
+        // Display scope: keep only the requested binder's rows (its binder row
+        // and items both carry `binder_id`); `None` keeps everything.
+        match scope {
+            None => rows,
+            Some(only) => rows
+                .into_iter()
+                .filter(|r| r.item.binder_id == Some(only))
+                .collect(),
+        }
     }
 }
 
@@ -357,14 +486,65 @@ mod tests {
     use bastyde::data::DragSource;
     use frontend::AppContext;
 
+    fn default_filters() -> TreeFilters {
+        TreeFilters {
+            binder: Signal::new(None),
+            query: Signal::new(String::new()),
+            all_binders: Signal::new(false),
+        }
+    }
+
+    /// Build a model plus a handle to its filter signals (so tests can drive the
+    /// binder scope / text query and observe the re-source).
+    fn model_with_filters() -> (BinderBinderItemsTreeModel, TreeFilters) {
+        let filters = default_filters();
+        let m = BinderBinderItemsTreeModel::new(
+            Rc::new(AppContext::new()),
+            Signal::new(None),
+            filters.clone(),
+        );
+        (m, filters)
+    }
+
     fn model() -> BinderBinderItemsTreeModel {
-        BinderBinderItemsTreeModel::new(Rc::new(AppContext::new()), Signal::new(None))
+        model_with_filters().0
     }
 
     #[test]
     fn fully_expanded_shows_every_row() {
         let m = model();
         // 2 binders + 7 items, all auto-expanded.
+        assert_eq!(m.visible_count(), 9);
+    }
+
+    #[test]
+    fn filter_to_one_binder_hides_others() {
+        let (m, f) = model_with_filters();
+        assert_eq!(m.visible_count(), 9); // all binders
+        // Manuscript = 1 binder row + 5 items.
+        f.binder.set(Some(1));
+        assert_eq!(m.visible_count(), 6);
+        // Notes = 1 binder row + 2 items.
+        f.binder.set(Some(2));
+        assert_eq!(m.visible_count(), 3);
+        f.binder.set(None);
+        assert_eq!(m.visible_count(), 9);
+    }
+
+    #[test]
+    fn search_keeps_ancestors_of_matches() {
+        let (m, f) = model_with_filters();
+        // "dawn" matches only item 103 "Scene at dawn" (Manuscript > Book One >
+        // Scene at dawn). KeepAncestors retains its two ancestors; the reveal
+        // override shows them even though Book One would otherwise be collapsible.
+        f.query.set("dawn".to_string());
+        assert_eq!(m.visible_count(), 3);
+        // Binder rows never match by name (items only), so a non-matching term
+        // clears the tree entirely.
+        f.query.set("zzz-nothing".to_string());
+        assert_eq!(m.visible_count(), 0);
+        // Clearing restores the full tree (and the persistent expand state).
+        f.query.set(String::new());
         assert_eq!(m.visible_count(), 9);
     }
 
