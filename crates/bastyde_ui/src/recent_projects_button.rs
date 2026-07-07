@@ -12,12 +12,13 @@
 //! arbitrary widget tree, so we wrap it in a `PopoverButton` to reproduce the
 //! split-button affordance with rich rows.
 //!
-//! Recent works come from the Qleany backend via the reactive
-//! [`RecentWorkListModel`](crate::models::RecentWorkListModel) (Layer A), not a
-//! Bastyde `MruList`. The popover content is built once per `build()`, so the
-//! list is refreshed by rebuilding the whole widget: the model self-subscribes
-//! to `LoadWork` and bumps a `version` signal this widget binds at
-//! `BindingLevel::Rebuild`.
+//! Recent works come from the reactive
+//! [`RecentWorkListModel`](crate::models::RecentWorkListModel) (Layer A), which is
+//! backed by a **persisted** Bastyde `MruList` (so recents survive restarts;
+//! unreachable projects are hidden but kept). The popover content is built once
+//! per `build()`, so the list is refreshed by rebuilding the whole widget: the
+//! model self-subscribes to `LoadWork`/`NewWork` and bumps a `version` signal this
+//! widget binds at `BindingLevel::Rebuild`.
 
 use std::rc::Rc;
 

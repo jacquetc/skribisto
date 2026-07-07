@@ -15,6 +15,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
+serde = { workspace = true }
 frontend = { workspace = true }
 skribisto_model = { workspace = true }
 # `automation` enables the debug-only in-app automation bridge

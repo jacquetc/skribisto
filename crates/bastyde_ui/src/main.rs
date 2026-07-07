@@ -537,8 +537,10 @@ fn main() {
         )
         .run();
 
-    // Tear the shared Root/System frame down and fire the `CleanUpBeforeExit`
-    // event before the event-dispatch thread is stopped by `shutdown()`.
+    // Flush the recent-works MRU synchronously so a just-opened project isn't
+    // lost inside the debounce window, then tear the shared Root/System frame
+    // down and fire `CleanUpBeforeExit` before the event thread is stopped.
+    crate::models::RecentWorkListModel::flush_now();
     if let Err(e) = handling_app_lifecycle_commands::clean_up_before_exit(&app_ctx) {
         eprintln!("clean_up_before_exit failed: {e:#}");
     }
