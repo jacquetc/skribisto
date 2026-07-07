@@ -511,10 +511,17 @@ features:
   - name: initialize_app
     entities:
     - Root
+    - System
     undoable: false
+    dto_out:
+      name: InitializeAppResultDto
+      fields:
+      - name: root_id
+        type: uinteger
   - name: clean_up_before_exit
     entities:
     - Root
+    - System
     undoable: false
 ui:
   rust_cli: false

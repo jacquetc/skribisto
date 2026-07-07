@@ -34,7 +34,9 @@ use recent_projects_button::RecentProjectsButton;
 
 use frontend::AppContext;
 use frontend::EventHubClient;
-use frontend::commands::{work_info_commands, work_management_commands};
+use frontend::commands::{
+    handling_app_lifecycle_commands, work_info_commands, work_management_commands,
+};
 use frontend::common::entities::WorkShape;
 use frontend::common::event::{Event, Origin};
 use frontend::work_management::{BackupNowDto, SaveAsDto};
@@ -172,6 +174,18 @@ fn main() {
     let client = EventHubClient::new(&app_ctx.event_hub);
     client.start(app_ctx.shutdown_rx.clone());
 
+    // Seed the single shared Root + System frame into the (empty) store at
+    // startup — before any work is opened — and keep the returned Root id to
+    // point `AppIds` at it. `initialize_app` is idempotent: a later load/new
+    // reuses this frame instead of creating a second Root/System.
+    let init_root_id = match handling_app_lifecycle_commands::initialize_app(&app_ctx) {
+        Ok(res) => Some(res.root_id),
+        Err(e) => {
+            eprintln!("initialize_app failed: {e:#}");
+            None
+        }
+    };
+
     // Read persisted UI prefs before constructing the app (same AppPaths the
     // builder will use via `.application(...)`).
     let (dark, locale_str, autosave_init) = read_prefs();
@@ -195,6 +209,11 @@ fn main() {
     // here, shared into the outline, the singles, and the title-bar menu, and
     // registered as `app_state` so any widget can reach it.
     let ids = AppIds::new();
+    // Point the app at the shared Root seeded by `initialize_app` above, so the
+    // root id is known before any work is opened (a load/new refreshes it later).
+    if let Some(root_id) = init_root_id {
+        ids.root_id.set(Some(root_id));
+    }
     // Reactive single-entity handles (Layer A). Created here so the title-bar menu
     // can bind the project title (Bug 1) and shape (Bug 2); `App::build` wires
     // their event subscriptions and re-points them on each `LoadWork`.
@@ -518,6 +537,11 @@ fn main() {
         )
         .run();
 
+    // Tear the shared Root/System frame down and fire the `CleanUpBeforeExit`
+    // event before the event-dispatch thread is stopped by `shutdown()`.
+    if let Err(e) = handling_app_lifecycle_commands::clean_up_before_exit(&app_ctx) {
+        eprintln!("clean_up_before_exit failed: {e:#}");
+    }
     app_ctx.shutdown();
 }
 

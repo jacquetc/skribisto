@@ -44,6 +44,11 @@ pub trait NewWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "Root", action = "SetRelationship")]
+// Reuse the single shared System/Root frame (seeded by `initialize_app`) rather
+// than minting a new pair each time — one Root/System per process.
+#[macros::uow_action(entity = "System", action = "GetAll")]
+#[macros::uow_action(entity = "System", action = "GetRelationship")]
+#[macros::uow_action(entity = "Root", action = "GetAll")]
 // Clearing actions: creating a work first closes the currently-open one (shared
 // with load_work/close_work via `work_io::close_current_work`).
 #[macros::uow_action(entity = "Work", action = "GetAll")]
@@ -247,12 +252,19 @@ impl NewWorkUseCase {
         }
         uow.set_work_relationship(&work.id, &WorkRelationshipField::Binders, &binder_ids)?;
 
-        // Non-undoable trunk: System → RecentWork → WorkInfo → Root.
-        let system = uow.create_orphan_system(&System {
-            created_at: now,
-            updated_at: now,
-            ..Default::default()
-        })?;
+        // Non-undoable trunk: reuse the single shared System/Root frame (seeded by
+        // `initialize_app`, or created by a prior load/new); create only if absent.
+        let system_id = match uow.get_all_system()?.into_iter().next() {
+            Some(system) => system.id,
+            None => {
+                uow.create_orphan_system(&System {
+                    created_at: now,
+                    updated_at: now,
+                    ..Default::default()
+                })?
+                .id
+            }
+        };
         let recent = uow.create_orphan_recent_work(&RecentWork {
             created_at: now,
             updated_at: now,
@@ -261,10 +273,14 @@ impl NewWorkUseCase {
             absolute_path: dto.file_name.clone(),
             ..Default::default()
         })?;
+        // Append to the existing recents rather than replacing them.
+        let mut recent_ids =
+            uow.get_system_relationship(&system_id, &SystemRelationshipField::RecentWorks)?;
+        recent_ids.push(recent.id);
         uow.set_system_relationship(
-            &system.id,
+            &system_id,
             &SystemRelationshipField::RecentWorks,
-            &[recent.id],
+            &recent_ids,
         )?;
 
         let shape = if dto.is_folder {
@@ -280,18 +296,25 @@ impl NewWorkUseCase {
             ..Default::default()
         })?;
         uow.set_system_relationship(
-            &system.id,
+            &system_id,
             &SystemRelationshipField::WorkInfo,
             &[work_info.id],
         )?;
 
-        let root = uow.create_orphan_root(&Root {
-            created_at: now,
-            updated_at: now,
-            ..Default::default()
-        })?;
-        uow.set_root_relationship(&root.id, &RootRelationshipField::System, &[system.id])?;
-        uow.set_root_relationship(&root.id, &RootRelationshipField::Works, &[work.id])?;
+        // Reuse the single shared Root (one per process; Works hang off it).
+        let root_id = match uow.get_all_root()?.into_iter().next() {
+            Some(root) => root.id,
+            None => {
+                uow.create_orphan_root(&Root {
+                    created_at: now,
+                    updated_at: now,
+                    ..Default::default()
+                })?
+                .id
+            }
+        };
+        uow.set_root_relationship(&root_id, &RootRelationshipField::System, &[system_id])?;
+        uow.set_root_relationship(&root_id, &RootRelationshipField::Works, &[work.id])?;
 
         uow.commit()?;
 
