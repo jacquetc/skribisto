@@ -18,6 +18,7 @@ pub mod work_info_commands;
 pub mod binder_item_management_commands;
 pub mod export_management_commands;
 pub mod handling_app_lifecycle_commands;
+pub mod import_management_commands;
 pub mod trash_management_commands;
 pub mod undo_redo_commands;
 pub mod work_management_commands;

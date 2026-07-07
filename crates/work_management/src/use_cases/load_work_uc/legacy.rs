@@ -12,7 +12,6 @@
 //! By the time `read_v2` runs, all content is Markdown (the 2.0 step converted
 //! it), so content blobs are taken verbatim.
 
-mod content;
 mod upgrader;
 
 use anyhow::{Context, Result, anyhow};

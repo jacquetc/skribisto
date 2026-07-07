@@ -26,7 +26,7 @@
 use anyhow::{Context, Result, bail};
 use rusqlite::{Connection, OptionalExtension};
 
-use super::content;
+use skrib_format::convert as content;
 
 /// Bring a legacy database up to schema version 2.0.
 pub fn upgrade_to_v2(conn: &Connection) -> Result<()> {

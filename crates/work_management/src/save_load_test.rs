@@ -6,7 +6,7 @@
 use crate::LoadWorkDto;
 use crate::SaveWorkDto;
 use crate::{NewWorkDto, NewWorkTemplate};
-use crate::skrib::{self, BinderWithItems, ItemWithContents, ShapeTag, SkribShape, WorkBundle};
+use skrib_format::{self as skrib, BinderWithItems, ItemWithContents, ShapeTag, SkribShape, WorkBundle};
 use crate::units_of_work::save_work_uow::SaveWorkUnitOfWorkFactory;
 use crate::use_cases::save_work_uc::SaveWorkUseCase;
 use crate::work_management_controller;

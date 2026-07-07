@@ -9,7 +9,7 @@
 // turns into entities (preserving every field + order + M2M links), then
 // `create_trunk` builds the non-undoable System/RecentWork/WorkInfo/Root frame.
 use crate::LoadWorkDto;
-use crate::skrib::{self, LoadedWork, SkribShape};
+use skrib_format::{self as skrib, LoadedWork, SkribShape};
 use crate::work_io::{self, WorkCloser};
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
@@ -214,7 +214,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
         // Single heal point for every load (legacy + new-format): preserve the
         // source's stable id, or mint a fresh one when it has none.
         unique_id: if lw.unique_id.is_empty() {
-            crate::work_io::new_unique_id()
+            skrib_format::new_unique_id()
         } else {
             lw.unique_id.clone()
         },

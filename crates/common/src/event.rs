@@ -91,6 +91,11 @@ pub enum HandlingAppLifecycleEvent {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+pub enum ImportManagementEvent {
+    ImportPlumeCreatorFile,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub enum Origin {
     DirectAccess(DirectAccessEntity),
     UndoRedo(UndoRedoEvent),
@@ -101,6 +106,7 @@ pub enum Origin {
     TrashManagement(TrashManagementEvent),
     BinderItemManagement(BinderItemManagementEvent),
     HandlingAppLifecycle(HandlingAppLifecycleEvent),
+    ImportManagement(ImportManagementEvent),
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
@@ -148,6 +154,7 @@ impl Event {
             Origin::TrashManagement(event) => format!("trash_management_{:?}", event),
             Origin::BinderItemManagement(event) => format!("binder_item_management_{:?}", event),
             Origin::HandlingAppLifecycle(event) => format!("handling_app_lifecycle_{:?}", event),
+            Origin::ImportManagement(event) => format!("import_management_{:?}", event),
         }
         .to_lowercase()
     }

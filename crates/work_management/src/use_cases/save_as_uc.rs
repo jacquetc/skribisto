@@ -6,7 +6,7 @@
 // use cases. Read-write long operation; reuses the shared `work_io` reader.
 use crate::SaveAsDto;
 use crate::SaveAsResultDto;
-use crate::skrib::SkribShape;
+use skrib_format::SkribShape;
 use crate::work_io::{self, TreeReader};
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;

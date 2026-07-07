@@ -523,5 +523,37 @@ features:
     - Root
     - System
     undoable: false
+- name: import_management
+  use_cases:
+  - name: import_plume_creator_file
+    entities: []
+    undoable: false
+    read_only: true
+    long_operation: false
+    dto_in:
+      name: ImportPlumeCreatorFileDto
+      fields:
+      - name: source_path
+        type: string
+      - name: output_path
+        type: string
+      - name: overwrite
+        type: boolean
+      - name: manuscript_binder_name
+        type: string
+      - name: story_bible_binder_name
+        type: string
+    dto_out:
+      name: ImportPlumeCreatorFileResultDto
+      fields:
+      - name: output_path
+        type: string
+      - name: imported_items
+        type: integer
+      - name: skipped_trashed
+        type: integer
+      - name: warnings
+        type: string
+        is_list: true
 ui:
   rust_cli: false

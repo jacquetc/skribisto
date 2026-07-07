@@ -5,6 +5,7 @@ mod app;
 mod app_ids;
 mod binder_icons;
 mod binder_switcher_button;
+mod import_plume_panel;
 mod intents;
 mod models;
 mod new_work_panel;
@@ -333,6 +334,15 @@ fn main() {
                                         .intent("work.open")
                                         .shortcut("work.open"),
                                 )
+                                // Import from another writing app. A submenu so
+                                // more importers can slot in later; each opens its
+                                // own panel via a global action.
+                                .submenu(tr!(menu_import_from()), |s| {
+                                    s.item(
+                                        MenuEntry::new(tr!(menu_import_plume()))
+                                            .intent("work.import_plume"),
+                                    )
+                                })
                                 .separator()
                                 // Flush editors to the store + write to disk (also Ctrl+S).
                                 .item(

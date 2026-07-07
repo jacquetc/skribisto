@@ -5,6 +5,8 @@
 menu-file = &File
 menu-new-work = &New Work
 menu-open-work = &Open Work…
+menu-import-from = &Import from
+menu-import-plume = &Plume Creator (.plume)…
 menu-save = &Save
 menu-save-as-file = Save as single &file…
 menu-save-as-folder = Save as fol&der…
@@ -194,3 +196,38 @@ new-work-notebook = Notebook
 new-work-chapter = Chapter
 new-work-scene = Scene
 new-work-note = Note
+
+## Import Plume Creator dialog
+import-plume-title = Import Plume Creator project
+import-plume-close = Close
+import-plume-source = Plume project
+import-plume-source-hint = Choose a .plume or .plume_backup file (any Plume Creator version).
+import-plume-location = Destination folder
+import-plume-name = File name
+import-plume-name-placeholder = Project name
+import-plume-will-create = Will create
+import-plume-trash-warning = ⚠ Trashed / deleted items are not migrated.
+import-plume-cancel = Cancel
+import-plume-import = Import
+# Field validation
+import-plume-source-required = Choose a Plume project file
+import-plume-source-missing = This file does not exist
+import-plume-source-not-file = This path is not a file
+import-plume-location-required = Choose a destination folder
+import-plume-location-missing = This folder does not exist
+import-plume-location-not-folder = This path is not a folder
+import-plume-location-readonly = This folder is not writable
+import-plume-name-required = Enter a file name
+import-plume-name-exists = A file with this name already exists here — Import will confirm overwrite
+# Overwrite confirmation
+import-plume-overwrite-title = Replace existing file?
+import-plume-overwrite-text = “{ $name }” already exists. Replace it with the imported project?
+# Binder names passed to the backend (which can't do i18n)
+import-plume-manuscript-binder = Manuscript
+import-plume-story-bible-binder = Story Bible
+# Result
+import-plume-done = Imported { $imported } items. { $skipped } trashed items were not migrated.
+import-plume-open-now = Open now
+# Error toast: a short reason in the body, the full technical chain behind Details
+import-plume-error-title = Could not import the project
+import-plume-error-details = Details

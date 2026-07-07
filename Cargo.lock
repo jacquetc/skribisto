@@ -797,6 +797,7 @@ dependencies = [
  "serde",
  "skribisto-frontend",
  "skribisto-model",
+ "tempfile",
 ]
 
 [[package]]
@@ -4251,6 +4252,7 @@ dependencies = [
  "skribisto-direct-access",
  "skribisto-export-management",
  "skribisto-handling-app-lifecycle",
+ "skribisto-import-management",
  "skribisto-model",
  "skribisto-trash-management",
  "skribisto-work-management",
@@ -4270,6 +4272,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "skribisto-import-management"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "roxmltree",
+ "serde",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-macros",
+ "skribisto-model",
+ "skribisto-skrib-format",
+ "tempfile",
+ "uuid",
+ "zip 2.4.2",
+]
+
+[[package]]
 name = "skribisto-macros"
 version = "0.0.1"
 dependencies = [
@@ -4284,6 +4304,24 @@ name = "skribisto-model"
 version = "0.0.1"
 dependencies = [
  "skribisto-common",
+]
+
+[[package]]
+name = "skribisto-skrib-format"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "ron",
+ "serde",
+ "skribisto-common",
+ "skribisto-model",
+ "tempfile",
+ "text-document",
+ "unicode-normalization",
+ "uuid",
+ "walkdir",
+ "zip 2.4.2",
 ]
 
 [[package]]
@@ -4305,19 +4343,15 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "chrono",
- "ron",
  "rusqlite",
  "serde",
  "serde_json",
  "skribisto-common",
  "skribisto-macros",
  "skribisto-model",
+ "skribisto-skrib-format",
  "tempfile",
- "text-document",
- "unicode-normalization",
  "uuid",
- "walkdir",
- "zip 2.4.2",
 ]
 
 [[package]]

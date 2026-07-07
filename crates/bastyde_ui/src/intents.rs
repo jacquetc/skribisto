@@ -33,6 +33,12 @@ pub enum AppIntent {
     #[name = "work.new"]
     NewWork,
 
+    /// Import a Plume Creator (.plume) project — presents the Import Plume modal.
+    /// Fired from File ▸ Import from ▸ Plume Creator. Consumed by a global
+    /// `work.import_plume` action in `App::build`.
+    #[name = "work.import_plume"]
+    ImportPlumeCreator,
+
     /// Open (or focus) the editor tab for a binder item.
     #[name = "editor.open_item"]
     OpenItem { item_id: u64, title: String },

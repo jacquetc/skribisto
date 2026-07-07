@@ -38,6 +38,7 @@ use crate::app_ids::AppIds;
 use crate::binder_switcher_button::{BinderSwitcherButton, binder_search_button};
 use crate::intents::AppIntent;
 use crate::models::{BinderTreeKey, TreeNode};
+use crate::import_plume_panel::ImportPlumePanel;
 use crate::new_work_panel::NewWorkPanel;
 use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
@@ -283,6 +284,21 @@ impl Widget for App {
             ctx.register_action_global(
                 Action::new("work.open").on_invoke(move |_i, c| open_work_flow(app_ctx.clone(), c)),
             );
+        }
+        // Import from Plume Creator: present the Import Plume modal (menu-only, no
+        // shortcut). Global so the title-bar overlay menu reaches it — like work.new.
+        {
+            let app_ctx = self.app_ctx.clone();
+            ctx.register_action_global(Action::new("work.import_plume").on_invoke(move |_i, c| {
+                let app_ctx = app_ctx.clone();
+                c.present_modal(
+                    ModalRequest::deferred(move |t| t.add(ImportPlumePanel::new(app_ctx)))
+                        .presentation(ModalPresentation::InTree)
+                        .title("Import Plume Creator project")
+                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                        .size(600, 500),
+                );
+            }));
         }
         // Close Work (Ctrl+W): the `work.close` *action* is registered further
         // down (it shares the unsaved-changes guard with the window close); here

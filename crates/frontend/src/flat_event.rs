@@ -9,8 +9,8 @@
 
 use common::event::{
     AllEvent, BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event,
-    ExportManagementEvent, HandlingAppLifecycleEvent, LongOperationEvent, Origin,
-    TrashManagementEvent, UndoRedoEvent, WorkManagementEvent,
+    ExportManagementEvent, HandlingAppLifecycleEvent, ImportManagementEvent, LongOperationEvent,
+    Origin, TrashManagementEvent, UndoRedoEvent, WorkManagementEvent,
 };
 use common::types::EntityId;
 
@@ -76,6 +76,8 @@ pub enum FlatEventKind {
 
     HandlingAppLifecycleInitializeApp,
     HandlingAppLifecycleCleanUpBeforeExit,
+
+    ImportManagementImportPlumeCreatorFile,
 
     // Undo/redo
     UndoPerformed,
@@ -213,6 +215,11 @@ impl From<Event> for FlatEvent {
                 }
                 HandlingAppLifecycleEvent::CleanUpBeforeExit => {
                     FlatEventKind::HandlingAppLifecycleCleanUpBeforeExit
+                }
+            },
+            Origin::ImportManagement(fe) => match fe {
+                ImportManagementEvent::ImportPlumeCreatorFile => {
+                    FlatEventKind::ImportManagementImportPlumeCreatorFile
                 }
             },
             Origin::UndoRedo(ur) => match ur {

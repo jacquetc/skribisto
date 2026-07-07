@@ -26,5 +26,9 @@ bastyde = { path = "../../../bastyde/crates/bastyde", features = ["automation"] 
 # Build-with-mocks: render the UI with fabricated data, no real backend needed.
 mocks = []
 
+[dev-dependencies]
+# Import-panel validation tests probe the filesystem for an existing target.
+tempfile = "3"
+
 [lints]
 workspace = true

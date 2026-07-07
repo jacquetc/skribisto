@@ -4,7 +4,7 @@
 // Read-only long operation.
 use crate::BackupNowDto;
 use crate::BackupResultDto;
-use crate::skrib;
+use skrib_format as skrib;
 use anyhow::{Result, anyhow};
 use common::database::QueryUnitOfWork;
 use common::entities::WorkInfo;

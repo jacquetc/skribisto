@@ -11,8 +11,10 @@ members = [
     "crates/trash_management",
     "crates/binder_item_management",
     "crates/handling_app_lifecycle",
+    "crates/import_management",
     "crates/frontend",
     "crates/skribisto_model",
+    "crates/skrib_format",
     "crates/bastyde_ui",
     ]
 
@@ -49,7 +51,9 @@ export_management = { package = "skribisto-export-management", version = "0.0.1"
 trash_management = { package = "skribisto-trash-management", version = "0.0.1", path = "crates/trash_management" }
 binder_item_management = { package = "skribisto-binder-item-management", version = "0.0.1", path = "crates/binder_item_management" }
 handling_app_lifecycle = { package = "skribisto-handling-app-lifecycle", version = "0.0.1", path = "crates/handling_app_lifecycle" }
+import_management = { package = "skribisto-import-management", version = "0.0.1", path = "crates/import_management" }
 skribisto_model = { package = "skribisto-model", version = "0.0.1", path = "crates/skribisto_model" }
+skrib_format = { package = "skribisto-skrib-format", version = "0.0.1", path = "crates/skrib_format" }
 
 [profile.release]
 lto = "fat"

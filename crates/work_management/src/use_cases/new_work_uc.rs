@@ -188,7 +188,7 @@ impl NewWorkUseCase {
             updated_at: now,
             title: title.clone(),
             dict_language: dto.language.clone(),
-            unique_id: work_io::new_unique_id(),
+            unique_id: skrib_format::new_unique_id(),
             ..Default::default()
         })?;
 

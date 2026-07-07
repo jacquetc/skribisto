@@ -5,6 +5,8 @@
 menu-file = &Fichier
 menu-new-work = &Nouvelle œuvre
 menu-open-work = &Ouvrir une œuvre…
+menu-import-from = &Importer depuis
+menu-import-plume = &Plume Creator (.plume)…
 menu-save = &Enregistrer
 menu-save-as-file = Enregistrer comme fichier &unique…
 menu-save-as-folder = Enregistrer comme &dossier…
@@ -194,3 +196,38 @@ new-work-notebook = Carnet
 new-work-chapter = Chapitre
 new-work-scene = Scène
 new-work-note = Note
+
+## Boîte de dialogue d'import Plume Creator
+import-plume-title = Importer un projet Plume Creator
+import-plume-close = Fermer
+import-plume-source = Projet Plume
+import-plume-source-hint = Choisissez un fichier .plume ou .plume_backup (n'importe quelle version de Plume Creator).
+import-plume-location = Dossier de destination
+import-plume-name = Nom du fichier
+import-plume-name-placeholder = Nom du projet
+import-plume-will-create = Créera
+import-plume-trash-warning = ⚠ Les éléments à la corbeille / supprimés ne sont pas migrés.
+import-plume-cancel = Annuler
+import-plume-import = Importer
+# Validation des champs
+import-plume-source-required = Choisissez un fichier de projet Plume
+import-plume-source-missing = Ce fichier n'existe pas
+import-plume-source-not-file = Ce chemin n'est pas un fichier
+import-plume-location-required = Choisissez un dossier de destination
+import-plume-location-missing = Ce dossier n'existe pas
+import-plume-location-not-folder = Ce chemin n'est pas un dossier
+import-plume-location-readonly = Ce dossier n'est pas accessible en écriture
+import-plume-name-required = Saisissez un nom de fichier
+import-plume-name-exists = Un fichier de ce nom existe déjà ici — l'import demandera confirmation du remplacement
+# Confirmation de remplacement
+import-plume-overwrite-title = Remplacer le fichier existant ?
+import-plume-overwrite-text = « { $name } » existe déjà. Le remplacer par le projet importé ?
+# Noms de classeurs transmis au backend (qui ne fait pas d'i18n)
+import-plume-manuscript-binder = Manuscrit
+import-plume-story-bible-binder = Personnages et lieux
+# Résultat
+import-plume-done = { $imported } éléments importés. { $skipped } éléments à la corbeille n'ont pas été migrés.
+import-plume-open-now = Ouvrir maintenant
+# Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
+import-plume-error-title = Impossible d'importer le projet
+import-plume-error-details = Détails

@@ -25,6 +25,8 @@
 //!   * [`welcome`] — `WelcomeViewModel`: store-backed facade for the start screen.
 //!   * [`new_work`] — `NewWorkViewModel`: single-instance live state (owns the New
 //!     Work dialog's form signals).
+//!   * [`import_plume`] — `ImportPlumeViewModel`: single-instance live state (owns
+//!     the Import Plume Creator dialog's form signals).
 //!
 //! Cross-view-model rules (keep the dependency graph a DAG):
 //!   * A view-model may hold framework model handles and call *down* into them.
@@ -33,12 +35,14 @@
 //!   * Many-to-one / distant links graduate to the intent bus.
 
 mod editors;
+mod import_plume;
 mod new_work;
 mod outline;
 mod settings;
 mod welcome;
 
 pub use editors::EditorsViewModel;
+pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;
 pub use settings::SettingsViewModel;

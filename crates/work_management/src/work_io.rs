@@ -3,7 +3,7 @@
 //! same generated read methods, so a thin [`TreeReader`] impl per UoW lets one
 //! [`gather`] do the ordered read + relationship hydration once.
 
-use crate::skrib::{self, BinderWithItems, ItemWithContents, ShapeTag, SkribShape};
+use skrib_format::{self as skrib, BinderWithItems, ItemWithContents, ShapeTag, SkribShape};
 use anyhow::{Result, anyhow};
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
@@ -15,16 +15,6 @@ use common::long_operation::OperationProgress;
 use common::types::EntityId;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
-
-/// Generate a fresh, stable project identity string (UUID v4).
-///
-/// Used to mint a `Work.unique_id` for brand-new projects and to *heal* a load
-/// whose source carries none (a legacy `.skrib` without
-/// `t_project_unique_identifier`, or a pre-v2 bundle lacking the field). Legacy
-/// ids that *are* present are preserved verbatim — this only fills the gaps.
-pub(crate) fn new_unique_id() -> String {
-    uuid::Uuid::new_v4().to_string()
-}
 
 /// The read surface needed to serialise the Work subtree. Implemented for each
 /// use case's `dyn …UnitOfWorkTrait` (the generated method names are identical).
