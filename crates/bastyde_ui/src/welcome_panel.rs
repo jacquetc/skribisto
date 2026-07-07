@@ -140,7 +140,18 @@ impl WelcomePanel {
     /// to one widget type (only the active page is mounted).
     fn recents_list(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
         let model = self.recents.list_model();
-        let empty = model.is_empty();
+
+        // Reactive page index: re-derived on every `refresh()` (which bumps
+        // `version` *after* `replace_all`), so the list replaces the empty-note
+        // placeholder as soon as the first recent work arrives. A plain
+        // build-time `model.is_empty()` snapshot fed to `Signal::new(..)` would
+        // leave the Switcher stuck on the empty page for this panel instance's
+        // whole lifetime (mirrors how the nav Switcher below derives its index).
+        let idx_model = model.clone();
+        let switch_index = self
+            .recents
+            .version_signal()
+            .map(move |_: &u64| if idx_model.is_empty() { 0usize } else { 1usize });
 
         // `on_activate` hands back only the row index, so the open path reads the
         // file path back out of a second cheap-clone handle on the same model.
@@ -172,7 +183,7 @@ impl WelcomePanel {
             }
         });
 
-        Switcher::new(Signal::new(if empty { 0 } else { 1 }))
+        Switcher::new(switch_index)
             .child(empty_note(tr!(welcome_empty_recents())))
             .child(list)
     }

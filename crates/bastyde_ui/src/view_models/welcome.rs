@@ -71,7 +71,13 @@ impl WelcomeViewModel {
             .add_filter("Skribisto work", &["skrib"]);
         let _ = ctx.pick_file(req, move |res, ectx| {
             if let FileDialogResult::File(Some(path)) = res {
-                ectx.dismiss_modal();
+                // NOT `dismiss_modal()`: this runs in the async file-dialog
+                // result callback, whose `EventContext` is anchored at the tree
+                // root (no source widget), so `dismiss_modal`'s walk up to the
+                // enclosing modal overlay finds nothing and silently no-ops. The
+                // Welcome modal is the topmost overlay when the native picker
+                // returns, so pop it directly.
+                ectx.dismiss_top_overlay();
                 let file = path.to_string_lossy().into_owned();
                 if let Err(e) =
                     work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: file })
