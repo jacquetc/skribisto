@@ -17,7 +17,9 @@ use frontend::common::direct_access::system::SystemRelationshipField;
 use work_management::{NewWorkDto, NewWorkTemplate};
 
 fn root_count(ctx: &AppContext) -> usize {
-    root_commands::get_all_root(ctx).expect("get_all_root").len()
+    root_commands::get_all_root(ctx)
+        .expect("get_all_root")
+        .len()
 }
 fn system_count(ctx: &AppContext) -> usize {
     system_commands::get_all_system(ctx)
@@ -84,7 +86,11 @@ fn new_work_reuses_the_shared_frame() {
     let init = handling_app_lifecycle_commands::initialize_app(&ctx).unwrap();
 
     work_management_commands::new_work(&ctx, &new_work_dto("one")).expect("new_work one");
-    assert_eq!(root_count(&ctx), 1, "new_work must reuse the Root, not add one");
+    assert_eq!(
+        root_count(&ctx),
+        1,
+        "new_work must reuse the Root, not add one"
+    );
     assert_eq!(system_count(&ctx), 1, "new_work must reuse the System");
     assert_eq!(
         the_root_id(&ctx),
@@ -95,7 +101,11 @@ fn new_work_reuses_the_shared_frame() {
     // The historically-buggy path: a SECOND new/open in one session used to leak a
     // second Root + System. It must remain exactly one of each.
     work_management_commands::new_work(&ctx, &new_work_dto("two")).expect("new_work two");
-    assert_eq!(root_count(&ctx), 1, "second new_work must not duplicate the Root");
+    assert_eq!(
+        root_count(&ctx),
+        1,
+        "second new_work must not duplicate the Root"
+    );
     assert_eq!(
         system_count(&ctx),
         1,

@@ -168,10 +168,10 @@ mod imp {
         /// Flush the shared recents MRU to disk synchronously. Call once at app
         /// shutdown so a just-opened work isn't lost inside the debounce window.
         pub fn flush_now() {
-            if let Some(mru) = shared_mru() {
-                if let Err(e) = mru.flush_now() {
-                    eprintln!("recents MRU: flush failed: {e}");
-                }
+            if let Some(mru) = shared_mru()
+                && let Err(e) = mru.flush_now()
+            {
+                eprintln!("recents MRU: flush failed: {e}");
             }
         }
 
@@ -282,7 +282,11 @@ mod imp {
 
             let rows = visible_rows(&Some(mru.clone()));
             // Only the reachable entry is visible…
-            assert_eq!(rows.len(), 1, "unreachable entry must be hidden from the UI");
+            assert_eq!(
+                rows.len(),
+                1,
+                "unreachable entry must be hidden from the UI"
+            );
             assert_eq!(rows[0].absolute_path, reachable.to_string_lossy());
             // …but the unreachable one stays in the durable MRU.
             assert_eq!(

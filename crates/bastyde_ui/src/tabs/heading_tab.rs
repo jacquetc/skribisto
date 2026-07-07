@@ -24,11 +24,13 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
         ));
     }
     if let Some(s) = &tab.synopsis {
-        col = col.child(shared::vspace(8.0)).child(shared::synopsis_section(
-            &s.doc,
-            &tab.column_width,
-            tab.mark_dirty_fn(),
-        ));
+        col = col
+            .child(shared::vspace(8.0))
+            .child(shared::synopsis_section(
+                &s.doc,
+                &tab.column_width,
+                tab.mark_dirty_fn(),
+            ));
     }
     shared::tab_backdrop(col)
 }

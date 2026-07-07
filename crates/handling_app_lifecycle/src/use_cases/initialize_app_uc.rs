@@ -67,11 +67,7 @@ impl InitializeAppUseCase {
                     updated_at: now,
                     ..Default::default()
                 })?;
-                uow.set_root_relationship(
-                    &root.id,
-                    &RootRelationshipField::System,
-                    &[system_id],
-                )?;
+                uow.set_root_relationship(&root.id, &RootRelationshipField::System, &[system_id])?;
                 root.id
             }
         };

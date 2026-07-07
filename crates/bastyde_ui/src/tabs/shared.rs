@@ -134,9 +134,7 @@ pub fn tab_backdrop(body: impl Widget + 'static) -> Box<dyn Widget> {
 
 /// A fixed vertical gap.
 pub fn vspace(height: f32) -> impl Widget {
-    bati!(FixedSize {
-        height: height
-    })
+    bati!(FixedSize { height: height })
 }
 
 /// Center `child` horizontally, capped at the live writing-column width.

@@ -13,7 +13,7 @@
 //! split-button affordance with rich rows.
 //!
 //! Recent works come from the reactive
-//! [`RecentWorkListModel`](crate::models::RecentWorkListModel) (Layer A), which is
+//! [`RecentWorkListModel`] (Layer A), which is
 //! backed by a **persisted** Bastyde `MruList` (so recents survive restarts;
 //! unreachable projects are hidden but kept). The popover content is built once
 //! per `build()`, so the list is refreshed by rebuilding the whole widget: the
@@ -156,9 +156,9 @@ impl Widget for RecentProjectsButton {
             Some(t) => lit!(t),
             None => tr!(no_work()),
         })
-            .variant(ButtonVariant::Ghost)
-            .text_style(TextStyleRole::BodyBold)
-            .trailing(IconWidget::chevron_down(12.0));
+        .variant(ButtonVariant::Ghost)
+        .text_style(TextStyleRole::BodyBold)
+        .trailing(IconWidget::chevron_down(12.0));
 
         // Trap Tab inside the popover: it is an anchored (not centered)
         // overlay, so it isn't auto-confined — a Cycle scope keeps keyboard

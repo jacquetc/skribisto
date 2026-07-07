@@ -16,6 +16,7 @@ mod tree_parse;
 mod version;
 
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result, bail};
 use skrib_format::{SkribShape, write_bundle};
@@ -34,6 +35,10 @@ pub struct ImportSummary {
 }
 
 /// Convert the Plume project at `source_path` into a `.skrib` zip at `output_path`.
+///
+/// Progress-free convenience wrapper used by the fixture tests; production code
+/// (the long-operation use case) calls [`import_with_progress`] directly.
+#[cfg(test)]
 pub fn import(
     source_path: &str,
     output_path: &str,
@@ -41,12 +46,43 @@ pub fn import(
     manuscript_binder_name: &str,
     story_bible_binder_name: &str,
 ) -> Result<ImportSummary> {
+    import_with_progress(
+        source_path,
+        output_path,
+        overwrite,
+        manuscript_binder_name,
+        story_bible_binder_name,
+        &|_, _| {},
+        &AtomicBool::new(false),
+    )
+}
+
+/// Convert the Plume project at `source_path` into a `.skrib` zip at
+/// `output_path`, reporting progress and honouring cancellation.
+///
+/// `report(percent, label)` drives the UI's progress toast; `cancel` is polled
+/// at every phase boundary and once per mapped node. Cancellation leaves nothing
+/// on disk: the `.skrib` is written to a sibling temp file and atomically renamed
+/// into place only after the final cancel check, so an existing `output_path`
+/// (overwrite) survives an aborted or failed import untouched.
+pub fn import_with_progress(
+    source_path: &str,
+    output_path: &str,
+    overwrite: bool,
+    manuscript_binder_name: &str,
+    story_bible_binder_name: &str,
+    report: &dyn Fn(f32, &str),
+    cancel: &AtomicBool,
+) -> Result<ImportSummary> {
     if !overwrite && Path::new(output_path).exists() {
         bail!("'{output_path}' already exists (choose another name or allow overwrite)");
     }
 
+    report(2.0, "Opening the Plume project…");
     let src = PlumeSource::open(source_path)?;
+    bail_if_cancelled(cancel)?;
 
+    report(12.0, "Reading the outline…");
     let tree = tree_parse::parse(&src.tree_xml).context("reading the Plume outline (tree)")?;
     let attendance = match &src.attendance_xml {
         Some(xml) => {
@@ -63,8 +99,14 @@ pub fn import(
         Some(xml) => info_parse::parse(xml).unwrap_or_default(),
         None => PlumeInfo::default(),
     };
-    let dict_words = src.dict.as_deref().map(dict_parse::parse).unwrap_or_default();
+    let dict_words = src
+        .dict
+        .as_deref()
+        .map(dict_parse::parse)
+        .unwrap_or_default();
+    bail_if_cancelled(cancel)?;
 
+    report(20.0, "Converting chapters and scenes…");
     let mapped = map::build_bundle(
         &tree,
         &attendance,
@@ -73,17 +115,40 @@ pub fn import(
         &src,
         manuscript_binder_name,
         story_bible_binder_name,
+        report,
+        cancel,
     );
+    bail_if_cancelled(cancel)?;
 
-    write_bundle(output_path, SkribShape::ZipFile, &mapped.bundle)
+    // Write to a sibling temp file, then atomically rename into place — so an
+    // existing target (overwrite) is only replaced once the write fully succeeds
+    // and no late cancel arrived.
+    report(92.0, "Writing the .skrib…");
+    let tmp_path = format!("{output_path}.importing");
+    write_bundle(&tmp_path, SkribShape::ZipFile, &mapped.bundle)
         .with_context(|| format!("writing '{output_path}'"))?;
+    if cancel.load(Ordering::Relaxed) {
+        let _ = std::fs::remove_file(&tmp_path);
+        bail!("import cancelled");
+    }
+    std::fs::rename(&tmp_path, output_path)
+        .with_context(|| format!("finalising '{output_path}'"))?;
 
+    report(100.0, "Done");
     Ok(ImportSummary {
         output_path: output_path.to_string(),
         imported_items: mapped.imported_items,
         skipped_trashed: mapped.skipped_trashed,
         warnings: mapped.warnings,
     })
+}
+
+/// Abort the import if the cancel token has been set, before any file is written.
+fn bail_if_cancelled(cancel: &AtomicBool) -> Result<()> {
+    if cancel.load(Ordering::Relaxed) {
+        bail!("import cancelled");
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -117,8 +182,13 @@ mod tests {
     /// A modern (terminal-version) project exercising every structure.
     fn terminal_members() -> Vec<(&'static str, &'static str)> {
         vec![
-            ("info", r#"<!DOCTYPE plume-information><plume-information version="0.3"><prj name="Sample Novel" creationDate="2015-01-02T03:04:05" lastModified="2016-02-03T04:05:06"/></plume-information>"#),
-            ("tree", r#"<!DOCTYPE plume-tree><plume-tree version="0.5" projectName="Sample">
+            (
+                "info",
+                r#"<!DOCTYPE plume-information><plume-information version="0.3"><prj name="Sample Novel" creationDate="2015-01-02T03:04:05" lastModified="2016-02-03T04:05:06"/></plume-information>"#,
+            ),
+            (
+                "tree",
+                r#"<!DOCTYPE plume-tree><plume-tree version="0.5" projectName="Sample">
                 <book number="1" name="Book One">
                   <act number="2" name="Act I">
                     <chapter number="3" name="Chapter 1">
@@ -136,14 +206,21 @@ mod tests {
                   <chapter number="20" name="B2 Ch"><scene number="21" name="B2 Scene"/></chapter>
                 </book>
                 <trash number="20000" name=""><book number="30" name="Deleted Book"/></trash>
-              </plume-tree>"#),
-            ("attendance", r#"<!DOCTYPE plume-attendance><plume-attendance version="0.6" box_1="Main--Secondary" box_2="None--Protagonist" spinBox_1_label="Age :">
+              </plume-tree>"#,
+            ),
+            (
+                "attendance",
+                r#"<!DOCTYPE plume-attendance><plume-attendance version="0.6" box_1="Main--Secondary" box_2="None--Protagonist" spinBox_1_label="Age :">
                 <group number="40" name="Characters">
                   <obj number="10" name="Alice" aliases="Al" quickDetails="The hero" box_1="0" box_2="1" spinBox_1="30"/>
-                </group></plume-attendance>"#),
+                </group></plume-attendance>"#,
+            ),
             ("dicts/userDict.dict_plume", "wibble;wobble;"),
             // Prose (T4 wrapped in a Qt-style doc to prove <style> stripping).
-            ("text/T4.html", r#"<html><head><style type="text/css">p{margin:0}</style></head><body><p>Prose of scene 1.1.</p></body></html>"#),
+            (
+                "text/T4.html",
+                r#"<html><head><style type="text/css">p{margin:0}</style></head><body><p>Prose of scene 1.1.</p></body></html>"#,
+            ),
             ("text/N4.html", "<p>Note for scene 1.1.</p>"),
             ("text/S2.html", "<p>The first act.</p>"),
             ("text/T6.html", "<p>Direct chapter prose.</p>"),
@@ -159,7 +236,12 @@ mod tests {
             .items
             .iter()
             .find(|i| i.item.title == title)
-            .unwrap_or_else(|| panic!("no item titled '{title}' in binder '{}'", binder.binder.name))
+            .unwrap_or_else(|| {
+                panic!(
+                    "no item titled '{title}' in binder '{}'",
+                    binder.binder.name
+                )
+            })
     }
     fn has(binder: &BundledBinder, title: &str) -> bool {
         binder.items.iter().any(|i| i.item.title == title)
@@ -203,6 +285,83 @@ mod tests {
     // -- tests -------------------------------------------------------------
 
     #[test]
+    fn progress_is_reported_monotonically_to_completion() {
+        use std::cell::RefCell;
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("p.plume");
+        let out = dir.path().join("o.skrib");
+        write_zip(&src, &terminal_members());
+
+        let seen = RefCell::new(Vec::<f32>::new());
+        let never = AtomicBool::new(false);
+        let summary = import_with_progress(
+            src.to_str().unwrap(),
+            out.to_str().unwrap(),
+            false,
+            "M",
+            "S",
+            &|pct, _label| seen.borrow_mut().push(pct),
+            &never,
+        )
+        .unwrap();
+
+        let seen = seen.into_inner();
+        assert!(!seen.is_empty(), "progress must be reported");
+        assert!(
+            seen.windows(2).all(|w| w[1] >= w[0]),
+            "progress must be monotonic non-decreasing: {seen:?}"
+        );
+        assert!(
+            seen.first().copied().unwrap() <= 20.0,
+            "first report should be an early phase"
+        );
+        assert_eq!(
+            seen.last().copied().unwrap(),
+            100.0,
+            "a successful import must finish at 100%"
+        );
+        assert_eq!(summary.imported_items, 16);
+    }
+
+    #[test]
+    fn cancel_during_mapping_leaves_no_output_and_preserves_target() {
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("p.plume");
+        let out = dir.path().join("o.skrib");
+        write_zip(&src, &terminal_members());
+        // An existing target opened with overwrite=true must survive a cancel.
+        std::fs::write(&out, b"ORIGINAL").unwrap();
+
+        // Trip the cancel token as soon as the mapping phase begins reporting.
+        let cancel = AtomicBool::new(false);
+        let res = import_with_progress(
+            src.to_str().unwrap(),
+            out.to_str().unwrap(),
+            true,
+            "M",
+            "S",
+            &|pct, _| {
+                if pct >= 20.0 {
+                    cancel.store(true, Ordering::Relaxed);
+                }
+            },
+            &cancel,
+        );
+
+        assert!(res.is_err(), "a cancelled import must return Err");
+        assert_eq!(
+            std::fs::read(&out).unwrap(),
+            b"ORIGINAL",
+            "the overwrite target must be untouched after a cancel"
+        );
+        let tmp = format!("{}.importing", out.to_str().unwrap());
+        assert!(
+            !Path::new(&tmp).exists(),
+            "no temp file may be left behind on cancel"
+        );
+    }
+
+    #[test]
     fn terminal_project_full_structure() {
         let (summary, bundle) = import_zip(&terminal_members());
 
@@ -222,22 +381,34 @@ mod tests {
 
         // --- manuscript tree: roles / sub-roles / indents ---
         let book1 = find(manuscript, "Book One");
-        assert_eq!((book1.item.role.clone(), book1.item.sub_role.clone()), (Role::Folder, SubRole::Book));
+        assert_eq!(
+            (book1.item.role.clone(), book1.item.sub_role.clone()),
+            (Role::Folder, SubRole::Book)
+        );
         assert_eq!(book1.item.indent, 0);
         assert_eq!(inline(book1, ContentRole::BookTitle), "Book One");
 
         let act = find(manuscript, "Act I");
-        assert_eq!((act.item.role.clone(), act.item.sub_role.clone()), (Role::Folder, SubRole::Part));
+        assert_eq!(
+            (act.item.role.clone(), act.item.sub_role.clone()),
+            (Role::Folder, SubRole::Part)
+        );
         assert_eq!(act.item.indent, 1);
         assert_eq!(inline(act, ContentRole::PartTitle), "Act I");
         assert!(prose(act, ContentRole::SynopsisText).contains("The first act."));
 
         let chap1 = find(manuscript, "Chapter 1");
-        assert_eq!((chap1.item.role.clone(), chap1.item.sub_role.clone()), (Role::Folder, SubRole::Chapter));
+        assert_eq!(
+            (chap1.item.role.clone(), chap1.item.sub_role.clone()),
+            (Role::Folder, SubRole::Chapter)
+        );
         assert_eq!(chap1.item.indent, 2);
 
         let scene11 = find(manuscript, "Scene 1.1");
-        assert_eq!((scene11.item.role.clone(), scene11.item.sub_role.clone()), (Role::Item, SubRole::Scene));
+        assert_eq!(
+            (scene11.item.role.clone(), scene11.item.sub_role.clone()),
+            (Role::Item, SubRole::Scene)
+        );
         assert_eq!(scene11.item.indent, 3);
         assert!(prose(scene11, ContentRole::SceneText).contains("Prose of scene 1.1."));
         // The Qt <style> block must not leak into the prose.
@@ -265,7 +436,11 @@ mod tests {
         // Multi-book + BookEnd markers (one per book).
         assert!(has(manuscript, "Book Two"));
         assert!(has(manuscript, "B2 Scene"));
-        let book_ends = manuscript.items.iter().filter(|i| i.item.sub_role == SubRole::BookEnd).count();
+        let book_ends = manuscript
+            .items
+            .iter()
+            .filter(|i| i.item.sub_role == SubRole::BookEnd)
+            .count();
         assert_eq!(book_ends, 2);
 
         // Trashed nodes are absent.
@@ -275,13 +450,25 @@ mod tests {
 
         // --- story bible + cross-links ---
         let characters = find(story, "Characters");
-        assert_eq!((characters.item.role.clone(), characters.item.sub_role.clone()), (Role::Folder, SubRole::None));
+        assert_eq!(
+            (
+                characters.item.role.clone(),
+                characters.item.sub_role.clone()
+            ),
+            (Role::Folder, SubRole::None)
+        );
         let alice = find(story, "Alice");
         assert_eq!(alice.item.sub_role, SubRole::Note);
         assert!(prose(alice, ContentRole::NoteText).contains("Alice is the hero."));
         let syn = prose(alice, ContentRole::SynopsisText);
-        assert!(syn.contains("The hero") && syn.contains("Al") && syn.contains("Main")
-            && syn.contains("Protagonist") && syn.contains("Age : 30"), "synopsis was: {syn:?}");
+        assert!(
+            syn.contains("The hero")
+                && syn.contains("Al")
+                && syn.contains("Main")
+                && syn.contains("Protagonist")
+                && syn.contains("Age : 30"),
+            "synopsis was: {syn:?}"
+        );
 
         // Scene 1.1's attend="-10" resolved to Alice's item id.
         assert_eq!(scene11.item.reference_ids, vec![alice.item.file_id]);
@@ -296,13 +483,22 @@ mod tests {
         // tree 0.4 (root plume-tree, no <trash>, separator without number),
         // attendance 0.3 (legacy char/item/place + level/role, no <group>).
         let members = vec![
-            ("info", r#"<!DOCTYPE plume-information><plume-information version="0.3"><prj name="Old Project"/></plume-information>"#),
-            ("tree", r#"<!DOCTYPE plume-tree><plume-tree version="0.4" projectName="Old">
+            (
+                "info",
+                r#"<!DOCTYPE plume-information><plume-information version="0.3"><prj name="Old Project"/></plume-information>"#,
+            ),
+            (
+                "tree",
+                r#"<!DOCTYPE plume-tree><plume-tree version="0.4" projectName="Old">
                 <book number="1" name="OldBook"><chapter number="2" name="OldChap">
-                  <scene number="3" name="OldScene"/></chapter></book></plume-tree>"#),
-            ("attendance", r#"<!DOCTYPE plume-attendance><attendance version="0.3" levelsNames="Main--Secondary" rolesNames="None--Protagonist">
+                  <scene number="3" name="OldScene"/></chapter></book></plume-tree>"#,
+            ),
+            (
+                "attendance",
+                r#"<!DOCTYPE plume-attendance><attendance version="0.3" levelsNames="Main--Secondary" rolesNames="None--Protagonist">
                 <char number="5" firstName="Bob" lastName="Smith" level="1" role="1"/>
-                <place number="6" name="Town"/></attendance>"#),
+                <place number="6" name="Town"/></attendance>"#,
+            ),
             ("text/T3.html", "<p>Old scene prose.</p>"),
         ];
         let (_summary, bundle) = import_zip(&members);
@@ -317,7 +513,10 @@ mod tests {
         assert!(has(story, "Characters") && has(story, "Places"));
         let bob = find(story, "Bob Smith");
         let syn = prose(bob, ContentRole::SynopsisText);
-        assert!(syn.contains("Secondary") && syn.contains("Protagonist"), "synopsis was: {syn:?}");
+        assert!(
+            syn.contains("Secondary") && syn.contains("Protagonist"),
+            "synopsis was: {syn:?}"
+        );
         assert!(has(story, "Town"));
     }
 
@@ -326,9 +525,13 @@ mod tests {
         // Pre-0.3 layout: loose *.plume (root <plume>) + *.attend + *.prjinfo + text/.
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
-        std::fs::write(root.join("Loose.plume"), r#"<!DOCTYPE plume><plume version="0.2" projectName="LooseProj">
+        std::fs::write(
+            root.join("Loose.plume"),
+            r#"<!DOCTYPE plume><plume version="0.2" projectName="LooseProj">
             <book number="1" name="LooseBook"><chapter number="2" name="LooseChap">
-              <scene number="3" name="LooseScene"/></chapter></book></plume>"#).unwrap();
+              <scene number="3" name="LooseScene"/></chapter></book></plume>"#,
+        )
+        .unwrap();
         std::fs::write(root.join("Loose.attend"), r#"<!DOCTYPE plume-attendance><attendance version="0.2" levelsNames="Main" rolesNames="None">
             <char number="5" firstName="Carol" lastName="Jones"/></attendance>"#).unwrap();
         std::fs::write(root.join("Loose.prjinfo"), r#"<!DOCTYPE plume-information><plume-information version="0.2"><prj name="Loose Project"/></plume-information>"#).unwrap();
@@ -362,7 +565,16 @@ mod tests {
         // A zip with no `tree` member is not a Plume project.
         write_zip(&src, &[("random", "<x/>")]);
         let out = dir.path().join("out.skrib");
-        assert!(import(src.to_str().unwrap(), out.to_str().unwrap(), false, "M", "S").is_err());
+        assert!(
+            import(
+                src.to_str().unwrap(),
+                out.to_str().unwrap(),
+                false,
+                "M",
+                "S"
+            )
+            .is_err()
+        );
         assert!(!out.exists(), "no output must be written on failure");
 
         // Overwrite guard.
@@ -370,8 +582,26 @@ mod tests {
         write_zip(&good, &terminal_members());
         let out2 = dir.path().join("exists.skrib");
         std::fs::write(&out2, "sentinel").unwrap();
-        assert!(import(good.to_str().unwrap(), out2.to_str().unwrap(), false, "M", "S").is_err());
+        assert!(
+            import(
+                good.to_str().unwrap(),
+                out2.to_str().unwrap(),
+                false,
+                "M",
+                "S"
+            )
+            .is_err()
+        );
         // ...but succeeds with overwrite=true.
-        assert!(import(good.to_str().unwrap(), out2.to_str().unwrap(), true, "M", "S").is_ok());
+        assert!(
+            import(
+                good.to_str().unwrap(),
+                out2.to_str().unwrap(),
+                true,
+                "M",
+                "S"
+            )
+            .is_ok()
+        );
     }
 }

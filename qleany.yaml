@@ -529,7 +529,7 @@ features:
     entities: []
     undoable: false
     read_only: true
-    long_operation: false
+    long_operation: true
     dto_in:
       name: ImportPlumeCreatorFileDto
       fields:

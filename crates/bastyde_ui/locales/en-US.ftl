@@ -225,6 +225,10 @@ import-plume-overwrite-text = “{ $name }” already exists. Replace it with th
 # Binder names passed to the backend (which can't do i18n)
 import-plume-manuscript-binder = Manuscript
 import-plume-story-bible-binder = Story Bible
+# Progress toast (the import runs as a long operation)
+import-plume-progress-title = Importing Plume project…
+import-plume-cancel-import = Cancel
+import-plume-cancelled = Import cancelled
 # Result
 import-plume-done = Imported { $imported } items. { $skipped } trashed items were not migrated.
 import-plume-open-now = Open now

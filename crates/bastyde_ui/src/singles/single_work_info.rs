@@ -1,7 +1,7 @@
 //! `SingleWorkInfo` — a reactive handle over the open project's `WorkInfo`.
 //!
 //! `WorkInfo` records the on-disk identity of the open project: its `file_name`
-//! and its [`WorkShape`] (`Zip` single-file vs exploded `Folder`). This single
+//! and its `WorkShape` (`Zip` single-file vs exploded `Folder`). This single
 //! drives the title-bar "Save as…" menu visibility (Bug 2) and the Save-as
 //! default name. `shape` is `Option` — `None` means no project is open, which
 //! collapses both conditional menu items.

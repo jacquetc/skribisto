@@ -1,14 +1,22 @@
-//! `ImportPlumeViewModel` — the Import Plume Creator dialog's business logic.
+//! `ImportPlumeViewModel` — the Import Plume Creator feature's business logic.
 //!
-//! Single-instance live state (like `NewWorkViewModel`): it owns the form's
-//! `Signal`s (source `.plume`, destination folder, output name), so it is created
-//! once in `ImportPlumePanel::new` and shared by `.clone()`. Picking a source
-//! defaults the destination to the *same folder* and *same base name* (with
-//! `.skrib`), still editable. On import it calls the backend command, then offers
-//! to open the produced `.skrib` via the existing `load_work`.
+//! Single-instance live state, created once in `main.rs` and registered as
+//! app-state (so `App::build` can wire the long-operation events to it and the
+//! panel can reach it). It owns the form's `Signal`s (source `.plume`,
+//! destination folder, output name) **and** the in-flight import job. Picking a
+//! source defaults the destination to the *same folder* and *same base name*
+//! (with `.skrib`), still editable.
+//!
+//! Import is a **long operation**: `run_import` starts it (returning immediately),
+//! closes the panel, and shows a *loading* toast with a live percentage and a
+//! **Cancel** button. The backend's `Origin::LongOperation(...)` events — routed
+//! here by `App::build` via `subscribe_event_with_ctx` — update that one toast in
+//! place: progress ticks, then a success toast (with **Open now** → `load_work`),
+//! a cancelled notice, or an error toast with **Details**.
 
 use std::path::Path;
 use std::rc::Rc;
+use std::time::Duration;
 
 use bastyde::prelude::*; // EventContext, Signal, tr!, lit!, FileDialogResult
 use bastyde::widgets::{
@@ -16,9 +24,16 @@ use bastyde::widgets::{
 };
 
 use frontend::AppContext;
-use frontend::commands::{import_management_commands, work_management_commands};
+use frontend::commands::{
+    import_management_commands, long_operation_commands, work_management_commands,
+};
+use frontend::common::event::Event;
 use frontend::import_management::ImportPlumeCreatorFileDto;
 use frontend::work_management::LoadWorkDto;
+
+/// Update-in-place key for the single toast the import drives through its
+/// lifecycle (loading → progress → success / cancelled / error).
+const IMPORT_TOAST_ID: &str = "import.plume";
 
 /// Strip a `.plume` / `.plume_backup` extension from a source path's file name,
 /// yielding the default output base name (`"…/Le Visiteur.plume"` → `"Le Visiteur"`).
@@ -107,6 +122,10 @@ pub struct ImportPlumeViewModel {
     location: Signal<String>,
     /// The output base name (a `.skrib` is appended).
     name: Signal<String>,
+    /// The long-operation id of the import running right now, if any — set on
+    /// start, cleared when it completes / is cancelled / fails. Drives event
+    /// filtering (only events for *this* op touch the toast) and the Cancel button.
+    active: Signal<Option<String>>,
     app_ctx: Rc<AppContext>,
 }
 
@@ -117,8 +136,17 @@ impl ImportPlumeViewModel {
             source: Signal::new(String::new()),
             location: Signal::new(String::new()),
             name: Signal::new(String::new()),
+            active: Signal::new(None),
             app_ctx,
         }
+    }
+
+    /// Clear the form fields — called when the panel is (re)opened so a previous
+    /// session's paths don't linger. The in-flight job is independent.
+    pub fn reset_form(&self) {
+        self.source.set(String::new());
+        self.location.set(String::new());
+        self.name.set(String::new());
     }
 
     // ── Signal accessors (bound by the view) ───────────────────────────────
@@ -146,7 +174,7 @@ impl ImportPlumeViewModel {
         }
     }
 
-    /// The reactive "Will create …/<name>.skrib" preview.
+    /// The reactive "Will create `…/<name>.skrib`" preview.
     pub fn target_path(&self) -> Signal<String> {
         self.location
             .zip(&self.name)
@@ -163,8 +191,12 @@ impl ImportPlumeViewModel {
     /// Whether "Import" may fire: a valid source **and** a valid destination
     /// **and** a non-blank name.
     pub fn can_import(&self) -> Signal<bool> {
-        let source_ok = self.source.map(|s| matches!(source_state(s), ValidationState::None));
-        let location_ok = self.location.map(|d| matches!(location_state(d), ValidationState::None));
+        let source_ok = self
+            .source
+            .map(|s| matches!(source_state(s), ValidationState::None));
+        let location_ok = self
+            .location
+            .map(|d| matches!(location_state(d), ValidationState::None));
         let name_ok = self.name.map(|n| !build_target("x", n).is_empty());
         source_ok.and(&location_ok).and(&name_ok)
     }
@@ -220,31 +252,110 @@ impl ImportPlumeViewModel {
         }
     }
 
-    /// Run the conversion. On success dismiss + offer to open; on failure surface
-    /// the real cause in a persistent toast with a **Details** button (the raw
-    /// `to_string()` of an `anyhow` error only shows the outermost context, so we
-    /// use the root cause for the body and the full `{:#}` chain for the dialog).
+    /// Start the conversion (a long operation). Returns immediately with the
+    /// operation id; the panel closes and a loading toast takes over, driven by
+    /// the `Origin::LongOperation(...)` events routed to `on_long_op_*`. Only a
+    /// failure to *start* is handled inline — the actual import errors arrive as
+    /// a `Failed` event.
     fn run_import(&self, ctx: &mut EventContext, overwrite: bool) {
-        match import_management_commands::import_plume_creator_file(&self.app_ctx, &self.dto(overwrite))
-        {
-            Ok(res) => {
+        let dto = self.dto(overwrite);
+        match import_management_commands::import_plume_creator_file(&self.app_ctx, &dto) {
+            Ok(op_id) => {
+                self.active.set(Some(op_id));
                 // Close the import panel. `dismiss_top_overlay` (not
                 // `dismiss_modal`) because on the overwrite path this runs from
                 // the confirmation MessageBox's `on_result` callback, whose
                 // context is anchored at the tree root (no source widget) — so
                 // `dismiss_modal`'s walk to the enclosing modal would no-op. The
-                // import panel is the topmost overlay in both the direct and the
-                // post-confirmation paths.
+                // import panel is the topmost overlay in both paths.
                 ctx.dismiss_top_overlay();
+                // Show the progress toast right away (before the first event).
+                ctx.show_toast(self.progress_toast(0.0, ""));
+            }
+            Err(e) => {
+                self.show_error(ctx, &format!("{e:#}"));
+            }
+        }
+    }
+
+    /// The loading toast the import lives in: spinner + a `NN% · message` body +
+    /// a **Cancel** button. Re-shown (same id) on every progress tick so the one
+    /// surface updates in place.
+    fn progress_toast(&self, percent: f32, message: &str) -> Toast {
+        let vm = self.clone();
+        let body = if message.is_empty() {
+            format!("{percent:.0}%")
+        } else {
+            format!("{percent:.0}% · {message}")
+        };
+        Toast::loading(tr!(import_plume_progress_title()))
+            .id(IMPORT_TOAST_ID)
+            .body(lit!(body))
+            .action(
+                ToastAction::destructive(tr!(import_plume_cancel_import()), move |c| vm.cancel(c))
+                    .closes_toast(false),
+            )
+    }
+
+    /// Cancel the running import (Cancel button). Sets the operation's cancel
+    /// flag; the backend stops at the next checkpoint and the manager emits a
+    /// `Cancelled` event, which `on_long_op_cancelled` turns into the final toast.
+    pub fn cancel(&self, _ctx: &mut EventContext) {
+        if let Some(op_id) = self.active.get() {
+            long_operation_commands::cancel_operation(&self.app_ctx, &op_id);
+        }
+    }
+
+    // ── Long-operation event handlers (wired in `App::build`) ───────────────
+    // Each event is generic across all long operations, so every handler first
+    // matches the payload's `id` against the in-flight job — events for another
+    // op (or a stale one) are ignored.
+
+    /// A progress tick: update the loading toast's percentage + message in place.
+    pub fn on_long_op_progress(&self, ctx: &mut EventContext, event: &Event) {
+        let Some(op_id) = self.active.get() else {
+            return;
+        };
+        let Some(payload) = parse_payload(event) else {
+            return;
+        };
+        if payload_id(&payload) != Some(op_id.as_str()) {
+            return;
+        }
+        let percent = payload
+            .get("percentage")
+            .and_then(|p| p.as_f64())
+            .unwrap_or(0.0) as f32;
+        let message = payload
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("");
+        ctx.show_toast(self.progress_toast(percent, message));
+    }
+
+    /// The operation finished: fetch the result and replace the loading toast
+    /// with a success toast offering **Open now** (loads the produced `.skrib`).
+    pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
+        let Some(op_id) = self.active.get() else {
+            return;
+        };
+        if event_id(event) != Some(op_id.clone()) {
+            return;
+        }
+        self.active.set(None);
+        match import_management_commands::get_import_plume_creator_file_result(
+            &self.app_ctx,
+            &op_id,
+        ) {
+            Ok(Some(res)) => {
                 let app_ctx = self.app_ctx.clone();
                 let output = res.output_path.clone();
                 let done = tr!(import_plume_done(
                     imported = res.imported_items,
                     skipped = res.skipped_trashed
                 ));
-                ctx.show_toast(Toast::success(done).action(ToastAction::primary(
-                    tr!(import_plume_open_now()),
-                    move |c| {
+                ctx.show_toast(Toast::success(done).id(IMPORT_TOAST_ID).action(
+                    ToastAction::primary(tr!(import_plume_open_now()), move |c| {
                         if let Err(e) = work_management_commands::load_work(
                             &app_ctx,
                             &LoadWorkDto {
@@ -255,51 +366,134 @@ impl ImportPlumeViewModel {
                                 error = e.to_string()
                             ))));
                         }
-                    },
-                )));
+                    }),
+                ));
             }
-            Err(e) => {
-                let reason = e.root_cause().to_string();
-                let details = format!("{e:#}");
+            // Completed without a recoverable result (shouldn't happen) — clear
+            // the loading toast with a neutral, self-dismissing notice.
+            Ok(None) | Err(_) => {
                 ctx.show_toast(
-                    Toast::error(tr!(import_plume_error_title()))
-                        .body(lit!(reason))
-                        .persistent()
-                        .action(ToastAction::primary(
-                            tr!(import_plume_error_details()),
-                            move |c| {
-                                MessageBox::warning(tr!(import_plume_error_title()))
-                                    .text(lit!(details.clone()))
-                                    .buttons(MessageBoxButtons::Ok)
-                                    .present(c);
-                            },
-                        )),
+                    Toast::info(tr!(import_plume_progress_title()))
+                        .id(IMPORT_TOAST_ID)
+                        .auto_dismiss_after(Duration::from_secs(4)),
                 );
             }
         }
     }
+
+    /// The operation was cancelled: replace the loading toast with a neutral,
+    /// self-dismissing notice.
+    pub fn on_long_op_cancelled(&self, ctx: &mut EventContext, event: &Event) {
+        let Some(op_id) = self.active.get() else {
+            return;
+        };
+        if event_id(event) != Some(op_id.clone()) {
+            return;
+        }
+        self.active.set(None);
+        ctx.show_toast(
+            Toast::info(tr!(import_plume_cancelled()))
+                .id(IMPORT_TOAST_ID)
+                .auto_dismiss_after(Duration::from_secs(4)),
+        );
+    }
+
+    /// The operation failed: replace the loading toast with an error toast whose
+    /// body is the failure reason and whose **Details** button shows the full
+    /// message (the operation's error string is the flattened `{:#}` chain).
+    pub fn on_long_op_failed(&self, ctx: &mut EventContext, event: &Event) {
+        let Some(op_id) = self.active.get() else {
+            return;
+        };
+        let Some(payload) = parse_payload(event) else {
+            return;
+        };
+        if payload_id(&payload) != Some(op_id.as_str()) {
+            return;
+        }
+        self.active.set(None);
+        let error = payload
+            .get("error")
+            .and_then(|e| e.as_str())
+            .unwrap_or_default()
+            .to_string();
+        self.show_error(ctx, &error);
+    }
+
+    /// Replace/raise the error toast: reason in the body, full message behind
+    /// **Details** (persistent — the user dismisses it).
+    fn show_error(&self, ctx: &mut EventContext, message: &str) {
+        let details = message.to_string();
+        ctx.show_toast(
+            Toast::error(tr!(import_plume_error_title()))
+                .id(IMPORT_TOAST_ID)
+                .body(lit!(message.to_string()))
+                .persistent()
+                .action(ToastAction::primary(
+                    tr!(import_plume_error_details()),
+                    move |c| {
+                        MessageBox::warning(tr!(import_plume_error_title()))
+                            .text(lit!(details.clone()))
+                            .buttons(MessageBoxButtons::Ok)
+                            .present(c);
+                    },
+                )),
+        );
+    }
+}
+
+/// Parse a `LongOperation` event's JSON payload (`{"id":…, "percentage":…, …}`).
+fn parse_payload(event: &Event) -> Option<serde_json::Value> {
+    event
+        .data
+        .as_ref()
+        .and_then(|s| serde_json::from_str(s).ok())
+}
+
+/// The operation id inside an already-parsed payload.
+fn payload_id(payload: &serde_json::Value) -> Option<&str> {
+    payload.get("id").and_then(|i| i.as_str())
+}
+
+/// The operation id carried by an event (parse + extract in one step).
+fn event_id(event: &Event) -> Option<String> {
+    parse_payload(event)?
+        .get("id")
+        .and_then(|i| i.as_str())
+        .map(str::to_string)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use bastyde::prelude::*; // FileDialogResult
+    use super::*; // brings `FileDialogResult` in via the parent's prelude glob
     use bastyde::widgets::ValidationState;
     use std::path::PathBuf;
 
     #[test]
     fn output_stem_strips_plume_extensions() {
         assert_eq!(output_stem("/books/Le Visiteur.plume"), "Le Visiteur");
-        assert_eq!(output_stem("/books/Faux-Semblants.plume_backup"), "Faux-Semblants");
+        assert_eq!(
+            output_stem("/books/Faux-Semblants.plume_backup"),
+            "Faux-Semblants"
+        );
         assert_eq!(output_stem("/books/PLAIN.PLUME"), "PLAIN");
         assert_eq!(output_stem("nodir.plume"), "nodir");
     }
 
     #[test]
     fn build_target_appends_skrib_once() {
-        assert_eq!(build_target("/books", "Le Visiteur"), "/books/Le Visiteur.skrib");
-        assert_eq!(build_target("/books/", "Le Visiteur"), "/books/Le Visiteur.skrib");
-        assert_eq!(build_target("/books", "Le Visiteur.skrib"), "/books/Le Visiteur.skrib");
+        assert_eq!(
+            build_target("/books", "Le Visiteur"),
+            "/books/Le Visiteur.skrib"
+        );
+        assert_eq!(
+            build_target("/books/", "Le Visiteur"),
+            "/books/Le Visiteur.skrib"
+        );
+        assert_eq!(
+            build_target("/books", "Le Visiteur.skrib"),
+            "/books/Le Visiteur.skrib"
+        );
         assert_eq!(build_target("/books", "   "), "");
     }
 

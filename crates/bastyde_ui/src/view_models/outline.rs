@@ -10,9 +10,7 @@ use std::rc::Rc;
 
 use bastyde::data::{DropPosition, KeyedSelectionModel, SelectionMode};
 use bastyde::prelude::*; // EventContext, Signal, tr!
-use bastyde::widgets::{
-    DockOpenLocation, DockSide, DockWidgetId, DockingModel, InputDialog,
-};
+use bastyde::widgets::{DockOpenLocation, DockSide, DockWidgetId, DockingModel, InputDialog};
 
 use frontend::AppContext;
 use frontend::commands::{
@@ -109,11 +107,8 @@ impl OutlineViewModel {
             query: Signal::new(String::new()),
             all_binders: Signal::new(false),
         };
-        let model = BinderBinderItemsTreeModel::new(
-            app_ctx.clone(),
-            ids.work_id.clone(),
-            filters.clone(),
-        );
+        let model =
+            BinderBinderItemsTreeModel::new(app_ctx.clone(), ids.work_id.clone(), filters.clone());
         let docking = DockingModel::new();
         docking.set_side_size(DockSide::Leading, 280.0);
         // A non-zero rail thickness switches the leading side to Rail

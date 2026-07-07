@@ -45,7 +45,7 @@ use frontend::work_management::{BackupNowDto, SaveAsDto};
 use app::{App, PendingExit};
 use app_ids::AppIds;
 use singles::{SingleWork, SingleWorkInfo};
-use view_models::OutlineViewModel;
+use view_models::{ImportPlumeViewModel, OutlineViewModel};
 
 /// The currently-open project's path (from `WorkInfo`), if any.
 fn current_project_path(ctx: &AppContext) -> Option<String> {
@@ -224,6 +224,10 @@ fn main() {
     // title-bar menu can bind its reactive checkmark and the whole app can reach
     // it via `ctx.app_state::<OutlineViewModel>()`.
     let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
+    // The Import-Plume view-model is a singleton (form + in-flight job + progress
+    // toast). Registered as app-state so `App::build` can route the import's
+    // long-operation events to it and the menu action can reach it to open the panel.
+    let import_plume = ImportPlumeViewModel::new(app_ctx.clone());
     // The title-bar menu lives outside `App` (no `ctx.settings()` there), so the
     // autosave setting is mirrored into this plain signal by `App::build` and read
     // by the menu to hide the "Save" item. Seeded from the persisted value.
@@ -249,6 +253,7 @@ fn main() {
         .app_state(single_work.clone())
         .app_state(single_work_info.clone())
         .app_state(outline.clone())
+        .app_state(import_plume.clone())
         .initial_window(
             WindowConfig::new()
                 .id("main")
@@ -501,7 +506,7 @@ fn main() {
                                                 tooltip: tr!(tooltip_welcome())
                                                 size: IconButtonSize::Large
                                                 on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
-                                                
+
                                             }
                                             RecentProjectsButton::new(app_ctx_root.clone())
                                             Expand::horizontal {

@@ -32,7 +32,10 @@ pub fn parse(xml: &str) -> Result<PlumeTree> {
     }
 
     Ok(PlumeTree {
-        project_name: root.attribute("projectName").unwrap_or_default().to_string(),
+        project_name: root
+            .attribute("projectName")
+            .unwrap_or_default()
+            .to_string(),
         roots: parse_children(root, false),
     })
 }
@@ -65,7 +68,9 @@ fn parse_node(node: roxmltree::Node, parent_trashed: bool) -> Option<PlumeNode> 
 
     Some(PlumeNode {
         kind,
-        number: node.attribute("number").and_then(|s| s.trim().parse::<u32>().ok()),
+        number: node
+            .attribute("number")
+            .and_then(|s| s.trim().parse::<u32>().ok()),
         name: node.attribute("name").unwrap_or_default().to_string(),
         is_trashed,
         badge: node.attribute("badge").unwrap_or_default().to_string(),

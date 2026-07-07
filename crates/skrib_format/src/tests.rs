@@ -105,9 +105,9 @@ fn sample_inputs() -> (
     ];
 
     let mut items = Vec::new();
-    let mut item_id = 300u64;
     let mut content_id = 1000u64;
     for (i, (role, sub_role)) in all_combinations().into_iter().enumerate() {
+        let item_id = 300 + i as u64;
         let mut contents = Vec::new();
         for cr in allowed_content(&role, &sub_role) {
             contents.push(Content {
@@ -141,7 +141,6 @@ fn sample_inputs() -> (
             tags: vec![10],
         };
         items.push(ItemWithContents { item, contents });
-        item_id += 1;
     }
     // A cross-reference: first item -> second item.
     items[0].item.references = vec![301];

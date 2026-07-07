@@ -19,7 +19,10 @@ mod tests {
 
     #[test]
     fn splits_and_trims() {
-        assert_eq!(parse("nanites;*$;"), vec!["nanites".to_string(), "*$".to_string()]);
+        assert_eq!(
+            parse("nanites;*$;"),
+            vec!["nanites".to_string(), "*$".to_string()]
+        );
         assert_eq!(parse(""), Vec::<String>::new());
         assert_eq!(parse("  a ; b ;a;"), vec!["a".to_string(), "b".to_string()]);
     }

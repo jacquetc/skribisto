@@ -12,7 +12,7 @@
 //!
 //! [`binder_search_button`] is a ghost `PopoverIconButton` (magnifier) whose
 //! popover holds a `SearchField` — two-way bound to the outline's live query
-//! signal so the tree filters as you type — and a togglable `IconButton`
+//! signal so the tree filters as you type — and a toggleable `IconButton`
 //! switching the search scope between the current binder and all binders. The
 //! filtering itself lives in the tree model (`TreeRowFilter`); these widgets
 //! only drive the [`OutlineViewModel`]'s filter signals.
@@ -23,8 +23,8 @@ use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     Button, ButtonVariant, FixedSize, FocusScope, HStack, IconButton, IconWidget, MenuItem,
-    MenuList, MessageBox, MessageBoxButtons, Padding, PopoverButton, PopoverIconButton, SearchField,
-    Spacer, StandardButton, TextWidget, TraversalScopePolicy,
+    MenuList, MessageBox, MessageBoxButtons, Padding, PopoverButton, PopoverIconButton,
+    SearchField, Spacer, StandardButton, TextWidget, TraversalScopePolicy,
 };
 
 use frontend::AppContext;
@@ -191,20 +191,21 @@ fn binder_row(outline: &OutlineViewModel, b: &BinderRow, current: bool) -> impl 
         // Right-click → confirm → intent → the `binder.trash` global action.
         .context_menu(move |_pos, _ctx| {
             let name = name.clone();
-            let menu = MenuList::new().item(MenuItem::new(tr!(ctx_trash())).on_activate_fn(
-                move |ctx| {
+            let menu =
+                MenuList::new().item(MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |ctx| {
                     let name = name.clone();
                     MessageBox::question(tr!(binder_trash_confirm_title()))
                         .text(tr!(binder_trash_confirm_text(name = name)))
                         .buttons(MessageBoxButtons::OkCancel)
                         .on_result(move |r, ctx| {
                             if r.button == StandardButton::Ok {
-                                ctx.send_intent(AppIntent::TrashBinder { binder_id: id as i64 });
+                                ctx.send_intent(AppIntent::TrashBinder {
+                                    binder_id: id as i64,
+                                });
                             }
                         })
                         .present(ctx);
-                },
-            ));
+                }));
             Some(Box::new(menu) as Box<dyn Widget>)
         });
     Padding::symmetric(6.0, 8.0).child(FixedSize::new().width(ROW_WIDTH).child(row))

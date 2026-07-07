@@ -9,8 +9,6 @@
 //! destination folder + name (same folder, same base name → `.skrib`); a warning
 //! notes that trashed items are not migrated.
 
-use std::rc::Rc;
-
 use bastyde::core::styles::PanelVariant;
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
@@ -18,8 +16,6 @@ use bastyde::widgets::{
     Button, ButtonVariant, Divider, Expand, FilePickerField, FilePickerKind, FixedSize, FormLayout,
     HStack, IconButton, Padding, Panel, ScrollArea, Spacer, TextInput, TextWidget, VStack,
 };
-
-use frontend::AppContext;
 
 use crate::view_models::ImportPlumeViewModel;
 
@@ -32,9 +28,12 @@ pub struct ImportPlumePanel {
 }
 
 impl ImportPlumePanel {
-    pub fn new(app_ctx: Rc<AppContext>) -> Self {
+    /// Build the panel over the shared, app-state [`ImportPlumeViewModel`] (the
+    /// same instance `App::build` wired the long-operation events to). The
+    /// presenting action resets the form before showing it.
+    pub fn new(vm: ImportPlumeViewModel) -> Self {
         Self {
-            vm: ImportPlumeViewModel::new(app_ctx),
+            vm,
             root_child: None,
         }
     }
@@ -51,7 +50,7 @@ impl ImportPlumePanel {
             .color(TextRole::Secondary)
     }
 
-    /// The reactive "Will create …/<name>.skrib" preview.
+    /// The reactive "Will create `…/<name>.skrib`" preview.
     fn path_preview(&self) -> impl Widget + 'static {
         HStack::new()
             .spacing(7.0)
@@ -212,17 +211,23 @@ impl Widget for ImportPlumePanel {
 mod tests {
     use super::*;
     use bastyde::core::widget_tree::WidgetTree;
+    use frontend::AppContext;
+    use std::rc::Rc;
 
     /// The whole panel — header, the `FormLayout` body (two `FilePickerField`s,
     /// a `TextInput`, the preview, the warning), and the footer — must build and
     /// lay out headlessly without panicking, at the modal's card size.
     #[test]
     fn panel_builds_and_lays_out() {
-        let ctx = Rc::new(AppContext::new());
+        let vm = ImportPlumeViewModel::new(Rc::new(AppContext::new()));
         let mut tree = WidgetTree::new();
-        let id = tree.add_boxed(Box::new(ImportPlumePanel::new(ctx)));
+        let id = tree.add_boxed(Box::new(ImportPlumePanel::new(vm)));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         let b = tree.bounds(id);
-        assert_eq!((b.width, b.height), (CARD_W, CARD_H), "panel fills the card");
+        assert_eq!(
+            (b.width, b.height),
+            (CARD_W, CARD_H),
+            "panel fills the card"
+        );
     }
 }

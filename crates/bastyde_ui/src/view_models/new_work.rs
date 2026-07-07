@@ -225,7 +225,7 @@ impl NewWorkViewModel {
     /// Light Novel, Novel = indices 1/2/3). Drives the toggle's `enabled` state
     /// so it greys out for None (0) / Notebook (4).
     pub fn chapter_scene_applicable(&self) -> Signal<bool> {
-        self.template_idx.map(|i| matches!(*i, 1 | 2 | 3))
+        self.template_idx.map(|i| matches!(*i, 1..=3))
     }
 
     /// The reactive "Will create …" path — recomputes as name/location/format
@@ -270,7 +270,11 @@ impl NewWorkViewModel {
     /// Build the DTO from the current form state.
     fn dto(&self) -> NewWorkDto {
         new_work_dto(
-            build_target_path(&self.location.get(), &self.name.get(), self.format_idx.get()),
+            build_target_path(
+                &self.location.get(),
+                &self.name.get(),
+                self.format_idx.get(),
+            ),
             self.format_idx.get() == 1,
             template_from_index(self.template_idx.get()),
             self.language.get().unwrap_or_default(),
@@ -284,7 +288,9 @@ impl NewWorkViewModel {
         match work_management_commands::new_work(&self.app_ctx, &self.dto()) {
             Ok(()) => ctx.dismiss_modal(),
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(could_not_create_work(error = e.to_string()))));
+                ctx.show_toast(Toast::error(tr!(could_not_create_work(
+                    error = e.to_string()
+                ))));
             }
         }
     }
@@ -319,7 +325,10 @@ mod tests {
             build_target_path("~/Novels", "Tidewrack", 0),
             "~/Novels/tidewrack.skrib"
         );
-        assert_eq!(build_target_path("~/Novels", "Tidewrack", 1), "~/Novels/tidewrack");
+        assert_eq!(
+            build_target_path("~/Novels", "Tidewrack", 1),
+            "~/Novels/tidewrack"
+        );
         // A trailing separator on the folder is not doubled.
         assert_eq!(
             build_target_path("~/Novels/", "Tidewrack", 0),

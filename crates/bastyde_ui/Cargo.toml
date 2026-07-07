@@ -16,6 +16,9 @@ path = "src/main.rs"
 anyhow = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }
+# Parse the LongOperation event payloads (id/percentage/message/error JSON) that
+# drive the import progress toast.
+serde_json = "1.0"
 frontend = { workspace = true }
 skribisto_model = { workspace = true }
 # `automation` enables the debug-only in-app automation bridge

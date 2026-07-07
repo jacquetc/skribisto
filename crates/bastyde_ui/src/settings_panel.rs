@@ -31,10 +31,10 @@ use bastyde::res;
 use bastyde::settings::{SettingsExt, TEXT_SCALE_KEY};
 use bastyde::widgets::{
     Breadcrumb, BreadcrumbItem, Button, ButtonVariant, Center, Checkbox, ComboBox, Divider, Expand,
-    FixedSize, FormLayout, GroupHeader, HStack, IconButton, IconWidget, LanguageSwitcher, MessageBox,
-    MessageBoxButton, MessageBoxButtons, Padding, Panel, ScrollArea, SearchField, Slider, Spacer,
-    StandardButton, StandardTreeItem, Switcher, TextScaleControl, TextWidget, ThemeSwitcher, Toggle,
-    TreeView, VStack,
+    FixedSize, FormLayout, GroupHeader, HStack, IconButton, IconWidget, LanguageSwitcher,
+    MessageBox, MessageBoxButton, MessageBoxButtons, Padding, Panel, ScrollArea, SearchField,
+    Slider, Spacer, StandardButton, StandardTreeItem, Switcher, TextScaleControl, TextWidget,
+    ThemeSwitcher, Toggle, TreeView, VStack,
 };
 
 use crate::view_models::SettingsViewModel;
@@ -192,17 +192,24 @@ fn build_not_defaults(
     let mut diffs = vec![
         theme.map(|t| t.is_dark()), // default = light
         scale.map(|s| (*s - TEXT_SCALE_DEFAULT).abs() > f32::EPSILON),
-        vm.column_width().map(|w| (*w - EDITOR_WIDTH_DEFAULT).abs() > 0.01),
-        vm.autosave().map(|a| *a),   // default = off
+        vm.column_width()
+            .map(|w| (*w - EDITOR_WIDTH_DEFAULT).abs() > 0.01),
+        vm.autosave().map(|a| *a),      // default = off
         vm.show_welcome().map(|s| !*s), // default = on
         vm.font_family().map(|f| f.as_str() != FONT_FAMILY_DEFAULT),
-        vm.line_height().map(|h| (*h - LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
+        vm.line_height()
+            .map(|h| (*h - LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
         vm.synopsis_pane().map(|s| *s != SYNOPSIS_PANE_DEFAULT),
         vm.typewriter().map(|s| *s != TYPEWRITER_DEFAULT),
-        vm.highlight_sentence().map(|s| *s != HIGHLIGHT_SENTENCE_DEFAULT),
+        vm.highlight_sentence()
+            .map(|s| *s != HIGHLIGHT_SENTENCE_DEFAULT),
     ];
     if let Some(loc) = locale {
-        diffs.push(loc.map(|l| l.to_string() != "en-US"));
+        // Compare against a once-parsed default rather than allocating a String
+        // per change (clippy::cmp_owned).
+        let default_locale: bastyde::i18n::LanguageIdentifier =
+            "en-US".parse().expect("valid default locale");
+        diffs.push(loc.map(move |l| *l != default_locale));
     }
     any_true(diffs)
 }
@@ -272,9 +279,8 @@ fn pane_frame(breadcrumb: impl Widget + 'static, content: impl Widget + 'static)
         )
         .child(Expand::horizontal().child(Divider::new()))
         .child(
-            Expand::vertical().child(
-                ScrollArea::new().child(Padding::symmetric(20.0, 24.0).child(content)),
-            ),
+            Expand::vertical()
+                .child(ScrollArea::new().child(Padding::symmetric(20.0, 24.0).child(content))),
         )
 }
 
@@ -392,7 +398,10 @@ impl SettingsPanel {
             );
 
         pane_frame(
-            crumb(Some(tr!(settings_sec_editor())), tr!(settings_page_manuscript())),
+            crumb(
+                Some(tr!(settings_sec_editor())),
+                tr!(settings_page_manuscript()),
+            ),
             form,
         )
     }
@@ -432,7 +441,10 @@ impl SettingsPanel {
             .full_width(hint(tr!(settings_autosave_hint())));
 
         pane_frame(
-            crumb(Some(tr!(settings_sec_backup())), tr!(settings_page_autosave())),
+            crumb(
+                Some(tr!(settings_sec_backup())),
+                tr!(settings_page_autosave()),
+            ),
             form,
         )
     }
@@ -443,12 +455,19 @@ impl SettingsPanel {
     fn build_tree(
         &self,
         ctx: &mut BuildContext,
-    ) -> (impl Widget, KeyedSelectionModel<NodeId>, HashMap<Pane, NodeId>) {
+    ) -> (
+        impl Widget,
+        KeyedSelectionModel<NodeId>,
+        HashMap<Pane, NodeId>,
+    ) {
         let model: TreeModel<Node> = TreeModel::new();
         let mut nodes: HashMap<Pane, NodeId> = HashMap::new();
 
         let ab = model.insert_root(0, Node::Section(Sec::AppearanceBehaviour));
-        nodes.insert(Pane::Appearance, model.insert_child(ab, 0, Node::Page(Pane::Appearance)));
+        nodes.insert(
+            Pane::Appearance,
+            model.insert_child(ab, 0, Node::Page(Pane::Appearance)),
+        );
         nodes.insert(
             Pane::MenusToolbars,
             model.insert_child(ab, 1, Node::Page(Pane::MenusToolbars)),
@@ -459,9 +478,18 @@ impl SettingsPanel {
         );
 
         let ed = model.insert_root(1, Node::Section(Sec::Editor));
-        nodes.insert(Pane::Manuscript, model.insert_child(ed, 0, Node::Page(Pane::Manuscript)));
-        nodes.insert(Pane::Goals, model.insert_child(ed, 1, Node::Page(Pane::Goals)));
-        nodes.insert(Pane::Corkboard, model.insert_child(ed, 2, Node::Page(Pane::Corkboard)));
+        nodes.insert(
+            Pane::Manuscript,
+            model.insert_child(ed, 0, Node::Page(Pane::Manuscript)),
+        );
+        nodes.insert(
+            Pane::Goals,
+            model.insert_child(ed, 1, Node::Page(Pane::Goals)),
+        );
+        nodes.insert(
+            Pane::Corkboard,
+            model.insert_child(ed, 2, Node::Page(Pane::Corkboard)),
+        );
 
         let sp = model.insert_root(2, Node::Section(Sec::Spelling));
         nodes.insert(
@@ -470,7 +498,10 @@ impl SettingsPanel {
         );
 
         let bk = model.insert_root(3, Node::Section(Sec::BackupSync));
-        nodes.insert(Pane::Autosave, model.insert_child(bk, 0, Node::Page(Pane::Autosave)));
+        nodes.insert(
+            Pane::Autosave,
+            model.insert_child(bk, 0, Node::Page(Pane::Autosave)),
+        );
 
         let ce = model.insert_root(4, Node::Section(Sec::CompileExport));
         nodes.insert(
@@ -493,10 +524,10 @@ impl SettingsPanel {
             let model = model.clone();
             let sig = selection.selection_signal();
             ctx.effect(&sig, move |set: &HashSet<NodeId>| {
-                if let Some(id) = set.iter().next().copied() {
-                    if let Some(Some(pane)) = model.with_item(id, |n: &Node| n.pane()) {
-                        selected_pane.set(pane);
-                    }
+                if let Some(id) = set.iter().next().copied()
+                    && let Some(Some(pane)) = model.with_item(id, |n: &Node| n.pane())
+                {
+                    selected_pane.set(pane);
                 }
             });
         }
@@ -505,19 +536,20 @@ impl SettingsPanel {
         // (wired via `on_toggle_rc`) expands/collapses a section. Proven config
         // (mirrors the framework's own tree examples) — reliable for both mouse
         // and synthetic input.
-        let tree = TreeView::new_with_context(model, move |node: &Node, entry, selected, rowctx| {
-            let mut row = StandardTreeItem::new(node.label())
-                .from_entry(entry)
-                .selected(selected)
-                .on_toggle_rc(rowctx.toggle_callback());
-            if let Some(icon) = node.icon() {
-                row = row.leading_slot(icon);
-            }
-            Box::new(row)
-        })
-        .keyed_selection(selection.clone())
-        .row_click_expands(false)
-        .item_height(28.0);
+        let tree =
+            TreeView::new_with_context(model, move |node: &Node, entry, selected, rowctx| {
+                let mut row = StandardTreeItem::new(node.label())
+                    .from_entry(entry)
+                    .selected(selected)
+                    .on_toggle_rc(rowctx.toggle_callback());
+                if let Some(icon) = node.icon() {
+                    row = row.leading_slot(icon);
+                }
+                Box::new(row)
+            })
+            .keyed_selection(selection.clone())
+            .row_click_expands(false)
+            .item_height(28.0);
 
         // Design-state expansion: the first two sections open, the rest closed —
         // regardless of the model's default (collapse is a no-op if already so).

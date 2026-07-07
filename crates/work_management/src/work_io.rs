@@ -3,7 +3,6 @@
 //! same generated read methods, so a thin [`TreeReader`] impl per UoW lets one
 //! [`gather`] do the ordered read + relationship hydration once.
 
-use skrib_format::{self as skrib, BinderWithItems, ItemWithContents, ShapeTag, SkribShape};
 use anyhow::{Result, anyhow};
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
@@ -13,6 +12,7 @@ use common::entities::{
 };
 use common::long_operation::OperationProgress;
 use common::types::EntityId;
+use skrib_format::{self as skrib, BinderWithItems, ItemWithContents, ShapeTag, SkribShape};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 

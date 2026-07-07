@@ -12,9 +12,9 @@
 
 use std::rc::Rc;
 
+use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::data::TreeDataSource;
-use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
@@ -28,22 +28,24 @@ use bastyde::widgets::{
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
-use frontend::work_management::LoadWorkDto;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{
-    DirectAccessEntity, EntityEvent, Event, Origin, WorkManagementEvent,
+    DirectAccessEntity, EntityEvent, Event, LongOperationEvent, Origin, WorkManagementEvent,
 };
+use frontend::work_management::LoadWorkDto;
 
 use crate::app_ids::AppIds;
 use crate::binder_switcher_button::{BinderSwitcherButton, binder_search_button};
+use crate::import_plume_panel::ImportPlumePanel;
 use crate::intents::AppIntent;
 use crate::models::{BinderTreeKey, TreeNode};
-use crate::import_plume_panel::ImportPlumePanel;
 use crate::new_work_panel::NewWorkPanel;
 use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
-use crate::view_models::{EditorsViewModel, OutlineViewModel, SettingsViewModel};
+use crate::view_models::{
+    EditorsViewModel, ImportPlumeViewModel, OutlineViewModel, SettingsViewModel,
+};
 use crate::welcome_panel::WelcomePanel;
 
 /// A close gesture deferred until the in-flight save finishes. The close guard
@@ -287,19 +289,22 @@ impl Widget for App {
         }
         // Import from Plume Creator: present the Import Plume modal (menu-only, no
         // shortcut). Global so the title-bar overlay menu reaches it — like work.new.
-        {
-            let app_ctx = self.app_ctx.clone();
-            ctx.register_action_global(Action::new("work.import_plume").on_invoke(move |_i, c| {
-                let app_ctx = app_ctx.clone();
-                c.present_modal(
-                    ModalRequest::deferred(move |t| t.add(ImportPlumePanel::new(app_ctx)))
-                        .presentation(ModalPresentation::InTree)
-                        .title("Import Plume Creator project")
-                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                        .size(600, 500),
-                );
-            }));
-        }
+        // The panel is built over the shared, app-state `ImportPlumeViewModel` (the
+        // same instance the long-operation events are routed to below), reset first
+        // so a previous session's paths don't linger.
+        ctx.register_action_global(Action::new("work.import_plume").on_invoke(move |_i, c| {
+            let Some(vm) = c.app_state::<ImportPlumeViewModel>().cloned() else {
+                return;
+            };
+            vm.reset_form();
+            c.present_modal(
+                ModalRequest::deferred(move |t| t.add(ImportPlumePanel::new(vm)))
+                    .presentation(ModalPresentation::InTree)
+                    .title("Import Plume Creator project")
+                    .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                    .size(600, 500),
+            );
+        }));
         // Close Work (Ctrl+W): the `work.close` *action* is registered further
         // down (it shares the unsaved-changes guard with the window close); here
         // we only add its global shortcut.
@@ -325,7 +330,7 @@ impl Widget for App {
                     // Not easily dismissable — like a critical MessageBox. Only
                     // the panel's own close button / Cancel / OK close it (each
                     // calls `ctx.dismiss_modal()`); Escape and outside clicks do
-                    // not, so a mis-click never discards a settings session.
+                    // not, so a stray click never discards a settings session.
                     .close_behavior(ModalCloseBehavior::Manual),
             );
         }));
@@ -441,6 +446,43 @@ impl Widget for App {
                     unsaved.set(false);
                 },
             );
+        }
+
+        // Route the Plume-import long operation's events to the shared
+        // `ImportPlumeViewModel`, which drives its progress / cancel / success /
+        // error toast. `subscribe_event_with_ctx` (not `subscribe_event`) because
+        // each callback needs a fresh `EventContext` to show/replace the toast —
+        // a plain subscription callback gets none. The VM filters by operation id,
+        // so events from other long operations (save / backup) are ignored.
+        if let Some(import_vm) = ctx.app_state::<ImportPlumeViewModel>().cloned() {
+            {
+                let vm = import_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Progress),
+                    move |e: &Event, c| vm.on_long_op_progress(c, e),
+                );
+            }
+            {
+                let vm = import_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Completed),
+                    move |e: &Event, c| vm.on_long_op_completed(c, e),
+                );
+            }
+            {
+                let vm = import_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Cancelled),
+                    move |e: &Event, c| vm.on_long_op_cancelled(c, e),
+                );
+            }
+            {
+                let vm = import_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Failed),
+                    move |e: &Event, c| vm.on_long_op_failed(c, e),
+                );
+            }
         }
 
         // On new work: same seeding as load (a project is now open), then write
@@ -958,12 +1000,15 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         .item(MenuItem::new(tr!(ctx_new_item())).on_activate_fn(move |_| {
             new_item.new_item_at(key, BinderItemRole::Item, BinderItemSubRole::Text)
         }))
-        .item(MenuItem::new(tr!(ctx_new_folder())).on_activate_fn(move |_| {
-            new_folder.new_item_at(key, BinderItemRole::Folder, BinderItemSubRole::None)
-        }))
+        .item(
+            MenuItem::new(tr!(ctx_new_folder())).on_activate_fn(move |_| {
+                new_folder.new_item_at(key, BinderItemRole::Folder, BinderItemSubRole::None)
+            }),
+        )
         .separator()
         .item(
-            MenuItem::new(tr!(ctx_rename())).on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
+            MenuItem::new(tr!(ctx_rename()))
+                .on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
         )
         .item(
             MenuItem::new(tr!(ctx_duplicate()))
@@ -987,9 +1032,10 @@ fn open_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
             if let Err(e) =
                 work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: file })
             {
-                ectx.show_toast(Toast::error(tr!(could_not_open_work(error = e.to_string()))));
+                ectx.show_toast(Toast::error(tr!(could_not_open_work(
+                    error = e.to_string()
+                ))));
             }
         }
     });
 }
-

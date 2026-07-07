@@ -63,3 +63,14 @@ codegen-units = 1
 
 [workspace.lints.rust]
 
+[workspace.lints.clippy]
+# Qleany-generated code (entity DTOs, controllers, units of work) pervasively
+# `.clone()`s `Copy` fields — defensive templates that compile for both `Copy`
+# and non-`Copy` types — and binds unit-returning calls to `let`. Both trip
+# clippy under `-D warnings`. Those files are regenerated and MUST NOT be
+# hand-edited (see the project guide), so the two generator-produced lints are
+# allowed workspace-wide rather than fought file-by-file. Hand-written crates
+# almost never hit them.
+clone_on_copy = "allow"
+let_unit_value = "allow"
+

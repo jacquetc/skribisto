@@ -32,11 +32,20 @@ pub fn parse(xml: &str) -> Result<PlumeAttendance> {
 
     // Root classification catalogs: box_1/2/3 (0.5+) or the legacy names.
     let catalogs = [
-        split_catalog(root.attribute("box_1").or_else(|| root.attribute("levelsNames"))),
-        split_catalog(root.attribute("box_2").or_else(|| root.attribute("rolesNames"))),
+        split_catalog(
+            root.attribute("box_1")
+                .or_else(|| root.attribute("levelsNames")),
+        ),
+        split_catalog(
+            root.attribute("box_2")
+                .or_else(|| root.attribute("rolesNames")),
+        ),
         split_catalog(root.attribute("box_3")),
     ];
-    let spinbox_label = root.attribute("spinBox_1_label").unwrap_or_default().to_string();
+    let spinbox_label = root
+        .attribute("spinBox_1_label")
+        .unwrap_or_default()
+        .to_string();
 
     let groups: Vec<roxmltree::Node> = root
         .children()
@@ -106,8 +115,14 @@ fn parse_obj(o: &roxmltree::Node, catalogs: &[Vec<String>; 3]) -> PlumeObj {
     };
 
     let box_labels = [
-        resolve_label(&catalogs[0], o.attribute("box_1").or_else(|| o.attribute("level"))),
-        resolve_label(&catalogs[1], o.attribute("box_2").or_else(|| o.attribute("role"))),
+        resolve_label(
+            &catalogs[0],
+            o.attribute("box_1").or_else(|| o.attribute("level")),
+        ),
+        resolve_label(
+            &catalogs[1],
+            o.attribute("box_2").or_else(|| o.attribute("role")),
+        ),
         resolve_label(&catalogs[2], o.attribute("box_3")),
     ];
 
@@ -119,7 +134,11 @@ fn parse_obj(o: &roxmltree::Node, catalogs: &[Vec<String>; 3]) -> PlumeObj {
     PlumeObj {
         number: parse_u32(o.attribute("number")),
         name,
-        aliases: o.attribute("aliases").unwrap_or_default().trim().to_string(),
+        aliases: o
+            .attribute("aliases")
+            .unwrap_or_default()
+            .trim()
+            .to_string(),
         quick_details: o.attribute("quickDetails").unwrap_or_default().to_string(),
         box_labels,
         spinbox,

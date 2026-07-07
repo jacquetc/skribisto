@@ -9,11 +9,11 @@
 //! a11y). All business logic lives on [`NewWorkViewModel`]; this view is thin —
 //! it binds the VM's signals and forwards the footer buttons to its methods.
 //!
-//! Format and Template are, *for now*, rendered as [`SegmentedControl`]s (the
+//! Format and Template are, *for now*, rendered as `SegmentedControl`s (the
 //! design's rich tile / radio-row variants are kept as comments for a later
 //! pass). Location uses a [`FilePickerField`] with its embedded browse
 //! affordance — no separate Browse button. The only runtime-computed string is
-//! the "Will create …/<slug>.skrib" path preview (`text` on the VM's derived
+//! the "Will create `…/<slug>.skrib`" path preview (`text` on the VM's derived
 //! signal); every other string is `tr!`-localized.
 
 use std::collections::HashMap;
@@ -26,7 +26,7 @@ use bastyde::res;
 use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{
     Button, ButtonVariant, ComboBox, Divider, Expand, FilePickerField, FilePickerKind, FixedSize,
-    FormLayout, HStack, IconWidget, IconButton, Padding, Panel, RadioTile, RadioTileGroup,
+    FormLayout, HStack, IconButton, IconWidget, Padding, Panel, RadioTile, RadioTileGroup,
     ScrollArea, Spacer, TextInput, TextWidget, TileLayout, Toggle, VStack,
 };
 
@@ -185,13 +185,17 @@ impl NewWorkPanel {
                     )
                     .tile(
                         RadioTile::new()
-                            .icon(Self::tile_icon(res!("assets/icons/new_work/empty-novel.svg")))
+                            .icon(Self::tile_icon(res!(
+                                "assets/icons/new_work/empty-novel.svg"
+                            )))
                             .title(tr!(new_work_template_empty_novel()))
                             .trailing(tr!(new_work_template_empty_novel_count())),
                     )
                     .tile(
                         RadioTile::new()
-                            .icon(Self::tile_icon(res!("assets/icons/new_work/light-novel.svg")))
+                            .icon(Self::tile_icon(res!(
+                                "assets/icons/new_work/light-novel.svg"
+                            )))
                             .title(tr!(new_work_template_light_novel()))
                             .trailing(tr!(new_work_template_light_novel_count())),
                     )
@@ -349,6 +353,10 @@ mod tests {
         // build and place without panicking.
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         let b = tree.bounds(id);
-        assert_eq!((b.width, b.height), (CARD_W, CARD_H), "panel fills the card");
+        assert_eq!(
+            (b.width, b.height),
+            (CARD_W, CARD_H),
+            "panel fills the card"
+        );
     }
 }

@@ -225,6 +225,10 @@ import-plume-overwrite-text = « { $name } » existe déjà. Le remplacer par le
 # Noms de classeurs transmis au backend (qui ne fait pas d'i18n)
 import-plume-manuscript-binder = Manuscrit
 import-plume-story-bible-binder = Personnages et lieux
+# Toast de progression (l'import est une opération longue)
+import-plume-progress-title = Importation du projet Plume…
+import-plume-cancel-import = Annuler
+import-plume-cancelled = Importation annulée
 # Résultat
 import-plume-done = { $imported } éléments importés. { $skipped } éléments à la corbeille n'ont pas été migrés.
 import-plume-open-now = Ouvrir maintenant

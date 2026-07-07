@@ -6,16 +6,42 @@ use crate::units_of_work::import_plume_creator_file_uow::ImportPlumeCreatorFileU
 use crate::use_cases::import_plume_creator_file_uc::ImportPlumeCreatorFileUseCase;
 use anyhow::Result;
 
+use common::long_operation::{LongOperationManager, OperationProgress};
 use common::{database::db_context::DbContext, event::EventHub};
 use std::sync::Arc;
 
 pub fn import_plume_creator_file(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
+    long_operation_manager: &mut LongOperationManager,
     dto: &ImportPlumeCreatorFileDto,
-) -> Result<ImportPlumeCreatorFileResultDto> {
+) -> Result<String> {
     let uow_context = ImportPlumeCreatorFileUnitOfWorkFactory::new(db_context, event_hub);
-    let mut uc = ImportPlumeCreatorFileUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
-    Ok(return_dto)
+    let uc = ImportPlumeCreatorFileUseCase::new(Box::new(uow_context), dto);
+    let operation_id = long_operation_manager.start_operation(uc);
+    Ok(operation_id)
+}
+
+pub fn get_import_plume_creator_file_progress(
+    long_operation_manager: &LongOperationManager,
+    operation_id: &str,
+) -> Option<OperationProgress> {
+    long_operation_manager.get_operation_progress(operation_id)
+}
+
+pub fn get_import_plume_creator_file_result(
+    long_operation_manager: &LongOperationManager,
+    operation_id: &str,
+) -> Result<Option<ImportPlumeCreatorFileResultDto>> {
+    // Get the operation result as a JSON string
+    let result_json = long_operation_manager.get_operation_result(operation_id);
+
+    // If there's no result, return None
+    if result_json.is_none() {
+        return Ok(None);
+    }
+    // Parse the JSON string into a ImportPlumeCreatorFileResultDto
+    let result_dto: ImportPlumeCreatorFileResultDto = serde_json::from_str(&result_json.unwrap())?;
+
+    Ok(Some(result_dto))
 }

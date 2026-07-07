@@ -22,9 +22,11 @@ extend-exclude = [
 ]
 
 [default.extend-words]
-# French strings embedded in packaging metadata (.desktop / mime .xml).
+# French strings embedded in packaging metadata (.desktop / mime .xml) and in the
+# bilingual UI-automation scripts (which match on both en-US and fr-FR labels).
 projet = "projet"
 projets = "projets"
 copie = "copie"
+apparence = "apparence"
 # "Big Sur" — macOS release name in the README.
 Sur = "Sur"

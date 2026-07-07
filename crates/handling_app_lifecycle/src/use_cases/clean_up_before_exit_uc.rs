@@ -41,8 +41,7 @@ impl CleanUpBeforeExitUseCase {
         // Remove the System first, then the Root (children before parents), so no
         // parent keeps a dangling link. `remove_multi` cleans each parent's
         // backward junction. A no-op when the store is already empty.
-        let system_ids: Vec<EntityId> =
-            uow.get_all_system()?.into_iter().map(|s| s.id).collect();
+        let system_ids: Vec<EntityId> = uow.get_all_system()?.into_iter().map(|s| s.id).collect();
         uow.remove_system_multi(&system_ids)?;
 
         let root_ids: Vec<EntityId> = uow.get_all_root()?.into_iter().map(|r| r.id).collect();

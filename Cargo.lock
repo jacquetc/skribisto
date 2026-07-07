@@ -795,6 +795,7 @@ dependencies = [
  "bastyde",
  "chrono",
  "serde",
+ "serde_json",
  "skribisto-frontend",
  "skribisto-model",
  "tempfile",

@@ -5,11 +5,10 @@
 
 use crate::LoadWorkDto;
 use crate::SaveWorkDto;
-use crate::{NewWorkDto, NewWorkTemplate};
-use skrib_format::{self as skrib, BinderWithItems, ItemWithContents, ShapeTag, SkribShape, WorkBundle};
 use crate::units_of_work::save_work_uow::SaveWorkUnitOfWorkFactory;
 use crate::use_cases::save_work_uc::SaveWorkUseCase;
 use crate::work_management_controller;
+use crate::{NewWorkDto, NewWorkTemplate};
 use chrono::{DateTime, Utc};
 use common::database::db_context::DbContext;
 use common::entities::{
@@ -18,6 +17,9 @@ use common::entities::{
 };
 use common::event::EventHub;
 use common::long_operation::LongOperation;
+use skrib_format::{
+    self as skrib, BinderWithItems, ItemWithContents, ShapeTag, SkribShape, WorkBundle,
+};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
@@ -345,10 +347,18 @@ fn save_load_round_trip_through_store() {
 
 /// The 7 template labels in the documented order (values don't matter here).
 fn labels() -> Vec<String> {
-    ["Manuscript", "Notes", "Research", "Notebook", "Chapter", "Scene", "Note"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect()
+    [
+        "Manuscript",
+        "Notes",
+        "Research",
+        "Notebook",
+        "Chapter",
+        "Scene",
+        "Note",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect()
 }
 
 /// Save the current store to `out` and read it straight back — a convenient way
@@ -405,8 +415,12 @@ fn legacy_load_preserves_unique_id() {
 fn bundle_without_unique_id_is_healed() {
     let dir = tempfile::tempdir().unwrap();
     let src = dir.path().join("Legacyish");
-    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &sample_bundle())
-        .unwrap();
+    skrib::write_bundle(
+        src.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &sample_bundle(),
+    )
+    .unwrap();
 
     // Simulate an older new-format file: drop the `unique_id` line from the
     // manifest and stamp it as format_version 1.
@@ -510,7 +524,10 @@ fn new_work_novel_builds_full_tree() {
         .count();
     assert_eq!(chapters, 20);
     assert_eq!(scenes, 20);
-    assert_eq!(manuscript.last().unwrap().item.sub_role, BinderItemSubRole::BookEnd);
+    assert_eq!(
+        manuscript.last().unwrap().item.sub_role,
+        BinderItemSubRole::BookEnd
+    );
     // Notes + Research are empty.
     assert!(b.binders[1].items.is_empty());
     assert!(b.binders[2].items.is_empty());
@@ -531,7 +548,11 @@ fn new_work_folder_shape_is_honored() {
     );
 
     let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
-    assert_eq!(b.manifest.shape, ShapeTag::Folder, "is_folder=true → folder shape");
+    assert_eq!(
+        b.manifest.shape,
+        ShapeTag::Folder,
+        "is_folder=true → folder shape"
+    );
     assert_eq!(b.binders.len(), 1);
     assert_eq!(b.binders[0].binder.name, "Notebook");
     // Notes folder + a starter Note.
@@ -545,14 +566,26 @@ fn new_work_mints_distinct_ids() {
     let db = DbContext::new().unwrap();
     let hub = Arc::new(EventHub::new());
 
-    new_work(&db, &hub, dir.path().join("A.skrib").to_str().unwrap(), false, NewWorkTemplate::None);
+    new_work(
+        &db,
+        &hub,
+        dir.path().join("A.skrib").to_str().unwrap(),
+        false,
+        NewWorkTemplate::None,
+    );
     let id1 = store_to_bundle(&db, &hub, &dir.path().join("o1"))
         .manifest
         .work
         .unique_id;
 
     // A second new_work replaces the first and mints a different id.
-    new_work(&db, &hub, dir.path().join("B.skrib").to_str().unwrap(), false, NewWorkTemplate::None);
+    new_work(
+        &db,
+        &hub,
+        dir.path().join("B.skrib").to_str().unwrap(),
+        false,
+        NewWorkTemplate::None,
+    );
     let id2 = store_to_bundle(&db, &hub, &dir.path().join("o2"))
         .manifest
         .work
@@ -569,8 +602,12 @@ fn new_work_replaces_open_project() {
 
     // Open an existing 2-binder project.
     let src = dir.path().join("Existing");
-    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &sample_bundle())
-        .unwrap();
+    skrib::write_bundle(
+        src.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &sample_bundle(),
+    )
+    .unwrap();
     work_management_controller::load_work(
         &db,
         &hub,
@@ -581,7 +618,13 @@ fn new_work_replaces_open_project() {
     .expect("load_work");
 
     // Creating a new (None) work must clear the old tree entirely.
-    new_work(&db, &hub, dir.path().join("Fresh.skrib").to_str().unwrap(), false, NewWorkTemplate::None);
+    new_work(
+        &db,
+        &hub,
+        dir.path().join("Fresh.skrib").to_str().unwrap(),
+        false,
+        NewWorkTemplate::None,
+    );
 
     let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
     assert_eq!(b.manifest.work.title, "Fresh");

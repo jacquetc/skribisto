@@ -9,7 +9,6 @@
 // turns into entities (preserving every field + order + M2M links), then
 // `create_trunk` builds the non-undoable System/RecentWork/WorkInfo/Root frame.
 use crate::LoadWorkDto;
-use skrib_format::{self as skrib, LoadedWork, SkribShape};
 use crate::work_io::{self, WorkCloser};
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
@@ -25,6 +24,7 @@ use common::entities::{
     WorkInfo, WorkShape,
 };
 use common::types::EntityId;
+use skrib_format::{self as skrib, LoadedWork, SkribShape};
 use std::collections::HashMap;
 
 mod legacy;

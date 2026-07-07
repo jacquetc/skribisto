@@ -47,7 +47,9 @@ impl WelcomeViewModel {
         if let Err(e) =
             work_management_commands::load_work(&self.app_ctx, &LoadWorkDto { file_name: path })
         {
-            ctx.show_toast(Toast::error(tr!(could_not_open_work(error = e.to_string()))));
+            ctx.show_toast(Toast::error(tr!(could_not_open_work(
+                error = e.to_string()
+            ))));
         }
     }
 
@@ -58,7 +60,9 @@ impl WelcomeViewModel {
         match write_temp_example(file_name, bytes) {
             Ok(path) => self.open_work(path, ctx),
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(could_not_open_example(error = e.to_string()))));
+                ctx.show_toast(Toast::error(tr!(could_not_open_example(
+                    error = e.to_string()
+                ))));
             }
         }
     }
@@ -82,7 +86,9 @@ impl WelcomeViewModel {
                 if let Err(e) =
                     work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: file })
                 {
-                    ectx.show_toast(Toast::error(tr!(could_not_open_work(error = e.to_string()))));
+                    ectx.show_toast(Toast::error(tr!(could_not_open_work(
+                        error = e.to_string()
+                    ))));
                 }
             }
         });
@@ -115,8 +121,10 @@ mod tests {
     #[test]
     fn welcome_show_default_on_and_persists() {
         // A real TOML store at a unique temp path (no in-memory store exists).
-        let path = std::env::temp_dir()
-            .join(format!("skribisto-welcome-test-{}.toml", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "skribisto-welcome-test-{}.toml",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&path);
         let store = SettingsStore::open(path.clone()).expect("open settings store");
         let app_ctx = Rc::new(AppContext::new());
@@ -128,7 +136,10 @@ mod tests {
         // A second facade over the same store observes the change (same cached
         // signal per key) — the store-backed-facade invariant.
         let vm2 = WelcomeViewModel::new(&store, app_ctx);
-        assert!(!vm2.show_welcome().get(), "toggle persists across instances");
+        assert!(
+            !vm2.show_welcome().get(),
+            "toggle persists across instances"
+        );
 
         let _ = std::fs::remove_file(&path);
     }

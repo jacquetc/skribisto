@@ -6,7 +6,6 @@
 // use cases. Read-write long operation; reuses the shared `work_io` reader.
 use crate::SaveAsDto;
 use crate::SaveAsResultDto;
-use skrib_format::SkribShape;
 use crate::work_io::{self, TreeReader};
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
@@ -18,6 +17,7 @@ use common::entities::{
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
+use skrib_format::SkribShape;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 

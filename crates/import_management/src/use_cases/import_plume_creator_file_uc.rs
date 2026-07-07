@@ -3,55 +3,86 @@
 // file→file transform that converts a Plume Creator `.plume` project into a
 // newest-version `.skrib`. It touches no store entities (the manifest declares
 // `entities: []`); the real work lives in the hand-written `plume` submodule.
+//
+// This is a **long operation** (`long_operation: true`): it runs on a background
+// thread via `LongOperationManager`, reports progress through the framework's
+// `progress_callback`, and honours cancellation via `cancel_flag`. The UI drives
+// a progress + cancel toast from the `Origin::LongOperation(...)` events the
+// manager emits.
 mod plume;
 
 use crate::ImportPlumeCreatorFileDto;
 use crate::ImportPlumeCreatorFileResultDto;
 use anyhow::Result;
 use common::database::QueryUnitOfWork;
+use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
+use std::sync::Arc;
 
 pub trait ImportPlumeCreatorFileUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn ImportPlumeCreatorFileUnitOfWorkTrait>;
 }
 
-//TODO: adapt entities and actions to real use :
-// GetRO, GetMultiRO, GetRelationship, GetRelationshipRO,
-// GetRelationshipsFromRightIdsRO
-//
-// You have here a read-only unit of work trait.
-//
-// RO means Read Only, so *RO actions should be used here.
-// Do not mix read-only and write actions in the same unit of work.
+// A long operation's unit of work must be thread-safe (`Send + Sync`): the use
+// case runs on a background thread. This one holds no store actions (the feature
+// has `entities: []`) — it only publishes the completion event.
 //
 // Exactly the same macros must be set in the use case uow trait file in ../units_of_work/import_plume_creator_file_uow.rs
 //
-pub trait ImportPlumeCreatorFileUnitOfWorkTrait: QueryUnitOfWork {
+pub trait ImportPlumeCreatorFileUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
     fn publish_import_plume_creator_file_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
 pub struct ImportPlumeCreatorFileUseCase {
     uow_factory: Box<dyn ImportPlumeCreatorFileUnitOfWorkFactoryTrait>,
+    dto: ImportPlumeCreatorFileDto,
 }
 
 impl ImportPlumeCreatorFileUseCase {
-    pub fn new(uow_factory: Box<dyn ImportPlumeCreatorFileUnitOfWorkFactoryTrait>) -> Self {
-        ImportPlumeCreatorFileUseCase { uow_factory }
-    }
-
-    pub fn execute(
-        &mut self,
+    pub fn new(
+        uow_factory: Box<dyn ImportPlumeCreatorFileUnitOfWorkFactoryTrait>,
         dto: &ImportPlumeCreatorFileDto,
-    ) -> Result<ImportPlumeCreatorFileResultDto> {
+    ) -> Self {
+        ImportPlumeCreatorFileUseCase {
+            uow_factory,
+            dto: dto.clone(),
+        }
+    }
+}
+
+impl LongOperation for ImportPlumeCreatorFileUseCase {
+    type Output = ImportPlumeCreatorFileResultDto;
+
+    fn execute(
+        &self,
+        progress_callback: Box<dyn Fn(OperationProgress) + Send>,
+        cancel_flag: Arc<std::sync::atomic::AtomicBool>,
+    ) -> Result<Self::Output> {
+        // Adapt the framework's progress channel to plume's `(percent, label)`
+        // reporter; the importer reports phase + per-node progress through it.
+        let report = |percent: f32, label: &str| {
+            progress_callback(OperationProgress::new(percent, Some(label.to_string())));
+        };
+
         // Pure file→file: read the `.plume`, write a `.skrib`. No transaction /
         // store access is needed; the UI opens the result with `load_work`.
-        let summary = plume::import(
-            &dto.source_path,
-            &dto.output_path,
-            dto.overwrite,
-            &dto.manuscript_binder_name,
-            &dto.story_bible_binder_name,
-        )?;
+        // `cancel_flag` is polled per node and at every phase boundary; on cancel
+        // nothing is left on disk (see `plume::import_with_progress`).
+        //
+        // Flatten the error to its full `{:#}` chain: the `LongOperationManager`
+        // records only `e.to_string()` in the `Failed` event, which for a plain
+        // `anyhow` error is the outermost context alone — losing the root cause
+        // the UI's error toast wants to show.
+        let summary = plume::import_with_progress(
+            &self.dto.source_path,
+            &self.dto.output_path,
+            self.dto.overwrite,
+            &self.dto.manuscript_binder_name,
+            &self.dto.story_bible_binder_name,
+            &report,
+            &cancel_flag,
+        )
+        .map_err(|e| anyhow::anyhow!("{e:#}"))?;
 
         // Notify listeners (parity with every other use case).
         let uow = self.uow_factory.create();

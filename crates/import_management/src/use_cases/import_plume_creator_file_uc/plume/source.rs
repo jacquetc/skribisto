@@ -103,7 +103,11 @@ impl PlumeSource {
             .transpose()?;
         let dict = {
             let p = dir.join(DICT_MEMBER);
-            if p.is_file() { Some(read_lossy(&p)?) } else { None }
+            if p.is_file() {
+                Some(read_lossy(&p)?)
+            } else {
+                None
+            }
         };
 
         // Load the text/ and attend/ subfolders into the html map.
@@ -113,8 +117,8 @@ impl PlumeSource {
             if !subdir.is_dir() {
                 continue;
             }
-            for entry in fs::read_dir(&subdir)
-                .with_context(|| format!("reading {}", subdir.display()))?
+            for entry in
+                fs::read_dir(&subdir).with_context(|| format!("reading {}", subdir.display()))?
             {
                 let path = entry?.path();
                 if path.is_file()
@@ -139,19 +143,27 @@ impl PlumeSource {
 
     /// Manuscript prose for tree node `n` (`text/T{n}.html`).
     pub fn text(&self, n: u32) -> Option<&str> {
-        self.html.get(&format!("text/T{n}.html")).map(String::as_str)
+        self.html
+            .get(&format!("text/T{n}.html"))
+            .map(String::as_str)
     }
     /// Synopsis for tree node `n` (`text/S{n}.html`).
     pub fn synopsis(&self, n: u32) -> Option<&str> {
-        self.html.get(&format!("text/S{n}.html")).map(String::as_str)
+        self.html
+            .get(&format!("text/S{n}.html"))
+            .map(String::as_str)
     }
     /// Note for tree node `n` (`text/N{n}.html`).
     pub fn note(&self, n: u32) -> Option<&str> {
-        self.html.get(&format!("text/N{n}.html")).map(String::as_str)
+        self.html
+            .get(&format!("text/N{n}.html"))
+            .map(String::as_str)
     }
     /// Detail sheet for attendance node `n` (`attend/A{n}.html`).
     pub fn attend_doc(&self, n: u32) -> Option<&str> {
-        self.html.get(&format!("attend/A{n}.html")).map(String::as_str)
+        self.html
+            .get(&format!("attend/A{n}.html"))
+            .map(String::as_str)
     }
 }
 

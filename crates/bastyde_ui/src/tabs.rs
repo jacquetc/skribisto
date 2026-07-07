@@ -281,7 +281,15 @@ mod tests {
         ];
         let ctx = Rc::new(AppContext::new());
         for (role, sub_role, expected) in combos {
-            let tab = tab_for(&ctx, 1, &role, &sub_role, &[], Signal::new(700.0), Signal::new(true));
+            let tab = tab_for(
+                &ctx,
+                1,
+                &role,
+                &sub_role,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+            );
             assert_eq!(tab.layout, expected, "{role:?}/{sub_role:?}");
             let mut tree = WidgetTree::new();
             let id = tree.add_boxed(tab_pane(&tab));
@@ -300,16 +308,48 @@ mod tests {
         use BinderItemRole::*;
         use BinderItemSubRole::*;
         let ctx = Rc::new(AppContext::new());
-        let scene = tab_for(&ctx, 1, &Item, &Scene, &[], Signal::new(700.0), Signal::new(true));
+        let scene = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+        );
         assert!(scene.main.is_some() && scene.synopsis.is_some() && scene.title.is_none());
 
-        let cs = tab_for(&ctx, 1, &Item, &ChapterScene, &[], Signal::new(700.0), Signal::new(true));
+        let cs = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &ChapterScene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+        );
         assert!(cs.main.is_some() && cs.synopsis.is_some() && cs.title.is_some());
 
-        let bb = tab_for(&ctx, 1, &Item, &BookBegin, &[], Signal::new(700.0), Signal::new(true));
+        let bb = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &BookBegin,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+        );
         assert!(bb.title.is_some() && bb.subtitle.is_some() && bb.main.is_none());
 
-        let end = tab_for(&ctx, 1, &Item, &BookEnd, &[], Signal::new(700.0), Signal::new(true));
+        let end = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &BookEnd,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+        );
         assert!(end.main.is_none() && end.synopsis.is_none() && end.title.is_none());
     }
 }
