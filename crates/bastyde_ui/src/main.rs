@@ -9,7 +9,7 @@ mod import_plume_panel;
 mod intents;
 mod models;
 mod new_work_panel;
-mod recent_projects_button;
+mod project_switcher_button;
 mod settings_panel;
 mod singles;
 mod tabs;
@@ -31,7 +31,7 @@ use bastyde::widgets::{
     MenuBar, MenuEntry, MenuModel, MessageBox, MessageBoxButtons, StandardButton, TextWidget,
     TitleBar, Toast, VStack, WindowFrame, framework_locales,
 };
-use recent_projects_button::RecentProjectsButton;
+use project_switcher_button::ProjectSwitcherButton;
 
 use frontend::AppContext;
 use frontend::EventHubClient;
@@ -508,7 +508,7 @@ fn main() {
                                                 on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
 
                                             }
-                                            RecentProjectsButton::new(app_ctx_root.clone())
+                                            ProjectSwitcherButton::new(app_ctx_root.clone())
                                             Expand::horizontal {
                                                 Center {
                                                     TextWidget::new(lit!("Skribisto")) {

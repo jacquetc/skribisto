@@ -116,7 +116,7 @@ placeholder-chapter-title = Chapter title…
 
 ## Binder / recents
 binder = Binder
-no-work = No work
+no-work = No work loaded
 no-recent-works = No recent works
 
 ## Binder switcher + search

@@ -116,7 +116,7 @@ placeholder-chapter-title = Titre du chapitre…
 
 ## Classeur / récents
 binder = Classeur
-no-work = Aucune œuvre
+no-work = Aucune œuvre chargée
 no-recent-works = Aucune œuvre récente
 
 ## Sélecteur de classeur + recherche

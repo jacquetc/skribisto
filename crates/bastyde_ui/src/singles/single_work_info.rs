@@ -225,7 +225,9 @@ mod imp {
                 inner: Rc::new(Inner {
                     id: Cell::new(Some(1)),
                     shape: Signal::new(Some(WorkShape::Zip)),
-                    file_name: Signal::new(Some("Mock Project.skrib".to_string())),
+                    // Matches the mock recents fixture path so the ProjectSwitcher
+                    // checkmark lights on the (single) mock project in mock builds.
+                    file_name: Signal::new(Some("/mock/Mock Project.skrib".to_string())),
                     loading_status: Signal::new(LoadingStatus::Loaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),

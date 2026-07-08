@@ -6,7 +6,7 @@
 //! first, debounced writes). The public surface is unchanged: a
 //! `bastyde::data::ListModel<RecentWorkDto>` a `ListView` binds to, plus a
 //! `version` signal + `items()` snapshot for the non-`ListView` consumer (the
-//! title-bar `RecentProjectsButton`).
+//! title-bar `ProjectSwitcherButton`).
 //!
 //! The bound `ListModel` is a **reachable-only view**: an entry whose file/folder
 //! no longer exists is **hidden from the UI but kept in the MRU**, so a project on

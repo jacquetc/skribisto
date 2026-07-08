@@ -7,7 +7,7 @@
 //! entry and a "New binder…" entry. Right-clicking a binder offers **Send to
 //! Trash** behind a confirmation (`MessageBox` → `AppIntent::TrashBinder` → the
 //! `binder.trash` global action). Modelled on
-//! [`RecentProjectsButton`](crate::recent_projects_button): a `PopoverButton`
+//! [`ProjectSwitcherButton`](crate::project_switcher_button): a `PopoverButton`
 //! over rich `MenuList` rows, refreshed by rebinding a `version` signal.
 //!
 //! [`binder_search_button`] is a ghost `PopoverIconButton` (magnifier) whose

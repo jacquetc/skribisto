@@ -41,7 +41,7 @@ impl WelcomeViewModel {
     }
 
     /// Open a recent/known work by path. Dismisses the modal first so the loaded
-    /// work is revealed behind it (mirrors `RecentProjectsButton`'s row click).
+    /// work is revealed behind it (mirrors `ProjectSwitcherButton`'s row click).
     pub fn open_work(&self, path: String, ctx: &mut EventContext) {
         ctx.dismiss_modal();
         if let Err(e) =
