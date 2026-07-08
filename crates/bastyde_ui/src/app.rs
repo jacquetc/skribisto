@@ -14,31 +14,26 @@ use std::rc::Rc;
 
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::core::widget::WidgetPlacement;
-use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    ActivateOn, Divider, DockOpenLocation, DockRail, DockSide, DockWidget, DockingLayout,
-    EventContextMessageBoxExt, Expand, FocusScope, HStack, IconButtonSize, MenuItem, MenuList,
-    MessageBox, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, Padding,
-    Spacer, StandardButton, StandardTreeItem, StatusBar, TabBarVisibility, TabWidget, Toast,
-    TraversalScopePolicy, TreeRow, TreeView, VStack,
+    Divider, DockRail, DockSide, DockingLayout, EventContextMessageBoxExt, Expand, HStack,
+    IconButtonSize, MessageBox, MessageBoxButtons, NotificationArchiveModel,
+    NotificationCenterButton, Spacer, StandardButton, StatusBar, TabBarVisibility, TabWidget,
+    Toast, VStack,
 };
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{
     DirectAccessEntity, EntityEvent, Event, LongOperationEvent, Origin, WorkManagementEvent,
 };
 use frontend::work_management::LoadWorkDto;
 
 use crate::app_ids::AppIds;
-use crate::binder_switcher_button::{BinderSwitcherButton, binder_search_button};
 use crate::import_plume_panel::ImportPlumePanel;
 use crate::intents::AppIntent;
-use crate::models::{BinderTreeKey, TreeNode};
 use crate::new_work_panel::NewWorkPanel;
 use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
@@ -556,7 +551,7 @@ impl Widget for App {
         // opens (or focuses) its editor tab. The tree fires this via
         // `TreeView::on_activate`; App supplies the open callback so neither
         // view-model imports the other.
-        let on_open: OpenItemFn = {
+        let on_open: crate::docks::outline::OpenItemFn = {
             let editors = editors.clone();
             Rc::new(move |item_id, title| editors.open_or_focus(item_id, &title))
         };
@@ -727,32 +722,21 @@ impl Widget for App {
             .active_indicator(bastyde::widgets::TabIndicatorPosition::InnerEdge);
 
         // ── Leading dock: the binder tree, fronted by a VS Code-style activity
-        //    bar (icon rail). The OutlineViewModel owns the DockingModel. ──────
-        let docking = outline.docking();
-        let dock_outline = outline.clone();
-        let dock_app_ctx = self.app_ctx.clone();
-        let layout = DockingLayout::new(docking.clone())
+        //    bar (icon rail). The OutlineViewModel owns the DockingModel; the
+        //    dock content itself lives in `docks::outline`. ───────────────────
+        let layout = DockingLayout::new(outline.docking())
             .rail(
                 DockRail::new(DockSide::Leading)
                     .background(SurfaceRole::Main)
                     .divider(),
             )
             .center(center)
-            .dock(
-                DockWidget::new(outline.dock_id(), tr!(binder()), move |_id| {
-                    // Group the dock's Tab order: a Continue scope keeps the
-                    // binder's tab_index numbering from colliding with other
-                    // docks/regions while still letting Tab flow out at the ends.
-                    FocusScope::new(TraversalScopePolicy::Continue).child(binder_tree(
-                        dock_outline.clone(),
-                        dock_app_ctx.clone(),
-                        on_open.clone(),
-                        active_item.clone(),
-                    ))
-                })
-                .icon(crate::activity_icons::outline_icon)
-                .default_location(DockOpenLocation::side(DockSide::Leading)),
-            );
+            .dock(crate::docks::outline::outline_dock(
+                outline.clone(),
+                self.app_ctx.clone(),
+                on_open,
+                active_item,
+            ));
         outline.open_in_layout();
 
         // ── Status bar (thin) with the notification bell ─────────────────────
@@ -834,199 +818,6 @@ impl Widget for App {
     fn children(&self) -> Vec<WidgetId> {
         self.root_child.into_iter().collect()
     }
-}
-
-/// The binder-item tree shown in the leading dock, backed by the
-/// `OutlineViewModel`'s `TreeDataSource` (so it drag-reorders). `StandardTreeItem`
-/// gives the expand chevron and renders the user-note `label` as the subtitle.
-/// Rows select (not expand) on click; selection is keyed by `BinderTreeKey`.
-/// Each row carries a right-click context menu; the wrapping column handles
-/// Delete / F2 / Tab / Shift-Tab.
-fn binder_tree(
-    outline: OutlineViewModel,
-    app_ctx: Rc<AppContext>,
-    on_open: OpenItemFn,
-    active_item: Signal<Option<u64>>,
-) -> impl Widget {
-    let menu_outline = outline.clone();
-    // Open on row *activation* (click or Enter), resolved from the flat index via
-    // the source — NOT on selection, so arrow-key navigation only moves the
-    // highlight and never spawns a tab.
-    let activate_model = outline.model();
-    let tree = TreeView::from_source_keyed(
-        outline.model(),
-        outline.selection(),
-        move |node: &TreeNode, row: &TreeRow, selected: bool| {
-            let key = key_of(node);
-            let mut item = StandardTreeItem::new(lit!(node.title.clone()))
-                .depth(row.depth)
-                .has_children(row.has_children)
-                .is_expanded(row.is_expanded)
-                .selected(selected)
-                .on_toggle_rc(row.toggle_callback());
-            if !node.label.is_empty() {
-                item = item.subtitle(lit!(node.label.clone()));
-            }
-            // Leading icon chosen purely by sub_role (binder rows get the binder
-            // glyph); tint follows the theme via `TextRole::Primary`.
-            let mut icon = if node.kind == "binder" {
-                crate::binder_icons::binder_icon()
-            } else {
-                crate::binder_icons::sub_role_icon(&node.sub_role)
-            };
-            // Persistent "open document" marker: the row whose item is the
-            // active editor tab shows an accent title + icon — independent of
-            // selection and focus, so you can always see what's open. Reactive
-            // (no rebuild); the same signal drives both title and icon color.
-            if let Some(item_id) = node.item_id {
-                let title_color = active_item.map(move |a| {
-                    if *a == Some(item_id) {
-                        TextRole::Accent
-                    } else {
-                        TextRole::Primary
-                    }
-                });
-                item = item.label_color(title_color.clone());
-                icon = icon.color(title_color);
-            }
-            item = item.leading_slot(icon);
-            let cm = menu_outline.clone();
-            Box::new(item.context_menu(move |_pos, _ctx| {
-                // Operate on the right-clicked row directly — do NOT mutate the
-                // selection here: selecting rebuilds this row, destroying the
-                // menu's anchor (the overlay would fall back to the corner).
-                Some(Box::new(binder_context_menu(cm.clone(), key)) as Box<dyn Widget>)
-            })) as Box<dyn Widget>
-        },
-    )
-    // Adaptive row heights: each row measures to its content, so title-only
-    // rows collapse to the single-line minimum (28) while rows carrying a
-    // subtitle take the two-line height (44) — instead of every row paying the
-    // uniform two-line cost. (A flat `item_height(40.0)` also clipped the 44px
-    // subtitled rows.) The estimate seeds unrealized rows for scroll extent.
-    .auto_item_height(28.0)
-    .row_click_expands(false)
-    .reorderable(true)
-    // Single-click to open (Scrivener convention) — arrow-key navigation only
-    // moves the highlight, so stepping through the binder never spawns tabs.
-    .activate_on(ActivateOn::SingleClick)
-    .on_activate(move |idx| {
-        if let Some(key) = activate_model.key_at(idx) {
-            // Binder rows have `item_id == None` and don't open an editor.
-            if let Some((Some(item_id), title)) = activate_model.node_of(&key) {
-                on_open(item_id, title);
-            }
-        }
-    });
-
-    // Header row above the tree: the binder switcher (fills) + the search
-    // button. Both drive the OutlineViewModel's filter signals; the tree model
-    // re-sources reactively.
-    let header = Padding::symmetric(8.0, 6.0).child(
-        HStack::new()
-            .spacing(4.0)
-            .child(Expand::horizontal().child(BinderSwitcherButton::new(outline.clone(), app_ctx)))
-            .child(binder_search_button(outline.clone())),
-    );
-
-    let keys = outline.clone();
-    VStack::new()
-        .spacing(0.0)
-        .child(header)
-        .child(Expand::new().child(tree))
-        .on_key(move |ev, ctx| match ev {
-            WidgetEvent::KeyDown {
-                key: Key::Delete, ..
-            } => {
-                keys.trash_selected();
-                EventResponse::Handled
-            }
-            WidgetEvent::KeyDown { key: Key::F2, .. } => {
-                keys.rename_selected(ctx);
-                EventResponse::Handled
-            }
-            // Indent / outdent via Ctrl+] / Ctrl+[ (the macOS Notes / outliner
-            // convention). Tab is deliberately NOT bound — it stays free for
-            // focus traversal out of the tree, so the keyboard isn't trapped.
-            WidgetEvent::KeyDown {
-                key: Key::Character(']'),
-                modifiers,
-                ..
-            } if modifiers.ctrl() => {
-                keys.indent_selected();
-                EventResponse::Handled
-            }
-            WidgetEvent::KeyDown {
-                key: Key::Character('['),
-                modifiers,
-                ..
-            } if modifiers.ctrl() => {
-                keys.outdent_selected();
-                EventResponse::Handled
-            }
-            _ => EventResponse::Ignored,
-        })
-}
-
-/// Callback App supplies to the binder tree to open (or focus) an item's editor
-/// tab on activation — keeps the tree decoupled from `EditorsViewModel`.
-type OpenItemFn = Rc<dyn Fn(u64, String)>;
-
-/// Reconstruct a row's `BinderTreeKey` from its `TreeNode` (the `from_source`
-/// delegate gives the node + flat metadata, not the key).
-fn key_of(node: &TreeNode) -> BinderTreeKey {
-    if node.kind == "binder" {
-        BinderTreeKey::Binder(node.binder_id.unwrap_or(0))
-    } else {
-        BinderTreeKey::Item(node.item_id.unwrap_or(0))
-    }
-}
-
-/// The per-row context menu: create / rename / duplicate / trash. *New Folder*
-/// is just `new_item(Folder, None)` — there is no separate folder command.
-///
-/// Multi-select convention for the **batch** actions (duplicate / trash): a
-/// right-click *inside* the current selection acts on the whole selection; a
-/// right-click on a row *outside* it acts on just that row (and, per the call
-/// site, without disturbing the selection). The single-target actions (new /
-/// rename) always anchor on the clicked row.
-fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
-    let selected = outline.selection().selected_keys();
-    let batch: Vec<BinderTreeKey> = if selected.contains(&key) {
-        selected
-    } else {
-        vec![key]
-    };
-
-    let new_item = outline.clone();
-    let new_folder = outline.clone();
-    let rename = outline.clone();
-    let duplicate = outline.clone();
-    let dup_batch = batch.clone();
-    let trash = outline;
-    let trash_batch = batch;
-    MenuList::new()
-        .item(MenuItem::new(tr!(ctx_new_item())).on_activate_fn(move |_| {
-            new_item.new_item_at(key, BinderItemRole::Item, BinderItemSubRole::Text)
-        }))
-        .item(
-            MenuItem::new(tr!(ctx_new_folder())).on_activate_fn(move |_| {
-                new_folder.new_item_at(key, BinderItemRole::Folder, BinderItemSubRole::None)
-            }),
-        )
-        .separator()
-        .item(
-            MenuItem::new(tr!(ctx_rename()))
-                .on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
-        )
-        .item(
-            MenuItem::new(tr!(ctx_duplicate()))
-                .on_activate_fn(move |_| duplicate.duplicate_keys(&dup_batch)),
-        )
-        .separator()
-        .item(
-            MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |_| trash.trash_keys(&trash_batch)),
-        )
 }
 
 /// Present the native picker for an existing `.skrib` and load it. Backs the

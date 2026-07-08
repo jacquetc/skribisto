@@ -5,6 +5,7 @@ mod app;
 mod app_ids;
 mod binder_icons;
 mod binder_switcher_button;
+mod docks;
 mod import_plume_panel;
 mod intents;
 mod ipc;
