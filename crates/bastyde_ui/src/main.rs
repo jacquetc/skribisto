@@ -7,8 +7,10 @@ mod binder_icons;
 mod binder_switcher_button;
 mod import_plume_panel;
 mod intents;
+mod ipc;
 mod models;
 mod new_work_panel;
+mod open_registry;
 mod project_switcher_button;
 mod settings_panel;
 mod singles;
@@ -16,6 +18,7 @@ mod tabs;
 mod view_models;
 mod welcome_panel;
 
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -23,6 +26,7 @@ use bastyde::core::event_source::{EventSource, SubscriptionHandle};
 use bastyde::widgets::{Center, HStack};
 
 use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
+use bastyde::core::app_event::AppEvent;
 use bastyde::res;
 use bastyde::settings::{AppPaths, SettingsStore};
 use bastyde::widgets::primitives::icon_widget::IconMode;
@@ -239,6 +243,27 @@ fn main() {
     // Optional `.skrib` path to open on launch (`skribisto <path>`); `App` opens it
     // once on first build.
     let initial_project = std::env::args().nth(1).filter(|s| !s.trim().is_empty());
+
+    // If the requested project is already open in another live instance, raise
+    // that instance (forwarding our launch activation token for a real Wayland
+    // raise) and exit instead of opening a duplicate window.
+    if let Some(path) = initial_project.as_ref() {
+        let canon = std::fs::canonicalize(path)
+            .map(|p| p.to_string_lossy().into_owned())
+            .unwrap_or_else(|_| path.clone());
+        if let Some(existing) = open_registry::scan().into_iter().find(|e| e.path == canon) {
+            let token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
+            let _ = ipc::send_raise(existing.pid, token);
+            return;
+        }
+    }
+
+    // Shared handle to the main window's `WindowState`, captured in its root
+    // builder below — lets IPC "raise" events (handled in `on_app_event`) focus
+    // the main window without a WindowManager id lookup, which misses while that
+    // window is dispatching its own events.
+    let main_window_state: Rc<RefCell<Option<WindowState>>> = Rc::new(RefCell::new(None));
+
     BastydeAppBuilder::new()
         .theme(theme)
         .application("eu", "skribisto", "Skribisto")
@@ -254,12 +279,33 @@ fn main() {
         .app_state(single_work_info.clone())
         .app_state(outline.clone())
         .app_state(import_plume.clone())
+        // Bind this instance's IPC listener (multi-process window switching); an
+        // incoming raise request focuses the captured main window.
+        .on_ready(|proxy| ipc::spawn_listener(proxy))
+        .on_app_event({
+            let main_window_state = main_window_state.clone();
+            move |event| {
+                if let AppEvent::External(payload) = event
+                    && let Some(req) = payload.downcast_ref::<ipc::RaiseMainWindow>()
+                    && let Some(state) = main_window_state.borrow().as_ref()
+                {
+                    if let Some(token) = req.activation_token.clone() {
+                        state.set_activation_token(token);
+                    }
+                    state.focus();
+                }
+            }
+        })
         .initial_window(
             WindowConfig::new()
                 .id("main")
                 .title("Skribisto")
                 .size(1200, 800)
                 .decorations(DecorationsMode::CustomChrome)
+                // Consume an xdg-activation startup token (set by the desktop, or
+                // by another instance's "open in new window") so this window comes
+                // up focused on Wayland.
+                .activate_from_env(true)
                 // Unsaved-changes guard for every interactive close (title-bar X,
                 // Alt+F4, and the Quit menu — all route through `close_window()`).
                 // Autosave on: just ensure the save runs, then close (no prompt).
@@ -293,7 +339,10 @@ fn main() {
                         CloseResponse::Veto
                     }
                 })
-                .root(move |tree, _state| {
+                .root(move |tree, state| {
+                    // Publish this window's handle so IPC "raise" events (handled
+                    // in `on_app_event`) can focus it directly.
+                    *main_window_state.borrow_mut() = Some(state.clone());
                     let theme = tree.theme().clone();
 
                     // Custom Bastyde title bar with a model-driven hamburger menu
@@ -556,6 +605,9 @@ fn main() {
     // lost inside the debounce window, then tear the shared Root/System frame
     // down and fire `CleanUpBeforeExit` before the event thread is stopped.
     crate::models::RecentWorkListModel::flush_now();
+    // Drop this instance's open-registry lock so its project stops showing as
+    // open in other instances' switchers.
+    crate::open_registry::release();
     if let Err(e) = handling_app_lifecycle_commands::clean_up_before_exit(&app_ctx) {
         eprintln!("clean_up_before_exit failed: {e:#}");
     }

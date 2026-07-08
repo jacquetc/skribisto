@@ -444,6 +444,11 @@ impl Widget for App {
                     single_work.set_id(ids.work_id.get());
                     single_work_info.set_id(ids.work_info_id.get());
                     unsaved.set(false);
+                    // Advertise this project as open so other instances' switchers
+                    // list it (and can raise this window).
+                    if let Some(path) = single_work_info.file_name().get() {
+                        crate::open_registry::claim(&path, &single_work.title().get());
+                    }
                 },
             );
         }
@@ -513,6 +518,9 @@ impl Widget for App {
                     single_work.set_id(ids.work_id.get());
                     single_work_info.set_id(ids.work_info_id.get());
                     unsaved.set(true);
+                    if let Some(path) = single_work_info.file_name().get() {
+                        crate::open_registry::claim(&path, &single_work.title().get());
+                    }
                     editors.save_to_disk();
                 },
             );
@@ -538,6 +546,7 @@ impl Widget for App {
                     single_work.set_id(None);
                     single_work_info.set_id(None);
                     unsaved.set(false);
+                    crate::open_registry::release();
                 },
             );
         }

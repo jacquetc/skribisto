@@ -118,6 +118,13 @@ placeholder-chapter-title = Titre du chapitre…
 binder = Classeur
 no-work = Aucune œuvre chargée
 no-recent-works = Aucune œuvre récente
+switcher-open-section = Œuvres ouvertes
+switcher-recent-section = Récentes
+switcher-this-window = cette fenêtre
+open-project-title = Ouvrir l’œuvre
+open-project-question = Comment ouvrir « { $title } » ?
+open-in-new-window = Ouvrir dans une nouvelle fenêtre
+open-here = Ouvrir ici
 
 ## Sélecteur de classeur + recherche
 binder-all = Tous les classeurs

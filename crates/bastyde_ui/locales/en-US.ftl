@@ -118,6 +118,13 @@ placeholder-chapter-title = Chapter title…
 binder = Binder
 no-work = No work loaded
 no-recent-works = No recent works
+switcher-open-section = Currently open
+switcher-recent-section = Recent
+switcher-this-window = this window
+open-project-title = Open project
+open-project-question = How do you want to open “{ $title }”?
+open-in-new-window = Open in new window
+open-here = Open here
 
 ## Binder switcher + search
 binder-all = All Binders

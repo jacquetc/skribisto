@@ -1,44 +1,39 @@
 //! Project switcher for the title bar.
 //!
 //! A flat dropdown button whose main slot shows the **currently-open project's**
-//! title (or a "No work loaded" fallback when nothing is open) plus a trailing
-//! chevron, and whose popover lists the recent projects as rich rows — title,
-//! absolute path, and last-opened date — each re-opening that project on click.
-//! The row that matches the open project is marked with a leading checkmark and
-//! an accent title.
+//! title (or "No work loaded" when nothing is open) plus a trailing chevron. Its
+//! popover has two sections:
 //!
-//! **"Open" is read from live state, never from list position.** The open
-//! project's identity comes from [`SingleWorkInfo::file_name`] (its on-disk path)
-//! and [`SingleWork::title`]; the recents list ([`RecentWorkListModel`], Layer A
-//! over a persisted `MruList`) is *only* the history source. Marking a row
-//! current is a path comparison against the open path — so at cold start (no work
-//! loaded) the button reads "No work loaded" and no row is checked, even though
-//! the persisted MRU is non-empty.
+//! - **Currently open** — every project open across running instances (from the
+//!   cross-process [`open_registry`]). This instance's own project is
+//!   check-marked; clicking another instance's project raises that window (via an
+//!   IPC "raise" message carrying a freshly-minted xdg-activation token, for a
+//!   real cross-surface raise on Wayland).
+//! - **Recent** — recent projects that are *not* currently open. Clicking one
+//!   asks (MessageBox) whether to open it in a new window (a new process) or here
+//!   (replacing this window's project).
 //!
-//! `SplitButton` is deliberately *not* used here: its dropdown reuses `MenuItem`
-//! verbatim (single label only), whereas we need three fields per row. The "free"
-//! `MenuList::item(impl Widget)` form lets a row be an arbitrary widget tree, so
-//! we wrap it in a `PopoverButton` to reproduce the split-button affordance with
-//! rich rows.
+//! **"Open" is read from live state, never from list position.** The current
+//! project's identity comes from [`SingleWorkInfo::file_name`] + [`SingleWork::title`];
+//! the "open elsewhere" set comes from the registry scan; the recents list
+//! ([`RecentWorkListModel`]) is only the history source.
 //!
-//! The popover content is built once per `build()`; the widget re-derives the
-//! list, current title, and checkmark whenever any of three signals bump at
-//! `BindingLevel::Rebuild`: the recents `version` (list changed), the open Work's
-//! `title` (load/new/close), and the open `WorkInfo`'s `file_name` (load/close/
-//! Save As).
-//!
-//! (Later phases will split the popover into "Currently open" vs "Recent (not
-//! open)" sections and route clicks through new-window / switch-focus flows; this
-//! file currently ships the corrected single-list behaviour only.)
+//! The popover content is rebuilt whenever the recents `version`, the open Work's
+//! `title`, or the open `WorkInfo`'s `file_name` change (bound at
+//! `BindingLevel::Rebuild`) — which also re-runs the registry scan. (Cross-instance
+//! open/close by *another* process is reflected on this instance's next such
+//! rebuild rather than live; a live on-open refresh is a later refinement.)
 
+use std::collections::HashSet;
 use std::path::Path;
 use std::rc::Rc;
 
 use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, FixedSize, FocusScope, HStack, IconWidget, MaxSize, MenuList, Padding,
-    PopoverButton, TextWidget, Toast, TraversalScopePolicy, VStack,
+    Button, ButtonVariant, FixedSize, FocusScope, GroupHeader, HStack, IconWidget, MaxSize,
+    MenuList, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, PopoverButton,
+    StandardButton, TextWidget, Toast, TraversalScopePolicy, VStack,
 };
 
 use frontend::AppContext;
@@ -46,14 +41,13 @@ use frontend::commands::work_management_commands;
 use frontend::work_management::LoadWorkDto;
 
 use crate::models::RecentWorkListModel;
+use crate::open_registry::{self, OpenEntry};
 use crate::singles::{SingleWork, SingleWorkInfo};
 
-/// Flat dropdown button whose main slot is the current project; its popover lists
-/// recent projects.
+/// Flat dropdown button: current project in the main slot, a two-section popover
+/// (open elsewhere / recent) listing everything else.
 pub struct ProjectSwitcherButton {
     app_ctx: Rc<AppContext>,
-    /// Reactive recent-projects history (Layer A); its `version` signal is bound
-    /// at `BindingLevel::Rebuild` so the list re-derives on load.
     model: RecentWorkListModel,
     root_child: Option<WidgetId>,
 }
@@ -74,10 +68,86 @@ impl std::fmt::Debug for ProjectSwitcherButton {
     }
 }
 
+/// Best-effort canonical form for comparing project paths across the registry
+/// (which stores canonical paths) and the recents list.
+fn canon(path: &str) -> String {
+    std::fs::canonicalize(path)
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| path.to_string())
+}
+
+/// Launch a fresh Skribisto process to open `path`, forwarding an activation
+/// `token` (so the new window comes up focused on Wayland via the main window's
+/// `activate_from_env`). The CLI-arg auto-load path already opens `argv[1]`.
+fn spawn_new_process(path: &str, token: Option<String>) {
+    let Ok(exe) = std::env::current_exe() else {
+        return;
+    };
+    let mut cmd = std::process::Command::new(exe);
+    cmd.arg(path);
+    if let Some(tok) = token {
+        cmd.env("XDG_ACTIVATION_TOKEN", &tok);
+        cmd.env("DESKTOP_STARTUP_ID", &tok);
+    }
+    let _ = cmd.spawn();
+}
+
+/// A rich two/three-line popover row (checkmark column + title + path [+ date]).
+fn row(
+    checked: bool,
+    accent: bool,
+    title: String,
+    path: String,
+    date: Option<String>,
+    on_tap: impl Fn(&mut EventContext) + 'static,
+) -> impl Widget {
+    let mut marker = FixedSize::new().width(16.0).height(16.0);
+    if checked {
+        marker = marker.child(IconWidget::checkmark(14.0));
+    }
+    let title_color = if accent {
+        TextRole::Accent
+    } else {
+        TextRole::Primary
+    };
+    let mut body = VStack::new()
+        .spacing(2.0)
+        .child(
+            TextWidget::new(lit!(title))
+                .style(TextStyleRole::BodyBold)
+                .color(title_color),
+        )
+        .child(
+            TextWidget::new(lit!(path))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary)
+                .single_line()
+                .overflow(TextOverflow::Ellipsis(EllipsisMode::Middle)),
+        );
+    if let Some(date) = date {
+        body = body.child(
+            TextWidget::new(lit!(date))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        );
+    }
+    let inner = HStack::new()
+        .spacing(8.0)
+        .child(marker)
+        .child(MaxSize::width(360.0).child(body))
+        .cursor(CursorIcon::Pointer)
+        .focusable(true)
+        .on_tap(move |_event, ctx| on_tap(ctx));
+    Padding::symmetric(6.0, 10.0).child(inner)
+}
+
+/// A non-navigable section caption for the popover.
+fn section(label: bastyde::i18n::LocalizedString) -> impl Widget {
+    Padding::symmetric(6.0, 8.0).child(GroupHeader::new(label))
+}
+
 impl Widget for ProjectSwitcherButton {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Live "what's open" state — the id-driven singles registered in `main`.
-        // These, not the MRU head, define the current project.
         let single_work = ctx
             .app_state::<SingleWork>()
             .cloned()
@@ -87,33 +157,23 @@ impl Widget for ProjectSwitcherButton {
             .cloned()
             .expect("SingleWorkInfo registered in main");
 
-        // Rebuild when: the recents history changes, the open Work's title changes
-        // (load/new/close all move it), or the open WorkInfo's file_name changes
-        // (load/close/Save As). The first keeps the list fresh; the latter two keep
-        // the trigger label + checkmark honest about what's actually open.
         self.model.wire(ctx);
         let sid = ctx.self_id();
         let reg = ctx.binding_registry();
         self.model
             .version_signal()
             .bind_to(sid, reg, BindingLevel::Rebuild);
-        single_work
-            .title()
-            .bind_to(sid, reg, BindingLevel::Rebuild);
+        single_work.title().bind_to(sid, reg, BindingLevel::Rebuild);
         single_work_info
             .file_name()
             .bind_to(sid, reg, BindingLevel::Rebuild);
 
-        // Most-recently-opened first — the history, *not* a stand-in for "open".
         let recents = self.model.items();
-
-        // The open project's on-disk path (None ⇒ nothing loaded) and title.
         let open_path = single_work_info.file_name().get();
         let work_title = single_work.title().get();
 
-        // A project is open iff we have a title or a path for it. The trigger label
-        // prefers the matching recents row's title (so it matches the checkmarked
-        // row), then the live Work title, then the file stem.
+        // Trigger label: the open project's title (matched recents title → live
+        // Work title → file stem), or "No work loaded".
         let is_open = !work_title.is_empty() || open_path.is_some();
         let current_title: Option<String> = if is_open {
             open_path
@@ -137,9 +197,23 @@ impl Widget for ProjectSwitcherButton {
             None
         };
 
-        // Popover content: a MenuList of rich rows.
-        let mut menu = MenuList::new().max_visible_items(10);
-        if recents.is_empty() {
+        // Cross-instance "what's open" — reaped of dead owners by the scan.
+        let open_entries: Vec<OpenEntry> = open_registry::scan();
+        let my_pid = open_registry::my_pid();
+        let open_paths: HashSet<String> = open_entries.iter().map(|e| e.path.clone()).collect();
+
+        // Recents that aren't open anywhere.
+        let recent_not_open: Vec<_> = recents
+            .iter()
+            .filter(|r| !open_paths.contains(&canon(&r.absolute_path)))
+            .collect();
+
+        let has_open = !open_entries.is_empty();
+        let has_recent = !recent_not_open.is_empty();
+
+        let mut menu = MenuList::new().max_visible_items(12);
+
+        if !has_open && !has_recent {
             menu = menu.item(
                 Padding::symmetric(8.0, 12.0).child(
                     TextWidget::new(tr!(no_recent_works()))
@@ -148,68 +222,95 @@ impl Widget for ProjectSwitcherButton {
                 ),
             );
         } else {
-            for dto in recents.iter() {
-                // Current ⇔ this row's path is the open project's path — never a
-                // list-position guess.
-                let is_current = open_path.as_deref() == Some(dto.absolute_path.as_str());
-                let path = dto.absolute_path.clone();
-                let app_ctx = self.app_ctx.clone();
-                let date = dto.last_opened_at.format("%Y-%m-%d %H:%M").to_string();
-
-                // 16px leading column — checkmark on the current project.
-                let mut marker = FixedSize::new().width(16.0).height(16.0);
-                if is_current {
-                    marker = marker.child(IconWidget::checkmark(14.0));
+            // ── Currently open (across instances) ──
+            if has_open {
+                menu = menu.header(section(tr!(switcher_open_section())));
+                for entry in &open_entries {
+                    let is_self = entry.pid == my_pid;
+                    let title = entry.title.clone();
+                    let path = entry.path.clone();
+                    let pid = entry.pid;
+                    menu = menu.item(row(
+                        is_self,
+                        is_self,
+                        title,
+                        path,
+                        None,
+                        move |ctx| {
+                            ctx.dismiss_self_overlay_chain();
+                            if is_self {
+                                return; // already this window
+                            }
+                            // Mint a token from this (focused) window, then ask the
+                            // owning instance to raise itself with it.
+                            ctx.request_activation_token_self(Box::new(move |tok| {
+                                let _ = crate::ipc::send_raise(pid, tok);
+                            }));
+                        },
+                    ));
                 }
+            }
 
-                let title_color = if is_current {
-                    TextRole::Accent
-                } else {
-                    TextRole::Primary
-                };
+            if has_open && has_recent {
+                menu = menu.separator();
+            }
 
-                let body = VStack::new()
-                    .spacing(2.0)
-                    .child(
-                        TextWidget::new(lit!(dto.title.clone()))
-                            .style(TextStyleRole::BodyBold)
-                            .color(title_color),
-                    )
-                    .child(
-                        TextWidget::new(lit!(path.clone()))
-                            .style(TextStyleRole::Small)
-                            .color(TextRole::Secondary)
-                            .single_line()
-                            .overflow(TextOverflow::Ellipsis(EllipsisMode::Middle)),
-                    )
-                    .child(
-                        TextWidget::new(lit!(date))
-                            .style(TextStyleRole::Small)
-                            .color(TextRole::Secondary),
-                    );
-
-                let row = HStack::new()
-                    .spacing(8.0)
-                    .child(marker)
-                    .child(MaxSize::width(360.0).child(body))
-                    .cursor(CursorIcon::Pointer)
-                    .focusable(true)
-                    .on_tap(move |_event, ctx| {
-                        // Dismiss the popover, then (re)open the project.
-                        ctx.dismiss_self_overlay_chain();
-                        if let Err(e) = work_management_commands::load_work(
-                            &app_ctx,
-                            &LoadWorkDto {
-                                file_name: path.clone(),
-                            },
-                        ) {
-                            ctx.show_toast(Toast::error(tr!(could_not_open_work(
-                                error = e.to_string()
-                            ))));
-                        }
-                    });
-
-                menu = menu.item(Padding::symmetric(6.0, 10.0).child(row));
+            // ── Recent (not open) ──
+            if has_recent {
+                menu = menu.header(section(tr!(switcher_recent_section())));
+                for dto in &recent_not_open {
+                    let title = dto.title.clone();
+                    let path = dto.absolute_path.clone();
+                    let date = dto.last_opened_at.format("%Y-%m-%d %H:%M").to_string();
+                    let app_ctx = self.app_ctx.clone();
+                    menu = menu.item(row(
+                        false,
+                        false,
+                        title.clone(),
+                        path.clone(),
+                        Some(date),
+                        move |ctx| {
+                            ctx.dismiss_self_overlay_chain();
+                            let for_new = path.clone();
+                            let for_here = path.clone();
+                            let app_ctx = app_ctx.clone();
+                            MessageBox::question(tr!(open_project_title()))
+                                .text(tr!(open_project_question(title = title.clone())))
+                                .buttons(MessageBoxButtons::Custom(vec![
+                                    MessageBoxButton::standard(StandardButton::Open)
+                                        .label(tr!(open_in_new_window())),
+                                    MessageBoxButton::standard(StandardButton::Yes)
+                                        .label(tr!(open_here())),
+                                    MessageBoxButton::standard(StandardButton::Cancel),
+                                ]))
+                                .default_button(StandardButton::Open)
+                                .escape_button(StandardButton::Cancel)
+                                .on_result(move |r, ctx| match r.button {
+                                    StandardButton::Open => {
+                                        // New process: mint a token to focus it.
+                                        let p = for_new.clone();
+                                        ctx.request_activation_token_self(Box::new(move |tok| {
+                                            spawn_new_process(&p, tok);
+                                        }));
+                                    }
+                                    StandardButton::Yes => {
+                                        if let Err(e) = work_management_commands::load_work(
+                                            &app_ctx,
+                                            &LoadWorkDto {
+                                                file_name: for_here.clone(),
+                                            },
+                                        ) {
+                                            ctx.show_toast(Toast::error(tr!(could_not_open_work(
+                                                error = e.to_string()
+                                            ))));
+                                        }
+                                    }
+                                    _ => {}
+                                })
+                                .present(ctx);
+                        },
+                    ));
+                }
             }
         }
 
@@ -221,9 +322,6 @@ impl Widget for ProjectSwitcherButton {
         .text_style(TextStyleRole::BodyBold)
         .trailing(IconWidget::chevron_down(12.0));
 
-        // Trap Tab inside the popover: it is an anchored (not centered)
-        // overlay, so it isn't auto-confined — a Cycle scope keeps keyboard
-        // navigation on the recent-project rows until the popover dismisses.
         let root = ctx.add(
             PopoverButton::new(trigger)
                 .show_disclosure_caret(false)
