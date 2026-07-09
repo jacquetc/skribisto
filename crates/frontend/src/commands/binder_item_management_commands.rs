@@ -5,7 +5,8 @@
 use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use binder_item_management::{
-    DuplicateDto, DuplicateReturnDto, MoveDto, binder_item_management_controller,
+    DuplicateDto, DuplicateReturnDto, MergeTwoScenesDto, MoveDto, SplitSceneDto,
+    binder_item_management_controller,
 };
 
 pub fn duplicate(
@@ -34,4 +35,32 @@ pub fn move_items(ctx: &AppContext, stack_id: Option<u64>, dto: &MoveDto) -> Res
         dto,
     )
     .context("move_items")
+}
+
+pub fn merge_two_scenes(
+    ctx: &AppContext,
+    stack_id: Option<u64>,
+    dto: &MergeTwoScenesDto,
+) -> Result<()> {
+    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    binder_item_management_controller::merge_two_scenes(
+        &ctx.db_context,
+        &ctx.event_hub,
+        &mut undo_redo_manager,
+        stack_id,
+        dto,
+    )
+    .context("merge_two_scenes")
+}
+
+pub fn split_scene(ctx: &AppContext, stack_id: Option<u64>, dto: &SplitSceneDto) -> Result<()> {
+    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    binder_item_management_controller::split_scene(
+        &ctx.db_context,
+        &ctx.event_hub,
+        &mut undo_redo_manager,
+        stack_id,
+        dto,
+    )
+    .context("split_scene")
 }

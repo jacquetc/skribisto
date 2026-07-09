@@ -146,11 +146,11 @@ impl Widget for App {
         let app_ctx = self.app_ctx.clone();
         let column_width = settings.column_width();
         let show_synopsis = settings.synopsis_pane();
-        let stack_id = self.outline.stack_id_signal();
+        let ids = self.outline.ids();
         let editors = self
             .editors
             .get_or_insert_with(|| {
-                EditorsViewModel::new(app_ctx, column_width, show_synopsis, stack_id)
+                EditorsViewModel::new(app_ctx, column_width, show_synopsis, ids)
             })
             .clone();
 
@@ -200,6 +200,9 @@ impl Widget for App {
             .expect("SingleWorkInfo registered in main");
         single_work.wire(ctx);
         single_work_info.wire(ctx);
+        // Keep the outline tree reactive to *all* structural mutations (incl. the
+        // Full Chapter view's rename/merge/split/add), not just the outline's own.
+        self.outline.wire(ctx);
 
         // ── App-global commands (the scriptable surface) ─────────────────────
         // Registered with `register_action_global` so they're reachable as a

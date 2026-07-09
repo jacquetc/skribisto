@@ -4,7 +4,7 @@
 //! `editor_tab.rs`; shared layout primitives live in [`super::shared`].
 
 use bastyde::prelude::*;
-use bastyde::widgets::{Switcher, VStack};
+use bastyde::widgets::{ScrollArea, Switcher, VStack};
 
 use super::{ContentTab, shared};
 
@@ -39,5 +39,9 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
                 tab.mark_dirty_fn(),
             ));
     }
-    shared::tab_backdrop(col)
+    // The whole dual-pane body scrolls as one flowing page: the main editor is
+    // intrinsic-sized with its own scroll bar suppressed (see
+    // `shared::writing_column`), so title, synopsis and prose scroll together
+    // here instead of the prose scrolling inside a fixed pane.
+    shared::tab_backdrop(ScrollArea::new().child(col))
 }

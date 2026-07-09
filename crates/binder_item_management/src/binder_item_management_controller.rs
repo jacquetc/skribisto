@@ -2,11 +2,17 @@
 
 use crate::DuplicateDto;
 use crate::DuplicateReturnDto;
+use crate::MergeTwoScenesDto;
 use crate::MoveDto;
+use crate::SplitSceneDto;
 use crate::units_of_work::duplicate_uow::DuplicateUnitOfWorkFactory;
+use crate::units_of_work::merge_two_scenes_uow::MergeTwoScenesUnitOfWorkFactory;
 use crate::units_of_work::move_items_uow::MoveItemsUnitOfWorkFactory;
+use crate::units_of_work::split_scene_uow::SplitSceneUnitOfWorkFactory;
 use crate::use_cases::duplicate_uc::DuplicateUseCase;
+use crate::use_cases::merge_two_scenes_uc::MergeTwoScenesUseCase;
 use crate::use_cases::move_items_uc::MoveItemsUseCase;
+use crate::use_cases::split_scene_uc::SplitSceneUseCase;
 use anyhow::Result;
 
 use common::undo_redo::UndoRedoManager;
@@ -36,6 +42,34 @@ pub fn move_items(
 ) -> Result<()> {
     let uow_context = MoveItemsUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = MoveItemsUseCase::new(Box::new(uow_context));
+    uc.execute(dto)?;
+    undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
+    Ok(())
+}
+
+pub fn merge_two_scenes(
+    db_context: &DbContext,
+    event_hub: &Arc<EventHub>,
+    undo_redo_manager: &mut UndoRedoManager,
+    stack_id: Option<u64>,
+    dto: &MergeTwoScenesDto,
+) -> Result<()> {
+    let uow_context = MergeTwoScenesUnitOfWorkFactory::new(db_context, event_hub);
+    let mut uc = MergeTwoScenesUseCase::new(Box::new(uow_context));
+    uc.execute(dto)?;
+    undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
+    Ok(())
+}
+
+pub fn split_scene(
+    db_context: &DbContext,
+    event_hub: &Arc<EventHub>,
+    undo_redo_manager: &mut UndoRedoManager,
+    stack_id: Option<u64>,
+    dto: &SplitSceneDto,
+) -> Result<()> {
+    let uow_context = SplitSceneUnitOfWorkFactory::new(db_context, event_hub);
+    let mut uc = SplitSceneUseCase::new(Box::new(uow_context));
     uc.execute(dto)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
     Ok(())

@@ -16,6 +16,7 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::direct_access::ContentDto;
 use frontend::work_management::SaveWorkDto;
 
+use crate::app_ids::AppIds;
 use crate::singles::SingleBinderItem;
 use crate::tabs::{self, ContentTab};
 
@@ -32,9 +33,11 @@ pub struct EditorsViewModel {
     /// Persisted "show synopsis pane" setting, threaded into every opened tab so
     /// the dual-pane editor shows/hides its synopsis live.
     show_synopsis: Signal<bool>,
-    /// The per-`Work` undo stack id — shared with `OutlineViewModel` so editor
-    /// write-back lands on the same Ctrl+Z history as tree edits. `App` wires it.
-    stack_id: Signal<Option<u64>>,
+    /// The app's id-only global state (work + undo-stack ids), shared by clone
+    /// with `OutlineViewModel`. Editor write-back lands on `ids.stack_id` so it
+    /// shares the tree edits' Ctrl+Z history; the Full Chapter view reads
+    /// `ids.work_id`.
+    ids: AppIds,
     /// Reactive read handle re-pointed at an item when opening its tab — supplies
     /// the `(role, sub_role)` that selects the tab layout (Layer A single).
     item_probe: SingleBinderItem,
@@ -48,7 +51,7 @@ impl EditorsViewModel {
         app_ctx: Rc<AppContext>,
         column_width: Signal<f32>,
         show_synopsis: Signal<bool>,
-        stack_id: Signal<Option<u64>>,
+        ids: AppIds,
     ) -> Self {
         Self {
             item_probe: SingleBinderItem::new(app_ctx.clone()),
@@ -58,7 +61,7 @@ impl EditorsViewModel {
             active_item: Signal::new(None),
             column_width,
             show_synopsis,
-            stack_id,
+            ids,
             edited: Signal::new(0),
         }
     }
@@ -135,6 +138,7 @@ impl EditorsViewModel {
             &contents,
             self.column_width.clone(),
             self.show_synopsis.clone(),
+            &self.ids,
         );
         // Every tab bumps the shared edit signal, so the autosave timer sees edits
         // from whichever tab is active.
@@ -165,7 +169,7 @@ impl EditorsViewModel {
     /// Persist every open tab's edits back to its `Content` rows (changed fields
     /// only), through the per-Work undo stack.
     pub fn flush_all(&self) {
-        let stack = self.stack_id.get();
+        let stack = self.ids.stack_id.get();
         for i in 0..self.tabs.len() {
             self.tabs.with_item(i, |h| {
                 if let Some(t) = h.payload.downcast_ref::<ContentTab>() {
@@ -178,7 +182,7 @@ impl EditorsViewModel {
     /// Save the tab with `tab_id` (if any) then remove it — the `TabWidget`'s
     /// `on_close` hook, so closing never drops unsaved edits.
     pub fn flush_and_close(&self, tab_id: TabId) {
-        let stack = self.stack_id.get();
+        let stack = self.ids.stack_id.get();
         let mut pos = None;
         for i in 0..self.tabs.len() {
             let hit = self.tabs.with_item(i, |h| {
@@ -278,7 +282,7 @@ mod tests {
             Rc::new(AppContext::new()),
             Signal::new(700.0),
             Signal::new(true),
-            Signal::new(None),
+            AppIds::new(),
         )
     }
 
@@ -294,6 +298,7 @@ mod tests {
             &[],
             p.column_width.clone(),
             p.show_synopsis.clone(),
+            &p.ids,
         );
         p.tabs.push(TabHandle::dynamic(
             id,

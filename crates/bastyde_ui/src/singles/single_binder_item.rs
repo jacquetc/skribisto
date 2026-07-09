@@ -161,14 +161,31 @@ mod imp {
         inner: Rc<Inner>,
     }
 
-    /// A fabricated Scene item carrying the requested id (so the mock UI opens a
-    /// prose tab for any clicked row).
+    /// Fabricated item matching the mock binder-tree fixture (so opening
+    /// "Chapter Two" gives a real `Folder/Chapter` → Full Chapter view). Ids
+    /// 201-203 are the mock chapter's fabricated child scenes; anything else
+    /// falls back to a plain Scene.
     fn mock_dto(id: u64) -> BinderItemDto {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let (role, sub_role, title) = match id {
+            101 => (Folder, Book, "Book One"),
+            102 => (Item, BookBegin, "Opening"),
+            103 => (Item, Scene, "Scene at dawn"),
+            104 => (Folder, Chapter, "Chapter Two"),
+            105 => (Item, ChapterScene, "Confrontation"),
+            106 => (Item, Note, "Character sketch"),
+            107 => (Item, Text, "Random idea"),
+            201 => (Item, Scene, "Scene 1"),
+            202 => (Item, Scene, "Scene 2"),
+            203 => (Item, Scene, "Scene 3"),
+            _ => (Item, Scene, "Mock Item"),
+        };
         BinderItemDto {
             id,
-            title: "Mock Item".to_string(),
-            role: BinderItemRole::Item,
-            sub_role: BinderItemSubRole::Scene,
+            title: title.to_string(),
+            role,
+            sub_role,
             is_printable: true,
             ..Default::default()
         }

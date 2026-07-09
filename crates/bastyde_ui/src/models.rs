@@ -15,6 +15,7 @@
 
 mod binder_binder_items_tree_model;
 mod binder_list_model;
+mod chapter_scenes_model;
 mod examples_list_model;
 mod recent_work_list_model;
 
@@ -22,5 +23,6 @@ pub use binder_binder_items_tree_model::{
     BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters, TreeNode,
 };
 pub use binder_list_model::{BinderListModel, BinderRow};
+pub use chapter_scenes_model::{ChapterScenesModel, SceneRow};
 pub use examples_list_model::ExamplesListModel;
 pub use recent_work_list_model::RecentWorkListModel;

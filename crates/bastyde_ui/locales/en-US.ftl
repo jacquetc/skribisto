@@ -114,6 +114,25 @@ placeholder-title = Title…
 placeholder-subtitle = Subtitle…
 placeholder-chapter-title = Chapter title…
 
+## Full Chapter view
+full-chapter = Full Chapter
+rename = Rename
+set-label = Set label
+insert-scene = Insert scene
+split-scene = Split scene
+move-up = Move up
+move-down = Move down
+merge-with-previous = Merge with previous
+move-to-trash = Move to trash
+rename-chapter = Rename chapter
+add-scene = Add new scene
+placeholder-scene-name = Scene name…
+menu-cut = Cut
+menu-copy = Copy
+menu-paste = Paste
+menu-paste-unformatted = Paste Unformatted
+menu-select-all = Select All
+
 ## Binder / recents
 binder = Binder
 no-work = No work loaded
@@ -138,6 +157,8 @@ binder-trash-confirm-text = “{ $name }” and all its items will be moved to t
 
 ## Dialogs
 dialog-rename = Rename
+dialog-set-label = Set label
+dialog-new-scene = New scene
 close-work-question = Save changes before closing the work?
 close-question = Save changes before closing?
 unsaved-changes = This work has unsaved changes.

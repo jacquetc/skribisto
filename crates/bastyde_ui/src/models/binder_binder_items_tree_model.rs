@@ -18,10 +18,14 @@
 //! `get_all_work`. Mutations are not applied here: drops route through the
 //! injected [`CommitMove`] closure and the slice re-reads itself.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use bastyde::core::ObserverHandle;
+use bastyde::prelude::BuildContext;
+use frontend::common::event::{
+    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event, Origin, TrashManagementEvent,
+};
 use bastyde::data::{
     DragEligibility, DropCommit, DropPosition, DropQuery, DropResponse, FlatEntry, TreeDataSlice,
     TreeDataSource, TreeFilterMode, TreeRowFilter,
@@ -100,6 +104,8 @@ pub struct BinderBinderItemsTreeModel {
     /// `ObserverHandle` unsubscribes on drop. Shared across clones so the last
     /// clone standing owns them.
     _filters: Rc<Vec<ObserverHandle>>,
+    /// One-shot guard so `wire` subscribes to backend events only once.
+    subscribed: Rc<Cell<bool>>,
 }
 
 impl BinderBinderItemsTreeModel {
@@ -228,6 +234,39 @@ impl BinderBinderItemsTreeModel {
         Self {
             slice,
             _filters: Rc::new(observers),
+            subscribed: Rc::new(Cell::new(false)),
+        }
+    }
+
+    /// Subscribe once so the tree **re-sources on any structural backend change**
+    /// — regardless of who caused it (the outline's own commands, the Full Chapter
+    /// view, import, another process). Without this the tree only refreshed after
+    /// `OutlineViewModel`'s own mutations. Call from a long-lived widget's `build`.
+    pub fn wire(&self, ctx: &mut BuildContext) {
+        if self.subscribed.replace(true) {
+            return;
+        }
+        use DirectAccessEntity::{Binder, BinderItem};
+        use EntityEvent::{Created, Removed, Updated};
+        let origins = [
+            Origin::DirectAccess(BinderItem(Created)),
+            Origin::DirectAccess(BinderItem(Updated)),
+            Origin::DirectAccess(BinderItem(Removed)),
+            Origin::DirectAccess(Binder(Created)),
+            Origin::DirectAccess(Binder(Updated)),
+            Origin::DirectAccess(Binder(Removed)),
+            Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
+            Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
+            Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
+            Origin::BinderItemManagement(BinderItemManagementEvent::SplitScene),
+            Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
+            Origin::TrashManagement(TrashManagementEvent::TrashBinder),
+            Origin::TrashManagement(TrashManagementEvent::RestoreItems),
+            Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
+        ];
+        for origin in origins {
+            let me = self.clone();
+            ctx.subscribe_event(origin, move |_e: &Event| me.reload());
         }
     }
 

@@ -34,6 +34,7 @@
 //!     outline-selection → editor-open effect in `app.rs`).
 //!   * Many-to-one / distant links graduate to the intent bus.
 
+mod chapter;
 mod editors;
 mod import_plume;
 mod new_work;
@@ -41,6 +42,7 @@ mod outline;
 mod settings;
 mod welcome;
 
+pub use chapter::ChapterViewModel;
 pub use editors::EditorsViewModel;
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;

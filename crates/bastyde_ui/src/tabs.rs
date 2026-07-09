@@ -22,7 +22,9 @@ use frontend::AppContext;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::direct_access::ContentDto;
 
+use crate::app_ids::AppIds;
 use crate::singles::SingleContent;
+use crate::view_models::ChapterViewModel;
 
 pub mod folder_book;
 pub mod folder_chapter;
@@ -87,6 +89,10 @@ pub struct ContentTab {
     /// Persisted "show synopsis pane above the manuscript" setting (Settings ▸
     /// Manuscript & Fonts). Consumed live by the dual-pane writing editor.
     pub show_synopsis: Signal<bool>,
+    /// For a `FolderChapter` layout: the Full Chapter view's per-tab view-model
+    /// (ordered scenes + per-scene documents + scene/chapter mutations). `None`
+    /// for every other layout.
+    pub chapter: Option<ChapterViewModel>,
 }
 
 fn layout_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> TabLayout {
@@ -143,8 +149,12 @@ pub fn tab_for(
     contents: &[ContentDto],
     column_width: Signal<f32>,
     show_synopsis: Signal<bool>,
+    ids: &AppIds,
 ) -> ContentTab {
     let layout = layout_for(role, sub_role);
+    // The Chapter folder tab drives a Full Chapter view over its child scenes.
+    let chapter = (layout == TabLayout::FolderChapter)
+        .then(|| ChapterViewModel::new(ctx.clone(), ids.clone(), item_id));
     let mut tab = ContentTab {
         item_id,
         layout,
@@ -157,6 +167,7 @@ pub fn tab_for(
         edited: None,
         column_width,
         show_synopsis,
+        chapter,
     };
     for cr in skribisto_model::allowed_content(role, sub_role) {
         let existing = contents.iter().find(|c| &c.role == cr);
@@ -207,6 +218,9 @@ impl ContentTab {
         }
         if let Some(f) = &self.synopsis {
             f.flush(stack)?;
+        }
+        if let Some(vm) = &self.chapter {
+            vm.flush_all(stack)?;
         }
         self.dirty.set(false);
         Ok(())
@@ -289,6 +303,7 @@ mod tests {
                 &[],
                 Signal::new(700.0),
                 Signal::new(true),
+                &AppIds::new(),
             );
             assert_eq!(tab.layout, expected, "{role:?}/{sub_role:?}");
             let mut tree = WidgetTree::new();
@@ -316,6 +331,7 @@ mod tests {
             &[],
             Signal::new(700.0),
             Signal::new(true),
+            &AppIds::new(),
         );
         assert!(scene.main.is_some() && scene.synopsis.is_some() && scene.title.is_none());
 
@@ -327,6 +343,7 @@ mod tests {
             &[],
             Signal::new(700.0),
             Signal::new(true),
+            &AppIds::new(),
         );
         assert!(cs.main.is_some() && cs.synopsis.is_some() && cs.title.is_some());
 
@@ -338,6 +355,7 @@ mod tests {
             &[],
             Signal::new(700.0),
             Signal::new(true),
+            &AppIds::new(),
         );
         assert!(bb.title.is_some() && bb.subtitle.is_some() && bb.main.is_none());
 
@@ -349,6 +367,7 @@ mod tests {
             &[],
             Signal::new(700.0),
             Signal::new(true),
+            &AppIds::new(),
         );
         assert!(end.main.is_none() && end.synopsis.is_none() && end.title.is_none());
     }

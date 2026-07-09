@@ -82,6 +82,8 @@ pub enum TrashManagementEvent {
 pub enum BinderItemManagementEvent {
     Duplicate,
     MoveItems,
+    MergeTwoScenes,
+    SplitScene,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]

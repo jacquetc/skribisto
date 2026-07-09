@@ -506,6 +506,38 @@ features:
         - Before
         - After
         - Into
+  - name: merge_two_scenes
+    entities:
+    - System
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: MergeTwoScenesDto
+      fields:
+      - name: target_id
+        type: uinteger
+      - name: source_id
+        type: uinteger
+  - name: split_scene
+    entities:
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: SplitSceneDto
+      fields:
+      - name: source_id
+        type: uinteger
+      - name: before_text
+        type: string
+      - name: after_text
+        type: string
+      - name: new_title
+        type: string
 - name: handling_app_lifecycle
   use_cases:
   - name: initialize_app

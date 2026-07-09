@@ -2,16 +2,22 @@
 //! the centered/capped writing column, and small pane builders (writing column,
 //! synopsis box, title field) reused across the per-`sub_role` layouts.
 
+use std::rc::Rc;
+
 use bastyde::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::text_document::TextDocument;
 use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
-use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
+use bastyde::widgets::rich_text::{EditorHandle, RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
-    Expand, FixedSize, GroupHeader, HStack, MaxSize, Padding, Panel, RectWidget, Spacer, TextInput,
-    VStack, ZStack,
+    Expand, FixedSize, GroupHeader, HStack, MaxSize, MenuItem, MenuList, Padding, Panel, RectWidget,
+    Spacer, TextInput, VStack, ZStack,
 };
+
+/// A caret-aware "split scene" action for a writing editor's context menu:
+/// invoked with the event context and the current caret offset.
+pub type SplitFn = Rc<dyn Fn(&mut EventContext, usize)>;
 
 use super::{ContentTab, TitleField};
 
@@ -19,26 +25,72 @@ use super::{ContentTab, TitleField};
 /// the main writing column, so it reads as the subordinate pane.
 pub const SYNOPSIS_WIDTH_INSET: f32 = 48.0;
 
+/// Minimum height (in lines) of the main writing editor when the scene tab
+/// scrolls as one flowing page: a short scene still presents a page-sized
+/// writing surface rather than collapsing to its few lines of text.
+pub const MAIN_MIN_LINES: u32 = 20;
+
 /// The centered, max-width main writing column for `doc`, wired so user edits
 /// flip the tab's dirty flag via `on_change`.
+///
+/// **Flowing layout:** the editor is *intrinsic*-sized (`min_lines`, no
+/// `max_lines` cap → grows to its content) and its own scroll bar is suppressed
+/// (`AlwaysOff`); the scene tab's outer `ScrollArea` scrolls the whole page.
+/// [`CenterColumnFlowing`] gives it a bounded width (so it wraps at the column
+/// cap) but takes its intrinsic height (so the page grows with the prose).
 pub fn writing_column(
     doc: &TextDocument,
     column_width: &Signal<f32>,
     on_change: impl Fn() + 'static,
-) -> CenterColumn {
-    CenterColumn::new(bati!(
+    split: Option<SplitFn>,
+) -> CenterColumnFlowing {
+    let mut editor = RichTextEditor::editor(doc.clone())
+        .style(WritingEditorStyle)
+        .on_change(on_change)
+        .content_padding_symmetric(8.0, 12.0)
+        .min_lines(MAIN_MIN_LINES)
+        .v_scroll_policy(ScrollPolicy::AlwaysOff);
+    if let Some(split) = split {
+        // Replace the built-in menu with the standard editing actions (rebuilt
+        // through the editor handle) plus "Split scene" at the caret.
+        let handle = editor.handle();
+        let cursor = editor.cursor_position_signal();
+        editor = editor.context_menu(move |_pt, _ctx| {
+            Some(Box::new(scene_editor_menu(
+                handle.clone(),
+                cursor.clone(),
+                split.clone(),
+            )))
+        });
+    }
+    CenterColumnFlowing::new(bati!(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
-            Expand {
-                RichTextEditor::editor(doc.clone()) {
-                    style: WritingEditorStyle
-                    on_change: on_change
-                    content_padding_symmetric: 8.0, 12.0
-                    v_scroll_policy: ScrollPolicy::Auto
-                }
-            }
+            Expand::horizontal { child: editor }
         }
     ))
+}
+
+/// The scene editor's right-click menu: Cut / Copy / Paste / Paste Unformatted /
+/// Select All (via the editor handle) plus **Split scene** at the caret.
+fn scene_editor_menu(handle: EditorHandle, cursor: Signal<usize>, split: SplitFn) -> MenuList {
+    let cut = handle.clone();
+    let copy = handle.clone();
+    let paste = handle.clone();
+    let paste_plain = handle.clone();
+    let select = handle;
+    MenuList::new()
+        .item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)))
+        .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
+        .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
+        .item(
+            MenuItem::new(tr!(menu_paste_unformatted()))
+                .on_activate_fn(move |ctx| paste_plain.paste_unformatted(ctx)),
+        )
+        .separator()
+        .item(MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()))
+        .separator()
+        .item(MenuItem::new(tr!(split_scene())).on_activate_fn(move |ctx| split(ctx, cursor.get())))
 }
 
 /// The bordered synopsis editor box (caller sizes/centres it). User edits flip
@@ -99,24 +151,22 @@ pub fn synopsis_section(
     )
 }
 
-/// "Text" header + the centered, capped main writing column.
+/// "Text" header + the centered, capped main writing column. The column is
+/// intrinsic-height (see [`writing_column`]) so the section grows with the prose
+/// and the tab's outer `ScrollArea` scrolls it.
 pub fn writing_section(
     doc: &TextDocument,
     column_width: &Signal<f32>,
     on_change: impl Fn() + 'static,
 ) -> impl Widget {
-    bati!(
-        VStack {
-            spacing: 5.0
-            GroupHeader::new(tr!(text_heading())) {
-                style: TextStyleRole::SmallBold
-                color: TextRole::Secondary
-            }
-            Expand {
-                child: writing_column(doc, column_width, on_change)
-            }
-        }
-    )
+    VStack::new()
+        .spacing(5.0)
+        .child(
+            GroupHeader::new(tr!(text_heading()))
+                .style(TextStyleRole::SmallBold)
+                .color(TextRole::Secondary),
+        )
+        .child(writing_column(doc, column_width, on_change, None))
 }
 
 /// A flat, edge-to-edge Content-surface backdrop wrapping the tab body (the
@@ -207,16 +257,19 @@ impl RichTextEditorStyle for WritingEditorStyle {
     }
 }
 
-/// Fills the available space and centers its single child **horizontally**,
-/// proposing the *bounded* available size so a width-capped child shrinks to the
-/// pane when narrower than its cap (instead of overflowing). Height fills.
+/// Fills the available width and centers its single child **horizontally**, but
+/// takes the child's **intrinsic height** instead of filling — for a flowing
+/// page inside an outer `ScrollArea`. It proposes a *bounded* width (so a
+/// width-capped wrapping child wraps at its cap rather than overflowing) and an
+/// *unspecified* height (so the child reports its natural content height), then
+/// centers the child horizontally.
 #[derive(Debug)]
-pub struct CenterColumn {
+pub struct CenterColumnFlowing {
     child_id: Option<WidgetId>,
     pending: Option<Box<dyn Widget>>,
 }
 
-impl CenterColumn {
+impl CenterColumnFlowing {
     pub fn new(child: impl Widget + 'static) -> Self {
         Self {
             child_id: None,
@@ -225,7 +278,7 @@ impl CenterColumn {
     }
 }
 
-impl Widget for CenterColumn {
+impl Widget for CenterColumnFlowing {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         if let Some(w) = self.pending.take() {
             self.child_id = Some(ctx.add_boxed(w));
@@ -233,8 +286,14 @@ impl Widget for CenterColumn {
         self.child_id.into_iter().collect()
     }
 
-    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
-        proposal.resolve(0.0, 0.0).into()
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        let width = proposal.resolve(0.0, 0.0).width;
+        let height = self
+            .child_id
+            .and_then(|id| ctx.child_size(id, SizeProposal::with_width(width)))
+            .map(|s| s.height)
+            .unwrap_or(0.0);
+        Size::new(width, height).into()
     }
 
     fn place_children(
@@ -246,7 +305,7 @@ impl Widget for CenterColumn {
     ) {
         for child in children.iter_mut() {
             let size = ctx
-                .child_size(child.id, SizeProposal::exact(bounds.width, bounds.height))
+                .child_size(child.id, SizeProposal::with_width(bounds.width))
                 .unwrap_or_else(|| bounds.size());
             let dx = ((bounds.width - size.width) / 2.0).max(0.0);
             child.origin = Point::new(bounds.x + dx, bounds.y);

@@ -73,6 +73,8 @@ pub enum FlatEventKind {
 
     BinderItemManagementDuplicate,
     BinderItemManagementMoveItems,
+    BinderItemManagementMergeTwoScenes,
+    BinderItemManagementSplitScene,
 
     HandlingAppLifecycleInitializeApp,
     HandlingAppLifecycleCleanUpBeforeExit,
@@ -207,6 +209,12 @@ impl From<Event> for FlatEvent {
                 }
                 BinderItemManagementEvent::MoveItems => {
                     FlatEventKind::BinderItemManagementMoveItems
+                }
+                BinderItemManagementEvent::MergeTwoScenes => {
+                    FlatEventKind::BinderItemManagementMergeTwoScenes
+                }
+                BinderItemManagementEvent::SplitScene => {
+                    FlatEventKind::BinderItemManagementSplitScene
                 }
             },
             Origin::HandlingAppLifecycle(fe) => match fe {
