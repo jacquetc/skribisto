@@ -28,7 +28,7 @@ pub const SYNOPSIS_WIDTH_INSET: f32 = 48.0;
 /// Minimum height (in lines) of the main writing editor when the scene tab
 /// scrolls as one flowing page: a short scene still presents a page-sized
 /// writing surface rather than collapsing to its few lines of text.
-pub const MAIN_MIN_LINES: u32 = 20;
+pub const MAIN_MIN_LINES: u32 = 10;
 
 /// The centered, max-width main writing column for `doc`, wired so user edits
 /// flip the tab's dirty flag via `on_change`.

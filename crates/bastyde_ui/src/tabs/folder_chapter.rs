@@ -146,7 +146,6 @@ fn scene_row(
     VStack::new()
         .spacing(4.0)
         .child(shared::vspace(10.0))
-        .child(Divider::new())
         .child(shared::centered(scene_header(vm, id), column_width))
         .child(shared::writing_column(
             &scene.main_doc(),
@@ -173,7 +172,7 @@ fn scene_header(vm: &ChapterViewModel, id: u64) -> impl Widget {
                 .text(scene.label())
                 .color(TextRole::Secondary),
         )
-        .child(Spacer::new())
+        .child(Expand::horizontal().child(Divider::new()))
         .child(scene_menu(vm, id))
 }
 
