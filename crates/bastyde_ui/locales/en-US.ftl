@@ -27,6 +27,7 @@ ctx-new-folder = New &Folder
 ctx-rename = &Rename
 ctx-duplicate = &Duplicate
 ctx-trash = Move to &Trash
+ctx-open-to-side = Open to the &Side
 
 ## Create recommendations — logical type labels (SplitButton title + Add ▸ rows)
 create-book = Book
@@ -158,6 +159,10 @@ untitled = Untitled
 placeholder-title = Title…
 placeholder-subtitle = Subtitle…
 placeholder-chapter-title = Chapter title…
+split-editor = Split editor
+close-split-view = Close split view
+drop-open-here = Open here
+drop-open-to-side = Open to the side
 
 ## Full Chapter view
 full-chapter = Full Chapter

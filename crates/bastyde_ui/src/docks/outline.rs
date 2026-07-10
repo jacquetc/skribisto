@@ -9,12 +9,13 @@
 
 use std::rc::Rc;
 
+use bastyde::core::widget::WidgetPlacement;
 use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    ActivateOn, DockOpenLocation, DockSide, DockWidget, Expand, FocusScope, HStack, MenuItem,
-    MenuList, MessageBox, MessageBoxButtons, Padding, StandardTreeItem, ToolbarItem,
-    TraversalScopePolicy, TreeRow, TreeView, VStack,
+    ActivateOn, DockOpenLocation, DockSide, DockWidget, DragTransferMode, Expand, FocusScope,
+    HStack, MenuItem, MenuList, MessageBox, MessageBoxButtons, Padding, StandardTreeItem,
+    ToolbarItem, TraversalScopePolicy, TreeRow, TreeView, VStack,
 };
 
 use frontend::AppContext;
@@ -22,12 +23,18 @@ use frontend::AppContext;
 use crate::binder_switcher_button::{BinderSwitcherButton, binder_search_button};
 use crate::create_labels::{recommendation_label, recommendation_tooltip};
 use crate::docks::create_split_button::CreateSplitButton;
+use crate::intents::AppIntent;
 use crate::models::{BinderTreeKey, TreeNode};
 use crate::view_models::OutlineViewModel;
 
 /// Callback App supplies to the binder tree to open (or focus) an item's editor
 /// tab on activation — keeps the tree decoupled from `EditorsViewModel`.
 pub type OpenItemFn = Rc<dyn Fn(u64, String)>;
+
+/// Id of the outline's **scoped** "Open to the Side" shortcut (Ctrl+Enter). Scoped
+/// (not global) so it never shadows `RichTextEditor`'s own Ctrl+Enter (insert
+/// block); the menu reads the translatable accelerator from it via `for_shortcut`.
+const OPEN_TO_SIDE_SHORTCUT: &str = "outline.open_to_side";
 
 /// Build the binder outline as a `DockWidget` for the leading side. `App` passes
 /// in the shared `OutlineViewModel`, the app context, the open callback, and the
@@ -45,13 +52,18 @@ pub fn outline_dock(
     DockWidget::new(dock_id, tr!(binder()), move |_id| {
         // Group the dock's Tab order: a Continue scope keeps the binder's
         // tab_index numbering from colliding with other docks/regions while
-        // still letting Tab flow out at the ends.
-        FocusScope::new(TraversalScopePolicy::Continue).child(binder_tree(
+        // still letting Tab flow out at the ends. `OutlineKeys` wraps it as the
+        // dock-content root so its scoped Ctrl+Enter shortcut covers the tree's
+        // focus (and nothing outside it).
+        OutlineKeys::new(
             outline.clone(),
-            app_ctx.clone(),
-            on_open.clone(),
-            active_item.clone(),
-        ))
+            FocusScope::new(TraversalScopePolicy::Continue).child(binder_tree(
+                outline.clone(),
+                app_ctx.clone(),
+                on_open.clone(),
+                active_item.clone(),
+            )),
+        )
     })
     .icon(crate::activity_icons::outline_icon)
     // Show the sole-pane dock's header bar (title + actions) and pin the
@@ -116,12 +128,35 @@ fn binder_tree(
             }
             item = item.leading_slot(icon);
             let cm = menu_outline.clone();
-            Box::new(item.context_menu(move |_pos, _ctx| {
-                // Operate on the right-clicked row directly — do NOT mutate the
-                // selection here: selecting rebuilds this row, destroying the
-                // menu's anchor (the overlay would fall back to the corner).
-                Some(Box::new(binder_context_menu(cm.clone(), key)) as Box<dyn Widget>)
-            })) as Box<dyn Widget>
+            // Middle-click opens the item to the side (only for item rows).
+            let mid = node.item_id.map(|id| (id, node.title.clone()));
+            Box::new(
+                item.context_menu(move |_pos, _ctx| {
+                    // Operate on the right-clicked row directly — do NOT mutate the
+                    // selection here: selecting rebuilds this row, destroying the
+                    // menu's anchor (the overlay would fall back to the corner).
+                    Some(Box::new(binder_context_menu(cm.clone(), key)) as Box<dyn Widget>)
+                })
+                // `on_pointer_event` (not `accept_tap_buttons`) so this never
+                // builds a tap gesture arena that would swallow the tree's own
+                // primary-click activation; we consume only the middle button.
+                .on_pointer_event(move |ev, ctx| {
+                    if let WidgetEvent::PointerDown {
+                        button: PointerButton::Middle,
+                        ..
+                    } = ev
+                    {
+                        if let Some((item_id, title)) = &mid {
+                            ctx.send_intent(AppIntent::OpenItemToSide {
+                                item_id: *item_id,
+                                title: title.clone(),
+                            });
+                            return EventResponse::Handled;
+                        }
+                    }
+                    EventResponse::Ignored
+                }),
+            ) as Box<dyn Widget>
         },
     )
     // Adaptive row heights: each row measures to its content, so title-only
@@ -132,6 +167,10 @@ fn binder_tree(
     .auto_item_height(28.0)
     .row_click_expands(false)
     .reorderable(true)
+    // Rows are also draggable OUT of the tree onto an editor pane (which opens
+    // the item). `Copy` leaves the row in place; in-tree reorder still works —
+    // one drag can drop inside the tree (reorder) or onto a pane (open).
+    .exportable(DragTransferMode::Copy)
     // Single-click to open (Scrivener convention) — arrow-key navigation only
     // moves the highlight, so stepping through the binder never spawns tabs.
     .activate_on(ActivateOn::SingleClick)
@@ -170,6 +209,9 @@ fn binder_tree(
                 keys.rename_selected(ctx);
                 EventResponse::Handled
             }
+            // Ctrl+Enter ("Open to the Side") is a scoped `Shortcut` registered by
+            // `OutlineKeys`, not handled here — so the menu can show its
+            // translatable accelerator via `for_shortcut`.
             // Indent / outdent via Ctrl+] / Ctrl+[ (the macOS Notes / outliner
             // convention). Tab is deliberately NOT bound — it stays free for
             // focus traversal out of the tree, so the keyboard isn't trapped.
@@ -203,8 +245,9 @@ fn key_of(node: &TreeNode) -> BinderTreeKey {
     }
 }
 
-/// The per-row context menu: create / rename / duplicate / trash. *New Folder*
-/// is just `new_item(Folder, None)` — there is no separate folder command.
+/// The per-row context menu: ("Open to the Side" for item rows) / Add ▸ / rename
+/// / duplicate / trash. The "Add ▸" submenu holds the recommended new-item types
+/// for the row (see [`add_recommendations_menu`]).
 ///
 /// Multi-select convention for the **batch** actions (duplicate / trash): a
 /// right-click *inside* the current selection acts on the whole selection; a
@@ -218,6 +261,10 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
     } else {
         vec![key]
     };
+    // Item rows (not binder roots) can open to the side.
+    let open_side = outline
+        .node_item(key)
+        .and_then(|(id, title)| id.map(|item_id| (item_id, title)));
 
     let add_outline = outline.clone();
     let rename = outline.clone();
@@ -225,8 +272,22 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
     let dup_batch = batch.clone();
     let trash = outline.clone();
     let trash_batch = batch;
-
-    let mut menu = MenuList::new()
+    let mut menu = MenuList::new();
+    if let Some((item_id, title)) = open_side {
+        menu = menu
+            .item(
+                MenuItem::new(tr!(ctx_open_to_side()))
+                    .for_shortcut(OPEN_TO_SIDE_SHORTCUT)
+                    .on_activate_fn(move |ctx| {
+                        ctx.send_intent(AppIntent::OpenItemToSide {
+                            item_id,
+                            title: title.clone(),
+                        })
+                    }),
+            )
+            .separator();
+    }
+    menu = menu
         // Context-dependent "Add ▸" submenu: the recommended new-item types for
         // this row, in recommended order, each with a rich tooltip. Mirrors the
         // header "Create" SplitButton but anchored on the right-clicked row.
@@ -300,4 +361,76 @@ fn add_recommendations_menu(outline: OutlineViewModel, key: BinderTreeKey) -> Me
         );
     }
     menu
+}
+
+/// Dock-content root that registers the outline's **scoped** Ctrl+Enter shortcut
+/// ("Open to the Side") on build. Because it's an ancestor of the tree, the
+/// shortcut fires only while the tree has focus — never shadowing the editor's
+/// own Ctrl+Enter (insert block). Otherwise a transparent single-child
+/// pass-through (fills its bounds with the wrapped content).
+struct OutlineKeys {
+    outline: OutlineViewModel,
+    child_id: Option<WidgetId>,
+    pending: Option<Box<dyn Widget>>,
+}
+
+impl OutlineKeys {
+    fn new(outline: OutlineViewModel, child: impl Widget + 'static) -> Self {
+        Self {
+            outline,
+            child_id: None,
+            pending: Some(Box::new(child)),
+        }
+    }
+}
+
+impl std::fmt::Debug for OutlineKeys {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OutlineKeys").finish()
+    }
+}
+
+impl Widget for OutlineKeys {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        ctx.register_shortcut(
+            Shortcut::new(OPEN_TO_SIDE_SHORTCUT)
+                .name("Open to the Side")
+                .primary(KeyStroke::new(Key::Enter, Modifiers::CTRL))
+                .build(),
+        );
+        let vm = self.outline.clone();
+        ctx.register_action(Action::new(OPEN_TO_SIDE_SHORTCUT).on_invoke(move |_i, ctx| {
+            if let Some((item_id, title)) = vm.selected_item() {
+                ctx.send_intent(AppIntent::OpenItemToSide { item_id, title });
+            }
+        }));
+        if let Some(w) = self.pending.take() {
+            self.child_id = Some(ctx.add_boxed(w));
+        }
+        self.child_id.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        match self.child_id.and_then(|id| ctx.child_size(id, proposal)) {
+            Some(size) => size.into(),
+            None => proposal.resolve(0.0, 0.0).into(),
+        }
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = bounds.origin();
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
+    }
 }

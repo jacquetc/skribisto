@@ -12,7 +12,7 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
     let mut col = VStack::new().spacing(5.0).child(shared::vspace(10.0));
 
     // ChapterScene opens a chapter — show its title field above the prose.
-    if let Some(t) = &tab.title {
+    if let Some(t) = tab.title() {
         col = col
             .child(shared::centered(
                 shared::title_input(t, tr!(placeholder_chapter_title())),
@@ -20,7 +20,7 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
             ))
             .child(shared::vspace(6.0));
     }
-    if let Some(s) = &tab.synopsis {
+    if let Some(s) = tab.synopsis() {
         // The synopsis pane is user-toggleable (Settings ▸ Manuscript & Fonts).
         // A `Switcher` keeps the writing editor mounted while the (hidden)
         // synopsis is dropped — only the active page is mounted, so the loaded
@@ -35,7 +35,7 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
             ),
         ));
     }
-    if let Some(m) = &tab.main {
+    if let Some(m) = tab.main() {
         col = col
             .child(shared::vspace(10.0))
             .child(shared::writing_section(

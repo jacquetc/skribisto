@@ -43,7 +43,7 @@ mod settings;
 mod welcome;
 
 pub use chapter::ChapterViewModel;
-pub use editors::EditorsViewModel;
+pub use editors::{EditorsViewModel, Side};
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;

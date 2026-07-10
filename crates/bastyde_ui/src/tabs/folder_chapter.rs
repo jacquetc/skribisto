@@ -48,7 +48,7 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
 fn full_chapter_pane(tab: &ContentTab) -> impl Widget {
     let cw = tab.column_width.clone();
     let mut col = VStack::new().spacing(0.0);
-    if let Some(vm) = tab.chapter.clone() {
+    if let Some(vm) = tab.chapter().cloned() {
         let mark_dirty: Rc<dyn Fn()> = Rc::new(tab.mark_dirty_fn());
         // The Full Chapter view's per-scene editors are scenes → Scene typography.
         let scene_typo = tab.typography.scene.clone();
@@ -69,7 +69,7 @@ fn full_chapter_pane(tab: &ContentTab) -> impl Widget {
         // The chapter folder's *own* prose (symmetric with the flat `ChapterScene`):
         // the chapter's own writing surface, above its scenes. Present e.g. after
         // promoting a flat chapter — this is where that prose stays editable.
-        if let Some(m) = &tab.main {
+        if let Some(m) = tab.main() {
             col = col
                 .child(shared::writing_section(
                     &m.doc,

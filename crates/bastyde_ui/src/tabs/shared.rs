@@ -222,19 +222,19 @@ pub fn centered(child: impl Widget + 'static, column_width: &Signal<f32>) -> imp
 /// own a `SegmentedControl`; this is the segment they all share.
 pub fn folder_synopsis_pane(tab: &ContentTab) -> impl Widget {
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
-    if let Some(t) = &tab.title {
+    if let Some(t) = tab.title() {
         col = col.child(centered(
             title_input(t, tr!(placeholder_title())),
             &tab.column_width,
         ));
     }
-    if let Some(st) = &tab.subtitle {
+    if let Some(st) = tab.subtitle() {
         col = col.child(centered(
             title_input(st, tr!(placeholder_subtitle())),
             &tab.column_width,
         ));
     }
-    if let Some(s) = &tab.synopsis {
+    if let Some(s) = tab.synopsis() {
         col = col.child(vspace(4.0)).child(synopsis_section(
             &s.doc,
             &tab.column_width,

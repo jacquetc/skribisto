@@ -12,16 +12,18 @@
 
 use std::rc::Rc;
 
+use bastyde::core::DragPayload;
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    Divider, DockRail, DockSide, DockWidgetId, DockingLayout, EventContextMessageBoxExt, Expand,
-    HStack, IconButton, IconButtonSize, MessageBox, MessageBoxButtons, NotificationArchiveModel,
-    NotificationCenterButton, Spacer, StandardButton, StatusBar, TabBarVisibility, TabWidget,
-    Toast, VStack,
+    Divider, DockRail, DockSide, DockWidgetId, DockingLayout, DropRegion, DropTarget,
+    DropTargetVariant, EventContextMessageBoxExt, Expand, HStack, IconButton, IconButtonSize,
+    MessageBox, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, RowDragData,
+    Spacer, Splitter, StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast,
+    VStack,
 };
 
 use frontend::AppContext;
@@ -37,11 +39,62 @@ use crate::intents::AppIntent;
 use crate::new_work_panel::NewWorkPanel;
 use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::models::TreeNode;
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
-    EditorsViewModel, ImportPlumeViewModel, OutlineViewModel, SettingsViewModel,
+    EditorsViewModel, ImportPlumeViewModel, OutlineViewModel, SettingsViewModel, Side,
 };
 use crate::welcome_panel::WelcomePanel;
+
+/// Build one editor pane's `TabWidget`: dynamic tabs, cross-pane migration
+/// (`accept_external_tabs` + `on_tab_received` dedup + `on_transfer_out`
+/// collapse), close, and `trailing` in the tab-strip trailing slot. Shared by
+/// both panes so their chrome can't drift.
+fn build_pane_tabs(
+    editors: &EditorsViewModel,
+    side: Side,
+    trailing: impl Widget + 'static,
+) -> TabWidget {
+    let close = editors.clone();
+    let recv = editors.clone();
+    let out = editors.clone();
+    TabWidget::new(editors.selected(side))
+        .dynamic_tab::<ContentTab>("editor", |_handle, state| tab_pane(state))
+        .dynamic_model(editors.tabs(side))
+        .on_close(move |tab_id, _ctx| close.close_in(side, tab_id))
+        .on_tab_received(move |handle, _idx, _ctx| recv.receive_tab(side, handle))
+        .on_transfer_out(move |tab_id, _ctx| out.transfer_out(side, tab_id))
+        .reorderable(true)
+        .accept_external_tabs(true)
+        .bar_visibility(TabBarVisibility::Always)
+        .compact_bar()
+        .selected_tab_background(SurfaceRole::Content)
+        .hover_tab_background(Hover)
+        .tab_dividers()
+        .active_indicator(bastyde::widgets::TabIndicatorPosition::InnerEdge)
+        .bar_trailing_slot(trailing)
+}
+
+/// Open every binder item in a dropped `RowDragData<TreeNode>` payload, routing
+/// each `(item_id, title)` through `open` (which picks the pane / side). Binder
+/// rows (no `item_id`) are ignored. Returns whether anything opened — the drop's
+/// accept verdict.
+fn drain_dropped(mut payload: DragPayload, mut open: impl FnMut(u64, &str)) -> bool {
+    let Some(rd) = payload.take_typed::<RowDragData<TreeNode>>() else {
+        return false;
+    };
+    let Some(items) = rd.items else {
+        return false;
+    };
+    let mut opened = false;
+    for node in items {
+        if let Some(item_id) = node.item_id {
+            open(item_id, &node.title);
+            opened = true;
+        }
+    }
+    opened
+}
 
 /// A close gesture deferred until the in-flight save finishes. The close guard
 /// (and the `work.close` action) sets this, `App` kicks the save, and the
@@ -152,10 +205,14 @@ impl Widget for App {
         let show_synopsis = settings.synopsis_pane();
         let typography = settings.editor_typography();
         let ids = self.outline.ids();
+        let docs = ctx
+            .app_state::<crate::models::OpenDocsStore>()
+            .cloned()
+            .expect("OpenDocsStore registered in main");
         let editors = self
             .editors
             .get_or_insert_with(|| {
-                EditorsViewModel::new(app_ctx, column_width, show_synopsis, typography, ids)
+                EditorsViewModel::new(app_ctx, column_width, show_synopsis, typography, ids, docs)
             })
             .clone();
 
@@ -238,6 +295,18 @@ impl Widget for App {
                     editors.open_or_focus(*item_id, title);
                 }
             }));
+        }
+        {
+            let editors = editors.clone();
+            ctx.register_action_global(
+                Action::new("editor.open_item_to_side").on_invoke(move |i, _c| {
+                    if let Some(AppIntent::OpenItemToSide { item_id, title }) =
+                        AppIntent::from_intent(i)
+                    {
+                        editors.open_to_side(*item_id, title);
+                    }
+                }),
+            );
         }
         // Ctrl+S: flush every editor to the store, then save the project to disk.
         ctx.register_shortcut_global(
@@ -575,15 +644,16 @@ impl Widget for App {
             Rc::new(move |item_id, title| editors.open_or_focus(item_id, &title))
         };
 
-        // Keep the "open document" id in sync with the active tab (open, close,
-        // or a tab-bar click), so the binder's open-item marker tracks it.
-        // Switching tabs also flushes pending edits to the store — autosave on a
-        // natural boundary (changed fields only; clean tabs are a no-op).
-        {
+        // Keep the "open document" id in sync with each pane's active tab (open,
+        // close, or a tab-bar click), so the binder's open-item marker tracks the
+        // focused pane. A selection change in a pane also marks it focused and
+        // flushes pending edits to the store — autosave on a natural boundary
+        // (changed fields only; clean tabs are a no-op). One effect per pane.
+        for side in [Side::Primary, Side::Secondary] {
             let editors = editors.clone();
-            ctx.effect(&editors.selected_tab(), move |_| {
+            ctx.effect(&editors.selected(side), move |_| {
                 editors.flush_all();
-                editors.sync_active_item();
+                editors.set_focused(side);
             });
         }
 
@@ -724,21 +794,82 @@ impl Widget for App {
             }));
         }
         let active_item = editors.active_item();
+        let split_active = editors.split_active();
 
-        // ── Center: dynamic editor tabs ──────────────────────────────────────
-        // Closing a tab saves it first (`on_close` is a pre-close intercept):
-        // never drop unsaved edits.
-        let close_editors = editors.clone();
-        let center = TabWidget::new(editors.selected_tab())
-            .dynamic_tab::<ContentTab>("editor", |_handle, state| tab_pane(state))
-            .dynamic_model(editors.tabs())
-            .on_close(move |tab_id, _ctx| close_editors.flush_and_close(tab_id))
-            .bar_visibility(TabBarVisibility::Always)
-            .compact_bar()
-            .selected_tab_background(SurfaceRole::Content)
-            .hover_tab_background(Hover)
-            .tab_dividers()
-            .active_indicator(bastyde::widgets::TabIndicatorPosition::InnerEdge);
+        // ── Center: split editor — two panes in a Splitter ───────────────────
+        // Each pane is a zoned `DropTarget` wrapping a `TabWidget`, so a binder
+        // row dragged from the outline opens on the pane it's dropped over. The
+        // primary pane's `Trailing` (right-edge) zone opens to the side; it
+        // deactivates once split (`enabled(split_active.not())`). Closing a tab
+        // saves it first (`on_close` is a pre-close intercept). Tabs migrate
+        // between panes (`accept_external_tabs` + `on_tab_received` dedup).
+        let split_button = {
+            let editors = editors.clone();
+            IconButton::new(crate::editor_icons::split())
+                .tooltip(tr!(split_editor()))
+                .icon_role(split_active.map(|on| {
+                    if *on {
+                        TextRole::Accent
+                    } else {
+                        TextRole::Primary
+                    }
+                }))
+                .on_activate_fn(move |_ctx| editors.toggle_split())
+        };
+        let close_split_button = {
+            let editors = editors.clone();
+            IconButton::new(crate::editor_icons::close_split())
+                .tooltip(tr!(close_split_view()))
+                .on_activate_fn(move |_ctx| editors.close_split())
+        };
+
+        let primary_pane = {
+            let e = editors.clone();
+            DropTarget::new()
+                .variant(DropTargetVariant::Prominent)
+                .zone_size_factor(0.3)
+                .accept_when(|p| {
+                    p.get_typed::<RowDragData<TreeNode>>()
+                        .is_some_and(|d| d.is_export())
+                })
+                .region(DropRegion::Center, |z| {
+                    z.hint(TextWidget::new(tr!(drop_open_here())))
+                })
+                .region(DropRegion::Trailing, |z| {
+                    z.hint(TextWidget::new(tr!(drop_open_to_side())))
+                        .enabled(split_active.not())
+                })
+                .on_region_drop(move |region, payload, _pos, _ctx| {
+                    drain_dropped(payload, |item_id, title| match region {
+                        DropRegion::Trailing => e.open_to_side(item_id, title),
+                        _ => e.open_in(Side::Primary, item_id, title),
+                    })
+                })
+                .child(build_pane_tabs(&editors, Side::Primary, split_button))
+        };
+
+        let secondary_pane = {
+            let e = editors.clone();
+            DropTarget::new()
+                .variant(DropTargetVariant::Prominent)
+                .accept_when(|p| {
+                    p.get_typed::<RowDragData<TreeNode>>()
+                        .is_some_and(|d| d.is_export())
+                })
+                .region(DropRegion::Center, |z| {
+                    z.hint(TextWidget::new(tr!(drop_open_here())))
+                })
+                .on_region_drop(move |_region, payload, _pos, _ctx| {
+                    drain_dropped(payload, |item_id, title| {
+                        e.open_in(Side::Secondary, item_id, title)
+                    })
+                })
+                .child(build_pane_tabs(&editors, Side::Secondary, close_split_button))
+        };
+
+        let center = Splitter::new(editors.splitter())
+            .pane(primary_pane)
+            .pane(secondary_pane);
 
         // ── Leading dock: the binder tree, fronted by a VS Code-style activity
         //    bar (icon rail). The OutlineViewModel owns the DockingModel; the

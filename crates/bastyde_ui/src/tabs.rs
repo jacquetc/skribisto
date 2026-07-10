@@ -8,10 +8,18 @@
 //! opens a placeholder. One [`ContentTab`] payload type carries them all; the
 //! `TabWidget` factory dispatches on its [`TabLayout`].
 //!
+//! A tab owns **no documents of its own**: its live editing state (main text +
+//! synopsis + titles, the dirty flag, the Full Chapter view-model) lives in a
+//! shared [`OpenDoc`] held by the [`OpenDocsStore`](crate::models::OpenDocsStore),
+//! keyed by item id. A `ContentTab` is a thin **view** that references that
+//! `Rc<OpenDoc>` plus its own per-tab presentation state (segment, column width,
+//! typography). Opening the same item in two panes yields two `ContentTab`s over
+//! one `OpenDoc`, so the two editors share one live `TextDocument`.
+//!
 //! Prose is Djot end-to-end: documents load via `set_djot` and write back via
-//! `to_djot` into `Content` rows. Write-back is **role-aware** — a tab only ever
-//! owns the content roles `skribisto_model` allows for its `(role, sub_role)`,
-//! so non-prose rows can never be corrupted.
+//! `to_djot` into `Content` rows. Write-back is **role-aware** — an `OpenDoc`
+//! only ever owns the content roles `skribisto_model` allows for its
+//! `(role, sub_role)`, so non-prose rows can never be corrupted.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -23,6 +31,7 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole}
 use frontend::direct_access::ContentDto;
 
 use crate::app_ids::AppIds;
+use crate::models::OpenDoc;
 use crate::singles::SingleContent;
 use crate::view_models::{ChapterViewModel, EditorTypography, EditorTypographySet};
 
@@ -68,42 +77,30 @@ pub struct ProseField {
     content: SingleContent,
 }
 
-/// The dynamic-tab payload: an item's editable fields + its presentation.
+/// The dynamic-tab payload: a thin per-tab **view** over a shared [`OpenDoc`]
+/// (the item's live documents, held by the store) plus this tab's own
+/// presentation state. Field access to the shared documents goes through the
+/// accessor methods, which forward to `open_doc`.
 pub struct ContentTab {
-    pub item_id: u64,
-    pub layout: TabLayout,
-    pub title: Option<TitleField>,
-    pub subtitle: Option<TitleField>,
-    pub main: Option<ProseField>,
-    pub synopsis: Option<ProseField>,
-    /// Selected segment for the folder container's `SegmentedControl`.
+    /// The shared, refcounted open-document state for this item — the live
+    /// `TextDocument`s + write-back. Two tabs (e.g. one per split pane) showing
+    /// the same item hold the **same** `Rc<OpenDoc>`.
+    pub open_doc: Rc<OpenDoc>,
+    /// Selected segment for the folder container's `SegmentedControl` — per-tab
+    /// (each pane keeps its own segment).
     pub segment: Signal<usize>,
-    /// `true` once the user has edited a field since the last save. Set
-    /// reactively from the editors' `on_change`; cleared by [`flush`](Self::flush).
-    /// Drives autosave + the unsaved-state read.
-    pub dirty: Signal<bool>,
-    /// Shared "an edit happened" counter (set by `EditorsViewModel` so every open
-    /// tab bumps the same signal) — drives the debounced autosave timer.
-    pub edited: Option<Signal<u64>>,
     pub column_width: Signal<f32>,
     /// Persisted "show synopsis pane above the manuscript" setting (Settings ▸
     /// Manuscript & Fonts). Consumed live by the dual-pane writing editor.
     pub show_synopsis: Signal<bool>,
-    /// For a `FolderChapter` layout: the Full Chapter view's per-tab view-model
-    /// (ordered scenes + per-scene documents + scene/chapter mutations). `None`
-    /// for every other layout.
-    pub chapter: Option<ChapterViewModel>,
-    /// Scene vs Note for the main prose editor; `None` for non-prose layouts.
-    /// Selects which typography bundle [`main_typography`](Self::main_typography)
-    /// returns for `main`.
-    pub kind: Option<ProseKind>,
     /// The three per-editor-type typography bundles (Scene / Synopsis / Notes),
     /// shared live from Settings. Every editor this tab builds reads its bundle
     /// from here, so a preference change fans out to all open tabs at once.
     pub typography: EditorTypographySet,
 }
 
-fn layout_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> TabLayout {
+/// Which view a `(role, sub_role)` opens.
+pub(crate) fn layout_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> TabLayout {
     use BinderItemRole::*;
     use BinderItemSubRole::*;
     match (role, sub_role) {
@@ -119,14 +116,17 @@ fn layout_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> TabLayout 
 
 /// Which prose kind a `TabLayout::Prose` main-text editor is, so it can pick the
 /// Scene vs Note typography bundle. `None` for every non-prose layout (folder
-/// tabs, headings) — they never populate `ContentTab::main`.
+/// tabs, headings) — they never populate `OpenDoc::main`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ProseKind {
     Scene,
     Note,
 }
 
-fn prose_kind_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Option<ProseKind> {
+pub(crate) fn prose_kind_for(
+    role: &BinderItemRole,
+    sub_role: &BinderItemSubRole,
+) -> Option<ProseKind> {
     use BinderItemRole::*;
     use BinderItemSubRole::*;
     match (role, sub_role) {
@@ -137,7 +137,7 @@ fn prose_kind_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Option
     }
 }
 
-fn prose_field(
+pub(crate) fn prose_field(
     ctx: &Rc<AppContext>,
     item_id: u64,
     role: ContentRole,
@@ -151,7 +151,7 @@ fn prose_field(
     ProseField { doc, content }
 }
 
-fn title_field(
+pub(crate) fn title_field(
     ctx: &Rc<AppContext>,
     item_id: u64,
     role: ContentRole,
@@ -166,9 +166,13 @@ fn title_field(
     }
 }
 
-/// Build the tab for `item_id`, loading each allowed content role from
-/// `contents` (the rows fetched at open time) into the right field, each backed
-/// by a [`SingleContent`] over `ctx`.
+/// Build a standalone tab for `item_id` (its own fresh, unshared [`OpenDoc`]).
+///
+/// The real app opens tabs through `EditorsViewModel` / [`OpenDocsStore`](crate::models::OpenDocsStore),
+/// which shares one `OpenDoc` across panes; this convenience is for tests and any
+/// call site that wants a self-contained tab.
+#[allow(clippy::too_many_arguments)]
+#[allow(dead_code)] // standalone-tab convenience; exercised by the tab tests
 pub fn tab_for(
     ctx: &Rc<AppContext>,
     item_id: u64,
@@ -180,49 +184,21 @@ pub fn tab_for(
     typography: EditorTypographySet,
     ids: &AppIds,
 ) -> ContentTab {
-    let layout = layout_for(role, sub_role);
-    // The Chapter folder tab drives a Full Chapter view over its child scenes.
-    let chapter = (layout == TabLayout::FolderChapter)
-        .then(|| ChapterViewModel::new(ctx.clone(), ids.clone(), item_id));
-    let mut tab = ContentTab {
+    let open_doc = Rc::new(OpenDoc::build(
+        ctx,
+        ids,
         item_id,
-        layout,
-        title: None,
-        subtitle: None,
-        main: None,
-        synopsis: None,
-        segment: Signal::new(0),
-        dirty: Signal::new(false),
-        edited: None,
-        column_width,
-        show_synopsis,
-        chapter,
-        kind: prose_kind_for(role, sub_role),
-        typography,
-    };
-    for cr in skribisto_model::allowed_content(role, sub_role) {
-        let existing = contents.iter().find(|c| &c.role == cr);
-        match cr {
-            ContentRole::SynopsisText => {
-                tab.synopsis = Some(prose_field(ctx, item_id, cr.clone(), existing))
-            }
-            ContentRole::SceneText | ContentRole::NoteText => {
-                tab.main = Some(prose_field(ctx, item_id, cr.clone(), existing))
-            }
-            ContentRole::BookSubtitle => {
-                tab.subtitle = Some(title_field(ctx, item_id, cr.clone(), existing))
-            }
-            ContentRole::BookTitle | ContentRole::ChapterTitle | ContentRole::PartTitle => {
-                tab.title = Some(title_field(ctx, item_id, cr.clone(), existing))
-            }
-        }
-    }
-    tab
+        role,
+        sub_role,
+        contents,
+        Signal::new(0),
+    ));
+    ContentTab::new(open_doc, column_width, show_synopsis, typography)
 }
 
 /// Build the widget for a tab (the `TabWidget` factory).
 pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
-    match tab.layout {
+    match tab.layout() {
         TabLayout::Prose => item_scene_tab::render(tab),
         TabLayout::Heading => heading_tab::render(tab),
         TabLayout::FolderChapter => folder_chapter::render(tab),
@@ -234,56 +210,80 @@ pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
 }
 
 impl ContentTab {
-    /// Persist every changed field back to its `Content` row (creating the row
-    /// if the item didn't have one yet) via each field's [`SingleContent`].
-    /// Routes through the undo `stack`.
+    /// Wrap a shared `OpenDoc` with this tab's presentation state.
+    pub fn new(
+        open_doc: Rc<OpenDoc>,
+        column_width: Signal<f32>,
+        show_synopsis: Signal<bool>,
+        typography: EditorTypographySet,
+    ) -> Self {
+        Self {
+            open_doc,
+            segment: Signal::new(0),
+            column_width,
+            show_synopsis,
+            typography,
+        }
+    }
+
+    /// The `BinderItem` this tab edits.
+    pub fn item_id(&self) -> u64 {
+        self.open_doc.item_id
+    }
+    /// Which view this tab presents.
+    pub fn layout(&self) -> TabLayout {
+        self.open_doc.layout
+    }
+    /// The main prose kind (Scene / Note), or `None` for non-prose layouts.
+    #[allow(dead_code)] // accessor mirroring the others; asserted in tests
+    pub fn kind(&self) -> Option<ProseKind> {
+        self.open_doc.kind
+    }
+    pub fn title(&self) -> Option<&TitleField> {
+        self.open_doc.title.as_ref()
+    }
+    pub fn subtitle(&self) -> Option<&TitleField> {
+        self.open_doc.subtitle.as_ref()
+    }
+    pub fn main(&self) -> Option<&ProseField> {
+        self.open_doc.main.as_ref()
+    }
+    pub fn synopsis(&self) -> Option<&ProseField> {
+        self.open_doc.synopsis.as_ref()
+    }
+    /// The Full Chapter view-model (only a `FolderChapter` tab has one).
+    pub fn chapter(&self) -> Option<&ChapterViewModel> {
+        self.open_doc.chapter.as_ref()
+    }
+
+    /// Persist every changed field back to its `Content` row via the shared
+    /// `OpenDoc`. Idempotent — flushing a shared doc twice (once per pane) is a
+    /// no-op the second time. Routes through the undo `stack`.
     pub fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
-        if let Some(f) = &self.title {
-            f.flush(stack)?;
-        }
-        if let Some(f) = &self.subtitle {
-            f.flush(stack)?;
-        }
-        if let Some(f) = &self.main {
-            f.flush(stack)?;
-        }
-        if let Some(f) = &self.synopsis {
-            f.flush(stack)?;
-        }
-        if let Some(vm) = &self.chapter {
-            vm.flush_all(stack)?;
-        }
-        self.dirty.set(false);
-        Ok(())
+        self.open_doc.flush(stack)
     }
 
     /// The typography bundle for this tab's **main** prose editor: the Notes
     /// bundle for a Note, the Scene bundle otherwise (Scene / ChapterScene, and a
     /// safe fallback for any layout without a `kind`).
     pub fn main_typography(&self) -> &EditorTypography {
-        match self.kind {
+        match self.open_doc.kind {
             Some(ProseKind::Note) => &self.typography.notes,
             _ => &self.typography.scene,
         }
     }
 
-    /// Wire the editors' `on_change` to set `dirty`. Called by each render fn
-    /// when it builds the prose editors (the title fields are diffed at flush
-    /// time, so they don't need a change hook).
+    /// Wire the editors' `on_change` to mark the shared doc dirty (and bump the
+    /// store's aggregate edit signal). Called by each render fn when it builds the
+    /// prose editors (the title fields are diffed at flush time, so they don't
+    /// need a change hook).
     pub fn mark_dirty_fn(&self) -> impl Fn() + 'static {
-        let dirty = self.dirty.clone();
-        let edited = self.edited.clone();
-        move || {
-            dirty.set(true);
-            if let Some(e) = &edited {
-                e.set(e.get().wrapping_add(1));
-            }
-        }
+        self.open_doc.mark_dirty_fn()
     }
 }
 
 impl TitleField {
-    fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
+    pub(crate) fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
         let val = self.value.get();
         if *self.original.borrow() == val {
             return Ok(());
@@ -296,7 +296,7 @@ impl TitleField {
 }
 
 impl ProseField {
-    fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
+    pub(crate) fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
         if !self.doc.is_modified() {
             return Ok(());
         }
@@ -366,14 +366,14 @@ mod tests {
                 test_typography(),
                 &AppIds::new(),
             );
-            assert_eq!(tab.layout, expected, "{role:?}/{sub_role:?}");
+            assert_eq!(tab.layout(), expected, "{role:?}/{sub_role:?}");
             // Prose tabs carry a kind + a main editor; every other layout has
             // neither.
             if expected == TabLayout::Prose {
-                assert!(tab.kind.is_some(), "{role:?}/{sub_role:?} prose needs a kind");
-                assert!(tab.main.is_some(), "{role:?}/{sub_role:?} prose needs main");
+                assert!(tab.kind().is_some(), "{role:?}/{sub_role:?} prose needs a kind");
+                assert!(tab.main().is_some(), "{role:?}/{sub_role:?} prose needs main");
             } else {
-                assert!(tab.kind.is_none(), "{role:?}/{sub_role:?} non-prose has no kind");
+                assert!(tab.kind().is_none(), "{role:?}/{sub_role:?} non-prose has no kind");
             }
             let mut tree = WidgetTree::new();
             let id = tree.add_boxed(tab_pane(&tab));
@@ -392,57 +392,30 @@ mod tests {
         use BinderItemRole::*;
         use BinderItemSubRole::*;
         let ctx = Rc::new(AppContext::new());
-        let scene = tab_for(
-            &ctx,
-            1,
-            &Item,
-            &Scene,
-            &[],
-            Signal::new(700.0),
-            Signal::new(true),
-            test_typography(),
-            &AppIds::new(),
-        );
-        assert!(scene.main.is_some() && scene.synopsis.is_some() && scene.title.is_none());
+        let mk = |sr: BinderItemSubRole| {
+            tab_for(
+                &ctx,
+                1,
+                &Item,
+                &sr,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                &AppIds::new(),
+            )
+        };
+        let scene = mk(Scene);
+        assert!(scene.main().is_some() && scene.synopsis().is_some() && scene.title().is_none());
 
-        let cs = tab_for(
-            &ctx,
-            1,
-            &Item,
-            &ChapterScene,
-            &[],
-            Signal::new(700.0),
-            Signal::new(true),
-            test_typography(),
-            &AppIds::new(),
-        );
-        assert!(cs.main.is_some() && cs.synopsis.is_some() && cs.title.is_some());
+        let cs = mk(ChapterScene);
+        assert!(cs.main().is_some() && cs.synopsis().is_some() && cs.title().is_some());
 
-        let bb = tab_for(
-            &ctx,
-            1,
-            &Item,
-            &BookBegin,
-            &[],
-            Signal::new(700.0),
-            Signal::new(true),
-            test_typography(),
-            &AppIds::new(),
-        );
-        assert!(bb.title.is_some() && bb.subtitle.is_some() && bb.main.is_none());
+        let bb = mk(BookBegin);
+        assert!(bb.title().is_some() && bb.subtitle().is_some() && bb.main().is_none());
 
-        let end = tab_for(
-            &ctx,
-            1,
-            &Item,
-            &BookEnd,
-            &[],
-            Signal::new(700.0),
-            Signal::new(true),
-            test_typography(),
-            &AppIds::new(),
-        );
-        assert!(end.main.is_none() && end.synopsis.is_none() && end.title.is_none());
+        let end = mk(BookEnd);
+        assert!(end.main().is_none() && end.synopsis().is_none() && end.title().is_none());
     }
 
     /// Scene, ChapterScene and Note are no longer collapsed into one prose kind:
@@ -466,10 +439,10 @@ mod tests {
                 &AppIds::new(),
             )
         };
-        assert_eq!(mk(Scene).kind, Some(ProseKind::Scene));
-        assert_eq!(mk(ChapterScene).kind, Some(ProseKind::Scene));
-        assert_eq!(mk(Note).kind, Some(ProseKind::Note));
-        assert_eq!(mk(Chapter).kind, Option::None); // Item/Chapter → Heading, no prose kind
+        assert_eq!(mk(Scene).kind(), Some(ProseKind::Scene));
+        assert_eq!(mk(ChapterScene).kind(), Some(ProseKind::Scene));
+        assert_eq!(mk(Note).kind(), Some(ProseKind::Note));
+        assert_eq!(mk(Chapter).kind(), Option::None); // Item/Chapter → Heading, no prose kind
 
         // `main_typography` picks the bundle by kind.
         assert_eq!(mk(Scene).main_typography().font_family.get(), "Literata");

@@ -183,6 +183,17 @@ impl OutlineViewModel {
         self.model.node_of(&key)
     }
 
+    /// The first selected **item** row's `(item_id, title)`, if the selection is
+    /// an item (not a binder root). Backs the outline's "Open to the Side"
+    /// keyboard shortcut.
+    pub fn selected_item(&self) -> Option<(u64, String)> {
+        let key = self.selection.selected_keys().first().copied()?;
+        match self.node_item(key)? {
+            (Some(item_id), title) => Some((item_id, title)),
+            _ => None,
+        }
+    }
+
     // ── visibility: pure delegation to the DockingModel ──
     //
     // The outline lives on a *rail* side, so "visible" means the side panel is

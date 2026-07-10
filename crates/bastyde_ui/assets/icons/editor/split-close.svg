@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Close split — two panes with the side (right) pane marked for closing -->
+  <rect x="2" y="3" width="12" height="10" rx="1.5"/>
+  <path d="M8 3v10"/>
+  <path d="M9.8 6.8 12.2 9.2M12.2 6.8 9.8 9.2"/>
+</svg>

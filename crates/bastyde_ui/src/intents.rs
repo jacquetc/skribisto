@@ -39,9 +39,15 @@ pub enum AppIntent {
     #[name = "work.import_plume"]
     ImportPlumeCreator,
 
-    /// Open (or focus) the editor tab for a binder item.
+    /// Open (or focus) the editor tab for a binder item (primary pane).
     #[name = "editor.open_item"]
     OpenItem { item_id: u64, title: String },
+
+    /// Open (or focus) a binder item in the **side** pane, revealing the split.
+    /// Fired from the outline's "Open to the Side" (context menu / Ctrl+Enter /
+    /// middle-click). Consumed by the `editor.open_item_to_side` global action.
+    #[name = "editor.open_item_to_side"]
+    OpenItemToSide { item_id: u64, title: String },
 
     /// Create a new binder item of a logical `CreateType`, placed by `relation`
     /// relative to the current selection. The header "Create" SplitButton fires

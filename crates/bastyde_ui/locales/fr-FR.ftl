@@ -27,6 +27,7 @@ ctx-new-folder = Nouveau d&ossier
 ctx-rename = &Renommer
 ctx-duplicate = &Dupliquer
 ctx-trash = Mettre à la &corbeille
+ctx-open-to-side = Ouvrir &sur le côté
 
 ## Recommandations de création — libellés de types (titre du SplitButton + Ajouter ▸)
 create-book = Livre
@@ -158,6 +159,10 @@ untitled = Sans titre
 placeholder-title = Titre…
 placeholder-subtitle = Sous-titre…
 placeholder-chapter-title = Titre du chapitre…
+split-editor = Diviser l'éditeur
+close-split-view = Fermer la vue divisée
+drop-open-here = Ouvrir ici
+drop-open-to-side = Ouvrir sur le côté
 
 ## Classeur / récents
 binder = Classeur

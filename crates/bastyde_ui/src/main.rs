@@ -7,6 +7,7 @@ mod binder_icons;
 mod binder_switcher_button;
 mod create_labels;
 mod docks;
+mod editor_icons;
 mod import_plume_panel;
 mod intents;
 mod ipc;
@@ -50,6 +51,7 @@ use frontend::work_management::{BackupNowDto, SaveAsDto};
 
 use app::{App, PendingExit};
 use app_ids::AppIds;
+use models::OpenDocsStore;
 use singles::{SingleWork, SingleWorkInfo};
 use view_models::{ImportPlumeViewModel, OutlineViewModel};
 
@@ -291,6 +293,11 @@ fn main() {
     if let Some(root_id) = init_root_id {
         ids.root_id.set(Some(root_id));
     }
+    // The shared open-document store (Layer A): one live `OpenDoc` per open item,
+    // holding the editors' `TextDocument`s + write-back. Registered as `app_state`
+    // so the split editor's two panes (and any future view) share one document per
+    // item — the documents are usable outside the `TabWidget`s.
+    let open_docs = OpenDocsStore::new(app_ctx.clone(), ids.clone());
     // Reactive single-entity handles (Layer A). Created here so the title-bar menu
     // can bind the project title (Bug 1) and shape (Bug 2); `App::build` wires
     // their event subscriptions and re-points them on each `LoadWork`.
@@ -350,6 +357,7 @@ fn main() {
         .install_toast_default()
         .event_source(EventHubSource { client })
         .app_state(ids.clone())
+        .app_state(open_docs.clone())
         .app_state(single_work.clone())
         .app_state(single_work_info.clone())
         .app_state(outline.clone())
