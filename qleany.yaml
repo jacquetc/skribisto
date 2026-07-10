@@ -91,6 +91,12 @@ entities:
     type: string
   - name: unique_id
     type: string
+  - name: chapter_mode
+    type: enum
+    enum_name: ChapterMode
+    enum_values:
+      - Folder
+      - Flat
   - name: binders
     type: entity
     entity: Binder

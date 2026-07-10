@@ -16,8 +16,8 @@ use common::direct_access::root::RootRelationshipField;
 use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, System, TrashInfo, Work,
-    WorkInfo, WorkShape,
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, RecentWork, Root, System,
+    TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use std::path::Path;
@@ -189,6 +189,13 @@ impl NewWorkUseCase {
             title: title.clone(),
             dict_language: dto.language.clone(),
             unique_id: skrib_format::new_unique_id(),
+            // The per-project chapter storage mode — same source as the template's
+            // per-chapter encoding, so the Create menu keeps matching the book.
+            chapter_mode: if dto.chapter_scene_mode {
+                ChapterMode::Flat
+            } else {
+                ChapterMode::Folder
+            },
             ..Default::default()
         })?;
 

@@ -159,6 +159,9 @@ mod imp {
                 author_name: self.inner.author_name.get(),
                 dict_language: self.inner.dict_language.get(),
                 unique_id: existing.unique_id,
+                // Preserved (this editor doesn't own it) — a scalar update
+                // overwrites every field, so carry the stored value through.
+                chapter_mode: existing.chapter_mode,
             };
             match work_commands::update_work(ctx, stack_id, &dto) {
                 Ok(_) => {

@@ -84,6 +84,8 @@ fn sample_bundle() -> WorkBundle {
         author_name: "Jane".into(),
         dict_language: "en-US".into(),
         unique_id: "the-lighthouse-uid".into(),
+        // Non-default so the round-trip actually exercises chapter_mode persistence.
+        chapter_mode: common::entities::ChapterMode::Flat,
         tags: vec![10, 11],
         dict_words: vec![20],
         binders: vec![100, 101],

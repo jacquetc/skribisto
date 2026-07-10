@@ -3,7 +3,9 @@
 
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
-use common::entities::{Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work};
+use common::entities::{
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, TrashInfo, Work,
+};
 use skribisto_model::content_allowed;
 use std::collections::BTreeMap;
 
@@ -133,6 +135,7 @@ pub fn from_entities(
                 tag_ids: work.tags.clone(),
                 dict_word_ids: work.dict_words.clone(),
                 unique_id: work.unique_id.clone(),
+                chapter_flat: matches!(work.chapter_mode, ChapterMode::Flat),
             },
             binder_order: binders.iter().map(|b| b.binder.id).collect(),
         },
@@ -190,6 +193,11 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         dict_language: m.work.dict_language.clone(),
         // Empty for pre-v2 bundles; healed (freshly minted) in `materialize`.
         unique_id: m.work.unique_id.clone(),
+        chapter_mode: if m.work.chapter_flat {
+            ChapterMode::Flat
+        } else {
+            ChapterMode::Folder
+        },
         ..Default::default()
     };
 

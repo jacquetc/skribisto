@@ -92,6 +92,7 @@ pub struct Work {
     pub author_name: String,
     pub dict_language: String,
     pub unique_id: String,
+    pub chapter_mode: ChapterMode,
     pub binders: Vec<EntityId>,
     pub tags: Vec<EntityId>,
     pub dict_words: Vec<EntityId>,
@@ -101,6 +102,12 @@ impl HasId for Work {
     fn id(&self) -> EntityId {
         self.id
     }
+}
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum ChapterMode {
+    #[default]
+    Folder,
+    Flat,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

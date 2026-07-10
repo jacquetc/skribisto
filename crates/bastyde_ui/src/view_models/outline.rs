@@ -371,11 +371,16 @@ impl OutlineViewModel {
         self.create_item_at(binder, index, indent, role, sub_role);
     }
 
-    /// The open project's chapter storage mode — how a `CreateType::Chapter`
-    /// is encoded. TODO(Phase B): read the open Work's `chapter_mode` field; for
-    /// now defaults to folder mode.
+    /// The open project's chapter storage mode — how a `CreateType::Chapter` is
+    /// encoded — read from the open Work's `chapter_mode` field (defaults to
+    /// folder mode when no Work is open).
     fn chapter_mode(&self) -> skribisto_model::ChapterMode {
-        skribisto_model::ChapterMode::default()
+        self.ids
+            .work_id
+            .get()
+            .and_then(|id| work_commands::get_work(&self.app_ctx, &id).ok().flatten())
+            .map(|w| w.chapter_mode)
+            .unwrap_or_default()
     }
 
     /// Begin a rename: present a modal `InputDialog`, applying `rename` on OK.

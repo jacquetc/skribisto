@@ -19,6 +19,10 @@ use common::entities::BinderItemSubRole as SubRole;
 use common::entities::ContentRole;
 use common::entities::ContentRole::*;
 
+/// The per-project chapter storage mode — generated on the `Work` entity, re-exported
+/// here so `CreateType::combo` and the UI can name it via `skribisto_model`.
+pub use common::entities::ChapterMode;
+
 /// One row of the constraint matrix: a valid `(role, sub_role)` pair and the
 /// content roles it permits.
 struct Combination {
@@ -248,17 +252,6 @@ pub enum Relation {
     /// As `Sibling` of the nearest ancestor whose `sub_role` `opens_chapter()`
     /// or `opens_book()` — "close what I'm inside and start the next one".
     ParentSibling,
-}
-
-/// How a book's chapters are stored — a per-project setting chosen at project
-/// creation. Only affects how a `CreateType::Chapter` is encoded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum ChapterMode {
-    /// A `Folder/Chapter` that holds its own prose *and* can contain child Scenes.
-    #[default]
-    Folder,
-    /// A flat `Item/ChapterScene` carrying its own prose, no child Scenes.
-    Flat,
 }
 
 /// The user-facing "create" vocabulary — a *logical* type, decoupled from its
@@ -492,7 +485,7 @@ mod tests {
             for r in &recs {
                 // Every offered type resolves to a valid combination in *both* modes.
                 for mode in [ChapterMode::Folder, ChapterMode::Flat] {
-                    let (role, sub_role) = r.create_type.combo(mode);
+                    let (role, sub_role) = r.create_type.combo(mode.clone());
                     assert!(
                         is_valid_combination(&role, &sub_role),
                         "{:?} in {:?} mode is not a valid combination",

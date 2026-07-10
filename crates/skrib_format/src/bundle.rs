@@ -57,6 +57,11 @@ pub struct WorkFile {
     /// `#[serde(default)]` keeps v1 bundles readable (empty → healed on load).
     #[serde(default)]
     pub unique_id: String,
+    /// Per-project chapter storage: `true` = flat `Item/ChapterScene`, `false`
+    /// (default) = `Folder/Chapter`. Added post-v2; `#[serde(default)]` keeps
+    /// older bundles readable (missing → folder mode).
+    #[serde(default)]
+    pub chapter_flat: bool,
 }
 
 /// `tags.ron`

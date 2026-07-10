@@ -110,6 +110,8 @@ pub fn build_bundle(
         tag_ids: Vec::new(),
         dict_word_ids: dict.iter().map(|d| d.file_id).collect(),
         unique_id: new_unique_id(),
+        // Plume Creator organises chapters as folders of sheets → folder mode.
+        chapter_flat: false,
     };
 
     // Binders, in on-disk order: Manuscript, then Story Bible (only if non-empty).
