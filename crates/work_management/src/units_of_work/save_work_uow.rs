@@ -36,7 +36,10 @@ impl SaveWorkUnitOfWork {
 impl QueryUnitOfWork for SaveWorkUnitOfWork {
     fn begin_transaction(&self) -> Result<()> {
         let mut transaction = self.transaction.lock().unwrap();
-        *transaction = Some(Transaction::begin_read_transaction(&self.context)?);
+        // Frozen (snapshot-isolated) read: `gather` runs on this long op's
+        // background thread; freezing gives it one consistent point-in-time view
+        // while the UI thread keeps writing the live store.
+        *transaction = Some(Transaction::begin_frozen_read_transaction(&self.context)?);
         Ok(())
     }
 

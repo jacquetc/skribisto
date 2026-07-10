@@ -43,7 +43,8 @@ impl SaveAsUnitOfWork {
 impl QueryUnitOfWork for SaveAsUnitOfWork {
     fn begin_transaction(&self) -> Result<()> {
         let mut transaction = self.transaction.lock().unwrap();
-        *transaction = Some(Transaction::begin_read_transaction(&self.context)?);
+        // Frozen (snapshot-isolated) read — see save_work_uow.
+        *transaction = Some(Transaction::begin_frozen_read_transaction(&self.context)?);
         Ok(())
     }
 
