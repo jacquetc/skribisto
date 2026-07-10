@@ -43,7 +43,8 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::models::TreeNode;
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
-    EditorsViewModel, ImportPlumeViewModel, OutlineViewModel, SettingsViewModel, Side,
+    EditorsViewModel, ImportPlumeViewModel, OutlineViewModel, SaveAsViewModel, SettingsViewModel,
+    Side,
 };
 use crate::welcome_panel::WelcomePanel;
 
@@ -567,6 +568,27 @@ impl Widget for App {
             }
             {
                 let vm = import_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Failed),
+                    move |e: &Event, c| vm.on_long_op_failed(c, e),
+                );
+            }
+        }
+
+        // Route the Save-As long operation's completion/failure to the shared
+        // `SaveAsViewModel`, which — on success — records the new file_name/shape
+        // into WorkInfo synchronously on the UI thread (save_as itself is
+        // read-only). Filters by op id, so import/backup events are ignored.
+        if let Some(save_as_vm) = ctx.app_state::<SaveAsViewModel>().cloned() {
+            {
+                let vm = save_as_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Completed),
+                    move |e: &Event, c| vm.on_long_op_completed(c, e),
+                );
+            }
+            {
+                let vm = save_as_vm.clone();
                 ctx.subscribe_event_with_ctx(
                     Origin::LongOperation(LongOperationEvent::Failed),
                     move |e: &Event, c| vm.on_long_op_failed(c, e),

@@ -6,9 +6,10 @@
 //! default name. `shape` is `Option` — `None` means no project is open, which
 //! collapses both conditional menu items.
 //!
-//! It refreshes on `WorkInfo` `Updated` events and on the two migrate events
-//! (which flip the shape in place without changing the id). Two `mod imp`
-//! variants share one public surface. See [`crate::singles`].
+//! It refreshes on `WorkInfo` `Updated` events. A "Save As" rewrites this same
+//! WorkInfo (its `file_name`/`shape`) via the UI thread's `update_work_info` on
+//! completion, which fires that event too. Two `mod imp` variants share one
+//! public surface. See [`crate::singles`].
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
@@ -20,9 +21,7 @@ mod imp {
     use frontend::AppContext;
     use frontend::commands::work_info_commands;
     use frontend::common::entities::WorkShape;
-    use frontend::common::event::{
-        DirectAccessEntity, EntityEvent, Event, Origin, WorkManagementEvent,
-    };
+    use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
     use frontend::direct_access::UpdateWorkInfoDto;
 
     use crate::singles::LoadingStatus;
@@ -72,9 +71,10 @@ mod imp {
             self.inner.id.get()
         }
 
-        /// Subscribe to `WorkInfo` `Updated` (id-matched) and the two migrate
-        /// events (which flip the shape in place). Call once from a long-lived
-        /// widget's `build`.
+        /// Subscribe to `WorkInfo` `Updated` (id-matched). Call once from a
+        /// long-lived widget's `build`. A "Save As" rewrites this same WorkInfo id
+        /// (via the UI thread's `update_work_info` on completion), which fires this
+        /// event too — so the "Save as…" menu flips through this single path.
         pub fn wire(&self, ctx: &mut BuildContext) {
             let s = self.clone();
             ctx.subscribe_event(
@@ -90,19 +90,6 @@ mod imp {
                     }
                 },
             );
-            // A Save As rewrites WorkInfo.shape/file_name for the *same* id —
-            // re-read it so the "Save as…" menu flips immediately after a save.
-            {
-                let s = self.clone();
-                ctx.subscribe_event(
-                    Origin::WorkManagement(WorkManagementEvent::SaveAs),
-                    move |_event: &Event| {
-                        if s.inner.id.get().is_some() {
-                            s.refresh();
-                        }
-                    },
-                );
-            }
         }
 
         // ── reactive accessors ──

@@ -305,6 +305,7 @@ features:
     - TrashInfo
     - WorkInfo
     undoable: false
+    read_only: true
     long_operation: true
     dto_in:
       name: SaveAsDto

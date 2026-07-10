@@ -31,6 +31,8 @@ use frontend::common::event::Event;
 use frontend::import_management::ImportPlumeCreatorFileDto;
 use frontend::work_management::LoadWorkDto;
 
+use super::long_op::{event_id, parse_payload, payload_id};
+
 /// Update-in-place key for the single toast the import drives through its
 /// lifecycle (loading → progress → success / cancelled / error).
 const IMPORT_TOAST_ID: &str = "import.plume";
@@ -440,27 +442,6 @@ impl ImportPlumeViewModel {
                 )),
         );
     }
-}
-
-/// Parse a `LongOperation` event's JSON payload (`{"id":…, "percentage":…, …}`).
-fn parse_payload(event: &Event) -> Option<serde_json::Value> {
-    event
-        .data
-        .as_ref()
-        .and_then(|s| serde_json::from_str(s).ok())
-}
-
-/// The operation id inside an already-parsed payload.
-fn payload_id(payload: &serde_json::Value) -> Option<&str> {
-    payload.get("id").and_then(|i| i.as_str())
-}
-
-/// The operation id carried by an event (parse + extract in one step).
-fn event_id(event: &Event) -> Option<String> {
-    parse_payload(event)?
-        .get("id")
-        .and_then(|i| i.as_str())
-        .map(str::to_string)
 }
 
 #[cfg(test)]

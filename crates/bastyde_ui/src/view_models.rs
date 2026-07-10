@@ -37,8 +37,10 @@
 mod chapter;
 mod editors;
 mod import_plume;
+mod long_op;
 mod new_work;
 mod outline;
+mod save_as;
 mod settings;
 mod welcome;
 
@@ -47,5 +49,6 @@ pub use editors::{EditorsViewModel, Side};
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;
+pub use save_as::SaveAsViewModel;
 pub use settings::{EditorTypography, EditorTypographySet, SettingsViewModel};
 pub use welcome::WelcomeViewModel;

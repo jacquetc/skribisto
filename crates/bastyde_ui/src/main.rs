@@ -53,7 +53,7 @@ use app::{App, PendingExit};
 use app_ids::AppIds;
 use models::OpenDocsStore;
 use singles::{SingleWork, SingleWorkInfo};
-use view_models::{ImportPlumeViewModel, OutlineViewModel};
+use view_models::{ImportPlumeViewModel, OutlineViewModel, SaveAsViewModel};
 
 /// The currently-open project's path (from `WorkInfo`), if any.
 fn current_project_path(ctx: &AppContext) -> Option<String> {
@@ -311,6 +311,10 @@ fn main() {
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
     let import_plume = ImportPlumeViewModel::new(app_ctx.clone());
+    // The Save-As view-model records the new path/shape into WorkInfo on the UI
+    // thread when a background "Save As" completes (save_as itself is read-only).
+    // Registered as app-state so `App::build` routes the long-operation events to it.
+    let save_as_vm = SaveAsViewModel::new(app_ctx.clone(), ids.clone());
     // The title-bar menu lives outside `App` (no `ctx.settings()` there), so the
     // autosave setting is mirrored into this plain signal by `App::build` and read
     // by the menu to hide the "Save" item. Seeded from the persisted value.
@@ -362,6 +366,7 @@ fn main() {
         .app_state(single_work_info.clone())
         .app_state(outline.clone())
         .app_state(import_plume.clone())
+        .app_state(save_as_vm.clone())
         // Bind this instance's IPC listener (multi-process window switching); an
         // incoming raise request focuses the captured main window.
         .on_ready(|proxy| ipc::spawn_listener(proxy))
@@ -438,11 +443,14 @@ fn main() {
                             let menu_work = single_work.clone();
                             let menu_work_info = single_work_info.clone();
                             let menu_autosave = autosave_menu.clone();
+                            let menu_save_as = save_as_vm.clone();
                             let menu = MenuModel::new().menu(tr!(menu_file()), move |m| {
                                 let file_ctx = menu_ctx.clone();
                                 let folder_ctx = menu_ctx.clone();
                                 let backup_ctx = menu_ctx.clone();
                                 let folder_work = menu_work.clone();
+                                let save_as_file_vm = menu_save_as.clone();
+                                let save_as_folder_vm = menu_save_as.clone();
                                 // A work is open iff its WorkInfo shape is known.
                                 let show_open = menu_work_info.shape().map(|s| s.is_some());
                                 // Bug 2: offer only the *other* shape — a zip project
@@ -493,6 +501,7 @@ fn main() {
                                 .item(MenuEntry::new(tr!(menu_save_as_file())).visible(show_save_file).on_activate(
                                     move |ectx| {
                                         let ctx = file_ctx.clone();
+                                        let vm = save_as_file_vm.clone();
                                         let req = FileDialogRequest::save_file()
                                             .title("Save as single .skrib file")
                                             .default_file_name(format!("{}.skrib", project_stem(&ctx)))
@@ -507,12 +516,19 @@ fn main() {
                                                         as_folder: false,
                                                     },
                                                 ) {
-                                                    Ok(_) => ectx2.show_toast(Toast::info(
-                                                        tr!(saving_as_file(target = target)),
-                                                    )),
-                                                    Err(e) => ectx2.show_toast(Toast::error(
-                                                        tr!(save_error(error = e.to_string())),
-                                                    )),
+                                                    // The background op is read-only; `vm` records the
+                                                    // new path/shape into WorkInfo on completion.
+                                                    Ok(op_id) => {
+                                                        vm.start(op_id, false);
+                                                        ectx2.show_toast(Toast::info(
+                                                            tr!(saving_as_file(target = target)),
+                                                        ));
+                                                    }
+                                                    Err(e) => {
+                                                        ectx2.show_toast(Toast::error(
+                                                            tr!(save_error(error = e.to_string())),
+                                                        ));
+                                                    }
                                                 };
                                             }
                                         });
@@ -536,6 +552,7 @@ fn main() {
                                         let name = sanitize_folder_name(&raw);
                                         let req = FileDialogRequest::pick_folder()
                                             .title("Choose a parent folder for the work");
+                                        let vm = save_as_folder_vm.clone();
                                         let _ = ectx.pick_folder(req, move |res, ectx2| {
                                             if let FileDialogResult::Folder(Some(path)) = res {
                                                 let target = path
@@ -549,12 +566,19 @@ fn main() {
                                                         as_folder: true,
                                                     },
                                                 ) {
-                                                    Ok(_) => ectx2.show_toast(Toast::info(
-                                                        tr!(saving_as_folder(target = target)),
-                                                    )),
-                                                    Err(e) => ectx2.show_toast(Toast::error(
-                                                        tr!(save_error(error = e.to_string())),
-                                                    )),
+                                                    // The background op is read-only; `vm` records the
+                                                    // new path/shape into WorkInfo on completion.
+                                                    Ok(op_id) => {
+                                                        vm.start(op_id, true);
+                                                        ectx2.show_toast(Toast::info(
+                                                            tr!(saving_as_folder(target = target)),
+                                                        ));
+                                                    }
+                                                    Err(e) => {
+                                                        ectx2.show_toast(Toast::error(
+                                                            tr!(save_error(error = e.to_string())),
+                                                        ));
+                                                    }
                                                 };
                                             }
                                         });
