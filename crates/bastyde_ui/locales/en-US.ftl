@@ -44,6 +44,13 @@ create-tooltip-sibling = Add a new { $kind } after “{ $target }”.
 create-tooltip-parent-sibling = Add a new { $kind } after the enclosing “{ $target }”.
 create-tooltip-top = Add a new { $kind } at the top level.
 
+## Promote — convert a binder item to its paired type
+ctx-promote-to = Promote to { $target }
+promote-chapter-folder = Chapter folder
+promote-flat-chapter = Flat chapter
+promote-blocked-title = Chapter not empty
+promote-blocked-text = This chapter still holds { $count } item(s). Move or trash them before converting it to a flat chapter.
+
 ## Settings
 language = Language
 theme = Theme

@@ -84,6 +84,7 @@ pub enum BinderItemManagementEvent {
     MoveItems,
     MergeTwoScenes,
     SplitScene,
+    Promote,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]

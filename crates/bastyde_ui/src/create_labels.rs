@@ -11,6 +11,7 @@ use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*; // tr!
 use bastyde::widgets::tooltip::TooltipContent;
 
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use skribisto_model::{CreateType, Recommendation, Relation};
 
 /// The human label for a logical [`CreateType`] — the SplitButton title text and
@@ -26,6 +27,25 @@ pub fn recommendation_label(create_type: CreateType) -> LocalizedString {
         CreateType::NoteFolder => tr!(create_note_folder()),
         CreateType::Folder => tr!(create_folder()),
         CreateType::EndOfBook => tr!(create_book_end()),
+    }
+}
+
+/// The label for a concrete promote target `(role, sub_role)` — used in the
+/// "Promote to <target>" menu item. Unlike the Create menu (which hides the two
+/// chapter encodings behind one "Chapter"), promote is exactly where the writer
+/// chooses between them, so they get distinct labels.
+pub fn promote_target_label(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> LocalizedString {
+    use BinderItemRole::{Folder, Item};
+    use BinderItemSubRole as S;
+    match (role, sub_role) {
+        (Folder, S::Chapter) => tr!(promote_chapter_folder()),
+        (Item, S::ChapterScene) => tr!(promote_flat_chapter()),
+        (Item, S::Scene) => tr!(create_scene()),
+        (Item, S::Note) => tr!(create_note()),
+        (Folder, S::None) => tr!(create_folder()),
+        (Folder, S::Note) => tr!(create_note_folder()),
+        // Unreachable — promote_target only yields the six pairs above.
+        _ => tr!(create_folder()),
     }
 }
 

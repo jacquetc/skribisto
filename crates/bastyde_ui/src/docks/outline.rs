@@ -13,8 +13,8 @@ use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     ActivateOn, DockOpenLocation, DockSide, DockWidget, Expand, FocusScope, HStack, MenuItem,
-    MenuList, Padding, StandardTreeItem, ToolbarItem, TraversalScopePolicy, TreeRow, TreeView,
-    VStack,
+    MenuList, MessageBox, MessageBoxButtons, Padding, StandardTreeItem, ToolbarItem,
+    TraversalScopePolicy, TreeRow, TreeView, VStack,
 };
 
 use frontend::AppContext;
@@ -223,17 +223,43 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
     let rename = outline.clone();
     let duplicate = outline.clone();
     let dup_batch = batch.clone();
-    let trash = outline;
+    let trash = outline.clone();
     let trash_batch = batch;
-    MenuList::new()
+
+    let mut menu = MenuList::new()
         // Context-dependent "Add ▸" submenu: the recommended new-item types for
         // this row, in recommended order, each with a rich tooltip. Mirrors the
         // header "Create" SplitButton but anchored on the right-clicked row.
         // (Replaces the old generic New Item / New Folder entries.)
         .item(MenuItem::submenu(tr!(ctx_add()), move || {
             Box::new(add_recommendations_menu(add_outline.clone(), key)) as Box<dyn Widget>
-        }))
-        .separator()
+        }));
+
+    // "Promote to <target>" — convert this item to its paired type, when it has
+    // one (flat Chapter ↔ Chapter folder, Scene ↔ Note, Folder ↔ Note folder).
+    // Demoting a non-empty Chapter folder to a flat Chapter is blocked behind a
+    // "move or trash its contents first" prompt.
+    if let Some((target_role, target_sub_role)) = outline.promote_target_of(key) {
+        let label = crate::create_labels::promote_target_label(&target_role, &target_sub_role);
+        let promote_vm = outline.clone();
+        menu = menu.separator().item(
+            MenuItem::new(tr!(ctx_promote_to(target = label.resolve_now())))
+                .icon(crate::binder_icons::sub_role_icon(&target_sub_role))
+                .on_activate_fn(move |ctx| {
+                    let blocked = promote_vm.demote_blocked_children(key);
+                    if blocked > 0 {
+                        MessageBox::warning(tr!(promote_blocked_title()))
+                            .text(tr!(promote_blocked_text(count = blocked.to_string())))
+                            .buttons(MessageBoxButtons::Ok)
+                            .present(ctx);
+                    } else {
+                        promote_vm.promote(key);
+                    }
+                }),
+        );
+    }
+
+    menu.separator()
         .item(
             MenuItem::new(tr!(ctx_rename()))
                 .on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),

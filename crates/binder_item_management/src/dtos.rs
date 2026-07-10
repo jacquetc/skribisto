@@ -25,7 +25,6 @@ pub enum MovePlace {
     After,
     Into,
 }
-
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct MergeTwoScenesDto {
     pub target_id: u64,
@@ -37,4 +36,8 @@ pub struct SplitSceneDto {
     pub before_text: String,
     pub after_text: String,
     pub new_title: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct PromoteDto {
+    pub item_id: u64,
 }

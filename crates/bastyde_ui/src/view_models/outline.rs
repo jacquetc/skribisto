@@ -24,7 +24,7 @@ use frontend::direct_access::{
     CreateBinderDto, CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto,
 };
 
-use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace};
+use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace, PromoteDto};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 
 use skribisto_model::{Recommendation, Relation, SubRoleExt};
@@ -369,6 +369,61 @@ impl OutlineViewModel {
             return;
         };
         self.create_item_at(binder, index, indent, role, sub_role);
+    }
+
+    // ── promote / demote (convert a binder item to its paired type) ──
+
+    /// The paired promote target for a row, if any — `(role, sub_role)` of the
+    /// type this item would become (see `skribisto_model::promote_target`).
+    pub fn promote_target_of(
+        &self,
+        key: BinderTreeKey,
+    ) -> Option<(BinderItemRole, BinderItemSubRole)> {
+        let BinderTreeKey::Item(item_id) = key else {
+            return None;
+        };
+        let dto = self.item_dto(item_id)?;
+        skribisto_model::promote_target(&dto.role, &dto.sub_role)
+    }
+
+    /// The number of child items that block demoting `key` — non-zero only when
+    /// `key` is a container becoming a leaf (Chapter folder → flat Chapter) and it
+    /// still holds items. The caller shows a "move or trash them first" prompt.
+    pub fn demote_blocked_children(&self, key: BinderTreeKey) -> usize {
+        let BinderTreeKey::Item(item_id) = key else {
+            return 0;
+        };
+        let Some((target_role, _)) = self.promote_target_of(key) else {
+            return 0;
+        };
+        let Some(dto) = self.item_dto(item_id) else {
+            return 0;
+        };
+        // Only a container → leaf conversion is gated on emptiness.
+        if !(dto.role == BinderItemRole::Folder && target_role == BinderItemRole::Item) {
+            return 0;
+        }
+        let Some(binder) = self.model.binder_of(&key) else {
+            return 0;
+        };
+        let (order, meta) = self.ordered_meta(binder);
+        let Some(pos) = order.iter().position(|&x| x == item_id) else {
+            return 0;
+        };
+        Self::subtree_end(&order, &meta, pos, dto.indent) - (pos + 1)
+    }
+
+    /// Promote/demote a binder item to its paired type (undoable). No-op if the
+    /// item has no promote pair. The demote-empty guard is the caller's job
+    /// (`demote_blocked_children`); this trusts it.
+    pub fn promote(&self, key: BinderTreeKey) {
+        let BinderTreeKey::Item(item_id) = key else {
+            return;
+        };
+        let dto = PromoteDto { item_id };
+        if binder_item_management_commands::promote(&self.app_ctx, self.stack(), &dto).is_ok() {
+            self.reload();
+        }
     }
 
     /// The open project's chapter storage mode — how a `CreateType::Chapter` is
@@ -1143,6 +1198,50 @@ mod tests {
                 expected
             );
             assert_eq!(outline.recommendations_for_key(None), expected);
+        }
+
+        #[test]
+        fn promote_flips_scene_to_note() {
+            let (outline, binder) = seed();
+            let scene =
+                seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 0, 0);
+            outline.promote(BinderTreeKey::Item(scene));
+            let dto = outline.item_dto(scene).unwrap();
+            assert_eq!(dto.role, BinderItemRole::Item);
+            assert_eq!(dto.sub_role, BinderItemSubRole::Note);
+        }
+
+        #[test]
+        fn promote_flips_chapterscene_to_chapter_folder() {
+            let (outline, binder) = seed();
+            let cs = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::ChapterScene,
+                0,
+                0,
+            );
+            outline.promote(BinderTreeKey::Item(cs));
+            let dto = outline.item_dto(cs).unwrap();
+            assert_eq!(dto.role, BinderItemRole::Folder);
+            assert_eq!(dto.sub_role, BinderItemSubRole::Chapter);
+        }
+
+        #[test]
+        fn demote_blocked_children_counts_the_subtree() {
+            let (outline, binder) = seed();
+            let chapter =
+                seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Chapter, 0, 0);
+            let s1 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 1);
+            let _s2 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 2);
+            // The chapter folder holds two scenes → demoting to a flat chapter is blocked.
+            assert_eq!(
+                outline.demote_blocked_children(BinderTreeKey::Item(chapter)),
+                2
+            );
+            // A leaf scene never blocks (it has no promote-to-leaf demote).
+            assert_eq!(outline.demote_blocked_children(BinderTreeKey::Item(s1)), 0);
         }
     }
 }

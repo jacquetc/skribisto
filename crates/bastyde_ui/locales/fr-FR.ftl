@@ -44,6 +44,13 @@ create-tooltip-sibling = Ajouter un(e) { $kind } après « { $target } ».
 create-tooltip-parent-sibling = Ajouter un(e) { $kind } après le conteneur « { $target } ».
 create-tooltip-top = Ajouter un(e) { $kind } au niveau supérieur.
 
+## Promouvoir — convertir un élément du classeur vers son type apparié
+ctx-promote-to = Promouvoir en { $target }
+promote-chapter-folder = Dossier de chapitre
+promote-flat-chapter = Chapitre à plat
+promote-blocked-title = Chapitre non vide
+promote-blocked-text = Ce chapitre contient encore { $count } élément(s). Déplacez-les ou mettez-les à la corbeille avant de le convertir en chapitre à plat.
+
 ## Paramètres
 language = Langue
 theme = Thème
