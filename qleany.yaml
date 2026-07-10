@@ -544,6 +544,16 @@ features:
         type: string
       - name: new_title
         type: string
+  - name: promote
+    entities:
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: PromoteDto
+      fields:
+      - name: item_id
+        type: uinteger
 - name: handling_app_lifecycle
   use_cases:
   - name: initialize_app

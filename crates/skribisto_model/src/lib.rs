@@ -368,6 +368,47 @@ pub fn recommendations_root() -> Vec<Recommendation> {
     assemble(vec![(CreateType::Book, Relation::Sibling)])
 }
 
+/// The paired type a binder item promotes/demotes to — a bidirectional toggle.
+/// `None` if the item's `(role, sub_role)` has no promote pair.
+///
+/// Pairs: flat Chapter (`Item/ChapterScene`) ↔ Chapter folder (`Folder/Chapter`),
+/// Scene ↔ Note, and Folder ↔ Note folder. Converting a container to a leaf
+/// (Chapter folder → flat Chapter) requires the folder to be empty first — the
+/// caller enforces that; this function only names the target.
+pub fn promote_target(role: &Role, sub_role: &SubRole) -> Option<(Role, SubRole)> {
+    use Role::{Folder, Item};
+    use SubRole as S;
+    Some(match (role, sub_role) {
+        (Item, S::ChapterScene) => (Folder, S::Chapter),
+        (Folder, S::Chapter) => (Item, S::ChapterScene),
+        (Item, S::Scene) => (Item, S::Note),
+        (Item, S::Note) => (Item, S::Scene),
+        (Folder, S::None) => (Folder, S::Note),
+        (Folder, S::Note) => (Folder, S::None),
+        _ => return None,
+    })
+}
+
+/// Remap one content role into the promote target's vocabulary, so prose
+/// survives a type change: `SceneText` ↔ `NoteText` for Scene↔Note; anything the
+/// target already allows is kept. `None` means the content role has no home in
+/// the target (not expected for the supported pairs — the caller may drop it).
+pub fn remap_content(
+    target_role: &Role,
+    target_sub_role: &SubRole,
+    content: &ContentRole,
+) -> Option<ContentRole> {
+    if content_allowed(target_role, target_sub_role, content) {
+        return Some(content.clone());
+    }
+    let swapped = match content {
+        SceneText => NoteText,
+        NoteText => SceneText,
+        other => other.clone(),
+    };
+    content_allowed(target_role, target_sub_role, &swapped).then_some(swapped)
+}
+
 /// Build the final ordered list: the context picks, then the canonical tail of
 /// every remaining `CreateType`, each as `Sibling`.
 fn assemble(picks: Vec<(CreateType, Relation)>) -> Vec<Recommendation> {
@@ -554,5 +595,58 @@ mod tests {
     fn root_recommends_book_first() {
         let recs = recommendations_root();
         assert_eq!(recs[0], rec(CreateType::Book, Relation::Sibling));
+    }
+
+    #[test]
+    fn promote_pairs_are_symmetric_toggles() {
+        for (r, sr) in [
+            (Role::Item, SubRole::ChapterScene),
+            (Role::Folder, SubRole::Chapter),
+            (Role::Item, SubRole::Scene),
+            (Role::Item, SubRole::Note),
+            (Role::Folder, SubRole::None),
+            (Role::Folder, SubRole::Note),
+        ] {
+            let (tr, tsr) = promote_target(&r, &sr).expect("has a promote pair");
+            assert!(is_valid_combination(&tr, &tsr));
+            // Toggling twice returns to the original type.
+            assert_eq!(promote_target(&tr, &tsr), Some((r, sr)));
+        }
+    }
+
+    #[test]
+    fn non_promotable_types_have_no_pair() {
+        assert_eq!(promote_target(&Role::Folder, &SubRole::Book), None);
+        assert_eq!(promote_target(&Role::Item, &SubRole::BookEnd), None);
+        assert_eq!(promote_target(&Role::Item, &SubRole::Text), None);
+    }
+
+    #[test]
+    fn scene_note_promote_remaps_prose_losslessly() {
+        // Scene → Note: SceneText becomes NoteText; SynopsisText kept.
+        assert_eq!(
+            remap_content(&Role::Item, &SubRole::Note, &SceneText),
+            Some(NoteText)
+        );
+        assert_eq!(
+            remap_content(&Role::Item, &SubRole::Note, &SynopsisText),
+            Some(SynopsisText)
+        );
+        // Note → Scene: NoteText becomes SceneText.
+        assert_eq!(
+            remap_content(&Role::Item, &SubRole::Scene, &NoteText),
+            Some(SceneText)
+        );
+    }
+
+    #[test]
+    fn chapter_promote_is_content_lossless() {
+        // Every ChapterScene content role is already allowed by Folder/Chapter.
+        for c in [ChapterTitle, SceneText, SynopsisText] {
+            assert_eq!(
+                remap_content(&Role::Folder, &SubRole::Chapter, &c),
+                Some(c.clone())
+            );
+        }
     }
 }
