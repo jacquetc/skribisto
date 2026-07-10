@@ -8,9 +8,9 @@
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_commands, binder_item_commands, binder_item_management_commands, content_commands,
-    root_commands, system_commands, trash_info_commands, trash_management_commands,
-    undo_redo_commands, work_commands,
+    binder_commands, binder_item_commands, binder_item_management_commands, binder_tag_commands,
+    content_commands, root_commands, system_commands, trash_info_commands,
+    trash_management_commands, undo_redo_commands, work_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
@@ -19,8 +19,9 @@ use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::common::types::EntityId;
 use frontend::direct_access::{
-    BinderRelationshipDto, CreateBinderDto, CreateBinderItemDto, CreateContentDto, CreateRootDto,
-    CreateSystemDto, CreateWorkDto, WorkRelationshipDto,
+    BinderItemRelationshipDto, BinderRelationshipDto, CreateBinderDto, CreateBinderItemDto,
+    CreateBinderTagDto, CreateContentDto, CreateRootDto, CreateSystemDto, CreateWorkDto,
+    WorkRelationshipDto,
 };
 
 use binder_item_management::{
@@ -962,4 +963,75 @@ fn split_scene_undo_redo() {
     assert_eq!(scene_text(&fx, s), "A");
     assert_eq!(order(&fx.ctx, fx.binder2), vec![s, new_scene]);
     assert_eq!(scene_text(&fx, new_scene), "B");
+}
+
+fn item_tags(fx: &Fixture, item_id: EntityId) -> Vec<EntityId> {
+    binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Tags,
+    )
+    .expect("tags")
+}
+
+/// duplicate copies M2M tag links; undo (scoped restore) must delete the clone AND
+/// its tag junction while leaving the shared BinderTag itself intact.
+#[test]
+fn duplicate_reverts_cloned_tag_links() {
+    let fx = make_fixture();
+    let tag = binder_tag_commands::create_orphan_binder_tag(
+        &fx.ctx,
+        Some(fx.setup),
+        &CreateBinderTagDto {
+            created_at: now(),
+            updated_at: now(),
+            name: "Important".into(),
+            color: "#f00".into(),
+            text_color: "#fff".into(),
+        },
+    )
+    .expect("create tag")
+    .id;
+    let source = mk_scene(&fx, "Tagged");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source]);
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: source,
+            field: BinderItemRelationshipField::Tags,
+            right_ids: vec![tag],
+        },
+    )
+    .expect("tag the item");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    // The clone shares the tag link.
+    assert_eq!(item_tags(&fx, clone), vec![tag]);
+
+    // Undo removes the clone and its tag junction; the shared tag entity survives.
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &clone)
+            .unwrap()
+            .is_none()
+    );
+    assert!(item_tags(&fx, clone).is_empty(), "no dangling tag junction");
+    assert!(
+        binder_tag_commands::get_binder_tag(&fx.ctx, &tag)
+            .unwrap()
+            .is_some(),
+        "shared tag must not be deleted"
+    );
+    assert_eq!(item_tags(&fx, source), vec![tag], "source keeps its tag");
 }

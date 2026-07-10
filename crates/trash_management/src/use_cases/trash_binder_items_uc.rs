@@ -172,7 +172,7 @@ pub(crate) fn root_id(uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<Entit
     uow.get_all_root()?
         .into_iter()
         .next()
-        .map(|r: Root| r.id)
+        .map(|r| r.id)
         .ok_or_else(|| anyhow!("trash: no Root entity in store"))
 }
 

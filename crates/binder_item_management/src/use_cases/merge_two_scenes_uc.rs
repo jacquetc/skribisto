@@ -204,7 +204,7 @@ fn system_singleton(uow: &dyn MergeTwoScenesUnitOfWorkTrait) -> Result<EntityId>
     uow.get_all_system()?
         .into_iter()
         .next()
-        .map(|s: System| s.id)
+        .map(|s| s.id)
         .ok_or_else(|| anyhow!("merge_two_scenes: no System entity"))
 }
 
@@ -212,7 +212,7 @@ fn root_id(uow: &dyn MergeTwoScenesUnitOfWorkTrait) -> Result<EntityId> {
     uow.get_all_root()?
         .into_iter()
         .next()
-        .map(|r: Root| r.id)
+        .map(|r| r.id)
         .ok_or_else(|| anyhow!("merge_two_scenes: no Root entity"))
 }
 

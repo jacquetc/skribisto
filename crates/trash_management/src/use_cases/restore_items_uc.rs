@@ -16,7 +16,7 @@ use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::entities::{Binder, BinderItem, Root, System};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub trait RestoreItemsUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn RestoreItemsUnitOfWorkTrait>;
@@ -74,7 +74,7 @@ impl RestoreItemsUseCase {
 
         let mut restored_count: i64 = 0;
         let mut orphaned = false;
-        let mut consumed: Vec<EntityId> = Vec::new(); // TrashInfos to drop from the index
+        let mut consumed: HashSet<EntityId> = HashSet::new(); // TrashInfos to drop from the index
         let mut touched: Vec<EntityId> = Vec::new();
 
         for info_id in &info_ids {
@@ -103,7 +103,7 @@ impl RestoreItemsUseCase {
                         touched.push(binder_id);
                         touched.extend(item_ids);
                         restored_count += 1;
-                        consumed.push(*info_id);
+                        consumed.insert(*info_id);
                     }
                     None => orphaned = true,
                 }
@@ -131,13 +131,13 @@ impl RestoreItemsUseCase {
                         reactivate(uow.as_ref(), &subtree)?;
                         touched.extend(subtree);
                         restored_count += 1;
-                        consumed.push(*info_id);
+                        consumed.insert(*info_id);
                     }
                     None => orphaned = true,
                 }
             } else {
                 // A TrashInfo with neither relationship is stale — drop it.
-                consumed.push(*info_id);
+                consumed.insert(*info_id);
             }
         }
 
@@ -219,7 +219,7 @@ fn root_id(uow: &dyn RestoreItemsUnitOfWorkTrait) -> Result<EntityId> {
     uow.get_all_root()?
         .into_iter()
         .next()
-        .map(|r: Root| r.id)
+        .map(|r| r.id)
         .ok_or_else(|| anyhow!("restore_items: no Root entity in store"))
 }
 
