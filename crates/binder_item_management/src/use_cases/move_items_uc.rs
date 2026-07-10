@@ -1,6 +1,7 @@
 // Custom implementation: reorder / reparent a set of BinderItems (with their
-// contiguous subtrees) within or across Binders. Undoable via whole-store
-// snapshot/restore.
+// contiguous subtrees) within or across Binders. Undoable via a scoped
+// snapshot/restore of the affected binder subtree(s) (v1.8 restore reverts only
+// the subtree rooted at the snapshot's root ids).
 //
 // The binder's `binder_items` relationship is an ordered flat list; an item's
 // subtree is the contiguous run of following items whose `indent` is strictly
@@ -60,10 +61,10 @@ impl MoveItemsUseCase {
 
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        // Whole-store snapshot taken before any mutation (the `ids` arg is
-        // ignored by the store snapshot). On any early `return Err`, the uow is
-        // dropped and its transaction auto-rolls back.
-        let snap_before = uow.snapshot_binder(&[])?;
+        // The scoped snapshot is taken below, once the affected binders are known,
+        // so undo/redo revert exactly those subtrees. All resolution above the
+        // snapshot is read-only. On any early `return Err`, the uow is dropped and
+        // its transaction auto-rolls back.
 
         // Resolve the single source binder shared by all requested items.
         let src_groups = uow.get_binder_relationships_from_right_ids(
@@ -198,6 +199,13 @@ impl MoveItemsUseCase {
 
         let delta = base_indent - root_old_indent;
 
+        // Scoped snapshot of the affected binder subtree(s), taken now (after the
+        // read-only resolution, before the first mutation below).
+        let mut roots = vec![src_binder, dest_binder];
+        roots.sort();
+        roots.dedup();
+        let snap_before = uow.snapshot_binder(&roots)?;
+
         // Apply the reorder (relationship vec) — same- and cross-binder.
         let filtered_src: Vec<EntityId> = src_order
             .iter()
@@ -242,7 +250,7 @@ impl MoveItemsUseCase {
             uow.update_binder_item_multi(&updated)?;
         }
 
-        let snap_after = uow.snapshot_binder(&[])?;
+        let snap_after = uow.snapshot_binder(&roots)?;
         uow.commit()?;
         uow.publish_move_items_event(full_move_ids.clone(), None);
 

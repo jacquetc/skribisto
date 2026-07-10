@@ -9,8 +9,8 @@
 use frontend::AppContext;
 use frontend::commands::{
     binder_commands, binder_item_commands, binder_item_management_commands, content_commands,
-    system_commands, trash_info_commands, trash_management_commands, undo_redo_commands,
-    work_commands,
+    root_commands, system_commands, trash_info_commands, trash_management_commands,
+    undo_redo_commands, work_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
@@ -19,11 +19,13 @@ use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::common::types::EntityId;
 use frontend::direct_access::{
-    BinderRelationshipDto, CreateBinderDto, CreateBinderItemDto, CreateContentDto, CreateSystemDto,
-    CreateWorkDto, WorkRelationshipDto,
+    BinderRelationshipDto, CreateBinderDto, CreateBinderItemDto, CreateContentDto, CreateRootDto,
+    CreateSystemDto, CreateWorkDto, WorkRelationshipDto,
 };
 
-use binder_item_management::{DuplicateDto, MergeTwoScenesDto, MoveDto, MovePlace};
+use binder_item_management::{
+    DuplicateDto, MergeTwoScenesDto, MoveDto, MovePlace, PromoteDto, SplitSceneDto,
+};
 use trash_management::{RestoreItemsDto, TrashBinderDto, TrashBinderItemsDto};
 
 // ───────────────────────────── fixture helpers ─────────────────────────────
@@ -172,6 +174,19 @@ fn make_fixture() -> Fixture {
         },
     )
     .expect("wire work");
+
+    // A Root owning the System + Work, matching what initialize_app seeds in the
+    // real app (empty_trash's undo restores the Root-scoped subtree).
+    root_commands::create_orphan_root(
+        &ctx,
+        &CreateRootDto {
+            created_at: now(),
+            updated_at: now(),
+            system,
+            works: vec![work],
+        },
+    )
+    .expect("create root");
 
     Fixture {
         ctx,
@@ -859,4 +874,92 @@ fn merge_two_scenes_round_trip() {
             .len(),
         1
     );
+}
+
+// ─────────────────────── promote + split_scene undo/redo ───────────────────────
+
+fn has_content_role(fx: &Fixture, item_id: EntityId, role: ContentRole) -> bool {
+    let cids = binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .expect("contents");
+    cids.iter().any(|cid| {
+        content_commands::get_content(&fx.ctx, cid)
+            .ok()
+            .flatten()
+            .map(|c| c.role == role)
+            .unwrap_or(false)
+    })
+}
+
+/// promote toggles Scene<->Note and remaps SceneText<->NoteText; the scoped
+/// (item-rooted) snapshot must revert both on undo and redo.
+#[test]
+fn promote_undo_redo() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Scene");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "prose");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::promote(&fx.ctx, Some(stack), &PromoteDto { item_id: s })
+        .expect("promote");
+
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
+    assert!(has_content_role(&fx, s, ContentRole::NoteText));
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Scene);
+    assert!(has_content_role(&fx, s, ContentRole::SceneText));
+
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
+    assert!(has_content_role(&fx, s, ContentRole::NoteText));
+}
+
+/// split_scene creates a new scene after the source; the scoped (binder-rooted)
+/// snapshot must delete it on undo (restoring the source text) and re-add it on redo.
+#[test]
+fn split_scene_undo_redo() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Full");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "AB");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::split_scene(
+        &fx.ctx,
+        Some(stack),
+        &SplitSceneDto {
+            source_id: s,
+            before_text: "A".into(),
+            after_text: "B".into(),
+            new_title: "Second".into(),
+        },
+    )
+    .expect("split");
+
+    // Source keeps "A"; a new scene follows carrying "B".
+    assert_eq!(scene_text(&fx, s), "A");
+    let after = order(&fx.ctx, fx.binder2);
+    assert_eq!(after.len(), 2);
+    assert_eq!(after[0], s);
+    let new_scene = after[1];
+    assert_eq!(scene_text(&fx, new_scene), "B");
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(scene_text(&fx, s), "AB");
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![s]);
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &new_scene)
+            .unwrap()
+            .is_none()
+    );
+
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
+    assert_eq!(scene_text(&fx, s), "A");
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![s, new_scene]);
+    assert_eq!(scene_text(&fx, new_scene), "B");
 }

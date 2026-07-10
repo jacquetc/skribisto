@@ -27,9 +27,9 @@ pub fn trash_binder_items(
 ) -> Result<()> {
     let uow_context = TrashBinderItemsUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = TrashBinderItemsUseCase::new(Box::new(uow_context));
-    uc.execute(dto)?;
+    let return_dto = uc.execute(dto)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
-    Ok(())
+    Ok(return_dto)
 }
 
 pub fn trash_binder(
@@ -41,9 +41,9 @@ pub fn trash_binder(
 ) -> Result<()> {
     let uow_context = TrashBinderUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = TrashBinderUseCase::new(Box::new(uow_context));
-    uc.execute(dto)?;
+    let return_dto = uc.execute(dto)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
-    Ok(())
+    Ok(return_dto)
 }
 
 pub fn restore_items(
@@ -68,7 +68,7 @@ pub fn empty_trash(
 ) -> Result<()> {
     let uow_context = EmptyTrashUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = EmptyTrashUseCase::new(Box::new(uow_context));
-    uc.execute()?;
+    let return_dto = uc.execute()?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
-    Ok(())
+    Ok(return_dto)
 }

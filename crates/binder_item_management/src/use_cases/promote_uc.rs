@@ -2,9 +2,10 @@
 // (flat Chapter <-> Chapter folder, Scene <-> Note, Folder <-> Note folder). The
 // target is derived from the item's current (role, sub_role); its content roles
 // are remapped into the target's vocabulary so prose survives (SceneText <->
-// NoteText). The item keeps its place in the binder. Undoable via whole-binder
-// snapshot/restore. The caller (UI) enforces the "empty folder before demoting a
-// Chapter folder to a flat Chapter" rule.
+// NoteText). The item keeps its place in the binder. Undoable via a scoped
+// snapshot/restore of the item's own subtree (item + its Content rows). The
+// caller (UI) enforces the "empty folder before demoting a Chapter folder to a
+// flat Chapter" rule.
 use crate::PromoteDto;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
@@ -19,11 +20,11 @@ pub trait PromoteUnitOfWorkFactoryTrait: Send + Sync {
 
 // The same macro set must appear on the impl block in
 // ../units_of_work/promote_uow.rs.
-#[macros::uow_action(entity = "Binder", action = "Snapshot")]
-#[macros::uow_action(entity = "Binder", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "Update")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
+#[macros::uow_action(entity = "BinderItem", action = "Snapshot")]
+#[macros::uow_action(entity = "BinderItem", action = "Restore")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 pub trait PromoteUnitOfWorkTrait: CommandUnitOfWork {
@@ -50,7 +51,7 @@ impl PromoteUseCase {
 
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        let snap_before = uow.snapshot_binder(&[])?;
+        let snap_before = uow.snapshot_binder_item(&[item_id])?;
 
         let item = uow
             .get_binder_item_multi(&[item_id])?
@@ -93,7 +94,7 @@ impl PromoteUseCase {
             }
         }
 
-        let snap_after = uow.snapshot_binder(&[])?;
+        let snap_after = uow.snapshot_binder_item(&[item_id])?;
         uow.commit()?;
         uow.publish_promote_event(vec![item_id], None);
 
@@ -113,7 +114,7 @@ impl UndoRedoCommand for PromoteUseCase {
             .ok_or_else(|| anyhow!("promote: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_binder(snap)?;
+        uow.restore_binder_item(snap)?;
         uow.commit()?;
         Ok(())
     }
@@ -125,7 +126,7 @@ impl UndoRedoCommand for PromoteUseCase {
             .ok_or_else(|| anyhow!("promote: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_binder(snap)?;
+        uow.restore_binder_item(snap)?;
         uow.commit()?;
         Ok(())
     }

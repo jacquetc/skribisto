@@ -2,7 +2,10 @@
 // System.trash_infos. Trashed binders (with their items + contents) are removed
 // and dropped from their Work; trashed item subtrees (with their contents) are
 // removed and dropped from their binder's order. All TrashInfos are removed and
-// the index cleared. Undoable via whole-store snapshot/restore.
+// the index cleared. Undoable via a Root-scoped snapshot/restore: the operation
+// spans both the Work trunk (items/binders) and the System trunk (TrashInfo), so
+// the whole tree is the undo scope. (When TrashInfo moves under Work in the
+// deferred multi-Work reparent, this becomes non-undoable + clear-stacks.)
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
@@ -10,7 +13,7 @@ use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{BinderItem, System, Work};
+use common::entities::{BinderItem, Root, System, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
@@ -33,8 +36,9 @@ pub trait EmptyTrashUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "RemoveMulti")]
-#[macros::uow_action(entity = "Binder", action = "Snapshot")]
-#[macros::uow_action(entity = "Binder", action = "Restore")]
+#[macros::uow_action(entity = "Root", action = "GetAll")]
+#[macros::uow_action(entity = "Root", action = "Snapshot")]
+#[macros::uow_action(entity = "Root", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]
@@ -61,7 +65,7 @@ impl EmptyTrashUseCase {
     pub fn execute(&mut self) -> Result<()> {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        let snap_before = uow.snapshot_binder(&[])?;
+        // The Root-scoped snapshot is taken below, after the read-only planning loop.
 
         let system = system_singleton(uow.as_ref())?;
         let trash_infos =
@@ -122,6 +126,16 @@ impl EmptyTrashUseCase {
             }
         }
 
+        // Root-scoped snapshot, taken now (after the read-only planning loop above,
+        // before the first mutation below).
+        let root_id = uow
+            .get_all_root()?
+            .into_iter()
+            .next()
+            .map(|r| r.id)
+            .ok_or_else(|| anyhow!("empty_trash: no Root entity"))?;
+        let snap_before = uow.snapshot_root(&[root_id])?;
+
         // Drop removed item subtrees from their surviving binders' order.
         for (binder_id, dropped) in &drop_from_binder {
             let dropped_set: HashSet<EntityId> = dropped.iter().copied().collect();
@@ -165,7 +179,7 @@ impl EmptyTrashUseCase {
         }
         uow.set_system_relationship(&system.id, &SystemRelationshipField::TrashInfos, &[])?;
 
-        let snap_after = uow.snapshot_binder(&[])?;
+        let snap_after = uow.snapshot_root(&[root_id])?;
         uow.commit()?;
         uow.publish_empty_trash_event(remove_items.clone(), None);
 
@@ -213,7 +227,7 @@ impl UndoRedoCommand for EmptyTrashUseCase {
             .ok_or_else(|| anyhow!("empty_trash: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_binder(snap)?;
+        uow.restore_root(snap)?;
         uow.commit()?;
         Ok(())
     }
@@ -225,7 +239,7 @@ impl UndoRedoCommand for EmptyTrashUseCase {
             .ok_or_else(|| anyhow!("empty_trash: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_binder(snap)?;
+        uow.restore_root(snap)?;
         uow.commit()?;
         Ok(())
     }

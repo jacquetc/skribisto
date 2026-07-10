@@ -7,7 +7,7 @@ use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Content, System, TrashInfo, Work};
+use common::entities::{Binder, BinderItem, Content, Root, System, TrashInfo, Work};
 use common::event::TrashManagementEvent::EmptyTrash;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -121,8 +121,9 @@ impl CommandUnitOfWork for EmptyTrashUnitOfWork {
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "RemoveMulti")]
-#[macros::uow_action(entity = "Binder", action = "Snapshot")]
-#[macros::uow_action(entity = "Binder", action = "Restore")]
+#[macros::uow_action(entity = "Root", action = "GetAll")]
+#[macros::uow_action(entity = "Root", action = "Snapshot")]
+#[macros::uow_action(entity = "Root", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]

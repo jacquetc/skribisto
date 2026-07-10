@@ -1,7 +1,7 @@
 // Custom implementation: deep-copy each selected BinderItem subtree (items +
 // their Content rows + tag links, NOT references) and insert each new subtree
-// immediately after its source subtree in the binder. Undoable via whole-store
-// snapshot/restore.
+// immediately after its source subtree in the binder. Undoable via a scoped
+// snapshot/restore of the source binder subtree.
 use crate::DuplicateDto;
 use crate::DuplicateReturnDto;
 use anyhow::{Result, anyhow};
@@ -56,7 +56,7 @@ impl DuplicateUseCase {
 
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        let snap_before = uow.snapshot_binder(&[])?;
+        // The scoped snapshot is taken below, once the source binder is known.
 
         // All requested items must share one source binder.
         let groups = uow.get_binder_relationships_from_right_ids(
@@ -76,6 +76,9 @@ impl DuplicateUseCase {
                 "duplicate: some items are not in the source binder"
             ));
         }
+
+        // Scoped snapshot of the source binder subtree, before the first mutation.
+        let snap_before = uow.snapshot_binder(&[binder])?;
 
         let order = uow.get_binder_relationship(&binder, &BinderRelationshipField::BinderItems)?;
         let mut indent: HashMap<EntityId, i64> = HashMap::new();
@@ -194,7 +197,7 @@ impl DuplicateUseCase {
         }
         uow.set_binder_relationship(&binder, &BinderRelationshipField::BinderItems, &new_order)?;
 
-        let snap_after = uow.snapshot_binder(&[])?;
+        let snap_after = uow.snapshot_binder(&[binder])?;
         uow.commit()?;
         uow.publish_duplicate_event(new_root_ids.clone(), None);
 

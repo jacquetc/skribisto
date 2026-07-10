@@ -2,7 +2,7 @@
 // the text before the caret (`before_text`); a new Scene is created immediately
 // after A carrying the text after the caret (`after_text`). The Djot-aware text
 // split is done UI-side; this use case does only the atomic structural change.
-// Undoable via whole-binder snapshot/restore.
+// Undoable via a scoped snapshot/restore of the source's binder subtree.
 use crate::SplitSceneDto;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
@@ -56,7 +56,7 @@ impl SplitSceneUseCase {
 
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        let snap_before = uow.snapshot_binder(&[])?;
+        // The scoped snapshot is taken below, once the source's binder is known.
 
         // Locate the source's binder.
         let groups = uow.get_binder_relationships_from_right_ids(
@@ -80,6 +80,9 @@ impl SplitSceneUseCase {
         ) {
             return Err(anyhow!("split_scene: source is not a scene"));
         }
+
+        // Scoped snapshot of the source's binder subtree, before the first mutation.
+        let snap_before = uow.snapshot_binder(&[binder])?;
 
         let now = chrono::Utc::now();
 
@@ -157,7 +160,7 @@ impl SplitSceneUseCase {
         new_order.extend_from_slice(&order[pos + 1..]);
         uow.set_binder_relationship(&binder, &BinderRelationshipField::BinderItems, &new_order)?;
 
-        let snap_after = uow.snapshot_binder(&[])?;
+        let snap_after = uow.snapshot_binder(&[binder])?;
         uow.commit()?;
         uow.publish_split_scene_event(vec![source, new_item.id], None);
 

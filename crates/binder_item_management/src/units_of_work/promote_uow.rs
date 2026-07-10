@@ -107,11 +107,11 @@ impl CommandUnitOfWork for PromoteUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/promote_uc.rs
 //
-#[macros::uow_action(entity = "Binder", action = "Snapshot")]
-#[macros::uow_action(entity = "Binder", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "Update")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
+#[macros::uow_action(entity = "BinderItem", action = "Snapshot")]
+#[macros::uow_action(entity = "BinderItem", action = "Restore")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 impl PromoteUnitOfWorkTrait for PromoteUnitOfWork {
