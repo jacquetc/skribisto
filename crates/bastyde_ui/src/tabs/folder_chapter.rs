@@ -65,7 +65,21 @@ fn full_chapter_pane(tab: &ContentTab) -> impl Widget {
             .child(WireOnBuild::new(vm.clone()))
             .child(shared::vspace(12.0))
             .child(shared::centered(chapter_header(&vm), &cw))
-            .child(shared::vspace(4.0))
+            .child(shared::vspace(4.0));
+        // The chapter folder's *own* prose (symmetric with the flat `ChapterScene`):
+        // the chapter's own writing surface, above its scenes. Present e.g. after
+        // promoting a flat chapter — this is where that prose stays editable.
+        if let Some(m) = &tab.main {
+            col = col
+                .child(shared::writing_section(
+                    &m.doc,
+                    &cw,
+                    tab.main_typography(),
+                    tab.mark_dirty_fn(),
+                ))
+                .child(shared::vspace(6.0));
+        }
+        col = col
             .child(Repeater::new(vm.scenes(), factory))
             .child(shared::vspace(10.0))
             .child(shared::centered(add_scene_button(&vm), &cw))
