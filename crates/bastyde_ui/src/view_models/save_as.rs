@@ -8,11 +8,19 @@
 //! `WorkShape` to `WorkInfo` **synchronously on the UI thread** via
 //! `update_work_info`, which fires `WorkInfo Updated` and refreshes
 //! `SingleWorkInfo` (flipping the "Save as…" menu). Single-instance live state
-//! (owns the in-flight op id); created in `main.rs`, registered as app-state.
+//! created in `main.rs`, registered as app-state.
+//!
+//! In-flight ops are keyed by their long-operation id, and each records the
+//! `WorkInfo` id captured **when the op started** — so completion always targets
+//! the project that was actually saved, even if the user switched projects while
+//! the background save was running, and concurrent Save-As ops don't drop each
+//! other's completion.
 
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
-use bastyde::prelude::*; // EventContext, Signal, tr!
+use bastyde::prelude::*; // EventContext, tr!
 use bastyde::widgets::Toast;
 
 use frontend::AppContext;
@@ -25,12 +33,19 @@ use crate::app_ids::AppIds;
 
 use super::long_op::{event_id, parse_payload};
 
+/// What a running Save-As needs to record on completion — pinned at start time.
+struct Pending {
+    as_folder: bool,
+    /// The `WorkInfo` id of the project being saved, captured at `start()`. `None`
+    /// if no project was open (shouldn't happen — Save As requires one).
+    work_info_id: Option<u64>,
+}
+
 #[derive(Clone)]
 pub struct SaveAsViewModel {
-    /// The `(op_id, as_folder)` of the Save As running right now, if any — set on
-    /// start, cleared when it completes / fails. Drives event filtering (only the
-    /// matching op touches WorkInfo) and picks the `WorkShape` to record.
-    active: Signal<Option<(String, bool)>>,
+    /// In-flight Save-As ops keyed by long-operation id. A map (not a single
+    /// slot) so a second Save As can't silently drop the first's completion.
+    pending: Rc<RefCell<HashMap<String, Pending>>>,
     app_ctx: Rc<AppContext>,
     ids: AppIds,
 }
@@ -38,41 +53,48 @@ pub struct SaveAsViewModel {
 impl SaveAsViewModel {
     pub fn new(app_ctx: Rc<AppContext>, ids: AppIds) -> Self {
         Self {
-            active: Signal::new(None),
+            pending: Rc::new(RefCell::new(HashMap::new())),
             app_ctx,
             ids,
         }
     }
 
-    /// Register the in-flight Save As so its completion updates `WorkInfo`.
-    /// Called from the Save-As menu action once the long operation has started.
+    /// Register the in-flight Save As, capturing the CURRENT `WorkInfo` id (the
+    /// project being saved) so completion targets it even if the user switches
+    /// projects before the background op finishes. Called from the Save-As menu
+    /// action once the long operation has started.
     pub fn start(&self, op_id: String, as_folder: bool) {
-        self.active.set(Some((op_id, as_folder)));
+        let work_info_id = self.ids.work_info_id.get();
+        self.pending.borrow_mut().insert(
+            op_id,
+            Pending {
+                as_folder,
+                work_info_id,
+            },
+        );
     }
 
-    /// The Save As finished: fetch its output path and record the new
-    /// path/shape into `WorkInfo` on the UI thread (fires `WorkInfo Updated`).
+    /// A Save As finished: if it was one of ours, record the new path/shape into
+    /// the *originating* project's `WorkInfo` on the UI thread.
     pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some((op_id, as_folder)) = self.active.get() else {
+        let Some(op_id) = event_id(event) else {
             return;
         };
-        if event_id(event).as_deref() != Some(op_id.as_str()) {
-            return;
-        }
-        self.active.set(None);
+        let Some(pending) = self.pending.borrow_mut().remove(&op_id) else {
+            return; // not one of our Save-As ops (import/backup/etc.)
+        };
 
         let output_path = match work_management_commands::get_save_as_result(&self.app_ctx, &op_id) {
             Ok(Some(res)) => res.output_path,
-            // Completed without a recoverable result (shouldn't happen) — nothing
-            // to record.
+            // Completed without a recoverable result (shouldn't happen).
             Ok(None) | Err(_) => return,
         };
-
-        let Some(id) = self.ids.work_info_id.get() else {
-            return;
+        // The WorkInfo of the project that was saved — NOT the currently-open one.
+        let Some(id) = pending.work_info_id else {
+            return; // no project was open when it started
         };
-        // Re-read the stored WorkInfo to preserve `created_at` — a scalar update
-        // overwrites every field.
+        // Re-read the stored WorkInfo to preserve `created_at` (a scalar update
+        // overwrites every field). If it's gone (project closed), skip.
         let Ok(Some(cur)) = work_info_commands::get_work_info(&self.app_ctx, &id) else {
             return;
         };
@@ -81,7 +103,7 @@ impl SaveAsViewModel {
             created_at: cur.created_at,
             updated_at: chrono::Utc::now(),
             file_name: Some(output_path.clone()),
-            shape: if as_folder {
+            shape: if pending.as_folder {
                 WorkShape::Folder
             } else {
                 WorkShape::Zip
@@ -93,16 +115,15 @@ impl SaveAsViewModel {
         };
     }
 
-    /// The Save As failed: surface the error. The background operation is
-    /// read-only, so nothing in the store needs undoing.
+    /// A Save As failed: if it was one of ours, surface the error. The background
+    /// operation is read-only, so nothing in the store needs undoing.
     pub fn on_long_op_failed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some((op_id, _)) = self.active.get() else {
+        let Some(op_id) = event_id(event) else {
             return;
         };
-        if event_id(event).as_deref() != Some(op_id.as_str()) {
-            return;
+        if self.pending.borrow_mut().remove(&op_id).is_none() {
+            return; // not one of ours
         }
-        self.active.set(None);
         let error = parse_payload(event)
             .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
             .unwrap_or_default();

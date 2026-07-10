@@ -63,74 +63,68 @@ impl HashMapStore {
     }
 
     /// Clone the entire store for savepoint support. O(1) thanks to im::HashMap.
+    /// (Poison-tolerant, but NOT atomic across tables — used for savepoints, which
+    /// are taken on the single writer thread with no concurrent writer; use
+    /// [`freeze`] when an atomic cross-table snapshot is required.)
     pub fn snapshot(&self) -> HashMapStoreSnapshot {
         HashMapStoreSnapshot {
-            roots: self.roots.read().unwrap().clone(),
-            systems: self.systems.read().unwrap().clone(),
-            work_infos: self.work_infos.read().unwrap().clone(),
-            recent_works: self.recent_works.read().unwrap().clone(),
-            works: self.works.read().unwrap().clone(),
-            trash_infos: self.trash_infos.read().unwrap().clone(),
-            binders: self.binders.read().unwrap().clone(),
-            binder_items: self.binder_items.read().unwrap().clone(),
-            binder_tags: self.binder_tags.read().unwrap().clone(),
-            contents: self.contents.read().unwrap().clone(),
-            dict_words: self.dict_words.read().unwrap().clone(),
-            jn_system_from_root_system: self.jn_system_from_root_system.read().unwrap().clone(),
-            jn_work_from_root_works: self.jn_work_from_root_works.read().unwrap().clone(),
-            jn_recent_work_from_system_recent_works: self
-                .jn_recent_work_from_system_recent_works
-                .read()
-                .unwrap()
+            roots: read_or_recover(&self.roots).clone(),
+            systems: read_or_recover(&self.systems).clone(),
+            work_infos: read_or_recover(&self.work_infos).clone(),
+            recent_works: read_or_recover(&self.recent_works).clone(),
+            works: read_or_recover(&self.works).clone(),
+            trash_infos: read_or_recover(&self.trash_infos).clone(),
+            binders: read_or_recover(&self.binders).clone(),
+            binder_items: read_or_recover(&self.binder_items).clone(),
+            binder_tags: read_or_recover(&self.binder_tags).clone(),
+            contents: read_or_recover(&self.contents).clone(),
+            dict_words: read_or_recover(&self.dict_words).clone(),
+            jn_system_from_root_system: read_or_recover(&self.jn_system_from_root_system).clone(),
+            jn_work_from_root_works: read_or_recover(&self.jn_work_from_root_works).clone(),
+            jn_recent_work_from_system_recent_works: read_or_recover(
+                &self.jn_recent_work_from_system_recent_works,
+            )
+            .clone(),
+            jn_trash_info_from_system_trash_infos: read_or_recover(
+                &self.jn_trash_info_from_system_trash_infos,
+            )
+            .clone(),
+            jn_work_info_from_system_work_info: read_or_recover(
+                &self.jn_work_info_from_system_work_info,
+            )
+            .clone(),
+            jn_binder_from_work_binders: read_or_recover(&self.jn_binder_from_work_binders).clone(),
+            jn_dict_word_from_work_dict_words: read_or_recover(
+                &self.jn_dict_word_from_work_dict_words,
+            )
+            .clone(),
+            jn_binder_tag_from_work_tags: read_or_recover(&self.jn_binder_tag_from_work_tags)
                 .clone(),
-            jn_trash_info_from_system_trash_infos: self
-                .jn_trash_info_from_system_trash_infos
-                .read()
-                .unwrap()
-                .clone(),
-            jn_work_info_from_system_work_info: self
-                .jn_work_info_from_system_work_info
-                .read()
-                .unwrap()
-                .clone(),
-            jn_binder_from_work_binders: self.jn_binder_from_work_binders.read().unwrap().clone(),
-            jn_dict_word_from_work_dict_words: self
-                .jn_dict_word_from_work_dict_words
-                .read()
-                .unwrap()
-                .clone(),
-            jn_binder_tag_from_work_tags: self.jn_binder_tag_from_work_tags.read().unwrap().clone(),
-            jn_binder_from_trash_info_trashed_binder: self
-                .jn_binder_from_trash_info_trashed_binder
-                .read()
-                .unwrap()
-                .clone(),
-            jn_binder_item_from_trash_info_trashed_binder_item: self
-                .jn_binder_item_from_trash_info_trashed_binder_item
-                .read()
-                .unwrap()
-                .clone(),
-            jn_binder_item_from_binder_binder_items: self
-                .jn_binder_item_from_binder_binder_items
-                .read()
-                .unwrap()
-                .clone(),
-            jn_content_from_binder_item_contents: self
-                .jn_content_from_binder_item_contents
-                .read()
-                .unwrap()
-                .clone(),
-            jn_binder_item_from_binder_item_references: self
-                .jn_binder_item_from_binder_item_references
-                .read()
-                .unwrap()
-                .clone(),
-            jn_binder_tag_from_binder_item_tags: self
-                .jn_binder_tag_from_binder_item_tags
-                .read()
-                .unwrap()
-                .clone(),
-            counters: self.counters.read().unwrap().clone(),
+            jn_binder_from_trash_info_trashed_binder: read_or_recover(
+                &self.jn_binder_from_trash_info_trashed_binder,
+            )
+            .clone(),
+            jn_binder_item_from_trash_info_trashed_binder_item: read_or_recover(
+                &self.jn_binder_item_from_trash_info_trashed_binder_item,
+            )
+            .clone(),
+            jn_binder_item_from_binder_binder_items: read_or_recover(
+                &self.jn_binder_item_from_binder_binder_items,
+            )
+            .clone(),
+            jn_content_from_binder_item_contents: read_or_recover(
+                &self.jn_content_from_binder_item_contents,
+            )
+            .clone(),
+            jn_binder_item_from_binder_item_references: read_or_recover(
+                &self.jn_binder_item_from_binder_item_references,
+            )
+            .clone(),
+            jn_binder_tag_from_binder_item_tags: read_or_recover(
+                &self.jn_binder_tag_from_binder_item_tags,
+            )
+            .clone(),
+            counters: read_or_recover(&self.counters).clone(),
         }
     }
 
@@ -138,13 +132,28 @@ impl HashMapStore {
     ///
     /// Unlike [`snapshot`], this holds a read guard on **every** table, junction,
     /// and the counters *simultaneously* while cloning, so the result is a single
-    /// consistent point-in-time view — no torn read across tables. Guards are
-    /// acquired in the struct's declared field order (all entity tables, then all
-    /// junctions, then counters), which matches the table-before-junction order
-    /// every writer uses (see `remove_multi`), so it cannot deadlock against an
-    /// in-flight write. O(1) clones (im::HashMap structural sharing); the lock
-    /// hold is just the clones. The returned store carries no savepoints and is
-    /// meant to back a read-only (frozen) transaction.
+    /// consistent point-in-time view of the store *at the instant freeze runs*.
+    /// O(1) clones (im::HashMap structural sharing); the lock hold is just the
+    /// clones. The returned store carries no savepoints and is meant to back a
+    /// read-only (frozen) transaction.
+    ///
+    /// Deadlock-freedom depends on an **invariant** (unenforced by the type
+    /// system): guards are acquired in the struct's declared field order (all
+    /// entity tables, then all junctions, then counters), and no writer ever
+    /// holds two *entity-table* locks simultaneously — each writer takes at most
+    /// one entity table, then its junctions, in table-before-junction order (see
+    /// `remove_multi`). A future cascade that nested two entity-table locks would
+    /// violate this and could deadlock against freeze; keep cascades single-table.
+    ///
+    /// SCOPE: freeze is atomic w.r.t. *itself*, not w.r.t. a writer's *multi-step*
+    /// cascade. A write transaction is not one critical section — its per-repo
+    /// calls each lock/unlock independently — so a cascading delete/create can
+    /// leave a brief window (e.g. child rows removed but the parent's junction not
+    /// yet cleared) into which freeze can land and capture a cross-table-torn
+    /// snapshot (`gather` then hits "entity vanished mid-read", or silently omits
+    /// a just-added-but-unlinked row). This shrinks the torn-read window from the
+    /// whole read to a single instant, but does not eliminate it; a store-wide
+    /// writer/reader gate would be required to fully close it.
     pub fn freeze(&self) -> HashMapStore {
         // Acquire ALL read guards first (declared order), then clone under that
         // one consistent lock set.
@@ -285,10 +294,10 @@ impl HashMapStore {
     /// O(1) thanks to im::HashMap structural sharing.
     pub fn create_savepoint(&self) -> u64 {
         let snap = self.snapshot();
-        let mut id_counter = self.next_savepoint_id.write().unwrap();
+        let mut id_counter = write_or_recover(&self.next_savepoint_id);
         let id = *id_counter;
         *id_counter += 1;
-        self.savepoints.write().unwrap().insert(id, snap);
+        write_or_recover(&self.savepoints).insert(id, snap);
         id
     }
 
@@ -301,14 +310,15 @@ impl HashMapStore {
         self.restore(&snap);
     }
 
-    /// Discard a savepoint without restoring (used on successful commit).
+    /// Discard a savepoint without restoring (used on successful commit, and
+    /// after a rollback so a rolled-back transaction doesn't leak its snapshot).
     pub fn discard_savepoint(&self, savepoint_id: u64) {
-        self.savepoints.write().unwrap().remove(&savepoint_id);
+        write_or_recover(&self.savepoints).remove(&savepoint_id);
     }
 
     /// Get-and-increment counter for an entity type.
     pub(crate) fn next_id(&self, entity_name: &str) -> EntityId {
-        let mut counters = self.counters.write().unwrap();
+        let mut counters = write_or_recover(&self.counters);
         let counter = counters.entry(entity_name.to_string()).or_insert(1);
         let id = *counter;
         *counter += 1;
@@ -424,16 +434,33 @@ impl StoreSnapshotTrait for HashMapStoreSnapshot {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Acquire a read guard, recovering the inner value if the lock was poisoned by
-/// a panic elsewhere. Used on the store's **restore/snapshot** paths so a single
-/// table poisoned by an unrelated panic can't escalate a rollback (the Drop-time
-/// `restore_savepoint`) into a process-wide double-panic abort.
+/// a panic elsewhere — and **clearing** the poison so recovery is permanent, not
+/// one-shot (a recovered-but-still-poisoned lock would re-panic on the next plain
+/// `.read()/.write().unwrap()`). Used throughout the store's own snapshot /
+/// savepoint / restore paths so a single table poisoned by an unrelated panic
+/// can't escalate a rollback (the Drop-time `restore_savepoint`) — or the very
+/// next write transaction's `create_savepoint` — into a process-wide abort.
 pub(crate) fn read_or_recover<T>(lock: &RwLock<T>) -> std::sync::RwLockReadGuard<'_, T> {
-    lock.read().unwrap_or_else(|e| e.into_inner())
+    match lock.read() {
+        Ok(guard) => guard,
+        Err(poisoned) => {
+            let guard = poisoned.into_inner();
+            lock.clear_poison();
+            guard
+        }
+    }
 }
 
-/// Write-guard counterpart of [`read_or_recover`].
+/// Write-guard counterpart of [`read_or_recover`] (also clears the poison).
 pub(crate) fn write_or_recover<T>(lock: &RwLock<T>) -> std::sync::RwLockWriteGuard<'_, T> {
-    lock.write().unwrap_or_else(|e| e.into_inner())
+    match lock.write() {
+        Ok(guard) => guard,
+        Err(poisoned) => {
+            let guard = poisoned.into_inner();
+            lock.clear_poison();
+            guard
+        }
+    }
 }
 
 pub(crate) fn delete_from_backward_junction(

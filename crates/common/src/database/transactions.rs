@@ -63,9 +63,11 @@ impl Transaction {
         if !self.is_write {
             bail!("Cannot rollback a read transaction");
         }
-        // Restore the auto-savepoint — undo all mutations
+        // Restore the auto-savepoint — undo all mutations — then discard it so a
+        // rolled-back transaction doesn't leak its whole-store snapshot forever.
         if let Some(sp) = self.savepoint.take() {
             self.store.restore_savepoint(sp);
+            self.store.discard_savepoint(sp);
         }
         Ok(())
     }
@@ -110,9 +112,11 @@ impl Transaction {
 impl Drop for Transaction {
     fn drop(&mut self) {
         // Safety net: if the transaction was not committed or rolled back,
-        // restore the auto-savepoint to undo any partial mutations.
+        // restore the auto-savepoint to undo any partial mutations, then discard
+        // it so the snapshot isn't leaked in HashMapStore::savepoints.
         if let Some(sp) = self.savepoint.take() {
             self.store.restore_savepoint(sp);
+            self.store.discard_savepoint(sp);
         }
     }
 }

@@ -844,5 +844,17 @@ fn restore_savepoint_recovers_a_poisoned_table_lock() {
     // `restore_savepoint` writes every table via `write_or_recover`; a plain
     // `.write().unwrap()` here would double-panic and abort the process.
     store.restore_savepoint(sp);
-    // Reaching here (no abort) is the assertion.
+
+    // Recovery is permanent, not one-shot: write_or_recover cleared the poison,
+    // so the lock is usable again and the (untouched, plain-`.unwrap()`) CRUD
+    // paths won't re-panic on the next access.
+    assert!(
+        !store.works.is_poisoned(),
+        "restore must clear the poison, not just recover once"
+    );
+    assert!(store.works.read().is_ok(), "the lock must be usable again");
+    // A fresh savepoint cycle (snapshot() uses read_or_recover, create/restore
+    // use write_or_recover) must also succeed on the recovered store.
+    let sp2 = store.create_savepoint();
+    store.restore_savepoint(sp2);
 }
