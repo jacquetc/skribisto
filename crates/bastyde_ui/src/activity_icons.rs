@@ -15,7 +15,13 @@ pub fn outline_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/outline.svg"))
 }
 
-/// The Inspector activity icon: a side-panel glyph.
+/// The Inspector activity icon: a right side-panel glyph.
 pub fn inspector_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/inspector.svg"))
+}
+
+/// The sidebar (leading dock) toggle glyph: a left side-panel — the mirror of
+/// [`inspector_icon`], for the status-bar show/hide-binder button.
+pub fn sidebar_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/sidebar.svg"))
 }

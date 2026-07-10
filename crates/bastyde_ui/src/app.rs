@@ -19,7 +19,8 @@ use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    Divider, DockRail, DockSide, DockWidgetId, DockingLayout, DropRegion, DropTarget,
+    Divider, DockOpenLocation, DockRail, DockSide, DockWidgetId, DockingLayout, DropRegion,
+    DropTarget,
     DropTargetVariant, EventContextMessageBoxExt, Expand, HStack, IconButton, IconButtonSize,
     MessageBox, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, RowDragData,
     Spacer, Splitter, StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast,
@@ -904,6 +905,11 @@ impl Widget for App {
                 self.inspector_dock,
             ));
         outline.open_in_layout();
+        // Mount the inspector on the trailing side (otherwise the side shows the
+        // empty "drop a panel here" placeholder).
+        outline
+            .docking()
+            .open_dock(self.inspector_dock, DockOpenLocation::side(DockSide::Trailing));
 
         // ── Status bar (thin) with the notification bell ─────────────────────
         let archive = ctx
@@ -917,19 +923,21 @@ impl Widget for App {
         let status = StatusBar::new().background(SurfaceRole::Main).child(
             HStack::new()
                 .spacing(8.0)
+                // Leading (binder) toggle on the left; trailing (inspector) toggle
+                // pushed to the right next to the notification bell.
                 .child(
-                    IconButton::new(crate::activity_icons::outline_icon())
+                    IconButton::new(crate::activity_icons::sidebar_icon())
                         .size(IconButtonSize::Compact)
                         .tooltip(tr!(statusbar_toggle_outline()))
                         .on_activate_fn(move |_| dock_lead.toggle_side_visible(DockSide::Leading)),
                 )
+                .child(Spacer::new())
                 .child(
                     IconButton::new(crate::activity_icons::inspector_icon())
                         .size(IconButtonSize::Compact)
                         .tooltip(tr!(statusbar_toggle_inspector()))
                         .on_activate_fn(move |_| dock_trail.toggle_side_visible(DockSide::Trailing)),
                 )
-                .child(Spacer::new())
                 .child(NotificationCenterButton::new(archive).size(IconButtonSize::Compact)),
         );
 
