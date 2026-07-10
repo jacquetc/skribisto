@@ -47,9 +47,6 @@ pub use shape::{SkribShape, detect_shape};
 pub use slug::{binder_dir_name, prose_file_name, prose_kind, prose_relpath, slugify};
 pub use writer::write_bundle;
 
-use anyhow::Result;
-use std::path::Path;
-
 /// Generate a fresh, stable project identity string (UUID v4). Used to mint a
 /// `Work.unique_id` for brand-new projects, to heal a load whose source carries
 /// none, and by the Plume importer for the work it creates.
@@ -64,24 +61,5 @@ impl From<SkribShape> for Option<ShapeTag> {
             SkribShape::ExplodedFolder => Some(ShapeTag::Folder),
             SkribShape::LegacySqlite => None,
         }
-    }
-}
-
-/// Copy a bundle to `dst` as a single `.skrib` file (used by `backup_now`): a
-/// zip or legacy file is copied verbatim; an exploded folder is packed into a
-/// zip so a backup is always one portable file.
-pub fn copy_bundle(src: &str, dst: &str) -> Result<()> {
-    match shape::detect_shape(src)? {
-        SkribShape::ZipFile | SkribShape::LegacySqlite => {
-            if let Some(p) = Path::new(dst)
-                .parent()
-                .filter(|p| !p.as_os_str().is_empty())
-            {
-                std::fs::create_dir_all(p)?;
-            }
-            std::fs::copy(src, dst)?;
-            Ok(())
-        }
-        SkribShape::ExplodedFolder => zip_io::zip_dir(&shape::folder_root(src), Path::new(dst)),
     }
 }

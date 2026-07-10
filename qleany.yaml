@@ -321,6 +321,13 @@ features:
         type: string
   - name: backup_now
     entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
+    - TrashInfo
     - WorkInfo
     undoable: false
     read_only: true
