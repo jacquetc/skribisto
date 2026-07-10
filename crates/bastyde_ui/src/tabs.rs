@@ -24,7 +24,7 @@ use frontend::direct_access::ContentDto;
 
 use crate::app_ids::AppIds;
 use crate::singles::SingleContent;
-use crate::view_models::ChapterViewModel;
+use crate::view_models::{ChapterViewModel, EditorTypography, EditorTypographySet};
 
 pub mod folder_book;
 pub mod folder_chapter;
@@ -93,6 +93,14 @@ pub struct ContentTab {
     /// (ordered scenes + per-scene documents + scene/chapter mutations). `None`
     /// for every other layout.
     pub chapter: Option<ChapterViewModel>,
+    /// Scene vs Note for the main prose editor; `None` for non-prose layouts.
+    /// Selects which typography bundle [`main_typography`](Self::main_typography)
+    /// returns for `main`.
+    pub kind: Option<ProseKind>,
+    /// The three per-editor-type typography bundles (Scene / Synopsis / Notes),
+    /// shared live from Settings. Every editor this tab builds reads its bundle
+    /// from here, so a preference change fans out to all open tabs at once.
+    pub typography: EditorTypographySet,
 }
 
 fn layout_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> TabLayout {
@@ -106,6 +114,26 @@ fn layout_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> TabLayout 
         (Folder, Book) => TabLayout::FolderBook,
         (Folder, None) | (Folder, Note) => TabLayout::FolderNote,
         _ => TabLayout::NoContent,
+    }
+}
+
+/// Which prose kind a `TabLayout::Prose` main-text editor is, so it can pick the
+/// Scene vs Note typography bundle. `None` for every non-prose layout (folder
+/// tabs, headings) — they never populate `ContentTab::main`.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ProseKind {
+    Scene,
+    Note,
+}
+
+fn prose_kind_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Option<ProseKind> {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    match (role, sub_role) {
+        (Item, Scene) | (Item, ChapterScene) => Some(ProseKind::Scene),
+        (Item, Note) => Some(ProseKind::Note),
+        // `None` is shadowed by `BinderItemSubRole::None` under the glob import.
+        _ => Option::None,
     }
 }
 
@@ -149,6 +177,7 @@ pub fn tab_for(
     contents: &[ContentDto],
     column_width: Signal<f32>,
     show_synopsis: Signal<bool>,
+    typography: EditorTypographySet,
     ids: &AppIds,
 ) -> ContentTab {
     let layout = layout_for(role, sub_role);
@@ -168,6 +197,8 @@ pub fn tab_for(
         column_width,
         show_synopsis,
         chapter,
+        kind: prose_kind_for(role, sub_role),
+        typography,
     };
     for cr in skribisto_model::allowed_content(role, sub_role) {
         let existing = contents.iter().find(|c| &c.role == cr);
@@ -226,6 +257,16 @@ impl ContentTab {
         Ok(())
     }
 
+    /// The typography bundle for this tab's **main** prose editor: the Notes
+    /// bundle for a Note, the Scene bundle otherwise (Scene / ChapterScene, and a
+    /// safe fallback for any layout without a `kind`).
+    pub fn main_typography(&self) -> &EditorTypography {
+        match self.kind {
+            Some(ProseKind::Note) => &self.typography.notes,
+            _ => &self.typography.scene,
+        }
+    }
+
     /// Wire the editors' `on_change` to set `dirty`. Called by each render fn
     /// when it builds the prose editors (the title fields are diffed at flush
     /// time, so they don't need a change hook).
@@ -272,6 +313,25 @@ mod tests {
     use bastyde::core::widget_tree::WidgetTree;
     use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 
+    /// A per-type typography set with distinguishable fonts (Scene/Synopsis =
+    /// Literata, Notes = Inter) so tests can assert the right bundle reaches the
+    /// right editor.
+    fn test_typography() -> EditorTypographySet {
+        let bundle = |family: &str| EditorTypography {
+            font_family: Signal::new(family.to_string()),
+            size: Signal::new(1.0),
+            line_height: Signal::new(1.5),
+            first_line_indent: Signal::new(0.0),
+            para_spacing_before: Signal::new(0.0),
+            para_spacing_after: Signal::new(0.0),
+        };
+        EditorTypographySet {
+            scene: bundle("Literata"),
+            synopsis: bundle("Literata"),
+            notes: bundle("Inter"),
+        }
+    }
+
     /// Every valid `(role, sub_role)` must build a tab and lay it out headlessly
     /// without panicking — the per-sub_role dispatch + each layout's widget tree.
     #[test]
@@ -303,9 +363,18 @@ mod tests {
                 &[],
                 Signal::new(700.0),
                 Signal::new(true),
+                test_typography(),
                 &AppIds::new(),
             );
             assert_eq!(tab.layout, expected, "{role:?}/{sub_role:?}");
+            // Prose tabs carry a kind + a main editor; every other layout has
+            // neither.
+            if expected == TabLayout::Prose {
+                assert!(tab.kind.is_some(), "{role:?}/{sub_role:?} prose needs a kind");
+                assert!(tab.main.is_some(), "{role:?}/{sub_role:?} prose needs main");
+            } else {
+                assert!(tab.kind.is_none(), "{role:?}/{sub_role:?} non-prose has no kind");
+            }
             let mut tree = WidgetTree::new();
             let id = tree.add_boxed(tab_pane(&tab));
             tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
@@ -331,6 +400,7 @@ mod tests {
             &[],
             Signal::new(700.0),
             Signal::new(true),
+            test_typography(),
             &AppIds::new(),
         );
         assert!(scene.main.is_some() && scene.synopsis.is_some() && scene.title.is_none());
@@ -343,6 +413,7 @@ mod tests {
             &[],
             Signal::new(700.0),
             Signal::new(true),
+            test_typography(),
             &AppIds::new(),
         );
         assert!(cs.main.is_some() && cs.synopsis.is_some() && cs.title.is_some());
@@ -355,6 +426,7 @@ mod tests {
             &[],
             Signal::new(700.0),
             Signal::new(true),
+            test_typography(),
             &AppIds::new(),
         );
         assert!(bb.title.is_some() && bb.subtitle.is_some() && bb.main.is_none());
@@ -367,8 +439,40 @@ mod tests {
             &[],
             Signal::new(700.0),
             Signal::new(true),
+            test_typography(),
             &AppIds::new(),
         );
         assert!(end.main.is_none() && end.synopsis.is_none() && end.title.is_none());
+    }
+
+    /// Scene, ChapterScene and Note are no longer collapsed into one prose kind:
+    /// `tab_for` tags each, and `main_typography` resolves the right bundle
+    /// (Scene → Scene font, Note → Notes font).
+    #[test]
+    fn prose_kind_distinguishes_scene_from_note() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let mk = |sr: BinderItemSubRole| {
+            tab_for(
+                &ctx,
+                1,
+                &Item,
+                &sr,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                &AppIds::new(),
+            )
+        };
+        assert_eq!(mk(Scene).kind, Some(ProseKind::Scene));
+        assert_eq!(mk(ChapterScene).kind, Some(ProseKind::Scene));
+        assert_eq!(mk(Note).kind, Some(ProseKind::Note));
+        assert_eq!(mk(Chapter).kind, Option::None); // Item/Chapter → Heading, no prose kind
+
+        // `main_typography` picks the bundle by kind.
+        assert_eq!(mk(Scene).main_typography().font_family.get(), "Literata");
+        assert_eq!(mk(Note).main_typography().font_family.get(), "Inter");
     }
 }

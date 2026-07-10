@@ -19,6 +19,7 @@ use frontend::work_management::SaveWorkDto;
 use crate::app_ids::AppIds;
 use crate::singles::SingleBinderItem;
 use crate::tabs::{self, ContentTab};
+use crate::view_models::EditorTypographySet;
 
 #[derive(Clone)]
 pub struct EditorsViewModel {
@@ -33,6 +34,9 @@ pub struct EditorsViewModel {
     /// Persisted "show synopsis pane" setting, threaded into every opened tab so
     /// the dual-pane editor shows/hides its synopsis live.
     show_synopsis: Signal<bool>,
+    /// The three per-editor-type typography bundles (Scene / Synopsis / Notes),
+    /// threaded into every opened tab so a settings change fans out live to all.
+    typography: EditorTypographySet,
     /// The app's id-only global state (work + undo-stack ids), shared by clone
     /// with `OutlineViewModel`. Editor write-back lands on `ids.stack_id` so it
     /// shares the tree edits' Ctrl+Z history; the Full Chapter view reads
@@ -51,6 +55,7 @@ impl EditorsViewModel {
         app_ctx: Rc<AppContext>,
         column_width: Signal<f32>,
         show_synopsis: Signal<bool>,
+        typography: EditorTypographySet,
         ids: AppIds,
     ) -> Self {
         Self {
@@ -61,6 +66,7 @@ impl EditorsViewModel {
             active_item: Signal::new(None),
             column_width,
             show_synopsis,
+            typography,
             ids,
             edited: Signal::new(0),
         }
@@ -138,6 +144,7 @@ impl EditorsViewModel {
             &contents,
             self.column_width.clone(),
             self.show_synopsis.clone(),
+            self.typography.clone(),
             &self.ids,
         );
         // Every tab bumps the shared edit signal, so the autosave timer sees edits
@@ -276,12 +283,32 @@ impl EditorsViewModel {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::view_models::EditorTypography;
+
+    /// Per-type typography with distinguishable fonts (Scene/Synopsis = Literata,
+    /// Notes = Inter) so a tab's resolved bundle is identifiable.
+    fn test_typography() -> EditorTypographySet {
+        let bundle = |family: &str| EditorTypography {
+            font_family: Signal::new(family.to_string()),
+            size: Signal::new(1.0),
+            line_height: Signal::new(1.5),
+            first_line_indent: Signal::new(0.0),
+            para_spacing_before: Signal::new(0.0),
+            para_spacing_after: Signal::new(0.0),
+        };
+        EditorTypographySet {
+            scene: bundle("Literata"),
+            synopsis: bundle("Literata"),
+            notes: bundle("Inter"),
+        }
+    }
 
     fn editors() -> EditorsViewModel {
         EditorsViewModel::new(
             Rc::new(AppContext::new()),
             Signal::new(700.0),
             Signal::new(true),
+            test_typography(),
             AppIds::new(),
         )
     }
@@ -298,6 +325,7 @@ mod tests {
             &[],
             p.column_width.clone(),
             p.show_synopsis.clone(),
+            p.typography.clone(),
             &p.ids,
         );
         p.tabs.push(TabHandle::dynamic(
@@ -329,5 +357,31 @@ mod tests {
         vm.close_all();
         assert_eq!(vm.tabs().len(), 0);
         assert_eq!(vm.selected_tab().get(), None);
+    }
+
+    /// Tabs opened through the VM carry the right per-type bundle: a Scene tab's
+    /// main editor gets the Scene font, a Note tab's the Notes font, and both
+    /// share the Synopsis bundle.
+    #[test]
+    fn scene_and_note_tabs_get_different_typography() {
+        let vm = editors();
+        let mk = |id: u64, sr: BinderItemSubRole| {
+            tabs::tab_for(
+                &vm.app_ctx,
+                id,
+                &BinderItemRole::Item,
+                &sr,
+                &[],
+                vm.column_width.clone(),
+                vm.show_synopsis.clone(),
+                vm.typography.clone(),
+                &vm.ids,
+            )
+        };
+        let scene = mk(1, BinderItemSubRole::Scene);
+        let note = mk(2, BinderItemSubRole::Note);
+        assert_eq!(scene.main_typography().font_family.get(), "Literata");
+        assert_eq!(note.main_typography().font_family.get(), "Inter");
+        assert_eq!(scene.typography.synopsis.font_family.get(), "Literata");
     }
 }

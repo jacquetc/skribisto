@@ -12,6 +12,7 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
         col = col.child(shared::synopsis_section(
             &s.doc,
             &tab.column_width,
+            &tab.typography.synopsis,
             tab.mark_dirty_fn(),
         ));
     }

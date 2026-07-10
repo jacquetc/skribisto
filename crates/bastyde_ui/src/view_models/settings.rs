@@ -4,7 +4,7 @@
 //! view over the same live state. Rebuild it anywhere via
 //! `SettingsViewModel::new(ctx.settings())`. Ambient app mutations (theme/locale)
 //! reach the live app through an `EventContext`; pure-state ops (column width,
-//! manuscript typography) do not.
+//! editor typography) do not.
 //!
 //! The full-preferences window (`settings_panel.rs`) binds these signals into its
 //! category panes. Theme and interface language are driven there by the
@@ -16,11 +16,47 @@ use bastyde::prelude::*; // EventContext, Signal, intui
 use bastyde::settings::SettingsStore;
 
 use crate::{
-    AUTOSAVE_KEY, DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, FONT_FAMILY_DEFAULT,
-    FONT_FAMILY_KEY, HIGHLIGHT_SENTENCE_DEFAULT, HIGHLIGHT_SENTENCE_KEY, LINE_HEIGHT_DEFAULT,
-    LINE_HEIGHT_KEY, LOCALE_KEY, SHOW_WELCOME_KEY, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PANE_KEY,
-    TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
+    AUTOSAVE_KEY, DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
+    HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
+    NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY,
+    NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT,
+    NOTES_PARA_SPACING_AFTER_KEY, NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_PARA_SPACING_BEFORE_KEY,
+    NOTES_SIZE_DEFAULT, NOTES_SIZE_KEY, SCENE_FIRST_LINE_INDENT_DEFAULT,
+    SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT, SCENE_FONT_FAMILY_KEY,
+    SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT,
+    SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY,
+    SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
+    SYNOPSIS_FIRST_LINE_INDENT_KEY, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY,
+    SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
+    SYNOPSIS_PARA_SPACING_AFTER_KEY, SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT,
+    SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PANE_KEY,
+    SYNOPSIS_SIZE_DEFAULT, SYNOPSIS_SIZE_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
 };
+
+/// One editor type's four typography knobs. Cheap to clone — every field is a
+/// `SettingsStore`-cached `Signal`, so all clones observe / drive the same
+/// live value. `size` is a relative zoom multiplier (`1.0` = 100 %);
+/// `line_height` is a multiple of the font size; `first_line_indent` is in px.
+#[derive(Clone)]
+pub struct EditorTypography {
+    pub font_family: Signal<String>,
+    pub size: Signal<f32>,
+    pub line_height: Signal<f32>,
+    pub first_line_indent: Signal<f32>,
+    /// Space (px) above each body paragraph.
+    pub para_spacing_before: Signal<f32>,
+    /// Space (px) below each body paragraph.
+    pub para_spacing_after: Signal<f32>,
+}
+
+/// The three per-editor-type typography bundles (Scene / Synopsis / Notes),
+/// created once and threaded through `EditorsViewModel` into every `ContentTab`.
+#[derive(Clone)]
+pub struct EditorTypographySet {
+    pub scene: EditorTypography,
+    pub synopsis: EditorTypography,
+    pub notes: EditorTypography,
+}
 
 #[derive(Clone)]
 pub struct SettingsViewModel {
@@ -29,9 +65,11 @@ pub struct SettingsViewModel {
     column_width: Signal<f32>,
     autosave: Signal<bool>,
     show_welcome: Signal<bool>,
-    // ── Manuscript & Fonts ──
-    font_family: Signal<String>,
-    line_height: Signal<f32>,
+    // ── Editor typography (per type) ──
+    scene_typo: EditorTypography,
+    synopsis_typo: EditorTypography,
+    notes_typo: EditorTypography,
+    // ── Editor behaviour ──
     synopsis_pane: Signal<bool>,
     typewriter: Signal<bool>,
     highlight_sentence: Signal<bool>,
@@ -47,8 +85,50 @@ impl SettingsViewModel {
             column_width: store.signal(EDITOR_WIDTH_KEY, EDITOR_WIDTH_DEFAULT),
             autosave: store.signal(AUTOSAVE_KEY, false),
             show_welcome: store.signal(SHOW_WELCOME_KEY, true),
-            font_family: store.signal(FONT_FAMILY_KEY, FONT_FAMILY_DEFAULT.to_string()),
-            line_height: store.signal(LINE_HEIGHT_KEY, LINE_HEIGHT_DEFAULT),
+            scene_typo: EditorTypography {
+                font_family: store
+                    .signal(SCENE_FONT_FAMILY_KEY, SCENE_FONT_FAMILY_DEFAULT.to_string()),
+                size: store.signal(SCENE_SIZE_KEY, SCENE_SIZE_DEFAULT),
+                line_height: store.signal(SCENE_LINE_HEIGHT_KEY, SCENE_LINE_HEIGHT_DEFAULT),
+                first_line_indent: store
+                    .signal(SCENE_FIRST_LINE_INDENT_KEY, SCENE_FIRST_LINE_INDENT_DEFAULT),
+                para_spacing_before: store
+                    .signal(SCENE_PARA_SPACING_BEFORE_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT),
+                para_spacing_after: store
+                    .signal(SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT),
+            },
+            synopsis_typo: EditorTypography {
+                font_family: store.signal(
+                    SYNOPSIS_FONT_FAMILY_KEY,
+                    SYNOPSIS_FONT_FAMILY_DEFAULT.to_string(),
+                ),
+                size: store.signal(SYNOPSIS_SIZE_KEY, SYNOPSIS_SIZE_DEFAULT),
+                line_height: store.signal(SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_LINE_HEIGHT_DEFAULT),
+                first_line_indent: store.signal(
+                    SYNOPSIS_FIRST_LINE_INDENT_KEY,
+                    SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
+                ),
+                para_spacing_before: store.signal(
+                    SYNOPSIS_PARA_SPACING_BEFORE_KEY,
+                    SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT,
+                ),
+                para_spacing_after: store.signal(
+                    SYNOPSIS_PARA_SPACING_AFTER_KEY,
+                    SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
+                ),
+            },
+            notes_typo: EditorTypography {
+                font_family: store
+                    .signal(NOTES_FONT_FAMILY_KEY, NOTES_FONT_FAMILY_DEFAULT.to_string()),
+                size: store.signal(NOTES_SIZE_KEY, NOTES_SIZE_DEFAULT),
+                line_height: store.signal(NOTES_LINE_HEIGHT_KEY, NOTES_LINE_HEIGHT_DEFAULT),
+                first_line_indent: store
+                    .signal(NOTES_FIRST_LINE_INDENT_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT),
+                para_spacing_before: store
+                    .signal(NOTES_PARA_SPACING_BEFORE_KEY, NOTES_PARA_SPACING_BEFORE_DEFAULT),
+                para_spacing_after: store
+                    .signal(NOTES_PARA_SPACING_AFTER_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT),
+            },
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
             typewriter: store.signal(TYPEWRITER_KEY, TYPEWRITER_DEFAULT),
             highlight_sentence: store.signal(HIGHLIGHT_SENTENCE_KEY, HIGHLIGHT_SENTENCE_DEFAULT),
@@ -78,16 +158,17 @@ impl SettingsViewModel {
         self.locale.clone()
     }
 
-    /// Manuscript typeface family (persisted preference). A `Signal<String>` (not
-    /// `Option`) so it always serialises cleanly to TOML; the Typeface `ComboBox`
-    /// bridges it to its `Option<String>` selection.
-    pub fn font_family(&self) -> Signal<String> {
-        self.font_family.clone()
+    /// The three per-editor-type typography bundles (Scene / Synopsis / Notes).
+    /// Every call returns clones of the same live signals, so a settings edit
+    /// fans out to every open editor tab that holds them.
+    pub fn editor_typography(&self) -> EditorTypographySet {
+        EditorTypographySet {
+            scene: self.scene_typo.clone(),
+            synopsis: self.synopsis_typo.clone(),
+            notes: self.notes_typo.clone(),
+        }
     }
-    /// Manuscript line height (leading multiple).
-    pub fn line_height(&self) -> Signal<f32> {
-        self.line_height.clone()
-    }
+
     /// Show the synopsis pane above the manuscript. Consumed live by the writing
     /// editor (`item_scene_tab`).
     pub fn synopsis_pane(&self) -> Signal<bool> {
@@ -129,10 +210,104 @@ impl SettingsViewModel {
         self.column_width.set(EDITOR_WIDTH_DEFAULT);
         self.autosave.set(false);
         self.show_welcome.set(true);
-        self.font_family.set(FONT_FAMILY_DEFAULT.to_string());
-        self.line_height.set(LINE_HEIGHT_DEFAULT);
+        // Scene
+        self.scene_typo
+            .font_family
+            .set(SCENE_FONT_FAMILY_DEFAULT.to_string());
+        self.scene_typo.size.set(SCENE_SIZE_DEFAULT);
+        self.scene_typo.line_height.set(SCENE_LINE_HEIGHT_DEFAULT);
+        self.scene_typo
+            .first_line_indent
+            .set(SCENE_FIRST_LINE_INDENT_DEFAULT);
+        self.scene_typo
+            .para_spacing_before
+            .set(SCENE_PARA_SPACING_BEFORE_DEFAULT);
+        self.scene_typo
+            .para_spacing_after
+            .set(SCENE_PARA_SPACING_AFTER_DEFAULT);
+        // Synopsis
+        self.synopsis_typo
+            .font_family
+            .set(SYNOPSIS_FONT_FAMILY_DEFAULT.to_string());
+        self.synopsis_typo.size.set(SYNOPSIS_SIZE_DEFAULT);
+        self.synopsis_typo
+            .line_height
+            .set(SYNOPSIS_LINE_HEIGHT_DEFAULT);
+        self.synopsis_typo
+            .first_line_indent
+            .set(SYNOPSIS_FIRST_LINE_INDENT_DEFAULT);
+        self.synopsis_typo
+            .para_spacing_before
+            .set(SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT);
+        self.synopsis_typo
+            .para_spacing_after
+            .set(SYNOPSIS_PARA_SPACING_AFTER_DEFAULT);
+        // Notes
+        self.notes_typo
+            .font_family
+            .set(NOTES_FONT_FAMILY_DEFAULT.to_string());
+        self.notes_typo.size.set(NOTES_SIZE_DEFAULT);
+        self.notes_typo.line_height.set(NOTES_LINE_HEIGHT_DEFAULT);
+        self.notes_typo
+            .first_line_indent
+            .set(NOTES_FIRST_LINE_INDENT_DEFAULT);
+        self.notes_typo
+            .para_spacing_before
+            .set(NOTES_PARA_SPACING_BEFORE_DEFAULT);
+        self.notes_typo
+            .para_spacing_after
+            .set(NOTES_PARA_SPACING_AFTER_DEFAULT);
         self.synopsis_pane.set(SYNOPSIS_PANE_DEFAULT);
         self.typewriter.set(TYPEWRITER_DEFAULT);
         self.highlight_sentence.set(HIGHLIGHT_SENTENCE_DEFAULT);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        NOTES_FONT_FAMILY_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FONT_FAMILY_DEFAULT,
+        SCENE_LINE_HEIGHT_DEFAULT, SCENE_SIZE_DEFAULT, SYNOPSIS_SIZE_DEFAULT,
+    };
+    use std::sync::atomic::{AtomicU32, Ordering};
+
+    fn temp_store() -> SettingsStore {
+        static N: AtomicU32 = AtomicU32::new(0);
+        let n = N.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir()
+            .join(format!("skribisto_settings_test_{}_{n}.toml", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        SettingsStore::open(path).expect("open temp settings store")
+    }
+
+    /// Reset restores all 12 per-type typography signals (the biggest, most
+    /// error-prone part of the VM) to their `_DEFAULT` constants.
+    #[test]
+    fn reset_editor_defaults_restores_all_three_typography_bundles() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        let t = vm.editor_typography();
+        for b in [&t.scene, &t.synopsis, &t.notes] {
+            b.font_family.set("EB Garamond".into());
+            b.size.set(1.3);
+            b.line_height.set(2.1);
+            b.first_line_indent.set(40.0);
+        }
+
+        vm.reset_editor_defaults();
+
+        let t = vm.editor_typography();
+        assert_eq!(t.scene.font_family.get(), SCENE_FONT_FAMILY_DEFAULT);
+        assert_eq!(t.scene.size.get(), SCENE_SIZE_DEFAULT);
+        assert_eq!(t.scene.line_height.get(), SCENE_LINE_HEIGHT_DEFAULT);
+        assert_eq!(t.scene.first_line_indent.get(), SCENE_FIRST_LINE_INDENT_DEFAULT);
+        assert_eq!(t.synopsis.size.get(), SYNOPSIS_SIZE_DEFAULT);
+        assert_eq!(t.notes.font_family.get(), NOTES_FONT_FAMILY_DEFAULT);
+        // None of the three still holds the mutated value.
+        for b in [&t.scene, &t.synopsis, &t.notes] {
+            assert_ne!(b.font_family.get(), "EB Garamond");
+            assert_ne!(b.first_line_indent.get(), 40.0);
+        }
     }
 }

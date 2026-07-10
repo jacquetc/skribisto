@@ -7,6 +7,7 @@ use std::rc::Rc;
 use bastyde::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
+use bastyde::text::EditorTypographyDefaults;
 use bastyde::text_document::TextDocument;
 use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::rich_text::{EditorHandle, RichTextEditor, ScrollPolicy};
@@ -14,6 +15,8 @@ use bastyde::widgets::{
     Expand, FixedSize, GroupHeader, HStack, MaxSize, MenuItem, MenuList, Padding, Panel, RectWidget,
     Spacer, TextInput, VStack, ZStack,
 };
+
+use crate::view_models::EditorTypography;
 
 /// A caret-aware "split scene" action for a writing editor's context menu:
 /// invoked with the event context and the current caret offset.
@@ -41,6 +44,7 @@ pub const MAIN_MIN_LINES: u32 = 10;
 pub fn writing_column(
     doc: &TextDocument,
     column_width: &Signal<f32>,
+    typo: &EditorTypography,
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
 ) -> CenterColumnFlowing {
@@ -49,7 +53,9 @@ pub fn writing_column(
         .on_change(on_change)
         .content_padding_symmetric(8.0, 12.0)
         .min_lines(MAIN_MIN_LINES)
-        .v_scroll_policy(ScrollPolicy::AlwaysOff);
+        .v_scroll_policy(ScrollPolicy::AlwaysOff)
+        .typography_defaults(typo_defaults(typo))
+        .zoom(typo.size.get());
     if let Some(split) = split {
         // Replace the built-in menu with the standard editing actions (rebuilt
         // through the editor handle) plus "Split scene" at the caret.
@@ -66,7 +72,7 @@ pub fn writing_column(
     CenterColumnFlowing::new(bati!(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
-            Expand::horizontal { child: editor }
+            Expand::horizontal { child: TypographyBoundEditor::new(editor, typo.clone()) }
         }
     ))
 }
@@ -95,22 +101,28 @@ fn scene_editor_menu(handle: EditorHandle, cursor: Signal<usize>, split: SplitFn
 
 /// The bordered synopsis editor box (caller sizes/centres it). User edits flip
 /// the tab's dirty flag via `on_change`.
-pub fn synopsis_editor(doc: &TextDocument, on_change: impl Fn() + 'static) -> impl Widget {
+pub fn synopsis_editor(
+    doc: &TextDocument,
+    typo: &EditorTypography,
+    on_change: impl Fn() + 'static,
+) -> impl Widget {
+    let editor = RichTextEditor::editor(doc.clone())
+        .style(WritingEditorStyle)
+        .on_change(on_change)
+        .content_padding_symmetric(6.0, 30.0)
+        .min_lines(1)
+        .max_lines(6)
+        .v_scroll_policy(ScrollPolicy::Auto)
+        .text_color(TextRole::Secondary)
+        .typography_defaults(typo_defaults(typo))
+        .zoom(typo.size.get());
     bati!(
         Panel {
             background: SurfaceRole::Content
             border_color: BorderRole::Default
             border_width: 1.0
             corner_radius: 6.0
-            RichTextEditor::editor(doc.clone()) {
-                style: WritingEditorStyle
-                on_change: on_change
-                content_padding_symmetric: 6.0, 30.0
-                min_lines: 1
-                max_lines: 6
-                v_scroll_policy: ScrollPolicy::Auto
-                text_color: TextRole::Secondary
-            }
+            child: TypographyBoundEditor::new(editor, typo.clone())
         }
     )
 }
@@ -125,6 +137,7 @@ pub fn title_input(field: &TitleField, placeholder: impl Into<LocalizedString>) 
 pub fn synopsis_section(
     doc: &TextDocument,
     column_width: &Signal<f32>,
+    typo: &EditorTypography,
     on_change: impl Fn() + 'static,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
@@ -140,7 +153,7 @@ pub fn synopsis_section(
                 MaxSize::width(synopsis_width.get()) {
                     max_width: synopsis_width.clone()
                     Expand::horizontal {
-                        child: synopsis_editor(doc, on_change)
+                        child: synopsis_editor(doc, typo, on_change)
                     }
                 }
                 Spacer {
@@ -157,6 +170,7 @@ pub fn synopsis_section(
 pub fn writing_section(
     doc: &TextDocument,
     column_width: &Signal<f32>,
+    typo: &EditorTypography,
     on_change: impl Fn() + 'static,
 ) -> impl Widget {
     VStack::new()
@@ -166,7 +180,7 @@ pub fn writing_section(
                 .style(TextStyleRole::SmallBold)
                 .color(TextRole::Secondary),
         )
-        .child(writing_column(doc, column_width, on_change, None))
+        .child(writing_column(doc, column_width, typo, on_change, None))
 }
 
 /// A flat, edge-to-edge Content-surface backdrop wrapping the tab body (the
@@ -224,10 +238,127 @@ pub fn folder_synopsis_pane(tab: &ContentTab) -> impl Widget {
         col = col.child(vspace(4.0)).child(synopsis_section(
             &s.doc,
             &tab.column_width,
+            &tab.typography.synopsis,
             tab.mark_dirty_fn(),
         ));
     }
     col
+}
+
+/// The framework's non-destructive default typography from a settings bundle's
+/// *current* values (font family / line height / first-line indent). Size is
+/// applied separately as editor zoom.
+fn typo_defaults(typo: &EditorTypography) -> EditorTypographyDefaults {
+    EditorTypographyDefaults {
+        font_family: Some(typo.font_family.get()),
+        line_height: typo.line_height.get(),
+        first_line_indent: typo.first_line_indent.get(),
+        paragraph_spacing_before: typo.para_spacing_before.get(),
+        paragraph_spacing_after: typo.para_spacing_after.get(),
+    }
+}
+
+/// Push `typo`'s current values onto a live editor: font / line-height / indent
+/// as non-destructive defaults, size as zoom. Idempotent — called on mount and
+/// on every settings change.
+fn push_typography(handle: &EditorHandle, typo: &EditorTypography) {
+    handle.set_typography_defaults(typo_defaults(typo));
+    handle.set_zoom_level(typo.size.get());
+}
+
+/// Wraps a `RichTextEditor`, keeping its per-editor-type typography live for the
+/// life of the tab. Initial values are already baked onto `editor` by the caller
+/// (`typography_defaults` + `zoom`); this registers one `ctx.effect` per settings
+/// field so a preference edit re-pushes the whole bundle through the editor
+/// handle to every open tab. Four *separate* effects rather than one combined
+/// `zip` signal — `zip`/`zip3` build a *derived* signal, which panics on
+/// `.observe()`; the `SettingsStore` signals are mutable, so per-field effects
+/// are safe.
+struct TypographyBoundEditor {
+    editor: Option<RichTextEditor>,
+    typo: EditorTypography,
+    child_id: Option<WidgetId>,
+}
+
+impl TypographyBoundEditor {
+    fn new(editor: RichTextEditor, typo: EditorTypography) -> Self {
+        Self {
+            editor: Some(editor),
+            typo,
+            child_id: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for TypographyBoundEditor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TypographyBoundEditor")
+            .finish_non_exhaustive()
+    }
+}
+
+impl Widget for TypographyBoundEditor {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let editor = self
+            .editor
+            .take()
+            .expect("TypographyBoundEditor built once");
+        let handle = editor.handle();
+        let id = ctx.add(editor);
+        self.child_id = Some(id);
+        // Any one field changing re-pushes the whole bundle (font/line/indent +
+        // zoom) to the live editor. Separate effects — a combined `zip` signal is
+        // derived and would panic on observe.
+        {
+            let (h, t) = (handle.clone(), self.typo.clone());
+            ctx.effect(&self.typo.font_family, move |_| push_typography(&h, &t));
+        }
+        {
+            let (h, t) = (handle.clone(), self.typo.clone());
+            ctx.effect(&self.typo.size, move |_| push_typography(&h, &t));
+        }
+        {
+            let (h, t) = (handle.clone(), self.typo.clone());
+            ctx.effect(&self.typo.line_height, move |_| push_typography(&h, &t));
+        }
+        {
+            let (h, t) = (handle.clone(), self.typo.clone());
+            ctx.effect(&self.typo.first_line_indent, move |_| push_typography(&h, &t));
+        }
+        {
+            let (h, t) = (handle.clone(), self.typo.clone());
+            ctx.effect(&self.typo.para_spacing_before, move |_| push_typography(&h, &t));
+        }
+        {
+            let (h, t) = (handle, self.typo.clone());
+            ctx.effect(&self.typo.para_spacing_after, move |_| push_typography(&h, &t));
+        }
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.child_id
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = Point::new(bounds.x, bounds.y);
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
+    }
 }
 
 /// Editor chrome with a **constant** border instead of the default recipe's

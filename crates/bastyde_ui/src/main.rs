@@ -134,13 +134,59 @@ pub const AUTOSAVE_KEY: &str = "editor.autosave";
 /// checkbox; both bind the same `SettingsStore` signal.
 pub const SHOW_WELCOME_KEY: &str = "ui.show_welcome";
 
-// ── Manuscript & Fonts (Settings ▸ Editor ▸ Manuscript & Fonts) ──────────────
-/// Manuscript typeface family (the writing-editor font). A persisted preference.
-pub const FONT_FAMILY_KEY: &str = "editor.font_family";
-pub const FONT_FAMILY_DEFAULT: &str = "Spectral";
-/// Manuscript line height (leading), as a multiple of the font size.
-pub const LINE_HEIGHT_KEY: &str = "editor.line_height";
-pub const LINE_HEIGHT_DEFAULT: f32 = 1.72;
+// ── Editor typography (Settings ▸ Editor ▸ Scene / Synopsis / Notes) ──────────
+// Non-destructive per-editor-type defaults. Font family / line height /
+// first-line indent are applied via `RichTextEditor::typography_defaults`
+// (a display-time snapshot fill that never mutates the document); size is a
+// per-editor `zoom` multiplier (`1.0` = 100 %). These are NOT the char-format
+// `set_font_family`/`set_font_size` (which mutate the selection + document).
+// `font_family` must resolve via the shared typesetter — an installed system
+// font or one registered by `register_editor_fonts` below; the `FontPicker`
+// control only ever offers names that will render.
+
+/// Scene / manuscript body editor typography.
+pub const SCENE_FONT_FAMILY_KEY: &str = "editor.scene.font_family";
+pub const SCENE_FONT_FAMILY_DEFAULT: &str = "Literata";
+pub const SCENE_SIZE_KEY: &str = "editor.scene.size";
+pub const SCENE_SIZE_DEFAULT: f32 = 1.0;
+pub const SCENE_LINE_HEIGHT_KEY: &str = "editor.scene.line_height";
+pub const SCENE_LINE_HEIGHT_DEFAULT: f32 = 1.5;
+pub const SCENE_FIRST_LINE_INDENT_KEY: &str = "editor.scene.first_line_indent";
+pub const SCENE_FIRST_LINE_INDENT_DEFAULT: f32 = 28.0;
+pub const SCENE_PARA_SPACING_BEFORE_KEY: &str = "editor.scene.para_spacing_before";
+pub const SCENE_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const SCENE_PARA_SPACING_AFTER_KEY: &str = "editor.scene.para_spacing_after";
+pub const SCENE_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
+
+/// Synopsis editor typography (the subordinate summary pane).
+pub const SYNOPSIS_FONT_FAMILY_KEY: &str = "editor.synopsis.font_family";
+pub const SYNOPSIS_FONT_FAMILY_DEFAULT: &str = "Literata";
+pub const SYNOPSIS_SIZE_KEY: &str = "editor.synopsis.size";
+pub const SYNOPSIS_SIZE_DEFAULT: f32 = 0.95;
+pub const SYNOPSIS_LINE_HEIGHT_KEY: &str = "editor.synopsis.line_height";
+pub const SYNOPSIS_LINE_HEIGHT_DEFAULT: f32 = 1.35;
+pub const SYNOPSIS_FIRST_LINE_INDENT_KEY: &str = "editor.synopsis.first_line_indent";
+pub const SYNOPSIS_FIRST_LINE_INDENT_DEFAULT: f32 = 0.0;
+pub const SYNOPSIS_PARA_SPACING_BEFORE_KEY: &str = "editor.synopsis.para_spacing_before";
+pub const SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const SYNOPSIS_PARA_SPACING_AFTER_KEY: &str = "editor.synopsis.para_spacing_after";
+pub const SYNOPSIS_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
+
+/// Notes editor typography.
+pub const NOTES_FONT_FAMILY_KEY: &str = "editor.notes.font_family";
+pub const NOTES_FONT_FAMILY_DEFAULT: &str = "Inter";
+pub const NOTES_SIZE_KEY: &str = "editor.notes.size";
+pub const NOTES_SIZE_DEFAULT: f32 = 1.0;
+pub const NOTES_LINE_HEIGHT_KEY: &str = "editor.notes.line_height";
+pub const NOTES_LINE_HEIGHT_DEFAULT: f32 = 1.5;
+pub const NOTES_FIRST_LINE_INDENT_KEY: &str = "editor.notes.first_line_indent";
+pub const NOTES_FIRST_LINE_INDENT_DEFAULT: f32 = 0.0;
+pub const NOTES_PARA_SPACING_BEFORE_KEY: &str = "editor.notes.para_spacing_before";
+pub const NOTES_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const NOTES_PARA_SPACING_AFTER_KEY: &str = "editor.notes.para_spacing_after";
+pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
+
+// ── Editor behaviour (Settings ▸ Editor ▸ Editor Behavior) ───────────────────
 /// Show the synopsis pane above the manuscript in the dual-pane writing editor
 /// (Skribisto's signature layout). Consumed live by `item_scene_tab`.
 pub const SYNOPSIS_PANE_KEY: &str = "editor.synopsis_pane";
@@ -151,6 +197,30 @@ pub const TYPEWRITER_DEFAULT: bool = true;
 /// Highlight the sentence the caret is in.
 pub const HIGHLIGHT_SENTENCE_KEY: &str = "editor.highlight_sentence";
 pub const HIGHLIGHT_SENTENCE_DEFAULT: bool = false;
+
+/// The bundled writing typefaces (OFL-1.1), registered additively into the
+/// shared typesetter at startup so the defaults render on every machine and the
+/// `FontPicker` lists them. Inter (sans, the Notes default) stays the app-wide
+/// default face — every serif here is registered non-default. Family names are
+/// exactly "Literata", "EB Garamond", "Source Serif 4" (verified via the font
+/// name tables), matching the `*_FONT_FAMILY_DEFAULT` values above.
+fn register_editor_fonts() -> bastyde::text::VecFontRegistrar {
+    use bastyde::text::{FontFaceSpec, VecFontRegistrar};
+    use std::sync::Arc;
+    let face = |bytes: &'static [u8]| FontFaceSpec {
+        data: Arc::new(bytes.to_vec()),
+        is_default: false,
+        default_size_px: 16.0,
+    };
+    VecFontRegistrar::new(vec![
+        face(include_bytes!("../assets/fonts/Literata-Variable.ttf")),
+        face(include_bytes!("../assets/fonts/Literata-Italic-Variable.ttf")),
+        face(include_bytes!("../assets/fonts/EBGaramond-Variable.ttf")),
+        face(include_bytes!("../assets/fonts/EBGaramond-Italic-Variable.ttf")),
+        face(include_bytes!("../assets/fonts/SourceSerif4-Variable.ttf")),
+        face(include_bytes!("../assets/fonts/SourceSerif4-Italic-Variable.ttf")),
+    ])
+}
 
 /// Adapts the Qleany-generated `EventHubClient` to Bastyde's `EventSource`
 /// (orphan rule prevents implementing the trait directly on the client).
@@ -269,6 +339,9 @@ fn main() {
         .theme(theme)
         .application("eu", "skribisto", "Skribisto")
         .settings(SettingsBundle::new().with_window_state(true))
+        // Ship the writing serifs so the manuscript defaults render everywhere
+        // and the typeface picker lists them (additive; Inter stays the default).
+        .register_fonts(register_editor_fonts())
         .i18n(i18n)
         .install_inspector_in_debug()
         .install_automation_bridge_in_debug()

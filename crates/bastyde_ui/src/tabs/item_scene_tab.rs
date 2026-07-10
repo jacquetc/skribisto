@@ -27,7 +27,12 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
         // synopsis document is preserved and re-shown on toggle-back.
         let visible = tab.show_synopsis.map(|on| if *on { 1 } else { 0 });
         col = col.child(Switcher::new(visible).child(shared::vspace(0.0)).child(
-            shared::synopsis_section(&s.doc, &tab.column_width, tab.mark_dirty_fn()),
+            shared::synopsis_section(
+                &s.doc,
+                &tab.column_width,
+                &tab.typography.synopsis,
+                tab.mark_dirty_fn(),
+            ),
         ));
     }
     if let Some(m) = &tab.main {
@@ -36,6 +41,7 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
             .child(shared::writing_section(
                 &m.doc,
                 &tab.column_width,
+                tab.main_typography(),
                 tab.mark_dirty_fn(),
             ));
     }

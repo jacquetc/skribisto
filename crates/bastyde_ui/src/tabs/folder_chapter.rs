@@ -14,7 +14,7 @@ use bastyde::widgets::{
 };
 
 use crate::models::SceneRow;
-use crate::view_models::ChapterViewModel;
+use crate::view_models::{ChapterViewModel, EditorTypography};
 
 use super::{ContentTab, shared};
 
@@ -50,12 +50,15 @@ fn full_chapter_pane(tab: &ContentTab) -> impl Widget {
     let mut col = VStack::new().spacing(0.0);
     if let Some(vm) = tab.chapter.clone() {
         let mark_dirty: Rc<dyn Fn()> = Rc::new(tab.mark_dirty_fn());
+        // The Full Chapter view's per-scene editors are scenes → Scene typography.
+        let scene_typo = tab.typography.scene.clone();
         let factory = {
             let vm = vm.clone();
             let cw = cw.clone();
             let md = mark_dirty.clone();
+            let typo = scene_typo.clone();
             move |row: &SceneRow| -> Box<dyn Widget> {
-                Box::new(scene_row(&vm, row.item_id, &cw, &md))
+                Box::new(scene_row(&vm, row.item_id, &cw, &typo, &md))
             }
         };
         col = col
@@ -133,6 +136,7 @@ fn scene_row(
     vm: &ChapterViewModel,
     id: u64,
     column_width: &Signal<f32>,
+    typo: &EditorTypography,
     mark_dirty: &Rc<dyn Fn()>,
 ) -> impl Widget {
     let scene = vm.scene(id);
@@ -150,6 +154,7 @@ fn scene_row(
         .child(shared::writing_column(
             &scene.main_doc(),
             column_width,
+            typo,
             on_change,
             Some(split),
         ))

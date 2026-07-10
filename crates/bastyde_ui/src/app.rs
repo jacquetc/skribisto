@@ -146,11 +146,12 @@ impl Widget for App {
         let app_ctx = self.app_ctx.clone();
         let column_width = settings.column_width();
         let show_synopsis = settings.synopsis_pane();
+        let typography = settings.editor_typography();
         let ids = self.outline.ids();
         let editors = self
             .editors
             .get_or_insert_with(|| {
-                EditorsViewModel::new(app_ctx, column_width, show_synopsis, ids)
+                EditorsViewModel::new(app_ctx, column_width, show_synopsis, typography, ids)
             })
             .clone();
 

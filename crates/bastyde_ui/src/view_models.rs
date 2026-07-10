@@ -47,5 +47,5 @@ pub use editors::EditorsViewModel;
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;
-pub use settings::SettingsViewModel;
+pub use settings::{EditorTypography, EditorTypographySet, SettingsViewModel};
 pub use welcome::WelcomeViewModel;

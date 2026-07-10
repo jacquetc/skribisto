@@ -30,17 +30,23 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::settings::{SettingsExt, TEXT_SCALE_KEY};
 use bastyde::widgets::{
-    Breadcrumb, BreadcrumbItem, Button, ButtonVariant, Center, Checkbox, ComboBox, Divider, Expand,
-    FixedSize, FormLayout, GroupHeader, HStack, IconButton, IconWidget, LanguageSwitcher,
-    MessageBox, MessageBoxButton, MessageBoxButtons, Padding, Panel, ScrollArea, SearchField,
-    Slider, Spacer, StandardButton, StandardTreeItem, Switcher, TextScaleControl, TextWidget,
-    ThemeSwitcher, Toggle, TreeView, VStack,
+    Breadcrumb, BreadcrumbItem, Button, ButtonVariant, Center, Checkbox, Divider, Expand,
+    FixedSize, FontPicker, FormLayout, GroupHeader, HStack, IconButton, IconWidget,
+    LanguageSwitcher, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, Panel, ScrollArea,
+    SearchField, Slider, Spacer, StandardButton, StandardTreeItem, Switcher, TextScaleControl,
+    TextWidget, ThemeSwitcher, Toggle, TreeView, VStack,
 };
 
-use crate::view_models::SettingsViewModel;
+use crate::view_models::{EditorTypography, SettingsViewModel};
 use crate::{
-    EDITOR_WIDTH_DEFAULT, FONT_FAMILY_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT, LINE_HEIGHT_DEFAULT,
-    SYNOPSIS_PANE_DEFAULT, TYPEWRITER_DEFAULT,
+    EDITOR_WIDTH_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT, NOTES_FIRST_LINE_INDENT_DEFAULT,
+    NOTES_FONT_FAMILY_DEFAULT, NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT,
+    NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_SIZE_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT,
+    SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT, SCENE_PARA_SPACING_AFTER_DEFAULT,
+    SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_SIZE_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
+    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
+    SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_SIZE_DEFAULT,
+    TYPEWRITER_DEFAULT,
 };
 
 /// Card dimensions (a compact two-pane preferences window).
@@ -54,16 +60,6 @@ const BODY_H: f32 = CARD_H - HEADER_H - 1.0;
 /// The default text-scale factor (framework `TEXT_SCALE_KEY` baseline).
 const TEXT_SCALE_DEFAULT: f32 = 1.0;
 
-/// Manuscript typeface choices (data — proper names, never translated).
-const FONT_FAMILIES: &[&str] = &[
-    "Spectral",
-    "Literata",
-    "Georgia",
-    "Iowan Old Style",
-    "Inter",
-    "System",
-];
-
 // ── Category tree model ──────────────────────────────────────────────────────
 
 /// A selectable settings page (a tree *leaf* → its own pane). The discriminant
@@ -73,7 +69,10 @@ enum Pane {
     Appearance = 0,
     MenusToolbars,
     Notifications,
-    Manuscript,
+    SceneTypography,
+    SynopsisTypography,
+    NotesTypography,
+    EditorBehavior,
     Goals,
     Corkboard,
     Dictionaries,
@@ -92,7 +91,10 @@ impl Pane {
             Pane::Appearance => tr!(settings_page_appearance()),
             Pane::MenusToolbars => tr!(settings_page_menus()),
             Pane::Notifications => tr!(settings_page_notifications()),
-            Pane::Manuscript => tr!(settings_page_manuscript()),
+            Pane::SceneTypography => tr!(settings_page_scene()),
+            Pane::SynopsisTypography => tr!(settings_page_synopsis()),
+            Pane::NotesTypography => tr!(settings_page_notes()),
+            Pane::EditorBehavior => tr!(settings_page_editor_behavior()),
             Pane::Goals => tr!(settings_page_goals()),
             Pane::Corkboard => tr!(settings_page_corkboard()),
             Pane::Dictionaries => tr!(settings_page_dictionaries()),
@@ -189,6 +191,7 @@ fn build_not_defaults(
     scale: &Signal<f32>,
     vm: &SettingsViewModel,
 ) -> Signal<bool> {
+    let typo = vm.editor_typography();
     let mut diffs = vec![
         theme.map(|t| t.is_dark()), // default = light
         scale.map(|s| (*s - TEXT_SCALE_DEFAULT).abs() > f32::EPSILON),
@@ -196,9 +199,28 @@ fn build_not_defaults(
             .map(|w| (*w - EDITOR_WIDTH_DEFAULT).abs() > 0.01),
         vm.autosave().map(|a| *a),      // default = off
         vm.show_welcome().map(|s| !*s), // default = on
-        vm.font_family().map(|f| f.as_str() != FONT_FAMILY_DEFAULT),
-        vm.line_height()
-            .map(|h| (*h - LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
+        // ── Scene typography ──
+        typo.scene.font_family.map(|f| f.as_str() != SCENE_FONT_FAMILY_DEFAULT),
+        typo.scene.size.map(|s| (*s - SCENE_SIZE_DEFAULT).abs() > f32::EPSILON),
+        typo.scene.line_height.map(|h| (*h - SCENE_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
+        typo.scene.first_line_indent.map(|i| (*i - SCENE_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
+        typo.scene.para_spacing_before.map(|v| (*v - SCENE_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
+        typo.scene.para_spacing_after.map(|v| (*v - SCENE_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
+        // ── Synopsis typography ──
+        typo.synopsis.font_family.map(|f| f.as_str() != SYNOPSIS_FONT_FAMILY_DEFAULT),
+        typo.synopsis.size.map(|s| (*s - SYNOPSIS_SIZE_DEFAULT).abs() > f32::EPSILON),
+        typo.synopsis.line_height.map(|h| (*h - SYNOPSIS_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
+        typo.synopsis.first_line_indent.map(|i| (*i - SYNOPSIS_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
+        typo.synopsis.para_spacing_before.map(|v| (*v - SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
+        typo.synopsis.para_spacing_after.map(|v| (*v - SYNOPSIS_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
+        // ── Notes typography ──
+        typo.notes.font_family.map(|f| f.as_str() != NOTES_FONT_FAMILY_DEFAULT),
+        typo.notes.size.map(|s| (*s - NOTES_SIZE_DEFAULT).abs() > f32::EPSILON),
+        typo.notes.line_height.map(|h| (*h - NOTES_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
+        typo.notes.first_line_indent.map(|i| (*i - NOTES_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
+        typo.notes.para_spacing_before.map(|v| (*v - NOTES_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
+        typo.notes.para_spacing_after.map(|v| (*v - NOTES_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
+        // ── Editor behaviour ──
         vm.synopsis_pane().map(|s| *s != SYNOPSIS_PANE_DEFAULT),
         vm.typewriter().map(|s| *s != TYPEWRITER_DEFAULT),
         vm.highlight_sentence()
@@ -314,7 +336,7 @@ fn empty_pane(
 
 pub struct SettingsPanel {
     /// The active page — a panel field so it survives rebuilds (and seeds the
-    /// tree selection + the content `Switcher`). Defaults to Manuscript & Fonts.
+    /// tree selection + the content `Switcher`). Defaults to Editor ▸ Scene.
     selected_pane: Signal<Pane>,
     root_child: Option<WidgetId>,
 }
@@ -322,23 +344,17 @@ pub struct SettingsPanel {
 impl SettingsPanel {
     pub fn new() -> Self {
         Self {
-            selected_pane: Signal::new(Pane::Manuscript),
+            selected_pane: Signal::new(Pane::SceneTypography),
             root_child: None,
         }
     }
 
-    /// Editor ▸ Manuscript & Fonts — the fully-specced design pane. Migrates the
-    /// existing Text-width and theme settings; adds typeface / size / line height
-    /// / synopsis / typewriter / highlight.
-    fn manuscript_pane(
-        ctx: &mut BuildContext,
-        vm: &SettingsViewModel,
-        scale: Signal<f32>,
-    ) -> impl Widget {
-        // Typeface: a `ComboBox<Option<String>>` bridged to the persisted
-        // `Signal<String>` (which serialises cleanly). The effect mirrors
-        // external changes (Reset / Cancel) back into the combo's selection.
-        let persisted = vm.font_family();
+    /// A `FontPicker` bound to a persisted typeface `Signal<String>` (bridged to
+    /// the picker's `Option<String>` selection; the effect mirrors external
+    /// changes — Reset — back into the picker). Self-populates from the shared
+    /// typesetter's real font database, including the bundled writing serifs, so
+    /// every offered name renders.
+    fn font_picker(ctx: &mut BuildContext, persisted: Signal<String>) -> impl Widget {
         let selection: Signal<Option<String>> = Signal::new(Some(persisted.get()));
         {
             let selection = selection.clone();
@@ -348,34 +364,68 @@ impl SettingsPanel {
                 }
             });
         }
-        let families: Vec<String> = FONT_FAMILIES.iter().map(|s| s.to_string()).collect();
         let write_back = persisted.clone();
-        let typeface = FixedSize::new().width(240.0).child(
-            ComboBox::from_items(families, selection, |f: &String| {
-                let f = f.clone();
-                localized(move || f.clone())
-            })
-            .placeholder(tr!(settings_field_typeface()))
-            .on_select(move |f: &String, _ctx| write_back.set(f.clone())),
-        );
+        FixedSize::new().width(240.0).child(
+            FontPicker::new(selection)
+                .placeholder(tr!(settings_field_typeface()))
+                .on_select(move |f: &str, _ctx| write_back.set(f.to_string())),
+        )
+    }
 
-        let text_scale = FixedSize::new()
-            .width(300.0)
-            .child(TextScaleControl::new(scale));
-
+    /// One per-editor-type typography page (Scene / Synopsis / Notes): Typeface /
+    /// Size / Line height / First-line indent, bound to `typo`'s live signals.
+    fn typography_pane(
+        ctx: &mut BuildContext,
+        page: LocalizedString,
+        typo: &EditorTypography,
+    ) -> impl Widget {
         let form = FormLayout::new()
-            .label(tr!(settings_page_manuscript()))
+            .label(page.clone())
             .label_gap(16.0)
             .row_spacing(14.0)
-            // ── Manuscript font ──
-            .full_width(group(tr!(settings_group_manuscript_font())))
-            .line(field_label(tr!(settings_field_typeface())), typeface)
-            .line(field_label(tr!(settings_field_size())), text_scale)
+            .full_width(group(tr!(settings_group_typography())))
+            .line(
+                field_label(tr!(settings_field_typeface())),
+                Self::font_picker(ctx, typo.font_family.clone()),
+            )
+            .line(
+                field_label(tr!(settings_field_size())),
+                slider_field(typo.size.clone(), 0.7, 1.6, 0.05, |v| {
+                    format!("{:.0}%", v * 100.0)
+                }),
+            )
             .line(
                 field_label(tr!(settings_field_line_height())),
-                slider_field(vm.line_height(), 1.0, 2.4, 0.02, |v| format!("{v:.2}")),
+                slider_field(typo.line_height.clone(), 1.0, 2.4, 0.02, |v| format!("{v:.2}")),
             )
-            // ── Writing column ──
+            .line(
+                field_label(tr!(settings_field_first_line_indent())),
+                slider_field(typo.first_line_indent.clone(), 0.0, 60.0, 2.0, |v| {
+                    format!("{} px", v.round() as i32)
+                }),
+            )
+            .line(
+                field_label(tr!(settings_field_paragraph_spacing_before())),
+                slider_field(typo.para_spacing_before.clone(), 0.0, 40.0, 2.0, |v| {
+                    format!("{} px", v.round() as i32)
+                }),
+            )
+            .line(
+                field_label(tr!(settings_field_paragraph_spacing_after())),
+                slider_field(typo.para_spacing_after.clone(), 0.0, 40.0, 2.0, |v| {
+                    format!("{} px", v.round() as i32)
+                }),
+            );
+        pane_frame(crumb(Some(tr!(settings_sec_editor())), page), form)
+    }
+
+    /// Editor ▸ Editor Behavior — the non-typographic writing settings: the
+    /// centered-column width + the synopsis-pane / typewriter / highlight toggles.
+    fn editor_behavior_pane(vm: &SettingsViewModel) -> impl Widget {
+        let form = FormLayout::new()
+            .label(tr!(settings_page_editor_behavior()))
+            .label_gap(16.0)
+            .row_spacing(14.0)
             .full_width(group(tr!(settings_group_writing_column())))
             .line(
                 field_label(tr!(settings_text_width())),
@@ -387,28 +437,22 @@ impl SettingsPanel {
             .full_width(Checkbox::new(vm.typewriter()).label(tr!(settings_typewriter())))
             .full_width(
                 Checkbox::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())),
-            )
-            // ── Theme ──
-            .full_width(group(tr!(settings_group_theme())))
-            .line(
-                field_label(tr!(settings_field_editor_theme())),
-                FixedSize::new()
-                    .width(240.0)
-                    .child(ThemeSwitcher::new().system(true)),
             );
 
         pane_frame(
             crumb(
                 Some(tr!(settings_sec_editor())),
-                tr!(settings_page_manuscript()),
+                tr!(settings_page_editor_behavior()),
             ),
             form,
         )
     }
 
-    /// Appearance & Behaviour ▸ Appearance — migrates interface language +
-    /// the "show welcome at startup" preference.
-    fn appearance_pane(vm: &SettingsViewModel) -> impl Widget {
+    /// Appearance & Behaviour ▸ Appearance — interface language, the app-wide
+    /// **Theme** and **Interface text size** (both relocated here from the old
+    /// Manuscript pane, where "Editor theme"/"Text size" were misnomers for
+    /// app-wide controls), and the "show welcome at startup" preference.
+    fn appearance_pane(vm: &SettingsViewModel, scale: Signal<f32>) -> impl Widget {
         let form = FormLayout::new()
             .label(tr!(settings_page_appearance()))
             .label_gap(16.0)
@@ -417,6 +461,17 @@ impl SettingsPanel {
             .line(
                 field_label(tr!(settings_field_language())),
                 FixedSize::new().width(240.0).child(LanguageSwitcher::new()),
+            )
+            .full_width(group(tr!(settings_group_theme())))
+            .line(
+                field_label(tr!(settings_field_app_theme())),
+                FixedSize::new()
+                    .width(240.0)
+                    .child(ThemeSwitcher::new().system(true)),
+            )
+            .line(
+                field_label(tr!(settings_field_text_scale())),
+                FixedSize::new().width(300.0).child(TextScaleControl::new(scale)),
             )
             .full_width(group(tr!(settings_group_startup())))
             .full_width(Checkbox::new(vm.show_welcome()).label(tr!(settings_show_welcome())));
@@ -479,16 +534,28 @@ impl SettingsPanel {
 
         let ed = model.insert_root(1, Node::Section(Sec::Editor));
         nodes.insert(
-            Pane::Manuscript,
-            model.insert_child(ed, 0, Node::Page(Pane::Manuscript)),
+            Pane::SceneTypography,
+            model.insert_child(ed, 0, Node::Page(Pane::SceneTypography)),
+        );
+        nodes.insert(
+            Pane::SynopsisTypography,
+            model.insert_child(ed, 1, Node::Page(Pane::SynopsisTypography)),
+        );
+        nodes.insert(
+            Pane::NotesTypography,
+            model.insert_child(ed, 2, Node::Page(Pane::NotesTypography)),
+        );
+        nodes.insert(
+            Pane::EditorBehavior,
+            model.insert_child(ed, 3, Node::Page(Pane::EditorBehavior)),
         );
         nodes.insert(
             Pane::Goals,
-            model.insert_child(ed, 1, Node::Page(Pane::Goals)),
+            model.insert_child(ed, 4, Node::Page(Pane::Goals)),
         );
         nodes.insert(
             Pane::Corkboard,
-            model.insert_child(ed, 2, Node::Page(Pane::Corkboard)),
+            model.insert_child(ed, 5, Node::Page(Pane::Corkboard)),
         );
 
         let sp = model.insert_root(2, Node::Section(Sec::Spelling));
@@ -571,27 +638,51 @@ impl SettingsPanel {
     ) -> impl Widget {
         // (searchable label, the page it lives on). Resolved per-keystroke so it
         // follows a locale change.
-        let index: Rc<Vec<(LocalizedString, Pane)>> = Rc::new(vec![
+        let mut idx: Vec<(LocalizedString, Pane)> = vec![
             (tr!(settings_page_appearance()), Pane::Appearance),
             (tr!(settings_page_menus()), Pane::MenusToolbars),
             (tr!(settings_page_notifications()), Pane::Notifications),
-            (tr!(settings_page_manuscript()), Pane::Manuscript),
+            (tr!(settings_page_scene()), Pane::SceneTypography),
+            (tr!(settings_page_synopsis()), Pane::SynopsisTypography),
+            (tr!(settings_page_notes()), Pane::NotesTypography),
+            (tr!(settings_page_editor_behavior()), Pane::EditorBehavior),
             (tr!(settings_page_goals()), Pane::Goals),
             (tr!(settings_page_corkboard()), Pane::Corkboard),
             (tr!(settings_page_dictionaries()), Pane::Dictionaries),
             (tr!(settings_page_autosave()), Pane::Autosave),
             (tr!(settings_page_export()), Pane::ExportFormats),
             (tr!(settings_page_keymap()), Pane::Keymap),
-            (tr!(settings_field_typeface()), Pane::Manuscript),
-            (tr!(settings_field_size()), Pane::Manuscript),
-            (tr!(settings_field_line_height()), Pane::Manuscript),
-            (tr!(settings_text_width()), Pane::Manuscript),
-            (tr!(settings_synopsis_pane()), Pane::Manuscript),
-            (tr!(settings_field_editor_theme()), Pane::Manuscript),
+            (tr!(settings_text_width()), Pane::EditorBehavior),
+            (tr!(settings_synopsis_pane()), Pane::EditorBehavior),
+            (tr!(settings_field_app_theme()), Pane::Appearance),
+            (tr!(settings_field_text_scale()), Pane::Appearance),
             (tr!(settings_field_language()), Pane::Appearance),
             (tr!(settings_show_welcome()), Pane::Appearance),
             (tr!(settings_autosave()), Pane::Autosave),
-        ]);
+        ];
+        // Typeface / Size / Line height / First-line indent repeat on all three
+        // typography pages, so disambiguate each by page ("Scene — Typeface") —
+        // the index dedupes by resolved text, so bare labels would collide and
+        // leave two of three pages unreachable.
+        for (page, pane) in [
+            (tr!(settings_page_scene()), Pane::SceneTypography),
+            (tr!(settings_page_synopsis()), Pane::SynopsisTypography),
+            (tr!(settings_page_notes()), Pane::NotesTypography),
+        ] {
+            for field in [
+                tr!(settings_field_typeface()),
+                tr!(settings_field_size()),
+                tr!(settings_field_line_height()),
+                tr!(settings_field_first_line_indent()),
+            ] {
+                let page = page.clone();
+                idx.push((
+                    localized(move || format!("{} — {}", page.resolve_now(), field.resolve_now())),
+                    pane,
+                ));
+            }
+        }
+        let index: Rc<Vec<(LocalizedString, Pane)>> = Rc::new(idx);
 
         let for_suggest = index.clone();
         let for_select = index.clone();
@@ -655,10 +746,13 @@ impl Widget for SettingsPanel {
             .child(Expand::vertical().child(Padding::symmetric(2.0, 6.0).child(tree)));
 
         // ── Right pane: the per-page content behind the selection Switcher ──
+        // Child order MUST equal the `Pane` discriminant order (guarded by
+        // `pane_indices_match_switcher_order`).
         let ab = tr!(settings_sec_appearance_behaviour());
         let editor = tr!(settings_sec_editor());
+        let typo = vm.editor_typography();
         let content = Switcher::new(self.selected_pane.map(|p| p.index()))
-            .child(Self::appearance_pane(&vm))
+            .child(Self::appearance_pane(&vm, scale.clone()))
             .child(empty_pane(
                 Some(ab.clone()),
                 tr!(settings_page_menus()),
@@ -669,7 +763,14 @@ impl Widget for SettingsPanel {
                 tr!(settings_page_notifications()),
                 Sec::AppearanceBehaviour.icon_svg(),
             ))
-            .child(Self::manuscript_pane(ctx, &vm, scale.clone()))
+            .child(Self::typography_pane(ctx, tr!(settings_page_scene()), &typo.scene))
+            .child(Self::typography_pane(
+                ctx,
+                tr!(settings_page_synopsis()),
+                &typo.synopsis,
+            ))
+            .child(Self::typography_pane(ctx, tr!(settings_page_notes()), &typo.notes))
+            .child(Self::editor_behavior_pane(&vm))
             .child(empty_pane(
                 Some(editor.clone()),
                 tr!(settings_page_goals()),
@@ -847,12 +948,15 @@ mod tests {
         assert_eq!(Pane::Appearance.index(), 0);
         assert_eq!(Pane::MenusToolbars.index(), 1);
         assert_eq!(Pane::Notifications.index(), 2);
-        assert_eq!(Pane::Manuscript.index(), 3);
-        assert_eq!(Pane::Goals.index(), 4);
-        assert_eq!(Pane::Corkboard.index(), 5);
-        assert_eq!(Pane::Dictionaries.index(), 6);
-        assert_eq!(Pane::Autosave.index(), 7);
-        assert_eq!(Pane::ExportFormats.index(), 8);
-        assert_eq!(Pane::Keymap.index(), 9);
+        assert_eq!(Pane::SceneTypography.index(), 3);
+        assert_eq!(Pane::SynopsisTypography.index(), 4);
+        assert_eq!(Pane::NotesTypography.index(), 5);
+        assert_eq!(Pane::EditorBehavior.index(), 6);
+        assert_eq!(Pane::Goals.index(), 7);
+        assert_eq!(Pane::Corkboard.index(), 8);
+        assert_eq!(Pane::Dictionaries.index(), 9);
+        assert_eq!(Pane::Autosave.index(), 10);
+        assert_eq!(Pane::ExportFormats.index(), 11);
+        assert_eq!(Pane::Keymap.index(), 12);
     }
 }
