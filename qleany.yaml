@@ -43,10 +43,10 @@ entities:
     strong: true
     list_model: true
     list_model_displayed_field: title
-  - name: work_info
+  - name: work_infos
     type: entity
     entity: WorkInfo
-    relationship: one_to_one
+    relationship: one_to_many
     strong: true
   undoable: false
 - name: WorkInfo
@@ -61,6 +61,11 @@ entities:
     enum_values:
       - Zip
       - Folder
+  - name: work
+    type: entity
+    entity: Work
+    relationship: many_to_one
+    optional: true
   undoable: false
 - name: RecentWork
   inherits_from: EntityBase

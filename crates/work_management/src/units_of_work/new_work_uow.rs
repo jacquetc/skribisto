@@ -122,6 +122,7 @@ impl CommandUnitOfWork for NewWorkUnitOfWork {
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
+#[macros::uow_action(entity = "WorkInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "Root", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "GetAll")]
 #[macros::uow_action(entity = "System", action = "GetRelationship")]

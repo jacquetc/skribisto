@@ -13,6 +13,7 @@ pub struct WorkInfoDto {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub file_name: Option<String>,
     pub shape: WorkShape,
+    pub work: Option<EntityId>,
 }
 
 impl From<WorkInfoDto> for WorkInfo {
@@ -23,6 +24,7 @@ impl From<WorkInfoDto> for WorkInfo {
             updated_at: dto.updated_at,
             file_name: dto.file_name,
             shape: dto.shape,
+            work: dto.work,
         }
     }
 }
@@ -35,6 +37,7 @@ impl From<&WorkInfoDto> for WorkInfo {
             updated_at: dto.updated_at.clone(),
             file_name: dto.file_name.clone(),
             shape: dto.shape.clone(),
+            work: dto.work.clone(),
         }
     }
 }
@@ -47,6 +50,7 @@ impl From<WorkInfo> for WorkInfoDto {
             updated_at: entity.updated_at,
             file_name: entity.file_name,
             shape: entity.shape,
+            work: entity.work,
         }
     }
 }
@@ -57,6 +61,7 @@ pub struct CreateWorkInfoDto {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub file_name: Option<String>,
     pub shape: WorkShape,
+    pub work: Option<EntityId>,
 }
 
 impl From<CreateWorkInfoDto> for WorkInfo {
@@ -67,6 +72,7 @@ impl From<CreateWorkInfoDto> for WorkInfo {
             updated_at: dto.updated_at,
             file_name: dto.file_name,
             shape: dto.shape,
+            work: dto.work,
         }
     }
 }
@@ -79,6 +85,7 @@ impl From<&CreateWorkInfoDto> for WorkInfo {
             updated_at: dto.updated_at.clone(),
             file_name: dto.file_name.clone(),
             shape: dto.shape.clone(),
+            work: dto.work.clone(),
         }
     }
 }
@@ -90,6 +97,7 @@ impl From<WorkInfo> for CreateWorkInfoDto {
             updated_at: entity.updated_at,
             file_name: entity.file_name,
             shape: entity.shape,
+            work: entity.work,
         }
     }
 }
@@ -110,6 +118,7 @@ impl From<UpdateWorkInfoDto> for WorkInfo {
             updated_at: dto.updated_at,
             file_name: dto.file_name,
             shape: dto.shape,
+            work: Default::default(),
         }
     }
 }
@@ -122,6 +131,7 @@ impl From<&UpdateWorkInfoDto> for WorkInfo {
             updated_at: dto.updated_at.clone(),
             file_name: dto.file_name.clone(),
             shape: dto.shape.clone(),
+            work: Default::default(),
         }
     }
 }
@@ -148,4 +158,12 @@ impl From<WorkInfoDto> for UpdateWorkInfoDto {
             shape: dto.shape,
         }
     }
+}
+pub use common::direct_access::work_info::WorkInfoRelationshipField;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkInfoRelationshipDto {
+    pub id: EntityId,
+    pub field: WorkInfoRelationshipField,
+    pub right_ids: Vec<EntityId>,
 }

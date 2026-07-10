@@ -29,7 +29,7 @@ pub struct System {
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub recent_works: Vec<EntityId>,
-    pub work_info: EntityId,
+    pub work_infos: Vec<EntityId>,
 }
 
 impl HasId for System {
@@ -47,6 +47,7 @@ pub struct WorkInfo {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub file_name: Option<String>,
     pub shape: WorkShape,
+    pub work: Option<EntityId>,
 }
 
 impl HasId for WorkInfo {

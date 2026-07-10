@@ -15,6 +15,7 @@ use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::root::RootRelationshipField;
 use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
+use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, RecentWork, Root, System,
     TrashInfo, Work, WorkInfo, WorkShape,
@@ -43,6 +44,7 @@ pub trait NewWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
+#[macros::uow_action(entity = "WorkInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "Root", action = "SetRelationship")]
 // Reuse the single shared System/Root frame (seeded by `initialize_app`) rather
 // than minting a new pair each time — one Root/System per process.
@@ -302,10 +304,17 @@ impl NewWorkUseCase {
             shape,
             ..Default::default()
         })?;
+        // Per-open-Work session info: link under System.work_infos and point it
+        // at its Work (the multi-Work discriminator).
         uow.set_system_relationship(
             &system_id,
-            &SystemRelationshipField::WorkInfo,
+            &SystemRelationshipField::WorkInfos,
             &[work_info.id],
+        )?;
+        uow.set_work_info_relationship(
+            &work_info.id,
+            &WorkInfoRelationshipField::Work,
+            &[work.id],
         )?;
 
         // Reuse the single shared Root (one per process; Works hang off it).

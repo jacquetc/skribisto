@@ -211,6 +211,7 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
 
             // Clean up backward references (uses the owning entity's forward junction)
 
+            delete_from_backward_junction(&self.store.jn_work_from_work_info_work, id);
             delete_from_backward_junction(&self.store.jn_work_from_root_works, id);
         }
         Ok(())

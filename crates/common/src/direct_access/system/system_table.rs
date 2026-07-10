@@ -35,7 +35,7 @@ impl<'a> SystemHashMapTable<'a> {
             SystemRelationshipField::RecentWorks => {
                 &self.store.jn_recent_work_from_system_recent_works
             }
-            SystemRelationshipField::WorkInfo => &self.store.jn_work_info_from_system_work_info,
+            SystemRelationshipField::WorkInfos => &self.store.jn_work_info_from_system_work_infos,
         }
     }
 
@@ -44,12 +44,8 @@ impl<'a> SystemHashMapTable<'a> {
             &self.store.jn_recent_work_from_system_recent_works,
             &entity.id,
         );
-        if let Some(val) = junction_get(&self.store.jn_work_info_from_system_work_info, &entity.id)
-            .into_iter()
-            .next()
-        {
-            entity.work_info = val;
-        }
+        entity.work_infos =
+            junction_get(&self.store.jn_work_info_from_system_work_infos, &entity.id);
     }
 }
 
@@ -80,23 +76,6 @@ impl<'a> SystemTable for SystemHashMapTable<'a> {
                 entity.clone()
             };
 
-            // one-to-one constraint check: ensure work_info is not already referenced by another system
-            {
-                let jn = self
-                    .store
-                    .jn_work_info_from_system_work_info
-                    .read()
-                    .unwrap();
-                for (&existing_id, right_ids) in jn.iter() {
-                    if existing_id != new_entity.id && right_ids.contains(&new_entity.work_info) {
-                        return Err(RepositoryError::ConstraintViolation(format!(
-                            "One-to-one constraint violation: WorkInfo {} is already referenced by System {}",
-                            new_entity.work_info, existing_id
-                        )));
-                    }
-                }
-            }
-
             system_map.insert(new_entity.id, new_entity.clone());
 
             junction_set(
@@ -105,9 +84,9 @@ impl<'a> SystemTable for SystemHashMapTable<'a> {
                 new_entity.recent_works.clone(),
             );
             junction_set(
-                &self.store.jn_work_info_from_system_work_info,
+                &self.store.jn_work_info_from_system_work_infos,
                 new_entity.id,
-                vec![new_entity.work_info],
+                new_entity.work_infos.clone(),
             );
 
             created.push(new_entity);
@@ -176,22 +155,6 @@ impl<'a> SystemTable for SystemHashMapTable<'a> {
     ) -> Result<Vec<System>, RepositoryError> {
         let mut system_map = self.store.systems.write().unwrap();
         for entity in entities {
-            // one-to-one constraint check: ensure work_info is not already referenced by another system
-            {
-                let jn = self
-                    .store
-                    .jn_work_info_from_system_work_info
-                    .read()
-                    .unwrap();
-                for (&existing_id, right_ids) in jn.iter() {
-                    if existing_id != entity.id && right_ids.contains(&entity.work_info) {
-                        return Err(RepositoryError::ConstraintViolation(format!(
-                            "One-to-one constraint violation: WorkInfo {} is already referenced by System {}",
-                            entity.work_info, existing_id
-                        )));
-                    }
-                }
-            }
             system_map.insert(entity.id, entity.clone());
 
             junction_set(
@@ -200,9 +163,9 @@ impl<'a> SystemTable for SystemHashMapTable<'a> {
                 entity.recent_works.clone(),
             );
             junction_set(
-                &self.store.jn_work_info_from_system_work_info,
+                &self.store.jn_work_info_from_system_work_infos,
                 entity.id,
-                vec![entity.work_info],
+                entity.work_infos.clone(),
             );
         }
         drop(system_map);
@@ -223,7 +186,7 @@ impl<'a> SystemTable for SystemHashMapTable<'a> {
             // Remove forward junction entries
 
             junction_remove(&self.store.jn_recent_work_from_system_recent_works, id);
-            junction_remove(&self.store.jn_work_info_from_system_work_info, id);
+            junction_remove(&self.store.jn_work_info_from_system_work_infos, id);
 
             // Clean up backward references (uses the owning entity's forward junction)
 
@@ -252,7 +215,7 @@ impl<'a> SystemHashMapTableRO<'a> {
             SystemRelationshipField::RecentWorks => {
                 &self.store.jn_recent_work_from_system_recent_works
             }
-            SystemRelationshipField::WorkInfo => &self.store.jn_work_info_from_system_work_info,
+            SystemRelationshipField::WorkInfos => &self.store.jn_work_info_from_system_work_infos,
         }
     }
 
@@ -261,12 +224,8 @@ impl<'a> SystemHashMapTableRO<'a> {
             &self.store.jn_recent_work_from_system_recent_works,
             &entity.id,
         );
-        if let Some(val) = junction_get(&self.store.jn_work_info_from_system_work_info, &entity.id)
-            .into_iter()
-            .next()
-        {
-            entity.work_info = val;
-        }
+        entity.work_infos =
+            junction_get(&self.store.jn_work_info_from_system_work_infos, &entity.id);
     }
 }
 
