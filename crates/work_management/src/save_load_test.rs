@@ -23,6 +23,17 @@ use skrib_format::{
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
+// ── Extra surface for the concurrency / robustness regression tests (F1–F4) ──
+use crate::use_cases::backup_now_uc::BackupNowUseCase;
+use crate::use_cases::save_as_uc::SaveAsUseCase;
+use crate::use_cases::save_work_uc::{SaveWorkUnitOfWorkFactoryTrait, SaveWorkUnitOfWorkTrait};
+use crate::units_of_work::backup_now_uow::BackupNowUnitOfWorkFactory;
+use crate::units_of_work::save_as_uow::SaveAsUnitOfWorkFactory;
+use crate::{BackupNowDto, SaveAsDto};
+use common::database::QueryUnitOfWork;
+use common::database::hashmap_store::HashMapStore;
+use common::long_operation::{LongOperationManager, OperationProgress, OperationStatus};
+
 fn ts() -> DateTime<Utc> {
     DateTime::from_timestamp(1_700_000_000, 0).unwrap()
 }
@@ -633,4 +644,205 @@ fn new_work_replaces_open_project() {
     assert_eq!(b.binders.len(), 1, "old binders must be gone");
     assert_eq!(b.binders[0].binder.name, "Manuscript");
     assert!(b.binders[0].items.is_empty());
+}
+
+// ── Concurrency / robustness regression tests (save-system review F1–F4) ─────
+
+/// Materialise the sample project (folder shape) on disk and load it into a
+/// fresh store; returns the tempdir (keep it alive) + the ctx.
+fn load_sample() -> (tempfile::TempDir, DbContext, Arc<EventHub>) {
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("Original");
+    skrib::write_bundle(
+        src.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &sample_bundle(),
+    )
+    .unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load_work");
+    (dir, db, hub)
+}
+
+/// Directly rewrite the open Work's title in the LIVE store — simulates a
+/// concurrent UI-thread edit landing while a background long op reads/writes.
+fn set_live_title(db: &DbContext, title: &str) {
+    let store = db.get_store();
+    let mut works = store.works.write().unwrap();
+    let (id, mut w) = works
+        .iter()
+        .next()
+        .map(|(k, v)| (*k, v.clone()))
+        .expect("a work is open");
+    w.title = title.to_string();
+    works.insert(id, w);
+}
+
+fn live_title(db: &DbContext) -> String {
+    db.get_store()
+        .works
+        .read()
+        .unwrap()
+        .values()
+        .next()
+        .unwrap()
+        .title
+        .clone()
+}
+
+/// F1: a frozen read transaction (what save now begins) sees one consistent
+/// point-in-time view — a concurrent write to the live store is invisible to it.
+#[test]
+fn frozen_read_is_isolated_from_concurrent_writes() {
+    let (_dir, db, hub) = load_sample();
+
+    // Begin a frozen read exactly as `save_work`/`save_as`/`backup_now` do.
+    let uow = SaveWorkUnitOfWorkFactory::new(&db, &hub).create();
+    uow.begin_transaction().unwrap();
+    let before = uow.get_all_work().unwrap()[0].title.clone();
+
+    // A concurrent write lands in the LIVE store mid-read.
+    set_live_title(&db, "MUTATED");
+
+    // The frozen read still returns the pre-mutation state.
+    let after = uow.get_all_work().unwrap()[0].title.clone();
+    uow.end_transaction().unwrap();
+
+    assert_eq!(
+        before, after,
+        "the frozen read must not observe the concurrent write"
+    );
+    assert_ne!(after, "MUTATED");
+    // Sanity: the live store really did change.
+    assert_eq!(live_title(&db), "MUTATED");
+}
+
+/// F2: a failed Save As never touches the store — the old whole-store-savepoint
+/// rollback on the background thread would have reverted a concurrent UI edit.
+#[test]
+fn failed_save_as_does_not_roll_back_the_store() {
+    let (dir, db, hub) = load_sample();
+
+    // A concurrent UI edit lands in the store.
+    set_live_title(&db, "EDIT");
+
+    // Aim Save As at a path whose parent is a *file* → the write must fail.
+    let not_a_dir = dir.path().join("iamafile");
+    std::fs::write(&not_a_dir, b"x").unwrap();
+    let target = not_a_dir.join("out.skrib");
+
+    let uc = SaveAsUseCase::new(
+        Box::new(SaveAsUnitOfWorkFactory::new(&db, &hub)),
+        &SaveAsDto {
+            file_name: target.to_str().unwrap().to_string(),
+            as_folder: false,
+        },
+    );
+    let res = uc.execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)));
+    assert!(res.is_err(), "Save As to an unwritable path must fail");
+
+    // The concurrent edit survived the failed Save As.
+    assert_eq!(
+        live_title(&db),
+        "EDIT",
+        "a failed Save As must not revert the store"
+    );
+}
+
+/// F3: Backup serialises the current in-memory store (the source of truth), not
+/// the possibly-stale on-disk artifact — an unsaved edit must appear in the
+/// backup — and it is always a zip regardless of the project's shape.
+#[test]
+fn backup_serializes_current_store_not_disk() {
+    let (dir, db, hub) = load_sample();
+
+    // An unsaved in-memory edit (never written back to the on-disk folder).
+    set_live_title(&db, "UNSAVED EDIT");
+
+    let backup_dir = dir.path().join("backups");
+    std::fs::create_dir_all(&backup_dir).unwrap();
+    let uc = BackupNowUseCase::new(
+        Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
+        &BackupNowDto {
+            directory: backup_dir.to_str().unwrap().to_string(),
+        },
+    );
+    let res = uc
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("backup_now");
+
+    let bundle = skrib::read_bundle(&res.backup_path).unwrap();
+    assert_eq!(
+        bundle.manifest.work.title, "UNSAVED EDIT",
+        "the backup must reflect the store, not the stale on-disk file"
+    );
+    assert_eq!(
+        bundle.manifest.shape,
+        ShapeTag::Zip,
+        "backups are always a single zip, even for a folder-shape project"
+    );
+}
+
+/// F4: a panicking long operation is reported `Failed`, not left stuck at
+/// `Running` with its background thread silently dead.
+#[test]
+fn panicking_long_operation_is_reported_failed_not_stuck() {
+    struct Panicky;
+    impl LongOperation for Panicky {
+        type Output = ();
+        fn execute(
+            &self,
+            _p: Box<dyn Fn(OperationProgress) + Send>,
+            _c: Arc<AtomicBool>,
+        ) -> anyhow::Result<()> {
+            panic!("boom");
+        }
+    }
+
+    let mgr = LongOperationManager::new();
+    let id = mgr.start_operation(Panicky);
+    // Wait for the background thread to settle.
+    for _ in 0..300 {
+        if !matches!(mgr.get_operation_status(&id), Some(OperationStatus::Running)) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert!(
+        matches!(mgr.get_operation_status(&id), Some(OperationStatus::Failed(_))),
+        "a panicking long op must be reported Failed, got {:?}",
+        mgr.get_operation_status(&id)
+    );
+}
+
+/// F4: the store's restore path recovers a poisoned lock instead of aborting —
+/// so a panic under one table's write lock can't turn the Drop-time rollback
+/// into a process-wide double-panic.
+#[test]
+fn restore_savepoint_recovers_a_poisoned_table_lock() {
+    let store = HashMapStore::new();
+    let sp = store.create_savepoint(); // clean snapshot, before poisoning
+
+    // Poison the `works` write lock by panicking while holding it.
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _g = store.works.write().unwrap();
+        panic!("poison the lock");
+    }));
+    assert!(
+        store.works.is_poisoned(),
+        "precondition: the works lock is poisoned"
+    );
+
+    // `restore_savepoint` writes every table via `write_or_recover`; a plain
+    // `.write().unwrap()` here would double-panic and abort the process.
+    store.restore_savepoint(sp);
+    // Reaching here (no abort) is the assertion.
 }
