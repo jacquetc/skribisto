@@ -6,4 +6,5 @@
 //! (corkboard, search results, …) will land here beside it.
 
 pub mod create_split_button;
+pub mod inspector;
 pub mod outline;

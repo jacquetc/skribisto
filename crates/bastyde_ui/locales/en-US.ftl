@@ -51,6 +51,13 @@ promote-flat-chapter = Flat chapter
 promote-blocked-title = Chapter not empty
 promote-blocked-text = This chapter still holds { $count } item(s). Move or trash them before converting it to a flat chapter.
 
+## Inspector (trailing dock) + status-bar dock toggles
+inspector = Inspector
+inspector-empty = Open an item to inspect it.
+inspector-promote-to = Promote to { $target }
+statusbar-toggle-outline = Toggle the binder
+statusbar-toggle-inspector = Toggle the inspector
+
 ## Settings
 language = Language
 theme = Theme

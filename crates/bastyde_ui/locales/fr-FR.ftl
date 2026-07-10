@@ -51,6 +51,13 @@ promote-flat-chapter = Chapitre à plat
 promote-blocked-title = Chapitre non vide
 promote-blocked-text = Ce chapitre contient encore { $count } élément(s). Déplacez-les ou mettez-les à la corbeille avant de le convertir en chapitre à plat.
 
+## Inspecteur (dock de droite) + bascules de docks dans la barre d'état
+inspector = Inspecteur
+inspector-empty = Ouvrez un élément pour l'inspecter.
+inspector-promote-to = Promouvoir en { $target }
+statusbar-toggle-outline = Afficher/masquer le classeur
+statusbar-toggle-inspector = Afficher/masquer l'inspecteur
+
 ## Paramètres
 language = Langue
 theme = Thème

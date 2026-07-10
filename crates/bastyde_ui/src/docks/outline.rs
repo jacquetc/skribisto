@@ -245,17 +245,7 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         menu = menu.separator().item(
             MenuItem::new(tr!(ctx_promote_to(target = label.resolve_now())))
                 .icon(crate::binder_icons::sub_role_icon(&target_sub_role))
-                .on_activate_fn(move |ctx| {
-                    let blocked = promote_vm.demote_blocked_children(key);
-                    if blocked > 0 {
-                        MessageBox::warning(tr!(promote_blocked_title()))
-                            .text(tr!(promote_blocked_text(count = blocked.to_string())))
-                            .buttons(MessageBoxButtons::Ok)
-                            .present(ctx);
-                    } else {
-                        promote_vm.promote(key);
-                    }
-                }),
+                .on_activate_fn(move |ctx| promote_with_guard(&promote_vm, key, ctx)),
         );
     }
 
@@ -272,6 +262,21 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         .item(
             MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |_| trash.trash_keys(&trash_batch)),
         )
+}
+
+/// Promote `key` to its paired type, guarding a non-empty Chapter-folder → flat
+/// Chapter demote behind a "move or trash its contents first" prompt. Shared by
+/// the outline context menu and the Inspector's Promote button.
+pub fn promote_with_guard(outline: &OutlineViewModel, key: BinderTreeKey, ctx: &mut EventContext) {
+    let blocked = outline.demote_blocked_children(key);
+    if blocked > 0 {
+        MessageBox::warning(tr!(promote_blocked_title()))
+            .text(tr!(promote_blocked_text(count = blocked.to_string())))
+            .buttons(MessageBoxButtons::Ok)
+            .present(ctx);
+    } else {
+        outline.promote(key);
+    }
 }
 
 /// The "Add ▸" submenu content: the recommended new-item types for `key`, in

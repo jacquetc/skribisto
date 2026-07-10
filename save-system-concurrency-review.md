@@ -14,7 +14,7 @@ The fear is **justified**, and it splits into two independent root causes plus a
 |---|---------|----------|------------------------------|--------|
 | **F1** | `save_work` / `save_as` read the Work tree **non-atomically** (table-by-table, no snapshot) → torn/corrupt `.skrib` **or** the save aborts with *"vanished mid-read"* | High | No (read-only) — bad **file** / failed op | Code-evident |
 | **F2** | `save_as` holds a **whole-store savepoint on a background thread**; on failure/panic its rollback reverts the **entire** store, erasing edits the UI committed meanwhile | **Critical — data loss** | **Yes** | **Empirically reproduced** |
-| **F3** | `backup_now` on an **exploded-folder** project copies the live folder while a concurrent save rewrites it file-by-file → corrupt/torn backup (zip shape is safe) | High | No — bad **backup file** | Verified from `folder_io` code |
+| **F3** | Backup design = **save first, then copy the zip** (sound); but the Backup menu doesn't save first → **stale** backup if there are unsaved edits. (Folder-shape source, if supported, also needs a consistent zip source.) | Medium | No — stale **backup file** | Missing save-first, code-confirmed |
 | **F4** | A **panic** while holding a store write-lock poisons it; the `Drop` rollback then re-panics → **process abort**. `LongOperation` has no `catch_unwind` → panicked op stuck `Running` | Medium | Process crash / poison spread | Reasoned from code + std semantics |
 
 **Bounded / non-issues:** `save_work` is read-only so it cannot corrupt the store (only the file it writes); `export_work` is an `unimplemented!()` stub ([export_work_uc.rs:76](crates/export_management/src/use_cases/export_work_uc.rs#L76)) — inert today but would inherit F1 if built the same way; `import_plume_creator_file` never touches the store (pure file→file).
@@ -77,14 +77,14 @@ This is the "nuclear option" the undo doc warns about, fired across threads. It 
 
 ---
 
-### F3 — `backup_now` copies a live exploded folder mid-write · High
+### F3 — backup relies on a "save first" invariant it doesn't enforce · Medium
 
-`backup_now` reads only `work_info` (one short read — no torn-read risk there) then, **outside any lock/txn**, calls `skrib::copy_bundle(source, backup_path)` ([backup_now_uc.rs:64](crates/work_management/src/use_cases/backup_now_uc.rs#L64)):
+**Intended design (confirmed):** the in-memory store is the source of truth; a backup is always a zip, and **a backup saves the work first**, so copying the freshly-written on-disk zip is a sound shortcut for a zip serialization of the store. Given that invariant, `backup_now`'s `copy_bundle(source, backup_path)` ([backup_now_uc.rs:49-65](crates/work_management/src/use_cases/backup_now_uc.rs#L49)) is correct for zip-mode projects: `fs::copy` of a fully-written zip is atomic (saves write via `NamedTempFile` + rename), and after a save the on-disk zip *is* the current store. No concurrency issue, no reimplementation needed. **My earlier "serialize the store in `backup_now`" recommendation was over-engineering — retracted.**
 
-- **Zip shape (canonical/default): safe.** `write_bundle` writes zips via `NamedTempFile` + atomic `persist`/rename, and `copy_bundle` does `fs::copy` — always the fully-old or fully-new file, never torn.
-- **Exploded-folder shape: unsafe.** `copy_bundle` `WalkDir`s the **live, in-place project folder** while a concurrent `save_work`/`save_as` rewrites that same folder **file-by-file** via `write_folder` ([folder_io.rs:52-113](crates/skrib_format/src/folder_io.rs#L52)): each file is atomically tmp+renamed, but the **tree as a whole is not atomic** — the manifest is deliberately written **last** as the commit point ([folder_io.rs:107](crates/skrib_format/src/folder_io.rs#L107)) and stale binder dirs / prose blobs are `prune`d mid-sweep ([folder_io.rs:94,104](crates/skrib_format/src/folder_io.rs#L94)).
+The actual gaps are narrower:
 
-**Outcomes:** (a) the walk captures a cross-file-inconsistent snapshot (new prose + old manifest, `items.ron` referencing a just-pruned `.djot`) → a **corrupt backup that still reports success**; or (b) `WalkDir` hits a path a concurrent prune just removed → a hard error. `backup_now` is a live command ([work_management_commands.rs:75](crates/frontend/src/commands/work_management_commands.rs#L75)) and autosave can fire during it, so *Backup Now while autosave runs* is a realistic interleaving for folder-shape projects.
+1. **The save-first invariant is not enforced in the flow.** The Backup menu item calls `backup_now` directly with no preceding save ([main.rs:556-561](crates/bastyde_ui/src/main.rs#L556)). So a backup taken with unsaved in-memory edits copies a **stale** zip (missing the latest work). Fix: route Backup through a save-first step (the app already has an "autosave-ensure" guard on `work.close` — reuse it).
+2. **Folder-shape source (only if that path is intended).** A folder-mode project has no on-disk zip to copy, so `copy_bundle` `zip_dir`s the **live** folder ([lib.rs:85](crates/skrib_format/src/lib.rs#L85)); that walk is not atomic, so a concurrent autosave during it can tear the backup. If folder-mode projects should be backable, produce their zip from the store / a just-saved consistent source rather than walking the live tree. (If folder-mode backup is out of scope, this is moot.)
 
 ---
 
@@ -99,9 +99,10 @@ This is the "nuclear option" the undo doc warns about, fired across threads. It 
 
 ## Root causes
 
-1. **Reads are not snapshot-isolated (and can't be made so cheaply as written).** Per-table locks + no atomic freeze → F1, and the read half of F2/F3.
+1. **Reads are not snapshot-isolated (and can't be made so cheaply as written).** Per-table locks + no atomic freeze → F1, and the read half of F2.
 2. **A whole-store savepoint is held by a writer on a background thread.** Savepoint rollback is whole-store by design; safe only when commands are serialized. `save_as` breaks that assumption → F2.
-3. **Locks/threads are not panic-hardened** → F4.
+3. **Backup's "save first" invariant isn't enforced** — the Backup menu copies the on-disk zip without saving first → stale backup → F3. (Copying the zip itself is sound once a save precedes it.)
+4. **Locks/threads are not panic-hardened** → F4.
 
 Causes 1 and 2 are orthogonal; `save_as` is unlucky enough to hit both.
 
@@ -129,7 +130,7 @@ work_info_commands::update_work_info(ctx, &WorkInfo { file_name: Some(out), shap
 
 Result: no background thread ever holds a whole-store savepoint → **F2 eliminated**, entirely in hand-written code.
 
-**F3 fix (interim) — serialize backup vs save at the UI layer.** Disable *Backup Now* (and suppress autosave) while any save/backup long-op is in flight, and vice-versa; prefer producing **zip** backups even for folder projects (zip path is atomic). Cheap, hand-written (`bastyde_ui`), removes the live folder race until Tier 2 lands.
+**F3 fix — enforce save-first before backup (hand-written, `bastyde_ui`).** Route the Backup menu action through the same save/autosave-ensure step used by `work.close`, then call `backup_now`. For a zip-mode project the copy is then a current, atomic snapshot — no change to `backup_now` itself. (Only if folder-mode backup is in scope: additionally produce that zip from the store / a just-saved source instead of walking the live folder.)
 
 ### Tier 2 — Snapshot-isolated reads for all long-ops (templates + regen)
 
@@ -159,7 +160,7 @@ let g = work_io::gather(&read_uow_over(frozen), progress, cancel)?; // now torn-
 work_io::serialize_and_write(&g, target, shape, tag)?; // slow I/O, nothing locked
 ```
 
-Fix **F3** properly by the same means: for folder-shape backup, snapshot the *entities* (freeze) and write a fresh backup bundle, rather than `WalkDir`-copying the live folder.
+**F3** needs no isolation work at all — enforcing save-first (above) makes the zip copy a current, atomic snapshot. Only a folder-mode backup path (if in scope) would benefit from producing its zip via the freeze.
 
 ### Tier 3 — Panic hardening (templates)
 
@@ -170,12 +171,13 @@ Fix **F3** properly by the same means: for folder-shape backup, snapshot the *en
 
 - **Atomicity:** spawn a writer thread hammering binder-item add/move/delete while `gather`/`freeze` runs; assert the produced bundle is internally consistent and never errors *"vanished mid-read"*.
 - **No clobber (F2 guard):** the PART2 interleaving from this review — background op begins, UI commits an edit, background op fails — must leave the UI edit intact. (Keep a permanent version of the throwaway test.)
-- **Backup vs save (F3):** concurrent `save_work` + `backup_now` on a folder project → backup must be a consistent tree or a clean error, never a torn success.
+- **Backup saves first (F3):** edit in memory without saving, then trigger Backup → the produced zip must contain that edit (proving a save ran before the copy).
 
 ---
 
 ## Priority
 
 1. **F2 (Tier 1)** — critical, silent data loss; small, hand-written fix. Do first.
-2. **F1 + F3 (Tier 2, Option A)** — the atomic-freeze primitive fixes both and future `export`.
-3. **F4 (Tier 3)** — robustness hardening; do alongside Tier 2 since both are template edits.
+2. **F3 (hand-written)** — enforce save-first before backup; small `bastyde_ui` change. Fixes the stale-backup gap.
+3. **F1 (Tier 2, Option A)** — the atomic-freeze primitive gives consistent reads to `save_work` / `save_as` / future `export` at once.
+4. **F4 (Tier 3)** — robustness hardening; do alongside Tier 2 since both are template edits.

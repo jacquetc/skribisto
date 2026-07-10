@@ -18,8 +18,8 @@ use bastyde::prelude::*;
 use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    Divider, DockRail, DockSide, DockingLayout, EventContextMessageBoxExt, Expand, HStack,
-    IconButtonSize, MessageBox, MessageBoxButtons, NotificationArchiveModel,
+    Divider, DockRail, DockSide, DockWidgetId, DockingLayout, EventContextMessageBoxExt, Expand,
+    HStack, IconButton, IconButtonSize, MessageBox, MessageBoxButtons, NotificationArchiveModel,
     NotificationCenterButton, Spacer, StandardButton, StatusBar, TabBarVisibility, TabWidget,
     Toast, VStack,
 };
@@ -79,6 +79,9 @@ pub struct App {
     initial_loaded: bool,
     /// Created once on first build (its column-width signal needs `ctx.settings()`).
     editors: Option<EditorsViewModel>,
+    /// Stable id for the trailing Inspector dock (created once so a rebuild keeps
+    /// the same dock in the `DockingModel`).
+    inspector_dock: DockWidgetId,
     root_child: Option<WidgetId>,
 }
 
@@ -100,6 +103,7 @@ impl App {
             initial_project,
             initial_loaded: false,
             editors: None,
+            inspector_dock: DockWidgetId::fresh(),
             root_child: None,
         }
     }
@@ -739,9 +743,19 @@ impl Widget for App {
         // ── Leading dock: the binder tree, fronted by a VS Code-style activity
         //    bar (icon rail). The OutlineViewModel owns the DockingModel; the
         //    dock content itself lives in `docks::outline`. ───────────────────
+        // The trailing side hosts the context Inspector (a rail dock, like the
+        // outline), sized + rail-fronted on the shared DockingModel.
+        let docking = outline.docking();
+        docking.set_side_size(DockSide::Trailing, 300.0);
+        docking.set_side_rail(DockSide::Trailing, 48.0);
         let layout = DockingLayout::new(outline.docking())
             .rail(
                 DockRail::new(DockSide::Leading)
+                    .background(SurfaceRole::Main)
+                    .divider(),
+            )
+            .rail(
+                DockRail::new(DockSide::Trailing)
                     .background(SurfaceRole::Main)
                     .divider(),
             )
@@ -750,7 +764,13 @@ impl Widget for App {
                 outline.clone(),
                 self.app_ctx.clone(),
                 on_open,
+                active_item.clone(),
+            ))
+            .dock(crate::docks::inspector::inspector_dock(
+                self.app_ctx.clone(),
+                outline.clone(),
                 active_item,
+                self.inspector_dock,
             ));
         outline.open_in_layout();
 
@@ -759,9 +779,25 @@ impl Widget for App {
             .app_state::<Rc<NotificationArchiveModel>>()
             .cloned()
             .expect("install_toast_default registers the notification archive");
+        // Status-bar dock toggles: hide/show the leading (binder) and trailing
+        // (inspector) sides — like Bastyde's `docking` example.
+        let dock_lead = outline.docking();
+        let dock_trail = outline.docking();
         let status = StatusBar::new().background(SurfaceRole::Main).child(
             HStack::new()
                 .spacing(8.0)
+                .child(
+                    IconButton::new(crate::activity_icons::outline_icon())
+                        .size(IconButtonSize::Compact)
+                        .tooltip(tr!(statusbar_toggle_outline()))
+                        .on_activate_fn(move |_| dock_lead.toggle_side_visible(DockSide::Leading)),
+                )
+                .child(
+                    IconButton::new(crate::activity_icons::inspector_icon())
+                        .size(IconButtonSize::Compact)
+                        .tooltip(tr!(statusbar_toggle_inspector()))
+                        .on_activate_fn(move |_| dock_trail.toggle_side_visible(DockSide::Trailing)),
+                )
                 .child(Spacer::new())
                 .child(NotificationCenterButton::new(archive).size(IconButtonSize::Compact)),
         );

@@ -14,3 +14,8 @@ use bastyde::widgets::IconWidget;
 pub fn outline_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/outline.svg"))
 }
+
+/// The Inspector activity icon: a side-panel glyph.
+pub fn inspector_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/inspector.svg"))
+}
