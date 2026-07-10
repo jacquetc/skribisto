@@ -12,9 +12,9 @@ use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
-use common::direct_access::system::SystemRelationshipField;
+use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
-use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole, Root, System, TrashInfo};
+use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole, TrashInfo, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::HashSet;
@@ -25,12 +25,11 @@ pub trait MergeTwoScenesUnitOfWorkFactoryTrait: Send + Sync {
 
 // The same macro set must appear on the impl block in
 // ../units_of_work/merge_two_scenes_uow.rs.
-#[macros::uow_action(entity = "Root", action = "GetAll")]
-#[macros::uow_action(entity = "Root", action = "Snapshot")]
-#[macros::uow_action(entity = "Root", action = "Restore")]
-#[macros::uow_action(entity = "System", action = "GetAll")]
-#[macros::uow_action(entity = "System", action = "GetRelationship")]
-#[macros::uow_action(entity = "System", action = "SetRelationship")]
+#[macros::uow_action(entity = "Work", action = "GetAll")]
+#[macros::uow_action(entity = "Work", action = "Snapshot")]
+#[macros::uow_action(entity = "Work", action = "Restore")]
+#[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
@@ -120,10 +119,10 @@ impl MergeTwoScenesUseCase {
             .flatten()
             .collect();
 
-        // Root-scoped snapshot, after the read-only validation above and before
+        // Work-scoped snapshot, after the read-only validation above and before
         // the first mutation below.
-        let root_id = root_id(uow.as_ref())?;
-        let snap_before = uow.snapshot_root(&[root_id])?;
+        let work_id = work_id(uow.as_ref())?;
+        let snap_before = uow.snapshot_work(&[work_id])?;
 
         let now = chrono::Utc::now();
         for role in [ContentRole::SceneText, ContentRole::SynopsisText] {
@@ -160,14 +159,13 @@ impl MergeTwoScenesUseCase {
             }
         }
 
-        // Trash B: flip `activated` and index one TrashInfo under System.
+        // Trash B: flip `activated` and index one TrashInfo under Work.
         let mut b_off = b.clone();
         b_off.activated = false;
         uow.update_binder_item_multi(&[b_off])?;
 
-        let system = system_singleton(uow.as_ref())?;
         let mut trash_infos =
-            uow.get_system_relationship(&system, &SystemRelationshipField::TrashInfos)?;
+            uow.get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?;
         let info = uow.create_orphan_trash_info(&TrashInfo {
             created_at: now,
             updated_at: now,
@@ -181,9 +179,9 @@ impl MergeTwoScenesUseCase {
             &[source],
         )?;
         trash_infos.push(info.id);
-        uow.set_system_relationship(&system, &SystemRelationshipField::TrashInfos, &trash_infos)?;
+        uow.set_work_relationship(&work_id, &WorkRelationshipField::TrashInfos, &trash_infos)?;
 
-        let snap_after = uow.snapshot_root(&[root_id])?;
+        let snap_after = uow.snapshot_work(&[work_id])?;
         uow.commit()?;
         uow.publish_merge_two_scenes_event(vec![target, source], None);
 
@@ -200,20 +198,12 @@ fn is_scene(sr: &BinderItemSubRole) -> bool {
     )
 }
 
-fn system_singleton(uow: &dyn MergeTwoScenesUnitOfWorkTrait) -> Result<EntityId> {
-    uow.get_all_system()?
+fn work_id(uow: &dyn MergeTwoScenesUnitOfWorkTrait) -> Result<EntityId> {
+    uow.get_all_work()?
         .into_iter()
         .next()
-        .map(|s| s.id)
-        .ok_or_else(|| anyhow!("merge_two_scenes: no System entity"))
-}
-
-fn root_id(uow: &dyn MergeTwoScenesUnitOfWorkTrait) -> Result<EntityId> {
-    uow.get_all_root()?
-        .into_iter()
-        .next()
-        .map(|r| r.id)
-        .ok_or_else(|| anyhow!("merge_two_scenes: no Root entity"))
+        .map(|w| w.id)
+        .ok_or_else(|| anyhow!("merge_two_scenes: no Work entity"))
 }
 
 /// Append `b` onto `a` with a blank-line separator (paragraph break in Djot).
@@ -235,7 +225,7 @@ impl UndoRedoCommand for MergeTwoScenesUseCase {
             .ok_or_else(|| anyhow!("merge_two_scenes: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_root(snap)?;
+        uow.restore_work(snap)?;
         uow.commit()?;
         Ok(())
     }
@@ -247,7 +237,7 @@ impl UndoRedoCommand for MergeTwoScenesUseCase {
             .ok_or_else(|| anyhow!("merge_two_scenes: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_root(snap)?;
+        uow.restore_work(snap)?;
         uow.commit()?;
         Ok(())
     }

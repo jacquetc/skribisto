@@ -100,6 +100,7 @@ fn sample_bundle() -> WorkBundle {
         tags: vec![10, 11],
         dict_words: vec![20],
         binders: vec![100, 101],
+        trash_infos: vec![],
     };
     let tags = vec![
         BinderTag {

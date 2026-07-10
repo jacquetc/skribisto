@@ -7,7 +7,7 @@ use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{BinderItem, Content, Root, System, TrashInfo};
+use common::entities::{BinderItem, Content, TrashInfo, Work};
 use common::event::TrashManagementEvent::TrashBinderItems;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -109,14 +109,12 @@ impl CommandUnitOfWork for TrashBinderItemsUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/trash_binder_items_uc.rs
 //
-#[macros::uow_action(entity = "Root", action = "GetAll")]
-#[macros::uow_action(entity = "Root", action = "Snapshot")]
-#[macros::uow_action(entity = "Root", action = "Restore")]
-#[macros::uow_action(entity = "System", action = "GetAll")]
-#[macros::uow_action(entity = "System", action = "GetRelationship")]
-#[macros::uow_action(entity = "System", action = "SetRelationship")]
+#[macros::uow_action(entity = "Work", action = "GetAll")]
+#[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
+#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]

@@ -21,6 +21,7 @@ pub enum WorkRelationshipField {
     Binders,
     DictWords,
     Tags,
+    TrashInfos,
 }
 
 impl Display for WorkRelationshipField {
@@ -296,6 +297,7 @@ impl<'a> WorkRepository<'a> {
         let binders = entity.binders.clone();
         let tags = entity.tags.clone();
         let dict_words = entity.dict_words.clone();
+        let trash_infos = entity.trash_infos.clone();
 
         // remove all strong relationships, initiating a cascade remove
 
@@ -305,6 +307,8 @@ impl<'a> WorkRepository<'a> {
             .remove_multi(event_buffer, &tags)?;
         repository_factory::write::create_dict_word_repository(self.transaction)?
             .remove_multi(event_buffer, &dict_words)?;
+        repository_factory::write::create_trash_info_repository(self.transaction)?
+            .remove_multi(event_buffer, &trash_infos)?;
         // Before removal, find which owner(s) reference this entity
         let affected_owner_ids: Vec<EntityId> = {
             let owner_repo = repository_factory::write::create_root_repository(self.transaction)?;
@@ -376,6 +380,14 @@ impl<'a> WorkRepository<'a> {
         // remove duplicates
         dict_words_ids.sort();
         dict_words_ids.dedup();
+        let mut trash_infos_ids: Vec<EntityId> = entities
+            .iter()
+            .flat_map(|entity| entity.as_ref().map(|entity| entity.trash_infos.clone()))
+            .flatten()
+            .collect();
+        // remove duplicates
+        trash_infos_ids.sort();
+        trash_infos_ids.dedup();
 
         // remove all strong relationships, initiating a cascade remove
 
@@ -385,6 +397,8 @@ impl<'a> WorkRepository<'a> {
             .remove_multi(event_buffer, &tags_ids)?;
         repository_factory::write::create_dict_word_repository(self.transaction)?
             .remove_multi(event_buffer, &dict_words_ids)?;
+        repository_factory::write::create_trash_info_repository(self.transaction)?
+            .remove_multi(event_buffer, &trash_infos_ids)?;
         // Before removal, find which owner(s) reference these entities
         let affected_owner_ids: Vec<EntityId> = {
             let owner_repo = repository_factory::write::create_root_repository(self.transaction)?;
@@ -528,6 +542,23 @@ impl<'a> WorkRepository<'a> {
                         });
                     }
                 }
+                WorkRelationshipField::TrashInfos => {
+                    let child_repo =
+                        repository_factory::write::create_trash_info_repository(self.transaction)?;
+                    let found = child_repo.get_multi(&all_right_ids)?;
+                    let missing: Vec<_> = all_right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship_multi",
+                            ids: missing,
+                        });
+                    }
+                }
             }
         }
         self.table
@@ -597,6 +628,23 @@ impl<'a> WorkRepository<'a> {
                 WorkRelationshipField::Tags => {
                     let child_repo =
                         repository_factory::write::create_binder_tag_repository(self.transaction)?;
+                    let found = child_repo.get_multi(right_ids)?;
+                    let missing: Vec<_> = right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship",
+                            ids: missing,
+                        });
+                    }
+                }
+                WorkRelationshipField::TrashInfos => {
+                    let child_repo =
+                        repository_factory::write::create_trash_info_repository(self.transaction)?;
                     let found = child_repo.get_multi(right_ids)?;
                     let missing: Vec<_> = right_ids
                         .iter()
@@ -816,6 +864,28 @@ impl<'a> WorkRepository<'a> {
                     .restore_subtree(event_buffer, snap, &child_ids, visited)?;
             }
         }
+        {
+            let mut child_ids: Vec<EntityId> = Vec::new();
+            for id in to_create.iter().chain(to_update.iter()) {
+                if let Some(list) = snap.jn_trash_info_from_work_trash_infos.get(id) {
+                    child_ids.extend(list.iter().copied());
+                }
+            }
+            {
+                let live_jn = store.jn_trash_info_from_work_trash_infos.read().unwrap();
+                for id in &ids {
+                    if let Some(list) = live_jn.get(id) {
+                        child_ids.extend(list.iter().copied());
+                    }
+                }
+            }
+            child_ids.sort();
+            child_ids.dedup();
+            if !child_ids.is_empty() {
+                repository_factory::write::create_trash_info_repository(self.transaction)?
+                    .restore_subtree(event_buffer, snap, &child_ids, visited)?;
+            }
+        }
 
         // 2. Entity rows: revert/re-add from snapshot, delete the ones created after it.
         {
@@ -868,6 +938,22 @@ impl<'a> WorkRepository<'a> {
             let mut live_jn = store.jn_binder_tag_from_work_tags.write().unwrap();
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_binder_tag_from_work_tags.get(id) {
+                    Some(v) => {
+                        live_jn.insert(*id, v.clone());
+                    }
+                    None => {
+                        live_jn.remove(id);
+                    }
+                }
+            }
+            for id in &to_delete {
+                live_jn.remove(id);
+            }
+        }
+        {
+            let mut live_jn = store.jn_trash_info_from_work_trash_infos.write().unwrap();
+            for id in to_create.iter().chain(to_update.iter()) {
+                match snap.jn_trash_info_from_work_trash_infos.get(id) {
                     Some(v) => {
                         live_jn.insert(*id, v.clone());
                     }

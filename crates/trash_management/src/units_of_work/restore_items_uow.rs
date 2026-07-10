@@ -7,7 +7,7 @@ use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Content, Root, System, TrashInfo};
+use common::entities::{Binder, BinderItem, Content, TrashInfo, Work};
 use common::event::TrashManagementEvent::RestoreItems;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -109,12 +109,11 @@ impl CommandUnitOfWork for RestoreItemsUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/restore_items_uc.rs
 //
-#[macros::uow_action(entity = "Root", action = "GetAll")]
-#[macros::uow_action(entity = "Root", action = "Snapshot")]
-#[macros::uow_action(entity = "Root", action = "Restore")]
-#[macros::uow_action(entity = "System", action = "GetAll")]
-#[macros::uow_action(entity = "System", action = "GetRelationship")]
-#[macros::uow_action(entity = "System", action = "SetRelationship")]
+#[macros::uow_action(entity = "Work", action = "GetAll")]
+#[macros::uow_action(entity = "Work", action = "Snapshot")]
+#[macros::uow_action(entity = "Work", action = "Restore")]
+#[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "GetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "Get")]
 #[macros::uow_action(entity = "Binder", action = "Update")]

@@ -1,19 +1,17 @@
 // Custom implementation: permanently delete everything indexed by
-// System.trash_infos. Trashed binders (with their items + contents) are removed
+// Work.trash_infos. Trashed binders (with their items + contents) are removed
 // and dropped from their Work; trashed item subtrees (with their contents) are
 // removed and dropped from their binder's order. All TrashInfos are removed and
-// the index cleared. Undoable via a Root-scoped snapshot/restore: the operation
-// spans both the Work trunk (items/binders) and the System trunk (TrashInfo), so
-// the whole tree is the undo scope. (When TrashInfo moves under Work in the
-// deferred multi-Work reparent, this becomes non-undoable + clear-stacks.)
+// the index cleared. Undoable via a Work-scoped snapshot/restore: post-reparent
+// TrashInfo lives in the Work trunk alongside the items/binders, so the whole
+// Work is the undo scope.
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
-use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{BinderItem, Root, System, Work};
+use common::entities::{BinderItem, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
@@ -24,21 +22,17 @@ pub trait EmptyTrashUnitOfWorkFactoryTrait: Send + Sync {
 
 // The same macro set must appear on the impl block in
 // ../units_of_work/empty_trash_uow.rs.
-#[macros::uow_action(entity = "System", action = "GetAll")]
-#[macros::uow_action(entity = "System", action = "GetRelationship")]
-#[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "GetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "GetAll")]
 #[macros::uow_action(entity = "Work", action = "GetRelationship")]
 #[macros::uow_action(entity = "Work", action = "SetRelationship")]
+#[macros::uow_action(entity = "Work", action = "Snapshot")]
+#[macros::uow_action(entity = "Work", action = "Restore")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "RemoveMulti")]
-#[macros::uow_action(entity = "Root", action = "GetAll")]
-#[macros::uow_action(entity = "Root", action = "Snapshot")]
-#[macros::uow_action(entity = "Root", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]
@@ -67,9 +61,9 @@ impl EmptyTrashUseCase {
         uow.begin_transaction()?;
         // The Root-scoped snapshot is taken below, after the read-only planning loop.
 
-        let system = system_singleton(uow.as_ref())?;
+        let work_id = work_id(uow.as_ref())?;
         let trash_infos =
-            uow.get_system_relationship(&system.id, &SystemRelationshipField::TrashInfos)?;
+            uow.get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?;
 
         let mut remove_contents: Vec<EntityId> = Vec::new();
         let mut remove_items: Vec<EntityId> = Vec::new();
@@ -126,15 +120,9 @@ impl EmptyTrashUseCase {
             }
         }
 
-        // Root-scoped snapshot, taken now (after the read-only planning loop above,
+        // Work-scoped snapshot, taken now (after the read-only planning loop above,
         // before the first mutation below).
-        let root_id = uow
-            .get_all_root()?
-            .into_iter()
-            .next()
-            .map(|r| r.id)
-            .ok_or_else(|| anyhow!("empty_trash: no Root entity"))?;
-        let snap_before = uow.snapshot_root(&[root_id])?;
+        let snap_before = uow.snapshot_work(&[work_id])?;
 
         // Drop removed item subtrees from their surviving binders' order.
         for (binder_id, dropped) in &drop_from_binder {
@@ -177,9 +165,9 @@ impl EmptyTrashUseCase {
         if !trash_infos.is_empty() {
             uow.remove_trash_info_multi(&trash_infos)?;
         }
-        uow.set_system_relationship(&system.id, &SystemRelationshipField::TrashInfos, &[])?;
+        uow.set_work_relationship(&work_id, &WorkRelationshipField::TrashInfos, &[])?;
 
-        let snap_after = uow.snapshot_root(&[root_id])?;
+        let snap_after = uow.snapshot_work(&[work_id])?;
         uow.commit()?;
         uow.publish_empty_trash_event(remove_items.clone(), None);
 
@@ -210,11 +198,12 @@ fn subtree_of(
     out
 }
 
-fn system_singleton(uow: &dyn EmptyTrashUnitOfWorkTrait) -> Result<System> {
-    uow.get_all_system()?
+fn work_id(uow: &dyn EmptyTrashUnitOfWorkTrait) -> Result<EntityId> {
+    uow.get_all_work()?
         .into_iter()
         .next()
-        .ok_or_else(|| anyhow!("empty_trash: no System entity in store"))
+        .map(|w| w.id)
+        .ok_or_else(|| anyhow!("empty_trash: no Work entity in store"))
 }
 
 use common::undo_redo::UndoRedoCommand;
@@ -227,7 +216,7 @@ impl UndoRedoCommand for EmptyTrashUseCase {
             .ok_or_else(|| anyhow!("empty_trash: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_root(snap)?;
+        uow.restore_work(snap)?;
         uow.commit()?;
         Ok(())
     }
@@ -239,7 +228,7 @@ impl UndoRedoCommand for EmptyTrashUseCase {
             .ok_or_else(|| anyhow!("empty_trash: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_root(snap)?;
+        uow.restore_work(snap)?;
         uow.commit()?;
         Ok(())
     }

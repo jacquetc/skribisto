@@ -43,13 +43,6 @@ entities:
     strong: true
     list_model: true
     list_model_displayed_field: title
-  - name: trash_infos
-    type: entity
-    entity: TrashInfo
-    relationship: one_to_many
-    strong: true
-    list_model: true
-    list_model_displayed_field: trashed_at
   - name: work_info
     type: entity
     entity: WorkInfo
@@ -116,6 +109,13 @@ entities:
     entity: DictWord
     relationship: one_to_many
     strong: true
+  - name: trash_infos
+    type: entity
+    entity: TrashInfo
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: trashed_at
   undoable: true
 - name: TrashInfo
   inherits_from: EntityBase
@@ -134,7 +134,7 @@ entities:
     entity: BinderItem
     relationship: many_to_one
     optional: true
-  undoable: false
+  undoable: true
 - name: Binder
   single_model: true
   inherits_from: EntityBase
@@ -422,7 +422,7 @@ features:
   use_cases:
   - name: trash_binder_items
     entities:
-    - System
+    - Work
     - TrashInfo
     - BinderItem
     - Content
@@ -437,7 +437,7 @@ features:
         type: integer
   - name: trash_binder
     entities:
-    - System
+    - Work
     - TrashInfo
     - Binder
     - BinderItem
@@ -450,7 +450,7 @@ features:
         type: integer
   - name: restore_items
     entities:
-    - System
+    - Work
     - TrashInfo
     - Binder
     - BinderItem
@@ -471,7 +471,7 @@ features:
         type: boolean
   - name: empty_trash
     entities:
-    - System
+    - Work
     - TrashInfo
     - Binder
     - BinderItem
@@ -522,7 +522,7 @@ features:
         - Into
   - name: merge_two_scenes
     entities:
-    - System
+    - Work
     - TrashInfo
     - Binder
     - BinderItem

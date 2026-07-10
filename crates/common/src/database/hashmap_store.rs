@@ -36,11 +36,11 @@ pub struct HashMapStore {
     pub jn_system_from_root_system: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_work_from_root_works: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_recent_work_from_system_recent_works: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_trash_info_from_system_trash_infos: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_work_info_from_system_work_info: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_from_work_binders: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_dict_word_from_work_dict_words: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_tag_from_work_tags: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_trash_info_from_work_trash_infos: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_from_trash_info_trashed_binder: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_trash_info_trashed_binder_item:
         RwLock<HashMap<EntityId, Vec<EntityId>>>,
@@ -85,10 +85,6 @@ impl HashMapStore {
                 &self.jn_recent_work_from_system_recent_works,
             )
             .clone(),
-            jn_trash_info_from_system_trash_infos: read_or_recover(
-                &self.jn_trash_info_from_system_trash_infos,
-            )
-            .clone(),
             jn_work_info_from_system_work_info: read_or_recover(
                 &self.jn_work_info_from_system_work_info,
             )
@@ -100,6 +96,10 @@ impl HashMapStore {
             .clone(),
             jn_binder_tag_from_work_tags: read_or_recover(&self.jn_binder_tag_from_work_tags)
                 .clone(),
+            jn_trash_info_from_work_trash_infos: read_or_recover(
+                &self.jn_trash_info_from_work_trash_infos,
+            )
+            .clone(),
             jn_binder_from_trash_info_trashed_binder: read_or_recover(
                 &self.jn_binder_from_trash_info_trashed_binder,
             )
@@ -172,14 +172,14 @@ impl HashMapStore {
         let g_jn_work_from_root_works = read_or_recover(&self.jn_work_from_root_works);
         let g_jn_recent_work_from_system_recent_works =
             read_or_recover(&self.jn_recent_work_from_system_recent_works);
-        let g_jn_trash_info_from_system_trash_infos =
-            read_or_recover(&self.jn_trash_info_from_system_trash_infos);
         let g_jn_work_info_from_system_work_info =
             read_or_recover(&self.jn_work_info_from_system_work_info);
         let g_jn_binder_from_work_binders = read_or_recover(&self.jn_binder_from_work_binders);
         let g_jn_dict_word_from_work_dict_words =
             read_or_recover(&self.jn_dict_word_from_work_dict_words);
         let g_jn_binder_tag_from_work_tags = read_or_recover(&self.jn_binder_tag_from_work_tags);
+        let g_jn_trash_info_from_work_trash_infos =
+            read_or_recover(&self.jn_trash_info_from_work_trash_infos);
         let g_jn_binder_from_trash_info_trashed_binder =
             read_or_recover(&self.jn_binder_from_trash_info_trashed_binder);
         let g_jn_binder_item_from_trash_info_trashed_binder_item =
@@ -211,9 +211,6 @@ impl HashMapStore {
             jn_recent_work_from_system_recent_works: RwLock::new(
                 g_jn_recent_work_from_system_recent_works.clone(),
             ),
-            jn_trash_info_from_system_trash_infos: RwLock::new(
-                g_jn_trash_info_from_system_trash_infos.clone(),
-            ),
             jn_work_info_from_system_work_info: RwLock::new(
                 g_jn_work_info_from_system_work_info.clone(),
             ),
@@ -222,6 +219,9 @@ impl HashMapStore {
                 g_jn_dict_word_from_work_dict_words.clone(),
             ),
             jn_binder_tag_from_work_tags: RwLock::new(g_jn_binder_tag_from_work_tags.clone()),
+            jn_trash_info_from_work_trash_infos: RwLock::new(
+                g_jn_trash_info_from_work_trash_infos.clone(),
+            ),
             jn_binder_from_trash_info_trashed_binder: RwLock::new(
                 g_jn_binder_from_trash_info_trashed_binder.clone(),
             ),
@@ -264,8 +264,6 @@ impl HashMapStore {
         *write_or_recover(&self.jn_work_from_root_works) = snap.jn_work_from_root_works.clone();
         *write_or_recover(&self.jn_recent_work_from_system_recent_works) =
             snap.jn_recent_work_from_system_recent_works.clone();
-        *write_or_recover(&self.jn_trash_info_from_system_trash_infos) =
-            snap.jn_trash_info_from_system_trash_infos.clone();
         *write_or_recover(&self.jn_work_info_from_system_work_info) =
             snap.jn_work_info_from_system_work_info.clone();
         *write_or_recover(&self.jn_binder_from_work_binders) =
@@ -274,6 +272,8 @@ impl HashMapStore {
             snap.jn_dict_word_from_work_dict_words.clone();
         *write_or_recover(&self.jn_binder_tag_from_work_tags) =
             snap.jn_binder_tag_from_work_tags.clone();
+        *write_or_recover(&self.jn_trash_info_from_work_trash_infos) =
+            snap.jn_trash_info_from_work_trash_infos.clone();
         *write_or_recover(&self.jn_binder_from_trash_info_trashed_binder) =
             snap.jn_binder_from_trash_info_trashed_binder.clone();
         *write_or_recover(&self.jn_binder_item_from_trash_info_trashed_binder_item) = snap
@@ -344,8 +344,6 @@ impl HashMapStore {
         *write_or_recover(&self.jn_work_from_root_works) = snap.jn_work_from_root_works.clone();
         *write_or_recover(&self.jn_recent_work_from_system_recent_works) =
             snap.jn_recent_work_from_system_recent_works.clone();
-        *write_or_recover(&self.jn_trash_info_from_system_trash_infos) =
-            snap.jn_trash_info_from_system_trash_infos.clone();
         *write_or_recover(&self.jn_work_info_from_system_work_info) =
             snap.jn_work_info_from_system_work_info.clone();
         *write_or_recover(&self.jn_binder_from_work_binders) =
@@ -354,6 +352,8 @@ impl HashMapStore {
             snap.jn_dict_word_from_work_dict_words.clone();
         *write_or_recover(&self.jn_binder_tag_from_work_tags) =
             snap.jn_binder_tag_from_work_tags.clone();
+        *write_or_recover(&self.jn_trash_info_from_work_trash_infos) =
+            snap.jn_trash_info_from_work_trash_infos.clone();
         *write_or_recover(&self.jn_binder_from_trash_info_trashed_binder) =
             snap.jn_binder_from_trash_info_trashed_binder.clone();
         *write_or_recover(&self.jn_binder_item_from_trash_info_trashed_binder_item) = snap
@@ -405,11 +405,11 @@ pub struct HashMapStoreSnapshot {
     pub(crate) jn_system_from_root_system: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_work_from_root_works: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_recent_work_from_system_recent_works: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_trash_info_from_system_trash_infos: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_work_info_from_system_work_info: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_from_work_binders: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_dict_word_from_work_dict_words: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_tag_from_work_tags: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_trash_info_from_work_trash_infos: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_from_trash_info_trashed_binder: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_trash_info_trashed_binder_item: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_binder_items: HashMap<EntityId, Vec<EntityId>>,

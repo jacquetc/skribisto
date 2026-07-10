@@ -12,7 +12,7 @@ use crate::{
     types::EntityId,
 };
 
-use crate::direct_access::system::SystemRelationshipField;
+use crate::direct_access::work::WorkRelationshipField;
 use crate::error::RepositoryError;
 use serde::{Deserialize, Serialize};
 
@@ -299,9 +299,9 @@ impl<'a> TrashInfoRepository<'a> {
 
         // Before removal, find which owner(s) reference this entity
         let affected_owner_ids: Vec<EntityId> = {
-            let owner_repo = repository_factory::write::create_system_repository(self.transaction)?;
+            let owner_repo = repository_factory::write::create_work_repository(self.transaction)?;
             owner_repo
-                .get_relationships_from_right_ids(&SystemRelationshipField::TrashInfos, &[*id])?
+                .get_relationships_from_right_ids(&WorkRelationshipField::TrashInfos, &[*id])?
                 .into_iter()
                 .map(|(owner_id, _)| owner_id)
                 .collect()
@@ -348,9 +348,9 @@ impl<'a> TrashInfoRepository<'a> {
 
         // Before removal, find which owner(s) reference these entities
         let affected_owner_ids: Vec<EntityId> = {
-            let owner_repo = repository_factory::write::create_system_repository(self.transaction)?;
+            let owner_repo = repository_factory::write::create_work_repository(self.transaction)?;
             owner_repo
-                .get_relationships_from_right_ids(&SystemRelationshipField::TrashInfos, ids)?
+                .get_relationships_from_right_ids(&WorkRelationshipField::TrashInfos, ids)?
                 .into_iter()
                 .map(|(owner_id, _)| owner_id)
                 .collect()
@@ -587,8 +587,8 @@ impl<'a> TrashInfoRepository<'a> {
         &self,
         owner_id: &EntityId,
     ) -> Result<Vec<EntityId>, RepositoryError> {
-        let repo = repository_factory::write::create_system_repository(self.transaction)?;
-        repo.get_relationship(owner_id, &SystemRelationshipField::TrashInfos)
+        let repo = repository_factory::write::create_work_repository(self.transaction)?;
+        repo.get_relationship(owner_id, &WorkRelationshipField::TrashInfos)
     }
 
     pub fn set_relationships_in_owner(
@@ -597,11 +597,11 @@ impl<'a> TrashInfoRepository<'a> {
         owner_id: &EntityId,
         ids: &[EntityId],
     ) -> Result<(), RepositoryError> {
-        let mut repo = repository_factory::write::create_system_repository(self.transaction)?;
+        let mut repo = repository_factory::write::create_work_repository(self.transaction)?;
         repo.set_relationship(
             event_buffer,
             owner_id,
-            &SystemRelationshipField::TrashInfos,
+            &WorkRelationshipField::TrashInfos,
             ids,
         )
     }
@@ -635,7 +635,7 @@ impl<'a> TrashInfoRepository<'a> {
 
         // Surgically reconcile the root ids' placement in their (external) strong owner,
         // preserving sibling edits made on other undo stacks.
-        self.reconcile_backref_system_trash_infos(event_buffer, snap_store, &snap.root_ids)?;
+        self.reconcile_backref_work_trash_infos(event_buffer, snap_store, &snap.root_ids)?;
 
         Ok(())
     }
@@ -774,8 +774,8 @@ impl<'a> TrashInfoRepository<'a> {
     }
 
     /// Surgically reconcile one external referrer junction (out-of-scope key -> in-scope values):
-    /// `system.trash_infos`.
-    fn reconcile_backref_system_trash_infos(
+    /// `work.trash_infos`.
+    fn reconcile_backref_work_trash_infos(
         &self,
         event_buffer: &mut EventBuffer,
         snap: &HashMapStoreSnapshot,
@@ -789,13 +789,13 @@ impl<'a> TrashInfoRepository<'a> {
 
         // External left keys whose ordered list references any scope id, in snapshot or live.
         let mut left_keys: std::collections::HashSet<EntityId> = std::collections::HashSet::new();
-        for (left, rights) in snap.jn_trash_info_from_system_trash_infos.iter() {
+        for (left, rights) in snap.jn_trash_info_from_work_trash_infos.iter() {
             if rights.iter().any(|rid| scope.contains(rid)) {
                 left_keys.insert(*left);
             }
         }
         {
-            let live_jn = store.jn_trash_info_from_system_trash_infos.read().unwrap();
+            let live_jn = store.jn_trash_info_from_work_trash_infos.read().unwrap();
             for (left, rights) in live_jn.iter() {
                 if rights.iter().any(|rid| scope.contains(rid)) {
                     left_keys.insert(*left);
@@ -805,12 +805,12 @@ impl<'a> TrashInfoRepository<'a> {
 
         for left in left_keys {
             let snap_list: Vec<EntityId> = snap
-                .jn_trash_info_from_system_trash_infos
+                .jn_trash_info_from_work_trash_infos
                 .get(&left)
                 .cloned()
                 .unwrap_or_default();
             let new_list = {
-                let live_jn = store.jn_trash_info_from_system_trash_infos.read().unwrap();
+                let live_jn = store.jn_trash_info_from_work_trash_infos.read().unwrap();
                 let live_list: Vec<EntityId> = live_jn.get(&left).cloned().unwrap_or_default();
                 let reconciled = crate::database::hashmap_store::reconcile_backref_list(
                     &live_list, &snap_list, &scope,
@@ -823,12 +823,12 @@ impl<'a> TrashInfoRepository<'a> {
             };
             if let Some(reconciled) = new_list {
                 store
-                    .jn_trash_info_from_system_trash_infos
+                    .jn_trash_info_from_work_trash_infos
                     .write()
                     .unwrap()
                     .insert(left, reconciled);
                 event_buffer.push(Event {
-                    origin: Origin::DirectAccess(DirectAccessEntity::System(EntityEvent::Updated)),
+                    origin: Origin::DirectAccess(DirectAccessEntity::Work(EntityEvent::Updated)),
                     ids: vec![left],
                     data: None,
                 });

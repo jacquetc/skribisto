@@ -198,7 +198,6 @@ impl LoadWorkUseCase {
 
 struct Materialized {
     work_id: EntityId,
-    trash_info_ids: Vec<EntityId>,
 }
 
 /// Materialise the Work subtree (lossless: every scalar field, content row,
@@ -394,11 +393,12 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
     if !dict_word_ids.is_empty() {
         uow.set_work_relationship(&work.id, &WorkRelationshipField::DictWords, &dict_word_ids)?;
     }
+    // Trash lives under the Work trunk (post-reparent).
+    if !trash_info_ids.is_empty() {
+        uow.set_work_relationship(&work.id, &WorkRelationshipField::TrashInfos, &trash_info_ids)?;
+    }
 
-    Ok(Materialized {
-        work_id: work.id,
-        trash_info_ids,
-    })
+    Ok(Materialized { work_id: work.id })
 }
 
 /// Build the non-undoable trunk: System + RecentWork + WorkInfo (records the
@@ -460,14 +460,6 @@ fn create_trunk(
         &SystemRelationshipField::WorkInfo,
         &[work_info.id],
     )?;
-
-    if !mat.trash_info_ids.is_empty() {
-        uow.set_system_relationship(
-            &system_id,
-            &SystemRelationshipField::TrashInfos,
-            &mat.trash_info_ids,
-        )?;
-    }
 
     // Reuse the single shared Root (one per process; multiple Works hang off it).
     let root_id = match uow.get_all_root()?.into_iter().next() {

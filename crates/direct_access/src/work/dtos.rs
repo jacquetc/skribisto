@@ -19,6 +19,7 @@ pub struct WorkDto {
     pub binders: Vec<EntityId>,
     pub tags: Vec<EntityId>,
     pub dict_words: Vec<EntityId>,
+    pub trash_infos: Vec<EntityId>,
 }
 
 impl From<WorkDto> for Work {
@@ -35,6 +36,7 @@ impl From<WorkDto> for Work {
             binders: dto.binders,
             tags: dto.tags,
             dict_words: dto.dict_words,
+            trash_infos: dto.trash_infos,
         }
     }
 }
@@ -53,6 +55,7 @@ impl From<&WorkDto> for Work {
             binders: dto.binders.clone(),
             tags: dto.tags.clone(),
             dict_words: dto.dict_words.clone(),
+            trash_infos: dto.trash_infos.clone(),
         }
     }
 }
@@ -71,6 +74,7 @@ impl From<Work> for WorkDto {
             binders: entity.binders,
             tags: entity.tags,
             dict_words: entity.dict_words,
+            trash_infos: entity.trash_infos,
         }
     }
 }
@@ -87,6 +91,7 @@ pub struct CreateWorkDto {
     pub binders: Vec<EntityId>,
     pub tags: Vec<EntityId>,
     pub dict_words: Vec<EntityId>,
+    pub trash_infos: Vec<EntityId>,
 }
 
 impl From<CreateWorkDto> for Work {
@@ -103,6 +108,7 @@ impl From<CreateWorkDto> for Work {
             binders: dto.binders,
             tags: dto.tags,
             dict_words: dto.dict_words,
+            trash_infos: dto.trash_infos,
         }
     }
 }
@@ -121,6 +127,7 @@ impl From<&CreateWorkDto> for Work {
             binders: dto.binders.clone(),
             tags: dto.tags.clone(),
             dict_words: dto.dict_words.clone(),
+            trash_infos: dto.trash_infos.clone(),
         }
     }
 }
@@ -138,6 +145,7 @@ impl From<Work> for CreateWorkDto {
             binders: entity.binders,
             tags: entity.tags,
             dict_words: entity.dict_words,
+            trash_infos: entity.trash_infos,
         }
     }
 }
@@ -167,6 +175,7 @@ impl From<UpdateWorkDto> for Work {
             binders: Default::default(),
             tags: Default::default(),
             dict_words: Default::default(),
+            trash_infos: Default::default(),
         }
     }
 }
@@ -185,6 +194,7 @@ impl From<&UpdateWorkDto> for Work {
             binders: Default::default(),
             tags: Default::default(),
             dict_words: Default::default(),
+            trash_infos: Default::default(),
         }
     }
 }

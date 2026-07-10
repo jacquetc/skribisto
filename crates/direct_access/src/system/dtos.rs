@@ -11,7 +11,6 @@ pub struct SystemDto {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub recent_works: Vec<EntityId>,
-    pub trash_infos: Vec<EntityId>,
     pub work_info: EntityId,
 }
 
@@ -22,7 +21,6 @@ impl From<SystemDto> for System {
             created_at: dto.created_at,
             updated_at: dto.updated_at,
             recent_works: dto.recent_works,
-            trash_infos: dto.trash_infos,
             work_info: dto.work_info,
         }
     }
@@ -35,7 +33,6 @@ impl From<&SystemDto> for System {
             created_at: dto.created_at.clone(),
             updated_at: dto.updated_at.clone(),
             recent_works: dto.recent_works.clone(),
-            trash_infos: dto.trash_infos.clone(),
             work_info: dto.work_info.clone(),
         }
     }
@@ -48,7 +45,6 @@ impl From<System> for SystemDto {
             created_at: entity.created_at,
             updated_at: entity.updated_at,
             recent_works: entity.recent_works,
-            trash_infos: entity.trash_infos,
             work_info: entity.work_info,
         }
     }
@@ -59,7 +55,6 @@ pub struct CreateSystemDto {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub recent_works: Vec<EntityId>,
-    pub trash_infos: Vec<EntityId>,
     pub work_info: EntityId,
 }
 
@@ -70,7 +65,6 @@ impl From<CreateSystemDto> for System {
             created_at: dto.created_at,
             updated_at: dto.updated_at,
             recent_works: dto.recent_works,
-            trash_infos: dto.trash_infos,
             work_info: dto.work_info,
         }
     }
@@ -83,7 +77,6 @@ impl From<&CreateSystemDto> for System {
             created_at: dto.created_at.clone(),
             updated_at: dto.updated_at.clone(),
             recent_works: dto.recent_works.clone(),
-            trash_infos: dto.trash_infos.clone(),
             work_info: dto.work_info.clone(),
         }
     }
@@ -95,7 +88,6 @@ impl From<System> for CreateSystemDto {
             created_at: entity.created_at,
             updated_at: entity.updated_at,
             recent_works: entity.recent_works,
-            trash_infos: entity.trash_infos,
             work_info: entity.work_info,
         }
     }
@@ -114,7 +106,6 @@ impl From<UpdateSystemDto> for System {
             created_at: dto.created_at,
             updated_at: dto.updated_at,
             recent_works: Default::default(),
-            trash_infos: Default::default(),
             work_info: Default::default(),
         }
     }
@@ -127,7 +118,6 @@ impl From<&UpdateSystemDto> for System {
             created_at: dto.created_at.clone(),
             updated_at: dto.updated_at.clone(),
             recent_works: Default::default(),
-            trash_infos: Default::default(),
             work_info: Default::default(),
         }
     }

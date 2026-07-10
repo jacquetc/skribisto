@@ -14,7 +14,6 @@ use frontend::commands::{
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
-use frontend::common::direct_access::system::SystemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::common::types::EntityId;
@@ -521,10 +520,10 @@ fn trash_items_cascades_and_indexes_trash_info() {
     let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
     assert_eq!(infos.len(), 1);
     assert_eq!(infos[0].trashed_binder_item, Some(fx.a));
-    let indexed = system_commands::get_system_relationship(
+    let indexed = work_commands::get_work_relationship(
         &fx.ctx,
-        &fx.system,
-        &SystemRelationshipField::TrashInfos,
+        &fx.work,
+        &WorkRelationshipField::TrashInfos,
     )
     .unwrap_or_default();
     assert_eq!(indexed, vec![infos[0].id]);
@@ -576,10 +575,10 @@ fn restore_items_round_trip() {
     assert!(!res.orphaned);
     assert!(activated(&fx.ctx, fx.c));
     // Index emptied.
-    let indexed = system_commands::get_system_relationship(
+    let indexed = work_commands::get_work_relationship(
         &fx.ctx,
-        &fx.system,
-        &SystemRelationshipField::TrashInfos,
+        &fx.work,
+        &WorkRelationshipField::TrashInfos,
     )
     .unwrap_or_default();
     assert!(indexed.is_empty());
@@ -744,10 +743,10 @@ fn empty_trash_removes_trashed_binder_from_work() {
 // ──────────────────────── restore + merge undo/redo ────────────────────────
 
 fn system_trash_index(fx: &Fixture) -> Vec<EntityId> {
-    system_commands::get_system_relationship(
+    work_commands::get_work_relationship(
         &fx.ctx,
-        &fx.system,
-        &SystemRelationshipField::TrashInfos,
+        &fx.work,
+        &WorkRelationshipField::TrashInfos,
     )
     .unwrap_or_default()
 }

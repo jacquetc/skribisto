@@ -19,7 +19,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SystemRelationshipField {
     RecentWorks,
-    TrashInfos,
     WorkInfo,
 }
 
@@ -294,15 +293,12 @@ impl<'a> SystemRepository<'a> {
         // get all strong forward relationship fields
 
         let recent_works = entity.recent_works.clone();
-        let trash_infos = entity.trash_infos.clone();
         let work_info = entity.work_info.clone();
 
         // remove all strong relationships, initiating a cascade remove
 
         repository_factory::write::create_recent_work_repository(self.transaction)?
             .remove_multi(event_buffer, &recent_works)?;
-        repository_factory::write::create_trash_info_repository(self.transaction)?
-            .remove_multi(event_buffer, &trash_infos)?;
         repository_factory::write::create_work_info_repository(self.transaction)?
             .remove(event_buffer, &work_info)?;
         // Before removal, find which owner(s) reference this entity
@@ -360,14 +356,6 @@ impl<'a> SystemRepository<'a> {
         // remove duplicates
         recent_works_ids.sort();
         recent_works_ids.dedup();
-        let mut trash_infos_ids: Vec<EntityId> = entities
-            .iter()
-            .flat_map(|entity| entity.as_ref().map(|entity| entity.trash_infos.clone()))
-            .flatten()
-            .collect();
-        // remove duplicates
-        trash_infos_ids.sort();
-        trash_infos_ids.dedup();
         let work_info_ids: Vec<EntityId> = entities
             .iter()
             .filter_map(|entity| entity.as_ref().map(|entity| entity.work_info))
@@ -377,8 +365,6 @@ impl<'a> SystemRepository<'a> {
 
         repository_factory::write::create_recent_work_repository(self.transaction)?
             .remove_multi(event_buffer, &recent_works_ids)?;
-        repository_factory::write::create_trash_info_repository(self.transaction)?
-            .remove_multi(event_buffer, &trash_infos_ids)?;
         repository_factory::write::create_work_info_repository(self.transaction)?
             .remove_multi(event_buffer, &work_info_ids)?;
         // Before removal, find which owner(s) reference these entities
@@ -490,23 +476,6 @@ impl<'a> SystemRepository<'a> {
                         });
                     }
                 }
-                SystemRelationshipField::TrashInfos => {
-                    let child_repo =
-                        repository_factory::write::create_trash_info_repository(self.transaction)?;
-                    let found = child_repo.get_multi(&all_right_ids)?;
-                    let missing: Vec<_> = all_right_ids
-                        .iter()
-                        .zip(found.iter())
-                        .filter(|(_, entity)| entity.is_none())
-                        .map(|(id, _)| *id)
-                        .collect();
-                    if !missing.is_empty() {
-                        return Err(RepositoryError::MissingRelationshipTarget {
-                            operation: "set_relationship_multi",
-                            ids: missing,
-                        });
-                    }
-                }
                 SystemRelationshipField::WorkInfo => {
                     let child_repo =
                         repository_factory::write::create_work_info_repository(self.transaction)?;
@@ -559,23 +528,6 @@ impl<'a> SystemRepository<'a> {
                 SystemRelationshipField::RecentWorks => {
                     let child_repo =
                         repository_factory::write::create_recent_work_repository(self.transaction)?;
-                    let found = child_repo.get_multi(right_ids)?;
-                    let missing: Vec<_> = right_ids
-                        .iter()
-                        .zip(found.iter())
-                        .filter(|(_, entity)| entity.is_none())
-                        .map(|(id, _)| *id)
-                        .collect();
-                    if !missing.is_empty() {
-                        return Err(RepositoryError::MissingRelationshipTarget {
-                            operation: "set_relationship",
-                            ids: missing,
-                        });
-                    }
-                }
-                SystemRelationshipField::TrashInfos => {
-                    let child_repo =
-                        repository_factory::write::create_trash_info_repository(self.transaction)?;
                     let found = child_repo.get_multi(right_ids)?;
                     let missing: Vec<_> = right_ids
                         .iter()
@@ -774,28 +726,6 @@ impl<'a> SystemRepository<'a> {
         {
             let mut child_ids: Vec<EntityId> = Vec::new();
             for id in to_create.iter().chain(to_update.iter()) {
-                if let Some(list) = snap.jn_trash_info_from_system_trash_infos.get(id) {
-                    child_ids.extend(list.iter().copied());
-                }
-            }
-            {
-                let live_jn = store.jn_trash_info_from_system_trash_infos.read().unwrap();
-                for id in &ids {
-                    if let Some(list) = live_jn.get(id) {
-                        child_ids.extend(list.iter().copied());
-                    }
-                }
-            }
-            child_ids.sort();
-            child_ids.dedup();
-            if !child_ids.is_empty() {
-                repository_factory::write::create_trash_info_repository(self.transaction)?
-                    .restore_subtree(event_buffer, snap, &child_ids, visited)?;
-            }
-        }
-        {
-            let mut child_ids: Vec<EntityId> = Vec::new();
-            for id in to_create.iter().chain(to_update.iter()) {
                 if let Some(list) = snap.jn_work_info_from_system_work_info.get(id) {
                     child_ids.extend(list.iter().copied());
                 }
@@ -838,22 +768,6 @@ impl<'a> SystemRepository<'a> {
                 .unwrap();
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_recent_work_from_system_recent_works.get(id) {
-                    Some(v) => {
-                        live_jn.insert(*id, v.clone());
-                    }
-                    None => {
-                        live_jn.remove(id);
-                    }
-                }
-            }
-            for id in &to_delete {
-                live_jn.remove(id);
-            }
-        }
-        {
-            let mut live_jn = store.jn_trash_info_from_system_trash_infos.write().unwrap();
-            for id in to_create.iter().chain(to_update.iter()) {
-                match snap.jn_trash_info_from_system_trash_infos.get(id) {
                     Some(v) => {
                         live_jn.insert(*id, v.clone());
                     }

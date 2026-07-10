@@ -11,9 +11,9 @@ use crate::RestoreResultDto;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
-use common::direct_access::system::SystemRelationshipField;
+use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
-use common::entities::{Binder, BinderItem, Root, System};
+use common::entities::{Binder, BinderItem, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
@@ -24,12 +24,11 @@ pub trait RestoreItemsUnitOfWorkFactoryTrait: Send + Sync {
 
 // The same macro set must appear on the impl block in
 // ../units_of_work/restore_items_uow.rs.
-#[macros::uow_action(entity = "Root", action = "GetAll")]
-#[macros::uow_action(entity = "Root", action = "Snapshot")]
-#[macros::uow_action(entity = "Root", action = "Restore")]
-#[macros::uow_action(entity = "System", action = "GetAll")]
-#[macros::uow_action(entity = "System", action = "GetRelationship")]
-#[macros::uow_action(entity = "System", action = "SetRelationship")]
+#[macros::uow_action(entity = "Work", action = "GetAll")]
+#[macros::uow_action(entity = "Work", action = "Snapshot")]
+#[macros::uow_action(entity = "Work", action = "Restore")]
+#[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "GetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "Get")]
 #[macros::uow_action(entity = "Binder", action = "Update")]
@@ -68,9 +67,9 @@ impl RestoreItemsUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // Root-scoped snapshot, before the first mutation.
-        let root_id = root_id(uow.as_ref())?;
-        let snap_before = uow.snapshot_root(&[root_id])?;
+        // Work-scoped snapshot, before the first mutation.
+        let work_id = work_id(uow.as_ref())?;
+        let snap_before = uow.snapshot_work(&[work_id])?;
 
         let mut restored_count: i64 = 0;
         let mut orphaned = false;
@@ -141,22 +140,17 @@ impl RestoreItemsUseCase {
             }
         }
 
-        // Unlink consumed TrashInfos from System.trash_infos.
+        // Unlink consumed TrashInfos from Work.trash_infos.
         if !consumed.is_empty() {
-            let system = system_singleton(uow.as_ref())?;
             let remaining: Vec<EntityId> = uow
-                .get_system_relationship(&system.id, &SystemRelationshipField::TrashInfos)?
+                .get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?
                 .into_iter()
                 .filter(|id| !consumed.contains(id))
                 .collect();
-            uow.set_system_relationship(
-                &system.id,
-                &SystemRelationshipField::TrashInfos,
-                &remaining,
-            )?;
+            uow.set_work_relationship(&work_id, &WorkRelationshipField::TrashInfos, &remaining)?;
         }
 
-        let snap_after = uow.snapshot_root(&[root_id])?;
+        let snap_after = uow.snapshot_work(&[work_id])?;
         uow.commit()?;
         uow.publish_restore_items_event(touched, None);
 
@@ -208,19 +202,12 @@ fn subtree_of(
     out
 }
 
-fn system_singleton(uow: &dyn RestoreItemsUnitOfWorkTrait) -> Result<System> {
-    uow.get_all_system()?
+fn work_id(uow: &dyn RestoreItemsUnitOfWorkTrait) -> Result<EntityId> {
+    uow.get_all_work()?
         .into_iter()
         .next()
-        .ok_or_else(|| anyhow!("restore_items: no System entity in store"))
-}
-
-fn root_id(uow: &dyn RestoreItemsUnitOfWorkTrait) -> Result<EntityId> {
-    uow.get_all_root()?
-        .into_iter()
-        .next()
-        .map(|r| r.id)
-        .ok_or_else(|| anyhow!("restore_items: no Root entity in store"))
+        .map(|w| w.id)
+        .ok_or_else(|| anyhow!("restore_items: no Work entity in store"))
 }
 
 use common::undo_redo::UndoRedoCommand;
@@ -233,7 +220,7 @@ impl UndoRedoCommand for RestoreItemsUseCase {
             .ok_or_else(|| anyhow!("restore_items: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_root(snap)?;
+        uow.restore_work(snap)?;
         uow.commit()?;
         Ok(())
     }
@@ -245,7 +232,7 @@ impl UndoRedoCommand for RestoreItemsUseCase {
             .ok_or_else(|| anyhow!("restore_items: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        uow.restore_root(snap)?;
+        uow.restore_work(snap)?;
         uow.commit()?;
         Ok(())
     }
