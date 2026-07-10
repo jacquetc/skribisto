@@ -179,7 +179,11 @@ mod imp {
         /// (dedupe by path, front-inserted), then refresh the reachable view.
         fn on_open(&self) {
             if let (Some(mru), Some(entry)) = (&self.inner.mru, opened_entry(&self.inner.ctx)) {
-                mru.add(entry);
+                // A backup file is never added to "Recent" — it's a point-in-time
+                // copy opened in its own window, not a project you return to.
+                if !crate::backup::is_backup_path(&entry.path) {
+                    mru.add(entry);
+                }
             }
             self.refresh();
         }

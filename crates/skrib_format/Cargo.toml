@@ -22,6 +22,7 @@ skribisto_model = { workspace = true }
 serde = "1.0"
 chrono = { workspace = true }
 uuid = { workspace = true }
+blake3 = "1"
 text-document = { path = "../../../text-document/crates/public_api" }
 ron = "0.8"
 zip = { version = "2", default-features = false, features = ["deflate"] }

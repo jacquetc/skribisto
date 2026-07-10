@@ -19,10 +19,10 @@ use common::entities::{
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
-use skrib_format::{ShapeTag, SkribShape};
+use skrib_format::{self as skrib, ShapeTag, SkribShape};
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub trait BackupNowUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn BackupNowUnitOfWorkTrait>;
@@ -137,15 +137,78 @@ fn run_backup(
         .as_ref()
         .and_then(|wi| wi.file_name.clone())
         .ok_or_else(|| anyhow!("no open project to back up"))?;
-    let backup_path = backup_path_for(&source, &dto.directory, stamp);
     let work_id = g.work.id;
-    let output =
-        work_io::serialize_and_write(&g, backup_path, SkribShape::ZipFile, ShapeTag::Zip)?;
-    Ok((work_id, BackupResultDto { backup_path: output }))
+
+    // Build the bundle once (pure, in-memory) and reuse it for every destination.
+    // Fingerprint BEFORE marking it a backup, so `backup_created_at` doesn't make
+    // every run's hash unique (which would defeat skip-if-unchanged).
+    let mut bundle = skrib::from_entities(
+        &g.work,
+        &g.tags,
+        &g.dict_words,
+        &g.trash_infos,
+        &g.binders,
+        ShapeTag::Zip,
+    );
+    let content_hash = skrib::content_fingerprint(&bundle);
+    skrib::mark_as_backup(&mut bundle, source.clone(), chrono::Utc::now());
+
+    // Empty destination list ⇒ one backup next to the project (back-compat).
+    let directories: Vec<String> = if dto.directories.is_empty() {
+        vec![String::new()]
+    } else {
+        dto.directories.clone()
+    };
+
+    let mut succeeded_paths = Vec::new();
+    let mut skipped_directories = Vec::new();
+    let mut failed_directories = Vec::new();
+    let mut failed_reasons = Vec::new();
+
+    let total = directories.len().max(1);
+    for (i, dir) in directories.iter().enumerate() {
+        if cancel.load(Ordering::Relaxed) {
+            return Err(anyhow!("operation cancelled"));
+        }
+        // Skip-if-unchanged: only when the caller supplied a matching hash for
+        // this destination (the manual trigger passes empty hashes ⇒ never skips).
+        let known = dto.last_known_hashes.get(i).map(String::as_str).unwrap_or("");
+        if !known.is_empty() && known == content_hash {
+            skipped_directories.push(dir.clone());
+        } else {
+            let target = backup_path_for(&source, dir, stamp);
+            // Resilient: a failed destination (unplugged drive, permission) is
+            // recorded and the remaining destinations still get written.
+            match skrib::write_bundle(&target, SkribShape::ZipFile, &bundle) {
+                Ok(()) => succeeded_paths.push(target),
+                Err(e) => {
+                    failed_directories.push(dir.clone());
+                    failed_reasons.push(e.to_string());
+                }
+            }
+        }
+        progress(OperationProgress::new(
+            10.0 + 80.0 * (i as f32 + 1.0) / total as f32,
+            Some(format!("Backing up ({}/{total})…", i + 1)),
+        ));
+    }
+
+    Ok((
+        work_id,
+        BackupResultDto {
+            content_hash,
+            succeeded_paths,
+            skipped_directories,
+            failed_directories,
+            failed_reasons,
+        },
+    ))
 }
 
 /// `<directory>/<stem>-<stamp>.skrib`. `directory` defaults to the source's
-/// parent; `stem` is the source's file/folder name without extension.
+/// parent; `stem` is the source's file/folder name without extension. On a
+/// same-second collision (rapid successive triggers) a `-N` suffix disambiguates
+/// so no earlier backup is overwritten.
 fn backup_path_for(source: &str, directory: &str, stamp: &str) -> String {
     let src = Path::new(source);
     let stem = src
@@ -161,7 +224,16 @@ fn backup_path_for(source: &str, directory: &str, stamp: &str) -> String {
     } else {
         Path::new(directory).to_path_buf()
     };
-    dir.join(format!("{stem}-{stamp}.skrib"))
-        .to_string_lossy()
-        .into_owned()
+    let base = dir.join(format!("{stem}-{stamp}.skrib"));
+    if !base.exists() {
+        return base.to_string_lossy().into_owned();
+    }
+    for n in 2u32..=u32::MAX {
+        let candidate = dir.join(format!("{stem}-{stamp}-{n}.skrib"));
+        if !candidate.exists() {
+            return candidate.to_string_lossy().into_owned();
+        }
+    }
+    // Exhausting u32 stamps within one second is not physically reachable.
+    base.to_string_lossy().into_owned()
 }

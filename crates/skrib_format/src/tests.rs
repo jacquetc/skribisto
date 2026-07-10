@@ -71,6 +71,7 @@ fn sample_inputs() -> (
         tags: vec![10, 11],
         dict_words: vec![20, 21],
         binders: vec![100],
+        trash_infos: vec![],
     };
     let tags = vec![
         BinderTag {

@@ -38,8 +38,8 @@ use bastyde::widgets::{
 };
 
 use crate::app_ids::AppIds;
-use crate::singles::SingleWork;
-use crate::view_models::{EditorTypography, SettingsViewModel};
+use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::view_models::{BackupSettingsViewModel, EditorTypography, SettingsViewModel};
 use skribisto_model::ChapterMode;
 use crate::{
     EDITOR_WIDTH_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT, NOTES_FIRST_LINE_INDENT_DEFAULT,
@@ -84,6 +84,10 @@ enum Pane {
     Keymap,
     /// Per-project "Work: <name> ▸ Structure" — chapter mode (folder vs flat).
     WorkStructure,
+    /// General backup ("Copies de secours") policy (under Backup & Sync).
+    Backup,
+    /// Per-project backup override (under the open Work's section).
+    WorkBackup,
 }
 
 impl Pane {
@@ -107,6 +111,8 @@ impl Pane {
             Pane::ExportFormats => tr!(settings_page_export()),
             Pane::Keymap => tr!(settings_page_keymap()),
             Pane::WorkStructure => tr!(settings_page_structure()),
+            Pane::Backup => tr!(settings_page_backup()),
+            Pane::WorkBackup => tr!(settings_page_work_backup()),
         }
     }
 }
@@ -635,6 +641,10 @@ impl SettingsPanel {
             Pane::Autosave,
             model.insert_child(bk, 0, Node::Page(Pane::Autosave)),
         );
+        nodes.insert(
+            Pane::Backup,
+            model.insert_child(bk, 1, Node::Page(Pane::Backup)),
+        );
 
         let ce = model.insert_root(4, Node::Section(Sec::CompileExport));
         nodes.insert(
@@ -657,6 +667,10 @@ impl SettingsPanel {
             nodes.insert(
                 Pane::WorkStructure,
                 model.insert_child(wk, 0, Node::Page(Pane::WorkStructure)),
+            );
+            nodes.insert(
+                Pane::WorkBackup,
+                model.insert_child(wk, 1, Node::Page(Pane::WorkBackup)),
             );
             work_node = Some(wk);
         }
@@ -748,6 +762,7 @@ impl SettingsPanel {
             (tr!(settings_page_corkboard()), Pane::Corkboard),
             (tr!(settings_page_dictionaries()), Pane::Dictionaries),
             (tr!(settings_page_autosave()), Pane::Autosave),
+            (tr!(settings_page_backup()), Pane::Backup),
             (tr!(settings_page_export()), Pane::ExportFormats),
             (tr!(settings_page_keymap()), Pane::Keymap),
             (tr!(settings_text_width()), Pane::EditorBehavior),
@@ -853,6 +868,33 @@ impl Widget for SettingsPanel {
             )),
         };
 
+        // ── Backup ("Copies de secours") panes ──
+        let backup_vm = ctx.app_state::<BackupSettingsViewModel>().cloned();
+        let backup_pane: Box<dyn Widget> = match &backup_vm {
+            Some(vm) => Box::new(crate::settings_backup::general_pane(ctx, vm)),
+            None => Box::new(empty_pane(
+                Some(tr!(settings_sec_backup())),
+                tr!(settings_page_backup()),
+                Sec::BackupSync.icon_svg(),
+            )),
+        };
+        let work_backup_pane: Box<dyn Widget> = match (&backup_vm, &work) {
+            (Some(vm), Some(w)) if w.id().is_some() => {
+                let uid = w.unique_id().get();
+                let path = ctx
+                    .app_state::<SingleWorkInfo>()
+                    .and_then(|wi| wi.file_name().get())
+                    .unwrap_or_default();
+                let title = w.title().get();
+                Box::new(crate::settings_backup::work_backup_pane(ctx, vm, uid, path, title))
+            }
+            _ => Box::new(empty_pane(
+                None,
+                tr!(settings_page_work_backup()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+
         // ── Left rail: search + category tree ───────────────────────────────
         let (tree, selection, nodes) = self.build_tree(ctx);
         let search = self.search_field(selection, nodes);
@@ -913,7 +955,9 @@ impl Widget for SettingsPanel {
                 tr!(settings_page_keymap()),
                 res!("assets/icons/settings/keymap.svg"),
             ))
-            .child_boxed(structure_pane);
+            .child_boxed(structure_pane)
+            .child_boxed(backup_pane)
+            .child_boxed(work_backup_pane);
 
         let footer = self.footer(vm, scale, not_defaults);
         let right = VStack::new()
@@ -1076,5 +1120,7 @@ mod tests {
         assert_eq!(Pane::ExportFormats.index(), 11);
         assert_eq!(Pane::Keymap.index(), 12);
         assert_eq!(Pane::WorkStructure.index(), 13);
+        assert_eq!(Pane::Backup.index(), 14);
+        assert_eq!(Pane::WorkBackup.index(), 15);
     }
 }

@@ -773,14 +773,17 @@ fn backup_serializes_current_store_not_disk() {
     let uc = BackupNowUseCase::new(
         Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
         &BackupNowDto {
-            directory: backup_dir.to_str().unwrap().to_string(),
+            directories: vec![backup_dir.to_str().unwrap().to_string()],
+            last_known_hashes: vec![],
         },
     );
     let res = uc
         .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
         .expect("backup_now");
 
-    let bundle = skrib::read_bundle(&res.backup_path).unwrap();
+    assert_eq!(res.succeeded_paths.len(), 1, "one destination written");
+    assert!(res.failed_directories.is_empty());
+    let bundle = skrib::read_bundle(&res.succeeded_paths[0]).unwrap();
     assert_eq!(
         bundle.manifest.work.title, "UNSAVED EDIT",
         "the backup must reflect the store, not the stale on-disk file"
@@ -790,6 +793,52 @@ fn backup_serializes_current_store_not_disk() {
         ShapeTag::Zip,
         "backups are always a single zip, even for a folder-shape project"
     );
+    // The backup carries the authoritative marker so it is recognised on open.
+    assert_eq!(bundle.manifest.kind, skrib::BundleKind::Backup);
+    assert!(bundle.manifest.backup_created_at.is_some());
+    assert!(bundle.manifest.backup_of.is_some());
+}
+
+/// A second destination that cannot be written must not sink the whole backup:
+/// the good destination still gets a file, and the bad one is reported. And a
+/// matching last-known hash makes a destination skip.
+#[test]
+fn backup_multi_destination_is_resilient_and_dedups() {
+    let (dir, db, hub) = load_sample();
+
+    let good = dir.path().join("good");
+    std::fs::create_dir_all(&good).unwrap();
+    // A path whose parent is a *file* — creating the zip there must fail.
+    let blocker = dir.path().join("blocker");
+    std::fs::write(&blocker, b"x").unwrap();
+    let bad = blocker.join("nested"); // parent is a file ⇒ unwritable
+
+    let run = |hashes: Vec<String>| {
+        BackupNowUseCase::new(
+            Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
+            &BackupNowDto {
+                directories: vec![
+                    good.to_str().unwrap().to_string(),
+                    bad.to_str().unwrap().to_string(),
+                ],
+                last_known_hashes: hashes,
+            },
+        )
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("backup_now")
+    };
+
+    let res = run(vec![]);
+    assert_eq!(res.succeeded_paths.len(), 1, "the good destination is written");
+    assert_eq!(res.failed_directories.len(), 1, "the bad destination is reported");
+    assert_eq!(res.failed_reasons.len(), 1);
+    assert!(!res.content_hash.is_empty());
+
+    // Feeding back the good destination's hash makes it skip on the next run.
+    let res2 = run(vec![res.content_hash.clone(), String::new()]);
+    assert_eq!(res2.skipped_directories.len(), 1, "unchanged good destination is skipped");
+    assert!(res2.succeeded_paths.is_empty(), "nothing written to the good destination");
+    assert_eq!(res2.failed_directories.len(), 1, "the bad destination still fails");
 }
 
 /// F4: a panicking long operation is reported `Failed`, not left stuck at

@@ -22,9 +22,10 @@ use bastyde::widgets::{
     Divider, DockOpenLocation, DockRail, DockSide, DockWidgetId, DockingLayout, DropRegion,
     DropTarget,
     DropTargetVariant, EventContextMessageBoxExt, Expand, HStack, IconButton, IconButtonSize,
-    MessageBox, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, RowDragData,
+    MessageBox, MessageBoxButton, MessageBoxButtons, NotificationArchiveModel,
+    NotificationCenterButton, RowDragData,
     Spacer, Splitter, StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast,
-    VStack,
+    ToastAction, VStack,
 };
 
 use frontend::AppContext;
@@ -43,8 +44,8 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::models::TreeNode;
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
-    EditorsViewModel, ImportPlumeViewModel, OutlineViewModel, SaveAsViewModel, SettingsViewModel,
-    Side,
+    BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ImportPlumeViewModel,
+    OutlineViewModel, SaveAsViewModel, SettingsViewModel, Side,
 };
 use crate::welcome_panel::WelcomePanel;
 
@@ -127,6 +128,12 @@ pub struct App {
     /// A deferred close (set by the guard/menu, performed on SaveWork). Shared with
     /// `main`'s window close guard.
     pending_exit: Signal<PendingExit>,
+    /// True while a *backup file* is open here (Save + auto-backup off; content
+    /// still editable). Shared with `main`'s title-bar menu.
+    backup_mode: Signal<bool>,
+    /// The open backup's details (drives the permanent banner + restore), or
+    /// `None` for a normal project.
+    backup_context: Signal<Option<crate::backup::BackupContext>>,
     /// A `.skrib` path given as the launch argument — opened once on first build
     /// (after the `LoadWork` subscription is live so the full load flow runs).
     initial_project: Option<String>,
@@ -141,12 +148,15 @@ pub struct App {
 }
 
 impl App {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         app_ctx: Rc<AppContext>,
         outline: OutlineViewModel,
         autosave_menu: Signal<bool>,
         unsaved: Signal<bool>,
         pending_exit: Signal<PendingExit>,
+        backup_mode: Signal<bool>,
+        backup_context: Signal<Option<crate::backup::BackupContext>>,
         initial_project: Option<String>,
     ) -> Self {
         Self {
@@ -155,6 +165,8 @@ impl App {
             autosave_menu,
             unsaved,
             pending_exit,
+            backup_mode,
+            backup_context,
             initial_project,
             initial_loaded: false,
             editors: None,
@@ -211,10 +223,19 @@ impl Widget for App {
             .app_state::<crate::models::OpenDocsStore>()
             .cloned()
             .expect("OpenDocsStore registered in main");
+        let backup_mode_for_editors = self.backup_mode.clone();
         let editors = self
             .editors
             .get_or_insert_with(|| {
-                EditorsViewModel::new(app_ctx, column_width, show_synopsis, typography, ids, docs)
+                EditorsViewModel::new(
+                    app_ctx,
+                    column_width,
+                    show_synopsis,
+                    typography,
+                    ids,
+                    docs,
+                    backup_mode_for_editors,
+                )
             })
             .clone();
 
@@ -264,6 +285,21 @@ impl Widget for App {
             .expect("SingleWorkInfo registered in main");
         single_work.wire(ctx);
         single_work_info.wire(ctx);
+        // Backup scheduler + settings (registered in `main`). The scheduler drives
+        // every trigger and holds the singles; the settings VM tracks the active
+        // project for the per-project settings pane.
+        let backup_scheduler = ctx
+            .app_state::<BackupSchedulerViewModel>()
+            .cloned()
+            .expect("BackupSchedulerViewModel registered in main");
+        let backup_settings = ctx
+            .app_state::<BackupSettingsViewModel>()
+            .cloned()
+            .expect("BackupSettingsViewModel registered in main");
+        let restore_vm = ctx
+            .app_state::<crate::view_models::RestoreViewModel>()
+            .cloned()
+            .expect("RestoreViewModel registered in main");
         // Keep the outline tree reactive to *all* structural mutations (incl. the
         // Full Chapter view's rename/merge/split/add), not just the outline's own.
         self.outline.wire(ctx);
@@ -515,6 +551,7 @@ impl Widget for App {
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
             let unsaved = self.unsaved.clone();
+            let backup_scheduler = backup_scheduler.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_event: &Event| {
@@ -533,6 +570,82 @@ impl Widget for App {
                     // list it (and can raise this window).
                     if let Some(path) = single_work_info.file_name().get() {
                         crate::open_registry::claim(&path, &single_work.title().get());
+                    }
+                    // Take an on-open backup if the policy asks for one.
+                    backup_scheduler.on_open();
+                },
+            );
+        }
+
+        // Detect "a backup file was opened" and enter backup mode. A separate
+        // `subscribe_event_with_ctx` (needs an `EventContext` to present the choice
+        // modal) reads the just-loaded path and sniffs its manifest. Opening a
+        // backup always happens in its own process (the redirect in the open entry
+        // points), so this only ever fires in a window dedicated to that backup.
+        {
+            let app_ctx = self.app_ctx.clone();
+            let backup_mode = self.backup_mode.clone();
+            let backup_context = self.backup_context.clone();
+            let restore_vm = restore_vm.clone();
+            let single_work = single_work.clone();
+            let backup_settings = backup_settings.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::WorkManagement(WorkManagementEvent::LoadWork),
+                move |_e: &Event, c: &mut EventContext| {
+                    let path = frontend::commands::work_info_commands::get_all_work_info(&app_ctx)
+                        .ok()
+                        .and_then(|v| v.into_iter().next())
+                        .and_then(|wi| wi.file_name);
+                    match path.as_deref().and_then(crate::backup::backup_context_for) {
+                        Some(bc) => {
+                            backup_mode.set(true);
+                            backup_context.set(Some(bc.clone()));
+                            let restore = restore_vm.clone();
+                            c.present_modal(
+                                ModalRequest::deferred(move |t| {
+                                    t.add(crate::backup_choice_panel::BackupChoicePanel::new(
+                                        restore.clone(),
+                                        bc.clone(),
+                                    ))
+                                })
+                                .presentation(ModalPresentation::InTree)
+                                .title(tr!(backup_choice_title()))
+                                .close_behavior(ModalCloseBehavior::Manual)
+                                .size(560, 320),
+                            );
+                        }
+                        None => {
+                            // A normal project — never in backup mode.
+                            backup_mode.set(false);
+                            backup_context.set(None);
+                            // One-time "no backups configured" nudge (only when the
+                            // effective policy has every trigger off — a project on
+                            // defaults still backs up on close, so it never nags).
+                            let uid = single_work.unique_id().get();
+                            if crate::models::uid_is_usable(&uid)
+                                && backup_settings.effective_for(&uid).is_effectively_off()
+                                && !backup_settings.was_nudged(&uid)
+                            {
+                                if let Some(p) = path.as_deref() {
+                                    backup_settings.mark_nudged(&uid, p);
+                                }
+                                c.show_toast(
+                                    Toast::warning(tr!(backup_nudge_text())).action(
+                                        ToastAction::primary(tr!(backup_nudge_action()), |c| {
+                                            c.present_modal(
+                                                ModalRequest::deferred(|t| {
+                                                    t.add(SettingsPanel::new())
+                                                })
+                                                .presentation(ModalPresentation::InTree)
+                                                .title("Settings")
+                                                .size(920, 620)
+                                                .close_behavior(ModalCloseBehavior::Manual),
+                                            );
+                                        }),
+                                    ),
+                                );
+                            }
+                        }
                     }
                 },
             );
@@ -596,6 +709,44 @@ impl Widget for App {
             }
         }
 
+        // Route the backup long operation's completion/failure to the shared
+        // `BackupSchedulerViewModel`, which records the per-destination success
+        // hash, applies retention, shows the summary toast, and — for an on-close
+        // backup — performs the deferred close. Filters by op id (import/save-as
+        // events are ignored).
+        {
+            let vm = backup_scheduler.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(LongOperationEvent::Completed),
+                move |e: &Event, c| vm.on_long_op_completed(c, e),
+            );
+        }
+        {
+            let vm = backup_scheduler.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(LongOperationEvent::Failed),
+                move |e: &Event, c| vm.on_long_op_failed(c, e),
+            );
+        }
+
+        // Route the restore's `save_as` op completion/failure to `RestoreViewModel`
+        // (it filters by its own op id, so save-as / backup / import events pass
+        // through). On success it records WorkInfo and leaves backup mode.
+        {
+            let vm = restore_vm.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(LongOperationEvent::Completed),
+                move |e: &Event, c| vm.on_long_op_completed(c, e),
+            );
+        }
+        {
+            let vm = restore_vm.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(LongOperationEvent::Failed),
+                move |e: &Event, c| vm.on_long_op_failed(c, e),
+            );
+        }
+
         // On new work: same seeding as load (a project is now open), then write
         // the freshly-created project to the chosen path immediately — a
         // create-and-save. `save_to_disk` resolves the target + shape from the
@@ -612,6 +763,8 @@ impl Widget for App {
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
             let unsaved = self.unsaved.clone();
+            let backup_mode = self.backup_mode.clone();
+            let backup_context = self.backup_context.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::NewWork),
                 move |_event: &Event| {
@@ -627,6 +780,9 @@ impl Widget for App {
                     if let Some(path) = single_work_info.file_name().get() {
                         crate::open_registry::claim(&path, &single_work.title().get());
                     }
+                    // A brand-new project is never a backup.
+                    backup_mode.set(false);
+                    backup_context.set(None);
                     editors.save_to_disk();
                 },
             );
@@ -641,6 +797,8 @@ impl Widget for App {
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
             let unsaved = self.unsaved.clone();
+            let backup_mode = self.backup_mode.clone();
+            let backup_context = self.backup_context.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::CloseWork),
                 move |_event: &Event| {
@@ -652,6 +810,8 @@ impl Widget for App {
                     single_work.set_id(None);
                     single_work_info.set_id(None);
                     unsaved.set(false);
+                    backup_mode.set(false);
+                    backup_context.set(None);
                     crate::open_registry::release();
                 },
             );
@@ -742,6 +902,43 @@ impl Widget for App {
             }
         }
 
+        // Periodic "every N hours" backup while a project is open. Mirrors the
+        // autosave timer: a `wake_at` deadline keeps the loop asleep; the
+        // `frame_tick` effect fires `interval_tick` when the deadline passes and
+        // re-arms. The interval (and whether it's on) comes from the open project's
+        // effective policy via the scheduler; `None` disarms it.
+        {
+            use std::time::{Duration, Instant};
+            let deadline: Rc<std::cell::Cell<Option<Instant>>> =
+                Rc::new(std::cell::Cell::new(None));
+            let wake = ctx.wake_at_handle();
+            let scheduler = backup_scheduler.clone();
+            let tick = ctx.frame_tick();
+            ctx.effect(&tick, move |_| {
+                let Some(secs) = scheduler.interval_secs() else {
+                    deadline.set(None); // interval off / no project open
+                    return;
+                };
+                match deadline.get() {
+                    None => {
+                        let at = Instant::now() + Duration::from_secs(secs);
+                        deadline.set(Some(at));
+                        wake.set(Some(at));
+                    }
+                    Some(at) => {
+                        if Instant::now() >= at {
+                            scheduler.interval_tick();
+                            let next = Instant::now() + Duration::from_secs(secs);
+                            deadline.set(Some(next));
+                            wake.set(Some(next));
+                        } else {
+                            wake.set(Some(at));
+                        }
+                    }
+                }
+            });
+        }
+
         // ── Exit guards (Close Work / Quit / window close) ───────────────────
         // The window close guard (in `main`) and the `work.close` action set
         // `pending_exit`; that kicks a disk save, and the SaveWork-completion event
@@ -757,26 +954,18 @@ impl Widget for App {
         {
             let unsaved = self.unsaved.clone();
             let pending = self.pending_exit.clone();
-            let app_ctx2 = self.app_ctx.clone();
-            let window = ctx.window().cloned();
-            ctx.subscribe_event(
+            let scheduler = backup_scheduler.clone();
+            ctx.subscribe_event_with_ctx(
                 Origin::WorkManagement(WorkManagementEvent::SaveWork),
-                move |_e: &Event| {
+                move |_e: &Event, c| {
                     unsaved.set(false);
                     let pe = pending.get();
                     if pe != PendingExit::None {
                         pending.set(PendingExit::None);
-                        match pe {
-                            PendingExit::CloseWindow => {
-                                if let Some(w) = &window {
-                                    w.close();
-                                }
-                            }
-                            PendingExit::CloseWork => {
-                                let _ = work_management_commands::close_work(&app_ctx2);
-                            }
-                            PendingExit::None => {}
-                        }
+                        // Saved and consistent — now take the on-close backup (if
+                        // configured) and then perform the deferred close. When no
+                        // on-close backup applies, `on_close_flow` closes at once.
+                        scheduler.on_close_flow(c, pe);
                     }
                 },
             );
@@ -789,12 +978,39 @@ impl Widget for App {
             let unsaved = self.unsaved.clone();
             let autosave = settings.autosave();
             let pending = self.pending_exit.clone();
+            let scheduler = backup_scheduler.clone();
+            let backup_mode = self.backup_mode.clone();
             ctx.register_action_global(Action::new("work.close").on_invoke(move |_i, ctx| {
+                // Backup window with unsaved edits: Save is off, so the normal
+                // save-then-close path can't run — offer to discard (Save As keeps
+                // them, via the banner).
+                if backup_mode.get() && unsaved.get() {
+                    let app_ctx3 = app_ctx2.clone();
+                    ctx.present_message_box(
+                        MessageBox::question(tr!(close_backup_discard_title()))
+                            .text(tr!(close_backup_discard_text()))
+                            .buttons(MessageBoxButtons::Custom(vec![
+                                MessageBoxButton::standard(StandardButton::Discard),
+                                MessageBoxButton::standard(StandardButton::Cancel),
+                            ]))
+                            .default_button(StandardButton::Cancel)
+                            .escape_button(StandardButton::Cancel)
+                            .on_result(move |r, _ctx| {
+                                if r.button == StandardButton::Discard {
+                                    let _ = work_management_commands::close_work(&app_ctx3);
+                                }
+                            }),
+                    );
+                    return;
+                }
                 if !unsaved.get() {
-                    let _ = work_management_commands::close_work(&app_ctx2);
+                    // Clean: take an on-close backup (if configured) then close.
+                    // (In backup mode `on_close_flow` is suppressed → closes at once.)
+                    scheduler.on_close_flow(ctx, PendingExit::CloseWork);
                     return;
                 }
                 if autosave.get() {
+                    // Save first; SaveWork-completion runs the backup then closes.
                     pending.set(PendingExit::CloseWork);
                     return;
                 }
@@ -808,11 +1024,50 @@ impl Widget for App {
                         .escape_button(StandardButton::Cancel)
                         .on_result(move |r, _ctx| match r.button {
                             StandardButton::Save => pe.set(PendingExit::CloseWork),
+                            // Discarding unsaved edits skips the backup.
                             StandardButton::Discard => {
                                 let _ = work_management_commands::close_work(&app_ctx3);
                             }
                             _ => {}
                         }),
+                );
+            }));
+        }
+        // `backup.now` — the manual "Back up now" command. Flushes in-widget edits
+        // into the store (so the backup captures the latest typing — a store write,
+        // not a disk save), then runs a forced backup to the configured
+        // destinations. Registered globally (the title-bar menu is an overlay).
+        {
+            let editors_for_backup = editors.clone();
+            let scheduler = backup_scheduler.clone();
+            ctx.register_action_global(Action::new("backup.now").on_invoke(move |_i, ctx| {
+                editors_for_backup.flush_all();
+                scheduler.backup_now(ctx);
+            }));
+        }
+        // `backups.show` — open the browsable list of this project's backup files.
+        {
+            let single_work = single_work.clone();
+            let single_work_info = single_work_info.clone();
+            let backup_settings = backup_settings.clone();
+            ctx.register_action_global(Action::new("backups.show").on_invoke(move |_i, c| {
+                let uid = single_work.unique_id().get();
+                let Some(path) = single_work_info.file_name().get() else {
+                    return;
+                };
+                let dirs = backup_settings.effective_for(&uid).destinations;
+                c.present_modal(
+                    ModalRequest::deferred(move |t| {
+                        t.add(crate::backups_list_panel::BackupsListPanel::new(
+                            uid.clone(),
+                            path.clone(),
+                            dirs.clone(),
+                        ))
+                    })
+                    .presentation(ModalPresentation::InTree)
+                    .title(tr!(backups_title()))
+                    .size(700, 540)
+                    .close_behavior(ModalCloseBehavior::EscapeOrClickOutside),
                 );
             }));
         }
@@ -983,9 +1238,22 @@ impl Widget for App {
                 .child(NotificationCenterButton::new(archive).size(IconButtonSize::Compact)),
         );
 
+        // The permanent backup banner sits above everything while a backup file is
+        // open (zero height otherwise).
+        let backup_banner = crate::backup_banner::BackupBanner::new(
+            self.backup_context.clone(),
+            restore_vm.clone(),
+            ctx.app_state::<SaveAsViewModel>()
+                .cloned()
+                .expect("SaveAsViewModel registered in main"),
+            single_work.clone(),
+            self.app_ctx.clone(),
+        );
+
         let root = ctx.add(
             VStack::new()
                 .spacing(0.0)
+                .child(backup_banner)
                 .child(Divider::new())
                 .child(Expand::new().child(layout))
                 .child(status),
@@ -1061,6 +1329,14 @@ fn open_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {
             let file = path.to_string_lossy().into_owned();
+            // A backup always opens in its own instance (never replacing the
+            // project in this window) — see the backup-mode invariant.
+            if crate::backup::is_backup_path(&file) {
+                ectx.request_activation_token_self(Box::new(move |tok| {
+                    crate::project_switcher_button::spawn_new_process(&file, tok);
+                }));
+                return;
+            }
             if let Err(e) =
                 work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: file })
             {

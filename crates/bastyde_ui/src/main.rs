@@ -3,6 +3,10 @@
 mod activity_icons;
 mod app;
 mod app_ids;
+mod backup;
+mod backup_banner;
+mod backup_choice_panel;
+mod backups_list_panel;
 mod binder_icons;
 mod binder_switcher_button;
 mod create_labels;
@@ -15,6 +19,7 @@ mod models;
 mod new_work_panel;
 mod open_registry;
 mod project_switcher_button;
+mod settings_backup;
 mod settings_panel;
 mod singles;
 mod tabs;
@@ -35,8 +40,8 @@ use bastyde::settings::{AppPaths, SettingsStore};
 use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
     CollapsePolicy, EventContextMessageBoxExt, Expand, IconButton, IconButtonSize, IconWidget,
-    MenuBar, MenuEntry, MenuModel, MessageBox, MessageBoxButtons, StandardButton, TextWidget,
-    TitleBar, Toast, VStack, WindowFrame, framework_locales,
+    MenuBar, MenuEntry, MenuModel, MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton,
+    TextWidget, TitleBar, Toast, VStack, WindowFrame, framework_locales,
 };
 use project_switcher_button::ProjectSwitcherButton;
 
@@ -47,13 +52,16 @@ use frontend::commands::{
 };
 use frontend::common::entities::WorkShape;
 use frontend::common::event::{Event, Origin};
-use frontend::work_management::{BackupNowDto, SaveAsDto};
+use frontend::work_management::SaveAsDto;
 
 use app::{App, PendingExit};
 use app_ids::AppIds;
-use models::OpenDocsStore;
+use models::{BackupSettingsService, OpenDocsStore};
 use singles::{SingleWork, SingleWorkInfo};
-use view_models::{ImportPlumeViewModel, OutlineViewModel, SaveAsViewModel};
+use view_models::{
+    BackupSchedulerViewModel, BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel,
+    RestoreViewModel, SaveAsViewModel,
+};
 
 /// The currently-open project's path (from `WorkInfo`), if any.
 fn current_project_path(ctx: &AppContext) -> Option<String> {
@@ -315,6 +323,47 @@ fn main() {
     // thread when a background "Save As" completes (save_as itself is read-only).
     // Registered as app-state so `App::build` routes the long-operation events to it.
     let save_as_vm = SaveAsViewModel::new(app_ctx.clone(), ids.clone());
+    // Backup-mode state: `backup_mode` is true while a *backup file* is open in
+    // this window (Save + auto-backup off; the file is read-only, the content is
+    // still editable). `backup_context` carries the open backup's details (drives
+    // the permanent banner + restore). Created here so the title-bar menu can read
+    // `backup_mode` (to hide Save / Back up now); `App::build` sets them on load.
+    let backup_mode = Signal::new(false);
+    let backup_context: Signal<Option<backup::BackupContext>> = Signal::new(None);
+    // Backup ("Copies de secours") settings — opened eagerly here (before any
+    // project loads) so the on-open/on-close/interval hooks and the scheduler see
+    // it. Degrades to a throwaway temp file if the config dir is unavailable,
+    // exactly as the recents MRU does.
+    let backup_service = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| {
+            BackupSettingsService::open(&paths)
+                .map_err(|e| eprintln!("backup settings: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(BackupSettingsService::in_memory_default);
+    let backup_settings = BackupSettingsViewModel::new(backup_service);
+    // The backup scheduler drives every trigger (manual / on-open / interval /
+    // on-close). It reads the open project's uid/path from the singles and the
+    // policy from `backup_settings`. Registered as app-state so `App::build` routes
+    // the backup long-operation events to it and fires the triggers.
+    let backup_scheduler = BackupSchedulerViewModel::new(
+        app_ctx.clone(),
+        backup_settings.clone(),
+        single_work.clone(),
+        single_work_info.clone(),
+        backup_mode.clone(),
+    );
+    // Restore-a-backup view-model — overwrites the original project with the open
+    // backup's content (reusing `save_as`), then leaves backup mode. Registered as
+    // app-state so `App::build` routes its long-operation events + the choice modal
+    // / banner reach it.
+    let restore_vm = RestoreViewModel::new(
+        app_ctx.clone(),
+        ids.clone(),
+        single_work.clone(),
+        backup_mode.clone(),
+        backup_context.clone(),
+    );
     // The title-bar menu lives outside `App` (no `ctx.settings()` there), so the
     // autosave setting is mirrored into this plain signal by `App::build` and read
     // by the menu to hide the "Save" item. Seeded from the persisted value.
@@ -367,9 +416,12 @@ fn main() {
         .app_state(outline.clone())
         .app_state(import_plume.clone())
         .app_state(save_as_vm.clone())
+        .app_state(backup_settings.clone())
+        .app_state(backup_scheduler.clone())
+        .app_state(restore_vm.clone())
         // Bind this instance's IPC listener (multi-process window switching); an
         // incoming raise request focuses the captured main window.
-        .on_ready(|proxy| ipc::spawn_listener(proxy))
+        .on_ready(ipc::spawn_listener)
         .on_app_event({
             let main_window_state = main_window_state.clone();
             move |event| {
@@ -403,11 +455,48 @@ fn main() {
                     let unsaved = unsaved.clone();
                     let autosave = autosave_menu.clone();
                     let pending = pending_exit.clone();
+                    let scheduler = backup_scheduler.clone();
+                    let backup_mode = backup_mode.clone();
                     move |ctx| {
+                        // Backup window: Save is off (the file is read-only), so the
+                        // normal save-then-close path doesn't apply. Clean → close;
+                        // dirty → offer to discard (Save As keeps edits — via the
+                        // banner). No on-close backup (never back up a backup).
+                        if backup_mode.get() {
+                            if !unsaved.get() {
+                                return CloseResponse::Close;
+                            }
+                            ctx.present_message_box(
+                                MessageBox::question(tr!(close_backup_discard_title()))
+                                    .text(tr!(close_backup_discard_text()))
+                                    .buttons(MessageBoxButtons::Custom(vec![
+                                        MessageBoxButton::standard(StandardButton::Discard),
+                                        MessageBoxButton::standard(StandardButton::Cancel),
+                                    ]))
+                                    .default_button(StandardButton::Cancel)
+                                    .escape_button(StandardButton::Cancel)
+                                    .on_result(move |r, ctx| {
+                                        if r.button == StandardButton::Discard {
+                                            ctx.close_window_forced();
+                                        }
+                                    }),
+                            );
+                            return CloseResponse::Veto;
+                        }
                         if !unsaved.get() {
+                            // Clean project: still take an on-close backup (if the
+                            // policy asks) before actually closing — `on_close_flow`
+                            // forced-closes once the backup finishes (or immediately
+                            // if there's nothing to do).
+                            if scheduler.wants_on_close() {
+                                scheduler.on_close_flow(ctx, PendingExit::CloseWindow);
+                                return CloseResponse::Veto;
+                            }
                             return CloseResponse::Close;
                         }
                         if autosave.get() {
+                            // Save first; the SaveWork-completion handler then runs
+                            // the on-close backup and performs the close.
                             pending.set(PendingExit::CloseWindow);
                             return CloseResponse::Veto;
                         }
@@ -420,6 +509,8 @@ fn main() {
                                 .escape_button(StandardButton::Cancel)
                                 .on_result(move |r, ctx| match r.button {
                                     StandardButton::Save => pe.set(PendingExit::CloseWindow),
+                                    // Discarding unsaved edits skips the backup (the
+                                    // last-saved state is what's kept).
                                     StandardButton::Discard => ctx.close_window_forced(),
                                     _ => {}
                                 }),
@@ -444,10 +535,10 @@ fn main() {
                             let menu_work_info = single_work_info.clone();
                             let menu_autosave = autosave_menu.clone();
                             let menu_save_as = save_as_vm.clone();
+                            let menu_backup_mode = backup_mode.clone();
                             let menu = MenuModel::new().menu(tr!(menu_file()), move |m| {
                                 let file_ctx = menu_ctx.clone();
                                 let folder_ctx = menu_ctx.clone();
-                                let backup_ctx = menu_ctx.clone();
                                 let folder_work = menu_work.clone();
                                 let save_as_file_vm = menu_save_as.clone();
                                 let save_as_folder_vm = menu_save_as.clone();
@@ -464,7 +555,14 @@ fn main() {
                                     menu_work_info.shape().map(|s| *s == Some(WorkShape::Zip));
                                 // Autosave hides the manual "Save" item (+ its Ctrl+S
                                 // accelerator); the save then runs on the debounce timer.
-                                let show_manual_save = menu_autosave.map(|a| !*a);
+                                // Also hidden in backup mode (Save is off there).
+                                let show_manual_save = menu_autosave
+                                    .zip(&menu_backup_mode)
+                                    .map(|(a, bm)| !*a && !*bm);
+                                // "Back up now" shows only for an open, non-backup project.
+                                let show_backup_now = show_open
+                                    .zip(&menu_backup_mode)
+                                    .map(|(o, bm)| *o && !*bm);
                                 // New / Open route through the global `work.new` /
                                 // `work.open` actions (registered in `App::build`), so
                                 // the same code path serves the menu and the Ctrl+N /
@@ -584,24 +682,22 @@ fn main() {
                                         });
                                     },
                                 ))
-                                // Timestamped single-file backup next to the project.
-                                .item(MenuEntry::new(tr!(menu_backup())).on_activate(
-                                    move |ectx| {
-                                        match work_management_commands::backup_now(
-                                            &backup_ctx,
-                                            &BackupNowDto { directory: String::new() },
-                                        ) {
-                                            Ok(_) => {
-                                                ectx.show_toast(Toast::info(tr!(backing_up())));
-                                            }
-                                            Err(e) => {
-                                                ectx.show_toast(Toast::error(tr!(backup_error(
-                                                    error = e.to_string()
-                                                ))));
-                                            }
-                                        }
-                                    },
-                                ))
+                                // Manual backup — routed through the guarded
+                                // `backup.now` action in `App` (which flushes the
+                                // editors into the store first, resolves the
+                                // configured destinations, and drives the toast).
+                                // Hidden while a project is open in backup mode.
+                                .item(
+                                    MenuEntry::new(tr!(menu_backup()))
+                                        .visible(show_backup_now)
+                                        .intent("backup.now"),
+                                )
+                                // Browse the project's backup files (open / reveal / delete).
+                                .item(
+                                    MenuEntry::new(tr!(menu_backups_list()))
+                                        .visible(show_open.clone())
+                                        .intent("backups.show"),
+                                )
                                 // Close the open work — routed through the guarded
                                 // `work.close` action (unsaved-changes prompt /
                                 // autosave-ensure live in `App`).
@@ -689,6 +785,8 @@ fn main() {
                             autosave_menu.clone(),
                             unsaved.clone(),
                             pending_exit.clone(),
+                            backup_mode.clone(),
+                            backup_context.clone(),
                             initial_project.clone(),
                         )));
                     let inner =
@@ -712,6 +810,9 @@ fn main() {
     // lost inside the debounce window, then tear the shared Root/System frame
     // down and fire `CleanUpBeforeExit` before the event thread is stopped.
     crate::models::RecentWorkListModel::flush_now();
+    // Flush any pending backup-settings write (last-success hashes / timestamps /
+    // nudge flag / edited policy) so it survives the debounce window on exit.
+    backup_settings.flush_now();
     // Drop this instance's open-registry lock so its project stops showing as
     // open in other instances' switchers.
     crate::open_registry::release();

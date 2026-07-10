@@ -13,6 +13,7 @@
 //! that algorithm once and gates only the seam (`mod rows`), to avoid
 //! duplicating (and drifting) the shared logic.
 
+mod backup_settings_file;
 mod binder_binder_items_tree_model;
 mod binder_list_model;
 mod chapter_scenes_model;
@@ -20,6 +21,7 @@ mod examples_list_model;
 mod open_docs;
 mod recent_work_list_model;
 
+pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
 pub use binder_binder_items_tree_model::{
     BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters, TreeNode,
 };

@@ -49,8 +49,9 @@ fn canon(path: &str) -> String {
 
 /// Launch a fresh Skribisto process to open `path`, forwarding an activation
 /// `token` (so the new window comes up focused on Wayland via the main window's
-/// `activate_from_env`).
-fn spawn_new_process(path: &str, token: Option<String>) {
+/// `activate_from_env`). Also used by the open-a-backup redirect (a backup always
+/// opens in its own instance).
+pub(crate) fn spawn_new_process(path: &str, token: Option<String>) {
     let Ok(exe) = std::env::current_exe() else {
         return;
     };

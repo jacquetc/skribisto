@@ -71,9 +71,13 @@ pub struct EditorsViewModel {
     ids: AppIds,
     /// The shared holder of open documents (app-state clone), refcounted per item.
     docs: OpenDocsStore,
+    /// `true` while a *backup file* is open: disk saves are inert (the file is
+    /// read-only; the content stays editable and can only be kept via Save As).
+    backup_mode: Signal<bool>,
 }
 
 impl EditorsViewModel {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         app_ctx: Rc<AppContext>,
         column_width: Signal<f32>,
@@ -81,6 +85,7 @@ impl EditorsViewModel {
         typography: EditorTypographySet,
         ids: AppIds,
         docs: OpenDocsStore,
+        backup_mode: Signal<bool>,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -107,6 +112,7 @@ impl EditorsViewModel {
             typography,
             ids,
             docs,
+            backup_mode,
         }
     }
 
@@ -390,8 +396,14 @@ impl EditorsViewModel {
     }
 
     /// Flush all editors to the store, then write the project to disk
-    /// (`save_work`, a long operation).
+    /// (`save_work`, a long operation). **Inert in backup mode**: the backup file
+    /// is read-only, so edits are kept only via Save As / Restore — never a
+    /// silent overwrite of the backup. (The content still lives in the store; it
+    /// simply never reaches disk here.)
     pub fn save_to_disk(&self) {
+        if self.backup_mode.get() {
+            return;
+        }
         self.flush_all();
         let _ = work_management_commands::save_work(
             &self.app_ctx,
@@ -500,6 +512,7 @@ mod tests {
             test_typography(),
             ids,
             docs,
+            Signal::new(false),
         )
     }
 

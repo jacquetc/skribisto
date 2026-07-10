@@ -33,6 +33,18 @@ pub enum ShapeTag {
     Folder,
 }
 
+/// Is this bundle a regular project file, or a point-in-time **backup** copy?
+///
+/// The manifest — not the filename — is the authoritative answer to "is this a
+/// backup". The `<stem>-<stamp>.skrib` naming stays a human/sort convention and a
+/// fallback sniff for backups written before this field existed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum BundleKind {
+    #[default]
+    Regular,
+    Backup,
+}
+
 /// `project.skrib` — the manifest, and the commit point of every save.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProjectManifest {
@@ -41,6 +53,19 @@ pub struct ProjectManifest {
     pub work: WorkFile,
     /// Ordered binder `file_id`s (authoritative binder order).
     pub binder_order: Vec<u64>,
+    /// Regular project vs. backup copy. Added post-v2; `#[serde(default)]` keeps
+    /// every existing manifest (all `Regular`) readable — same additive pattern as
+    /// `WorkFile.unique_id`/`chapter_flat`, so `FORMAT_VERSION` is not bumped.
+    #[serde(default)]
+    pub kind: BundleKind,
+    /// For a backup: the original project's path at backup time (best-effort — a
+    /// path can move/rename later; retention correlates on `WorkFile.unique_id`).
+    #[serde(default)]
+    pub backup_of: Option<String>,
+    /// For a backup: its own creation timestamp (RFC3339), independent of the
+    /// filename's `-YYYYMMDD-HHMMSS` suffix.
+    #[serde(default)]
+    pub backup_created_at: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -163,8 +188,10 @@ pub struct ItemsFile {
 }
 
 /// The whole document, in memory. Not serialised as a single file — `writer`
-/// splits it across `project.skrib`, `tags.ron`, … and the `.djot` blobs.
-#[derive(Debug, Clone, PartialEq)]
+/// splits it across `project.skrib`, `tags.ron`, … and the `.djot` blobs. The
+/// `Serialize` derive is used only to compute a stable content fingerprint (see
+/// `fingerprint`); the on-disk format is still the split layout, never this.
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct WorkBundle {
     pub manifest: ProjectManifest,
     pub tags: Vec<BinderTagFile>,
@@ -173,13 +200,13 @@ pub struct WorkBundle {
     pub binders: Vec<BundledBinder>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct BundledBinder {
     pub binder: BinderFile,
     pub items: Vec<BundledItem>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct BundledItem {
     pub item: BinderItemFile,
     /// Prose content text keyed by content `file_id` (the `.djot` blobs).

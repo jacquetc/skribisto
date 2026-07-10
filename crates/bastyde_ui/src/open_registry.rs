@@ -74,7 +74,7 @@ pub fn my_ipc_socket() -> Option<PathBuf> {
     ipc_socket_for_pid(my_pid())
 }
 
-fn canonical(path: &str) -> String {
+pub(crate) fn canonical(path: &str) -> String {
     std::fs::canonicalize(path)
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|_| path.to_string())

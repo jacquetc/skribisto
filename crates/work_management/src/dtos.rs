@@ -26,11 +26,16 @@ pub struct SaveAsResultDto {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct BackupNowDto {
-    pub directory: String,
+    pub directories: Vec<String>,
+    pub last_known_hashes: Vec<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct BackupResultDto {
-    pub backup_path: String,
+    pub content_hash: String,
+    pub succeeded_paths: Vec<String>,
+    pub skipped_directories: Vec<String>,
+    pub failed_directories: Vec<String>,
+    pub failed_reasons: Vec<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct NewWorkDto {

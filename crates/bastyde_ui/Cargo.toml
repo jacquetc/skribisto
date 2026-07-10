@@ -21,6 +21,10 @@ serde = { workspace = true }
 serde_json = "1.0"
 frontend = { workspace = true }
 skribisto_model = { workspace = true }
+# Direct edge (bypassing the generated `frontend` crate) for the backup settings'
+# retention policy type + the retention/fingerprint/sniff helpers used by the
+# backup scheduler, backups list, and open-a-backup flow.
+skrib_format = { workspace = true }
 # `automation` enables the debug-only in-app automation bridge
 # (`install_automation_bridge_in_debug()`); a no-op in release.
 bastyde = { path = "../../../bastyde/crates/bastyde", features = ["automation"] }

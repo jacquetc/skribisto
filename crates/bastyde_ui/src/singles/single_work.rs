@@ -29,6 +29,10 @@ mod imp {
         author_name: Signal<String>,
         dict_language: Signal<String>,
         chapter_mode: Signal<ChapterMode>,
+        /// The stable per-project UUID (`Work.unique_id`). Read-only here — it is
+        /// the key the backup settings/retention correlate a project on. Empty
+        /// string when no work is loaded (or a pre-v2 project not yet healed).
+        unique_id: Signal<String>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -53,6 +57,7 @@ mod imp {
                     author_name: Signal::new(String::new()),
                     dict_language: Signal::new(String::new()),
                     chapter_mode: Signal::new(ChapterMode::default()),
+                    unique_id: Signal::new(String::new()),
                     loading_status: Signal::new(LoadingStatus::Unloaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -117,6 +122,11 @@ mod imp {
         }
         pub fn dirty(&self) -> Signal<bool> {
             self.inner.dirty.clone()
+        }
+        /// The open project's stable UUID (empty when no work is loaded). Read-only —
+        /// the key backup settings/retention correlate this project on.
+        pub fn unique_id(&self) -> Signal<String> {
+            self.inner.unique_id.clone()
         }
 
         // ── setters for two-way binding: mark dirty unless mid-refresh ──
@@ -192,6 +202,7 @@ mod imp {
                     self.inner.author_name.set(w.author_name);
                     self.inner.dict_language.set(w.dict_language);
                     self.inner.chapter_mode.set(w.chapter_mode);
+                    self.inner.unique_id.set(w.unique_id);
                     self.inner.is_refreshing.set(false);
                     self.inner.dirty.set(false);
                     self.inner.error_message.set(String::new());
@@ -208,6 +219,7 @@ mod imp {
             self.inner.author_name.set(String::new());
             self.inner.dict_language.set(String::new());
             self.inner.chapter_mode.set(ChapterMode::default());
+            self.inner.unique_id.set(String::new());
             self.inner.is_refreshing.set(false);
             self.inner.dirty.set(false);
             self.inner.error_message.set(String::new());
@@ -239,6 +251,7 @@ mod imp {
         author_name: Signal<String>,
         dict_language: Signal<String>,
         chapter_mode: Signal<ChapterMode>,
+        unique_id: Signal<String>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -260,6 +273,7 @@ mod imp {
                     author_name: Signal::new("Mock Author".to_string()),
                     dict_language: Signal::new("en".to_string()),
                     chapter_mode: Signal::new(ChapterMode::default()),
+                    unique_id: Signal::new("mock-work-uid-1".to_string()),
                     loading_status: Signal::new(LoadingStatus::Loaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -286,6 +300,9 @@ mod imp {
         }
         pub fn chapter_mode(&self) -> Signal<ChapterMode> {
             self.inner.chapter_mode.clone()
+        }
+        pub fn unique_id(&self) -> Signal<String> {
+            self.inner.unique_id.clone()
         }
         pub fn loading_status(&self) -> Signal<LoadingStatus> {
             self.inner.loading_status.clone()

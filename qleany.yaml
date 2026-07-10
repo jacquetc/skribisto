@@ -340,13 +340,36 @@ features:
     dto_in:
       name: BackupNowDto
       fields:
-      - name: directory
+      # Destination directories. Empty ⇒ back up next to the project (back-compat).
+      - name: directories
         type: string
+        is_list: true
+      # Per-destination last-known content hash (parallel to `directories`); an
+      # empty entry means "no known hash" ⇒ never skipped. Enables skip-if-unchanged.
+      - name: last_known_hashes
+        type: string
+        is_list: true
     dto_out:
       name: BackupResultDto
       fields:
-      - name: backup_path
+      # The fresh content fingerprint of what was gathered (for skip-if-unchanged).
+      - name: content_hash
         type: string
+      # Full output paths actually written.
+      - name: succeeded_paths
+        type: string
+        is_list: true
+      # Destinations skipped because their content matched the last-known hash.
+      - name: skipped_directories
+        type: string
+        is_list: true
+      # Destinations whose write failed (parallel to `failed_reasons`).
+      - name: failed_directories
+        type: string
+        is_list: true
+      - name: failed_reasons
+        type: string
+        is_list: true
   - name: close_work
     entities:
     - Work

@@ -44,6 +44,13 @@ impl WelcomeViewModel {
     /// work is revealed behind it (mirrors `ProjectSwitcherButton`'s row click).
     pub fn open_work(&self, path: String, ctx: &mut EventContext) {
         ctx.dismiss_modal();
+        // A backup opens in its own instance (never in this window).
+        if crate::backup::is_backup_path(&path) {
+            ctx.request_activation_token_self(Box::new(move |tok| {
+                crate::project_switcher_button::spawn_new_process(&path, tok);
+            }));
+            return;
+        }
         if let Err(e) =
             work_management_commands::load_work(&self.app_ctx, &LoadWorkDto { file_name: path })
         {
@@ -83,6 +90,12 @@ impl WelcomeViewModel {
                 // returns, so pop it directly.
                 ectx.dismiss_top_overlay();
                 let file = path.to_string_lossy().into_owned();
+                if crate::backup::is_backup_path(&file) {
+                    ectx.request_activation_token_self(Box::new(move |tok| {
+                        crate::project_switcher_button::spawn_new_process(&file, tok);
+                    }));
+                    return;
+                }
                 if let Err(e) =
                     work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: file })
                 {

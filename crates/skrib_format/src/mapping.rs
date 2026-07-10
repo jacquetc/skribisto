@@ -138,6 +138,10 @@ pub fn from_entities(
                 chapter_flat: matches!(work.chapter_mode, ChapterMode::Flat),
             },
             binder_order: binders.iter().map(|b| b.binder.id).collect(),
+            // A regular save. The backup path re-stamps these via `mark_as_backup`.
+            kind: BundleKind::Regular,
+            backup_of: None,
+            backup_created_at: None,
         },
         tags: tags
             .iter()
@@ -173,6 +177,18 @@ pub fn from_entities(
             .collect(),
         binders: bundled_binders,
     }
+}
+
+/// Stamp a freshly-built [`WorkBundle`] as a point-in-time backup copy.
+///
+/// Called only from the backup path (never `save_work`/`save_as`), so the shared
+/// [`from_entities`] stays backup-agnostic. Call this **after** computing the
+/// content fingerprint — otherwise `backup_created_at` makes every backup's
+/// fingerprint unique and defeats skip-if-unchanged.
+pub fn mark_as_backup(bundle: &mut WorkBundle, backup_of: String, created_at: DateTime<Utc>) {
+    bundle.manifest.kind = BundleKind::Backup;
+    bundle.manifest.backup_of = Some(backup_of);
+    bundle.manifest.backup_created_at = Some(created_at.to_rfc3339());
 }
 
 // ---------------------------------------------------------------------------

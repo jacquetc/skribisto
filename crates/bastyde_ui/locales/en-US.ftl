@@ -224,6 +224,82 @@ saved-as = Saved to { $target }
 save-error = Could not save: { $error }
 backup-error = Could not back up: { $error }
 backing-up = Backing up…
+backup-nothing-open = No project is open to back up.
+backup-already-running = A backup is already in progress.
+backup-complete = Backup complete ({ $ok } saved, { $skipped } already current)
+backup-partial = Backup finished: { $ok } saved, { $failed } destination(s) failed
+backup-no-destination-title = No backup location available
+backup-no-destination-text = None of the configured backup destinations can be reached (for example, an external drive may be unplugged). Plug it in and retry, or exit without backing up.
+
+## Open-a-backup (choice modal + permanent banner + restore)
+backup-choice-title = Backup file
+backup-choice-heading = You've opened a backup copy
+backup-choice-subtitle = This is a point-in-time backup of a project.
+backup-choice-subtitle-dated = Backup taken { $date }.
+backup-choice-body = You can open it and edit freely, but changes can only be kept with Save As — the original project file is not touched. Or restore this project to exactly this backup.
+backup-choice-open = Open the backup
+backup-choice-restore = Restore this project to this point…
+backup-banner-title = Backup copy — changes can't be saved here
+backup-banner-description = Use Save As to keep your edits in a new file, or Restore to replace the original project with this backup.
+backup-banner-restore = Restore…
+backup-banner-save-as = Save As…
+restore-original-missing = Can't find the original project to restore over. Use Save As to keep this backup as a new project instead.
+restore-close-elsewhere-title = Project open in another window
+restore-close-elsewhere-text = The project you're restoring over is open in another window. Please close it there first, then retry.
+restore-focus-window = Focus that window
+restore-confirm-title = Restore this backup?
+restore-confirm-text = The current version of the project will be copied aside as a safety backup before being replaced with this one.
+restore-confirm-ok = Restore
+restore-error = Could not restore: { $error }
+restored-ok = Project restored.
+restored-with-safety = Project restored. Your previous version was saved to { $path }.
+close-backup-discard-title = Discard changes to this backup?
+close-backup-discard-text = Changes to a backup can't be saved to it. Use Save As to keep them, or discard and close.
+backup-nudge-text = No backups are set up for this project.
+backup-nudge-action = Set up backups…
+
+## Backups list panel
+menu-backups-list = Bac&kups…
+backups-title = Backups
+backups-empty = No backups found for this project yet.
+backups-open = Open
+backups-reveal = Reveal
+backups-delete = Delete this backup
+backups-refresh = Refresh
+backups-close = Close
+
+## Backup settings panes
+settings-page-backup = Backups
+settings-page-work-backup = Backups
+settings-backup-general-title = Default backup settings
+settings-backup-work-title = Backups for this project
+settings-backup-inherit = Use the general backup settings
+settings-backup-inheriting = This project uses the general backup settings.
+settings-backup-none-hint = No automatic backups are set up (every trigger is off).
+settings-backup-last = Last backup: { $date }
+settings-backup-last-never = No backups yet.
+settings-backup-open-list = Open backups list…
+settings-backup-triggers = When to back up
+settings-backup-on-close = Back up when closing the project
+settings-backup-on-open = Back up when opening the project
+settings-backup-interval = Back up periodically, every
+settings-backup-destinations = Backup destinations
+settings-backup-dest-none = No destinations — backups are saved next to the project.
+settings-backup-dest-remove = Remove
+settings-backup-dest-add = Add folder…
+settings-backup-dest-refresh = Refresh
+settings-backup-retention = How many to keep
+settings-backup-retention-tiered = Tiered
+settings-backup-retention-keep-n = Keep last N
+settings-backup-retention-tip = How old backups are pruned.
+settings-backup-retention-tip-more = Tiered keeps one backup per hour for a day, per day for a week, per week for a month, and per month beyond — recent history stays dense and old history thins out. "Keep last N" simply keeps the N most recent backups. In both modes the newest few (the floor below) are always kept.
+settings-backup-gfs-hourly = Hourly (last 24 h)
+settings-backup-gfs-daily = Daily (last week)
+settings-backup-gfs-weekly = Weekly (last month)
+settings-backup-gfs-monthly = Monthly
+settings-backup-keep-n = Number to keep
+settings-backup-min-keep = Always keep at least
+settings-backup-dedup = Skip a backup when nothing has changed
 
 ## New-work dialog
 new-work-title = New Work

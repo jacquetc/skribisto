@@ -138,6 +138,10 @@ pub fn build_bundle(
             shape: ShapeTag::Zip,
             work,
             binder_order,
+            // An imported project is a regular project, not a backup.
+            kind: skrib_format::BundleKind::Regular,
+            backup_of: None,
+            backup_created_at: None,
         },
         tags: Vec::new(),
         dict_words: dict,

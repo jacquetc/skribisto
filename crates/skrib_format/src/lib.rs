@@ -19,13 +19,16 @@
 
 mod bundle;
 pub mod convert;
+mod fingerprint;
 mod folder_io;
 mod loaded;
 mod mapping;
 mod migration;
 mod reader;
+pub mod retention;
 mod shape;
 mod slug;
+mod sniff;
 #[cfg(test)]
 mod tests;
 mod writer;
@@ -35,16 +38,18 @@ mod zip_io;
 // producer (the Plume importer) can build a bundle directly, exactly the way
 // `from_entities` builds one from store entities.
 pub use bundle::{
-    BinderFile, BinderItemFile, BinderTagFile, BinderWithItems, BundledBinder, BundledItem,
-    DictWordFile, FORMAT_VERSION, InlineContent, ItemWithContents, ItemsFile, ProjectManifest,
-    ProseRef, ShapeTag, TrashInfoFile, WorkBundle, WorkFile,
+    BinderFile, BinderItemFile, BinderTagFile, BinderWithItems, BundleKind, BundledBinder,
+    BundledItem, DictWordFile, FORMAT_VERSION, InlineContent, ItemWithContents, ItemsFile,
+    ProjectManifest, ProseRef, ShapeTag, TrashInfoFile, WorkBundle, WorkFile,
 };
 pub use convert::{html_to_djot, markdown_to_html};
+pub use fingerprint::content_fingerprint;
 pub use loaded::{LoadedBinder, LoadedItem, LoadedTrash, LoadedWork};
-pub use mapping::{bundle_to_loaded, from_entities};
-pub use reader::read_bundle;
+pub use mapping::{bundle_to_loaded, from_entities, mark_as_backup};
+pub use reader::{peek_manifest, read_bundle};
 pub use shape::{SkribShape, detect_shape};
 pub use slug::{binder_dir_name, prose_file_name, prose_kind, prose_relpath, slugify};
+pub use sniff::{BackupSniff, sniff_backup, sniff_backup_filename};
 pub use writer::write_bundle;
 
 /// Generate a fresh, stable project identity string (UUID v4). Used to mint a
