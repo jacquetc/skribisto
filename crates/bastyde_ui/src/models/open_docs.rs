@@ -29,17 +29,14 @@ use frontend::direct_access::ContentDto;
 
 use crate::app_ids::AppIds;
 use crate::singles::SingleBinderItem;
-use crate::tabs::{
-    ProseField, ProseKind, TabLayout, TitleField, layout_for, prose_field, prose_kind_for,
-    title_field,
-};
+use crate::tabs::{ProseField, ProseKind, TitleField, prose_field, prose_kind_for, title_field};
 use crate::view_models::ChapterViewModel;
 
 /// One open item's live editing state, shared by every view showing that item.
 pub struct OpenDoc {
     pub item_id: u64,
+    pub role: BinderItemRole,
     pub sub_role: BinderItemSubRole,
-    pub layout: TabLayout,
     pub kind: Option<ProseKind>,
     pub title: Option<TitleField>,
     pub subtitle: Option<TitleField>,
@@ -69,14 +66,16 @@ impl OpenDoc {
         contents: &[ContentDto],
         edited: Signal<u64>,
     ) -> Self {
-        let layout = layout_for(role, sub_role);
         // The Chapter folder tab drives a Full Chapter view over its child scenes.
-        let chapter = (layout == TabLayout::FolderChapter)
-            .then(|| ChapterViewModel::new(ctx.clone(), ids.clone(), item_id));
+        let chapter = matches!(
+            (role, sub_role),
+            (BinderItemRole::Folder, BinderItemSubRole::Chapter)
+        )
+        .then(|| ChapterViewModel::new(ctx.clone(), ids.clone(), item_id));
         let mut doc = OpenDoc {
             item_id,
+            role: role.clone(),
             sub_role: sub_role.clone(),
-            layout,
             kind: prose_kind_for(role, sub_role),
             title: None,
             subtitle: None,

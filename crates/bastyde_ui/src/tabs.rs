@@ -1,12 +1,15 @@
 //! Per-`(role, sub_role)` editor tabs.
 //!
-//! Not every outline row is a prose editor: a writing item (Scene / Note /
-//! ChapterScene) opens the dual-pane editor (`item_scene_tab`); a title-bearing
-//! item (Chapter / Part / BookBegin) opens a heading form; a structural folder
-//! (Book / Part / Chapter) opens a **container** tab with a `SegmentedControl`
-//! (Synopsis now; Corkboard/Overview later); a contentless row (BookEnd / Text)
-//! opens a placeholder. One [`ContentTab`] payload type carries them all; the
-//! `TabWidget` factory dispatches on its [`TabLayout`].
+//! Every valid `(role, sub_role)` combination has its **own module** — a single
+//! visual tab (`item_scene`, `item_chapter_scene`, `folder_book`, …); [`tab_pane`]
+//! dispatches each combination to its module. Not every outline row is a prose
+//! editor: a writing item (Scene / ChapterScene / Note) opens the dual-pane
+//! editor; a title-bearing item (Chapter / Part / BookBegin) opens a heading form;
+//! a structural folder (Book / Part / Chapter) opens a **container** tab with a
+//! `SegmentedControl` (Synopsis now; Corkboard/Overview later); a contentless row
+//! (BookEnd / Text) opens a placeholder. What several combinations share — the
+//! composite pane bodies and the low-level editor primitives — lives in
+//! [`shared`]. One [`ContentTab`] payload type carries them all.
 //!
 //! A tab owns **no documents of its own**: its live editing state (main text +
 //! synopsis + titles, the dirty flag, the Full Chapter view-model) lives in a
@@ -35,30 +38,22 @@ use crate::models::OpenDoc;
 use crate::singles::SingleContent;
 use crate::view_models::{ChapterViewModel, EditorTypography, EditorTypographySet};
 
-pub mod folder_book;
-pub mod folder_chapter;
-pub mod folder_note_tab;
-pub mod folder_part;
-pub mod heading_tab;
-pub mod item_scene_tab;
-pub mod no_content_tab;
+// One module per valid `(role, sub_role)` combination — each a single visual tab
+// (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
+mod folder_book;
+mod folder_chapter;
+mod folder_none;
+mod folder_note;
+mod folder_part;
+mod item_book_begin;
+mod item_book_end;
+mod item_chapter;
+mod item_chapter_scene;
+mod item_note;
+mod item_part;
+mod item_scene;
+mod item_text;
 mod shared;
-
-/// Which view a tab presents (selected from `(role, sub_role)`).
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum TabLayout {
-    /// Dual-pane prose: optional title + main text + synopsis (Scene, ChapterScene, Note).
-    Prose,
-    /// Title (+ optional subtitle / synopsis) form (Item Chapter / Part / BookBegin).
-    Heading,
-    FolderChapter,
-    FolderPart,
-    FolderBook,
-    /// Synopsis only (Folder None / Note).
-    FolderNote,
-    /// No editable content (BookEnd, Text).
-    NoContent,
-}
 
 /// A short, single-line title content (BookTitle/Subtitle, Chapter/PartTitle),
 /// edited via a `TextInput` bound to `value`; persisted through its
@@ -99,24 +94,9 @@ pub struct ContentTab {
     pub typography: EditorTypographySet,
 }
 
-/// Which view a `(role, sub_role)` opens.
-pub(crate) fn layout_for(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> TabLayout {
-    use BinderItemRole::*;
-    use BinderItemSubRole::*;
-    match (role, sub_role) {
-        (Item, Scene) | (Item, ChapterScene) | (Item, Note) => TabLayout::Prose,
-        (Item, Chapter) | (Item, Part) | (Item, BookBegin) => TabLayout::Heading,
-        (Folder, Chapter) => TabLayout::FolderChapter,
-        (Folder, Part) => TabLayout::FolderPart,
-        (Folder, Book) => TabLayout::FolderBook,
-        (Folder, None) | (Folder, Note) => TabLayout::FolderNote,
-        _ => TabLayout::NoContent,
-    }
-}
-
-/// Which prose kind a `TabLayout::Prose` main-text editor is, so it can pick the
-/// Scene vs Note typography bundle. `None` for every non-prose layout (folder
-/// tabs, headings) — they never populate `OpenDoc::main`.
+/// Which prose kind a dual-pane main-text editor is, so it can pick the Scene vs
+/// Note typography bundle. `None` for every non-prose combination (folder tabs,
+/// headings) — they never populate `OpenDoc::main`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ProseKind {
     Scene,
@@ -196,16 +176,29 @@ pub fn tab_for(
     ContentTab::new(open_doc, column_width, show_synopsis, typography)
 }
 
-/// Build the widget for a tab (the `TabWidget` factory).
+/// Build the widget for a tab (the `TabWidget` factory): dispatch each
+/// `(role, sub_role)` to its own visual-tab module. Mirrors
+/// `skribisto_model::COMBINATIONS`.
 pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
-    match tab.layout() {
-        TabLayout::Prose => item_scene_tab::render(tab),
-        TabLayout::Heading => heading_tab::render(tab),
-        TabLayout::FolderChapter => folder_chapter::render(tab),
-        TabLayout::FolderPart => folder_part::render(tab),
-        TabLayout::FolderBook => folder_book::render(tab),
-        TabLayout::FolderNote => folder_note_tab::render(tab),
-        TabLayout::NoContent => no_content_tab::render(tab),
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    match (tab.role(), tab.sub_role()) {
+        (Item, Scene) => item_scene::render(tab),
+        (Item, ChapterScene) => item_chapter_scene::render(tab),
+        (Item, Note) => item_note::render(tab),
+        (Item, Chapter) => item_chapter::render(tab),
+        (Item, Part) => item_part::render(tab),
+        (Item, BookBegin) => item_book_begin::render(tab),
+        (Item, BookEnd) => item_book_end::render(tab),
+        (Item, Text) => item_text::render(tab),
+        (Folder, None) => folder_none::render(tab),
+        (Folder, Note) => folder_note::render(tab),
+        (Folder, Chapter) => folder_chapter::render(tab),
+        (Folder, Part) => folder_part::render(tab),
+        (Folder, Book) => folder_book::render(tab),
+        // Any pair outside the constraint matrix is invalid by construction; fall
+        // back to the contentless placeholder rather than panic.
+        _ => item_text::render(tab),
     }
 }
 
@@ -230,11 +223,14 @@ impl ContentTab {
     pub fn item_id(&self) -> u64 {
         self.open_doc.item_id
     }
-    /// Which view this tab presents.
-    pub fn layout(&self) -> TabLayout {
-        self.open_doc.layout
+    /// The `(role, sub_role)` pair this tab edits — what [`tab_pane`] dispatches on.
+    pub fn role(&self) -> &BinderItemRole {
+        &self.open_doc.role
     }
-    /// The main prose kind (Scene / Note), or `None` for non-prose layouts.
+    pub fn sub_role(&self) -> &BinderItemSubRole {
+        &self.open_doc.sub_role
+    }
+    /// The main prose kind (Scene / Note), or `None` for non-prose combinations.
     #[allow(dead_code)] // accessor mirroring the others; asserted in tests
     pub fn kind(&self) -> Option<ProseKind> {
         self.open_doc.kind
@@ -333,28 +329,31 @@ mod tests {
     }
 
     /// Every valid `(role, sub_role)` must build a tab and lay it out headlessly
-    /// without panicking — the per-sub_role dispatch + each layout's widget tree.
+    /// without panicking — the per-combination dispatch + each tab's widget tree.
+    /// The `bool` flags which combinations open the dual-pane prose editor (Scene /
+    /// ChapterScene / Note): those carry a prose kind + a main editor; the rest do
+    /// not.
     #[test]
     fn every_combination_builds_and_lays_out() {
         use BinderItemRole::*;
         use BinderItemSubRole::*;
         let combos = [
-            (Item, Scene, TabLayout::Prose),
-            (Item, ChapterScene, TabLayout::Prose),
-            (Item, Note, TabLayout::Prose),
-            (Item, Chapter, TabLayout::Heading),
-            (Item, Part, TabLayout::Heading),
-            (Item, BookBegin, TabLayout::Heading),
-            (Item, BookEnd, TabLayout::NoContent),
-            (Item, Text, TabLayout::NoContent),
-            (Folder, None, TabLayout::FolderNote),
-            (Folder, Chapter, TabLayout::FolderChapter),
-            (Folder, Part, TabLayout::FolderPart),
-            (Folder, Book, TabLayout::FolderBook),
-            (Folder, Note, TabLayout::FolderNote),
+            (Item, Scene, true),
+            (Item, ChapterScene, true),
+            (Item, Note, true),
+            (Item, Chapter, false),
+            (Item, Part, false),
+            (Item, BookBegin, false),
+            (Item, BookEnd, false),
+            (Item, Text, false),
+            (Folder, None, false),
+            (Folder, Chapter, false),
+            (Folder, Part, false),
+            (Folder, Book, false),
+            (Folder, Note, false),
         ];
         let ctx = Rc::new(AppContext::new());
-        for (role, sub_role, expected) in combos {
+        for (role, sub_role, is_prose) in combos {
             let tab = tab_for(
                 &ctx,
                 1,
@@ -366,10 +365,9 @@ mod tests {
                 test_typography(),
                 &AppIds::new(),
             );
-            assert_eq!(tab.layout(), expected, "{role:?}/{sub_role:?}");
-            // Prose tabs carry a kind + a main editor; every other layout has
+            // Prose tabs carry a kind + a main editor; every other combination has
             // neither.
-            if expected == TabLayout::Prose {
+            if is_prose {
                 assert!(tab.kind().is_some(), "{role:?}/{sub_role:?} prose needs a kind");
                 assert!(tab.main().is_some(), "{role:?}/{sub_role:?} prose needs main");
             } else {

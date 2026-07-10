@@ -191,7 +191,7 @@ pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
 
 // ── Editor behaviour (Settings ▸ Editor ▸ Editor Behavior) ───────────────────
 /// Show the synopsis pane above the manuscript in the dual-pane writing editor
-/// (Skribisto's signature layout). Consumed live by `item_scene_tab`.
+/// (Skribisto's signature layout). Consumed live by the `shared::prose` body.
 pub const SYNOPSIS_PANE_KEY: &str = "editor.synopsis_pane";
 pub const SYNOPSIS_PANE_DEFAULT: bool = true;
 /// Keep the caret line vertically centred while typing.

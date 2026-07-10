@@ -5,7 +5,7 @@
 //!
 //! One instance **per open chapter tab** (each chapter tab has independent live
 //! scene documents — the same per-tab ownership shape as `ContentTab`'s
-//! `ProseField`s). Created in `tabs::tab_for` for a `FolderChapter` layout and
+//! `ProseField`s). Created in `OpenDoc::build` for a `Folder/Chapter` item and
 //! stored on the `ContentTab`. All name entry is a modal `InputDialog` (mirrors
 //! `OutlineViewModel::begin_rename`); each `begin_*` presents the dialog and the
 //! matching apply-method does the undoable backend call. Plain Rust →

@@ -170,7 +170,7 @@ impl SettingsViewModel {
     }
 
     /// Show the synopsis pane above the manuscript. Consumed live by the writing
-    /// editor (`item_scene_tab`).
+    /// editor (`tabs::shared::prose`).
     pub fn synopsis_pane(&self) -> Signal<bool> {
         self.synopsis_pane.clone()
     }
