@@ -21,11 +21,28 @@ menu-view = &Affichage
 menu-outline = &Plan
 
 ## Menu contextuel du classeur
+ctx-add = &Ajouter
 ctx-new-item = &Nouvel élément
 ctx-new-folder = Nouveau d&ossier
 ctx-rename = &Renommer
 ctx-duplicate = &Dupliquer
 ctx-trash = Mettre à la &corbeille
+
+## Recommandations de création — libellés de types (titre du SplitButton + Ajouter ▸)
+create-book = Livre
+create-part = Partie
+create-chapter = Chapitre
+create-scene = Scène
+create-note = Note
+create-note-folder = Dossier de notes
+create-folder = Dossier
+create-book-end = Fin du livre
+
+## Recommandations de création — infobulles enrichies ({ $kind } = type, { $target } = titre de l’ancre)
+create-tooltip-child = Ajouter un(e) { $kind } dans « { $target } ».
+create-tooltip-sibling = Ajouter un(e) { $kind } après « { $target } ».
+create-tooltip-parent-sibling = Ajouter un(e) { $kind } après le conteneur « { $target } ».
+create-tooltip-top = Ajouter un(e) { $kind } au niveau supérieur.
 
 ## Paramètres
 language = Langue

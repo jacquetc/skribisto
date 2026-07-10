@@ -364,8 +364,19 @@ impl Widget for App {
         {
             let outline = outline.clone();
             ctx.register_action_global(Action::new("binder.new_item").on_invoke(move |i, _c| {
-                if let Some(AppIntent::NewItem { role, sub_role }) = AppIntent::from_intent(i) {
-                    outline.new_item(role.clone(), sub_role.clone());
+                if let Some(AppIntent::NewItem {
+                    create_type,
+                    relation,
+                }) = AppIntent::from_intent(i)
+                {
+                    // Anchored on the current selection (None), placed by relation.
+                    outline.add_recommended(
+                        None,
+                        &skribisto_model::Recommendation {
+                            create_type: *create_type,
+                            relation: *relation,
+                        },
+                    );
                 }
             }));
         }

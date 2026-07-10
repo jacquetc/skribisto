@@ -5,4 +5,5 @@
 //! Currently the sole dock is the binder [`outline`]; further container docks
 //! (corkboard, search results, …) will land here beside it.
 
+pub mod create_split_button;
 pub mod outline;

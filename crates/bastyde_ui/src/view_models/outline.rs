@@ -27,6 +27,8 @@ use frontend::direct_access::{
 use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 
+use skribisto_model::{Recommendation, Relation, SubRoleExt};
+
 use crate::app_ids::AppIds;
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters};
 use crate::singles::{SingleBinder, SingleBinderItem};
@@ -287,6 +289,20 @@ impl OutlineViewModel {
         let Some((binder, index, indent)) = self.insertion_point(anchor) else {
             return;
         };
+        self.create_item_at(binder, index, indent, role, sub_role);
+    }
+
+    /// The shared create tail: build the DTO and run the undoable create command,
+    /// then reload. Both `create_item` (legacy anchor logic) and `add_recommended`
+    /// (relation-aware) funnel through this so the DTO/undo/reload stay in one place.
+    fn create_item_at(
+        &self,
+        binder: u64,
+        index: usize,
+        indent: i64,
+        role: BinderItemRole,
+        sub_role: BinderItemSubRole,
+    ) {
         let title = match role {
             BinderItemRole::Folder => "New Folder",
             BinderItemRole::Item => "New Item",
@@ -311,6 +327,55 @@ impl OutlineViewModel {
         {
             self.reload();
         }
+    }
+
+    // ── context-dependent "create" recommendations ──
+
+    /// The ordered `Recommendation`s for the current selection's first key — what
+    /// the header "Create" SplitButton offers (default first). Reads live data,
+    /// so it must be recomputed whenever `selection_signal()` changes.
+    pub fn recommendations_for_selection(&self) -> Vec<Recommendation> {
+        self.recommendations_for_key(self.selection.selected_keys().first().copied())
+    }
+
+    /// The ordered `Recommendation`s for a specific anchor row (the per-item
+    /// "Add ▸" submenu). A `Binder`/absent/stale anchor falls back to the
+    /// top-level set (Book first). Applies the live BookEnd gating.
+    pub fn recommendations_for_key(&self, anchor: Option<BinderTreeKey>) -> Vec<Recommendation> {
+        match anchor {
+            Some(BinderTreeKey::Item(i)) => match self.item_dto(i) {
+                Some(dto) => {
+                    let mut recs = skribisto_model::recommendations(&dto.role, &dto.sub_role);
+                    self.gate_book_end(i, &mut recs);
+                    recs
+                }
+                None => skribisto_model::recommendations_root(),
+            },
+            _ => skribisto_model::recommendations_root(),
+        }
+    }
+
+    /// Create the recommended item, relation-aware. `anchor = None` re-reads the
+    /// current selection (header button); `Some(key)` anchors explicitly (context
+    /// menu). The logical `CreateType` is resolved to a concrete `(role, sub_role)`
+    /// via the project's chapter mode. Guarded by `validate_item`.
+    pub fn add_recommended(&self, anchor: Option<BinderTreeKey>, rec: &Recommendation) {
+        let anchor = anchor.or_else(|| self.selection.selected_keys().first().copied());
+        let (role, sub_role) = rec.create_type.combo(self.chapter_mode());
+        if skribisto_model::validate_item(&role, &sub_role, &[]).is_err() {
+            return;
+        }
+        let Some((binder, index, indent)) = self.insertion_point_for(anchor, rec.relation) else {
+            return;
+        };
+        self.create_item_at(binder, index, indent, role, sub_role);
+    }
+
+    /// The open project's chapter storage mode — how a `CreateType::Chapter`
+    /// is encoded. TODO(Phase B): read the open Work's `chapter_mode` field; for
+    /// now defaults to folder mode.
+    fn chapter_mode(&self) -> skribisto_model::ChapterMode {
+        skribisto_model::ChapterMode::default()
     }
 
     /// Begin a rename: present a modal `InputDialog`, applying `rename` on OK.
@@ -521,6 +586,176 @@ impl OutlineViewModel {
         }
     }
 
+    /// `(binder, insert_index, indent)` for a new item placed by `relation`
+    /// relative to `anchor` — the relation-aware generalisation of
+    /// [`insertion_point`](Self::insertion_point) (which it leaves untouched).
+    ///
+    /// - `Sibling` lands after the anchor's *entire subtree* at the anchor's own
+    ///   indent (so a sibling of a populated folder follows its children).
+    /// - `Child` appends inside a folder anchor (indent + 1), but before any direct
+    ///   child that `closes_book()` (keeps a Book's `BookEnd` last).
+    /// - `ParentSibling` walks up to the nearest ancestor that opens a chapter/book
+    ///   and behaves as `Sibling` of it.
+    fn insertion_point_for(
+        &self,
+        anchor: Option<BinderTreeKey>,
+        relation: Relation,
+    ) -> Option<(u64, usize, i64)> {
+        match anchor {
+            Some(BinderTreeKey::Binder(b)) => match relation {
+                Relation::Child => Some((b, 0, 0)),
+                _ => Some((b, self.ordered_meta(b).0.len(), 0)),
+            },
+            Some(BinderTreeKey::Item(i)) => {
+                let binder = self.model.binder_of(&BinderTreeKey::Item(i))?;
+                let (order, meta) = self.ordered_meta(binder);
+                let pos = order.iter().position(|&x| x == i)?;
+                let (anchor_indent, _) = *meta.get(&i)?;
+                match relation {
+                    Relation::Sibling => {
+                        let end = Self::subtree_end(&order, &meta, pos, anchor_indent);
+                        Some((binder, end, anchor_indent))
+                    }
+                    Relation::Child => {
+                        let end = Self::subtree_end(&order, &meta, pos, anchor_indent);
+                        let child_indent = anchor_indent + 1;
+                        // Keep a book's trailing `BookEnd` last: insert before any
+                        // direct child that closes the book, else at the subtree end.
+                        let before_close = ((pos + 1)..end).find(|&k| {
+                            meta.get(&order[k])
+                                .is_some_and(|(ind, sr)| *ind == child_indent && sr.closes_book())
+                        });
+                        Some((binder, before_close.unwrap_or(end), child_indent))
+                    }
+                    Relation::ParentSibling => {
+                        let (apos, aind) = Self::enclosing_opener(&order, &meta, pos)
+                            .unwrap_or((pos, anchor_indent));
+                        let end = Self::subtree_end(&order, &meta, apos, aind);
+                        Some((binder, end, aind))
+                    }
+                }
+            }
+            None => {
+                let b = self.first_binder()?;
+                Some((b, self.ordered_meta(b).0.len(), 0))
+            }
+        }
+    }
+
+    /// The binder's ordered item ids plus `{id -> (indent, sub_role)}`, in one
+    /// batch fetch — the data `insertion_point_for` / `gate_book_end` walk.
+    fn ordered_meta(&self, binder: u64) -> (Vec<u64>, HashMap<u64, (i64, BinderItemSubRole)>) {
+        let ctx = &*self.app_ctx;
+        let order = binder_commands::get_binder_relationship(
+            ctx,
+            &binder,
+            &BinderRelationshipField::BinderItems,
+        )
+        .unwrap_or_default();
+        let meta = binder_item_commands::get_binder_item_multi(ctx, &order)
+            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .map(|it| (it.id, (it.indent, it.sub_role)))
+            .collect();
+        (order, meta)
+    }
+
+    /// First index after `order[pos]`'s whole subtree: the next row whose indent is
+    /// `<= base_indent`. A leaf (nothing deeper follows) returns `pos + 1`.
+    /// (Mirrors `binder_item_management::move_items_uc::subtree_end`, reimplemented
+    /// here because `bastyde_ui` doesn't depend on that use-case crate.)
+    fn subtree_end(
+        order: &[u64],
+        meta: &HashMap<u64, (i64, BinderItemSubRole)>,
+        pos: usize,
+        base_indent: i64,
+    ) -> usize {
+        let mut j = pos + 1;
+        while j < order.len()
+            && meta.get(&order[j]).map(|(ind, _)| *ind).unwrap_or(base_indent) > base_indent
+        {
+            j += 1;
+        }
+        j
+    }
+
+    /// `(position, indent)` of the nearest ancestor of `order[pos]` that opens a
+    /// chapter or book — the target of a `ParentSibling` insertion. `None` if the
+    /// anchor has no such enclosing opener.
+    fn enclosing_opener(
+        order: &[u64],
+        meta: &HashMap<u64, (i64, BinderItemSubRole)>,
+        pos: usize,
+    ) -> Option<(usize, i64)> {
+        let mut cur = pos;
+        let mut cur_indent = meta.get(&order[pos])?.0;
+        while cur > 0 {
+            cur -= 1;
+            let (ind, sr) = meta.get(&order[cur])?;
+            if *ind < cur_indent {
+                if sr.opens_chapter() || sr.opens_book() {
+                    return Some((cur, *ind));
+                }
+                cur_indent = *ind;
+            }
+        }
+        None
+    }
+
+    /// `(position, indent)` of the book enclosing `order[pos]` — the anchor itself
+    /// if it opens a book, else the nearest book ancestor (walking *past* any
+    /// intermediate chapters). `None` if the anchor is not inside a book.
+    fn enclosing_book(
+        order: &[u64],
+        meta: &HashMap<u64, (i64, BinderItemSubRole)>,
+        pos: usize,
+    ) -> Option<(usize, i64)> {
+        let (ind0, sr0) = meta.get(&order[pos])?;
+        let mut cur_indent = *ind0;
+        if sr0.opens_book() {
+            return Some((pos, cur_indent));
+        }
+        let mut cur = pos;
+        while cur > 0 {
+            cur -= 1;
+            let (ind, sr) = meta.get(&order[cur])?;
+            if *ind < cur_indent {
+                cur_indent = *ind;
+                if sr.opens_book() {
+                    return Some((cur, *ind));
+                }
+            }
+        }
+        None
+    }
+
+    /// Drop any `closes_book()` recommendation (End of Book) when the anchor's
+    /// enclosing book already contains one — a book has exactly one end. This is
+    /// the live-data gating the pure `recommendations()` table can't do itself.
+    fn gate_book_end(&self, anchor_item: u64, recs: &mut Vec<Recommendation>) {
+        if !recs.iter().any(|r| r.create_type.closes_book()) {
+            return;
+        }
+        let Some(binder) = self.model.binder_of(&BinderTreeKey::Item(anchor_item)) else {
+            return;
+        };
+        let (order, meta) = self.ordered_meta(binder);
+        let Some(pos) = order.iter().position(|&x| x == anchor_item) else {
+            return;
+        };
+        let Some((book_pos, book_indent)) = Self::enclosing_book(&order, &meta, pos) else {
+            return;
+        };
+        let end = Self::subtree_end(&order, &meta, book_pos, book_indent);
+        let has_end = order[book_pos..end]
+            .iter()
+            .any(|id| meta.get(id).is_some_and(|(_, sr)| sr.closes_book()));
+        if has_end {
+            recs.retain(|r| !r.create_type.closes_book());
+        }
+    }
+
     fn first_binder(&self) -> Option<u64> {
         let ctx = &*self.app_ctx;
         // ids-only global state: the open Work's id is known; no `get_all_work`.
@@ -721,5 +956,188 @@ mod tests {
         assert_eq!(model.visible_count(), 3); // Manuscript > Book One > Scene at dawn
         outline.clear_search();
         assert_eq!(model.visible_count(), 9);
+    }
+
+    // ── relation-aware creation (real backend: seed a Work/Binder/items and
+    // assert where `add_recommended` lands). Gated off `mocks`, whose tree model
+    // ignores `work_id` and re-sources a static fixture instead. ──
+    #[cfg(not(feature = "mocks"))]
+    mod recommend {
+        use super::*;
+
+        /// Seed an empty Work + Binder; return a VM wired to it (reloaded) and the
+        /// binder id.
+        fn seed() -> (OutlineViewModel, u64) {
+            let app_ctx = Rc::new(AppContext::new());
+            let work = work_commands::create_orphan_work(
+                &app_ctx,
+                None,
+                &frontend::direct_access::CreateWorkDto::default(),
+            )
+            .unwrap();
+            let binder = binder_commands::create_binder(
+                &app_ctx,
+                None,
+                &CreateBinderDto {
+                    name: "B".into(),
+                    activated: true,
+                    ..Default::default()
+                },
+                work.id,
+                0,
+            )
+            .unwrap();
+            let ids = AppIds::default();
+            ids.work_id.set(Some(work.id));
+            let outline = OutlineViewModel::new_default(app_ctx, ids);
+            outline.reload();
+            (outline, binder.id)
+        }
+
+        /// Append an item to `binder` at `index` (sequential = append) and reload.
+        fn seed_item(
+            outline: &OutlineViewModel,
+            binder: u64,
+            role: BinderItemRole,
+            sub_role: BinderItemSubRole,
+            indent: i64,
+            index: i32,
+        ) -> u64 {
+            let dto = CreateBinderItemDto {
+                title: format!("{role:?}/{sub_role:?}"),
+                role,
+                sub_role,
+                activated: true,
+                is_printable: true,
+                indent,
+                ..Default::default()
+            };
+            let id = binder_item_commands::create_binder_item(&outline.app_ctx, None, &dto, binder, index)
+                .unwrap()
+                .id;
+            outline.reload();
+            id
+        }
+
+        fn order_of(outline: &OutlineViewModel, binder: u64) -> Vec<u64> {
+            binder_commands::get_binder_relationship(
+                &outline.app_ctx,
+                &binder,
+                &BinderRelationshipField::BinderItems,
+            )
+            .unwrap()
+        }
+
+        use skribisto_model::CreateType;
+
+        fn rec(create_type: CreateType, relation: Relation) -> Recommendation {
+            Recommendation {
+                create_type,
+                relation,
+            }
+        }
+
+        #[test]
+        fn chapter_creates_a_folder_chapter_in_folder_mode() {
+            let (outline, binder) = seed();
+            let book = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
+            outline.add_recommended(
+                Some(BinderTreeKey::Item(book)),
+                &rec(CreateType::Chapter, Relation::Child),
+            );
+            let new = *order_of(&outline, binder).last().unwrap();
+            let dto = outline.item_dto(new).unwrap();
+            // Default (folder) mode → a Chapter is a Folder/Chapter.
+            assert_eq!(dto.role, BinderItemRole::Folder);
+            assert_eq!(dto.sub_role, BinderItemSubRole::Chapter);
+        }
+
+        #[test]
+        fn child_appends_inside_a_book_before_its_book_end() {
+            let (outline, binder) = seed();
+            let book = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
+            let ch1 = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Chapter, 1, 1);
+            let end = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::BookEnd, 1, 2);
+
+            outline.add_recommended(
+                Some(BinderTreeKey::Item(book)),
+                &rec(CreateType::Chapter, Relation::Child),
+            );
+
+            let order = order_of(&outline, binder);
+            assert_eq!(order.len(), 4);
+            let new = order[2];
+            // New chapter lands after the existing chapter but *before* BookEnd.
+            assert_eq!(order, vec![book, ch1, new, end]);
+            // …and at the book's child indent.
+            assert_eq!(outline.item_dto(new).unwrap().indent, 1);
+        }
+
+        #[test]
+        fn sibling_lands_after_the_anchor_folders_whole_subtree() {
+            let (outline, binder) = seed();
+            let chapter =
+                seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Chapter, 0, 0);
+            let s1 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 1);
+            let s2 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 2);
+
+            outline.add_recommended(
+                Some(BinderTreeKey::Item(chapter)),
+                &rec(CreateType::Chapter, Relation::Sibling),
+            );
+
+            let order = order_of(&outline, binder);
+            let new = *order.last().unwrap();
+            // After both scenes (not nested between the chapter and its children).
+            assert_eq!(order, vec![chapter, s1, s2, new]);
+            assert_eq!(outline.item_dto(new).unwrap().indent, 0);
+        }
+
+        #[test]
+        fn parent_sibling_targets_the_enclosing_chapters_level() {
+            let (outline, binder) = seed();
+            let book = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
+            let chapter =
+                seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Chapter, 1, 1);
+            let s1 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 2, 2);
+            let s2 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 2, 3);
+
+            // Anchored on a deep scene: a new Chapter should start after the whole
+            // enclosing chapter, at the chapter's own indent — not nested in it.
+            outline.add_recommended(
+                Some(BinderTreeKey::Item(s1)),
+                &rec(CreateType::Chapter, Relation::ParentSibling),
+            );
+
+            let order = order_of(&outline, binder);
+            let new = *order.last().unwrap();
+            assert_eq!(order, vec![book, chapter, s1, s2, new]);
+            assert_eq!(outline.item_dto(new).unwrap().indent, 1);
+        }
+
+        #[test]
+        fn book_end_recommendation_is_gated_once_the_book_has_one() {
+            let (outline, binder) = seed();
+            let book = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
+            let _end =
+                seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::BookEnd, 1, 1);
+
+            let recs = outline.recommendations_for_key(Some(BinderTreeKey::Item(book)));
+            assert!(
+                recs.iter().all(|r| r.create_type != CreateType::EndOfBook),
+                "End of Book should be hidden when the book already has one"
+            );
+        }
+
+        #[test]
+        fn binder_and_empty_selection_use_the_root_recommendations() {
+            let (outline, binder) = seed();
+            let expected = skribisto_model::recommendations_root();
+            assert_eq!(
+                outline.recommendations_for_key(Some(BinderTreeKey::Binder(binder))),
+                expected
+            );
+            assert_eq!(outline.recommendations_for_key(None), expected);
+        }
     }
 }

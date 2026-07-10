@@ -38,3 +38,19 @@ pub fn sub_role_icon(sub_role: &BinderItemSubRole) -> IconWidget {
 pub fn binder_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/binder/binder.svg")).icon_size(ICON_SIZE)
 }
+
+/// Icon for a logical "Create" type — reuses the same `sub_role` glyphs the tree
+/// shows, so a "+ Chapter" in the menu matches the chapter rows below it.
+pub fn create_type_icon(t: skribisto_model::CreateType) -> IconWidget {
+    use skribisto_model::CreateType;
+    let sub_role = match t {
+        CreateType::Book => BinderItemSubRole::Book,
+        CreateType::Part => BinderItemSubRole::Part,
+        CreateType::Chapter => BinderItemSubRole::Chapter,
+        CreateType::Scene => BinderItemSubRole::Scene,
+        CreateType::Note | CreateType::NoteFolder => BinderItemSubRole::Note,
+        CreateType::Folder => BinderItemSubRole::None,
+        CreateType::EndOfBook => BinderItemSubRole::BookEnd,
+    };
+    sub_role_icon(&sub_role)
+}

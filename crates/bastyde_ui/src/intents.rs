@@ -12,7 +12,7 @@
 
 use bastyde::IntentKind; // derive macro
 
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+use skribisto_model::{CreateType, Relation};
 
 #[allow(dead_code)]
 #[derive(Debug, IntentKind)]
@@ -43,13 +43,14 @@ pub enum AppIntent {
     #[name = "editor.open_item"]
     OpenItem { item_id: u64, title: String },
 
-    /// Create a new binder item. A "folder" is just `role = Folder` — there is
-    /// no separate `NewFolder` (the *New Folder* affordance fires this with
-    /// `role = Folder`).
+    /// Create a new binder item of a logical `CreateType`, placed by `relation`
+    /// relative to the current selection. The header "Create" SplitButton fires
+    /// this with the recommended type + relation; the concrete `(role, sub_role)`
+    /// is resolved from the project's chapter mode at execution time.
     #[name = "binder.new_item"]
     NewItem {
-        role: BinderItemRole,
-        sub_role: BinderItemSubRole,
+        create_type: CreateType,
+        relation: Relation,
     },
 
     /// Rename the selected binder/item (presents an input dialog).

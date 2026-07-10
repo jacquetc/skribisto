@@ -21,11 +21,28 @@ menu-view = &View
 menu-outline = &Outline
 
 ## Binder context menu
+ctx-add = &Add
 ctx-new-item = &New Item
 ctx-new-folder = New &Folder
 ctx-rename = &Rename
 ctx-duplicate = &Duplicate
 ctx-trash = Move to &Trash
+
+## Create recommendations — logical type labels (SplitButton title + Add ▸ rows)
+create-book = Book
+create-part = Part
+create-chapter = Chapter
+create-scene = Scene
+create-note = Note
+create-note-folder = Note folder
+create-folder = Folder
+create-book-end = End of Book
+
+## Create recommendations — rich tooltips ({ $kind } = type, { $target } = anchor title)
+create-tooltip-child = Add a new { $kind } inside “{ $target }”.
+create-tooltip-sibling = Add a new { $kind } after “{ $target }”.
+create-tooltip-parent-sibling = Add a new { $kind } after the enclosing “{ $target }”.
+create-tooltip-top = Add a new { $kind } at the top level.
 
 ## Settings
 language = Language

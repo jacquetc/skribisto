@@ -82,7 +82,10 @@ const COMBINATIONS: &[Combination] = &[
     Combination {
         role: Role::Folder,
         sub_role: SubRole::Chapter,
-        allowed: &[ChapterTitle, SynopsisText],
+        // A Chapter folder carries its own prose (SceneText) — symmetric with the
+        // flat `Item/ChapterScene` — so it can *contain* child Scenes AND hold
+        // prose directly, and promote/demote between the two encodings is lossless.
+        allowed: &[ChapterTitle, SceneText, SynopsisText],
     },
     Combination {
         role: Role::Folder,
@@ -229,6 +232,171 @@ impl RoleExt for Role {
     }
 }
 
+/// How a recommended new item is placed relative to the anchor the writer
+/// selected/right-clicked. Purely topological — this crate has no access to the
+/// live item stream, so it cannot resolve a `Relation` to a concrete index
+/// itself; the view-model does that (see `OutlineViewModel::insertion_point_for`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Relation {
+    /// Append **inside** a container anchor — after its whole subtree, but before
+    /// any direct child that `closes_book()` (so a Book's `BookEnd` stays last).
+    /// Only ever emitted for `Folder` anchors (`RoleExt::is_container`).
+    Child,
+    /// After the anchor's **entire subtree**, at the anchor's own indent (a
+    /// sibling of a populated folder lands after its children, not among them).
+    Sibling,
+    /// As `Sibling` of the nearest ancestor whose `sub_role` `opens_chapter()`
+    /// or `opens_book()` — "close what I'm inside and start the next one".
+    ParentSibling,
+}
+
+/// How a book's chapters are stored — a per-project setting chosen at project
+/// creation. Only affects how a `CreateType::Chapter` is encoded.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ChapterMode {
+    /// A `Folder/Chapter` that holds its own prose *and* can contain child Scenes.
+    #[default]
+    Folder,
+    /// A flat `Item/ChapterScene` carrying its own prose, no child Scenes.
+    Flat,
+}
+
+/// The user-facing "create" vocabulary — a *logical* type, decoupled from its
+/// storage encoding. Notably `Chapter` maps to either a `Folder/Chapter` or an
+/// `Item/ChapterScene` depending on the project's [`ChapterMode`], so the writer
+/// only ever sees one "Chapter" (they promote/demote to switch encoding). This
+/// is a deliberately curated subset of the valid `COMBINATIONS` — the internal
+/// forms (`Item/Part`, `Item/BookBegin`, `Item/Chapter`, `Item/Text`) are never
+/// offered.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CreateType {
+    Book,
+    Part,
+    Chapter,
+    Scene,
+    Note,
+    NoteFolder,
+    Folder,
+    EndOfBook,
+}
+
+impl CreateType {
+    /// Resolve to a concrete `(role, sub_role)` for creation. Only `Chapter`
+    /// depends on the project's `ChapterMode`; every other type is fixed.
+    pub fn combo(self, mode: ChapterMode) -> (Role, SubRole) {
+        match self {
+            CreateType::Book => (Role::Folder, SubRole::Book),
+            CreateType::Part => (Role::Folder, SubRole::Part),
+            CreateType::Chapter => match mode {
+                ChapterMode::Folder => (Role::Folder, SubRole::Chapter),
+                ChapterMode::Flat => (Role::Item, SubRole::ChapterScene),
+            },
+            CreateType::Scene => (Role::Item, SubRole::Scene),
+            CreateType::Note => (Role::Item, SubRole::Note),
+            CreateType::NoteFolder => (Role::Folder, SubRole::Note),
+            CreateType::Folder => (Role::Folder, SubRole::None),
+            CreateType::EndOfBook => (Role::Item, SubRole::BookEnd),
+        }
+    }
+
+    /// Whether creating this type closes a book (the single `EndOfBook`) — drives
+    /// the "hide once the book already has one" gating.
+    pub fn closes_book(self) -> bool {
+        matches!(self, CreateType::EndOfBook)
+    }
+}
+
+/// One ranked "create" offer: which logical type to create and where to place
+/// it. UI labels/tooltips live in the view, not here (this crate stays
+/// string-free).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Recommendation {
+    pub create_type: CreateType,
+    pub relation: Relation,
+}
+
+/// Canonical order for the "…and the others" tail — every offerable
+/// [`CreateType`], biggest container first, the book-end marker last.
+const CANONICAL: &[CreateType] = &[
+    CreateType::Book,
+    CreateType::Part,
+    CreateType::Chapter,
+    CreateType::Scene,
+    CreateType::NoteFolder,
+    CreateType::Note,
+    CreateType::Folder,
+    CreateType::EndOfBook,
+];
+
+/// The ordered "create" recommendations for an item anchor with the given
+/// `(role, sub_role)`. The first entry is the default (the SplitButton title);
+/// the rest form the dropdown, ending with the canonical tail of every remaining
+/// type.
+///
+/// Note: the Book context includes an `EndOfBook` pick unconditionally — the
+/// "hide it once the book already has one" gating needs live data and is applied
+/// by the caller, not here.
+pub fn recommendations(role: &Role, sub_role: &SubRole) -> Vec<Recommendation> {
+    use CreateType as T;
+    use Relation::{Child, ParentSibling, Sibling};
+    use Role::{Folder, Item};
+    use SubRole as S;
+
+    let picks: Vec<(CreateType, Relation)> = match (role, sub_role) {
+        (Folder, S::Book) => vec![(T::Chapter, Child), (T::Part, Child), (T::EndOfBook, Child)],
+        (Folder, S::Part) => vec![(T::Chapter, Child), (T::Part, Sibling)],
+        (Folder, S::Chapter) => vec![(T::Scene, Child), (T::Chapter, Sibling)],
+        (Folder, S::None) => vec![(T::Note, Child), (T::Folder, Sibling), (T::Folder, Child)],
+        (Folder, S::Note) => vec![
+            (T::Note, Child),
+            (T::NoteFolder, Sibling),
+            (T::NoteFolder, Child),
+        ],
+        (Item, S::Scene) => vec![(T::Scene, Sibling), (T::Chapter, ParentSibling)],
+        (Item, S::ChapterScene) => vec![(T::Chapter, Sibling)],
+        (Item, S::Note) => vec![(T::Note, Sibling)],
+        (Item, S::BookEnd) => vec![(T::Book, ParentSibling)],
+        // Legacy anchors — no longer offered as *types*, but existing data may
+        // still hold them; recommend a sensible offerable sibling if selected.
+        (Item, S::BookBegin) => vec![(T::Chapter, Sibling)],
+        (Item, S::Chapter) => vec![(T::Scene, Sibling)],
+        (Item, S::Part) => vec![(T::Chapter, Sibling)],
+        (Item, S::Text) => vec![(T::Scene, Sibling)],
+        _ => vec![],
+    };
+
+    assemble(picks)
+}
+
+/// Recommendations for the top level — no selection, or a Binder row selected: a
+/// Book first (the entry point of the compile stream), then every other type,
+/// all inserted at the binder's top level.
+pub fn recommendations_root() -> Vec<Recommendation> {
+    assemble(vec![(CreateType::Book, Relation::Sibling)])
+}
+
+/// Build the final ordered list: the context picks, then the canonical tail of
+/// every remaining `CreateType`, each as `Sibling`.
+fn assemble(picks: Vec<(CreateType, Relation)>) -> Vec<Recommendation> {
+    let mut out: Vec<Recommendation> = picks
+        .iter()
+        .map(|&(create_type, relation)| Recommendation {
+            create_type,
+            relation,
+        })
+        .collect();
+    for &create_type in CANONICAL {
+        if picks.iter().any(|&(t, _)| t == create_type) {
+            continue;
+        }
+        out.push(Recommendation {
+            create_type,
+            relation: Relation::Sibling,
+        });
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -284,5 +452,114 @@ mod tests {
         assert!(SubRole::BookEnd.closes_book());
         assert!(Role::Folder.is_container());
         assert!(!Role::Item.is_container());
+    }
+
+    fn rec(create_type: CreateType, relation: Relation) -> Recommendation {
+        Recommendation {
+            create_type,
+            relation,
+        }
+    }
+
+    #[test]
+    fn chapter_folder_now_carries_scene_prose() {
+        // Symmetric with the flat Item/ChapterScene so promote/demote is lossless.
+        assert!(content_allowed(&Role::Folder, &SubRole::Chapter, &SceneText));
+    }
+
+    #[test]
+    fn chapter_type_resolves_by_mode() {
+        assert_eq!(
+            CreateType::Chapter.combo(ChapterMode::Folder),
+            (Role::Folder, SubRole::Chapter)
+        );
+        assert_eq!(
+            CreateType::Chapter.combo(ChapterMode::Flat),
+            (Role::Item, SubRole::ChapterScene)
+        );
+    }
+
+    #[test]
+    fn every_anchor_yields_valid_offerable_recommendations() {
+        for c in COMBINATIONS {
+            let recs = recommendations(&c.role, &c.sub_role);
+            assert!(
+                !recs.is_empty(),
+                "no recommendations for anchor {:?}/{:?}",
+                c.role,
+                c.sub_role
+            );
+            for r in &recs {
+                // Every offered type resolves to a valid combination in *both* modes.
+                for mode in [ChapterMode::Folder, ChapterMode::Flat] {
+                    let (role, sub_role) = r.create_type.combo(mode);
+                    assert!(
+                        is_valid_combination(&role, &sub_role),
+                        "{:?} in {:?} mode is not a valid combination",
+                        r.create_type,
+                        mode
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn leaf_anchors_never_offer_a_child_relation() {
+        for c in COMBINATIONS {
+            if c.role == Role::Item {
+                let recs = recommendations(&c.role, &c.sub_role);
+                assert!(
+                    recs.iter().all(|r| r.relation != Relation::Child),
+                    "leaf anchor {:?}/{:?} offered a Child relation",
+                    c.role,
+                    c.sub_role
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn book_recommends_chapter_first_then_the_worked_example() {
+        let recs = recommendations(&Role::Folder, &SubRole::Book);
+        let leading: Vec<_> = recs.iter().take(3).copied().collect();
+        assert_eq!(
+            leading,
+            vec![
+                rec(CreateType::Chapter, Relation::Child),
+                rec(CreateType::Part, Relation::Child),
+                rec(CreateType::EndOfBook, Relation::Child),
+            ]
+        );
+        // "…and the others (even Book)".
+        assert!(recs.iter().any(|r| r.create_type == CreateType::Book));
+    }
+
+    #[test]
+    fn chapter_folder_recommends_scene_then_sibling_chapter() {
+        let recs = recommendations(&Role::Folder, &SubRole::Chapter);
+        assert_eq!(recs[0], rec(CreateType::Scene, Relation::Child));
+        assert_eq!(recs[1], rec(CreateType::Chapter, Relation::Sibling));
+    }
+
+    #[test]
+    fn folder_recommends_note_then_sibling_and_child_folder() {
+        let recs = recommendations(&Role::Folder, &SubRole::None);
+        assert_eq!(recs[0], rec(CreateType::Note, Relation::Child));
+        assert_eq!(recs[1], rec(CreateType::Folder, Relation::Sibling));
+        assert_eq!(recs[2], rec(CreateType::Folder, Relation::Child));
+    }
+
+    #[test]
+    fn scene_recommends_sibling_scene_then_parent_sibling_chapter() {
+        let recs = recommendations(&Role::Item, &SubRole::Scene);
+        assert_eq!(recs[0], rec(CreateType::Scene, Relation::Sibling));
+        assert_eq!(recs[1], rec(CreateType::Chapter, Relation::ParentSibling));
+    }
+
+    #[test]
+    fn root_recommends_book_first() {
+        let recs = recommendations_root();
+        assert_eq!(recs[0], rec(CreateType::Book, Relation::Sibling));
     }
 }

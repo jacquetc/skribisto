@@ -13,13 +13,15 @@ use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     ActivateOn, DockOpenLocation, DockSide, DockWidget, Expand, FocusScope, HStack, MenuItem,
-    MenuList, Padding, StandardTreeItem, TraversalScopePolicy, TreeRow, TreeView, VStack,
+    MenuList, Padding, StandardTreeItem, ToolbarItem, TraversalScopePolicy, TreeRow, TreeView,
+    VStack,
 };
 
 use frontend::AppContext;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 
 use crate::binder_switcher_button::{BinderSwitcherButton, binder_search_button};
+use crate::create_labels::{recommendation_label, recommendation_tooltip};
+use crate::docks::create_split_button::CreateSplitButton;
 use crate::models::{BinderTreeKey, TreeNode};
 use crate::view_models::OutlineViewModel;
 
@@ -37,6 +39,9 @@ pub fn outline_dock(
     active_item: Signal<Option<u64>>,
 ) -> DockWidget {
     let dock_id = outline.dock_id();
+    // A clone for the framework header's Create button (the content closure below
+    // moves `outline`).
+    let header_outline = outline.clone();
     DockWidget::new(dock_id, tr!(binder()), move |_id| {
         // Group the dock's Tab order: a Continue scope keeps the binder's
         // tab_index numbering from colliding with other docks/regions while
@@ -49,6 +54,10 @@ pub fn outline_dock(
         ))
     })
     .icon(crate::activity_icons::outline_icon)
+    // Show the sole-pane dock's header bar (title + actions) and pin the
+    // context-dependent "Create" SplitButton into it as a custom toolbar item.
+    .show_header(true)
+    .header_actions(move |_id| vec![ToolbarItem::custom(CreateSplitButton::new(header_outline.clone()))])
     .default_location(DockOpenLocation::side(DockSide::Leading))
 }
 
@@ -210,22 +219,20 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         vec![key]
     };
 
-    let new_item = outline.clone();
-    let new_folder = outline.clone();
+    let add_outline = outline.clone();
     let rename = outline.clone();
     let duplicate = outline.clone();
     let dup_batch = batch.clone();
     let trash = outline;
     let trash_batch = batch;
     MenuList::new()
-        .item(MenuItem::new(tr!(ctx_new_item())).on_activate_fn(move |_| {
-            new_item.new_item_at(key, BinderItemRole::Item, BinderItemSubRole::Text)
+        // Context-dependent "Add ▸" submenu: the recommended new-item types for
+        // this row, in recommended order, each with a rich tooltip. Mirrors the
+        // header "Create" SplitButton but anchored on the right-clicked row.
+        // (Replaces the old generic New Item / New Folder entries.)
+        .item(MenuItem::submenu(tr!(ctx_add()), move || {
+            Box::new(add_recommendations_menu(add_outline.clone(), key)) as Box<dyn Widget>
         }))
-        .item(
-            MenuItem::new(tr!(ctx_new_folder())).on_activate_fn(move |_| {
-                new_folder.new_item_at(key, BinderItemRole::Folder, BinderItemSubRole::None)
-            }),
-        )
         .separator()
         .item(
             MenuItem::new(tr!(ctx_rename()))
@@ -239,4 +246,27 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         .item(
             MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |_| trash.trash_keys(&trash_batch)),
         )
+}
+
+/// The "Add ▸" submenu content: the recommended new-item types for `key`, in
+/// recommended order, each with a rich tooltip. Fires `add_recommended` on the
+/// outline directly (row-anchored — mirrors `new_item_at`, not via an intent).
+fn add_recommendations_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
+    let recs = outline.recommendations_for_key(Some(key));
+    // Anchor title for the tooltips — `Some` only for a real item row.
+    let anchor_title = outline
+        .node_item(key)
+        .and_then(|(item_id, title)| item_id.map(|_| title));
+    let mut menu = MenuList::new();
+    for rec in &recs {
+        let vm = outline.clone();
+        let rec_owned = *rec;
+        menu = menu.item(
+            MenuItem::new(recommendation_label(rec.create_type))
+                .icon(crate::binder_icons::create_type_icon(rec.create_type))
+                .rich_tooltip_content(recommendation_tooltip(rec, anchor_title.as_deref()))
+                .on_activate_fn(move |_| vm.add_recommended(Some(key), &rec_owned)),
+        );
+    }
+    menu
 }

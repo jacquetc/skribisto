@@ -1,0 +1,109 @@
+//! The Outline dock header's context-dependent **Create** control: a
+//! `SplitButton` whose title (an add icon + the top recommended type, e.g.
+//! "＋ Scene"), dropdown, and tooltips all track the current outline selection.
+//!
+//! The recommendation logic lives in `skribisto_model` +
+//! [`OutlineViewModel`](crate::view_models::OutlineViewModel); this widget only
+//! renders it. `SplitButton`'s item list is fixed at `build()` time, so — like
+//! [`BinderSwitcherButton`](crate::binder_switcher_button::BinderSwitcherButton) —
+//! this widget binds `selection_signal()` at `BindingLevel::Rebuild` and
+//! reconstructs itself whenever the selection changes. Picking a row fires
+//! `AppIntent::NewItem { .., relation }` (the scriptable command surface).
+
+use bastyde::core::BindingLevel;
+use bastyde::prelude::*;
+use bastyde::res;
+use bastyde::widgets::{ButtonVariant, IconWidget, MenuItem, SplitButton};
+
+use crate::create_labels::{recommendation_label, recommendation_tooltip};
+use crate::intents::AppIntent;
+use crate::view_models::OutlineViewModel;
+
+/// The "＋ <type>" split button shown in the outline dock header.
+pub struct CreateSplitButton {
+    outline: OutlineViewModel,
+    root_child: Option<WidgetId>,
+}
+
+impl CreateSplitButton {
+    pub fn new(outline: OutlineViewModel) -> Self {
+        Self {
+            outline,
+            root_child: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for CreateSplitButton {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CreateSplitButton").finish()
+    }
+}
+
+/// The fixed "add" glyph for the main region (the "＋"). A project asset in the
+/// binder icon style; the dropdown rows carry per-type binder icons instead.
+fn add_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/add.svg")).icon_size(14.0)
+}
+
+impl Widget for CreateSplitButton {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Title / dropdown / tooltips all depend on the selection → full rebuild
+        // when it changes (the SplitButton's rows are fixed at build time).
+        self.outline.selection_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+
+        let anchor = self.outline.selection().selected_keys().first().copied();
+        // A title only for a real *item* anchor (a Binder row / no selection is a
+        // top-level context → None, which picks the "at the top level" tooltip).
+        let anchor_title = anchor
+            .and_then(|k| self.outline.node_item(k))
+            .and_then(|(item_id, title)| item_id.map(|_| title));
+        let recs = self.outline.recommendations_for_selection();
+
+        // `new_static`: the main region stays pinned to index 0 (the current top
+        // recommendation). A dropdown pick must NOT promote/replace it — the title
+        // has to keep tracking the *selection*, which a create doesn't change.
+        let mut btn = SplitButton::new_static()
+            .variant(ButtonVariant::Tinted)
+            .icon(add_icon());
+
+        for rec in &recs {
+            let label = recommendation_label(rec.create_type);
+            let tip = recommendation_tooltip(rec, anchor_title.as_deref());
+            let create_type = rec.create_type;
+            let relation = rec.relation;
+            btn = btn.item(
+                MenuItem::new(label)
+                    .icon(crate::binder_icons::create_type_icon(rec.create_type))
+                    .rich_tooltip_content(tip)
+                    .on_activate_fn(move |ctx| {
+                        ctx.send_intent(AppIntent::NewItem {
+                            create_type,
+                            relation,
+                        });
+                    }),
+            );
+        }
+
+        // Main-region tooltip = the default (top) recommendation's tooltip, so it
+        // adapts to the selection alongside the title.
+        if let Some(top) = recs.first() {
+            btn = btn.rich_tooltip_content(recommendation_tooltip(top, anchor_title.as_deref()));
+        }
+
+        let id = ctx.add(btn);
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0))
+            .into()
+    }
+}
