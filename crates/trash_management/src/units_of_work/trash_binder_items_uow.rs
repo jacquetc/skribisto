@@ -114,11 +114,10 @@ impl CommandUnitOfWork for TrashBinderItemsUnitOfWork {
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
+#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
-#[macros::uow_action(entity = "BinderItem", action = "Snapshot")]
-#[macros::uow_action(entity = "BinderItem", action = "Restore")]
 impl TrashBinderItemsUnitOfWorkTrait for TrashBinderItemsUnitOfWork {
     fn publish_trash_binder_items_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

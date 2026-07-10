@@ -23,7 +23,7 @@ use frontend::direct_access::{
     CreateWorkDto, WorkRelationshipDto,
 };
 
-use binder_item_management::{DuplicateDto, MoveDto, MovePlace};
+use binder_item_management::{DuplicateDto, MergeTwoScenesDto, MoveDto, MovePlace};
 use trash_management::{RestoreItemsDto, TrashBinderDto, TrashBinderItemsDto};
 
 // ───────────────────────────── fixture helpers ─────────────────────────────
@@ -722,5 +722,141 @@ fn empty_trash_removes_trashed_binder_from_work() {
         binders,
         vec![fx.binder1],
         "trashed binder dropped from work"
+    );
+}
+
+// ──────────────────────── restore + merge undo/redo ────────────────────────
+
+fn system_trash_index(fx: &Fixture) -> Vec<EntityId> {
+    system_commands::get_system_relationship(
+        &fx.ctx,
+        &fx.system,
+        &SystemRelationshipField::TrashInfos,
+    )
+    .unwrap_or_default()
+}
+
+fn mk_scene(fx: &Fixture, title: &str) -> EntityId {
+    let dto = CreateBinderItemDto {
+        created_at: now(),
+        updated_at: now(),
+        title: title.to_string(),
+        role: BinderItemRole::Item,
+        sub_role: BinderItemSubRole::Scene,
+        activated: true,
+        is_printable: true,
+        indent: 0,
+        ..Default::default()
+    };
+    binder_item_commands::create_orphan_binder_item(&fx.ctx, Some(fx.setup), &dto)
+        .expect("create scene")
+        .id
+}
+
+fn scene_text(fx: &Fixture, item_id: EntityId) -> String {
+    let cids = binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .expect("contents");
+    for cid in cids {
+        if let Some(c) = content_commands::get_content(&fx.ctx, &cid).expect("get content") {
+            if c.role == ContentRole::SceneText {
+                return c.data;
+            }
+        }
+    }
+    String::new()
+}
+
+/// The targeted inverse of `restore_items`: undo re-trashes and re-links the
+/// index; redo restores again.
+#[test]
+fn restore_items_undo_redo() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderItemsDto {
+            binder_item_ids: vec![fx.c as i64],
+            origin_binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash");
+    let info = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap()[0].id;
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsDto {
+            trash_info_ids: vec![info as i64],
+        },
+    )
+    .expect("restore");
+    assert!(activated(&fx.ctx, fx.c));
+    assert!(system_trash_index(&fx).is_empty());
+
+    // Undo restore → c re-trashed, the index re-links the TrashInfo.
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo restore");
+    assert!(!activated(&fx.ctx, fx.c));
+    assert_eq!(system_trash_index(&fx), vec![info]);
+
+    // Redo restore → c active again, index emptied.
+    undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo restore");
+    assert!(activated(&fx.ctx, fx.c));
+    assert!(system_trash_index(&fx).is_empty());
+}
+
+/// merge_two_scenes appends B's text into A and trashes B; the targeted inverse
+/// must restore A's content exactly, reactivate B, and drop the TrashInfo.
+#[test]
+fn merge_two_scenes_round_trip() {
+    let fx = make_fixture();
+    let a = mk_scene(&fx, "SceneA");
+    let b = mk_scene(&fx, "SceneB");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[a, b]);
+    add_content(&fx, a, ContentRole::SceneText, "Alpha.");
+    add_content(&fx, b, ContentRole::SceneText, "Bravo.");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::merge_two_scenes(
+        &fx.ctx,
+        Some(stack),
+        &MergeTwoScenesDto {
+            target_id: a,
+            source_id: b,
+        },
+    )
+    .expect("merge");
+
+    // A absorbed B's text; B is trashed and indexed.
+    assert_eq!(scene_text(&fx, a), "Alpha.\n\nBravo.");
+    assert!(!activated(&fx.ctx, b));
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder_item, Some(b));
+
+    // Undo → A's content restored exactly, B reactivated, TrashInfo gone.
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo merge");
+    assert_eq!(scene_text(&fx, a), "Alpha.");
+    assert!(activated(&fx.ctx, b));
+    assert!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .is_empty()
+    );
+
+    // Redo → merged again.
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo merge");
+    assert_eq!(scene_text(&fx, a), "Alpha.\n\nBravo.");
+    assert!(!activated(&fx.ctx, b));
+    assert_eq!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .len(),
+        1
     );
 }

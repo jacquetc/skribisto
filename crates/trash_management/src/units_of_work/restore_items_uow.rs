@@ -117,8 +117,6 @@ impl CommandUnitOfWork for RestoreItemsUnitOfWork {
 #[macros::uow_action(entity = "Binder", action = "Update")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipsFromRightIds")]
-#[macros::uow_action(entity = "Binder", action = "Snapshot")]
-#[macros::uow_action(entity = "Binder", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
 impl RestoreItemsUnitOfWorkTrait for RestoreItemsUnitOfWork {

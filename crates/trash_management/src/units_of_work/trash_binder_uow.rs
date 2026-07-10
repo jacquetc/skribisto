@@ -114,11 +114,10 @@ impl CommandUnitOfWork for TrashBinderUnitOfWork {
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
+#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Binder", action = "Get")]
 #[macros::uow_action(entity = "Binder", action = "Update")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
-#[macros::uow_action(entity = "Binder", action = "Snapshot")]
-#[macros::uow_action(entity = "Binder", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
 impl TrashBinderUnitOfWorkTrait for TrashBinderUnitOfWork {

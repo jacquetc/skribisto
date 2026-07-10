@@ -95,10 +95,9 @@ impl CommandUnitOfWork for MergeTwoScenesUnitOfWork {
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
+#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipsFromRightIds")]
-#[macros::uow_action(entity = "Binder", action = "Snapshot")]
-#[macros::uow_action(entity = "Binder", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
@@ -106,6 +105,7 @@ impl CommandUnitOfWork for MergeTwoScenesUnitOfWork {
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Content", action = "RemoveMulti")]
 impl MergeTwoScenesUnitOfWorkTrait for MergeTwoScenesUnitOfWork {
     fn publish_merge_two_scenes_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
