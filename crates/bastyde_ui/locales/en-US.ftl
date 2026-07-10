@@ -110,6 +110,13 @@ settings-typewriter = Typewriter scrolling (keep caret line centred)
 settings-highlight-sentence = Highlight the current sentence
 settings-autosave-hint = Changes are written to disk automatically as you write.
 
+## Settings — Work (the open project)
+settings-sec-work = Work
+settings-page-structure = Structure
+settings-group-chapters = Chapters
+settings-chapter-flat = Write directly in chapters
+settings-chapter-flat-hint = On: each chapter is a single writing surface (flat). Off: chapters are folders that hold scenes. New chapters follow this; existing ones change via Promote.
+
 ## Welcome
 welcome-title = Welcome to Skribisto
 welcome-close = Close

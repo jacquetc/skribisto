@@ -37,7 +37,10 @@ use bastyde::widgets::{
     TextWidget, ThemeSwitcher, Toggle, TreeView, VStack,
 };
 
+use crate::app_ids::AppIds;
+use crate::singles::SingleWork;
 use crate::view_models::{EditorTypography, SettingsViewModel};
+use skribisto_model::ChapterMode;
 use crate::{
     EDITOR_WIDTH_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT, NOTES_FIRST_LINE_INDENT_DEFAULT,
     NOTES_FONT_FAMILY_DEFAULT, NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT,
@@ -79,6 +82,8 @@ enum Pane {
     Autosave,
     ExportFormats,
     Keymap,
+    /// Per-project "Work: <name> ▸ Structure" — chapter mode (folder vs flat).
+    WorkStructure,
 }
 
 impl Pane {
@@ -101,6 +106,7 @@ impl Pane {
             Pane::Autosave => tr!(settings_page_autosave()),
             Pane::ExportFormats => tr!(settings_page_export()),
             Pane::Keymap => tr!(settings_page_keymap()),
+            Pane::WorkStructure => tr!(settings_page_structure()),
         }
     }
 }
@@ -113,6 +119,9 @@ enum Sec {
     Spelling,
     BackupSync,
     CompileExport,
+    /// The open project. Its displayed label is "Work: <title>" (the title is
+    /// filled in at tree-build time — the enum stays data-free / `Copy`).
+    Work,
 }
 
 impl Sec {
@@ -123,6 +132,7 @@ impl Sec {
             Sec::Spelling => tr!(settings_sec_spelling()),
             Sec::BackupSync => tr!(settings_sec_backup()),
             Sec::CompileExport => tr!(settings_sec_compile()),
+            Sec::Work => tr!(settings_sec_work()),
         }
     }
 
@@ -133,6 +143,7 @@ impl Sec {
             Sec::Spelling => res!("assets/icons/settings/spelling.svg"),
             Sec::BackupSync => res!("assets/icons/settings/backup.svg"),
             Sec::CompileExport => res!("assets/icons/settings/compile.svg"),
+            Sec::Work => res!("assets/icons/binder/book.svg"),
         }
     }
 }
@@ -504,6 +515,61 @@ impl SettingsPanel {
         )
     }
 
+    /// Work: <name> ▸ Structure — the per-project chapter storage mode, backed by
+    /// the shared `SingleWork` (entity-backed, undoable via the Work's stack). The
+    /// `Toggle` is bridged to `chapter_mode` (checked = flat) with two effects: one
+    /// mirrors external changes (refresh/undo) into the toggle, the other writes +
+    /// saves on a user toggle. Both guard on the current value to avoid a loop.
+    fn work_structure_pane(
+        ctx: &mut BuildContext,
+        work: &SingleWork,
+        stack: Signal<Option<u64>>,
+        work_title: String,
+    ) -> impl Widget {
+        let mode = work.chapter_mode();
+        let flat: Signal<bool> = Signal::new(matches!(mode.get(), ChapterMode::Flat));
+        {
+            let flat = flat.clone();
+            ctx.effect(&mode, move |m| {
+                let is_flat = matches!(m, ChapterMode::Flat);
+                if flat.get() != is_flat {
+                    flat.set(is_flat);
+                }
+            });
+        }
+        {
+            let work = work.clone();
+            let mode = mode.clone();
+            ctx.effect(&flat, move |f| {
+                let want = if *f {
+                    ChapterMode::Flat
+                } else {
+                    ChapterMode::Folder
+                };
+                if mode.get() != want {
+                    work.set_chapter_mode(want.clone());
+                    work.save(stack.get());
+                }
+            });
+        }
+
+        let form = FormLayout::new()
+            .label(tr!(settings_page_structure()))
+            .label_gap(16.0)
+            .row_spacing(12.0)
+            .full_width(group(tr!(settings_group_chapters())))
+            .full_width(Toggle::new(flat).label(tr!(settings_chapter_flat())))
+            .full_width(hint(tr!(settings_chapter_flat_hint())));
+
+        pane_frame(
+            crumb(
+                Some(lit!(format!("{}: {}", tr!(settings_sec_work()).resolve_now(), work_title))),
+                tr!(settings_page_structure()),
+            ),
+            form,
+        )
+    }
+
     /// The category tree (left rail). Builds the `TreeModel`, seeds selection to
     /// the active page, and wires selection → `selected_pane`. Returns the
     /// `TreeView`, the search's page→node map, and the model for lookups.
@@ -578,6 +644,25 @@ impl SettingsPanel {
 
         nodes.insert(Pane::Keymap, model.insert_root(5, Node::Page(Pane::Keymap)));
 
+        // The open project's own section (multi-project-ready): shown only when a
+        // Work is open, labelled "Work: <title>" — for now its single page is
+        // Structure (the chapter mode). Read through the shared `SingleWork`.
+        let work_title = ctx
+            .app_state::<SingleWork>()
+            .filter(|w| w.id().is_some())
+            .map(|w| w.title().get());
+        let mut work_node: Option<NodeId> = None;
+        if work_title.is_some() {
+            let wk = model.insert_root(6, Node::Section(Sec::Work));
+            nodes.insert(
+                Pane::WorkStructure,
+                model.insert_child(wk, 0, Node::Page(Pane::WorkStructure)),
+            );
+            work_node = Some(wk);
+        }
+        // The dynamic section label needs the title inside the row closure.
+        let work_title_row = work_title.unwrap_or_default();
+
         // Single-selection, seeded to the active page so the pane + highlight
         // agree on open (Manuscript & Fonts by default).
         let selection = KeyedSelectionModel::<NodeId>::new(SelectionMode::Single);
@@ -605,7 +690,17 @@ impl SettingsPanel {
         // and synthetic input.
         let tree =
             TreeView::new_with_context(model, move |node: &Node, entry, selected, rowctx| {
-                let mut row = StandardTreeItem::new(node.label())
+                // The Work section's label is dynamic ("Work: <title>"); every
+                // other node uses its static label.
+                let label = match node {
+                    Node::Section(Sec::Work) => lit!(format!(
+                        "{}: {}",
+                        tr!(settings_sec_work()).resolve_now(),
+                        work_title_row
+                    )),
+                    other => other.label(),
+                };
+                let mut row = StandardTreeItem::new(label)
                     .from_entry(entry)
                     .selected(selected)
                     .on_toggle_rc(rowctx.toggle_callback());
@@ -625,6 +720,9 @@ impl SettingsPanel {
         tree.collapse(sp);
         tree.collapse(bk);
         tree.collapse(ce);
+        if let Some(wk) = work_node {
+            tree.expand(wk);
+        }
 
         (tree, selection, nodes)
     }
@@ -737,6 +835,24 @@ impl Widget for SettingsPanel {
         // only while something differs from the factory defaults.
         let not_defaults = build_not_defaults(&theme_sig, &locale_sig, &scale, &vm);
 
+        // The open project (shared handle) backs the "Work: <name> ▸ Structure"
+        // page. When no project is open, the page is present in the Switcher but
+        // its tree node isn't shown, so it renders an empty placeholder.
+        let work = ctx.app_state::<SingleWork>().cloned();
+        let stack = ctx
+            .app_state::<AppIds>()
+            .map(|i| i.stack_id.clone())
+            .unwrap_or_else(|| Signal::new(None));
+        let work_title = work.as_ref().map(|w| w.title().get()).unwrap_or_default();
+        let structure_pane: Box<dyn Widget> = match &work {
+            Some(w) => Box::new(Self::work_structure_pane(ctx, w, stack, work_title)),
+            None => Box::new(empty_pane(
+                None,
+                tr!(settings_page_structure()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+
         // ── Left rail: search + category tree ───────────────────────────────
         let (tree, selection, nodes) = self.build_tree(ctx);
         let search = self.search_field(selection, nodes);
@@ -796,7 +912,8 @@ impl Widget for SettingsPanel {
                 None,
                 tr!(settings_page_keymap()),
                 res!("assets/icons/settings/keymap.svg"),
-            ));
+            ))
+            .child_boxed(structure_pane);
 
         let footer = self.footer(vm, scale, not_defaults);
         let right = VStack::new()
@@ -958,5 +1075,6 @@ mod tests {
         assert_eq!(Pane::Autosave.index(), 10);
         assert_eq!(Pane::ExportFormats.index(), 11);
         assert_eq!(Pane::Keymap.index(), 12);
+        assert_eq!(Pane::WorkStructure.index(), 13);
     }
 }

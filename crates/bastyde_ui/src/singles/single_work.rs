@@ -17,6 +17,7 @@ mod imp {
 
     use frontend::AppContext;
     use frontend::commands::work_commands;
+    use frontend::common::entities::ChapterMode;
     use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
     use frontend::direct_access::UpdateWorkDto;
 
@@ -27,6 +28,7 @@ mod imp {
         title: Signal<String>,
         author_name: Signal<String>,
         dict_language: Signal<String>,
+        chapter_mode: Signal<ChapterMode>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -50,6 +52,7 @@ mod imp {
                     title: Signal::new(String::new()),
                     author_name: Signal::new(String::new()),
                     dict_language: Signal::new(String::new()),
+                    chapter_mode: Signal::new(ChapterMode::default()),
                     loading_status: Signal::new(LoadingStatus::Unloaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -103,6 +106,9 @@ mod imp {
         pub fn dict_language(&self) -> Signal<String> {
             self.inner.dict_language.clone()
         }
+        pub fn chapter_mode(&self) -> Signal<ChapterMode> {
+            self.inner.chapter_mode.clone()
+        }
         pub fn loading_status(&self) -> Signal<LoadingStatus> {
             self.inner.loading_status.clone()
         }
@@ -125,6 +131,10 @@ mod imp {
         pub fn set_dict_language(&self, v: String) {
             self.mark_dirty();
             self.inner.dict_language.set(v);
+        }
+        pub fn set_chapter_mode(&self, v: ChapterMode) {
+            self.mark_dirty();
+            self.inner.chapter_mode.set(v);
         }
 
         fn mark_dirty(&self) {
@@ -159,9 +169,7 @@ mod imp {
                 author_name: self.inner.author_name.get(),
                 dict_language: self.inner.dict_language.get(),
                 unique_id: existing.unique_id,
-                // Preserved (this editor doesn't own it) — a scalar update
-                // overwrites every field, so carry the stored value through.
-                chapter_mode: existing.chapter_mode,
+                chapter_mode: self.inner.chapter_mode.get(),
             };
             match work_commands::update_work(ctx, stack_id, &dto) {
                 Ok(_) => {
@@ -183,6 +191,7 @@ mod imp {
                     self.inner.title.set(w.title);
                     self.inner.author_name.set(w.author_name);
                     self.inner.dict_language.set(w.dict_language);
+                    self.inner.chapter_mode.set(w.chapter_mode);
                     self.inner.is_refreshing.set(false);
                     self.inner.dirty.set(false);
                     self.inner.error_message.set(String::new());
@@ -198,6 +207,7 @@ mod imp {
             self.inner.title.set(String::new());
             self.inner.author_name.set(String::new());
             self.inner.dict_language.set(String::new());
+            self.inner.chapter_mode.set(ChapterMode::default());
             self.inner.is_refreshing.set(false);
             self.inner.dirty.set(false);
             self.inner.error_message.set(String::new());
@@ -219,6 +229,7 @@ mod imp {
     use bastyde::prelude::*;
 
     use frontend::AppContext;
+    use frontend::common::entities::ChapterMode;
 
     use crate::singles::LoadingStatus;
 
@@ -227,6 +238,7 @@ mod imp {
         title: Signal<String>,
         author_name: Signal<String>,
         dict_language: Signal<String>,
+        chapter_mode: Signal<ChapterMode>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -247,6 +259,7 @@ mod imp {
                     title: Signal::new("Mock Work".to_string()),
                     author_name: Signal::new("Mock Author".to_string()),
                     dict_language: Signal::new("en".to_string()),
+                    chapter_mode: Signal::new(ChapterMode::default()),
                     loading_status: Signal::new(LoadingStatus::Loaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -271,6 +284,9 @@ mod imp {
         pub fn dict_language(&self) -> Signal<String> {
             self.inner.dict_language.clone()
         }
+        pub fn chapter_mode(&self) -> Signal<ChapterMode> {
+            self.inner.chapter_mode.clone()
+        }
         pub fn loading_status(&self) -> Signal<LoadingStatus> {
             self.inner.loading_status.clone()
         }
@@ -289,6 +305,9 @@ mod imp {
         }
         pub fn set_dict_language(&self, v: String) {
             self.inner.dict_language.set(v);
+        }
+        pub fn set_chapter_mode(&self, v: ChapterMode) {
+            self.inner.chapter_mode.set(v);
         }
 
         pub fn save(&self, _stack_id: Option<u64>) {

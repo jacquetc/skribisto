@@ -110,6 +110,13 @@ settings-typewriter = Défilement machine à écrire (garder la ligne du curseur
 settings-highlight-sentence = Surligner la phrase courante
 settings-autosave-hint = Les modifications sont enregistrées automatiquement au fil de l'écriture.
 
+## Paramètres — Œuvre (le projet ouvert)
+settings-sec-work = Œuvre
+settings-page-structure = Structure
+settings-group-chapters = Chapitres
+settings-chapter-flat = Écrire directement dans les chapitres
+settings-chapter-flat-hint = Activé : chaque chapitre est une surface d'écriture unique (à plat). Désactivé : les chapitres sont des dossiers contenant des scènes. Les nouveaux chapitres suivent ce choix ; les existants se convertissent via Promouvoir.
+
 ## Accueil
 welcome-title = Bienvenue dans Skribisto
 welcome-close = Fermer
