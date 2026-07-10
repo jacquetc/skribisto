@@ -551,6 +551,26 @@ mod tests {
     }
 
     #[test]
+    fn set_focused_switches_active_item_between_panes() {
+        let vm = editors();
+        vm.set_split(true);
+        let p = push_tab(&vm, Side::Primary, 42);
+        vm.pane(Side::Primary).selected.set(Some(p));
+        let s = push_tab(&vm, Side::Secondary, 7);
+        vm.pane(Side::Secondary).selected.set(Some(s));
+
+        // Focusing a pane (e.g. clicking into its editor) makes its selected item
+        // the active "inspected" item — the split-view Inspector focus fix. In the
+        // app, `focus_within` on each pane drives `set_focused`.
+        vm.set_focused(Side::Primary);
+        assert_eq!(vm.active_item().get(), Some(42));
+        vm.set_focused(Side::Secondary);
+        assert_eq!(vm.active_item().get(), Some(7));
+        vm.set_focused(Side::Primary);
+        assert_eq!(vm.active_item().get(), Some(42));
+    }
+
+    #[test]
     fn closing_last_side_tab_auto_collapses() {
         let vm = editors();
         vm.set_split(true);

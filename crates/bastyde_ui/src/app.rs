@@ -824,6 +824,24 @@ impl Widget for App {
                 .on_activate_fn(move |_ctx| editors.close_split())
         };
 
+        // Follow keyboard focus, not just tab selection: when focus enters a
+        // pane's content (e.g. clicking into its editor), mark that pane focused so
+        // the Inspector + open-item marker track the pane you're actually working
+        // in. `focus_within` is set by the framework when a descendant has focus.
+        let primary_focus = Signal::new(false);
+        let secondary_focus = Signal::new(false);
+        for (sig, side) in [
+            (&primary_focus, Side::Primary),
+            (&secondary_focus, Side::Secondary),
+        ] {
+            let editors = editors.clone();
+            ctx.effect(sig, move |&focused| {
+                if focused {
+                    editors.set_focused(side);
+                }
+            });
+        }
+
         let primary_pane = {
             let e = editors.clone();
             DropTarget::new()
@@ -847,6 +865,7 @@ impl Widget for App {
                     })
                 })
                 .child(build_pane_tabs(&editors, Side::Primary, split_button))
+                .focus_within(primary_focus.clone())
         };
 
         let secondary_pane = {
@@ -866,6 +885,7 @@ impl Widget for App {
                     })
                 })
                 .child(build_pane_tabs(&editors, Side::Secondary, close_split_button))
+                .focus_within(secondary_focus.clone())
         };
 
         let center = Splitter::new(editors.splitter())
