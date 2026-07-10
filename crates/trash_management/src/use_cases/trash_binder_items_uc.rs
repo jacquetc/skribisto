@@ -2,18 +2,18 @@
 // subtrees. Trashed items stay in place in the binder; `activated` flips to
 // false and one TrashInfo per requested root is indexed under System.trash_infos.
 //
-// Undoable via a *targeted inverse* (not a whole-store snapshot): the command
-// records exactly the cascade it deactivated and the TrashInfo ids it created,
-// so undo reactivates those items + removes those TrashInfo rows and nothing
-// else. This keeps undo scoped to the rows actually touched.
+// Undoable via a Root-scoped snapshot/restore. The op spans both the Work trunk
+// (item `activated` flags) and the System trunk (TrashInfo + the index), so the
+// whole tree is the undo scope. (This narrows to the Work once TrashInfo moves
+// under Work in the deferred multi-Work reparent.)
 use crate::TrashBinderItemsDto;
 use anyhow::{Result, anyhow};
-use chrono::{DateTime, Utc};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
-use common::entities::{BinderItem, System, TrashInfo};
+use common::entities::{BinderItem, Root, System, TrashInfo};
+use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
 
@@ -23,12 +23,14 @@ pub trait TrashBinderItemsUnitOfWorkFactoryTrait: Send + Sync {
 
 // The same macro set must appear on the impl block in
 // ../units_of_work/trash_binder_items_uow.rs.
+#[macros::uow_action(entity = "Root", action = "GetAll")]
+#[macros::uow_action(entity = "Root", action = "Snapshot")]
+#[macros::uow_action(entity = "Root", action = "Restore")]
 #[macros::uow_action(entity = "System", action = "GetAll")]
 #[macros::uow_action(entity = "System", action = "GetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
-#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
@@ -38,23 +40,16 @@ pub trait TrashBinderItemsUnitOfWorkTrait: CommandUnitOfWork {
 
 pub struct TrashBinderItemsUseCase {
     uow_factory: Box<dyn TrashBinderItemsUnitOfWorkFactoryTrait>,
-    // Undo/redo state — targeted inverse, no whole-store snapshot.
-    origin_binder: EntityId,
-    trashed_at: DateTime<Utc>,
-    roots: Vec<EntityId>,
-    cascade: Vec<EntityId>,
-    created_trash: Vec<EntityId>,
+    snap_before: Option<EntityTreeSnapshot>,
+    snap_after: Option<EntityTreeSnapshot>,
 }
 
 impl TrashBinderItemsUseCase {
     pub fn new(uow_factory: Box<dyn TrashBinderItemsUnitOfWorkFactoryTrait>) -> Self {
         TrashBinderItemsUseCase {
             uow_factory,
-            origin_binder: 0,
-            trashed_at: Utc::now(),
-            roots: Vec::new(),
-            cascade: Vec::new(),
-            created_trash: Vec::new(),
+            snap_before: None,
+            snap_after: None,
         }
     }
 
@@ -83,33 +78,31 @@ impl TrashBinderItemsUseCase {
             ));
         }
 
-        // Record what undo/redo needs, then apply forward.
-        self.origin_binder = origin_binder;
-        self.trashed_at = Utc::now();
-        self.roots = roots.clone();
-        self.cascade = cascade;
-        self.apply(uow.as_ref())?;
+        // Root-scoped snapshot, taken after the read-only resolution above and
+        // before the first mutation below.
+        let root_id = root_id(uow.as_ref())?;
+        let snap_before = uow.snapshot_root(&[root_id])?;
 
-        uow.commit()?;
-        uow.publish_trash_binder_items_event(roots, None);
-        Ok(())
-    }
+        // Flip `activated` to false for the whole cascade.
+        let mut updated: Vec<BinderItem> = Vec::new();
+        for it in uow.get_binder_item_multi(&cascade)?.into_iter().flatten() {
+            let mut it = it;
+            it.activated = false;
+            updated.push(it);
+        }
+        uow.update_binder_item_multi(&updated)?;
 
-    /// Forward direction (execute + redo): flip the cascade to trashed and index
-    /// one TrashInfo per root under System.trash_infos, recording the new ids.
-    fn apply(&mut self, uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<()> {
-        set_activated(uow, &self.cascade, false)?;
-
-        let system = system_singleton(uow)?;
-        let mut index =
+        // Index one TrashInfo per requested root under System.trash_infos.
+        let system = system_singleton(uow.as_ref())?;
+        let mut trash_infos =
             uow.get_system_relationship(&system.id, &SystemRelationshipField::TrashInfos)?;
-        let mut created = Vec::with_capacity(self.roots.len());
-        for root in &self.roots {
+        let now = chrono::Utc::now();
+        for root in &roots {
             let info = uow.create_orphan_trash_info(&TrashInfo {
-                created_at: self.trashed_at,
-                updated_at: self.trashed_at,
-                trashed_at: self.trashed_at,
-                origin_binder_id: self.origin_binder as i64,
+                created_at: now,
+                updated_at: now,
+                trashed_at: now,
+                origin_binder_id: origin_binder as i64,
                 ..Default::default()
             })?;
             uow.set_trash_info_relationship(
@@ -117,54 +110,22 @@ impl TrashBinderItemsUseCase {
                 &TrashInfoRelationshipField::TrashedBinderItem,
                 &[*root],
             )?;
-            index.push(info.id);
-            created.push(info.id);
+            trash_infos.push(info.id);
         }
-        uow.set_system_relationship(&system.id, &SystemRelationshipField::TrashInfos, &index)?;
-        self.created_trash = created;
+        uow.set_system_relationship(
+            &system.id,
+            &SystemRelationshipField::TrashInfos,
+            &trash_infos,
+        )?;
+
+        let snap_after = uow.snapshot_root(&[root_id])?;
+        uow.commit()?;
+        uow.publish_trash_binder_items_event(roots, None);
+
+        self.snap_before = Some(snap_before);
+        self.snap_after = Some(snap_after);
         Ok(())
     }
-
-    /// Inverse (undo): reactivate the cascade and drop this command's TrashInfo
-    /// rows, unlinking them from System.trash_infos.
-    fn revert(&self, uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<()> {
-        set_activated(uow, &self.cascade, true)?;
-
-        if !self.created_trash.is_empty() {
-            let system = system_singleton(uow)?;
-            let drop: HashSet<EntityId> = self.created_trash.iter().copied().collect();
-            let remaining: Vec<EntityId> = uow
-                .get_system_relationship(&system.id, &SystemRelationshipField::TrashInfos)?
-                .into_iter()
-                .filter(|id| !drop.contains(id))
-                .collect();
-            uow.set_system_relationship(
-                &system.id,
-                &SystemRelationshipField::TrashInfos,
-                &remaining,
-            )?;
-            uow.remove_trash_info_multi(&self.created_trash)?;
-        }
-        Ok(())
-    }
-}
-
-/// Load the given items, set `activated`, write them back.
-fn set_activated(
-    uow: &dyn TrashBinderItemsUnitOfWorkTrait,
-    ids: &[EntityId],
-    value: bool,
-) -> Result<()> {
-    if ids.is_empty() {
-        return Ok(());
-    }
-    let mut items: Vec<BinderItem> =
-        uow.get_binder_item_multi(ids)?.into_iter().flatten().collect();
-    for it in &mut items {
-        it.activated = value;
-    }
-    uow.update_binder_item_multi(&items)?;
-    Ok(())
 }
 
 /// Compute the requested *roots* (items not nested under another requested item)
@@ -207,24 +168,38 @@ pub(crate) fn system_singleton(uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Res
         .ok_or_else(|| anyhow!("trash: no System entity in store"))
 }
 
+pub(crate) fn root_id(uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<EntityId> {
+    uow.get_all_root()?
+        .into_iter()
+        .next()
+        .map(|r: Root| r.id)
+        .ok_or_else(|| anyhow!("trash: no Root entity in store"))
+}
+
 use common::undo_redo::UndoRedoCommand;
 use std::any::Any;
 impl UndoRedoCommand for TrashBinderItemsUseCase {
     fn undo(&mut self) -> Result<()> {
+        let snap = self
+            .snap_before
+            .as_ref()
+            .ok_or_else(|| anyhow!("trash_binder_items: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        self.revert(uow.as_ref())?;
+        uow.restore_root(snap)?;
         uow.commit()?;
-        uow.publish_trash_binder_items_event(self.cascade.clone(), None);
         Ok(())
     }
 
     fn redo(&mut self) -> Result<()> {
+        let snap = self
+            .snap_after
+            .as_ref()
+            .ok_or_else(|| anyhow!("trash_binder_items: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        self.apply(uow.as_ref())?;
+        uow.restore_root(snap)?;
         uow.commit()?;
-        uow.publish_trash_binder_items_event(self.roots.clone(), None);
         Ok(())
     }
     fn as_any(&self) -> &dyn Any {

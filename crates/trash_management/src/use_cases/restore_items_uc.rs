@@ -4,9 +4,8 @@
 // If a trashed item's binder no longer exists, it is reported `orphaned`.
 // The restored TrashInfos are unlinked from System.trash_infos.
 //
-// Undoable via a *targeted inverse* (not a whole-store snapshot): the command
-// records exactly the binders/items it reactivated and the System.trash_infos
-// index before/after, so undo re-trashes those rows and re-links the index.
+// Undoable via a Root-scoped snapshot/restore (the op spans the Work trunk +
+// the System trunk; see trash_binder_items_uc for the rationale).
 use crate::RestoreItemsDto;
 use crate::RestoreResultDto;
 use anyhow::{Result, anyhow};
@@ -14,9 +13,10 @@ use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
-use common::entities::{Binder, BinderItem, System};
+use common::entities::{Binder, BinderItem, Root, System};
+use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub trait RestoreItemsUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn RestoreItemsUnitOfWorkTrait>;
@@ -24,6 +24,9 @@ pub trait RestoreItemsUnitOfWorkFactoryTrait: Send + Sync {
 
 // The same macro set must appear on the impl block in
 // ../units_of_work/restore_items_uow.rs.
+#[macros::uow_action(entity = "Root", action = "GetAll")]
+#[macros::uow_action(entity = "Root", action = "Snapshot")]
+#[macros::uow_action(entity = "Root", action = "Restore")]
 #[macros::uow_action(entity = "System", action = "GetAll")]
 #[macros::uow_action(entity = "System", action = "GetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
@@ -40,21 +43,16 @@ pub trait RestoreItemsUnitOfWorkTrait: CommandUnitOfWork {
 
 pub struct RestoreItemsUseCase {
     uow_factory: Box<dyn RestoreItemsUnitOfWorkFactoryTrait>,
-    // Undo/redo state — targeted inverse, no whole-store snapshot.
-    touched_binders: Vec<EntityId>,
-    touched_items: Vec<EntityId>,
-    index_before: Vec<EntityId>,
-    index_after: Vec<EntityId>,
+    snap_before: Option<EntityTreeSnapshot>,
+    snap_after: Option<EntityTreeSnapshot>,
 }
 
 impl RestoreItemsUseCase {
     pub fn new(uow_factory: Box<dyn RestoreItemsUnitOfWorkFactoryTrait>) -> Self {
         RestoreItemsUseCase {
             uow_factory,
-            touched_binders: Vec::new(),
-            touched_items: Vec::new(),
-            index_before: Vec::new(),
-            index_after: Vec::new(),
+            snap_before: None,
+            snap_after: None,
         }
     }
 
@@ -70,15 +68,14 @@ impl RestoreItemsUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        let system = system_singleton(uow.as_ref())?;
-        let index_before =
-            uow.get_system_relationship(&system.id, &SystemRelationshipField::TrashInfos)?;
+        // Root-scoped snapshot, before the first mutation.
+        let root_id = root_id(uow.as_ref())?;
+        let snap_before = uow.snapshot_root(&[root_id])?;
 
         let mut restored_count: i64 = 0;
         let mut orphaned = false;
-        let mut consumed: HashSet<EntityId> = HashSet::new(); // TrashInfos to drop from the index
-        let mut touched_binders: Vec<EntityId> = Vec::new();
-        let mut touched_items: Vec<EntityId> = Vec::new();
+        let mut consumed: Vec<EntityId> = Vec::new(); // TrashInfos to drop from the index
+        let mut touched: Vec<EntityId> = Vec::new();
 
         for info_id in &info_ids {
             let trashed_binder = uow
@@ -102,11 +99,11 @@ impl RestoreItemsUseCase {
                             &binder_id,
                             &BinderRelationshipField::BinderItems,
                         )?;
-                        set_items_activated(uow.as_ref(), &item_ids, true)?;
-                        touched_binders.push(binder_id);
-                        touched_items.extend(item_ids);
+                        reactivate(uow.as_ref(), &item_ids)?;
+                        touched.push(binder_id);
+                        touched.extend(item_ids);
                         restored_count += 1;
-                        consumed.insert(*info_id);
+                        consumed.push(*info_id);
                     }
                     None => orphaned = true,
                 }
@@ -131,87 +128,55 @@ impl RestoreItemsUseCase {
                             indent.insert(it.id, it.indent);
                         }
                         let subtree = subtree_of(&order, &indent, item_id);
-                        set_items_activated(uow.as_ref(), &subtree, true)?;
-                        touched_items.extend(subtree);
+                        reactivate(uow.as_ref(), &subtree)?;
+                        touched.extend(subtree);
                         restored_count += 1;
-                        consumed.insert(*info_id);
+                        consumed.push(*info_id);
                     }
                     None => orphaned = true,
                 }
             } else {
                 // A TrashInfo with neither relationship is stale — drop it.
-                consumed.insert(*info_id);
+                consumed.push(*info_id);
             }
         }
 
         // Unlink consumed TrashInfos from System.trash_infos.
-        let index_after: Vec<EntityId> = index_before
-            .iter()
-            .copied()
-            .filter(|id| !consumed.contains(id))
-            .collect();
-        if index_after.len() != index_before.len() {
+        if !consumed.is_empty() {
+            let system = system_singleton(uow.as_ref())?;
+            let remaining: Vec<EntityId> = uow
+                .get_system_relationship(&system.id, &SystemRelationshipField::TrashInfos)?
+                .into_iter()
+                .filter(|id| !consumed.contains(id))
+                .collect();
             uow.set_system_relationship(
                 &system.id,
                 &SystemRelationshipField::TrashInfos,
-                &index_after,
+                &remaining,
             )?;
         }
 
+        let snap_after = uow.snapshot_root(&[root_id])?;
         uow.commit()?;
-        uow.publish_restore_items_event(touched_event(&touched_binders, &touched_items), None);
+        uow.publish_restore_items_event(touched, None);
 
-        self.touched_binders = touched_binders;
-        self.touched_items = touched_items;
-        self.index_before = index_before;
-        self.index_after = index_after;
+        self.snap_before = Some(snap_before);
+        self.snap_after = Some(snap_after);
         Ok(RestoreResultDto {
             restored_count,
             orphaned,
         })
     }
-
-    fn set_state(&self, uow: &dyn RestoreItemsUnitOfWorkTrait, activated: bool, index: &[EntityId]) -> Result<()> {
-        set_binders_activated(uow, &self.touched_binders, activated)?;
-        set_items_activated(uow, &self.touched_items, activated)?;
-        let system = system_singleton(uow)?;
-        uow.set_system_relationship(&system.id, &SystemRelationshipField::TrashInfos, index)?;
-        Ok(())
-    }
 }
 
-fn touched_event(binders: &[EntityId], items: &[EntityId]) -> Vec<EntityId> {
-    let mut all = binders.to_vec();
-    all.extend_from_slice(items);
-    all
-}
-
-fn set_binders_activated(
-    uow: &dyn RestoreItemsUnitOfWorkTrait,
-    ids: &[EntityId],
-    value: bool,
-) -> Result<()> {
-    for id in ids {
-        if let Some(mut binder) = uow.get_binder(id)? {
-            binder.activated = value;
-            uow.update_binder(&binder)?;
-        }
-    }
-    Ok(())
-}
-
-fn set_items_activated(
-    uow: &dyn RestoreItemsUnitOfWorkTrait,
-    ids: &[EntityId],
-    value: bool,
-) -> Result<()> {
+fn reactivate(uow: &dyn RestoreItemsUnitOfWorkTrait, ids: &[EntityId]) -> Result<()> {
     if ids.is_empty() {
         return Ok(());
     }
     let mut updated: Vec<BinderItem> = Vec::new();
     for it in uow.get_binder_item_multi(ids)?.into_iter().flatten() {
         let mut it = it;
-        it.activated = value;
+        it.activated = true;
         updated.push(it);
     }
     if !updated.is_empty() {
@@ -250,33 +215,38 @@ fn system_singleton(uow: &dyn RestoreItemsUnitOfWorkTrait) -> Result<System> {
         .ok_or_else(|| anyhow!("restore_items: no System entity in store"))
 }
 
+fn root_id(uow: &dyn RestoreItemsUnitOfWorkTrait) -> Result<EntityId> {
+    uow.get_all_root()?
+        .into_iter()
+        .next()
+        .map(|r: Root| r.id)
+        .ok_or_else(|| anyhow!("restore_items: no Root entity in store"))
+}
+
 use common::undo_redo::UndoRedoCommand;
 use std::any::Any;
 impl UndoRedoCommand for RestoreItemsUseCase {
     fn undo(&mut self) -> Result<()> {
-        // Re-trash: deactivate what we restored and re-link the prior index.
-        let index = self.index_before.clone();
+        let snap = self
+            .snap_before
+            .as_ref()
+            .ok_or_else(|| anyhow!("restore_items: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        self.set_state(uow.as_ref(), false, &index)?;
+        uow.restore_root(snap)?;
         uow.commit()?;
-        uow.publish_restore_items_event(
-            touched_event(&self.touched_binders, &self.touched_items),
-            None,
-        );
         Ok(())
     }
 
     fn redo(&mut self) -> Result<()> {
-        let index = self.index_after.clone();
+        let snap = self
+            .snap_after
+            .as_ref()
+            .ok_or_else(|| anyhow!("restore_items: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        self.set_state(uow.as_ref(), true, &index)?;
+        uow.restore_root(snap)?;
         uow.commit()?;
-        uow.publish_restore_items_event(
-            touched_event(&self.touched_binders, &self.touched_items),
-            None,
-        );
         Ok(())
     }
     fn as_any(&self) -> &dyn Any {

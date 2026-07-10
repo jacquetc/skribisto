@@ -8,7 +8,7 @@ use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Content, System, TrashInfo};
+use common::entities::{Binder, BinderItem, Content, Root, System, TrashInfo};
 use common::event::BinderItemManagementEvent::MergeTwoScenes;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -90,12 +90,14 @@ impl CommandUnitOfWork for MergeTwoScenesUnitOfWork {
 }
 
 // Same macro set as the trait in ../use_cases/merge_two_scenes_uc.rs.
+#[macros::uow_action(entity = "Root", action = "GetAll")]
+#[macros::uow_action(entity = "Root", action = "Snapshot")]
+#[macros::uow_action(entity = "Root", action = "Restore")]
 #[macros::uow_action(entity = "System", action = "GetAll")]
 #[macros::uow_action(entity = "System", action = "GetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
-#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
@@ -105,7 +107,6 @@ impl CommandUnitOfWork for MergeTwoScenesUnitOfWork {
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
-#[macros::uow_action(entity = "Content", action = "RemoveMulti")]
 impl MergeTwoScenesUnitOfWorkTrait for MergeTwoScenesUnitOfWork {
     fn publish_merge_two_scenes_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
