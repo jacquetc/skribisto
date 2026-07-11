@@ -578,6 +578,10 @@ features:
         type: string
       - name: after_text
         type: string
+      - name: before_synopsis
+        type: string
+      - name: after_synopsis
+        type: string
       - name: new_title
         type: string
   - name: promote

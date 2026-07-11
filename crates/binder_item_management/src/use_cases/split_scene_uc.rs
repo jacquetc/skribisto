@@ -1,7 +1,18 @@
 // Custom implementation: split scene A (source) at the caret into two. A keeps
-// the text before the caret (`before_text`); a new Scene is created immediately
-// after A carrying the text after the caret (`after_text`). The Djot-aware text
-// split is done UI-side; this use case does only the atomic structural change.
+// the before-caret half; a new Scene is created immediately after A carrying the
+// after-caret half. Both writing roles are reassigned: `SceneText` from
+// `before_text`/`after_text` and `SynopsisText` from `before_synopsis`/
+// `after_synopsis`, so the split works from *either* editor — the caller cuts the
+// role it is editing at the caret and passes the other role whole to the source
+// (empty to the new scene). The Djot-aware text split is done UI-side; this use
+// case does only the atomic structural change.
+//
+// The writes are authoritative reassignments, not appends (contrast
+// `merge_two_scenes`, which skips an empty source text because it is appending
+// onto an already-correct row): an empty half must genuinely empty its row, or a
+// split from the synopsis would leave the new scene carrying a copy of the
+// source's prose.
+//
 // Undoable via a scoped snapshot/restore of the source's binder subtree.
 use crate::SplitSceneDto;
 use anyhow::{Result, anyhow};
@@ -84,7 +95,7 @@ impl SplitSceneUseCase {
 
         let now = chrono::Utc::now();
 
-        // 1. Overwrite the source's SceneText with the before-caret text.
+        // 1. Reassign the source's writing roles to the before-caret halves.
         let mut src_content_ids =
             uow.get_binder_item_relationship(&source, &BinderItemRelationshipField::Contents)?;
         let src_rows: Vec<Content> = uow
@@ -92,35 +103,46 @@ impl SplitSceneUseCase {
             .into_iter()
             .flatten()
             .collect();
-        match src_rows
-            .iter()
-            .find(|c| c.role == ContentRole::SceneText)
-            .cloned()
-        {
-            Some(mut row) => {
-                row.data = dto.before_text.clone();
-                row.updated_at = now;
-                uow.update_content(&row)?;
-            }
-            None => {
-                let created = uow.create_orphan_content(&Content {
-                    created_at: now,
-                    updated_at: now,
-                    activated: true,
-                    role: ContentRole::SceneText,
-                    data: dto.before_text.clone(),
-                    ..Default::default()
-                })?;
-                src_content_ids.push(created.id);
-                uow.set_binder_item_relationship(
-                    &source,
-                    &BinderItemRelationshipField::Contents,
-                    &src_content_ids,
-                )?;
+        let mut src_ids_changed = false;
+        for (role, text) in [
+            (ContentRole::SceneText, &dto.before_text),
+            (ContentRole::SynopsisText, &dto.before_synopsis),
+        ] {
+            match src_rows.iter().find(|c| c.role == role).cloned() {
+                Some(mut row) => {
+                    row.data = text.clone();
+                    row.updated_at = now;
+                    uow.update_content(&row)?;
+                }
+                None => {
+                    // Don't materialise an empty row for a role the source never had.
+                    if text.is_empty() {
+                        continue;
+                    }
+                    let created = uow.create_orphan_content(&Content {
+                        created_at: now,
+                        updated_at: now,
+                        activated: true,
+                        role,
+                        data: text.clone(),
+                        ..Default::default()
+                    })?;
+                    src_content_ids.push(created.id);
+                    src_ids_changed = true;
+                }
             }
         }
+        if src_ids_changed {
+            uow.set_binder_item_relationship(
+                &source,
+                &BinderItemRelationshipField::Contents,
+                &src_content_ids,
+            )?;
+        }
 
-        // 2. Create the new scene carrying the after-caret text.
+        // 2. Create the new scene carrying the after-caret halves. `Item/Scene`
+        //    allows both SceneText and SynopsisText (skribisto_model), so both
+        //    roles are legal on it by construction.
         let new_item = uow.create_orphan_binder_item(&BinderItem {
             created_at: now,
             updated_at: now,
@@ -132,18 +154,28 @@ impl SplitSceneUseCase {
             indent: src.indent,
             ..Default::default()
         })?;
-        let new_content = uow.create_orphan_content(&Content {
-            created_at: now,
-            updated_at: now,
-            activated: true,
-            role: ContentRole::SceneText,
-            data: dto.after_text.clone(),
-            ..Default::default()
-        })?;
+        let mut new_content_ids = Vec::new();
+        for (role, text) in [
+            (ContentRole::SceneText, &dto.after_text),
+            (ContentRole::SynopsisText, &dto.after_synopsis),
+        ] {
+            if text.is_empty() {
+                continue; // the split left this role entirely on the source
+            }
+            let created = uow.create_orphan_content(&Content {
+                created_at: now,
+                updated_at: now,
+                activated: true,
+                role,
+                data: text.clone(),
+                ..Default::default()
+            })?;
+            new_content_ids.push(created.id);
+        }
         uow.set_binder_item_relationship(
             &new_item.id,
             &BinderItemRelationshipField::Contents,
-            &[new_content.id],
+            &new_content_ids,
         )?;
 
         // 3. Splice the new scene into the binder immediately after the source.

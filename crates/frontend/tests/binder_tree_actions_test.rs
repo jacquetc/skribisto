@@ -202,6 +202,9 @@ fn make_fixture() -> Fixture {
     }
 }
 
+/// Link a new `Content` row onto `item_id`, **keeping** the rows already there —
+/// an item legitimately carries several roles at once (prose + synopsis), so this
+/// appends rather than replacing the relationship.
 fn add_content(fx: &Fixture, item_id: EntityId, role: ContentRole, data: &str) -> EntityId {
     let cid = content_commands::create_orphan_content(
         &fx.ctx,
@@ -216,13 +219,20 @@ fn add_content(fx: &Fixture, item_id: EntityId, role: ContentRole, data: &str) -
     )
     .expect("create content")
     .id;
+    let mut right_ids = binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .expect("contents");
+    right_ids.push(cid);
     binder_item_commands::set_binder_item_relationship(
         &fx.ctx,
         Some(fx.setup),
         &frontend::direct_access::BinderItemRelationshipDto {
             id: item_id,
             field: BinderItemRelationshipField::Contents,
-            right_ids: vec![cid],
+            right_ids,
         },
     )
     .expect("set contents");
@@ -757,6 +767,14 @@ fn mk_scene(fx: &Fixture, title: &str) -> EntityId {
 }
 
 fn scene_text(fx: &Fixture, item_id: EntityId) -> String {
+    content_data(fx, item_id, ContentRole::SceneText)
+}
+
+fn synopsis_text(fx: &Fixture, item_id: EntityId) -> String {
+    content_data(fx, item_id, ContentRole::SynopsisText)
+}
+
+fn content_data(fx: &Fixture, item_id: EntityId, role: ContentRole) -> String {
     let cids = binder_item_commands::get_binder_item_relationship(
         &fx.ctx,
         &item_id,
@@ -765,7 +783,7 @@ fn scene_text(fx: &Fixture, item_id: EntityId) -> String {
     .expect("contents");
     for cid in cids {
         if let Some(c) = content_commands::get_content(&fx.ctx, &cid).expect("get content")
-            && c.role == ContentRole::SceneText
+            && c.role == role
         {
             return c.data;
         }
@@ -924,6 +942,8 @@ fn split_scene_undo_redo() {
             source_id: s,
             before_text: "A".into(),
             after_text: "B".into(),
+            before_synopsis: String::new(),
+            after_synopsis: String::new(),
             new_title: "Second".into(),
         },
     )
@@ -950,6 +970,63 @@ fn split_scene_undo_redo() {
     assert_eq!(scene_text(&fx, s), "A");
     assert_eq!(order(&fx.ctx, fx.binder2), vec![s, new_scene]);
     assert_eq!(scene_text(&fx, new_scene), "B");
+}
+
+/// Splitting from the **synopsis** editor: the synopsis is cut at the caret, the
+/// prose stays whole on the source, and the whole thing undoes/redoes cleanly —
+/// the scoped snapshot must cover the `SynopsisText` rows too, including the one
+/// created on the new scene.
+#[test]
+fn split_scene_from_synopsis_undo_redo() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Full");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "the whole prose");
+    add_content(&fx, s, ContentRole::SynopsisText, "AB");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::split_scene(
+        &fx.ctx,
+        Some(stack),
+        &SplitSceneDto {
+            source_id: s,
+            // The untouched role goes whole to the source, empty to the new scene.
+            before_text: "the whole prose".into(),
+            after_text: String::new(),
+            before_synopsis: "A".into(),
+            after_synopsis: "B".into(),
+            new_title: "Second".into(),
+        },
+    )
+    .expect("split");
+
+    let after = order(&fx.ctx, fx.binder2);
+    assert_eq!(after.len(), 2);
+    let new_scene = after[1];
+    assert_eq!(scene_text(&fx, s), "the whole prose");
+    assert_eq!(synopsis_text(&fx, s), "A");
+    assert_eq!(scene_text(&fx, new_scene), "");
+    assert_eq!(synopsis_text(&fx, new_scene), "B");
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(scene_text(&fx, s), "the whole prose");
+    assert_eq!(
+        synopsis_text(&fx, s),
+        "AB",
+        "undo restores the whole synopsis"
+    );
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![s]);
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &new_scene)
+            .unwrap()
+            .is_none()
+    );
+
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
+    assert_eq!(synopsis_text(&fx, s), "A");
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![s, new_scene]);
+    assert_eq!(synopsis_text(&fx, new_scene), "B");
+    assert_eq!(scene_text(&fx, new_scene), "");
 }
 
 fn item_tags(fx: &Fixture, item_id: EntityId) -> Vec<EntityId> {

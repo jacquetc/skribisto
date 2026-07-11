@@ -23,12 +23,13 @@ use bastyde::widgets::InputDialog;
 use frontend::AppContext;
 use frontend::binder_item_management::{MergeTwoScenesDto, MoveDto, MovePlace, SplitSceneDto};
 use frontend::commands::{
-    binder_commands, binder_item_commands, binder_item_management_commands,
+    binder_commands, binder_item_commands, binder_item_management_commands, content_commands,
     trash_management_commands, work_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
+use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 use frontend::direct_access::{BinderItemDto, CreateBinderItemDto, UpdateBinderItemDto};
 use frontend::trash_management::TrashBinderItemsDto;
@@ -306,6 +307,11 @@ impl ChapterViewModel {
         let Ok((before, after)) = split_djot(&doc, caret) else {
             return;
         };
+        // Splitting from the prose editor: the synopsis is not cut — it goes whole
+        // to the source and empty to the new scene (generalized in `StreamViewModel`).
+        // `split_scene` *reassigns* SynopsisText, so passing the empty string here
+        // would wipe the source's synopsis.
+        let synopsis = self.synopsis_djot(id);
         let _ = binder_item_management_commands::split_scene(
             &self.inner.app_ctx,
             self.stack(),
@@ -313,6 +319,8 @@ impl ChapterViewModel {
                 source_id: id,
                 before_text: before,
                 after_text: after,
+                before_synopsis: synopsis,
+                after_synopsis: String::new(),
                 new_title: "New Scene".to_string(),
             },
         );
@@ -347,6 +355,26 @@ impl ChapterViewModel {
 
     fn stack(&self) -> Option<u64> {
         self.inner.ids.stack_id.get()
+    }
+
+    /// The scene's persisted `SynopsisText`, so a prose split can pass it back
+    /// unchanged. `SingleScene` only owns the `SceneText` document; this whole
+    /// view-model is superseded by `StreamViewModel`, whose rows hold the shared
+    /// `OpenDoc` (both roles) and need no such lookup.
+    fn synopsis_djot(&self, id: u64) -> String {
+        let content_ids = binder_item_commands::get_binder_item_relationship(
+            &self.inner.app_ctx,
+            &id,
+            &BinderItemRelationshipField::Contents,
+        )
+        .unwrap_or_default();
+        content_commands::get_content_multi(&self.inner.app_ctx, &content_ids)
+            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .find(|c| c.role == ContentRole::SynopsisText)
+            .map(|c| c.data)
+            .unwrap_or_default()
     }
 
     fn item_dto(&self, id: u64) -> Option<BinderItemDto> {

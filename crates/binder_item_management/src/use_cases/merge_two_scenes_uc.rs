@@ -103,6 +103,25 @@ impl MergeTwoScenesUseCase {
             return Err(anyhow!("merge_two_scenes: both items must be scenes"));
         }
 
+        // Merge is only ever an *adjacent*-scene merge. Enforce it here, not just
+        // in the caller: the Full Part / Full Book streams are the first views
+        // whose row list legitimately spans several chapters, so without this a
+        // stale row list (or any future caller) could silently concatenate prose
+        // across a chapter/part/book boundary. Adjacency in the flat order implies
+        // no boundary marker sits between them.
+        let order = uow.get_binder_relationship(&binder, &BinderRelationshipField::BinderItems)?;
+        let pos_of = |id: EntityId| -> Result<usize> {
+            order
+                .iter()
+                .position(|&x| x == id)
+                .ok_or_else(|| anyhow!("merge_two_scenes: scene {id} not in the binder order"))
+        };
+        if pos_of(target)?.abs_diff(pos_of(source)?) != 1 {
+            return Err(anyhow!(
+                "merge_two_scenes: target and source are not adjacent"
+            ));
+        }
+
         // Read A's content rows (keep their ids) and B's rows (source text).
         let mut a_content_ids =
             uow.get_binder_item_relationship(&target, &BinderItemRelationshipField::Contents)?;

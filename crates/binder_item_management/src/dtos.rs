@@ -35,6 +35,8 @@ pub struct SplitSceneDto {
     pub source_id: u64,
     pub before_text: String,
     pub after_text: String,
+    pub before_synopsis: String,
+    pub after_synopsis: String,
     pub new_title: String,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
