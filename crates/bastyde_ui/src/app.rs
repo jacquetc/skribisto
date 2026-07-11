@@ -201,6 +201,19 @@ fn mutation_origins() -> Vec<Origin> {
     v
 }
 
+/// "Is there anything to save right now?" — the single truth the Save affordances
+/// (menu item, `editor.save` action, Ctrl+S) all gate on.
+///
+/// True iff the work has edits not yet on disk **and** this window is not in backup
+/// mode. Backup mode is excluded because [`EditorsViewModel::save_to_disk`] is inert
+/// there (the backup file is read-only; edits leave only through Save As / Restore),
+/// so a Save command would be a silent no-op — better to show it disabled.
+///
+/// Derived, so it stays reactive: it recomputes whenever either input changes.
+pub fn can_save(unsaved: &Signal<bool>, backup_mode: &Signal<bool>) -> Signal<bool> {
+    unsaved.and(&backup_mode.not())
+}
+
 impl std::fmt::Debug for App {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("App").finish()
@@ -345,16 +358,26 @@ impl Widget for App {
             ));
         }
         // Ctrl+S: flush every editor to the store, then save the project to disk.
+        // Gated on `can_save` (dirty && !backup mode) at *both* ends: the shortcut
+        // stops matching the keystroke, and the action stops matching the intent —
+        // so nothing to save means the menu item greys out (same signal, in `main`),
+        // Ctrl+S is inert, and a scripted `editor.save` intent is a no-op instead of
+        // a pointless disk write. The exit guards call `save_to_disk()` directly,
+        // not through the intent, so save-then-close still works.
+        let can_save = can_save(&self.unsaved, &self.backup_mode);
         ctx.register_shortcut_global(
             Shortcut::new("editor.save")
                 .name("Save")
                 .primary(KeyStroke::ctrl(Key::S))
+                .enabled_when(can_save.clone())
                 .build(),
         );
         {
             let editors = editors.clone();
             ctx.register_action_global(
-                Action::new("editor.save").on_invoke(move |_i, _c| editors.save_to_disk()),
+                Action::new("editor.save")
+                    .enabled_when(can_save)
+                    .on_invoke(move |_i, _c| editors.save_to_disk()),
             );
         }
         // ── File / app commands (the scriptable surface for the title bar). ──
@@ -1361,4 +1384,80 @@ fn open_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The four states the Save affordances gate on. Nothing to save, or a
+    /// read-only backup window → disabled.
+    #[test]
+    fn can_save_only_when_dirty_and_not_in_backup_mode() {
+        for (dirty, backup, want) in [
+            (false, false, false), // clean project — nothing to write
+            (true, false, true),   // the only case that saves
+            (false, true, false),  // backup window, clean
+            (true, true, false),   // backup window with edits: Save As / Restore, not Save
+        ] {
+            let unsaved = Signal::new(dirty);
+            let backup_mode = Signal::new(backup);
+            assert_eq!(
+                can_save(&unsaved, &backup_mode).get(),
+                want,
+                "dirty={dirty} backup_mode={backup}"
+            );
+        }
+    }
+
+    /// The signal is *derived*, not sampled: flipping either input after the fact
+    /// must move it (otherwise the menu item would freeze at its build-time value).
+    #[test]
+    fn can_save_tracks_later_input_changes() {
+        let unsaved = Signal::new(false);
+        let backup_mode = Signal::new(false);
+        let can = can_save(&unsaved, &backup_mode);
+        assert!(!can.get());
+
+        unsaved.set(true); // an edit lands
+        assert!(can.get());
+
+        backup_mode.set(true); // …in a backup window: still nothing Save can do
+        assert!(!can.get());
+
+        backup_mode.set(false); // Save As turned it back into a normal project
+        assert!(can.get());
+
+        unsaved.set(false); // saved to disk
+        assert!(!can.get());
+    }
+
+    /// The shortcut and the action must *both* follow the signal — the keystroke
+    /// and the intent are two independent entry points into `save_to_disk`.
+    #[test]
+    fn save_shortcut_and_action_follow_can_save() {
+        let unsaved = Signal::new(false);
+        let backup_mode = Signal::new(false);
+        let can = can_save(&unsaved, &backup_mode);
+
+        let shortcut = Shortcut::new("editor.save")
+            .name("Save")
+            .primary(KeyStroke::ctrl(Key::S))
+            .enabled_when(can.clone())
+            .build();
+        let action = Action::new("editor.save")
+            .enabled_when(can)
+            .on_invoke(|_i, _c| {});
+
+        assert!(!shortcut.is_enabled(), "Ctrl+S inert on a clean project");
+        assert!(!action.is_enabled(), "editor.save inert on a clean project");
+
+        unsaved.set(true);
+        assert!(shortcut.is_enabled());
+        assert!(action.is_enabled());
+
+        backup_mode.set(true);
+        assert!(!shortcut.is_enabled(), "Ctrl+S inert in backup mode");
+        assert!(!action.is_enabled(), "editor.save inert in backup mode");
+    }
 }

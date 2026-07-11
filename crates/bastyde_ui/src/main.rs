@@ -550,6 +550,7 @@ fn main() {
                             let menu_autosave = autosave_menu.clone();
                             let menu_save_as = save_as_vm.clone();
                             let menu_backup_mode = backup_mode.clone();
+                            let menu_unsaved = unsaved.clone();
                             let menu = MenuModel::new().menu(tr!(menu_file()), move |m| {
                                 let file_ctx = menu_ctx.clone();
                                 let folder_ctx = menu_ctx.clone();
@@ -573,6 +574,11 @@ fn main() {
                                 let show_manual_save = menu_autosave
                                     .zip(&menu_backup_mode)
                                     .map(|(a, bm)| !*a && !*bm);
+                                // …and it greys out while there is nothing to save.
+                                // Same signal as the `editor.save` action/shortcut
+                                // (app.rs), so the item, Ctrl+S and the intent are
+                                // enabled or disabled as one.
+                                let can_save = app::can_save(&menu_unsaved, &menu_backup_mode);
                                 // "Back up now" shows only for an open, non-backup project.
                                 let show_backup_now = show_open
                                     .zip(&menu_backup_mode)
@@ -605,6 +611,7 @@ fn main() {
                                 .item(
                                     MenuEntry::new(tr!(menu_save()))
                                         .visible(show_manual_save)
+                                        .enabled(can_save)
                                         .intent("editor.save")
                                         .shortcut("editor.save"),
                                 )
