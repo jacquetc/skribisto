@@ -14,8 +14,8 @@ use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     ActivateOn, DockOpenLocation, DockSide, DockWidget, DragTransferMode, Expand, FocusScope,
-    HStack, MenuItem, MenuList, MessageBox, MessageBoxButtons, Padding, StandardTreeItem,
-    ToolbarItem, TraversalScopePolicy, TreeRow, TreeView, VStack,
+    HStack, MenuItem, MenuList, MessageBox, MessageBoxButtons, Padding, ScrollBarMode,
+    StandardTreeItem, ToolbarItem, TraversalScopePolicy, TreeRow, TreeView, VStack,
 };
 
 use frontend::AppContext;
@@ -168,6 +168,10 @@ fn binder_tree(
     // uniform two-line cost. (A flat `item_height(40.0)` also clipped the 44px
     // subtitled rows.) The estimate seeds unrealized rows for scroll extent.
     .auto_item_height(28.0)
+    // The dock is narrow, so the default `Permanent` bar (a 12px gutter column
+    // stolen from every row) is too costly here: `Overlay` floats a thin resting
+    // indicator over the content and expands it to the full track on hover.
+    .scroll_bar_style(ScrollBarMode::Overlay)
     .row_click_expands(false)
     .reorderable(true)
     // Rows are also draggable OUT of the tree onto an editor pane (which opens
