@@ -247,12 +247,31 @@ fn scan_backups(uid: &str, project_path: &str, dirs: &[String]) -> Vec<BackupRow
 }
 
 fn human_size(path: &Path) -> String {
-    let bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    let bytes = byte_size(path);
     if bytes >= 1_048_576 {
         format!("{:.1} MB", bytes as f64 / 1_048_576.0)
     } else {
         format!("{} KB", (bytes / 1024).max(1))
     }
+}
+
+/// Total bytes at `path`. A backup is normally a single zip, but a folder-shaped
+/// bundle must be summed recursively — `metadata(dir).len()` is the directory
+/// entry's own size (~4 KB), not its contents.
+fn byte_size(path: &Path) -> u64 {
+    let Ok(meta) = std::fs::metadata(path) else {
+        return 0;
+    };
+    if meta.is_file() {
+        return meta.len();
+    }
+    if !meta.is_dir() {
+        return 0;
+    }
+    let Ok(entries) = std::fs::read_dir(path) else {
+        return 0;
+    };
+    entries.flatten().map(|e| byte_size(&e.path())).sum()
 }
 
 /// Open the file manager at `path`'s containing folder (best-effort, per platform).
@@ -292,5 +311,18 @@ mod tests {
         let f = d.path().join("a");
         std::fs::write(&f, vec![0u8; 2048]).unwrap();
         assert_eq!(human_size(&f), "2 KB");
+    }
+
+    #[test]
+    fn human_size_sums_a_folder_bundle_recursively() {
+        // A folder-shaped bundle: `metadata(dir).len()` would report the directory
+        // entry (~4 KB), not the 3 KB of actual content across nested files.
+        let d = tempfile::tempdir().unwrap();
+        let root = d.path().join("novel-20260101-120000.skrib");
+        std::fs::create_dir_all(root.join("binders/manuscript")).unwrap();
+        std::fs::write(root.join("project.skrib"), vec![0u8; 1024]).unwrap();
+        std::fs::write(root.join("binders/manuscript/a.djot"), vec![0u8; 2048]).unwrap();
+        assert_eq!(byte_size(&root), 3072, "summed recursively");
+        assert_eq!(human_size(&root), "3 KB");
     }
 }

@@ -30,6 +30,8 @@ use frontend::common::event::Event;
 use frontend::direct_access::UpdateWorkInfoDto;
 
 use crate::app_ids::AppIds;
+use crate::backup::BackupContext;
+use crate::singles::SingleWork;
 
 use super::long_op::{event_id, parse_payload};
 
@@ -48,14 +50,30 @@ pub struct SaveAsViewModel {
     pending: Rc<RefCell<HashMap<String, Pending>>>,
     app_ctx: Rc<AppContext>,
     ids: AppIds,
+    single_work: SingleWork,
+    /// Cleared on a successful Save As: whatever this window was showing, it now
+    /// points at the freshly-written file, and `from_entities` always stamps that
+    /// `kind: Regular` — so it is never a backup. This is what lets "Save As" be
+    /// the escape hatch out of backup mode (the banner's other exit is Restore).
+    backup_mode: Signal<bool>,
+    backup_context: Signal<Option<BackupContext>>,
 }
 
 impl SaveAsViewModel {
-    pub fn new(app_ctx: Rc<AppContext>, ids: AppIds) -> Self {
+    pub fn new(
+        app_ctx: Rc<AppContext>,
+        ids: AppIds,
+        single_work: SingleWork,
+        backup_mode: Signal<bool>,
+        backup_context: Signal<Option<BackupContext>>,
+    ) -> Self {
         Self {
             pending: Rc::new(RefCell::new(HashMap::new())),
             app_ctx,
             ids,
+            single_work,
+            backup_mode,
+            backup_context,
         }
     }
 
@@ -110,8 +128,21 @@ impl SaveAsViewModel {
             },
         };
         match work_info_commands::update_work_info(&self.app_ctx, &dto) {
-            Ok(_) => ctx.show_toast(Toast::success(tr!(saved_as(target = output_path)))),
-            Err(e) => ctx.show_toast(Toast::error(tr!(save_error(error = e.to_string())))),
+            Ok(_) => {
+                // The window now *is* the file it just wrote. If it was showing a
+                // backup, that's no longer true: drop backup mode (banner goes, Save
+                // re-enables) instead of leaving a read-only-file window pointed at a
+                // regular project. Re-claim so other instances see the right path.
+                if self.backup_mode.get() {
+                    self.backup_mode.set(false);
+                    self.backup_context.set(None);
+                }
+                crate::open_registry::claim(&output_path, &self.single_work.title().get());
+                ctx.show_toast(Toast::success(tr!(saved_as(target = output_path))));
+            }
+            Err(e) => {
+                ctx.show_toast(Toast::error(tr!(save_error(error = e.to_string()))));
+            }
         };
     }
 

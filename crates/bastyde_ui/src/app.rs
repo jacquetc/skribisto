@@ -911,6 +911,11 @@ impl Widget for App {
             use std::time::{Duration, Instant};
             let deadline: Rc<std::cell::Cell<Option<Instant>>> =
                 Rc::new(std::cell::Cell::new(None));
+            // Last `completed_epoch` we armed against: ANY backup (manual, on-open,
+            // on-close, or our own tick) restarts the countdown, so "every N hours"
+            // means N hours since the last backup — not since the timer last armed.
+            let seen_epoch: Rc<std::cell::Cell<u64>> =
+                Rc::new(std::cell::Cell::new(backup_scheduler.completed_epoch()));
             let wake = ctx.wake_at_handle();
             let scheduler = backup_scheduler.clone();
             let tick = ctx.frame_tick();
@@ -919,6 +924,15 @@ impl Widget for App {
                     deadline.set(None); // interval off / no project open
                     return;
                 };
+                let epoch = scheduler.completed_epoch();
+                if epoch != seen_epoch.get() {
+                    // A backup just completed — restart the countdown from now.
+                    seen_epoch.set(epoch);
+                    let at = Instant::now() + Duration::from_secs(secs);
+                    deadline.set(Some(at));
+                    wake.set(Some(at));
+                    return;
+                }
                 match deadline.get() {
                     None => {
                         let at = Instant::now() + Duration::from_secs(secs);

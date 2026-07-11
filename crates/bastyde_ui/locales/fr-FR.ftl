@@ -209,6 +209,8 @@ backup-complete = Copie de secours terminée ({ $ok } enregistrée(s), { $skippe
 backup-partial = Copie de secours terminée : { $ok } enregistrée(s), échec pour { $failed } destination(s)
 backup-no-destination-title = Aucun emplacement de copie de secours disponible
 backup-no-destination-text = Aucune des destinations configurées n'est accessible (par exemple, un disque externe peut être débranché). Branchez-le et réessayez, ou quittez sans créer de copie de secours.
+backup-failed-close-title = La copie de secours n'a pas pu être enregistrée
+backup-failed-close-text = Aucune copie de secours n'a pu être écrite avant la fermeture : toutes les destinations ont échoué (le disque a peut-être été retiré, ou il est plein ou protégé en écriture). Corrigez le problème et réessayez, ou quittez sans créer de copie de secours.
 
 ## Ouvrir une copie de secours (modale de choix + bannière permanente + restauration)
 backup-choice-title = Copie de secours

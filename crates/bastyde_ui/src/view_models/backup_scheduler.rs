@@ -59,6 +59,11 @@ pub struct BackupSchedulerViewModel {
     /// no-ops (a backup window never backs itself up).
     backup_mode: Signal<bool>,
     pending: Signal<Option<Pending>>,
+    /// Bumped every time a backup actually happens (written or already-current).
+    /// The App's interval timer watches this and restarts its countdown, so
+    /// "every N hours" means N hours since the *last backup*, whatever triggered
+    /// it — not N hours since the timer last armed.
+    completed_epoch: Signal<u64>,
 }
 
 impl BackupSchedulerViewModel {
@@ -76,7 +81,14 @@ impl BackupSchedulerViewModel {
             single_work_info,
             backup_mode,
             pending: Signal::new(None),
+            completed_epoch: Signal::new(0),
         }
+    }
+
+    /// Counter of completed backups — the App's interval timer re-arms whenever
+    /// this changes (see [`Self::completed_epoch`]).
+    pub fn completed_epoch(&self) -> u64 {
+        self.completed_epoch.get()
     }
 
     /// The open project's `(unique_id, path)`, or `None` when nothing is open /
@@ -330,6 +342,10 @@ impl BackupSchedulerViewModel {
         .ok()
         .flatten();
 
+        // Set when the backup produced *nothing*: every destination failed to
+        // write. On close this is the last chance to keep a copy, so it blocks.
+        let mut produced_nothing = false;
+
         if let Some(res) = result {
             let now = chrono::Utc::now().to_rfc3339();
             // Directories that were actually written = all minus skipped minus failed.
@@ -370,9 +386,27 @@ impl BackupSchedulerViewModel {
             let ok = res.succeeded_paths.len();
             let skipped = res.skipped_directories.len();
             let failed = res.failed_directories.len();
+            produced_nothing = ok == 0 && skipped == 0 && failed > 0;
+
+            // A backup really happened (written, or already current) → restart the
+            // interval countdown so it measures time since the *last* backup.
+            if ok > 0 || skipped > 0 {
+                let e = &self.completed_epoch;
+                e.set(e.get().wrapping_add(1));
+            }
+
             // Quiet on a pure no-op close (nothing written, nothing failed); noisy
             // enough to reassure on a manual/successful write, and warn on failure.
-            if failed > 0 {
+            // When *everything* failed on close we prompt below instead of toasting.
+            if produced_nothing {
+                if pending.close.is_none() {
+                    ctx.show_toast(
+                        Toast::error(tr!(backup_partial(ok = ok, failed = failed)))
+                            .id(BACKUP_TOAST_ID)
+                            .auto_dismiss_after(Duration::from_secs(6)),
+                    );
+                }
+            } else if failed > 0 {
                 ctx.show_toast(
                     Toast::warning(tr!(backup_partial(ok = ok, failed = failed)))
                         .id(BACKUP_TOAST_ID)
@@ -387,8 +421,14 @@ impl BackupSchedulerViewModel {
             }
         }
 
-        // A pending close proceeds regardless of the backup outcome.
         if let Some(then) = pending.close {
+            // Every destination failed at write time (drive yanked mid-write, disk
+            // full, permissions). The availability pre-check couldn't catch this, so
+            // this is the backstop: don't silently quit without a backup — let the
+            // user fix it and retry, or knowingly discard.
+            if produced_nothing {
+                return self.prompt_backup_failed(ctx, then);
+            }
             self.do_close(ctx, then);
         }
     }
@@ -409,11 +449,34 @@ impl BackupSchedulerViewModel {
             .and_then(|e| e.as_str())
             .unwrap_or_default()
             .to_string();
-        ctx.show_toast(Toast::error(tr!(backup_error(error = error))).id(BACKUP_TOAST_ID));
-        // A failed backup never traps the exit.
+        // On close, a failed backup means no copy was made — same backstop as
+        // "every destination failed": prompt rather than quit silently.
         if let Some(then) = pending.close {
-            self.do_close(ctx, then);
+            return self.prompt_backup_failed(ctx, then);
         }
+        ctx.show_toast(Toast::error(tr!(backup_error(error = error))).id(BACKUP_TOAST_ID));
+    }
+
+    /// The backup ran but nothing was written (or it failed outright) and a close
+    /// is pending. Offer to retry — the retry re-scans the destinations, so a
+    /// freshly-plugged drive is picked up — or to quit without a backup.
+    fn prompt_backup_failed(&self, ctx: &mut EventContext, then: PendingExit) {
+        let me = self.clone();
+        MessageBox::warning(tr!(backup_failed_close_title()))
+            .text(tr!(backup_failed_close_text()))
+            .buttons(MessageBoxButtons::Custom(vec![
+                StandardButton::Retry.into(),
+                StandardButton::Discard.into(),
+            ]))
+            .default_button(StandardButton::Retry)
+            .escape_button(StandardButton::Discard)
+            .on_result(move |r, c| match r.button {
+                // Re-run the whole on-close flow (re-checks reachability, re-writes).
+                StandardButton::Retry => me.on_close_flow(c, then),
+                // Discard and exit: quit without a backup.
+                _ => me.do_close(c, then),
+            })
+            .present(ctx);
     }
 }
 

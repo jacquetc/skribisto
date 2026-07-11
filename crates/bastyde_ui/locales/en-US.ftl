@@ -230,6 +230,8 @@ backup-complete = Backup complete ({ $ok } saved, { $skipped } already current)
 backup-partial = Backup finished: { $ok } saved, { $failed } destination(s) failed
 backup-no-destination-title = No backup location available
 backup-no-destination-text = None of the configured backup destinations can be reached (for example, an external drive may be unplugged). Plug it in and retry, or exit without backing up.
+backup-failed-close-title = The backup could not be saved
+backup-failed-close-text = No backup copy could be written before closing — every destination failed (the drive may have been removed, or it may be full or write-protected). Fix it and retry, or exit without backing up.
 
 ## Open-a-backup (choice modal + permanent banner + restore)
 backup-choice-title = Backup file

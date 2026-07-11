@@ -319,10 +319,6 @@ fn main() {
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
     let import_plume = ImportPlumeViewModel::new(app_ctx.clone());
-    // The Save-As view-model records the new path/shape into WorkInfo on the UI
-    // thread when a background "Save As" completes (save_as itself is read-only).
-    // Registered as app-state so `App::build` routes the long-operation events to it.
-    let save_as_vm = SaveAsViewModel::new(app_ctx.clone(), ids.clone());
     // Backup-mode state: `backup_mode` is true while a *backup file* is open in
     // this window (Save + auto-backup off; the file is read-only, the content is
     // still editable). `backup_context` carries the open backup's details (drives
@@ -330,6 +326,18 @@ fn main() {
     // `backup_mode` (to hide Save / Back up now); `App::build` sets them on load.
     let backup_mode = Signal::new(false);
     let backup_context: Signal<Option<backup::BackupContext>> = Signal::new(None);
+    // The Save-As view-model records the new path/shape into WorkInfo on the UI
+    // thread when a background "Save As" completes (save_as itself is read-only).
+    // It also clears backup mode on success — a Save As out of a backup window makes
+    // that window the freshly-written (regular) project.
+    // Registered as app-state so `App::build` routes the long-operation events to it.
+    let save_as_vm = SaveAsViewModel::new(
+        app_ctx.clone(),
+        ids.clone(),
+        single_work.clone(),
+        backup_mode.clone(),
+        backup_context.clone(),
+    );
     // Backup ("Copies de secours") settings — opened eagerly here (before any
     // project loads) so the on-open/on-close/interval hooks and the scheduler see
     // it. Degrades to a throwaway temp file if the config dir is unavailable,
