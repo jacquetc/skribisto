@@ -2,31 +2,43 @@
 //!
 //! - [`general_pane`] — the app-wide default policy (`Sec::BackupSync`).
 //! - [`work_backup_pane`] — the open project's optional override (`Sec::Work`),
-//!   with an "Inherit general settings" toggle, the "last backup" indicator, a
-//!   no-backups hint, and an "Open backups list" button.
+//!   with a "use the general backup settings" toggle, the "last backup"
+//!   indicator / no-backups hint, and an "Open backups list" button.
 //!
-//! Both are driven by [`BackupSettingsViewModel`]. Because a `BackupPolicy` is a
-//! single struct (not per-field signals), each control mirrors one field into a
-//! local signal and, on change, does a read-modify-write of the *current* policy
-//! through the supplied `set` closure — so concurrent field edits compose.
+//! Both build a single [`FormLayout`] with the shared `group` helper and are
+//! wrapped by the caller in the standard `pane_frame` (breadcrumb · rule ·
+//! scroll), so they look and scroll exactly like every other settings pane.
+//!
+//! In the per-project pane the override controls are **shown but disabled** while
+//! "use general settings" is on (not hidden) — the inherited values stay visible,
+//! greyed out. Each control's `.enabled(..)` is bound to a signal that tracks the
+//! inherit toggle; flipping it off enables them and materialises an override keyed
+//! by the project uid.
+//!
+//! Because a `BackupPolicy` is a single struct (not per-field signals), each
+//! control mirrors one field into a local signal and, on change, does a
+//! read-modify-write of the *current* policy through the supplied `set` closure —
+//! so concurrent field edits compose.
 
 use std::rc::Rc;
 
 use bastyde::prelude::*;
 use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{
-    Button, ButtonVariant, Divider, Expand, FixedSize, HStack, IconButton, Padding, SegmentedControl,
-    Segment, SpinBox, Switcher, TextWidget, Toggle, VStack,
+    Button, ButtonVariant, Divider, Expand, FixedSize, FormLayout, HStack, IconButton, Segment,
+    SegmentedControl, SpinBox, Switcher, TextWidget, Toggle, VStack,
 };
 
 use crate::backup::is_destination_available;
-use crate::models::{BackupPolicy, RetentionMode};
+use crate::models::{BackupPolicy, RetentionMode, uid_is_usable};
+use crate::settings_panel::group;
 use crate::view_models::BackupSettingsViewModel;
 
 type Get = Rc<dyn Fn() -> BackupPolicy>;
 type Set = Rc<dyn Fn(BackupPolicy)>;
 
-/// The general (app-wide default) backup policy pane.
+/// The general (app-wide default) backup policy pane — a single `FormLayout`,
+/// always editable. The caller wraps it in `pane_frame`.
 pub fn general_pane(ctx: &mut BuildContext, vm: &BackupSettingsViewModel) -> impl Widget {
     let get: Get = {
         let vm = vm.clone();
@@ -36,14 +48,22 @@ pub fn general_pane(ctx: &mut BuildContext, vm: &BackupSettingsViewModel) -> imp
         let vm = vm.clone();
         Rc::new(move |p| vm.set_general(p))
     };
-    VStack::new()
-        .spacing(16.0)
-        .child(section_header(tr!(settings_backup_general_title())))
-        .child(policy_controls(ctx, get, set))
+    let always_on = Signal::new(true);
+    add_policy_rows(
+        FormLayout::new()
+            .label(tr!(settings_page_backup()))
+            .label_gap(16.0)
+            .row_spacing(14.0),
+        ctx,
+        get,
+        set,
+        always_on,
+    )
 }
 
-/// The per-project override pane. Shows an "Inherit general settings" toggle;
-/// when off, the same controls edit an override keyed by the project's `uid`.
+/// The per-project override pane. A "use general settings" toggle sits above the
+/// same control set; when it is on, the controls are **disabled (not hidden)** and
+/// display the inherited values. Toggling it off writes an override keyed by uid.
 pub fn work_backup_pane(
     ctx: &mut BuildContext,
     vm: &BackupSettingsViewModel,
@@ -51,6 +71,7 @@ pub fn work_backup_pane(
     path: String,
     title: String,
 ) -> impl Widget {
+    let usable = uid_is_usable(&uid);
     let has_override = vm.has_override(&uid);
     // `inherit == true` ⇒ no override (use general). Toggling writes/clears it.
     let inherit = Signal::new(!has_override);
@@ -60,6 +81,10 @@ pub fn work_backup_pane(
         let path = path.clone();
         let title = title.clone();
         ctx.effect(&inherit, move |inh| {
+            // Never key an override by an unusable (empty) uid.
+            if !usable {
+                return;
+            }
             if *inh {
                 vm.clear_override(&uid);
             } else if !vm.has_override(&uid) {
@@ -70,8 +95,14 @@ pub fn work_backup_pane(
         });
     }
 
-    // The override editor is shown only when not inheriting (Switcher on inherit).
-    let editor_index = inherit.map(|inh| if *inh { 0usize } else { 1usize });
+    // `enabled == !inherit`: the controls are live only when overriding. A plain
+    // mutable signal (not derived) so it drives every control's `.enabled(..)`.
+    let enabled = Signal::new(has_override && usable);
+    {
+        let enabled = enabled.clone();
+        ctx.effect(&inherit, move |inh| enabled.set(!*inh && usable));
+    }
+
     let get: Get = {
         let vm = vm.clone();
         let uid = uid.clone();
@@ -82,20 +113,14 @@ pub fn work_backup_pane(
         let uid = uid.clone();
         let path = path.clone();
         let title = title.clone();
-        Rc::new(move |p| vm.set_override(&uid, &path, &title, p))
+        Rc::new(move |p| {
+            if uid_is_usable(&uid) {
+                vm.set_override(&uid, &path, &title, p);
+            }
+        })
     };
 
-    let editor = Switcher::new(editor_index)
-        .child(
-            Padding::symmetric(0.0, 6.0).child(
-                TextWidget::new(tr!(settings_backup_inheriting()))
-                    .style(TextStyleRole::Small)
-                    .color(TextRole::Secondary),
-            ),
-        )
-        .child(policy_controls(ctx, get, set));
-
-    // "Last backup" indicator + no-backups hint (computed when the pane opens).
+    // "Last backup" indicator / no-backups hint (computed when the pane opens).
     let status = {
         let last = vm.last_backup_at(&uid);
         let off = vm.effective_for(&uid).is_effectively_off();
@@ -129,22 +154,35 @@ pub fn work_backup_pane(
         })
     };
 
-    VStack::new()
-        .spacing(16.0)
-        .child(section_header(tr!(settings_backup_work_title())))
-        .child(TextWidget::new(status).style(TextStyleRole::Small).color(TextRole::Secondary))
-        .child(Toggle::new(inherit).label(tr!(settings_backup_inherit())))
-        .child(editor)
-        .child(open_list)
+    // One FormLayout: status + the (always-enabled) inherit toggle, then the same
+    // control rows as the general pane — each gated on `enabled` — then the button.
+    let form = FormLayout::new()
+        .label(tr!(settings_page_work_backup()))
+        .label_gap(16.0)
+        .row_spacing(14.0)
+        .full_width(
+            TextWidget::new(status)
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        )
+        .full_width(Toggle::new(inherit).label(tr!(settings_backup_inherit())))
+        .full_width(Divider::new());
+    add_policy_rows(form, ctx, get, set, enabled)
+        .full_width(Divider::new())
+        .full_width(open_list)
 }
 
-fn section_header(label: impl Into<LocalizedString>) -> impl Widget {
-    TextWidget::new(label.into()).style(TextStyleRole::BodyBold)
-}
-
-/// The shared set of policy controls (triggers, destinations, retention, dedup),
-/// each wired to read-modify-write the policy via `set`.
-fn policy_controls(ctx: &mut BuildContext, get: Get, set: Set) -> impl Widget {
+/// Append the shared policy controls (triggers, destinations, retention, dedup) to
+/// `form`, each wired to read-modify-write the policy via `set` and gated on
+/// `enabled` (always `true` for the general pane). Kept as one FormLayout — no
+/// nested forms — so every row shares the pane's label column and full width.
+fn add_policy_rows(
+    form: FormLayout,
+    ctx: &mut BuildContext,
+    get: Get,
+    set: Set,
+    enabled: Signal<bool>,
+) -> FormLayout {
     let p0 = get();
 
     // ── Triggers ──
@@ -177,13 +215,16 @@ fn policy_controls(ctx: &mut BuildContext, get: Get, set: Set) -> impl Widget {
     }
     // The tiered-vs-keep-N explanation, shown as a rich tooltip on each segment
     // (short summary + a "more" disclosure) so the choice is self-documenting.
-    let tiered_tip = TooltipContent::new("backup-retention-tiered", tr!(settings_backup_retention_tiered()))
-        .with_more(tr!(settings_backup_retention_tip_more()));
-    let keepn_tip = TooltipContent::new("backup-retention-keepn", tr!(settings_backup_retention_keep_n()))
-        .with_more(tr!(settings_backup_retention_tip_more()));
+    let tiered_tip =
+        TooltipContent::new("backup-retention-tiered", tr!(settings_backup_retention_tiered()))
+            .with_more(tr!(settings_backup_retention_tip_more()));
+    let keepn_tip =
+        TooltipContent::new("backup-retention-keepn", tr!(settings_backup_retention_keep_n()))
+            .with_more(tr!(settings_backup_retention_tip_more()));
     let mode_control = SegmentedControl::new(retention_mode.clone())
         .segment(Segment::new(tr!(settings_backup_retention_tiered())).rich_tooltip_content(tiered_tip))
-        .segment(Segment::new(tr!(settings_backup_retention_keep_n())).rich_tooltip_content(keepn_tip));
+        .segment(Segment::new(tr!(settings_backup_retention_keep_n())).rich_tooltip_content(keepn_tip))
+        .enabled(enabled.clone());
 
     let keep_n = int_field(ctx, &get, &set, p0.keep_last_n as i64, |p, v| {
         p.keep_last_n = v.max(1) as u32
@@ -194,57 +235,69 @@ fn policy_controls(ctx: &mut BuildContext, get: Get, set: Set) -> impl Widget {
     let gfs_m = int_field(ctx, &get, &set, p0.gfs_monthly as i64, |p, v| p.gfs_monthly = v.max(0) as u32);
     let min_keep = int_field(ctx, &get, &set, p0.min_keep as i64, |p, v| p.min_keep = v.max(0) as u32);
 
-    // Show keep-N vs GFS params reactively on the selected mode.
-    let retention_params = Switcher::new(retention_mode.map(|m| *m))
-        .child(
-            // Tiered / GFS
-            VStack::new()
-                .spacing(6.0)
-                .child(spin_row(tr!(settings_backup_gfs_hourly()), gfs_h, 0, 168))
-                .child(spin_row(tr!(settings_backup_gfs_daily()), gfs_d, 0, 60))
-                .child(spin_row(tr!(settings_backup_gfs_weekly()), gfs_w, 0, 52))
-                .child(spin_row(tr!(settings_backup_gfs_monthly()), gfs_m, 0, 120)),
-        )
-        .child(spin_row(tr!(settings_backup_keep_n()), keep_n, 1, 999));
+    // Keep-N vs GFS params, switched on the selected mode. Fixed-width labels (a
+    // `.line()`/Expand label collapses to a sliver inside the hug-width Switcher).
+    let gfs = VStack::new()
+        .spacing(8.0)
+        .child(spin_line(tr!(settings_backup_gfs_hourly()), gfs_h, 0, 168, &enabled))
+        .child(spin_line(tr!(settings_backup_gfs_daily()), gfs_d, 0, 60, &enabled))
+        .child(spin_line(tr!(settings_backup_gfs_weekly()), gfs_w, 0, 52, &enabled))
+        .child(spin_line(tr!(settings_backup_gfs_monthly()), gfs_m, 0, 120, &enabled));
+    let keepn = spin_line(tr!(settings_backup_keep_n()), keep_n, 1, 999, &enabled);
+    let retention_params = Switcher::new(retention_mode.map(|m| *m)).child(gfs).child(keepn);
 
     // ── Dedup ──
     let dedup = bool_field(ctx, &get, &set, p0.skip_if_unchanged, |p, v| {
         p.skip_if_unchanged = v
     });
 
-    VStack::new()
-        .spacing(10.0)
-        .child(group_label(tr!(settings_backup_triggers())))
-        .child(Toggle::new(on_close).label(tr!(settings_backup_on_close())))
-        .child(Toggle::new(on_open).label(tr!(settings_backup_on_open())))
-        .child(HStack::new().spacing(10.0)
-            .child(Toggle::new(interval_on).label(tr!(settings_backup_interval())))
-            .child(FixedSize::new().width(120.0).child(
-                SpinBox::new(interval_hours, 1i64, 168).suffix(" h"),
-            )))
-        .child(Divider::new())
-        .child(group_label(tr!(settings_backup_destinations())))
-        .child(DestinationsEditor::new(get.clone(), set.clone()))
-        .child(Divider::new())
-        .child(group_label(tr!(settings_backup_retention())))
-        .child(mode_control)
-        .child(retention_params)
-        .child(spin_row(tr!(settings_backup_min_keep()), min_keep, 0, 99))
-        .child(Divider::new())
-        .child(Toggle::new(dedup).label(tr!(settings_backup_dedup())))
+    form
+        // Triggers
+        .full_width(group(tr!(settings_backup_triggers())))
+        .full_width(Toggle::new(on_close).label(tr!(settings_backup_on_close())).enabled(enabled.clone()))
+        .full_width(Toggle::new(on_open).label(tr!(settings_backup_on_open())).enabled(enabled.clone()))
+        // Interval trigger + its "every N h" spin, on one aligned row.
+        .line(
+            Toggle::new(interval_on).label(tr!(settings_backup_interval())).enabled(enabled.clone()),
+            FixedSize::new().width(120.0).child(
+                SpinBox::new(interval_hours, 1i64, 168).suffix(" h").enabled(enabled.clone()),
+            ),
+        )
+        // Destinations
+        .full_width(group(tr!(settings_backup_destinations())))
+        .full_width(DestinationsEditor::new(get.clone(), set.clone(), enabled.clone()))
+        // Retention
+        .full_width(group(tr!(settings_backup_retention())))
+        .full_width(mode_control)
+        .full_width(retention_params)
+        .full_width(spin_line(tr!(settings_backup_min_keep()), min_keep, 0, 99, &enabled))
+        .full_width(Toggle::new(dedup).label(tr!(settings_backup_dedup())).enabled(enabled))
 }
 
-fn group_label(label: impl Into<LocalizedString>) -> impl Widget {
-    TextWidget::new(label.into())
-        .style(TextStyleRole::SmallBold)
-        .color(TextRole::Secondary)
-}
-
-fn spin_row(label: impl Into<LocalizedString>, value: Signal<i64>, min: i64, max: i64) -> impl Widget {
+/// A retention param row: a fixed-width single-line label + a spin cell. Fixed
+/// (not Expand) so the label survives the hug-width proposal a `Switcher` makes.
+fn spin_line(
+    label: impl Into<LocalizedString>,
+    value: Signal<i64>,
+    min: i64,
+    max: i64,
+    enabled: &Signal<bool>,
+) -> impl Widget {
     HStack::new()
-        .spacing(10.0)
-        .child(Expand::horizontal().child(TextWidget::new(label.into()).style(TextStyleRole::Small)))
-        .child(FixedSize::new().width(120.0).child(SpinBox::new(value, min, max)))
+        .spacing(12.0)
+        .child(
+            FixedSize::new().width(210.0).child(
+                TextWidget::new(label.into())
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary)
+                    .single_line(),
+            ),
+        )
+        .child(
+            FixedSize::new()
+                .width(120.0)
+                .child(SpinBox::new(value, min, max).enabled(enabled.clone())),
+        )
 }
 
 /// A bool field mirrored into a signal that writes back through `set`.
@@ -288,20 +341,23 @@ fn int_field(
 // ── Destinations editor ──────────────────────────────────────────────────────
 
 /// A reactive list of destination folders with per-row availability badges,
-/// Remove, an "Add folder…" picker, and a "Refresh" availability re-check.
+/// Remove, an "Add folder…" picker, and a "Refresh" availability re-check. Its
+/// buttons honour `enabled` so it dims with the rest in the inherited pane.
 struct DestinationsEditor {
     get: Get,
     set: Set,
+    enabled: Signal<bool>,
     /// Bumped on add/remove/refresh so the row list rebuilds.
     epoch: Signal<u64>,
     root_child: Option<WidgetId>,
 }
 
 impl DestinationsEditor {
-    fn new(get: Get, set: Set) -> Self {
+    fn new(get: Get, set: Set, enabled: Signal<bool>) -> Self {
         Self {
             get,
             set,
+            enabled,
             epoch: Signal::new(0),
             root_child: None,
         }
@@ -349,6 +405,7 @@ impl Widget for DestinationsEditor {
                 .child(
                     IconButton::clear()
                         .tooltip(tr!(settings_backup_dest_remove()))
+                        .enabled(self.enabled.clone())
                         .on_activate_fn(move |_c| {
                             let mut p = get();
                             if idx < p.destinations.len() {
@@ -367,29 +424,32 @@ impl Widget for DestinationsEditor {
             let get = self.get.clone();
             let set = self.set.clone();
             let epoch = self.epoch.clone();
-            Button::new(tr!(settings_backup_dest_add())).on_activate_fn(move |c| {
-                let get = get.clone();
-                let set = set.clone();
-                let epoch = epoch.clone();
-                let req = FileDialogRequest::pick_folder().title(tr!(settings_backup_dest_add()));
-                let _ = c.pick_folder(req, move |res, _c| {
-                    if let FileDialogResult::Folder(Some(path)) = res {
-                        let p_str = path.to_string_lossy().into_owned();
-                        let mut p = get();
-                        if !p.destinations.contains(&p_str) {
-                            p.destinations.push(p_str);
+            Button::new(tr!(settings_backup_dest_add()))
+                .enabled(self.enabled.clone())
+                .on_activate_fn(move |c| {
+                    let get = get.clone();
+                    let set = set.clone();
+                    let epoch = epoch.clone();
+                    let req = FileDialogRequest::pick_folder().title(tr!(settings_backup_dest_add()));
+                    let _ = c.pick_folder(req, move |res, _c| {
+                        if let FileDialogResult::Folder(Some(path)) = res {
+                            let p_str = path.to_string_lossy().into_owned();
+                            let mut p = get();
+                            if !p.destinations.contains(&p_str) {
+                                p.destinations.push(p_str);
+                            }
+                            set(p);
+                            let e = &epoch;
+                            e.set(e.get().wrapping_add(1));
                         }
-                        set(p);
-                        let e = &epoch;
-                        e.set(e.get().wrapping_add(1));
-                    }
-                });
-            })
+                    });
+                })
         };
         let refresh = {
             let epoch = self.epoch.clone();
             Button::new(tr!(settings_backup_dest_refresh()))
                 .variant(ButtonVariant::Plain)
+                .enabled(self.enabled.clone())
                 .on_activate_fn(move |_c| {
                     let e = &epoch;
                     e.set(e.get().wrapping_add(1));

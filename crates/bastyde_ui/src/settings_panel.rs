@@ -256,7 +256,9 @@ fn build_not_defaults(
 // ── Small view helpers ───────────────────────────────────────────────────────
 
 /// A left-column field label (dimmed, small) — matches the design's `--tx2`.
-fn field_label(text: LocalizedString) -> TextWidget {
+/// `pub(crate)` so the backup panes (`settings_backup`) share the exact same
+/// row-label style as every built-in pane.
+pub(crate) fn field_label(text: LocalizedString) -> TextWidget {
     TextWidget::new(text)
         .style(TextStyleRole::Small)
         .color(TextRole::Secondary)
@@ -270,7 +272,8 @@ fn hint(text: LocalizedString) -> TextWidget {
 }
 
 /// A lowercase-titled section header + trailing rule (design's group headers).
-fn group(text: LocalizedString) -> GroupHeader {
+/// `pub(crate)` so the backup panes reuse the identical group-header treatment.
+pub(crate) fn group(text: LocalizedString) -> GroupHeader {
     GroupHeader::new(text)
         .style(TextStyleRole::SmallBold)
         .color(TextRole::Secondary)
@@ -869,9 +872,15 @@ impl Widget for SettingsPanel {
         };
 
         // ── Backup ("Copies de secours") panes ──
+        // Wrapped in the shared `pane_frame` (breadcrumb · rule · scrollable,
+        // padded body) exactly like every built-in pane, so they match the rest
+        // and their tall forms scroll instead of overflowing.
         let backup_vm = ctx.app_state::<BackupSettingsViewModel>().cloned();
         let backup_pane: Box<dyn Widget> = match &backup_vm {
-            Some(vm) => Box::new(crate::settings_backup::general_pane(ctx, vm)),
+            Some(vm) => Box::new(pane_frame(
+                crumb(Some(tr!(settings_sec_backup())), tr!(settings_page_backup())),
+                crate::settings_backup::general_pane(ctx, vm),
+            )),
             None => Box::new(empty_pane(
                 Some(tr!(settings_sec_backup())),
                 tr!(settings_page_backup()),
@@ -886,7 +895,17 @@ impl Widget for SettingsPanel {
                     .and_then(|wi| wi.file_name().get())
                     .unwrap_or_default();
                 let title = w.title().get();
-                Box::new(crate::settings_backup::work_backup_pane(ctx, vm, uid, path, title))
+                Box::new(pane_frame(
+                    crumb(
+                        Some(lit!(format!(
+                            "{}: {}",
+                            tr!(settings_sec_work()).resolve_now(),
+                            title
+                        ))),
+                        tr!(settings_page_work_backup()),
+                    ),
+                    crate::settings_backup::work_backup_pane(ctx, vm, uid, path, title),
+                ))
             }
             _ => Box::new(empty_pane(
                 None,
