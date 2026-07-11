@@ -137,12 +137,14 @@ def find(label, timeout=6.0, minx=None):
     return None
 
 
-def click(label, what="", minx=None, pointer=False):
+def click(label, what="", minx=None):
+    """Invoke the node's AccessKit `click` action; fall back to a synthetic tap for
+    the few nodes that expose no action."""
     n = find(label, minx=minx)
     if not n:
         print(f"  !! no node labelled {label!r} {what}")
         return False
-    if not pointer and "click" in (n.get("actions") or []):
+    if "click" in (n.get("actions") or []):
         call("invoke_action", {"node": n["id"], "action": "click"})
     else:
         b = n.get("bounds") or {}
@@ -212,7 +214,7 @@ for container, segment, min_editors in CASES:
         continue
 
     for seg in (segment, "Full Synopsis"):
-        if not click(seg, "(segment)", minx=PANE_X, pointer=True):
+        if not click(seg, "(segment)", minx=PANE_X):
             failures.append(f"{container}: no {seg!r} segment")
             continue
         pn = pane_nodes()

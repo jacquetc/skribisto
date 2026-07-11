@@ -226,6 +226,13 @@ def close_menu():
         time.sleep(0.3)
 
 
+def block_count(node_id):
+    """The writing editor's block count, read straight from the a11y tree — a
+    document-level fact, independent of whatever the dirty flag believes."""
+    _, n = s.call("read_node", {"node": node_id})
+    return len(n.get("children") or [])
+
+
 # ── 1. Freshly loaded ⇒ clean ⇒ Save must be disabled ─────────────────────────
 print("== clean project: File ▸ Save must be greyed out ==")
 disabled = save_item_disabled(shot="/tmp/save-item-clean.png")
@@ -271,7 +278,32 @@ print(f"  Save item: disabled={disabled}")
 if not disabled:
     fail("Save stayed enabled after a successful save", s.app, s.mcp, s.log)
 
-print("\nPASS: Save is disabled while there is nothing to save, enabled after an edit, "
-      "and disabled again once written to disk.")
+# ── 4. A *structural* edit must dirty the work too ────────────────────────────
+# The regression that made this whole feature unsafe: a lone Enter changes the
+# block count but inserts no character. RichTextEditor used to lump the resulting
+# BlockCountChanged in with DocumentReset and skip `on_change` (bastyde 7fa39918),
+# so the edit was never marked unsaved — and with Save gated on that flag, it
+# became unsavable. Assert the document really changed (block count, straight from
+# the a11y tree) *and* that Save went live, so a null result can't pass silently.
+print("== a lone Enter (block split, no character typed) must enable Save ==")
+s.call("invoke_action", {"node": main["id"], "action": "focus"})
+time.sleep(0.5)
+before = block_count(main["id"])
+s.call("inject_key", {"key": "Enter"})
+time.sleep(1.5)
+after = block_count(main["id"])
+print(f"  blocks: {before} -> {after}")
+if after == before:
+    fail("the injected Enter never reached the editor — the check below would be vacuous",
+         s.app, s.mcp, s.log)
+disabled = save_item_disabled()
+print(f"  Save item: disabled={disabled}")
+if disabled:
+    fail("a structural edit (Enter) did not mark the work unsaved — it is now UNSAVABLE; "
+         "RichTextEditor's on_change is suppressing block-count changes again",
+         s.app, s.mcp, s.log)
+
+print("\nPASS: Save is disabled while there is nothing to save, enabled after an edit "
+      "(typed text *and* a structural block split), and disabled again once written to disk.")
 s.close()
 shutil.rmtree(scratch, ignore_errors=True)
