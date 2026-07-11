@@ -123,28 +123,32 @@ pub(crate) fn prose_kind_for(
     }
 }
 
+/// A prose field seeded from its [`SingleContent`], **not** from `existing` directly —
+/// the single *is* the real/mock seam (its mock variant fabricates content for an item
+/// the empty mock backend has no rows for), so reading around it would leave every
+/// editor blank under `--features mocks`.
 pub(crate) fn prose_field(
     ctx: &Rc<AppContext>,
     item_id: u64,
     role: ContentRole,
     existing: Option<&ContentDto>,
 ) -> ProseField {
-    let data = existing.map(|c| c.data.as_str()).unwrap_or("");
-    let doc = TextDocument::new();
-    let _ = doc.set_djot(data).and_then(|op| op.wait());
-    doc.set_modified(false);
     let content = SingleContent::for_field(ctx.clone(), item_id, role, existing);
+    let doc = TextDocument::new();
+    let _ = doc.set_djot(&content.data().get()).and_then(|op| op.wait());
+    doc.set_modified(false);
     ProseField { doc, content }
 }
 
+/// A title field seeded from its [`SingleContent`] — same reason as [`prose_field`].
 pub(crate) fn title_field(
     ctx: &Rc<AppContext>,
     item_id: u64,
     role: ContentRole,
     existing: Option<&ContentDto>,
 ) -> TitleField {
-    let data = existing.map(|c| c.data.clone()).unwrap_or_default();
     let content = SingleContent::for_field(ctx.clone(), item_id, role, existing);
+    let data = content.data().get();
     TitleField {
         value: Signal::new(data.clone()),
         original: RefCell::new(data),
