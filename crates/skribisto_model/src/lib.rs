@@ -536,6 +536,14 @@ mod tests {
         );
     }
 
+    /// The matrix has exactly 12 rows, and `bastyde_ui` mirrors them 1:1 (one tab
+    /// module per combination — see `tabs::tab_pane`). Pinned so the docs and the tab
+    /// dispatch can't silently drift from the model.
+    #[test]
+    fn the_matrix_has_twelve_combinations() {
+        assert_eq!(COMBINATIONS.len(), 12);
+    }
+
     /// Every combination that carries *any* content also carries a synopsis — the
     /// only exceptions are the two genuinely contentless markers. This is what lets
     /// the Full Synopsis stream render every row without a hole.

@@ -256,14 +256,14 @@ impl OutlineViewModel {
         self.ids.stack_id.clone()
     }
     /// The app's id-only global state (shared by clone), handed to
-    /// `EditorsViewModel` so its tabs (esp. the Full Chapter view) can reach
+    /// `EditorsViewModel` so its tabs (esp. the manuscript streams) can reach
     /// `work_id`/`stack_id`.
     pub fn ids(&self) -> AppIds {
         self.ids.clone()
     }
 
     /// Subscribe the tree to backend structural events so it re-sources on any
-    /// mutation, whoever caused it (the Full Chapter view, import, etc.) — not
+    /// mutation, whoever caused it (a manuscript stream, import, etc.) — not
     /// just the outline's own commands. Call once from `App::build`.
     pub fn wire(&self, ctx: &mut BuildContext) {
         self.model.wire(ctx);

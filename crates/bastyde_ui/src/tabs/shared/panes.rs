@@ -99,10 +99,10 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     tab_backdrop(ScrollArea::new().child(col))
 }
 
-/// A title (+ optional subtitle / synopsis) form. Shared by the title-bearing
-/// item tabs: Item/Chapter and Item/Part (title + synopsis) and Item/BookBegin
-/// (book title + subtitle + synopsis). The fields present are decided by
-/// `tab_for` from the constraint matrix, so this one body covers all three.
+/// A title (+ optional subtitle / synopsis) form. Shared by the title-bearing item
+/// tabs: Item/Part (title + synopsis) and Item/BookBegin (book title + subtitle +
+/// synopsis). The fields present are decided by `tab_for` from the constraint matrix,
+/// so one body covers both.
 pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
     let mut col = VStack::new().spacing(8.0).child(vspace(20.0));
 

@@ -84,12 +84,12 @@ impl SplitSceneUseCase {
             .next()
             .flatten()
             .ok_or_else(|| anyhow!("split_scene: source vanished"))?;
-        // Any prose-bearing row can be split — the constraint matrix decides which
-        // those are, not a hardcoded sub_role list. That is what makes a
-        // `Folder/Chapter` splittable: the matrix gives it a `SceneText` exactly like
-        // the flat `Item/ChapterScene` it promotes to/from, so refusing to split its
-        // prose would contradict the model. Title-only rows (a `Part`, a bare
-        // `Item/Chapter`) carry no prose and are rejected here.
+        // Any prose-bearing row can be split — the constraint matrix decides which those
+        // are, not a hardcoded sub_role list. That is what makes a chapter *folder*
+        // splittable: `Folder/ChapterScene` carries a `SceneText` exactly like the flat
+        // `Item/ChapterScene` it promotes to/from, so refusing to split its prose would
+        // contradict the model. Title-only rows (a Part, a Book) carry no prose and are
+        // rejected here.
         if !skribisto_model::content_allowed(&src.role, &src.sub_role, &ContentRole::SceneText) {
             return Err(anyhow!(
                 "split_scene: {:?}/{:?} carries no scene prose",
@@ -153,7 +153,7 @@ impl SplitSceneUseCase {
         //    roles are legal on it by construction.
         //
         //    Indent: splitting a leaf yields a *sibling*, but splitting a container
-        //    (a `Folder/Chapter`'s own prose) must yield a *child* — the cut-off
+        //    (a chapter folder's own prose) must yield a *child* — the cut-off
         //    prose becomes that chapter's first scene, not a scene after the chapter.
         //    Indent is UI-only, but getting it wrong would visibly eject the new
         //    scene from the chapter it came out of.

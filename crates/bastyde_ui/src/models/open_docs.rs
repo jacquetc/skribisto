@@ -1,17 +1,20 @@
 //! `OpenDocsStore` + `OpenDoc` — the app's shared holder of open editing state.
 //!
 //! An [`OpenDoc`] is one binder item's **live, shareable** editing state: its main
-//! text + synopsis documents, its title fields, the Full Chapter view-model, and
-//! the dirty flag — everything a `RichTextEditor` binds to. Because a
+//! text + synopsis documents, its title fields and the dirty flag — everything a
+//! `RichTextEditor` binds to. It is a **leaf**: it owns documents and nothing else (see
+//! [`OpenDoc::build`] for why the container tabs' stream view-model deliberately does
+//! *not* live here). Because a
 //! [`TextDocument`](bastyde::text_document::TextDocument) is a cheap `Arc` handle,
 //! two editors bound to the same `OpenDoc` share one live document.
 //!
 //! [`OpenDocsStore`] keeps one `Rc<OpenDoc>` per open item id, reference-counted:
 //! [`open`](OpenDocsStore::open) builds-or-reuses (and refs) it, [`release`](OpenDocsStore::release)
 //! unrefs and — on the last reference — flushes + evicts. Registered as
-//! `app_state`, so the shared documents are reachable **outside** the editor tabs
-//! (a preview pane, the Full Chapter view, any future consumer), not only from the
-//! `TabWidget`s. This file is written once (no `#[cfg]` seam): the real/mock
+//! `app_state`, so the shared documents are reachable **outside** the editor tabs (a
+//! preview pane, a manuscript stream's rows, any future consumer), not only from the
+//! `TabWidget`s — which is what makes one item resolve to one live document everywhere.
+//! This file is written once (no `#[cfg]` seam): the real/mock
 //! difference lives below it in `SingleContent` / `SingleBinderItem`, exactly as
 //! for the other Layer-A models.
 

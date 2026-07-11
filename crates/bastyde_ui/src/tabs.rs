@@ -12,7 +12,7 @@
 //! [`shared`]. One [`ContentTab`] payload type carries them all.
 //!
 //! A tab owns **no documents of its own**: its live editing state (main text +
-//! synopsis + titles, the dirty flag, the Full Chapter view-model) lives in a
+//! synopsis + titles, the dirty flag) lives in a
 //! shared [`OpenDoc`] held by the [`OpenDocsStore`](crate::models::OpenDocsStore),
 //! keyed by item id. A `ContentTab` is a thin **view** that references that
 //! `Rc<OpenDoc>` plus its own per-tab presentation state (segment, column width,

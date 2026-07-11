@@ -312,7 +312,7 @@ impl Widget for App {
             .cloned()
             .expect("RestoreViewModel registered in main");
         // Keep the outline tree reactive to *all* structural mutations (incl. the
-        // Full Chapter view's rename/merge/split/add), not just the outline's own.
+        // manuscript streams' rename/merge/split/add), not just the outline's own.
         self.outline.wire(ctx);
 
         // ── App-global commands (the scriptable surface) ─────────────────────
