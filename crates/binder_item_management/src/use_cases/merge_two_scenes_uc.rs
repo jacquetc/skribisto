@@ -1,7 +1,16 @@
-// Custom implementation: merge scene B (source) into scene A (target). A survives
-// and receives B's SceneText (after a blank line) and its SynopsisText
-// (concatenated); B is then sent to Trash (`activated = false` + one TrashInfo
-// under System.trash_infos).
+// Custom implementation: merge row B (source) into row A (target). A survives and
+// receives B's SceneText (after a blank line) and its SynopsisText (concatenated);
+// B is then sent to Trash (`activated = false` + one TrashInfo under Work).
+//
+// Who may take part is decided by the constraint matrix, not a hardcoded sub_role
+// list. The *target* need only be prose-bearing — which includes a `Folder/Chapter`
+// (it carries its own SceneText), making merge the exact inverse of `split_scene`:
+// a scene cut out of a chapter folder merges straight back into it. The *source* is
+// trashed, so it must additionally be structurally inert: merging away a
+// `ChapterScene` would delete a chapter boundary, and merging away a
+// `Folder/Chapter` would orphan its child scenes. Both are rejected. The two rows
+// must also be adjacent in the flat order — merge is only ever an adjacent merge,
+// and adjacency is what guarantees no boundary sits between them.
 //
 // Undoable via a Root-scoped snapshot/restore: the op mutates A's Content (Work
 // trunk) and creates a TrashInfo (System trunk), so the whole tree is the undo
@@ -14,9 +23,10 @@ use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole, TrashInfo, Work};
+use common::entities::{BinderItem, Content, ContentRole, TrashInfo, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
+use skribisto_model::SubRoleExt;
 use std::collections::HashSet;
 
 pub trait MergeTwoScenesUnitOfWorkFactoryTrait: Send + Sync {
@@ -87,7 +97,7 @@ impl MergeTwoScenesUseCase {
             return Err(anyhow!("merge_two_scenes: a scene is not in the binder"));
         }
 
-        // Load both items (in [target, source] order) and validate they are scenes.
+        // Load both items (in [target, source] order) and validate them.
         let items = uow.get_binder_item_multi(&[target, source])?;
         let a = items
             .first()
@@ -99,8 +109,38 @@ impl MergeTwoScenesUseCase {
             .cloned()
             .flatten()
             .ok_or_else(|| anyhow!("merge_two_scenes: source vanished"))?;
-        if !is_scene(&a.sub_role) || !is_scene(&b.sub_role) {
-            return Err(anyhow!("merge_two_scenes: both items must be scenes"));
+
+        // The **target** absorbs prose, so it need only be a prose-bearing row per
+        // the constraint matrix — which includes a `Folder/Chapter` (it carries its
+        // own SceneText). That makes merge the exact inverse of split: a scene cut
+        // out of a chapter folder can be merged straight back into it.
+        if !skribisto_model::content_allowed(&a.role, &a.sub_role, &ContentRole::SceneText) {
+            return Err(anyhow!(
+                "merge_two_scenes: target {:?}/{:?} carries no scene prose",
+                a.role,
+                a.sub_role
+            ));
+        }
+        // The **source** is trashed by the merge, so it must be a row whose
+        // disappearance destroys nothing: prose-bearing, and *not* a structural
+        // opener. Merging away a `ChapterScene` would silently delete a chapter
+        // boundary; merging away a `Folder/Chapter` would orphan its child scenes.
+        // The UI already refuses both, but the invariant belongs here — the Full
+        // Part / Full Book streams are the first views whose rows span several
+        // chapters, so a stale row list must not be able to corrupt the structure.
+        if !skribisto_model::content_allowed(&b.role, &b.sub_role, &ContentRole::SceneText) {
+            return Err(anyhow!(
+                "merge_two_scenes: source {:?}/{:?} carries no scene prose",
+                b.role,
+                b.sub_role
+            ));
+        }
+        if b.sub_role.opens_chapter() || b.sub_role.opens_part() || b.sub_role.opens_book() {
+            return Err(anyhow!(
+                "merge_two_scenes: source {:?}/{:?} opens a structural section and cannot be merged away",
+                b.role,
+                b.sub_role
+            ));
         }
 
         // Merge is only ever an *adjacent*-scene merge. Enforce it here, not just
@@ -208,13 +248,6 @@ impl MergeTwoScenesUseCase {
         self.snap_after = Some(snap_after);
         Ok(())
     }
-}
-
-fn is_scene(sr: &BinderItemSubRole) -> bool {
-    matches!(
-        sr,
-        BinderItemSubRole::Scene | BinderItemSubRole::ChapterScene
-    )
 }
 
 fn work_id(uow: &dyn MergeTwoScenesUnitOfWorkTrait) -> Result<EntityId> {

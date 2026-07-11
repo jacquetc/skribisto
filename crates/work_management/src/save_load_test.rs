@@ -151,7 +151,7 @@ fn sample_bundle() -> WorkBundle {
                 301,
                 "Chapter One",
                 Folder,
-                Chapter,
+                ChapterScene,
                 vec![
                     content(410, ChapterTitle, "Chapter One"),
                     content(411, SynopsisText, "Arrival."),
@@ -529,7 +529,7 @@ fn new_work_novel_builds_full_tree() {
     assert_eq!(manuscript[0].item.sub_role, BinderItemSubRole::Book);
     let chapters = manuscript
         .iter()
-        .filter(|i| i.item.sub_role == BinderItemSubRole::Chapter)
+        .filter(|i| i.item.sub_role == BinderItemSubRole::ChapterScene)
         .count();
     let scenes = manuscript
         .iter()

@@ -5,19 +5,23 @@
 //! [`prose`] editor (Item Scene / ChapterScene / Note), the [`placeholder`] for
 //! contentless rows (Item BookEnd / Text), and the folder-container bodies
 //! ([`folder_synopsis_only`] for plain grouping folders, [`folder_segmented`] for
-//! the Book/Part containers). The fields each body shows are decided by the
+//! the three structural containers). The fields each body shows are decided by the
 //! constraint matrix (via `tab_for`), so one body covers every combination in its
-//! group. Combination-specific bodies (e.g. the Full Chapter view) stay in their
-//! own module.
+//! group. The manuscript-stream pane the containers share lives in
+//! [`stream`](super::stream).
 
+use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Center, ScrollArea, Segment, SegmentedControl, Switcher, TextWidget, VStack,
+    Center, Expand, ScrollArea, Segment, SegmentedControl, Switcher, TextWidget, VStack,
 };
 
 use crate::tabs::ContentTab;
+use crate::view_models::SplitFlavour;
 
-use super::{centered, synopsis_section, tab_backdrop, title_input, vspace, writing_section};
+use super::{
+    centered, stream_pane, synopsis_section, tab_backdrop, title_input, vspace, writing_section,
+};
 
 /// The shared **Synopsis** view for the folder container tabs: the folder's title
 /// (and subtitle, for a Book) above its synopsis editor. The Book/Part/Chapter
@@ -153,20 +157,39 @@ pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
     tab_backdrop(col)
 }
 
-/// A folder container body with a `SegmentedControl` over the shared **Synopsis**
-/// view (Folder/Book, Folder/Part). Corkboard and Overview are 🚧 future segments
-/// (FEATURES.md), shown disabled.
-pub fn folder_segmented(tab: &ContentTab) -> Box<dyn Widget> {
+/// The body every folder container shares: a `SegmentedControl` over
+///
+/// 1. **Synopsis** — the container's own title(s) + synopsis;
+/// 2. the **manuscript stream** — Full Chapter / Full Part / Full Book, named by
+///    `manuscript_label` (the one thing that differs between the three);
+/// 3. **Full Synopsis** — the same stream, showing each row's synopsis instead;
+///
+/// plus Corkboard and Overview as 🚧 future segments (FEATURES.md), shown disabled.
+///
+/// The `Switcher` mounts only the child at the selected index; the two disabled
+/// segments have no child, and an out-of-range selection mounts nothing (no panic) —
+/// the same shape the 4-segment / 2-child bar relied on before.
+pub fn folder_segmented(
+    tab: &ContentTab,
+    manuscript_label: impl Into<LocalizedString>,
+) -> Box<dyn Widget> {
     let bar = SegmentedControl::new(tab.segment.clone())
         .segment(Segment::new(tr!(synopsis())))
+        .segment(Segment::new(manuscript_label))
+        .segment(Segment::new(tr!(full_synopsis())))
         .segment(Segment::new(tr!(corkboard())).disabled(true))
         .segment(Segment::new(tr!(overview())).disabled(true));
-    let content = Switcher::new(tab.segment.clone()).child(folder_synopsis_pane(tab));
+    let content = Switcher::new(tab.segment.clone())
+        .child(folder_synopsis_pane(tab))
+        .child(stream_pane(tab, SplitFlavour::Prose))
+        .child(stream_pane(tab, SplitFlavour::Synopsis));
 
     let col = VStack::new()
         .spacing(8.0)
         .child(vspace(10.0))
         .child(centered(bar, &tab.column_width))
-        .child(content);
+        // Fill the remaining height so the selected segment (especially a stream's
+        // `ScrollArea`) gets a bounded viewport to fill.
+        .child(Expand::new().child(content));
     tab_backdrop(col)
 }

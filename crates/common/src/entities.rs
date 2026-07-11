@@ -192,7 +192,6 @@ pub enum BinderItemSubRole {
     Note,
     Book,
     Part,
-    Chapter,
     Scene,
     ChapterScene,
     BookBegin,

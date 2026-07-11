@@ -7,6 +7,10 @@
 //! (`sub_role == None`) shows `folder.svg`. Icons default to `TextRole::Primary`
 //! and follow the theme; callers may re-tint via `IconWidget::color`.
 //!
+//! A chapter shows the same glyph in both of its encodings — they are one concept
+//! (`ChapterScene`), differing only on the UI-only `role` axis, and the tree's
+//! expand chevron already shows which one contains its scenes.
+//!
 //! `res!` embeds each asset at compile time and needs a literal path per call
 //! site, so the mapping is a `match` with one `res!(...)` per arm.
 
@@ -25,9 +29,8 @@ pub fn sub_role_icon(sub_role: &BinderItemSubRole) -> IconWidget {
         BinderItemSubRole::Note => res!("assets/icons/binder/note.svg"),
         BinderItemSubRole::Book => res!("assets/icons/binder/book.svg"),
         BinderItemSubRole::Part => res!("assets/icons/binder/part.svg"),
-        BinderItemSubRole::Chapter => res!("assets/icons/binder/chapter.svg"),
         BinderItemSubRole::Scene => res!("assets/icons/binder/scene.svg"),
-        BinderItemSubRole::ChapterScene => res!("assets/icons/binder/chapter-scene.svg"),
+        BinderItemSubRole::ChapterScene => res!("assets/icons/binder/chapter.svg"),
         BinderItemSubRole::BookBegin => res!("assets/icons/binder/book-begin.svg"),
         BinderItemSubRole::BookEnd => res!("assets/icons/binder/book-end.svg"),
     };
@@ -46,7 +49,7 @@ pub fn create_type_icon(t: skribisto_model::CreateType) -> IconWidget {
     let sub_role = match t {
         CreateType::Book => BinderItemSubRole::Book,
         CreateType::Part => BinderItemSubRole::Part,
-        CreateType::Chapter => BinderItemSubRole::Chapter,
+        CreateType::Chapter => BinderItemSubRole::ChapterScene,
         CreateType::Scene => BinderItemSubRole::Scene,
         CreateType::Note | CreateType::NoteFolder => BinderItemSubRole::Note,
         CreateType::Folder => BinderItemSubRole::None,

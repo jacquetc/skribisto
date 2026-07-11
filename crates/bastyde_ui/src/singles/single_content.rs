@@ -19,7 +19,8 @@ mod imp {
     use bastyde::prelude::*;
 
     use frontend::AppContext;
-    use frontend::commands::content_commands;
+    use frontend::commands::{binder_item_commands, content_commands};
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
     use frontend::common::entities::ContentRole;
     use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
     use frontend::direct_access::{ContentDto, CreateContentDto, UpdateContentDto};
@@ -180,6 +181,44 @@ mod imp {
             Ok(())
         }
 
+        /// Re-fetch this field's row **by `(item_id, role)`**, not by cached row id
+        /// — for a field another use case rewrote out from under this handle (a merge
+        /// absorbing a neighbour, a split cutting the source in two).
+        ///
+        /// The id-gated [`refresh`](Self::refresh) is not enough: those use cases may
+        /// have *created* the row for the first time, and this handle would still
+        /// hold `id == None` and refresh into a no-op.
+        pub fn reload(&self) {
+            let Some(item_id) = self.inner.item_id.get() else {
+                return;
+            };
+            let role = self.inner.role.borrow().clone();
+            let content_ids = binder_item_commands::get_binder_item_relationship(
+                &self.inner.ctx,
+                &item_id,
+                &BinderItemRelationshipField::Contents,
+            )
+            .unwrap_or_default();
+            let found = content_commands::get_content_multi(&self.inner.ctx, &content_ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .find(|c| c.role == role);
+            match found {
+                Some(c) => {
+                    self.inner.id.set(Some(c.id));
+                    self.inner.created_at.set(c.created_at);
+                    self.inner.data.set(c.data);
+                }
+                None => {
+                    self.inner.id.set(None);
+                    self.inner.data.set(String::new());
+                }
+            }
+            self.inner.dirty.set(false);
+            self.inner.loading_status.set(LoadingStatus::Loaded);
+        }
+
         /// Auto-refresh the persisted `data` when this row changes elsewhere. The
         /// editor owns its live document, so it does NOT wire this for an open tab
         /// (snapshot-at-open); read-only consumers do. Call once from a long-lived
@@ -254,17 +293,46 @@ mod imp {
         inner: Rc<Inner>,
     }
 
+    /// Fabricated content for the mocks build.
+    ///
+    /// The mock app runs against a real-but-empty `AppContext` (there is no `#[cfg]`
+    /// seam in `OpenDocsStore`), so every field's `existing` row is always `None` and
+    /// every editor would render blank. Fabricating here — one level below `OpenDoc`
+    /// — gives *every* mock tab plausible content, not just the streams, and keeps
+    /// the seam where the house rules put it: in the singles, never in the consumers.
+    fn fabricate(item_id: u64, role: &ContentRole) -> String {
+        match role {
+            ContentRole::SceneText => format!(
+                "This is the fabricated body of scene {item_id}. The morning light crept over \
+                 the ridgeline and the camp began to stir; she had not slept, and the cold had \
+                 settled deep into her hands.\n\nA second paragraph follows, so the manuscript \
+                 streams show real flowing prose per row."
+            ),
+            ContentRole::NoteText => {
+                format!("Fabricated note {item_id}: a loose idea worth keeping.")
+            }
+            ContentRole::SynopsisText => format!(
+                "Fabricated synopsis for item {item_id} — one or two lines saying what happens \
+                 here, so the Full Synopsis stream reads as a working outline."
+            ),
+            ContentRole::BookTitle => "The Lighthouse".to_string(),
+            ContentRole::BookSubtitle => "a novel".to_string(),
+            ContentRole::ChapterTitle => format!("Chapter {item_id}"),
+            ContentRole::PartTitle => format!("Part {item_id}"),
+        }
+    }
+
     #[allow(dead_code)] // identical surface to the real variant; some unused under mocks
     impl SingleContent {
         pub fn for_field(
             _ctx: Rc<AppContext>,
-            _item_id: u64,
+            item_id: u64,
             role: ContentRole,
             existing: Option<&ContentDto>,
         ) -> Self {
             let (id, data) = match existing {
                 Some(c) => (Some(c.id), c.data.clone()),
-                None => (None, String::new()),
+                None => (None, fabricate(item_id, &role)),
             };
             Self {
                 inner: Rc::new(Inner {
@@ -320,6 +388,11 @@ mod imp {
         pub fn save(&self, _stack: Option<u64>) -> anyhow::Result<()> {
             self.inner.dirty.set(false);
             Ok(())
+        }
+
+        /// No backend to re-read: the fabricated data stands.
+        pub fn reload(&self) {
+            self.inner.dirty.set(false);
         }
 
         pub fn wire(&self, _ctx: &mut BuildContext) {}

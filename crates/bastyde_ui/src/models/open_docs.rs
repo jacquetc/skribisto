@@ -27,10 +27,8 @@ use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::direct_access::ContentDto;
 
-use crate::app_ids::AppIds;
 use crate::singles::SingleBinderItem;
 use crate::tabs::{ProseField, ProseKind, TitleField, prose_field, prose_kind_for, title_field};
-use crate::view_models::ChapterViewModel;
 
 /// One open item's live editing state, shared by every view showing that item.
 pub struct OpenDoc {
@@ -42,9 +40,6 @@ pub struct OpenDoc {
     pub subtitle: Option<TitleField>,
     pub main: Option<ProseField>,
     pub synopsis: Option<ProseField>,
-    /// The Full Chapter view-model (only a `FolderChapter` item has one). Shared,
-    /// so a chapter open in two panes drives one live Scrivenings view.
-    pub chapter: Option<ChapterViewModel>,
     /// `true` once any editor bound to this doc edited a field since the last
     /// save. Cleared by [`flush`](Self::flush).
     pub dirty: Signal<bool>,
@@ -57,21 +52,22 @@ impl OpenDoc {
     /// Build an item's editing state from its already-fetched `Content` rows,
     /// loading each allowed role into the right field. `edited` is the store's
     /// shared edit counter.
+    ///
+    /// An `OpenDoc` is a **leaf**: it owns documents, nothing else. The container
+    /// tabs' `StreamViewModel` deliberately does *not* live here — it holds the
+    /// `OpenDocsStore` (to open its rows), and the store owns this `OpenDoc`, so
+    /// hanging it here would close an `Rc` cycle. Worse, `OpenDocsStore::clear()`
+    /// drops its `OpenDoc`s *while* holding the map's `RefCell` borrow, so a `Drop`
+    /// that released row refs would re-enter `borrow_mut()` and panic. It lives on
+    /// `ContentTab` instead, which nothing in the store points back at.
     pub fn build(
         ctx: &Rc<AppContext>,
-        ids: &AppIds,
         item_id: u64,
         role: &BinderItemRole,
         sub_role: &BinderItemSubRole,
         contents: &[ContentDto],
         edited: Signal<u64>,
     ) -> Self {
-        // The Chapter folder tab drives a Full Chapter view over its child scenes.
-        let chapter = matches!(
-            (role, sub_role),
-            (BinderItemRole::Folder, BinderItemSubRole::Chapter)
-        )
-        .then(|| ChapterViewModel::new(ctx.clone(), ids.clone(), item_id));
         let mut doc = OpenDoc {
             item_id,
             role: role.clone(),
@@ -81,7 +77,6 @@ impl OpenDoc {
             subtitle: None,
             main: None,
             synopsis: None,
-            chapter,
             dirty: Signal::new(false),
             edited,
         };
@@ -132,11 +127,31 @@ impl OpenDoc {
         if let Some(f) = &self.synopsis {
             f.flush(stack)?;
         }
-        if let Some(vm) = &self.chapter {
-            vm.flush_all(stack)?;
-        }
         self.dirty.set(false);
         Ok(())
+    }
+
+    /// Discard the live edits and re-read every present field from its persisted
+    /// `Content` row — for a doc another use case rewrote out from under us (a merge
+    /// absorbing a neighbour, a split cutting the source in two). Both writing roles
+    /// are reloaded, not just the prose: a merge concatenates the synopses too.
+    ///
+    /// The caller flushes first, so nothing unsaved is lost; it must also pump a
+    /// frame afterwards, since `set_djot` only queues a document event.
+    pub fn reload(&self) {
+        if let Some(f) = &self.title {
+            f.reload();
+        }
+        if let Some(f) = &self.subtitle {
+            f.reload();
+        }
+        if let Some(f) = &self.main {
+            f.reload();
+        }
+        if let Some(f) = &self.synopsis {
+            f.reload();
+        }
+        self.dirty.set(false);
     }
 }
 
@@ -148,7 +163,6 @@ struct Entry {
 struct Inner {
     open: RefCell<HashMap<u64, Entry>>,
     app_ctx: Rc<AppContext>,
-    ids: AppIds,
     /// Reactive read handle re-pointed at an item to fetch its `(role, sub_role)`.
     item_probe: SingleBinderItem,
     /// Aggregate "an edit happened" counter shared by every open doc.
@@ -162,13 +176,12 @@ pub struct OpenDocsStore {
 }
 
 impl OpenDocsStore {
-    pub fn new(app_ctx: Rc<AppContext>, ids: AppIds) -> Self {
+    pub fn new(app_ctx: Rc<AppContext>) -> Self {
         Self {
             inner: Rc::new(Inner {
                 open: RefCell::new(HashMap::new()),
                 item_probe: SingleBinderItem::new(app_ctx.clone()),
                 app_ctx,
-                ids,
                 edited: Signal::new(0),
             }),
         }
@@ -193,7 +206,6 @@ impl OpenDocsStore {
         let contents = self.load_contents(item_id, &item.role, &item.sub_role);
         let doc = Rc::new(OpenDoc::build(
             &self.inner.app_ctx,
-            &self.inner.ids,
             item_id,
             &item.role,
             &item.sub_role,
@@ -303,12 +315,10 @@ mod tests {
     #[test]
     fn refcount_reuses_releases_and_evicts() {
         let ctx = Rc::new(AppContext::new());
-        let ids = AppIds::new();
-        let store = OpenDocsStore::new(ctx.clone(), ids.clone());
+        let store = OpenDocsStore::new(ctx.clone());
         // Seed one open doc (as `open()` would for the first consumer).
         let doc = Rc::new(OpenDoc::build(
             &ctx,
-            &ids,
             1,
             &BinderItemRole::Item,
             &BinderItemSubRole::Scene,
@@ -343,10 +353,8 @@ mod tests {
     #[test]
     fn open_doc_shares_one_live_document() {
         let ctx = Rc::new(AppContext::new());
-        let ids = AppIds::new();
         let doc = OpenDoc::build(
             &ctx,
-            &ids,
             1,
             &BinderItemRole::Item,
             &BinderItemSubRole::Scene,
@@ -372,11 +380,9 @@ mod tests {
     #[test]
     fn mark_dirty_sets_dirty_and_bumps_edited() {
         let ctx = Rc::new(AppContext::new());
-        let ids = AppIds::new();
         let edited = Signal::new(0u64);
         let doc = OpenDoc::build(
             &ctx,
-            &ids,
             1,
             &BinderItemRole::Item,
             &BinderItemSubRole::Scene,

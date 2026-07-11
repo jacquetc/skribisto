@@ -161,10 +161,11 @@ mod imp {
         inner: Rc<Inner>,
     }
 
-    /// Fabricated item matching the mock binder-tree fixture (so opening
-    /// "Chapter Two" gives a real `Folder/Chapter` → Full Chapter view). Ids
-    /// 201-203 are the mock chapter's fabricated child scenes; anything else
-    /// falls back to a plain Scene.
+    /// Fabricated item matching the mock binder-tree fixture, so every container
+    /// opens onto a real stream: the Book (101) holds a Part (301) holding two
+    /// chapters — a chapter folder (104) with scenes 201-203, and a flat
+    /// `Item/ChapterScene` (302) followed by scene 303. Anything else falls back to
+    /// a plain Scene. Kept in step with `models::StreamRowsModel`'s mock rows.
     fn mock_dto(id: u64) -> BinderItemDto {
         use BinderItemRole::*;
         use BinderItemSubRole::*;
@@ -172,13 +173,16 @@ mod imp {
             101 => (Folder, Book, "Book One"),
             102 => (Item, BookBegin, "Opening"),
             103 => (Item, Scene, "Scene at dawn"),
-            104 => (Folder, Chapter, "Chapter Two"),
+            104 => (Folder, ChapterScene, "Chapter Two"),
             105 => (Item, ChapterScene, "Confrontation"),
             106 => (Item, Note, "Character sketch"),
             107 => (Item, Text, "Random idea"),
             201 => (Item, Scene, "Scene 1"),
             202 => (Item, Scene, "Scene 2"),
             203 => (Item, Scene, "Scene 3"),
+            301 => (Folder, Part, "Part One — Arrival"),
+            302 => (Item, ChapterScene, "Into the Dark"),
+            303 => (Item, Scene, "The light returns"),
             _ => (Item, Scene, "Mock Item"),
         };
         BinderItemDto {

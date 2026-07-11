@@ -48,7 +48,29 @@ fn setup() -> (AppContext, u64) {
 
 /// Append a `Scene` item with `SceneText = text` to the binder; return its id.
 fn make_scene(ctx: &AppContext, binder: u64, title: &str, text: &str) -> u64 {
-    make_item(ctx, binder, BinderItemSubRole::Scene, title, text, "")
+    make_item(
+        ctx,
+        binder,
+        BinderItemRole::Item,
+        BinderItemSubRole::Scene,
+        title,
+        text,
+        "",
+    )
+}
+
+/// Append a chapter **folder** — the container encoding of a chapter, which carries its
+/// own prose exactly like the flat `Item/ChapterScene` it promotes to.
+fn make_chapter_folder(ctx: &AppContext, binder: u64, title: &str, text: &str) -> u64 {
+    make_item(
+        ctx,
+        binder,
+        BinderItemRole::Folder,
+        BinderItemSubRole::ChapterScene,
+        title,
+        text,
+        "",
+    )
 }
 
 /// Append a `Scene` carrying **both** writing roles — for the split-from-synopsis
@@ -60,24 +82,31 @@ fn make_scene_with_synopsis(
     text: &str,
     synopsis: &str,
 ) -> u64 {
-    make_item(ctx, binder, BinderItemSubRole::Scene, title, text, synopsis)
+    make_item(
+        ctx,
+        binder,
+        BinderItemRole::Item,
+        BinderItemSubRole::Scene,
+        title,
+        text,
+        synopsis,
+    )
 }
 
-/// Append an item of `sub_role`, with the given (optional) `SceneText` /
+/// Append an item of `(role, sub_role)`, with the given (optional) `SceneText` /
 /// `SynopsisText` rows. An empty string means "no row for that role".
+///
+/// The role is explicit because a chapter has two encodings that share one sub_role:
+/// `Folder/ChapterScene` (extent by containment) and `Item/ChapterScene` (by marker).
 fn make_item(
     ctx: &AppContext,
     binder: u64,
+    role: BinderItemRole,
     sub_role: BinderItemSubRole,
     title: &str,
     text: &str,
     synopsis: &str,
 ) -> u64 {
-    let role = if matches!(sub_role, BinderItemSubRole::Chapter) {
-        BinderItemRole::Folder
-    } else {
-        BinderItemRole::Item
-    };
     let item = binder_item_commands::create_binder_item(
         ctx,
         None,
@@ -182,14 +211,7 @@ fn merge_two_scenes_concats_text_and_trashes_source() {
 fn merge_two_scenes_rejects_non_adjacent() {
     let (ctx, binder) = setup();
     let a = make_scene(&ctx, binder, "A", "Alpha");
-    make_item(
-        &ctx,
-        binder,
-        BinderItemSubRole::Chapter,
-        "Chapter Two",
-        "",
-        "",
-    );
+    make_chapter_folder(&ctx, binder, "Chapter Two", "");
     let b = make_scene(&ctx, binder, "B", "Beta");
 
     let res = binder_item_management_commands::merge_two_scenes(
@@ -213,6 +235,117 @@ fn merge_two_scenes_rejects_non_adjacent() {
             .unwrap()
             .activated
     );
+}
+
+/// A `Folder/Chapter` carries its own `SceneText` (the matrix says so — that is
+/// what makes promote/demote to `Item/ChapterScene` lossless), so its prose is
+/// splittable like any other prose-bearing row. The scene cut out of it must land
+/// *inside* the chapter (indent + 1), as its first child — not after it.
+#[test]
+fn split_scene_works_on_a_chapter_folders_own_prose() {
+    let (ctx, binder) = setup();
+    let ch = make_chapter_folder(&ctx, binder, "The Long Road", "FirstBeatSecondBeat");
+    let ch_indent = binder_item_commands::get_binder_item(&ctx, &ch)
+        .unwrap()
+        .unwrap()
+        .indent;
+
+    binder_item_management_commands::split_scene(
+        &ctx,
+        None,
+        &SplitSceneDto {
+            source_id: ch,
+            before_text: "FirstBeat".into(),
+            after_text: "SecondBeat".into(),
+            before_synopsis: String::new(),
+            after_synopsis: String::new(),
+            new_title: "New Scene".into(),
+        },
+    )
+    .expect("a chapter folder's own prose is splittable");
+
+    assert_eq!(scene_text(&ctx, ch), "FirstBeat");
+    let order = binder_order(&ctx, binder);
+    let new_id = order[order.iter().position(|&x| x == ch).unwrap() + 1];
+    let new_item = binder_item_commands::get_binder_item(&ctx, &new_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(scene_text(&ctx, new_id), "SecondBeat");
+    assert_eq!(new_item.sub_role, BinderItemSubRole::Scene);
+    assert_eq!(
+        new_item.indent,
+        ch_indent + 1,
+        "a scene split out of a chapter folder becomes its child, not its sibling"
+    );
+}
+
+/// The inverse: that same scene merges straight back into the chapter folder.
+/// Split → merge must round-trip.
+#[test]
+fn merge_absorbs_a_scene_back_into_its_chapter_folder() {
+    let (ctx, binder) = setup();
+    let ch = make_chapter_folder(&ctx, binder, "The Long Road", "FirstBeat");
+    let sc = make_scene(&ctx, binder, "Scene", "SecondBeat");
+
+    binder_item_management_commands::merge_two_scenes(
+        &ctx,
+        None,
+        &MergeTwoScenesDto {
+            target_id: ch,
+            source_id: sc,
+        },
+    )
+    .expect("a chapter folder can absorb its first scene");
+
+    assert_eq!(scene_text(&ctx, ch), "FirstBeat\n\nSecondBeat");
+    assert!(
+        !binder_item_commands::get_binder_item(&ctx, &sc)
+            .unwrap()
+            .unwrap()
+            .activated
+    );
+}
+
+/// Merging *away* a row that opens a structural section would destroy the
+/// structure: a `ChapterScene` source would delete a chapter boundary, and a
+/// `Folder/Chapter` source would orphan its child scenes. Both are rejected by the
+/// use case, not merely hidden by the UI.
+#[test]
+fn merge_refuses_to_trash_a_structural_opener() {
+    // Both encodings of a chapter open a section: the flat marker and the folder.
+    for role in [BinderItemRole::Item, BinderItemRole::Folder] {
+        let (ctx, binder) = setup();
+        let a = make_scene(&ctx, binder, "A", "Alpha");
+        let b = make_item(
+            &ctx,
+            binder,
+            role.clone(),
+            BinderItemSubRole::ChapterScene,
+            "Chapter Two",
+            "Beta",
+            "",
+        );
+
+        let res = binder_item_management_commands::merge_two_scenes(
+            &ctx,
+            None,
+            &MergeTwoScenesDto {
+                target_id: a,
+                source_id: b,
+            },
+        );
+        assert!(
+            res.is_err(),
+            "merging away a {role:?}/ChapterScene would destroy a chapter boundary"
+        );
+        assert_eq!(scene_text(&ctx, a), "Alpha", "nothing was mutated");
+        assert!(
+            binder_item_commands::get_binder_item(&ctx, &b)
+                .unwrap()
+                .unwrap()
+                .activated
+        );
+    }
 }
 
 #[test]

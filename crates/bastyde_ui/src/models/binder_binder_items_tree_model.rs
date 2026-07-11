@@ -499,7 +499,7 @@ mod rows {
         _work_id: &Signal<Option<u64>>,
         scope: Option<u64>,
     ) -> Vec<TreeRow<BinderTreeKey, TreeNode>> {
-        use BinderItemSubRole::{Book, BookBegin, Chapter, ChapterScene, Note, Scene, Text};
+        use BinderItemSubRole::{Book, BookBegin, ChapterScene, Note, Part, Scene, Text};
         let rows = vec![
             TreeRow::new(
                 BinderTreeKey::Binder(1),
@@ -509,7 +509,24 @@ mod rows {
             item(101, 1, "Book One", "the setup", "folder", Book, 1),
             item(102, 1, "Opening", "1st plot point", "item", BookBegin, 2),
             item(103, 1, "Scene at dawn", "", "item", Scene, 2),
-            item(104, 1, "Chapter Two", "rising action", "folder", Chapter, 1),
+            // A part holding both chapter encodings, so every container opens onto a
+            // non-trivial stream. Kept in step with `models::StreamRowsModel`'s mock rows
+            // and `singles::SingleBinderItem`'s `mock_dto`.
+            item(301, 1, "Part One — Arrival", "", "folder", Part, 2),
+            item(
+                104,
+                1,
+                "Chapter Two",
+                "rising action",
+                "folder",
+                ChapterScene,
+                3,
+            ),
+            item(201, 1, "Scene 1", "opening beat", "item", Scene, 4),
+            item(202, 1, "Scene 2", "", "item", Scene, 4),
+            item(203, 1, "Scene 3", "", "item", Scene, 4),
+            item(302, 1, "Into the Dark", "", "item", ChapterScene, 3),
+            item(303, 1, "The light returns", "", "item", Scene, 3),
             item(105, 1, "Confrontation", "", "item", ChapterScene, 2),
             TreeRow::new(
                 BinderTreeKey::Binder(2),
@@ -564,22 +581,22 @@ mod tests {
     #[test]
     fn fully_expanded_shows_every_row() {
         let m = model();
-        // 2 binders + 7 items, all auto-expanded.
-        assert_eq!(m.visible_count(), 9);
+        // 2 binders + 13 items, all auto-expanded.
+        assert_eq!(m.visible_count(), 15);
     }
 
     #[test]
     fn filter_to_one_binder_hides_others() {
         let (m, f) = model_with_filters();
-        assert_eq!(m.visible_count(), 9); // all binders
-        // Manuscript = 1 binder row + 5 items.
+        assert_eq!(m.visible_count(), 15); // all binders
+        // Manuscript = 1 binder row + 11 items.
         f.binder.set(Some(1));
-        assert_eq!(m.visible_count(), 6);
+        assert_eq!(m.visible_count(), 12);
         // Notes = 1 binder row + 2 items.
         f.binder.set(Some(2));
         assert_eq!(m.visible_count(), 3);
         f.binder.set(None);
-        assert_eq!(m.visible_count(), 9);
+        assert_eq!(m.visible_count(), 15);
     }
 
     #[test]
@@ -596,7 +613,7 @@ mod tests {
         assert_eq!(m.visible_count(), 0);
         // Clearing restores the full tree (and the persistent expand state).
         f.query.set(String::new());
-        assert_eq!(m.visible_count(), 9);
+        assert_eq!(m.visible_count(), 15);
     }
 
     #[test]
@@ -606,21 +623,22 @@ mod tests {
         // made the expand/collapse chevrons dead (toggle flips per-row state but
         // the override keeps every row shown).
         let (m, f) = model_with_filters();
-        f.binder.set(Some(1)); // Manuscript: binder + 5 items, expanded → 6
-        assert_eq!(m.visible_count(), 6);
-        m.set_expanded(&BinderTreeKey::Item(101), false); // collapse "Book One" (2 kids)
-        assert_eq!(m.visible_count(), 4);
+        f.binder.set(Some(1)); // Manuscript: binder + 11 items, expanded → 12
+        assert_eq!(m.visible_count(), 12);
+        // Collapse "Book One" — the whole book is its subtree (10 rows).
+        m.set_expanded(&BinderTreeKey::Item(101), false);
+        assert_eq!(m.visible_count(), 2);
         m.set_expanded(&BinderTreeKey::Item(101), true);
-        assert_eq!(m.visible_count(), 6);
+        assert_eq!(m.visible_count(), 12);
     }
 
     #[test]
     fn collapsing_a_folder_hides_its_subtree() {
         let m = model();
-        m.set_expanded(&BinderTreeKey::Item(101), false); // "Book One" (2 children)
-        assert_eq!(m.visible_count(), 7);
+        m.set_expanded(&BinderTreeKey::Item(101), false); // "Book One" (10 descendants)
+        assert_eq!(m.visible_count(), 5);
         m.set_expanded(&BinderTreeKey::Item(101), true);
-        assert_eq!(m.visible_count(), 9);
+        assert_eq!(m.visible_count(), 15);
     }
 
     #[test]

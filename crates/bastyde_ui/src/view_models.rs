@@ -18,6 +18,8 @@
 //! One file per view-model (each self-documents its ownership shape):
 //!   * [`editors`] — `EditorsViewModel`: single-instance live state (owns the tab
 //!     list + selection).
+//!   * [`stream`] — `StreamViewModel`: per-container-tab live state (owns the
+//!     Full Chapter/Part/Book row list and the row mutations).
 //!   * [`outline`] — `OutlineViewModel`: single-instance live state (owns the
 //!     `DockingModel` + tree model).
 //!   * [`settings`] — `SettingsViewModel`: store-backed facade over persisted UI
@@ -36,7 +38,6 @@
 
 mod backup_scheduler;
 mod backup_settings;
-mod chapter;
 mod editors;
 mod import_plume;
 mod long_op;
@@ -45,11 +46,11 @@ mod outline;
 mod restore;
 mod save_as;
 mod settings;
+mod stream;
 mod welcome;
 
 pub use backup_scheduler::BackupSchedulerViewModel;
 pub use backup_settings::BackupSettingsViewModel;
-pub use chapter::ChapterViewModel;
 pub use editors::{EditorsViewModel, Side};
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
@@ -57,4 +58,6 @@ pub use outline::OutlineViewModel;
 pub use restore::RestoreViewModel;
 pub use save_as::SaveAsViewModel;
 pub use settings::{EditorTypography, EditorTypographySet, SettingsViewModel};
+pub use stream::{SplitFlavour, StreamViewModel};
+pub(crate) use stream::{is_prose_bearing, is_synopsis_bearing};
 pub use welcome::WelcomeViewModel;

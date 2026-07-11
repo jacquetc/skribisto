@@ -67,11 +67,6 @@ const COMBINATIONS: &[Combination] = &[
     },
     Combination {
         role: Role::Item,
-        sub_role: SubRole::Chapter,
-        allowed: &[ChapterTitle, SynopsisText],
-    },
-    Combination {
-        role: Role::Item,
         sub_role: SubRole::Note,
         allowed: &[NoteText, SynopsisText],
     },
@@ -88,10 +83,14 @@ const COMBINATIONS: &[Combination] = &[
     },
     Combination {
         role: Role::Folder,
-        sub_role: SubRole::Chapter,
-        // A Chapter folder carries its own prose (SceneText) — symmetric with the
-        // flat `Item/ChapterScene` — so it can *contain* child Scenes AND hold
-        // prose directly, and promote/demote between the two encodings is lossless.
+        // A chapter folder carries its own prose, so it is *the same thing* as the
+        // flat `Item/ChapterScene` — same sub_role, same allowed content — differing
+        // only on the UI-only `role` axis (a Folder can contain children). A chapter has
+        // exactly two encodings, `Item/ChapterScene` (extent by marker) and
+        // `Folder/ChapterScene` (extent by containment), and promote/demote between them
+        // is lossless by construction. There is no prose-less chapter, so there is no
+        // separate `Chapter` sub_role at all.
+        sub_role: SubRole::ChapterScene,
         allowed: &[ChapterTitle, SceneText, SynopsisText],
     },
     Combination {
@@ -219,7 +218,7 @@ impl SubRoleExt for SubRole {
         matches!(self, SubRole::Part)
     }
     fn opens_chapter(&self) -> bool {
-        matches!(self, SubRole::Chapter | SubRole::ChapterScene)
+        matches!(self, SubRole::ChapterScene)
     }
     fn carries_scene(&self) -> bool {
         matches!(self, SubRole::Scene | SubRole::ChapterScene)
@@ -283,8 +282,10 @@ impl CreateType {
         match self {
             CreateType::Book => (Role::Folder, SubRole::Book),
             CreateType::Part => (Role::Folder, SubRole::Part),
+            // One "Chapter" in the UI, two encodings: the `role` axis is the whole
+            // difference — the sub_role is `ChapterScene` either way.
             CreateType::Chapter => match mode {
-                ChapterMode::Folder => (Role::Folder, SubRole::Chapter),
+                ChapterMode::Folder => (Role::Folder, SubRole::ChapterScene),
                 ChapterMode::Flat => (Role::Item, SubRole::ChapterScene),
             },
             CreateType::Scene => (Role::Item, SubRole::Scene),
@@ -341,7 +342,7 @@ pub fn recommendations(role: &Role, sub_role: &SubRole) -> Vec<Recommendation> {
     let picks: Vec<(CreateType, Relation)> = match (role, sub_role) {
         (Folder, S::Book) => vec![(T::Chapter, Child), (T::Part, Child), (T::EndOfBook, Child)],
         (Folder, S::Part) => vec![(T::Chapter, Child), (T::Part, Sibling)],
-        (Folder, S::Chapter) => vec![(T::Scene, Child), (T::Chapter, Sibling)],
+        (Folder, S::ChapterScene) => vec![(T::Scene, Child), (T::Chapter, Sibling)],
         (Folder, S::None) => vec![(T::Note, Child), (T::Folder, Sibling), (T::Folder, Child)],
         (Folder, S::Note) => vec![
             (T::Note, Child),
@@ -355,7 +356,6 @@ pub fn recommendations(role: &Role, sub_role: &SubRole) -> Vec<Recommendation> {
         // Legacy anchors — no longer offered as *types*, but existing data may
         // still hold them; recommend a sensible offerable sibling if selected.
         (Item, S::BookBegin) => vec![(T::Chapter, Sibling)],
-        (Item, S::Chapter) => vec![(T::Scene, Sibling)],
         (Item, S::Part) => vec![(T::Chapter, Sibling)],
         (Item, S::Text) => vec![(T::Scene, Sibling)],
         _ => vec![],
@@ -374,16 +374,19 @@ pub fn recommendations_root() -> Vec<Recommendation> {
 /// The paired type a binder item promotes/demotes to — a bidirectional toggle.
 /// `None` if the item's `(role, sub_role)` has no promote pair.
 ///
-/// Pairs: flat Chapter (`Item/ChapterScene`) ↔ Chapter folder (`Folder/Chapter`),
-/// Scene ↔ Note, and Folder ↔ Note folder. Converting a container to a leaf
-/// (Chapter folder → flat Chapter) requires the folder to be empty first — the
+/// Pairs: flat Chapter (`Item/ChapterScene`) ↔ Chapter folder
+/// (`Folder/ChapterScene` — same sub_role, the `role` axis is the whole
+/// difference), Scene ↔ Note, and Folder ↔ Note folder. Converting a container to a
+/// leaf (Chapter folder → flat Chapter) requires the folder to be empty first — the
 /// caller enforces that; this function only names the target.
 pub fn promote_target(role: &Role, sub_role: &SubRole) -> Option<(Role, SubRole)> {
     use Role::{Folder, Item};
     use SubRole as S;
     Some(match (role, sub_role) {
-        (Item, S::ChapterScene) => (Folder, S::Chapter),
-        (Folder, S::Chapter) => (Item, S::ChapterScene),
+        // The two encodings of a chapter: same sub_role, the `role` axis is the
+        // whole difference (extent by containment vs. extent by marker).
+        (Item, S::ChapterScene) => (Folder, S::ChapterScene),
+        (Folder, S::ChapterScene) => (Item, S::ChapterScene),
         (Item, S::Scene) => (Item, S::Note),
         (Item, S::Note) => (Item, S::Scene),
         (Folder, S::None) => (Folder, S::Note),
@@ -483,8 +486,6 @@ mod tests {
     fn compile_predicates() {
         assert!(SubRole::ChapterScene.opens_chapter());
         assert!(SubRole::ChapterScene.carries_scene());
-        assert!(SubRole::Chapter.opens_chapter());
-        assert!(!SubRole::Chapter.carries_scene());
         assert!(SubRole::BookBegin.opens_book());
         assert!(SubRole::BookEnd.closes_book());
         assert!(Role::Folder.is_container());
@@ -500,10 +501,18 @@ mod tests {
 
     #[test]
     fn chapter_folder_now_carries_scene_prose() {
-        // Symmetric with the flat Item/ChapterScene so promote/demote is lossless.
+        // The chapter folder *is* the flat ChapterScene in container form — same
+        // sub_role, same content — so promote/demote is lossless.
         assert!(content_allowed(
             &Role::Folder,
-            &SubRole::Chapter,
+            &SubRole::ChapterScene,
+            &SceneText
+        ));
+        // A chapter *is* a ChapterScene in both encodings; the `role` axis is the
+        // whole difference.
+        assert!(content_allowed(
+            &Role::Item,
+            &SubRole::ChapterScene,
             &SceneText
         ));
     }
@@ -549,7 +558,7 @@ mod tests {
     fn chapter_type_resolves_by_mode() {
         assert_eq!(
             CreateType::Chapter.combo(ChapterMode::Folder),
-            (Role::Folder, SubRole::Chapter)
+            (Role::Folder, SubRole::ChapterScene)
         );
         assert_eq!(
             CreateType::Chapter.combo(ChapterMode::Flat),
@@ -615,7 +624,7 @@ mod tests {
 
     #[test]
     fn chapter_folder_recommends_scene_then_sibling_chapter() {
-        let recs = recommendations(&Role::Folder, &SubRole::Chapter);
+        let recs = recommendations(&Role::Folder, &SubRole::ChapterScene);
         assert_eq!(recs[0], rec(CreateType::Scene, Relation::Child));
         assert_eq!(recs[1], rec(CreateType::Chapter, Relation::Sibling));
     }
@@ -645,7 +654,7 @@ mod tests {
     fn promote_pairs_are_symmetric_toggles() {
         for (r, sr) in [
             (Role::Item, SubRole::ChapterScene),
-            (Role::Folder, SubRole::Chapter),
+            (Role::Folder, SubRole::ChapterScene),
             (Role::Item, SubRole::Scene),
             (Role::Item, SubRole::Note),
             (Role::Folder, SubRole::None),
@@ -688,7 +697,7 @@ mod tests {
         // Every ChapterScene content role is already allowed by Folder/Chapter.
         for c in [ChapterTitle, SceneText, SynopsisText] {
             assert_eq!(
-                remap_content(&Role::Folder, &SubRole::Chapter, &c),
+                remap_content(&Role::Folder, &SubRole::ChapterScene, &c),
                 Some(c.clone())
             );
         }

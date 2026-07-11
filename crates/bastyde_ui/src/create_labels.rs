@@ -41,7 +41,7 @@ pub fn promote_target_label(
     use BinderItemRole::{Folder, Item};
     use BinderItemSubRole as S;
     match (role, sub_role) {
-        (Folder, S::Chapter) => tr!(promote_chapter_folder()),
+        (Folder, S::ChapterScene) => tr!(promote_chapter_folder()),
         (Item, S::ChapterScene) => tr!(promote_flat_chapter()),
         (Item, S::Scene) => tr!(create_scene()),
         (Item, S::Note) => tr!(create_note()),

@@ -164,11 +164,15 @@ close-split-view = Close split view
 drop-open-here = Open here
 drop-open-to-side = Open to the side
 
-## Full Chapter view
+## Manuscript streams (Full Chapter / Part / Book + Full Synopsis)
 full-chapter = Full Chapter
+full-part = Full Part
+full-book = Full Book
+full-synopsis = Full Synopsis
 rename = Rename
 set-label = Set label
 insert-scene = Insert scene
+insert-chapter = Insert chapter
 split-scene = Split scene
 move-up = Move up
 move-down = Move down
@@ -176,6 +180,8 @@ merge-with-previous = Merge with previous
 move-to-trash = Move to trash
 rename-chapter = Rename chapter
 add-scene = Add new scene
+add-chapter = Add new chapter
+new-scene-title = New Scene
 placeholder-scene-name = Scene name…
 menu-cut = Cut
 menu-copy = Copy

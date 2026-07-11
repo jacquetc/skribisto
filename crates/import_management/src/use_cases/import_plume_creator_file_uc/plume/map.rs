@@ -347,7 +347,7 @@ impl<'a> Builder<'a> {
                     self.emit_container(
                         node,
                         indent,
-                        SubRole::Chapter,
+                        SubRole::ChapterScene,
                         ContentRole::ChapterTitle,
                         false,
                         bindex,

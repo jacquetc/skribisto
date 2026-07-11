@@ -34,20 +34,19 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole}
 use frontend::direct_access::ContentDto;
 
 use crate::app_ids::AppIds;
-use crate::models::OpenDoc;
+use crate::models::{OpenDoc, OpenDocsStore};
 use crate::singles::SingleContent;
-use crate::view_models::{ChapterViewModel, EditorTypography, EditorTypographySet};
+use crate::view_models::{EditorTypography, EditorTypographySet, StreamViewModel};
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
 // (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
 mod folder_book;
-mod folder_chapter;
+mod folder_chapter_scene;
 mod folder_none;
 mod folder_note;
 mod folder_part;
 mod item_book_begin;
 mod item_book_end;
-mod item_chapter;
 mod item_chapter_scene;
 mod item_note;
 mod item_part;
@@ -81,6 +80,12 @@ pub struct ContentTab {
     /// `TextDocument`s + write-back. Two tabs (e.g. one per split pane) showing
     /// the same item hold the **same** `Rc<OpenDoc>`.
     pub open_doc: Rc<OpenDoc>,
+    /// The manuscript-stream view-model — `Some` only for a folder container (Chapter /
+    /// Part / Book). It lives here, not on the shared `OpenDoc`, because it holds the
+    /// `OpenDocsStore` that owns that `OpenDoc`: hanging it there would close an `Rc`
+    /// cycle and make `OpenDocsStore::clear()` re-enter its own `RefCell`. See
+    /// [`StreamViewModel`].
+    stream: Option<StreamViewModel>,
     /// Selected segment for the folder container's `SegmentedControl` — per-tab
     /// (each pane keeps its own segment).
     pub segment: Signal<usize>,
@@ -110,7 +115,8 @@ pub(crate) fn prose_kind_for(
     use BinderItemRole::*;
     use BinderItemSubRole::*;
     match (role, sub_role) {
-        (Item, Scene) | (Item, ChapterScene) => Some(ProseKind::Scene),
+        // Both encodings of a chapter carry scene prose, as does a plain Scene.
+        (Item, Scene) | (Item, ChapterScene) | (Folder, ChapterScene) => Some(ProseKind::Scene),
         (Item, Note) => Some(ProseKind::Note),
         // `None` is shadowed by `BinderItemSubRole::None` under the glob import.
         _ => Option::None,
@@ -146,11 +152,12 @@ pub(crate) fn title_field(
     }
 }
 
-/// Build a standalone tab for `item_id` (its own fresh, unshared [`OpenDoc`]).
+/// Build a standalone tab for `item_id` (its own fresh, unshared [`OpenDoc`] over a
+/// private [`OpenDocsStore`]).
 ///
-/// The real app opens tabs through `EditorsViewModel` / [`OpenDocsStore`](crate::models::OpenDocsStore),
-/// which shares one `OpenDoc` across panes; this convenience is for tests and any
-/// call site that wants a self-contained tab.
+/// The real app opens tabs through `EditorsViewModel` / the app-wide [`OpenDocsStore`],
+/// which shares one `OpenDoc` across panes **and** across a stream's rows; this
+/// convenience is for tests and any call site that wants a self-contained tab.
 #[allow(clippy::too_many_arguments)]
 #[allow(dead_code)] // standalone-tab convenience; exercised by the tab tests
 pub fn tab_for(
@@ -166,14 +173,21 @@ pub fn tab_for(
 ) -> ContentTab {
     let open_doc = Rc::new(OpenDoc::build(
         ctx,
-        ids,
         item_id,
         role,
         sub_role,
         contents,
         Signal::new(0),
     ));
-    ContentTab::new(open_doc, column_width, show_synopsis, typography)
+    ContentTab::new(
+        ctx.clone(),
+        ids.clone(),
+        OpenDocsStore::new(ctx.clone()),
+        open_doc,
+        column_width,
+        show_synopsis,
+        typography,
+    )
 }
 
 /// Build the widget for a tab (the `TabWidget` factory): dispatch each
@@ -186,14 +200,13 @@ pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
         (Item, Scene) => item_scene::render(tab),
         (Item, ChapterScene) => item_chapter_scene::render(tab),
         (Item, Note) => item_note::render(tab),
-        (Item, Chapter) => item_chapter::render(tab),
         (Item, Part) => item_part::render(tab),
         (Item, BookBegin) => item_book_begin::render(tab),
         (Item, BookEnd) => item_book_end::render(tab),
         (Item, Text) => item_text::render(tab),
         (Folder, None) => folder_none::render(tab),
         (Folder, Note) => folder_note::render(tab),
-        (Folder, Chapter) => folder_chapter::render(tab),
+        (Folder, ChapterScene) => folder_chapter_scene::render(tab),
         (Folder, Part) => folder_part::render(tab),
         (Folder, Book) => folder_book::render(tab),
         // Any pair outside the constraint matrix is invalid by construction; fall
@@ -203,15 +216,31 @@ pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
 }
 
 impl ContentTab {
-    /// Wrap a shared `OpenDoc` with this tab's presentation state.
+    /// Wrap a shared `OpenDoc` with this tab's presentation state, plus — for a folder
+    /// container — its manuscript-stream view-model. `StreamViewModel::new` returns
+    /// `None` for every combination that has no stream, so one
+    /// `StreamLevel::for_container` gate decides it both here and inside the view-model.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
+        app_ctx: Rc<AppContext>,
+        ids: AppIds,
+        docs: OpenDocsStore,
         open_doc: Rc<OpenDoc>,
         column_width: Signal<f32>,
         show_synopsis: Signal<bool>,
         typography: EditorTypographySet,
     ) -> Self {
+        let stream = StreamViewModel::new(
+            app_ctx,
+            ids,
+            docs,
+            open_doc.item_id,
+            &open_doc.role,
+            &open_doc.sub_role,
+        );
         Self {
             open_doc,
+            stream,
             segment: Signal::new(0),
             column_width,
             show_synopsis,
@@ -247,9 +276,10 @@ impl ContentTab {
     pub fn synopsis(&self) -> Option<&ProseField> {
         self.open_doc.synopsis.as_ref()
     }
-    /// The Full Chapter view-model (only a `FolderChapter` tab has one).
-    pub fn chapter(&self) -> Option<&ChapterViewModel> {
-        self.open_doc.chapter.as_ref()
+    /// The manuscript-stream view-model — only a folder container (Chapter / Part /
+    /// Book) has one.
+    pub fn stream(&self) -> Option<&StreamViewModel> {
+        self.stream.as_ref()
     }
 
     /// Persist every changed field back to its `Content` row via the shared
@@ -289,6 +319,16 @@ impl TitleField {
         *self.original.borrow_mut() = val;
         Ok(())
     }
+
+    /// Re-read the persisted value, discarding any live edit (see
+    /// [`OpenDoc::reload`](crate::models::OpenDoc::reload)). Goes through
+    /// `SingleContent`, never a raw command call — the write-back stays in Layer A.
+    pub(crate) fn reload(&self) {
+        self.content.reload();
+        let data = self.content.data().get();
+        self.value.set(data.clone());
+        *self.original.borrow_mut() = data;
+    }
 }
 
 impl ProseField {
@@ -300,6 +340,21 @@ impl ProseField {
         self.content.save(stack)?;
         self.doc.set_modified(false);
         Ok(())
+    }
+
+    /// Re-read the persisted prose into the live document, discarding any live edit
+    /// (see [`OpenDoc::reload`](crate::models::OpenDoc::reload)).
+    pub(crate) fn reload(&self) {
+        self.content.reload();
+        let data = self.content.data().get();
+        let _ = self.doc.set_djot(&data).and_then(|op| op.wait());
+        self.doc.set_modified(false);
+    }
+
+    /// This field's current text as Djot (empty on a serialisation error) — the
+    /// "pass the untouched role whole to the source" half of a split.
+    pub(crate) fn djot(&self) -> String {
+        self.doc.to_djot().unwrap_or_default()
     }
 }
 
@@ -341,13 +396,13 @@ mod tests {
             (Item, Scene, true),
             (Item, ChapterScene, true),
             (Item, Note, true),
-            (Item, Chapter, false),
             (Item, Part, false),
             (Item, BookBegin, false),
             (Item, BookEnd, false),
             (Item, Text, false),
             (Folder, None, false),
-            (Folder, Chapter, false),
+            // A chapter folder carries its own prose, like the flat ChapterScene.
+            (Folder, ChapterScene, true),
             (Folder, Part, false),
             (Folder, Book, false),
             (Folder, Note, false),
@@ -455,7 +510,7 @@ mod tests {
         assert_eq!(mk(Scene).kind(), Some(ProseKind::Scene));
         assert_eq!(mk(ChapterScene).kind(), Some(ProseKind::Scene));
         assert_eq!(mk(Note).kind(), Some(ProseKind::Note));
-        assert_eq!(mk(Chapter).kind(), Option::None); // Item/Chapter → Heading, no prose kind
+        assert_eq!(mk(Part).kind(), Option::None); // Item/Part → heading, no prose kind
 
         // `main_typography` picks the bundle by kind.
         assert_eq!(mk(Scene).main_typography().font_family.get(), "Literata");

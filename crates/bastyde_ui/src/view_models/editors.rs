@@ -190,6 +190,9 @@ impl EditorsViewModel {
         };
         let sub_role = doc.sub_role.clone();
         let tab = ContentTab::new(
+            self.app_ctx.clone(),
+            self.ids.clone(),
+            self.docs.clone(),
             doc,
             self.column_width.clone(),
             self.show_synopsis.clone(),
@@ -507,7 +510,7 @@ mod tests {
     fn editors() -> EditorsViewModel {
         let app_ctx = Rc::new(AppContext::new());
         let ids = AppIds::new();
-        let docs = OpenDocsStore::new(app_ctx.clone(), ids.clone());
+        let docs = OpenDocsStore::new(app_ctx.clone());
         EditorsViewModel::new(
             app_ctx,
             Signal::new(700.0),

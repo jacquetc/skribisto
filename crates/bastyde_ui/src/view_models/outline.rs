@@ -30,6 +30,7 @@ use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 use skribisto_model::{Recommendation, Relation, SubRoleExt};
 
 use crate::app_ids::AppIds;
+use crate::binder_placement;
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters};
 use crate::singles::{SingleBinder, SingleBinderItem};
 
@@ -421,7 +422,7 @@ impl OutlineViewModel {
         let Some(pos) = order.iter().position(|&x| x == item_id) else {
             return 0;
         };
-        Self::subtree_end(&order, &meta, pos, dto.indent) - (pos + 1)
+        binder_placement::subtree_end(&order, &meta, pos, dto.indent) - (pos + 1)
     }
 
     /// Promote/demote a binder item to its paired type (undoable). No-op if the
@@ -682,29 +683,15 @@ impl OutlineViewModel {
                 let (order, meta) = self.ordered_meta(binder);
                 let pos = order.iter().position(|&x| x == i)?;
                 let (anchor_indent, _) = *meta.get(&i)?;
-                match relation {
-                    Relation::Sibling => {
-                        let end = Self::subtree_end(&order, &meta, pos, anchor_indent);
-                        Some((binder, end, anchor_indent))
-                    }
-                    Relation::Child => {
-                        let end = Self::subtree_end(&order, &meta, pos, anchor_indent);
-                        let child_indent = anchor_indent + 1;
-                        // Keep a book's trailing `BookEnd` last: insert before any
-                        // direct child that closes the book, else at the subtree end.
-                        let before_close = ((pos + 1)..end).find(|&k| {
-                            meta.get(&order[k])
-                                .is_some_and(|(ind, sr)| *ind == child_indent && sr.closes_book())
-                        });
-                        Some((binder, before_close.unwrap_or(end), child_indent))
-                    }
-                    Relation::ParentSibling => {
-                        let (apos, aind) = Self::enclosing_opener(&order, &meta, pos)
-                            .unwrap_or((pos, anchor_indent));
-                        let end = Self::subtree_end(&order, &meta, apos, aind);
-                        Some((binder, end, aind))
-                    }
-                }
+                // Shared with `StreamViewModel` — see `crate::binder_placement`.
+                let (index, indent) = binder_placement::insertion_point_for_item(
+                    &order,
+                    &meta,
+                    pos,
+                    anchor_indent,
+                    relation,
+                );
+                Some((binder, index, indent))
             }
             None => {
                 let b = self.first_binder()?;
@@ -730,52 +717,6 @@ impl OutlineViewModel {
             .map(|it| (it.id, (it.indent, it.sub_role)))
             .collect();
         (order, meta)
-    }
-
-    /// First index after `order[pos]`'s whole subtree: the next row whose indent is
-    /// `<= base_indent`. A leaf (nothing deeper follows) returns `pos + 1`.
-    /// (Mirrors `binder_item_management::move_items_uc::subtree_end`, reimplemented
-    /// here because `bastyde_ui` doesn't depend on that use-case crate.)
-    fn subtree_end(
-        order: &[u64],
-        meta: &HashMap<u64, (i64, BinderItemSubRole)>,
-        pos: usize,
-        base_indent: i64,
-    ) -> usize {
-        let mut j = pos + 1;
-        while j < order.len()
-            && meta
-                .get(&order[j])
-                .map(|(ind, _)| *ind)
-                .unwrap_or(base_indent)
-                > base_indent
-        {
-            j += 1;
-        }
-        j
-    }
-
-    /// `(position, indent)` of the nearest ancestor of `order[pos]` that opens a
-    /// chapter or book — the target of a `ParentSibling` insertion. `None` if the
-    /// anchor has no such enclosing opener.
-    fn enclosing_opener(
-        order: &[u64],
-        meta: &HashMap<u64, (i64, BinderItemSubRole)>,
-        pos: usize,
-    ) -> Option<(usize, i64)> {
-        let mut cur = pos;
-        let mut cur_indent = meta.get(&order[pos])?.0;
-        while cur > 0 {
-            cur -= 1;
-            let (ind, sr) = meta.get(&order[cur])?;
-            if *ind < cur_indent {
-                if sr.opens_chapter() || sr.opens_book() {
-                    return Some((cur, *ind));
-                }
-                cur_indent = *ind;
-            }
-        }
-        None
     }
 
     /// `(position, indent)` of the book enclosing `order[pos]` — the anchor itself
@@ -822,7 +763,7 @@ impl OutlineViewModel {
         let Some((book_pos, book_indent)) = Self::enclosing_book(&order, &meta, pos) else {
             return;
         };
-        let end = Self::subtree_end(&order, &meta, book_pos, book_indent);
+        let end = binder_placement::subtree_end(&order, &meta, book_pos, book_indent);
         let has_end = order[book_pos..end]
             .iter()
             .any(|id| meta.get(id).is_some_and(|(_, sr)| sr.closes_book()));
@@ -1008,18 +949,18 @@ mod tests {
         assert!(!visible.get(), "hide() hides the side");
     }
 
-    // The mock tree has content (2 binders, 7 items) so these assert the
+    // The mock tree has content (2 binders, 13 items) so these assert the
     // switcher/search signals drive the model's re-source end-to-end.
     #[cfg(feature = "mocks")]
     #[test]
     fn set_binder_filter_scopes_the_tree() {
         let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()), AppIds::default());
         let model = outline.model();
-        assert_eq!(model.visible_count(), 9); // all binders
+        assert_eq!(model.visible_count(), 15); // all binders
         outline.set_binder_filter(Some(1));
-        assert_eq!(model.visible_count(), 6); // Manuscript = binder + 5 items
+        assert_eq!(model.visible_count(), 12); // Manuscript = binder + 11 items
         outline.set_binder_filter(None);
-        assert_eq!(model.visible_count(), 9);
+        assert_eq!(model.visible_count(), 15);
     }
 
     #[cfg(feature = "mocks")]
@@ -1030,7 +971,7 @@ mod tests {
         outline.search_query_signal().set("dawn".to_string());
         assert_eq!(model.visible_count(), 3); // Manuscript > Book One > Scene at dawn
         outline.clear_search();
-        assert_eq!(model.visible_count(), 9);
+        assert_eq!(model.visible_count(), 15);
     }
 
     // ── relation-aware creation (real backend: seed a Work/Binder/items and
@@ -1135,9 +1076,9 @@ mod tests {
             );
             let new = *order_of(&outline, binder).last().unwrap();
             let dto = outline.item_dto(new).unwrap();
-            // Default (folder) mode → a Chapter is a Folder/Chapter.
+            // Default (folder) mode → a Chapter is a Folder/ChapterScene.
             assert_eq!(dto.role, BinderItemRole::Folder);
-            assert_eq!(dto.sub_role, BinderItemSubRole::Chapter);
+            assert_eq!(dto.sub_role, BinderItemSubRole::ChapterScene);
         }
 
         #[test]
@@ -1155,7 +1096,7 @@ mod tests {
                 &outline,
                 binder,
                 BinderItemRole::Folder,
-                BinderItemSubRole::Chapter,
+                BinderItemSubRole::ChapterScene,
                 1,
                 1,
             );
@@ -1189,7 +1130,7 @@ mod tests {
                 &outline,
                 binder,
                 BinderItemRole::Folder,
-                BinderItemSubRole::Chapter,
+                BinderItemSubRole::ChapterScene,
                 0,
                 0,
             );
@@ -1237,7 +1178,7 @@ mod tests {
                 &outline,
                 binder,
                 BinderItemRole::Folder,
-                BinderItemSubRole::Chapter,
+                BinderItemSubRole::ChapterScene,
                 1,
                 1,
             );
@@ -1340,7 +1281,7 @@ mod tests {
             outline.promote(BinderTreeKey::Item(cs));
             let dto = outline.item_dto(cs).unwrap();
             assert_eq!(dto.role, BinderItemRole::Folder);
-            assert_eq!(dto.sub_role, BinderItemSubRole::Chapter);
+            assert_eq!(dto.sub_role, BinderItemSubRole::ChapterScene);
         }
 
         #[test]
@@ -1350,7 +1291,7 @@ mod tests {
                 &outline,
                 binder,
                 BinderItemRole::Folder,
-                BinderItemSubRole::Chapter,
+                BinderItemSubRole::ChapterScene,
                 0,
                 0,
             );

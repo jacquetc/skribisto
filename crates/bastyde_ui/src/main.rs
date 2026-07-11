@@ -8,6 +8,7 @@ mod backup_banner;
 mod backup_choice_panel;
 mod backups_list_panel;
 mod binder_icons;
+mod binder_placement;
 mod binder_switcher_button;
 mod create_labels;
 mod docks;
@@ -311,7 +312,7 @@ fn main() {
     // holding the editors' `TextDocument`s + write-back. Registered as `app_state`
     // so the split editor's two panes (and any future view) share one document per
     // item — the documents are usable outside the `TabWidget`s.
-    let open_docs = OpenDocsStore::new(app_ctx.clone(), ids.clone());
+    let open_docs = OpenDocsStore::new(app_ctx.clone());
     // Reactive single-entity handles (Layer A). Created here so the title-bar menu
     // can bind the project title (Bug 1) and shape (Bug 2); `App::build` wires
     // their event subscriptions and re-points them on each `LoadWork`.

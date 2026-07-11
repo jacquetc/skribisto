@@ -173,13 +173,16 @@ entities:
   - name: sub_role
     type: enum
     enum_name: BinderItemSubRole
+    # A chapter is `ChapterScene` in both encodings — `Item/ChapterScene` (extent by
+    # marker) and `Folder/ChapterScene` (extent by containment). There is no separate
+    # `Chapter` value: a chapter always carries its own prose slot, so the two
+    # encodings differ only on the UI-only `role` axis.
     enum_values:
       - Text
       - None
       - Note
       - Book
       - Part
-      - Chapter
       - Scene
       - ChapterScene
       - BookBegin

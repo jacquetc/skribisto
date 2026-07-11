@@ -400,7 +400,7 @@ mod tests {
         let chap1 = find(manuscript, "Chapter 1");
         assert_eq!(
             (chap1.item.role.clone(), chap1.item.sub_role.clone()),
-            (Role::Folder, SubRole::Chapter)
+            (Role::Folder, SubRole::ChapterScene)
         );
         assert_eq!(chap1.item.indent, 2);
 

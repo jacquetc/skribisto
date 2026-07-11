@@ -94,7 +94,10 @@ fn value_to_string(v: ValueRef) -> String {
 fn section_type_to_sub_role(section_type: &str) -> BinderItemSubRole {
     match section_type {
         "book-beginning" => BinderItemSubRole::BookBegin,
-        "chapter" => BinderItemSubRole::Chapter,
+        // A legacy chapter section is a chapter *marker* whose scenes follow it in
+        // the flat stream — the flat encoding, `Item/ChapterScene`. (It carries a
+        // title + synopsis; its prose slot simply goes unused.)
+        "chapter" => BinderItemSubRole::ChapterScene,
         "book-end" => BinderItemSubRole::BookEnd,
         // Unknown section type → a plain text item (valid, keeps any content).
         _ => BinderItemSubRole::Text,
@@ -313,10 +316,7 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
                     role: ContentRole::BookTitle,
                     data: row.title.clone(),
                 });
-            } else if matches!(
-                &sub_role,
-                BinderItemSubRole::Chapter | BinderItemSubRole::ChapterScene
-            ) {
+            } else if sub_role == BinderItemSubRole::ChapterScene {
                 candidates.push(LegacyContent {
                     role: ContentRole::ChapterTitle,
                     data: row.title.clone(),

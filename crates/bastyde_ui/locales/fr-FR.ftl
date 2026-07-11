@@ -164,6 +164,31 @@ close-split-view = Fermer la vue divisée
 drop-open-here = Ouvrir ici
 drop-open-to-side = Ouvrir sur le côté
 
+## Flux du manuscrit (Chapitre / Partie / Livre complet + Synopsis complet)
+full-chapter = Chapitre complet
+full-part = Partie complète
+full-book = Livre complet
+full-synopsis = Synopsis complet
+rename = Renommer
+set-label = Définir l'étiquette
+insert-scene = Insérer une scène
+insert-chapter = Insérer un chapitre
+split-scene = Scinder la scène
+move-up = Monter
+move-down = Descendre
+merge-with-previous = Fusionner avec la précédente
+move-to-trash = Mettre à la corbeille
+rename-chapter = Renommer le chapitre
+add-scene = Ajouter une scène
+add-chapter = Ajouter un chapitre
+new-scene-title = Nouvelle scène
+placeholder-scene-name = Nom de la scène…
+menu-cut = Couper
+menu-copy = Copier
+menu-paste = Coller
+menu-paste-unformatted = Coller sans mise en forme
+menu-select-all = Tout sélectionner
+
 ## Classeur / récents
 binder = Classeur
 no-work = Aucune œuvre chargée
@@ -188,6 +213,8 @@ binder-trash-confirm-text = « { $name } » et tous ses éléments seront mis à
 
 ## Boîtes de dialogue
 dialog-rename = Renommer
+dialog-set-label = Définir l'étiquette
+dialog-new-scene = Nouvelle scène
 close-work-question = Enregistrer les modifications avant de fermer l'œuvre ?
 close-question = Enregistrer les modifications avant de fermer ?
 unsaved-changes = Cette œuvre a des modifications non enregistrées.

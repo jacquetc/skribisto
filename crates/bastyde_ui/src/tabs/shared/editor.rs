@@ -33,6 +33,13 @@ pub const SYNOPSIS_WIDTH_INSET: f32 = 48.0;
 /// writing surface rather than collapsing to its few lines of text.
 pub const MAIN_MIN_LINES: u32 = 10;
 
+/// Minimum height for a *subordinate* prose editor inside a stream — a chapter
+/// heading's own prose in a Full Part / Full Book view. A chapter folder always has a
+/// `SceneText` field (the matrix gives it one), so at `MAIN_MIN_LINES` a Full Book
+/// would show an empty ten-line box under every chapter heading. One line, growing
+/// with its content, keeps the manuscript readable.
+pub const HEADING_PROSE_MIN_LINES: u32 = 1;
+
 /// The centered, max-width main writing column for `doc`, wired so user edits
 /// flip the tab's dirty flag via `on_change`.
 ///
@@ -45,6 +52,7 @@ pub fn writing_column(
     doc: &TextDocument,
     column_width: &Signal<f32>,
     typo: &EditorTypography,
+    min_lines: u32,
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
 ) -> CenterColumnFlowing {
@@ -52,7 +60,7 @@ pub fn writing_column(
         .style(WritingEditorStyle)
         .on_change(on_change)
         .content_padding_symmetric(8.0, 12.0)
-        .min_lines(MAIN_MIN_LINES)
+        .min_lines(min_lines)
         .v_scroll_policy(ScrollPolicy::AlwaysOff)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
@@ -79,8 +87,10 @@ pub fn writing_column(
     ))
 }
 
-/// The scene editor's right-click menu: Cut / Copy / Paste / Paste Unformatted /
-/// Select All (via the editor handle) plus **Split scene** at the caret.
+/// A writing editor's right-click menu: Cut / Copy / Paste / Paste Unformatted /
+/// Select All (via the editor handle) plus **Split scene** at the caret. Offered on
+/// both of a row's surfaces — which text the split cuts is implicit in which editor
+/// was right-clicked (see `StreamViewModel::split_row`).
 fn scene_editor_menu(handle: EditorHandle, cursor: Signal<usize>, split: SplitFn) -> MenuList {
     let cut = handle.clone();
     let copy = handle.clone();
@@ -101,14 +111,16 @@ fn scene_editor_menu(handle: EditorHandle, cursor: Signal<usize>, split: SplitFn
         .item(MenuItem::new(tr!(split_scene())).on_activate_fn(move |ctx| split(ctx, cursor.get())))
 }
 
-/// The bordered synopsis editor box (caller sizes/centres it). User edits flip
-/// the tab's dirty flag via `on_change`.
+/// The bordered synopsis editor box (caller sizes/centres it). User edits flip the
+/// tab's dirty flag via `on_change`. `split` adds the caret-aware "Split scene" action
+/// to its context menu — in a Full Synopsis stream the synopsis is the text being cut.
 pub fn synopsis_editor(
     doc: &TextDocument,
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
+    split: Option<SplitFn>,
 ) -> impl Widget {
-    let editor = RichTextEditor::editor(doc.clone())
+    let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
         .on_change(on_change)
         .content_padding_symmetric(6.0, 30.0)
@@ -118,6 +130,17 @@ pub fn synopsis_editor(
         .text_color(TextRole::Secondary)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
+    if let Some(split) = split {
+        let handle = editor.handle();
+        let cursor = editor.cursor_position_signal();
+        editor = editor.context_menu(move |_pt, _ctx| {
+            Some(Box::new(scene_editor_menu(
+                handle.clone(),
+                cursor.clone(),
+                split.clone(),
+            )))
+        });
+    }
     bati!(
         Panel {
             background: SurfaceRole::Content
@@ -142,7 +165,6 @@ pub fn synopsis_section(
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
 ) -> impl Widget {
-    let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
         VStack {
             spacing: 5.0
@@ -150,17 +172,32 @@ pub fn synopsis_section(
                 style: TextStyleRole::SmallBold
                 color: TextRole::Secondary
             }
-            HStack {
-                Spacer
-                MaxSize::width(synopsis_width.get()) {
-                    max_width: synopsis_width.clone()
-                    Expand::horizontal {
-                        child: synopsis_editor(doc, typo, on_change)
-                    }
+            child: synopsis_column(doc, column_width, typo, on_change, Option::None)
+        }
+    )
+}
+
+/// The centered, capped synopsis editor without the "Synopsis" caption — for a stream
+/// row, where the caption would repeat on every row and the segment already says it.
+pub fn synopsis_column(
+    doc: &TextDocument,
+    column_width: &Signal<f32>,
+    typo: &EditorTypography,
+    on_change: impl Fn() + 'static,
+    split: Option<SplitFn>,
+) -> impl Widget {
+    let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
+    bati!(
+        HStack {
+            Spacer
+            MaxSize::width(synopsis_width.get()) {
+                max_width: synopsis_width.clone()
+                Expand::horizontal {
+                    child: synopsis_editor(doc, typo, on_change, split)
                 }
-                Spacer {
-                    min_length: 4.0
-                }
+            }
+            Spacer {
+                min_length: 4.0
             }
         }
     )
@@ -182,7 +219,14 @@ pub fn writing_section(
                 .style(TextStyleRole::SmallBold)
                 .color(TextRole::Secondary),
         )
-        .child(writing_column(doc, column_width, typo, on_change, None))
+        .child(writing_column(
+            doc,
+            column_width,
+            typo,
+            MAIN_MIN_LINES,
+            on_change,
+            None,
+        ))
 }
 
 /// A flat, edge-to-edge Content-surface backdrop wrapping the tab body (the

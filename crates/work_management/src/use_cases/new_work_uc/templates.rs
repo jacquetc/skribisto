@@ -95,10 +95,11 @@ fn item(
 /// `chapters` chapters, then a BookEnd.
 ///
 /// `chapter_scene` picks the per-chapter encoding: `false` (default) gives the
-/// classic layout — a `Folder/Chapter` holding one empty `Item/Scene`; `true`
+/// classic layout — a `Folder/ChapterScene` holding one empty `Item/Scene`; `true`
 /// gives a single flat `Item/ChapterScene` per chapter (opens the chapter *and*
-/// carries its own prose), which the user writes straight into. Both compile to
-/// the same book — see the writing model in `skribisto_model`.
+/// carries its own prose), which the user writes straight into. The two differ only
+/// on the `role` axis (extent by containment vs. by marker) and compile to the same
+/// book — see the writing model in `skribisto_model`.
 fn manuscript_binder(
     title: &str,
     l: &TemplateLabels,
@@ -106,7 +107,7 @@ fn manuscript_binder(
     chapter_scene: bool,
 ) -> TemplateBinder {
     use BinderItemRole::{Folder, Item};
-    use BinderItemSubRole::{Book, BookEnd, Chapter, ChapterScene, Scene};
+    use BinderItemSubRole::{Book, BookEnd, ChapterScene, Scene};
     use ContentRole::{BookTitle, ChapterTitle, SceneText, SynopsisText};
 
     let mut items = Vec::new();
@@ -136,10 +137,10 @@ fn manuscript_binder(
                 ],
             ));
         } else {
-            // Classic: a Chapter folder holding one empty Scene.
+            // Classic: a chapter folder holding one empty Scene.
             items.push(item(
                 Folder,
-                Chapter,
+                ChapterScene,
                 chapter_title.clone(),
                 1,
                 true,
@@ -293,7 +294,7 @@ mod tests {
             build_template(t, "T", &labels(), false)[0]
                 .items
                 .iter()
-                .filter(|i| i.sub_role == BinderItemSubRole::Chapter)
+                .filter(|i| i.sub_role == BinderItemSubRole::ChapterScene)
                 .count()
         };
         assert_eq!(count_chapters(NewWorkTemplate::EmptyNovel), 1);
@@ -359,10 +360,9 @@ mod tests {
             "no plain Scene items in ChapterScene mode"
         );
         assert!(
-            m.iter()
-                .all(|i| !(i.role == BinderItemRole::Folder
-                    && i.sub_role == BinderItemSubRole::Chapter)),
-            "no Chapter folders in ChapterScene mode"
+            m.iter().all(|i| !(i.role == BinderItemRole::Folder
+                && i.sub_role == BinderItemSubRole::ChapterScene)),
+            "no chapter folders in flat-chapter mode"
         );
         // Every ChapterScene is flat (indent 1) and carries all three content rows.
         for cs in m
