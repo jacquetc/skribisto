@@ -33,7 +33,6 @@ use trash_management::{RestoreItemsDto, TrashBinderDto, TrashBinderItemsDto};
 struct Fixture {
     ctx: AppContext,
     setup: u64,
-    system: EntityId,
     work: EntityId,
     binder1: EntityId,
     binder2: EntityId,
@@ -191,7 +190,6 @@ fn make_fixture() -> Fixture {
     Fixture {
         ctx,
         setup,
-        system,
         work,
         binder1,
         binder2,
@@ -520,12 +518,9 @@ fn trash_items_cascades_and_indexes_trash_info() {
     let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
     assert_eq!(infos.len(), 1);
     assert_eq!(infos[0].trashed_binder_item, Some(fx.a));
-    let indexed = work_commands::get_work_relationship(
-        &fx.ctx,
-        &fx.work,
-        &WorkRelationshipField::TrashInfos,
-    )
-    .unwrap_or_default();
+    let indexed =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::TrashInfos)
+            .unwrap_or_default();
     assert_eq!(indexed, vec![infos[0].id]);
 
     undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
@@ -575,12 +570,9 @@ fn restore_items_round_trip() {
     assert!(!res.orphaned);
     assert!(activated(&fx.ctx, fx.c));
     // Index emptied.
-    let indexed = work_commands::get_work_relationship(
-        &fx.ctx,
-        &fx.work,
-        &WorkRelationshipField::TrashInfos,
-    )
-    .unwrap_or_default();
+    let indexed =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::TrashInfos)
+            .unwrap_or_default();
     assert!(indexed.is_empty());
 }
 
@@ -743,12 +735,8 @@ fn empty_trash_removes_trashed_binder_from_work() {
 // ──────────────────────── restore + merge undo/redo ────────────────────────
 
 fn system_trash_index(fx: &Fixture) -> Vec<EntityId> {
-    work_commands::get_work_relationship(
-        &fx.ctx,
-        &fx.work,
-        &WorkRelationshipField::TrashInfos,
-    )
-    .unwrap_or_default()
+    work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::TrashInfos)
+        .unwrap_or_default()
 }
 
 fn mk_scene(fx: &Fixture, title: &str) -> EntityId {
@@ -776,10 +764,10 @@ fn scene_text(fx: &Fixture, item_id: EntityId) -> String {
     )
     .expect("contents");
     for cid in cids {
-        if let Some(c) = content_commands::get_content(&fx.ctx, &cid).expect("get content") {
-            if c.role == ContentRole::SceneText {
-                return c.data;
-            }
+        if let Some(c) = content_commands::get_content(&fx.ctx, &cid).expect("get content")
+            && c.role == ContentRole::SceneText
+        {
+            return c.data;
         }
     }
     String::new()

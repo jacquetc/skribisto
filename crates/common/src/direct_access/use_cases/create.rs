@@ -141,10 +141,10 @@ where
 
             // Replacing also cascade-removed the previously-owned children on execute; the scoped
             // restore re-adds them and surgically re-links them into the owner.
-            if let OwnerStrategy::Replacing = self.strategy {
-                if let Some(ref snap) = self.displaced_children_snapshot {
-                    uow.restore(snap)?;
-                }
+            if let OwnerStrategy::Replacing = self.strategy
+                && let Some(ref snap) = self.displaced_children_snapshot
+            {
+                uow.restore(snap)?;
             }
 
             uow.commit()?;
@@ -158,12 +158,11 @@ where
             uow.begin_transaction()?;
 
             // Replacing re-displaces the current children (snapshot for the next undo, then remove).
-            if let OwnerStrategy::Replacing = self.strategy {
-                if !self.existing_child_ids.is_empty() {
-                    self.displaced_children_snapshot =
-                        Some(uow.snapshot(&self.existing_child_ids)?);
-                    uow.remove_multi(&self.existing_child_ids)?;
-                }
+            if let OwnerStrategy::Replacing = self.strategy
+                && !self.existing_child_ids.is_empty()
+            {
+                self.displaced_children_snapshot = Some(uow.snapshot(&self.existing_child_ids)?);
+                uow.remove_multi(&self.existing_child_ids)?;
             }
 
             // Scoped restore re-adds the created subtree and surgically re-links it into the owner.

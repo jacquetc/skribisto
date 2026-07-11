@@ -7,8 +7,6 @@
 use super::binder_tag_repository::BinderTagTable;
 use super::binder_tag_repository::BinderTagTableRO;
 use crate::entities::BinderTag;
-use crate::error::RepositoryError;
-use crate::types::EntityId;
 
 crate::impl_leaf_entity_table!(
     entity: BinderTag,

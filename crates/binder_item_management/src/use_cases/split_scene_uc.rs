@@ -8,9 +8,7 @@ use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
-use common::entities::{
-    BinderItem, BinderItemRole, BinderItemSubRole, Content, ContentRole,
-};
+use common::entities::{BinderItem, BinderItemRole, BinderItemSubRole, Content, ContentRole};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 

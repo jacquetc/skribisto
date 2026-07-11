@@ -368,10 +368,19 @@ mod tests {
             // Prose tabs carry a kind + a main editor; every other combination has
             // neither.
             if is_prose {
-                assert!(tab.kind().is_some(), "{role:?}/{sub_role:?} prose needs a kind");
-                assert!(tab.main().is_some(), "{role:?}/{sub_role:?} prose needs main");
+                assert!(
+                    tab.kind().is_some(),
+                    "{role:?}/{sub_role:?} prose needs a kind"
+                );
+                assert!(
+                    tab.main().is_some(),
+                    "{role:?}/{sub_role:?} prose needs main"
+                );
             } else {
-                assert!(tab.kind().is_none(), "{role:?}/{sub_role:?} non-prose has no kind");
+                assert!(
+                    tab.kind().is_none(),
+                    "{role:?}/{sub_role:?} non-prose has no kind"
+                );
             }
             let mut tree = WidgetTree::new();
             let id = tree.add_boxed(tab_pane(&tab));

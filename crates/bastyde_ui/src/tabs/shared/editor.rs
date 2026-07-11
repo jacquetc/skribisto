@@ -13,8 +13,8 @@ use bastyde::text_document::TextDocument;
 use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::rich_text::{EditorHandle, RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
-    Expand, FixedSize, GroupHeader, HStack, MaxSize, MenuItem, MenuList, Padding, Panel, RectWidget,
-    Spacer, TextInput, VStack, ZStack,
+    Expand, FixedSize, GroupHeader, HStack, MaxSize, MenuItem, MenuList, Padding, Panel,
+    RectWidget, Spacer, TextInput, VStack, ZStack,
 };
 
 use crate::tabs::TitleField;
@@ -72,7 +72,9 @@ pub fn writing_column(
     CenterColumnFlowing::new(bati!(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
-            Expand::horizontal { child: TypographyBoundEditor::new(editor, typo.clone()) }
+            Expand::horizontal {
+                child: TypographyBoundEditor::new(editor, typo.clone())
+            }
         }
     ))
 }
@@ -191,7 +193,9 @@ pub fn tab_backdrop(body: impl Widget + 'static) -> Box<dyn Widget> {
             background: SurfaceRole::Content
             corner_radius: 0.0
             padding: 0.0
-            child: Expand { child: body }
+            child: Expand {
+                child: body
+            }
         }
     ))
 }
@@ -295,15 +299,21 @@ impl Widget for TypographyBoundEditor {
         }
         {
             let (h, t) = (handle.clone(), self.typo.clone());
-            ctx.effect(&self.typo.first_line_indent, move |_| push_typography(&h, &t));
+            ctx.effect(&self.typo.first_line_indent, move |_| {
+                push_typography(&h, &t)
+            });
         }
         {
             let (h, t) = (handle.clone(), self.typo.clone());
-            ctx.effect(&self.typo.para_spacing_before, move |_| push_typography(&h, &t));
+            ctx.effect(&self.typo.para_spacing_before, move |_| {
+                push_typography(&h, &t)
+            });
         }
         {
             let (h, t) = (handle, self.typo.clone());
-            ctx.effect(&self.typo.para_spacing_after, move |_| push_typography(&h, &t));
+            ctx.effect(&self.typo.para_spacing_after, move |_| {
+                push_typography(&h, &t)
+            });
         }
         vec![id]
     }

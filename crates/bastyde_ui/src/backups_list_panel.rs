@@ -149,8 +149,7 @@ impl Widget for BackupsListPanel {
 
         let refresh_scanner = self.scanner.clone();
 
-        let root = bati!(ctx =>
-            FixedSize {
+        let root = bati!(ctx => FixedSize {
                 width: CARD_W
                 height: CARD_H
                 Panel {
@@ -181,9 +180,15 @@ impl Widget for BackupsListPanel {
                                 }
                             }
                         }
-                        Expand::horizontal { Divider }
-                        Expand::vertical { child: body }
-                        Expand::horizontal { Divider }
+                        Expand::horizontal {
+                            Divider
+                        }
+                        Expand::vertical {
+                            child: body
+                        }
+                        Expand::horizontal {
+                            Divider
+                        }
                         FixedSize {
                             height: 52.0
                             Padding::symmetric(10.0, 22.0) {

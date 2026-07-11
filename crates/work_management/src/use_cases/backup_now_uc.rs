@@ -172,7 +172,11 @@ fn run_backup(
         }
         // Skip-if-unchanged: only when the caller supplied a matching hash for
         // this destination (the manual trigger passes empty hashes ⇒ never skips).
-        let known = dto.last_known_hashes.get(i).map(String::as_str).unwrap_or("");
+        let known = dto
+            .last_known_hashes
+            .get(i)
+            .map(String::as_str)
+            .unwrap_or("");
         if !known.is_empty() && known == content_hash {
             skipped_directories.push(dir.clone());
         } else {

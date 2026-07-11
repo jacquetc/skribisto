@@ -498,7 +498,11 @@ mod tests {
     #[test]
     fn chapter_folder_now_carries_scene_prose() {
         // Symmetric with the flat Item/ChapterScene so promote/demote is lossless.
-        assert!(content_allowed(&Role::Folder, &SubRole::Chapter, &SceneText));
+        assert!(content_allowed(
+            &Role::Folder,
+            &SubRole::Chapter,
+            &SceneText
+        ));
     }
 
     #[test]

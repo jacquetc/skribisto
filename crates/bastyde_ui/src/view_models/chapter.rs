@@ -202,7 +202,8 @@ impl ChapterViewModel {
         if let Some(it) = self.item_dto(self.inner.chapter_id) {
             let mut dto = update_item_dto(&it);
             dto.title = title.to_string();
-            let _ = binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
+            let _ =
+                binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
             self.inner.chapter_probe.set_id(Some(self.inner.chapter_id));
         }
     }
@@ -211,7 +212,8 @@ impl ChapterViewModel {
         if let Some(it) = self.item_dto(id) {
             let mut dto = update_item_dto(&it);
             dto.title = title.to_string();
-            let _ = binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
+            let _ =
+                binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
             self.scene(id).refresh_meta();
         }
     }
@@ -220,7 +222,8 @@ impl ChapterViewModel {
         if let Some(it) = self.item_dto(id) {
             let mut dto = update_item_dto(&it);
             dto.label = label.to_string();
-            let _ = binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
+            let _ =
+                binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
             self.scene(id).refresh_meta();
         }
     }
@@ -237,7 +240,11 @@ impl ChapterViewModel {
         if let Some(&last) = self.inner.model.ids().last() {
             self.insert_scene_after(ctx, last, title);
         } else if let Some((binder, _order, pos)) = self.locate(self.inner.chapter_id) {
-            let indent = self.item_dto(self.inner.chapter_id).map(|it| it.indent).unwrap_or(0) + 1;
+            let indent = self
+                .item_dto(self.inner.chapter_id)
+                .map(|it| it.indent)
+                .unwrap_or(0)
+                + 1;
             self.create_scene(binder, (pos + 1) as i32, indent, title);
         }
     }

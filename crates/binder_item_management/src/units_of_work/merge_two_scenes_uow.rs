@@ -132,6 +132,9 @@ impl MergeTwoScenesUnitOfWorkFactory {
 
 impl MergeTwoScenesUnitOfWorkFactoryTrait for MergeTwoScenesUnitOfWorkFactory {
     fn create(&self) -> Box<dyn MergeTwoScenesUnitOfWorkTrait> {
-        Box::new(MergeTwoScenesUnitOfWork::new(&self.context, &self.event_hub))
+        Box::new(MergeTwoScenesUnitOfWork::new(
+            &self.context,
+            &self.event_hub,
+        ))
     }
 }

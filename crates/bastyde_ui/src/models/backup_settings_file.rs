@@ -84,7 +84,9 @@ impl BackupPolicy {
     /// The `skrib_format` retention policy this configuration resolves to.
     pub fn retention(&self) -> RetentionPolicy {
         match self.retention_mode {
-            RetentionMode::KeepLastN => RetentionPolicy::KeepLastN { n: self.keep_last_n },
+            RetentionMode::KeepLastN => RetentionPolicy::KeepLastN {
+                n: self.keep_last_n,
+            },
             RetentionMode::Tiered => RetentionPolicy::Gfs {
                 hourly: self.gfs_hourly,
                 daily: self.gfs_daily,
@@ -309,7 +311,11 @@ impl BackupSettingsService {
         self.file.mutate(|f| {
             let ps = project_state_mut(f, work_uid);
             ps.last_path = last_path.to_string();
-            if let Some(d) = ps.destination_states.iter_mut().find(|d| d.directory == dir) {
+            if let Some(d) = ps
+                .destination_states
+                .iter_mut()
+                .find(|d| d.directory == dir)
+            {
                 d.last_success_hash = hash.to_string();
                 d.last_success_at = at.to_string();
             } else {
@@ -384,7 +390,10 @@ mod tests {
         assert!(g.on_close && !g.on_open && !g.interval_enabled);
         assert_eq!(g.retention_mode, RetentionMode::Tiered);
         assert_eq!(g.min_keep, 3);
-        assert!(matches!(g.retention(), RetentionPolicy::Gfs { monthly: 12, .. }));
+        assert!(matches!(
+            g.retention(),
+            RetentionPolicy::Gfs { monthly: 12, .. }
+        ));
     }
 
     #[test]
@@ -418,10 +427,22 @@ mod tests {
         let d = tempdir().unwrap();
         {
             let s = svc(d.path());
-            s.record_destination_success("uid-A", "/x/a.skrib", "/backups", "hash1", "2026-06-01T10:00:00Z")
-                .unwrap();
-            s.record_destination_success("uid-A", "/x/a.skrib", "/usb", "hash2", "2026-06-02T10:00:00Z")
-                .unwrap();
+            s.record_destination_success(
+                "uid-A",
+                "/x/a.skrib",
+                "/backups",
+                "hash1",
+                "2026-06-01T10:00:00Z",
+            )
+            .unwrap();
+            s.record_destination_success(
+                "uid-A",
+                "/x/a.skrib",
+                "/usb",
+                "hash2",
+                "2026-06-02T10:00:00Z",
+            )
+            .unwrap();
             s.mark_nudged("uid-A", "/x/a.skrib").unwrap();
             s.flush_now().unwrap();
         }
@@ -429,10 +450,15 @@ mod tests {
         // nested structs + the flat retention fields).
         let s = svc(d.path());
         assert_eq!(
-            s.destination_state("uid-A", "/backups").unwrap().last_success_hash,
+            s.destination_state("uid-A", "/backups")
+                .unwrap()
+                .last_success_hash,
             "hash1"
         );
-        assert_eq!(s.last_backup_at("uid-A").as_deref(), Some("2026-06-02T10:00:00Z"));
+        assert_eq!(
+            s.last_backup_at("uid-A").as_deref(),
+            Some("2026-06-02T10:00:00Z")
+        );
         assert!(s.was_nudged("uid-A"));
     }
 }

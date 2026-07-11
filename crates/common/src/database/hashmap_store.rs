@@ -66,7 +66,7 @@ impl HashMapStore {
     /// Clone the entire store for savepoint support. O(1) thanks to im::HashMap.
     /// (Poison-tolerant, but NOT atomic across tables — used for savepoints, which
     /// are taken on the single writer thread with no concurrent writer; use
-    /// [`freeze`] when an atomic cross-table snapshot is required.)
+    /// [`Self::freeze`] when an atomic cross-table snapshot is required.)
     pub fn snapshot(&self) -> HashMapStoreSnapshot {
         HashMapStoreSnapshot {
             roots: read_or_recover(&self.roots).clone(),
@@ -132,7 +132,7 @@ impl HashMapStore {
 
     /// Atomically snapshot the whole store into a fresh, isolated `HashMapStore`.
     ///
-    /// Unlike [`snapshot`], this holds a read guard on **every** table, junction,
+    /// Unlike [`Self::snapshot`], this holds a read guard on **every** table, junction,
     /// and the counters *simultaneously* while cloning, so the result is a single
     /// consistent point-in-time view of the store *at the instant freeze runs*.
     /// O(1) clones (im::HashMap structural sharing); the lock hold is just the
@@ -479,12 +479,12 @@ pub(crate) fn delete_from_backward_junction(
     let mut jn = junction.write().unwrap();
     let keys: Vec<EntityId> = jn.keys().copied().collect();
     for k in keys {
-        if let Some(right_ids) = jn.get(&k) {
-            if right_ids.contains(id) {
-                let filtered: Vec<EntityId> =
-                    right_ids.iter().copied().filter(|eid| eid != id).collect();
-                jn.insert(k, filtered);
-            }
+        if let Some(right_ids) = jn.get(&k)
+            && right_ids.contains(id)
+        {
+            let filtered: Vec<EntityId> =
+                right_ids.iter().copied().filter(|eid| eid != id).collect();
+            jn.insert(k, filtered);
         }
     }
 }
@@ -577,7 +577,7 @@ pub(crate) fn reconcile_backref_list(
     let mut work: Vec<EntityId> = live_list
         .iter()
         .copied()
-        .filter(|x| !(scope.contains(x) && !snap_member_set.contains(x)))
+        .filter(|x| !scope.contains(x) || snap_member_set.contains(x))
         .collect();
 
     // Re-insert missing scope ids at their snapshot-relative position (count of snapshot

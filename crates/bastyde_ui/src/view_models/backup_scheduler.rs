@@ -8,7 +8,7 @@
 //! route the long-operation events to it and fire its triggers.
 //!
 //! **On close** it also orchestrates the "back up before quitting" step: the
-//! close guards defer to [`on_close_flow`], which — if a destination is
+//! close guards defer to [`BackupSchedulerViewModel::on_close_flow`], which — if a destination is
 //! reachable — runs the backup and only then performs the real (forced) close;
 //! if *no* destination is reachable it shows a blocking **Retry / Discard-and-
 //! exit** prompt so the user can plug a drive in and retry.
@@ -169,7 +169,7 @@ impl BackupSchedulerViewModel {
     }
 
     /// Whether the currently-open project wants an on-close backup (the close
-    /// guards consult this before deferring to [`on_close_flow`]).
+    /// guards consult this before deferring to [`Self::on_close_flow`]).
     pub fn wants_on_close(&self) -> bool {
         if self.suppressed() {
             return false;
@@ -181,7 +181,7 @@ impl BackupSchedulerViewModel {
 
     /// The interval between automatic backups for the open project, in seconds —
     /// `None` when nothing is open or the interval trigger is off. Drives the App
-    /// timer that calls [`interval_tick`].
+    /// timer that calls [`Self::interval_tick`].
     pub fn interval_secs(&self) -> Option<u64> {
         if self.suppressed() {
             return None;
@@ -368,10 +368,7 @@ impl BackupSchedulerViewModel {
                 );
             }
             // Retention: prune every destination we wrote to or already had current.
-            for d in succeeded_dirs
-                .iter()
-                .chain(res.skipped_directories.iter())
-            {
+            for d in succeeded_dirs.iter().chain(res.skipped_directories.iter()) {
                 if let Some(dir) = retention_dir(d, &pending.path) {
                     let _ = retention::apply_retention(
                         &dir,

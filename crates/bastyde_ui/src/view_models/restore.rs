@@ -99,8 +99,7 @@ impl RestoreViewModel {
         MessageBox::warning(tr!(restore_close_elsewhere_title()))
             .text(tr!(restore_close_elsewhere_text()))
             .buttons(MessageBoxButtons::Custom(vec![
-                MessageBoxButton::standard(StandardButton::Open)
-                    .label(tr!(restore_focus_window())),
+                MessageBoxButton::standard(StandardButton::Open).label(tr!(restore_focus_window())),
                 MessageBoxButton::standard(StandardButton::Retry),
                 MessageBoxButton::standard(StandardButton::Cancel),
             ]))

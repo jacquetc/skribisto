@@ -31,10 +31,13 @@ pub fn recommendation_label(create_type: CreateType) -> LocalizedString {
 }
 
 /// The label for a concrete promote target `(role, sub_role)` — used in the
-/// "Promote to <target>" menu item. Unlike the Create menu (which hides the two
+/// "Promote to `<target>`" menu item. Unlike the Create menu (which hides the two
 /// chapter encodings behind one "Chapter"), promote is exactly where the writer
 /// chooses between them, so they get distinct labels.
-pub fn promote_target_label(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> LocalizedString {
+pub fn promote_target_label(
+    role: &BinderItemRole,
+    sub_role: &BinderItemSubRole,
+) -> LocalizedString {
     use BinderItemRole::{Folder, Item};
     use BinderItemSubRole as S;
     match (role, sub_role) {
@@ -65,7 +68,10 @@ pub fn recommendation_tooltip(rec: &Recommendation, anchor_title: Option<&str>) 
             tr!(create_tooltip_sibling(kind = kind, target = t.to_string()))
         }
         (Some(t), Relation::ParentSibling) => {
-            tr!(create_tooltip_parent_sibling(kind = kind, target = t.to_string()))
+            tr!(create_tooltip_parent_sibling(
+                kind = kind,
+                target = t.to_string()
+            ))
         }
         (None, _) => tr!(create_tooltip_top(kind = kind)),
     };

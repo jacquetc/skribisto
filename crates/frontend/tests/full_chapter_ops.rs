@@ -10,7 +10,9 @@ use frontend::commands::{
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
-use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateContentDto, CreateWorkDto};
+use frontend::direct_access::{
+    CreateBinderDto, CreateBinderItemDto, CreateContentDto, CreateWorkDto,
+};
 
 /// A fresh store with one Work + one Binder; returns (ctx, binder_id).
 fn setup() -> (AppContext, u64) {
@@ -118,7 +120,9 @@ fn merge_two_scenes_concats_text_and_trashes_source() {
     // A absorbed B's text after a blank line.
     assert_eq!(scene_text(&ctx, a), "Alpha\n\nBeta");
     // B is trashed (deactivated, so excluded from the flat stream).
-    let b_dto = binder_item_commands::get_binder_item(&ctx, &b).unwrap().unwrap();
+    let b_dto = binder_item_commands::get_binder_item(&ctx, &b)
+        .unwrap()
+        .unwrap();
     assert!(!b_dto.activated, "merged-away scene should be trashed");
 }
 

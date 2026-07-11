@@ -147,7 +147,9 @@ mod imp {
                     flat.iter().map(|it| it.sub_role.clone()).collect();
                 return scene_indices(&sub_roles, pos)
                     .into_iter()
-                    .map(|i| SceneRow { item_id: flat[i].id })
+                    .map(|i| SceneRow {
+                        item_id: flat[i].id,
+                    })
                     .collect();
             }
         }
@@ -183,31 +185,6 @@ mod imp {
         out
     }
 
-    #[cfg(test)]
-    mod tests {
-        use super::scene_indices;
-        use frontend::common::entities::BinderItemSubRole::*;
-
-        #[test]
-        fn boundary_rule() {
-            // Chapter folder head is not itself a scene; a Note between scenes is
-            // skipped (not scene-bearing, not a boundary); the run stops at the
-            // next Chapter.
-            assert_eq!(
-                scene_indices(&[Chapter, Scene, Note, Scene, Chapter, Scene], 0),
-                vec![1, 3]
-            );
-            // A ChapterScene head IS its own first scene; stops at the next Part.
-            assert_eq!(scene_indices(&[ChapterScene, Scene, Part, Scene], 0), vec![0, 1]);
-            // Text carries no content — neither scene nor boundary.
-            assert_eq!(scene_indices(&[Chapter, Text, Scene], 0), vec![2]);
-            // BookBegin / BookEnd are boundaries.
-            assert_eq!(scene_indices(&[Chapter, Scene, BookEnd, Scene], 0), vec![1]);
-            // Runs to the end of the stream when no boundary follows.
-            assert_eq!(scene_indices(&[Chapter, Scene, Scene], 0), vec![1, 2]);
-        }
-    }
-
     /// Apply `next` onto `model` with the fewest granular ops (remove / insert /
     /// move), so the reconciling `Repeater` keeps surviving rows' editors.
     fn reconcile(model: &ListModel<SceneRow>, next: Vec<SceneRow>) {
@@ -240,6 +217,34 @@ mod imp {
                     cur.insert(pos, want.clone());
                 }
             }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::scene_indices;
+        use frontend::common::entities::BinderItemSubRole::*;
+
+        #[test]
+        fn boundary_rule() {
+            // Chapter folder head is not itself a scene; a Note between scenes is
+            // skipped (not scene-bearing, not a boundary); the run stops at the
+            // next Chapter.
+            assert_eq!(
+                scene_indices(&[Chapter, Scene, Note, Scene, Chapter, Scene], 0),
+                vec![1, 3]
+            );
+            // A ChapterScene head IS its own first scene; stops at the next Part.
+            assert_eq!(
+                scene_indices(&[ChapterScene, Scene, Part, Scene], 0),
+                vec![0, 1]
+            );
+            // Text carries no content — neither scene nor boundary.
+            assert_eq!(scene_indices(&[Chapter, Text, Scene], 0), vec![2]);
+            // BookBegin / BookEnd are boundaries.
+            assert_eq!(scene_indices(&[Chapter, Scene, BookEnd, Scene], 0), vec![1]);
+            // Runs to the end of the stream when no boundary follows.
+            assert_eq!(scene_indices(&[Chapter, Scene, Scene], 0), vec![1, 2]);
         }
     }
 }

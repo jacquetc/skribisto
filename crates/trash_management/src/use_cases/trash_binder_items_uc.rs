@@ -105,7 +105,8 @@ impl TrashBinderItemsUseCase {
     fn apply(&mut self, uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<()> {
         set_activated(uow, &self.cascade, false)?;
 
-        let mut index = uow.get_work_relationship(&self.work_id, &WorkRelationshipField::TrashInfos)?;
+        let mut index =
+            uow.get_work_relationship(&self.work_id, &WorkRelationshipField::TrashInfos)?;
         let mut created = Vec::with_capacity(self.roots.len());
         for root in &self.roots {
             let info = uow.create_orphan_trash_info(&TrashInfo {
@@ -140,7 +141,11 @@ impl TrashBinderItemsUseCase {
                 .into_iter()
                 .filter(|id| !drop.contains(id))
                 .collect();
-            uow.set_work_relationship(&self.work_id, &WorkRelationshipField::TrashInfos, &remaining)?;
+            uow.set_work_relationship(
+                &self.work_id,
+                &WorkRelationshipField::TrashInfos,
+                &remaining,
+            )?;
             uow.remove_trash_info_multi(&self.created_trash)?;
         }
         Ok(())
@@ -156,8 +161,11 @@ fn set_activated(
     if ids.is_empty() {
         return Ok(());
     }
-    let mut items: Vec<BinderItem> =
-        uow.get_binder_item_multi(ids)?.into_iter().flatten().collect();
+    let mut items: Vec<BinderItem> = uow
+        .get_binder_item_multi(ids)?
+        .into_iter()
+        .flatten()
+        .collect();
     for it in &mut items {
         it.activated = value;
     }

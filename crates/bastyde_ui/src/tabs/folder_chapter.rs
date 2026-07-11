@@ -218,7 +218,9 @@ fn scene_menu(vm: &ChapterViewModel, id: u64) -> impl Widget {
                 MenuItem::new(tr!(insert_scene()))
                     .on_activate_fn(mk(|v, c, id| v.begin_insert_scene_after(c, id))),
             )
-            .item(MenuItem::new(tr!(move_up())).on_activate_fn(mk(|v, c, id| v.move_scene_up(c, id))))
+            .item(
+                MenuItem::new(tr!(move_up())).on_activate_fn(mk(|v, c, id| v.move_scene_up(c, id))),
+            )
             .item(
                 MenuItem::new(tr!(move_down()))
                     .on_activate_fn(mk(|v, c, id| v.move_scene_down(c, id))),

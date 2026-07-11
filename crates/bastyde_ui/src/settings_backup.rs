@@ -80,12 +80,12 @@ pub fn work_backup_pane(
         let uid = uid.clone();
         let path = path.clone();
         let title = title.clone();
-        ctx.effect(&inherit, move |inh| {
+        ctx.effect(&inherit, move |inherited| {
             // Never key an override by an unusable (empty) uid.
             if !usable {
                 return;
             }
-            if *inh {
+            if *inherited {
                 vm.clear_override(&uid);
             } else if !vm.has_override(&uid) {
                 // Seed the new override from the currently-effective policy.
@@ -100,7 +100,9 @@ pub fn work_backup_pane(
     let enabled = Signal::new(has_override && usable);
     {
         let enabled = enabled.clone();
-        ctx.effect(&inherit, move |inh| enabled.set(!*inh && usable));
+        ctx.effect(&inherit, move |inherited| {
+            enabled.set(!*inherited && usable)
+        });
     }
 
     let get: Get = {
@@ -215,36 +217,80 @@ fn add_policy_rows(
     }
     // The tiered-vs-keep-N explanation, shown as a rich tooltip on each segment
     // (short summary + a "more" disclosure) so the choice is self-documenting.
-    let tiered_tip =
-        TooltipContent::new("backup-retention-tiered", tr!(settings_backup_retention_tiered()))
-            .with_more(tr!(settings_backup_retention_tip_more()));
-    let keepn_tip =
-        TooltipContent::new("backup-retention-keepn", tr!(settings_backup_retention_keep_n()))
-            .with_more(tr!(settings_backup_retention_tip_more()));
+    let tiered_tip = TooltipContent::new(
+        "backup-retention-tiered",
+        tr!(settings_backup_retention_tiered()),
+    )
+    .with_more(tr!(settings_backup_retention_tip_more()));
+    let keepn_tip = TooltipContent::new(
+        "backup-retention-keepn",
+        tr!(settings_backup_retention_keep_n()),
+    )
+    .with_more(tr!(settings_backup_retention_tip_more()));
     let mode_control = SegmentedControl::new(retention_mode.clone())
-        .segment(Segment::new(tr!(settings_backup_retention_tiered())).rich_tooltip_content(tiered_tip))
-        .segment(Segment::new(tr!(settings_backup_retention_keep_n())).rich_tooltip_content(keepn_tip))
+        .segment(
+            Segment::new(tr!(settings_backup_retention_tiered())).rich_tooltip_content(tiered_tip),
+        )
+        .segment(
+            Segment::new(tr!(settings_backup_retention_keep_n())).rich_tooltip_content(keepn_tip),
+        )
         .enabled(enabled.clone());
 
     let keep_n = int_field(ctx, &get, &set, p0.keep_last_n as i64, |p, v| {
         p.keep_last_n = v.max(1) as u32
     });
-    let gfs_h = int_field(ctx, &get, &set, p0.gfs_hourly as i64, |p, v| p.gfs_hourly = v.max(0) as u32);
-    let gfs_d = int_field(ctx, &get, &set, p0.gfs_daily as i64, |p, v| p.gfs_daily = v.max(0) as u32);
-    let gfs_w = int_field(ctx, &get, &set, p0.gfs_weekly as i64, |p, v| p.gfs_weekly = v.max(0) as u32);
-    let gfs_m = int_field(ctx, &get, &set, p0.gfs_monthly as i64, |p, v| p.gfs_monthly = v.max(0) as u32);
-    let min_keep = int_field(ctx, &get, &set, p0.min_keep as i64, |p, v| p.min_keep = v.max(0) as u32);
+    let gfs_h = int_field(ctx, &get, &set, p0.gfs_hourly as i64, |p, v| {
+        p.gfs_hourly = v.max(0) as u32
+    });
+    let gfs_d = int_field(ctx, &get, &set, p0.gfs_daily as i64, |p, v| {
+        p.gfs_daily = v.max(0) as u32
+    });
+    let gfs_w = int_field(ctx, &get, &set, p0.gfs_weekly as i64, |p, v| {
+        p.gfs_weekly = v.max(0) as u32
+    });
+    let gfs_m = int_field(ctx, &get, &set, p0.gfs_monthly as i64, |p, v| {
+        p.gfs_monthly = v.max(0) as u32
+    });
+    let min_keep = int_field(ctx, &get, &set, p0.min_keep as i64, |p, v| {
+        p.min_keep = v.max(0) as u32
+    });
 
     // Keep-N vs GFS params, switched on the selected mode. Fixed-width labels (a
     // `.line()`/Expand label collapses to a sliver inside the hug-width Switcher).
     let gfs = VStack::new()
         .spacing(8.0)
-        .child(spin_line(tr!(settings_backup_gfs_hourly()), gfs_h, 0, 168, &enabled))
-        .child(spin_line(tr!(settings_backup_gfs_daily()), gfs_d, 0, 60, &enabled))
-        .child(spin_line(tr!(settings_backup_gfs_weekly()), gfs_w, 0, 52, &enabled))
-        .child(spin_line(tr!(settings_backup_gfs_monthly()), gfs_m, 0, 120, &enabled));
+        .child(spin_line(
+            tr!(settings_backup_gfs_hourly()),
+            gfs_h,
+            0,
+            168,
+            &enabled,
+        ))
+        .child(spin_line(
+            tr!(settings_backup_gfs_daily()),
+            gfs_d,
+            0,
+            60,
+            &enabled,
+        ))
+        .child(spin_line(
+            tr!(settings_backup_gfs_weekly()),
+            gfs_w,
+            0,
+            52,
+            &enabled,
+        ))
+        .child(spin_line(
+            tr!(settings_backup_gfs_monthly()),
+            gfs_m,
+            0,
+            120,
+            &enabled,
+        ));
     let keepn = spin_line(tr!(settings_backup_keep_n()), keep_n, 1, 999, &enabled);
-    let retention_params = Switcher::new(retention_mode.map(|m| *m)).child(gfs).child(keepn);
+    let retention_params = Switcher::new(retention_mode.map(|m| *m))
+        .child(gfs)
+        .child(keepn);
 
     // ── Dedup ──
     let dedup = bool_field(ctx, &get, &set, p0.skip_if_unchanged, |p, v| {
@@ -254,24 +300,50 @@ fn add_policy_rows(
     form
         // Triggers
         .full_width(group(tr!(settings_backup_triggers())))
-        .full_width(Toggle::new(on_close).label(tr!(settings_backup_on_close())).enabled(enabled.clone()))
-        .full_width(Toggle::new(on_open).label(tr!(settings_backup_on_open())).enabled(enabled.clone()))
+        .full_width(
+            Toggle::new(on_close)
+                .label(tr!(settings_backup_on_close()))
+                .enabled(enabled.clone()),
+        )
+        .full_width(
+            Toggle::new(on_open)
+                .label(tr!(settings_backup_on_open()))
+                .enabled(enabled.clone()),
+        )
         // Interval trigger + its "every N h" spin, on one aligned row.
         .line(
-            Toggle::new(interval_on).label(tr!(settings_backup_interval())).enabled(enabled.clone()),
+            Toggle::new(interval_on)
+                .label(tr!(settings_backup_interval()))
+                .enabled(enabled.clone()),
             FixedSize::new().width(120.0).child(
-                SpinBox::new(interval_hours, 1i64, 168).suffix(" h").enabled(enabled.clone()),
+                SpinBox::new(interval_hours, 1i64, 168)
+                    .suffix(" h")
+                    .enabled(enabled.clone()),
             ),
         )
         // Destinations
         .full_width(group(tr!(settings_backup_destinations())))
-        .full_width(DestinationsEditor::new(get.clone(), set.clone(), enabled.clone()))
+        .full_width(DestinationsEditor::new(
+            get.clone(),
+            set.clone(),
+            enabled.clone(),
+        ))
         // Retention
         .full_width(group(tr!(settings_backup_retention())))
         .full_width(mode_control)
         .full_width(retention_params)
-        .full_width(spin_line(tr!(settings_backup_min_keep()), min_keep, 0, 99, &enabled))
-        .full_width(Toggle::new(dedup).label(tr!(settings_backup_dedup())).enabled(enabled))
+        .full_width(spin_line(
+            tr!(settings_backup_min_keep()),
+            min_keep,
+            0,
+            99,
+            &enabled,
+        ))
+        .full_width(
+            Toggle::new(dedup)
+                .label(tr!(settings_backup_dedup()))
+                .enabled(enabled),
+        )
 }
 
 /// A retention param row: a fixed-width single-line label + a spin cell. Fixed
@@ -372,8 +444,11 @@ impl std::fmt::Debug for DestinationsEditor {
 
 impl Widget for DestinationsEditor {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.epoch
-            .bind_to(ctx.self_id(), ctx.binding_registry(), bastyde::core::BindingLevel::Rebuild);
+        self.epoch.bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            bastyde::core::BindingLevel::Rebuild,
+        );
 
         let dests = (self.get)().destinations;
         let mut col = VStack::new().spacing(6.0);
@@ -399,9 +474,13 @@ impl Widget for DestinationsEditor {
             let row = HStack::new()
                 .spacing(8.0)
                 .child(FixedSize::new().width(16.0).child(badge))
-                .child(Expand::horizontal().child(
-                    TextWidget::new(lit!(d.clone())).style(TextStyleRole::Small).single_line(),
-                ))
+                .child(
+                    Expand::horizontal().child(
+                        TextWidget::new(lit!(d.clone()))
+                            .style(TextStyleRole::Small)
+                            .single_line(),
+                    ),
+                )
                 .child(
                     IconButton::clear()
                         .tooltip(tr!(settings_backup_dest_remove()))
@@ -430,7 +509,8 @@ impl Widget for DestinationsEditor {
                     let get = get.clone();
                     let set = set.clone();
                     let epoch = epoch.clone();
-                    let req = FileDialogRequest::pick_folder().title(tr!(settings_backup_dest_add()));
+                    let req =
+                        FileDialogRequest::pick_folder().title(tr!(settings_backup_dest_add()));
                     let _ = c.pick_folder(req, move |res, _c| {
                         if let FileDialogResult::Folder(Some(path)) = res {
                             let p_str = path.to_string_lossy().into_owned();

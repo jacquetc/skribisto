@@ -55,8 +55,7 @@ impl Widget for BackupChoicePanel {
         };
         let restore = self.restore.clone();
 
-        let root = bati!(ctx =>
-            FixedSize {
+        let root = bati!(ctx => FixedSize {
                 width: CARD_W
                 height: CARD_H
                 Panel {
@@ -83,7 +82,9 @@ impl Widget for BackupChoicePanel {
                                 }
                             }
                         }
-                        Expand::horizontal { Divider }
+                        Expand::horizontal {
+                            Divider
+                        }
                         Expand::vertical {
                             Padding::symmetric(24.0, 22.0) {
                                 VStack {
@@ -101,7 +102,9 @@ impl Widget for BackupChoicePanel {
                                 }
                             }
                         }
-                        Expand::horizontal { Divider }
+                        Expand::horizontal {
+                            Divider
+                        }
                         FixedSize {
                             height: 56.0
                             Padding::symmetric(10.0, 22.0) {
@@ -164,6 +167,10 @@ mod tests {
         let id = tree.add_boxed(Box::new(BackupChoicePanel::new(restore, ctx)));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         let b = tree.bounds(id);
-        assert_eq!((b.width, b.height), (CARD_W, CARD_H), "panel fills the card");
+        assert_eq!(
+            (b.width, b.height),
+            (CARD_W, CARD_H),
+            "panel fills the card"
+        );
     }
 }

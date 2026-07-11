@@ -142,5 +142,10 @@ fn run_save_as(
         work_io::resolve_target(&dto.file_name, g.work_info.as_ref(), Some(forced))?;
     let work_id = g.work.id;
     let output = work_io::serialize_and_write(&g, target, shape, tag)?;
-    Ok((work_id, SaveAsResultDto { output_path: output }))
+    Ok((
+        work_id,
+        SaveAsResultDto {
+            output_path: output,
+        },
+    ))
 }

@@ -22,15 +22,15 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use bastyde::core::ObserverHandle;
-use bastyde::prelude::BuildContext;
-use frontend::common::event::{
-    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event, Origin, TrashManagementEvent,
-};
 use bastyde::data::{
     DragEligibility, DropCommit, DropPosition, DropQuery, DropResponse, FlatEntry, TreeDataSlice,
     TreeDataSource, TreeFilterMode, TreeRowFilter,
 };
+use bastyde::prelude::BuildContext;
 use bastyde::prelude::Signal;
+use frontend::common::event::{
+    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event, Origin, TrashManagementEvent,
+};
 
 use frontend::AppContext;
 use frontend::common::entities::BinderItemSubRole;

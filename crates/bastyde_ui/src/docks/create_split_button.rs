@@ -3,7 +3,7 @@
 //! "＋ Scene"), dropdown, and tooltips all track the current outline selection.
 //!
 //! The recommendation logic lives in `skribisto_model` +
-//! [`OutlineViewModel`](crate::view_models::OutlineViewModel); this widget only
+//! [`OutlineViewModel`]; this widget only
 //! renders it. `SplitButton`'s item list is fixed at `build()` time, so — like
 //! [`BinderSwitcherButton`](crate::binder_switcher_button::BinderSwitcherButton) —
 //! this widget binds `selection_signal()` at `BindingLevel::Rebuild` and
@@ -19,7 +19,7 @@ use crate::create_labels::{recommendation_label, recommendation_tooltip};
 use crate::intents::AppIntent;
 use crate::view_models::OutlineViewModel;
 
-/// The "＋ <type>" split button shown in the outline dock header.
+/// The "＋ `<type>`" split button shown in the outline dock header.
 pub struct CreateSplitButton {
     outline: OutlineViewModel,
     root_child: Option<WidgetId>,

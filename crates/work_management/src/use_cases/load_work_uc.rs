@@ -397,7 +397,11 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
     }
     // Trash lives under the Work trunk (post-reparent).
     if !trash_info_ids.is_empty() {
-        uow.set_work_relationship(&work.id, &WorkRelationshipField::TrashInfos, &trash_info_ids)?;
+        uow.set_work_relationship(
+            &work.id,
+            &WorkRelationshipField::TrashInfos,
+            &trash_info_ids,
+        )?;
     }
 
     Ok(Materialized { work_id: work.id })

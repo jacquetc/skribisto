@@ -1,7 +1,9 @@
 // Custom UoW for SplitScene — action macros must match the trait in
 // ../use_cases/split_scene_uc.rs.
 
-use crate::use_cases::split_scene_uc::{SplitSceneUnitOfWorkFactoryTrait, SplitSceneUnitOfWorkTrait};
+use crate::use_cases::split_scene_uc::{
+    SplitSceneUnitOfWorkFactoryTrait, SplitSceneUnitOfWorkTrait,
+};
 use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};

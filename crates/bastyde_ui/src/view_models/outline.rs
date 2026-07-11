@@ -744,7 +744,11 @@ impl OutlineViewModel {
     ) -> usize {
         let mut j = pos + 1;
         while j < order.len()
-            && meta.get(&order[j]).map(|(ind, _)| *ind).unwrap_or(base_indent) > base_indent
+            && meta
+                .get(&order[j])
+                .map(|(ind, _)| *ind)
+                .unwrap_or(base_indent)
+                > base_indent
         {
             j += 1;
         }
@@ -1083,9 +1087,15 @@ mod tests {
                 indent,
                 ..Default::default()
             };
-            let id = binder_item_commands::create_binder_item(&outline.app_ctx, None, &dto, binder, index)
-                .unwrap()
-                .id;
+            let id = binder_item_commands::create_binder_item(
+                &outline.app_ctx,
+                None,
+                &dto,
+                binder,
+                index,
+            )
+            .unwrap()
+            .id;
             outline.reload();
             id
         }
@@ -1111,7 +1121,14 @@ mod tests {
         #[test]
         fn chapter_creates_a_folder_chapter_in_folder_mode() {
             let (outline, binder) = seed();
-            let book = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
+            let book = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Book,
+                0,
+                0,
+            );
             outline.add_recommended(
                 Some(BinderTreeKey::Item(book)),
                 &rec(CreateType::Chapter, Relation::Child),
@@ -1126,9 +1143,30 @@ mod tests {
         #[test]
         fn child_appends_inside_a_book_before_its_book_end() {
             let (outline, binder) = seed();
-            let book = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
-            let ch1 = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Chapter, 1, 1);
-            let end = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::BookEnd, 1, 2);
+            let book = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Book,
+                0,
+                0,
+            );
+            let ch1 = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Chapter,
+                1,
+                1,
+            );
+            let end = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::BookEnd,
+                1,
+                2,
+            );
 
             outline.add_recommended(
                 Some(BinderTreeKey::Item(book)),
@@ -1147,10 +1185,30 @@ mod tests {
         #[test]
         fn sibling_lands_after_the_anchor_folders_whole_subtree() {
             let (outline, binder) = seed();
-            let chapter =
-                seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Chapter, 0, 0);
-            let s1 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 1);
-            let s2 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 2);
+            let chapter = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Chapter,
+                0,
+                0,
+            );
+            let s1 = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+                1,
+            );
+            let s2 = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+                2,
+            );
 
             outline.add_recommended(
                 Some(BinderTreeKey::Item(chapter)),
@@ -1167,11 +1225,38 @@ mod tests {
         #[test]
         fn parent_sibling_targets_the_enclosing_chapters_level() {
             let (outline, binder) = seed();
-            let book = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
-            let chapter =
-                seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Chapter, 1, 1);
-            let s1 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 2, 2);
-            let s2 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 2, 3);
+            let book = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Book,
+                0,
+                0,
+            );
+            let chapter = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Chapter,
+                1,
+                1,
+            );
+            let s1 = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                2,
+                2,
+            );
+            let s2 = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                2,
+                3,
+            );
 
             // Anchored on a deep scene: a new Chapter should start after the whole
             // enclosing chapter, at the chapter's own indent — not nested in it.
@@ -1189,9 +1274,22 @@ mod tests {
         #[test]
         fn book_end_recommendation_is_gated_once_the_book_has_one() {
             let (outline, binder) = seed();
-            let book = seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
-            let _end =
-                seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::BookEnd, 1, 1);
+            let book = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Book,
+                0,
+                0,
+            );
+            let _end = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::BookEnd,
+                1,
+                1,
+            );
 
             let recs = outline.recommendations_for_key(Some(BinderTreeKey::Item(book)));
             assert!(
@@ -1214,8 +1312,14 @@ mod tests {
         #[test]
         fn promote_flips_scene_to_note() {
             let (outline, binder) = seed();
-            let scene =
-                seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 0, 0);
+            let scene = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                0,
+                0,
+            );
             outline.promote(BinderTreeKey::Item(scene));
             let dto = outline.item_dto(scene).unwrap();
             assert_eq!(dto.role, BinderItemRole::Item);
@@ -1242,10 +1346,30 @@ mod tests {
         #[test]
         fn demote_blocked_children_counts_the_subtree() {
             let (outline, binder) = seed();
-            let chapter =
-                seed_item(&outline, binder, BinderItemRole::Folder, BinderItemSubRole::Chapter, 0, 0);
-            let s1 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 1);
-            let _s2 = seed_item(&outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 2);
+            let chapter = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Chapter,
+                0,
+                0,
+            );
+            let s1 = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+                1,
+            );
+            let _s2 = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+                2,
+            );
             // The chapter folder holds two scenes → demoting to a flat chapter is blocked.
             assert_eq!(
                 outline.demote_blocked_children(BinderTreeKey::Item(chapter)),

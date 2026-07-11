@@ -134,8 +134,7 @@ impl Widget for ImportPlumePanel {
         let import_vm = self.vm.clone();
         let import_can = self.vm.can_import();
 
-        let root = bati!(ctx =>
-            FixedSize {
+        let root = bati!(ctx => FixedSize {
                 width: CARD_W
                 height: CARD_H
                 Panel {

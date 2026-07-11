@@ -20,12 +20,10 @@ use bastyde::settings::SettingsExt;
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
     Divider, DockOpenLocation, DockRail, DockSide, DockWidgetId, DockingLayout, DropRegion,
-    DropTarget,
-    DropTargetVariant, EventContextMessageBoxExt, Expand, HStack, IconButton, IconButtonSize,
-    MessageBox, MessageBoxButton, MessageBoxButtons, NotificationArchiveModel,
-    NotificationCenterButton, RowDragData,
-    Spacer, Splitter, StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast,
-    ToastAction, VStack,
+    DropTarget, DropTargetVariant, EventContextMessageBoxExt, Expand, HStack, IconButton,
+    IconButtonSize, MessageBox, MessageBoxButton, MessageBoxButtons, NotificationArchiveModel,
+    NotificationCenterButton, RowDragData, Spacer, Splitter, StandardButton, StatusBar,
+    TabBarVisibility, TabWidget, TextWidget, Toast, ToastAction, VStack,
 };
 
 use frontend::AppContext;
@@ -38,10 +36,10 @@ use frontend::work_management::LoadWorkDto;
 use crate::app_ids::AppIds;
 use crate::import_plume_panel::ImportPlumePanel;
 use crate::intents::AppIntent;
+use crate::models::TreeNode;
 use crate::new_work_panel::NewWorkPanel;
 use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
-use crate::models::TreeNode;
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ImportPlumeViewModel,
@@ -336,15 +334,15 @@ impl Widget for App {
         }
         {
             let editors = editors.clone();
-            ctx.register_action_global(
-                Action::new("editor.open_item_to_side").on_invoke(move |i, _c| {
+            ctx.register_action_global(Action::new("editor.open_item_to_side").on_invoke(
+                move |i, _c| {
                     if let Some(AppIntent::OpenItemToSide { item_id, title }) =
                         AppIntent::from_intent(i)
                     {
                         editors.open_to_side(*item_id, title);
                     }
-                }),
-            );
+                },
+            ));
         }
         // Ctrl+S: flush every editor to the store, then save the project to disk.
         ctx.register_shortcut_global(
@@ -629,21 +627,17 @@ impl Widget for App {
                                 if let Some(p) = path.as_deref() {
                                     backup_settings.mark_nudged(&uid, p);
                                 }
-                                c.show_toast(
-                                    Toast::warning(tr!(backup_nudge_text())).action(
-                                        ToastAction::primary(tr!(backup_nudge_action()), |c| {
-                                            c.present_modal(
-                                                ModalRequest::deferred(|t| {
-                                                    t.add(SettingsPanel::new())
-                                                })
+                                c.show_toast(Toast::warning(tr!(backup_nudge_text())).action(
+                                    ToastAction::primary(tr!(backup_nudge_action()), |c| {
+                                        c.present_modal(
+                                            ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
                                                 .presentation(ModalPresentation::InTree)
                                                 .title("Settings")
                                                 .size(920, 620)
                                                 .close_behavior(ModalCloseBehavior::Manual),
-                                            );
-                                        }),
-                                    ),
-                                );
+                                        );
+                                    }),
+                                ));
                             }
                         }
                     }
@@ -1175,7 +1169,11 @@ impl Widget for App {
                         e.open_in(Side::Secondary, item_id, title)
                     })
                 })
-                .child(build_pane_tabs(&editors, Side::Secondary, close_split_button))
+                .child(build_pane_tabs(
+                    &editors,
+                    Side::Secondary,
+                    close_split_button,
+                ))
                 .focus_within(secondary_focus.clone())
         };
 
@@ -1218,9 +1216,10 @@ impl Widget for App {
         outline.open_in_layout();
         // Mount the inspector on the trailing side (otherwise the side shows the
         // empty "drop a panel here" placeholder).
-        outline
-            .docking()
-            .open_dock(self.inspector_dock, DockOpenLocation::side(DockSide::Trailing));
+        outline.docking().open_dock(
+            self.inspector_dock,
+            DockOpenLocation::side(DockSide::Trailing),
+        );
 
         // ── Status bar (thin) with the notification bell ─────────────────────
         let archive = ctx
@@ -1247,7 +1246,9 @@ impl Widget for App {
                     IconButton::new(crate::activity_icons::inspector_icon())
                         .size(IconButtonSize::Compact)
                         .tooltip(tr!(statusbar_toggle_inspector()))
-                        .on_activate_fn(move |_| dock_trail.toggle_side_visible(DockSide::Trailing)),
+                        .on_activate_fn(move |_| {
+                            dock_trail.toggle_side_visible(DockSide::Trailing)
+                        }),
                 )
                 .child(NotificationCenterButton::new(archive).size(IconButtonSize::Compact)),
         );

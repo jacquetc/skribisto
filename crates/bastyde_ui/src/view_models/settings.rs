@@ -27,10 +27,10 @@ use crate::{
     SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY,
     SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
     SYNOPSIS_FIRST_LINE_INDENT_KEY, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY,
-    SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
-    SYNOPSIS_PARA_SPACING_AFTER_KEY, SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT,
-    SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PANE_KEY,
-    SYNOPSIS_SIZE_DEFAULT, SYNOPSIS_SIZE_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
+    SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT,
+    SYNOPSIS_PANE_KEY, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
+    SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_SIZE_DEFAULT,
+    SYNOPSIS_SIZE_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
 };
 
 /// One editor type's four typography knobs. Cheap to clone — every field is a
@@ -92,10 +92,14 @@ impl SettingsViewModel {
                 line_height: store.signal(SCENE_LINE_HEIGHT_KEY, SCENE_LINE_HEIGHT_DEFAULT),
                 first_line_indent: store
                     .signal(SCENE_FIRST_LINE_INDENT_KEY, SCENE_FIRST_LINE_INDENT_DEFAULT),
-                para_spacing_before: store
-                    .signal(SCENE_PARA_SPACING_BEFORE_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT),
-                para_spacing_after: store
-                    .signal(SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT),
+                para_spacing_before: store.signal(
+                    SCENE_PARA_SPACING_BEFORE_KEY,
+                    SCENE_PARA_SPACING_BEFORE_DEFAULT,
+                ),
+                para_spacing_after: store.signal(
+                    SCENE_PARA_SPACING_AFTER_KEY,
+                    SCENE_PARA_SPACING_AFTER_DEFAULT,
+                ),
             },
             synopsis_typo: EditorTypography {
                 font_family: store.signal(
@@ -124,10 +128,14 @@ impl SettingsViewModel {
                 line_height: store.signal(NOTES_LINE_HEIGHT_KEY, NOTES_LINE_HEIGHT_DEFAULT),
                 first_line_indent: store
                     .signal(NOTES_FIRST_LINE_INDENT_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT),
-                para_spacing_before: store
-                    .signal(NOTES_PARA_SPACING_BEFORE_KEY, NOTES_PARA_SPACING_BEFORE_DEFAULT),
-                para_spacing_after: store
-                    .signal(NOTES_PARA_SPACING_AFTER_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT),
+                para_spacing_before: store.signal(
+                    NOTES_PARA_SPACING_BEFORE_KEY,
+                    NOTES_PARA_SPACING_BEFORE_DEFAULT,
+                ),
+                para_spacing_after: store.signal(
+                    NOTES_PARA_SPACING_AFTER_KEY,
+                    NOTES_PARA_SPACING_AFTER_DEFAULT,
+                ),
             },
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
             typewriter: store.signal(TYPEWRITER_KEY, TYPEWRITER_DEFAULT),
@@ -275,8 +283,10 @@ mod tests {
     fn temp_store() -> SettingsStore {
         static N: AtomicU32 = AtomicU32::new(0);
         let n = N.fetch_add(1, Ordering::Relaxed);
-        let path = std::env::temp_dir()
-            .join(format!("skribisto_settings_test_{}_{n}.toml", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "skribisto_settings_test_{}_{n}.toml",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&path);
         SettingsStore::open(path).expect("open temp settings store")
     }
@@ -301,7 +311,10 @@ mod tests {
         assert_eq!(t.scene.font_family.get(), SCENE_FONT_FAMILY_DEFAULT);
         assert_eq!(t.scene.size.get(), SCENE_SIZE_DEFAULT);
         assert_eq!(t.scene.line_height.get(), SCENE_LINE_HEIGHT_DEFAULT);
-        assert_eq!(t.scene.first_line_indent.get(), SCENE_FIRST_LINE_INDENT_DEFAULT);
+        assert_eq!(
+            t.scene.first_line_indent.get(),
+            SCENE_FIRST_LINE_INDENT_DEFAULT
+        );
         assert_eq!(t.synopsis.size.get(), SYNOPSIS_SIZE_DEFAULT);
         assert_eq!(t.notes.font_family.get(), NOTES_FONT_FAMILY_DEFAULT);
         // None of the three still holds the mutated value.

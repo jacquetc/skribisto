@@ -47,8 +47,8 @@ pub fn spawn_listener(proxy: AppEventProxy) {
             for conn in listener.incoming().flatten() {
                 let mut line = String::new();
                 if BufReader::new(conn).read_line(&mut line).is_ok() && !line.trim().is_empty() {
-                    let msg = serde_json::from_str::<RaiseMainWindow>(line.trim())
-                        .unwrap_or_default();
+                    let msg =
+                        serde_json::from_str::<RaiseMainWindow>(line.trim()).unwrap_or_default();
                     proxy.send_external(msg);
                 }
             }

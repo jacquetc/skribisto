@@ -69,7 +69,11 @@ pub fn outline_dock(
     // Show the sole-pane dock's header bar (title + actions) and pin the
     // context-dependent "Create" SplitButton into it as a custom toolbar item.
     .show_header(true)
-    .header_actions(move |_id| vec![ToolbarItem::custom(CreateSplitButton::new(header_outline.clone()))])
+    .header_actions(move |_id| {
+        vec![ToolbarItem::custom(CreateSplitButton::new(
+            header_outline.clone(),
+        ))]
+    })
     .default_location(DockOpenLocation::side(DockSide::Leading))
 }
 
@@ -145,14 +149,13 @@ fn binder_tree(
                         button: PointerButton::Middle,
                         ..
                     } = ev
+                        && let Some((item_id, title)) = &mid
                     {
-                        if let Some((item_id, title)) = &mid {
-                            ctx.send_intent(AppIntent::OpenItemToSide {
-                                item_id: *item_id,
-                                title: title.clone(),
-                            });
-                            return EventResponse::Handled;
-                        }
+                        ctx.send_intent(AppIntent::OpenItemToSide {
+                            item_id: *item_id,
+                            title: title.clone(),
+                        });
+                        return EventResponse::Handled;
                     }
                     EventResponse::Ignored
                 }),
@@ -399,11 +402,13 @@ impl Widget for OutlineKeys {
                 .build(),
         );
         let vm = self.outline.clone();
-        ctx.register_action(Action::new(OPEN_TO_SIDE_SHORTCUT).on_invoke(move |_i, ctx| {
-            if let Some((item_id, title)) = vm.selected_item() {
-                ctx.send_intent(AppIntent::OpenItemToSide { item_id, title });
-            }
-        }));
+        ctx.register_action(
+            Action::new(OPEN_TO_SIDE_SHORTCUT).on_invoke(move |_i, ctx| {
+                if let Some((item_id, title)) = vm.selected_item() {
+                    ctx.send_intent(AppIntent::OpenItemToSide { item_id, title });
+                }
+            }),
+        );
         if let Some(w) = self.pending.take() {
             self.child_id = Some(ctx.add_boxed(w));
         }

@@ -102,7 +102,8 @@ impl SaveAsViewModel {
             return; // not one of our Save-As ops (import/backup/etc.)
         };
 
-        let output_path = match work_management_commands::get_save_as_result(&self.app_ctx, &op_id) {
+        let output_path = match work_management_commands::get_save_as_result(&self.app_ctx, &op_id)
+        {
             Ok(Some(res)) => res.output_path,
             // Completed without a recoverable result (shouldn't happen).
             Ok(None) | Err(_) => return,

@@ -1,7 +1,7 @@
 //! The trailing **Inspector** dock: a context panel that adapts to the focused
 //! binder item (the active editor tab). It shows the item's title and — for any
 //! item with a promote pair (Chapter, ChapterScene, Scene, Note, Folder, Note
-//! folder) — a "Promote to <target>" button, the Chapter/ChapterScene inspectors'
+//! folder) — a "Promote to `<target>`" button, the Chapter/ChapterScene inspectors'
 //! headline affordance. Rebuilds when the focused item changes.
 //!
 //! It reuses the shared [`promote_with_guard`] so the button behaves exactly like

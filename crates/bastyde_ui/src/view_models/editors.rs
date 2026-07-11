@@ -1,5 +1,5 @@
 //! `EditorsViewModel` — the split editor: two panes of open tabs (a primary and a
-//! secondary/side pane) over the shared [`OpenDocsStore`](crate::models::OpenDocsStore).
+//! secondary/side pane) over the shared [`OpenDocsStore`].
 //!
 //! Single-instance live state: owns the two panes' `ListModel`s + selection
 //! signals, the split state, and the horizontal `SplitterModel`; `App` creates
@@ -95,7 +95,10 @@ impl EditorsViewModel {
         let splitter = SplitterModel::from_panes(
             vec![
                 PaneDescriptor::new().stretch(1.0).min_size(PANE_MIN_WIDTH),
-                PaneDescriptor::new().stretch(1.0).min_size(0.0).visible(false),
+                PaneDescriptor::new()
+                    .stretch(1.0)
+                    .min_size(0.0)
+                    .visible(false),
             ],
             Orientation::Horizontal,
         );
@@ -373,13 +376,13 @@ impl EditorsViewModel {
             .payload
             .downcast_ref::<ContentTab>()
             .map(|t| t.item_id());
-        if let Some(item_id) = item_id {
-            if let Some(existing) = self.find_open(side, item_id) {
-                self.docs.release(item_id, self.ids.stack_id.get());
-                self.pane(side).selected.set(Some(existing));
-                self.set_focused(side);
-                return;
-            }
+        if let Some(item_id) = item_id
+            && let Some(existing) = self.find_open(side, item_id)
+        {
+            self.docs.release(item_id, self.ids.stack_id.get());
+            self.pane(side).selected.set(Some(existing));
+            self.set_focused(side);
+            return;
         }
         let id = handle.id;
         self.pane(side).tabs.push(handle);
@@ -531,9 +534,12 @@ mod tests {
             vm.typography.clone(),
             &vm.ids,
         );
-        vm.pane(side)
-            .tabs
-            .push(TabHandle::dynamic(id, "editor", TabInfo::new().closable(true), tab));
+        vm.pane(side).tabs.push(TabHandle::dynamic(
+            id,
+            "editor",
+            TabInfo::new().closable(true),
+            tab,
+        ));
         id
     }
 
@@ -590,7 +596,10 @@ mod tests {
         let id = push_tab(&vm, Side::Secondary, 9);
         vm.close_in(Side::Secondary, id);
         assert_eq!(vm.tabs(Side::Secondary).len(), 0);
-        assert!(!vm.split_active().get(), "emptying the side pane collapses the split");
+        assert!(
+            !vm.split_active().get(),
+            "emptying the side pane collapses the split"
+        );
     }
 
     #[test]
@@ -633,7 +642,11 @@ mod tests {
             ),
         );
         vm.receive_tab(Side::Secondary, migrating);
-        assert_eq!(vm.tabs(Side::Secondary).len(), 1, "no duplicate in the side pane");
+        assert_eq!(
+            vm.tabs(Side::Secondary).len(),
+            1,
+            "no duplicate in the side pane"
+        );
         assert_eq!(vm.selected(Side::Secondary).get(), Some(existing));
     }
 

@@ -11,7 +11,9 @@
 //! own module.
 
 use bastyde::prelude::*;
-use bastyde::widgets::{Center, ScrollArea, Segment, SegmentedControl, Switcher, TextWidget, VStack};
+use bastyde::widgets::{
+    Center, ScrollArea, Segment, SegmentedControl, Switcher, TextWidget, VStack,
+};
 
 use crate::tabs::ContentTab;
 
@@ -67,14 +69,16 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
         // synopsis is dropped — only the active page is mounted, so the loaded
         // synopsis document is preserved and re-shown on toggle-back.
         let visible = tab.show_synopsis.map(|on| if *on { 1 } else { 0 });
-        col = col.child(Switcher::new(visible).child(vspace(0.0)).child(
-            synopsis_section(
-                &s.doc,
-                &tab.column_width,
-                &tab.typography.synopsis,
-                tab.mark_dirty_fn(),
-            ),
-        ));
+        col = col.child(
+            Switcher::new(visible)
+                .child(vspace(0.0))
+                .child(synopsis_section(
+                    &s.doc,
+                    &tab.column_width,
+                    &tab.typography.synopsis,
+                    tab.mark_dirty_fn(),
+                )),
+        );
     }
     if let Some(m) = tab.main() {
         col = col.child(vspace(10.0)).child(writing_section(

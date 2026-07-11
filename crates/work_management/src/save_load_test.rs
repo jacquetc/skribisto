@@ -24,13 +24,12 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
 // ── Extra surface for the concurrency / robustness regression tests (F1–F4) ──
-use crate::use_cases::backup_now_uc::BackupNowUseCase;
-use crate::use_cases::save_as_uc::SaveAsUseCase;
-use crate::use_cases::save_work_uc::{SaveWorkUnitOfWorkFactoryTrait, SaveWorkUnitOfWorkTrait};
 use crate::units_of_work::backup_now_uow::BackupNowUnitOfWorkFactory;
 use crate::units_of_work::save_as_uow::SaveAsUnitOfWorkFactory;
+use crate::use_cases::backup_now_uc::BackupNowUseCase;
+use crate::use_cases::save_as_uc::SaveAsUseCase;
+use crate::use_cases::save_work_uc::SaveWorkUnitOfWorkFactoryTrait;
 use crate::{BackupNowDto, SaveAsDto};
-use common::database::QueryUnitOfWork;
 use common::database::hashmap_store::HashMapStore;
 use common::long_operation::{LongOperationManager, OperationProgress, OperationStatus};
 
@@ -829,16 +828,35 @@ fn backup_multi_destination_is_resilient_and_dedups() {
     };
 
     let res = run(vec![]);
-    assert_eq!(res.succeeded_paths.len(), 1, "the good destination is written");
-    assert_eq!(res.failed_directories.len(), 1, "the bad destination is reported");
+    assert_eq!(
+        res.succeeded_paths.len(),
+        1,
+        "the good destination is written"
+    );
+    assert_eq!(
+        res.failed_directories.len(),
+        1,
+        "the bad destination is reported"
+    );
     assert_eq!(res.failed_reasons.len(), 1);
     assert!(!res.content_hash.is_empty());
 
     // Feeding back the good destination's hash makes it skip on the next run.
     let res2 = run(vec![res.content_hash.clone(), String::new()]);
-    assert_eq!(res2.skipped_directories.len(), 1, "unchanged good destination is skipped");
-    assert!(res2.succeeded_paths.is_empty(), "nothing written to the good destination");
-    assert_eq!(res2.failed_directories.len(), 1, "the bad destination still fails");
+    assert_eq!(
+        res2.skipped_directories.len(),
+        1,
+        "unchanged good destination is skipped"
+    );
+    assert!(
+        res2.succeeded_paths.is_empty(),
+        "nothing written to the good destination"
+    );
+    assert_eq!(
+        res2.failed_directories.len(),
+        1,
+        "the bad destination still fails"
+    );
 }
 
 /// F4: a panicking long operation is reported `Failed`, not left stuck at
@@ -861,13 +879,19 @@ fn panicking_long_operation_is_reported_failed_not_stuck() {
     let id = mgr.start_operation(Panicky);
     // Wait for the background thread to settle.
     for _ in 0..300 {
-        if !matches!(mgr.get_operation_status(&id), Some(OperationStatus::Running)) {
+        if !matches!(
+            mgr.get_operation_status(&id),
+            Some(OperationStatus::Running)
+        ) {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
     assert!(
-        matches!(mgr.get_operation_status(&id), Some(OperationStatus::Failed(_))),
+        matches!(
+            mgr.get_operation_status(&id),
+            Some(OperationStatus::Failed(_))
+        ),
         "a panicking long op must be reported Failed, got {:?}",
         mgr.get_operation_status(&id)
     );

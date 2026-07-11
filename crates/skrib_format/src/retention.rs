@@ -61,8 +61,7 @@ pub fn scan_destination(
 
     for entry in entries.flatten() {
         let path = entry.path();
-        let is_zip = path.is_file()
-            && path.extension().and_then(|e| e.to_str()) == Some("skrib");
+        let is_zip = path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("skrib");
         let is_folder_bundle = path.is_dir() && path.join("project.skrib").is_file();
         if !is_zip && !is_folder_bundle {
             continue;
@@ -287,7 +286,9 @@ mod tests {
     fn cand(path: &str, ts: &str) -> BackupCandidate {
         BackupCandidate {
             path: PathBuf::from(path),
-            timestamp: DateTime::parse_from_rfc3339(ts).unwrap().with_timezone(&Utc),
+            timestamp: DateTime::parse_from_rfc3339(ts)
+                .unwrap()
+                .with_timezone(&Utc),
             work_unique_id: "uid".into(),
         }
     }
@@ -402,10 +403,38 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         // Two backups for project A, one for project B (same stem "novel"),
         // plus a regular (non-backup) file that shares the naming.
-        write_backup_zip(dir.path(), "novel-20260615-100000.skrib", BundleKind::Backup, "A", Some("/x/novel.skrib"), "2026-06-15T10:00:00Z");
-        write_backup_zip(dir.path(), "novel-20260614-100000.skrib", BundleKind::Backup, "A", Some("/x/novel.skrib"), "2026-06-14T10:00:00Z");
-        write_backup_zip(dir.path(), "novel-20260613-100000.skrib", BundleKind::Backup, "B", Some("/y/novel.skrib"), "2026-06-13T10:00:00Z");
-        write_backup_zip(dir.path(), "novel-20260612-100000.skrib", BundleKind::Regular, "A", None, "2026-06-12T10:00:00Z");
+        write_backup_zip(
+            dir.path(),
+            "novel-20260615-100000.skrib",
+            BundleKind::Backup,
+            "A",
+            Some("/x/novel.skrib"),
+            "2026-06-15T10:00:00Z",
+        );
+        write_backup_zip(
+            dir.path(),
+            "novel-20260614-100000.skrib",
+            BundleKind::Backup,
+            "A",
+            Some("/x/novel.skrib"),
+            "2026-06-14T10:00:00Z",
+        );
+        write_backup_zip(
+            dir.path(),
+            "novel-20260613-100000.skrib",
+            BundleKind::Backup,
+            "B",
+            Some("/y/novel.skrib"),
+            "2026-06-13T10:00:00Z",
+        );
+        write_backup_zip(
+            dir.path(),
+            "novel-20260612-100000.skrib",
+            BundleKind::Regular,
+            "A",
+            None,
+            "2026-06-12T10:00:00Z",
+        );
 
         let found = scan_destination(dir.path(), "A", "/x/novel.skrib").unwrap();
         assert_eq!(found.len(), 2, "only project A's two backups");

@@ -214,45 +214,52 @@ impl Widget for OpenProjectsMenu {
                     let path = dto.absolute_path.clone();
                     let date = dto.last_opened_at.format("%Y-%m-%d %H:%M").to_string();
                     let app_ctx = self.app_ctx.clone();
-                    menu = menu.item(row(false, false, title.clone(), path.clone(), Some(date), move |ctx| {
-                        ctx.dismiss_self_overlay_chain();
-                        let for_new = path.clone();
-                        let for_here = path.clone();
-                        let app_ctx = app_ctx.clone();
-                        MessageBox::question(tr!(open_project_title()))
-                            .text(tr!(open_project_question(title = title.clone())))
-                            .buttons(MessageBoxButtons::Custom(vec![
-                                MessageBoxButton::standard(StandardButton::Open)
-                                    .label(tr!(open_in_new_window())),
-                                MessageBoxButton::standard(StandardButton::Yes)
-                                    .label(tr!(open_here())),
-                                MessageBoxButton::standard(StandardButton::Cancel),
-                            ]))
-                            .default_button(StandardButton::Open)
-                            .escape_button(StandardButton::Cancel)
-                            .on_result(move |r, ctx| match r.button {
-                                StandardButton::Open => {
-                                    let p = for_new.clone();
-                                    ctx.request_activation_token_self(Box::new(move |tok| {
-                                        spawn_new_process(&p, tok);
-                                    }));
-                                }
-                                StandardButton::Yes => {
-                                    if let Err(e) = work_management_commands::load_work(
-                                        &app_ctx,
-                                        &LoadWorkDto {
-                                            file_name: for_here.clone(),
-                                        },
-                                    ) {
-                                        ctx.show_toast(Toast::error(tr!(could_not_open_work(
-                                            error = e.to_string()
-                                        ))));
+                    menu = menu.item(row(
+                        false,
+                        false,
+                        title.clone(),
+                        path.clone(),
+                        Some(date),
+                        move |ctx| {
+                            ctx.dismiss_self_overlay_chain();
+                            let for_new = path.clone();
+                            let for_here = path.clone();
+                            let app_ctx = app_ctx.clone();
+                            MessageBox::question(tr!(open_project_title()))
+                                .text(tr!(open_project_question(title = title.clone())))
+                                .buttons(MessageBoxButtons::Custom(vec![
+                                    MessageBoxButton::standard(StandardButton::Open)
+                                        .label(tr!(open_in_new_window())),
+                                    MessageBoxButton::standard(StandardButton::Yes)
+                                        .label(tr!(open_here())),
+                                    MessageBoxButton::standard(StandardButton::Cancel),
+                                ]))
+                                .default_button(StandardButton::Open)
+                                .escape_button(StandardButton::Cancel)
+                                .on_result(move |r, ctx| match r.button {
+                                    StandardButton::Open => {
+                                        let p = for_new.clone();
+                                        ctx.request_activation_token_self(Box::new(move |tok| {
+                                            spawn_new_process(&p, tok);
+                                        }));
                                     }
-                                }
-                                _ => {}
-                            })
-                            .present(ctx);
-                    }));
+                                    StandardButton::Yes => {
+                                        if let Err(e) = work_management_commands::load_work(
+                                            &app_ctx,
+                                            &LoadWorkDto {
+                                                file_name: for_here.clone(),
+                                            },
+                                        ) {
+                                            ctx.show_toast(Toast::error(tr!(could_not_open_work(
+                                                error = e.to_string()
+                                            ))));
+                                        }
+                                    }
+                                    _ => {}
+                                })
+                                .present(ctx);
+                        },
+                    ));
                 }
             }
         }

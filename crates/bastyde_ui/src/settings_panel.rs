@@ -40,17 +40,17 @@ use bastyde::widgets::{
 use crate::app_ids::AppIds;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{BackupSettingsViewModel, EditorTypography, SettingsViewModel};
-use skribisto_model::ChapterMode;
 use crate::{
     EDITOR_WIDTH_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT, NOTES_FIRST_LINE_INDENT_DEFAULT,
     NOTES_FONT_FAMILY_DEFAULT, NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT,
     NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_SIZE_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT,
     SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT, SCENE_PARA_SPACING_AFTER_DEFAULT,
     SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_SIZE_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
-    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
-    SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_SIZE_DEFAULT,
-    TYPEWRITER_DEFAULT,
+    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_PANE_DEFAULT,
+    SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT,
+    SYNOPSIS_SIZE_DEFAULT, TYPEWRITER_DEFAULT,
 };
+use skribisto_model::ChapterMode;
 
 /// Card dimensions (a compact two-pane preferences window).
 const CARD_W: f32 = 920.0;
@@ -82,7 +82,7 @@ enum Pane {
     Autosave,
     ExportFormats,
     Keymap,
-    /// Per-project "Work: <name> ▸ Structure" — chapter mode (folder vs flat).
+    /// Per-project "Work: `<name>` ▸ Structure" — chapter mode (folder vs flat).
     WorkStructure,
     /// General backup ("Copies de secours") policy (under Backup & Sync).
     Backup,
@@ -125,7 +125,7 @@ enum Sec {
     Spelling,
     BackupSync,
     CompileExport,
-    /// The open project. Its displayed label is "Work: <title>" (the title is
+    /// The open project. Its displayed label is "Work: `<title>`" (the title is
     /// filled in at tree-build time — the enum stays data-free / `Copy`).
     Work,
 }
@@ -217,26 +217,62 @@ fn build_not_defaults(
         vm.autosave().map(|a| *a),      // default = off
         vm.show_welcome().map(|s| !*s), // default = on
         // ── Scene typography ──
-        typo.scene.font_family.map(|f| f.as_str() != SCENE_FONT_FAMILY_DEFAULT),
-        typo.scene.size.map(|s| (*s - SCENE_SIZE_DEFAULT).abs() > f32::EPSILON),
-        typo.scene.line_height.map(|h| (*h - SCENE_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
-        typo.scene.first_line_indent.map(|i| (*i - SCENE_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
-        typo.scene.para_spacing_before.map(|v| (*v - SCENE_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
-        typo.scene.para_spacing_after.map(|v| (*v - SCENE_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
+        typo.scene
+            .font_family
+            .map(|f| f.as_str() != SCENE_FONT_FAMILY_DEFAULT),
+        typo.scene
+            .size
+            .map(|s| (*s - SCENE_SIZE_DEFAULT).abs() > f32::EPSILON),
+        typo.scene
+            .line_height
+            .map(|h| (*h - SCENE_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
+        typo.scene
+            .first_line_indent
+            .map(|i| (*i - SCENE_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
+        typo.scene
+            .para_spacing_before
+            .map(|v| (*v - SCENE_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
+        typo.scene
+            .para_spacing_after
+            .map(|v| (*v - SCENE_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
         // ── Synopsis typography ──
-        typo.synopsis.font_family.map(|f| f.as_str() != SYNOPSIS_FONT_FAMILY_DEFAULT),
-        typo.synopsis.size.map(|s| (*s - SYNOPSIS_SIZE_DEFAULT).abs() > f32::EPSILON),
-        typo.synopsis.line_height.map(|h| (*h - SYNOPSIS_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
-        typo.synopsis.first_line_indent.map(|i| (*i - SYNOPSIS_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
-        typo.synopsis.para_spacing_before.map(|v| (*v - SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
-        typo.synopsis.para_spacing_after.map(|v| (*v - SYNOPSIS_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
+        typo.synopsis
+            .font_family
+            .map(|f| f.as_str() != SYNOPSIS_FONT_FAMILY_DEFAULT),
+        typo.synopsis
+            .size
+            .map(|s| (*s - SYNOPSIS_SIZE_DEFAULT).abs() > f32::EPSILON),
+        typo.synopsis
+            .line_height
+            .map(|h| (*h - SYNOPSIS_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
+        typo.synopsis
+            .first_line_indent
+            .map(|i| (*i - SYNOPSIS_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
+        typo.synopsis
+            .para_spacing_before
+            .map(|v| (*v - SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
+        typo.synopsis
+            .para_spacing_after
+            .map(|v| (*v - SYNOPSIS_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
         // ── Notes typography ──
-        typo.notes.font_family.map(|f| f.as_str() != NOTES_FONT_FAMILY_DEFAULT),
-        typo.notes.size.map(|s| (*s - NOTES_SIZE_DEFAULT).abs() > f32::EPSILON),
-        typo.notes.line_height.map(|h| (*h - NOTES_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
-        typo.notes.first_line_indent.map(|i| (*i - NOTES_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
-        typo.notes.para_spacing_before.map(|v| (*v - NOTES_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
-        typo.notes.para_spacing_after.map(|v| (*v - NOTES_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
+        typo.notes
+            .font_family
+            .map(|f| f.as_str() != NOTES_FONT_FAMILY_DEFAULT),
+        typo.notes
+            .size
+            .map(|s| (*s - NOTES_SIZE_DEFAULT).abs() > f32::EPSILON),
+        typo.notes
+            .line_height
+            .map(|h| (*h - NOTES_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
+        typo.notes
+            .first_line_indent
+            .map(|i| (*i - NOTES_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
+        typo.notes
+            .para_spacing_before
+            .map(|v| (*v - NOTES_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
+        typo.notes
+            .para_spacing_after
+            .map(|v| (*v - NOTES_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
         // ── Editor behaviour ──
         vm.synopsis_pane().map(|s| *s != SYNOPSIS_PANE_DEFAULT),
         vm.typewriter().map(|s| *s != TYPEWRITER_DEFAULT),
@@ -416,7 +452,9 @@ impl SettingsPanel {
             )
             .line(
                 field_label(tr!(settings_field_line_height())),
-                slider_field(typo.line_height.clone(), 1.0, 2.4, 0.02, |v| format!("{v:.2}")),
+                slider_field(typo.line_height.clone(), 1.0, 2.4, 0.02, |v| {
+                    format!("{v:.2}")
+                }),
             )
             .line(
                 field_label(tr!(settings_field_first_line_indent())),
@@ -491,7 +529,9 @@ impl SettingsPanel {
             )
             .line(
                 field_label(tr!(settings_field_text_scale())),
-                FixedSize::new().width(300.0).child(TextScaleControl::new(scale)),
+                FixedSize::new()
+                    .width(300.0)
+                    .child(TextScaleControl::new(scale)),
             )
             .full_width(group(tr!(settings_group_startup())))
             .full_width(Checkbox::new(vm.show_welcome()).label(tr!(settings_show_welcome())));
@@ -524,7 +564,7 @@ impl SettingsPanel {
         )
     }
 
-    /// Work: <name> ▸ Structure — the per-project chapter storage mode, backed by
+    /// Work: `<name>` ▸ Structure — the per-project chapter storage mode, backed by
     /// the shared `SingleWork` (entity-backed, undoable via the Work's stack). The
     /// `Toggle` is bridged to `chapter_mode` (checked = flat) with two effects: one
     /// mirrors external changes (refresh/undo) into the toggle, the other writes +
@@ -572,7 +612,11 @@ impl SettingsPanel {
 
         pane_frame(
             crumb(
-                Some(lit!(format!("{}: {}", tr!(settings_sec_work()).resolve_now(), work_title))),
+                Some(lit!(format!(
+                    "{}: {}",
+                    tr!(settings_sec_work()).resolve_now(),
+                    work_title
+                ))),
                 tr!(settings_page_structure()),
             ),
             form,
@@ -658,7 +702,7 @@ impl SettingsPanel {
         nodes.insert(Pane::Keymap, model.insert_root(5, Node::Page(Pane::Keymap)));
 
         // The open project's own section (multi-project-ready): shown only when a
-        // Work is open, labelled "Work: <title>" — for now its single page is
+        // Work is open, labelled "Work: `<title>`" — for now its single page is
         // Structure (the chapter mode). Read through the shared `SingleWork`.
         let work_title = ctx
             .app_state::<SingleWork>()
@@ -707,7 +751,7 @@ impl SettingsPanel {
         // and synthetic input.
         let tree =
             TreeView::new_with_context(model, move |node: &Node, entry, selected, rowctx| {
-                // The Work section's label is dynamic ("Work: <title>"); every
+                // The Work section's label is dynamic ("Work: `<title>`"); every
                 // other node uses its static label.
                 let label = match node {
                     Node::Section(Sec::Work) => lit!(format!(
@@ -853,7 +897,7 @@ impl Widget for SettingsPanel {
         // only while something differs from the factory defaults.
         let not_defaults = build_not_defaults(&theme_sig, &locale_sig, &scale, &vm);
 
-        // The open project (shared handle) backs the "Work: <name> ▸ Structure"
+        // The open project (shared handle) backs the "Work: `<name>` ▸ Structure"
         // page. When no project is open, the page is present in the Switcher but
         // its tree node isn't shown, so it renders an empty placeholder.
         let work = ctx.app_state::<SingleWork>().cloned();
@@ -878,7 +922,10 @@ impl Widget for SettingsPanel {
         let backup_vm = ctx.app_state::<BackupSettingsViewModel>().cloned();
         let backup_pane: Box<dyn Widget> = match &backup_vm {
             Some(vm) => Box::new(pane_frame(
-                crumb(Some(tr!(settings_sec_backup())), tr!(settings_page_backup())),
+                crumb(
+                    Some(tr!(settings_sec_backup())),
+                    tr!(settings_page_backup()),
+                ),
                 crate::settings_backup::general_pane(ctx, vm),
             )),
             None => Box::new(empty_pane(
@@ -940,13 +987,21 @@ impl Widget for SettingsPanel {
                 tr!(settings_page_notifications()),
                 Sec::AppearanceBehaviour.icon_svg(),
             ))
-            .child(Self::typography_pane(ctx, tr!(settings_page_scene()), &typo.scene))
+            .child(Self::typography_pane(
+                ctx,
+                tr!(settings_page_scene()),
+                &typo.scene,
+            ))
             .child(Self::typography_pane(
                 ctx,
                 tr!(settings_page_synopsis()),
                 &typo.synopsis,
             ))
-            .child(Self::typography_pane(ctx, tr!(settings_page_notes()), &typo.notes))
+            .child(Self::typography_pane(
+                ctx,
+                tr!(settings_page_notes()),
+                &typo.notes,
+            ))
             .child(Self::editor_behavior_pane(&vm))
             .child(empty_pane(
                 Some(editor.clone()),
@@ -1005,8 +1060,7 @@ impl Widget for SettingsPanel {
             ),
         );
 
-        let root = bati!(ctx =>
-            FixedSize {
+        let root = bati!(ctx => FixedSize {
                 width: CARD_W
                 height: CARD_H
                 Panel {
@@ -1015,8 +1069,12 @@ impl Widget for SettingsPanel {
                     padding: 0.0
                     VStack {
                         spacing: 0.0
-                        Expand::horizontal { child: header }
-                        Expand::horizontal { Divider }
+                        Expand::horizontal {
+                            child: header
+                        }
+                        Expand::horizontal {
+                            Divider
+                        }
                         HStack {
                             spacing: 0.0
                             FixedSize {

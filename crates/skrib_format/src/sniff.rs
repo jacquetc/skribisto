@@ -102,7 +102,11 @@ pub fn sniff_backup_filename(path: &str) -> Option<String> {
                 return None;
             }
             let dir = p.parent().unwrap_or_else(|| Path::new(""));
-            return Some(dir.join(format!("{name}.skrib")).to_string_lossy().into_owned());
+            return Some(
+                dir.join(format!("{name}.skrib"))
+                    .to_string_lossy()
+                    .into_owned(),
+            );
         }
     }
     None

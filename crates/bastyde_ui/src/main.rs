@@ -33,8 +33,8 @@ use std::sync::Arc;
 use bastyde::core::event_source::{EventSource, SubscriptionHandle};
 use bastyde::widgets::{Center, HStack};
 
-use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
 use bastyde::core::app_event::AppEvent;
+use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
 use bastyde::res;
 use bastyde::settings::{AppPaths, SettingsStore};
 use bastyde::widgets::primitives::icon_widget::IconMode;
@@ -225,11 +225,17 @@ fn register_editor_fonts() -> bastyde::text::VecFontRegistrar {
     };
     VecFontRegistrar::new(vec![
         face(include_bytes!("../assets/fonts/Literata-Variable.ttf")),
-        face(include_bytes!("../assets/fonts/Literata-Italic-Variable.ttf")),
+        face(include_bytes!(
+            "../assets/fonts/Literata-Italic-Variable.ttf"
+        )),
         face(include_bytes!("../assets/fonts/EBGaramond-Variable.ttf")),
-        face(include_bytes!("../assets/fonts/EBGaramond-Italic-Variable.ttf")),
+        face(include_bytes!(
+            "../assets/fonts/EBGaramond-Italic-Variable.ttf"
+        )),
         face(include_bytes!("../assets/fonts/SourceSerif4-Variable.ttf")),
-        face(include_bytes!("../assets/fonts/SourceSerif4-Italic-Variable.ttf")),
+        face(include_bytes!(
+            "../assets/fonts/SourceSerif4-Italic-Variable.ttf"
+        )),
     ])
 }
 
@@ -756,17 +762,14 @@ fn main() {
                                         HStack {
                                             spacing: 5.0
                                             alignment: bastyde::tokens::VAlignment::Center
-                                            IconButton::new(
-                                                IconWidget::from_raster(
-                                                    res!("../../resources/icons/skribisto.png"),
-                                                    25.0,
-                                                )
-                                                .mode(IconMode::FullColor)
-                                            ) {
+                                            IconButton::new(IconWidget::from_raster(
+                                                res!("../../resources/icons/skribisto.png"),
+                                                25.0,
+                                            )
+                                            .mode(IconMode::FullColor)) {
                                                 tooltip: tr!(tooltip_welcome())
                                                 size: IconButtonSize::Large
                                                 on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
-
                                             }
                                             ProjectSwitcherButton::new(app_ctx_root.clone())
                                             Expand::horizontal {

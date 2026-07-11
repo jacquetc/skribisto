@@ -281,7 +281,10 @@ impl OpenDocsStore {
     /// the refcount/eviction lifecycle is testable without a loaded project.
     fn insert_for_test(&self, doc: Rc<OpenDoc>) {
         let id = doc.item_id;
-        self.inner.open.borrow_mut().insert(id, Entry { doc, refs: 1 });
+        self.inner
+            .open
+            .borrow_mut()
+            .insert(id, Entry { doc, refs: 1 });
     }
 
     /// The current reference count for `item_id`, or `None` if not open.
@@ -350,7 +353,10 @@ mod tests {
             &[],
             Signal::new(0),
         );
-        let main = doc.main.as_ref().expect("a Scene owns a main text document");
+        let main = doc
+            .main
+            .as_ref()
+            .expect("a Scene owns a main text document");
         // No `TabWidget` anywhere: two bare handles to the shared document.
         let a = main.doc.clone();
         let b = main.doc.clone();

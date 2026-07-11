@@ -253,8 +253,7 @@ impl Widget for NewWorkPanel {
         let create_vm = self.vm.clone();
         let create_can = self.vm.can_create();
 
-        let root = bati!(ctx =>
-            FixedSize {
+        let root = bati!(ctx => FixedSize {
                 width: CARD_W
                 height: CARD_H
                 Panel {

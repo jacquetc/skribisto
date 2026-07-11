@@ -356,8 +356,7 @@ impl Widget for WelcomePanel {
         // Hard-bound the whole card to the modal size so the greedy inner
         // `Expand`s fill exactly 780×548 (otherwise they stretch to the window
         // height and the sidebar overflows below the card).
-        let root = bati!(ctx =>
-            FixedSize {
+        let root = bati!(ctx => FixedSize {
                 width: 780.0
                 height: 548.0
                 // The Raised card is the modal's lighter surface.

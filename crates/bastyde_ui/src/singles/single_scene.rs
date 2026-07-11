@@ -48,8 +48,12 @@ mod imp {
                 .set_djot(existing.as_ref().map(|c| c.data.as_str()).unwrap_or(""))
                 .and_then(|op| op.wait());
             doc.set_modified(false);
-            let content =
-                SingleContent::for_field(ctx.clone(), item_id, ContentRole::SceneText, existing.as_ref());
+            let content = SingleContent::for_field(
+                ctx.clone(),
+                item_id,
+                ContentRole::SceneText,
+                existing.as_ref(),
+            );
 
             Self {
                 inner: Rc::new(Inner {
@@ -62,6 +66,8 @@ mod imp {
             }
         }
 
+        /// Part of the uniform `Single*` surface; not called yet for scenes.
+        #[allow(dead_code)]
         pub fn id(&self) -> u64 {
             self.inner.item_id
         }
@@ -161,11 +167,16 @@ mod imp {
             Self {
                 item_id,
                 title: Signal::new(format!("Scene {n}")),
-                label: Signal::new(if n == 1 { "opening beat".to_string() } else { String::new() }),
+                label: Signal::new(if n == 1 {
+                    "opening beat".to_string()
+                } else {
+                    String::new()
+                }),
                 doc,
             }
         }
 
+        #[allow(dead_code)]
         pub fn id(&self) -> u64 {
             self.item_id
         }

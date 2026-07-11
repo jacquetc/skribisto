@@ -138,7 +138,7 @@ pub fn scan() -> Vec<OpenEntry> {
         };
         match serde_json::from_str::<OpenEntry>(&text) {
             Ok(entry) if pid_is_alive(entry.pid) => out.push(entry),
-            // Unparseable or dead-owner ⇒ stale; reap it.
+            // Unparsable or dead-owner ⇒ stale; reap it.
             _ => {
                 let _ = std::fs::remove_file(&p);
             }

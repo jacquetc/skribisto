@@ -85,7 +85,8 @@ impl TrashBinderUseCase {
         set_binder_activated(uow, self.binder_id, false)?;
         set_items_activated(uow, &self.item_ids, false)?;
 
-        let mut index = uow.get_work_relationship(&self.work_id, &WorkRelationshipField::TrashInfos)?;
+        let mut index =
+            uow.get_work_relationship(&self.work_id, &WorkRelationshipField::TrashInfos)?;
         let info = uow.create_orphan_trash_info(&TrashInfo {
             created_at: self.trashed_at,
             updated_at: self.trashed_at,
@@ -115,7 +116,11 @@ impl TrashBinderUseCase {
                 .into_iter()
                 .filter(|id| !drop.contains(id))
                 .collect();
-            uow.set_work_relationship(&self.work_id, &WorkRelationshipField::TrashInfos, &remaining)?;
+            uow.set_work_relationship(
+                &self.work_id,
+                &WorkRelationshipField::TrashInfos,
+                &remaining,
+            )?;
             uow.remove_trash_info_multi(&self.created_trash)?;
         }
         Ok(())
