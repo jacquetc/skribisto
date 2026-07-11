@@ -1,5 +1,6 @@
-//! `Item/BookBegin` — the book-start marker: the book title + subtitle (no
-//! synopsis). Shares the [`heading`](super::shared::heading) form.
+//! `Item/BookBegin` — the book-start marker: the book title + subtitle + the
+//! book's synopsis (symmetric with the `Folder/Book` container). Shares the
+//! [`heading`](super::shared::heading) form.
 
 use bastyde::prelude::*;
 

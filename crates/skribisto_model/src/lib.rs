@@ -40,7 +40,10 @@ const COMBINATIONS: &[Combination] = &[
     Combination {
         role: Role::Item,
         sub_role: SubRole::BookBegin,
-        allowed: &[BookTitle, BookSubtitle],
+        // Symmetric with the `Folder/Book` container: the flat book-start marker
+        // carries the book's synopsis too, so a book outline has no hole whichever
+        // encoding the book uses.
+        allowed: &[BookTitle, BookSubtitle, SynopsisText],
     },
     Combination {
         role: Role::Item,
@@ -503,6 +506,43 @@ mod tests {
             &SubRole::Chapter,
             &SceneText
         ));
+    }
+
+    #[test]
+    fn book_begin_now_carries_synopsis() {
+        // Symmetric with the Folder/Book container, so a book's synopsis exists
+        // whichever encoding the book uses.
+        assert!(content_allowed(
+            &Role::Item,
+            &SubRole::BookBegin,
+            &SynopsisText
+        ));
+        assert!(
+            validate_item(
+                &Role::Item,
+                &SubRole::BookBegin,
+                &[BookTitle, BookSubtitle, SynopsisText]
+            )
+            .is_ok()
+        );
+    }
+
+    /// Every combination that carries *any* content also carries a synopsis — the
+    /// only exceptions are the two genuinely contentless markers. This is what lets
+    /// the Full Synopsis stream render every row without a hole.
+    #[test]
+    fn every_content_bearing_combination_carries_a_synopsis() {
+        for c in COMBINATIONS {
+            if c.allowed.is_empty() {
+                continue; // Item/BookEnd, Item/Text — contentless by design
+            }
+            assert!(
+                c.allowed.contains(&SynopsisText),
+                "{:?}/{:?} carries content but no synopsis",
+                c.role,
+                c.sub_role
+            );
+        }
     }
 
     #[test]

@@ -393,7 +393,8 @@ mod tests {
     }
 
     /// A writing item exposes the fields the matrix allows: a Scene gets main +
-    /// synopsis prose; a ChapterScene adds a title; a BookBegin gets two titles.
+    /// synopsis prose; a ChapterScene adds a title; a BookBegin gets two titles
+    /// plus the book's synopsis (symmetric with the Folder/Book container).
     #[test]
     fn tab_for_loads_allowed_fields() {
         use BinderItemRole::*;
@@ -419,7 +420,12 @@ mod tests {
         assert!(cs.main().is_some() && cs.synopsis().is_some() && cs.title().is_some());
 
         let bb = mk(BookBegin);
-        assert!(bb.title().is_some() && bb.subtitle().is_some() && bb.main().is_none());
+        assert!(
+            bb.title().is_some()
+                && bb.subtitle().is_some()
+                && bb.synopsis().is_some()
+                && bb.main().is_none()
+        );
 
         let end = mk(BookEnd);
         assert!(end.main().is_none() && end.synopsis().is_none() && end.title().is_none());
