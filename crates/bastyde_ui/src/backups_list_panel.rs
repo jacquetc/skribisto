@@ -4,9 +4,17 @@
 //! project's backups (correlated on `unique_id`, newest first) and lists them
 //! with date + size. Each row can **Open** the backup (in its own instance, which
 //! shows the read-only/restore choice), **Reveal** it in the file manager, or
-//! **Delete** it. A **Refresh** button re-scans on demand (e.g. after plugging a
-//! drive in). Distinct from the destinations editor in Settings — that lists the
-//! configured *paths*; this lists the actual backup *files*.
+//! **Delete** it (behind a confirmation — T1-4). A **Refresh** button re-scans on
+//! demand (e.g. after plugging a drive in). Distinct from the destinations editor
+//! in Settings — that lists the configured *paths*; this lists the actual backup
+//! *files*.
+//!
+//! **T2-3 — off the UI thread.** The scan (`retention::scan_destination` — a
+//! `read_dir` + one zip-manifest peek per candidate) and `human_size`'s recursive
+//! folder-bundle walk can be slow on a USB stick or network share, so every scan
+//! (initial load, the Refresh button, and the rescan after a delete) runs via the
+//! main-thread async executor's `spawn_blocking`, with a loading state shown
+//! meanwhile — never inline in `build()` or an event handler.
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -15,14 +23,16 @@ use bastyde::core::styles::PanelVariant;
 use bastyde::data::ListModel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, Divider, Expand, FixedSize, HStack, IconButton, ListView, Padding,
-    Panel, Spacer, StandardListItem, Switcher, TextWidget, VStack,
+    Button, ButtonVariant, Divider, Expand, FixedSize, HStack, IconButton, ListView, MessageBox,
+    MessageBoxButtons, Padding, Panel, Spacer, StandardButton, StandardListItem, Switcher,
+    TextWidget, Toast, VStack,
 };
 
 use skrib_format::retention;
 
 const CARD_W: f32 = 680.0;
 const CARD_H: f32 = 520.0;
+const DELETE_TOAST_ID: &str = "backups.delete";
 
 #[derive(Clone)]
 struct BackupRow {
@@ -38,48 +48,140 @@ struct Scanner {
     project_path: String,
     dirs: Vec<String>,
     model: ListModel<BackupRow>,
+    /// Bumped whenever the list's *content* changes (a scan lands), driving the
+    /// empty-state/list `Switcher`.
     epoch: Signal<u64>,
+    /// `true` while a scan (initial / refresh / post-delete) is in flight.
+    loading: Signal<bool>,
+    /// The main-thread async executor, fetched once from `app_state` in
+    /// `BackupsListPanel::build`. `None` only if `install_async()` was somehow
+    /// not called at startup (an app bug, not a normal runtime state) — every
+    /// method below falls back to a synchronous scan/delete in that case rather
+    /// than getting stuck loading forever.
+    async_rt: Option<AsyncRuntimeHandle>,
 }
 
 impl Scanner {
-    fn rescan(&self) {
-        self.model
-            .replace_all(scan_backups(&self.uid, &self.project_path, &self.dirs));
-        let e = &self.epoch;
-        e.set(e.get().wrapping_add(1));
+    /// (Re)scan in the background and push the result into `model` on
+    /// completion. Safe to call from anywhere that holds a `Scanner` clone — no
+    /// `EventContext` required, since landing the result is just `Signal`/
+    /// `ListModel` mutation, no ambient op.
+    fn kick_scan(&self) {
+        self.loading.set(true);
+        let uid = self.uid.clone();
+        let project_path = self.project_path.clone();
+        let dirs = self.dirs.clone();
+        let model = self.model.clone();
+        let epoch = self.epoch.clone();
+        let loading = self.loading.clone();
+        match &self.async_rt {
+            Some(rt) => {
+                rt.spawn_local(async move {
+                    let rows = spawn_blocking(move || scan_backups(&uid, &project_path, &dirs))
+                        .await
+                        .unwrap_or_default();
+                    model.replace_all(rows);
+                    loading.set(false);
+                    epoch.set(epoch.get().wrapping_add(1));
+                })
+                .detach();
+            }
+            None => {
+                model.replace_all(scan_backups(&uid, &project_path, &dirs));
+                loading.set(false);
+                epoch.set(epoch.get().wrapping_add(1));
+            }
+        }
     }
 
-    fn delete(&self, path: &str) {
-        let p = Path::new(path);
-        let _ = if p.is_dir() {
-            std::fs::remove_dir_all(p)
-        } else {
-            std::fs::remove_file(p)
-        };
-        self.rescan();
+    /// Delete `path` in the background, report a failure as an error toast
+    /// (T1-4 — the previous `let _ =` silently swallowed it), then rescan
+    /// either way (a partial folder-bundle removal should still be reflected).
+    fn delete(&self, ctx: &mut EventContext, path: &str) {
+        self.loading.set(true);
+        let scanner = self.clone();
+        let target = PathBuf::from(path);
+        match &self.async_rt {
+            Some(_) => {
+                ctx.spawn_local_with(
+                    async move {
+                        spawn_blocking(move || {
+                            if target.is_dir() {
+                                std::fs::remove_dir_all(&target)
+                            } else {
+                                std::fs::remove_file(&target)
+                            }
+                        })
+                        .await
+                    },
+                    move |result, ctx2| {
+                        match result {
+                            Ok(Ok(())) => {}
+                            Ok(Err(e)) => {
+                                ctx2.show_toast(
+                                    Toast::error(tr!(backups_delete_error(error = e.to_string())))
+                                        .id(DELETE_TOAST_ID),
+                                );
+                            }
+                            Err(_panicked) => {
+                                ctx2.show_toast(
+                                    Toast::error(tr!(backups_delete_error(
+                                        error = "panicked".to_string()
+                                    )))
+                                    .id(DELETE_TOAST_ID),
+                                );
+                            }
+                        }
+                        scanner.kick_scan();
+                    },
+                )
+                .detach();
+            }
+            None => {
+                let result = if target.is_dir() {
+                    std::fs::remove_dir_all(&target)
+                } else {
+                    std::fs::remove_file(&target)
+                };
+                if let Err(e) = result {
+                    ctx.show_toast(
+                        Toast::error(tr!(backups_delete_error(error = e.to_string())))
+                            .id(DELETE_TOAST_ID),
+                    );
+                }
+                scanner.kick_scan();
+            }
+        }
     }
 }
 
 pub struct BackupsListPanel {
     scanner: Scanner,
     root_child: Option<WidgetId>,
+    /// One-shot guard: the initial background scan is kicked off only on the
+    /// very first `build()` call.
+    scan_kicked: bool,
 }
 
 impl BackupsListPanel {
     /// `dirs` are the configured destinations; the project's own folder is always
-    /// scanned too (the default "next to the project" destination).
+    /// scanned too (the default "next to the project" destination). The scan
+    /// itself is deferred to the first `build()` (T2-3) — construction does no
+    /// filesystem I/O.
     pub fn new(uid: String, project_path: String, mut dirs: Vec<String>) -> Self {
         dirs.push(String::new()); // the project's own folder
-        let rows = scan_backups(&uid, &project_path, &dirs);
         Self {
             scanner: Scanner {
                 uid,
                 project_path,
                 dirs,
-                model: ListModel::from_vec(rows),
+                model: ListModel::from_vec(Vec::new()),
                 epoch: Signal::new(0),
+                loading: Signal::new(true),
+                async_rt: None,
             },
             root_child: None,
+            scan_kicked: false,
         }
     }
 }
@@ -92,6 +194,14 @@ impl std::fmt::Debug for BackupsListPanel {
 
 impl Widget for BackupsListPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if self.scanner.async_rt.is_none() {
+            self.scanner.async_rt = ctx.app_state::<AsyncRuntimeHandle>().cloned();
+        }
+        if !self.scan_kicked {
+            self.scan_kicked = true;
+            self.scanner.kick_scan();
+        }
+
         let model = self.scanner.model.clone();
         let scanner_for_rows = self.scanner.clone();
 
@@ -100,6 +210,7 @@ impl Widget for BackupsListPanel {
             let open_path = row.path.clone();
             let reveal_path = row.path.clone();
             let delete_path = row.path.clone();
+            let delete_name = backup_display_name(&row.path);
             let actions = HStack::new()
                 .spacing(6.0)
                 .child(
@@ -120,7 +231,20 @@ impl Widget for BackupsListPanel {
                 .child(
                     IconButton::clear()
                         .tooltip(tr!(backups_delete()))
-                        .on_activate_fn(move |_c| s.delete(&delete_path)),
+                        .on_activate_fn(move |ctx| {
+                            let s = s.clone();
+                            let path = delete_path.clone();
+                            let name = delete_name.clone();
+                            MessageBox::question(tr!(backups_delete_confirm_title()))
+                                .text(tr!(backups_delete_confirm_text(name = name)))
+                                .buttons(MessageBoxButtons::OkCancel)
+                                .on_result(move |r, ctx2| {
+                                    if r.button == StandardButton::Ok {
+                                        s.delete(ctx2, &path);
+                                    }
+                                })
+                                .present(ctx);
+                        }),
                 );
             Box::new(
                 StandardListItem::new(lit!(row.date.clone()))
@@ -131,13 +255,30 @@ impl Widget for BackupsListPanel {
         })
         .auto_item_height(56.0);
 
-        // Empty-state vs list, re-derived on each rescan (epoch bump).
+        // Loading / empty-state / list, re-derived whenever either the loading
+        // flag or the list content changes.
         let idx_model = model.clone();
-        let switch_index = self
-            .scanner
-            .epoch
-            .map(move |_: &u64| if idx_model.is_empty() { 0usize } else { 1usize });
+        let switch_index =
+            self.scanner
+                .loading
+                .zip(&self.scanner.epoch)
+                .map(move |(loading, _epoch)| {
+                    if *loading {
+                        0usize
+                    } else if idx_model.is_empty() {
+                        1usize
+                    } else {
+                        2usize
+                    }
+                });
         let body = Switcher::new(switch_index)
+            .child(
+                Padding::symmetric(24.0, 40.0).child(
+                    TextWidget::new(tr!(backups_loading()))
+                        .style(TextStyleRole::Small)
+                        .color(TextRole::Secondary),
+                ),
+            )
             .child(
                 Padding::symmetric(24.0, 40.0).child(
                     TextWidget::new(tr!(backups_empty()))
@@ -171,7 +312,7 @@ impl Widget for BackupsListPanel {
                                     }
                                     Button::new(tr!(backups_refresh())) {
                                         variant: ButtonVariant::Plain
-                                        on_activate_fn: move |_c| refresh_scanner.rescan()
+                                        on_activate_fn: move |_c| refresh_scanner.kick_scan()
                                     }
                                     IconButton::clear() {
                                         tooltip: tr!(backups_close())
@@ -215,6 +356,15 @@ impl Widget for BackupsListPanel {
             .map(LayoutResponse::from)
             .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
     }
+}
+
+/// The file's basename, shown as the `{ $name }` placeholder in the delete
+/// confirmation (e.g. `novel-20260101-120000.skrib`).
+fn backup_display_name(path: &str) -> String {
+    Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| path.to_string())
 }
 
 /// Scan `dirs` (+ resolve the empty "project folder" destination) for this
@@ -329,5 +479,14 @@ mod tests {
         std::fs::write(root.join("binders/manuscript/a.djot"), vec![0u8; 2048]).unwrap();
         assert_eq!(byte_size(&root), 3072, "summed recursively");
         assert_eq!(human_size(&root), "3 KB");
+    }
+
+    #[test]
+    fn backup_display_name_is_the_basename() {
+        assert_eq!(
+            backup_display_name("/a/b/novel-20260101-120000.skrib"),
+            "novel-20260101-120000.skrib"
+        );
+        assert_eq!(backup_display_name("novel.skrib"), "novel.skrib");
     }
 }

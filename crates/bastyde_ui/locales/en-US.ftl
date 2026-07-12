@@ -247,6 +247,7 @@ backup-choice-subtitle-dated = Backup taken { $date }.
 backup-choice-body = You can open it and edit freely, but changes can only be kept with Save As — the original project file is not touched. Or restore this project to exactly this backup.
 backup-choice-open = Open the backup
 backup-choice-restore = Restore this project to this point…
+backup-choice-not-a-backup = No, open it normally
 backup-banner-title = Backup copy — changes can't be saved here
 backup-banner-description = Use Save As to keep your edits in a new file, or Restore to replace the original project with this backup.
 backup-banner-restore = Restore…
@@ -269,10 +270,14 @@ backup-nudge-action = Set up backups…
 ## Backups list panel
 menu-backups-list = Bac&kups…
 backups-title = Backups
+backups-loading = Scanning for backups…
 backups-empty = No backups found for this project yet.
 backups-open = Open
 backups-reveal = Reveal
 backups-delete = Delete this backup
+backups-delete-confirm-title = Delete this backup?
+backups-delete-confirm-text = “{ $name }” will be permanently deleted. This can't be undone.
+backups-delete-error = Could not delete the backup: { $error }
 backups-refresh = Refresh
 backups-close = Close
 
@@ -398,3 +403,13 @@ import-plume-open-now = Open now
 # Error toast: a short reason in the body, the full technical chain behind Details
 import-plume-error-title = Could not import the project
 import-plume-error-details = Details
+
+## Backup scheduler (progress toast + failure/prune-warning details — backup review, T1-2/T1-7/T2-3/T2-8/T2-9)
+backup-progress-start = Starting…
+backup-progress-retention = Cleaning up old backups…
+backup-progress-done = Done
+backup-progress-destination = Destination { $i } of { $n }
+backup-details = Details
+backup-issues-title = Backup issues
+backup-failed-title = Backup failed
+backup-complete-prune-warning = Backup complete ({ $ok } saved, { $skipped } already current) — some old backups could not be removed

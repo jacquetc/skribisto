@@ -42,22 +42,39 @@ impl WelcomeViewModel {
 
     /// Open a recent/known work by path. Dismisses the modal first so the loaded
     /// work is revealed behind it (mirrors `ProjectSwitcherButton`'s row click).
+    ///
+    /// The backup sniff (a blocking `File::open` + zip parse with no timeout —
+    /// see `crate::backup::is_backup_path`) runs off the UI thread (T2-3):
+    /// clicking any recent entry must never hang the app on a disconnected
+    /// network/FUSE mount.
     pub fn open_work(&self, path: String, ctx: &mut EventContext) {
         ctx.dismiss_modal();
-        // A backup opens in its own instance (never in this window).
-        if crate::backup::is_backup_path(&path) {
-            ctx.request_activation_token_self(Box::new(move |tok| {
-                crate::project_switcher_button::spawn_new_process(&path, tok);
-            }));
-            return;
-        }
-        if let Err(e) =
-            work_management_commands::load_work(&self.app_ctx, &LoadWorkDto { file_name: path })
-        {
-            ctx.show_toast(Toast::error(tr!(could_not_open_work(
-                error = e.to_string()
-            ))));
-        }
+        let app_ctx = self.app_ctx.clone();
+        let path_for_check = path.clone();
+        ctx.spawn_local_with(
+            async move {
+                spawn_blocking(move || crate::backup::is_backup_path(&path_for_check))
+                    .await
+                    .unwrap_or(false)
+            },
+            move |is_backup, ectx| {
+                // A backup opens in its own instance (never in this window).
+                if is_backup {
+                    ectx.request_activation_token_self(Box::new(move |tok| {
+                        crate::project_switcher_button::spawn_new_process(&path, tok);
+                    }));
+                    return;
+                }
+                if let Err(e) =
+                    work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: path })
+                {
+                    ectx.show_toast(Toast::error(tr!(could_not_open_work(
+                        error = e.to_string()
+                    ))));
+                }
+            },
+        )
+        .detach();
     }
 
     /// Open a bundled example. Its bytes are embedded in the binary; write them
@@ -74,7 +91,9 @@ impl WelcomeViewModel {
         }
     }
 
-    /// "Open" button — native picker for an existing `.skrib`, then load.
+    /// "Open" button — native picker for an existing `.skrib`, then load. The
+    /// backup sniff runs off the UI thread (T2-3), same rationale as
+    /// [`Self::open_work`].
     pub fn pick_open(&self, ctx: &mut EventContext) {
         let app_ctx = self.app_ctx.clone();
         let req = FileDialogRequest::pick_file()
@@ -90,19 +109,34 @@ impl WelcomeViewModel {
                 // returns, so pop it directly.
                 ectx.dismiss_top_overlay();
                 let file = path.to_string_lossy().into_owned();
-                if crate::backup::is_backup_path(&file) {
-                    ectx.request_activation_token_self(Box::new(move |tok| {
-                        crate::project_switcher_button::spawn_new_process(&file, tok);
-                    }));
-                    return;
-                }
-                if let Err(e) =
-                    work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: file })
-                {
-                    ectx.show_toast(Toast::error(tr!(could_not_open_work(
-                        error = e.to_string()
-                    ))));
-                }
+                let app_ctx = app_ctx.clone();
+                let file_for_check = file.clone();
+                ectx.spawn_local_with(
+                    async move {
+                        spawn_blocking(move || crate::backup::is_backup_path(&file_for_check))
+                            .await
+                            .unwrap_or(false)
+                    },
+                    move |is_backup, ectx2| {
+                        if is_backup {
+                            ectx2.request_activation_token_self(Box::new(move |tok| {
+                                crate::project_switcher_button::spawn_new_process(&file, tok);
+                            }));
+                            return;
+                        }
+                        if let Err(e) = work_management_commands::load_work(
+                            &app_ctx,
+                            &LoadWorkDto {
+                                file_name: file.clone(),
+                            },
+                        ) {
+                            ectx2.show_toast(Toast::error(tr!(could_not_open_work(
+                                error = e.to_string()
+                            ))));
+                        }
+                    },
+                )
+                .detach();
             }
         });
     }

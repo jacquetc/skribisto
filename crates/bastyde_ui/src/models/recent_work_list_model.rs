@@ -107,6 +107,13 @@ mod imp {
         /// One-shot guard: subscriptions persist across the consumer's rebuilds.
         subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
+        /// The main-thread async executor (T2-3): `on_open`'s backup sniff (a
+        /// blocking `File::open` + zip parse — see `crate::backup::is_backup_path`)
+        /// must never run on the UI thread, since building this list runs on every
+        /// `LoadWork`/`NewWork`. Populated once in `wire` (`None` only if
+        /// `install_async()` wasn't called at startup, which would be an app bug —
+        /// `on_open` falls back to a synchronous check rather than panicking).
+        async_rt: RefCell<Option<AsyncRuntimeHandle>>,
     }
 
     #[derive(Clone)]
@@ -127,6 +134,7 @@ mod imp {
                     version: Signal::new(0),
                     subscribed: Cell::new(false),
                     ctx,
+                    async_rt: RefCell::new(None),
                 }),
             }
         }
@@ -136,6 +144,7 @@ mod imp {
             if self.inner.subscribed.replace(true) {
                 return;
             }
+            *self.inner.async_rt.borrow_mut() = ctx.app_state::<AsyncRuntimeHandle>().cloned();
             let me = self.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
@@ -177,15 +186,50 @@ mod imp {
 
         /// On a successful open, record the just-opened work in the durable MRU
         /// (dedupe by path, front-inserted), then refresh the reachable view.
+        ///
+        /// The backup sniff (T2-3) runs off the UI thread via the main-thread
+        /// async executor: this fires on every `LoadWork`/`NewWork`, so it must
+        /// never block. `mru.add` + `refresh` need no `EventContext` (no ambient
+        /// op), so a fire-and-forget `spawn_local` is enough — no
+        /// `spawn_local_with` completion hop required.
         fn on_open(&self) {
-            if let (Some(mru), Some(entry)) = (&self.inner.mru, opened_entry(&self.inner.ctx)) {
-                // A backup file is never added to "Recent" — it's a point-in-time
-                // copy opened in its own window, not a project you return to.
-                if !crate::backup::is_backup_path(&entry.path) {
-                    mru.add(entry);
+            let Some(entry) = opened_entry(&self.inner.ctx) else {
+                self.refresh();
+                return;
+            };
+            let Some(mru) = self.inner.mru.clone() else {
+                self.refresh();
+                return;
+            };
+            match self.inner.async_rt.borrow().clone() {
+                Some(rt) => {
+                    let me = self.clone();
+                    rt.spawn_local(async move {
+                        let path = entry.path.clone();
+                        // A backup file is never added to "Recent" — it's a
+                        // point-in-time copy opened in its own window, not a
+                        // project you return to.
+                        let is_backup =
+                            spawn_blocking(move || crate::backup::is_backup_path(&path))
+                                .await
+                                .unwrap_or(false);
+                        if !is_backup {
+                            mru.add(entry);
+                        }
+                        me.refresh();
+                    })
+                    .detach();
+                }
+                None => {
+                    // `install_async()` wasn't called at startup (an app bug, not
+                    // a normal runtime state) — fall back to a synchronous check
+                    // rather than silently dropping the "recently opened" record.
+                    if !crate::backup::is_backup_path(&entry.path) {
+                        mru.add(entry);
+                    }
+                    self.refresh();
                 }
             }
-            self.refresh();
         }
 
         /// Re-derive the reachable view from the MRU, then bump `version`.

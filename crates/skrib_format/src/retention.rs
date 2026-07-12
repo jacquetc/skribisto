@@ -151,19 +151,41 @@ fn file_mtime(path: &Path) -> Option<DateTime<Utc>> {
     Some(DateTime::<Utc>::from(modified))
 }
 
-/// Pure: given candidates + policy + `min_keep` floor + `now`, return which paths
-/// to delete. No filesystem access — fully unit-testable.
+/// Pure: given candidates + policy + `min_keep` floor + `protected` + `now`,
+/// return which paths to delete. No filesystem access — fully unit-testable.
+///
+/// Two guarantees hold **whatever** the policy, the `min_keep` floor, or the
+/// system clock say, because a backup system that can delete every copy is worse
+/// than no backup system at all:
+///
+/// 1. **At least one backup always survives** — the newest candidate is kept
+///    unconditionally, before any policy math runs. A policy that resolves to an
+///    empty keep-set (all-zero GFS tiers, `KeepLastN { n: 0 }`, `min_keep = 0`)
+///    would otherwise return *every* candidate for deletion.
+/// 2. **`protected` paths are never deleted**, by identity rather than by
+///    timestamp. This is what survives a backwards clock correction (NTP, a
+///    dual-boot RTC, a VM resume): a backup written *now* can carry an *older*
+///    stamp than its predecessors, so it sorts as oldest and neither the newest-
+///    first rule nor `min_keep` (which reads the same corrupted order) would save
+///    it. Callers pass the paths this very run just wrote.
 pub fn plan_deletions(
     candidates: &[BackupCandidate],
     policy: &RetentionPolicy,
     min_keep: u32,
+    protected: &[PathBuf],
     now: DateTime<Utc>,
 ) -> Vec<PathBuf> {
     let mut sorted = candidates.to_vec();
     sorted.sort_by(|a, b| b.timestamp.cmp(&a.timestamp).then(a.path.cmp(&b.path)));
 
     let mut keep: HashSet<PathBuf> = HashSet::new();
-    // Absolute floor first: the `min_keep` newest are never deleted.
+    // Guarantee 1: never leave a project with zero backups, whatever the policy.
+    if let Some(newest) = sorted.first() {
+        keep.insert(newest.path.clone());
+    }
+    // Guarantee 2: whatever this run just wrote survives, regardless of its stamp.
+    keep.extend(protected.iter().cloned());
+    // Absolute floor: the `min_keep` newest are never deleted.
     for c in sorted.iter().take(min_keep as usize) {
         keep.insert(c.path.clone());
     }
@@ -252,15 +274,20 @@ fn keep_one_per_bucket<B, E>(
 
 /// Scan `dir`, plan deletions, and delete — best-effort: a failed delete is
 /// collected, never panics, and never aborts the rest of the sweep.
+///
+/// `protected` holds paths that must never be deleted (in practice: the backups
+/// this very run just wrote). See [`plan_deletions`] for why identity, not
+/// timestamp, is what protects them.
 pub fn apply_retention(
     dir: &Path,
     current_unique_id: &str,
     current_path_fallback: &str,
     policy: &RetentionPolicy,
     min_keep: u32,
+    protected: &[PathBuf],
 ) -> Result<RetentionReport> {
     let candidates = scan_destination(dir, current_unique_id, current_path_fallback)?;
-    let to_delete = plan_deletions(&candidates, policy, min_keep, Utc::now());
+    let to_delete = plan_deletions(&candidates, policy, min_keep, protected, Utc::now());
 
     let mut report = RetentionReport::default();
     for p in to_delete {
@@ -307,7 +334,7 @@ mod tests {
             cand("/b/a-20260613-100000.skrib", "2026-06-13T10:00:00Z"),
             cand("/b/a-20260612-100000.skrib", "2026-06-12T10:00:00Z"),
         ];
-        let del = plan_deletions(&c, &RetentionPolicy::KeepLastN { n: 2 }, 0, now());
+        let del = plan_deletions(&c, &RetentionPolicy::KeepLastN { n: 2 }, 0, &[], now());
         assert_eq!(
             del,
             vec![
@@ -325,8 +352,93 @@ mod tests {
             cand("/b/a-20260613-100000.skrib", "2026-06-13T10:00:00Z"),
         ];
         // Policy says keep 1, floor says keep 3 → nothing deleted.
-        let del = plan_deletions(&c, &RetentionPolicy::KeepLastN { n: 1 }, 3, now());
+        let del = plan_deletions(&c, &RetentionPolicy::KeepLastN { n: 1 }, 3, &[], now());
         assert!(del.is_empty());
+    }
+
+    // ── the newest backup always survives, whatever the policy says ──────────
+    //
+    // Every one of these configurations used to return *every* candidate for
+    // deletion: nothing was ever inserted into `keep`, so a project was left with
+    // zero backups seconds after a "backup complete" toast.
+
+    fn three() -> Vec<BackupCandidate> {
+        vec![
+            cand("/b/a-20260615-100000.skrib", "2026-06-15T10:00:00Z"),
+            cand("/b/a-20260614-100000.skrib", "2026-06-14T10:00:00Z"),
+            cand("/b/a-20260613-100000.skrib", "2026-06-13T10:00:00Z"),
+        ]
+    }
+
+    fn newest() -> PathBuf {
+        PathBuf::from("/b/a-20260615-100000.skrib")
+    }
+
+    #[test]
+    fn all_zero_gfs_tiers_still_keep_the_newest() {
+        let policy = RetentionPolicy::Gfs {
+            hourly: 0,
+            daily: 0,
+            weekly: 0,
+            monthly: 0,
+        };
+        let del = plan_deletions(&three(), &policy, 0, &[], now());
+        assert!(!del.contains(&newest()), "the newest backup must survive");
+        assert_eq!(del.len(), 2, "the two older ones may go");
+    }
+
+    #[test]
+    fn keep_last_zero_still_keeps_the_newest() {
+        let del = plan_deletions(
+            &three(),
+            &RetentionPolicy::KeepLastN { n: 0 },
+            0,
+            &[],
+            now(),
+        );
+        assert!(!del.contains(&newest()));
+        assert_eq!(del.len(), 2);
+    }
+
+    #[test]
+    fn an_empty_candidate_set_deletes_nothing() {
+        let policy = RetentionPolicy::Gfs {
+            hourly: 0,
+            daily: 0,
+            weekly: 0,
+            monthly: 0,
+        };
+        assert!(plan_deletions(&[], &policy, 0, &[], now()).is_empty());
+    }
+
+    #[test]
+    fn a_protected_path_survives_a_backwards_clock() {
+        // The backup we just wrote (`fresh`) carries an *older* stamp than its
+        // predecessors — exactly what a backwards clock correction produces. It
+        // therefore sorts as the oldest, so neither the newest-first rule nor
+        // `min_keep` (which reads that same corrupted order) would save it.
+        // Only protecting it by identity does.
+        let fresh = PathBuf::from("/b/a-20260101-000000.skrib");
+        let mut c = three();
+        c.push(cand("/b/a-20260101-000000.skrib", "2026-01-01T00:00:00Z"));
+
+        let unprotected = plan_deletions(&c, &RetentionPolicy::KeepLastN { n: 1 }, 0, &[], now());
+        assert!(
+            unprotected.contains(&fresh),
+            "precondition: the clock-skewed backup is otherwise the first to die"
+        );
+
+        let protected = plan_deletions(
+            &c,
+            &RetentionPolicy::KeepLastN { n: 1 },
+            0,
+            std::slice::from_ref(&fresh),
+            now(),
+        );
+        assert!(
+            !protected.contains(&fresh),
+            "a backup this run just wrote is never deleted, whatever its timestamp"
+        );
     }
 
     #[test]
@@ -346,7 +458,7 @@ mod tests {
             weekly: 2,
             monthly: 2,
         };
-        let del = plan_deletions(&c, &policy, 0, now());
+        let del = plan_deletions(&c, &policy, 0, &[], now());
         // hourly (2 most-recent hour-buckets today) keeps 11:00 & 10:00; today's 09:00
         // falls to the daily tier but that day-bucket is already covered by 11:00, so
         // 09:00 is dropped. daily also keeps 06-10. weekly adds nothing new. monthly=2
@@ -441,7 +553,7 @@ mod tests {
         assert!(found.iter().all(|c| c.work_unique_id == "A"));
 
         // keep-last-1 deletes the older A backup, never B's or the regular file.
-        let del = plan_deletions(&found, &RetentionPolicy::KeepLastN { n: 1 }, 0, now());
+        let del = plan_deletions(&found, &RetentionPolicy::KeepLastN { n: 1 }, 0, &[], now());
         assert_eq!(del, vec![dir.path().join("novel-20260614-100000.skrib")]);
     }
 }

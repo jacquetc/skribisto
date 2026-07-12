@@ -7,6 +7,10 @@
 //! [`AppEventProxy::send_external`]; `main.rs`'s `on_app_event` handler then
 //! focuses the captured main-window `WindowState` (optionally with the forwarded
 //! xdg-activation token, for a real cross-surface raise on Wayland).
+//!
+//! The socket file itself is unlinked on a clean exit by [`cleanup_own_socket`]
+//! (call alongside `open_registry::release_all()`); a crash instead leaves it
+//! for `open_registry::scan()` to reap once this pid is dead.
 
 use std::io::{BufRead, BufReader, Write};
 
@@ -53,6 +57,15 @@ pub fn spawn_listener(proxy: AppEventProxy) {
                 }
             }
         });
+}
+
+/// Remove this instance's own socket file, if present. Call once at shutdown,
+/// alongside `open_registry::release_all()`, so a clean exit never leaves a
+/// socket behind for a later `scan()` to have to reap.
+pub fn cleanup_own_socket() {
+    if let Some(sock) = open_registry::my_ipc_socket() {
+        let _ = std::fs::remove_file(sock);
+    }
 }
 
 /// Ask the instance owning `pid` to raise its window, forwarding an optional

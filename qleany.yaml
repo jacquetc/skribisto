@@ -352,25 +352,66 @@ features:
       - name: last_known_hashes
         type: string
         is_list: true
+      # Per-destination last-known written path (parallel to `directories`); a
+      # skip is only honoured when this path still exists on disk — otherwise the
+      # backup is gone (deleted folder, reformatted stick) and must be rewritten
+      # even though the hash still matches.
+      - name: last_known_paths
+        type: string
+        is_list: true
+      # Whether to run retention pruning in this same operation, off the UI thread.
+      - name: prune
+        type: boolean
+      # Flat retention fields (no data-carrying enum DTOs are supported) mirroring
+      # skrib_format::retention::RetentionPolicy / the UI's BackupPolicy.
+      - name: retention_mode
+        type: enum
+        enum_name: RetentionMode
+        enum_values:
+        - Tiered
+        - KeepLastN
+      - name: keep_last_n
+        type: uinteger
+      - name: gfs_hourly
+        type: uinteger
+      - name: gfs_daily
+        type: uinteger
+      - name: gfs_weekly
+        type: uinteger
+      - name: gfs_monthly
+        type: uinteger
+      # Absolute floor: the newest `min_keep` backups per destination are never pruned.
+      - name: min_keep
+        type: uinteger
     dto_out:
       name: BackupResultDto
       fields:
       # The fresh content fingerprint of what was gathered (for skip-if-unchanged).
       - name: content_hash
         type: string
-      # Full output paths actually written.
+      # Full output paths actually written AND verified.
       - name: succeeded_paths
         type: string
         is_list: true
-      # Destinations skipped because their content matched the last-known hash.
+      # Destinations skipped because their content matched the last-known hash
+      # AND the previously-written file still exists on disk.
       - name: skipped_directories
         type: string
         is_list: true
-      # Destinations whose write failed (parallel to `failed_reasons`).
+      # Destinations whose write (or post-write verification) failed (parallel to
+      # `failed_reasons`).
       - name: failed_directories
         type: string
         is_list: true
       - name: failed_reasons
+        type: string
+        is_list: true
+      # Backup files pruned by retention this run (parallel semantics to
+      # `delete_errors`, which records the ones that failed to delete).
+      - name: deleted_paths
+        type: string
+        is_list: true
+      - name: delete_errors
         type: string
         is_list: true
   - name: close_work

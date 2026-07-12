@@ -311,6 +311,18 @@ impl Widget for App {
             .app_state::<crate::view_models::RestoreViewModel>()
             .cloned()
             .expect("RestoreViewModel registered in main");
+        // T1-2: install the real flush hook — every backup trigger
+        // (`backup_now` / `on_open` / `interval_tick` / `on_close_flow`) flushes
+        // the live editor buffers into the store *before* it reads it, so a
+        // long typing session in an unfocused tab is never lost to
+        // skip-if-unchanged. The scheduler's `flush_hook` cell is shared across
+        // every clone already handed out (the window close guard in `main.rs`,
+        // `App`'s own exit-guard effect below), so installing it here — once,
+        // before any trigger can fire — makes it visible everywhere at once.
+        backup_scheduler.set_flush_hook(Rc::new({
+            let editors = editors.clone();
+            move || editors.flush_all()
+        }));
         // Keep the outline tree reactive to *all* structural mutations (incl. the
         // manuscript streams' rename/merge/split/add), not just the outline's own.
         self.outline.wire(ctx);
@@ -572,7 +584,6 @@ impl Widget for App {
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
             let unsaved = self.unsaved.clone();
-            let backup_scheduler = backup_scheduler.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_event: &Event| {
@@ -588,12 +599,18 @@ impl Widget for App {
                     single_work_info.set_id(ids.work_info_id.get());
                     unsaved.set(false);
                     // Advertise this project as open so other instances' switchers
-                    // list it (and can raise this window).
+                    // list it (and can raise this window). This window may already
+                    // hold a claim on a different path (Load supersedes New/Load/
+                    // Restore with no `CloseWork` in between) — `replace_claim`
+                    // drops that one first (T1-5).
                     if let Some(path) = single_work_info.file_name().get() {
-                        crate::open_registry::claim(&path, &single_work.title().get());
+                        crate::open_registry::replace_claim(&path, &single_work.title().get());
                     }
-                    // Take an on-open backup if the policy asks for one.
-                    backup_scheduler.on_open();
+                    // NOTE: the on-open backup trigger is fired from the SECOND
+                    // `LoadWork` subscriber below (T2-4), once `backup_mode` is
+                    // known — firing it here, before that sniff runs, could pump a
+                    // freshly-opened *backup* file into the real project's
+                    // retention pool before anyone knew it was a backup.
                 },
             );
         }
@@ -610,6 +627,7 @@ impl Widget for App {
             let restore_vm = restore_vm.clone();
             let single_work = single_work.clone();
             let backup_settings = backup_settings.clone();
+            let backup_scheduler = backup_scheduler.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_e: &Event, c: &mut EventContext| {
@@ -622,11 +640,15 @@ impl Widget for App {
                             backup_mode.set(true);
                             backup_context.set(Some(bc.clone()));
                             let restore = restore_vm.clone();
+                            let backup_mode_for_panel = backup_mode.clone();
+                            let backup_context_for_panel = backup_context.clone();
                             c.present_modal(
                                 ModalRequest::deferred(move |t| {
                                     t.add(crate::backup_choice_panel::BackupChoicePanel::new(
                                         restore.clone(),
                                         bc.clone(),
+                                        backup_mode_for_panel.clone(),
+                                        backup_context_for_panel.clone(),
                                     ))
                                 })
                                 .presentation(ModalPresentation::InTree)
@@ -639,6 +661,12 @@ impl Widget for App {
                             // A normal project — never in backup mode.
                             backup_mode.set(false);
                             backup_context.set(None);
+                            // Take an on-open backup now (T2-4) — `backup_mode` is
+                            // known false at this point, so a freshly-opened
+                            // *backup* file (the `Some(bc)` arm above) can never be
+                            // pumped into the real project's retention pool before
+                            // anyone knew it was a backup.
+                            backup_scheduler.on_open();
                             // One-time "no backups configured" nudge (only when the
                             // effective policy has every trigger off — a project on
                             // defaults still backs up on close, so it never nags).
@@ -726,11 +754,19 @@ impl Widget for App {
             }
         }
 
-        // Route the backup long operation's completion/failure to the shared
-        // `BackupSchedulerViewModel`, which records the per-destination success
-        // hash, applies retention, shows the summary toast, and — for an on-close
-        // backup — performs the deferred close. Filters by op id (import/save-as
-        // events are ignored).
+        // Route the backup long operation's progress/completion/failure to the
+        // shared `BackupSchedulerViewModel`, which records the per-destination
+        // success hash + path, shows a progress toast (retention now runs
+        // *inside* the operation — see the engine), shows the summary toast, and
+        // — for an on-close backup — performs the deferred close. Filters by op
+        // id (import/save-as events are ignored).
+        {
+            let vm = backup_scheduler.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(LongOperationEvent::Progress),
+                move |e: &Event, c| vm.on_long_op_progress(c, e),
+            );
+        }
         {
             let vm = backup_scheduler.clone();
             ctx.subscribe_event_with_ctx(
@@ -795,7 +831,7 @@ impl Widget for App {
                     single_work_info.set_id(ids.work_info_id.get());
                     unsaved.set(true);
                     if let Some(path) = single_work_info.file_name().get() {
-                        crate::open_registry::claim(&path, &single_work.title().get());
+                        crate::open_registry::replace_claim(&path, &single_work.title().get());
                     }
                     // A brand-new project is never a backup.
                     backup_mode.set(false);
@@ -819,6 +855,15 @@ impl Widget for App {
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::CloseWork),
                 move |_event: &Event| {
+                    // Release exactly the project being closed, before the
+                    // singles are unpointed and its path becomes unreachable.
+                    // Not `release_all()`: a window may one day hold several
+                    // projects, and closing one must not drop the others' claims
+                    // (T1-5 — the registry is keyed on (pid, path), so a claim is
+                    // per project, not per process).
+                    if let Some(path) = single_work_info.file_name().get() {
+                        crate::open_registry::release(&path);
+                    }
                     ids.clear();
                     outline.set_binder_filter(None);
                     outline.clear_search();
@@ -829,7 +874,6 @@ impl Widget for App {
                     unsaved.set(false);
                     backup_mode.set(false);
                     backup_context.set(None);
-                    crate::open_registry::release();
                 },
             );
         }
@@ -1064,15 +1108,14 @@ impl Widget for App {
                 );
             }));
         }
-        // `backup.now` — the manual "Back up now" command. Flushes in-widget edits
-        // into the store (so the backup captures the latest typing — a store write,
-        // not a disk save), then runs a forced backup to the configured
-        // destinations. Registered globally (the title-bar menu is an overlay).
+        // `backup.now` — the manual "Back up now" command. Runs a forced backup
+        // to the configured destinations; `backup_now` itself flushes in-widget
+        // edits into the store first (T1-2 — the flush hook installed above, at
+        // the top of every trigger, not just this one). Registered globally (the
+        // title-bar menu is an overlay).
         {
-            let editors_for_backup = editors.clone();
             let scheduler = backup_scheduler.clone();
             ctx.register_action_global(Action::new("backup.now").on_invoke(move |_i, ctx| {
-                editors_for_backup.flush_all();
                 scheduler.backup_now(ctx);
             }));
         }
@@ -1359,7 +1402,11 @@ impl Widget for App {
 }
 
 /// Present the native picker for an existing `.skrib` and load it. Backs the
-/// global `work.open` command (File ▸ Open Work… and Ctrl+O).
+/// global `work.open` command (File ▸ Open Work… and Ctrl+O) — the most-used
+/// file path in the app, so the backup sniff below (a blocking `File::open` +
+/// zip parse with no timeout — see `crate::backup::is_backup_path`) must never
+/// run on the UI thread: a recent entry on a disconnected network/FUSE mount
+/// would otherwise hang the whole app on an ordinary click (T2-3).
 fn open_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
     let req = FileDialogRequest::pick_file()
         .title("Open Skribisto work")
@@ -1367,21 +1414,36 @@ fn open_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {
             let file = path.to_string_lossy().into_owned();
-            // A backup always opens in its own instance (never replacing the
-            // project in this window) — see the backup-mode invariant.
-            if crate::backup::is_backup_path(&file) {
-                ectx.request_activation_token_self(Box::new(move |tok| {
-                    crate::project_switcher_button::spawn_new_process(&file, tok);
-                }));
-                return;
-            }
-            if let Err(e) =
-                work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: file })
-            {
-                ectx.show_toast(Toast::error(tr!(could_not_open_work(
-                    error = e.to_string()
-                ))));
-            }
+            let app_ctx = app_ctx.clone();
+            let file_for_check = file.clone();
+            ectx.spawn_local_with(
+                async move {
+                    spawn_blocking(move || crate::backup::is_backup_path(&file_for_check))
+                        .await
+                        .unwrap_or(false)
+                },
+                move |is_backup, ectx2| {
+                    // A backup always opens in its own instance (never replacing
+                    // the project in this window) — see the backup-mode invariant.
+                    if is_backup {
+                        ectx2.request_activation_token_self(Box::new(move |tok| {
+                            crate::project_switcher_button::spawn_new_process(&file, tok);
+                        }));
+                        return;
+                    }
+                    if let Err(e) = work_management_commands::load_work(
+                        &app_ctx,
+                        &LoadWorkDto {
+                            file_name: file.clone(),
+                        },
+                    ) {
+                        ectx2.show_toast(Toast::error(tr!(could_not_open_work(
+                            error = e.to_string()
+                        ))));
+                    }
+                },
+            )
+            .detach();
         }
     });
 }

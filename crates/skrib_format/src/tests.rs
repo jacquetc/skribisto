@@ -388,3 +388,151 @@ fn writes_are_diff_minimal() {
         changed[0]
     );
 }
+
+// ---------------------------------------------------------------------------
+// T2-1: durable persist (fsync before rename)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn persist_durably_writes_a_readable_fsynced_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("durable.bin");
+    let mut tmp = tempfile::NamedTempFile::new_in(dir.path()).unwrap();
+    {
+        use std::io::Write;
+        tmp.write_all(b"durable payload").unwrap();
+    }
+    super::writer::persist_durably(tmp, &target).unwrap();
+    assert_eq!(fs::read(&target).unwrap(), b"durable payload");
+}
+
+#[test]
+fn write_zip_round_trips_through_the_durable_persist_path() {
+    // write_zip now writes through the NamedTempFile's own fd and fsyncs
+    // before/after rename (persist_durably) rather than a second independent
+    // File::create handle on the same path; the round trip must still be
+    // lossless.
+    let bundle = build_bundle(ShapeTag::Zip);
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("Durable.skrib");
+    write_bundle(target.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+    assert!(target.exists());
+    let read = read_bundle(target.to_str().unwrap()).unwrap();
+    assert_eq!(bundle, read);
+}
+
+// ---------------------------------------------------------------------------
+// T2-2: verify_backup_at
+// ---------------------------------------------------------------------------
+
+#[test]
+fn verify_backup_at_accepts_real_backup_and_rejects_the_rest() {
+    let mut bundle = build_bundle(ShapeTag::Zip);
+    let dir = tempfile::tempdir().unwrap();
+
+    // A plain Regular save must be rejected (not a backup at all).
+    let regular_path = dir.path().join("Regular.skrib");
+    write_bundle(regular_path.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+    assert!(verify_backup_at(regular_path.to_str().unwrap(), "").is_err());
+
+    // Mark + rewrite as a real backup: must be accepted, with no expected
+    // unique_id and with the correct one.
+    let backup_path = dir.path().join("Regular-20260101-120000.skrib");
+    mark_as_backup(
+        &mut bundle,
+        regular_path.to_string_lossy().into_owned(),
+        ts(),
+    );
+    write_bundle(backup_path.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+    verify_backup_at(backup_path.to_str().unwrap(), "").unwrap();
+    verify_backup_at(backup_path.to_str().unwrap(), "test-unique-id-abc").unwrap();
+
+    // Wrong expected unique_id must be rejected.
+    assert!(verify_backup_at(backup_path.to_str().unwrap(), "some-other-project").is_err());
+
+    // Garbage (unparseable, not even a real zip) must be rejected.
+    let garbage_path = dir.path().join("garbage.skrib");
+    fs::write(&garbage_path, b"not a skrib file at all").unwrap();
+    assert!(verify_backup_at(garbage_path.to_str().unwrap(), "").is_err());
+}
+
+// ---------------------------------------------------------------------------
+// T2-5: filename-fallback sniff must not hijack a legacy project
+// ---------------------------------------------------------------------------
+
+#[test]
+fn sniff_backup_filename_fallback_requires_the_original_to_exist() {
+    let bundle = build_bundle(ShapeTag::Zip);
+    let dir = tempfile::tempdir().unwrap();
+
+    // Stamped-looking name, unreadable "manifest" (garbage bytes), but its
+    // guessed original ("ghost.skrib") does NOT exist on disk -> must NOT be
+    // treated as a backup (the legacy-project-genuinely-named-like-a-backup
+    // case).
+    let orphan_stamp_path = dir.path().join("ghost-20260101-120000.skrib");
+    fs::write(&orphan_stamp_path, b"not a parseable skrib file").unwrap();
+    let sniff = sniff_backup(orphan_stamp_path.to_str().unwrap());
+    assert!(
+        !sniff.is_backup,
+        "a stamped file whose guessed original doesn't exist must not be a backup"
+    );
+
+    // Same unreadable file, but now its guessed original DOES exist on disk
+    // -> accepted as a non-authoritative backup guess.
+    let original_path = dir.path().join("ghost.skrib");
+    write_bundle(
+        original_path.to_str().unwrap(),
+        SkribShape::ZipFile,
+        &bundle,
+    )
+    .unwrap();
+    let sniff2 = sniff_backup(orphan_stamp_path.to_str().unwrap());
+    assert!(sniff2.is_backup);
+    assert!(!sniff2.authoritative);
+    assert_eq!(
+        sniff2.backup_of.as_deref(),
+        Some(original_path.to_str().unwrap())
+    );
+
+    // A readable `Regular` manifest always wins, even when the filename also
+    // matches the stamp pattern.
+    let regular_stamped_path = dir.path().join("mynovel-20260101-120000.skrib");
+    write_bundle(
+        regular_stamped_path.to_str().unwrap(),
+        SkribShape::ZipFile,
+        &bundle,
+    )
+    .unwrap();
+    let sniff3 = sniff_backup(regular_stamped_path.to_str().unwrap());
+    assert!(!sniff3.is_backup);
+    assert!(sniff3.authoritative);
+}
+
+// ---------------------------------------------------------------------------
+// T2-7: mark_existing_as_backup
+// ---------------------------------------------------------------------------
+
+#[test]
+fn mark_existing_as_backup_turns_a_regular_bundle_into_a_backup_in_place() {
+    let bundle = build_bundle(ShapeTag::Zip);
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("Project.skrib");
+    write_bundle(path.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+
+    let before = peek_manifest(path.to_str().unwrap()).unwrap();
+    assert_eq!(before.kind, BundleKind::Regular);
+
+    mark_existing_as_backup(path.to_str().unwrap(), "/orig/Project.skrib", ts()).unwrap();
+
+    let after = peek_manifest(path.to_str().unwrap()).unwrap();
+    assert_eq!(after.kind, BundleKind::Backup);
+    assert_eq!(after.backup_of.as_deref(), Some("/orig/Project.skrib"));
+    // The work's identity must be preserved, not reset.
+    assert_eq!(after.work.unique_id, "test-unique-id-abc");
+
+    // Content preserved (shape + data round trip through read/write).
+    let reread = read_bundle(path.to_str().unwrap()).unwrap();
+    assert_eq!(reread.binders.len(), bundle.binders.len());
+    assert_eq!(reread.manifest.work.title, bundle.manifest.work.title);
+    assert_eq!(reread.tags, bundle.tags);
+}

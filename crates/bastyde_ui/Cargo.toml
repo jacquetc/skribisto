@@ -26,8 +26,13 @@ skribisto_model = { workspace = true }
 # backup scheduler, backups list, and open-a-backup flow.
 skrib_format = { workspace = true }
 # `automation` enables the debug-only in-app automation bridge
-# (`install_automation_bridge_in_debug()`); a no-op in release.
-bastyde = { path = "../../../bastyde/crates/bastyde", features = ["automation"] }
+# (`install_automation_bridge_in_debug()`); a no-op in release. `async` enables
+# the main-thread async executor (`ctx.spawn_local`/`spawn_local_with` +
+# `spawn_blocking`) — the sanctioned way to get pure-filesystem work (backup
+# sniffing, destination-reachability probes) off the UI thread without
+# reaching for the Qleany `LongOperation` machinery, which is for backend
+# store operations, not local I/O.
+bastyde = { path = "../../../bastyde/crates/bastyde", features = ["automation", "async"] }
 # Cross-instance IPC (multi-process window switching): Unix domain socket on
 # Linux/macOS, named pipe on Windows — one API.
 interprocess = "2"

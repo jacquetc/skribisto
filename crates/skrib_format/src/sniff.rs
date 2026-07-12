@@ -6,6 +6,16 @@
 //! the manifest can't be read at all (legacy SQLite / corrupt bundle) — never to
 //! override a readable `Regular` manifest, so a real project that merely happens
 //! to be named like a backup is never mistaken for one.
+//!
+//! Even in the fallback case, a filename match alone is not enough: it is only
+//! accepted when the *guessed original* path actually exists on disk. A legacy
+//! project genuinely named e.g. `draft-20260615-100000.skrib` (unreadable, so
+//! the manifest can't rule it out) would otherwise be forced into read-only
+//! backup mode forever, with no original to point back to. A backup whose
+//! original is gone is indistinguishable from a project that merely looks like
+//! one, so — since we can't even parse the file — the safe default is "this is
+//! a normal project": wrongly entering read-only backup mode is far worse for
+//! the user than missing the banner.
 
 use std::path::Path;
 
@@ -43,8 +53,12 @@ impl BackupSniff {
 /// - Readable manifest `Regular` → authoritatively **not** a backup (a real
 ///   project is never dragged into backup mode by its name).
 /// - Manifest unreadable (legacy SQLite / corrupt) → fall back to the
-///   `<stem>-<YYYYMMDD-HHMMSS>[-N].skrib` filename convention; a match is a
-///   non-authoritative guess (the restore flow confirms the original path).
+///   `<stem>-<YYYYMMDD-HHMMSS>[-N].skrib` filename convention, but only when
+///   the guessed original path **actually exists on disk**; a match whose
+///   original is gone is indistinguishable from a project that merely looks
+///   like one, so it is treated as "not a backup" rather than trapping the
+///   user in permanent read-only mode. A match with an existing original is a
+///   non-authoritative guess (the restore flow re-confirms the original path).
 ///
 /// Never errors — an odd file is simply "not a backup".
 pub fn sniff_backup(path: &str) -> BackupSniff {
@@ -57,13 +71,13 @@ pub fn sniff_backup(path: &str) -> BackupSniff {
         },
         Ok(_) => BackupSniff::not_backup(true),
         Err(_) => match sniff_backup_filename(path) {
-            Some(backup_of) => BackupSniff {
+            Some(backup_of) if Path::new(&backup_of).exists() => BackupSniff {
                 is_backup: true,
                 backup_of: Some(backup_of),
                 backup_created_at: None,
                 authoritative: false,
             },
-            None => BackupSniff::not_backup(false),
+            _ => BackupSniff::not_backup(false),
         },
     }
 }

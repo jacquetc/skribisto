@@ -50,7 +50,7 @@ pub use reader::{peek_manifest, read_bundle};
 pub use shape::{SkribShape, detect_shape};
 pub use slug::{binder_dir_name, prose_file_name, prose_kind, prose_relpath, slugify};
 pub use sniff::{BackupSniff, sniff_backup, sniff_backup_filename};
-pub use writer::write_bundle;
+pub use writer::{mark_existing_as_backup, verify_backup_at, write_bundle};
 
 /// Generate a fresh, stable project identity string (UUID v4). Used to mint a
 /// `Work.unique_id` for brand-new projects, to heal a load whose source carries

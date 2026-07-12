@@ -28,6 +28,22 @@ pub struct SaveAsResultDto {
 pub struct BackupNowDto {
     pub directories: Vec<String>,
     pub last_known_hashes: Vec<String>,
+    pub last_known_paths: Vec<String>,
+    pub prune: bool,
+    pub retention_mode: RetentionMode,
+    pub keep_last_n: u64,
+    pub gfs_hourly: u64,
+    pub gfs_daily: u64,
+    pub gfs_weekly: u64,
+    pub gfs_monthly: u64,
+    pub min_keep: u64,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum RetentionMode {
+    #[default]
+    Tiered,
+    KeepLastN,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct BackupResultDto {
@@ -36,6 +52,8 @@ pub struct BackupResultDto {
     pub skipped_directories: Vec<String>,
     pub failed_directories: Vec<String>,
     pub failed_reasons: Vec<String>,
+    pub deleted_paths: Vec<String>,
+    pub delete_errors: Vec<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct NewWorkDto {

@@ -20,6 +20,8 @@
 //! read-modify-write of the *current* policy through the supplied `set` closure —
 //! so concurrent field edits compose.
 
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use bastyde::prelude::*;
@@ -251,8 +253,11 @@ fn add_policy_rows(
     let gfs_m = int_field(ctx, &get, &set, p0.gfs_monthly as i64, |p, v| {
         p.gfs_monthly = v.max(0) as u32
     });
+    // T1-1: floor of 1, matching `keep_last_n` — a policy must never be able to
+    // express "keep zero backups" through the UI (defence in depth; the actual
+    // floor is now enforced unconditionally in `skrib_format::retention`).
     let min_keep = int_field(ctx, &get, &set, p0.min_keep as i64, |p, v| {
-        p.min_keep = v.max(0) as u32
+        p.min_keep = v.max(1) as u32
     });
 
     // Keep-N vs GFS params, switched on the selected mode. Fixed-width labels (a
@@ -335,7 +340,7 @@ fn add_policy_rows(
         .full_width(spin_line(
             tr!(settings_backup_min_keep()),
             min_keep,
-            0,
+            1,
             99,
             &enabled,
         ))
@@ -415,12 +420,33 @@ fn int_field(
 /// A reactive list of destination folders with per-row availability badges,
 /// Remove, an "Add folder…" picker, and a "Refresh" availability re-check. Its
 /// buttons honour `enabled` so it dims with the rest in the inherited pane.
+///
+/// **T2-3.** `is_destination_available` is a blocking `fs::metadata` call, so it
+/// must never run inline in `build()` — an unplugged/unmounted or hung network
+/// destination would stall the whole settings pane on every rebuild. Instead the
+/// badges are driven from `availability` (a cache filled off-thread via the
+/// main-thread async executor) and `build()` only ever reads that cache; a
+/// change to the destination *set* kicks one background re-check (guarded by
+/// `last_checked` so the rebuild the check's own completion triggers doesn't
+/// re-spawn another one).
 struct DestinationsEditor {
     get: Get,
     set: Set,
     enabled: Signal<bool>,
-    /// Bumped on add/remove/refresh so the row list rebuilds.
+    /// Bumped on add/remove/refresh/availability-landed so the row list rebuilds.
     epoch: Signal<u64>,
+    /// Last-known availability per destination path. `None` (missing key) means
+    /// "not checked yet" — rendered as a neutral badge rather than guessing.
+    availability: Rc<RefCell<HashMap<String, bool>>>,
+    /// The destination set the last background check was kicked off for, so an
+    /// unchanged rebuild (e.g. the one the check's own completion causes) does
+    /// not spawn a redundant check.
+    last_checked: Rc<RefCell<Option<Vec<String>>>>,
+    /// The main-thread async executor, fetched once from `app_state`. `None`
+    /// only if `install_async()` was somehow not called at startup — falls back
+    /// to a synchronous (but still off the hot `build()` common path once
+    /// cached) check rather than leaving every badge unknown forever.
+    async_rt: Option<AsyncRuntimeHandle>,
     root_child: Option<WidgetId>,
 }
 
@@ -431,7 +457,52 @@ impl DestinationsEditor {
             set,
             enabled,
             epoch: Signal::new(0),
+            availability: Rc::new(RefCell::new(HashMap::new())),
+            last_checked: Rc::new(RefCell::new(None)),
+            async_rt: None,
             root_child: None,
+        }
+    }
+
+    /// Kick a background availability re-check for `dests` unless that exact
+    /// set was already the target of the last check.
+    fn refresh_availability(&self, dests: Vec<String>) {
+        if self.last_checked.borrow().as_ref() == Some(&dests) {
+            return;
+        }
+        *self.last_checked.borrow_mut() = Some(dests.clone());
+        let availability = self.availability.clone();
+        let epoch = self.epoch.clone();
+        match &self.async_rt {
+            Some(rt) => {
+                rt.spawn_local(async move {
+                    let checked = spawn_blocking(move || {
+                        dests
+                            .into_iter()
+                            .map(|d| {
+                                let ok = is_destination_available(&d);
+                                (d, ok)
+                            })
+                            .collect::<Vec<_>>()
+                    })
+                    .await
+                    .unwrap_or_default();
+                    {
+                        let mut map = availability.borrow_mut();
+                        map.clear();
+                        map.extend(checked);
+                    }
+                    epoch.set(epoch.get().wrapping_add(1));
+                })
+                .detach();
+            }
+            None => {
+                let mut map = availability.borrow_mut();
+                map.clear();
+                for d in &dests {
+                    map.insert(d.clone(), is_destination_available(d));
+                }
+            }
         }
     }
 }
@@ -449,8 +520,16 @@ impl Widget for DestinationsEditor {
             ctx.binding_registry(),
             bastyde::core::BindingLevel::Rebuild,
         );
+        if self.async_rt.is_none() {
+            self.async_rt = ctx.app_state::<AsyncRuntimeHandle>().cloned();
+        }
 
         let dests = (self.get)().destinations;
+        // T2-3: kick (or skip, if unchanged since the last check) a background
+        // availability re-check rather than calling `is_destination_available`
+        // inline below for every row on every rebuild.
+        self.refresh_availability(dests.clone());
+
         let mut col = VStack::new().spacing(6.0);
 
         if dests.is_empty() {
@@ -461,11 +540,12 @@ impl Widget for DestinationsEditor {
             );
         }
         for (i, d) in dests.iter().enumerate() {
-            let available = is_destination_available(d);
-            let badge = if available {
-                TextWidget::new(lit!("✓".to_string())).color(TextRole::Success)
-            } else {
-                TextWidget::new(lit!("✗".to_string())).color(TextRole::Error)
+            // `None` (not checked yet) renders as a neutral badge rather than
+            // guessing available/unavailable.
+            let badge = match self.availability.borrow().get(d) {
+                Some(true) => TextWidget::new(lit!("✓".to_string())).color(TextRole::Success),
+                Some(false) => TextWidget::new(lit!("✗".to_string())).color(TextRole::Error),
+                None => TextWidget::new(lit!("…".to_string())).color(TextRole::Secondary),
             };
             let get = self.get.clone();
             let set = self.set.clone();
@@ -527,10 +607,14 @@ impl Widget for DestinationsEditor {
         };
         let refresh = {
             let epoch = self.epoch.clone();
+            let last_checked = self.last_checked.clone();
             Button::new(tr!(settings_backup_dest_refresh()))
                 .variant(ButtonVariant::Plain)
                 .enabled(self.enabled.clone())
                 .on_activate_fn(move |_c| {
+                    // Force a re-check even if the destination set itself
+                    // hasn't changed (e.g. a drive was just plugged in).
+                    *last_checked.borrow_mut() = None;
                     let e = &epoch;
                     e.set(e.get().wrapping_add(1));
                 })

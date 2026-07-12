@@ -6,10 +6,27 @@
 // `save_work`, never a copy of the possibly-stale/mid-write on-disk artifact,
 // and always a zip regardless of the project's own shape. Read-only long
 // operation; reuses the shared `work_io` reader.
+//
+// Retention pruning (T1-7) now runs INSIDE this operation, off the UI thread —
+// `apply_retention` does a `read_dir` + a manifest peek per candidate, which can
+// stall on a slow/network destination. The write and the prune share the same
+// `protected` set (the paths *this run* just wrote/verified), which is what
+// stops a backwards system clock from making retention delete the very backup
+// it just produced (see `skrib_format::retention` for why identity, not
+// timestamp, is what protects it).
+//
+// Progress is reported as STABLE MACHINE KEYS (the backend has no i18n layer),
+// not English prose — the UI maps these with `tr!()`:
+//   "backup.start"                  — 0%, about to begin.
+//   "backup.destination:<i>:<n>"    — writing/skipping destination `i` of `n`
+//                                      (both 1-based).
+//   "backup.retention"              — pruning old backups per destination.
+//   "backup.done"                   — 100%, operation complete.
 use crate::BackupNowDto;
 use crate::BackupResultDto;
+use crate::RetentionMode;
 use crate::work_io::{self, TreeReader};
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
@@ -19,8 +36,11 @@ use common::entities::{
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
+use skrib_format::retention::{self, RetentionPolicy};
 use skrib_format::{self as skrib, ShapeTag, SkribShape};
-use std::path::Path;
+use std::collections::HashSet;
+use std::fs::OpenOptions;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -107,7 +127,10 @@ impl LongOperation for BackupNowUseCase {
         progress_callback: Box<dyn Fn(OperationProgress) + Send>,
         cancel_flag: Arc<AtomicBool>,
     ) -> Result<Self::Output> {
-        progress_callback(OperationProgress::new(0.0, Some("Backing up…".to_string())));
+        progress_callback(OperationProgress::new(
+            0.0,
+            Some("backup.start".to_string()),
+        ));
         let stamp = chrono::Utc::now().format("%Y%m%d-%H%M%S").to_string();
 
         let uow = self.uow_factory.create();
@@ -117,7 +140,10 @@ impl LongOperation for BackupNowUseCase {
 
         let (work_id, result) = outcome?;
         uow.publish_backup_now_event(vec![work_id], None);
-        progress_callback(OperationProgress::new(100.0, Some("completed".to_string())));
+        progress_callback(OperationProgress::new(
+            100.0,
+            Some("backup.done".to_string()),
+        ));
         Ok(result)
     }
 }
@@ -138,6 +164,7 @@ fn run_backup(
         .and_then(|wi| wi.file_name.clone())
         .ok_or_else(|| anyhow!("no open project to back up"))?;
     let work_id = g.work.id;
+    let unique_id = g.work.unique_id.clone();
 
     // Build the bundle once (pure, in-memory) and reuse it for every destination.
     // Fingerprint BEFORE marking it a backup, so `backup_created_at` doesn't make
@@ -164,27 +191,44 @@ fn run_backup(
     let mut skipped_directories = Vec::new();
     let mut failed_directories = Vec::new();
     let mut failed_reasons = Vec::new();
+    // The resolved directories this run actually touched (wrote to, or found
+    // already current) — retention only sweeps these (T1-7).
+    let mut swept_dirs: Vec<PathBuf> = Vec::new();
 
     let total = directories.len().max(1);
     for (i, dir) in directories.iter().enumerate() {
         if cancel.load(Ordering::Relaxed) {
             return Err(anyhow!("operation cancelled"));
         }
-        // Skip-if-unchanged: only when the caller supplied a matching hash for
-        // this destination (the manual trigger passes empty hashes ⇒ never skips).
-        let known = dto
+        // Skip-if-unchanged (T1-3): only when the caller supplied a matching hash
+        // for this destination AND the previously-written file still exists on
+        // disk. Without the existence check, deleting the backup folder (or
+        // reformatting the USB stick) makes the app skip forever while believing
+        // it is current — zero backups on disk, and a reassuring toast.
+        let known_hash = dto
             .last_known_hashes
             .get(i)
             .map(String::as_str)
             .unwrap_or("");
-        if !known.is_empty() && known == content_hash {
+        let known_path = dto
+            .last_known_paths
+            .get(i)
+            .map(String::as_str)
+            .unwrap_or("");
+        let backup_still_present = !known_path.is_empty() && Path::new(known_path).exists();
+
+        if !known_hash.is_empty() && known_hash == content_hash && backup_still_present {
             skipped_directories.push(dir.clone());
+            swept_dirs.push(resolve_backup_dir(&source, dir));
         } else {
-            let target = backup_path_for(&source, dir, stamp);
-            // Resilient: a failed destination (unplugged drive, permission) is
-            // recorded and the remaining destinations still get written.
-            match skrib::write_bundle(&target, SkribShape::ZipFile, &bundle) {
-                Ok(()) => succeeded_paths.push(target),
+            // Resilient: a failed destination (unplugged drive, permission,
+            // failed verification) is recorded and the remaining destinations
+            // still get written.
+            match write_and_verify(&source, dir, stamp, &bundle, &unique_id) {
+                Ok(target) => {
+                    succeeded_paths.push(target);
+                    swept_dirs.push(resolve_backup_dir(&source, dir));
+                }
                 Err(e) => {
                     failed_directories.push(dir.clone());
                     failed_reasons.push(e.to_string());
@@ -192,9 +236,52 @@ fn run_backup(
             }
         }
         progress(OperationProgress::new(
-            10.0 + 80.0 * (i as f32 + 1.0) / total as f32,
-            Some(format!("Backing up ({}/{total})…", i + 1)),
+            10.0 + 70.0 * (i as f32 + 1.0) / total as f32,
+            Some(format!("backup.destination:{}:{total}", i + 1)),
         ));
+    }
+
+    // Retention (T1-7): join the write instead of running on the UI thread.
+    // `protected` holds every path this run wrote AND verified — never pruned,
+    // whatever its timestamp says (see `skrib_format::retention`).
+    let mut deleted_paths = Vec::new();
+    let mut delete_errors = Vec::new();
+    if dto.prune {
+        progress(OperationProgress::new(
+            85.0,
+            Some("backup.retention".to_string()),
+        ));
+        let policy = retention_policy_from(dto);
+        let min_keep = clamp_u32(dto.min_keep);
+        let protected: Vec<PathBuf> = succeeded_paths.iter().map(PathBuf::from).collect();
+
+        let mut seen: HashSet<PathBuf> = HashSet::new();
+        for dir in swept_dirs {
+            if !seen.insert(dir.clone()) {
+                continue; // several destinations can resolve to the same folder
+            }
+            match retention::apply_retention(
+                &dir, &unique_id, &source, &policy, min_keep, &protected,
+            ) {
+                Ok(report) => {
+                    deleted_paths.extend(
+                        report
+                            .deleted
+                            .into_iter()
+                            .map(|p| p.to_string_lossy().into_owned()),
+                    );
+                    delete_errors.extend(
+                        report
+                            .delete_errors
+                            .into_iter()
+                            .map(|(p, e)| format!("{}: {e}", p.display())),
+                    );
+                }
+                Err(e) => {
+                    delete_errors.push(format!("{}: {e}", dir.display()));
+                }
+            }
+        }
     }
 
     Ok((
@@ -205,39 +292,167 @@ fn run_backup(
             skipped_directories,
             failed_directories,
             failed_reasons,
+            deleted_paths,
+            delete_errors,
         },
     ))
 }
 
-/// `<directory>/<stem>-<stamp>.skrib`. `directory` defaults to the source's
-/// parent; `stem` is the source's file/folder name without extension. On a
-/// same-second collision (rapid successive triggers) a `-N` suffix disambiguates
-/// so no earlier backup is overwritten.
-fn backup_path_for(source: &str, directory: &str, stamp: &str) -> String {
-    let src = Path::new(source);
-    let stem = src
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .filter(|s| !s.is_empty())
-        .unwrap_or("backup");
-    let dir = if directory.trim().is_empty() {
-        src.parent()
+/// Reserve a destination path, write the bundle to it, and verify it landed —
+/// a backup nobody has read back is a hypothesis, not a backup (T2-2). On
+/// either a write or a verification failure the (possibly empty / corrupt /
+/// wrongly-tagged) file is removed best-effort, so a failed attempt never
+/// leaves litter that a later run's retention scan would have to reason about.
+fn write_and_verify(
+    source: &str,
+    directory: &str,
+    stamp: &str,
+    bundle: &skrib::WorkBundle,
+    unique_id: &str,
+) -> Result<String> {
+    let target = reserve_backup_path(source, directory, stamp)?;
+    let result = skrib::write_bundle(&target, SkribShape::ZipFile, bundle)
+        .and_then(|()| skrib::verify_backup_at(&target, unique_id))
+        .and_then(|()| {
+            // Test-only fault injection: exercises the "write succeeded, its
+            // verification didn't" branch, which can't be triggered by
+            // legitimately corrupting the filesystem out from under a write
+            // that just succeeded on it.
+            if take_forced_verify_failure(&resolve_backup_dir(source, directory)) {
+                Err(anyhow!("forced verification failure (test)"))
+            } else {
+                Ok(())
+            }
+        });
+    match result {
+        Ok(()) => Ok(target),
+        Err(e) => {
+            let _ = std::fs::remove_file(&target);
+            Err(e)
+        }
+    }
+}
+
+/// The directory a destination resolves to: `directory` itself, or (for the
+/// empty "next to project" destination) the project's parent folder — exactly
+/// what the UI's own `retention_dir()` computes, so retention sweeps the same
+/// folder the backup was actually written into.
+fn resolve_backup_dir(source: &str, directory: &str) -> PathBuf {
+    if directory.trim().is_empty() {
+        Path::new(source)
+            .parent()
             .filter(|p| !p.as_os_str().is_empty())
             .map(|p| p.to_path_buf())
             .unwrap_or_else(|| Path::new(".").to_path_buf())
     } else {
         Path::new(directory).to_path_buf()
-    };
-    let base = dir.join(format!("{stem}-{stamp}.skrib"));
-    if !base.exists() {
-        return base.to_string_lossy().into_owned();
     }
+}
+
+fn backup_stem(source: &str) -> String {
+    Path::new(source)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("backup")
+        .to_string()
+}
+
+/// `<directory>/<stem>-<stamp>.skrib`, reserved with an EXCLUSIVE create
+/// (T2-11): the old `!base.exists()` check-then-write left a window in which
+/// two projects sharing a stem and a shared network backup folder could
+/// collide within the same second, and one atomic rename would silently
+/// clobber the other's just-written backup. `OpenOptions::create_new` claims
+/// the name atomically; `write_bundle`'s own temp+rename then overwrites the
+/// (empty) reservation placeholder, which is fine — the point was only to win
+/// the name race. On a same-second collision (rapid successive triggers) a
+/// `-N` suffix disambiguates so no earlier backup is overwritten.
+fn reserve_backup_path(source: &str, directory: &str, stamp: &str) -> Result<String> {
+    let dir = resolve_backup_dir(source, directory);
+    std::fs::create_dir_all(&dir)
+        .with_context(|| format!("creating backup directory {}", dir.display()))?;
+    let stem = backup_stem(source);
+
+    let mut candidate = dir.join(format!("{stem}-{stamp}.skrib"));
     for n in 2u32..=u32::MAX {
-        let candidate = dir.join(format!("{stem}-{stamp}-{n}.skrib"));
-        if !candidate.exists() {
-            return candidate.to_string_lossy().into_owned();
+        match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&candidate)
+        {
+            Ok(_) => return Ok(candidate.to_string_lossy().into_owned()),
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                candidate = dir.join(format!("{stem}-{stamp}-{n}.skrib"));
+            }
+            Err(e) => {
+                return Err(anyhow!(
+                    "reserving backup path {}: {e}",
+                    candidate.display()
+                ));
+            }
         }
     }
-    // Exhausting u32 stamps within one second is not physically reachable.
-    base.to_string_lossy().into_owned()
+    // Exhausting u32 suffixes within one second is not physically reachable.
+    Err(anyhow!(
+        "exhausted retry suffixes reserving a backup path for '{stem}'"
+    ))
+}
+
+fn retention_policy_from(dto: &BackupNowDto) -> RetentionPolicy {
+    match &dto.retention_mode {
+        RetentionMode::KeepLastN => RetentionPolicy::KeepLastN {
+            n: clamp_u32(dto.keep_last_n),
+        },
+        RetentionMode::Tiered => RetentionPolicy::Gfs {
+            hourly: clamp_u32(dto.gfs_hourly),
+            daily: clamp_u32(dto.gfs_daily),
+            weekly: clamp_u32(dto.gfs_weekly),
+            monthly: clamp_u32(dto.gfs_monthly),
+        },
+    }
+}
+
+/// DTO retention counters are `u64` (Qleany's `uinteger`); the retention engine
+/// takes `u32` — clamp rather than panic on an implausibly large value.
+fn clamp_u32(v: u64) -> u32 {
+    u32::try_from(v).unwrap_or(u32::MAX)
+}
+
+// ── T2-2 test seam: forced verification failure ─────────────────────────────
+//
+// A write that *genuinely* succeeds and then fails verification is hard to
+// reproduce deterministically without corrupting the filesystem out from under
+// a write that just completed on it (a real race). Cargo runs each test on its
+// own thread by default, so a `thread_local` lets a test declare "the next
+// write to this resolved directory must be treated as failing verification"
+// without any cross-test interference — the production `write_and_verify`
+// still calls the real `skrib::verify_backup_at` first; this only overrides an
+// otherwise-successful outcome, and it compiles to nothing outside `#[cfg(test)]`.
+#[cfg(test)]
+thread_local! {
+    static FORCE_VERIFY_FAILURE_FOR: std::cell::RefCell<Option<PathBuf>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+pub(crate) fn force_verify_failure_for(dir: &Path) {
+    FORCE_VERIFY_FAILURE_FOR.with(|f| *f.borrow_mut() = Some(dir.to_path_buf()));
+}
+
+#[cfg(test)]
+fn take_forced_verify_failure(dir: &Path) -> bool {
+    FORCE_VERIFY_FAILURE_FOR.with(|f| {
+        let mut slot = f.borrow_mut();
+        if slot.as_deref() == Some(dir) {
+            *slot = None;
+            true
+        } else {
+            false
+        }
+    })
+}
+
+#[cfg(not(test))]
+fn take_forced_verify_failure(_dir: &Path) -> bool {
+    false
 }

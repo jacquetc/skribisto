@@ -65,11 +65,12 @@ impl BackupSettingsViewModel {
         last_path: &str,
         dir: &str,
         hash: &str,
+        backup_path: &str,
         at: &str,
     ) {
-        if let Err(e) = self
-            .service
-            .record_destination_success(uid, last_path, dir, hash, at)
+        if let Err(e) =
+            self.service
+                .record_destination_success(uid, last_path, dir, hash, backup_path, at)
         {
             eprintln!("backup settings: record_destination_success failed: {e}");
         }

@@ -423,6 +423,12 @@ fn main() {
         .install_automation_bridge_in_debug()
         .install_file_dialog()
         .install_toast_default()
+        // Main-thread async executor: `ctx.spawn_local` / `spawn_local_with` +
+        // `spawn_blocking` get pure-filesystem work (backup sniffing,
+        // destination-reachability probes) off the UI thread. No store
+        // involvement, so this — not a Qleany `LongOperation` — is the right
+        // tool (see bastyde's `docs/async.md`).
+        .install_async()
         .event_source(EventHubSource { client })
         .app_state(ids.clone())
         .app_state(open_docs.clone())
@@ -832,9 +838,13 @@ fn main() {
     // Flush any pending backup-settings write (last-success hashes / timestamps /
     // nudge flag / edited policy) so it survives the debounce window on exit.
     backup_settings.flush_now();
-    // Drop this instance's open-registry lock so its project stops showing as
-    // open in other instances' switchers.
-    crate::open_registry::release();
+    // Drop every open-registry claim this instance holds (process exit — the
+    // "release everything" point, unlike `CloseWork`'s single-path release) so
+    // its project(s) stop showing as open in other instances' switchers, and
+    // unlink this instance's IPC socket so a later `scan()` never has to reap
+    // it as stale.
+    crate::open_registry::release_all();
+    crate::ipc::cleanup_own_socket();
     if let Err(e) = handling_app_lifecycle_commands::clean_up_before_exit(&app_ctx) {
         eprintln!("clean_up_before_exit failed: {e:#}");
     }

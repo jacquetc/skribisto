@@ -26,10 +26,10 @@ use std::sync::atomic::AtomicBool;
 // ── Extra surface for the concurrency / robustness regression tests (F1–F4) ──
 use crate::units_of_work::backup_now_uow::BackupNowUnitOfWorkFactory;
 use crate::units_of_work::save_as_uow::SaveAsUnitOfWorkFactory;
-use crate::use_cases::backup_now_uc::BackupNowUseCase;
+use crate::use_cases::backup_now_uc::{self, BackupNowUseCase};
 use crate::use_cases::save_as_uc::SaveAsUseCase;
 use crate::use_cases::save_work_uc::SaveWorkUnitOfWorkFactoryTrait;
-use crate::{BackupNowDto, SaveAsDto};
+use crate::{BackupNowDto, RetentionMode, SaveAsDto};
 use common::database::hashmap_store::HashMapStore;
 use common::long_operation::{LongOperationManager, OperationProgress, OperationStatus};
 
@@ -757,6 +757,25 @@ fn failed_save_as_does_not_roll_back_the_store() {
     );
 }
 
+/// A `BackupNowDto` with every retention/skip field at its "do nothing extra"
+/// default (no pruning, no skip-if-unchanged) — the shape every pre-existing
+/// test wants; tests that exercise T1-3/T1-7/T2-2/T2-11 build their own.
+fn plain_backup_dto(directories: Vec<String>, last_known_hashes: Vec<String>) -> BackupNowDto {
+    BackupNowDto {
+        directories,
+        last_known_hashes,
+        last_known_paths: vec![],
+        prune: false,
+        retention_mode: RetentionMode::Tiered,
+        keep_last_n: 0,
+        gfs_hourly: 0,
+        gfs_daily: 0,
+        gfs_weekly: 0,
+        gfs_monthly: 0,
+        min_keep: 0,
+    }
+}
+
 /// F3: Backup serialises the current in-memory store (the source of truth), not
 /// the possibly-stale on-disk artifact — an unsaved edit must appear in the
 /// backup — and it is always a zip regardless of the project's shape.
@@ -771,10 +790,7 @@ fn backup_serializes_current_store_not_disk() {
     std::fs::create_dir_all(&backup_dir).unwrap();
     let uc = BackupNowUseCase::new(
         Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
-        &BackupNowDto {
-            directories: vec![backup_dir.to_str().unwrap().to_string()],
-            last_known_hashes: vec![],
-        },
+        &plain_backup_dto(vec![backup_dir.to_str().unwrap().to_string()], vec![]),
     );
     let res = uc
         .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
@@ -812,22 +828,21 @@ fn backup_multi_destination_is_resilient_and_dedups() {
     std::fs::write(&blocker, b"x").unwrap();
     let bad = blocker.join("nested"); // parent is a file ⇒ unwritable
 
-    let run = |hashes: Vec<String>| {
-        BackupNowUseCase::new(
-            Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
-            &BackupNowDto {
-                directories: vec![
-                    good.to_str().unwrap().to_string(),
-                    bad.to_str().unwrap().to_string(),
-                ],
-                last_known_hashes: hashes,
-            },
-        )
-        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
-        .expect("backup_now")
+    let run = |hashes: Vec<String>, paths: Vec<String>| {
+        let mut dto = plain_backup_dto(
+            vec![
+                good.to_str().unwrap().to_string(),
+                bad.to_str().unwrap().to_string(),
+            ],
+            hashes,
+        );
+        dto.last_known_paths = paths;
+        BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto)
+            .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+            .expect("backup_now")
     };
 
-    let res = run(vec![]);
+    let res = run(vec![], vec![]);
     assert_eq!(
         res.succeeded_paths.len(),
         1,
@@ -841,8 +856,12 @@ fn backup_multi_destination_is_resilient_and_dedups() {
     assert_eq!(res.failed_reasons.len(), 1);
     assert!(!res.content_hash.is_empty());
 
-    // Feeding back the good destination's hash makes it skip on the next run.
-    let res2 = run(vec![res.content_hash.clone(), String::new()]);
+    // Feeding back the good destination's hash AND its still-existing path
+    // makes it skip on the next run.
+    let res2 = run(
+        vec![res.content_hash.clone(), String::new()],
+        vec![res.succeeded_paths[0].clone(), String::new()],
+    );
     assert_eq!(
         res2.skipped_directories.len(),
         1,
@@ -856,6 +875,256 @@ fn backup_multi_destination_is_resilient_and_dedups() {
         res2.failed_directories.len(),
         1,
         "the bad destination still fails"
+    );
+}
+
+// ── backup: T1-3 (skip-if-gone) / T1-7 (retention joins the op) / T2-2
+//    (verify-after-write) / T2-11 (atomic path reservation) regression tests ──
+
+/// Write a fake single-file backup directly (bypassing `BackupNowUseCase`) so a
+/// destination can be pre-seeded with backups carrying an arbitrary manifest
+/// timestamp — including one in the FUTURE, simulating what a backwards system
+/// clock produces for a genuinely older backup.
+fn write_fake_backup(dir: &std::path::Path, name: &str, when: DateTime<Utc>) -> String {
+    let mut bundle = sample_bundle();
+    skrib::mark_as_backup(&mut bundle, "irrelevant-source".to_string(), when);
+    let path = dir.join(name);
+    skrib::write_bundle(path.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+    path.to_str().unwrap().to_string()
+}
+
+/// Same as [`write_fake_backup`] but as a folder-shape bundle (a directory
+/// containing `project.skrib`) — used to engineer a deletion that fails.
+fn write_fake_folder_backup(
+    dir: &std::path::Path,
+    name: &str,
+    when: DateTime<Utc>,
+) -> std::path::PathBuf {
+    let mut bundle = sample_bundle();
+    skrib::mark_as_backup(&mut bundle, "irrelevant-source".to_string(), when);
+    let path = dir.join(name);
+    skrib::write_bundle(path.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    path
+}
+
+/// T1-3: skip-if-unchanged must not skip when the previously-written backup
+/// file is gone (deleted folder, reformatted stick) — the app must not believe
+/// a destination is "current" when it actually holds zero backups.
+#[test]
+fn skip_if_unchanged_does_not_skip_when_the_backup_file_is_gone() {
+    let (dir, db, hub) = load_sample();
+    let dest = dir.path().join("dest");
+    std::fs::create_dir_all(&dest).unwrap();
+
+    let dto1 = plain_backup_dto(vec![dest.to_str().unwrap().to_string()], vec![]);
+    let res1 = BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto1)
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("backup_now");
+    assert_eq!(res1.succeeded_paths.len(), 1, "first run writes the backup");
+    let written = res1.succeeded_paths[0].clone();
+
+    // The backup is gone out from under the app (drive wiped, folder removed).
+    std::fs::remove_file(&written).unwrap();
+    assert!(!std::path::Path::new(&written).exists());
+
+    // A matching hash AND the now-deleted path must NOT be enough to skip.
+    let mut dto2 = plain_backup_dto(
+        vec![dest.to_str().unwrap().to_string()],
+        vec![res1.content_hash.clone()],
+    );
+    dto2.last_known_paths = vec![written.clone()];
+    let res2 = BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto2)
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("backup_now");
+
+    assert!(
+        res2.skipped_directories.is_empty(),
+        "must not skip when the recorded backup file no longer exists on disk"
+    );
+    assert_eq!(
+        res2.succeeded_paths.len(),
+        1,
+        "the destination must be rewritten"
+    );
+    assert!(std::path::Path::new(&res2.succeeded_paths[0]).exists());
+}
+
+/// T1-7: retention now runs INSIDE the operation and joins the write — and the
+/// backup this run just wrote survives an aggressive `KeepLastN { n: 1 }` even
+/// when a sibling backup's manifest carries a simulated FUTURE timestamp
+/// (exactly what a backwards system clock produces for an older backup): that
+/// sibling sorts as "newest" so neither the newest-first rule nor `KeepLastN`
+/// would save the one just written — only `protected` does. Exercised across
+/// two destinations, to confirm `protected` is wired per-destination.
+#[test]
+fn retention_runs_inside_the_operation_and_protects_the_just_written_backup() {
+    let (dir, db, hub) = load_sample();
+
+    let dest_a = dir.path().join("dest_a");
+    let dest_b = dir.path().join("dest_b");
+    std::fs::create_dir_all(&dest_a).unwrap();
+    std::fs::create_dir_all(&dest_b).unwrap();
+
+    let now = Utc::now();
+    let mut old_paths = Vec::new();
+    let mut future_paths = Vec::new();
+    for dest in [&dest_a, &dest_b] {
+        old_paths.push(write_fake_backup(
+            dest,
+            "old.skrib",
+            now - chrono::Duration::days(10),
+        ));
+        future_paths.push(write_fake_backup(
+            dest,
+            "future.skrib",
+            now + chrono::Duration::days(30),
+        ));
+    }
+
+    let mut dto = plain_backup_dto(
+        vec![
+            dest_a.to_str().unwrap().to_string(),
+            dest_b.to_str().unwrap().to_string(),
+        ],
+        vec![],
+    );
+    dto.prune = true;
+    dto.retention_mode = RetentionMode::KeepLastN;
+    dto.keep_last_n = 1;
+    dto.min_keep = 0;
+
+    let res = BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto)
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("backup_now");
+
+    assert_eq!(res.succeeded_paths.len(), 2, "both destinations written");
+    assert!(res.delete_errors.is_empty());
+
+    // The backup just written to each destination survives, whatever the
+    // (simulated clock-skewed) sibling timestamps say.
+    for p in &res.succeeded_paths {
+        assert!(
+            !res.deleted_paths.contains(p),
+            "the backup just written must never be pruned: {p}"
+        );
+        assert!(
+            std::path::Path::new(p).exists(),
+            "the protected backup must still be on disk: {p}"
+        );
+    }
+    // The genuinely stale backup in each destination is pruned (T1-7 also
+    // populates `deleted_paths`, not just protects).
+    for p in &old_paths {
+        assert!(
+            res.deleted_paths.contains(p),
+            "a genuinely stale backup must be pruned: {p}, deleted={:?}",
+            res.deleted_paths
+        );
+        assert!(!std::path::Path::new(p).exists());
+    }
+    // The simulated future-dated backup is also kept — it is the "newest" by
+    // manifest timestamp, so the unconditional "always keep the newest" rule
+    // covers it regardless of `protected`.
+    for p in &future_paths {
+        assert!(std::path::Path::new(p).exists());
+    }
+}
+
+/// T2-2: a destination whose file writes but fails verification must be
+/// reported as FAILED, not succeeded — and the invalid file must not be left
+/// on disk. A genuine write-then-verify failure can't be triggered by
+/// corrupting the filesystem out from under a write that just succeeded on
+/// it, so this uses the `#[cfg(test)]` fault-injection seam in
+/// `backup_now_uc` (production code always calls the real
+/// `skrib::verify_backup_at`; the seam only overrides an otherwise-successful
+/// outcome, and compiles to nothing outside tests).
+#[test]
+fn destination_failing_verification_is_reported_failed_not_succeeded() {
+    let (dir, db, hub) = load_sample();
+    let dest = dir.path().join("verify_fail_dest");
+    std::fs::create_dir_all(&dest).unwrap();
+
+    backup_now_uc::force_verify_failure_for(&dest);
+
+    let dto = plain_backup_dto(vec![dest.to_str().unwrap().to_string()], vec![]);
+    let res = BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto)
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("backup_now");
+
+    assert!(
+        res.succeeded_paths.is_empty(),
+        "a destination that fails verification must not be reported as succeeded"
+    );
+    assert_eq!(res.failed_directories.len(), 1);
+    assert_eq!(res.failed_reasons.len(), 1);
+    assert!(
+        res.failed_reasons[0].contains("forced verification failure"),
+        "unexpected failure reason: {}",
+        res.failed_reasons[0]
+    );
+    // A failed-verification write must not leave a (corrupt/unverified) file.
+    let leftovers: Vec<_> = std::fs::read_dir(&dest).unwrap().collect();
+    assert!(
+        leftovers.is_empty(),
+        "the unverified file must be cleaned up, found: {leftovers:?}"
+    );
+}
+
+/// `deleted_paths` / `delete_errors`: a deletion that genuinely fails (here, a
+/// permission-denied unlink) is surfaced in `delete_errors`, not silently
+/// dropped like the old `let _ = apply_retention(..)` on the UI thread used to.
+#[cfg(unix)]
+#[test]
+fn a_failed_deletion_is_reported_in_delete_errors() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let (dir, db, hub) = load_sample();
+    let dest = dir.path().join("delete_error_dest");
+    std::fs::create_dir_all(&dest).unwrap();
+
+    let stale = write_fake_folder_backup(
+        &dest,
+        "stale_folder_backup",
+        Utc::now() - chrono::Duration::days(30),
+    );
+    // Deny write on the stale bundle's own directory: deleting its
+    // `project.skrib` requires write permission on the directory containing
+    // it, so this makes `remove_dir_all` fail with a permission error — while
+    // `dest` itself stays writable, so the new backup still gets written.
+    let mut perms = std::fs::metadata(&stale).unwrap().permissions();
+    perms.set_mode(0o555);
+    std::fs::set_permissions(&stale, perms).unwrap();
+
+    let mut dto = plain_backup_dto(vec![dest.to_str().unwrap().to_string()], vec![]);
+    dto.prune = true;
+    dto.retention_mode = RetentionMode::KeepLastN;
+    dto.keep_last_n = 1;
+    dto.min_keep = 0;
+
+    let res = BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto)
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("backup_now");
+
+    // Restore permissions immediately so the tempdir can clean itself up.
+    let mut perms = std::fs::metadata(&stale).unwrap().permissions();
+    perms.set_mode(0o755);
+    std::fs::set_permissions(&stale, perms).unwrap();
+
+    assert_eq!(
+        res.succeeded_paths.len(),
+        1,
+        "the new backup is still written"
+    );
+    assert!(
+        !res.delete_errors.is_empty(),
+        "a permission-denied delete must be surfaced, not silently dropped"
+    );
+    assert!(
+        res.delete_errors
+            .iter()
+            .any(|e| e.contains("stale_folder_backup")),
+        "delete_errors should name the path that failed: {:?}",
+        res.delete_errors
     );
 }
 

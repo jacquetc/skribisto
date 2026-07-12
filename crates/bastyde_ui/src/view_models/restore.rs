@@ -1,12 +1,25 @@
 //! `RestoreViewModel` — "restore this project to this backup".
 //!
 //! A backup is opened read-only-file in its own window (see [`crate::backup`]).
-//! Restoring writes that window's store (the backup's content, plus any in-session
-//! edits) over the **original** project (`backup_of`), reusing the existing
-//! `save_as` command. Before overwriting, the current on-disk original is copied
-//! aside as a safety backup, so a restore is always reversible. If the original
-//! is open in another window, the user is asked to close it there first (with a
-//! "Focus that window" shortcut); restore never force-closes a peer.
+//! Restoring writes the restored content — this window's store, the backup's
+//! content plus any in-session edits — over the **original** project
+//! (`backup_of`), reusing the existing `save_as` command. Before overwriting,
+//! the current on-disk original is copied aside as a safety backup (and
+//! promoted to a *real*, prunable backup — T2-7, see [`mark_existing_as_backup`]
+//! below), so a restore is always reversible. If the original is open in
+//! another window, the user is asked to close it there first (with a "Focus
+//! that window" shortcut); restore never force-closes a peer.
+//!
+//! **T2-6 — crash-safe for folder-shape projects.** `save_as` writes to a
+//! **temp sibling** path next to the original, never in place. Only once that
+//! write fully succeeds does [`Self::on_long_op_completed`] swap it over the
+//! real target — a same-filesystem `rename`, atomic for a zip file, and a
+//! 3-step rename-aside/rename-in/remove-old dance for a folder bundle (`rename`
+//! refuses to replace a non-empty directory directly). A mid-write failure
+//! therefore never touches the original at all — it's still sitting untouched
+//! at `target` while the (now-abandoned) temp holds whatever got written — so
+//! `on_long_op_failed`'s "state unchanged" is now literally true for both
+//! shapes, not just the zip one.
 //!
 //! Self-contained: it triggers `save_as` directly (not via `SaveAsViewModel`) and
 //! handles that op's completion itself — recording the new path/shape into
@@ -14,7 +27,7 @@
 //! project in place (no reload).
 
 use std::cell::RefCell;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use bastyde::prelude::*;
@@ -26,6 +39,7 @@ use frontend::common::entities::WorkShape;
 use frontend::common::event::Event;
 use frontend::direct_access::UpdateWorkInfoDto;
 use frontend::work_management::SaveAsDto;
+use skrib_format::mark_existing_as_backup;
 
 use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
@@ -35,7 +49,11 @@ use super::long_op::{event_id, parse_payload};
 
 struct RestorePending {
     op_id: String,
+    /// The real project path being restored over.
     target: String,
+    /// Where `save_as` actually wrote (T2-6): a temp sibling of `target`, never
+    /// `target` itself — swapped in atomically once the write is confirmed done.
+    temp_target: String,
     as_folder: bool,
     work_info_id: Option<u64>,
     safety_backup_path: Option<String>,
@@ -138,7 +156,8 @@ impl RestoreViewModel {
             .present(ctx);
     }
 
-    /// Safety-copy the original, then overwrite it via `save_as`.
+    /// Safety-copy the original, then write the restored content to a temp
+    /// sibling (T2-6) — never in place.
     fn do_restore(&self, ctx: &mut EventContext, target: String) {
         // Re-check the peer race just before writing (advisory, best-effort).
         let canon = crate::open_registry::canonical(&target);
@@ -157,16 +176,30 @@ impl RestoreViewModel {
                 return;
             }
         };
+        // T2-7: the safety copy is a raw byte copy, so as written it still
+        // carries `kind: Regular` — retention would never prune it and the
+        // backups list would never show it, a permanent invisible orphan on
+        // every restore. Mark it as a real backup of `target` in place.
+        if let Some(path) = &safety_backup_path {
+            let when = chrono::Utc::now();
+            if let Err(e) = mark_existing_as_backup(path, &target, when) {
+                eprintln!("restore: could not mark the safety copy '{path}' as a backup: {e:#}");
+            }
+        }
 
-        // 2) Overwrite the original with this window's store, preserving its shape.
+        // 2) Write the restored content to a TEMP SIBLING of the original
+        // (T2-6), preserving its shape — never in place. A mid-write failure
+        // therefore can't touch `target` at all; the swap happens only once
+        // this write is confirmed done (`on_long_op_completed`).
         let as_folder = matches!(
             skrib_format::detect_shape(&target),
             Ok(skrib_format::SkribShape::ExplodedFolder)
         );
+        let temp_target = temp_sibling_path(Path::new(&target), "restore-tmp");
         match work_management_commands::save_as(
             &self.app_ctx,
             &SaveAsDto {
-                file_name: target.clone(),
+                file_name: temp_target.to_string_lossy().into_owned(),
                 as_folder,
             },
         ) {
@@ -174,6 +207,7 @@ impl RestoreViewModel {
                 *self.pending.borrow_mut() = Some(RestorePending {
                     op_id,
                     target,
+                    temp_target: temp_target.to_string_lossy().into_owned(),
                     as_folder,
                     work_info_id: self.ids.work_info_id.get(),
                     safety_backup_path,
@@ -185,8 +219,10 @@ impl RestoreViewModel {
         }
     }
 
-    /// The restore write finished: record the new path/shape into `WorkInfo`, then
-    /// leave backup mode — this window becomes the live restored project in place.
+    /// The write to the temp sibling finished: swap it over the real target
+    /// (T2-6 — a rename, never an in-place overwrite), then record the new
+    /// path/shape into `WorkInfo` and leave backup mode — this window becomes
+    /// the live restored project in place.
     pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
         let Some(op_id) = event_id(event) else {
             return;
@@ -198,6 +234,24 @@ impl RestoreViewModel {
                 _ => return, // not our restore op
             }
         };
+
+        // The write into the temp sibling succeeded — swap it over the
+        // original now. A rename (or, for a non-empty folder, a 3-step
+        // rename-aside/rename-in/remove-old dance), so a crash here can never
+        // leave a torn tree: either the swap didn't happen (original intact,
+        // temp still holds the full write) or it did.
+        if let Err(e) = atomic_replace(
+            Path::new(&pending.temp_target),
+            Path::new(&pending.target),
+            pending.as_folder,
+        ) {
+            // The restored content is safe on disk at `temp_target` — only the
+            // swap failed, so nothing has been lost. Leave it in place (don't
+            // delete it) so the user can retry or recover it manually, and
+            // leave the original untouched — still viewing the backup here.
+            ctx.show_toast(Toast::error(tr!(restore_error(error = e.to_string()))));
+            return;
+        }
 
         // Update WorkInfo (mirrors SaveAsViewModel) so the window points at the
         // restored file with the right shape.
@@ -218,10 +272,13 @@ impl RestoreViewModel {
             let _ = work_info_commands::update_work_info(&self.app_ctx, &dto);
         }
 
-        // Leave backup mode: this window is now the live restored project.
+        // Leave backup mode: this window is now the live restored project. It
+        // was holding a claim on the *backup's* path (or an earlier restored
+        // path) with no `LoadWork`/`CloseWork` in between, so drop that first
+        // (T1-5's `replace_claim`, not a bare additive `claim`).
         self.backup_mode.set(false);
         self.backup_context.set(None);
-        crate::open_registry::claim(&pending.target, &self.single_work.title().get());
+        crate::open_registry::replace_claim(&pending.target, &self.single_work.title().get());
 
         let msg = match &pending.safety_backup_path {
             Some(p) => tr!(restored_with_safety(path = p.clone())),
@@ -234,13 +291,21 @@ impl RestoreViewModel {
         let Some(op_id) = event_id(event) else {
             return;
         };
-        {
+        let pending = {
             let mut slot = self.pending.borrow_mut();
             match slot.as_ref() {
-                Some(p) if p.op_id == op_id => {
-                    slot.take();
-                }
+                Some(p) if p.op_id == op_id => slot.take(),
                 _ => return,
+            }
+        };
+        // The write into the temp sibling failed before it could reach the
+        // swap — the original was never touched. Best-effort clean up
+        // whatever partial temp content the failed write left behind.
+        if let Some(p) = &pending {
+            if p.as_folder {
+                let _ = std::fs::remove_dir_all(&p.temp_target);
+            } else {
+                let _ = std::fs::remove_file(&p.temp_target);
             }
         }
         let error = parse_payload(event)
@@ -295,6 +360,46 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
+/// A sibling path next to `path`, tagged and disambiguated by this process's
+/// pid (two restores in two windows never collide) — used both for the T2-6
+/// temp write target and the atomic-replace "old" aside.
+fn temp_sibling_path(path: &Path, tag: &str) -> PathBuf {
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("project");
+    let dir = path.parent().unwrap_or_else(|| Path::new("."));
+    dir.join(format!("{name}.{tag}-{}", std::process::id()))
+}
+
+/// Atomically replace `target` with the freshly-written `temp` (same directory
+/// ⇒ same filesystem, so `rename` is atomic) — T2-6.
+///
+/// A zip bundle is a single `rename`: POSIX `rename()` replaces an existing
+/// destination *file* in one atomic step, so this is the whole operation.
+///
+/// A folder bundle needs a 3-step swap, because `rename()` refuses to replace
+/// a non-empty destination *directory*: move the current folder aside, rename
+/// the new one into `target`, then remove the old one. If the second rename
+/// fails, the first is rolled back (the original folder moves right back to
+/// `target`) before the error is returned — so the only failure window is a
+/// single `rename` syscall, never a half-written tree.
+fn atomic_replace(temp: &Path, target: &Path, as_folder: bool) -> std::io::Result<()> {
+    if as_folder && target.exists() {
+        let aside = temp_sibling_path(target, "restore-old");
+        std::fs::rename(target, &aside)?;
+        if let Err(e) = std::fs::rename(temp, target) {
+            let _ = std::fs::rename(&aside, target); // put the original back
+            return Err(e);
+        }
+        let _ = std::fs::remove_dir_all(&aside); // best-effort cleanup
+        Ok(())
+    } else {
+        std::fs::rename(temp, target)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -325,5 +430,83 @@ mod tests {
         std::fs::write(proj.join("binders/items.ron"), b"i").unwrap();
         let out = safety_copy(proj.to_str().unwrap()).unwrap().unwrap();
         assert!(Path::new(&out).join("binders/items.ron").exists());
+    }
+
+    // ── T2-6: crash-safe atomic replace ──────────────────────────────────────
+
+    #[test]
+    fn temp_sibling_path_is_next_to_the_original_and_tagged() {
+        let d = tempdir().unwrap();
+        let proj = d.path().join("novel.skrib");
+        let tmp = temp_sibling_path(&proj, "restore-tmp");
+        assert_eq!(tmp.parent(), Some(d.path()));
+        assert!(
+            tmp.file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .starts_with("novel.skrib.restore-tmp-")
+        );
+    }
+
+    #[test]
+    fn atomic_replace_swaps_a_zip_file_in_one_rename() {
+        let d = tempdir().unwrap();
+        let target = d.path().join("novel.skrib");
+        std::fs::write(&target, b"old").unwrap();
+        let temp = d.path().join("novel.skrib.restore-tmp-x");
+        std::fs::write(&temp, b"new").unwrap();
+
+        atomic_replace(&temp, &target, false).unwrap();
+
+        assert_eq!(std::fs::read(&target).unwrap(), b"new");
+        assert!(!temp.exists());
+    }
+
+    #[test]
+    fn atomic_replace_swaps_a_non_empty_folder_and_cleans_up_the_old_one() {
+        let d = tempdir().unwrap();
+        let target = d.path().join("proj");
+        std::fs::create_dir_all(target.join("binders")).unwrap();
+        std::fs::write(target.join("project.skrib"), b"old-manifest").unwrap();
+        std::fs::write(target.join("binders/items.ron"), b"old-items").unwrap();
+
+        let temp = d.path().join("proj.restore-tmp-x");
+        std::fs::create_dir_all(&temp).unwrap();
+        std::fs::write(temp.join("project.skrib"), b"new-manifest").unwrap();
+
+        atomic_replace(&temp, &target, true).unwrap();
+
+        assert_eq!(
+            std::fs::read(target.join("project.skrib")).unwrap(),
+            b"new-manifest"
+        );
+        assert!(
+            !target.join("binders").exists(),
+            "the old folder's content must be fully replaced, not merged"
+        );
+        assert!(!temp.exists(), "the temp folder was consumed by the swap");
+        // No leftover "-restore-old-" sibling — cleaned up on success.
+        let leftovers: Vec<_> = std::fs::read_dir(d.path())
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.contains("restore-old"))
+            .collect();
+        assert!(leftovers.is_empty(), "leftovers: {leftovers:?}");
+    }
+
+    #[test]
+    fn atomic_replace_writes_a_fresh_folder_when_target_does_not_exist_yet() {
+        let d = tempdir().unwrap();
+        let target = d.path().join("brand-new-proj");
+        let temp = d.path().join("brand-new-proj.restore-tmp-x");
+        std::fs::create_dir_all(&temp).unwrap();
+        std::fs::write(temp.join("project.skrib"), b"m").unwrap();
+
+        atomic_replace(&temp, &target, true).unwrap();
+
+        assert!(target.join("project.skrib").exists());
+        assert!(!temp.exists());
     }
 }

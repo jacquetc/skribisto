@@ -15,6 +15,7 @@ use tempfile::NamedTempFile;
 use super::bundle::*;
 use super::shape::MANIFEST_NAME;
 use super::slug::binder_dir_name;
+use super::writer::persist_durably;
 
 fn to_ron<T: Serialize>(value: &T) -> Result<String> {
     let cfg = ron::ser::PrettyConfig::new().struct_names(true);
@@ -43,9 +44,7 @@ fn write_if_changed(path: &Path, bytes: &[u8]) -> Result<bool> {
         .with_context(|| format!("temp file in {}", parent.display()))?;
     tmp.write_all(bytes)
         .with_context(|| format!("writing {}", path.display()))?;
-    tmp.as_file().sync_all().ok();
-    tmp.persist(path)
-        .map_err(|e| anyhow::anyhow!("persisting {}: {}", path.display(), e))?;
+    persist_durably(tmp, path)?;
     Ok(true)
 }
 

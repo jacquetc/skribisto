@@ -14,6 +14,7 @@ use zip::write::SimpleFileOptions;
 
 use super::bundle::WorkBundle;
 use super::folder_io::{read_folder, write_folder};
+use super::writer::persist_durably;
 
 pub fn write_zip(target: &Path, bundle: &WorkBundle) -> Result<()> {
     let staging = tempfile::tempdir().context("creating staging dir for zip save")?;
@@ -23,16 +24,17 @@ pub fn write_zip(target: &Path, bundle: &WorkBundle) -> Result<()> {
     if let Some(p) = parent {
         std::fs::create_dir_all(p).with_context(|| format!("creating {}", p.display()))?;
     }
-    let tmp = match parent {
+    let mut tmp = match parent {
         Some(p) => NamedTempFile::new_in(p),
         None => NamedTempFile::new(),
     }
     .context("temp file for zip")?;
 
-    zip_dir(staging.path(), tmp.path())?;
-    tmp.persist(target)
-        .map_err(|e| anyhow::anyhow!("persisting {}: {}", target.display(), e))?;
-    Ok(())
+    // Write through the `NamedTempFile`'s own fd (not a second, independent
+    // `File::create` on the same path) so the bytes we fsync in
+    // `persist_durably` are demonstrably the bytes we just wrote.
+    zip_dir(staging.path(), tmp.as_file_mut())?;
+    persist_durably(tmp, target)
 }
 
 pub fn read_zip(path: &Path) -> Result<WorkBundle> {
@@ -46,10 +48,12 @@ pub fn read_zip(path: &Path) -> Result<WorkBundle> {
     read_folder(dir.path())
 }
 
-/// Pack `src_dir`'s tree into a fresh zip at `target` (deterministic order).
-pub fn zip_dir(src_dir: &Path, target: &Path) -> Result<()> {
-    let file = File::create(target).with_context(|| format!("creating {}", target.display()))?;
-    let mut zw = zip::ZipWriter::new(file);
+/// Pack `src_dir`'s tree into a fresh zip, written through `target` (an
+/// already-open file — typically a [`NamedTempFile`]'s own fd, so the bytes
+/// fsynced afterwards are demonstrably the bytes just written, rather than
+/// through a second independent handle on the same path).
+pub fn zip_dir(src_dir: &Path, target: &mut File) -> Result<()> {
+    let mut zw = zip::ZipWriter::new(target);
     let opts = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
     for entry in WalkDir::new(src_dir).sort_by_file_name() {

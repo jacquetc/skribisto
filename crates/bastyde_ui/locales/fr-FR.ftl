@@ -247,6 +247,7 @@ backup-choice-subtitle-dated = Copie de secours du { $date }.
 backup-choice-body = Vous pouvez l'ouvrir et la modifier librement, mais les changements ne peuvent être conservés qu'avec « Enregistrer sous » — le fichier du projet d'origine n'est pas modifié. Ou restaurez ce projet exactement à cette copie de secours.
 backup-choice-open = Ouvrir la copie de secours
 backup-choice-restore = Restaurer le projet à ce point…
+backup-choice-not-a-backup = Non, l'ouvrir normalement
 backup-banner-title = Copie de secours — les changements ne peuvent pas être enregistrés ici
 backup-banner-description = Utilisez « Enregistrer sous » pour conserver vos modifications dans un nouveau fichier, ou « Restaurer » pour remplacer le projet d'origine par cette copie.
 backup-banner-restore = Restaurer…
@@ -269,10 +270,14 @@ backup-nudge-action = Configurer les copies de secours…
 ## Panneau de la liste des copies de secours
 menu-backups-list = &Liste des copies de secours…
 backups-title = Copies de secours
+backups-loading = Recherche des copies de secours…
 backups-empty = Aucune copie de secours trouvée pour ce projet.
 backups-open = Ouvrir
 backups-reveal = Afficher
 backups-delete = Supprimer cette copie de secours
+backups-delete-confirm-title = Supprimer cette copie de secours ?
+backups-delete-confirm-text = « { $name } » sera définitivement supprimée. Cette action est irréversible.
+backups-delete-error = Impossible de supprimer la copie de secours : { $error }
 backups-refresh = Actualiser
 backups-close = Fermer
 
@@ -398,3 +403,13 @@ import-plume-open-now = Ouvrir maintenant
 # Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
 import-plume-error-title = Impossible d'importer le projet
 import-plume-error-details = Détails
+
+## Planificateur de sauvegardes (toast de progression + détails d'échec/d'avertissement de purge — revue backup, T1-2/T1-7/T2-3/T2-8/T2-9)
+backup-progress-start = Démarrage…
+backup-progress-retention = Nettoyage des anciennes sauvegardes…
+backup-progress-done = Terminé
+backup-progress-destination = Destination { $i } sur { $n }
+backup-details = Détails
+backup-issues-title = Problèmes de sauvegarde
+backup-failed-title = Échec de la sauvegarde
+backup-complete-prune-warning = Sauvegarde terminée ({ $ok } enregistrée(s), { $skipped } déjà à jour) — certaines anciennes sauvegardes n'ont pas pu être supprimées
