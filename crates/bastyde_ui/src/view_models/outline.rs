@@ -388,6 +388,12 @@ impl OutlineViewModel {
 
     /// The paired promote target for a row, if any — `(role, sub_role)` of the
     /// type this item would become (see `skribisto_model::promote_target`).
+    /// The backend context — for tests that assert on entities directly.
+    #[cfg(test)]
+    pub(crate) fn app_ctx(&self) -> &AppContext {
+        &self.app_ctx
+    }
+
     /// Every type `key` may be converted to, in menu order. Empty when it has none.
     pub fn promote_targets_of(&self, key: BinderTreeKey) -> Vec<PromoteTarget> {
         let BinderTreeKey::Item(item_id) = key else {
@@ -514,11 +520,13 @@ impl OutlineViewModel {
                 }
             }
             BinderTreeKey::Item(i) => {
-                if let Some(it) = self.item_dto(i) {
-                    let mut dto = update_item_dto(&it);
-                    dto.title = title.to_string();
-                    let _ = binder_item_commands::update_binder_item(ctx, self.stack(), &dto);
-                }
+                // Through the single, so the title `Content` row follows the entity field.
+                // A tree rename that wrote only `BinderItem.title` would leave the
+                // manuscript compiling the old chapter title — the mirror image of the
+                // editor-rename bug.
+                let item = SingleBinderItem::new(self.app_ctx.clone());
+                item.set_id(Some(i));
+                let _ = item.set_title(title, self.stack());
             }
         }
         self.reload();
@@ -1363,6 +1371,51 @@ mod tests {
             assert_eq!(
                 outline.demote_blocked_children(BinderTreeKey::Item(s1), PromoteTarget::Note),
                 0
+            );
+        }
+
+        /// An item's name has two homes: `BinderItem.title`, which the outline tree and
+        /// the tab show, and a title `Content` row, which compiles into the manuscript.
+        /// **Renaming through either door must reach both.**
+        ///
+        /// Renaming a chapter in the tree used to write only the entity field, leaving the
+        /// manuscript compiling the old title; renaming it in its editor wrote only the
+        /// content row, leaving the tree and the tab showing the old name. Both now go
+        /// through `SingleBinderItem::set_title`.
+        #[test]
+        fn a_rename_reaches_both_homes_of_the_title() {
+            let (outline, binder) = seed();
+            let ch = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::ChapterScene,
+                0,
+                0,
+            );
+
+            outline.rename(BinderTreeKey::Item(ch), "The Long Road");
+
+            // The entity field the tree and the tab read...
+            assert_eq!(outline.item_dto(ch).unwrap().title, "The Long Road");
+            // ...and the content row the manuscript compiles.
+            let content_ids = binder_item_commands::get_binder_item_relationship(
+                outline.app_ctx(),
+                &ch,
+                &BinderItemRelationshipField::Contents,
+            )
+            .unwrap();
+            let chapter_title =
+                content_commands::get_content_multi(outline.app_ctx(), &content_ids)
+                    .unwrap()
+                    .into_iter()
+                    .flatten()
+                    .find(|c| c.role == ContentRole::ChapterTitle)
+                    .map(|c| c.data);
+            assert_eq!(
+                chapter_title.as_deref(),
+                Some("The Long Road"),
+                "a tree rename must reach the title the manuscript compiles"
             );
         }
 

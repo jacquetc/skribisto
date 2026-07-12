@@ -15,10 +15,12 @@ use bastyde::widgets::{Orientation, PaneDescriptor, SplitterModel, TabHandle, Ta
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
+use frontend::direct_access::BinderItemDto;
 use frontend::work_management::SaveWorkDto;
 
 use crate::app_ids::AppIds;
 use crate::models::OpenDocsStore;
+use crate::singles::SingleBinderItem;
 use crate::tabs::ContentTab;
 use crate::view_models::EditorTypographySet;
 
@@ -445,6 +447,137 @@ impl EditorsViewModel {
         match side {
             Side::Primary => &self.primary,
             Side::Secondary => &self.secondary,
+        }
+    }
+
+    /// React to `BinderItem::Updated` for `item_ids`: re-title any open tab whose item was
+    /// renamed, and **rebuild** any whose *type* changed.
+    ///
+    /// The view never reads entities itself, so the lookup lives here.
+    pub fn items_updated(&self, item_ids: &[u64]) {
+        let probe = SingleBinderItem::new(self.app_ctx.clone());
+        for id in item_ids {
+            probe.set_id(Some(*id));
+            let Some(it) = probe.dto() else { continue };
+            // A Promote rewrites the item's type. The open tab was built for the *old*
+            // one — it is still showing a chapter's segments and a chapter's editors for
+            // what is now a Part — and its `OpenDoc` still owns the old type's fields. Both
+            // have to be rebuilt.
+            if self.retype(*id, &it) {
+                continue; // the rebuilt tab already carries the new caption
+            }
+            self.retitle(*id, &it.title);
+        }
+    }
+
+    /// Rebuild every open tab for `item_id` if its `(role, sub_role)` no longer matches
+    /// the entity. Returns whether anything was rebuilt.
+    ///
+    /// The document is rebuilt *in place* in the store (same reference count), so every
+    /// other holder — a split pane, a stream row — picks up the fresh one too rather than
+    /// being handed the stale cached `Rc`.
+    fn retype(&self, item_id: u64, it: &BinderItemDto) -> bool {
+        let stale = |t: &ContentTab| t.role() != &it.role || t.sub_role() != &it.sub_role;
+        let needs_rebuild = [Side::Primary, Side::Secondary].iter().any(|&side| {
+            let pane = self.pane(side);
+            (0..pane.tabs.len()).any(|i| {
+                pane.tabs
+                    .with_item(i, |h| {
+                        h.payload.downcast_ref::<ContentTab>().is_some_and(stale)
+                    })
+                    .unwrap_or(false)
+            })
+        });
+        if !needs_rebuild {
+            return false;
+        }
+
+        let stack = self.ids.stack_id.get();
+        let Some(doc) = self.docs.rebuild(item_id, stack) else {
+            return false;
+        };
+
+        for side in [Side::Primary, Side::Secondary] {
+            let pane = self.pane(side);
+            for i in 0..pane.tabs.len() {
+                let hit = pane.tabs.with_item(i, |h| {
+                    h.payload
+                        .downcast_ref::<ContentTab>()
+                        .is_some_and(|t| t.item_id() == item_id)
+                        .then(|| h.clone())
+                });
+                let Some(Some(h)) = hit else { continue };
+                let tab = ContentTab::new(
+                    self.app_ctx.clone(),
+                    self.ids.clone(),
+                    self.docs.clone(),
+                    doc.clone(),
+                    self.column_width.clone(),
+                    self.show_synopsis.clone(),
+                    self.typography.clone(),
+                );
+                let caption = if it.title.is_empty() {
+                    tr!(untitled())
+                } else {
+                    lit!(it.title.clone())
+                };
+                let sub_role = it.sub_role.clone();
+                // A **fresh** `TabId`, and remove+insert rather than `set`. The
+                // `TabWidget` keys its mounted content widget by tab id, so swapping the
+                // payload under the same id updates the strip but leaves the old editor on
+                // screen — a chapter's segments for what is now a Part. A new id makes it a
+                // new tab as far as the widget is concerned, so the content is rebuilt.
+                // Same slot, and reselected if it was selected, so nothing moves.
+                let was_selected = pane.selected.get() == Some(h.id);
+                let new_id = TabId::fresh();
+                pane.tabs.remove(i);
+                pane.tabs.insert(
+                    i,
+                    TabHandle::dynamic(
+                        new_id,
+                        "editor",
+                        TabInfo::new()
+                            .title(caption)
+                            .closable(true)
+                            .icon(move || crate::binder_icons::sub_role_icon(&sub_role)),
+                        tab,
+                    ),
+                );
+                if was_selected {
+                    pane.selected.set(Some(new_id));
+                }
+            }
+        }
+        true
+    }
+
+    /// Re-title every open tab whose item was renamed.
+    ///
+    /// The tab's caption is a plain `LocalizedString` baked in at open time — it does not
+    /// follow a signal — so a rename has to push it. `TabHandle::info` is a public field
+    /// and `payload` is an `Rc`, so the handle is rebuilt with a new caption while the
+    /// *same* `ContentTab` (and therefore the same live documents, caret and scroll
+    /// position) is carried straight through.
+    fn retitle(&self, item_id: u64, title: &str) {
+        let caption = if title.is_empty() {
+            tr!(untitled())
+        } else {
+            lit!(title.to_string())
+        };
+        for side in [Side::Primary, Side::Secondary] {
+            let pane = self.pane(side);
+            for i in 0..pane.tabs.len() {
+                let hit = pane.tabs.with_item(i, |h| {
+                    h.payload
+                        .downcast_ref::<ContentTab>()
+                        .is_some_and(|t| t.item_id() == item_id)
+                        .then(|| h.clone())
+                });
+                if let Some(Some(mut h)) = hit {
+                    h.info = h.info.clone().title(caption.clone());
+                    pane.tabs.set(i, h);
+                }
+            }
         }
     }
 

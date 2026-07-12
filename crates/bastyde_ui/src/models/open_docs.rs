@@ -31,7 +31,9 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole}
 use frontend::direct_access::ContentDto;
 
 use crate::singles::SingleBinderItem;
-use crate::tabs::{ProseField, ProseKind, TitleField, prose_field, prose_kind_for, title_field};
+use crate::tabs::{
+    ProseField, ProseKind, TitleField, TitlePart, prose_field, prose_kind_for, title_field,
+};
 
 /// One open item's live editing state, shared by every view showing that item.
 pub struct OpenDoc {
@@ -92,11 +94,14 @@ impl OpenDoc {
                 ContentRole::SceneText | ContentRole::NoteText => {
                     doc.main = Some(prose_field(ctx, item_id, cr.clone(), existing))
                 }
+                // The two *names*. They are edited as the item's title/subtitle (what the
+                // outline tree and the tab show) and mirrored into these content rows on
+                // save — see `TitleField`.
                 ContentRole::BookSubtitle => {
-                    doc.subtitle = Some(title_field(ctx, item_id, cr.clone(), existing))
+                    doc.subtitle = Some(title_field(ctx, item_id, TitlePart::SubTitle))
                 }
                 ContentRole::BookTitle | ContentRole::ChapterTitle | ContentRole::PartTitle => {
-                    doc.title = Some(title_field(ctx, item_id, cr.clone(), existing))
+                    doc.title = Some(title_field(ctx, item_id, TitlePart::Title))
                 }
             }
         }
@@ -223,6 +228,42 @@ impl OpenDocsStore {
             },
         );
         Some(doc)
+    }
+
+    /// Rebuild `item_id`'s document **in place**, keeping its reference count.
+    ///
+    /// An `OpenDoc`'s fields are decided once, at construction, from the constraint
+    /// matrix for the item's `(role, sub_role)`. A Promote rewrites that type, so every
+    /// cached doc for it is now wrong — it may hold a prose field the new type has no
+    /// room for, or be missing one it now has. Releasing is not enough: while any other
+    /// holder still references the entry, the stale doc stays in the map and the next
+    /// `open()` hands it straight back.
+    ///
+    /// Returns the fresh doc, or `None` if the item isn't open (or can't be read).
+    pub fn rebuild(&self, item_id: u64, stack: Option<u64>) -> Option<Rc<OpenDoc>> {
+        let old = self
+            .inner
+            .open
+            .borrow()
+            .get(&item_id)
+            .map(|e| e.doc.clone())?;
+        let _ = old.flush(stack);
+
+        self.inner.item_probe.set_id(Some(item_id));
+        let item = self.inner.item_probe.dto()?;
+        let contents = self.load_contents(item_id, &item.role, &item.sub_role);
+        let fresh = Rc::new(OpenDoc::build(
+            &self.inner.app_ctx,
+            item_id,
+            &item.role,
+            &item.sub_role,
+            &contents,
+            self.inner.edited.clone(),
+        ));
+        if let Some(entry) = self.inner.open.borrow_mut().get_mut(&item_id) {
+            entry.doc = fresh.clone();
+        }
+        Some(fresh)
     }
 
     /// Release one reference to `item_id`. On the **last** reference, flush the

@@ -42,13 +42,23 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(t) = tab.title() {
         col = col.child(centered(
-            title_input(t, tr!(placeholder_title())),
+            title_input(
+                t,
+                tr!(placeholder_title()),
+                tab.mark_dirty_fn(),
+                tab.commit_names_fn(),
+            ),
             &tab.column_width,
         ));
     }
     if let Some(st) = tab.subtitle() {
         col = col.child(centered(
-            title_input(st, tr!(placeholder_subtitle())),
+            title_input(
+                st,
+                tr!(placeholder_subtitle()),
+                tab.mark_dirty_fn(),
+                tab.commit_names_fn(),
+            ),
             &tab.column_width,
         ));
     }
@@ -94,7 +104,12 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     if let Some(t) = tab.title() {
         col = col
             .child(centered(
-                title_input(t, tr!(placeholder_chapter_title())),
+                title_input(
+                    t,
+                    tr!(placeholder_chapter_title()),
+                    tab.mark_dirty_fn(),
+                    tab.commit_names_fn(),
+                ),
                 &tab.column_width,
             ))
             .child(vspace(6.0));
@@ -140,13 +155,23 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
 
     if let Some(t) = tab.title() {
         col = col.child(centered(
-            title_input(t, tr!(placeholder_title())),
+            title_input(
+                t,
+                tr!(placeholder_title()),
+                tab.mark_dirty_fn(),
+                tab.commit_names_fn(),
+            ),
             &tab.column_width,
         ));
     }
     if let Some(st) = tab.subtitle() {
         col = col.child(centered(
-            title_input(st, tr!(placeholder_subtitle())),
+            title_input(
+                st,
+                tr!(placeholder_subtitle()),
+                tab.mark_dirty_fn(),
+                tab.commit_names_fn(),
+            ),
             &tab.column_width,
         ));
     }

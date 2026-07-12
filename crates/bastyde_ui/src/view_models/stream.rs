@@ -29,7 +29,7 @@
 //! each `begin_*` presents the dialog and the matching apply-method does the undoable
 //! backend call. Plain Rust → headless-testable.
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -89,7 +89,6 @@ struct Inner {
     /// One handle per row, created lazily and reused across list refreshes so an edited
     /// row's document survives structural changes.
     row_handles: RefCell<HashMap<u64, RowHandle>>,
-    subscribed: Cell<bool>,
 }
 
 /// Release every document this stream still holds, when the tab closes (the
@@ -143,7 +142,6 @@ impl StreamViewModel {
                 rows,
                 container_probe,
                 row_handles: RefCell::new(HashMap::new()),
-                subscribed: Cell::new(false),
             }),
         })
     }
@@ -178,7 +176,9 @@ impl StreamViewModel {
             }
         });
 
-        if !self.inner.subscribed.replace(true) {
+        // Every build, not once — see `StreamRowsModel::wire`: a subscription is scoped
+        // to the widget's current build and dropped on the next one.
+        {
             let weak = Rc::downgrade(&self.inner);
             ctx.subscribe_event(
                 Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Updated)),
@@ -197,7 +197,10 @@ impl StreamViewModel {
                         .collect();
                     // A Promote rewrites a row's type in place. That row's `OpenDoc`
                     // decided its fields at construction, from the *old* type, so it is
-                    // now stale: evict it and let the next `row_doc()` rebuild it.
+                    // now stale. Dropping our cached handle is not enough: while any other
+                    // holder (a standalone tab, the other pane) still references the entry,
+                    // the store keeps the stale doc and hands it straight back. Rebuild it
+                    // in place instead, so every holder sees the fresh one.
                     let stale: Vec<u64> = {
                         let mut cache = inner.row_handles.borrow_mut();
                         let mut stale = Vec::new();
@@ -215,7 +218,7 @@ impl StreamViewModel {
                     };
                     let stack = inner.ids.stack_id.get();
                     for id in stale {
-                        inner.docs.release(id, stack);
+                        inner.docs.rebuild(id, stack);
                     }
                 },
             );
@@ -380,27 +383,15 @@ impl StreamViewModel {
 
     // ── apply methods (undoable backend calls; unit-tested) ──
 
+    /// Rename the container. Through the single, so its title `Content` row follows the
+    /// entity field — one title, two homes (see [`SingleBinderItem`]).
     pub fn rename_container(&self, _ctx: &mut EventContext, title: &str) {
-        if let Some(it) = self.item_dto(self.inner.container_id) {
-            let mut dto = update_item_dto(&it);
-            dto.title = title.to_string();
-            let _ =
-                binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
-            self.inner
-                .container_probe
-                .set_id(Some(self.inner.container_id));
-        }
+        let _ = self.inner.container_probe.set_title(title, self.stack());
     }
 
     pub fn rename_row(&self, _ctx: &mut EventContext, id: u64, title: &str) {
-        if let Some(it) = self.item_dto(id) {
-            let mut dto = update_item_dto(&it);
-            dto.title = title.to_string();
-            let _ =
-                binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
-            if let Some(h) = self.handle(id) {
-                h.probe.set_id(Some(id));
-            }
+        if let Some(h) = self.handle(id) {
+            let _ = h.probe.set_title(title, self.stack());
         }
     }
 

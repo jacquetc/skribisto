@@ -178,9 +178,92 @@ pub fn synopsis_editor(
     )
 }
 
-/// A one-line title input bound to `field.value`.
-pub fn title_input(field: &TitleField, placeholder: impl Into<LocalizedString>) -> impl Widget {
-    TextInput::new(field.value.clone()).placeholder(placeholder)
+/// A one-line name input bound to `field.value`, wired so an edit marks the tab dirty.
+///
+/// `TextInput` has no `on_change` hook and its text is a plain `Signal`, so the edit is
+/// detected by watching that signal and **diffing against the loaded value** — an effect
+/// that also fires on registration must not mark a freshly-opened tab dirty.
+///
+/// Without this, renaming a chapter in its own editor never set the dirty flag: no
+/// autosave, no unsaved-changes prompt, and the edit was lost unless something else
+/// happened to flush the tab.
+pub fn title_input(
+    field: &TitleField,
+    placeholder: impl Into<LocalizedString>,
+    on_change: impl Fn() + 'static,
+    on_commit: impl Fn() + 'static,
+) -> impl Widget {
+    // `on_commit` fires on blur and on Enter — a name is also an identifier (the tree,
+    // the tab and the Inspector all show it), so it must not wait for the autosave
+    // debounce the way prose can.
+    let commit = Rc::new(on_commit);
+    let (blur, submit) = (commit.clone(), commit);
+    let input = TextInput::new(field.value.clone())
+        .placeholder(placeholder)
+        .on_blur_fn(move |_ctx| blur())
+        .on_submit_fn(move |_ctx| submit());
+    DirtyOnEdit {
+        input: Some(input),
+        value: field.value.clone(),
+        is_edited: field.edited_probe(),
+        on_change: Rc::new(on_change),
+        child_id: None,
+    }
+}
+
+/// Wraps a title `TextInput` and reports genuine edits (see [`title_input`]).
+struct DirtyOnEdit {
+    input: Option<TextInput>,
+    value: Signal<String>,
+    /// Reads back whether the field currently differs from what was loaded.
+    is_edited: Rc<dyn Fn() -> bool>,
+    on_change: Rc<dyn Fn()>,
+    child_id: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for DirtyOnEdit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DirtyOnEdit").finish_non_exhaustive()
+    }
+}
+
+impl Widget for DirtyOnEdit {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let input = self.input.take().expect("DirtyOnEdit built once");
+        let id = ctx.add(input);
+        self.child_id = Some(id);
+        let (edited, on_change) = (self.is_edited.clone(), self.on_change.clone());
+        ctx.effect(&self.value, move |_| {
+            if edited() {
+                on_change();
+            }
+        });
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.child_id
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = Point::new(bounds.x, bounds.y);
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
+    }
 }
 
 /// "Synopsis" header + the **compact** synopsis box (a touch narrower than the main

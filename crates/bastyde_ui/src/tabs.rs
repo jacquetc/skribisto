@@ -35,7 +35,7 @@ use frontend::direct_access::ContentDto;
 
 use crate::app_ids::AppIds;
 use crate::models::{OpenDoc, OpenDocsStore};
-use crate::singles::SingleContent;
+use crate::singles::{SingleBinderItem, SingleContent};
 use crate::view_models::{EditorTypography, EditorTypographySet, StreamViewModel};
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
@@ -54,13 +54,26 @@ mod item_scene;
 mod item_text;
 mod shared;
 
-/// A short, single-line title content (BookTitle/Subtitle, Chapter/PartTitle),
-/// edited via a `TextInput` bound to `value`; persisted through its
-/// [`SingleContent`] (which owns the row id / `created_at` / create-or-update).
+/// Which of the item's two names this field edits.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum TitlePart {
+    Title,
+    SubTitle,
+}
+
+/// A short, single-line name (the item's title, or a Book's subtitle), edited via a
+/// `TextInput` bound to `value`.
+///
+/// It persists through [`SingleBinderItem`], **not** through `SingleContent` — because
+/// the name has two homes that must never drift: `BinderItem.title`, which the outline
+/// tree and the tab show, and the title `Content` row, which is what gets compiled into
+/// the manuscript. The single writes both. Editing a chapter's title in its editor used
+/// to write only the content row, leaving the tree and the tab showing the old name.
 pub struct TitleField {
     pub value: Signal<String>,
-    original: RefCell<String>,
-    content: SingleContent,
+    original: Rc<RefCell<String>>,
+    item: SingleBinderItem,
+    part: TitlePart,
 }
 
 /// A rich prose content (SceneText/NoteText/SynopsisText), edited in a
@@ -86,6 +99,8 @@ pub struct ContentTab {
     /// cycle and make `OpenDocsStore::clear()` re-enter its own `RefCell`. See
     /// [`StreamViewModel`].
     stream: Option<StreamViewModel>,
+    /// The app's entity ids — needed for the undo stack when a name field commits.
+    ids: AppIds,
     /// Selected segment for the folder container's `SegmentedControl` — per-tab
     /// (each pane keeps its own segment).
     pub segment: Signal<usize>,
@@ -140,19 +155,22 @@ pub(crate) fn prose_field(
     ProseField { doc, content }
 }
 
-/// A title field seeded from its [`SingleContent`] — same reason as [`prose_field`].
-pub(crate) fn title_field(
-    ctx: &Rc<AppContext>,
-    item_id: u64,
-    role: ContentRole,
-    existing: Option<&ContentDto>,
-) -> TitleField {
-    let content = SingleContent::for_field(ctx.clone(), item_id, role, existing);
-    let data = content.data().get();
+/// A name field over `item_id`, seeded from the **entity** (`BinderItem.title` /
+/// `.sub_title`) — the value the outline tree and the tab show, and therefore the one
+/// the writer means by "the title". The matching `Content` row is kept in step by
+/// [`SingleBinderItem::set_title`] on save.
+pub(crate) fn title_field(ctx: &Rc<AppContext>, item_id: u64, part: TitlePart) -> TitleField {
+    let item = SingleBinderItem::new(ctx.clone());
+    item.set_id(Some(item_id));
+    let data = match part {
+        TitlePart::Title => item.title().get(),
+        TitlePart::SubTitle => item.sub_title().get(),
+    };
     TitleField {
         value: Signal::new(data.clone()),
-        original: RefCell::new(data),
-        content,
+        original: Rc::new(RefCell::new(data)),
+        item,
+        part,
     }
 }
 
@@ -236,7 +254,7 @@ impl ContentTab {
     ) -> Self {
         let stream = StreamViewModel::new(
             app_ctx,
-            ids,
+            ids.clone(),
             docs,
             open_doc.item_id,
             &open_doc.role,
@@ -245,6 +263,7 @@ impl ContentTab {
         Self {
             open_doc,
             stream,
+            ids,
             segment: Signal::new(0),
             column_width,
             show_synopsis,
@@ -310,26 +329,68 @@ impl ContentTab {
     pub fn mark_dirty_fn(&self) -> impl Fn() + 'static {
         self.open_doc.mark_dirty_fn()
     }
+
+    /// Commit the name fields **now** — what a title input calls when it loses focus or
+    /// takes Enter.
+    ///
+    /// Names are not like prose. Prose can wait for the autosave debounce, but a name is
+    /// also an *identifier*: the outline tree, the tab and the Inspector all show it, and
+    /// they only learn about a rename when the entity is written. Leaving that to the
+    /// next save meant renaming a chapter in its editor and watching the tree keep the
+    /// old name until you happened to save or switch tabs. So it commits on blur, which
+    /// is the moment the writer has finished typing it.
+    pub fn commit_names_fn(&self) -> impl Fn() + 'static {
+        let doc = self.open_doc.clone();
+        let stack = self.ids.stack_id.clone();
+        move || {
+            let stack = stack.get();
+            if let Some(f) = doc.title.as_ref() {
+                let _ = f.flush(stack);
+            }
+            if let Some(f) = doc.subtitle.as_ref() {
+                let _ = f.flush(stack);
+            }
+        }
+    }
 }
 
 impl TitleField {
+    /// Persist the name **to both of its homes** (the entity field the tree shows, and
+    /// the title `Content` row the manuscript compiles) — see [`SingleBinderItem`].
+    /// No-op when unchanged.
     pub(crate) fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
         let val = self.value.get();
         if *self.original.borrow() == val {
             return Ok(());
         }
-        self.content.set_data(val.clone());
-        self.content.save(stack)?;
+        match self.part {
+            TitlePart::Title => self.item.set_title(&val, stack)?,
+            TitlePart::SubTitle => self.item.set_sub_title(&val, stack)?,
+        }
         *self.original.borrow_mut() = val;
         Ok(())
     }
 
-    /// Re-read the persisted value, discarding any live edit (see
-    /// [`OpenDoc::reload`](crate::models::OpenDoc::reload)). Goes through
-    /// `SingleContent`, never a raw command call — the write-back stays in Layer A.
+    /// A cloneable "does this field hold an unsaved edit?" probe, for the input widget's
+    /// effect. A `TextInput` has no `on_change` hook, so an edit is detected by diffing
+    /// the bound signal against the value that was loaded — which also means an effect
+    /// that fires on registration cannot mark a freshly-opened tab dirty.
+    pub(crate) fn edited_probe(&self) -> Rc<dyn Fn() -> bool> {
+        let value = self.value.clone();
+        let original = self.original.clone();
+        Rc::new(move || *original.borrow() != value.get())
+    }
+
+    /// Re-read the persisted name, discarding any live edit (see
+    /// [`OpenDoc::reload`](crate::models::OpenDoc::reload)).
     pub(crate) fn reload(&self) {
-        self.content.reload();
-        let data = self.content.data().get();
+        if let Some(id) = self.item.id() {
+            self.item.set_id(Some(id)); // synchronous re-read
+        }
+        let data = match self.part {
+            TitlePart::Title => self.item.title().get(),
+            TitlePart::SubTitle => self.item.sub_title().get(),
+        };
         self.value.set(data.clone());
         *self.original.borrow_mut() = data;
     }
@@ -488,6 +549,98 @@ mod tests {
 
         let end = mk(BookEnd);
         assert!(end.main().is_none() && end.synopsis().is_none() && end.title().is_none());
+    }
+
+    /// The editor half of "one title, two homes": typing a name into a container's own
+    /// page and committing it (blur / Enter) must reach **both** `BinderItem.title` —
+    /// what the outline tree and the tab caption show — and the title `Content` row that
+    /// compiles into the manuscript.
+    ///
+    /// It used to write only the content row, which is why renaming a chapter in its
+    /// editor left the tree and the tab showing the old name.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn committing_a_title_reaches_both_of_its_homes() {
+        use frontend::commands::{binder_commands, binder_item_commands, content_commands};
+        use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+        use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+        let ctx = Rc::new(AppContext::new());
+        let work = frontend::commands::work_commands::create_orphan_work(
+            &ctx,
+            None,
+            &CreateWorkDto::default(),
+        )
+        .unwrap();
+        let binder = binder_commands::create_binder(
+            &ctx,
+            None,
+            &CreateBinderDto {
+                name: "B".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .unwrap();
+        let item = binder_item_commands::create_binder_item(
+            &ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "Old name".into(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::ChapterScene,
+                activated: true,
+                is_printable: true,
+                ..Default::default()
+            },
+            binder.id,
+            -1,
+        )
+        .unwrap();
+
+        let tab = tab_for(
+            &ctx,
+            item.id,
+            &BinderItemRole::Folder,
+            &BinderItemSubRole::ChapterScene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            &AppIds::new(),
+        );
+        let title = tab.title().expect("a chapter folder has a title field");
+        assert_eq!(
+            title.value.get(),
+            "Old name",
+            "the field is seeded from the entity — the name the writer sees in the tree"
+        );
+
+        title.value.set("The Long Road".to_string());
+        tab.commit_names_fn()(); // what blur / Enter fires
+
+        // Home 1: the entity field the tree and the tab caption read.
+        let dto = binder_item_commands::get_binder_item(&ctx, &item.id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(dto.title, "The Long Road");
+
+        // Home 2: the content row the manuscript compiles.
+        let content_ids = binder_item_commands::get_binder_item_relationship(
+            &ctx,
+            &item.id,
+            &BinderItemRelationshipField::Contents,
+        )
+        .unwrap();
+        let chapter_title = content_commands::get_content_multi(&ctx, &content_ids)
+            .unwrap()
+            .into_iter()
+            .flatten()
+            .find(|c| c.role == ContentRole::ChapterTitle)
+            .map(|c| c.data);
+        assert_eq!(chapter_title.as_deref(), Some("The Long Road"));
     }
 
     /// Scene, ChapterScene and Note are no longer collapsed into one prose kind:

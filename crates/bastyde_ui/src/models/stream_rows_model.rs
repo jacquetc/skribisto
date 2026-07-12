@@ -119,7 +119,7 @@ pub fn row_indices(sub_roles: &[BinderItemSubRole], head: usize, level: StreamLe
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
-    use std::cell::{Cell, RefCell};
+    use std::cell::RefCell;
     use std::collections::HashSet;
     use std::rc::Rc;
 
@@ -144,7 +144,6 @@ mod imp {
 
     struct Inner {
         model: ListModel<StreamRow>,
-        subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
         work_id: Signal<Option<u64>>,
         head_id: u64,
@@ -170,7 +169,6 @@ mod imp {
             Self {
                 inner: Rc::new(Inner {
                     model: ListModel::new(),
-                    subscribed: Cell::new(false),
                     ctx,
                     work_id,
                     head_id,
@@ -215,7 +213,12 @@ mod imp {
         /// which `reconcile` turns into an in-place `set`.
         pub fn wire(&self, ctx: &mut BuildContext, on_removed: impl Fn(&[u64]) + 'static) {
             *self.inner.on_removed.borrow_mut() = Some(Box::new(on_removed));
-            if !self.inner.subscribed.replace(true) {
+            // Subscribe on **every** build. `BuildContext::subscribe_event` scopes a
+            // subscription to the widget's current build and drops it on the next one, so
+            // a "subscribe once" guard would make this model go deaf the first time its
+            // host widget rebuilt. Re-subscribing cannot duplicate: the old callbacks are
+            // already gone.
+            {
                 use DirectAccessEntity::BinderItem;
                 use EntityEvent::{Created, Removed};
                 let origins = [

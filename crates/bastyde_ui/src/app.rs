@@ -584,6 +584,19 @@ impl Widget for App {
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
             let unsaved = self.unsaved.clone();
+            // An open tab does not follow its item by itself: `TabInfo::title` is a plain
+            // string baked in at open time, and the `ContentTab` payload is built once for
+            // the item's `(role, sub_role)`. So a rename must push the new caption, and a
+            // Promote must rebuild the tab — otherwise it keeps showing a chapter's
+            // segments and editors for what is now a Part.
+            {
+                let editors = editors.clone();
+                ctx.subscribe_event(
+                    Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Updated)),
+                    move |event: &Event| editors.items_updated(&event.ids),
+                );
+            }
+
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_event: &Event| {

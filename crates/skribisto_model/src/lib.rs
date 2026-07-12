@@ -489,9 +489,14 @@ pub fn promote_targets(role: &Role, sub_role: &SubRole) -> Vec<PromoteTarget> {
 }
 
 /// The single title role a combination carries, if any (`BookTitle` / `PartTitle` /
-/// `ChapterTitle`). Used to carry a *name* across a type change: a chapter folder that
-/// becomes a part keeps its title, it just becomes a part title.
-fn title_role_of(role: &Role, sub_role: &SubRole) -> Option<ContentRole> {
+/// `ChapterTitle`).
+///
+/// Two things use it. Promote carries a *name* across a type change (a chapter folder
+/// that becomes a part keeps its title, it just becomes a part title). And the UI keeps
+/// `BinderItem.title` — the name in the outline and on the tab — in step with the title
+/// `Content` row, which is the one that actually gets compiled into the manuscript.
+/// They are one title with two homes; nothing good comes of letting them drift.
+pub fn title_role_of(role: &Role, sub_role: &SubRole) -> Option<ContentRole> {
     [BookTitle, PartTitle, ChapterTitle]
         .into_iter()
         .find(|r| content_allowed(role, sub_role, r))

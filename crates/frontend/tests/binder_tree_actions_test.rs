@@ -1088,6 +1088,48 @@ fn promote_refuses_a_target_that_was_never_offered() {
     );
 }
 
+/// An item's name lives in two places: `BinderItem.title`, which the outline tree and
+/// the tab show, and a title `Content` row, which is what compiles into the manuscript.
+/// They are one title with two homes. This pins the promote path's half of that: a
+/// conversion carries the name across *and* keeps both homes in step.
+#[test]
+fn a_rename_keeps_both_homes_of_the_title_in_step() {
+    let fx = make_fixture();
+    let ch = mk_item(&fx.ctx, fx.setup, "Old name", 0, BinderItemRole::Folder);
+    set_sub_role(&fx, ch, BinderItemSubRole::ChapterScene);
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[ch]);
+    add_content(&fx, ch, ContentRole::ChapterTitle, "Old name");
+
+    // Converting to a Book must carry the name into the *book's* title role, and the
+    // entity field must still agree with it.
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        None,
+        &PromoteDto {
+            item_id: ch,
+            target: PromoteTarget::BookFolder.code(),
+        },
+    )
+    .expect("an empty chapter becomes a book");
+
+    assert_eq!(item(&fx.ctx, ch).sub_role, BinderItemSubRole::Book);
+    assert_eq!(
+        content_data(&fx, ch, ContentRole::BookTitle),
+        "Old name",
+        "the chapter title became the book title"
+    );
+    assert_eq!(
+        item(&fx.ctx, ch).title,
+        "Old name",
+        "the entity field the tree shows is unchanged by the conversion"
+    );
+    assert_eq!(
+        content_data(&fx, ch, ContentRole::ChapterTitle),
+        "",
+        "the old title role is gone"
+    );
+}
+
 /// Set an item's sub_role directly (the fixture helper builds Text items).
 fn set_sub_role(fx: &Fixture, item_id: EntityId, sub_role: BinderItemSubRole) {
     let mut dto = item(&fx.ctx, item_id);

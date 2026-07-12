@@ -64,12 +64,29 @@ impl std::fmt::Debug for Inspector {
 
 impl Widget for Inspector {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Follow the focused item — rebuild the panel when it changes.
+        // Rebuild when focus moves to a different item...
         self.focus
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        // ...and when the focused item *itself* changes under us. Promote rewrites its
+        // `(role, sub_role)` and a rename its title, neither of which moves focus — so
+        // without this the panel kept offering the conversions of the item's *old* type.
+        self.probe.dto_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        // Re-subscribe on **every** build, not once: `BuildContext::subscribe_event`
+        // scopes the subscription to the widget's *current* build and drops it on the
+        // next one. Guarding this with a "wired" flag made the panel deaf the moment it
+        // first rebuilt — which is exactly when it needed to keep listening.
+        self.probe.wire(ctx);
 
         let item_id = self.focus.get();
-        self.probe.set_id(item_id);
+        // Only re-point on a genuine focus change: `set_id` re-reads synchronously and
+        // writes the dto signal, which is now a rebuild trigger.
+        if self.probe.id() != item_id {
+            self.probe.set_id(item_id);
+        }
         let dto = item_id.and_then(|_| self.probe.dto());
 
         let body: Box<dyn Widget> = match dto {

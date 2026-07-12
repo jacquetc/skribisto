@@ -1,14 +1,23 @@
-//! `SingleBinderItem` — a reactive **read** handle over one `BinderItem`.
+//! `SingleBinderItem` — a reactive handle over one `BinderItem`.
 //!
-//! Caches the full `BinderItemDto` reactively (refreshed on the entity's
-//! `Updated` events) and exposes it via [`dto`](imp::SingleBinderItem::dto) +
-//! mapped field signals. Unlike [`SingleWork`](crate::singles::SingleWork) it has
-//! no `save()`: binder-item edits (rename, reindent, move, trash) are tree
-//! mutations that must run on the per-`Work` undo stack, so they go through
-//! `OutlineViewModel`'s undoable commands — this single is the **read** half,
-//! used both for the open tab's `(role, sub_role)` dispatch and as the source of
-//! the current item state when those commands build their update DTO. Two
-//! `mod imp` variants share one public surface. See [`crate::singles`].
+//! Caches the full `BinderItemDto` reactively (refreshed on the entity's `Updated`
+//! events) and exposes it via [`dto`](imp::SingleBinderItem::dto) + mapped field
+//! signals. Structural edits (reindent, move, trash) are tree mutations and stay in
+//! `OutlineViewModel`'s undoable commands; this single is the read half for those.
+//!
+//! It does own **one** write, because that write must never be done by halves:
+//! [`set_title`](imp::SingleBinderItem::set_title) and
+//! [`set_sub_title`](imp::SingleBinderItem::set_sub_title).
+//!
+//! An item's name lives in two places — `BinderItem.title`, which the outline tree and
+//! the tab show, and a title `Content` row (`BookTitle` / `PartTitle` / `ChapterTitle`),
+//! which is what gets compiled into the manuscript. They are **one title with two
+//! homes**. Writing only one of them is what made renaming a chapter in its editor leave
+//! the tree showing the old name, and renaming it in the tree leave the manuscript
+//! showing the old one. So every rename goes through here, and here writes both. Same
+//! for the subtitle (`BinderItem.sub_title` + `BookSubtitle`).
+//!
+//! Two `mod imp` variants share one public surface. See [`crate::singles`].
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
@@ -18,11 +27,41 @@ mod imp {
     use bastyde::prelude::*;
 
     use frontend::AppContext;
-    use frontend::commands::binder_item_commands;
+    use frontend::commands::{binder_item_commands, content_commands};
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::entities::ContentRole;
     use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
-    use frontend::direct_access::BinderItemDto;
+    use frontend::direct_access::{BinderItemDto, ContentDto, UpdateBinderItemDto};
 
-    use crate::singles::LoadingStatus;
+    use crate::singles::{LoadingStatus, SingleContent};
+
+    /// Which of the item's two names is being written.
+    #[derive(Clone, Copy)]
+    enum TitlePart {
+        Title,
+        SubTitle,
+    }
+
+    /// A scalar-only update DTO from a fetched item (relationships untouched).
+    fn update_dto(it: &BinderItemDto) -> UpdateBinderItemDto {
+        UpdateBinderItemDto {
+            id: it.id,
+            created_at: it.created_at,
+            updated_at: it.updated_at,
+            title: it.title.clone(),
+            sub_title: it.sub_title.clone(),
+            role: it.role.clone(),
+            sub_role: it.sub_role.clone(),
+            label: it.label.clone(),
+            activated: it.activated,
+            is_favorite: it.is_favorite,
+            is_printable: it.is_printable,
+            indent: it.indent,
+            word_count_goal: it.word_count_goal,
+            char_count_goal: it.char_count_goal,
+            dict_language: it.dict_language.clone(),
+        }
+    }
 
     struct Inner {
         id: Cell<Option<u64>>,
@@ -66,9 +105,13 @@ mod imp {
             self.inner.id.get()
         }
 
-        /// Auto-refresh when this `BinderItem` changes elsewhere. Call once from a
-        /// long-lived widget's `build` for a persistently-bound handle; one-shot
-        /// probes need not wire (each `set_id` reloads synchronously).
+        /// Auto-refresh when this `BinderItem` changes elsewhere.
+        ///
+        /// Call it from `build` — **every** build, not once. `BuildContext::subscribe_event`
+        /// scopes a subscription to the widget's current build and drops it on the next
+        /// one, so a "wire once" guard silently makes the handle deaf the first time its
+        /// widget rebuilds. Re-subscribing cannot duplicate: the old callback is gone.
+        /// (One-shot probes need not wire at all — each `set_id` reloads synchronously.)
         pub fn wire(&self, ctx: &mut BuildContext) {
             let s = self.clone();
             ctx.subscribe_event(
@@ -100,11 +143,92 @@ mod imp {
                 .dto
                 .map(|d| d.as_ref().map(|x| x.title.clone()).unwrap_or_default())
         }
+        /// The item's subtitle as a reactive signal (empty when unloaded).
+        pub fn sub_title(&self) -> Signal<String> {
+            self.inner
+                .dto
+                .map(|d| d.as_ref().map(|x| x.sub_title.clone()).unwrap_or_default())
+        }
         pub fn loading_status(&self) -> Signal<LoadingStatus> {
             self.inner.loading_status.clone()
         }
         pub fn error_message(&self) -> Signal<String> {
             self.inner.error_message.clone()
+        }
+
+        /// Rename the item: writes `BinderItem.title` **and** the title `Content` row the
+        /// constraint matrix gives this `(role, sub_role)`, if it has one.
+        ///
+        /// Both, always. The tree and the tab read the entity field; the manuscript reads
+        /// the content row. Writing one without the other is how they drift apart.
+        /// Undoable on `stack`.
+        pub fn set_title(&self, title: &str, stack: Option<u64>) -> anyhow::Result<()> {
+            self.write_name(title, TitlePart::Title, stack)
+        }
+
+        /// Set the item's subtitle: `BinderItem.sub_title` **and** its `BookSubtitle`
+        /// row, when the matrix allows one (only a Book does).
+        pub fn set_sub_title(&self, sub_title: &str, stack: Option<u64>) -> anyhow::Result<()> {
+            self.write_name(sub_title, TitlePart::SubTitle, stack)
+        }
+
+        fn write_name(
+            &self,
+            text: &str,
+            part: TitlePart,
+            stack: Option<u64>,
+        ) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            let Some(it) = self.dto() else {
+                anyhow::bail!("SingleBinderItem: item {id} not loaded");
+            };
+
+            // 1. The entity field — what the outline tree and the tab show.
+            let mut dto = update_dto(&it);
+            match part {
+                TitlePart::Title => dto.title = text.to_string(),
+                TitlePart::SubTitle => dto.sub_title = text.to_string(),
+            }
+            dto.updated_at = chrono::Utc::now();
+            binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
+
+            // 2. The matching Content row — what the manuscript compiles.
+            let role = match part {
+                TitlePart::Title => skribisto_model::title_role_of(&it.role, &it.sub_role),
+                TitlePart::SubTitle => skribisto_model::content_allowed(
+                    &it.role,
+                    &it.sub_role,
+                    &ContentRole::BookSubtitle,
+                )
+                .then_some(ContentRole::BookSubtitle),
+            };
+            if let Some(role) = role {
+                let existing = self.content_row(id, &role);
+                let field =
+                    SingleContent::for_field(self.inner.ctx.clone(), id, role, existing.as_ref());
+                field.set_data(text.to_string());
+                field.save(stack)?;
+            }
+
+            self.refresh();
+            Ok(())
+        }
+
+        /// The item's `Content` row for `role`, if it exists.
+        fn content_row(&self, id: u64, role: &ContentRole) -> Option<ContentDto> {
+            let ids = binder_item_commands::get_binder_item_relationship(
+                &self.inner.ctx,
+                &id,
+                &BinderItemRelationshipField::Contents,
+            )
+            .unwrap_or_default();
+            content_commands::get_content_multi(&self.inner.ctx, &ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .find(|c| &c.role == role)
         }
 
         fn refresh(&self) {
@@ -237,11 +361,34 @@ mod imp {
                 .dto
                 .map(|d| d.as_ref().map(|x| x.title.clone()).unwrap_or_default())
         }
+        pub fn sub_title(&self) -> Signal<String> {
+            self.inner
+                .dto
+                .map(|d| d.as_ref().map(|x| x.sub_title.clone()).unwrap_or_default())
+        }
         pub fn loading_status(&self) -> Signal<LoadingStatus> {
             self.inner.loading_status.clone()
         }
         pub fn error_message(&self) -> Signal<String> {
             self.inner.error_message.clone()
+        }
+
+        /// Rename the fabricated item, so the mock outline and tab track the edit just
+        /// like the real ones.
+        pub fn set_title(&self, title: &str, _stack: Option<u64>) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.title = title.to_string();
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
+        }
+
+        pub fn set_sub_title(&self, sub_title: &str, _stack: Option<u64>) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.sub_title = sub_title.to_string();
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
         }
     }
 }
