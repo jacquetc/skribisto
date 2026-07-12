@@ -42,4 +42,5 @@ pub struct SplitSceneDto {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct PromoteDto {
     pub item_id: u64,
+    pub target: u64,
 }

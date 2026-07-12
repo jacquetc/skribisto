@@ -13,20 +13,32 @@
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Center, Expand, ScrollArea, Segment, SegmentedControl, Switcher, TextWidget, VStack,
+    Center, Expand, GroupHeader, ScrollArea, Segment, SegmentedControl, Switcher, TextWidget,
+    VStack,
 };
 
 use crate::tabs::ContentTab;
 use crate::view_models::SplitFlavour;
 
 use super::{
-    centered, stream_pane, synopsis_section, tab_backdrop, title_input, vspace, writing_section,
+    centered, stream_pane, synopsis_column, synopsis_section, tab_backdrop, title_input, vspace,
+    writing_section,
 };
 
-/// The shared **Synopsis** view for the folder container tabs: the folder's title
-/// (and subtitle, for a Book) above its synopsis editor. The Book/Part/Chapter
-/// folders each own a `SegmentedControl`; this is the synopsis segment they share.
-pub fn folder_synopsis_pane(tab: &ContentTab) -> impl Widget {
+/// The container's **own page** — the first segment of every folder container tab.
+///
+/// It is the container as a *writing surface*, not a summary of one: its title (and
+/// subtitle, for a Book), its synopsis, and — for a chapter folder — **its own prose**.
+/// A chapter folder carries a `SceneText` exactly like the flat chapter it promotes
+/// to, so a synopsis-only page here would hide the writer's actual text; that is why
+/// this pane is named after the container ("Chapter" / "Part" / "Book") rather than
+/// "Synopsis", and why it reads like a Scene tab.
+///
+/// Which fields appear is decided by the constraint matrix (via `OpenDoc::build`), so
+/// one body covers all three containers: a Part and a Book simply have no prose to show.
+/// The synopsis here is a *primary* surface, so it grows with its content (unlike the
+/// compact box that sits above a scene's prose in the dual-pane editor).
+pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(t) = tab.title() {
         col = col.child(centered(
@@ -41,14 +53,34 @@ pub fn folder_synopsis_pane(tab: &ContentTab) -> impl Widget {
         ));
     }
     if let Some(s) = tab.synopsis() {
-        col = col.child(vspace(4.0)).child(synopsis_section(
-            &s.doc,
+        col = col
+            .child(vspace(4.0))
+            .child(
+                GroupHeader::new(tr!(synopsis()))
+                    .style(TextStyleRole::SmallBold)
+                    .color(TextRole::Secondary),
+            )
+            .child(synopsis_column(
+                &s.doc,
+                &tab.column_width,
+                &tab.typography.synopsis,
+                tab.mark_dirty_fn(),
+                Option::None,
+            ));
+    }
+    // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
+    // them no `SceneText`.
+    if let Some(m) = tab.main() {
+        col = col.child(vspace(10.0)).child(writing_section(
+            &m.doc,
             &tab.column_width,
-            &tab.typography.synopsis,
+            tab.main_typography(),
             tab.mark_dirty_fn(),
         ));
     }
-    col
+    // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
+    // whole thing rather than each editor scrolling inside its own box.
+    ScrollArea::new().child(col.child(vspace(28.0)))
 }
 
 /// The dual-pane writing editor (Skribisto's signature): an optional title, a
@@ -119,14 +151,24 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
         ));
     }
     if let Some(s) = tab.synopsis() {
-        col = col.child(vspace(8.0)).child(synopsis_section(
-            &s.doc,
-            &tab.column_width,
-            &tab.typography.synopsis,
-            tab.mark_dirty_fn(),
-        ));
+        // On a heading tab the synopsis *is* the page — it grows, like any primary
+        // writing surface (contrast the compact box above a scene's prose).
+        col = col
+            .child(vspace(8.0))
+            .child(
+                GroupHeader::new(tr!(synopsis()))
+                    .style(TextStyleRole::SmallBold)
+                    .color(TextRole::Secondary),
+            )
+            .child(synopsis_column(
+                &s.doc,
+                &tab.column_width,
+                &tab.typography.synopsis,
+                tab.mark_dirty_fn(),
+                Option::None,
+            ));
     }
-    tab_backdrop(col)
+    tab_backdrop(ScrollArea::new().child(col.child(vspace(28.0))))
 }
 
 /// A quiet placeholder for contentless rows (Item/BookEnd, Item/Text): they carry
@@ -142,45 +184,62 @@ pub fn placeholder(_tab: &ContentTab) -> Box<dyn Widget> {
     ))
 }
 
-/// A synopsis-only folder body (Folder/None, Folder/Note): a plain grouping /
-/// notes folder carrying only a synopsis, with no segmented control.
+/// A synopsis-only folder body (Folder/None, Folder/Note): a plain grouping / notes
+/// folder, which the matrix gives *only* a synopsis — so there is nothing to segment,
+/// and no stream (it has no manuscript extent).
+///
+/// Its synopsis is the page, not a footnote to one, so it grows with its content like
+/// any other primary writing surface.
 pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(s) = tab.synopsis() {
-        col = col.child(synopsis_section(
-            &s.doc,
-            &tab.column_width,
-            &tab.typography.synopsis,
-            tab.mark_dirty_fn(),
-        ));
+        col = col
+            .child(
+                GroupHeader::new(tr!(synopsis()))
+                    .style(TextStyleRole::SmallBold)
+                    .color(TextRole::Secondary),
+            )
+            .child(synopsis_column(
+                &s.doc,
+                &tab.column_width,
+                &tab.typography.synopsis,
+                tab.mark_dirty_fn(),
+                Option::None,
+            ));
     }
-    tab_backdrop(col)
+    tab_backdrop(ScrollArea::new().child(col.child(vspace(28.0))))
 }
 
 /// The body every folder container shares: a `SegmentedControl` over
 ///
-/// 1. **Synopsis** — the container's own title(s) + synopsis;
-/// 2. the **manuscript stream** — Full Chapter / Full Part / Full Book, named by
-///    `manuscript_label` (the one thing that differs between the three);
-/// 3. **Full Synopsis** — the same stream, showing each row's synopsis instead;
+/// 1. the container's **own page** — named after the container itself ("Chapter" /
+///    "Part" / "Book"), because it *is* that item as a writing surface: title,
+///    synopsis, and — for a chapter — its own prose. (It used to be called "Synopsis";
+///    that became a lie the moment a chapter folder started carrying prose.)
+/// 2. the **manuscript stream** — Full Chapter / Full Part / Full Book: the container
+///    *and everything inside it*, as one continuous manuscript;
+/// 3. **Full Synopsis** — the same rows, showing each one's synopsis instead;
 ///
 /// plus Corkboard and Overview as 🚧 future segments (FEATURES.md), shown disabled.
 ///
+/// The pairing reads as "this one" vs "this one and all of it": `Chapter` /
+/// `Full Chapter`.
+///
 /// The `Switcher` mounts only the child at the selected index; the two disabled
-/// segments have no child, and an out-of-range selection mounts nothing (no panic) —
-/// the same shape the 4-segment / 2-child bar relied on before.
+/// segments have no child, and an out-of-range selection mounts nothing (no panic).
 pub fn folder_segmented(
     tab: &ContentTab,
+    own_label: impl Into<LocalizedString>,
     manuscript_label: impl Into<LocalizedString>,
 ) -> Box<dyn Widget> {
     let bar = SegmentedControl::new(tab.segment.clone())
-        .segment(Segment::new(tr!(synopsis())))
+        .segment(Segment::new(own_label))
         .segment(Segment::new(manuscript_label))
         .segment(Segment::new(tr!(full_synopsis())))
         .segment(Segment::new(tr!(corkboard())).disabled(true))
         .segment(Segment::new(tr!(overview())).disabled(true));
     let content = Switcher::new(tab.segment.clone())
-        .child(folder_synopsis_pane(tab))
+        .child(folder_own_pane(tab))
         .child(stream_pane(tab, SplitFlavour::Prose))
         .child(stream_pane(tab, SplitFlavour::Synopsis));
 

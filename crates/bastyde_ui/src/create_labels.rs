@@ -11,8 +11,8 @@ use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*; // tr!
 use bastyde::widgets::tooltip::TooltipContent;
 
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
-use skribisto_model::{CreateType, Recommendation, Relation};
+use frontend::common::entities::ContentRole;
+use skribisto_model::{CreateType, PromoteTarget, Recommendation, Relation};
 
 /// The human label for a logical [`CreateType`] — the SplitButton title text and
 /// each menu row's label. Icons come from
@@ -30,25 +30,36 @@ pub fn recommendation_label(create_type: CreateType) -> LocalizedString {
     }
 }
 
-/// The label for a concrete promote target `(role, sub_role)` — used in the
-/// "Promote to `<target>`" menu item. Unlike the Create menu (which hides the two
-/// chapter encodings behind one "Chapter"), promote is exactly where the writer
-/// chooses between them, so they get distinct labels.
-pub fn promote_target_label(
-    role: &BinderItemRole,
-    sub_role: &BinderItemSubRole,
-) -> LocalizedString {
-    use BinderItemRole::{Folder, Item};
-    use BinderItemSubRole as S;
-    match (role, sub_role) {
-        (Folder, S::ChapterScene) => tr!(promote_chapter_folder()),
-        (Item, S::ChapterScene) => tr!(promote_flat_chapter()),
-        (Item, S::Scene) => tr!(create_scene()),
-        (Item, S::Note) => tr!(create_note()),
-        (Folder, S::None) => tr!(create_folder()),
-        (Folder, S::Note) => tr!(create_note_folder()),
-        // Unreachable — promote_target only yields the six pairs above.
-        _ => tr!(create_folder()),
+/// The label for a promote target — the rows of the "Convert to ▸" submenu.
+///
+/// Unlike the Create menu (which hides the two chapter encodings behind one "Chapter"),
+/// Convert is exactly where the writer chooses between them, so they get distinct
+/// labels.
+pub fn promote_target_label(target: PromoteTarget) -> LocalizedString {
+    use PromoteTarget as T;
+    match target {
+        T::Folder => tr!(create_folder()),
+        T::ChapterFolder => tr!(promote_chapter_folder()),
+        T::PartFolder => tr!(create_part()),
+        T::BookFolder => tr!(create_book()),
+        T::NoteFolder => tr!(create_note_folder()),
+        T::FlatChapter => tr!(promote_flat_chapter()),
+        T::Scene => tr!(create_scene()),
+        T::Note => tr!(create_note()),
+    }
+}
+
+/// The human name of a content role — for explaining what a conversion would discard
+/// ("a Part has nowhere to keep: Scene text").
+pub fn content_role_label(role: &ContentRole) -> LocalizedString {
+    match role {
+        ContentRole::SceneText => tr!(content_scene_text()),
+        ContentRole::NoteText => tr!(content_note_text()),
+        ContentRole::SynopsisText => tr!(synopsis()),
+        ContentRole::BookTitle => tr!(content_book_title()),
+        ContentRole::BookSubtitle => tr!(content_book_subtitle()),
+        ContentRole::PartTitle => tr!(content_part_title()),
+        ContentRole::ChapterTitle => tr!(content_chapter_title()),
     }
 }
 

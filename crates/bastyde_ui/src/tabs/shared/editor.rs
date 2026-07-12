@@ -111,12 +111,30 @@ fn scene_editor_menu(handle: EditorHandle, cursor: Signal<usize>, split: SplitFn
         .item(MenuItem::new(tr!(split_scene())).on_activate_fn(move |ctx| split(ctx, cursor.get())))
 }
 
+/// How tall a *growing* synopsis editor starts: enough to invite a couple of lines,
+/// then it grows with its content like a writing column.
+pub const SYNOPSIS_MIN_LINES: u32 = 3;
+
+/// How a synopsis editor sizes itself.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum SynopsisFit {
+    /// Capped at six lines and scrolling inside its own box — the *subordinate* pane
+    /// above a scene's prose, where it must not push the writing surface off screen.
+    Compact,
+    /// Intrinsic-height, no inner scroll bar: it grows with the text and the page's
+    /// outer `ScrollArea` scrolls it — same flowing behaviour as [`writing_column`].
+    /// This is what a synopsis needs wherever it *is* the writing surface: a Full
+    /// Synopsis stream row, or a container's own page.
+    Growing,
+}
+
 /// The bordered synopsis editor box (caller sizes/centres it). User edits flip the
 /// tab's dirty flag via `on_change`. `split` adds the caret-aware "Split scene" action
 /// to its context menu — in a Full Synopsis stream the synopsis is the text being cut.
 pub fn synopsis_editor(
     doc: &TextDocument,
     typo: &EditorTypography,
+    fit: SynopsisFit,
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
 ) -> impl Widget {
@@ -124,12 +142,20 @@ pub fn synopsis_editor(
         .style(WritingEditorStyle)
         .on_change(on_change)
         .content_padding_symmetric(6.0, 30.0)
-        .min_lines(1)
-        .max_lines(6)
-        .v_scroll_policy(ScrollPolicy::Auto)
         .text_color(TextRole::Secondary)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
+    editor = match fit {
+        SynopsisFit::Compact => editor
+            .min_lines(1)
+            .max_lines(6)
+            .v_scroll_policy(ScrollPolicy::Auto),
+        // No `max_lines` → the editor sizes to its content; its own scroll bar is
+        // suppressed so the page scrolls instead. Mirrors `writing_column`.
+        SynopsisFit::Growing => editor
+            .min_lines(SYNOPSIS_MIN_LINES)
+            .v_scroll_policy(ScrollPolicy::AlwaysOff),
+    };
     if let Some(split) = split {
         let handle = editor.handle();
         let cursor = editor.cursor_position_signal();
@@ -157,14 +183,16 @@ pub fn title_input(field: &TitleField, placeholder: impl Into<LocalizedString>) 
     TextInput::new(field.value.clone()).placeholder(placeholder)
 }
 
-/// "Synopsis" header + the centered, capped synopsis editor (a touch narrower
-/// than the main column so it reads as subordinate).
+/// "Synopsis" header + the **compact** synopsis box (a touch narrower than the main
+/// column so it reads as subordinate) — the dual-pane editor's upper half, where it
+/// sits above the prose and must not push it off screen.
 pub fn synopsis_section(
     doc: &TextDocument,
     column_width: &Signal<f32>,
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
 ) -> impl Widget {
+    let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
         VStack {
             spacing: 5.0
@@ -172,35 +200,53 @@ pub fn synopsis_section(
                 style: TextStyleRole::SmallBold
                 color: TextRole::Secondary
             }
-            child: synopsis_column(doc, column_width, typo, on_change, Option::None)
+            HStack {
+                Spacer
+                MaxSize::width(synopsis_width.get()) {
+                    max_width: synopsis_width.clone()
+                    Expand::horizontal {
+                        child: synopsis_editor(
+                            doc,
+                            typo,
+                            SynopsisFit::Compact,
+                            on_change,
+                            Option::None,
+                        )
+                    }
+                }
+                Spacer {
+                    min_length: 4.0
+                }
+            }
         }
     )
 }
 
-/// The centered, capped synopsis editor without the "Synopsis" caption — for a stream
-/// row, where the caption would repeat on every row and the segment already says it.
+/// The centered, capped, **growing** synopsis column — no "Synopsis" caption (in a
+/// stream it would repeat on every row, and the segment already says it).
+///
+/// Built exactly like [`writing_column`], and for the same reason: the editor is
+/// intrinsic-sized and its own scroll bar suppressed, so it grows with the text while
+/// the page's outer `ScrollArea` does the scrolling. It must go through
+/// [`CenterColumnFlowing`], *not* an `HStack` + `Spacer` — an alignment widget measures
+/// its child with an **unbounded** proposal, so the `MaxSize` would report its full cap
+/// and the editor would never wrap or shrink to fit.
 pub fn synopsis_column(
     doc: &TextDocument,
     column_width: &Signal<f32>,
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
-) -> impl Widget {
+) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
-    bati!(
-        HStack {
-            Spacer
-            MaxSize::width(synopsis_width.get()) {
-                max_width: synopsis_width.clone()
-                Expand::horizontal {
-                    child: synopsis_editor(doc, typo, on_change, split)
-                }
-            }
-            Spacer {
-                min_length: 4.0
+    CenterColumnFlowing::new(bati!(
+        MaxSize::width(synopsis_width.get()) {
+            max_width: synopsis_width.clone()
+            Expand::horizontal {
+                child: synopsis_editor(doc, typo, SynopsisFit::Growing, on_change, split)
             }
         }
-    )
+    ))
 }
 
 /// "Text" header + the centered, capped main writing column. The column is

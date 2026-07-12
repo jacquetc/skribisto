@@ -46,16 +46,25 @@ create-tooltip-parent-sibling = Ajouter un(e) { $kind } après le conteneur « {
 create-tooltip-top = Ajouter un(e) { $kind } au niveau supérieur.
 
 ## Promouvoir — convertir un élément du classeur vers son type apparié
-ctx-promote-to = Promouvoir en { $target }
+ctx-promote = &Convertir en
 promote-chapter-folder = Dossier de chapitre
 promote-flat-chapter = Chapitre à plat
+promote-lossy-title = Aucun endroit pour ce texte
+promote-lossy-text = Un(e) { $target } n'a nulle part où conserver : { $kinds }. Déplacez ou effacez ce texte, puis convertissez.
+# Noms des rôles de contenu, pour expliquer ce qu'une conversion ne peut pas reprendre.
+content-scene-text = Texte de la scène
+content-note-text = Texte de la note
+content-book-title = Titre du livre
+content-book-subtitle = Sous-titre du livre
+content-part-title = Titre de la partie
+content-chapter-title = Titre du chapitre
 promote-blocked-title = Chapitre non vide
 promote-blocked-text = Ce chapitre contient encore { $count } élément(s). Déplacez-les ou mettez-les à la corbeille avant de le convertir en chapitre à plat.
 
 ## Inspecteur (dock de droite) + bascules de docks dans la barre d'état
 inspector = Inspecteur
 inspector-empty = Ouvrez un élément pour l'inspecter.
-inspector-promote-to = Promouvoir en { $target }
+inspector-promote = Convertir en…
 statusbar-toggle-outline = Afficher/masquer le classeur
 statusbar-toggle-inspector = Afficher/masquer l'inspecteur
 
@@ -129,8 +138,8 @@ settings-autosave-hint = Les modifications sont enregistrées automatiquement au
 settings-sec-work = Œuvre
 settings-page-structure = Structure
 settings-group-chapters = Chapitres
-settings-chapter-flat = Écrire directement dans les chapitres
-settings-chapter-flat-hint = Activé : chaque chapitre est une surface d'écriture unique (à plat). Désactivé : les chapitres sont des dossiers contenant des scènes. Les nouveaux chapitres suivent ce choix ; les existants se convertissent via Promouvoir.
+settings-chapter-flat = Chapitres à plat
+settings-chapter-flat-hint = Activé : un chapitre est une seule ligne. Vous y écrivez, et il ne contient aucune scène. Désactivé : un chapitre est un dossier. Vous y écrivez également, mais il peut en outre contenir des scènes. Les nouveaux chapitres suivent ce réglage ; les existants se convertissent via Promouvoir.
 
 ## Accueil
 welcome-title = Bienvenue dans Skribisto
@@ -165,6 +174,11 @@ drop-open-here = Ouvrir ici
 drop-open-to-side = Ouvrir sur le côté
 
 ## Flux du manuscrit (Chapitre / Partie / Livre complet + Synopsis complet)
+# La page du conteneur lui-même. « Chapitre » = ce chapitre ; « Chapitre complet » =
+# ce chapitre et toutes ses scènes.
+segment-chapter = Chapitre
+segment-part = Partie
+segment-book = Livre
 full-chapter = Chapitre complet
 full-part = Partie complète
 full-book = Livre complet
@@ -305,7 +319,7 @@ settings-backup-retention = Combien en conserver
 settings-backup-retention-tiered = Par paliers
 settings-backup-retention-keep-n = Garder les N dernières
 settings-backup-retention-tip = Comment les anciennes copies sont supprimées.
-settings-backup-retention-tip-more = Le mode par paliers conserve une copie par heure pendant un jour, par jour pendant une semaine, par semaine pendant un mois, et par mois au-delà — l'historique récent reste dense et l'ancien s'éclaircit. « Garder les N dernières » conserve simplement les N copies les plus récentes. Dans les deux modes, les plus récentes (le minimum ci-dessous) sont toujours conservées.
+settings-backup-retention-tip-more = Le mode par paliers conserve une copie par heure pendant un jour, par jour pendant une semaine, par semaine pendant un mois, et par mois au-delà : l'historique récent reste dense et l'ancien s'éclaircit. « Garder les N dernières » conserve simplement les N copies les plus récentes. Dans les deux modes, les plus récentes (le minimum ci-dessous) sont toujours conservées.
 settings-backup-gfs-hourly = Par heure (dernières 24 h)
 settings-backup-gfs-daily = Par jour (dernière semaine)
 settings-backup-gfs-weekly = Par semaine (dernier mois)
@@ -345,9 +359,9 @@ new-work-template-light-novel-count = 15 chapitres
 new-work-template-novel-count = 20 chapitres
 new-work-template-notebook-count = notes libres
 # Bascule ChapterScene (modèles de roman)
-new-work-chapter-scene = Écrire directement dans les chapitres
-new-work-chapter-scene-tip = Chaque chapitre devient une page unique où vous écrivez directement (un *ChapterScene*). Laissez désactivé pour la disposition classique — chaque chapitre est un dossier contenant une scène vide, préférable quand un chapitre compte plusieurs scènes.
-new-work-chapter-scene-tip-more = L'arborescence du classeur de Skribisto est purement organisationnelle : les deux dispositions produisent le même livre. Un *dossier* de chapitre est défini par les scènes qu'il contient ; un *ChapterScene* est l'équivalent à plat qui ouvre le chapitre et porte son texte en une seule ligne. Vous pouvez librement mélanger les deux par la suite.
+new-work-chapter-scene = Chapitres à plat
+new-work-chapter-scene-tip = Chaque chapitre est une seule ligne où vous écrivez directement, sans scène en dessous. Laissez désactivé pour la disposition classique : le chapitre est alors un dossier, dans lequel vous écrivez tout autant, mais qui peut aussi contenir des scènes.
+new-work-chapter-scene-tip-more = Vous écrivez dans le chapitre dans les deux cas. La seule différence est sa capacité à *contenir* des scènes. L'arborescence du classeur de Skribisto est purement organisationnelle : les deux dispositions produisent le même livre, vous pouvez les mélanger librement, et Promouvoir convertit un chapitre de l'une à l'autre sans perdre un mot.
 # Validation des champs
 new-work-name-required = Saisissez un nom pour l'œuvre
 new-work-name-invalid = Ce nom ne contient aucun caractère utilisable

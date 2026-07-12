@@ -72,6 +72,9 @@ impl StreamLevel {
 }
 
 /// Does `sr` close a container at `level`?
+// The mock row model fabricates its rows, so under `--features mocks` these pure
+// functions are exercised only by the tests below.
+#[cfg_attr(feature = "mocks", allow(dead_code))]
 fn is_boundary(level: StreamLevel, sr: &BinderItemSubRole) -> bool {
     match level {
         // A chapter ends at the next chapter, part or book.
@@ -87,6 +90,7 @@ fn is_boundary(level: StreamLevel, sr: &BinderItemSubRole) -> bool {
 
 /// Is `sr` worth a row? Scene-bearing items are the prose; chapter and part heads
 /// are the structure headings that make a Full Book read as a manuscript.
+#[cfg_attr(feature = "mocks", allow(dead_code))]
 fn is_row(sr: &BinderItemSubRole) -> bool {
     sr.carries_scene() || sr.opens_chapter() || sr.opens_part()
 }
@@ -99,6 +103,7 @@ fn is_row(sr: &BinderItemSubRole) -> bool {
 /// is the pane's own section. (This matters now that a chapter folder `carries_scene()`
 /// like any scene: without the `skip`, a `Folder/ChapterScene` head would list itself.)
 /// `indent` / folder nesting is deliberately not consulted.
+#[cfg_attr(feature = "mocks", allow(dead_code))]
 pub fn row_indices(sub_roles: &[BinderItemSubRole], head: usize, level: StreamLevel) -> Vec<usize> {
     let mut out = Vec::new();
     for (i, sr) in sub_roles.iter().enumerate().skip(head + 1) {

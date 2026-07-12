@@ -46,16 +46,25 @@ create-tooltip-parent-sibling = Add a new { $kind } after the enclosing “{ $ta
 create-tooltip-top = Add a new { $kind } at the top level.
 
 ## Promote — convert a binder item to its paired type
-ctx-promote-to = Promote to { $target }
+ctx-promote = &Convert to
 promote-chapter-folder = Chapter folder
 promote-flat-chapter = Flat chapter
+promote-lossy-title = Nowhere to keep the text
+promote-lossy-text = A { $target } has nowhere to keep: { $kinds }. Move or clear that text first, then convert.
+# Content-role names, for explaining what a conversion cannot carry over.
+content-scene-text = Scene text
+content-note-text = Note text
+content-book-title = Book title
+content-book-subtitle = Book subtitle
+content-part-title = Part title
+content-chapter-title = Chapter title
 promote-blocked-title = Chapter not empty
 promote-blocked-text = This chapter still holds { $count } item(s). Move or trash them before converting it to a flat chapter.
 
 ## Inspector (trailing dock) + status-bar dock toggles
 inspector = Inspector
 inspector-empty = Open an item to inspect it.
-inspector-promote-to = Promote to { $target }
+inspector-promote = Convert to…
 statusbar-toggle-outline = Toggle the binder
 statusbar-toggle-inspector = Toggle the inspector
 
@@ -129,8 +138,8 @@ settings-autosave-hint = Changes are written to disk automatically as you write.
 settings-sec-work = Work
 settings-page-structure = Structure
 settings-group-chapters = Chapters
-settings-chapter-flat = Write directly in chapters
-settings-chapter-flat-hint = On: each chapter is a single writing surface (flat). Off: chapters are folders that hold scenes. New chapters follow this; existing ones change via Promote.
+settings-chapter-flat = Flat chapters
+settings-chapter-flat-hint = On: a chapter is a single row. You write into it, and it holds no scenes. Off: a chapter is a folder. You still write into it, but it can hold scenes as well. New chapters follow this setting; existing ones convert via Promote.
 
 ## Welcome
 welcome-title = Welcome to Skribisto
@@ -165,6 +174,11 @@ drop-open-here = Open here
 drop-open-to-side = Open to the side
 
 ## Manuscript streams (Full Chapter / Part / Book + Full Synopsis)
+# The container's own page. "Chapter" is this chapter; "Full Chapter" is this chapter
+# and every scene in it.
+segment-chapter = Chapter
+segment-part = Part
+segment-book = Book
 full-chapter = Full Chapter
 full-part = Full Part
 full-book = Full Book
@@ -305,7 +319,7 @@ settings-backup-retention = How many to keep
 settings-backup-retention-tiered = Tiered
 settings-backup-retention-keep-n = Keep last N
 settings-backup-retention-tip = How old backups are pruned.
-settings-backup-retention-tip-more = Tiered keeps one backup per hour for a day, per day for a week, per week for a month, and per month beyond — recent history stays dense and old history thins out. "Keep last N" simply keeps the N most recent backups. In both modes the newest few (the floor below) are always kept.
+settings-backup-retention-tip-more = Tiered keeps one backup per hour for a day, per day for a week, per week for a month, and per month beyond, so recent history stays dense and old history thins out. “Keep last N” simply keeps the N most recent copies. In both modes the newest copies (the minimum below) are always kept.
 settings-backup-gfs-hourly = Hourly (last 24 h)
 settings-backup-gfs-daily = Daily (last week)
 settings-backup-gfs-weekly = Weekly (last month)
@@ -345,9 +359,9 @@ new-work-template-light-novel-count = 15 chapters
 new-work-template-novel-count = 20 chapters
 new-work-template-notebook-count = free-form notes
 # ChapterScene toggle (novel templates)
-new-work-chapter-scene = Write directly in chapters
-new-work-chapter-scene-tip = Each chapter becomes a single page you write straight into (a *ChapterScene*). Leave this off for the classic layout — every chapter is a folder holding one empty scene, better when a chapter has several scenes.
-new-work-chapter-scene-tip-more = Skribisto's binder tree is organisational only, so both layouts compile to the same book. A chapter *folder* is defined by the scenes inside it; a *ChapterScene* is the flat equivalent that opens the chapter and holds its prose in one row. You can mix the two freely later.
+new-work-chapter-scene = Flat chapters
+new-work-chapter-scene-tip = Each chapter is a single row you write straight into, with no scenes under it. Leave this off for the classic layout, where a chapter is a folder: you write straight into that too, but it can hold scenes as well.
+new-work-chapter-scene-tip-more = You write into a chapter either way. The only difference is whether it can *contain* scenes. Skribisto's binder tree is organisational only, so both layouts compile to the same book, you can mix them freely, and Promote converts a chapter between the two without losing a word.
 # Field validation
 new-work-name-required = Enter a name for the work
 new-work-name-invalid = This name has no usable characters

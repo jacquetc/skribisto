@@ -201,17 +201,32 @@ settle()
 failures = []
 
 CASES = [
-    # (container to open, manuscript segment, editors expected in the prose stream)
-    ("Chapter Two", "Full Chapter", 4),   # the chapter's own prose + 3 scenes
-    ("Part One — Arrival", "Full Part", 6),  # chapter folder + 3 scenes + flat chapter + 1 scene
-    ("Book One", "Full Book", 6),         # same rows; the part heading has no prose
+    # (container, own-page segment, own-page editors, manuscript segment, stream editors)
+    #
+    # The own page is the container *as a writing surface*: its title, its synopsis, and
+    # — for a chapter — its own prose. A Part/Book has no prose, so one editor fewer.
+    ("Chapter Two", "Chapter", 3, "Full Chapter", 4),
+    ("Part One — Arrival", "Part", 2, "Full Part", 6),
+    ("Book One", "Book", 3, "Full Book", 6),  # book title + subtitle + synopsis
 ]
 
-for container, segment, min_editors in CASES:
+for container, own_seg, own_editors, segment, min_editors in CASES:
     print(f"\n=== {container} ===")
     if not click(container, "(binder row)"):
         failures.append(f"{container}: not in the binder")
         continue
+
+    # The container's own page must carry its prose, not just a synopsis.
+    if not click(own_seg, "(own segment)", minx=PANE_X):
+        failures.append(f"{container}: no {own_seg!r} segment")
+    else:
+        pn = pane_nodes()
+        eds = [n for n in pn if n.get("role") in ("TextInput", "MultilineTextInput", "TextField")]
+        print(f"  {own_seg:14} → {len(eds)} editors (own page)")
+        if len(eds) < own_editors:
+            failures.append(
+                f"{container}/{own_seg}: only {len(eds)} editors, expected >= {own_editors}")
+            print(pane_summary())
 
     for seg in (segment, "Full Synopsis"):
         if not click(seg, "(segment)", minx=PANE_X):

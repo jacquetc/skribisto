@@ -1,11 +1,24 @@
-// Custom implementation: "promote" toggles a binder item to its paired type
-// (flat Chapter <-> Chapter folder, Scene <-> Note, Folder <-> Note folder). The
-// target is derived from the item's current (role, sub_role); its content roles
-// are remapped into the target's vocabulary so prose survives (SceneText <->
-// NoteText). The item keeps its place in the binder. Undoable via a scoped
-// snapshot/restore of the item's own subtree (item + its Content rows). The
-// caller (UI) enforces the "empty folder before demoting a Chapter folder to a
-// flat Chapter" rule.
+// Custom implementation: "promote" converts a binder item to another type. It is no
+// longer a single paired toggle: a folder may become any *other* kind of folder (a
+// plain folder into a chapter, a part, a book, a notes folder), which is what lets a
+// writer outline in bare folders and then declare what each one is. Scene <-> Note and
+// chapter-folder <-> flat-chapter remain pairs.
+//
+// The caller names the target as a `skribisto_model::PromoteTarget` wire code. It is a
+// *code*, not an index into a menu: this use case re-derives the legal targets from the
+// item's CURRENT type and rejects anything not among them, so a stale menu can never
+// promote an item to a type that was never offered for it.
+//
+// Content is remapped into the target's vocabulary so the writer's text survives: a
+// title becomes the target's title (a chapter that becomes a part keeps its name, as a
+// part title), and SceneText <-> NoteText for Scene <-> Note. A conversion that would
+// leave non-empty text with nowhere to go (a chapter holding prose becoming a Part,
+// which has no prose) is REFUSED rather than silently discarding it. Empty rows never
+// block anything.
+//
+// The item keeps its place in the binder. Undoable via a scoped snapshot/restore of the
+// item's own subtree (item + its Content rows). The caller (UI) enforces the "empty the
+// folder before demoting a container to a leaf" rule.
 use crate::PromoteDto;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
@@ -13,6 +26,7 @@ use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::entities::{BinderItem, Content};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
+use skribisto_model::PromoteTarget;
 
 pub trait PromoteUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn PromoteUnitOfWorkTrait>;
@@ -60,22 +74,20 @@ impl PromoteUseCase {
             .flatten()
             .ok_or_else(|| anyhow!("promote: item not found"))?;
 
-        // The paired target type (a bidirectional toggle).
-        let (target_role, target_sub_role) =
-            skribisto_model::promote_target(&item.role, &item.sub_role)
-                .ok_or_else(|| anyhow!("promote: item type has no promote pair"))?;
+        // Resolve the requested target, and check it is one this item may actually
+        // become *right now* — not merely one it could become when the menu was built.
+        let target = PromoteTarget::from_code(dto.target)
+            .ok_or_else(|| anyhow!("promote: unknown target code {}", dto.target))?;
+        if !skribisto_model::promote_targets(&item.role, &item.sub_role).contains(&target) {
+            return Err(anyhow!(
+                "promote: {:?}/{:?} cannot become {:?}",
+                item.role,
+                item.sub_role,
+                target
+            ));
+        }
+        let (target_role, target_sub_role) = target.combo();
 
-        let now = chrono::Utc::now();
-
-        // 1. Flip the item's type (scalar update — relationships untouched).
-        let mut updated = item.clone();
-        updated.role = target_role.clone();
-        updated.sub_role = target_sub_role.clone();
-        updated.updated_at = now;
-        uow.update_binder_item(&updated)?;
-
-        // 2. Remap the item's content roles into the target's vocabulary so prose
-        //    survives (SceneText <-> NoteText for Scene<->Note; others unchanged).
         let content_ids =
             uow.get_binder_item_relationship(&item_id, &BinderItemRelationshipField::Contents)?;
         let rows: Vec<Content> = uow
@@ -83,6 +95,38 @@ impl PromoteUseCase {
             .into_iter()
             .flatten()
             .collect();
+
+        // Refuse before mutating anything if the target has nowhere to put text the item
+        // actually holds. Empty rows are ignored: an untouched prose slot must not stop a
+        // chapter becoming a part.
+        let non_empty: Vec<_> = rows
+            .iter()
+            .filter(|c| !c.data.trim().is_empty())
+            .map(|c| c.role.clone())
+            .collect();
+        let lost =
+            skribisto_model::promote_content_loss(&target_role, &target_sub_role, &non_empty);
+        if !lost.is_empty() {
+            return Err(anyhow!(
+                "promote: {:?} has nowhere to keep {:?}; clear or move that text first",
+                target,
+                lost
+            ));
+        }
+
+        let now = chrono::Utc::now();
+
+        // 1. Flip the item's type (scalar update; relationships untouched).
+        let mut updated = item.clone();
+        updated.role = target_role.clone();
+        updated.sub_role = target_sub_role.clone();
+        updated.updated_at = now;
+        uow.update_binder_item(&updated)?;
+
+        // 2. Remap the content roles into the target's vocabulary so the text survives.
+        //    Anything with no home here is empty (the guard above proved it), so it is
+        //    simply left behind: it is invalid for the new type, and the `.skrib`
+        //    serializer filters content by the constraint matrix on save.
         for mut row in rows {
             if let Some(new_role) =
                 skribisto_model::remap_content(&target_role, &target_sub_role, &row.role)

@@ -26,6 +26,7 @@ use frontend::direct_access::{
 use binder_item_management::{
     DuplicateDto, MergeTwoScenesDto, MoveDto, MovePlace, PromoteDto, SplitSceneDto,
 };
+use skribisto_model::PromoteTarget;
 use trash_management::{RestoreItemsDto, TrashBinderDto, TrashBinderItemsDto};
 
 // ───────────────────────────── fixture helpers ─────────────────────────────
@@ -910,8 +911,15 @@ fn promote_undo_redo() {
     add_content(&fx, s, ContentRole::SceneText, "prose");
 
     let stack = undo_redo_commands::create_new_stack(&fx.ctx);
-    binder_item_management_commands::promote(&fx.ctx, Some(stack), &PromoteDto { item_id: s })
-        .expect("promote");
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::Note.code(),
+        },
+    )
+    .expect("promote");
 
     assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
     assert!(has_content_role(&fx, s, ContentRole::NoteText));
@@ -923,6 +931,189 @@ fn promote_undo_redo() {
     undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
     assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
     assert!(has_content_role(&fx, s, ContentRole::NoteText));
+}
+
+/// The headline of multi-target promote: a plain folder becomes any other kind of
+/// folder. It carries only a synopsis, which every folder type allows, so nothing is
+/// lost and its text comes along.
+#[test]
+fn a_plain_folder_becomes_any_other_kind_of_folder() {
+    for (target, want) in [
+        (
+            PromoteTarget::ChapterFolder,
+            BinderItemSubRole::ChapterScene,
+        ),
+        (PromoteTarget::PartFolder, BinderItemSubRole::Part),
+        (PromoteTarget::BookFolder, BinderItemSubRole::Book),
+        (PromoteTarget::NoteFolder, BinderItemSubRole::Note),
+    ] {
+        let fx = make_fixture();
+        // A plain grouping folder — `Folder/None`, the shape you outline in.
+        let f = mk_item(&fx.ctx, fx.setup, "Draft", 0, BinderItemRole::Folder);
+        set_sub_role(&fx, f, BinderItemSubRole::None);
+        wire_binder(&fx.ctx, fx.setup, fx.binder2, &[f]);
+        add_content(&fx, f, ContentRole::SynopsisText, "what happens here");
+
+        binder_item_management_commands::promote(
+            &fx.ctx,
+            None,
+            &PromoteDto {
+                item_id: f,
+                target: target.code(),
+            },
+        )
+        .unwrap_or_else(|e| panic!("promote to {target:?}: {e}"));
+
+        let dto = item(&fx.ctx, f);
+        assert_eq!(dto.role, BinderItemRole::Folder);
+        assert_eq!(dto.sub_role, want, "promoting to {target:?}");
+        assert_eq!(
+            content_data(&fx, f, ContentRole::SynopsisText),
+            "what happens here",
+            "the synopsis must survive the conversion to {target:?}"
+        );
+    }
+}
+
+/// A name outlives the kind of thing it names: a chapter that becomes a part keeps its
+/// title, remapped into the part's vocabulary.
+#[test]
+fn a_title_is_carried_across_a_type_change() {
+    let fx = make_fixture();
+    let ch = mk_item(
+        &fx.ctx,
+        fx.setup,
+        "The Long Road",
+        0,
+        BinderItemRole::Folder,
+    );
+    set_sub_role(&fx, ch, BinderItemSubRole::ChapterScene);
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[ch]);
+    add_content(&fx, ch, ContentRole::ChapterTitle, "The Long Road");
+
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        None,
+        &PromoteDto {
+            item_id: ch,
+            target: PromoteTarget::PartFolder.code(),
+        },
+    )
+    .expect("an empty chapter becomes a part");
+
+    assert_eq!(item(&fx.ctx, ch).sub_role, BinderItemSubRole::Part);
+    assert_eq!(
+        content_data(&fx, ch, ContentRole::PartTitle),
+        "The Long Road",
+        "the chapter title became the part title"
+    );
+}
+
+/// A conversion that has nowhere to keep the writer's text is refused outright, not
+/// quietly performed with the prose dropped. A Part carries no scene prose.
+#[test]
+fn promote_refuses_to_discard_text() {
+    let fx = make_fixture();
+    let ch = mk_item(&fx.ctx, fx.setup, "Chapter", 0, BinderItemRole::Folder);
+    set_sub_role(&fx, ch, BinderItemSubRole::ChapterScene);
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[ch]);
+    add_content(&fx, ch, ContentRole::SceneText, "words the writer typed");
+
+    let res = binder_item_management_commands::promote(
+        &fx.ctx,
+        None,
+        &PromoteDto {
+            item_id: ch,
+            target: PromoteTarget::PartFolder.code(),
+        },
+    );
+    assert!(res.is_err(), "a Part has nowhere to keep scene prose");
+    // Nothing moved.
+    assert_eq!(item(&fx.ctx, ch).sub_role, BinderItemSubRole::ChapterScene);
+    assert_eq!(
+        content_data(&fx, ch, ContentRole::SceneText),
+        "words the writer typed"
+    );
+
+    // An *empty* prose row never blocks the conversion.
+    let fx2 = make_fixture();
+    let ch2 = mk_item(&fx2.ctx, fx2.setup, "Chapter", 0, BinderItemRole::Folder);
+    set_sub_role(&fx2, ch2, BinderItemSubRole::ChapterScene);
+    wire_binder(&fx2.ctx, fx2.setup, fx2.binder2, &[ch2]);
+    add_content(&fx2, ch2, ContentRole::SceneText, "");
+    binder_item_management_commands::promote(
+        &fx2.ctx,
+        None,
+        &PromoteDto {
+            item_id: ch2,
+            target: PromoteTarget::PartFolder.code(),
+        },
+    )
+    .expect("an empty prose row must not block the conversion");
+    assert_eq!(item(&fx2.ctx, ch2).sub_role, BinderItemSubRole::Part);
+}
+
+/// The DTO carries a stable *code*, not a menu index, and the use case re-derives the
+/// legal targets from the item's current type: a target that was never offered for this
+/// item is refused.
+#[test]
+fn promote_refuses_a_target_that_was_never_offered() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Scene");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+
+    // A Scene may only become a Note.
+    let res = binder_item_management_commands::promote(
+        &fx.ctx,
+        None,
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::BookFolder.code(),
+        },
+    );
+    assert!(res.is_err(), "a Scene cannot become a Book folder");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Scene);
+
+    // An unknown code is rejected too.
+    assert!(
+        binder_item_management_commands::promote(
+            &fx.ctx,
+            None,
+            &PromoteDto {
+                item_id: s,
+                target: 9999,
+            },
+        )
+        .is_err()
+    );
+}
+
+/// Set an item's sub_role directly (the fixture helper builds Text items).
+fn set_sub_role(fx: &Fixture, item_id: EntityId, sub_role: BinderItemSubRole) {
+    let mut dto = item(&fx.ctx, item_id);
+    dto.sub_role = sub_role;
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            id: dto.id,
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            title: dto.title,
+            sub_title: dto.sub_title,
+            role: dto.role,
+            sub_role: dto.sub_role,
+            label: dto.label,
+            activated: dto.activated,
+            is_favorite: dto.is_favorite,
+            is_printable: dto.is_printable,
+            indent: dto.indent,
+            word_count_goal: dto.word_count_goal,
+            char_count_goal: dto.char_count_goal,
+            dict_language: dto.dict_language,
+        },
+    )
+    .expect("set sub_role");
 }
 
 /// split_scene creates a new scene after the source; the scoped (binder-rooted)

@@ -14,12 +14,13 @@ use bastyde::widgets::{DockOpenLocation, DockSide, DockWidgetId, DockingModel, I
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_commands, binder_item_commands, binder_item_management_commands,
+    binder_commands, binder_item_commands, binder_item_management_commands, content_commands,
     trash_management_commands, undo_redo_commands, work_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
+use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::direct_access::{
     CreateBinderDto, CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto,
 };
@@ -27,7 +28,7 @@ use frontend::direct_access::{
 use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace, PromoteDto};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 
-use skribisto_model::{Recommendation, Relation, SubRoleExt};
+use skribisto_model::{PromoteTarget, Recommendation, Relation, SubRoleExt};
 
 use crate::app_ids::AppIds;
 use crate::binder_placement;
@@ -387,32 +388,58 @@ impl OutlineViewModel {
 
     /// The paired promote target for a row, if any — `(role, sub_role)` of the
     /// type this item would become (see `skribisto_model::promote_target`).
-    pub fn promote_target_of(
-        &self,
-        key: BinderTreeKey,
-    ) -> Option<(BinderItemRole, BinderItemSubRole)> {
+    /// Every type `key` may be converted to, in menu order. Empty when it has none.
+    pub fn promote_targets_of(&self, key: BinderTreeKey) -> Vec<PromoteTarget> {
         let BinderTreeKey::Item(item_id) = key else {
-            return None;
+            return Vec::new();
         };
-        let dto = self.item_dto(item_id)?;
-        skribisto_model::promote_target(&dto.role, &dto.sub_role)
+        let Some(dto) = self.item_dto(item_id) else {
+            return Vec::new();
+        };
+        skribisto_model::promote_targets(&dto.role, &dto.sub_role)
     }
 
-    /// The number of child items that block demoting `key` — non-zero only when
-    /// `key` is a container becoming a leaf (Chapter folder → flat Chapter) and it
-    /// still holds items. The caller shows a "move or trash them first" prompt.
-    pub fn demote_blocked_children(&self, key: BinderTreeKey) -> usize {
+    /// The content roles whose text `key` would **lose** by becoming `target` (empty
+    /// rows never count). Non-empty means the conversion is refused: a chapter holding
+    /// prose cannot become a Part, which has nowhere to put it.
+    pub fn promote_content_loss(
+        &self,
+        key: BinderTreeKey,
+        target: PromoteTarget,
+    ) -> Vec<ContentRole> {
         let BinderTreeKey::Item(item_id) = key else {
-            return 0;
+            return Vec::new();
         };
-        let Some((target_role, _)) = self.promote_target_of(key) else {
+        let (target_role, target_sub_role) = target.combo();
+        let content_ids = binder_item_commands::get_binder_item_relationship(
+            &self.app_ctx,
+            &item_id,
+            &BinderItemRelationshipField::Contents,
+        )
+        .unwrap_or_default();
+        let non_empty: Vec<ContentRole> =
+            content_commands::get_content_multi(&self.app_ctx, &content_ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .filter(|c| !c.data.trim().is_empty())
+                .map(|c| c.role)
+                .collect();
+        skribisto_model::promote_content_loss(&target_role, &target_sub_role, &non_empty)
+    }
+
+    /// The number of child items that block converting `key` into `target` — non-zero
+    /// only when a container would become a leaf (a chapter folder → a flat chapter)
+    /// while it still holds items. The caller shows a "move or trash them first" prompt.
+    pub fn demote_blocked_children(&self, key: BinderTreeKey, target: PromoteTarget) -> usize {
+        let BinderTreeKey::Item(item_id) = key else {
             return 0;
         };
         let Some(dto) = self.item_dto(item_id) else {
             return 0;
         };
         // Only a container → leaf conversion is gated on emptiness.
-        if !(dto.role == BinderItemRole::Folder && target_role == BinderItemRole::Item) {
+        if !(dto.role == BinderItemRole::Folder && target.combo().0 == BinderItemRole::Item) {
             return 0;
         }
         let Some(binder) = self.model.binder_of(&key) else {
@@ -425,14 +452,18 @@ impl OutlineViewModel {
         binder_placement::subtree_end(&order, &meta, pos, dto.indent) - (pos + 1)
     }
 
-    /// Promote/demote a binder item to its paired type (undoable). No-op if the
-    /// item has no promote pair. The demote-empty guard is the caller's job
-    /// (`demote_blocked_children`); this trusts it.
-    pub fn promote(&self, key: BinderTreeKey) {
+    /// Convert a binder item to `target` (undoable). The use case re-validates the
+    /// target against the item's current type and refuses a conversion that would drop
+    /// text, so this is safe to call even from a stale menu. The demote-empty guard is
+    /// the caller's job (`demote_blocked_children`); this trusts it.
+    pub fn promote(&self, key: BinderTreeKey, target: PromoteTarget) {
         let BinderTreeKey::Item(item_id) = key else {
             return;
         };
-        let dto = PromoteDto { item_id };
+        let dto = PromoteDto {
+            item_id,
+            target: target.code(),
+        };
         if binder_item_management_commands::promote(&self.app_ctx, self.stack(), &dto).is_ok() {
             self.reload();
         }
@@ -1261,7 +1292,7 @@ mod tests {
                 0,
                 0,
             );
-            outline.promote(BinderTreeKey::Item(scene));
+            outline.promote(BinderTreeKey::Item(scene), PromoteTarget::Note);
             let dto = outline.item_dto(scene).unwrap();
             assert_eq!(dto.role, BinderItemRole::Item);
             assert_eq!(dto.sub_role, BinderItemSubRole::Note);
@@ -1278,7 +1309,7 @@ mod tests {
                 0,
                 0,
             );
-            outline.promote(BinderTreeKey::Item(cs));
+            outline.promote(BinderTreeKey::Item(cs), PromoteTarget::ChapterFolder);
             let dto = outline.item_dto(cs).unwrap();
             assert_eq!(dto.role, BinderItemRole::Folder);
             assert_eq!(dto.sub_role, BinderItemSubRole::ChapterScene);
@@ -1311,13 +1342,64 @@ mod tests {
                 1,
                 2,
             );
-            // The chapter folder holds two scenes → demoting to a flat chapter is blocked.
+            // The chapter folder holds two scenes, so collapsing it into a flat chapter
+            // is blocked...
             assert_eq!(
-                outline.demote_blocked_children(BinderTreeKey::Item(chapter)),
+                outline.demote_blocked_children(
+                    BinderTreeKey::Item(chapter),
+                    PromoteTarget::FlatChapter
+                ),
                 2
             );
-            // A leaf scene never blocks (it has no promote-to-leaf demote).
-            assert_eq!(outline.demote_blocked_children(BinderTreeKey::Item(s1)), 0);
+            // ...but becoming another *folder* is not: nothing is being collapsed.
+            assert_eq!(
+                outline.demote_blocked_children(
+                    BinderTreeKey::Item(chapter),
+                    PromoteTarget::PartFolder
+                ),
+                0
+            );
+            // A leaf scene has no container to empty.
+            assert_eq!(
+                outline.demote_blocked_children(BinderTreeKey::Item(s1), PromoteTarget::Note),
+                0
+            );
+        }
+
+        /// The headline of this feature: outline in bare folders, then declare what each
+        /// one is. A plain folder carries only a synopsis, which every folder type allows,
+        /// so every one of these conversions is lossless.
+        #[test]
+        fn a_plain_folder_becomes_any_other_kind_of_folder() {
+            for (target, want) in [
+                (
+                    PromoteTarget::ChapterFolder,
+                    BinderItemSubRole::ChapterScene,
+                ),
+                (PromoteTarget::PartFolder, BinderItemSubRole::Part),
+                (PromoteTarget::BookFolder, BinderItemSubRole::Book),
+                (PromoteTarget::NoteFolder, BinderItemSubRole::Note),
+            ] {
+                let (outline, binder) = seed();
+                let f = seed_item(
+                    &outline,
+                    binder,
+                    BinderItemRole::Folder,
+                    BinderItemSubRole::None,
+                    0,
+                    0,
+                );
+                assert!(
+                    outline
+                        .promote_targets_of(BinderTreeKey::Item(f))
+                        .contains(&target),
+                    "a plain folder must offer {target:?}"
+                );
+                outline.promote(BinderTreeKey::Item(f), target);
+                let dto = outline.item_dto(f).unwrap();
+                assert_eq!(dto.role, BinderItemRole::Folder);
+                assert_eq!(dto.sub_role, want, "promoting to {target:?}");
+            }
         }
     }
 }

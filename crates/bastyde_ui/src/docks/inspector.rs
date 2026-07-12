@@ -13,13 +13,12 @@ use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     Button, ButtonVariant, DockOpenLocation, DockSide, DockWidget, DockWidgetId, Padding,
-    TextWidget, VStack,
+    PopoverButton, TextWidget, VStack,
 };
 
 use frontend::AppContext;
 
-use crate::create_labels::promote_target_label;
-use crate::docks::outline::promote_with_guard;
+use crate::docks::outline::promote_menu;
 use crate::models::BinderTreeKey;
 use crate::singles::SingleBinderItem;
 use crate::view_models::OutlineViewModel;
@@ -82,17 +81,17 @@ impl Widget for Inspector {
                 let mut col = VStack::new()
                     .spacing(12.0)
                     .child(TextWidget::new(lit!(d.title.clone())).style(TextStyleRole::BodyBold));
-                // The headline affordance: convert to the paired type.
-                if let Some((target_role, target_sub_role)) =
-                    skribisto_model::promote_target(&d.role, &d.sub_role)
-                {
-                    let label = promote_target_label(&target_role, &target_sub_role);
+                // The headline affordance: convert this item to another type. A folder
+                // can become any other kind of folder, so it is a menu, not a button.
+                let key = BinderTreeKey::Item(d.id);
+                let targets = self.outline.promote_targets_of(key);
+                if !targets.is_empty() {
                     let outline = self.outline.clone();
-                    let key = BinderTreeKey::Item(d.id);
                     col = col.child(
-                        Button::new(tr!(inspector_promote_to(target = label.resolve_now())))
-                            .variant(ButtonVariant::Tinted)
-                            .on_activate_fn(move |ctx| promote_with_guard(&outline, key, ctx)),
+                        PopoverButton::new(
+                            Button::new(tr!(inspector_promote())).variant(ButtonVariant::Tinted),
+                        )
+                        .content(promote_menu(outline, key)),
                     );
                 }
                 Box::new(Padding::symmetric(16.0, 16.0).child(col))

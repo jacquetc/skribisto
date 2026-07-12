@@ -20,6 +20,8 @@ use bastyde::widgets::{
 
 use frontend::AppContext;
 
+use skribisto_model::PromoteTarget;
+
 use crate::binder_switcher_button::{BinderSwitcherButton, binder_search_button};
 use crate::create_labels::{recommendation_label, recommendation_tooltip};
 use crate::docks::create_split_button::CreateSplitButton;
@@ -303,18 +305,16 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
             Box::new(add_recommendations_menu(add_outline.clone(), key)) as Box<dyn Widget>
         }));
 
-    // "Promote to <target>" — convert this item to its paired type, when it has
-    // one (flat Chapter ↔ Chapter folder, Scene ↔ Note, Folder ↔ Note folder).
-    // Demoting a non-empty Chapter folder to a flat Chapter is blocked behind a
-    // "move or trash its contents first" prompt.
-    if let Some((target_role, target_sub_role)) = outline.promote_target_of(key) {
-        let label = crate::create_labels::promote_target_label(&target_role, &target_sub_role);
+    // "Convert to ▸" — every type this item may become. A folder can become any other
+    // kind of folder, so this is a submenu, not a single paired toggle.
+    let targets = outline.promote_targets_of(key);
+    if !targets.is_empty() {
         let promote_vm = outline.clone();
-        menu = menu.separator().item(
-            MenuItem::new(tr!(ctx_promote_to(target = label.resolve_now())))
-                .icon(crate::binder_icons::sub_role_icon(&target_sub_role))
-                .on_activate_fn(move |ctx| promote_with_guard(&promote_vm, key, ctx)),
-        );
+        menu = menu
+            .separator()
+            .item(MenuItem::submenu(tr!(ctx_promote()), move || {
+                Box::new(promote_menu(promote_vm.clone(), key)) as Box<dyn Widget>
+            }));
     }
 
     menu.separator()
@@ -332,19 +332,62 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         )
 }
 
-/// Promote `key` to its paired type, guarding a non-empty Chapter-folder → flat
-/// Chapter demote behind a "move or trash its contents first" prompt. Shared by
-/// the outline context menu and the Inspector's Promote button.
-pub fn promote_with_guard(outline: &OutlineViewModel, key: BinderTreeKey, ctx: &mut EventContext) {
-    let blocked = outline.demote_blocked_children(key);
+/// The "Convert to ▸" submenu: every type `key` may become, each behind the guards in
+/// [`promote_with_guard`]. Shared by the outline context menu and the Inspector.
+pub fn promote_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
+    let mut menu = MenuList::new();
+    for target in outline.promote_targets_of(key) {
+        let (_, sub_role) = target.combo();
+        let vm = outline.clone();
+        menu = menu.item(
+            MenuItem::new(crate::create_labels::promote_target_label(target))
+                .icon(crate::binder_icons::sub_role_icon(&sub_role))
+                .on_activate_fn(move |ctx| promote_with_guard(&vm, key, target, ctx)),
+        );
+    }
+    menu
+}
+
+/// Convert `key` into `target`, behind two guards:
+///
+/// * a container becoming a leaf must be **empty** (a chapter folder still holding
+///   scenes cannot collapse into a single flat chapter);
+/// * the target must have somewhere to keep the item's text (a chapter holding prose
+///   cannot become a Part, which has no prose at all).
+///
+/// Both are refused with an explanation rather than silently discarding anything. The
+/// use case enforces the same invariants, so this is presentation, not protection.
+pub fn promote_with_guard(
+    outline: &OutlineViewModel,
+    key: BinderTreeKey,
+    target: PromoteTarget,
+    ctx: &mut EventContext,
+) {
+    let blocked = outline.demote_blocked_children(key, target);
     if blocked > 0 {
         MessageBox::warning(tr!(promote_blocked_title()))
             .text(tr!(promote_blocked_text(count = blocked.to_string())))
             .buttons(MessageBoxButtons::Ok)
             .present(ctx);
-    } else {
-        outline.promote(key);
+        return;
     }
+    let lost = outline.promote_content_loss(key, target);
+    if !lost.is_empty() {
+        let kinds = lost
+            .iter()
+            .map(|r| crate::create_labels::content_role_label(r).resolve_now())
+            .collect::<Vec<_>>()
+            .join(", ");
+        MessageBox::warning(tr!(promote_lossy_title()))
+            .text(tr!(promote_lossy_text(
+                target = crate::create_labels::promote_target_label(target).resolve_now(),
+                kinds = kinds
+            )))
+            .buttons(MessageBoxButtons::Ok)
+            .present(ctx);
+        return;
+    }
+    outline.promote(key, target);
 }
 
 /// The "Add ▸" submenu content: the recommended new-item types for `key`, in

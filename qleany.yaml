@@ -638,6 +638,11 @@ features:
       fields:
       - name: item_id
         type: uinteger
+      # A `skribisto_model::PromoteTarget` wire code. Not a list index: the use case
+      # re-derives the legal targets from the item's *current* type and rejects a code
+      # that isn't among them, so a stale menu can never promote to the wrong type.
+      - name: target
+        type: uinteger
 - name: handling_app_lifecycle
   use_cases:
   - name: initialize_app
