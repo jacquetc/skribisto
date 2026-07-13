@@ -32,7 +32,16 @@ skrib_format = { workspace = true }
 # sniffing, destination-reachability probes) off the UI thread without
 # reaching for the Qleany `LongOperation` machinery, which is for backend
 # store operations, not local I/O.
-bastyde = { path = "../../../bastyde/crates/bastyde", features = ["automation", "async"] }
+# `async-std` (not the bare `async`): it implies `async`, and async-std is
+# *already* in our dependency tree via the default `file-dialog` feature (rfd).
+# So the reactor is free — same binary, strictly more capability. Bare `async`
+# would install an executor with **no reactor**, which works for our
+# `spawn_blocking`-only futures but silently never wakes if anything ever awaits
+# a native future (a timer, a socket) — a runtime hang, not a compile error.
+bastyde = { path = "../../../bastyde/crates/bastyde", features = [
+    "automation",
+    "async-std",
+] }
 # Cross-instance IPC (multi-process window switching): Unix domain socket on
 # Linux/macOS, named pipe on Windows — one API.
 interprocess = "2"

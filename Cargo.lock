@@ -546,6 +546,7 @@ version = "0.6.2"
 dependencies = [
  "bastyde-app",
  "bastyde-async",
+ "bastyde-async-std",
  "bastyde-automation",
  "bastyde-canvas",
  "bastyde-core",
@@ -592,6 +593,16 @@ dependencies = [
  "bastyde-app",
  "bastyde-core",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "bastyde-async-std"
+version = "0.6.2"
+dependencies = [
+ "async-std",
+ "bastyde-app",
+ "bastyde-async",
+ "bastyde-core",
 ]
 
 [[package]]
@@ -760,6 +771,7 @@ dependencies = [
  "bastyde-data",
  "etcetera",
  "fs2",
+ "notify",
  "serde",
  "tempfile",
  "thiserror 2.0.18",
