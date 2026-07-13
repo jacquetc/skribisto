@@ -29,7 +29,7 @@ mod imp {
 
     use bastyde::data::ListModel;
     use bastyde::prelude::*;
-    use bastyde::settings::{AppPaths, MruEntry, MruList};
+    use bastyde::settings::{AppPaths, Keyed, MruEntry, MruList};
     use serde::{Deserialize, Serialize};
 
     use frontend::AppContext;
@@ -51,11 +51,14 @@ mod imp {
         pinned: bool,
     }
 
-    impl MruEntry for RecentEntry {
-        type Key = str;
-        fn key(&self) -> &str {
-            &self.path
+    impl Keyed for RecentEntry {
+        type Key = String;
+        fn key(&self) -> String {
+            self.path.clone()
         }
+    }
+
+    impl MruEntry for RecentEntry {
         fn is_pinned(&self) -> bool {
             self.pinned
         }
@@ -233,8 +236,22 @@ mod imp {
         }
 
         /// Re-derive the reachable view from the MRU, then bump `version`.
+        ///
+        /// `reconcile_by_key` (keyed on `absolute_path`, this list's stable
+        /// identity — see the module doc) rather than `replace_all`: the latter
+        /// emits `DataChange::Reset`, which would blow away the Welcome list's
+        /// row-level state (selection, in-flight open) every time *any* window
+        /// records an open — including a peer process's, once the settings
+        /// watcher or another local refresh trigger fires this. Reconciling
+        /// emits only the granular inserts/removes/moves/updates the new
+        /// snapshot actually needs, so an unrelated peer-driven refresh doesn't
+        /// reset the list out from under the user.
         fn refresh(&self) {
-            self.inner.model.replace_all(visible_rows(&self.inner.mru));
+            self.inner
+                .model
+                .reconcile_by_key(visible_rows(&self.inner.mru), |dto| {
+                    dto.absolute_path.clone()
+                });
             let v = &self.inner.version;
             v.set(v.get().wrapping_add(1));
         }

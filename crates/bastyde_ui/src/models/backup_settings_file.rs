@@ -19,28 +19,41 @@
 //! `skrib_format::retention::RetentionPolicy` from them — one conversion, in one
 //! place, next to the engine that consumes it.
 //!
-//! **T1-6 — cross-process shared mode.** Skribisto runs **one process per
+//! **T1-6 — cross-process safety.** Skribisto runs **one process per
 //! project**, and every instance shares this same `<config_dir>/backup.toml` —
 //! two windows editing overrides for two different projects (or the general
-//! policy) previously silently clobbered each other, because the default
-//! `SettingsFile::load` mode reads once and re-serializes an increasingly stale
-//! in-memory snapshot on every write. This service instead opens the file via
-//! [`SettingsFile::load_shared`], which performs a locked read-modify-write on
-//! every `mutate`/`replace` (re-reading fresh from disk under an exclusive lock
-//! before applying the change), and every **read** path calls
-//! [`SettingsFile::reload_if_stale`] first (a cheap mtime check) so a peer's
-//! change is picked up here too. See `bastyde_settings::file`'s module docs for
-//! the full contract.
+//! policy) must never clobber each other. That is now `SettingsFile<T>`'s
+//! **only** mode (`load_shared` is gone — `load` performs the locked
+//! read-modify-write unconditionally, see `bastyde_settings::file`'s module
+//! docs), so this service just calls [`SettingsFile::load`] like any other
+//! persisted type.
+//!
+//! **Reads no longer eagerly reload.** The old per-read `reload_if_stale()`
+//! poll before every getter is gone: cross-process *write* safety was always
+//! the point of that call's sibling machinery, but eagerly re-`stat`ing the
+//! file on every single read was a workaround for not having a real
+//! change-notification path. Now there is one: this handle is registered
+//! into the app's shared `bastyde::settings::SettingsRegistry` (see
+//! `App::build` in `app.rs`), and the app's `SettingsWatcher` calls
+//! [`Reloadable::reload_from_disk`](bastyde::settings::Reloadable::reload_from_disk)
+//! on it the moment a peer's write lands on disk — no polling, and reads in
+//! between two writes are just plain in-memory reads. [`as_reloadable`]
+//! exposes the hook that registration needs. Tests that stand in for two
+//! processes (no live app, no watcher) call `as_reloadable().reload_from_disk()`
+//! directly to simulate the watcher firing.
 
+use std::rc::Rc;
 use std::time::Duration;
 
-use bastyde::settings::{AppPaths, Migrator, SettingsFile, SettingsFileError, Versioned};
+use bastyde::settings::{
+    AppPaths, Migrator, Reloadable, SettingsFile, SettingsFileError, Versioned,
+};
 use serde::{Deserialize, Serialize};
 
-/// Debounce for backup-settings writes. Vestigial now that every entry point
-/// below opens the file in shared mode (`load_shared`'s writes are always
-/// synchronous, bypassing the debounce entirely — see the module docs) — kept
-/// only so `open`/`open_with_delay`'s signature stays stable for callers.
+/// Debounce parameter accepted by [`open_with_delay`]/[`open_at`] for call-site
+/// stability only. `SettingsFile::load`'s writes are always a synchronous
+/// locked read-modify-write now (see the module docs) — there is no debounce
+/// left to configure, exactly like `bastyde-settings`' own `WindowStateService`.
 const SETTINGS_DEBOUNCE: Duration = Duration::from_millis(500);
 
 /// Which retention strategy a policy uses.
@@ -142,7 +155,7 @@ pub struct PerProjectBackupOverride {
     pub policy: BackupPolicy,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct BackupSettingsFile {
     #[serde(default = "default_version")]
     pub version: u32,
@@ -188,15 +201,15 @@ pub struct BackupSettingsService {
 }
 
 impl BackupSettingsService {
-    /// Open `backup.toml` under `paths` in shared (cross-process) mode (T1-6).
+    /// Open `backup.toml` under `paths` (T1-6: cross-process safe by default).
     pub fn open(paths: &AppPaths) -> Result<Self, SettingsFileError> {
         Self::open_with_delay(paths, SETTINGS_DEBOUNCE)
     }
 
-    /// `delay` is accepted for signature stability but has no effect: shared
-    /// mode's writes are always synchronous (see the module docs).
+    /// `delay` is accepted for call-site stability but has no effect: writes
+    /// are always a synchronous locked read-modify-write (see the module docs).
     pub fn open_with_delay(paths: &AppPaths, _delay: Duration) -> Result<Self, SettingsFileError> {
-        let file = SettingsFile::load_shared(paths.config_file("backup"), Migrator::new())?;
+        let file = SettingsFile::load(paths.config_file("backup"), Migrator::new())?;
         Ok(Self { file })
     }
 
@@ -204,22 +217,21 @@ impl BackupSettingsService {
     /// only for signature stability (see [`open_with_delay`](Self::open_with_delay)).
     #[cfg_attr(not(test), allow(dead_code))]
     pub fn open_at(path: std::path::PathBuf, _delay: Duration) -> Result<Self, SettingsFileError> {
-        let file = SettingsFile::load_shared(path, Migrator::new())?;
+        let file = SettingsFile::load(path, Migrator::new())?;
         Ok(Self { file })
     }
 
     /// Graceful fallback when the config dir is unavailable: a throwaway
     /// per-process temp file, so the app still runs (backups just won't persist
-    /// their settings across restarts). Opened in shared mode too, for
-    /// consistency (harmless here since the path is unique per process).
+    /// their settings across restarts).
     pub fn in_memory_default() -> Self {
         let path =
             std::env::temp_dir().join(format!("skribisto-backup-{}.toml", std::process::id()));
-        SettingsFile::load_shared(path, Migrator::new())
+        SettingsFile::load(path, Migrator::new())
             .map(|file| Self { file })
             .unwrap_or_else(|_| {
                 // Even the temp path failed; use a last-ditch in-cwd name.
-                let file = SettingsFile::load_shared(
+                let file = SettingsFile::load(
                     std::path::PathBuf::from(".skribisto-backup.toml"),
                     Migrator::new(),
                 )
@@ -228,20 +240,16 @@ impl BackupSettingsService {
             })
     }
 
-    /// Pick up a peer process's change before a read (T1-6): a cheap mtime
-    /// check, so two windows sharing this file (one process per project) never
-    /// read a stale snapshot. Logged, not propagated — a reload failure should
-    /// not turn every settings read into a `Result`; the handle simply keeps
-    /// whatever it last had.
-    fn reload(&self) {
-        if let Err(e) = self.file.reload_if_stale() {
-            eprintln!("backup settings: reload_if_stale failed: {e}");
-        }
+    /// The `Reloadable` hook for the app's shared `SettingsRegistry` — register
+    /// this (and keep the returned handle alive) so the settings-file watcher
+    /// picks up a peer process's write and refreshes this handle in place, with
+    /// no per-read polling. See the module docs.
+    pub fn as_reloadable(&self) -> Rc<dyn Reloadable> {
+        Rc::new(self.file.clone())
     }
 
     // ── general policy ──
     pub fn general(&self) -> BackupPolicy {
-        self.reload();
         self.file.borrow().general.clone()
     }
 
@@ -251,7 +259,6 @@ impl BackupSettingsService {
 
     // ── per-project overrides ──
     pub fn has_override(&self, work_uid: &str) -> bool {
-        self.reload();
         self.file
             .borrow()
             .overrides
@@ -261,7 +268,6 @@ impl BackupSettingsService {
 
     /// The policy in effect for `work_uid`: its override if set, else general.
     pub fn effective_for(&self, work_uid: &str) -> BackupPolicy {
-        self.reload();
         let f = self.file.borrow();
         f.overrides
             .iter()
@@ -300,7 +306,6 @@ impl BackupSettingsService {
 
     // ── per-destination bookkeeping (dedup + "last backup") ──
     pub fn destination_state(&self, work_uid: &str, dir: &str) -> Option<DestinationState> {
-        self.reload();
         self.file
             .borrow()
             .project_states
@@ -312,7 +317,6 @@ impl BackupSettingsService {
 
     /// Most recent successful-backup timestamp across this project's destinations.
     pub fn last_backup_at(&self, work_uid: &str) -> Option<String> {
-        self.reload();
         self.file
             .borrow()
             .project_states
@@ -363,7 +367,6 @@ impl BackupSettingsService {
 
     // ── one-time no-backups nudge ──
     pub fn was_nudged(&self, work_uid: &str) -> bool {
-        self.reload();
         self.file
             .borrow()
             .project_states
@@ -512,8 +515,9 @@ mod tests {
         // at this crate's own level: two `BackupSettingsService`s standing in for
         // two Skribisto processes (one process per project) sharing one
         // `backup.toml`, each writing a *different* project's override. Without
-        // `load_shared`'s locked read-modify-write, the second write's stale
-        // in-memory snapshot would silently drop the first.
+        // `SettingsFile::load`'s locked read-modify-write (now the only mode —
+        // `load_shared` no longer exists as a separate opt-in), the second
+        // write's stale in-memory snapshot would silently drop the first.
         let d = tempdir().unwrap();
         let path = d.path().join("backup.toml");
 
@@ -542,7 +546,14 @@ mod tests {
     }
 
     #[test]
-    fn a_peers_write_is_visible_through_reload_if_stale_on_the_next_read() {
+    fn a_peers_write_is_not_seen_until_reload_from_disk_is_called() {
+        // Reads no longer eagerly poll the file (that per-read `reload_if_stale`
+        // call is gone — see the module docs): in the real app, the app's
+        // `SettingsWatcher` calls `Reloadable::reload_from_disk()` on this
+        // handle the moment a peer's write lands on disk. Here (no live app, no
+        // watcher) we drive that same hook by hand, proving both halves: a bare
+        // read really doesn't see the peer's write, and the hook — once
+        // invoked — makes it visible.
         let d = tempdir().unwrap();
         let path = d.path().join("backup.toml");
 
@@ -560,8 +571,22 @@ mod tests {
         )
         .unwrap();
 
-        // `a` never wrote anything itself, but a read path reloads-if-stale
-        // first, so it must see `b`'s write.
+        // `a` never wrote anything itself and never re-checks disk on its own.
+        assert!(
+            a.destination_state("uid-A", "/backups").is_none(),
+            "no eager reload: a bare read must not see a peer's write yet"
+        );
+
+        // Simulate the watcher noticing the peer's write and firing the hook.
+        let changed = a
+            .as_reloadable()
+            .reload_from_disk()
+            .expect("reload_from_disk should succeed");
+        assert!(
+            changed,
+            "reload_from_disk must report the peer's real change"
+        );
+
         assert_eq!(
             a.destination_state("uid-A", "/backups")
                 .unwrap()
@@ -569,5 +594,39 @@ mod tests {
             "/backups/a.skrib"
         );
         assert!(a.last_backup_at("uid-A").is_some());
+    }
+
+    #[test]
+    fn registering_with_the_settings_registry_reloads_on_dispatch() {
+        // The actual integration point `App::build` relies on: register this
+        // handle's `Reloadable` into a `SettingsRegistry` (as the app does with
+        // the real, watcher-backed registry), then a path-keyed `dispatch` —
+        // exactly what `SettingsWatcher`'s sink triggers — must reload it.
+        use bastyde::settings::SettingsRegistry;
+
+        let d = tempdir().unwrap();
+        let path = d.path().join("backup.toml");
+
+        let a = BackupSettingsService::open_at(path.clone(), Duration::ZERO).unwrap();
+        let b = BackupSettingsService::open_at(path.clone(), Duration::ZERO).unwrap();
+
+        let registry = SettingsRegistry::new();
+        // Keep the returned handle alive for the registration to stay live.
+        let _keep_alive = registry.register(a.as_reloadable());
+
+        let mut policy = b.general();
+        policy.on_open = true;
+        b.set_override("uid-X", "/x/x.skrib", "X", policy).unwrap();
+
+        assert!(
+            !a.has_override("uid-X"),
+            "no eager reload before dispatch fires"
+        );
+        let changed = registry.dispatch(&path).expect("dispatch should not error");
+        assert!(changed, "dispatch must report a's state actually changed");
+        assert!(
+            a.has_override("uid-X"),
+            "registry dispatch must apply the peer's write to a's live state"
+        );
     }
 }
