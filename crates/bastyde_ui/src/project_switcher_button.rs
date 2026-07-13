@@ -395,6 +395,7 @@ impl Widget for ProjectSwitcherButton {
         let root = ctx.add(
             PopoverButton::new(trigger)
                 .show_disclosure_caret(false)
+                .bare()
                 .content(content)
                 // Re-scan the registry each time the popover opens.
                 .on_open(move || open_epoch.set(open_epoch.get().wrapping_add(1))),
