@@ -32,8 +32,8 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
-    Center, CollapsePolicy, Expand, HStack, IconButton, IconButtonSize, IconWidget, MenuBar,
-    MenuEntry, MenuModel, TextWidget, TitleBar, VStack, WindowFrame,
+    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButton, IconButtonSize, IconWidget,
+    MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar, VStack, WindowFrame,
 };
 
 use frontend::AppContext;
@@ -510,16 +510,31 @@ impl ProjectWindowFactory {
                                     HStack {
                                         spacing: 5.0
                                         alignment: bastyde::tokens::VAlignment::Center
-                                        IconButton::new(IconWidget::from_raster(
-                                            res!("../../resources/icons/skribisto.png"),
-                                            25.0,
-                                        )
-                                        .mode(IconMode::FullColor)) {
-                                            tooltip: tr!(tooltip_welcome())
-                                            size: IconButtonSize::Large
-                                            on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
+                                        // The `center` slot lives inside the TitleBar's
+                                        // DragRegion, which is published to the OS as the
+                                        // window caption (on Windows: WM_NCHITTEST ->
+                                        // HTCAPTION). The OS owns caption pixels outright,
+                                        // so a bare button here would never see a click —
+                                        // it would only drag the window. `DeadZone` carves
+                                        // these two controls back out of the caption, and
+                                        // (on every platform) stops a few px of pointer
+                                        // jitter during a click from arming the window drag.
+                                        DeadZone {
+                                            HStack {
+                                                spacing: 5.0
+                                                alignment: bastyde::tokens::VAlignment::Center
+                                                IconButton::new(IconWidget::from_raster(
+                                                    res!("../../resources/icons/skribisto.png"),
+                                                    25.0,
+                                                )
+                                                .mode(IconMode::FullColor)) {
+                                                    tooltip: tr!(tooltip_welcome())
+                                                    size: IconButtonSize::Large
+                                                    on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
+                                                }
+                                                ProjectSwitcherButton::new(app_ctx_root.clone())
+                                            }
                                         }
-                                        ProjectSwitcherButton::new(app_ctx_root.clone())
                                         Expand::horizontal {
                                             Center {
                                                 TextWidget::new(lit!("Skribisto")) {
