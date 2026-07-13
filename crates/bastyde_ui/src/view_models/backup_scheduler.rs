@@ -17,8 +17,8 @@
 //! typing session in an unfocused tab must never be invisible to skip-if-
 //! unchanged. The hook is installed once (`App::build`, as
 //! `editors.flush_all()`) via [`Self::set_flush_hook`] and shared through every
-//! clone of this view-model (the window close guard in `main.rs`, `App`'s own
-//! exit-guard effect, …) via an `Rc<RefCell<..>>` cell, so installing it on one
+//! clone of this view-model (the project window's close guard in `windows.rs`,
+//! `App`'s own exit-guard effect, …) via an `Rc<RefCell<..>>` cell, so installing it on one
 //! clone is visible everywhere at once. It defaults to a no-op so headless
 //! tests can construct the scheduler without an `EditorsViewModel`.
 //!
@@ -408,12 +408,13 @@ impl BackupSchedulerViewModel {
             .unzip()
     }
 
-    /// Perform the deferred close (window forced-close, or the Close-Work command).
+    /// Perform the deferred close: release the project and return to the
+    /// Launcher (see `crate::app::close_work_and_return_to_launcher`) — the
+    /// launcher-window model's only outcome for a guarded close.
     fn do_close(&self, ctx: &mut EventContext, then: PendingExit) {
         match then {
-            PendingExit::CloseWindow => ctx.close_window_forced(),
-            PendingExit::CloseWork => {
-                let _ = frontend::commands::work_management_commands::close_work(&self.app_ctx);
+            PendingExit::ReturnToLauncher => {
+                crate::app::close_work_and_return_to_launcher(&self.app_ctx, ctx)
             }
             PendingExit::None => {}
         }
@@ -793,7 +794,7 @@ mod tests {
     fn set_flush_hook_is_visible_on_every_existing_clone() {
         // The hook cell is shared (`Rc<RefCell<..>>`), so installing it on ONE
         // clone (as `App::build` does) must be visible on clones made earlier —
-        // e.g. the window close guard's clone in `main.rs`.
+        // e.g. the project window's close guard clone in `windows.rs`.
         let scheduler = test_scheduler();
         let earlier_clone = scheduler.clone();
         let flushed = Rc::new(Cell::new(0u32));

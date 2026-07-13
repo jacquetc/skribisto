@@ -2,13 +2,21 @@
 """Drive a live Skribisto via the bastyde automation MCP bridge and verify the
 New Work modal feature end-to-end.
 
-Flow: launch the app (no CLI arg) → the Welcome modal pops → open New Work
-(Ctrl+N, with a click-the-button fallback) → assert the modal's structure (a
-Form landmark, the two SegmentedControls, the language ComboBox, the Cancel /
+Flow: launch the app (no CLI arg) → the **Launcher window** opens (the
+Welcome UI is a real window now, not a modal — see `bastyde_ui::main`'s module
+docs) → click the Launcher's "New Work" button (there is no `Ctrl+N` global
+shortcut in the Launcher window — that action only exists inside an
+already-open project window's tree, so a keyboard fallback would just no-op;
+the button is the only path here) → assert the modal's structure (a Form
+landmark, the two SegmentedControls, the language ComboBox, the Cancel /
 Create buttons) → type a work name into the name field and assert the reactive
 "Will create …/<slug>.skrib" path preview recomputes (single-file vs bundle) →
 screenshot. Assertions favour locale-independent anchors (roles + the .skrib
 path) so the harness passes whatever UI language is persisted.
+
+Note: this script does not click "Create Work" — creating from the Launcher
+opens a *second* (project) window and closes the Launcher; that transition is
+covered end-to-end by `automation_welcome.py`.
 
 Reuses the launch + scrape-socket/token + connect scaffolding from
 automation_welcome.py.
@@ -181,7 +189,7 @@ class Session:
             self.app.kill()
 
 
-# ── Launch, wait for the Welcome modal ────────────────────────────────────────
+# ── Launch, wait for the Launcher window ──────────────────────────────────────
 print("== New Work modal via the automation MCP ==")
 s = Session([])
 tools = s.tools()
@@ -191,8 +199,8 @@ for n in ("inject_key", "type_text", "focus_node", "set_value", "invoke_action")
         print(f"# {n} schema:", json.dumps(tools[n].get("inputSchema", {}))[:300])
 
 if not s.wait_label("welcome sections"):
-    fail("Welcome modal did not appear at startup", s.app, s.mcp, s.log)
-print("Welcome modal is up.")
+    fail("the Launcher window did not appear at startup", s.app, s.mcp, s.log)
+print("Launcher window is up.")
 
 
 # Text shows up in a node's `value` (AccessKit), not `label`.
@@ -211,12 +219,14 @@ def find_value_contains(substr, timeout=6):
 
 
 # ── Open the New Work modal ───────────────────────────────────────────────────
-# Primary: click the Welcome panel's "New Work" button — this exercises the real
-# wiring (button → dismiss Welcome → `work.new` intent → present the modal) and
-# leaves a single modal. Fallback: Escape (close Welcome) then Ctrl+N. The modal
-# is detected structurally by its FormLayout body (role "Form") — the
-# SegmentedControls surface as RadioGroups and the label is localized, so role is
-# the robust anchor.
+# Click the Launcher's "New Work" button — this exercises the real wiring
+# (`WelcomeViewModel::new_work` presents `NewWorkPanel::new_for_launcher`
+# directly in the Launcher window). This is the *only* path here: unlike an
+# already-open project window, the Launcher registers no `work.new` global
+# action/shortcut (there is no `App` mounted there), so a `Ctrl+N` fallback
+# would just no-op. The modal is detected structurally by its FormLayout body
+# (role "Form") — the SegmentedControls surface as RadioGroups and the label
+# is localized, so role is the robust anchor.
 def new_work_form():
     return next(iter(s.by_role("Form")), None)
 
@@ -233,21 +243,14 @@ def welcome_new_work_button():
 
 def open_new_work():
     btn = welcome_new_work_button()
-    if btn:
-        res, _ = s.call("invoke_action", {"node": btn["id"], "action": "click"})
-        if not res.get("isError"):
-            time.sleep(0.8)
-            if new_work_form():
-                return f"Welcome 'New Work' button ({btn.get('label')!r})"
-    # Fallback: close Welcome, then Ctrl+N.
-    s.call("inject_key", {"key": "Escape"})
-    time.sleep(0.4)
-    for args in ({"key": "N", "ctrl": True}, {"key": "n", "modifiers": ["ctrl"]}):
-        res, _ = s.call("inject_key", args)
-        if not (isinstance(res, dict) and res.get("isError")):
-            time.sleep(0.8)
-            if new_work_form():
-                return f"Ctrl+N ({args})"
+    if not btn:
+        return None
+    res, _ = s.call("invoke_action", {"node": btn["id"], "action": "click"})
+    if res.get("isError"):
+        return None
+    time.sleep(0.8)
+    if new_work_form():
+        return f"Launcher 'New Work' button ({btn.get('label')!r})"
     return None
 
 

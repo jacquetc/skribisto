@@ -45,9 +45,24 @@ pub struct NewWorkPanel {
 }
 
 impl NewWorkPanel {
+    /// Presented over an already-open project (File ▸ New Work / Ctrl+N):
+    /// creates the work in place, replacing this window's project.
     pub fn new(app_ctx: Rc<AppContext>) -> Self {
         Self {
             vm: NewWorkViewModel::new(app_ctx),
+            root_child: None,
+        }
+    }
+
+    /// Presented from the Launcher (`WelcomeViewModel::new_work`): creation is
+    /// deferred to a freshly-opened project window, which then closes the
+    /// Launcher — see [`crate::view_models::NewWorkViewModel::new_for_launcher`].
+    pub fn new_for_launcher(
+        app_ctx: Rc<AppContext>,
+        factory: crate::windows::ProjectWindowFactory,
+    ) -> Self {
+        Self {
+            vm: NewWorkViewModel::new_for_launcher(app_ctx, factory),
             root_child: None,
         }
     }

@@ -39,6 +39,20 @@ pub enum AppIntent {
     #[name = "work.import_plume"]
     ImportPlumeCreator,
 
+    /// Open an **already-chosen** `.skrib` over the project in this window.
+    ///
+    /// Fired by the doors that pick the path themselves and live outside `App`:
+    /// the project switcher's "Open here" and the Plume import toast's "Open
+    /// now". Consumed by the global `work.open_path` action, which runs it
+    /// through the unsaved-changes guard (`ProjectSwitchViewModel`) — replacing
+    /// the open project destroys its unsaved edits otherwise. Distinct from
+    /// `work.open`, which *picks* a file first.
+    ///
+    /// The intent bus (rather than either caller reaching for the guard directly)
+    /// is what keeps the view-model graph a DAG — same shape as `binder.trash`.
+    #[name = "work.open_path"]
+    OpenWorkPath { path: String },
+
     /// Open (or focus) the editor tab for a binder item (primary pane).
     #[name = "editor.open_item"]
     OpenItem { item_id: u64, title: String },
@@ -102,6 +116,21 @@ mod tests {
                 assert_eq!(title, "Scene");
             }
             other => panic!("expected OpenItem, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn open_work_path_round_trips_its_payload() {
+        // The switcher's "Open here" and the import toast's "Open now" carry the
+        // path across the bus to the guard; a lost payload would mean opening
+        // nothing (or, worse, the wrong project) after the guard's save.
+        let intent: Intent = AppIntent::OpenWorkPath {
+            path: "/tmp/novel.skrib".into(),
+        }
+        .into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::OpenWorkPath { path }) => assert_eq!(path, "/tmp/novel.skrib"),
+            other => panic!("expected OpenWorkPath, got {other:?}"),
         }
     }
 

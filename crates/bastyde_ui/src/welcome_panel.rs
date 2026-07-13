@@ -1,18 +1,20 @@
-//! The Welcome modal — Skribisto's start screen.
-//!
-//! Presented as an in-tree modal (see the `welcome.show` action in `app.rs`).
-//! Two panes: a left **sidebar** (brand block + a bottom-pinned vertical nav) and
-//! a right **content** area that switches with the nav selection.
+//! The Welcome content — Skribisto's start screen, hosted as the Launcher
+//! window's root (see [`crate::windows::launcher_window_config`]) rather than
+//! a modal — the launcher-window model. Two panes: a left **sidebar** (brand
+//! block + a bottom-pinned vertical nav) and a right **content** area that
+//! switches with the nav selection.
 //!
 //! The nav is the framework's standalone vertical [`TabBar`] — it gives the 2 dp
 //! leading accent indicator, accent-on-selected label, keyboard nav, and
 //! `Role::TabList`/`Tab` accessibility for free (tablist/tab is the correct AT
 //! semantics for *in-place* pane switching; see the a11y note in the plan). The
 //! right pane is a sibling [`Switcher`] keyed off the bar's `selected_tab`
-//! signal — we compose `[branding, Spacer, TabBar, checkbox]` ourselves so the
-//! nav pins to the **bottom** (a vertical `TabWidget` keeps its tabs top-aligned
-//! under the leading slot; only owning the layout lets the `Spacer` claim the
-//! slack).
+//! signal — we compose `[branding, Spacer, TabBar]` ourselves so the nav pins
+//! to the **bottom** (a vertical `TabWidget` keeps its tabs top-aligned under
+//! the leading slot; only owning the layout lets the `Spacer` claim the
+//! slack). No inline "show at startup" control here — that setting lives in
+//! Settings ▸ Appearance & Behaviour (a launcher-local copy would be a
+//! footgun: it would hide the very screen you're looking at).
 //!
 //! All business logic lives on [`WelcomeViewModel`]; this view is thin. The
 //! layout is built with the `bati!` DSL; only the nav [`TabBar`] and the content
@@ -28,10 +30,9 @@ use bastyde::res;
 use bastyde::widgets::GroupHeader;
 use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
-    ActivateOn, Button, ButtonVariant, Center, Checkbox, Divider, Expand, FixedSize, HStack,
-    IconButton, IconLocation, IconWidget, ListView, Padding, Panel, SearchField, Spacer,
-    StandardListItem, Switcher, TabBar, TabDelegate, TabId, TabIndicatorPosition, TextWidget,
-    VStack,
+    ActivateOn, Button, ButtonVariant, Center, Divider, Expand, FixedSize, HStack, IconLocation,
+    IconWidget, ListView, Padding, Panel, SearchField, Spacer, StandardListItem, Switcher, TabBar,
+    TabDelegate, TabId, TabIndicatorPosition, TextWidget, VStack,
 };
 
 use frontend::AppContext;
@@ -133,16 +134,15 @@ impl WelcomePanel {
         )
     }
 
-    /// The recent-works region: a virtualized [`ListView`] of [`StandardListItem`]
-    /// rows — `Role::List`/`Role::ListItem` a11y, keyboard navigation and
-    /// type-ahead come for free — or a muted placeholder when there are none.
-    /// Both arms sit under a constant-index [`Switcher`] so the region resolves
-    /// to one widget type (only the active page is mounted).
+    /// The recent-works region: a virtualized [`ListView`] of hand-rolled rows
+    /// (see [`recent_row`]) — or a muted placeholder when there are none. Both
+    /// arms sit under a constant-index [`Switcher`] so the region resolves to
+    /// one widget type (only the active page is mounted).
     fn recents_list(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
         let model = self.recents.list_model();
 
         // Reactive page index: re-derived on every `refresh()` (which bumps
-        // `version` *after* `replace_all`), so the list replaces the empty-note
+        // `version` *after* `reconcile_by_key`), so the list replaces the empty-note
         // placeholder as soon as the first recent work arrives. A plain
         // build-time `model.is_empty()` snapshot fed to `Signal::new(..)` would
         // leave the Switcher stuck on the empty page for this panel instance's
@@ -161,17 +161,13 @@ impl WelcomePanel {
             let icon =
                 IconWidget::from_svg_icon(res!("assets/icons/binder/book.svg")).icon_size(20.0);
             let date = dto.last_opened_at.format("%Y-%m-%d").to_string();
-            Box::new(
-                StandardListItem::new(lit!(dto.title.clone()))
-                    .subtitle(lit!(dto.absolute_path.clone()))
-                    .leading_slot(icon)
-                    .trailing_slot(
-                        TextWidget::new(lit!(date))
-                            .style(TextStyleRole::Small)
-                            .color(TextRole::Secondary),
-                    )
-                    .selected(selected),
-            )
+            Box::new(recent_row(
+                icon,
+                dto.title.clone(),
+                dto.absolute_path.clone(),
+                date,
+                selected,
+            ))
         })
         // Single-click to open (these rows are launch targets, not multi-select
         // list items); arrow keys still move the highlight without opening.
@@ -233,6 +229,69 @@ impl WelcomePanel {
     }
 }
 
+/// A recent-work row: icon, title + middle-ellipsized path, trailing date.
+///
+/// Hand-rolled rather than [`StandardListItem`] — its subtitle line has no
+/// overflow override (always wraps) *and*, more fundamentally, its
+/// `label_column` is a plain (non-flex) child of the row's outer `HStack`,
+/// measured at its own intrinsic/natural width before that HStack's trailing
+/// `Spacer` claims the rest. `Expand`'s default flex basis is **zero** (it
+/// contributes nothing to an intrinsic-size query), so nesting an `Expand`
+/// inside `subtitle_leading_slot` never widens `label_column` itself — it can
+/// only ever fill whatever (already-narrow, title-width-sized) box
+/// `StandardListItem` handed it. Owning the whole row lets the path's
+/// `Expand` compete for the *row's* remaining width directly, so a long path
+/// (e.g. `/home/cyril/Nextcloud/…/Faux-semblants.skrib`) stays one line, on
+/// one row height, with the filename still readable — the "wrap in `Expand`
+/// (fill mode) to make it fill a box" layout gotcha, applied at the right
+/// level this time.
+///
+/// No selection background (StandardListItem's rounded-rect chrome isn't
+/// reproduced here — these rows are launch targets that navigate away
+/// immediately on click, not a persistent multi-select list); the title
+/// accents on selection instead, mirroring `project_switcher_button.rs`'s
+/// own hand-rolled row.
+fn recent_row(
+    icon: IconWidget,
+    title: String,
+    path: String,
+    date: String,
+    selected: bool,
+) -> impl Widget + 'static {
+    let title_role = if selected {
+        TextRole::Accent
+    } else {
+        TextRole::Primary
+    };
+    let body = VStack::new()
+        .spacing(2.0)
+        .child(
+            TextWidget::new(lit!(title.clone()))
+                .style(TextStyleRole::Body)
+                .color(title_role)
+                .single_line(),
+        )
+        .child(
+            TextWidget::new(lit!(path.clone()))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary)
+                .overflow(TextOverflow::Ellipsis(EllipsisMode::Middle)),
+        );
+    Padding::symmetric(6.0, 10.0).child(
+        HStack::new()
+            .spacing(10.0)
+            .child(icon)
+            .child(Expand::horizontal().child(body))
+            .child(
+                TextWidget::new(lit!(date))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+            )
+            .access_label_literal(title)
+            .access_description_literal(path),
+    )
+}
+
 /// Muted top-aligned note shown in place of a list when it has no rows.
 fn empty_note(text: impl Into<LocalizedString>) -> impl Widget + 'static {
     bati!(
@@ -265,8 +324,14 @@ impl std::fmt::Debug for WelcomePanel {
 
 impl Widget for WelcomePanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // All logic on the view-model; rebuilt here from the live store.
-        let vm = WelcomeViewModel::new(ctx.settings(), self.app_ctx.clone());
+        // All logic on the view-model; rebuilt here from the live store. The
+        // project-window factory is process-wide `app_state` (registered once
+        // in `main`), shared by clone rather than reconstructed.
+        let factory = ctx
+            .app_state::<crate::windows::ProjectWindowFactory>()
+            .cloned()
+            .expect("ProjectWindowFactory registered in main");
+        let vm = WelcomeViewModel::new(ctx.settings(), self.app_ctx.clone(), factory);
 
         // The lists are reactive `ListView`s bound to Layer-A `ListModel`s, so
         // they refresh themselves on `LoadWork` — no widget rebuild needed here.
@@ -366,7 +431,12 @@ impl Widget for WelcomePanel {
                     padding: 0.0
                     VStack {
                         spacing: 0.0
-                        // ── Header strip: title + close (full width, fixed 44 dp).
+                        // ── Header strip: title (full width, fixed 44 dp). No
+                        // close button here any more — the Launcher is a real
+                        // window now, and its own `TitleBar` (see
+                        // `windows.rs::launcher_window_config`) already has the
+                        // window controls; a second, inner ✕ would be redundant
+                        // and ambiguous about what it even closes.
                         // `Expand::horizontal` claims the VStack's full width; the
                         // height-only `FixedSize` alone would leave the strip at its
                         // natural (collapsed) width and squash the title.
@@ -374,18 +444,9 @@ impl Widget for WelcomePanel {
                             FixedSize {
                                 height: 44.0
                                 Padding::symmetric(8.0, 14.0) {
-                                    HStack {
-                                        spacing: 8.0
-                                        Expand::horizontal {
-                                            TextWidget::new(tr!(welcome_title())) {
-                                                style: TextStyleRole::Small
-                                                color: TextRole::Secondary
-                                            }
-                                        }
-                                        IconButton::clear() {
-                                            tooltip: tr!(welcome_close())
-                                            on_activate_fn: |ctx| ctx.dismiss_modal()
-                                        }
+                                    TextWidget::new(tr!(welcome_title())) {
+                                        style: TextStyleRole::Small
+                                        color: TextRole::Secondary
                                     }
                                 }
                             }
@@ -397,8 +458,11 @@ impl Widget for WelcomePanel {
                         // ── Body: sidebar · vertical rule · content pane.
                         HStack {
                             spacing: 0.0
-                            // Sidebar: brand block, a Spacer, the bottom-pinned nav,
-                            // then the startup checkbox.
+                            // Sidebar: brand block, a Spacer, the bottom-pinned
+                            // nav. No "show at startup" control here — that
+                            // setting lives in Settings ▸ Appearance & Behaviour
+                            // only (a launcher-local copy would hide the very
+                            // screen you're looking at, with no way back).
                             FixedSize {
                                 width: 264.0
                                 height: BODY_H
@@ -417,13 +481,6 @@ impl Widget for WelcomePanel {
                                         FixedSize {
                                             height: 136.0
                                             child: bar
-                                        }
-                                        // Inline "show at startup" checkbox (binds the
-                                        // same persisted setting as the Settings panel).
-                                        Padding::symmetric(8.0, 8.0) {
-                                            Checkbox::new(vm.show_welcome()) {
-                                                label: tr!(welcome_show_at_startup())
-                                            }
                                         }
                                     }
                                 }

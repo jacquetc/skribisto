@@ -77,7 +77,7 @@ light = Clair
 dark = Sombre
 settings-text-width = Largeur du texte
 settings-autosave = Enregistrement automatique sur le disque
-settings-show-welcome = Afficher l'écran d'accueil au démarrage
+settings-show-welcome = Afficher le lanceur au démarrage (sinon, rouvrir le dernier projet)
 
 ## Fenêtre des paramètres — cadre
 settings-title = Paramètres
@@ -143,7 +143,6 @@ settings-chapter-flat-hint = Activé : un chapitre est une seule ligne. Vous y �
 
 ## Accueil
 welcome-title = Bienvenue dans Skribisto
-welcome-close = Fermer
 welcome-search = Rechercher des œuvres
 welcome-open = Ouvrir
 welcome-new-work = Nouvelle œuvre
@@ -152,7 +151,6 @@ welcome-empty-recents = Aucune œuvre récente.
 welcome-learn-soon = Guides et astuces à venir.
 welcome-about-blurb = Skribisto — une réécriture en Rust + Bastyde de l'application d'écriture.
 welcome-tagline = Un endroit calme pour écrire de longs textes.
-welcome-show-at-startup = Afficher au démarrage
 nav-works = Œuvres
 nav-examples = Exemples
 nav-learn = Apprendre
@@ -232,6 +230,15 @@ dialog-new-scene = Nouvelle scène
 close-work-question = Enregistrer les modifications avant de fermer l'œuvre ?
 close-question = Enregistrer les modifications avant de fermer ?
 unsaved-changes = Cette œuvre a des modifications non enregistrées.
+# Remplacement de l'œuvre ouverte dans cette fenêtre (Nouvelle œuvre, Ouvrir une
+# œuvre, « Ouvrir ici », « Ouvrir maintenant » du bandeau d'import) — même garde
+# que la fermeture, puisque l'œuvre ouverte est fermée dans tous les cas.
+new-work-unsaved-question = Enregistrer les modifications avant de créer une nouvelle œuvre ?
+open-work-unsaved-question = Enregistrer les modifications avant d'ouvrir une autre œuvre ?
+switch-backup-discard-title = Abandonner les modifications de cette copie de secours ?
+switch-backup-discard-text = Les modifications d'une copie de secours ne peuvent pas y être enregistrées. Utilisez « Enregistrer sous » ou « Restaurer » pour les conserver, ou abandonnez-les et ouvrez l'autre œuvre.
+switch-save-failed = L'œuvre n'a pas pu être enregistrée, elle n'a donc pas été remplacée : { $error }
+switch-save-not-started = L'œuvre n'a pas pu être enregistrée, elle n'a donc pas été remplacée.
 tooltip-welcome = Accueil
 
 ## Notifications

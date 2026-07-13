@@ -5,15 +5,9 @@
 //! backup, with **Restore** and **Save As** actions. Mounted above the content in
 //! `App`'s root column. Rebuilds only on the rare `backup_context` transitions.
 
-use std::rc::Rc;
-
 use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{Banner, Button, ButtonVariant, HStack};
-
-use frontend::AppContext;
-use frontend::commands::work_management_commands;
-use frontend::work_management::SaveAsDto;
 
 use crate::backup::BackupContext;
 use crate::singles::SingleWork;
@@ -24,7 +18,6 @@ pub struct BackupBanner {
     restore: RestoreViewModel,
     save_as: SaveAsViewModel,
     single_work: SingleWork,
-    app_ctx: Rc<AppContext>,
     root_child: Option<WidgetId>,
 }
 
@@ -34,14 +27,12 @@ impl BackupBanner {
         restore: RestoreViewModel,
         save_as: SaveAsViewModel,
         single_work: SingleWork,
-        app_ctx: Rc<AppContext>,
     ) -> Self {
         Self {
             backup_context,
             restore,
             save_as,
             single_work,
-            app_ctx,
             root_child: None,
         }
     }
@@ -67,7 +58,6 @@ impl Widget for BackupBanner {
         let restore = self.restore.clone();
         let save_as_vm = self.save_as.clone();
         let single_work = self.single_work.clone();
-        let app_ctx = self.app_ctx.clone();
 
         let actions = HStack::new()
             .spacing(8.0)
@@ -79,9 +69,7 @@ impl Widget for BackupBanner {
             .child(
                 Button::new(tr!(backup_banner_save_as()))
                     .variant(ButtonVariant::Plain)
-                    .on_activate_fn(move |c| {
-                        save_as_from_banner(c, &app_ctx, &save_as_vm, &single_work)
-                    }),
+                    .on_activate_fn(move |c| save_as_from_banner(c, &save_as_vm, &single_work)),
             );
 
         // No `.on_dismiss` ⇒ no close button ⇒ a permanent reminder.
@@ -108,7 +96,6 @@ impl Widget for BackupBanner {
 /// menu — the escape hatch for keeping edits made in backup mode.
 fn save_as_from_banner(
     ctx: &mut EventContext,
-    app_ctx: &Rc<AppContext>,
     save_as: &SaveAsViewModel,
     single_work: &SingleWork,
 ) {
@@ -124,7 +111,6 @@ fn save_as_from_banner(
         .title(tr!(backup_banner_save_as()))
         .default_file_name(format!("{base}.skrib"))
         .add_filter("Skribisto work", &["skrib"]);
-    let app_ctx = app_ctx.clone();
     let save_as = save_as.clone();
     let _ = ctx.save_file(req, move |res, ectx| {
         if let FileDialogResult::Saved(Some(path)) = res {
@@ -132,22 +118,11 @@ fn save_as_from_banner(
             if !target.ends_with(".skrib") {
                 target.push_str(".skrib");
             }
-            match work_management_commands::save_as(
-                &app_ctx,
-                &SaveAsDto {
-                    file_name: target.clone(),
-                    as_folder: false,
-                },
-            ) {
-                Ok(op_id) => {
-                    // SaveAsViewModel records the new path/shape on completion.
-                    save_as.start(op_id, false);
-                    ectx.show_toast(Toast::info(tr!(saving_as_file(target = target))));
-                }
-                Err(e) => {
-                    ectx.show_toast(Toast::error(tr!(save_error(error = e.to_string()))));
-                }
-            }
+            // `begin` flushes the editors into the store before the background op
+            // reads it. This is the *only* way edits made in backup mode can be
+            // kept (Save is off there), so writing the pre-edit prose here would
+            // lose them outright.
+            save_as.begin(ectx, target, false);
         }
     });
 }

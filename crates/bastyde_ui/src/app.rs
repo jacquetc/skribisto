@@ -16,7 +16,7 @@ use bastyde::core::DragPayload;
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
-use bastyde::settings::SettingsExt;
+use bastyde::settings::{Reloadable, SettingsExt, SettingsRegistry};
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
     Divider, DockOpenLocation, DockRail, DockSide, DockWidgetId, DockingLayout, DropRegion,
@@ -31,7 +31,7 @@ use frontend::commands::work_management_commands;
 use frontend::common::event::{
     DirectAccessEntity, EntityEvent, Event, LongOperationEvent, Origin, WorkManagementEvent,
 };
-use frontend::work_management::LoadWorkDto;
+use frontend::work_management::{LoadWorkDto, NewWorkDto};
 
 use crate::app_ids::AppIds;
 use crate::import_plume_panel::ImportPlumePanel;
@@ -43,9 +43,9 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ImportPlumeViewModel,
-    OutlineViewModel, SaveAsViewModel, SettingsViewModel, Side,
+    OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel, SettingsViewModel,
+    Side,
 };
-use crate::welcome_panel::WelcomePanel;
 
 /// Build one editor pane's `TabWidget`: dynamic tabs, cross-pane migration
 /// (`accept_external_tabs` + `on_tab_received` dedup + `on_transfer_out`
@@ -97,17 +97,75 @@ fn drain_dropped(mut payload: DragPayload, mut open: impl FnMut(u64, &str)) -> b
     opened
 }
 
-/// A close gesture deferred until the in-flight save finishes. The close guard
-/// (and the `work.close` action) sets this, `App` kicks the save, and the
-/// SaveWork-completion event performs the action — so the async save is awaited.
+/// A close gesture deferred until the in-flight save finishes. The window's
+/// close guard, the `work.close` action, and `welcome.show` (aliased to
+/// `work.close` — see its action below) all set this; `App` kicks the save,
+/// and the SaveWork-completion event performs the action — so the async save
+/// is awaited.
+///
+/// In the launcher-window model there is only one outcome: every guarded
+/// close of a project window (title-bar X, Alt+F4, Ctrl+Q, Ctrl+W, File ▸
+/// Close Work, the brand icon / File ▸ Welcome…) returns to the Launcher —
+/// see [`close_work_and_return_to_launcher`]. The process only actually exits
+/// when the Launcher window itself is closed, so there is no separate
+/// "close the window without returning to the Launcher" outcome to encode
+/// here any more (that used to be `CloseWindow` vs. `CloseWork` — collapsed
+/// once both meant the same thing).
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum PendingExit {
     #[default]
     None,
-    /// Close the window (Quit / title-bar X / Alt+F4) once saved.
-    CloseWindow,
-    /// Close the open work once saved.
-    CloseWork,
+    /// Release the open project and return to the Launcher, once saved (and,
+    /// if configured, once the on-close backup finishes).
+    ReturnToLauncher,
+}
+
+/// A backend-mutating action deferred to a freshly-created project window's
+/// first build (see `App::build`'s first-build logic below) — performed only
+/// *after* that window's `LoadWork`/`NewWork` event subscriptions are live, so
+/// the seeding they perform (`AppIds::seed`, `SingleWork::set_id`, the tree
+/// reload, …) never races the event that would otherwise fire before anyone
+/// is listening.
+///
+/// Mirrors the pre-existing "open the argv path once mounted" mechanism; the
+/// Launcher's recents / file-picker / examples / New Work flows all build a
+/// project window with one of these instead of touching the backend directly
+/// from the Launcher's own (App-less) window.
+#[derive(Clone, Debug)]
+pub enum PendingAction {
+    /// Load an existing `.skrib` at this path.
+    Load(String),
+    /// Create a brand-new work from this DTO (the Launcher's "New Work").
+    New(NewWorkDto),
+}
+
+impl PendingAction {
+    /// The on-disk path this action targets — used to derive the project
+    /// window's persistence id ([`crate::windows::window_id_for`]) before the
+    /// action itself has run.
+    pub fn target_path(&self) -> &str {
+        match self {
+            PendingAction::Load(path) => path,
+            PendingAction::New(dto) => &dto.file_name,
+        }
+    }
+}
+
+/// Release the open project and return to the Launcher: fires `CloseWork`
+/// (releases the open-registry claim and clears `AppIds`/the tree/the
+/// singles via the subscriber below), opens a fresh Launcher window, **then**
+/// force-closes this project window.
+///
+/// Order matters: opening the Launcher before closing this window means the
+/// process is never briefly windowless mid-transition — which would quit it
+/// (see `main.rs`'s module docs). Callers invoking this from inside a
+/// `on_close_requested` guard must return `CloseResponse::Veto` afterward:
+/// this function performs the actual close itself, via `close_window_forced`,
+/// rather than deferring to the guard's own return value.
+pub fn close_work_and_return_to_launcher(app_ctx: &Rc<AppContext>, ctx: &mut EventContext) {
+    let _ = work_management_commands::close_work(app_ctx);
+    ctx.open_window(crate::windows::launcher_window_config(app_ctx.clone()));
+    ctx.close_window_forced();
 }
 
 pub struct App {
@@ -132,10 +190,12 @@ pub struct App {
     /// The open backup's details (drives the permanent banner + restore), or
     /// `None` for a normal project.
     backup_context: Signal<Option<crate::backup::BackupContext>>,
-    /// A `.skrib` path given as the launch argument — opened once on first build
-    /// (after the `LoadWork` subscription is live so the full load flow runs).
-    initial_project: Option<String>,
-    /// One-shot guard so the launch project loads only on the first build.
+    /// The backend mutation this window's project performs once mounted (load
+    /// an existing path, or create a brand-new work) — taken on first build,
+    /// after the `LoadWork`/`NewWork` subscriptions are live so the full
+    /// seed flow runs. See [`PendingAction`].
+    initial_action: Option<PendingAction>,
+    /// One-shot guard so `initial_action` runs only on the first build.
     initial_loaded: bool,
     /// Created once on first build (its column-width signal needs `ctx.settings()`).
     editors: Option<EditorsViewModel>,
@@ -143,6 +203,12 @@ pub struct App {
     /// the same dock in the `DockingModel`).
     inspector_dock: DockWidgetId,
     root_child: Option<WidgetId>,
+    /// Keeps `backup_settings`'s `Reloadable` registration alive in the app's
+    /// shared `SettingsRegistry` (only a `Weak` is held internally — see
+    /// `SettingsRegistry::register`'s docs) so the settings-file watcher keeps
+    /// applying a peer process's `backup.toml` writes to this handle for as
+    /// long as `App` lives. Registered once, on first build.
+    backup_settings_reloadable: Option<Rc<dyn Reloadable>>,
 }
 
 impl App {
@@ -155,7 +221,7 @@ impl App {
         pending_exit: Signal<PendingExit>,
         backup_mode: Signal<bool>,
         backup_context: Signal<Option<crate::backup::BackupContext>>,
-        initial_project: Option<String>,
+        initial_action: PendingAction,
     ) -> Self {
         Self {
             app_ctx,
@@ -165,11 +231,12 @@ impl App {
             pending_exit,
             backup_mode,
             backup_context,
-            initial_project,
+            initial_action: Some(initial_action),
             initial_loaded: false,
             editors: None,
             inspector_dock: DockWidgetId::fresh(),
             root_child: None,
+            backup_settings_reloadable: None,
         }
     }
 }
@@ -311,6 +378,28 @@ impl Widget for App {
             .app_state::<crate::view_models::RestoreViewModel>()
             .cloned()
             .expect("RestoreViewModel registered in main");
+        let save_as_vm = ctx
+            .app_state::<SaveAsViewModel>()
+            .cloned()
+            .expect("SaveAsViewModel registered in main");
+        // Live cross-process reload for `backup.toml` (T1-6 continued): register
+        // this window's `BackupSettingsService` into the app's shared
+        // `SettingsRegistry` once, so the settings-file watcher (installed by
+        // `BastydeAppBuilder` whenever a settings bundle is configured — see
+        // `main.rs`) reloads it in place the moment a peer window (another
+        // Skribisto process, one per project) writes an override / policy /
+        // bookkeeping change. Without this, `backup_settings`'s reads would
+        // only ever see this process's own last write (reads no longer poll —
+        // see `models::backup_settings_file`'s module docs). Absent registry
+        // (e.g. a headless/test build with no settings bundle) is a silent
+        // no-op: the service still works, peer writes just aren't picked up
+        // live until this process next writes something itself.
+        if self.backup_settings_reloadable.is_none()
+            && let Some(registry) = ctx.app_state::<SettingsRegistry>().cloned()
+        {
+            self.backup_settings_reloadable =
+                Some(registry.register(backup_settings.service().as_reloadable()));
+        }
         // T1-2: install the real flush hook — every backup trigger
         // (`backup_now` / `on_open` / `interval_tick` / `on_close_flow`) flushes
         // the live editor buffers into the store *before* it reads it, so a
@@ -322,6 +411,51 @@ impl Widget for App {
         backup_scheduler.set_flush_hook(Rc::new({
             let editors = editors.clone();
             move || editors.flush_all()
+        }));
+        // The same invariant for the *other* two paths that serialize the store on
+        // a background thread: Save As and Restore. Typing only marks a doc dirty
+        // (`OpenDoc::mark_dirty_fn`) — the prose reaches `Content` only on a flush
+        // — so a read-only background op that starts without one writes the
+        // pre-edit text. `save_work` gets this via `EditorsViewModel::save_to_disk`
+        // and the backups via the hook above; these two had no flush at all, which
+        // is worst in backup mode, where Save is off and Save As / Restore are the
+        // only ways the edits can be kept at all.
+        save_as_vm.set_flush_hook(Rc::new({
+            let editors = editors.clone();
+            move || editors.flush_all()
+        }));
+        restore_vm.set_flush_hook(Rc::new({
+            let editors = editors.clone();
+            move || editors.flush_all()
+        }));
+        // The project-switch guard (New Work / Open Work / "Open here" / the import
+        // toast — every command that replaces this window's project in place) needs
+        // two things only the view layer has: a way to write the project to disk
+        // (returning the op id, so a *failed* save drops the parked switch instead
+        // of stranding it), and a way to put the New Work form on screen. Installed
+        // here, once — the guard itself is created in `main` (it holds the same
+        // `unsaved`/`backup_mode`/autosave signals as the close guard) and reached
+        // from outside `App` via app-state.
+        let project_switch = ctx
+            .app_state::<ProjectSwitchViewModel>()
+            .cloned()
+            .expect("ProjectSwitchViewModel registered in main");
+        project_switch.set_save_hook(Rc::new({
+            let editors = editors.clone();
+            move || editors.save_to_disk_op()
+        }));
+        project_switch.set_new_work_form_hook(Rc::new({
+            let app_ctx = self.app_ctx.clone();
+            move |c: &mut EventContext| {
+                let app_ctx = app_ctx.clone();
+                c.present_modal(
+                    ModalRequest::deferred(move |t| t.add(NewWorkPanel::new(app_ctx)))
+                        .presentation(ModalPresentation::InTree)
+                        .title("New Work")
+                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                        .size(600, 680),
+                );
+            }
         }));
         // Keep the outline tree reactive to *all* structural mutations (incl. the
         // manuscript streams' rename/merge/split/add), not just the outline's own.
@@ -396,8 +530,12 @@ impl Widget for App {
         // Global (not `register_action`/`register_shortcut`) so they're reached
         // from the title-bar overlay menu — which renders as a sibling of `App`,
         // NOT on `App`'s source→root path — as well as from their shortcuts.
-        // New Work (Ctrl+N): present the New Work modal (name/format/location/
-        // language/template), which creates the work on confirm.
+        // New Work (Ctrl+N) and Open Work (Ctrl+O) both **replace this window's
+        // project in place** (the backend closes the open Work first). So both go
+        // through `ProjectSwitchViewModel` — the same Save/Discard/Cancel guard the
+        // close paths use — instead of destroying unsaved edits outright, which is
+        // what they did before. The guard performs the switch itself, now or once
+        // the deferred save lands; these actions only *ask* for it.
         ctx.register_shortcut_global(
             Shortcut::new("work.new")
                 .name("New Work")
@@ -405,19 +543,16 @@ impl Widget for App {
                 .build(),
         );
         {
-            let app_ctx = self.app_ctx.clone();
-            ctx.register_action_global(Action::new("work.new").on_invoke(move |_i, c| {
-                let app_ctx = app_ctx.clone();
-                c.present_modal(
-                    ModalRequest::deferred(move |t| t.add(NewWorkPanel::new(app_ctx)))
-                        .presentation(ModalPresentation::InTree)
-                        .title("New Work")
-                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                        .size(600, 680),
-                );
-            }));
+            let switch = project_switch.clone();
+            ctx.register_action_global(
+                Action::new("work.new")
+                    .on_invoke(move |_i, c| switch.request(c, PendingSwitch::NewWork)),
+            );
         }
-        // Open Work (Ctrl+O): native picker for an existing `.skrib`, then load.
+        // Open Work (Ctrl+O): native picker for an existing `.skrib`, then the
+        // guard, then load. The guard runs *after* the pick, so cancelling the
+        // picker — or choosing a backup file, which opens in its own process and
+        // leaves this project untouched — never prompts about unsaved changes.
         ctx.register_shortcut_global(
             Shortcut::new("work.open")
                 .name("Open Work")
@@ -425,10 +560,21 @@ impl Widget for App {
                 .build(),
         );
         {
-            let app_ctx = self.app_ctx.clone();
+            let switch = project_switch.clone();
             ctx.register_action_global(
-                Action::new("work.open").on_invoke(move |_i, c| open_work_flow(app_ctx.clone(), c)),
+                Action::new("work.open").on_invoke(move |_i, c| open_work_flow(switch.clone(), c)),
             );
+        }
+        // Open an already-chosen path (payload in the intent) — the switcher
+        // popover's "Open here" and the import toast's "Open now", both of which
+        // live outside `App` and pick the path themselves. Same guard, no picker.
+        {
+            let switch = project_switch.clone();
+            ctx.register_action_global(Action::new("work.open_path").on_invoke(move |i, c| {
+                if let Some(AppIntent::OpenWorkPath { path }) = AppIntent::from_intent(i) {
+                    switch.request(c, PendingSwitch::OpenWork(path.clone()));
+                }
+            }));
         }
         // Import from Plume Creator: present the Import Plume modal (menu-only, no
         // shortcut). Global so the title-bar overlay menu reaches it — like work.new.
@@ -485,22 +631,17 @@ impl Widget for App {
                 .build(),
         );
         ctx.register_action_global(Action::new("app.quit").on_invoke(|_i, c| c.close_window()));
-        // Welcome modal: presented at startup (gated below), and on demand from
-        // File ▸ Welcome… and the brand icon button — all dispatch `welcome.show`.
-        // Global so the title-bar overlay menu/button reach it (house rule).
-        {
-            let app_ctx = self.app_ctx.clone();
-            ctx.register_action_global(Action::new("welcome.show").on_invoke(move |_i, c| {
-                let app_ctx = app_ctx.clone();
-                c.present_modal(
-                    ModalRequest::deferred(move |t| t.add(WelcomePanel::new(app_ctx)))
-                        .presentation(ModalPresentation::InTree)
-                        .title("Welcome to Skribisto")
-                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                        .size(780, 548),
-                );
-            }));
-        }
+        // "Welcome" now means "close this work and go back to the Launcher"
+        // (the launcher-window model — Welcome is a real window, not a modal
+        // any more). Fired from File ▸ Welcome… and the brand icon button.
+        // A pure alias for `work.close`, dispatched by name, so it shares
+        // that action's exact guard (unsaved-changes prompt, the on-close
+        // backup, backup-mode handling) rather than bypassing it — do NOT
+        // inline a second copy of that logic here. Global so the title-bar
+        // overlay menu/button reach it (house rule).
+        ctx.register_action_global(
+            Action::new("welcome.show").on_invoke(|_i, c| c.send_intent(Intent::new("work.close"))),
+        );
 
         // ── Binder-tree commands (the scriptable surface for the outline). ───
         // Each drives an `OutlineViewModel` method; the context menu and key
@@ -750,21 +891,19 @@ impl Widget for App {
         // `SaveAsViewModel`, which — on success — records the new file_name/shape
         // into WorkInfo synchronously on the UI thread (save_as itself is
         // read-only). Filters by op id, so import/backup events are ignored.
-        if let Some(save_as_vm) = ctx.app_state::<SaveAsViewModel>().cloned() {
-            {
-                let vm = save_as_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Completed),
-                    move |e: &Event, c| vm.on_long_op_completed(c, e),
-                );
-            }
-            {
-                let vm = save_as_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Failed),
-                    move |e: &Event, c| vm.on_long_op_failed(c, e),
-                );
-            }
+        {
+            let vm = save_as_vm.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(LongOperationEvent::Completed),
+                move |e: &Event, c| vm.on_long_op_completed(c, e),
+            );
+        }
+        {
+            let vm = save_as_vm.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(LongOperationEvent::Failed),
+                move |e: &Event, c| vm.on_long_op_failed(c, e),
+            );
         }
 
         // Route the backup long operation's progress/completion/failure to the
@@ -1043,6 +1182,7 @@ impl Widget for App {
             let unsaved = self.unsaved.clone();
             let pending = self.pending_exit.clone();
             let scheduler = backup_scheduler.clone();
+            let switch = project_switch.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::WorkManagement(WorkManagementEvent::SaveWork),
                 move |_e: &Event, c| {
@@ -1050,6 +1190,11 @@ impl Widget for App {
                     let pe = pending.get();
                     if pe != PendingExit::None {
                         pending.set(PendingExit::None);
+                        // A close and a switch can't both win: the project is
+                        // leaving this window entirely, so a switch parked behind
+                        // a save is moot — drop it rather than let it fire into a
+                        // window that is on its way to the Launcher.
+                        switch.cancel();
                         // Saved and consistent — now take the on-close backup (if
                         // configured) and then perform the deferred close. When no
                         // on-close backup applies, `on_close_flow` closes at once.
@@ -1058,9 +1203,35 @@ impl Widget for App {
                 },
             );
         }
-        // `work.close` — the Close Work menu command. Guards unsaved changes just
-        // like the window close: clean → close now; autosave → save then close;
-        // else prompt.
+        // A parked project switch (New Work / Open Work / "Open here" / the import
+        // toast, where the user chose "Save") is performed — or dropped — off the
+        // **long-operation** events, not `SaveWork` above: only these carry the
+        // operation id, and the switch must wait for *its own* save. With autosave
+        // on, another `save_work` can already be in flight when the guard kicks
+        // one; firing the switch on that one's completion would wipe the store
+        // while ours is still queued. A failure drops the switch (with a toast)
+        // instead of stranding a command that silently never happens — the project
+        // is untouched, still open and still dirty, so nothing is lost by staying.
+        {
+            let switch = project_switch.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(LongOperationEvent::Completed),
+                move |e: &Event, c| switch.on_long_op_completed(c, e),
+            );
+        }
+        {
+            let switch = project_switch.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(LongOperationEvent::Failed),
+                move |e: &Event, c| switch.on_save_failed(c, e),
+            );
+        }
+        // `work.close` — the Close Work menu command (Ctrl+W), and the target
+        // of the `welcome.show` alias. Guards unsaved changes just like the
+        // window close guard (`windows.rs`): clean → return to the Launcher
+        // now; autosave → save then return; else prompt. Every terminal path
+        // ends at [`close_work_and_return_to_launcher`] — there is no more
+        // "close in place, keep this (now-empty) window" outcome.
         {
             let app_ctx2 = self.app_ctx.clone();
             let unsaved = self.unsaved.clone();
@@ -1083,23 +1254,24 @@ impl Widget for App {
                             ]))
                             .default_button(StandardButton::Cancel)
                             .escape_button(StandardButton::Cancel)
-                            .on_result(move |r, _ctx| {
+                            .on_result(move |r, ctx| {
                                 if r.button == StandardButton::Discard {
-                                    let _ = work_management_commands::close_work(&app_ctx3);
+                                    close_work_and_return_to_launcher(&app_ctx3, ctx);
                                 }
                             }),
                     );
                     return;
                 }
                 if !unsaved.get() {
-                    // Clean: take an on-close backup (if configured) then close.
-                    // (In backup mode `on_close_flow` is suppressed → closes at once.)
-                    scheduler.on_close_flow(ctx, PendingExit::CloseWork);
+                    // Clean: take an on-close backup (if configured), then return
+                    // to the Launcher. (In backup mode `on_close_flow` is
+                    // suppressed → returns at once.)
+                    scheduler.on_close_flow(ctx, PendingExit::ReturnToLauncher);
                     return;
                 }
                 if autosave.get() {
-                    // Save first; SaveWork-completion runs the backup then closes.
-                    pending.set(PendingExit::CloseWork);
+                    // Save first; SaveWork-completion runs the backup then returns.
+                    pending.set(PendingExit::ReturnToLauncher);
                     return;
                 }
                 let app_ctx3 = app_ctx2.clone();
@@ -1110,11 +1282,11 @@ impl Widget for App {
                         .buttons(MessageBoxButtons::SaveDiscardCancel)
                         .default_button(StandardButton::Save)
                         .escape_button(StandardButton::Cancel)
-                        .on_result(move |r, _ctx| match r.button {
-                            StandardButton::Save => pe.set(PendingExit::CloseWork),
+                        .on_result(move |r, ctx| match r.button {
+                            StandardButton::Save => pe.set(PendingExit::ReturnToLauncher),
                             // Discarding unsaved edits skips the backup.
                             StandardButton::Discard => {
-                                let _ = work_management_commands::close_work(&app_ctx3);
+                                close_work_and_return_to_launcher(&app_ctx3, ctx);
                             }
                             _ => {}
                         }),
@@ -1341,7 +1513,6 @@ impl Widget for App {
                 .cloned()
                 .expect("SaveAsViewModel registered in main"),
             single_work.clone(),
-            self.app_ctx.clone(),
         );
 
         let root = ctx.add(
@@ -1354,35 +1525,34 @@ impl Widget for App {
         );
         self.root_child = Some(root);
 
-        // Open the launch project (argv[1]) exactly once — now that the `LoadWork`
-        // subscription above is live, so its handler runs the full load flow
-        // (seed ids, reload the tree, point the singles).
+        // Perform this project window's one backend mutation (load the argv
+        // path / a Launcher-picked recent, or create a brand-new work)
+        // exactly once — now that the `LoadWork`/`NewWork` subscriptions above
+        // are live, so the handler runs the full seed flow (ids, tree,
+        // singles). There is no "show the Welcome modal" branch any more:
+        // whether this process opens a Launcher or a project window at all is
+        // decided in `main` before any window (hence any `App`) exists — see
+        // `windows.rs` and the launcher-window model in `main.rs`'s module docs.
         if !self.initial_loaded {
             self.initial_loaded = true;
-            if let Some(path) = self.initial_project.clone() {
-                if let Err(e) = work_management_commands::load_work(
-                    &self.app_ctx,
-                    &LoadWorkDto {
-                        file_name: path.clone(),
-                    },
-                ) {
-                    eprintln!("skribisto: could not open '{path}': {e}");
+            match self.initial_action.take() {
+                Some(PendingAction::Load(path)) => {
+                    if let Err(e) = work_management_commands::load_work(
+                        &self.app_ctx,
+                        &LoadWorkDto {
+                            file_name: path.clone(),
+                        },
+                    ) {
+                        eprintln!("skribisto: could not open '{path}': {e}");
+                    }
                 }
-            } else if SettingsViewModel::new(ctx.settings()).show_welcome().get() {
-                // No work on the command line + "show at startup" on → pop the
-                // Welcome modal once the tree mounts. `present_modal` needs an
-                // `EventContext` (unavailable in `build`); `run_after_mount`
-                // supplies one, so we present directly here (no intent hop).
-                let app_ctx = self.app_ctx.clone();
-                ctx.run_after_mount(move |ectx| {
-                    ectx.present_modal(
-                        ModalRequest::deferred(move |t| t.add(WelcomePanel::new(app_ctx)))
-                            .presentation(ModalPresentation::InTree)
-                            .title("Welcome to Skribisto")
-                            .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                            .size(780, 548),
-                    );
-                });
+                Some(PendingAction::New(dto)) => {
+                    let target = dto.file_name.clone();
+                    if let Err(e) = work_management_commands::new_work(&self.app_ctx, &dto) {
+                        eprintln!("skribisto: could not create '{target}': {e}");
+                    }
+                }
+                None => {}
             }
         }
 
@@ -1420,14 +1590,21 @@ impl Widget for App {
 /// zip parse with no timeout — see `crate::backup::is_backup_path`) must never
 /// run on the UI thread: a recent entry on a disconnected network/FUSE mount
 /// would otherwise hang the whole app on an ordinary click (T2-3).
-fn open_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
+///
+/// Loading replaces this window's project **in place**, so the load itself goes
+/// through the unsaved-changes guard (`ProjectSwitchViewModel`) rather than
+/// straight to `load_work` — which is what used to throw away the open project's
+/// unsaved edits without a word. The guard runs *after* the pick and *after* the
+/// backup sniff, so neither cancelling the picker nor choosing a backup (which
+/// opens in its own process, leaving this project alone) prompts about anything.
+fn open_work_flow(switch: ProjectSwitchViewModel, ctx: &mut EventContext) {
     let req = FileDialogRequest::pick_file()
         .title("Open Skribisto work")
         .add_filter("Skribisto work", &["skrib"]);
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {
             let file = path.to_string_lossy().into_owned();
-            let app_ctx = app_ctx.clone();
+            let switch = switch.clone();
             let file_for_check = file.clone();
             ectx.spawn_local_with(
                 async move {
@@ -1438,22 +1615,14 @@ fn open_work_flow(app_ctx: Rc<AppContext>, ctx: &mut EventContext) {
                 move |is_backup, ectx2| {
                     // A backup always opens in its own instance (never replacing
                     // the project in this window) — see the backup-mode invariant.
+                    // Nothing here is destroyed, so there is nothing to guard.
                     if is_backup {
                         ectx2.request_activation_token_self(Box::new(move |tok| {
                             crate::project_switcher_button::spawn_new_process(&file, tok);
                         }));
                         return;
                     }
-                    if let Err(e) = work_management_commands::load_work(
-                        &app_ctx,
-                        &LoadWorkDto {
-                            file_name: file.clone(),
-                        },
-                    ) {
-                        ectx2.show_toast(Toast::error(tr!(could_not_open_work(
-                            error = e.to_string()
-                        ))));
-                    }
+                    switch.request(ectx2, PendingSwitch::OpenWork(file.clone()));
                 },
             )
             .detach();

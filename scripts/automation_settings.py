@@ -2,16 +2,20 @@
 """Drive a live Skribisto via the bastyde automation MCP bridge and verify the
 Settings preferences window end-to-end.
 
-Launches with the bundled example loaded (so the Welcome modal is suppressed),
-opens Settings (Ctrl+, with a menu fallback), then asserts:
+Launches with the bundled example loaded (a project path on argv skips the
+Launcher entirely under the launcher-window model — see `bastyde_ui::main`'s
+module docs), opens Settings (Ctrl+, with a menu fallback), then asserts:
 
   1. the category TreeView holds every section + page (Appearance & Behaviour,
-     Editor ▸ Manuscript & Fonts, Spelling, Backup & Sync, Compile & Export,
-     Keymap);
-  2. the default pane (Manuscript & Fonts) shows its group headers + controls
-     (Typeface, Text width, Editor theme, the synopsis checkbox);
-  3. selecting the Appearance page switches the pane (Interface language + the
-     welcome checkbox appear);
+     Editor ▸ Scene/Synopsis/Notes/Editor Behavior/Goals/Corkboard, Spelling,
+     Backup & Sync, Compile & Export, Keymap);
+  2. the default pane (Editor ▸ Scene, a typography form) shows its controls
+     (the font-family ComboBox + the typography sliders);
+  3. selecting the Appearance page switches the pane (Interface language, the
+     Theme ComboBox — moved here from the old Manuscript & Fonts page — and
+     the "show the launcher at startup" checkbox, formerly worded "show the
+     Welcome screen"; it now also governs whether a bare launch reopens the
+     last project instead);
   4. expanding Backup & Sync and selecting Autosave reveals the autosave setting;
   5. selecting the empty Keymap page shows the "no settings yet" placeholder;
   6. the SearchField accepts a query;
@@ -203,24 +207,27 @@ print("example loaded.")
 # ── Locale-robust anchors ────────────────────────────────────────────────────
 # The app restores whatever UI language was last persisted, so every concept is
 # matched against its en-US *and* fr-FR wording. (Concept → list of substrings.)
+#
+# NOTE: the panel was restructured (independently of the launcher-window
+# model) — "Manuscript & Fonts" no longer exists as a single page. Editor ▸
+# Scene/Synopsis/Notes now each carry their own typography form, Editor ▸
+# Editor Behavior carries the synopsis-pane/typewriter/highlight toggles, and
+# the Theme/Interface-text-size controls moved to Appearance & Behaviour ▸
+# Appearance. The default pane on open is now Scene.
 SECTIONS = {
     "appearance_behaviour": ["appearance & behaviour", "apparence et comportement"],
     "editor": ["editor", "éditeur"],
-    "manuscript": ["manuscript & fonts", "manuscrit et polices"],
+    "scene": ["scene", "scène"],
     "spelling": ["spelling", "orthographe"],
     "backup": ["backup & sync", "sauvegarde et synchronisation"],
     "compile": ["compile & export", "compilation et export"],
     "keymap": ["keymap", "raccourcis clavier"],
 }
 # GroupHeaders and FormLayout field labels are decorative (not AccessKit
-# labels), so assert on the controls the AT tree actually surfaces.
-MANUSCRIPT_BITS = {
-    "synopsis checkbox": ["synopsis"],
-    "typewriter checkbox": ["typewriter", "machine à écrire"],
-    "highlight checkbox": ["highlight", "surligner"],
-    "theme control (ThemeSwitcher)": ["theme", "thème"],
-    "text scale (TextScaleControl)": ["text scale"],
-}
+# labels), so assert on the controls the AT tree actually surfaces. The
+# default (Scene) pane is a typography form: a font-family ComboBox plus five
+# sliders (size, line height, first-line indent, paragraph spacing before/after).
+SCENE_MIN_SLIDERS = 5
 # (page label variants) for clicking a tree leaf — exact match, not substring, so
 # "Appearance" never matches the "Appearance & Behaviour" section.
 APPEARANCE_PAGE = ["appearance", "apparence"]
@@ -228,7 +235,10 @@ BACKUP_SECTION = ["backup & sync", "sauvegarde et synchronisation"]
 AUTOSAVE_PAGE = ["autosave", "enregistrement automatique"]
 KEYMAP_PAGE = ["keymap", "raccourcis clavier"]
 APPEARANCE_BITS = {
-    "welcome checkbox": ["welcome screen", "écran d'accueil"],
+    # Reworded for the launcher-window model: the checkbox now describes
+    # "show the launcher at startup (otherwise, reopen the last project)",
+    # not "show the Welcome screen" (there's no modal to show any more).
+    "welcome checkbox": ["show the launcher", "afficher le lanceur"],
 }
 AUTOSAVE_BIT = ["autosave to disk", "sur le disque"]
 EMPTY_BIT = ["no settings here yet", "aucun paramètre ici"]
@@ -297,6 +307,14 @@ def expand_section(n):
     return pointer_click(n.get("bounds") or {}, dx=10)
 
 
+def settings_open():
+    """A stable "the Settings window is open" signal — the instant-apply
+    footer (Reset to defaults + Done) is present on every pane regardless of
+    which one is showing by default, so it survives the panel being
+    restructured around any particular page/section name."""
+    return has_any(("reset to defaults", "réinitialiser")) and has_any(("done", "terminé"))
+
+
 def open_settings():
     for args in ({"key": ",", "ctrl": True},
                  {"key": ",", "modifiers": ["ctrl"]},
@@ -304,7 +322,7 @@ def open_settings():
         res, _ = s.call("inject_key", args)
         if not (isinstance(res, dict) and res.get("isError")):
             time.sleep(0.8)
-            if has_any(SECTIONS["manuscript"]):
+            if settings_open():
                 return f"Ctrl+, ({args})"
     return None
 
@@ -315,19 +333,46 @@ if not how:
     fail("could not open the Settings window", s.app, s.mcp, s.log)
 print(f"Settings opened via {how}.")
 s.dump("Settings window (default pane)")
-s.shot("/tmp/sk-settings-manuscript.png")
+s.shot("/tmp/sk-settings-scene.png")
 
 # ── 1. The category tree holds every section + page ───────────────────────────
 require_all(SECTIONS, "the category tree")
 print("PASS: category tree lists all sections + pages")
 
-# ── 2. Default pane (Manuscript & Fonts) shows its groups + controls ──────────
-require_all(MANUSCRIPT_BITS, "the Manuscript & Fonts pane")
-print("PASS: Manuscript & Fonts pane shows group headers + migrated/new controls")
+# ── 2. Default pane (Editor ▸ Scene) shows its typography controls ───────────
+font_combo = next(
+    (n for n in s.by_role("ComboBox") if "font" in (n.get("label") or "").lower()), None
+)
+if not font_combo:
+    print("  labels:", joined()[:700])
+    fail("expected the Scene pane's font-family ComboBox", s.app, s.mcp, s.log)
+sliders = s.by_role("Slider")
+print(f"  font ComboBox present; {len(sliders)} Slider nodes")
+if len(sliders) < SCENE_MIN_SLIDERS:
+    fail(f"expected >= {SCENE_MIN_SLIDERS} sliders on the Scene typography pane "
+         f"(size, line height, first-line indent, paragraph spacing before/after), "
+         f"got {len(sliders)}", s.app, s.mcp, s.log)
+print("PASS: Scene pane (the new default) shows its typography controls "
+      "(font ComboBox + typography sliders)")
 
-# ── 2b. Regression: selecting a ComboBox item must NOT close the window ───────
+# ── 3. Selecting the Appearance page switches the pane ────────────────────────
+appearance = node_match(APPEARANCE_PAGE, exact=True, rail_only=True)
+if not appearance:
+    s.dump("looking for Appearance page")
+    fail("no 'Appearance' page row in the category rail", s.app, s.mcp, s.log)
+if not click_node(appearance):
+    fail("could not click the Appearance page row", s.app, s.mcp, s.log)
+time.sleep(0.6)
+require_all(APPEARANCE_BITS, "the Appearance pane")
+print("PASS: Appearance page switched the pane (language switcher + 'show the launcher "
+      "at startup' checkbox)")
+s.shot("/tmp/sk-settings-appearance.png")
+
+# ── 3b. Regression: selecting a ComboBox item must NOT close the window ──────
 # (The dropdown floats in a child overlay of the modal; a host-surface fix in
-# bastyde keeps the modal alive when the dropdown dismisses on select.)
+# bastyde keeps the modal alive when the dropdown dismisses on select.) The
+# Theme control lives on this (Appearance) pane now — it moved off the old
+# Manuscript & Fonts page in the panel restructuring.
 theme_combo = None
 for n in s.nodes():
     if n.get("role") == "ComboBox" and any(
@@ -356,13 +401,13 @@ if theme_combo:
         if not click_node(opt):
             pointer_click(opt.get("bounds") or {})    # select
         time.sleep(0.6)
-        if not has_any(SECTIONS["manuscript"]):
+        if not settings_open():
             fail("selecting a ComboBox item CLOSED the Settings window (overlay-host bug)",
                  s.app, s.mcp, s.log)
         print("PASS: selecting a ComboBox dropdown item kept the Settings window open")
     else:
         # Still a useful signal: opening the dropdown must not close the modal.
-        if not has_any(SECTIONS["manuscript"]):
+        if not settings_open():
             fail("opening a ComboBox dropdown CLOSED the Settings window", s.app, s.mcp, s.log)
         print("NOTE: dropdown option not addressable; opening it kept the window open")
     # Close any lingering dropdown before continuing.
@@ -370,18 +415,6 @@ if theme_combo:
     time.sleep(0.3)
 else:
     print("NOTE: theme ComboBox not surfaced; skipping combo regression")
-
-# ── 3. Selecting the Appearance page switches the pane ────────────────────────
-appearance = node_match(APPEARANCE_PAGE, exact=True, rail_only=True)
-if not appearance:
-    s.dump("looking for Appearance page")
-    fail("no 'Appearance' page row in the category rail", s.app, s.mcp, s.log)
-if not click_node(appearance):
-    fail("could not click the Appearance page row", s.app, s.mcp, s.log)
-time.sleep(0.6)
-require_all(APPEARANCE_BITS, "the Appearance pane")
-print("PASS: Appearance page switched the pane (language switcher + welcome checkbox)")
-s.shot("/tmp/sk-settings-appearance.png")
 
 # ── 4. The empty Keymap page shows the placeholder ───────────────────────────
 # Done before any section expansion, so tree-row positions are stable (an async
@@ -459,7 +492,7 @@ done = footer_btn({"done", "terminé"})
 if done:
     click_node(done)
     time.sleep(0.6)
-    if has_any(SECTIONS["manuscript"]) and has_any(MANUSCRIPT_BITS["text scale"]):
+    if settings_open():
         fail("Settings window did not close after Done", s.app, s.mcp, s.log)
     print("PASS: Done dismissed the Settings window")
 

@@ -5,6 +5,18 @@
 //! is created once in `NewWorkPanel::new` and shared by `.clone()`. The dialog's
 //! actions (derive the target path, assemble the `NewWorkDto`, create the work)
 //! live here, not in the view's `build()`.
+//!
+//! Two presentation contexts, one behaviour split on [`Self::create`]:
+//!   * **From an already-open project** (`NewWorkPanel::new` — File ▸ New
+//!     Work / Ctrl+N): creates the work in place, replacing this window's
+//!     project — the same "load in place" pattern as `work.open`/Ctrl+O.
+//!   * **From the Launcher** (`NewWorkPanel::new_for_launcher` —
+//!     `WelcomeViewModel::new_work`): creation is *deferred* to a freshly
+//!     opened project window's first build
+//!     ([`crate::app::PendingAction::New`]), which then closes the Launcher.
+//!     Creating the work here instead — before that window's `NewWork`
+//!     subscription is live — would race the event and silently skip the
+//!     seed flow (`AppIds::seed`, `SingleWork::set_id`, the tree reload, …).
 
 use std::path::Path;
 use std::rc::Rc;
@@ -15,6 +27,9 @@ use bastyde::widgets::{Toast, ValidationState};
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
 use frontend::work_management::{NewWorkDto, NewWorkTemplate};
+
+use crate::app::PendingAction;
+use crate::windows::ProjectWindowFactory;
 
 /// Build the `NewWorkDto` for the New Work dialog.
 ///
@@ -184,10 +199,15 @@ pub struct NewWorkViewModel {
     /// non-manuscript templates. Defaults to `false` (the classic layout).
     chapter_scene: Signal<bool>,
     app_ctx: Rc<AppContext>,
+    /// `Some` when presented from the Launcher: "Create Work" defers to a
+    /// freshly-opened project window instead of creating in place. `None`
+    /// when presented from an already-open project (File ▸ New Work).
+    launcher_factory: Option<ProjectWindowFactory>,
 }
 
 #[allow(dead_code)]
 impl NewWorkViewModel {
+    /// For `NewWorkPanel::new` — presented over an already-open project.
     pub fn new(app_ctx: Rc<AppContext>) -> Self {
         Self {
             name: Signal::new(String::new()),
@@ -197,6 +217,23 @@ impl NewWorkViewModel {
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
             app_ctx,
+            launcher_factory: None,
+        }
+    }
+
+    /// For `NewWorkPanel::new_for_launcher` — presented from the Launcher, no
+    /// project open yet. `factory` builds the project window that "Create
+    /// Work" opens once the form is submitted.
+    pub fn new_for_launcher(app_ctx: Rc<AppContext>, factory: ProjectWindowFactory) -> Self {
+        Self {
+            name: Signal::new(String::new()),
+            format_idx: Signal::new(0),
+            location: Signal::new(default_location()),
+            language: Signal::new(current_locale_tag()),
+            template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
+            chapter_scene: Signal::new(false),
+            app_ctx,
+            launcher_factory: Some(factory),
         }
     }
 
@@ -282,15 +319,32 @@ impl NewWorkViewModel {
         )
     }
 
-    /// "Create Work" — create the work from the current form, then dismiss. On
-    /// failure the toast surfaces the error and the dialog stays open to retry.
+    /// "Create Work".
+    ///
+    /// Already in a project window (`launcher_factory` is `None`): create the
+    /// work in place, then dismiss. On failure the toast surfaces the error
+    /// and the dialog stays open to retry.
+    ///
+    /// From the Launcher (`launcher_factory` is `Some`): don't touch the
+    /// backend here — open a project window carrying this DTO as its
+    /// `PendingAction::New` (it creates the work on its own first build, once
+    /// its `NewWork` subscription is live), then close the Launcher. There is
+    /// no synchronous failure to report inline in this path; a creation error
+    /// there is `eprintln!`-only (see `App::build`), matching the argv/Open
+    /// path's existing error handling.
     pub fn create(&self, ctx: &mut EventContext) {
-        match work_management_commands::new_work(&self.app_ctx, &self.dto()) {
-            Ok(()) => ctx.dismiss_modal(),
-            Err(e) => {
-                ctx.show_toast(Toast::error(tr!(could_not_create_work(
-                    error = e.to_string()
-                ))));
+        match &self.launcher_factory {
+            None => match work_management_commands::new_work(&self.app_ctx, &self.dto()) {
+                Ok(()) => ctx.dismiss_modal(),
+                Err(e) => {
+                    ctx.show_toast(Toast::error(tr!(could_not_create_work(
+                        error = e.to_string()
+                    ))));
+                }
+            },
+            Some(factory) => {
+                ctx.open_window(factory.window_config(PendingAction::New(self.dto())));
+                ctx.close_window();
             }
         }
     }

@@ -1,55 +1,75 @@
-//! `WelcomeViewModel` — facade for the Welcome start screen.
+//! `WelcomeViewModel` — facade for the Launcher's Welcome content.
 //!
-//! Store-backed like `SettingsViewModel` (owns only the `show_welcome` signal +
-//! the app handle), so the Welcome panel rebuilds it anywhere from
-//! `WelcomeViewModel::new(ctx.settings(), app_ctx)`. The business actions (open a
-//! recent/example work, pick a file, create a new work) live here, not in the
-//! view's `build()`.
+//! Store-backed like `SettingsViewModel` (owns only the `show_welcome` signal,
+//! the app handle, and the project-window factory), so the Welcome panel
+//! rebuilds it anywhere from `WelcomeViewModel::new(ctx.settings(), app_ctx,
+//! factory)`. The business actions (open a recent/example work, pick a file,
+//! create a new work) live here, not in the view's `build()`.
+//!
+//! **Launcher-window model**: none of these methods touch the backend
+//! directly any more. Loading/creating a work here — in the Launcher window,
+//! before any project window's `App` exists — would race that window's
+//! `LoadWork`/`NewWork` subscription and silently skip the seed flow
+//! (`AppIds::seed`, `SingleWork::set_id`, the tree reload, …). Instead every
+//! action here opens a **project window** carrying the action as a
+//! [`PendingAction`], performed on that window's own first build once its
+//! subscriptions are live (mirrors the pre-existing argv-launch mechanism),
+//! then closes the Launcher — opening the new window *before* closing this
+//! one, per the ordering rule in `main.rs`'s module docs.
 
 use std::rc::Rc;
 
+use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*; // EventContext, Signal, tr!, FileDialogRequest/Result
 use bastyde::settings::SettingsStore;
 use bastyde::widgets::Toast;
 
 use frontend::AppContext;
-use frontend::commands::work_management_commands;
-use frontend::work_management::LoadWorkDto;
 
 use crate::SHOW_WELCOME_KEY;
-use crate::intents::AppIntent;
+use crate::app::PendingAction;
+use crate::new_work_panel::NewWorkPanel;
+use crate::windows::ProjectWindowFactory;
 
 #[derive(Clone)]
 pub struct WelcomeViewModel {
     show_welcome: Signal<bool>,
     app_ctx: Rc<AppContext>,
+    /// Builds the project window a successful open/create/import opens,
+    /// before this (Launcher) window closes.
+    factory: ProjectWindowFactory,
 }
 
 #[allow(dead_code)]
 impl WelcomeViewModel {
-    pub fn new(store: &SettingsStore, app_ctx: Rc<AppContext>) -> Self {
+    pub fn new(
+        store: &SettingsStore,
+        app_ctx: Rc<AppContext>,
+        factory: ProjectWindowFactory,
+    ) -> Self {
         Self {
             show_welcome: store.signal(SHOW_WELCOME_KEY, true),
             app_ctx,
+            factory,
         }
     }
 
-    /// The persisted "show at startup" signal — bound by the dialog's inline
-    /// checkbox and the Settings toggle (same cached `SHOW_WELCOME_KEY` signal).
+    /// The persisted "show at startup" signal — bound by the Launcher's
+    /// inline checkbox and the Settings toggle (same cached
+    /// `SHOW_WELCOME_KEY` signal).
     pub fn show_welcome(&self) -> Signal<bool> {
         self.show_welcome.clone()
     }
 
-    /// Open a recent/known work by path. Dismisses the modal first so the loaded
-    /// work is revealed behind it (mirrors `ProjectSwitcherButton`'s row click).
+    /// Open a recent/known work by path: opens a project window carrying
+    /// `PendingAction::Load(path)`, then closes the Launcher.
     ///
     /// The backup sniff (a blocking `File::open` + zip parse with no timeout —
     /// see `crate::backup::is_backup_path`) runs off the UI thread (T2-3):
     /// clicking any recent entry must never hang the app on a disconnected
     /// network/FUSE mount.
     pub fn open_work(&self, path: String, ctx: &mut EventContext) {
-        ctx.dismiss_modal();
-        let app_ctx = self.app_ctx.clone();
+        let factory = self.factory.clone();
         let path_for_check = path.clone();
         ctx.spawn_local_with(
             async move {
@@ -58,20 +78,18 @@ impl WelcomeViewModel {
                     .unwrap_or(false)
             },
             move |is_backup, ectx| {
-                // A backup opens in its own instance (never in this window).
+                // A backup always opens in its own instance (never as this
+                // process's project) — see the backup-mode invariant.
                 if is_backup {
                     ectx.request_activation_token_self(Box::new(move |tok| {
                         crate::project_switcher_button::spawn_new_process(&path, tok);
                     }));
                     return;
                 }
-                if let Err(e) =
-                    work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: path })
-                {
-                    ectx.show_toast(Toast::error(tr!(could_not_open_work(
-                        error = e.to_string()
-                    ))));
-                }
+                // Open the project window *before* closing the Launcher — the
+                // ordering rule in `main.rs`'s module docs.
+                ectx.open_window(factory.window_config(PendingAction::Load(path.clone())));
+                ectx.close_window();
             },
         )
         .detach();
@@ -91,25 +109,18 @@ impl WelcomeViewModel {
         }
     }
 
-    /// "Open" button — native picker for an existing `.skrib`, then load. The
-    /// backup sniff runs off the UI thread (T2-3), same rationale as
-    /// [`Self::open_work`].
+    /// "Open" button — native picker for an existing `.skrib`, then open a
+    /// project window carrying `PendingAction::Load`. The backup sniff runs
+    /// off the UI thread (T2-3), same rationale as [`Self::open_work`].
     pub fn pick_open(&self, ctx: &mut EventContext) {
-        let app_ctx = self.app_ctx.clone();
+        let factory = self.factory.clone();
         let req = FileDialogRequest::pick_file()
             .title("Open Skribisto work")
             .add_filter("Skribisto work", &["skrib"]);
         let _ = ctx.pick_file(req, move |res, ectx| {
             if let FileDialogResult::File(Some(path)) = res {
-                // NOT `dismiss_modal()`: this runs in the async file-dialog
-                // result callback, whose `EventContext` is anchored at the tree
-                // root (no source widget), so `dismiss_modal`'s walk up to the
-                // enclosing modal overlay finds nothing and silently no-ops. The
-                // Welcome modal is the topmost overlay when the native picker
-                // returns, so pop it directly.
-                ectx.dismiss_top_overlay();
                 let file = path.to_string_lossy().into_owned();
-                let app_ctx = app_ctx.clone();
+                let factory = factory.clone();
                 let file_for_check = file.clone();
                 ectx.spawn_local_with(
                     async move {
@@ -124,16 +135,8 @@ impl WelcomeViewModel {
                             }));
                             return;
                         }
-                        if let Err(e) = work_management_commands::load_work(
-                            &app_ctx,
-                            &LoadWorkDto {
-                                file_name: file.clone(),
-                            },
-                        ) {
-                            ectx2.show_toast(Toast::error(tr!(could_not_open_work(
-                                error = e.to_string()
-                            ))));
-                        }
+                        ectx2.open_window(factory.window_config(PendingAction::Load(file.clone())));
+                        ectx2.close_window();
                     },
                 )
                 .detach();
@@ -141,12 +144,28 @@ impl WelcomeViewModel {
         });
     }
 
-    /// "New Work" button — dismiss the Welcome modal and open the New Work
-    /// dialog. Routed through the global `work.new` command (App presents the
-    /// `NewWorkPanel` modal), so this VM stays decoupled from that peer.
+    /// "New Work" button — present the New Work modal directly in the
+    /// Launcher window. There is no `App`/`work.new` global action to
+    /// dispatch an intent to here (that action only exists inside an
+    /// already-open project window's tree), so this builds
+    /// [`NewWorkPanel::new_for_launcher`] directly: submitting the form opens
+    /// a project window carrying `PendingAction::New`, then closes the
+    /// Launcher — see `NewWorkViewModel::create`.
     pub fn new_work(&self, ctx: &mut EventContext) {
-        ctx.dismiss_modal();
-        ctx.send_intent(AppIntent::NewWork);
+        let app_ctx = self.app_ctx.clone();
+        let factory = self.factory.clone();
+        ctx.present_modal(
+            ModalRequest::deferred(move |t| {
+                t.add(NewWorkPanel::new_for_launcher(
+                    app_ctx.clone(),
+                    factory.clone(),
+                ))
+            })
+            .presentation(ModalPresentation::InTree)
+            .title("New Work")
+            .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+            .size(600, 680),
+        );
     }
 }
 
@@ -164,6 +183,57 @@ fn write_temp_example(file_name: &str, bytes: &[u8]) -> std::io::Result<String> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::RefCell;
+
+    use crate::app::PendingExit;
+    use crate::app_ids::AppIds;
+    use crate::models::BackupSettingsService;
+    use crate::singles::{SingleWork, SingleWorkInfo};
+    use crate::view_models::{
+        BackupSchedulerViewModel, BackupSettingsViewModel, OutlineViewModel, SaveAsViewModel,
+    };
+
+    /// A minimal, fully in-memory `ProjectWindowFactory` — enough plumbing to
+    /// construct a `WelcomeViewModel` in a test; these particular tests never
+    /// exercise the factory's `window_config`.
+    fn test_factory(app_ctx: Rc<AppContext>) -> ProjectWindowFactory {
+        let ids = AppIds::new();
+        let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
+        let single_work = SingleWork::new(app_ctx.clone());
+        let single_work_info = SingleWorkInfo::new(app_ctx.clone());
+        let backup_mode = Signal::new(false);
+        let backup_context = Signal::new(None);
+        let save_as_vm = SaveAsViewModel::new(
+            app_ctx.clone(),
+            ids.clone(),
+            single_work.clone(),
+            backup_mode.clone(),
+            backup_context.clone(),
+        );
+        let backup_settings =
+            BackupSettingsViewModel::new(BackupSettingsService::in_memory_default());
+        let backup_scheduler = BackupSchedulerViewModel::new(
+            app_ctx.clone(),
+            backup_settings,
+            single_work.clone(),
+            single_work_info.clone(),
+            backup_mode.clone(),
+        );
+        ProjectWindowFactory::new(
+            app_ctx,
+            outline,
+            single_work,
+            single_work_info,
+            Signal::new(false),
+            save_as_vm,
+            backup_mode,
+            backup_context,
+            Signal::new(false),
+            Signal::new(PendingExit::None),
+            backup_scheduler,
+            Rc::new(RefCell::new(None)),
+        )
+    }
 
     #[test]
     fn welcome_show_default_on_and_persists() {
@@ -176,13 +246,13 @@ mod tests {
         let store = SettingsStore::open(path.clone()).expect("open settings store");
         let app_ctx = Rc::new(AppContext::new());
 
-        let vm = WelcomeViewModel::new(&store, app_ctx.clone());
+        let vm = WelcomeViewModel::new(&store, app_ctx.clone(), test_factory(app_ctx.clone()));
         assert!(vm.show_welcome().get(), "defaults to on");
 
         vm.show_welcome().set(false);
         // A second facade over the same store observes the change (same cached
         // signal per key) — the store-backed-facade invariant.
-        let vm2 = WelcomeViewModel::new(&store, app_ctx);
+        let vm2 = WelcomeViewModel::new(&store, app_ctx.clone(), test_factory(app_ctx));
         assert!(
             !vm2.show_welcome().get(),
             "toggle persists across instances"

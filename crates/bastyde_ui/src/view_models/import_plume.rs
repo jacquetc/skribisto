@@ -24,14 +24,12 @@ use bastyde::widgets::{
 };
 
 use frontend::AppContext;
-use frontend::commands::{
-    import_management_commands, long_operation_commands, work_management_commands,
-};
+use frontend::commands::{import_management_commands, long_operation_commands};
 use frontend::common::event::Event;
 use frontend::import_management::ImportPlumeCreatorFileDto;
-use frontend::work_management::LoadWorkDto;
 
 use super::long_op::{event_id, parse_payload, payload_id};
+use crate::intents::AppIntent;
 
 /// Update-in-place key for the single toast the import drives through its
 /// lifecycle (loading → progress → success / cancelled / error).
@@ -350,7 +348,6 @@ impl ImportPlumeViewModel {
             &op_id,
         ) {
             Ok(Some(res)) => {
-                let app_ctx = self.app_ctx.clone();
                 let output = res.output_path.clone();
                 let done = tr!(import_plume_done(
                     imported = res.imported_items,
@@ -358,16 +355,15 @@ impl ImportPlumeViewModel {
                 ));
                 ctx.show_toast(Toast::success(done).id(IMPORT_TOAST_ID).action(
                     ToastAction::primary(tr!(import_plume_open_now()), move |c| {
-                        if let Err(e) = work_management_commands::load_work(
-                            &app_ctx,
-                            &LoadWorkDto {
-                                file_name: output.clone(),
-                            },
-                        ) {
-                            c.show_toast(Toast::error(tr!(could_not_open_work(
-                                error = e.to_string()
-                            ))));
-                        }
+                        // Opening the imported project *replaces* the one in this
+                        // window, so this goes through the `work.open_path` intent →
+                        // the unsaved-changes guard, which loads it once the open
+                        // project is saved or explicitly discarded. It used to call
+                        // `load_work` outright: importing from a window with unsaved
+                        // edits and clicking "Open now" binned them without a word.
+                        c.send_intent(AppIntent::OpenWorkPath {
+                            path: output.clone(),
+                        });
                     }),
                 ));
             }

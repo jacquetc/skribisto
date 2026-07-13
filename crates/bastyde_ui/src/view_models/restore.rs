@@ -21,10 +21,19 @@
 //! `on_long_op_failed`'s "state unchanged" is now literally true for both
 //! shapes, not just the zip one.
 //!
-//! Self-contained: it triggers `save_as` directly (not via `SaveAsViewModel`) and
-//! handles that op's completion itself — recording the new path/shape into
-//! `WorkInfo`, then clearing backup mode so the window becomes the live restored
-//! project in place (no reload).
+//! Self-contained: it triggers `save_as` directly (not via `SaveAsViewModel`,
+//! whose completion would repoint `WorkInfo` at the *temp* path) and handles that
+//! op's completion itself — recording the new path/shape into `WorkInfo`, then
+//! clearing backup mode so the window becomes the live restored project in place
+//! (no reload).
+//!
+//! Because it bypasses `SaveAsViewModel::begin`, it owns the same
+//! flush-before-serialize invariant itself: [`Self::set_flush_hook`] installs
+//! `editors.flush_all()`, and [`Self::do_restore`] runs it before the read-only
+//! background op reads the store. Typing only marks a doc dirty until an explicit
+//! flush, so without it a restore would write the *pre-edit* prose — silently
+//! dropping everything typed in the backup window since the last flush boundary,
+//! which is exactly the content the user is restoring *in order to keep*.
 
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
@@ -67,6 +76,10 @@ pub struct RestoreViewModel {
     backup_mode: Signal<bool>,
     backup_context: Signal<Option<BackupContext>>,
     pending: Rc<RefCell<Option<RestorePending>>>,
+    /// Pushes the live editor buffers into the store (`editors.flush_all()`),
+    /// installed by `App::build`. See the module docs: a restore serializes the
+    /// store, so it must flush first. Shared cell → visible on every clone.
+    flush_hook: Rc<RefCell<Rc<dyn Fn()>>>,
 }
 
 impl RestoreViewModel {
@@ -84,7 +97,20 @@ impl RestoreViewModel {
             backup_mode,
             backup_context,
             pending: Rc::new(RefCell::new(None)),
+            flush_hook: Rc::new(RefCell::new(Rc::new(|| {}) as Rc<dyn Fn()>)),
         }
+    }
+
+    /// Install the real flush hook (`editors.flush_all()`). Called once from
+    /// `App::build`; visible on every existing clone.
+    pub fn set_flush_hook(&self, hook: Rc<dyn Fn()>) {
+        *self.flush_hook.borrow_mut() = hook;
+    }
+
+    /// Copy the live editor buffers into the store. Cheap when nothing is dirty.
+    fn flush(&self) {
+        let hook = self.flush_hook.borrow().clone();
+        hook();
     }
 
     /// Begin the restore flow (from the choice modal or the banner button).
@@ -159,6 +185,12 @@ impl RestoreViewModel {
     /// Safety-copy the original, then write the restored content to a temp
     /// sibling (T2-6) — never in place.
     fn do_restore(&self, ctx: &mut EventContext, target: String) {
+        // The background `save_as` below is read-only: it serializes the store as
+        // it finds it. Push the live editor buffers in first, or the restored file
+        // is written from the *pre-edit* prose (see the module docs). Cheap when
+        // nothing is dirty; must happen on the UI thread, before the op starts.
+        self.flush();
+
         // Re-check the peer race just before writing (advisory, best-effort).
         let canon = crate::open_registry::canonical(&target);
         if crate::open_registry::scan().into_iter().any(|e| {

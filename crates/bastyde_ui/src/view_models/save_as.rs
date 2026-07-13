@@ -15,6 +15,16 @@
 //! the project that was actually saved, even if the user switched projects while
 //! the background save was running, and concurrent Save-As ops don't drop each
 //! other's completion.
+//!
+//! [`SaveAsViewModel::begin`] is the **only** door to the backend `save_as`: it
+//! flushes the live editor buffers into the store before the background op reads
+//! it. Typing does not write through to `Content` — it only marks the doc dirty
+//! (`OpenDoc::mark_dirty_fn`) until an explicit flush — so a Save As that skipped
+//! that step would serialize the *pre-edit* prose and silently write a file
+//! missing everything typed since the last flush boundary. That is worst in
+//! backup mode, where Save is off and Save As is the only way to keep the edits
+//! at all. Same invariant as `save_work` (via `EditorsViewModel::save_to_disk`)
+//! and every backup trigger (via the scheduler's flush hook).
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -28,6 +38,7 @@ use frontend::commands::{work_info_commands, work_management_commands};
 use frontend::common::entities::WorkShape;
 use frontend::common::event::Event;
 use frontend::direct_access::UpdateWorkInfoDto;
+use frontend::work_management::SaveAsDto;
 
 use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
@@ -57,6 +68,12 @@ pub struct SaveAsViewModel {
     /// the escape hatch out of backup mode (the banner's other exit is Restore).
     backup_mode: Signal<bool>,
     backup_context: Signal<Option<BackupContext>>,
+    /// Pushes the live editor buffers into the store (in practice
+    /// `editors.flush_all()`), installed by `App::build` once the editors exist.
+    /// A no-op until then — and in headless tests, which is why it is a hook
+    /// rather than a hard `EditorsViewModel` dependency. Shared (`Rc<RefCell<_>>`)
+    /// so installing it is visible on every clone already handed out.
+    flush_hook: Rc<RefCell<Rc<dyn Fn()>>>,
 }
 
 impl SaveAsViewModel {
@@ -74,14 +91,70 @@ impl SaveAsViewModel {
             single_work,
             backup_mode,
             backup_context,
+            flush_hook: Rc::new(RefCell::new(Rc::new(|| {}) as Rc<dyn Fn()>)),
         }
+    }
+
+    /// Install the real flush hook (`editors.flush_all()`). Called once from
+    /// `App::build`; visible on every existing clone.
+    pub fn set_flush_hook(&self, hook: Rc<dyn Fn()>) {
+        *self.flush_hook.borrow_mut() = hook;
+    }
+
+    /// Copy the live editor buffers into the store. Cheap when nothing is dirty.
+    fn flush(&self) {
+        let hook = self.flush_hook.borrow().clone();
+        hook();
+    }
+
+    /// Start a Save As to `target` — **the only door to the backend `save_as`**.
+    ///
+    /// Flushes the editors first (see the module docs: without it the background
+    /// op serializes the pre-edit prose), then starts the long operation, records
+    /// it as in-flight, and toasts. On a start failure the error is surfaced and
+    /// nothing is registered.
+    pub fn begin(&self, ctx: &mut EventContext, target: String, as_folder: bool) {
+        match self.start_flushed(target.clone(), as_folder) {
+            Ok(()) => {
+                let toast = if as_folder {
+                    tr!(saving_as_folder(target = target))
+                } else {
+                    tr!(saving_as_file(target = target))
+                };
+                ctx.show_toast(Toast::info(toast));
+            }
+            Err(e) => {
+                ctx.show_toast(Toast::error(tr!(save_error(error = e.to_string()))));
+            }
+        }
+    }
+
+    /// [`Self::begin`] without the toasts: flush the editors, start the background
+    /// op, register it as in-flight. The background op is read-only, so it reads
+    /// the store the flush just wrote; `on_long_op_completed` records the new
+    /// path/shape into `WorkInfo` when it lands.
+    ///
+    /// Split out ctx-free so the flush-before-serialize invariant is testable
+    /// headlessly (this crate has no `EventContext` harness — see the tests below
+    /// and `backup_scheduler.rs`'s).
+    fn start_flushed(&self, target: String, as_folder: bool) -> anyhow::Result<()> {
+        self.flush();
+        let op_id = work_management_commands::save_as(
+            &self.app_ctx,
+            &SaveAsDto {
+                file_name: target,
+                as_folder,
+            },
+        )?;
+        self.start(op_id, as_folder);
+        Ok(())
     }
 
     /// Register the in-flight Save As, capturing the CURRENT `WorkInfo` id (the
     /// project being saved) so completion targets it even if the user switches
-    /// projects before the background op finishes. Called from the Save-As menu
-    /// action once the long operation has started.
-    pub fn start(&self, op_id: String, as_folder: bool) {
+    /// projects before the background op finishes. Called by [`Self::begin`] once
+    /// the long operation has started.
+    fn start(&self, op_id: String, as_folder: bool) {
         let work_info_id = self.ids.work_info_id.get();
         self.pending.borrow_mut().insert(
             op_id,
@@ -163,5 +236,77 @@ impl SaveAsViewModel {
             .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
             .unwrap_or_default();
         ctx.show_toast(Toast::error(tr!(save_error(error = error))));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+
+    /// No project is open in these tests, so `start_flushed`'s backend call is a
+    /// no-op-ish long op that finds nothing to write — what is under test is the
+    /// flush that happens *before* it, which is the invariant Save As used to
+    /// violate. (`begin` itself needs a real `&mut EventContext` for its toasts,
+    /// and this crate has no `EventContext` harness — same constraint the backup
+    /// scheduler's flush tests work around, and why `start_flushed` is ctx-free.)
+    fn test_vm() -> SaveAsViewModel {
+        let app_ctx = Rc::new(AppContext::new());
+        let single_work = SingleWork::new(app_ctx.clone());
+        SaveAsViewModel::new(
+            app_ctx,
+            AppIds::default(),
+            single_work,
+            Signal::new(false),
+            Signal::new(None),
+        )
+    }
+
+    fn target() -> String {
+        std::env::temp_dir()
+            .join("skribisto-save-as-flush-test.skrib")
+            .to_string_lossy()
+            .into_owned()
+    }
+
+    #[test]
+    fn save_as_flushes_the_editors_before_it_reads_the_store() {
+        let vm = test_vm();
+        let flushed = Rc::new(Cell::new(0u32));
+        {
+            let flushed = flushed.clone();
+            vm.set_flush_hook(Rc::new(move || flushed.set(flushed.get() + 1)));
+        }
+        let _ = vm.start_flushed(target(), false);
+        assert_eq!(
+            flushed.get(),
+            1,
+            "Save As must flush the live editor buffers into the store, or the \
+             background op serializes the pre-edit prose"
+        );
+    }
+
+    #[test]
+    fn flush_hook_defaults_to_a_harmless_no_op() {
+        // Constructing the view-model without installing a hook (the headless
+        // shape) must not panic: `start_flushed`'s `self.flush()` is always safe.
+        let vm = test_vm();
+        let _ = vm.start_flushed(target(), false);
+    }
+
+    #[test]
+    fn set_flush_hook_is_visible_on_every_existing_clone() {
+        // The hook cell is shared, so installing it on ONE clone (as `App::build`
+        // does) must be visible on clones handed out earlier — e.g. the ones held
+        // by the title-bar menu and the backup banner.
+        let vm = test_vm();
+        let earlier_clone = vm.clone();
+        let flushed = Rc::new(Cell::new(0u32));
+        {
+            let flushed = flushed.clone();
+            vm.set_flush_hook(Rc::new(move || flushed.set(flushed.get() + 1)));
+        }
+        let _ = earlier_clone.start_flushed(target(), false);
+        assert_eq!(flushed.get(), 1, "the earlier clone must see the new hook");
     }
 }

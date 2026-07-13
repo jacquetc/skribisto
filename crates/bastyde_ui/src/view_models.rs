@@ -29,6 +29,10 @@
 //!     Work dialog's form signals).
 //!   * [`import_plume`] — `ImportPlumeViewModel`: single-instance live state (owns
 //!     the Import Plume Creator dialog's form signals).
+//!   * [`project_switch`] — `ProjectSwitchViewModel`: single-instance live state
+//!     (owns the unsaved-changes guard every in-place project switch — New Work,
+//!     Open Work, "Open here", the import toast — must pass, and the switch parked
+//!     behind an in-flight save).
 //!
 //! Cross-view-model rules (keep the dependency graph a DAG):
 //!   * A view-model may hold framework model handles and call *down* into them.
@@ -43,6 +47,7 @@ mod import_plume;
 mod long_op;
 mod new_work;
 mod outline;
+mod project_switch;
 mod restore;
 mod save_as;
 mod settings;
@@ -55,6 +60,7 @@ pub use editors::{EditorsViewModel, Side};
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;
+pub use project_switch::{PendingSwitch, ProjectSwitchViewModel};
 pub use restore::RestoreViewModel;
 pub use save_as::SaveAsViewModel;
 pub use settings::{EditorTypography, EditorTypographySet, SettingsViewModel};

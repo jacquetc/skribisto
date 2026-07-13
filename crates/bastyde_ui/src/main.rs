@@ -1,4 +1,31 @@
 //! Skribisto desktop UI (Bastyde). Wires the Qleany backend to a Bastyde shell.
+//!
+//! ## The launcher-window model
+//!
+//! Skribisto is one process per project, so a project window must only ever
+//! be created once its project is already known — otherwise the window's
+//! persistence id (see [`windows::window_id_for`]) has to be fixed before any
+//! project exists, and per-project geometry becomes impossible to key
+//! correctly (the bug this model replaces).
+//!
+//! - **Bare launch** (no `.skrib` on argv), with the "show at startup" setting
+//!   on, or with it off but no reachable recent project: opens a **Launcher**
+//!   window (the Welcome UI as a real window — see [`windows::launcher_window_config`]).
+//! - **Bare launch with the setting off and a reachable recent project**:
+//!   skips the Launcher and opens that project directly.
+//! - **Launch with a path on argv** (file manager, CLI, `spawn_new_process`):
+//!   always skips the Launcher and opens that project directly.
+//! - Picking / creating / importing a project from the Launcher opens a
+//!   **project window**, then closes the Launcher.
+//! - Closing a project (its window's own close, Ctrl+Q, Ctrl+W / File ▸ Close
+//!   Work, or the brand icon / File ▸ Welcome…) opens a fresh Launcher window,
+//!   then closes the project window — see
+//!   [`app::close_work_and_return_to_launcher`]. The process stays alive; it
+//!   only quits once the Launcher itself is closed.
+//!
+//! **Critical ordering rule**: the process quits when its last window closes,
+//! so every transition above always opens the new window *before* closing the
+//! old one. Getting this backwards quits the app.
 
 mod activity_icons;
 mod app;
@@ -26,42 +53,31 @@ mod singles;
 mod tabs;
 mod view_models;
 mod welcome_panel;
+mod windows;
 
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use bastyde::core::event_source::{EventSource, SubscriptionHandle};
-use bastyde::widgets::{Center, HStack};
 
 use bastyde::core::app_event::AppEvent;
 use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
-use bastyde::res;
 use bastyde::settings::{AppPaths, SettingsStore};
-use bastyde::widgets::primitives::icon_widget::IconMode;
-use bastyde::widgets::{
-    CollapsePolicy, EventContextMessageBoxExt, Expand, IconButton, IconButtonSize, IconWidget,
-    MenuBar, MenuEntry, MenuModel, MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton,
-    TextWidget, TitleBar, Toast, VStack, WindowFrame, framework_locales,
-};
-use project_switcher_button::ProjectSwitcherButton;
+use bastyde::widgets::framework_locales;
 
 use frontend::AppContext;
 use frontend::EventHubClient;
-use frontend::commands::{
-    handling_app_lifecycle_commands, work_info_commands, work_management_commands,
-};
-use frontend::common::entities::WorkShape;
+use frontend::commands::{handling_app_lifecycle_commands, work_info_commands};
 use frontend::common::event::{Event, Origin};
-use frontend::work_management::SaveAsDto;
 
-use app::{App, PendingExit};
+use app::PendingExit;
 use app_ids::AppIds;
 use models::{BackupSettingsService, OpenDocsStore};
 use singles::{SingleWork, SingleWorkInfo};
 use view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel,
-    RestoreViewModel, SaveAsViewModel,
+    ProjectSwitchViewModel, RestoreViewModel, SaveAsViewModel,
 };
 
 /// The currently-open project's path (from `WorkInfo`), if any.
@@ -141,9 +157,12 @@ pub const EDITOR_WIDTH_KEY: &str = "editor.column_width";
 pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;
 /// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
 pub const AUTOSAVE_KEY: &str = "editor.autosave";
-/// When on (default), the Welcome modal pops at startup if no work was passed
-/// on the command line. Toggled in Settings and via the Welcome dialog's inline
-/// checkbox; both bind the same `SettingsStore` signal.
+/// When on (default) and no work was passed on the command line, a bare
+/// launch opens the Launcher window (the Welcome UI). When off, a bare launch
+/// instead opens the most recent *reachable* project directly — falling back
+/// to the Launcher only if there is none (JetBrains' "reopen last project on
+/// startup"). Toggled in Settings ▸ Appearance & Behaviour (the Launcher
+/// itself has no inline copy of this — see `welcome_panel.rs`'s module docs).
 pub const SHOW_WELCOME_KEY: &str = "ui.show_welcome";
 
 // ── Editor typography (Settings ▸ Editor ▸ Scene / Synopsis / Notes) ──────────
@@ -282,7 +301,7 @@ fn main() {
 
     // Read persisted UI prefs before constructing the app (same AppPaths the
     // builder will use via `.application(...)`).
-    let (dark, locale_str, autosave_init) = read_prefs();
+    let (dark, locale_str, autosave_init, show_welcome_init) = read_prefs();
 
     let theme = if dark { intui::dark() } else { intui::light() };
 
@@ -298,7 +317,6 @@ fn main() {
         .fallback_locale("en-US".parse().unwrap())
         .framework_locales(framework_locales());
 
-    let app_ctx_root = app_ctx.clone();
     // The app's id-only global state (root/work/work-info/undo-stack ids). Created
     // here, shared into the outline, the singles, and the title-bar menu, and
     // registered as `app_state` so any widget can reach it.
@@ -387,6 +405,20 @@ fn main() {
     // `App` (which maintains `unsaved` and performs the deferred close on save).
     let unsaved = Signal::new(false);
     let pending_exit = Signal::new(PendingExit::None);
+    // The *switch* guard — the same unsaved-changes prompt for the four commands
+    // that replace this window's project in place without going through a close
+    // (New Work, Open Work, the switcher's "Open here", the import toast's "Open
+    // now"); all four used to destroy unsaved edits silently. Built here because
+    // it guards on the same `unsaved`/`backup_mode`/autosave signals as the close
+    // guard, and registered as app-state so the two doors outside `App` (the
+    // switcher popover, the import toast) reach it. `App::build` installs its
+    // save + New-Work-form hooks (both need the editors / the widget tree).
+    let project_switch = ProjectSwitchViewModel::new(
+        app_ctx.clone(),
+        unsaved.clone(),
+        backup_mode.clone(),
+        autosave_menu.clone(),
+    );
     // Optional `.skrib` path to open on launch (`skribisto <path>`); `App` opens it
     // once on first build.
     let initial_project = std::env::args().nth(1).filter(|s| !s.trim().is_empty());
@@ -405,11 +437,63 @@ fn main() {
         }
     }
 
-    // Shared handle to the main window's `WindowState`, captured in its root
-    // builder below — lets IPC "raise" events (handled in `on_app_event`) focus
-    // the main window without a WindowManager id lookup, which misses while that
-    // window is dispatching its own events.
+    // Shared handle to the *current* project window's `WindowState`, captured
+    // in its root builder — lets IPC "raise" events (handled in
+    // `on_app_event`) focus it directly without a WindowManager id lookup,
+    // which misses while that window is dispatching its own events. Never
+    // pointed at the Launcher (see `windows::launcher_window_config`'s docs):
+    // IPC raise is only ever targeted at a process holding an open-registry
+    // claim on a specific project path, which a Launcher-only process never
+    // has.
     let main_window_state: Rc<RefCell<Option<WindowState>>> = Rc::new(RefCell::new(None));
+
+    // Everything a project window needs to build itself — bundled once here
+    // and registered as `app_state` so both this initial-window decision and
+    // a later runtime `ctx.open_window(...)` (from the Launcher, or the
+    // Close-Work → Launcher path) build an identical window. See
+    // `windows.rs`.
+    let project_factory = windows::ProjectWindowFactory::new(
+        app_ctx.clone(),
+        outline.clone(),
+        single_work.clone(),
+        single_work_info.clone(),
+        autosave_menu.clone(),
+        save_as_vm.clone(),
+        backup_mode.clone(),
+        backup_context.clone(),
+        unsaved.clone(),
+        pending_exit.clone(),
+        backup_scheduler.clone(),
+        main_window_state.clone(),
+    );
+
+    // ── Decide the initial window: launcher-window model ────────────────
+    // A project window is only ever created once its project is already
+    // known (see the module docs above) — so this is the one place that
+    // decides, up front, whether the very first window is the Launcher or a
+    // project, based on argv / the persisted "show at startup" setting / the
+    // most recent reachable project.
+    let initial_window_config = if let Some(path) = initial_project.clone() {
+        // Launch with a path on argv (file manager, CLI, `spawn_new_process`):
+        // always skip the Launcher.
+        project_factory.window_config(app::PendingAction::Load(path))
+    } else if show_welcome_init {
+        windows::launcher_window_config(app_ctx.clone())
+    } else {
+        // "Show at startup" is off: open the most recent *reachable* project
+        // directly (`RecentWorkListModel` already filters unreachable/backup
+        // entries) — falling back to the Launcher only if there is none.
+        match crate::models::RecentWorkListModel::new(app_ctx.clone())
+            .items()
+            .into_iter()
+            .next()
+        {
+            Some(recent) => {
+                project_factory.window_config(app::PendingAction::Load(recent.absolute_path))
+            }
+            None => windows::launcher_window_config(app_ctx.clone()),
+        }
+    };
 
     BastydeAppBuilder::new()
         .theme(theme)
@@ -423,12 +507,19 @@ fn main() {
         .install_automation_bridge_in_debug()
         .install_file_dialog()
         .install_toast_default()
-        // Main-thread async executor: `ctx.spawn_local` / `spawn_local_with` +
-        // `spawn_blocking` get pure-filesystem work (backup sniffing,
-        // destination-reachability probes) off the UI thread. No store
-        // involvement, so this — not a Qleany `LongOperation` — is the right
-        // tool (see bastyde's `docs/async.md`).
-        .install_async()
+        // Main-thread async executor: `spawn_blocking` gets pure-filesystem work
+        // (backup sniffing, destination-reachability probes) off the UI thread.
+        // These are UI concerns — "is this directory writable, so I can draw a
+        // ✓", "is this file a backup, so I know which panel to show" — not
+        // business rules: no entity, no invariant, no undo, no event. A Qleany
+        // `LongOperation` would be ceremony around a unit of work that touches
+        // no unit of work.
+        //
+        // `install_async_async_std`, not the bare `install_async`: async-std is
+        // already linked via the default `file-dialog` (rfd) feature, so the
+        // reactor costs nothing. The bare executor has *no* reactor, and would
+        // silently never wake a future awaiting a native timer/socket.
+        .install_async_async_std()
         .event_source(EventHubSource { client })
         .app_state(ids.clone())
         .app_state(open_docs.clone())
@@ -440,6 +531,8 @@ fn main() {
         .app_state(backup_settings.clone())
         .app_state(backup_scheduler.clone())
         .app_state(restore_vm.clone())
+        .app_state(project_switch.clone())
+        .app_state(project_factory.clone())
         // Bind this instance's IPC listener (multi-process window switching); an
         // incoming raise request focuses the captured main window.
         .on_ready(ipc::spawn_listener)
@@ -457,378 +550,7 @@ fn main() {
                 }
             }
         })
-        .initial_window(
-            WindowConfig::new()
-                .id("main")
-                .title("Skribisto")
-                .size(1200, 800)
-                .decorations(DecorationsMode::CustomChrome)
-                // Consume an xdg-activation startup token (set by the desktop, or
-                // by another instance's "open in new window") so this window comes
-                // up focused on Wayland.
-                .activate_from_env(true)
-                // Unsaved-changes guard for every interactive close (title-bar X,
-                // Alt+F4, and the Quit menu — all route through `close_window()`).
-                // Autosave on: just ensure the save runs, then close (no prompt).
-                // Autosave off + unsaved: Save / Discard / Cancel. The save is
-                // async, so we veto now and `App` re-issues the close on SaveWork.
-                .on_close_requested({
-                    let unsaved = unsaved.clone();
-                    let autosave = autosave_menu.clone();
-                    let pending = pending_exit.clone();
-                    let scheduler = backup_scheduler.clone();
-                    let backup_mode = backup_mode.clone();
-                    move |ctx| {
-                        // Backup window: Save is off (the file is read-only), so the
-                        // normal save-then-close path doesn't apply. Clean → close;
-                        // dirty → offer to discard (Save As keeps edits — via the
-                        // banner). No on-close backup (never back up a backup).
-                        if backup_mode.get() {
-                            if !unsaved.get() {
-                                return CloseResponse::Close;
-                            }
-                            ctx.present_message_box(
-                                MessageBox::question(tr!(close_backup_discard_title()))
-                                    .text(tr!(close_backup_discard_text()))
-                                    .buttons(MessageBoxButtons::Custom(vec![
-                                        MessageBoxButton::standard(StandardButton::Discard),
-                                        MessageBoxButton::standard(StandardButton::Cancel),
-                                    ]))
-                                    .default_button(StandardButton::Cancel)
-                                    .escape_button(StandardButton::Cancel)
-                                    .on_result(move |r, ctx| {
-                                        if r.button == StandardButton::Discard {
-                                            ctx.close_window_forced();
-                                        }
-                                    }),
-                            );
-                            return CloseResponse::Veto;
-                        }
-                        if !unsaved.get() {
-                            // Clean project: still take an on-close backup (if the
-                            // policy asks) before actually closing — `on_close_flow`
-                            // forced-closes once the backup finishes (or immediately
-                            // if there's nothing to do).
-                            if scheduler.wants_on_close() {
-                                scheduler.on_close_flow(ctx, PendingExit::CloseWindow);
-                                return CloseResponse::Veto;
-                            }
-                            return CloseResponse::Close;
-                        }
-                        if autosave.get() {
-                            // Save first; the SaveWork-completion handler then runs
-                            // the on-close backup and performs the close.
-                            pending.set(PendingExit::CloseWindow);
-                            return CloseResponse::Veto;
-                        }
-                        let pe = pending.clone();
-                        ctx.present_message_box(
-                            MessageBox::question(tr!(close_question()))
-                                .text(tr!(unsaved_changes()))
-                                .buttons(MessageBoxButtons::SaveDiscardCancel)
-                                .default_button(StandardButton::Save)
-                                .escape_button(StandardButton::Cancel)
-                                .on_result(move |r, ctx| match r.button {
-                                    StandardButton::Save => pe.set(PendingExit::CloseWindow),
-                                    // Discarding unsaved edits skips the backup (the
-                                    // last-saved state is what's kept).
-                                    StandardButton::Discard => ctx.close_window_forced(),
-                                    _ => {}
-                                }),
-                        );
-                        CloseResponse::Veto
-                    }
-                })
-                .root(move |tree, state| {
-                    // Publish this window's handle so IPC "raise" events (handled
-                    // in `on_app_event`) can focus it directly.
-                    *main_window_state.borrow_mut() = Some(state.clone());
-                    let theme = tree.theme().clone();
-
-                    // Custom Bastyde title bar with a model-driven hamburger menu
-                    // in the leading slot (falls back to a plain label on any
-                    // platform whose host is unavailable).
-                    let title_bar = match tree.title_bar_host() {
-                        Some(host) => {
-                            // Model-style menu, collapsed to a hamburger (☰).
-                            let menu_ctx = app_ctx_root.clone();
-                            let menu_work = single_work.clone();
-                            let menu_work_info = single_work_info.clone();
-                            let menu_autosave = autosave_menu.clone();
-                            let menu_save_as = save_as_vm.clone();
-                            let menu_backup_mode = backup_mode.clone();
-                            let menu_unsaved = unsaved.clone();
-                            let menu = MenuModel::new().menu(tr!(menu_file()), move |m| {
-                                let file_ctx = menu_ctx.clone();
-                                let folder_ctx = menu_ctx.clone();
-                                let folder_work = menu_work.clone();
-                                let save_as_file_vm = menu_save_as.clone();
-                                let save_as_folder_vm = menu_save_as.clone();
-                                // A work is open iff its WorkInfo shape is known.
-                                let show_open = menu_work_info.shape().map(|s| s.is_some());
-                                // Bug 2: offer only the *other* shape — a zip project
-                                // shows "Save as folder", a folder project shows
-                                // "Save as single file". Both collapse when no
-                                // project is open (`shape` is `None`). Reactive via
-                                // the overlay menu's `visible_when`.
-                                let show_save_file =
-                                    menu_work_info.shape().map(|s| *s == Some(WorkShape::Folder));
-                                let show_save_folder =
-                                    menu_work_info.shape().map(|s| *s == Some(WorkShape::Zip));
-                                // Autosave hides the manual "Save" item (+ its Ctrl+S
-                                // accelerator); the save then runs on the debounce timer.
-                                // Also hidden in backup mode (Save is off there).
-                                let show_manual_save = menu_autosave
-                                    .zip(&menu_backup_mode)
-                                    .map(|(a, bm)| !*a && !*bm);
-                                // …and it greys out while there is nothing to save.
-                                // Same signal as the `editor.save` action/shortcut
-                                // (app.rs), so the item, Ctrl+S and the intent are
-                                // enabled or disabled as one.
-                                let can_save = app::can_save(&menu_unsaved, &menu_backup_mode);
-                                // "Back up now" shows only for an open, non-backup project.
-                                let show_backup_now = show_open
-                                    .zip(&menu_backup_mode)
-                                    .map(|(o, bm)| *o && !*bm);
-                                // New / Open route through the global `work.new` /
-                                // `work.open` actions (registered in `App::build`), so
-                                // the same code path serves the menu and the Ctrl+N /
-                                // Ctrl+O shortcuts.
-                                m.item(
-                                    MenuEntry::new(tr!(menu_new_work()))
-                                        .intent("work.new")
-                                        .shortcut("work.new"),
-                                )
-                                .item(
-                                    MenuEntry::new(tr!(menu_open_work()))
-                                        .intent("work.open")
-                                        .shortcut("work.open"),
-                                )
-                                // Import from another writing app. A submenu so
-                                // more importers can slot in later; each opens its
-                                // own panel via a global action.
-                                .submenu(tr!(menu_import_from()), |s| {
-                                    s.item(
-                                        MenuEntry::new(tr!(menu_import_plume()))
-                                            .intent("work.import_plume"),
-                                    )
-                                })
-                                .separator()
-                                // Flush editors to the store + write to disk (also Ctrl+S).
-                                .item(
-                                    MenuEntry::new(tr!(menu_save()))
-                                        .visible(show_manual_save)
-                                        .enabled(can_save)
-                                        .intent("editor.save")
-                                        .shortcut("editor.save"),
-                                )
-                                // Convert the open project to a single zipped `.skrib`
-                                // at a user-chosen location (native save dialog).
-                                .item(MenuEntry::new(tr!(menu_save_as_file())).visible(show_save_file).on_activate(
-                                    move |ectx| {
-                                        let ctx = file_ctx.clone();
-                                        let vm = save_as_file_vm.clone();
-                                        let req = FileDialogRequest::save_file()
-                                            .title("Save as single .skrib file")
-                                            .default_file_name(format!("{}.skrib", project_stem(&ctx)))
-                                            .add_filter("Skribisto work", &["skrib"]);
-                                        let _ = ectx.save_file(req, move |res, ectx2| {
-                                            if let FileDialogResult::Saved(Some(path)) = res {
-                                                let target = path.to_string_lossy().into_owned();
-                                                match work_management_commands::save_as(
-                                                    &ctx,
-                                                    &SaveAsDto {
-                                                        file_name: target.clone(),
-                                                        as_folder: false,
-                                                    },
-                                                ) {
-                                                    // The background op is read-only; `vm` records the
-                                                    // new path/shape into WorkInfo on completion.
-                                                    Ok(op_id) => {
-                                                        vm.start(op_id, false);
-                                                        ectx2.show_toast(Toast::info(
-                                                            tr!(saving_as_file(target = target)),
-                                                        ));
-                                                    }
-                                                    Err(e) => {
-                                                        ectx2.show_toast(Toast::error(
-                                                            tr!(save_error(error = e.to_string())),
-                                                        ));
-                                                    }
-                                                };
-                                            }
-                                        });
-                                    },
-                                ))
-                                // Convert the open project to an exploded folder at a
-                                // user-chosen directory (native folder picker).
-                                .item(MenuEntry::new(tr!(menu_save_as_folder())).visible(show_save_folder).on_activate(
-                                    move |ectx| {
-                                        let ctx = folder_ctx.clone();
-                                        // Bug 1: the picked folder is the *parent* —
-                                        // write into a subfolder named after the Work
-                                        // title (sanitized), falling back to the
-                                        // project file stem when the title is empty.
-                                        let title = folder_work.title().get();
-                                        let raw = if title.trim().is_empty() {
-                                            project_stem(&ctx)
-                                        } else {
-                                            title
-                                        };
-                                        let name = sanitize_folder_name(&raw);
-                                        let req = FileDialogRequest::pick_folder()
-                                            .title("Choose a parent folder for the work");
-                                        let vm = save_as_folder_vm.clone();
-                                        let _ = ectx.pick_folder(req, move |res, ectx2| {
-                                            if let FileDialogResult::Folder(Some(path)) = res {
-                                                let target = path
-                                                    .join(&name)
-                                                    .to_string_lossy()
-                                                    .into_owned();
-                                                match work_management_commands::save_as(
-                                                    &ctx,
-                                                    &SaveAsDto {
-                                                        file_name: target.clone(),
-                                                        as_folder: true,
-                                                    },
-                                                ) {
-                                                    // The background op is read-only; `vm` records the
-                                                    // new path/shape into WorkInfo on completion.
-                                                    Ok(op_id) => {
-                                                        vm.start(op_id, true);
-                                                        ectx2.show_toast(Toast::info(
-                                                            tr!(saving_as_folder(target = target)),
-                                                        ));
-                                                    }
-                                                    Err(e) => {
-                                                        ectx2.show_toast(Toast::error(
-                                                            tr!(save_error(error = e.to_string())),
-                                                        ));
-                                                    }
-                                                };
-                                            }
-                                        });
-                                    },
-                                ))
-                                // Manual backup — routed through the guarded
-                                // `backup.now` action in `App` (which flushes the
-                                // editors into the store first, resolves the
-                                // configured destinations, and drives the toast).
-                                // Hidden while a project is open in backup mode.
-                                .item(
-                                    MenuEntry::new(tr!(menu_backup()))
-                                        .visible(show_backup_now)
-                                        .intent("backup.now"),
-                                )
-                                // Browse the project's backup files (open / reveal / delete).
-                                .item(
-                                    MenuEntry::new(tr!(menu_backups_list()))
-                                        .visible(show_open.clone())
-                                        .intent("backups.show"),
-                                )
-                                // Close the open work — routed through the guarded
-                                // `work.close` action (unsaved-changes prompt /
-                                // autosave-ensure live in `App`).
-                                .item(
-                                    MenuEntry::new(tr!(menu_close_work()))
-                                        .visible(show_open)
-                                        .intent("work.close")
-                                        .shortcut("work.close"),
-                                )
-                                .separator()
-                                .item(MenuEntry::new(tr!(menu_welcome())).intent("welcome.show"))
-                                .item(
-                                    MenuEntry::new(tr!(menu_settings()))
-                                        .intent("app.settings")
-                                        .shortcut("app.settings"),
-                                )
-                                .separator()
-                                .item(
-                                    MenuEntry::new(tr!(menu_quit()))
-                                        .intent("app.quit")
-                                        .shortcut("app.quit"),
-                                )
-                            })
-                            .menu(tr!(menu_view()), {
-                                // Reflect-only checkmark: mirrors the dock's truth
-                                // (`is_visible`) without writing it; the toggle is
-                                // driven by the `outline.toggle` intent (F9).
-                                let outline = outline.clone();
-                                move |m| {
-                                    m.item(
-                                        MenuEntry::new(tr!(menu_outline()))
-                                            .checked(outline.is_visible())
-                                            .intent("outline.toggle")
-                                            .shortcut("outline.toggle"),
-                                    )
-                                }
-                            });
-                            let menubar = MenuBar::from_model(menu)
-                                .collapse_policy(CollapsePolicy::Always)
-                                .hamburger_size(IconButtonSize::Large);
-
-                            tree.add_boxed(Box::new(bati!(
-
-                                TitleBar::new(host) {
-                                    background: SurfaceRole::Main
-                                    leading: menubar
-                                    center: Expand::horizontal {
-                                        HStack {
-                                            spacing: 5.0
-                                            alignment: bastyde::tokens::VAlignment::Center
-                                            IconButton::new(IconWidget::from_raster(
-                                                res!("../../resources/icons/skribisto.png"),
-                                                25.0,
-                                            )
-                                            .mode(IconMode::FullColor)) {
-                                                tooltip: tr!(tooltip_welcome())
-                                                size: IconButtonSize::Large
-                                                on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
-                                            }
-                                            ProjectSwitcherButton::new(app_ctx_root.clone())
-                                            Expand::horizontal {
-                                                Center {
-                                                    TextWidget::new(lit!("Skribisto")) {
-                                                        style: theme.typography.body_bold.clone()
-                                                        color: TextRole::Primary
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    close_action: |ctx| ctx.close_window()
-                                }
-                            )))
-                        }
-                        None => tree.add(TextWidget::new(lit!("Skribisto"))),
-                    };
-
-                    let body =
-                        tree.add(Expand::new().child(App::new(
-                            app_ctx_root.clone(),
-                            outline.clone(),
-                            autosave_menu.clone(),
-                            unsaved.clone(),
-                            pending_exit.clone(),
-                            backup_mode.clone(),
-                            backup_context.clone(),
-                            initial_project.clone(),
-                        )));
-                    let inner =
-                        tree.add(VStack::new().spacing(0.0).add_child(title_bar).add_child(body));
-
-                    // Add edge resize handles only where the host needs the app
-                    // to drive them (skipped on macOS — NSWindow handles edges).
-                    // App-global commands reach the menu/shortcut via
-                    // `register_action_global` (no root wrapper needed).
-                    match tree.title_bar_host() {
-                        Some(host) if host.needs_custom_resize_handles() => {
-                            tree.add(WindowFrame::new(host).thickness(6.0).content_id(inner))
-                        }
-                        _ => inner,
-                    }
-                }),
-        )
+        .initial_window(initial_window_config)
         .run();
 
     // Flush the recent-works MRU synchronously so a just-opened project isn't
@@ -851,10 +573,14 @@ fn main() {
     app_ctx.shutdown();
 }
 
-/// Best-effort read of persisted theme/locale; defaults if anything is missing.
-fn read_prefs() -> (bool, String, bool) {
+/// Best-effort read of persisted theme/locale/autosave/show-welcome; defaults
+/// if anything is missing. `show_welcome` is read here (not just via
+/// `ctx.settings()` inside `App::build`) because it decides whether a bare
+/// launch's *initial window* is the Launcher or a project — a decision made
+/// in `main`, before any widget tree (hence any `BuildContext`) exists.
+fn read_prefs() -> (bool, String, bool, bool) {
     let Some(paths) = AppPaths::new("eu", "skribisto", "Skribisto") else {
-        return (false, "en-US".to_string(), false);
+        return (false, "en-US".to_string(), false, true);
     };
     // `config_file` appends `.toml`, and the settings bundle opens its K/V
     // store under the name "general" (-> general.toml). Pass the bare name
@@ -865,14 +591,19 @@ fn read_prefs() -> (bool, String, bool) {
             store.signal(DARK_KEY, false).get(),
             store.signal(LOCALE_KEY, "en-US".to_string()).get(),
             store.signal(AUTOSAVE_KEY, false).get(),
+            store.signal(SHOW_WELCOME_KEY, true).get(),
         ),
-        Err(_) => (false, "en-US".to_string(), false),
+        Err(_) => (false, "en-US".to_string(), false, true),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::sanitize_folder_name;
+
+    // Per-project window geometry (`windows::window_id_for`) replaces the old
+    // shared-slot stopgap — see that module's tests for its id-stability
+    // coverage.
 
     #[test]
     fn keeps_a_clean_title_verbatim() {

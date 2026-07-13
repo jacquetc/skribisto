@@ -9,6 +9,14 @@ labels and would match trivially.
 
     scripts/automation_streams.py                  # mocks build (fabricated fixture)
     scripts/automation_streams.py PROJECT.skrib    # a real project
+
+Launcher-window model: with a `PROJECT.skrib` on argv, the launch skips the
+Launcher entirely (unchanged, still the fast path). With no args, a bare
+launch now opens the **Launcher window** first (the Welcome UI is a real
+window, not a modal) — so this script drives it: the mocks build's Works tab
+always shows one fabricated "Mock Project" recent row; clicking it opens the
+project window (mocks-fabricated content, regardless of the fake path) and
+closes the Launcher, exactly like a real recent would.
 """
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
@@ -189,13 +197,35 @@ def shot(name):
     return path
 
 
-# ── dismiss the welcome dialog ────────────────────────────────────────────────
-# Two nodes are labelled "Close" (the window button and the dialog's). The dialog's
-# is the one that is not in the title bar.
-for n in nodes():
-    if n.get("label") == "Close" and (n.get("bounds") or {}).get("y", 0) > 100:
-        call("invoke_action", {"node": n["id"], "action": "click"})
-        break
+# ── reach the editor ──────────────────────────────────────────────────────────
+# A project path on argv already skips the Launcher (nothing to do here). With
+# no args, a bare launch opens the Launcher window; drive it to the mocks
+# build's fabricated "Mock Project" recent row.
+if project is None:
+    row = find("Mock Project", timeout=10)
+    if not row:
+        die("no 'Mock Project' recent row in the Launcher — this script's no-args "
+            "mode needs a `--features mocks` build (see the module docstring)",
+            app, mcp)
+    b = row.get("bounds") or {}
+    if "x" in b:
+        call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
+                                "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+    else:
+        die("'Mock Project' row has no bounds to click", app, mcp)
+    # Poll for the Launcher → project transition (opening the project window
+    # and tearing down the Launcher is a real, if fast, window-manager
+    # sequence — a single immediate snapshot would race it).
+    end = time.time() + 15
+    opened = False
+    while time.time() < end:
+        labels_now = [n.get("label") for n in nodes() if n.get("label")]
+        if "Welcome sections" not in labels_now and "Binder" in labels_now:
+            opened = True
+            break
+        settle()
+    if not opened:
+        die("clicking 'Mock Project' in the Launcher never opened the editor", app, mcp)
 settle()
 
 failures = []

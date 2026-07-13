@@ -409,17 +409,32 @@ impl EditorsViewModel {
     /// silent overwrite of the backup. (The content still lives in the store; it
     /// simply never reaches disk here.)
     pub fn save_to_disk(&self) {
+        let _ = self.save_to_disk_op();
+    }
+
+    /// [`Self::save_to_disk`], returning the id of the `save_work` long operation
+    /// it started — `None` in backup mode (nothing was started) or if the command
+    /// could not be issued.
+    ///
+    /// Callers that *defer* an action until the save lands need this: the write is
+    /// asynchronous, so a failure arrives as a `LongOperation::Failed` event and
+    /// can only be told apart from a failing backup/import by its op id. Without
+    /// it, a deferred action would either be dropped by an unrelated failure or
+    /// wait forever for a `SaveWork` that is never coming. See
+    /// [`crate::view_models::ProjectSwitchViewModel`].
+    pub fn save_to_disk_op(&self) -> Option<String> {
         if self.backup_mode.get() {
-            return;
+            return None;
         }
         self.flush_all();
-        let _ = work_management_commands::save_work(
+        work_management_commands::save_work(
             &self.app_ctx,
             &SaveWorkDto {
                 file_name: String::new(),
                 overwrite: true,
             },
-        );
+        )
+        .ok()
     }
 
     /// Close every tab in both panes and reset the split (e.g. on project load).

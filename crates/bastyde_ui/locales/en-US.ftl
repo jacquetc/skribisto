@@ -77,7 +77,7 @@ light = Light
 dark = Dark
 settings-text-width = Text width
 settings-autosave = Autosave to disk
-settings-show-welcome = Show the Welcome screen at startup
+settings-show-welcome = Show the launcher at startup (otherwise, reopen the last project)
 
 ## Settings window — chrome
 settings-title = Settings
@@ -143,7 +143,6 @@ settings-chapter-flat-hint = On: a chapter is a single row. You write into it, a
 
 ## Welcome
 welcome-title = Welcome to Skribisto
-welcome-close = Close
 welcome-search = Search works
 welcome-open = Open
 welcome-new-work = New Work
@@ -152,7 +151,6 @@ welcome-empty-recents = No recent works yet.
 welcome-learn-soon = Guides and tips are coming soon.
 welcome-about-blurb = Skribisto — a Rust + Bastyde rewrite of the writing app.
 welcome-tagline = A quiet place to write long things.
-welcome-show-at-startup = Show at startup
 nav-works = Works
 nav-examples = Examples
 nav-learn = Learn
@@ -232,6 +230,15 @@ dialog-new-scene = New scene
 close-work-question = Save changes before closing the work?
 close-question = Save changes before closing?
 unsaved-changes = This work has unsaved changes.
+# Replacing the open work in this window (New Work, Open Work, "Open here", the
+# import toast's "Open now") — the same guard as closing, since the open work is
+# closed either way.
+new-work-unsaved-question = Save changes before creating a new work?
+open-work-unsaved-question = Save changes before opening another work?
+switch-backup-discard-title = Discard changes to this backup?
+switch-backup-discard-text = Changes to a backup can't be saved to it. Use Save As or Restore to keep them, or discard them and open the other work.
+switch-save-failed = The work couldn't be saved, so it wasn't replaced: { $error }
+switch-save-not-started = The work couldn't be saved, so it wasn't replaced.
 tooltip-welcome = Welcome
 
 ## Toasts
