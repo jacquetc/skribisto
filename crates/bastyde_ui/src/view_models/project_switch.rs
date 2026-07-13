@@ -20,7 +20,8 @@
 //! called that guard.
 //!
 //! This view-model *is* that guard, factored so all four doors share one branch
-//! order — the same one the close guard uses ([`switch_decision`]):
+//! order — [`unsaved_decision`], which `work.close` also matches on, so the two
+//! guards cannot drift apart:
 //!
 //! | open project | outcome |
 //! |---|---|
@@ -35,25 +36,29 @@
 //! wipes the entities the background gather is reading). So a Save-branch switch
 //! is parked in [`Self::pending`] and performed only when **its own** write lands.
 //!
-//! "Its own" is the load-bearing part, and it is why both the completion and the
-//! failure path key on the long-operation **id** ([`Self::on_long_op_completed`] /
-//! [`Self::on_save_failed`]) rather than on `WorkManagementEvent::SaveWork`, which
-//! carries no id: with autosave on, a `save_work` can already be in flight when
-//! the guard kicks its own. Firing the switch on *that* op's completion would
-//! wipe the store while our save is still queued — and if the older op's gather
-//! ran before our flush, the last sentence the user typed would end up in no file
-//! at all. Matching the id also means a failing backup or import can neither fire
-//! nor cancel a switch waiting on a save.
+//! "Its own" is the load-bearing part. The switch waits on the **edit sequence**
+//! its save covers ([`Self::on_saved`]), not on "a save finished": with autosave
+//! on, a `save_work` can already be in flight when the guard asks for one, and its
+//! snapshot may predate our flush. Firing the switch when *that* op lands would
+//! wipe the store while the edits it never contained were still unwritten — the
+//! last sentence typed would end up in no file at all. Waiting for
+//! `saved_seq >= covers` is what makes "Save, then switch" mean it. (Not the op id
+//! either: `save_queue` coalesces, so the op that finally carries our edits may be
+//! a *follow-up* one, issued only when the in-flight save lands.)
 //!
 //! Single-instance live state: created in `main.rs` (where the `unsaved` /
-//! `backup_mode` / autosave signals live) and registered as app-state, so the two
-//! doors outside `App` — the project-switcher popover and the import toast —
-//! reach it with `ctx.app_state::<ProjectSwitchViewModel>()`. The two things only
-//! the view layer can do (write the editors to disk; put the New Work form on
-//! screen) are injected by `App::build` as hooks, the same idiom the backup
-//! scheduler uses for its flush.
+//! `backup_mode` / autosave signals live) and registered as app-state; `App::build`
+//! takes it from there to install its hooks and to serve the `work.new` /
+//! `work.open` / `work.open_path` actions. The two doors that live *outside* `App`
+//! — the project-switcher popover and the import toast — do **not** reach in for
+//! this view-model: they fire the `work.open_path` intent, and `App` calls
+//! [`Self::request`] for them. That is what keeps the view-model graph a DAG (see
+//! the house rule: peers don't import peers; distant links graduate to the intent
+//! bus). The two things only the view layer can do (write the editors to disk; put
+//! the New Work form on screen) are injected by `App::build` as hooks — the same
+//! idiom the backup scheduler uses for its flush.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use bastyde::prelude::*;
@@ -64,10 +69,7 @@ use bastyde::widgets::{
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
-use frontend::common::event::Event;
 use frontend::work_management::LoadWorkDto;
-
-use super::long_op::{event_id, parse_payload};
 
 /// A project switch, either performed at once or parked until the save lands.
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
@@ -80,16 +82,21 @@ pub enum PendingSwitch {
     OpenWork(String),
 }
 
-/// How a switch resolves against the open project's unsaved edits. Pure, so the
-/// branch order is testable without a widget tree (this crate has no
-/// `EventContext` harness) — and identical to the close guard's.
+/// What to do about the open project's unsaved edits before something takes it
+/// away. **The one branch order every unsaved-changes guard in the app shares** —
+/// the four switch doors here, and `work.close` (Ctrl+W / File ▸ Close Work).
+///
+/// Pure, so it is testable without a widget tree (this crate has no `EventContext`
+/// harness), and single-sourced so the guards cannot silently drift apart: what
+/// happens to your unsaved chapter must not depend on *which* command is about to
+/// discard it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum SwitchDecision {
-    /// Nothing to protect — switch now.
+pub enum UnsavedDecision {
+    /// Nothing to protect — go ahead now.
     Proceed,
-    /// Save first (autosave is on: the user already said "just save"), then switch
-    /// when the write lands. No prompt.
-    SaveThenSwitch,
+    /// Save first (autosave is on: the user already said "just save"), then go
+    /// ahead when the write lands. No prompt.
+    SaveThenProceed,
     /// Ask: Save / Discard / Cancel.
     PromptSaveDiscardCancel,
     /// Backup mode: the backup file is read-only, so there is no Save to offer —
@@ -98,15 +105,16 @@ pub enum SwitchDecision {
     PromptDiscardOnly,
 }
 
-/// The guard's branch order. `unsaved` is true whenever the project has edits not
-/// yet on disk — including text still sitting in an editor buffer, since typing
-/// bumps it through the editors' `edited` signal (see `App::build`).
-pub fn switch_decision(unsaved: bool, backup_mode: bool, autosave: bool) -> SwitchDecision {
+/// The shared branch order (see [`UnsavedDecision`]). `unsaved` is true whenever
+/// the project has edits not yet on disk — including text still sitting in an
+/// editor buffer, since typing bumps it through the editors' `edited` signal (see
+/// `App::build`).
+pub fn unsaved_decision(unsaved: bool, backup_mode: bool, autosave: bool) -> UnsavedDecision {
     match (unsaved, backup_mode, autosave) {
-        (false, _, _) => SwitchDecision::Proceed,
-        (true, true, _) => SwitchDecision::PromptDiscardOnly,
-        (true, false, true) => SwitchDecision::SaveThenSwitch,
-        (true, false, false) => SwitchDecision::PromptSaveDiscardCancel,
+        (false, _, _) => UnsavedDecision::Proceed,
+        (true, true, _) => UnsavedDecision::PromptDiscardOnly,
+        (true, false, true) => UnsavedDecision::SaveThenProceed,
+        (true, false, false) => UnsavedDecision::PromptSaveDiscardCancel,
     }
 }
 
@@ -120,13 +128,16 @@ pub struct ProjectSwitchViewModel {
     autosave: Signal<bool>,
     /// The switch waiting for the in-flight save to land.
     pending: Signal<PendingSwitch>,
-    /// The `save_work` operation [`Self::pending`] is waiting on, so a *different*
-    /// long op's failure (a backup, an import) can't cancel the switch.
-    pending_op: Rc<RefCell<Option<String>>>,
-    /// Flush the editors and start the disk write, returning its op id
-    /// (`EditorsViewModel::save_to_disk_op`). Installed by `App::build`, which is
-    /// where the editors are created; a no-op until then, and in headless tests.
-    save_hook: Rc<RefCell<Rc<dyn Fn() -> Option<String>>>>,
+    /// The **edit sequence** [`Self::pending`] is waiting to see on disk (see
+    /// `save_queue`): the switch fires when `saved_seq >= this`, not merely when
+    /// "a save finished" — an autosave already in flight may have gathered the
+    /// store before our flush.
+    pending_seq: Rc<Cell<Option<u64>>>,
+    /// Flush the editors and ask for a disk write, returning the edit sequence it
+    /// will cover (`EditorsViewModel::request_save`). Installed by `App::build`,
+    /// which is where the editors are created; a no-op until then, and in headless
+    /// tests.
+    save_hook: Rc<RefCell<Rc<dyn Fn() -> Option<u64>>>>,
     /// Put the New Work form on screen (`App::build` presents the modal). A view
     /// concern, injected — this view-model owns *when* the form may appear, not
     /// what it looks like.
@@ -146,19 +157,17 @@ impl ProjectSwitchViewModel {
             backup_mode,
             autosave,
             pending: Signal::new(PendingSwitch::None),
-            pending_op: Rc::new(RefCell::new(None)),
-            save_hook: Rc::new(RefCell::new(
-                Rc::new(|| None) as Rc<dyn Fn() -> Option<String>>
-            )),
+            pending_seq: Rc::new(Cell::new(None)),
+            save_hook: Rc::new(RefCell::new(Rc::new(|| None) as Rc<dyn Fn() -> Option<u64>>)),
             new_work_form_hook: Rc::new(RefCell::new(
                 Rc::new(|_: &mut EventContext| {}) as Rc<dyn Fn(&mut EventContext)>
             )),
         }
     }
 
-    /// Install "flush the editors and write the project to disk", from `App::build`.
+    /// Install "flush the editors and ask for a disk write", from `App::build`.
     /// Visible on every clone already handed out (shared cell).
-    pub fn set_save_hook(&self, hook: Rc<dyn Fn() -> Option<String>>) {
+    pub fn set_save_hook(&self, hook: Rc<dyn Fn() -> Option<u64>>) {
         *self.save_hook.borrow_mut() = hook;
     }
 
@@ -171,14 +180,14 @@ impl ProjectSwitchViewModel {
     /// to do with the open project's unsaved edits, then switch (now, or once the
     /// save lands, or not at all).
     pub fn request(&self, ctx: &mut EventContext, switch: PendingSwitch) {
-        match switch_decision(
+        match unsaved_decision(
             self.unsaved.get(),
             self.backup_mode.get(),
             self.autosave.get(),
         ) {
-            SwitchDecision::Proceed => self.perform(ctx, switch),
-            SwitchDecision::SaveThenSwitch => self.defer(ctx, switch),
-            SwitchDecision::PromptDiscardOnly => {
+            UnsavedDecision::Proceed => self.perform(ctx, switch),
+            UnsavedDecision::SaveThenProceed => self.defer(ctx, switch),
+            UnsavedDecision::PromptDiscardOnly => {
                 let me = self.clone();
                 ctx.present_message_box(
                     MessageBox::question(tr!(switch_backup_discard_title()))
@@ -196,7 +205,7 @@ impl ProjectSwitchViewModel {
                         }),
                 );
             }
-            SwitchDecision::PromptSaveDiscardCancel => {
+            UnsavedDecision::PromptSaveDiscardCancel => {
                 let me = self.clone();
                 let title = match switch {
                     PendingSwitch::NewWork => tr!(new_work_unsaved_question()),
@@ -220,21 +229,21 @@ impl ProjectSwitchViewModel {
         }
     }
 
-    /// Park the switch and kick the (asynchronous) save.
-    /// [`Self::on_long_op_completed`] performs it once **that** write actually
-    /// lands — see the module docs on why this must not race the background gather.
+    /// Park the switch and ask for a save. [`Self::on_saved`] performs it once the
+    /// edits it covers are actually on disk — see the module docs on why this must
+    /// not race the background gather.
     ///
-    /// The switch is parked only if the save really started. If the command could
-    /// not be issued at all, nothing is parked: a switch waiting on an operation
-    /// that will never complete is a command that silently never happens.
+    /// The switch is parked only if a save was really asked for. If the command
+    /// could not be issued at all, nothing is parked: a switch waiting on a write
+    /// that will never happen is a command that silently never happens.
     fn defer(&self, ctx: &mut EventContext, switch: PendingSwitch) {
         let save = self.save_hook.borrow().clone();
-        let Some(op_id) = save() else {
+        let Some(covers) = save() else {
             ctx.show_toast(Toast::error(tr!(switch_save_not_started())));
             return;
         };
         self.pending.set(switch);
-        *self.pending_op.borrow_mut() = Some(op_id);
+        self.pending_seq.set(Some(covers));
     }
 
     /// Do the switch. The point of no return: both use cases close the open Work
@@ -261,22 +270,20 @@ impl ProjectSwitchViewModel {
         }
     }
 
-    /// A long operation completed: if it is **the save this switch is waiting on**,
-    /// perform the switch.
+    /// A save landed, and everything mutated up to `saved_seq` is now on disk. If
+    /// that covers what the parked switch was waiting for, perform it.
     ///
-    /// Matched by op id — deliberately *not* driven off `WorkManagementEvent::
-    /// SaveWork`, which carries no operation id. Autosave can already have a
-    /// `save_work` in flight when the guard kicks its own: that older op's
-    /// completion would fire the switch early, and if its background gather had
-    /// run *before* our flush, the sentence the user typed last would be in no
-    /// file at all — the store is wiped by the switch a moment later. Waiting for
-    /// our own op id is what makes "Save, then switch" mean it.
-    pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = event_id(event) else {
+    /// Keyed on the **edit sequence**, not on "a save finished" — and not on the
+    /// op id either, because the save that finally carries our edits may not be the
+    /// op we started: `SaveQueue` coalesces, so if another `save_work` was already
+    /// in flight, ours is a *follow-up* op issued when that one lands. The sequence
+    /// is what actually answers "are my edits on disk yet?".
+    pub fn on_saved(&self, ctx: &mut EventContext, saved_seq: u64) {
+        let Some(waiting_for) = self.pending_seq.get() else {
             return;
         };
-        if !self.matches_pending_op(&op_id) {
-            return; // someone else's op (an autosave, a backup, an import)
+        if saved_seq < waiting_for {
+            return; // an earlier save landed; ours is still coming
         }
         let switch = self.take_pending();
         if switch != PendingSwitch::None {
@@ -284,27 +291,27 @@ impl ProjectSwitchViewModel {
         }
     }
 
-    /// Is `op_id` the save the parked switch is waiting on?
-    fn matches_pending_op(&self, op_id: &str) -> bool {
-        self.pending_op.borrow().as_deref() == Some(op_id)
-    }
-
-    /// A long operation failed. If it was *our* save, the project is still dirty
-    /// and still open — so drop the parked switch and say why, instead of leaving
-    /// the user with a New/Open that silently never happens. Nothing is lost: the
-    /// edits are exactly where they were.
-    pub fn on_save_failed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = event_id(event) else {
-            return;
-        };
-        if !self.matches_pending_op(&op_id) {
-            return; // someone else's op (a backup, an import, a save-as)
+    /// The save the switch was waiting on failed. The project is still open and
+    /// still dirty, so drop the parked switch and say why, instead of leaving the
+    /// user with a New/Open that silently never happens. Nothing is lost: the edits
+    /// are exactly where they were.
+    ///
+    /// `error` is `None` when the save never started, so there is no backend message
+    /// to quote.
+    ///
+    /// `true` if a switch *was* parked — the caller has then already reported the
+    /// failure (this toast says both that the save failed and that the switch
+    /// didn't happen) and must not toast a second time.
+    pub fn on_save_failed(&self, ctx: &mut EventContext, error: Option<&str>) -> bool {
+        if self.pending_seq.get().is_none() {
+            return false;
         }
         self.take_pending();
-        let error = parse_payload(event)
-            .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
-            .unwrap_or_default();
-        ctx.show_toast(Toast::error(tr!(switch_save_failed(error = error))));
+        ctx.show_toast(Toast::error(match error {
+            Some(e) => tr!(switch_save_failed(error = e.to_string())),
+            None => tr!(switch_save_not_started()),
+        }));
+        true
     }
 
     /// Abandon any parked switch (the close flow won the race: the project is
@@ -318,7 +325,7 @@ impl ProjectSwitchViewModel {
         if switch != PendingSwitch::None {
             self.pending.set(PendingSwitch::None);
         }
-        *self.pending_op.borrow_mut() = None;
+        self.pending_seq.set(None);
         switch
     }
 }
@@ -344,8 +351,8 @@ mod tests {
         for backup in [false, true] {
             for autosave in [false, true] {
                 assert_eq!(
-                    switch_decision(false, backup, autosave),
-                    SwitchDecision::Proceed,
+                    unsaved_decision(false, backup, autosave),
+                    UnsavedDecision::Proceed,
                     "nothing to protect (backup={backup}, autosave={autosave})"
                 );
             }
@@ -355,16 +362,16 @@ mod tests {
     #[test]
     fn a_dirty_project_prompts_when_autosave_is_off() {
         assert_eq!(
-            switch_decision(true, false, false),
-            SwitchDecision::PromptSaveDiscardCancel
+            unsaved_decision(true, false, false),
+            UnsavedDecision::PromptSaveDiscardCancel
         );
     }
 
     #[test]
     fn a_dirty_project_saves_first_when_autosave_is_on() {
         assert_eq!(
-            switch_decision(true, false, true),
-            SwitchDecision::SaveThenSwitch
+            unsaved_decision(true, false, true),
+            UnsavedDecision::SaveThenProceed
         );
     }
 
@@ -374,8 +381,8 @@ mod tests {
         // inert there, so the switch would proceed having written nothing.
         for autosave in [false, true] {
             assert_eq!(
-                switch_decision(true, true, autosave),
-                SwitchDecision::PromptDiscardOnly,
+                unsaved_decision(true, true, autosave),
+                UnsavedDecision::PromptDiscardOnly,
                 "autosave={autosave}"
             );
         }
@@ -385,13 +392,13 @@ mod tests {
 
     /// `defer` needs an `EventContext` only for its "the save never started" toast,
     /// and this crate has no `EventContext` harness (see `backup_scheduler.rs`).
-    /// This is the ctx-free core it is built on: kick the save, park the switch
-    /// against the returned op id.
+    /// This is the ctx-free core it is built on: ask for the save, park the switch
+    /// against the edit sequence that save will cover.
     fn defer_headless(vm: &ProjectSwitchViewModel, switch: PendingSwitch) {
         let save = vm.save_hook.borrow().clone();
-        if let Some(op_id) = save() {
+        if let Some(covers) = save() {
             vm.pending.set(switch);
-            *vm.pending_op.borrow_mut() = Some(op_id);
+            vm.pending_seq.set(Some(covers));
         }
     }
 
@@ -403,58 +410,58 @@ mod tests {
             let saves = saves.clone();
             vm.set_save_hook(Rc::new(move || {
                 saves.set(saves.get() + 1);
-                Some("op-1".to_string())
+                Some(7)
             }));
         }
         defer_headless(&vm, PendingSwitch::OpenWork("/tmp/other.skrib".into()));
-        assert_eq!(saves.get(), 1, "the deferral must kick the disk write");
+        assert_eq!(saves.get(), 1, "the deferral must ask for the disk write");
         assert_eq!(
             vm.pending.get(),
             PendingSwitch::OpenWork("/tmp/other.skrib".into()),
             "the switch must be parked, not performed — the write is still in flight"
         );
-        assert_eq!(vm.pending_op.borrow().as_deref(), Some("op-1"));
+        assert_eq!(vm.pending_seq.get(), Some(7));
     }
 
     #[test]
-    fn a_switch_waits_for_its_own_save_not_just_any_completion() {
+    fn a_switch_waits_for_the_save_that_covers_its_edits() {
         // The race this closes: with autosave on, a `save_work` can already be in
-        // flight when the guard kicks its own. If the switch fired on *that* op's
-        // completion, the store would be wiped while our save was still queued —
-        // and if the older op's gather ran before our flush, the last sentence
-        // typed would be in no file at all. So a foreign op id must not release it.
+        // flight when the guard asks for one, and its snapshot may predate our
+        // flush. Releasing the switch when *that* one lands would wipe the store
+        // while the last sentence typed was still unwritten. So an earlier save
+        // landing (a lower sequence) must not release it.
         let vm = test_vm(true, false, true);
-        vm.set_save_hook(Rc::new(|| Some("ours".to_string())));
+        vm.set_save_hook(Rc::new(|| Some(9))); // our edits are at seq 9
         defer_headless(&vm, PendingSwitch::NewWork);
 
         assert!(
-            !vm.matches_pending_op("someone-elses"),
-            "an unrelated long op must not release the parked switch"
+            vm.pending_seq.get().is_some_and(|s| 8 < s),
+            "a save covering only seq 8 does not cover our seq-9 edits"
         );
         assert_eq!(
             vm.pending.get(),
             PendingSwitch::NewWork,
-            "the switch is still parked, waiting for its own save"
+            "still parked: the save that landed predates our edits"
         );
 
         assert!(
-            vm.matches_pending_op("ours"),
-            "our own save must release it"
+            vm.pending_seq.get().is_some_and(|s| 9 >= s),
+            "a save covering seq 9 does cover them"
         );
         assert_eq!(vm.take_pending(), PendingSwitch::NewWork);
         assert_eq!(vm.pending.get(), PendingSwitch::None);
-        assert!(vm.pending_op.borrow().is_none());
+        assert!(vm.pending_seq.get().is_none());
     }
 
     #[test]
     fn a_save_that_never_started_parks_nothing() {
-        // A switch waiting on an operation that will never complete is a command
-        // that silently never happens. Better to report it and stay put.
+        // A switch waiting on a write that will never happen is a command that
+        // silently never happens. Better to report it and stay put.
         let vm = test_vm(true, false, true);
         vm.set_save_hook(Rc::new(|| None)); // the command could not be issued
         defer_headless(&vm, PendingSwitch::NewWork);
         assert_eq!(vm.pending.get(), PendingSwitch::None);
-        assert!(vm.pending_op.borrow().is_none());
+        assert!(vm.pending_seq.get().is_none());
     }
 
     #[test]
@@ -462,11 +469,11 @@ mod tests {
         // The close flow wins the race: the project is leaving the window, so the
         // parked switch must not fire behind it.
         let vm = test_vm(true, false, true);
-        vm.set_save_hook(Rc::new(|| Some("op-1".to_string())));
+        vm.set_save_hook(Rc::new(|| Some(1)));
         defer_headless(&vm, PendingSwitch::NewWork);
         vm.cancel();
         assert_eq!(vm.pending.get(), PendingSwitch::None);
-        assert!(vm.pending_op.borrow().is_none());
+        assert!(vm.pending_seq.get().is_none());
     }
 
     #[test]
@@ -475,7 +482,7 @@ mod tests {
         // nothing to wait on.
         let vm = test_vm(true, false, true);
         defer_headless(&vm, PendingSwitch::NewWork);
-        assert!(vm.pending_op.borrow().is_none());
+        assert!(vm.pending_seq.get().is_none());
 
         // The hook cells are shared, so installing from `App::build` reaches the
         // clones handed out earlier (the switcher popover, the import toast).

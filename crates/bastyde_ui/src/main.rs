@@ -47,6 +47,7 @@ mod models;
 mod new_work_panel;
 mod open_registry;
 mod project_switcher_button;
+mod save_indicator;
 mod settings_backup;
 mod settings_panel;
 mod singles;

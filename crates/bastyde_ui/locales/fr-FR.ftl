@@ -67,6 +67,11 @@ inspector-empty = Ouvrez un élément pour l'inspecter.
 inspector-promote = Convertir en…
 statusbar-toggle-outline = Afficher/masquer le classeur
 statusbar-toggle-inspector = Afficher/masquer l'inspecteur
+# L'indicateur d'enregistrement (barre d'état, à côté de la bascule du classeur).
+statusbar-save-unsaved = Modifications non enregistrées — cliquez pour enregistrer
+statusbar-save-saved = Toutes les modifications sont enregistrées
+statusbar-save-autosave = L'enregistrement automatique est activé — les modifications sont enregistrées au fil de l'écriture
+statusbar-saving = Enregistrement…
 
 ## Paramètres
 language = Langue
@@ -239,6 +244,9 @@ switch-backup-discard-title = Abandonner les modifications de cette copie de sec
 switch-backup-discard-text = Les modifications d'une copie de secours ne peuvent pas y être enregistrées. Utilisez « Enregistrer sous » ou « Restaurer » pour les conserver, ou abandonnez-les et ouvrez l'autre œuvre.
 switch-save-failed = L'œuvre n'a pas pu être enregistrée, elle n'a donc pas été remplacée : { $error }
 switch-save-not-started = L'œuvre n'a pas pu être enregistrée, elle n'a donc pas été remplacée.
+close-save-failed = L'œuvre n'a pas pu être enregistrée, elle n'a donc pas été fermée : { $error }
+close-save-not-started = L'œuvre n'a pas pu être enregistrée, elle n'a donc pas été fermée.
+save-not-started = L'œuvre n'a pas pu être enregistrée.
 tooltip-welcome = Accueil
 
 ## Notifications

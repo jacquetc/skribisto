@@ -50,6 +50,8 @@ mod outline;
 mod project_switch;
 mod restore;
 mod save_as;
+mod save_queue;
+mod save_status;
 mod settings;
 mod stream;
 mod welcome;
@@ -60,9 +62,12 @@ pub use editors::{EditorsViewModel, Side};
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;
-pub use project_switch::{PendingSwitch, ProjectSwitchViewModel};
+pub use project_switch::{
+    PendingSwitch, ProjectSwitchViewModel, UnsavedDecision, unsaved_decision,
+};
 pub use restore::RestoreViewModel;
 pub use save_as::SaveAsViewModel;
+pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
 pub use settings::{EditorTypography, EditorTypographySet, SettingsViewModel};
 pub use stream::{SplitFlavour, StreamViewModel};
 pub(crate) use stream::{is_prose_bearing, is_synopsis_bearing};

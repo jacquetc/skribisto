@@ -67,6 +67,11 @@ inspector-empty = Open an item to inspect it.
 inspector-promote = Convert to…
 statusbar-toggle-outline = Toggle the binder
 statusbar-toggle-inspector = Toggle the inspector
+# The save indicator (status bar, next to the binder toggle).
+statusbar-save-unsaved = Unsaved changes — click to save
+statusbar-save-saved = All changes saved
+statusbar-save-autosave = Autosave is on — changes are saved as you write
+statusbar-saving = Saving…
 
 ## Settings
 language = Language
@@ -239,6 +244,9 @@ switch-backup-discard-title = Discard changes to this backup?
 switch-backup-discard-text = Changes to a backup can't be saved to it. Use Save As or Restore to keep them, or discard them and open the other work.
 switch-save-failed = The work couldn't be saved, so it wasn't replaced: { $error }
 switch-save-not-started = The work couldn't be saved, so it wasn't replaced.
+close-save-failed = The work couldn't be saved, so it wasn't closed: { $error }
+close-save-not-started = The work couldn't be saved, so it wasn't closed.
+save-not-started = The work couldn't be saved.
 tooltip-welcome = Welcome
 
 ## Toasts

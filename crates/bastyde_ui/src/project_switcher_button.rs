@@ -143,7 +143,6 @@ fn section(label: bastyde::i18n::LocalizedString) -> impl Widget {
 /// (fired by the button's `on_open`) so it reflects other instances' current
 /// state each time it is shown — without rebuilding the enclosing button.
 struct OpenProjectsMenu {
-    app_ctx: Rc<AppContext>,
     model: RecentWorkListModel,
     open_epoch: Signal<u64>,
     root: Option<WidgetId>,
@@ -385,7 +384,6 @@ impl Widget for ProjectSwitcherButton {
         .trailing(IconWidget::chevron_down(12.0));
 
         let content = OpenProjectsMenu {
-            app_ctx: self.app_ctx.clone(),
             model: RecentWorkListModel::new(self.app_ctx.clone()),
             open_epoch: self.open_epoch.clone(),
             root: None,

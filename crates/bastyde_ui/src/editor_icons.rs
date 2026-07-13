@@ -18,3 +18,13 @@ pub fn split() -> IconWidget {
 pub fn close_split() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/editor/split-close.svg")).icon_size(ICON_SIZE)
 }
+
+/// Save glyph with an asterisk — the status bar's "there are unsaved changes".
+pub fn save_unsaved() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/save-unsaved.svg")).icon_size(ICON_SIZE)
+}
+
+/// Save glyph with a check — the status bar's "everything is on disk".
+pub fn save_saved() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/save-saved.svg")).icon_size(ICON_SIZE)
+}

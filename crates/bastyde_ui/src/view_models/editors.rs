@@ -7,7 +7,9 @@
 //! in the store, so opening the same item in both panes yields two tabs over one
 //! live document.
 
+use std::cell::RefCell;
 use std::rc::Rc;
+use std::time::Instant;
 
 use bastyde::data::ListModel;
 use bastyde::prelude::*; // Signal, tr!, lit!
@@ -18,11 +20,30 @@ use frontend::commands::work_management_commands;
 use frontend::direct_access::BinderItemDto;
 use frontend::work_management::SaveWorkDto;
 
+use frontend::common::event::Event;
+
 use crate::app_ids::AppIds;
 use crate::models::OpenDocsStore;
 use crate::singles::SingleBinderItem;
 use crate::tabs::ContentTab;
+
+use super::long_op::{event_id, parse_payload};
+use super::save_queue::{SaveQueue, SaveRequest};
 use crate::view_models::EditorTypographySet;
+
+/// A `save_work` of ours landed — what `App` needs to release whatever was waiting
+/// on it (a deferred close, a parked project switch).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SaveLanded {
+    /// Everything mutated up to this edit sequence is now on disk.
+    pub saved_seq: u64,
+    /// Edits had arrived during that save, so a follow-up was due — and it could
+    /// **not** be issued. Nothing further is coming: no further completion, no
+    /// failure event (there is no operation to fail). Anything still parked on a
+    /// sequence beyond [`Self::saved_seq`] would wait forever, so `App` must drop it
+    /// and say so, exactly as it does for an outright failure.
+    pub follow_up_failed: bool,
+}
 
 /// Which editor pane. `Primary` is always present; `Secondary` is the side pane,
 /// revealed by the split view.
@@ -76,6 +97,18 @@ pub struct EditorsViewModel {
     /// `true` while a *backup file* is open: disk saves are inert (the file is
     /// read-only; the content stays editable and can only be kept via Save As).
     backup_mode: Signal<bool>,
+    /// Monotonic edit sequence, bumped by `App` on **every** mutation (typing, tree
+    /// edits, metadata). A save started after a flush at seq *n* covers *n*.
+    dirty_seq: Signal<u64>,
+    /// The highest edit sequence actually written to disk. With [`Self::dirty_seq`]
+    /// this is the truth behind "unsaved" — `dirty_seq > saved_seq` — and what the
+    /// deferred close/switch guards wait on.
+    saved_seq: Signal<u64>,
+    /// A `save_work` is in flight (or a follow-up is about to be). Drives the save
+    /// indicator; read by the guards.
+    saving: Signal<bool>,
+    /// One `save_work` at a time, with coalescing — see [`SaveQueue`].
+    queue: Rc<RefCell<SaveQueue>>,
 }
 
 impl EditorsViewModel {
@@ -88,6 +121,7 @@ impl EditorsViewModel {
         ids: AppIds,
         docs: OpenDocsStore,
         backup_mode: Signal<bool>,
+        dirty_seq: Signal<u64>,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -118,6 +152,10 @@ impl EditorsViewModel {
             ids,
             docs,
             backup_mode,
+            dirty_seq,
+            saved_seq: Signal::new(0),
+            saving: Signal::new(false),
+            queue: Rc::new(RefCell::new(SaveQueue::default())),
         }
     }
 
@@ -409,32 +447,133 @@ impl EditorsViewModel {
     /// silent overwrite of the backup. (The content still lives in the store; it
     /// simply never reaches disk here.)
     pub fn save_to_disk(&self) {
-        let _ = self.save_to_disk_op();
+        let _ = self.request_save();
     }
 
-    /// [`Self::save_to_disk`], returning the id of the `save_work` long operation
-    /// it started — `None` in backup mode (nothing was started) or if the command
-    /// could not be issued.
+    /// [`Self::save_to_disk`], returning the **edit sequence** the resulting save
+    /// will cover — everything mutated up to that point is on disk once
+    /// [`Self::saved_seq`] reaches it. `None` in backup mode (saving is inert) or
+    /// if the command could not be issued at all.
     ///
-    /// Callers that *defer* an action until the save lands need this: the write is
-    /// asynchronous, so a failure arrives as a `LongOperation::Failed` event and
-    /// can only be told apart from a failing backup/import by its op id. Without
-    /// it, a deferred action would either be dropped by an unrelated failure or
-    /// wait forever for a `SaveWork` that is never coming. See
-    /// [`crate::view_models::ProjectSwitchViewModel`].
-    pub fn save_to_disk_op(&self) -> Option<String> {
+    /// Callers that *defer* an action until the edits are safely on disk (the close
+    /// guard, the project-switch guard) wait on that sequence rather than on "some
+    /// save finished": with autosave on, another `save_work` can already be in
+    /// flight, and it may have gathered the store *before* this flush.
+    ///
+    /// **At most one `save_work` runs at a time** ([`SaveQueue`]): if one is in
+    /// flight this queues a follow-up instead of starting a second op — two ops
+    /// write the same path and their completion order is unspecified, so an older
+    /// snapshot could land last and silently regress the file.
+    pub fn request_save(&self) -> Option<u64> {
         if self.backup_mode.get() {
             return None;
         }
+        // Flush first, then read the sequence: the store now holds everything the
+        // user has typed, so a save started here covers exactly this seq.
         self.flush_all();
-        work_management_commands::save_work(
+        let covers = self.dirty_seq.get();
+        let request = self.queue.borrow_mut().request(Instant::now());
+        match request {
+            // A save is already running; its completion issues the follow-up that
+            // will cover this request.
+            SaveRequest::Queued => Some(covers),
+            SaveRequest::StartNow => self.start_save(covers).then_some(covers),
+        }
+    }
+
+    /// Issue `save_work` and record it as the running op. `false` if the command
+    /// could not be issued at all. The store has already been flushed by the caller.
+    fn start_save(&self, covers: u64) -> bool {
+        match work_management_commands::save_work(
             &self.app_ctx,
             &SaveWorkDto {
                 file_name: String::new(),
                 overwrite: true,
             },
+        ) {
+            Ok(op_id) => {
+                self.queue.borrow_mut().started(op_id, covers, Instant::now());
+                self.saving.set(true);
+                true
+            }
+            Err(_) => {
+                self.queue.borrow_mut().start_failed();
+                self.saving.set(false);
+                false
+            }
+        }
+    }
+
+    /// Route a `LongOperation::Completed`. `None` if it wasn't **our** save — a
+    /// backup's, an import's or a Save As's completion is left to their own
+    /// view-models.
+    ///
+    /// If edits arrived while that save was running, the follow-up is issued here.
+    pub fn on_save_completed(&self, event: &Event) -> Option<SaveLanded> {
+        let op_id = event_id(event)?;
+        let done = self.queue.borrow_mut().completed(&op_id)?;
+        // Everything up to `covers` is now on disk. Never move it backwards.
+        if done.covers > self.saved_seq.get() {
+            self.saved_seq.set(done.covers);
+        }
+        let mut follow_up_failed = false;
+        if done.restart {
+            // Edits landed while that op was in flight, and its snapshot predates
+            // them. Save again, covering everything typed since.
+            self.flush_all();
+            let covers = self.dirty_seq.get();
+            follow_up_failed = !self.start_save(covers);
+        } else {
+            self.saving.set(false);
+        }
+        Some(SaveLanded {
+            saved_seq: self.saved_seq.get(),
+            follow_up_failed,
+        })
+    }
+
+    /// Route a `LongOperation::Failed`. `Some(error)` if it was our save: the queue
+    /// goes idle and any queued follow-up is dropped. The edits are untouched —
+    /// still in the store, still dirty — so nothing is lost by not retrying behind
+    /// the user's back; the caller reports it.
+    pub fn on_save_failed(&self, event: &Event) -> Option<String> {
+        let Some(op_id) = event_id(event) else {
+            return None;
+        };
+        if !self.queue.borrow_mut().failed(&op_id) {
+            return None;
+        }
+        self.saving.set(false);
+        Some(
+            parse_payload(event)
+                .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
+                .unwrap_or_default(),
         )
-        .ok()
+    }
+
+    /// The highest edit sequence written to disk. With `dirty_seq` (bumped on every
+    /// mutation) this is the truth behind "unsaved".
+    pub fn saved_seq(&self) -> Signal<u64> {
+        self.saved_seq.clone()
+    }
+
+    /// A disk save is in flight.
+    pub fn saving(&self) -> Signal<bool> {
+        self.saving.clone()
+    }
+
+    /// Mark everything currently in the store as "on disk" — a project just loaded,
+    /// was created, or was closed: nothing is pending against *this* work.
+    ///
+    /// Also forgets any save still outstanding: it was a save of the **outgoing**
+    /// project. Leaving it in the queue would let its completion fire the queued
+    /// follow-up against the store that replaced it — a pointless full write of the
+    /// new project, or (after a close) a save of an empty store whose failure would
+    /// toast at a user who has already left.
+    pub fn mark_clean(&self) {
+        self.queue.borrow_mut().reset();
+        self.saving.set(false);
+        self.saved_seq.set(self.dirty_seq.get());
     }
 
     /// Close every tab in both panes and reset the split (e.g. on project load).
@@ -667,6 +806,7 @@ mod tests {
             ids,
             docs,
             Signal::new(false),
+            Signal::new(0),
         )
     }
 

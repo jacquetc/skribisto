@@ -44,7 +44,7 @@ use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ImportPlumeViewModel,
     OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel, SettingsViewModel,
-    Side,
+    Side, SpinnerGate, UnsavedDecision, unsaved_decision,
 };
 
 /// Build one editor pane's `TabWidget`: dynamic tabs, cross-pane migration
@@ -177,13 +177,32 @@ pub struct App {
     /// (outside `App`) to hide the manual "Save" item. `App::build` mirrors the
     /// store-backed setting into it.
     autosave_menu: Signal<bool>,
-    /// `true` while the open work has edits not yet written to disk. Maintained by
-    /// `App` (set on mutations, cleared on SaveWork/LoadWork/CloseWork); read by
-    /// the close guard + `work.close` to decide whether to prompt.
+    /// `true` while the open work has edits not yet written to disk. Read by the
+    /// close guard, `work.close` and the switch guard to decide whether to prompt,
+    /// and by `can_save` for the Save affordances.
+    ///
+    /// **Derived**, not set by hand: `dirty_seq > editors.saved_seq()`. It used to
+    /// be a flag set on mutation and cleared whenever *a* save landed — which lied
+    /// while a save was in flight, because typing during that save was marked clean
+    /// the moment it finished, even though its snapshot never contained those
+    /// edits. Save then greyed out on prose that was on no disk anywhere.
     unsaved: Signal<bool>,
-    /// A deferred close (set by the guard/menu, performed on SaveWork). Shared with
-    /// `main`'s window close guard.
+    /// Monotonic edit sequence: bumped on every mutation (typing via the editors'
+    /// `edited` signal, plus the tree/metadata events in [`mutation_origins`]).
+    /// Handed to the editors, which capture it when a save starts, so "are my edits
+    /// on disk?" has an exact answer — see `view_models::save_queue`.
+    dirty_seq: Signal<u64>,
+    /// A deferred close: performed once the save it asked for actually covers the
+    /// edits (see `exit_seq`). Shared with `main`'s window close guard.
     pending_exit: Signal<PendingExit>,
+    /// The edit sequence [`Self::pending_exit`] is waiting to see on disk.
+    exit_seq: Rc<std::cell::Cell<Option<u64>>>,
+    /// The save indicator's "saving…" hysteresis, and the gate's answer. Held here,
+    /// not in the widget: `build` constructs a fresh `SaveIndicator` on every run, so
+    /// a gate owned by the widget would have a slow save's delay / min-display timers
+    /// reset by any unrelated App rebuild.
+    save_spinner: Rc<std::cell::RefCell<SpinnerGate>>,
+    save_spinner_visible: Signal<bool>,
     /// True while a *backup file* is open here (Save + auto-backup off; content
     /// still editable). Shared with `main`'s title-bar menu.
     backup_mode: Signal<bool>,
@@ -228,7 +247,11 @@ impl App {
             outline,
             autosave_menu,
             unsaved,
+            dirty_seq: Signal::new(0),
             pending_exit,
+            exit_seq: Rc::new(std::cell::Cell::new(None)),
+            save_spinner: Rc::new(std::cell::RefCell::new(SpinnerGate::default())),
+            save_spinner_visible: Signal::new(false),
             backup_mode,
             backup_context,
             initial_action: Some(initial_action),
@@ -302,6 +325,7 @@ impl Widget for App {
             .cloned()
             .expect("OpenDocsStore registered in main");
         let backup_mode_for_editors = self.backup_mode.clone();
+        let dirty_seq_for_editors = self.dirty_seq.clone();
         let editors = self
             .editors
             .get_or_insert_with(|| {
@@ -313,9 +337,30 @@ impl Widget for App {
                     ids,
                     docs,
                     backup_mode_for_editors,
+                    dirty_seq_for_editors,
                 )
             })
             .clone();
+
+        // "Unsaved" is *derived*: the work has edits not on disk iff more mutations
+        // have happened than the last completed save covered. Recomputed whenever
+        // either side moves — a mutation (typing, tree edit) or a save landing.
+        {
+            let unsaved = self.unsaved.clone();
+            let dirty_seq = self.dirty_seq.clone();
+            let saved_seq = editors.saved_seq();
+            let recompute = Rc::new(move || {
+                let is_unsaved = dirty_seq.get() > saved_seq.get();
+                if unsaved.get() != is_unsaved {
+                    unsaved.set(is_unsaved);
+                }
+            });
+            {
+                let r = recompute.clone();
+                ctx.effect(&self.dirty_seq, move |_| r());
+            }
+            ctx.effect(&editors.saved_seq(), move |_| recompute());
+        }
 
         let outline = self.outline.clone();
 
@@ -442,7 +487,7 @@ impl Widget for App {
             .expect("ProjectSwitchViewModel registered in main");
         project_switch.set_save_hook(Rc::new({
             let editors = editors.clone();
-            move || editors.save_to_disk_op()
+            move || editors.request_save()
         }));
         project_switch.set_new_work_form_hook(Rc::new({
             let app_ctx = self.app_ctx.clone();
@@ -724,7 +769,6 @@ impl Widget for App {
             let editors = editors.clone();
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
-            let unsaved = self.unsaved.clone();
             // An open tab does not follow its item by itself: `TabInfo::title` is a plain
             // string baked in at open time, and the `ContentTab` payload is built once for
             // the item's `(role, sub_role)`. So a rename must push the new caption, and a
@@ -751,7 +795,9 @@ impl Widget for App {
                     editors.close_all();
                     single_work.set_id(ids.work_id.get());
                     single_work_info.set_id(ids.work_info_id.get());
-                    unsaved.set(false);
+                    // The freshly-loaded project is exactly what is on disk: nothing
+                    // is pending against it (`unsaved` is derived from this).
+                    editors.mark_clean();
                     // Advertise this project as open so other instances' switchers
                     // list it (and can raise this window). This window may already
                     // hold a claim on a different path (Load supersedes New/Load/
@@ -967,7 +1013,7 @@ impl Widget for App {
             let editors = editors.clone();
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
-            let unsaved = self.unsaved.clone();
+            let dirty_seq = self.dirty_seq.clone();
             let backup_mode = self.backup_mode.clone();
             let backup_context = self.backup_context.clone();
             ctx.subscribe_event(
@@ -981,7 +1027,12 @@ impl Widget for App {
                     editors.close_all();
                     single_work.set_id(ids.work_id.get());
                     single_work_info.set_id(ids.work_info_id.get());
-                    unsaved.set(true);
+                    // A brand-new project isn't on disk yet: start from "everything
+                    // the previous project had is settled", then put this one one
+                    // step ahead so it reads as unsaved until the create-and-save
+                    // below actually lands.
+                    editors.mark_clean();
+                    dirty_seq.set(dirty_seq.get() + 1);
                     if let Some(path) = single_work_info.file_name().get() {
                         crate::open_registry::replace_claim(&path, &single_work.title().get());
                     }
@@ -1001,7 +1052,6 @@ impl Widget for App {
             let editors = editors.clone();
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
-            let unsaved = self.unsaved.clone();
             let backup_mode = self.backup_mode.clone();
             let backup_context = self.backup_context.clone();
             ctx.subscribe_event(
@@ -1023,7 +1073,8 @@ impl Widget for App {
                     editors.close_all();
                     single_work.set_id(None);
                     single_work_info.set_id(None);
-                    unsaved.set(false);
+                    // No project open — nothing can be pending against it.
+                    editors.mark_clean();
                     backup_mode.set(false);
                     backup_context.set(None);
                 },
@@ -1078,9 +1129,12 @@ impl Widget for App {
                 let deadline = deadline.clone();
                 let wake = wake.clone();
                 let autosave = autosave.clone();
-                let unsaved = self.unsaved.clone();
+                let dirty_seq = self.dirty_seq.clone();
                 Rc::new(move || {
-                    unsaved.set(true);
+                    // Bump the edit sequence: this mutation is now ahead of whatever
+                    // the last save covered, so the derived `unsaved` goes true —
+                    // and stays true if the save in flight (if any) predates it.
+                    dirty_seq.set(dirty_seq.get() + 1);
                     if autosave.get() {
                         let at = Instant::now() + Duration::from_millis(1500);
                         deadline.set(Some(at));
@@ -1168,70 +1222,130 @@ impl Widget for App {
 
         // ── Exit guards (Close Work / Quit / window close) ───────────────────
         // The window close guard (in `main`) and the `work.close` action set
-        // `pending_exit`; that kicks a disk save, and the SaveWork-completion event
-        // performs the deferred close — so the async save is awaited, never raced.
+        // `pending_exit`; that asks for a disk save and remembers the edit sequence
+        // it will cover. The close is performed only once *that* sequence is on disk
+        // (below) — so the async write is awaited, never raced.
         {
             let editors = editors.clone();
+            let exit_seq = self.exit_seq.clone();
+            let pending = self.pending_exit.clone();
             ctx.effect(&self.pending_exit, move |pe| {
-                if *pe != PendingExit::None {
-                    editors.save_to_disk();
+                if *pe == PendingExit::None {
+                    return;
+                }
+                match editors.request_save() {
+                    Some(covers) => exit_seq.set(Some(covers)),
+                    // The command could not be issued, so no operation exists — no
+                    // completion and no failure event will ever arrive. Leaving the
+                    // close armed on a write that will never happen would make
+                    // Ctrl+W / Ctrl+Q / the window's X do nothing at all, forever.
+                    // Disarm instead: the window stays open and usable, and the next
+                    // close attempt retries. (No toast: an `effect` has no
+                    // `EventContext`. `save_work` can only fail to *start* on a
+                    // poisoned store lock, at which point this log line is the least
+                    // of it — every other path that can reach a context does toast.)
+                    None => {
+                        exit_seq.set(None);
+                        pending.set(PendingExit::None);
+                        eprintln!("skribisto: could not start the save for a deferred close");
+                    }
                 }
             });
         }
+        // Both deferred flows — the close above and a parked project switch (New
+        // Work / Open Work / "Open here" / the import toast, where the user chose
+        // "Save") — resume here, off the **long-operation** events.
+        //
+        // They wait on the edit *sequence* their save covers, not on "a save
+        // finished": `SaveQueue` runs one `save_work` at a time and coalesces, so
+        // the op that finally carries these edits may be a follow-up issued when an
+        // already-in-flight save landed. That in-flight save's snapshot can predate
+        // our flush, and resuming on it would wipe the store while the last sentence
+        // typed was still unwritten.
         {
-            let unsaved = self.unsaved.clone();
+            let editors = editors.clone();
             let pending = self.pending_exit.clone();
+            let exit_seq = self.exit_seq.clone();
             let scheduler = backup_scheduler.clone();
             let switch = project_switch.clone();
             ctx.subscribe_event_with_ctx(
-                Origin::WorkManagement(WorkManagementEvent::SaveWork),
-                move |_e: &Event, c| {
-                    unsaved.set(false);
-                    let pe = pending.get();
-                    if pe != PendingExit::None {
-                        pending.set(PendingExit::None);
-                        // A close and a switch can't both win: the project is
-                        // leaving this window entirely, so a switch parked behind
-                        // a save is moot — drop it rather than let it fire into a
-                        // window that is on its way to the Launcher.
-                        switch.cancel();
-                        // Saved and consistent — now take the on-close backup (if
-                        // configured) and then perform the deferred close. When no
-                        // on-close backup applies, `on_close_flow` closes at once.
-                        scheduler.on_close_flow(c, pe);
+                Origin::LongOperation(LongOperationEvent::Completed),
+                move |e: &Event, c| {
+                    // Ours? (A backup's, an import's or a Save As's completion is
+                    // their own view-model's business.) This also issues the
+                    // follow-up save when edits arrived while that one was running.
+                    let Some(landed) = editors.on_save_completed(e) else {
+                        return;
+                    };
+                    // That follow-up could not be issued: nothing further is coming
+                    // for anything still parked beyond what just landed, so drop it
+                    // rather than let it wait forever.
+                    if landed.follow_up_failed {
+                        abandon_deferred(c, &pending, &exit_seq, &switch, None);
+                        return;
                     }
+                    let saved = landed.saved_seq;
+                    let pe = pending.get();
+                    // A close outranks a switch: the project is leaving this window
+                    // entirely, so a switch parked behind a save is moot either way.
+                    // Note this returns even when the close is *not yet* covered —
+                    // otherwise a switch parked on an earlier sequence would fire and
+                    // replace the project out from under a close that is still
+                    // waiting for its own write.
+                    if pe != PendingExit::None {
+                        if exit_seq.get().is_some_and(|s| saved >= s) {
+                            pending.set(PendingExit::None);
+                            exit_seq.set(None);
+                            switch.cancel();
+                            // Saved and consistent — now take the on-close backup (if
+                            // configured) and then perform the deferred close. When
+                            // no on-close backup applies, `on_close_flow` closes at
+                            // once.
+                            scheduler.on_close_flow(c, pe);
+                        }
+                        return;
+                    }
+                    switch.on_saved(c, saved);
                 },
             );
         }
-        // A parked project switch (New Work / Open Work / "Open here" / the import
-        // toast, where the user chose "Save") is performed — or dropped — off the
-        // **long-operation** events, not `SaveWork` above: only these carry the
-        // operation id, and the switch must wait for *its own* save. With autosave
-        // on, another `save_work` can already be in flight when the guard kicks
-        // one; firing the switch on that one's completion would wipe the store
-        // while ours is still queued. A failure drops the switch (with a toast)
-        // instead of stranding a command that silently never happens — the project
-        // is untouched, still open and still dirty, so nothing is lost by staying.
+        // **A failed save is always a toast.** The write is asynchronous, so the only
+        // other way the user could learn of it is the Save affordance staying live —
+        // which is invisible under autosave, where Save is hidden entirely. It used
+        // to be reported nowhere at all.
+        //
+        // Exactly one toast, and it says what was lost *besides* the write: if a
+        // close or a project switch was parked behind that save, it is dropped and
+        // the message says so (the deferred command silently never happening is the
+        // more confusing half). The project itself is untouched — still open, still
+        // dirty — so nothing is lost by staying put. Only *our* save's failure
+        // counts here; a failing backup / import / Save As is reported by its own
+        // view-model.
         {
-            let switch = project_switch.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Completed),
-                move |e: &Event, c| switch.on_long_op_completed(c, e),
-            );
-        }
-        {
+            let editors = editors.clone();
+            let pending = self.pending_exit.clone();
+            let exit_seq = self.exit_seq.clone();
             let switch = project_switch.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Failed),
-                move |e: &Event, c| switch.on_save_failed(c, e),
+                move |e: &Event, c| {
+                    let Some(error) = editors.on_save_failed(e) else {
+                        return;
+                    };
+                    abandon_deferred(c, &pending, &exit_seq, &switch, Some(&error));
+                },
             );
         }
-        // `work.close` — the Close Work menu command (Ctrl+W), and the target
-        // of the `welcome.show` alias. Guards unsaved changes just like the
-        // window close guard (`windows.rs`): clean → return to the Launcher
-        // now; autosave → save then return; else prompt. Every terminal path
-        // ends at [`close_work_and_return_to_launcher`] — there is no more
-        // "close in place, keep this (now-empty) window" outcome.
+        // `work.close` — the Close Work menu command (Ctrl+W), and the target of the
+        // `welcome.show` alias. Every terminal path ends at
+        // [`close_work_and_return_to_launcher`] — there is no more "close in place,
+        // keep this (now-empty) window" outcome.
+        //
+        // It branches on the **same** [`unsaved_decision`] table as the four
+        // project-switch doors (`ProjectSwitchViewModel`), rather than re-deriving
+        // it: what happens to your unsaved chapter must not depend on which command
+        // is about to discard it. Only the *outcome* differs — this one leaves for
+        // the Launcher instead of switching project.
         {
             let app_ctx2 = self.app_ctx.clone();
             let unsaved = self.unsaved.clone();
@@ -1240,57 +1354,59 @@ impl Widget for App {
             let scheduler = backup_scheduler.clone();
             let backup_mode = self.backup_mode.clone();
             ctx.register_action_global(Action::new("work.close").on_invoke(move |_i, ctx| {
-                // Backup window with unsaved edits: Save is off, so the normal
-                // save-then-close path can't run — offer to discard (Save As keeps
-                // them, via the banner).
-                if backup_mode.get() && unsaved.get() {
-                    let app_ctx3 = app_ctx2.clone();
-                    ctx.present_message_box(
-                        MessageBox::question(tr!(close_backup_discard_title()))
-                            .text(tr!(close_backup_discard_text()))
-                            .buttons(MessageBoxButtons::Custom(vec![
-                                MessageBoxButton::standard(StandardButton::Discard),
-                                MessageBoxButton::standard(StandardButton::Cancel),
-                            ]))
-                            .default_button(StandardButton::Cancel)
-                            .escape_button(StandardButton::Cancel)
-                            .on_result(move |r, ctx| {
-                                if r.button == StandardButton::Discard {
-                                    close_work_and_return_to_launcher(&app_ctx3, ctx);
-                                }
-                            }),
-                    );
-                    return;
+                match unsaved_decision(unsaved.get(), backup_mode.get(), autosave.get()) {
+                    // Clean: take an on-close backup (if configured), then return to
+                    // the Launcher. (In backup mode `on_close_flow` is suppressed →
+                    // returns at once.)
+                    UnsavedDecision::Proceed => {
+                        scheduler.on_close_flow(ctx, PendingExit::ReturnToLauncher);
+                    }
+                    // Autosave: save first; SaveWork-completion runs the on-close
+                    // backup, then returns to the Launcher.
+                    UnsavedDecision::SaveThenProceed => {
+                        pending.set(PendingExit::ReturnToLauncher);
+                    }
+                    // Backup window with unsaved edits: Save is off, so the normal
+                    // save-then-close path can't run — offer to discard (Save As
+                    // keeps them, via the banner).
+                    UnsavedDecision::PromptDiscardOnly => {
+                        let app_ctx3 = app_ctx2.clone();
+                        ctx.present_message_box(
+                            MessageBox::question(tr!(close_backup_discard_title()))
+                                .text(tr!(close_backup_discard_text()))
+                                .buttons(MessageBoxButtons::Custom(vec![
+                                    MessageBoxButton::standard(StandardButton::Discard),
+                                    MessageBoxButton::standard(StandardButton::Cancel),
+                                ]))
+                                .default_button(StandardButton::Cancel)
+                                .escape_button(StandardButton::Cancel)
+                                .on_result(move |r, ctx| {
+                                    if r.button == StandardButton::Discard {
+                                        close_work_and_return_to_launcher(&app_ctx3, ctx);
+                                    }
+                                }),
+                        );
+                    }
+                    UnsavedDecision::PromptSaveDiscardCancel => {
+                        let app_ctx3 = app_ctx2.clone();
+                        let pe = pending.clone();
+                        ctx.present_message_box(
+                            MessageBox::question(tr!(close_work_question()))
+                                .text(tr!(unsaved_changes()))
+                                .buttons(MessageBoxButtons::SaveDiscardCancel)
+                                .default_button(StandardButton::Save)
+                                .escape_button(StandardButton::Cancel)
+                                .on_result(move |r, ctx| match r.button {
+                                    StandardButton::Save => pe.set(PendingExit::ReturnToLauncher),
+                                    // Discarding unsaved edits skips the backup.
+                                    StandardButton::Discard => {
+                                        close_work_and_return_to_launcher(&app_ctx3, ctx);
+                                    }
+                                    _ => {}
+                                }),
+                        );
+                    }
                 }
-                if !unsaved.get() {
-                    // Clean: take an on-close backup (if configured), then return
-                    // to the Launcher. (In backup mode `on_close_flow` is
-                    // suppressed → returns at once.)
-                    scheduler.on_close_flow(ctx, PendingExit::ReturnToLauncher);
-                    return;
-                }
-                if autosave.get() {
-                    // Save first; SaveWork-completion runs the backup then returns.
-                    pending.set(PendingExit::ReturnToLauncher);
-                    return;
-                }
-                let app_ctx3 = app_ctx2.clone();
-                let pe = pending.clone();
-                ctx.present_message_box(
-                    MessageBox::question(tr!(close_work_question()))
-                        .text(tr!(unsaved_changes()))
-                        .buttons(MessageBoxButtons::SaveDiscardCancel)
-                        .default_button(StandardButton::Save)
-                        .escape_button(StandardButton::Cancel)
-                        .on_result(move |r, ctx| match r.button {
-                            StandardButton::Save => pe.set(PendingExit::ReturnToLauncher),
-                            // Discarding unsaved edits skips the backup.
-                            StandardButton::Discard => {
-                                close_work_and_return_to_launcher(&app_ctx3, ctx);
-                            }
-                            _ => {}
-                        }),
-                );
             }));
         }
         // `backup.now` — the manual "Back up now" command. Runs a forced backup
@@ -1481,6 +1597,21 @@ impl Widget for App {
         // (inspector) sides — like Bastyde's `docking` example.
         let dock_lead = outline.docking();
         let dock_trail = outline.docking();
+        // The save indicator sits right after the binder toggle: the quiet, always-
+        // there answer to "is my last paragraph on disk?" — the one thing autosave
+        // mode had no way to tell you (it hides Save + Ctrl+S). Failures are toasts;
+        // this is only the steady state.
+        let save_indicator = crate::save_indicator::SaveIndicator::new(
+            editors.clone(),
+            self.unsaved.clone(),
+            settings.autosave(),
+            self.backup_mode.clone(),
+            // A work is open iff its `WorkInfo` shape is known (same test the File
+            // menu uses to collapse its project-only items).
+            single_work_info.shape().map(|s| s.is_some()),
+            self.save_spinner.clone(),
+            self.save_spinner_visible.clone(),
+        );
         let status = StatusBar::new().background(SurfaceRole::Main).child(
             HStack::new()
                 .spacing(8.0)
@@ -1492,6 +1623,7 @@ impl Widget for App {
                         .tooltip(tr!(statusbar_toggle_outline()))
                         .on_activate_fn(move |_| dock_lead.toggle_side_visible(DockSide::Leading)),
                 )
+                .child(save_indicator)
                 .child(Spacer::new())
                 .child(
                     IconButton::new(crate::activity_icons::inspector_icon())
@@ -1581,6 +1713,46 @@ impl Widget for App {
 
     fn children(&self) -> Vec<WidgetId> {
         self.root_child.into_iter().collect()
+    }
+}
+
+/// The disk write a deferred flow was waiting on will never land — it failed, or a
+/// follow-up save could not even be started. Drop whatever was parked on it and say
+/// so, rather than leave the user with a command that silently never happens.
+///
+/// **Exactly one toast**, naming what was lost *besides* the write, because the
+/// deferred command not happening is the more confusing half. A close outranks a
+/// switch (it is where the project was headed); with neither parked, this is a plain
+/// autosave / Ctrl+S and only the write itself is reported. `error` is `None` when
+/// the operation never started, so there is no message from the backend to quote.
+///
+/// The project is untouched — still open, still dirty — so nothing is lost by
+/// staying put; the edits are exactly where the user left them.
+fn abandon_deferred(
+    c: &mut EventContext,
+    pending: &Signal<PendingExit>,
+    exit_seq: &Rc<std::cell::Cell<Option<u64>>>,
+    switch: &ProjectSwitchViewModel,
+    error: Option<&str>,
+) {
+    if pending.get() != PendingExit::None {
+        pending.set(PendingExit::None);
+        exit_seq.set(None);
+        switch.cancel();
+        c.show_toast(Toast::error(match error {
+            Some(e) => tr!(close_save_failed(error = e.to_string())),
+            None => tr!(close_save_not_started()),
+        }));
+        return;
+    }
+    if switch.on_save_failed(c, error) {
+        return; // it toasted "…so it wasn't replaced"
+    }
+    // Nothing was waiting: report just the failed write.
+    if let Some(e) = error {
+        c.show_toast(Toast::error(tr!(save_error(error = e.to_string()))));
+    } else {
+        c.show_toast(Toast::error(tr!(save_not_started())));
     }
 }
 
