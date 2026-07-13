@@ -492,7 +492,9 @@ impl EditorsViewModel {
             },
         ) {
             Ok(op_id) => {
-                self.queue.borrow_mut().started(op_id, covers, Instant::now());
+                self.queue
+                    .borrow_mut()
+                    .started(op_id, covers, Instant::now());
                 self.saving.set(true);
                 true
             }

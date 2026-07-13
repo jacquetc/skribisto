@@ -104,11 +104,13 @@ impl SaveIndicator {
         match status {
             // No project, or a read-only backup: nothing to say, and no width taken.
             SaveStatus::Hidden => None,
-            SaveStatus::Saving => Some(ctx.add(
-                FixedSize::new()
-                    .width(SLOT)
-                    .child(Spinner::new(SPINNER_SIZE).label(tr!(statusbar_saving()))),
-            )),
+            SaveStatus::Saving => Some(
+                ctx.add(
+                    FixedSize::new()
+                        .width(SLOT)
+                        .child(Spinner::new(SPINNER_SIZE).label(tr!(statusbar_saving()))),
+                ),
+            ),
             SaveStatus::Unsaved | SaveStatus::Saved => {
                 let autosave = self.autosave.get();
                 let unsaved = status == SaveStatus::Unsaved;
@@ -143,16 +145,18 @@ impl SaveIndicator {
                     (false, false) => tr!(statusbar_save_saved()),
                 };
                 let editors = self.editors.clone();
-                Some(ctx.add(
-                    FixedSize::new().width(SLOT).child(
-                        IconButton::new(icon)
-                            .size(IconButtonSize::Compact)
-                            .icon_role(role)
-                            .enabled(save_clickable(status, autosave))
-                            .tooltip(tooltip)
-                            .on_activate_fn(move |_| editors.save_to_disk()),
+                Some(
+                    ctx.add(
+                        FixedSize::new().width(SLOT).child(
+                            IconButton::new(icon)
+                                .size(IconButtonSize::Compact)
+                                .icon_role(role)
+                                .enabled(save_clickable(status, autosave))
+                                .tooltip(tooltip)
+                                .on_activate_fn(move |_| editors.save_to_disk()),
+                        ),
                     ),
-                ))
+                )
             }
         }
     }

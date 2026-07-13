@@ -92,7 +92,7 @@ impl SpinnerGate {
     pub fn set_saving(&mut self, saving: bool, now: Instant) {
         match (saving, self.started) {
             (true, None) => self.started = Some(now),
-            (true, Some(_)) => {}     // already running; keep the original start
+            (true, Some(_)) => {} // already running; keep the original start
             (false, _) => self.started = None,
         }
     }
@@ -176,7 +176,10 @@ mod tests {
             !save_clickable(SaveStatus::Saved, false),
             "a clean project has nothing to write — the Save command is greyed too"
         );
-        assert!(!save_clickable(SaveStatus::Unsaved, true), "autosave owns it");
+        assert!(
+            !save_clickable(SaveStatus::Unsaved, true),
+            "autosave owns it"
+        );
         assert!(!save_clickable(SaveStatus::Saved, true), "autosave owns it");
         // Nothing to click while the write is in flight, or when there's no button.
         assert!(!save_clickable(SaveStatus::Saving, false));
@@ -210,7 +213,10 @@ mod tests {
 
         let late = t + SPINNER_DELAY + Duration::from_millis(1);
         let wake = gate.poll(late);
-        assert!(gate.visible(), "still running after the delay — show progress");
+        assert!(
+            gate.visible(),
+            "still running after the delay — show progress"
+        );
         assert_eq!(
             wake,
             Some(late + SPINNER_MIN_SHOWN),

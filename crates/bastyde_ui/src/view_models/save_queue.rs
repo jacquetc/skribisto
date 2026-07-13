@@ -274,7 +274,10 @@ mod tests {
         q.started("lost-op".into(), 1, t);
 
         // Still believed in while it might yet land.
-        assert_eq!(q.request(t + STALE_AFTER - Duration::from_secs(1)), SaveRequest::Queued);
+        assert_eq!(
+            q.request(t + STALE_AFTER - Duration::from_secs(1)),
+            SaveRequest::Queued
+        );
 
         // Past the backstop: presumed lost, and the save actually happens.
         assert_eq!(q.request(t + STALE_AFTER), SaveRequest::StartNow);
@@ -301,6 +304,10 @@ mod tests {
         assert!(!q.is_running());
         assert_eq!(q.completed("op-old"), None, "not ours any more");
         assert!(!q.failed("op-old"));
-        assert_eq!(q.request(t), SaveRequest::StartNow, "the new project saves fresh");
+        assert_eq!(
+            q.request(t),
+            SaveRequest::StartNow,
+            "the new project saves fresh"
+        );
     }
 }
