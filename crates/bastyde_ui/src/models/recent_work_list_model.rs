@@ -204,13 +204,25 @@ mod imp {
             }
         }
 
-        /// Flush the shared recents MRU to disk synchronously. Call once at app
-        /// shutdown so a just-opened work isn't lost inside the debounce window.
-        pub fn flush_now() {
-            if let Some(mru) = shared_mru()
-                && let Err(e) = mru.flush_now()
-            {
-                eprintln!("recents MRU: flush failed: {e}");
+        /// Flush the shared recents MRU to disk **and release it**, synchronously.
+        /// Call once at app shutdown, so a just-opened work isn't lost inside the
+        /// debounce window.
+        ///
+        /// Taking the `MruList` out of the thread-local — rather than leaving it
+        /// to the thread-local's own destructor — is what keeps exit *possible*.
+        /// Dropping an `MruList` blocks until the shared settings-writer thread
+        /// acks its final flush, and on Windows a thread-local's destructor runs
+        /// inside `DLL_PROCESS_DETACH`, which `ExitProcess` reaches only after it
+        /// has already killed that writer thread: the ack would never arrive and
+        /// the process would hang forever, unkillable, with its window still on
+        /// screen. Called from `main`, the writer is alive and acks immediately.
+        pub fn shutdown() {
+            let mru = SHARED_MRU.with(|cell| cell.borrow_mut().take());
+            if let Some(mru) = mru {
+                if let Err(e) = mru.flush_now() {
+                    eprintln!("recents MRU: flush failed: {e}");
+                }
+                // Dropped here, on a live app — not during process teardown.
             }
         }
 
@@ -368,6 +380,32 @@ mod imp {
                 last_opened_ms: ms,
                 pinned: false,
             }
+        }
+
+        /// The MRU must not still be sitting in the thread-local when `main`
+        /// returns. Dropping an `MruList` blocks until the shared settings-writer
+        /// thread acks its final flush, and a thread-local's destructor runs
+        /// during process teardown — on Windows inside `DLL_PROCESS_DETACH`,
+        /// after `ExitProcess` has already killed that writer. The ack never
+        /// comes and the app hangs forever, unkillable. `shutdown` is what keeps
+        /// the drop inside `main`, where the writer can still answer.
+        #[test]
+        fn shutdown_releases_the_thread_local_mru() {
+            let toml = tmp("recents_shutdown.toml");
+            let _ = std::fs::remove_file(&toml);
+            let mru = MruList::open_at(toml, 30, Duration::ZERO).unwrap();
+            SHARED_MRU.with(|cell| *cell.borrow_mut() = Some(mru));
+
+            RecentWorkListModel::shutdown();
+
+            SHARED_MRU.with(|cell| {
+                assert!(
+                    cell.borrow().is_none(),
+                    "shutdown must take the MRU out of the thread-local, or its \
+                     writer's drop lands in a TLS destructor at process teardown \
+                     and wedges the exit"
+                )
+            });
         }
 
         #[test]
@@ -560,7 +598,7 @@ mod imp {
         }
 
         /// No persistence in the mock build.
-        pub fn flush_now() {}
+        pub fn shutdown() {}
     }
 }
 

@@ -592,9 +592,13 @@ fn main() {
         .run();
 
     // Flush the recent-works MRU synchronously so a just-opened project isn't
-    // lost inside the debounce window, then tear the shared Root/System frame
-    // down and fire `CleanUpBeforeExit` before the event thread is stopped.
-    crate::models::RecentWorkListModel::flush_now();
+    // lost inside the debounce window, and *release* it while the app is still
+    // alive — its writer is parked in a thread-local, whose destructor would
+    // otherwise run during process teardown, after the settings-writer thread it
+    // waits on has been killed (an unkillable hang; see `shutdown`'s docs). Then
+    // tear the shared Root/System frame down and fire `CleanUpBeforeExit` before
+    // the event thread is stopped.
+    crate::models::RecentWorkListModel::shutdown();
     // Flush any pending backup-settings write (last-success hashes / timestamps /
     // nudge flag / edited policy) so it survives the debounce window on exit.
     backup_settings.flush_now();
