@@ -25,6 +25,13 @@ skribisto_model = { workspace = true }
 # retention policy type + the retention/fingerprint/sniff helpers used by the
 # backup scheduler, backups list, and open-a-backup flow.
 skrib_format = { workspace = true }
+# Stable content hash for the per-project window-persistence id
+# (`windows::window_id_for`). NOT `std::hash::DefaultHasher`: its output is
+# explicitly not guaranteed stable across Rust releases, and this id is
+# *persisted* as the key for a project's saved window geometry — a toolchain
+# bump would silently orphan every one of them. Already in the tree via
+# `skrib_format` (the `.skrib` content fingerprint), so this costs nothing.
+blake3 = "1"
 # `automation` enables the debug-only in-app automation bridge
 # (`install_automation_bridge_in_debug()`); a no-op in release. `async` enables
 # the main-thread async executor (`ctx.spawn_local`/`spawn_local_with` +

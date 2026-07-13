@@ -333,6 +333,26 @@ impl Widget for WelcomePanel {
             .expect("ProjectWindowFactory registered in main");
         let vm = WelcomeViewModel::new(ctx.settings(), self.app_ctx.clone(), factory);
 
+        // Ctrl+Q / File ▸ Quit on the bare Launcher (no project open, hence no
+        // `App`, no unsaved state, no `on_close_requested` guard — this window's
+        // own doc comment already states that closing it while it's the only
+        // open window quits the process, by design). A plain guarded
+        // `close_window()` is correct here: there is nothing to veto. This is
+        // deliberately simpler than the project window's `app.quit` (which runs
+        // through `guard_unsaved_exit` — see `app.rs`) — registering *that*
+        // version here would have zero effect anyway: each `WidgetTree` (one per
+        // OS window) has its own independent `global_actions`/`shortcut_registry`,
+        // so `App::build`'s own `app.quit` registration is unreachable from a
+        // window that never builds an `App`. Must be registered inside a widget
+        // that is actually built into the Launcher's own window tree — this one.
+        ctx.register_shortcut_global(
+            Shortcut::new("app.quit")
+                .name("Quit")
+                .primary(KeyStroke::ctrl(Key::Q))
+                .build(),
+        );
+        ctx.register_action_global(Action::new("app.quit").on_invoke(|_i, c| c.close_window()));
+
         // The lists are reactive `ListView`s bound to Layer-A `ListModel`s, so
         // they refresh themselves on `LoadWork` — no widget rebuild needed here.
         // `wire` just subscribes each model to the backend (examples: a no-op).

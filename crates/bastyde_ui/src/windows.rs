@@ -20,6 +20,10 @@
 //! **Ordering invariant.** The process quits when its last window closes, so
 //! every transition here opens the new window *before* closing the old one —
 //! see `main.rs`'s module docs and [`crate::app::close_work_and_return_to_launcher`].
+//! The one deliberate exception is `app.quit` (Ctrl+Q / File ▸ Quit —
+//! registered in `app.rs`, not here): it force-closes this window with
+//! nothing reopened, so the last-window-closes rule *is* the exit — see
+//! [`crate::app::quit_app`]/`PendingExit::Quit`.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -28,15 +32,14 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
-    Center, CollapsePolicy, EventContextMessageBoxExt, Expand, HStack, IconButton, IconButtonSize,
-    IconWidget, MenuBar, MenuEntry, MenuModel, MessageBox, MessageBoxButton, MessageBoxButtons,
-    StandardButton, TextWidget, TitleBar, VStack, WindowFrame,
+    Center, CollapsePolicy, Expand, HStack, IconButton, IconButtonSize, IconWidget, MenuBar,
+    MenuEntry, MenuModel, TextWidget, TitleBar, VStack, WindowFrame,
 };
 
 use frontend::AppContext;
 use frontend::common::entities::WorkShape;
 
-use crate::app::{App, PendingAction, PendingExit};
+use crate::app::{App, PendingAction, PendingExit, guard_unsaved_exit};
 use crate::project_switcher_button::ProjectSwitcherButton;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{BackupSchedulerViewModel, OutlineViewModel, SaveAsViewModel};
@@ -62,14 +65,23 @@ pub const LAUNCHER_WINDOW_ID: &str = "launcher";
 /// target that hasn't been written to disk) — still stable and still
 /// collision-free in practice, since every caller hashes the exact target
 /// path it already computed.
+///
+/// Hashed with **blake3**, not `std::hash::DefaultHasher`: the result is
+/// *persisted* (as the key of a `window_state.toml` row), and `DefaultHasher`'s
+/// algorithm is explicitly not guaranteed stable across Rust releases — a
+/// toolchain bump would silently orphan every saved geometry. blake3 is
+/// already resolved in this workspace (a transitive dependency via
+/// `skrib_format`, which documents the identical rationale in
+/// `crates/skrib_format/src/fingerprint.rs`), so this adds no new crate to
+/// the dependency graph. Truncated to 16 hex chars to match the previous
+/// `work-{:016x}` id width (`window_state.toml`'s existing well-formed rows
+/// stay visually consistent); the full 32-char digest would be equally safe,
+/// this is just cosmetic.
 pub fn window_id_for(project: &str) -> String {
-    use std::hash::{Hash, Hasher};
     let canon = std::fs::canonicalize(project)
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|_| project.to_string());
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    canon.hash(&mut hasher);
-    format!("work-{:016x}", hasher.finish())
+    format!("work-{}", &blake3::hash(canon.as_bytes()).to_hex()[..16])
 }
 
 /// The Launcher window: the Welcome UI hosted as a real top-level window
@@ -254,16 +266,28 @@ impl ProjectWindowFactory {
             // by another instance's "open in new window") so this window comes
             // up focused on Wayland.
             .activate_from_env(true)
-            // Unsaved-changes guard for every interactive close (title-bar X,
-            // Alt+F4, and Ctrl+Q — all route through `close_window()`). In the
-            // launcher-window model, closing a project window never quits the
-            // process by itself: it always opens a fresh Launcher window
-            // first, then force-closes this one (`close_work_and_return_to_
-            // launcher`) — the process only actually exits when the Launcher
-            // itself is closed. Autosave on: just ensure the save runs, then
-            // return to the Launcher (no prompt). Autosave off + unsaved:
-            // Save / Discard / Cancel. The save is async, so we veto now and
-            // `App` re-issues the close on SaveWork.
+            // Unsaved-changes guard for every interactive close that still
+            // routes through `close_window()` — the title-bar X and Alt+F4
+            // (Ctrl+Q no longer does: `app.quit`'s action calls
+            // `guard_unsaved_exit` directly and ends in a real process exit —
+            // see `app::PendingExit::Quit` — instead of `close_window()`,
+            // which would only ever land back here and return to the
+            // Launcher). In the launcher-window model, closing a project
+            // window *this* way never quits the process by itself: it always
+            // opens a fresh Launcher window first, then force-closes this one
+            // (`close_work_and_return_to_launcher`) — the process only
+            // actually exits via `app.quit`, or by closing the Launcher
+            // itself.
+            //
+            // Delegates entirely to `guard_unsaved_exit` (shared with
+            // `work.close`'s action and `app.quit`'s action, both in
+            // `app.rs`) instead of re-deriving the branch order here — this
+            // is the ONE hand-written copy of it left in the crate. See that
+            // function's docs for what each `UnsavedDecision` arm does; this
+            // closure only supplies the outcome (`ReturnToLauncher`) and
+            // always vetoes the framework's own close, regardless of branch —
+            // the guard performs the actual transition itself, either at once
+            // or once a deferred save lands.
             .on_close_requested({
                 let unsaved = unsaved.clone();
                 let autosave = autosave_menu.clone();
@@ -272,75 +296,15 @@ impl ProjectWindowFactory {
                 let backup_mode = backup_mode.clone();
                 let app_ctx_guard = app_ctx_root.clone();
                 move |ctx| {
-                    // Backup window: Save is off (the file is read-only), so the
-                    // normal save-then-close path doesn't apply. Clean → return
-                    // to the Launcher; dirty → offer to discard (Save As keeps
-                    // edits — via the banner). No on-close backup (never back
-                    // up a backup).
-                    if backup_mode.get() {
-                        if !unsaved.get() {
-                            crate::app::close_work_and_return_to_launcher(&app_ctx_guard, ctx);
-                            return CloseResponse::Veto;
-                        }
-                        let app_ctx_inner = app_ctx_guard.clone();
-                        ctx.present_message_box(
-                            MessageBox::question(tr!(close_backup_discard_title()))
-                                .text(tr!(close_backup_discard_text()))
-                                .buttons(MessageBoxButtons::Custom(vec![
-                                    MessageBoxButton::standard(StandardButton::Discard),
-                                    MessageBoxButton::standard(StandardButton::Cancel),
-                                ]))
-                                .default_button(StandardButton::Cancel)
-                                .escape_button(StandardButton::Cancel)
-                                .on_result(move |r, ctx| {
-                                    if r.button == StandardButton::Discard {
-                                        crate::app::close_work_and_return_to_launcher(
-                                            &app_ctx_inner,
-                                            ctx,
-                                        );
-                                    }
-                                }),
-                        );
-                        return CloseResponse::Veto;
-                    }
-                    if !unsaved.get() {
-                        // Clean project: still take an on-close backup (if the
-                        // policy asks) before actually leaving — `on_close_flow`
-                        // performs the Launcher-return once the backup finishes
-                        // (or immediately if there's nothing to do).
-                        if scheduler.wants_on_close() {
-                            scheduler.on_close_flow(ctx, PendingExit::ReturnToLauncher);
-                            return CloseResponse::Veto;
-                        }
-                        crate::app::close_work_and_return_to_launcher(&app_ctx_guard, ctx);
-                        return CloseResponse::Veto;
-                    }
-                    if autosave.get() {
-                        // Save first; the SaveWork-completion handler then runs
-                        // the on-close backup and returns to the Launcher.
-                        pending.set(PendingExit::ReturnToLauncher);
-                        return CloseResponse::Veto;
-                    }
-                    let pe = pending.clone();
-                    let app_ctx_discard = app_ctx_guard.clone();
-                    ctx.present_message_box(
-                        MessageBox::question(tr!(close_question()))
-                            .text(tr!(unsaved_changes()))
-                            .buttons(MessageBoxButtons::SaveDiscardCancel)
-                            .default_button(StandardButton::Save)
-                            .escape_button(StandardButton::Cancel)
-                            .on_result(move |r, ctx| match r.button {
-                                StandardButton::Save => pe.set(PendingExit::ReturnToLauncher),
-                                // Discarding unsaved edits skips the backup (the
-                                // last-saved state is what's kept).
-                                StandardButton::Discard => {
-                                    crate::app::close_work_and_return_to_launcher(
-                                        &app_ctx_discard,
-                                        ctx,
-                                    );
-                                }
-                                _ => {}
-                            }),
+                    guard_unsaved_exit(
+                        ctx,
+                        &app_ctx_guard,
+                        unsaved.get(),
+                        backup_mode.get(),
+                        autosave.get(),
+                        &pending,
+                        &scheduler,
+                        PendingExit::ReturnToLauncher,
                     );
                     CloseResponse::Veto
                 }
@@ -637,5 +601,28 @@ mod tests {
         );
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// F4(a): the persisted id must not depend on `std::hash::DefaultHasher`
+    /// (whose algorithm std explicitly does not guarantee stable across Rust
+    /// releases) — swapped for blake3. This can't directly prove
+    /// cross-release stability (that would require pinning a specific
+    /// toolchain), but it does pin the two properties a caller actually
+    /// relies on: the id is deterministic for a given input in this process,
+    /// and its shape is the fixed `work-{16 hex chars}` this module's other
+    /// callers (and `window_state.toml`'s existing rows) expect.
+    #[test]
+    fn window_id_for_is_deterministic_and_16_hex_chars() {
+        let path = "/tmp/skribisto-window-id-format-test-does-not-exist.skrib";
+        let a = window_id_for(path);
+        let b = window_id_for(path);
+        assert_eq!(a, b, "hashing the same path twice must agree");
+
+        let hex = a.strip_prefix("work-").expect("id must start with work-");
+        assert_eq!(hex.len(), 16, "id must be work- + exactly 16 hex chars");
+        assert!(
+            hex.chars().all(|c| c.is_ascii_hexdigit()),
+            "id suffix must be lowercase/uppercase hex, got {hex:?}"
+        );
     }
 }

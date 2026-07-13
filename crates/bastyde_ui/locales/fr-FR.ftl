@@ -233,7 +233,7 @@ dialog-rename = Renommer
 dialog-set-label = Définir l'étiquette
 dialog-new-scene = Nouvelle scène
 close-work-question = Enregistrer les modifications avant de fermer l'œuvre ?
-close-question = Enregistrer les modifications avant de fermer ?
+quit-question = Enregistrer les modifications avant de quitter ?
 unsaved-changes = Cette œuvre a des modifications non enregistrées.
 # Remplacement de l'œuvre ouverte dans cette fenêtre (Nouvelle œuvre, Ouvrir une
 # œuvre, « Ouvrir ici », « Ouvrir maintenant » du bandeau d'import) — même garde
@@ -293,6 +293,8 @@ restored-ok = Projet restauré.
 restored-with-safety = Projet restauré. Votre version précédente a été enregistrée dans { $path }.
 close-backup-discard-title = Abandonner les modifications de cette copie de secours ?
 close-backup-discard-text = Les modifications d'une copie de secours ne peuvent pas y être enregistrées. Utilisez « Enregistrer sous » pour les conserver, ou abandonnez et fermez.
+quit-backup-discard-title = Abandonner les modifications et quitter ?
+quit-backup-discard-text = Les modifications d'une copie de secours ne peuvent pas y être enregistrées. Utilisez « Enregistrer sous » pour les conserver, ou abandonnez et quittez.
 backup-nudge-text = Aucune copie de secours n'est configurée pour ce projet.
 backup-nudge-action = Configurer les copies de secours…
 

@@ -819,6 +819,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "bastyde",
+ "blake3",
  "chrono",
  "interprocess",
  "libc",

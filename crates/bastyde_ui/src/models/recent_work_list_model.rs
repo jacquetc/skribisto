@@ -177,6 +177,33 @@ mod imp {
             snapshot(&self.inner.model)
         }
 
+        /// One-shot read of **every** raw recents entry's path — including ones
+        /// currently hidden from the UI because their file isn't reachable right
+        /// now (see the module doc: "hidden but kept"). Used only by `main.rs`'s
+        /// one-time `window_state.toml` reconciliation sweep, which must not treat
+        /// a project on a temporarily-unmounted drive as orphaned just because
+        /// [`Self::items`]'s UI-filtered view doesn't show it right now.
+        ///
+        /// Opens a short-lived `MruList` handle, reads it, and drops it
+        /// immediately — safe even though [`SHARED_MRU`]'s own "don't open twice"
+        /// note warns against two *live* handles diverging: that's about
+        /// concurrent divergence, not a one-shot read taken (and dropped) before
+        /// the real, long-lived handle (`shared_mru()`) is ever opened for this
+        /// process — `main.rs` calls this before constructing any
+        /// `RecentWorkListModel` for real.
+        pub(crate) fn all_raw_paths() -> Vec<String> {
+            let Some(paths) = AppPaths::new("eu", "skribisto", "Skribisto") else {
+                return Vec::new();
+            };
+            match MruList::<RecentEntry>::open(&paths, "recents", MAX_RECENTS) {
+                Ok(mru) => raw_paths(&mru),
+                Err(e) => {
+                    eprintln!("recents MRU: one-shot open for window-state prune failed: {e}");
+                    Vec::new()
+                }
+            }
+        }
+
         /// Flush the shared recents MRU to disk synchronously. Call once at app
         /// shutdown so a just-opened work isn't lost inside the debounce window.
         pub fn flush_now() {
@@ -278,6 +305,18 @@ mod imp {
         })
     }
 
+    /// Pure: every raw entry's path from an already-opened MRU, in whatever order
+    /// the model holds them — **not** filtered by reachability (unlike
+    /// [`visible_rows`]). Factored out from [`RecentWorkListModel::all_raw_paths`]
+    /// so it's testable against a temp-file `MruList` (see the module's other
+    /// tests) without touching the real recents file.
+    fn raw_paths(mru: &MruList<RecentEntry>) -> Vec<String> {
+        let model = mru.model();
+        (0..model.len())
+            .filter_map(|i| model.with_item(i, |e| e.path.clone()))
+            .collect()
+    }
+
     /// Reachable recents as UI rows, most-recently-opened first (MRU order).
     /// Entries whose file/folder no longer exists are hidden here but remain in
     /// the MRU (see the module doc).
@@ -359,6 +398,41 @@ mod imp {
                 2,
                 "unreachable entry must remain in the MRU, not be dropped"
             );
+
+            let _ = std::fs::remove_file(&reachable);
+            let _ = std::fs::remove_file(&toml);
+        }
+
+        #[test]
+        fn raw_paths_includes_unreachable_entries_unlike_visible_rows() {
+            // One reachable, one missing — mirrors
+            // `unreachable_entries_are_hidden_but_kept_in_the_mru` above, but
+            // asserts the OPPOSITE property for the raw reader: F4b's window-state
+            // prune must not mistake "temporarily unreachable" for "orphaned".
+            let reachable = tmp("raw_paths_reachable.skrib");
+            std::fs::write(&reachable, b"x").unwrap();
+            let missing = tmp("raw_paths_missing.skrib");
+            let _ = std::fs::remove_file(&missing);
+
+            let toml = tmp("recents_raw_paths.toml");
+            let _ = std::fs::remove_file(&toml);
+            let mru = MruList::open_at(toml.clone(), 30, Duration::ZERO).unwrap();
+            mru.add(entry(&missing.to_string_lossy(), "Gone", 1));
+            mru.add(entry(&reachable.to_string_lossy(), "Here", 2));
+
+            let paths = raw_paths(&mru);
+            assert_eq!(
+                paths.len(),
+                2,
+                "raw_paths must include the unreachable entry too, unlike visible_rows"
+            );
+            assert!(paths.contains(&missing.to_string_lossy().into_owned()));
+            assert!(paths.contains(&reachable.to_string_lossy().into_owned()));
+
+            // Contrast with the UI-filtered view, which does hide the unreachable
+            // one — this is exactly the difference that matters for F4b.
+            let visible = visible_rows(&Some(mru.clone()));
+            assert_eq!(visible.len(), 1, "visible_rows still hides the missing one");
 
             let _ = std::fs::remove_file(&reachable);
             let _ = std::fs::remove_file(&toml);
@@ -477,6 +551,12 @@ mod imp {
             (0..self.model.len())
                 .filter_map(|i| self.model.with_item(i, |d| d.clone()))
                 .collect()
+        }
+
+        /// No persisted recents file in the mock build — nothing to protect from
+        /// the window-state prune (`main.rs`), so nothing to report.
+        pub(crate) fn all_raw_paths() -> Vec<String> {
+            Vec::new()
         }
 
         /// No persistence in the mock build.

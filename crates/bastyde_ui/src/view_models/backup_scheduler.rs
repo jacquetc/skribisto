@@ -218,17 +218,6 @@ impl BackupSchedulerViewModel {
         self.start(None, &uid, &path, &policy, false, None);
     }
 
-    /// Whether the currently-open project wants an on-close backup (the close
-    /// guards consult this before deferring to [`Self::on_close_flow`]).
-    pub fn wants_on_close(&self) -> bool {
-        if self.suppressed() {
-            return false;
-        }
-        self.current()
-            .map(|(uid, _)| self.settings.effective_for(&uid).on_close)
-            .unwrap_or(false)
-    }
-
     /// The interval between automatic backups for the open project, in seconds —
     /// `None` when nothing is open or the interval trigger is off. Drives the App
     /// timer that calls [`Self::interval_tick`].
@@ -408,14 +397,16 @@ impl BackupSchedulerViewModel {
             .unzip()
     }
 
-    /// Perform the deferred close: release the project and return to the
-    /// Launcher (see `crate::app::close_work_and_return_to_launcher`) — the
-    /// launcher-window model's only outcome for a guarded close.
+    /// Perform the deferred close: either return to the Launcher (see
+    /// `crate::app::close_work_and_return_to_launcher`) or really terminate
+    /// the process (see `crate::app::quit_app`) — the two outcomes a guarded
+    /// close can end in.
     fn do_close(&self, ctx: &mut EventContext, then: PendingExit) {
         match then {
             PendingExit::ReturnToLauncher => {
                 crate::app::close_work_and_return_to_launcher(&self.app_ctx, ctx)
             }
+            PendingExit::Quit => crate::app::quit_app(&self.app_ctx, ctx),
             PendingExit::None => {}
         }
     }

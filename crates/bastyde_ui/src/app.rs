@@ -98,19 +98,20 @@ fn drain_dropped(mut payload: DragPayload, mut open: impl FnMut(u64, &str)) -> b
 }
 
 /// A close gesture deferred until the in-flight save finishes. The window's
-/// close guard, the `work.close` action, and `welcome.show` (aliased to
-/// `work.close` — see its action below) all set this; `App` kicks the save,
-/// and the SaveWork-completion event performs the action — so the async save
-/// is awaited.
+/// close guard, the `work.close` action, `app.quit`'s action, and
+/// `welcome.show` (aliased to `work.close` — see its action below) all set
+/// this; `App` kicks the save, and the SaveWork-completion event performs the
+/// action — so the async save is awaited.
 ///
-/// In the launcher-window model there is only one outcome: every guarded
-/// close of a project window (title-bar X, Alt+F4, Ctrl+Q, Ctrl+W, File ▸
-/// Close Work, the brand icon / File ▸ Welcome…) returns to the Launcher —
-/// see [`close_work_and_return_to_launcher`]. The process only actually exits
-/// when the Launcher window itself is closed, so there is no separate
-/// "close the window without returning to the Launcher" outcome to encode
-/// here any more (that used to be `CloseWindow` vs. `CloseWork` — collapsed
-/// once both meant the same thing).
+/// Two outcomes today. Every guarded close of a project window that still
+/// goes through `close_window()` (title-bar X, Alt+F4, Ctrl+W, File ▸ Close
+/// Work, the brand icon / File ▸ Welcome…) returns to the Launcher — see
+/// [`close_work_and_return_to_launcher`]. Ctrl+Q / File ▸ Quit is the one
+/// exception: it never calls `close_window()` at all — `app.quit`'s action
+/// runs the same unsaved-changes guard ([`guard_unsaved_exit`]) but ends in
+/// [`quit_app`], which really terminates the process instead of reopening the
+/// Launcher. Both outcomes share the exact same branch order
+/// (`unsaved_decision`/`UnsavedDecision`); only the terminal action differs.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum PendingExit {
     #[default]
@@ -118,6 +119,15 @@ pub enum PendingExit {
     /// Release the open project and return to the Launcher, once saved (and,
     /// if configured, once the on-close backup finishes).
     ReturnToLauncher,
+    /// Release the open project and terminate the process entirely, once
+    /// saved (and, if configured, once the on-close backup finishes).
+    /// Unlike `ReturnToLauncher`, this does NOT open a fresh Launcher
+    /// window — `quit_app` force-closes the project window with nothing
+    /// reopened, so `WindowManager::is_empty()` trips and the event loop
+    /// exits (bastyde-app/src/app.rs, `maybe_exit`/`event_loop.exit()`).
+    /// Only valid when this project window is the sole open window, which
+    /// is Skribisto's steady state.
+    Quit,
 }
 
 /// A backend-mutating action deferred to a freshly-created project window's
@@ -166,6 +176,128 @@ pub fn close_work_and_return_to_launcher(app_ctx: &Rc<AppContext>, ctx: &mut Eve
     let _ = work_management_commands::close_work(app_ctx);
     ctx.open_window(crate::windows::launcher_window_config(app_ctx.clone()));
     ctx.close_window_forced();
+}
+
+/// Release the open project and terminate the process — the `Quit` sibling
+/// of [`close_work_and_return_to_launcher`]. Deliberately does NOT open a
+/// fresh Launcher window: once this (normally sole) window force-closes,
+/// `WindowManager::is_empty()` trips and the event loop exits for real — the
+/// framework's only process-exit mechanism (there is no
+/// `EventContext::quit()`/`terminate()`).
+///
+/// Callers invoking this from inside a close guard must return
+/// `CloseResponse::Veto` afterward, exactly like its Launcher-returning
+/// sibling: this function performs the actual close itself, via
+/// `close_window_forced`, rather than deferring to the guard's own return
+/// value.
+pub fn quit_app(app_ctx: &Rc<AppContext>, ctx: &mut EventContext) {
+    let _ = work_management_commands::close_work(app_ctx);
+    ctx.close_window_forced();
+}
+
+/// Perform `outcome` immediately — `close_work_and_return_to_launcher` for
+/// `ReturnToLauncher`, `quit_app` for `Quit`. Shared by every "user picked
+/// Discard" branch in [`guard_unsaved_exit`], so discarding unsaved edits
+/// always skips the on-close backup (the last-saved state is what's kept),
+/// exactly as it did before the guard's three call sites were unified.
+fn perform_exit(outcome: PendingExit, app_ctx: &Rc<AppContext>, ctx: &mut EventContext) {
+    match outcome {
+        PendingExit::ReturnToLauncher => close_work_and_return_to_launcher(app_ctx, ctx),
+        PendingExit::Quit => quit_app(app_ctx, ctx),
+        PendingExit::None => unreachable!("guard_unsaved_exit is never invoked with outcome=None"),
+    }
+}
+
+/// **The** unsaved-changes guard shared by `work.close`'s action, `app.quit`'s
+/// action, and the project window's `on_close_requested` (`windows.rs`) — the
+/// single branch order every exit path in the app uses, mirroring
+/// [`ProjectSwitchViewModel::request`]'s four switch doors, which already
+/// share [`unsaved_decision`]. `outcome` is `ReturnToLauncher` or `Quit`
+/// (never `None` — that would mean nothing to guard, which none of the three
+/// callers ever ask for).
+///
+/// * [`UnsavedDecision::Proceed`] — nothing to protect: hand straight to
+///   `scheduler.on_close_flow`, which itself takes the on-close backup (if
+///   configured and not suppressed by backup mode) before performing
+///   `outcome`.
+/// * [`UnsavedDecision::SaveThenProceed`] — autosave is on: just arm
+///   `pending_exit = outcome`. The existing save-then-close machinery (the
+///   `pending_exit` effect + the `LongOperation::Completed` handler, both in
+///   `App::build`, unchanged) resumes the outcome once the save lands.
+/// * [`UnsavedDecision::PromptDiscardOnly`] — a backup file is open here
+///   (Save is off): Discard performs `outcome` at once (bypassing
+///   `on_close_flow` — discarding a backup's edits never backs anything up);
+///   Cancel does nothing.
+/// * [`UnsavedDecision::PromptSaveDiscardCancel`] — Save arms
+///   `pending_exit = outcome` (same resumption as `SaveThenProceed`); Discard
+///   performs `outcome` at once; Cancel does nothing.
+///
+/// The dialog copy differs by `outcome` (quitting says so, rather than
+/// reusing "closing the work") — see `quit-question` /
+/// `quit-backup-discard-title` / `quit-backup-discard-text` in the locales.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn guard_unsaved_exit(
+    ctx: &mut EventContext,
+    app_ctx: &Rc<AppContext>,
+    unsaved: bool,
+    backup_mode: bool,
+    autosave: bool,
+    pending: &Signal<PendingExit>,
+    scheduler: &BackupSchedulerViewModel,
+    outcome: PendingExit,
+) {
+    match unsaved_decision(unsaved, backup_mode, autosave) {
+        UnsavedDecision::Proceed => scheduler.on_close_flow(ctx, outcome),
+        UnsavedDecision::SaveThenProceed => pending.set(outcome),
+        UnsavedDecision::PromptDiscardOnly => {
+            let app_ctx = app_ctx.clone();
+            let (title, text) = match outcome {
+                PendingExit::Quit => (
+                    tr!(quit_backup_discard_title()),
+                    tr!(quit_backup_discard_text()),
+                ),
+                _ => (
+                    tr!(close_backup_discard_title()),
+                    tr!(close_backup_discard_text()),
+                ),
+            };
+            ctx.present_message_box(
+                MessageBox::question(title)
+                    .text(text)
+                    .buttons(MessageBoxButtons::Custom(vec![
+                        MessageBoxButton::standard(StandardButton::Discard),
+                        MessageBoxButton::standard(StandardButton::Cancel),
+                    ]))
+                    .default_button(StandardButton::Cancel)
+                    .escape_button(StandardButton::Cancel)
+                    .on_result(move |r, ctx| {
+                        if r.button == StandardButton::Discard {
+                            perform_exit(outcome, &app_ctx, ctx);
+                        }
+                    }),
+            );
+        }
+        UnsavedDecision::PromptSaveDiscardCancel => {
+            let app_ctx = app_ctx.clone();
+            let pe = pending.clone();
+            let title = match outcome {
+                PendingExit::Quit => tr!(quit_question()),
+                _ => tr!(close_work_question()),
+            };
+            ctx.present_message_box(
+                MessageBox::question(title)
+                    .text(tr!(unsaved_changes()))
+                    .buttons(MessageBoxButtons::SaveDiscardCancel)
+                    .default_button(StandardButton::Save)
+                    .escape_button(StandardButton::Cancel)
+                    .on_result(move |r, ctx| match r.button {
+                        StandardButton::Save => pe.set(outcome),
+                        StandardButton::Discard => perform_exit(outcome, &app_ctx, ctx),
+                        _ => {}
+                    }),
+            );
+        }
+    }
 }
 
 pub struct App {
@@ -668,14 +800,40 @@ impl Widget for App {
                     .close_behavior(ModalCloseBehavior::Manual),
             );
         }));
-        // Quit (Ctrl+Q): routes through the window close guard (unsaved prompt).
+        // Quit (Ctrl+Q): really terminates the process (see `PendingExit::Quit`'s
+        // docs), after the same unsaved-changes guard as every other exit path —
+        // `guard_unsaved_exit`, shared with `work.close`'s action below and the
+        // project window's own `on_close_requested` guard (`windows.rs`).
+        // Deliberately does NOT go through `close_window()`: that would only ever
+        // land back on the project window's close guard, which always returns to
+        // the Launcher — never terminates. The title-bar X / Alt+F4 path is
+        // unchanged (still `close_window()`, still returns to the Launcher).
         ctx.register_shortcut_global(
             Shortcut::new("app.quit")
                 .name("Quit")
                 .primary(KeyStroke::ctrl(Key::Q))
                 .build(),
         );
-        ctx.register_action_global(Action::new("app.quit").on_invoke(|_i, c| c.close_window()));
+        {
+            let app_ctx3 = self.app_ctx.clone();
+            let unsaved = self.unsaved.clone();
+            let autosave = settings.autosave();
+            let pending = self.pending_exit.clone();
+            let scheduler = backup_scheduler.clone();
+            let backup_mode = self.backup_mode.clone();
+            ctx.register_action_global(Action::new("app.quit").on_invoke(move |_i, ctx| {
+                guard_unsaved_exit(
+                    ctx,
+                    &app_ctx3,
+                    unsaved.get(),
+                    backup_mode.get(),
+                    autosave.get(),
+                    &pending,
+                    &scheduler,
+                    PendingExit::Quit,
+                );
+            }));
+        }
         // "Welcome" now means "close this work and go back to the Launcher"
         // (the launcher-window model — Welcome is a real window, not a modal
         // any more). Fired from File ▸ Welcome… and the brand icon button.
@@ -1341,11 +1499,11 @@ impl Widget for App {
         // [`close_work_and_return_to_launcher`] — there is no more "close in place,
         // keep this (now-empty) window" outcome.
         //
-        // It branches on the **same** [`unsaved_decision`] table as the four
-        // project-switch doors (`ProjectSwitchViewModel`), rather than re-deriving
-        // it: what happens to your unsaved chapter must not depend on which command
-        // is about to discard it. Only the *outcome* differs — this one leaves for
-        // the Launcher instead of switching project.
+        // Delegates to [`guard_unsaved_exit`] — the same guard `app.quit`'s action
+        // and the project window's `on_close_requested` (`windows.rs`) call — rather
+        // than re-deriving the branch order: what happens to your unsaved chapter
+        // must not depend on which command is about to discard it. Only the
+        // *outcome* differs — this one leaves for the Launcher instead of quitting.
         {
             let app_ctx2 = self.app_ctx.clone();
             let unsaved = self.unsaved.clone();
@@ -1354,59 +1512,16 @@ impl Widget for App {
             let scheduler = backup_scheduler.clone();
             let backup_mode = self.backup_mode.clone();
             ctx.register_action_global(Action::new("work.close").on_invoke(move |_i, ctx| {
-                match unsaved_decision(unsaved.get(), backup_mode.get(), autosave.get()) {
-                    // Clean: take an on-close backup (if configured), then return to
-                    // the Launcher. (In backup mode `on_close_flow` is suppressed →
-                    // returns at once.)
-                    UnsavedDecision::Proceed => {
-                        scheduler.on_close_flow(ctx, PendingExit::ReturnToLauncher);
-                    }
-                    // Autosave: save first; SaveWork-completion runs the on-close
-                    // backup, then returns to the Launcher.
-                    UnsavedDecision::SaveThenProceed => {
-                        pending.set(PendingExit::ReturnToLauncher);
-                    }
-                    // Backup window with unsaved edits: Save is off, so the normal
-                    // save-then-close path can't run — offer to discard (Save As
-                    // keeps them, via the banner).
-                    UnsavedDecision::PromptDiscardOnly => {
-                        let app_ctx3 = app_ctx2.clone();
-                        ctx.present_message_box(
-                            MessageBox::question(tr!(close_backup_discard_title()))
-                                .text(tr!(close_backup_discard_text()))
-                                .buttons(MessageBoxButtons::Custom(vec![
-                                    MessageBoxButton::standard(StandardButton::Discard),
-                                    MessageBoxButton::standard(StandardButton::Cancel),
-                                ]))
-                                .default_button(StandardButton::Cancel)
-                                .escape_button(StandardButton::Cancel)
-                                .on_result(move |r, ctx| {
-                                    if r.button == StandardButton::Discard {
-                                        close_work_and_return_to_launcher(&app_ctx3, ctx);
-                                    }
-                                }),
-                        );
-                    }
-                    UnsavedDecision::PromptSaveDiscardCancel => {
-                        let app_ctx3 = app_ctx2.clone();
-                        let pe = pending.clone();
-                        ctx.present_message_box(
-                            MessageBox::question(tr!(close_work_question()))
-                                .text(tr!(unsaved_changes()))
-                                .buttons(MessageBoxButtons::SaveDiscardCancel)
-                                .default_button(StandardButton::Save)
-                                .escape_button(StandardButton::Cancel)
-                                .on_result(move |r, ctx| match r.button {
-                                    StandardButton::Save => pe.set(PendingExit::ReturnToLauncher),
-                                    // Discarding unsaved edits skips the backup.
-                                    StandardButton::Discard => {
-                                        close_work_and_return_to_launcher(&app_ctx3, ctx);
-                                    }
-                                    _ => {}
-                                }),
-                        );
-                    }
-                }
+                guard_unsaved_exit(
+                    ctx,
+                    &app_ctx2,
+                    unsaved.get(),
+                    backup_mode.get(),
+                    autosave.get(),
+                    &pending,
+                    &scheduler,
+                    PendingExit::ReturnToLauncher,
+                );
             }));
         }
         // `backup.now` — the manual "Back up now" command. Runs a forced backup

@@ -233,7 +233,7 @@ dialog-rename = Rename
 dialog-set-label = Set label
 dialog-new-scene = New scene
 close-work-question = Save changes before closing the work?
-close-question = Save changes before closing?
+quit-question = Save changes before quitting?
 unsaved-changes = This work has unsaved changes.
 # Replacing the open work in this window (New Work, Open Work, "Open here", the
 # import toast's "Open now") — the same guard as closing, since the open work is
@@ -293,6 +293,8 @@ restored-ok = Project restored.
 restored-with-safety = Project restored. Your previous version was saved to { $path }.
 close-backup-discard-title = Discard changes to this backup?
 close-backup-discard-text = Changes to a backup can't be saved to it. Use Save As to keep them, or discard and close.
+quit-backup-discard-title = Discard changes and quit?
+quit-backup-discard-text = Changes to a backup can't be saved to it. Use Save As to keep them, or discard and quit.
 backup-nudge-text = No backups are set up for this project.
 backup-nudge-action = Set up backups…
 

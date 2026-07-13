@@ -288,6 +288,47 @@ fn main() {
     let client = EventHubClient::new(&app_ctx.event_hub);
     client.start(app_ctx.shutdown_rx.clone());
 
+    // Optional `.skrib` path to open on launch (`skribisto <path>`); `App` opens it
+    // once on first build.
+    //
+    // Read **before** the window-state prune below, not at the point of use: the
+    // prune forgets every `work-*` row whose project it cannot account for, and a
+    // path handed to us on argv (a file-manager double-click, `spawn_new_process`)
+    // is a project we are about to open *right now* — but it need not be in the
+    // recents MRU (it can have aged out of the 12-entry cap) nor in the open
+    // registry (nothing has claimed it yet). Pruning first would therefore delete
+    // the saved geometry of the very window we are seconds away from restoring.
+    let initial_project = std::env::args().nth(1).filter(|s| !s.trim().is_empty());
+
+    // ── One-time startup maintenance: prune orphaned window-state rows (F4b) ──
+    // `window_state.toml` gets a `work-{hash}` row every time a project window
+    // opens, but nothing ever removed one — a project tried once (or an
+    // automation-test tempdir that no longer exists) leaves a permanent,
+    // default-geometry row behind forever. Sweep once, synchronously, before
+    // the app builder opens its own long-lived `WindowStateService` handle,
+    // and before any `RecentWorkListModel` is constructed for real (see
+    // `models::RecentWorkListModel::all_raw_paths`'s docs on why a short-lived
+    // handle here is safe). A maintenance sweep, not a reactive per-close
+    // mechanism: most orphaned rows point at tempdirs that still existed at
+    // close time and were only deleted after process exit by the test
+    // harness, so hooking `close_work` wouldn't have caught them; a raw
+    // row-count cap was also rejected, since `window_state.toml`'s row order
+    // is insertion order, not LRU, so trimming it would need a new recency
+    // field. `"main"`/`"launcher"`/any other fixed label is never touched —
+    // only `work-*` labels are ever considered.
+    if let Some(paths) = AppPaths::new("eu", "skribisto", "Skribisto") {
+        match WindowStateService::open(&paths) {
+            Ok(window_state) => {
+                let known_paths = known_project_paths(initial_project.as_deref());
+                prune_orphaned_window_state(&window_state, &known_paths);
+                if let Err(e) = window_state.flush_now() {
+                    eprintln!("skribisto: window-state prune: flush failed: {e}");
+                }
+            }
+            Err(e) => eprintln!("skribisto: window-state prune: open failed: {e}"),
+        }
+    }
+
     // Seed the single shared Root + System frame into the (empty) store at
     // startup — before any work is opened — and keep the returned Root id to
     // point `AppIds` at it. `initialize_app` is idempotent: a later load/new
@@ -420,10 +461,6 @@ fn main() {
         backup_mode.clone(),
         autosave_menu.clone(),
     );
-    // Optional `.skrib` path to open on launch (`skribisto <path>`); `App` opens it
-    // once on first build.
-    let initial_project = std::env::args().nth(1).filter(|s| !s.trim().is_empty());
-
     // If the requested project is already open in another live instance, raise
     // that instance (forwarding our launch activation token for a real Wayland
     // raise) and exit instead of opening a duplicate window.
@@ -598,9 +635,53 @@ fn read_prefs() -> (bool, String, bool, bool) {
     }
 }
 
+/// The pure half of the F4(b) startup sweep: forget every `work-*` label in
+/// `window_state` that doesn't hash (via [`windows::window_id_for`]) to one of
+/// `known_paths`. Factored out from `main`'s production wiring (which resolves
+/// `known_paths` from the real recents file + `open_registry::scan()`) so it's
+/// directly testable against a temp-dir-backed `WindowStateService`, without
+/// touching the real user's `window_state.toml` or recents file.
+///
+/// `"main"`, `"launcher"`, and any other label that doesn't start with
+/// `"work-"` are never touched, regardless of `known_paths` — they are fixed,
+/// not per-project.
+/// Every project path this process can account for — the set the prune above
+/// treats as "still wanted". Three sources, and **all three are load-bearing**:
+///
+/// 1. the recents MRU (the usual case);
+/// 2. the open registry (a project another live instance is holding — it never
+///    reaches *our* recents, but its geometry must survive);
+/// 3. **`initial_project`** — the path handed to us on argv. This one is easy to
+///    forget and is exactly the bug this function exists to make untestable-by-
+///    omission: a file-manager double-click on a project that has aged out of the
+///    12-entry MRU is in neither (1) nor (2), yet we are about to open it. Prune
+///    without it and we delete the saved geometry of the very window we are
+///    seconds away from restoring.
+fn known_project_paths(initial_project: Option<&str>) -> Vec<String> {
+    let mut known = models::RecentWorkListModel::all_raw_paths();
+    known.extend(open_registry::scan().into_iter().map(|e| e.path));
+    known.extend(initial_project.map(str::to_string));
+    known
+}
+
+fn prune_orphaned_window_state(window_state: &WindowStateService, known_paths: &[String]) {
+    let known_labels: std::collections::HashSet<String> = known_paths
+        .iter()
+        .map(|p| windows::window_id_for(p))
+        .collect();
+    for label in window_state.labels() {
+        if !label.starts_with("work-") || known_labels.contains(&label) {
+            continue;
+        }
+        if let Err(e) = window_state.forget(&label) {
+            eprintln!("skribisto: could not forget stale window state '{label}': {e}");
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::sanitize_folder_name;
+    use super::*;
 
     // Per-project window geometry (`windows::window_id_for`) replaces the old
     // shared-slot stopgap — see that module's tests for its id-stability
@@ -653,5 +734,125 @@ mod tests {
         let long = "a".repeat(500);
         let out = sanitize_folder_name(&long);
         assert_eq!(out.chars().count(), 200);
+    }
+
+    // ── F4(b): pruning orphaned window-state rows ───────────────────────────
+
+    /// A `work-*` label matching nothing in `known_paths` must be forgotten; a
+    /// `work-*` label matching a known path, and the two fixed labels, must
+    /// survive untouched. Fails on the old code (no pruning ever ran at all,
+    /// so `window_state.toml` only ever grew) because the orphan label would
+    /// still be present afterward.
+    #[test]
+    fn prune_orphaned_window_state_forgets_only_unmatched_work_labels() {
+        let path = std::env::temp_dir().join(format!(
+            "skribisto_test_{}_window_state_prune.toml",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        let window_state = WindowStateService::open_at(path.clone(), std::time::Duration::ZERO)
+            .expect("open a fresh window-state file");
+
+        let known_path = "/tmp/skribisto-prune-test-known-project.skrib".to_string();
+        let known_label = windows::window_id_for(&known_path);
+        let orphan_label = "work-0000000000000000".to_string();
+
+        let sample = |label: &str| PerWindowState {
+            label: label.to_string(),
+            x: 0,
+            y: 0,
+            width: 800,
+            height: 600,
+            placement: WindowPlacement::Floating,
+        };
+        window_state.record(sample("main")).unwrap();
+        window_state.record(sample("launcher")).unwrap();
+        window_state.record(sample(&known_label)).unwrap();
+        window_state.record(sample(&orphan_label)).unwrap();
+
+        prune_orphaned_window_state(&window_state, &[known_path]);
+
+        let labels: std::collections::HashSet<String> = window_state.labels().into_iter().collect();
+        assert!(labels.contains("main"), "fixed labels must never be pruned");
+        assert!(
+            labels.contains("launcher"),
+            "fixed labels must never be pruned"
+        );
+        assert!(
+            labels.contains(&known_label),
+            "a work-* label matching a known path must survive"
+        );
+        assert!(
+            !labels.contains(&orphan_label),
+            "a work-* label matching nothing must be pruned"
+        );
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// The argv project must count as "known" even when it is in neither the
+    /// recents MRU nor the open registry.
+    ///
+    /// The bug this pins: the startup prune ran *before* argv was read, so a
+    /// file-manager double-click on a project that had aged out of the 12-entry
+    /// MRU had its saved geometry forgotten milliseconds before that very window
+    /// was restored — the window then opened at the default size and position,
+    /// and the row was silently gone from `window_state.toml`.
+    ///
+    /// `known_project_paths` exists precisely so this is assertable: the failure
+    /// was a data-flow ordering mistake in `main()`, invisible to a unit test of
+    /// `prune_orphaned_window_state` alone (which was, and still is, correct —
+    /// it was simply handed an incomplete set).
+    #[test]
+    fn the_argv_project_is_a_known_path_even_when_it_is_in_no_recents_list() {
+        let argv = "/tmp/skribisto-argv-not-in-recents.skrib";
+
+        let without = known_project_paths(None);
+        assert!(
+            !without.iter().any(|p| p == argv),
+            "precondition: this path is in neither recents nor the open registry"
+        );
+
+        let with = known_project_paths(Some(argv));
+        assert!(
+            with.iter().any(|p| p == argv),
+            "the project we were launched with must be treated as known, or the \
+             prune deletes the geometry of the window it is about to restore"
+        );
+        assert_eq!(
+            with.len(),
+            without.len() + 1,
+            "argv adds exactly itself — it must not disturb the other sources"
+        );
+    }
+
+    #[test]
+    fn prune_orphaned_window_state_is_a_no_op_when_everything_is_known() {
+        let path = std::env::temp_dir().join(format!(
+            "skribisto_test_{}_window_state_prune_noop.toml",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        let window_state = WindowStateService::open_at(path.clone(), std::time::Duration::ZERO)
+            .expect("open a fresh window-state file");
+
+        let known_path = "/tmp/skribisto-prune-test-noop-project.skrib".to_string();
+        let known_label = windows::window_id_for(&known_path);
+        window_state
+            .record(PerWindowState {
+                label: known_label.clone(),
+                x: 1,
+                y: 2,
+                width: 900,
+                height: 700,
+                placement: WindowPlacement::Floating,
+            })
+            .unwrap();
+
+        prune_orphaned_window_state(&window_state, &[known_path]);
+
+        assert_eq!(window_state.labels(), vec![known_label]);
+
+        let _ = std::fs::remove_file(&path);
     }
 }
