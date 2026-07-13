@@ -26,15 +26,14 @@ use std::rc::Rc;
 use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, FixedSize, FocusScope, GroupHeader, HStack, IconWidget, MaxSize,
-    MenuList, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, PopoverButton,
-    StandardButton, TextWidget, Toast, TraversalScopePolicy, VStack,
+    Button, ButtonVariant, FixedSize, FocusScope, GroupHeader, HStack, IconWidget, MenuList,
+    MessageBox, MessageBoxButton, MessageBoxButtons, Padding, PopoverButton, StandardButton,
+    TextWidget, TraversalScopePolicy, VStack,
 };
 
 use frontend::AppContext;
-use frontend::commands::work_management_commands;
-use frontend::work_management::LoadWorkDto;
 
+use crate::intents::AppIntent;
 use crate::models::RecentWorkListModel;
 use crate::open_registry::{self, OpenEntry};
 use crate::singles::{SingleWork, SingleWorkInfo};
@@ -64,6 +63,15 @@ pub(crate) fn spawn_new_process(path: &str, token: Option<String>) {
     let _ = cmd.spawn();
 }
 
+/// Width of a popover row's text column.
+///
+/// This is what makes the popover a definite, readable width. `MenuList` has no
+/// width setting — it sizes to its items — and a `TextWidget` sizes to *its*
+/// content, so without a bound here the rows grew to the full natural width of a
+/// long path (~600px), overflowed the popover, and were clipped to an unreadable
+/// middle slice. Fixing the text column fixes the whole popover.
+const ROW_TEXT_WIDTH: f32 = 340.0;
+
 /// A rich two/three-line popover row (checkmark column + title + path [+ date]).
 fn row(
     checked: bool,
@@ -85,11 +93,18 @@ fn row(
     let mut body = VStack::new()
         .spacing(2.0)
         .child(
+            // Titles can be long too ("Faux-Semblants — brouillon 3"), and a
+            // wrapped title would make rows ragged. Trailing ellipsis: a title's
+            // identity is at its start.
             TextWidget::new(lit!(title))
                 .style(TextStyleRole::BodyBold)
-                .color(title_color),
+                .color(title_color)
+                .single_line()
+                .overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing)),
         )
         .child(
+            // Middle, not trailing: a path ends in the filename, which is the
+            // one part that tells two projects apart.
             TextWidget::new(lit!(path))
                 .style(TextStyleRole::Small)
                 .color(TextRole::Secondary)
@@ -106,7 +121,13 @@ fn row(
     let inner = HStack::new()
         .spacing(8.0)
         .child(marker)
-        .child(MaxSize::width(360.0).child(body))
+        // The text column MUST be bounded, or the row has no natural width: a
+        // `TextWidget` sizes to its content and only ellipsizes against a bounded
+        // proposal, so an unbounded path would lay out at ~700px and drag the
+        // whole popover with it. `FixedSize` proposes exactly this width down to
+        // the text, so the ellipsis engages and the row hugs to a predictable
+        // 384 (16 marker + 8 spacing + 340 text + 20 padding).
+        .child(FixedSize::new().width(ROW_TEXT_WIDTH).child(body))
         .cursor(CursorIcon::Pointer)
         .focusable(true)
         .on_tap(move |_event, ctx| on_tap(ctx));
@@ -213,7 +234,6 @@ impl Widget for OpenProjectsMenu {
                     let title = dto.title.clone();
                     let path = dto.absolute_path.clone();
                     let date = dto.last_opened_at.format("%Y-%m-%d %H:%M").to_string();
-                    let app_ctx = self.app_ctx.clone();
                     menu = menu.item(row(
                         false,
                         false,
@@ -224,7 +244,6 @@ impl Widget for OpenProjectsMenu {
                             ctx.dismiss_self_overlay_chain();
                             let for_new = path.clone();
                             let for_here = path.clone();
-                            let app_ctx = app_ctx.clone();
                             MessageBox::question(tr!(open_project_title()))
                                 .text(tr!(open_project_question(title = title.clone())))
                                 .buttons(MessageBoxButtons::Custom(vec![
@@ -243,17 +262,16 @@ impl Widget for OpenProjectsMenu {
                                             spawn_new_process(&p, tok);
                                         }));
                                     }
+                                    // "Open here" *replaces* this window's project, so
+                                    // it goes through the `work.open_path` intent →
+                                    // the unsaved-changes guard, which loads it once
+                                    // the open project is saved or explicitly
+                                    // discarded. It used to call `load_work` outright
+                                    // and bin those edits without asking.
                                     StandardButton::Yes => {
-                                        if let Err(e) = work_management_commands::load_work(
-                                            &app_ctx,
-                                            &LoadWorkDto {
-                                                file_name: for_here.clone(),
-                                            },
-                                        ) {
-                                            ctx.show_toast(Toast::error(tr!(could_not_open_work(
-                                                error = e.to_string()
-                                            ))));
-                                        }
+                                        ctx.send_intent(AppIntent::OpenWorkPath {
+                                            path: for_here.clone(),
+                                        });
                                     }
                                     _ => {}
                                 })
@@ -390,5 +408,134 @@ impl Widget for ProjectSwitcherButton {
             .and_then(|id| ctx.child_size(id, proposal))
             .unwrap_or_else(|| proposal.resolve(0.0, 0.0))
             .into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    /// A popover row must stay within its bound no matter how long the path is.
+    ///
+    /// A hugging container measures its items with an unbounded proposal to learn
+    /// their natural width — and a `TextWidget` sizes to its content, so an
+    /// unbounded path would lay out at its full ~700px and drag the popover with
+    /// it. The text column is therefore bounded (`ROW_TEXT_WIDTH`), which makes
+    /// the ellipsis engage and gives the row a predictable natural width.
+    ///
+    /// Remove that bound and this test fails.
+    #[test]
+    fn a_long_path_cannot_blow_out_the_popover_row() {
+        let long = "/home/cyril/Nextcloud/Documents/Livres/Faux-Semblants/\
+                    deeply/nested/for/the/purposes/of/this/test/Faux-semblants.skrib";
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(row(
+            false,
+            false,
+            "A Very Long Project Title That Would Also Overflow".to_string(),
+            long.to_string(),
+            Some("2026-07-13 10:00".to_string()),
+            |_| {},
+        )));
+        // Propose far more width than the row should take: a correct row clamps
+        // itself; the broken one grew to the text's natural width.
+        // A hugging container (MenuList) measures its items with an UNBOUNDED
+        // proposal to learn their natural width. That is the measurement that
+        // decides the popover's width, so it is the one to assert on.
+        tree.layout(SizeProposal {
+            width: None,
+            height: None,
+        });
+        let b = tree.bounds(id);
+        eprintln!("NATURAL ROW WIDTH = {}", b.width);
+
+        // marker (16) + spacing (8) + text column + horizontal padding (2 x 10).
+        let ceiling = ROW_TEXT_WIDTH + 16.0 + 8.0 + 20.0 + 1.0;
+        assert!(
+            b.width <= ceiling,
+            "row must hug to its bounded text column, got {} (ceiling {}). \
+             Without a bound the path lays out at full natural width and the \
+             popover is dragged out with it.",
+            b.width,
+            ceiling
+        );
+        assert!(b.width > 100.0, "row should not collapse either");
+    }
+
+    /// Measure the whole `MenuList` the popover actually shows — the row is only
+    /// half the story, and the row alone measured fine even when the popover was
+    /// visibly broken.
+    #[test]
+    fn menu_list_of_rows_reports_its_content_width() {
+        let long = "/home/cyril/Nextcloud/Documents/Livres/Faux-Semblants/\
+                    deeply/nested/Faux-semblants.skrib";
+        let mut menu = MenuList::new().max_visible_items(12);
+        menu = menu.header(section(lit!("Currently open".to_string())));
+        for i in 0..3 {
+            menu = menu.item(row(
+                i == 0,
+                i == 0,
+                format!("Project {i}"),
+                long.to_string(),
+                None,
+                |_| {},
+            ));
+        }
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(menu));
+        tree.layout(SizeProposal {
+            width: None,
+            height: None,
+        });
+        let b = tree.bounds(id);
+        eprintln!("NATURAL MENULIST WIDTH (3 items, no scroll) = {}", b.width);
+        assert!(
+            b.width >= ROW_TEXT_WIDTH,
+            "the MenuList must be at least as wide as its rows' text column, \
+             got {} (rows hug to {}). If it is narrower, the popover clips its \
+             own content and the user sees a middle slice of each path.",
+            b.width,
+            ROW_TEXT_WIDTH
+        );
+    }
+
+    /// The popover scrolls once it exceeds `max_visible_items`. Does engaging the
+    /// scroll viewport change how the menu measures its width?
+    ///
+    /// This is the difference between "worked before" and "broken now": recents
+    /// grew past 12 entries, so the scrollbar appeared.
+    #[test]
+    fn a_scrolling_menu_still_reports_its_content_width() {
+        let long = "/home/cyril/Nextcloud/Documents/Livres/Faux-Semblants/\
+                    deeply/nested/Faux-semblants.skrib";
+        let mut menu = MenuList::new().max_visible_items(12);
+        // 30 items — well past the 12-item scroll threshold.
+        for i in 0..30 {
+            menu = menu.item(row(
+                false,
+                false,
+                format!("P{i}"),
+                long.to_string(),
+                None,
+                |_| {},
+            ));
+        }
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(menu));
+        tree.layout(SizeProposal {
+            width: None,
+            height: None,
+        });
+        let b = tree.bounds(id);
+        eprintln!("SCROLLING MENULIST WIDTH (30 items) = {}", b.width);
+        assert!(
+            b.width >= ROW_TEXT_WIDTH,
+            "a scrolling menu collapsed to {} (rows hug to {}) — the scroll \
+             viewport is squeezing the content width",
+            b.width,
+            ROW_TEXT_WIDTH
+        );
     }
 }
