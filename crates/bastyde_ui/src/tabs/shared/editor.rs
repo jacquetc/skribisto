@@ -14,7 +14,7 @@ use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::rich_text::{EditorHandle, RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
     Expand, FixedSize, GroupHeader, HStack, MaxSize, MenuItem, MenuList, Padding, Panel,
-    RectWidget, Spacer, Switcher, TextInput, TextWidget, VStack, ZStack,
+    RectWidget, TextInput, TextWidget, VStack, ZStack,
 };
 
 use crate::tabs::TitleField;
@@ -269,6 +269,13 @@ impl Widget for DirtyOnEdit {
 /// "Synopsis" header + the **compact** synopsis box (a touch narrower than the main
 /// column so it reads as subordinate) — the dual-pane editor's upper half, where it
 /// sits above the prose and must not push it off screen.
+///
+/// Centred through [`CenterColumnFlowing`], **not** an `HStack` + `Spacer` — for the
+/// same reason spelled out on [`synopsis_column`], which this had quietly drifted away
+/// from. An alignment widget measures its child with an *unbounded* proposal, so the
+/// `MaxSize` reported its full cap and this box stayed ~656px wide in a 300px window,
+/// overhanging the tab to the right for the whole height of the scene. That overhang is
+/// what the renderer then tried to stripe, and it froze the app (see [`centered`]).
 pub fn synopsis_section(
     doc: &TextDocument,
     column_width: &Signal<f32>,
@@ -283,8 +290,7 @@ pub fn synopsis_section(
                 style: TextStyleRole::SmallBold
                 color: TextRole::Secondary
             }
-            HStack {
-                Spacer
+            child: CenterColumnFlowing::new(bati!(
                 MaxSize::width(synopsis_width.get()) {
                     max_width: synopsis_width.clone()
                     Expand::horizontal {
@@ -297,10 +303,7 @@ pub fn synopsis_section(
                         )
                     }
                 }
-                Spacer {
-                    min_length: 4.0
-                }
-            }
+            ))
         }
     )
 }
@@ -415,26 +418,9 @@ pub fn tab_backdrop_with_find(
     //
     // `Switcher` is the proven pattern (the synopsis toggle a few lines up in
     // `panes::prose` uses exactly this), and it mounts/unmounts rather than parking
-    // a zero-size child, so a closed banner stays out of the a11y tree and the Tab
-    // order — which is what we want anyway.
-    //
-    // The banner is wrapped in `Expand::horizontal` so it spans the editor: sized to
-    // its natural width it renders as a stub a few dozen pixels wide.
-    // `Expand::horizontal` must wrap the *Switcher*, not sit inside it. Both
-    // `Switcher` and `Collapse` size to their child's NATURAL width, and a row whose
-    // only stretchy element is an inner `Expand` has a natural width of roughly
-    // nothing — so the banner rendered as a ~55px stub in the corner. Expanding on
-    // the outside gives the page a bounded proposal to fill.
-    let page = visible.map(|on| if *on { 1 } else { 0 });
     let column = VStack::new()
         .spacing(0.0)
-        .child(
-            Expand::horizontal().child(
-                Switcher::new(page)
-                    .child(vspace(0.0))
-                    .child(find_banner_row()),
-            ),
-        )
+        .child(VisibleWhen::new(visible, find_banner_row()))
         .child(Expand::new().child(body));
     Box::new(bati!(
         Panel {
@@ -444,6 +430,79 @@ pub fn tab_backdrop_with_find(
             child: column
         }
     ))
+}
+
+/// Shows `child` only while `visible`, and occupies **nothing** when hidden.
+///
+/// This is `ctx.visible_when` — the framework's own show/hide gate, the same one the
+/// docking system uses to park a side's content. A hidden node goes *dormant*: it
+/// drops out of layout (so the prose sits flush at the top until the banner opens),
+/// it is not painted, and it leaves the accessibility tree and the Tab order.
+///
+/// Deliberately **not** a `Switcher`. A `Switcher` reports its child's *natural* width,
+/// so the closed banner still claimed the width of its query row (~650px) — which made
+/// the whole tab overhang any window narrower than that, for the full height of the
+/// scene. That overhang is exactly the geometry that used to wedge the renderer (see
+/// [`centered`]). `visible_when` reports nothing at all when hidden, so it cannot.
+/// (`Collapse` was the other candidate and is simply broken — driven by an external
+/// signal it never leaves `progress = 0`, because `ctx.animated_signal()` mints a fresh
+/// signal on every build while the `ctx.effect()` observer survives rebuilds.)
+#[derive(Debug)]
+pub struct VisibleWhen {
+    visible: Signal<bool>,
+    child_id: Option<WidgetId>,
+    pending: Option<Box<dyn Widget>>,
+}
+
+impl VisibleWhen {
+    pub fn new(visible: Signal<bool>, child: impl Widget + 'static) -> Self {
+        Self {
+            visible,
+            child_id: None,
+            pending: Some(Box::new(child)),
+        }
+    }
+}
+
+impl Widget for VisibleWhen {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if let Some(w) = self.pending.take() {
+            let id = ctx.add_boxed(w);
+            ctx.visible_when(id, self.visible.clone());
+            self.child_id = Some(id);
+        }
+        self.child_id.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        // The gate is read here too, not just handed to `visible_when`: a dormant child
+        // must contribute **zero height**, or the VStack would still reserve the
+        // banner's row and the prose would sit 56px low with nothing above it.
+        if !self.visible.get() {
+            return Size::new(0.0, 0.0).into();
+        }
+        self.child_id
+            .and_then(|id| ctx.child_size(id, proposal))
+            .unwrap_or(Size::new(0.0, 0.0))
+            .into()
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = Point::new(bounds.x, bounds.y);
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
+    }
 }
 
 /// The find banner's row (Phase 0.2 placeholder): a raised strip with a query
@@ -474,20 +533,49 @@ pub fn vspace(height: f32) -> impl Widget {
     bati!(FixedSize { height: height })
 }
 
-/// Center `child` horizontally, capped at the live writing-column width.
+/// How narrow the writing column may get before it stops following the window down.
+///
+/// The column *grows* to the width set in Settings, but it must also *shrink*: a
+/// writer who narrows the window to sit beside another app should get a narrower
+/// column, not a page that hangs off the right edge. Below this floor shrinking
+/// stops — a column of a few pixels is not a writing surface, and something has to
+/// bound the wrap width.
+pub const MIN_COLUMN_WIDTH: f32 = 100.0;
+
+/// The width to propose to the writing column when the tab has `available` px.
+///
+/// Just the floor — the *cap* is the `MaxSize` inside, fed by the Settings width — but
+/// it must be applied identically wherever the column is measured and placed, or the
+/// two disagree and the child is centred against a size it was never measured at.
+fn column_width(available: f32) -> f32 {
+    available.max(MIN_COLUMN_WIDTH)
+}
+
+/// Center `child` horizontally, capped at the live writing-column width and floored
+/// at [`MIN_COLUMN_WIDTH`].
+///
+/// **This must not be an `HStack` + `Spacer`.** That is the alignment-proposal trap
+/// already called out in `CLAUDE.md`: an alignment parent measures its child with an
+/// *unbounded* width, so the `MaxSize` inside always reported its **full cap** and
+/// never shrank. Narrow the window below the column width and every centered row —
+/// title, synopsis, header, bar — overhung the tab to the right by the difference,
+/// for the entire height of the scene.
+///
+/// That overhang is what froze the app: the inspector's overflow overlay painted
+/// hazard stripes across a strip as tall as the whole document, and one 45° band over
+/// it became a 7573x7563 path — a 229 MB rasterization the path atlas could never
+/// store, re-done every frame at 100% CPU. Both of those are hardened now, but the
+/// geometry was born here.
+///
+/// [`CenterColumnFlowing`] proposes a **bounded** width, which is exactly what lets
+/// `MaxSize` resolve to `min(cap, available)` and actually shrink.
 pub fn centered(child: impl Widget + 'static, column_width: &Signal<f32>) -> impl Widget {
-    bati!(
-        HStack {
-            Spacer
-            MaxSize::width(column_width.get()) {
-                max_width: column_width.clone()
-                child: child
-            }
-            Spacer {
-                min_length: 4.0
-            }
+    CenterColumnFlowing::new(bati!(
+        MaxSize::width(column_width.get()) {
+            max_width: column_width.clone()
+            child: child
         }
-    )
+    ))
 }
 
 /// The framework's non-destructive default typography from a settings bundle's
@@ -645,6 +733,15 @@ impl RichTextEditorStyle for WritingEditorStyle {
 /// width-capped wrapping child wraps at its cap rather than overflowing) and an
 /// *unspecified* height (so the child reports its natural content height), then
 /// centers the child horizontally.
+///
+/// The bounded width proposal is the whole point: it is what lets a `MaxSize` child
+/// resolve to `min(cap, available)` and **shrink** with the window. An alignment
+/// widget (`Center`, `HStack` + `Spacer`) proposes an *unbounded* width instead, so
+/// the same `MaxSize` would report its full cap forever and overhang a narrow window.
+///
+/// The proposal is floored at [`MIN_COLUMN_WIDTH`], so the column bottoms out instead
+/// of collapsing toward zero (which would wrap the prose one word per line and make
+/// the page absurdly tall).
 #[derive(Debug)]
 pub struct CenterColumnFlowing {
     child_id: Option<WidgetId>,
@@ -672,7 +769,7 @@ impl Widget for CenterColumnFlowing {
         let width = proposal.resolve(0.0, 0.0).width;
         let height = self
             .child_id
-            .and_then(|id| ctx.child_size(id, SizeProposal::with_width(width)))
+            .and_then(|id| ctx.child_size(id, SizeProposal::with_width(column_width(width))))
             .map(|s| s.height)
             .unwrap_or(0.0);
         Size::new(width, height).into()
@@ -687,7 +784,10 @@ impl Widget for CenterColumnFlowing {
     ) {
         for child in children.iter_mut() {
             let size = ctx
-                .child_size(child.id, SizeProposal::with_width(bounds.width))
+                .child_size(
+                    child.id,
+                    SizeProposal::with_width(column_width(bounds.width)),
+                )
                 .unwrap_or_else(|| bounds.size());
             let dx = ((bounds.width - size.width) / 2.0).max(0.0);
             child.origin = Point::new(bounds.x + dx, bounds.y);

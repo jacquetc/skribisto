@@ -21,8 +21,8 @@ use crate::tabs::ContentTab;
 use crate::view_models::SplitFlavour;
 
 use super::{
-    centered, stream_pane, synopsis_column, synopsis_section, tab_backdrop, title_input, vspace,
-    writing_section,
+    VisibleWhen, centered, stream_pane, synopsis_column, synopsis_section, tab_backdrop,
+    title_input, vspace, writing_section,
 };
 
 /// The container's **own page** — the first segment of every folder container tab.
@@ -116,20 +116,26 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     }
     if let Some(s) = tab.synopsis() {
         // The synopsis pane is user-toggleable (Settings ▸ Manuscript & Fonts).
-        // A `Switcher` keeps the writing editor mounted while the (hidden)
-        // synopsis is dropped — only the active page is mounted, so the loaded
-        // synopsis document is preserved and re-shown on toggle-back.
-        let visible = tab.show_synopsis.map(|on| if *on { 1 } else { 0 });
-        col = col.child(
-            Switcher::new(visible)
-                .child(vspace(0.0))
-                .child(synopsis_section(
-                    &s.doc,
-                    &tab.column_width,
-                    &tab.typography.synopsis,
-                    tab.mark_dirty_fn(),
-                )),
-        );
+        // Hidden, it goes dormant: no space, no paint, out of the a11y tree and the
+        // Tab order — while the writing editor stays mounted and the synopsis's own
+        // document (owned by the shared `OpenDoc`) survives to be re-shown.
+        //
+        // **Not a `Switcher`.** A `Switcher` reports its child's *natural* width and
+        // ignores the bounded width it is proposed, so this one claimed the synopsis's
+        // full column width (~656px) even in a 300px window — making the tab overhang
+        // to the right for the entire height of the scene. That overhang is what wedged
+        // the renderer: the inspector striped the overflow, and a single hazard band
+        // across a scene-tall strip became a 229 MB path the atlas re-rasterized every
+        // frame. See `shared::editor::VisibleWhen`.
+        col = col.child(VisibleWhen::new(
+            tab.show_synopsis.clone(),
+            synopsis_section(
+                &s.doc,
+                &tab.column_width,
+                &tab.typography.synopsis,
+                tab.mark_dirty_fn(),
+            ),
+        ));
     }
     if let Some(m) = tab.main() {
         col = col.child(vspace(10.0)).child(writing_section(

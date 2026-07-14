@@ -551,6 +551,174 @@ mod tests {
         assert!(end.main().is_none() && end.synopsis().is_none() && end.title().is_none());
     }
 
+    /// The widest right edge anywhere under `id`, with the widget that owns it — the
+    /// name matters, because "something overflows" is useless without "what".
+    fn widest_right(tree: &WidgetTree, id: WidgetId) -> (f32, String) {
+        let mut worst = (
+            tree.bounds(id).right(),
+            tree.widget_type_name(id).unwrap_or("?").to_string(),
+        );
+        for child in tree.children(id) {
+            let got = widest_right(tree, child);
+            if got.0 > worst.0 {
+                worst = got;
+            }
+        }
+        worst
+    }
+
+    /// **The writing column must shrink with the window, not overflow it.**
+    ///
+    /// The column grows up to the width set in Settings, but below that it has to
+    /// follow the window down. It did not: `centered()` laid its cap out inside an
+    /// `HStack` + `Spacer`, and an alignment parent measures its child with an
+    /// **unbounded** proposal — so `MaxSize` always reported its full cap and never
+    /// shrank. Narrow the window under the column width and the tab overflowed to the
+    /// right by the difference, for the entire height of the document.
+    ///
+    /// That overhang is what froze the app: the inspector painted hazard stripes over
+    /// an overflow strip as tall as the whole scene, and a single 45° band across it
+    /// became a 7573x7563 path — a 229 MB rasterization too big for the path atlas to
+    /// store, so it was rebuilt and thrown away on every frame at 100% CPU. The
+    /// renderer and the overlay are both hardened now, but the layout is where the
+    /// absurd geometry was born, so it is pinned here too.
+    #[test]
+    fn a_window_narrower_than_the_column_does_not_overflow() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+
+        let ctx = Rc::new(AppContext::new());
+        // The settings column cap is far wider than the window we lay out in.
+        const CAP: f32 = 700.0;
+        const BOX_W: f32 = 300.0;
+
+        for (role, sub_role) in [
+            (Item, Scene),
+            (Item, ChapterScene),
+            (Item, Note),
+            (Folder, Book),
+            (Folder, ChapterScene),
+        ] {
+            let tab = tab_for(
+                &ctx,
+                1,
+                &role,
+                &sub_role,
+                &[],
+                Signal::new(CAP),
+                Signal::new(true),
+                test_typography(),
+                &AppIds::new(),
+            );
+            let mut tree = WidgetTree::new();
+            let id = tree.add_boxed(tab_pane(&tab));
+            tree.layout(bastyde::prelude::SizeProposal::exact(BOX_W, 700.0));
+
+            let (right, who) = widest_right(&tree, id);
+            assert!(
+                right <= BOX_W + 0.5,
+                "{role:?}/{sub_role:?}: `{who}` reaches x={right} in a {BOX_W}px window \
+                 (column cap {CAP}) — the writing column must shrink with the window, \
+                 not overhang it by {:.0}px for the full height of the scene",
+                right - BOX_W
+            );
+        }
+    }
+
+    /// …but it stops shrinking at a floor, so the column never collapses to nothing.
+    #[test]
+    fn the_writing_column_shrinks_no_further_than_its_floor() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            &AppIds::new(),
+        );
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(tab_pane(&tab));
+        // Absurdly narrow — far below the floor.
+        tree.layout(bastyde::prelude::SizeProposal::exact(20.0, 400.0));
+
+        let (right, _who) = widest_right(&tree, id);
+        assert!(
+            right >= shared::editor::MIN_COLUMN_WIDTH - 0.5,
+            "the column collapsed to {right}px; it must bottom out at \
+             {}px rather than shrink to nothing",
+            shared::editor::MIN_COLUMN_WIDTH
+        );
+    }
+
+    /// Hiding the synopsis pane must give its space back to the prose.
+    ///
+    /// It used to be a `Switcher` (which parks a zero-size page); it is now
+    /// `VisibleWhen`, which sends the node *dormant* — out of layout entirely. This
+    /// pins the property that actually matters to the writer: with the pane off, the
+    /// tab is shorter by the height of the synopsis, rather than leaving a gap where
+    /// it used to be.
+    #[test]
+    fn hiding_the_synopsis_pane_reclaims_its_height() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+
+        let ctx = Rc::new(AppContext::new());
+        let height_with = |show: bool| {
+            let tab = tab_for(
+                &ctx,
+                1,
+                &Item,
+                &Scene,
+                &[],
+                Signal::new(700.0),
+                Signal::new(show),
+                test_typography(),
+                &AppIds::new(),
+            );
+            let mut tree = WidgetTree::new();
+            let id = tree.add_boxed(tab_pane(&tab));
+            tree.layout(bastyde::prelude::SizeProposal::exact(900.0, 700.0));
+
+            // Count the editors that actually take up space. The tab always fills its
+            // 700px box (the outer ScrollArea fills), so the tab's own height says
+            // nothing; what changes is whether the synopsis editor is laid out at all.
+            fn editors_with_height(tree: &WidgetTree, id: WidgetId, n: &mut usize) {
+                let is_editor = tree
+                    .widget_type_name(id)
+                    .is_some_and(|t| t.contains("RichTextEditor"));
+                if is_editor && tree.bounds(id).height > 0.0 {
+                    *n += 1;
+                }
+                for c in tree.children(id) {
+                    editors_with_height(tree, c, n);
+                }
+            }
+            let mut n = 0;
+            editors_with_height(&tree, id, &mut n);
+            n
+        };
+
+        let shown = height_with(true);
+        let hidden = height_with(false);
+        assert!(
+            hidden > 0,
+            "the prose editor must still be laid out with the synopsis hidden"
+        );
+        assert!(
+            hidden < shown,
+            "{shown} editor nodes take space with the synopsis shown and {hidden} with it \
+             hidden — hiding it must send the pane DORMANT and drop it out of layout, not \
+             park an empty row where it used to be"
+        );
+    }
+
     /// The editor half of "one title, two homes": typing a name into a container's own
     /// page and committing it (blur / Enter) must reach **both** `BinderItem.title` —
     /// what the outline tree and the tab caption show — and the title `Content` row that
