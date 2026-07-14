@@ -38,7 +38,7 @@ use bastyde::widgets::styles::RecipeStandardItemStyle;
 use bastyde::widgets::{
     ActivateOn, Button, ButtonVariant, Center, Divider, Expand, FixedSize, HStack, IconLocation,
     IconWidget, ListView, Padding, Panel, SearchField, Spacer, StandardListItem, Switcher, TabBar,
-    TabDelegate, TabId, TabIndicatorPosition, TextWidget, VStack,
+    TabDelegate, TabId, TabIndicatorPosition, TabSizing, TextWidget, VStack,
 };
 
 use frontend::AppContext;
@@ -537,6 +537,13 @@ impl Widget for WelcomePanel {
         .selected_tab_background(SurfaceRole::AccentSubtle)
         .active_indicator(TabIndicatorPosition::OuterEdge)
         .tab_bar_height(34.0) // compact pills (~design's 30 dp), not the 50 dp default
+        // Nav-rail sizing: the pills span the sidebar instead of shrinking to
+        // their label ("Learn" would otherwise be a stub next to "Examples").
+        // The default `Shared` fits the widest label; `Fill` takes the width
+        // the sidebar column offers — which is why the bar must not be wrapped
+        // in a height-only `FixedSize` (that proposes `width: None` and there
+        // would be nothing to fill).
+        .tab_sizing(TabSizing::Fill)
         .show_scroll_arrows(false)
         .show_overflow_dropdown(false)
         .access_label_literal("Welcome sections");
@@ -611,22 +618,20 @@ impl Widget for WelcomePanel {
                             FixedSize {
                                 width: 264.0
                                 height: BODY_H
-                                // Left margin so the brand/nav don't hug the modal edge.
-                                Padding::new(0.0, 0.0, 0.0, 16.0) {
+                                // Side margins so the brand — and now the full-width
+                                // nav pills — don't hug the modal edge or the divider.
+                                Padding::new(0.0, 16.0, 0.0, 16.0) {
                                     VStack {
                                         spacing: 0.0
                                         child: branding
                                         Spacer
-                                        // A vertical TabBar's scroll area is greedily
-                                        // `Expand::vertical`, so next to a flexible
-                                        // `Spacer` it collapses to height 0 and its
-                                        // pills overflow. Pin it to its intrinsic
-                                        // extent (4 tabs × 34 dp) so the `Spacer` above
-                                        // can push the whole nav to the sidebar bottom.
-                                        FixedSize {
-                                            height: 136.0
-                                            child: bar
-                                        }
+                                        // No height pin: a vertical TabBar reports its
+                                        // own content height (4 pills × 34 dp), so the
+                                        // `Spacer` above claims the rest and pushes the
+                                        // nav to the sidebar bottom. A `FixedSize` here
+                                        // would also hide the sidebar's width from the
+                                        // bar and defeat `TabSizing::Fill`.
+                                        child: bar
                                     }
                                 }
                             }
