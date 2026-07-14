@@ -457,3 +457,80 @@ fn whole_word_reaches_the_matcher_and_finds_the_possessive() {
          apostrophe is still gluing the possessive into one word"
     );
 }
+
+/// **The corpus is prose, not markup.**
+///
+/// `Content.data` is Djot. Scanning it raw matched text the writer never wrote and cannot
+/// see — a link's URL, an emphasis marker, a heading's `#`. Worse, a count taken from the
+/// markup would not agree with what `replace_in_project` re-derives inside the parsed
+/// document, so its "the text moved under me" guard would fire on perfectly good rows.
+#[test]
+fn the_search_reads_the_prose_and_not_the_djot_markup() {
+    use frontend::commands::content_commands;
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::entities::ContentRole;
+
+    let ctx = loaded_ctx();
+
+    let victim = binder_item_commands::get_all_binder_item(&ctx)
+        .unwrap()
+        .into_iter()
+        .filter(|i| i.activated)
+        .find_map(|i| {
+            let cids = binder_item_commands::get_binder_item_relationship(
+                &ctx,
+                &i.id,
+                &BinderItemRelationshipField::Contents,
+            )
+            .unwrap();
+            content_commands::get_content_multi(&ctx, &cids)
+                .unwrap()
+                .into_iter()
+                .flatten()
+                .find(|c| c.role == ContentRole::SceneText)
+        })
+        .expect("a scene with body text");
+
+    // Prose that contains `Aurélien` ONCE, plus a link whose URL also contains it — and a
+    // heading, and emphasis markers.
+    content_commands::update_content(
+        &ctx,
+        None,
+        &frontend::content::dtos::UpdateContentDto {
+            id: victim.id,
+            created_at: victim.created_at,
+            updated_at: victim.updated_at,
+            activated: victim.activated,
+            role: victim.role.clone(),
+            // The name appears ONCE in the prose, and once more inside the link's
+            // destination — where the writer cannot see it. A raw-markup scan finds two.
+            data: "## A chapter\n\nShe called *Aurélien* and read \
+                   [the note](https://example.test/Aurélien-notes)."
+                .to_string(),
+        },
+    )
+    .unwrap();
+
+    let mut body_only = dto("Aurélien");
+    body_only.search_titles = false;
+    body_only.search_synopsis = false;
+    let out = search_management_commands::run_search(&ctx, &body_only).expect("run_search");
+    assert_eq!(
+        out.match_count, 1,
+        "`Aurélien` occurs once in the PROSE; if this is 2 the search is still reading \
+         the Djot source and matched the link's URL as well"
+    );
+
+    // And the markup itself must be unreachable.
+    for markup in ["https", "example.test", "##"] {
+        let mut q = dto(markup);
+        q.search_titles = false;
+        q.search_synopsis = false;
+        let out = search_management_commands::run_search(&ctx, &q).expect("run_search");
+        assert_eq!(
+            out.match_count, 0,
+            "{markup:?} is markup, not prose — the writer never typed it and must not be \
+             shown a result for it"
+        );
+    }
+}

@@ -13,16 +13,26 @@
 //! prose-correct word boundary (whole-word `Elena` finds `Elena's`) are already right
 //! here, because they are right *there*.
 //!
+//! ## The corpus is prose, not markup
+//!
+//! `Content.data` holds **Djot**. Scanning it directly would match text the writer never
+//! wrote and cannot see — `http` inside a link's URL, `*` on an emphasis marker — and,
+//! worse, an occurrence count taken from markup does not agree with what
+//! `replace_in_project` re-derives inside the parsed document, so its "the text moved
+//! under me, skip this field" guard would fire on perfectly good rows and silently refuse
+//! to rename them.
+//!
+//! So the corpus goes through `djot_to_plain_text`: the prose, without importing the
+//! document (27x cheaper than a full import — and a keystroke rescans the whole
+//! manuscript), pinned upstream as being *exactly* the text the document itself searches.
+//!
 //! Still to land, per the plan:
 //!
 //!   * per-scene language resolution + diacritic folding (`Aurelien` finds `Aurélien`) —
 //!     until then `diacritic_sensitive` is a **dead** flag: the DTO takes it, the `Search`
 //!     entity stores it, and nothing reads it.
-//!   * **plain-text extraction from Djot.** This still scans the raw `Content.data`, which
-//!     is *markup*: a search for `http` hits link URLs, and an occurrence count taken from
-//!     the source will not agree with what a parsed replace re-derives — which would make
-//!     `replace_in_project`'s "the text moved under us" guard fire on perfectly good rows.
-//!   * a versioned corpus cache (re-parsing 4000 rows per keystroke is not viable).
+//!   * a versioned corpus cache. Extraction is cheap but not free, and this re-extracts
+//!     every row on every keystroke; the cache keys on `Content.updated_at`.
 //!
 //! What *is* already real and must not regress:
 //!
@@ -50,6 +60,7 @@ use common::entities::{
 };
 use common::types::EntityId;
 use text_document::matching::MatchOptions;
+use text_document::{DjotImportOptions, djot_to_plain_text};
 
 /// Most rows we will keep for one search. A common word ("said", "elle") matches
 /// thousands of times in a novel; past this we stop scanning and set `truncated`.
@@ -268,11 +279,27 @@ impl RunSearchUseCase {
                 ContentRole::SynopsisText if dto.search_synopsis => MatchField::Synopsis,
                 _ => continue,
             };
+            // `Content.data` is **Djot**, i.e. markup. Searching it directly would match
+            // text the writer never wrote and cannot see: `http` inside a link's URL, `*`
+            // on an emphasis marker, `#` on a heading. Worse, an occurrence count taken
+            // from the markup does not agree with what `replace_in_project` re-derives
+            // inside the parsed document — so its "the text moved under me, skip this
+            // field" guard would fire on perfectly good rows and silently refuse to rename
+            // them.
+            //
+            // `djot_to_plain_text` extracts the prose without importing the document (27x
+            // cheaper than a full import, which matters when a keystroke rescans the whole
+            // manuscript) and is pinned upstream as being *exactly* the text the document
+            // itself searches. So a count taken here survives a replace performed there.
+            let prose = djot_to_plain_text(&content.data, &DjotImportOptions::default());
+            if prose.is_empty() {
+                continue;
+            }
             out.push(Field {
                 item_id: item.id,
                 item_title: title.clone(),
                 match_field: field,
-                text: content.data.clone(),
+                text: prose,
                 trashed,
             });
         }
