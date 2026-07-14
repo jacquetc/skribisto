@@ -21,14 +21,20 @@
 //! [`Switcher`] stay as plain builders — they're generic over closures, which the
 //! DSL can't express (same rationale as `app.rs`).
 
+use std::cell::Cell;
 use std::rc::Rc;
 
-use bastyde::core::styles::PanelVariant;
-use bastyde::data::ListModel;
+use bastyde::core::styles::{PanelVariant, SharedStandardItemStyle, StandardItemStyleConfig};
+use bastyde::core::widget_builder::HandlerSet;
+use bastyde::data::{ListModel, SelectionMode, SelectionModel};
 use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::GroupHeader;
 use bastyde::widgets::primitives::icon_widget::IconMode;
+// `InteractionState` (the hover/press state the standard-item chrome recipe
+// consumes) is not re-exported at the widgets root — reach it by module path.
+use bastyde::widgets::button::InteractionState;
+use bastyde::widgets::styles::RecipeStandardItemStyle;
 use bastyde::widgets::{
     ActivateOn, Button, ButtonVariant, Center, Divider, Expand, FixedSize, HStack, IconLocation,
     IconWidget, ListView, Padding, Panel, SearchField, Spacer, StandardListItem, Switcher, TabBar,
@@ -71,6 +77,21 @@ pub struct WelcomePanel {
     /// content `Switcher`'s derived index.
     tab_ids: Vec<TabId>,
     search: Signal<String>,
+    /// Keyboard/pointer cursor for each list. **Required for any row highlight
+    /// to exist at all:** `ListView` hands its row delegate
+    /// `selection.map(|s| s.is_selected(i)).unwrap_or(false)` — with no
+    /// selection model attached, every row is told it is unselected forever, so
+    /// arrow keys move the view's internal `focused_index` (Enter still opens
+    /// the right row) while nothing on screen — and nothing in the AccessKit
+    /// tree — says where the cursor is. Held on the panel, not built inside
+    /// `build`, so the highlight survives a rebuild.
+    recents_selection: SelectionModel,
+    examples_selection: SelectionModel,
+    /// The recents `ListView`'s id, republished on each build as this panel's
+    /// [`Widget::initial_focus_hint`] so the Launcher window opens with the list
+    /// focused (Enter then opens the highlighted project straight away).
+    /// `None` when there are no recents — see [`Self::recents_list`].
+    recents_list_id: Cell<Option<WidgetId>>,
     root_child: Option<WidgetId>,
 }
 
@@ -85,12 +106,17 @@ impl WelcomePanel {
             selected_tab,
             tab_ids,
             search: Signal::new(String::new()),
+            // Single: these lists are launch targets — you open one project, so
+            // a multi-select cursor would be meaningless.
+            recents_selection: SelectionModel::new(SelectionMode::Single),
+            examples_selection: SelectionModel::new(SelectionMode::Single),
+            recents_list_id: Cell::new(None),
             root_child: None,
         }
     }
 
     /// Works pane: search + Open/New-Work actions, then the recent-works list.
-    fn works_pane(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
+    fn works_pane(&self, vm: &WelcomeViewModel, ctx: &mut BuildContext) -> impl Widget + 'static {
         let open_vm = vm.clone();
         let new_vm = vm.clone();
         let open_icon =
@@ -128,18 +154,28 @@ impl WelcomePanel {
                     }
                 }
                 Expand::vertical {
-                    child: self.recents_list(vm)
+                    child: self.recents_list(vm, ctx)
                 }
             }
         )
     }
 
     /// The recent-works region: a virtualized [`ListView`] of hand-rolled rows
-    /// (see [`recent_row`]) — or a muted placeholder when there are none. Both
+    /// (see [`RecentRow`]) — or a muted placeholder when there are none. Both
     /// arms sit under a constant-index [`Switcher`] so the region resolves to
     /// one widget type (only the active page is mounted).
-    fn recents_list(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
+    fn recents_list(&self, vm: &WelcomeViewModel, ctx: &mut BuildContext) -> impl Widget + 'static {
         let model = self.recents.list_model();
+
+        // Open with the most recent work under the cursor — the launcher
+        // convention: Enter resumes your last project without aiming first, and
+        // the arrow keys step from a row you can actually see (`ListView` adopts
+        // a preset selection as its keyboard cursor). Guarded on "nothing
+        // selected yet" so a rebuild never yanks the highlight back to the top
+        // after the user has moved it.
+        if !model.is_empty() && self.recents_selection.selected_indices().is_empty() {
+            self.recents_selection.select(0);
+        }
 
         // Reactive page index: re-derived on every `refresh()` (which bumps
         // `version` *after* `reconcile_by_key`), so the list replaces the empty-note
@@ -161,7 +197,7 @@ impl WelcomePanel {
             let icon =
                 IconWidget::from_svg_icon(res!("assets/icons/binder/book.svg")).icon_size(20.0);
             let date = dto.last_opened_at.format("%Y-%m-%d").to_string();
-            Box::new(recent_row(
+            Box::new(RecentRow::new(
                 icon,
                 dto.title.clone(),
                 dto.absolute_path.clone(),
@@ -172,6 +208,7 @@ impl WelcomePanel {
         // Single-click to open (these rows are launch targets, not multi-select
         // list items); arrow keys still move the highlight without opening.
         .activate_on(ActivateOn::SingleClick)
+        .selection(self.recents_selection.clone())
         .auto_item_height(52.0)
         .on_activate(move |i, ctx| {
             if let Some(path) = open_model.with_item(i, |d| d.absolute_path.clone()) {
@@ -179,9 +216,18 @@ impl WelcomePanel {
             }
         });
 
+        // Mount the list by id so the panel can hand it back as its
+        // `initial_focus_hint` — the window opens with the list already focused,
+        // so Enter resumes the highlighted project with no Tab first. Published
+        // only when there ARE recents: with none, the Switcher shows the empty
+        // note instead and focusing an unmounted list would be a dead focus.
+        let list_id = ctx.add(list);
+        self.recents_list_id
+            .set((!self.recents.list_model().is_empty()).then_some(list_id));
+
         Switcher::new(switch_index)
             .child(empty_note(tr!(welcome_empty_recents())))
-            .child(list)
+            .child_id(list_id)
     }
 
     /// Examples pane: the bundled example works (one today — Starforgers).
@@ -220,6 +266,7 @@ impl WelcomePanel {
             )
         })
         .activate_on(ActivateOn::SingleClick)
+        .selection(self.examples_selection.clone())
         .auto_item_height(52.0)
         .on_activate(move |i, ctx| {
             if let Some((file_name, bytes)) = open_model.with_item(i, |e| (e.file_name, e.bytes)) {
@@ -231,65 +278,143 @@ impl WelcomePanel {
 
 /// A recent-work row: icon, title + middle-ellipsized path, trailing date.
 ///
-/// Hand-rolled rather than [`StandardListItem`] — its subtitle line has no
-/// overflow override (always wraps) *and*, more fundamentally, its
-/// `label_column` is a plain (non-flex) child of the row's outer `HStack`,
-/// measured at its own intrinsic/natural width before that HStack's trailing
-/// `Spacer` claims the rest. `Expand`'s default flex basis is **zero** (it
-/// contributes nothing to an intrinsic-size query), so nesting an `Expand`
-/// inside `subtitle_leading_slot` never widens `label_column` itself — it can
-/// only ever fill whatever (already-narrow, title-width-sized) box
-/// `StandardListItem` handed it. Owning the whole row lets the path's
-/// `Expand` compete for the *row's* remaining width directly, so a long path
-/// (e.g. `/home/cyril/Nextcloud/…/Faux-semblants.skrib`) stays one line, on
-/// one row height, with the filename still readable — the "wrap in `Expand`
-/// (fill mode) to make it fill a box" layout gotcha, applied at the right
-/// level this time.
+/// **The layout is hand-rolled; the chrome is not.** The selection background,
+/// corner radius, hover wash, WCAG selection edge and `:focus-visible` keyboard
+/// ring all come from the *same* [`StandardItemStyle`] recipe
+/// [`StandardListItem`] uses (`theme.style_slots.standard_item`), so a
+/// highlighted recents row is indistinguishable from a highlighted Examples row
+/// — in both themes, and including the muted `SelectedInactive` wash when focus
+/// sits elsewhere. That seam is exactly what `StandardItemStyleConfig` is for:
+/// its own docs say the style owns "the chrome (selection background, corner
+/// radius, padding) but **not** row-internal layout". The recipe already pads
+/// and insets its content, so the row hands it the bare `HStack` (as
+/// `StandardListItem` does) and adds no `Padding` of its own.
 ///
-/// No selection background (StandardListItem's rounded-rect chrome isn't
-/// reproduced here — these rows are launch targets that navigate away
-/// immediately on click, not a persistent multi-select list); the title
-/// accents on selection instead, mirroring `project_switcher_button.rs`'s
-/// own hand-rolled row.
-fn recent_row(
-    icon: IconWidget,
+/// Why not simply *be* a [`StandardListItem`], then? Its `label_column` is a
+/// plain (non-flex) child of the row's outer `HStack`, measured at its own
+/// intrinsic/natural width before that HStack's trailing `Spacer` claims the
+/// rest. `Expand`'s default flex basis is **zero** (it contributes nothing to
+/// an intrinsic-size query), so nesting an `Expand` inside
+/// `subtitle_leading_slot` never widens `label_column` itself — it can only
+/// ever fill whatever (already-narrow, title-width-sized) box
+/// `StandardListItem` handed it. Owning the row lets the path's `Expand`
+/// compete for the *row's* remaining width directly, so a long path (e.g.
+/// `/home/cyril/Nextcloud/…/Faux-semblants.skrib`) stays one line, on one row
+/// height, with the filename still readable — the "wrap in `Expand` (fill mode)
+/// to make it fill a box" layout gotcha, applied at the right level. Borrowing
+/// the chrome recipe keeps that layout freedom *and* the stock look.
+struct RecentRow {
+    /// `Option` only so `build` can move it into the tree (built once).
+    icon: Option<IconWidget>,
     title: String,
     path: String,
     date: String,
-    selected: bool,
-) -> impl Widget + 'static {
-    let title_role = if selected {
-        TextRole::Accent
-    } else {
-        TextRole::Primary
-    };
-    let body = VStack::new()
-        .spacing(2.0)
-        .child(
-            TextWidget::new(lit!(title.clone()))
-                .style(TextStyleRole::Body)
-                .color(title_role)
-                .single_line(),
-        )
-        .child(
-            TextWidget::new(lit!(path.clone()))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary)
-                .overflow(TextOverflow::Ellipsis(EllipsisMode::Middle)),
-        );
-    Padding::symmetric(6.0, 10.0).child(
-        HStack::new()
+    selected: Signal<bool>,
+    /// Hover/press state feeding the recipe's non-selected chrome. Rows are
+    /// rebuilt on selection change, so a per-build `Signal` is enough.
+    interaction: Signal<InteractionState>,
+    root_child: Option<WidgetId>,
+}
+
+impl RecentRow {
+    fn new(icon: IconWidget, title: String, path: String, date: String, selected: bool) -> Self {
+        Self {
+            icon: Some(icon),
+            title,
+            path,
+            date,
+            selected: Signal::new(selected),
+            interaction: Signal::new(InteractionState::Idle),
+            root_child: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for RecentRow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RecentRow")
+            .field("title", &self.title)
+            .finish()
+    }
+}
+
+impl Widget for RecentRow {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let body = VStack::new()
+            .spacing(2.0)
+            .child(
+                TextWidget::new(lit!(self.title.clone()))
+                    .style(TextStyleRole::Body)
+                    .color(TextRole::Primary)
+                    .single_line(),
+            )
+            .child(
+                TextWidget::new(lit!(self.path.clone()))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary)
+                    .overflow(TextOverflow::Ellipsis(EllipsisMode::Middle)),
+            );
+        let row = HStack::new()
             .spacing(10.0)
-            .child(icon)
+            .child(self.icon.take().expect("RecentRow builds once"))
             .child(Expand::horizontal().child(body))
             .child(
-                TextWidget::new(lit!(date))
+                TextWidget::new(lit!(self.date.clone()))
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary),
             )
-            .access_label_literal(title)
-            .access_description_literal(path),
-    )
+            .access_label_literal(self.title.clone())
+            .access_description_literal(self.path.clone());
+        let content = ctx.add(row);
+
+        // The stock chrome, driven by this row's own state signals — the theme's
+        // slot when one is installed, else the default recipe (mirrors
+        // `StandardListItem::build_with_background`).
+        let style: SharedStandardItemStyle = ctx
+            .theme()
+            .style_slots
+            .standard_item
+            .clone()
+            .unwrap_or_else(|| Rc::new(RecipeStandardItemStyle::default()));
+        let cfg = StandardItemStyleConfig {
+            content,
+            is_selected: self.selected.clone(),
+            is_hovered: self
+                .interaction
+                .map(|s| matches!(s, InteractionState::Hovered)),
+            is_pressed: self
+                .interaction
+                .map(|s| matches!(s, InteractionState::Pressed)),
+            // Resolves this row's focus scope — the enclosing `ListView` — so a
+            // selected row pales to `SelectedInactive` when focus leaves it.
+            is_focused: ctx.view_focus_active(),
+            is_focus_visible: ctx.focus_visible(),
+            is_disabled: Signal::new(false),
+            is_window_active: ctx.window_active_signal(),
+        };
+        let root = style.make_body(&cfg, ctx);
+
+        let interaction = self.interaction.clone();
+        ctx.apply_self_handlers(HandlerSet::new().on_hover(
+            move |entered: bool, _ctx: &mut EventContext| {
+                interaction.set(if entered {
+                    InteractionState::Hovered
+                } else {
+                    InteractionState::Idle
+                });
+            },
+        ));
+
+        self.root_child = Some(root);
+        vec![root]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
 }
 
 /// Muted top-aligned note shown in place of a list when it has no rows.
@@ -426,7 +551,7 @@ impl Widget for WelcomePanel {
                 .unwrap_or(0)
         });
         let content = Switcher::new(switch_index)
-            .child(self.works_pane(&vm))
+            .child(self.works_pane(&vm, ctx))
             .child(self.examples_pane(&vm))
             .child(placeholder(tr!(welcome_learn_soon())))
             .child(placeholder(tr!(welcome_about_blurb())));
@@ -531,6 +656,20 @@ impl Widget for WelcomePanel {
         );
         self.root_child = Some(root);
         vec![root]
+    }
+
+    /// Open the Launcher with keyboard focus already on the recent-works list,
+    /// so **Enter opens the highlighted project immediately** — no Tab hunt
+    /// first. The window machinery consults this after the root is built (it
+    /// walks descendants, so the hint is found under the title bar / resize
+    /// frame chrome) and focuses what we point at. Paired with the preselected
+    /// top row in [`Self::recents_list`]: highlight *and* focus, or Enter would
+    /// still go nowhere.
+    ///
+    /// `None` when there are no recents — the list isn't the mounted page then,
+    /// and the window falls back to opening with nothing focused, as before.
+    fn initial_focus_hint(&self) -> Option<WidgetId> {
+        self.recents_list_id.get()
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {

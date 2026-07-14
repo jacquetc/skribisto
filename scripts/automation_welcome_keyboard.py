@@ -197,56 +197,123 @@ class Session:
             self.app.kill()
 
 
-def selected_rows(s):
-    """Rows the AT tree reports as selected, with their labels."""
-    return [(n.get("id"), n.get("label")) for n in s.nodes() if n.get("selected")]
-
-
 def list_items(s):
-    return [n for n in s.nodes() if n.get("role") == "ListItem"]
+    # `ListView` wraps each row in a ListItemWrapper, surfaced as a
+    # `ListBoxOption` under the view's `ListBox`; the row's own text is on a
+    # `GenericContainer` child (that's where `access_label_literal` lands).
+    return [n for n in s.nodes() if n.get("role") == "ListBoxOption"]
 
 
-print("== Launcher: keyboard highlight in the Welcome lists ==")
+def selected_rows(s):
+    """LIST ROWS the AT tree reports as selected.
+
+    Scoped to `ListBoxOption` on purpose: the nav `TabBar` also publishes a
+    `selected` tab ("Works"), and counting that as a hit turns this whole check
+    into a false pass.
+    """
+    return [(n.get("id"), n.get("selected")) for n in list_items(s) if n.get("selected") is True]
+
+
+def selected_index(s):
+    """Row *position* of the cursor (rows come back in visual order), or None."""
+    for i, n in enumerate(list_items(s)):
+        if n.get("selected") is True:
+            return i
+    return None
+
+
+failures = []
+
+# ── Phase 0: Enter, straight off the launch, opens the highlighted project ──
+# The decisive test of "focus is already on the list": no click, no Tab, no
+# focus_node — just the key. A preselected row you cannot act on is a tease, and
+# an AT `focused` flag is a weaker claim than the app actually doing the thing.
+# (Alpha is the most recent, so it is the row under the cursor.)
+print("== Phase 0: Enter at launch opens the top recent (no click, no Tab) ==")
+s0 = Session([])
+if not s0.wait_label("welcome sections"):
+    fail("the Launcher window did not appear", s0.app, s0.mcp, s0.log)
+if not s0.wait_label("alpha", timeout=8):
+    fail("the seeded recents never appeared", s0.app, s0.mcp, s0.log)
+lb0 = next((n for n in s0.nodes() if n.get("role") == "ListBox"), None)
+print(f"AT `focused` on the recents ListBox at open: {lb0.get('focused') if lb0 else 'no ListBox'}")
+
+s0.key("Enter")
+opened_at_launch = s0.wait_label("binder", timeout=15)
+loaded_alpha = s0.wait_label("alpha", timeout=10) if opened_at_launch else False
+s0.shot("/tmp/sk-kbd-enter-at-launch.png")
+if not opened_at_launch:
+    failures.append("FOCUS: pressing Enter right after the Launcher opens did nothing — the "
+                    "recents list does not hold keyboard focus, so the highlighted project "
+                    "cannot be opened without Tabbing to the list first")
+elif not loaded_alpha:
+    failures.append("FOCUS: Enter at launch opened a project, but not the highlighted top "
+                    "recent (Alpha)")
+else:
+    print("PASS: Enter at launch opened the highlighted top recent (Alpha) — the list is "
+          "focused from the start")
+s0.close()
+
+print("\n== Launcher: keyboard highlight in the Welcome lists ==")
 s = Session([])
 if not s.wait_label("welcome sections"):
     fail("the Launcher window did not appear", s.app, s.mcp, s.log)
-
-failures = []
 
 # ── Recent Works ────────────────────────────────────────────────────────────
 if not s.wait_label("alpha", timeout=8):
     fail("the seeded recents never appeared in the Works pane", s.app, s.mcp, s.log)
 rows = list_items(s)
-print(f"recent rows (ListItem): {[(n.get('id'), n.get('label')) for n in rows]}")
+print(f"recent rows (ListBoxOption): {[(n.get('id'), n.get('selected')) for n in rows]}")
 if len(rows) < 3:
-    fail(f"expected the 3 seeded recents as ListItems, got {len(rows)}", s.app, s.mcp, s.log)
+    fail(f"expected the 3 seeded recents as rows, got {len(rows)}", s.app, s.mcp, s.log)
 
 # Focus the list without clicking a row (a click would OPEN the project).
 listbox = next((n for n in s.nodes() if n.get("role") == "ListBox"), None)
 if not listbox:
     fail("no ListBox node for the recents list", s.app, s.mcp, s.log)
+# The launcher preselects the top recent, so a cursor exists before any input.
+if selected_index(s) != 0:
+    failures.append("RECENTS: the top recent is not preselected on open — the launcher "
+                    "should open with a visible cursor (Enter resumes your last project)")
+
+print(f"AT `focused` on the recents ListBox at open: {listbox.get('focused')}")
+
 s.call("focus_node", {"node": listbox["id"]})
 time.sleep(0.4)
-before_png = s.shot("/tmp/sk-kbd-recents-focused.png")
-print(f"selected after focus, before any arrow: {selected_rows(s)}")
+s.shot("/tmp/sk-kbd-recents-focused.png")
+print(f"selected row index after focus, before any arrow: {selected_index(s)}")
 
 s.key("Down")
-after_one = selected_rows(s)
-print(f"selected after 1x Down: {after_one}")
+one_png = s.shot("/tmp/sk-kbd-recents-down1.png")
+after_one = selected_index(s)
+print(f"selected row index after 1x Down: {after_one}")
+# The cursor steps from the *preselected* row 0 to row 1. It must NOT jump to
+# row 2: that would mean the view ignored the visible selection and navigated
+# from an invisible anchor, skipping a row.
+if after_one != 1:
+    failures.append(f"RECENTS: the first ArrowDown landed on row {after_one}, expected row 1 "
+                    "(step from the preselected top row, skipping nothing)")
 s.key("Down")
-after_two = selected_rows(s)
-after_png = s.shot("/tmp/sk-kbd-recents-down2.png")
-print(f"selected after 2x Down: {after_two}")
+two_png = s.shot("/tmp/sk-kbd-recents-down2.png")
+after_two = selected_index(s)
+print(f"selected row index after 2x Down: {after_two}")
 
-if not after_two:
+if after_two is None:
     failures.append("RECENTS: after 2x ArrowDown no row is reported `selected` in the "
                     "AccessKit tree — a screen reader cannot announce the cursor row")
-if before_png == after_png:
-    failures.append("RECENTS: the window pixels are IDENTICAL before and after 2x ArrowDown "
-                    "— the keyboard cursor is invisible "
-                    "(/tmp/sk-kbd-recents-focused.png vs /tmp/sk-kbd-recents-down2.png)")
+elif after_two != 2:
+    failures.append(f"RECENTS: the second ArrowDown landed on row {after_two}, expected row 2")
+# Compare the two ARROW steps, not focus-vs-arrow: the first key press also
+# turns on `focus_visible` (keyboard modality), which lights the ListView's
+# whole-view container ring — a pixel delta that says nothing about a per-row
+# cursor. Between Down #1 and Down #2 the ring is already lit and identical, so
+# any difference must be the cursor moving from row 0 to row 1.
+if one_png == two_png:
+    failures.append("RECENTS: the window pixels are IDENTICAL between ArrowDown #1 and #2 "
+                    "— the cursor row does not move on screen "
+                    "(/tmp/sk-kbd-recents-down1.png vs /tmp/sk-kbd-recents-down2.png)")
 else:
-    print("recents: pixels changed on arrow-down (some visual feedback exists)")
+    print("recents: pixels changed between the two arrow steps (a cursor is visible)")
 
 # Enter must still activate the arrowed-to row — proving nav DOES work, it is
 # only unseen. Assert the project window opens on the row the cursor is on.
@@ -276,15 +343,18 @@ lb2 = next((n for n in s2.nodes() if n.get("role") == "ListBox"), None)
 if lb2:
     s2.call("focus_node", {"node": lb2["id"]})
     time.sleep(0.3)
-    b2 = s2.shot("/tmp/sk-kbd-examples-focused.png")
+    # Examples are a browse list, so nothing is preselected here. With no cursor
+    # yet, the first ArrowDown must land ON row 0 — landing on row 1 would skip
+    # the first example (and with one bundled example, select nothing at all).
     s2.key("Down")
-    sel2 = selected_rows(s2)
-    a2 = s2.shot("/tmp/sk-kbd-examples-down.png")
-    print(f"examples selected after Down: {sel2}")
-    if not sel2:
+    idx2 = selected_index(s2)
+    s2.shot("/tmp/sk-kbd-examples-down.png")
+    print(f"examples selected row index after Down: {idx2}")
+    if idx2 is None:
         failures.append("EXAMPLES: after ArrowDown no row is reported `selected` in the AT tree")
-    if b2 == a2:
-        failures.append("EXAMPLES: pixels IDENTICAL before/after ArrowDown — no keyboard cursor")
+    elif idx2 != 0:
+        failures.append(f"EXAMPLES: the first ArrowDown landed on row {idx2}, expected row 0 "
+                        "(with no cursor yet, Down must land on the first row, not skip it)")
 else:
     failures.append("EXAMPLES: no ListBox node")
 s2.close()
