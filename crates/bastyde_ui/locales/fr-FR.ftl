@@ -156,6 +156,9 @@ welcome-open = Ouvrir
 welcome-new-work = Nouvelle œuvre
 welcome-recent-works = Œuvres récentes
 welcome-empty-recents = Aucune œuvre récente.
+# Affiché à la place de la liste des œuvres récentes lorsque la recherche n'en
+# trouve aucune — à distinguer du cas où il n'y a aucune œuvre récente.
+welcome-no-matches = Aucune œuvre récente ne correspond à votre recherche.
 welcome-learn-soon = Guides et astuces à venir.
 welcome-about-blurb = Skribisto — une réécriture en Rust + Bastyde de l'application d'écriture.
 # Les *…* sont du balisage, pas de la décoration : ils mettent la ligne en

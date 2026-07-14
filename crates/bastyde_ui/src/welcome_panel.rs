@@ -54,7 +54,7 @@ use bastyde::widgets::{
 
 use frontend::AppContext;
 
-use crate::models::{ExamplesListModel, RecentWorkListModel};
+use crate::models::ExamplesListModel;
 use crate::view_models::WelcomeViewModel;
 
 /// The four left-rail sections, in order.
@@ -80,23 +80,29 @@ impl NavItem {
 
 pub struct WelcomePanel {
     app_ctx: Rc<AppContext>,
-    recents: RecentWorkListModel,
+    /// The Welcome view-model — **single-instance live state** (it owns the
+    /// search query and the recents projection wired to it), so it is created
+    /// once on the first `build` (`ctx.settings()` and the window factory only
+    /// exist there) and shared by `.clone()` from then on. Rebuilding it per
+    /// build would hand the `SearchField` a fresh query signal every frame —
+    /// the field would write into one and the list would filter on another.
+    vm: Option<WelcomeViewModel>,
     examples: ExamplesListModel,
     /// Bar selection (source of truth); seeded to the first tab so Works shows.
     selected_tab: Signal<Option<TabId>>,
     /// Stable per-tab ids (index ↔ id), shared by the bar's `id_of` and the
     /// content `Switcher`'s derived index.
     tab_ids: Vec<TabId>,
-    search: Signal<String>,
-    /// Keyboard/pointer cursor for each list. **Required for any row highlight
-    /// to exist at all:** `ListView` hands its row delegate
+    /// Keyboard/pointer cursor for the examples list. **Required for any row
+    /// highlight to exist at all:** `ListView` hands its row delegate
     /// `selection.map(|s| s.is_selected(i)).unwrap_or(false)` — with no
     /// selection model attached, every row is told it is unselected forever, so
     /// arrow keys move the view's internal `focused_index` (Enter still opens
     /// the right row) while nothing on screen — and nothing in the AccessKit
     /// tree — says where the cursor is. Held on the panel, not built inside
-    /// `build`, so the highlight survives a rebuild.
-    recents_selection: SelectionModel,
+    /// `build`, so the highlight survives a rebuild. (The recents list's cursor
+    /// lives on the view-model instead — it has to move with the *filter*, not
+    /// just with the pointer.)
     examples_selection: SelectionModel,
     /// The recents `ListView`'s id, republished on each build as this panel's
     /// [`Widget::initial_focus_hint`] so the Launcher window opens with the list
@@ -111,15 +117,13 @@ impl WelcomePanel {
         let tab_ids: Vec<TabId> = (0..4).map(|_| TabId::fresh()).collect();
         let selected_tab = Signal::new(Some(tab_ids[0]));
         Self {
-            recents: RecentWorkListModel::new(app_ctx.clone()),
+            vm: None,
             examples: ExamplesListModel::new(app_ctx.clone()),
             app_ctx,
             selected_tab,
             tab_ids,
-            search: Signal::new(String::new()),
-            // Single: these lists are launch targets — you open one project, so
-            // a multi-select cursor would be meaningless.
-            recents_selection: SelectionModel::new(SelectionMode::Single),
+            // Single: this list is a launch target — you open one example, so a
+            // multi-select cursor would be meaningless.
             examples_selection: SelectionModel::new(SelectionMode::Single),
             recents_list_id: Cell::new(None),
             root_child: None,
@@ -142,7 +146,7 @@ impl WelcomePanel {
                     HStack {
                         spacing: 10.0
                         Expand::horizontal {
-                            SearchField::new(self.search.clone()) {
+                            SearchField::new(vm.search_query()) {
                                 placeholder: tr!(welcome_search())
                             }
                         }
@@ -172,39 +176,26 @@ impl WelcomePanel {
     }
 
     /// The recent-works region: a virtualized [`ListView`] of hand-rolled rows
-    /// (see [`RecentRow`]) — or a muted placeholder when there are none. Both
-    /// arms sit under a constant-index [`Switcher`] so the region resolves to
-    /// one widget type (only the active page is mounted).
+    /// (see [`RecentRow`]) — or a muted placeholder when there are none, or when
+    /// the search matched none. All three arms sit under a [`Switcher`] keyed off
+    /// [`WelcomeViewModel::recents_page`], so the region resolves to one widget
+    /// type (only the active page is mounted) — keep the child order in lock-step
+    /// with the `RECENTS_PAGE_*` constants.
+    ///
+    /// **Everything here reads the view-model's *projection*, never the raw MRU.**
+    /// With a query active the two disagree, and the index a `ListView` hands
+    /// back is an index into what it was given — resolving it against the
+    /// unfiltered model is how a click on the one visible search hit opens a
+    /// different project.
     fn recents_list(&self, vm: &WelcomeViewModel, ctx: &mut BuildContext) -> impl Widget + 'static {
-        let model = self.recents.list_model();
-
         // Open with the most recent work under the cursor — the launcher
         // convention: Enter resumes your last project without aiming first, and
         // the arrow keys step from a row you can actually see (`ListView` adopts
-        // a preset selection as its keyboard cursor). Guarded on "nothing
-        // selected yet" so a rebuild never yanks the highlight back to the top
-        // after the user has moved it.
-        if !model.is_empty() && self.recents_selection.selected_indices().is_empty() {
-            self.recents_selection.select(0);
-        }
+        // a preset selection as its keyboard cursor).
+        vm.preselect_first();
 
-        // Reactive page index: re-derived on every `refresh()` (which bumps
-        // `version` *after* `reconcile_by_key`), so the list replaces the empty-note
-        // placeholder as soon as the first recent work arrives. A plain
-        // build-time `model.is_empty()` snapshot fed to `Signal::new(..)` would
-        // leave the Switcher stuck on the empty page for this panel instance's
-        // whole lifetime (mirrors how the nav Switcher below derives its index).
-        let idx_model = model.clone();
-        let switch_index = self
-            .recents
-            .version_signal()
-            .map(move |_: &u64| if idx_model.is_empty() { 0usize } else { 1usize });
-
-        // `on_activate` hands back only the row index, so the open path reads the
-        // file path back out of a second cheap-clone handle on the same model.
-        let open_model = model.clone();
         let row_vm = vm.clone();
-        let list = ListView::new(model, |_i, dto, selected| {
+        let list = ListView::from_source(vm.recents_source(), |_i, dto, selected| {
             let icon =
                 IconWidget::from_svg_icon(res!("assets/icons/binder/book.svg")).icon_size(20.0);
             let date = dto.last_opened_at.format("%Y-%m-%d").to_string();
@@ -219,10 +210,10 @@ impl WelcomePanel {
         // Single-click to open (these rows are launch targets, not multi-select
         // list items); arrow keys still move the highlight without opening.
         .activate_on(ActivateOn::SingleClick)
-        .selection(self.recents_selection.clone())
+        .selection(vm.recents_selection())
         .auto_item_height(52.0)
         .on_activate(move |i, ctx| {
-            if let Some(path) = open_model.with_item(i, |d| d.absolute_path.clone()) {
+            if let Some(path) = row_vm.recent_path(i) {
                 row_vm.open_work(path, ctx);
             }
         });
@@ -230,15 +221,16 @@ impl WelcomePanel {
         // Mount the list by id so the panel can hand it back as its
         // `initial_focus_hint` — the window opens with the list already focused,
         // so Enter resumes the highlighted project with no Tab first. Published
-        // only when there ARE recents: with none, the Switcher shows the empty
-        // note instead and focusing an unmounted list would be a dead focus.
+        // only when the list is the mounted page: otherwise the Switcher shows a
+        // note instead, and focusing an unmounted list would be a dead focus.
         let list_id = ctx.add(list);
         self.recents_list_id
-            .set((!self.recents.list_model().is_empty()).then_some(list_id));
+            .set((vm.visible_recents() > 0).then_some(list_id));
 
-        Switcher::new(switch_index)
-            .child(empty_note(tr!(welcome_empty_recents())))
-            .child_id(list_id)
+        Switcher::new(vm.recents_page())
+            .child(empty_note(tr!(welcome_empty_recents()))) // RECENTS_PAGE_EMPTY
+            .child(empty_note(tr!(welcome_no_matches()))) // RECENTS_PAGE_NO_MATCH
+            .child_id(list_id) // RECENTS_PAGE_LIST
     }
 
     /// Examples pane: the bundled example works (one today — Starforgers).
@@ -523,14 +515,21 @@ impl std::fmt::Debug for WelcomePanel {
 
 impl Widget for WelcomePanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // All logic on the view-model; rebuilt here from the live store. The
-        // project-window factory is process-wide `app_state` (registered once
+        // All logic on the view-model — created **once** (it owns the live search
+        // query and the recents projection reading it; a per-build instance would
+        // give the `SearchField` a new query signal every frame, so typing would
+        // filter a list nobody is looking at) and shared by clone from then on.
+        // The project-window factory is process-wide `app_state` (registered once
         // in `main`), shared by clone rather than reconstructed.
         let factory = ctx
             .app_state::<crate::windows::ProjectWindowFactory>()
             .cloned()
             .expect("ProjectWindowFactory registered in main");
-        let vm = WelcomeViewModel::new(ctx.settings(), self.app_ctx.clone(), factory);
+        let app_ctx = self.app_ctx.clone();
+        let vm = self
+            .vm
+            .get_or_insert_with(|| WelcomeViewModel::new(ctx.settings(), app_ctx, factory))
+            .clone();
 
         // Ctrl+Q / File ▸ Quit on the bare Launcher (no project open, hence no
         // `App`, no unsaved state, no `on_close_requested` guard — this window's
@@ -555,7 +554,7 @@ impl Widget for WelcomePanel {
         // The lists are reactive `ListView`s bound to Layer-A `ListModel`s, so
         // they refresh themselves on `LoadWork` — no widget rebuild needed here.
         // `wire` just subscribes each model to the backend (examples: a no-op).
-        self.recents.wire(ctx);
+        vm.wire(ctx);
         self.examples.wire(ctx);
 
         // ── Brand block (top of the sidebar) ───────────────────────────────

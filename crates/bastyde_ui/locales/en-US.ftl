@@ -156,6 +156,9 @@ welcome-open = Open
 welcome-new-work = New Work
 welcome-recent-works = Recent Works
 welcome-empty-recents = No recent works yet.
+# Shown in place of the recents list when the search matched none of them —
+# distinct from having no recent works at all.
+welcome-no-matches = No recent work matches your search.
 welcome-learn-soon = Guides and tips are coming soon.
 welcome-about-blurb = Skribisto — a Rust + Bastyde rewrite of the writing app.
 # The *…* is inline markup, not decoration: it italicises the line (the widget
