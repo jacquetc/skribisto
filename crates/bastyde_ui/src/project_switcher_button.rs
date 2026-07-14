@@ -415,6 +415,107 @@ mod tests {
     use super::*;
     use bastyde::core::widget_tree::WidgetTree;
 
+    /// A stand-in for [`OpenProjectsMenu`]: focusable rows in a `MenuList`,
+    /// rebuilt whenever `epoch` bumps. That is the whole shape that matters
+    /// here — the real menu's registry scan is irrelevant to focus.
+    struct EpochRows {
+        epoch: Signal<u64>,
+        root: Option<WidgetId>,
+    }
+
+    impl std::fmt::Debug for EpochRows {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("EpochRows").finish()
+        }
+    }
+
+    impl Widget for EpochRows {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let sid = ctx.self_id();
+            let reg = ctx.binding_registry();
+            self.epoch.bind_to(sid, reg, BindingLevel::Rebuild);
+
+            let mut menu = MenuList::new().max_visible_items(12);
+            for i in 0..3 {
+                menu = menu.item(row(
+                    false,
+                    false,
+                    format!("Project {i}"),
+                    "/tmp/p.skrib".to_string(),
+                    None,
+                    |_| {},
+                ));
+            }
+            let root = ctx.add(FocusScope::new(TraversalScopePolicy::Cycle).child(menu));
+            self.root = Some(root);
+            vec![root]
+        }
+
+        fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+            self.root
+                .and_then(|id| ctx.child_size(id, proposal))
+                .unwrap_or_else(|| proposal.resolve(0.0, 0.0))
+                .into()
+        }
+    }
+
+    /// Clicking the switcher must leave keyboard focus **inside** the popover.
+    ///
+    /// `PopoverButton` focuses the first focusable descendant of its content
+    /// when it opens — but our `on_open` bumps `open_epoch` to re-scan the
+    /// registry, and that `BindingLevel::Rebuild` runs in the *next* layout
+    /// pass, destroying the very row that was just focused. The tree then drops
+    /// focus (`revalidate_interaction_state`), so the popup opens unfocused:
+    /// no arrow-key navigation, no Enter.
+    #[test]
+    fn opening_the_popover_puts_focus_inside_it() {
+        let mut tree = WidgetTree::new();
+        let epoch = Signal::new(0u64);
+        let bump = epoch.clone();
+
+        let pb = PopoverButton::new(Button::new(lit!("Switch")))
+            .show_disclosure_caret(false)
+            .bare()
+            .content(EpochRows {
+                epoch: epoch.clone(),
+                root: None,
+            })
+            .on_open(move || bump.set(bump.get().wrapping_add(1)));
+        let id = tree.add(pb);
+        tree.layout(SizeProposal::exact(600.0, 400.0));
+
+        let trigger = tree
+            .first_focusable_descendant(id)
+            .expect("PopoverButton exposes a focusable trigger");
+        let b = tree.bounds(trigger);
+        let center = Point::new(b.x + b.width / 2.0, b.y + b.height / 2.0);
+        tree.pointer_down_button(center, PointerButton::Primary);
+        tree.pointer_up_button(center, PointerButton::Primary);
+
+        // The open lands focus on the first row here...
+        let after_click = tree.focused();
+        assert!(
+            after_click.is_some_and(|f| f != trigger),
+            "the popover should focus its content on open, got {after_click:?}"
+        );
+
+        // ...and the on_open-driven content rebuild happens in this pass.
+        tree.layout(SizeProposal::exact(600.0, 400.0));
+
+        let focused = tree.focused().expect(
+            "focus must stay inside the open popover; the on_open re-scan rebuilt the \
+             content and destroyed the focused row, so focus was dropped entirely",
+        );
+        assert_ne!(
+            focused, trigger,
+            "focus must be inside the popover, not back on the trigger"
+        );
+        assert!(
+            tree.is_active(focused),
+            "the focused widget must be a live node"
+        );
+    }
+
     /// A popover row must stay within its bound no matter how long the path is.
     ///
     /// A hugging container measures its items with an unbounded proposal to learn
