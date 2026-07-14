@@ -83,7 +83,10 @@ fn a_replace_is_one_undoable_step() {
 
     search_management_commands::run_search(&ctx, &search("ipsum")).expect("run_search");
     let before = all_prose(&ctx);
-    assert!(before.contains("ipsum"), "the fixture must contain the word");
+    assert!(
+        before.contains("ipsum"),
+        "the fixture must contain the word"
+    );
 
     let out = search_management_commands::replace_in_project(
         &ctx,
@@ -96,7 +99,10 @@ fn a_replace_is_one_undoable_step() {
     )
     .expect("replace_in_project");
 
-    assert!(out.items_changed > 0, "the replace must have touched fields");
+    assert!(
+        out.items_changed > 0,
+        "the replace must have touched fields"
+    );
     assert!(out.occurrences_replaced > 0);
     assert!(
         out.skipped_stale.is_empty(),
@@ -166,6 +172,7 @@ fn excluded_rows_are_left_untouched() {
     // The excluded field must still contain the original word.
     let item_contents = {
         use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+        use frontend::common::entities::ContentRole;
         let cids = frontend::commands::binder_item_commands::get_binder_item_relationship(
             &ctx,
             &excluded_row.binder_item_id,
@@ -202,6 +209,7 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
     // Simulate the writer editing that very scene after reviewing the results: add one
     // more occurrence, so its count no longer matches what the row recorded.
     use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::entities::ContentRole;
     let cids = frontend::commands::binder_item_commands::get_binder_item_relationship(
         &ctx,
         &row.binder_item_id,
@@ -214,7 +222,9 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
         .flatten()
         .find(|c| c.data.to_lowercase().contains("ipsum"))
         .expect("the row's field");
-    victim.data.push_str("\n\nAnd one more ipsum, typed after the search ran.");
+    victim
+        .data
+        .push_str("\n\nAnd one more ipsum, typed after the search ran.");
     content_commands::update_content(
         &ctx,
         stack,
@@ -251,5 +261,91 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
     assert!(
         !reloaded.data.contains("QQQ"),
         "a field that moved under us must be left completely alone"
+    );
+}
+
+/// `preserve_case` was a DTO field nothing read — so a character rename would have
+/// lowercased every capitalised occurrence. It is the whole point of a rename: renaming
+/// Aurélien must leave AURÉLIEN as AURÉLIAN, not aurélian.
+#[test]
+fn preserve_case_keeps_the_case_it_found() {
+    use frontend::commands::binder_item_commands;
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::entities::ContentRole;
+
+    let ctx = loaded_ctx();
+    let stack = Some(undo_redo_commands::create_new_stack(&ctx));
+
+    // Pick a SCENE-TEXT content deliberately. `get_all_binder_item` iterates a HashMap,
+    // so "the first item with a Content row" is nondeterministic — and if it landed on a
+    // title Content, a body-scoped search would never read it and the test would pass or
+    // fail depending on hash order.
+    let victim = binder_item_commands::get_all_binder_item(&ctx)
+        .unwrap()
+        .into_iter()
+        .filter(|i| i.activated)
+        .find_map(|i| {
+            let cids = binder_item_commands::get_binder_item_relationship(
+                &ctx,
+                &i.id,
+                &BinderItemRelationshipField::Contents,
+            )
+            .unwrap();
+            content_commands::get_content_multi(&ctx, &cids)
+                .unwrap()
+                .into_iter()
+                .flatten()
+                .find(|c| c.role == ContentRole::SceneText)
+        })
+        .expect("an item with a SceneText content row");
+    content_commands::update_content(
+        &ctx,
+        None,
+        &frontend::content::dtos::UpdateContentDto {
+            id: victim.id,
+            created_at: victim.created_at,
+            updated_at: victim.updated_at,
+            activated: victim.activated,
+            role: victim.role.clone(),
+            data: "Aurélien, AURÉLIEN and aurélien walked on.".to_string(),
+        },
+    )
+    .unwrap();
+
+    let mut q = search("aurélien");
+    q.search_titles = false;
+    q.search_synopsis = false;
+    search_management_commands::run_search(&ctx, &q).expect("run_search");
+
+    search_management_commands::replace_in_project(
+        &ctx,
+        stack,
+        &ReplaceInProjectDto {
+            replacement: "aurélian".to_string(),
+            preserve_case: true,
+            excluded_result_ids: vec![],
+        },
+    )
+    .expect("replace_in_project");
+
+    let out = content_commands::get_content(&ctx, &victim.id)
+        .unwrap()
+        .unwrap()
+        .data;
+    assert!(
+        out.contains("Aurélian"),
+        "Titlecase must stay titlecase: {out:?}"
+    );
+    assert!(
+        out.contains("AURÉLIAN"),
+        "ALL CAPS must stay ALL CAPS: {out:?}"
+    );
+    assert!(
+        out.contains("aurélian"),
+        "lowercase stays lowercase: {out:?}"
+    );
+    assert!(
+        !out.to_lowercase().contains("aurélien"),
+        "no occurrence of the old name may survive: {out:?}"
     );
 }

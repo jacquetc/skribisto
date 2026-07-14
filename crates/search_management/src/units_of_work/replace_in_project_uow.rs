@@ -113,6 +113,7 @@ impl CommandUnitOfWork for ReplaceInProjectUnitOfWork {
 #[macros::uow_action(entity = "Search", action = "Get")]
 #[macros::uow_action(entity = "Search", action = "GetRelationship")]
 #[macros::uow_action(entity = "SearchResult", action = "GetMulti")]
+#[macros::uow_action(entity = "SearchResult", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "GetAll")]
 #[macros::uow_action(entity = "Work", action = "Snapshot")]
 #[macros::uow_action(entity = "Work", action = "Restore")]

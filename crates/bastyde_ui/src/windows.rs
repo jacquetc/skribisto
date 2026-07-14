@@ -31,7 +31,10 @@ use std::rc::Rc;
 use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::primitives::icon_widget::IconMode;
-use bastyde::widgets::{Center, CollapsePolicy, DeadZone, DockSide, Expand, HStack, IconButton, IconButtonSize, IconWidget, MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar, VStack, WindowFrame};
+use bastyde::widgets::{
+    Center, CollapsePolicy, DeadZone, DockSide, Expand, HStack, IconButton, IconButtonSize,
+    IconWidget, MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar, VStack, WindowFrame,
+};
 
 use frontend::AppContext;
 use frontend::common::entities::WorkShape;

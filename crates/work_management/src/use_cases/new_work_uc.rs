@@ -16,7 +16,10 @@ use common::direct_access::root::RootRelationshipField;
 use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
-use common::entities::{Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, RecentWork, Root, Search, System, TrashInfo, Work, WorkInfo, WorkShape};
+use common::entities::{
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, RecentWork, Root, Search,
+    System, TrashInfo, Work, WorkInfo, WorkShape,
+};
 use common::types::EntityId;
 use std::path::Path;
 

@@ -18,7 +18,13 @@ use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::settings::{Reloadable, SettingsExt, SettingsRegistry};
 use bastyde::tokens::SurfaceRole::Hover;
-use bastyde::widgets::{Divider, DockCorner, DockOpenLocation, DockRail, DockRailItemSize, DockSide, DockWidgetId, DockingLayout, DropRegion, DropTarget, DropTargetVariant, EventContextMessageBoxExt, Expand, HStack, IconButton, IconButtonSize, MessageBox, MessageBoxButton, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, RowDragData, Spacer, Splitter, StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast, ToastAction, VStack};
+use bastyde::widgets::{
+    Divider, DockCorner, DockOpenLocation, DockRail, DockRailItemSize, DockSide, DockWidgetId,
+    DockingLayout, DropRegion, DropTarget, DropTargetVariant, EventContextMessageBoxExt, Expand,
+    HStack, IconButton, IconButtonSize, MessageBox, MessageBoxButton, MessageBoxButtons,
+    NotificationArchiveModel, NotificationCenterButton, RowDragData, Spacer, Splitter,
+    StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast, ToastAction, VStack,
+};
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;

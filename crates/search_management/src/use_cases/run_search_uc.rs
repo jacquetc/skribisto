@@ -273,13 +273,14 @@ impl RunSearchUseCase {
     fn scan(corpus: &[Field], dto: &RunSearchDto) -> (Vec<SearchResult>, bool) {
         let mut rows = Vec::new();
         for field in corpus {
-            let hits = Self::occurrences(&field.text, &dto.query, dto.case_sensitive);
-            let Some(&first) = hits.first() else { continue };
+            let hits = crate::matching::occurrences(&field.text, &dto.query, dto.case_sensitive);
+            let Some(&(first, first_len)) = hits.first() else {
+                continue;
+            };
             if rows.len() >= RESULT_CAP {
                 return (rows, true);
             }
-            let (before, matched, after) =
-                Self::snippet(&field.text, first, dto.query.chars().count());
+            let (before, matched, after) = Self::snippet(&field.text, first, first_len);
             rows.push(SearchResult {
                 binder_item_id: field.item_id,
                 item_title: field.item_title.clone(),
@@ -293,30 +294,6 @@ impl RunSearchUseCase {
             });
         }
         (rows, false)
-    }
-
-    /// Char offsets of every occurrence of `needle` in `haystack`.
-    ///
-    /// Phase 0.1: a plain literal scan. `case_sensitive: false` lowercases both sides,
-    /// which is wrong for Turkish (`I`/`ı`) and misses `ß`/`ss` — the real matcher
-    /// (A1.2) folds per-scene-language with an offset map instead. Good enough to
-    /// prove the pipe, and replaced wholesale, not extended.
-    fn occurrences(haystack: &str, needle: &str, case_sensitive: bool) -> Vec<usize> {
-        if needle.is_empty() {
-            return Vec::new();
-        }
-        let (hay, pat) = if case_sensitive {
-            (haystack.to_string(), needle.to_string())
-        } else {
-            (haystack.to_lowercase(), needle.to_lowercase())
-        };
-        // `match_indices` is the two-way algorithm — not the O(n·m) char-window scan
-        // the current `document_search` literal path uses (A1.6 fixes that upstream).
-        let byte_to_char: std::collections::HashMap<usize, usize> =
-            hay.char_indices().enumerate().map(|(c, (b, _))| (b, c)).collect();
-        hay.match_indices(&pat)
-            .filter_map(|(b, _)| byte_to_char.get(&b).copied())
-            .collect()
     }
 
     /// `SNIPPET_CONTEXT` chars either side of the match, on char boundaries.

@@ -295,12 +295,18 @@ fn closing_a_project_tears_down_its_search_surface() {
         !results(&ctx).is_empty(),
         "the fixture must produce rows for this test to mean anything"
     );
-    assert!(!search_result_commands::get_all_search_result(&ctx).unwrap().is_empty());
+    assert!(
+        !search_result_commands::get_all_search_result(&ctx)
+            .unwrap()
+            .is_empty()
+    );
 
     work_management_commands::close_work(&ctx).expect("close_work");
 
     assert!(
-        work_info_commands::get_all_work_info(&ctx).unwrap().is_empty(),
+        work_info_commands::get_all_work_info(&ctx)
+            .unwrap()
+            .is_empty(),
         "close_work removes the WorkInfo"
     );
     assert!(
@@ -308,8 +314,82 @@ fn closing_a_project_tears_down_its_search_surface() {
         "...and the Search hanging off it must go with it"
     );
     assert!(
-        search_result_commands::get_all_search_result(&ctx).unwrap().is_empty(),
+        search_result_commands::get_all_search_result(&ctx)
+            .unwrap()
+            .is_empty(),
         "...and every SearchResult under that Search — otherwise every open/close \
          cycle leaks the last search's rows"
+    );
+}
+
+/// Searching a project that contains Turkish prose must not take the backend down.
+///
+/// `'İ'.to_lowercase()` is TWO chars, so a match offset computed in a lowercased
+/// haystack is wrong — and, with enough `İ` before the match, past the end — when
+/// applied to the source. This used to panic outright
+/// ("range end index 21 out of range for slice of length 16"), and case-insensitive is
+/// the DEFAULT, so any Turkish scene crashed the very first search.
+#[test]
+fn a_case_insensitive_search_over_turkish_prose_does_not_panic() {
+    use frontend::commands::{binder_item_commands, content_commands};
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::entities::ContentRole;
+
+    let ctx = loaded_ctx();
+
+    // Pick a SCENE-TEXT content deliberately. `get_all_binder_item` iterates a HashMap,
+    // so "the first item with a Content row" is nondeterministic — and if it landed on a
+    // title Content, a body-scoped search would never read it and the test would pass or
+    // fail depending on hash order.
+    let victim = binder_item_commands::get_all_binder_item(&ctx)
+        .unwrap()
+        .into_iter()
+        .filter(|i| i.activated)
+        .find_map(|i| {
+            let cids = binder_item_commands::get_binder_item_relationship(
+                &ctx,
+                &i.id,
+                &BinderItemRelationshipField::Contents,
+            )
+            .unwrap();
+            content_commands::get_content_multi(&ctx, &cids)
+                .unwrap()
+                .into_iter()
+                .flatten()
+                .find(|c| c.role == ContentRole::SceneText)
+        })
+        .expect("an item with a SceneText content row");
+    content_commands::update_content(
+        &ctx,
+        None,
+        &frontend::content::dtos::UpdateContentDto {
+            id: victim.id,
+            created_at: victim.created_at,
+            updated_at: victim.updated_at,
+            activated: victim.activated,
+            role: victim.role.clone(),
+            data: "İİİİİİİİİİ ipsum".to_string(),
+        },
+    )
+    .unwrap();
+
+    // The search itself is the assertion: it must return, not panic.
+    let mut q = dto("ipsum");
+    q.search_titles = false;
+    q.search_synopsis = false;
+    let out = search_management_commands::run_search(&ctx, &q).expect("run_search");
+    assert!(
+        out.match_count > 0,
+        "the Turkish scene's 'ipsum' must still be found"
+    );
+
+    // And the snippet must point at the match in the SOURCE, not at a shifted offset.
+    let row = results(&ctx)
+        .into_iter()
+        .find(|r| r.snippet_before.contains('İ'))
+        .expect("the Turkish row");
+    assert_eq!(
+        row.snippet_match, "ipsum",
+        "the matched span must be the match itself, not text shifted by the case fold"
     );
 }

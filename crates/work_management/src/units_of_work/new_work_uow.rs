@@ -5,7 +5,10 @@ use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, Search, System, TrashInfo, Work, WorkInfo};
+use common::entities::{
+    Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, Search, System, TrashInfo,
+    Work, WorkInfo,
+};
 use common::event::WorkManagementEvent::NewWork;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]

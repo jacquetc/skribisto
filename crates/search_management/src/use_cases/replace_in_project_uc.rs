@@ -59,6 +59,7 @@ pub trait ReplaceInProjectUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Search", action = "Get")]
 #[macros::uow_action(entity = "Search", action = "GetRelationship")]
 #[macros::uow_action(entity = "SearchResult", action = "GetMulti")]
+#[macros::uow_action(entity = "SearchResult", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "GetAll")]
 #[macros::uow_action(entity = "Work", action = "Snapshot")]
 #[macros::uow_action(entity = "Work", action = "Restore")]
@@ -133,9 +134,24 @@ impl ReplaceInProjectUseCase {
         // the discipline `empty_trash` follows.
         let snap_before = uow.snapshot_work(&[work.id])?;
 
-        let mut items_changed = 0u64;
         let mut occurrences_replaced = 0u64;
         let mut skipped_stale: Vec<u64> = Vec::new();
+        // ITEMS, not fields. A scene whose body AND synopsis both match is one item —
+        // the confirm dialog says "across N items", and it must not say two.
+        let mut touched_items: HashSet<EntityId> = HashSet::new();
+
+        // How each individual occurrence is rewritten. With `preserve_case`, a rename
+        // keeps the case it found (AURÉLIEN → AURÉLIAN, not aurélian) — which is the
+        // whole point of a rename, and was silently ignored before.
+        let replacement = dto.replacement.clone();
+        let preserve = dto.preserve_case;
+        let case_of = move |matched: &str| -> String {
+            if preserve {
+                crate::matching::preserve_case(matched, &replacement)
+            } else {
+                replacement.clone()
+            }
+        };
 
         for row in &rows {
             match row.match_field {
@@ -151,25 +167,29 @@ impl ReplaceInProjectUseCase {
                         MatchField::Title => item.title.clone(),
                         _ => item.label.clone(),
                     };
-                    let n = Self::count(&current, &search.query, search.case_sensitive);
-                    if n != row.occurrence_count {
+                    let hits = crate::matching::occurrences(
+                        &current,
+                        &search.query,
+                        search.case_sensitive,
+                    );
+                    if hits.len() as u64 != row.occurrence_count {
                         // The field moved under us since the writer reviewed it.
                         skipped_stale.push(row.id);
                         continue;
                     }
-                    let rewritten = Self::replace_all(
+                    let rewritten = crate::matching::replace_all(
                         &current,
                         &search.query,
-                        &dto.replacement,
                         search.case_sensitive,
+                        &case_of,
                     );
                     match row.match_field {
                         MatchField::Title => item.title = rewritten,
                         _ => item.label = rewritten,
                     }
                     uow.update_binder_item(&item)?;
-                    items_changed += 1;
-                    occurrences_replaced += n;
+                    touched_items.insert(row.binder_item_id);
+                    occurrences_replaced += hits.len() as u64;
                 }
                 // Prose. Through the parser, never through the markup.
                 MatchField::Body | MatchField::Synopsis => {
@@ -191,27 +211,36 @@ impl ReplaceInProjectUseCase {
                         continue;
                     }
 
-                    // Phase 0.1b: rewrite through the exported Djot and re-import it.
-                    // A2 replaces this with an in-place range splice that preserves
-                    // character formatting — until then a prose replace drops that
-                    // scene's bold/italic runs, which is exactly why nothing in the UI
-                    // calls this yet.
+                    // Phase 0.1b: rewrite the re-exported Djot.
+                    //
+                    // Honest about what this is: it validates against the PARSED prose
+                    // (`find_all`) and then rewrites the MARKUP as a string, so a query
+                    // that also occurs inside a link URL or an attribute would be
+                    // rewritten there too. A2's range splice removes this — it edits the
+                    // document in place, at the offsets `find_all` gave, and preserves
+                    // the character formatting this path currently drops. Nothing in the
+                    // UI calls replace yet, for exactly these two reasons.
                     let djot = batch.to_djot(&DjotExportOptions::default())?;
-                    let rewritten = Self::replace_all(
+                    content.data = crate::matching::replace_all(
                         &djot,
                         &search.query,
-                        &dto.replacement,
                         search.case_sensitive,
+                        &case_of,
                     );
-                    let out = BatchDocument::new()?;
-                    out.set_djot(&rewritten, &DjotImportOptions::default())?;
-                    content.data = out.to_djot(&DjotExportOptions::default())?;
 
                     uow.update_content(&content)?;
-                    items_changed += 1;
+                    touched_items.insert(row.binder_item_id);
                     occurrences_replaced += hits.len() as u64;
                 }
             }
+        }
+
+        // Every row we just rewrote now describes prose that no longer exists — its
+        // snippet and its occurrence count are both lies. Drop the result set rather
+        // than leave the UI listing matches it can no longer find (and rather than let
+        // a second Replace All run against rows that would all read as stale).
+        if !result_ids.is_empty() {
+            uow.remove_search_result_multi(&result_ids)?;
         }
 
         let snap_after = uow.snapshot_work(&[work.id])?;
@@ -222,7 +251,7 @@ impl ReplaceInProjectUseCase {
         self.snap_after = Some(snap_after);
 
         Ok(ReplaceInProjectResultDto {
-            items_changed,
+            items_changed: touched_items.len() as u64,
             occurrences_replaced,
             skipped_stale,
         })
@@ -250,54 +279,6 @@ impl ReplaceInProjectUseCase {
                     ) | (MatchField::Synopsis, ContentRole::SynopsisText)
                 )
             }))
-    }
-
-    fn count(haystack: &str, needle: &str, case_sensitive: bool) -> u64 {
-        if needle.is_empty() {
-            return 0;
-        }
-        if case_sensitive {
-            haystack.matches(needle).count() as u64
-        } else {
-            haystack
-                .to_lowercase()
-                .matches(&needle.to_lowercase())
-                .count() as u64
-        }
-    }
-
-    /// Phase 0.1b: a literal replace. A1/A2 bring the prose-correct matcher (word
-    /// boundaries, per-scene folding) and case preservation; this is the simplest thing
-    /// that proves the pipe, and it gets replaced wholesale rather than extended.
-    fn replace_all(haystack: &str, needle: &str, replacement: &str, case_sensitive: bool) -> String {
-        if needle.is_empty() {
-            return haystack.to_string();
-        }
-        if case_sensitive {
-            return haystack.replace(needle, replacement);
-        }
-        // Case-insensitive: find positions in the lowercased haystack, but splice from
-        // the ORIGINAL so untouched text keeps its own case.
-        let lower_hay = haystack.to_lowercase();
-        let lower_needle = needle.to_lowercase();
-        let mut out = String::with_capacity(haystack.len());
-        let mut last = 0usize;
-        for (start, _) in lower_hay.match_indices(&lower_needle) {
-            let end = start + lower_needle.len();
-            // `to_lowercase` can change byte length (`İ` → `i̇`), so a lowercased index
-            // is not always valid in the original. If it isn't, this string is one of
-            // those; leave it alone rather than corrupt it. (The real matcher, A1.2,
-            // carries an offset map precisely so this case is handled instead of
-            // dodged.)
-            if !haystack.is_char_boundary(start) || !haystack.is_char_boundary(end) {
-                return haystack.to_string();
-            }
-            out.push_str(&haystack[last..start]);
-            out.push_str(replacement);
-            last = end;
-        }
-        out.push_str(&haystack[last..]);
-        out
     }
 }
 
