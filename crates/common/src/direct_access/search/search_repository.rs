@@ -6,142 +6,140 @@ use crate::{
     database::hashmap_store::HashMapStoreSnapshot,
     database::transactions::Transaction,
     direct_access::repository_factory,
-    entities::WorkInfo,
+    entities::Search,
     event::{DirectAccessEntity, EntityEvent, Event, EventBuffer, Origin},
     snapshot::EntityTreeSnapshot,
     types::EntityId,
 };
 
-use crate::direct_access::system::SystemRelationshipField;
+use crate::direct_access::work_info::WorkInfoRelationshipField;
 use crate::error::RepositoryError;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum WorkInfoRelationshipField {
-    Search,
-    Work,
+pub enum SearchRelationshipField {
+    Results,
 }
 
-impl Display for WorkInfoRelationshipField {
+impl Display for SearchRelationshipField {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
-pub trait WorkInfoTable {
-    fn create(&mut self, entity: &WorkInfo) -> Result<WorkInfo, RepositoryError>;
-    fn create_multi(&mut self, entities: &[WorkInfo]) -> Result<Vec<WorkInfo>, RepositoryError>;
-    fn get(&self, id: &EntityId) -> Result<Option<WorkInfo>, RepositoryError>;
-    fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<WorkInfo>>, RepositoryError>;
-    fn get_all(&self) -> Result<Vec<WorkInfo>, RepositoryError>;
-    fn update(&mut self, entity: &WorkInfo) -> Result<WorkInfo, RepositoryError>;
-    fn update_multi(&mut self, entities: &[WorkInfo]) -> Result<Vec<WorkInfo>, RepositoryError>;
-    fn update_with_relationships(&mut self, entity: &WorkInfo)
-    -> Result<WorkInfo, RepositoryError>;
+pub trait SearchTable {
+    fn create(&mut self, entity: &Search) -> Result<Search, RepositoryError>;
+    fn create_multi(&mut self, entities: &[Search]) -> Result<Vec<Search>, RepositoryError>;
+    fn get(&self, id: &EntityId) -> Result<Option<Search>, RepositoryError>;
+    fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Search>>, RepositoryError>;
+    fn get_all(&self) -> Result<Vec<Search>, RepositoryError>;
+    fn update(&mut self, entity: &Search) -> Result<Search, RepositoryError>;
+    fn update_multi(&mut self, entities: &[Search]) -> Result<Vec<Search>, RepositoryError>;
+    fn update_with_relationships(&mut self, entity: &Search) -> Result<Search, RepositoryError>;
     fn update_with_relationships_multi(
         &mut self,
-        entities: &[WorkInfo],
-    ) -> Result<Vec<WorkInfo>, RepositoryError>;
+        entities: &[Search],
+    ) -> Result<Vec<Search>, RepositoryError>;
     fn remove(&mut self, id: &EntityId) -> Result<(), RepositoryError>;
     fn remove_multi(&mut self, ids: &[EntityId]) -> Result<(), RepositoryError>;
     fn get_relationship(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<Vec<EntityId>, RepositoryError>;
     fn get_relationship_many(
         &self,
         ids: &[EntityId],
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<std::collections::HashMap<EntityId, Vec<EntityId>>, RepositoryError>;
     fn get_relationship_count(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<usize, RepositoryError>;
     fn get_relationship_in_range(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         offset: usize,
         limit: usize,
     ) -> Result<Vec<EntityId>, RepositoryError>;
     fn get_relationships_from_right_ids(
         &self,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         right_ids: &[EntityId],
     ) -> Result<Vec<(EntityId, Vec<EntityId>)>, RepositoryError>;
     fn set_relationship_multi(
         &mut self,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         relationships: Vec<(EntityId, Vec<EntityId>)>,
     ) -> Result<(), RepositoryError>;
     fn set_relationship(
         &mut self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         right_ids: &[EntityId],
     ) -> Result<(), RepositoryError>;
     fn move_relationship_ids(
         &mut self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         ids_to_move: &[EntityId],
         new_index: i32,
     ) -> Result<Vec<EntityId>, RepositoryError>;
 }
 
-pub trait WorkInfoTableRO {
-    fn get(&self, id: &EntityId) -> Result<Option<WorkInfo>, RepositoryError>;
-    fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<WorkInfo>>, RepositoryError>;
-    fn get_all(&self) -> Result<Vec<WorkInfo>, RepositoryError>;
+pub trait SearchTableRO {
+    fn get(&self, id: &EntityId) -> Result<Option<Search>, RepositoryError>;
+    fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Search>>, RepositoryError>;
+    fn get_all(&self) -> Result<Vec<Search>, RepositoryError>;
     fn get_relationship(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<Vec<EntityId>, RepositoryError>;
     fn get_relationship_many(
         &self,
         ids: &[EntityId],
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<std::collections::HashMap<EntityId, Vec<EntityId>>, RepositoryError>;
     fn get_relationship_count(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<usize, RepositoryError>;
     fn get_relationship_in_range(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         offset: usize,
         limit: usize,
     ) -> Result<Vec<EntityId>, RepositoryError>;
     fn get_relationships_from_right_ids(
         &self,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         right_ids: &[EntityId],
     ) -> Result<Vec<(EntityId, Vec<EntityId>)>, RepositoryError>;
 }
 
-pub struct WorkInfoRepository<'a> {
-    table: Box<dyn WorkInfoTable + 'a>,
+pub struct SearchRepository<'a> {
+    table: Box<dyn SearchTable + 'a>,
     transaction: &'a Transaction,
 }
 
-impl<'a> WorkInfoRepository<'a> {
-    pub fn new(table: Box<dyn WorkInfoTable + 'a>, transaction: &'a Transaction) -> Self {
-        WorkInfoRepository { table, transaction }
+impl<'a> SearchRepository<'a> {
+    pub fn new(table: Box<dyn SearchTable + 'a>, transaction: &'a Transaction) -> Self {
+        SearchRepository { table, transaction }
     }
 
     pub fn create_orphan(
         &mut self,
         event_buffer: &mut EventBuffer,
-        entity: &WorkInfo,
-    ) -> Result<WorkInfo, RepositoryError> {
+        entity: &Search,
+    ) -> Result<Search, RepositoryError> {
         let new = self.table.create(entity)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Created)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Created)),
             ids: vec![new.id],
             data: None,
         });
@@ -151,11 +149,11 @@ impl<'a> WorkInfoRepository<'a> {
     pub fn create_orphan_multi(
         &mut self,
         event_buffer: &mut EventBuffer,
-        entities: &[WorkInfo],
-    ) -> Result<Vec<WorkInfo>, RepositoryError> {
+        entities: &[Search],
+    ) -> Result<Vec<Search>, RepositoryError> {
         let new_entities = self.table.create_multi(entities)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Created)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Created)),
             ids: new_entities.iter().map(|e| e.id).collect(),
             data: None,
         });
@@ -164,24 +162,25 @@ impl<'a> WorkInfoRepository<'a> {
     pub fn create(
         &mut self,
         event_buffer: &mut EventBuffer,
-        entity: &WorkInfo,
+        entity: &Search,
         owner_id: EntityId,
-        index: i32,
-    ) -> Result<WorkInfo, RepositoryError> {
+        _index: i32,
+    ) -> Result<Search, RepositoryError> {
         let new = self.table.create(entity)?;
         let created_id = new.id;
 
         let mut relationship_ids = self.get_relationships_from_owner(&owner_id)?;
-        // Insert at index
-        if index >= 0 && (index as usize) < relationship_ids.len() {
-            relationship_ids.insert(index as usize, created_id);
+        if relationship_ids.is_empty() {
+            relationship_ids = vec![created_id];
         } else {
-            relationship_ids.push(created_id);
+            // Replace existing relationship: cascade-remove old entities first
+            self.remove_multi(event_buffer, &relationship_ids)?;
+            relationship_ids = vec![created_id];
         }
 
         self.set_relationships_in_owner(event_buffer, &owner_id, &relationship_ids)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Created)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Created)),
             ids: vec![created_id],
             data: None,
         });
@@ -191,49 +190,48 @@ impl<'a> WorkInfoRepository<'a> {
     pub fn create_multi(
         &mut self,
         event_buffer: &mut EventBuffer,
-        entities: &[WorkInfo],
+        entities: &[Search],
         owner_id: EntityId,
-        index: i32,
-    ) -> Result<Vec<WorkInfo>, RepositoryError> {
+        _index: i32,
+    ) -> Result<Vec<Search>, RepositoryError> {
         let new_entities = self.table.create_multi(entities)?;
         let created_ids: Vec<EntityId> = new_entities.iter().map(|e| e.id).collect();
 
         let mut relationship_ids = self.get_relationships_from_owner(&owner_id)?;
-        if index >= 0 && (index as usize) < relationship_ids.len() {
-            for (i, id) in created_ids.iter().enumerate() {
-                relationship_ids.insert(index as usize + i, *id);
-            }
+        if relationship_ids.is_empty() {
+            relationship_ids = created_ids.clone();
         } else {
-            relationship_ids.extend(created_ids.iter());
+            self.remove_multi(event_buffer, &relationship_ids)?;
+            relationship_ids = created_ids.clone();
         }
 
         self.set_relationships_in_owner(event_buffer, &owner_id, &relationship_ids)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Created)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Created)),
             ids: created_ids,
             data: None,
         });
         Ok(new_entities)
     }
 
-    pub fn get(&self, id: &EntityId) -> Result<Option<WorkInfo>, RepositoryError> {
+    pub fn get(&self, id: &EntityId) -> Result<Option<Search>, RepositoryError> {
         self.table.get(id)
     }
-    pub fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<WorkInfo>>, RepositoryError> {
+    pub fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Search>>, RepositoryError> {
         self.table.get_multi(ids)
     }
-    pub fn get_all(&self) -> Result<Vec<WorkInfo>, RepositoryError> {
+    pub fn get_all(&self) -> Result<Vec<Search>, RepositoryError> {
         self.table.get_all()
     }
 
     pub fn update(
         &mut self,
         event_buffer: &mut EventBuffer,
-        entity: &WorkInfo,
-    ) -> Result<WorkInfo, RepositoryError> {
+        entity: &Search,
+    ) -> Result<Search, RepositoryError> {
         let updated = self.table.update(entity)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Updated)),
             ids: vec![updated.id],
             data: None,
         });
@@ -243,11 +241,11 @@ impl<'a> WorkInfoRepository<'a> {
     pub fn update_multi(
         &mut self,
         event_buffer: &mut EventBuffer,
-        entities: &[WorkInfo],
-    ) -> Result<Vec<WorkInfo>, RepositoryError> {
+        entities: &[Search],
+    ) -> Result<Vec<Search>, RepositoryError> {
         let updated = self.table.update_multi(entities)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Updated)),
             ids: updated.iter().map(|e| e.id).collect(),
             data: None,
         });
@@ -257,11 +255,11 @@ impl<'a> WorkInfoRepository<'a> {
     pub fn update_with_relationships(
         &mut self,
         event_buffer: &mut EventBuffer,
-        entity: &WorkInfo,
-    ) -> Result<WorkInfo, RepositoryError> {
+        entity: &Search,
+    ) -> Result<Search, RepositoryError> {
         let updated = self.table.update_with_relationships(entity)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Updated)),
             ids: vec![updated.id],
             data: None,
         });
@@ -271,11 +269,11 @@ impl<'a> WorkInfoRepository<'a> {
     pub fn update_with_relationships_multi(
         &mut self,
         event_buffer: &mut EventBuffer,
-        entities: &[WorkInfo],
-    ) -> Result<Vec<WorkInfo>, RepositoryError> {
+        entities: &[Search],
+    ) -> Result<Vec<Search>, RepositoryError> {
         let updated = self.table.update_with_relationships_multi(entities)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Updated)),
             ids: updated.iter().map(|e| e.id).collect(),
             data: None,
         });
@@ -293,17 +291,18 @@ impl<'a> WorkInfoRepository<'a> {
         };
         // get all strong forward relationship fields
 
-        let search = entity.search.clone();
+        let results = entity.results.clone();
 
         // remove all strong relationships, initiating a cascade remove
 
-        repository_factory::write::create_search_repository(self.transaction)?
-            .remove(event_buffer, &search)?;
+        repository_factory::write::create_search_result_repository(self.transaction)?
+            .remove_multi(event_buffer, &results)?;
         // Before removal, find which owner(s) reference this entity
         let affected_owner_ids: Vec<EntityId> = {
-            let owner_repo = repository_factory::write::create_system_repository(self.transaction)?;
+            let owner_repo =
+                repository_factory::write::create_work_info_repository(self.transaction)?;
             owner_repo
-                .get_relationships_from_right_ids(&SystemRelationshipField::WorkInfos, &[*id])?
+                .get_relationships_from_right_ids(&WorkInfoRelationshipField::Search, &[*id])?
                 .into_iter()
                 .map(|(owner_id, _)| owner_id)
                 .collect()
@@ -318,7 +317,7 @@ impl<'a> WorkInfoRepository<'a> {
         // remove entity
         self.table.remove(id)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Removed)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Removed)),
             ids: vec![*id],
             data: None,
         });
@@ -346,20 +345,25 @@ impl<'a> WorkInfoRepository<'a> {
 
         // get all strong forward relationship fields
 
-        let search_ids: Vec<EntityId> = entities
+        let mut results_ids: Vec<EntityId> = entities
             .iter()
-            .filter_map(|entity| entity.as_ref().map(|entity| entity.search))
+            .flat_map(|entity| entity.as_ref().map(|entity| entity.results.clone()))
+            .flatten()
             .collect();
+        // remove duplicates
+        results_ids.sort();
+        results_ids.dedup();
 
         // remove all strong relationships, initiating a cascade remove
 
-        repository_factory::write::create_search_repository(self.transaction)?
-            .remove_multi(event_buffer, &search_ids)?;
+        repository_factory::write::create_search_result_repository(self.transaction)?
+            .remove_multi(event_buffer, &results_ids)?;
         // Before removal, find which owner(s) reference these entities
         let affected_owner_ids: Vec<EntityId> = {
-            let owner_repo = repository_factory::write::create_system_repository(self.transaction)?;
+            let owner_repo =
+                repository_factory::write::create_work_info_repository(self.transaction)?;
             owner_repo
-                .get_relationships_from_right_ids(&SystemRelationshipField::WorkInfos, ids)?
+                .get_relationships_from_right_ids(&WorkInfoRelationshipField::Search, ids)?
                 .into_iter()
                 .map(|(owner_id, _)| owner_id)
                 .collect()
@@ -373,7 +377,7 @@ impl<'a> WorkInfoRepository<'a> {
 
         self.table.remove_multi(ids)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Removed)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Removed)),
             ids: ids.into(),
             data: None,
         });
@@ -397,28 +401,28 @@ impl<'a> WorkInfoRepository<'a> {
     pub fn get_relationship(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<Vec<EntityId>, RepositoryError> {
         self.table.get_relationship(id, field)
     }
     pub fn get_relationship_many(
         &self,
         ids: &[EntityId],
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<std::collections::HashMap<EntityId, Vec<EntityId>>, RepositoryError> {
         self.table.get_relationship_many(ids, field)
     }
     pub fn get_relationship_count(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<usize, RepositoryError> {
         self.table.get_relationship_count(id, field)
     }
     pub fn get_relationship_in_range(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         offset: usize,
         limit: usize,
     ) -> Result<Vec<EntityId>, RepositoryError> {
@@ -427,7 +431,7 @@ impl<'a> WorkInfoRepository<'a> {
     }
     pub fn get_relationships_from_right_ids(
         &self,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         right_ids: &[EntityId],
     ) -> Result<Vec<(EntityId, Vec<EntityId>)>, RepositoryError> {
         self.table
@@ -437,7 +441,7 @@ impl<'a> WorkInfoRepository<'a> {
     pub fn set_relationship_multi(
         &mut self,
         event_buffer: &mut EventBuffer,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         relationships: Vec<(EntityId, Vec<EntityId>)>,
     ) -> Result<(), RepositoryError> {
         // Validate that all right_ids exist
@@ -447,26 +451,10 @@ impl<'a> WorkInfoRepository<'a> {
             .collect();
         if !all_right_ids.is_empty() {
             match field {
-                WorkInfoRelationshipField::Search => {
-                    let child_repo =
-                        repository_factory::write::create_search_repository(self.transaction)?;
-                    let found = child_repo.get_multi(&all_right_ids)?;
-                    let missing: Vec<_> = all_right_ids
-                        .iter()
-                        .zip(found.iter())
-                        .filter(|(_, entity)| entity.is_none())
-                        .map(|(id, _)| *id)
-                        .collect();
-                    if !missing.is_empty() {
-                        return Err(RepositoryError::MissingRelationshipTarget {
-                            operation: "set_relationship_multi",
-                            ids: missing,
-                        });
-                    }
-                }
-                WorkInfoRelationshipField::Work => {
-                    let child_repo =
-                        repository_factory::write::create_work_repository(self.transaction)?;
+                SearchRelationshipField::Results => {
+                    let child_repo = repository_factory::write::create_search_result_repository(
+                        self.transaction,
+                    )?;
                     let found = child_repo.get_multi(&all_right_ids)?;
                     let missing: Vec<_> = all_right_ids
                         .iter()
@@ -487,7 +475,7 @@ impl<'a> WorkInfoRepository<'a> {
             .set_relationship_multi(field, relationships.clone())?;
         for (left_id, right_ids) in relationships {
             event_buffer.push(Event {
-                origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+                origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Updated)),
                 ids: vec![left_id],
                 data: Some(format!(
                     "{}:{}",
@@ -507,32 +495,16 @@ impl<'a> WorkInfoRepository<'a> {
         &mut self,
         event_buffer: &mut EventBuffer,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         right_ids: &[EntityId],
     ) -> Result<(), RepositoryError> {
         // Validate that all right_ids exist
         if !right_ids.is_empty() {
             match field {
-                WorkInfoRelationshipField::Search => {
-                    let child_repo =
-                        repository_factory::write::create_search_repository(self.transaction)?;
-                    let found = child_repo.get_multi(right_ids)?;
-                    let missing: Vec<_> = right_ids
-                        .iter()
-                        .zip(found.iter())
-                        .filter(|(_, entity)| entity.is_none())
-                        .map(|(id, _)| *id)
-                        .collect();
-                    if !missing.is_empty() {
-                        return Err(RepositoryError::MissingRelationshipTarget {
-                            operation: "set_relationship",
-                            ids: missing,
-                        });
-                    }
-                }
-                WorkInfoRelationshipField::Work => {
-                    let child_repo =
-                        repository_factory::write::create_work_repository(self.transaction)?;
+                SearchRelationshipField::Results => {
+                    let child_repo = repository_factory::write::create_search_result_repository(
+                        self.transaction,
+                    )?;
                     let found = child_repo.get_multi(right_ids)?;
                     let missing: Vec<_> = right_ids
                         .iter()
@@ -551,7 +523,7 @@ impl<'a> WorkInfoRepository<'a> {
         }
         self.table.set_relationship(id, field, right_ids)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Updated)),
             ids: vec![*id],
             data: Some(format!(
                 "{}:{}",
@@ -570,7 +542,7 @@ impl<'a> WorkInfoRepository<'a> {
         &mut self,
         event_buffer: &mut EventBuffer,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         ids_to_move: &[EntityId],
         new_index: i32,
     ) -> Result<Vec<EntityId>, RepositoryError> {
@@ -578,7 +550,7 @@ impl<'a> WorkInfoRepository<'a> {
             .table
             .move_relationship_ids(id, field, ids_to_move, new_index)?;
         event_buffer.push(Event {
-            origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+            origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Updated)),
             ids: vec![*id],
             data: Some(format!(
                 "{}:{}",
@@ -596,8 +568,8 @@ impl<'a> WorkInfoRepository<'a> {
         &self,
         owner_id: &EntityId,
     ) -> Result<Vec<EntityId>, RepositoryError> {
-        let repo = repository_factory::write::create_system_repository(self.transaction)?;
-        repo.get_relationship(owner_id, &SystemRelationshipField::WorkInfos)
+        let repo = repository_factory::write::create_work_info_repository(self.transaction)?;
+        repo.get_relationship(owner_id, &WorkInfoRelationshipField::Search)
     }
 
     pub fn set_relationships_in_owner(
@@ -606,11 +578,11 @@ impl<'a> WorkInfoRepository<'a> {
         owner_id: &EntityId,
         ids: &[EntityId],
     ) -> Result<(), RepositoryError> {
-        let mut repo = repository_factory::write::create_system_repository(self.transaction)?;
+        let mut repo = repository_factory::write::create_work_info_repository(self.transaction)?;
         repo.set_relationship(
             event_buffer,
             owner_id,
-            &SystemRelationshipField::WorkInfos,
+            &WorkInfoRelationshipField::Search,
             ids,
         )
     }
@@ -644,7 +616,7 @@ impl<'a> WorkInfoRepository<'a> {
 
         // Surgically reconcile the root ids' placement in their (external) strong owner,
         // preserving sibling edits made on other undo stacks.
-        self.reconcile_backref_system_work_infos(event_buffer, snap_store, &snap.root_ids)?;
+        self.reconcile_backref_work_info_search(event_buffer, snap_store, &snap.root_ids)?;
 
         Ok(())
     }
@@ -665,7 +637,7 @@ impl<'a> WorkInfoRepository<'a> {
         let ids: Vec<EntityId> = ids
             .iter()
             .copied()
-            .filter(|id| visited.insert(("work_info", *id)))
+            .filter(|id| visited.insert(("search", *id)))
             .collect();
         if ids.is_empty() {
             return Ok(());
@@ -678,9 +650,9 @@ impl<'a> WorkInfoRepository<'a> {
         let mut to_update: Vec<EntityId> = Vec::new(); // in both                    -> revert
         let mut to_delete: Vec<EntityId> = Vec::new(); // live only (created after)  -> delete
         {
-            let live = store.work_infos.read().unwrap();
+            let live = store.searchs.read().unwrap();
             for id in &ids {
-                match (snap.work_infos.contains_key(id), live.contains_key(id)) {
+                match (snap.searchs.contains_key(id), live.contains_key(id)) {
                     (true, false) => to_create.push(*id),
                     (true, true) => to_update.push(*id),
                     (false, true) => to_delete.push(*id),
@@ -694,12 +666,12 @@ impl<'a> WorkInfoRepository<'a> {
         {
             let mut child_ids: Vec<EntityId> = Vec::new();
             for id in to_create.iter().chain(to_update.iter()) {
-                if let Some(list) = snap.jn_search_from_work_info_search.get(id) {
+                if let Some(list) = snap.jn_search_result_from_search_results.get(id) {
                     child_ids.extend(list.iter().copied());
                 }
             }
             {
-                let live_jn = store.jn_search_from_work_info_search.read().unwrap();
+                let live_jn = store.jn_search_result_from_search_results.read().unwrap();
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -709,16 +681,16 @@ impl<'a> WorkInfoRepository<'a> {
             child_ids.sort();
             child_ids.dedup();
             if !child_ids.is_empty() {
-                repository_factory::write::create_search_repository(self.transaction)?
+                repository_factory::write::create_search_result_repository(self.transaction)?
                     .restore_subtree(event_buffer, snap, &child_ids, visited)?;
             }
         }
 
         // 2. Entity rows: revert/re-add from snapshot, delete the ones created after it.
         {
-            let mut live = store.work_infos.write().unwrap();
+            let mut live = store.searchs.write().unwrap();
             for id in to_create.iter().chain(to_update.iter()) {
-                if let Some(row) = snap.work_infos.get(id) {
+                if let Some(row) = snap.searchs.get(id) {
                     live.insert(*id, row.clone());
                 }
             }
@@ -730,25 +702,9 @@ impl<'a> WorkInfoRepository<'a> {
         // 3. This entity's own forward junctions (strong + weak): restored wholesale because the
         //    junction key is in-scope (owned exclusively by this trunk).
         {
-            let mut live_jn = store.jn_search_from_work_info_search.write().unwrap();
+            let mut live_jn = store.jn_search_result_from_search_results.write().unwrap();
             for id in to_create.iter().chain(to_update.iter()) {
-                match snap.jn_search_from_work_info_search.get(id) {
-                    Some(v) => {
-                        live_jn.insert(*id, v.clone());
-                    }
-                    None => {
-                        live_jn.remove(id);
-                    }
-                }
-            }
-            for id in &to_delete {
-                live_jn.remove(id);
-            }
-        }
-        {
-            let mut live_jn = store.jn_work_from_work_info_work.write().unwrap();
-            for id in to_create.iter().chain(to_update.iter()) {
-                match snap.jn_work_from_work_info_work.get(id) {
+                match snap.jn_search_result_from_search_results.get(id) {
                     Some(v) => {
                         live_jn.insert(*id, v.clone());
                     }
@@ -767,26 +723,26 @@ impl<'a> WorkInfoRepository<'a> {
         // 5. Events: precise per-id (Created/Updated/Removed), not a whole-store storm.
         if !to_create.is_empty() {
             event_buffer.push(Event {
-                origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Created)),
+                origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Created)),
                 ids: to_create.clone(),
                 data: None,
             });
             event_buffer.push(Event {
-                origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+                origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Updated)),
                 ids: to_create.clone(),
                 data: None,
             });
         }
         if !to_update.is_empty() {
             event_buffer.push(Event {
-                origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+                origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Updated)),
                 ids: to_update.clone(),
                 data: None,
             });
         }
         if !to_delete.is_empty() {
             event_buffer.push(Event {
-                origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Removed)),
+                origin: Origin::DirectAccess(DirectAccessEntity::Search(EntityEvent::Removed)),
                 ids: to_delete.clone(),
                 data: None,
             });
@@ -796,8 +752,8 @@ impl<'a> WorkInfoRepository<'a> {
     }
 
     /// Surgically reconcile one external referrer junction (out-of-scope key -> in-scope values):
-    /// `system.work_infos`.
-    fn reconcile_backref_system_work_infos(
+    /// `work_info.search`.
+    fn reconcile_backref_work_info_search(
         &self,
         event_buffer: &mut EventBuffer,
         snap: &HashMapStoreSnapshot,
@@ -811,13 +767,13 @@ impl<'a> WorkInfoRepository<'a> {
 
         // External left keys whose ordered list references any scope id, in snapshot or live.
         let mut left_keys: std::collections::HashSet<EntityId> = std::collections::HashSet::new();
-        for (left, rights) in snap.jn_work_info_from_system_work_infos.iter() {
+        for (left, rights) in snap.jn_search_from_work_info_search.iter() {
             if rights.iter().any(|rid| scope.contains(rid)) {
                 left_keys.insert(*left);
             }
         }
         {
-            let live_jn = store.jn_work_info_from_system_work_infos.read().unwrap();
+            let live_jn = store.jn_search_from_work_info_search.read().unwrap();
             for (left, rights) in live_jn.iter() {
                 if rights.iter().any(|rid| scope.contains(rid)) {
                     left_keys.insert(*left);
@@ -827,12 +783,12 @@ impl<'a> WorkInfoRepository<'a> {
 
         for left in left_keys {
             let snap_list: Vec<EntityId> = snap
-                .jn_work_info_from_system_work_infos
+                .jn_search_from_work_info_search
                 .get(&left)
                 .cloned()
                 .unwrap_or_default();
             let new_list = {
-                let live_jn = store.jn_work_info_from_system_work_infos.read().unwrap();
+                let live_jn = store.jn_search_from_work_info_search.read().unwrap();
                 let live_list: Vec<EntityId> = live_jn.get(&left).cloned().unwrap_or_default();
                 let reconciled = crate::database::hashmap_store::reconcile_backref_list(
                     &live_list, &snap_list, &scope,
@@ -845,12 +801,14 @@ impl<'a> WorkInfoRepository<'a> {
             };
             if let Some(reconciled) = new_list {
                 store
-                    .jn_work_info_from_system_work_infos
+                    .jn_search_from_work_info_search
                     .write()
                     .unwrap()
                     .insert(left, reconciled);
                 event_buffer.push(Event {
-                    origin: Origin::DirectAccess(DirectAccessEntity::System(EntityEvent::Updated)),
+                    origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(
+                        EntityEvent::Updated,
+                    )),
                     ids: vec![left],
                     data: None,
                 });
@@ -860,47 +818,47 @@ impl<'a> WorkInfoRepository<'a> {
     }
 }
 
-pub struct WorkInfoRepositoryRO<'a> {
-    table: Box<dyn WorkInfoTableRO + 'a>,
+pub struct SearchRepositoryRO<'a> {
+    table: Box<dyn SearchTableRO + 'a>,
 }
-impl<'a> WorkInfoRepositoryRO<'a> {
-    pub fn new(table: Box<dyn WorkInfoTableRO + 'a>) -> Self {
-        WorkInfoRepositoryRO { table }
+impl<'a> SearchRepositoryRO<'a> {
+    pub fn new(table: Box<dyn SearchTableRO + 'a>) -> Self {
+        SearchRepositoryRO { table }
     }
-    pub fn get(&self, id: &EntityId) -> Result<Option<WorkInfo>, RepositoryError> {
+    pub fn get(&self, id: &EntityId) -> Result<Option<Search>, RepositoryError> {
         self.table.get(id)
     }
-    pub fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<WorkInfo>>, RepositoryError> {
+    pub fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Search>>, RepositoryError> {
         self.table.get_multi(ids)
     }
-    pub fn get_all(&self) -> Result<Vec<WorkInfo>, RepositoryError> {
+    pub fn get_all(&self) -> Result<Vec<Search>, RepositoryError> {
         self.table.get_all()
     }
     pub fn get_relationship(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<Vec<EntityId>, RepositoryError> {
         self.table.get_relationship(id, field)
     }
     pub fn get_relationship_many(
         &self,
         ids: &[EntityId],
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<std::collections::HashMap<EntityId, Vec<EntityId>>, RepositoryError> {
         self.table.get_relationship_many(ids, field)
     }
     pub fn get_relationship_count(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
     ) -> Result<usize, RepositoryError> {
         self.table.get_relationship_count(id, field)
     }
     pub fn get_relationship_in_range(
         &self,
         id: &EntityId,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         offset: usize,
         limit: usize,
     ) -> Result<Vec<EntityId>, RepositoryError> {
@@ -909,7 +867,7 @@ impl<'a> WorkInfoRepositoryRO<'a> {
     }
     pub fn get_relationships_from_right_ids(
         &self,
-        field: &WorkInfoRelationshipField,
+        field: &SearchRelationshipField,
         right_ids: &[EntityId],
     ) -> Result<Vec<(EntityId, Vec<EntityId>)>, RepositoryError> {
         self.table

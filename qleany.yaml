@@ -66,6 +66,95 @@ entities:
     entity: Work
     relationship: many_to_one
     optional: true
+  - name: search
+    type: entity
+    entity: Search
+    relationship: one_to_one
+    strong: true
+  undoable: false
+# The live search surface. It hangs off WorkInfo (not Work) and is `undoable: false`
+# deliberately: WorkInfo has no per-instance undo stack the way Work does, and a
+# result set that is re-derived on every keystroke must never enter the manuscript's
+# Ctrl+Z history. `undoable: false` also means run_search never snapshots the entity
+# tree, so `remove_multi` genuinely frees the old rows instead of retaining them.
+#
+# It is the *business surface*, not a persistence bet: the store is an ephemeral
+# HashMap and WorkInfo never round-trips through .skrib, so the search PARAMETERS
+# that must survive a restart live in `search.toml` (see models/search_settings_file.rs),
+# not here.
+- name: Search
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  - name: query
+    type: string
+  - name: case_sensitive
+    type: boolean
+  - name: whole_word
+    type: boolean
+  - name: diacritic_sensitive
+    type: boolean
+  - name: search_body
+    type: boolean
+  - name: search_titles
+    type: boolean
+  - name: search_synopsis
+    type: boolean
+  - name: search_labels
+    type: boolean
+  - name: include_trashed
+    type: boolean
+  - name: truncated
+    type: boolean
+  - name: results
+    type: entity
+    entity: SearchResult
+    relationship: ordered_one_to_many
+    strong: true
+  undoable: false
+# One row per matching FIELD (a scene's body, its synopsis, an item's title…), not
+# per occurrence — `occurrence_count` carries the rest. Per-occurrence review happens
+# in the preview pane, recomputed live from the item's own document.
+#
+# Deliberately carries NO character offsets. There are three distinct offset spaces
+# in play (bytes into raw Djot, chars into parsed plain text, and the editor's own
+# char space); a stored offset from one silently corrupts an operation in another,
+# and it goes stale the moment anything before it is edited. Positions are always
+# re-derived fresh, inside one just-parsed document.
+- name: SearchResult
+  inherits_from: EntityBase
+  fields:
+  # A PLAIN id, deliberately not an `entity` relationship.
+  #
+  # A weak many_to_one would make Qleany generate a reverse join table on BinderItem,
+  # whose backing field lives in the hand-edited `common/src/database/hashmap_store.rs`
+  # — so wiring it would force a regen of a file that carries hand-written changes,
+  # for no benefit. A SearchResult is a *projection*, not a relational citizen: it is
+  # re-derived on every search and every activation re-validates it against the live
+  # document, so a stale id is caught there and costs nothing. Referential integrity
+  # would be machinery guarding a value we never trust anyway.
+  - name: binder_item_id
+    type: uinteger
+  - name: item_title
+    type: string
+  - name: match_field
+    type: enum
+    enum_name: MatchField
+    enum_values:
+      - Body
+      - Title
+      - Synopsis
+      - Label
+  - name: occurrence_count
+    type: uinteger
+  - name: snippet_before
+    type: string
+  - name: snippet_match
+    type: string
+  - name: snippet_after
+    type: string
+  - name: trashed
+    type: boolean
   undoable: false
 - name: RecentWork
   inherits_from: EntityBase
@@ -264,6 +353,7 @@ features:
     - System
     - RecentWork
     - WorkInfo
+    - Search
     - Work
     - TrashInfo
     - Binder
@@ -424,12 +514,15 @@ features:
     - DictWord
     - TrashInfo
     - WorkInfo
+    - Search
+    - SearchResult
     undoable: false
   - name: new_work
     entities:
     - Root
     - System
     - WorkInfo
+    - Search
     - RecentWork
     - Work
     - Binder
@@ -691,6 +784,98 @@ features:
         type: integer
       - name: warnings
         type: string
+        is_list: true
+- name: search_management
+  use_cases:
+  # Synchronous Command UoW. NOT `read_only` — a QueryUnitOfWork has no commit(), so
+  # a read-only use case structurally cannot write the SearchResult rows. NOT a
+  # long_operation either: being synchronous is what removes the need for cancellation
+  # and a generation counter, since there is no thread boundary for two searches to
+  # race across (the UI debounce already serialises them).
+  - name: run_search
+    entities:
+    - Work
+    - WorkInfo
+    - Search
+    - SearchResult
+    - Binder
+    - BinderItem
+    - Content
+    undoable: false
+    dto_in:
+      name: RunSearchDto
+      fields:
+      - name: query
+        type: string
+      - name: case_sensitive
+        type: boolean
+      - name: whole_word
+        type: boolean
+      - name: diacritic_sensitive
+        type: boolean
+      - name: search_body
+        type: boolean
+      - name: search_titles
+        type: boolean
+      - name: search_synopsis
+        type: boolean
+      - name: search_labels
+        type: boolean
+      - name: include_trashed
+        type: boolean
+    dto_out:
+      name: RunSearchResultDto
+      fields:
+      - name: match_count
+        type: uinteger
+      - name: item_count
+        type: uinteger
+      - name: truncated
+        type: boolean
+  # SYNCHRONOUS, deliberately — and this is not the obvious choice, so: Qleany
+  # silently IGNORES `undoable: true` when `long_operation: true`. Compare the two
+  # generated controllers: an undoable command's controller takes an
+  # `undo_redo_manager` and calls `add_command_to_stack(uc, stack_id)`; a long
+  # operation's takes a `long_operation_manager`, calls `start_operation(uc)` — which
+  # *consumes* the use case — and never touches the undo stack. The manifest validates
+  # and the code compiles; the replace would simply never be undoable.
+  #
+  # Undo is the whole safety story for a bulk replace (one Ctrl-Z / one toast action
+  # puts the manuscript back), so it wins over progress-and-cancel. `snapshot_work` /
+  # `restore_work` is O(1) — an `im::HashMap` structural clone — so the batch is one
+  # undo entry regardless of how many scenes it touched.
+  - name: replace_in_project
+    entities:
+    - Work
+    - WorkInfo
+    - Search
+    - SearchResult
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: ReplaceInProjectDto
+      fields:
+      - name: replacement
+        type: string
+      - name: preserve_case
+        type: boolean
+      # SearchResult ids the writer unticked — the fields to leave alone.
+      - name: excluded_result_ids
+        type: uinteger
+        is_list: true
+    dto_out:
+      name: ReplaceInProjectResultDto
+      fields:
+      - name: items_changed
+        type: uinteger
+      - name: occurrences_replaced
+        type: uinteger
+      # Fields whose occurrence count no longer matches what the writer reviewed:
+      # skipped and reported, never guessed at.
+      - name: skipped_stale
+        type: uinteger
         is_list: true
 ui:
   rust_cli: false

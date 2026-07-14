@@ -32,6 +32,7 @@ impl<'a> WorkInfoHashMapTable<'a> {
         field: &WorkInfoRelationshipField,
     ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
         match field {
+            WorkInfoRelationshipField::Search => &self.store.jn_search_from_work_info_search,
             WorkInfoRelationshipField::Work => &self.store.jn_work_from_work_info_work,
         }
     }
@@ -40,6 +41,12 @@ impl<'a> WorkInfoHashMapTable<'a> {
         entity.work = junction_get(&self.store.jn_work_from_work_info_work, &entity.id)
             .into_iter()
             .next();
+        if let Some(val) = junction_get(&self.store.jn_search_from_work_info_search, &entity.id)
+            .into_iter()
+            .next()
+        {
+            entity.search = val;
+        }
     }
 }
 
@@ -70,8 +77,26 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
                 entity.clone()
             };
 
+            // one-to-one constraint check: ensure search is not already referenced by another work_info
+            {
+                let jn = self.store.jn_search_from_work_info_search.read().unwrap();
+                for (&existing_id, right_ids) in jn.iter() {
+                    if existing_id != new_entity.id && right_ids.contains(&new_entity.search) {
+                        return Err(RepositoryError::ConstraintViolation(format!(
+                            "One-to-one constraint violation: Search {} is already referenced by WorkInfo {}",
+                            new_entity.search, existing_id
+                        )));
+                    }
+                }
+            }
+
             work_info_map.insert(new_entity.id, new_entity.clone());
 
+            junction_set(
+                &self.store.jn_search_from_work_info_search,
+                new_entity.id,
+                vec![new_entity.search],
+            );
             junction_set(
                 &self.store.jn_work_from_work_info_work,
                 new_entity.id,
@@ -147,12 +172,29 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
     ) -> Result<Vec<WorkInfo>, RepositoryError> {
         let mut work_info_map = self.store.work_infos.write().unwrap();
         for entity in entities {
+            // one-to-one constraint check: ensure search is not already referenced by another work_info
+            {
+                let jn = self.store.jn_search_from_work_info_search.read().unwrap();
+                for (&existing_id, right_ids) in jn.iter() {
+                    if existing_id != entity.id && right_ids.contains(&entity.search) {
+                        return Err(RepositoryError::ConstraintViolation(format!(
+                            "One-to-one constraint violation: Search {} is already referenced by WorkInfo {}",
+                            entity.search, existing_id
+                        )));
+                    }
+                }
+            }
             work_info_map.insert(entity.id, entity.clone());
 
             junction_set(
                 &self.store.jn_work_from_work_info_work,
                 entity.id,
                 entity.work.into_iter().collect::<Vec<EntityId>>(),
+            );
+            junction_set(
+                &self.store.jn_search_from_work_info_search,
+                entity.id,
+                vec![entity.search],
             );
         }
         drop(work_info_map);
@@ -173,6 +215,7 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
             // Remove forward junction entries
 
             junction_remove(&self.store.jn_work_from_work_info_work, id);
+            junction_remove(&self.store.jn_search_from_work_info_search, id);
 
             // Clean up backward references (uses the owning entity's forward junction)
 
@@ -198,6 +241,7 @@ impl<'a> WorkInfoHashMapTableRO<'a> {
         field: &WorkInfoRelationshipField,
     ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
         match field {
+            WorkInfoRelationshipField::Search => &self.store.jn_search_from_work_info_search,
             WorkInfoRelationshipField::Work => &self.store.jn_work_from_work_info_work,
         }
     }
@@ -206,6 +250,12 @@ impl<'a> WorkInfoHashMapTableRO<'a> {
         entity.work = junction_get(&self.store.jn_work_from_work_info_work, &entity.id)
             .into_iter()
             .next();
+        if let Some(val) = junction_get(&self.store.jn_search_from_work_info_search, &entity.id)
+            .into_iter()
+            .next()
+        {
+            entity.search = val;
+        }
     }
 }
 

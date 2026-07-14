@@ -4351,6 +4351,7 @@ dependencies = [
  "skribisto-handling-app-lifecycle",
  "skribisto-import-management",
  "skribisto-model",
+ "skribisto-search-management",
  "skribisto-trash-management",
  "skribisto-work-management",
 ]
@@ -4401,6 +4402,20 @@ name = "skribisto-model"
 version = "0.0.1"
 dependencies = [
  "skribisto-common",
+]
+
+[[package]]
+name = "skribisto-search-management"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-macros",
+ "text-document",
+ "uuid",
 ]
 
 [[package]]

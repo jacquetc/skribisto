@@ -10,7 +10,7 @@
 use common::event::{
     AllEvent, BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event,
     ExportManagementEvent, HandlingAppLifecycleEvent, ImportManagementEvent, LongOperationEvent,
-    Origin, TrashManagementEvent, UndoRedoEvent, WorkManagementEvent,
+    Origin, SearchManagementEvent, TrashManagementEvent, UndoRedoEvent, WorkManagementEvent,
 };
 use common::types::EntityId;
 
@@ -31,6 +31,12 @@ pub enum FlatEventKind {
     WorkInfoCreated,
     WorkInfoUpdated,
     WorkInfoRemoved,
+    SearchCreated,
+    SearchUpdated,
+    SearchRemoved,
+    SearchResultCreated,
+    SearchResultUpdated,
+    SearchResultRemoved,
     RecentWorkCreated,
     RecentWorkUpdated,
     RecentWorkRemoved,
@@ -82,6 +88,9 @@ pub enum FlatEventKind {
 
     ImportManagementImportPlumeCreatorFile,
 
+    SearchManagementRunSearch,
+    SearchManagementReplaceInProject,
+
     // Undo/redo
     UndoPerformed,
     RedoPerformed,
@@ -128,6 +137,18 @@ impl From<Event> for FlatEvent {
                 }
                 DirectAccessEntity::WorkInfo(EntityEvent::Removed) => {
                     FlatEventKind::WorkInfoRemoved
+                }
+                DirectAccessEntity::Search(EntityEvent::Created) => FlatEventKind::SearchCreated,
+                DirectAccessEntity::Search(EntityEvent::Updated) => FlatEventKind::SearchUpdated,
+                DirectAccessEntity::Search(EntityEvent::Removed) => FlatEventKind::SearchRemoved,
+                DirectAccessEntity::SearchResult(EntityEvent::Created) => {
+                    FlatEventKind::SearchResultCreated
+                }
+                DirectAccessEntity::SearchResult(EntityEvent::Updated) => {
+                    FlatEventKind::SearchResultUpdated
+                }
+                DirectAccessEntity::SearchResult(EntityEvent::Removed) => {
+                    FlatEventKind::SearchResultRemoved
                 }
                 DirectAccessEntity::RecentWork(EntityEvent::Created) => {
                     FlatEventKind::RecentWorkCreated
@@ -232,6 +253,12 @@ impl From<Event> for FlatEvent {
                     FlatEventKind::ImportManagementImportPlumeCreatorFile
                 }
             },
+            Origin::SearchManagement(fe) => match fe {
+                SearchManagementEvent::RunSearch => FlatEventKind::SearchManagementRunSearch,
+                SearchManagementEvent::ReplaceInProject => {
+                    FlatEventKind::SearchManagementReplaceInProject
+                }
+            },
             Origin::UndoRedo(ur) => match ur {
                 UndoRedoEvent::Undone => FlatEventKind::UndoPerformed,
                 UndoRedoEvent::Redone => FlatEventKind::RedoPerformed,
@@ -269,6 +296,12 @@ pub fn is_mutation(kind: &FlatEventKind) -> bool {
             | WorkInfoCreated
             | WorkInfoUpdated
             | WorkInfoRemoved
+            | SearchCreated
+            | SearchUpdated
+            | SearchRemoved
+            | SearchResultCreated
+            | SearchResultUpdated
+            | SearchResultRemoved
             | RecentWorkCreated
             | RecentWorkUpdated
             | RecentWorkRemoved
@@ -335,6 +368,14 @@ mod tests {
         assert!(is_mutation(&FlatEventKind::WorkInfoCreated));
         assert!(is_mutation(&FlatEventKind::WorkInfoUpdated));
         assert!(is_mutation(&FlatEventKind::WorkInfoRemoved));
+
+        assert!(is_mutation(&FlatEventKind::SearchCreated));
+        assert!(is_mutation(&FlatEventKind::SearchUpdated));
+        assert!(is_mutation(&FlatEventKind::SearchRemoved));
+
+        assert!(is_mutation(&FlatEventKind::SearchResultCreated));
+        assert!(is_mutation(&FlatEventKind::SearchResultUpdated));
+        assert!(is_mutation(&FlatEventKind::SearchResultRemoved));
 
         assert!(is_mutation(&FlatEventKind::RecentWorkCreated));
         assert!(is_mutation(&FlatEventKind::RecentWorkUpdated));

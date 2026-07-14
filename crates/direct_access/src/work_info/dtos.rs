@@ -14,6 +14,7 @@ pub struct WorkInfoDto {
     pub file_name: Option<String>,
     pub shape: WorkShape,
     pub work: Option<EntityId>,
+    pub search: EntityId,
 }
 
 impl From<WorkInfoDto> for WorkInfo {
@@ -25,6 +26,7 @@ impl From<WorkInfoDto> for WorkInfo {
             file_name: dto.file_name,
             shape: dto.shape,
             work: dto.work,
+            search: dto.search,
         }
     }
 }
@@ -38,6 +40,7 @@ impl From<&WorkInfoDto> for WorkInfo {
             file_name: dto.file_name.clone(),
             shape: dto.shape.clone(),
             work: dto.work.clone(),
+            search: dto.search.clone(),
         }
     }
 }
@@ -51,6 +54,7 @@ impl From<WorkInfo> for WorkInfoDto {
             file_name: entity.file_name,
             shape: entity.shape,
             work: entity.work,
+            search: entity.search,
         }
     }
 }
@@ -62,6 +66,7 @@ pub struct CreateWorkInfoDto {
     pub file_name: Option<String>,
     pub shape: WorkShape,
     pub work: Option<EntityId>,
+    pub search: EntityId,
 }
 
 impl From<CreateWorkInfoDto> for WorkInfo {
@@ -73,6 +78,7 @@ impl From<CreateWorkInfoDto> for WorkInfo {
             file_name: dto.file_name,
             shape: dto.shape,
             work: dto.work,
+            search: dto.search,
         }
     }
 }
@@ -86,6 +92,7 @@ impl From<&CreateWorkInfoDto> for WorkInfo {
             file_name: dto.file_name.clone(),
             shape: dto.shape.clone(),
             work: dto.work.clone(),
+            search: dto.search.clone(),
         }
     }
 }
@@ -98,6 +105,7 @@ impl From<WorkInfo> for CreateWorkInfoDto {
             file_name: entity.file_name,
             shape: entity.shape,
             work: entity.work,
+            search: entity.search,
         }
     }
 }
@@ -119,6 +127,7 @@ impl From<UpdateWorkInfoDto> for WorkInfo {
             file_name: dto.file_name,
             shape: dto.shape,
             work: Default::default(),
+            search: Default::default(),
         }
     }
 }
@@ -132,6 +141,7 @@ impl From<&UpdateWorkInfoDto> for WorkInfo {
             file_name: dto.file_name.clone(),
             shape: dto.shape.clone(),
             work: Default::default(),
+            search: Default::default(),
         }
     }
 }

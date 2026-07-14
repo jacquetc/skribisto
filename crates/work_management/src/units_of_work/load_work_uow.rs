@@ -5,10 +5,7 @@ use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, System, TrashInfo, Work,
-    WorkInfo,
-};
+use common::entities::{Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, Search, System, TrashInfo, Work, WorkInfo};
 use common::event::WorkManagementEvent::LoadWork;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -127,6 +124,7 @@ impl CommandUnitOfWork for LoadWorkUnitOfWork {
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "WorkInfo", action = "SetRelationship")]
+#[macros::uow_action(entity = "Search", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Root", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "GetAll")]
 #[macros::uow_action(entity = "System", action = "GetRelationship")]

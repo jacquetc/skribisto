@@ -48,6 +48,7 @@ pub struct WorkInfo {
     pub file_name: Option<String>,
     pub shape: WorkShape,
     pub work: Option<EntityId>,
+    pub search: EntityId,
 }
 
 impl HasId for WorkInfo {
@@ -60,6 +61,63 @@ pub enum WorkShape {
     #[default]
     Zip,
     Folder,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct Search {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub query: String,
+    pub case_sensitive: bool,
+    pub whole_word: bool,
+    pub diacritic_sensitive: bool,
+    pub search_body: bool,
+    pub search_titles: bool,
+    pub search_synopsis: bool,
+    pub search_labels: bool,
+    pub include_trashed: bool,
+    pub truncated: bool,
+    pub results: Vec<EntityId>,
+}
+
+impl HasId for Search {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct SearchResult {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub binder_item_id: u64,
+    pub item_title: String,
+    pub match_field: MatchField,
+    pub occurrence_count: u64,
+    pub snippet_before: String,
+    pub snippet_match: String,
+    pub snippet_after: String,
+    pub trashed: bool,
+}
+
+impl HasId for SearchResult {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum MatchField {
+    #[default]
+    Body,
+    Title,
+    Synopsis,
+    Label,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

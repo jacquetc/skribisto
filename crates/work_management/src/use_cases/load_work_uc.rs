@@ -20,10 +20,7 @@ use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
-use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, System, TrashInfo, Work,
-    WorkInfo, WorkShape,
-};
+use common::entities::{Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, Search, System, TrashInfo, Work, WorkInfo, WorkShape};
 use common::types::EntityId;
 use skrib_format::{self as skrib, LoadedWork, SkribShape};
 use std::collections::HashMap;
@@ -53,6 +50,7 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "WorkInfo", action = "SetRelationship")]
+#[macros::uow_action(entity = "Search", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Root", action = "SetRelationship")]
 // Reuse the single shared System/Root frame (seeded by `initialize_app`) rather
 // than minting a new pair each open — there is exactly one Root/System for the
@@ -454,6 +452,17 @@ fn create_trunk(
         SkribShape::ExplodedFolder => WorkShape::Folder,
         SkribShape::ZipFile | SkribShape::LegacySqlite => WorkShape::Zip,
     };
+    // Every Work gets its live Search surface, created eagerly alongside its
+    // WorkInfo. `run_search` resolves it through `WorkInfo.search`, so a project
+    // opened without one could never search. `Search`/`SearchResult` are
+    // `undoable: false` and never round-trip through .skrib — this is a business
+    // surface rebuilt per session, not persisted state. (The *parameters* that must
+    // survive a restart live in the UI's `search.toml`, not here.)
+    let search = uow.create_orphan_search(&Search {
+        created_at: now,
+        updated_at: now,
+        ..Default::default()
+    })?;
     let work_info = uow.create_orphan_work_info(&WorkInfo {
         created_at: now,
         updated_at: now,
@@ -467,6 +476,11 @@ fn create_trunk(
         &system_id,
         &SystemRelationshipField::WorkInfos,
         &[work_info.id],
+    )?;
+    uow.set_work_info_relationship(
+        &work_info.id,
+        &WorkInfoRelationshipField::Search,
+        &[search.id],
     )?;
     uow.set_work_info_relationship(
         &work_info.id,

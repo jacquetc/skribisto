@@ -45,6 +45,8 @@ pub enum DirectAccessEntity {
     Root(EntityEvent),
     System(EntityEvent),
     WorkInfo(EntityEvent),
+    Search(EntityEvent),
+    SearchResult(EntityEvent),
     RecentWork(EntityEvent),
     Work(EntityEvent),
     TrashInfo(EntityEvent),
@@ -99,6 +101,12 @@ pub enum ImportManagementEvent {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+pub enum SearchManagementEvent {
+    RunSearch,
+    ReplaceInProject,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub enum Origin {
     DirectAccess(DirectAccessEntity),
     UndoRedo(UndoRedoEvent),
@@ -110,6 +118,7 @@ pub enum Origin {
     BinderItemManagement(BinderItemManagementEvent),
     HandlingAppLifecycle(HandlingAppLifecycleEvent),
     ImportManagement(ImportManagementEvent),
+    SearchManagement(SearchManagementEvent),
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
@@ -129,6 +138,10 @@ impl Event {
                 DirectAccessEntity::System(event) => format!("direct_access_system_{:?}", event),
                 DirectAccessEntity::WorkInfo(event) => {
                     format!("direct_access_work_info_{:?}", event)
+                }
+                DirectAccessEntity::Search(event) => format!("direct_access_search_{:?}", event),
+                DirectAccessEntity::SearchResult(event) => {
+                    format!("direct_access_search_result_{:?}", event)
                 }
                 DirectAccessEntity::RecentWork(event) => {
                     format!("direct_access_recent_work_{:?}", event)
@@ -158,6 +171,7 @@ impl Event {
             Origin::BinderItemManagement(event) => format!("binder_item_management_{:?}", event),
             Origin::HandlingAppLifecycle(event) => format!("handling_app_lifecycle_{:?}", event),
             Origin::ImportManagement(event) => format!("import_management_{:?}", event),
+            Origin::SearchManagement(event) => format!("search_management_{:?}", event),
         }
         .to_lowercase()
     }
