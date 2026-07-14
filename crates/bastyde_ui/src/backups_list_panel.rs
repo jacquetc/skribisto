@@ -22,6 +22,7 @@ use std::path::{Path, PathBuf};
 use bastyde::core::styles::PanelVariant;
 use bastyde::data::ListModel;
 use bastyde::prelude::*;
+use bastyde::prelude::{EllipsisMode, TextOverflow};
 use bastyde::widgets::{
     Button, ButtonVariant, Divider, Expand, FixedSize, HStack, IconButton, ListView, MessageBox,
     MessageBoxButtons, Padding, Panel, Spacer, StandardButton, StandardListItem, Switcher,
@@ -249,6 +250,13 @@ impl Widget for BackupsListPanel {
             Box::new(
                 StandardListItem::new(lit!(row.date.clone()))
                     .subtitle(lit!(format!("{} · {}", row.size, row.path)))
+                    // A backup path is long and a destination can sit anywhere,
+                    // so the subtitle must truncate rather than claim its full
+                    // intrinsic width — a wrapping subtitle over-constrains the
+                    // row and pushes Open/Reveal/Delete past the card's edge
+                    // (Delete ended up outside it entirely). Middle elision
+                    // keeps both the root and the file name legible.
+                    .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Middle))
                     .trailing_slot(actions)
                     .selected(selected),
             )
@@ -299,24 +307,33 @@ impl Widget for BackupsListPanel {
                     padding: 0.0
                     VStack {
                         spacing: 0.0
-                        FixedSize {
-                            height: 44.0
-                            Padding::symmetric(8.0, 14.0) {
-                                HStack {
-                                    spacing: 8.0
-                                    Expand::horizontal {
-                                        TextWidget::new(tr!(backups_title())) {
-                                            style: TextStyleRole::Small
-                                            color: TextRole::Secondary
+                        // `FixedSize` ignores the parent's proposal and reports its
+                        // child's *intrinsic* width, so a bare height-only bar is
+                        // placed at ~its content width and left-aligned — which
+                        // starves the title's `Expand` and leaves the footer's
+                        // `Spacer` nothing to push against. `Expand::horizontal`
+                        // (fill mode) places the bar across the whole card, exactly
+                        // as the Settings card does with its own header strip.
+                        Expand::horizontal {
+                            FixedSize {
+                                height: 44.0
+                                Padding::symmetric(8.0, 14.0) {
+                                    HStack {
+                                        spacing: 8.0
+                                        Expand::horizontal {
+                                            TextWidget::new(tr!(backups_title())) {
+                                                style: TextStyleRole::Small
+                                                color: TextRole::Secondary
+                                            }
                                         }
-                                    }
-                                    Button::new(tr!(backups_refresh())) {
-                                        variant: ButtonVariant::Plain
-                                        on_activate_fn: move |_c| refresh_scanner.kick_scan()
-                                    }
-                                    IconButton::clear() {
-                                        tooltip: tr!(backups_close())
-                                        on_activate_fn: |ctx| ctx.dismiss_modal()
+                                        Button::new(tr!(backups_refresh())) {
+                                            variant: ButtonVariant::Plain
+                                            on_activate_fn: move |_c| refresh_scanner.kick_scan()
+                                        }
+                                        IconButton::clear() {
+                                            tooltip: tr!(backups_close())
+                                            on_activate_fn: |ctx| ctx.dismiss_modal()
+                                        }
                                     }
                                 }
                             }
@@ -330,14 +347,16 @@ impl Widget for BackupsListPanel {
                         Expand::horizontal {
                             Divider
                         }
-                        FixedSize {
-                            height: 52.0
-                            Padding::symmetric(10.0, 22.0) {
-                                HStack {
-                                    Spacer
-                                    Button::new(tr!(backups_close())) {
-                                        variant: ButtonVariant::Filled
-                                        on_activate_fn: |ctx| ctx.dismiss_modal()
+                        Expand::horizontal {
+                            FixedSize {
+                                height: 52.0
+                                Padding::symmetric(10.0, 22.0) {
+                                    HStack {
+                                        Spacer
+                                        Button::new(tr!(backups_close())) {
+                                            variant: ButtonVariant::Filled
+                                            on_activate_fn: |ctx| ctx.dismiss_modal()
+                                        }
                                     }
                                 }
                             }
@@ -446,6 +465,75 @@ fn reveal_in_file_manager(path: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    fn descendants(tree: &WidgetTree, id: WidgetId, out: &mut Vec<WidgetId>) {
+        for child in tree.children(id) {
+            out.push(child);
+            descendants(tree, child, out);
+        }
+    }
+
+    /// The header (title · Refresh · ✕) and footer (Close) bars must span the
+    /// whole card. `FixedSize` ignores its parent's proposal and reports its
+    /// child's *intrinsic* width, so a height-only bar dropped straight into the
+    /// VStack is placed at ~its content width: the title's `Expand` collapsed to
+    /// nothing (the word wrapped one letter per line) and the footer's `Spacer`
+    /// had no room to push Close to the right. Wrapping each bar in
+    /// `Expand::horizontal` is what makes them fill the card.
+    #[test]
+    fn the_header_and_footer_bars_span_the_card() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut tree = WidgetTree::new();
+        let id = tree.add(BackupsListPanel::new(
+            "uid".into(),
+            dir.path()
+                .join("novel.skrib")
+                .to_string_lossy()
+                .into_owned(),
+            vec![dir.path().to_string_lossy().into_owned()],
+        ));
+        // Lay the panel out at the size it reports (CARD_W x CARD_H) — that is
+        // what the modal overlay gives it.
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+
+        let card = tree.bounds(id);
+        assert!(
+            (card.width - CARD_W).abs() < 0.5,
+            "card should be {CARD_W} wide, got {}",
+            card.width
+        );
+
+        let mut ids = Vec::new();
+        descendants(&tree, id, &mut ids);
+
+        let bar_spans_card = |height: f32| {
+            ids.iter().any(|d| {
+                let b = tree.bounds(*d);
+                (b.height - height).abs() < 0.5 && (b.width - CARD_W).abs() < 0.5
+            })
+        };
+        assert!(
+            bar_spans_card(44.0),
+            "the 44px header bar must span the full card width"
+        );
+        assert!(
+            bar_spans_card(52.0),
+            "the 52px footer bar must span the full card width"
+        );
+
+        // And nothing may stick out past the card's edge (the row actions used
+        // to: the Delete button landed ~30px outside it).
+        for d in &ids {
+            let b = tree.bounds(*d);
+            assert!(
+                b.right() <= card.right() + 0.5,
+                "a descendant overflows the card: right={} vs card right={}",
+                b.right(),
+                card.right()
+            );
+        }
+    }
 
     #[test]
     fn scan_lists_this_projects_backups_newest_first() {

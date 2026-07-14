@@ -26,9 +26,9 @@ use std::rc::Rc;
 use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, FixedSize, FocusScope, GroupHeader, HStack, IconWidget, MenuList,
-    MessageBox, MessageBoxButton, MessageBoxButtons, Padding, PopoverButton, StandardButton,
-    TextWidget, TraversalScopePolicy, VStack,
+    Button, ButtonVariant, FixedSize, FocusScope, GroupHeader, HStack, IconWidget, MaxSize,
+    MenuList, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, PopoverButton, Spacer,
+    StandardButton, TextWidget, TraversalScopePolicy, VStack,
 };
 
 use frontend::AppContext;
@@ -63,14 +63,14 @@ pub(crate) fn spawn_new_process(path: &str, token: Option<String>) {
     let _ = cmd.spawn();
 }
 
-/// Width of a popover row's text column.
+/// Cap on a popover row's text column.
 ///
 /// This is what makes the popover a definite, readable width. `MenuList` has no
 /// width setting — it sizes to its items — and a `TextWidget` sizes to *its*
-/// content, so without a bound here the rows grew to the full natural width of a
+/// content, so without a cap here the rows grew to the full natural width of a
 /// long path (~600px), overflowed the popover, and were clipped to an unreadable
-/// middle slice. Fixing the text column fixes the whole popover.
-const ROW_TEXT_WIDTH: f32 = 340.0;
+/// middle slice. Capping the text column caps the whole popover.
+const ROW_TEXT_MAX_WIDTH: f32 = 340.0;
 
 /// A rich two/three-line popover row (checkmark column + title + path [+ date]).
 fn row(
@@ -90,9 +90,25 @@ fn row(
     } else {
         TextRole::Primary
     };
+    // The cap belongs on the *text*, not on the column around it. A `TextWidget`
+    // sizes to its content and only ellipsizes against a bounded proposal, and
+    // `MenuList` (a hugging container) measures its items unbounded — so an
+    // uncapped path lays out at its full ~700px and drags the popover with it.
+    // `MaxSize` proposes `min(parent, cap)` down to the text, so the ellipsis
+    // engages, and reports `min(child, cap)`, so a short line still hugs.
+    //
+    // Capping the *column* instead cannot hug: a `VStack` fills whatever width it
+    // is offered on its cross axis, so it would report the cap for every row, long
+    // or short. (That is what the `FixedSize` here used to do — it pinned every row
+    // to 340 and only forced the bounded proposal, engaging the ellipsis, as a
+    // side effect.)
+    let capped = |w: TextWidget| MaxSize::width(ROW_TEXT_MAX_WIDTH).child(w);
     let mut body = VStack::new()
         .spacing(2.0)
-        .child(
+        // Lines are left-aligned against each other: once each line hugs its own
+        // text, a centred column would stagger the title over its path.
+        .alignment(bastyde::tokens::HAlignment::Leading)
+        .child(capped(
             // Titles can be long too ("Faux-Semblants — brouillon 3"), and a
             // wrapped title would make rows ragged. Trailing ellipsis: a title's
             // identity is at its start.
@@ -101,8 +117,8 @@ fn row(
                 .color(title_color)
                 .single_line()
                 .overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing)),
-        )
-        .child(
+        ))
+        .child(capped(
             // Middle, not trailing: a path ends in the filename, which is the
             // one part that tells two projects apart.
             TextWidget::new(lit!(path))
@@ -110,7 +126,7 @@ fn row(
                 .color(TextRole::Secondary)
                 .single_line()
                 .overflow(TextOverflow::Ellipsis(EllipsisMode::Middle)),
-        );
+        ));
     if let Some(date) = date {
         body = body.child(
             TextWidget::new(lit!(date))
@@ -118,16 +134,18 @@ fn row(
                 .color(TextRole::Secondary),
         );
     }
+    let content = HStack::new().spacing(8.0).child(marker).child(body);
+    // Rows hug their own content now, so they no longer all measure the same
+    // width — and a hugging row placed in a wider list is *centred* in it, which
+    // staggered the short-path rows to the right of the long ones. The trailing
+    // `Spacer` absorbs that slack instead, keeping every row flush left. It sits
+    // in its own zero-spacing HStack so it adds no gap to the row's natural width
+    // (`content`'s own 8px spacing would otherwise apply to it too), and the tap
+    // target stays the full row width rather than shrinking to the content.
     let inner = HStack::new()
-        .spacing(8.0)
-        .child(marker)
-        // The text column MUST be bounded, or the row has no natural width: a
-        // `TextWidget` sizes to its content and only ellipsizes against a bounded
-        // proposal, so an unbounded path would lay out at ~700px and drag the
-        // whole popover with it. `FixedSize` proposes exactly this width down to
-        // the text, so the ellipsis engages and the row hugs to a predictable
-        // 384 (16 marker + 8 spacing + 340 text + 20 padding).
-        .child(FixedSize::new().width(ROW_TEXT_WIDTH).child(body))
+        .spacing(0.0)
+        .child(content)
+        .child(Spacer::new())
         .cursor(CursorIcon::Pointer)
         .focusable(true)
         .on_tap(move |_event, ctx| on_tap(ctx));
@@ -516,15 +534,15 @@ mod tests {
         );
     }
 
-    /// A popover row must stay within its bound no matter how long the path is.
+    /// A popover row must stay within its cap no matter how long the path is.
     ///
     /// A hugging container measures its items with an unbounded proposal to learn
     /// their natural width — and a `TextWidget` sizes to its content, so an
-    /// unbounded path would lay out at its full ~700px and drag the popover with
-    /// it. The text column is therefore bounded (`ROW_TEXT_WIDTH`), which makes
+    /// uncapped path would lay out at its full ~700px and drag the popover with
+    /// it. The text column is therefore capped (`ROW_TEXT_MAX_WIDTH`), which makes
     /// the ellipsis engage and gives the row a predictable natural width.
     ///
-    /// Remove that bound and this test fails.
+    /// Remove that cap and this test fails.
     #[test]
     fn a_long_path_cannot_blow_out_the_popover_row() {
         let long = "/home/cyril/Nextcloud/Documents/Livres/Faux-Semblants/\
@@ -552,7 +570,7 @@ mod tests {
         eprintln!("NATURAL ROW WIDTH = {}", b.width);
 
         // marker (16) + spacing (8) + text column + horizontal padding (2 x 10).
-        let ceiling = ROW_TEXT_WIDTH + 16.0 + 8.0 + 20.0 + 1.0;
+        let ceiling = ROW_TEXT_MAX_WIDTH + 16.0 + 8.0 + 20.0 + 1.0;
         assert!(
             b.width <= ceiling,
             "row must hug to its bounded text column, got {} (ceiling {}). \
@@ -562,6 +580,110 @@ mod tests {
             ceiling
         );
         assert!(b.width > 100.0, "row should not collapse either");
+    }
+
+    /// The text column is a **cap, not a pin**: a row whose title and path both
+    /// fit must hug its content instead of stretching to the cap.
+    ///
+    /// This is the difference between `MaxSize` (which reports `min(child, cap)`)
+    /// and the `FixedSize` it replaced (which reported the cap unconditionally,
+    /// and only bounded the proposal — hence engaged the ellipsis — as a side
+    /// effect). Swap `MaxSize` back for `FixedSize` and this test fails.
+    #[test]
+    fn a_short_path_hugs_instead_of_stretching_to_the_cap() {
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(row(
+            false,
+            false,
+            "Novel".to_string(),
+            "/tmp/n.skrib".to_string(),
+            None,
+            |_| {},
+        )));
+        tree.layout(SizeProposal {
+            width: None,
+            height: None,
+        });
+        let b = tree.bounds(id);
+
+        // marker (16) + spacing (8) + text column + horizontal padding (2 x 10).
+        let pinned = ROW_TEXT_MAX_WIDTH + 16.0 + 8.0 + 20.0;
+        assert!(
+            b.width < pinned - 1.0,
+            "a short row must hug its content, not stretch to the cap: got {} \
+             (a pinned column would report {})",
+            b.width,
+            pinned
+        );
+        assert!(b.width > 60.0, "…but it must still hold its content");
+    }
+
+    /// A short row sitting under a long one stays flush left with it.
+    ///
+    /// Rows hug their content, so they no longer all measure the same width — and
+    /// the `MenuList` stretches each item to the list width, which *centres* a
+    /// narrow row's content and staggered the short-path rows to the right of the
+    /// long ones. The trailing `Spacer` absorbs that slack instead. Drop it and
+    /// this test fails.
+    ///
+    /// Asserted through a `MenuList`, because that is where the stretching (and so
+    /// the centring) happens — a row laid out on its own fills and aligns leading
+    /// either way, and would pass even while the popover was visibly staggered.
+    #[test]
+    fn a_short_row_stays_flush_left_with_a_long_one() {
+        let long = "/home/cyril/Nextcloud/Documents/Livres/Faux-Semblants/\
+                    deeply/nested/Faux-semblants.skrib";
+        let menu = MenuList::new()
+            .max_visible_items(12)
+            .item(row(
+                false,
+                false,
+                "Long".to_string(),
+                long.to_string(),
+                None,
+                |_| {},
+            ))
+            .item(row(
+                false,
+                false,
+                "Short".to_string(),
+                "/tmp/n.skrib".to_string(),
+                None,
+                |_| {},
+            ));
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(menu));
+        tree.layout(SizeProposal {
+            width: None,
+            height: None,
+        });
+
+        // Each row's leading edge is its 16x16 marker column (empty when the row
+        // is unchecked). Both must land at the same x.
+        let mut ids = Vec::new();
+        collect(&tree, id, &mut ids);
+        let markers: Vec<f32> = ids
+            .iter()
+            .map(|i| tree.bounds(*i))
+            .filter(|b| (b.width - 16.0).abs() < 0.5 && (b.height - 16.0).abs() < 0.5)
+            .map(|b| b.x)
+            .collect();
+
+        assert_eq!(markers.len(), 2, "expected one marker per row");
+        assert!(
+            (markers[0] - markers[1]).abs() < 0.5,
+            "both rows must start at the same x — got {:?}. A centred short row \
+             is staggered to the right of the long one.",
+            markers
+        );
+    }
+
+    fn collect(tree: &WidgetTree, id: WidgetId, out: &mut Vec<WidgetId>) {
+        for child in tree.children(id) {
+            out.push(child);
+            collect(tree, child, out);
+        }
     }
 
     /// Measure the whole `MenuList` the popover actually shows — the row is only
@@ -592,12 +714,12 @@ mod tests {
         let b = tree.bounds(id);
         eprintln!("NATURAL MENULIST WIDTH (3 items, no scroll) = {}", b.width);
         assert!(
-            b.width >= ROW_TEXT_WIDTH,
+            b.width >= ROW_TEXT_MAX_WIDTH,
             "the MenuList must be at least as wide as its rows' text column, \
              got {} (rows hug to {}). If it is narrower, the popover clips its \
              own content and the user sees a middle slice of each path.",
             b.width,
-            ROW_TEXT_WIDTH
+            ROW_TEXT_MAX_WIDTH
         );
     }
 
@@ -631,11 +753,11 @@ mod tests {
         let b = tree.bounds(id);
         eprintln!("SCROLLING MENULIST WIDTH (30 items) = {}", b.width);
         assert!(
-            b.width >= ROW_TEXT_WIDTH,
+            b.width >= ROW_TEXT_MAX_WIDTH,
             "a scrolling menu collapsed to {} (rows hug to {}) — the scroll \
              viewport is squeezing the content width",
             b.width,
-            ROW_TEXT_WIDTH
+            ROW_TEXT_MAX_WIDTH
         );
     }
 }
