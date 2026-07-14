@@ -21,11 +21,24 @@
 //!
 //! ## How a replacement reaches the prose
 //!
-//! Never by string surgery on `Content.data`. That field holds **Djot**, and a match
-//! found in the *prose* does not sit at the same offset in the *markup* — rewriting at
-//! a plain-text offset inside `*emphasis*` or a link label corrupts it. Every prose
-//! rewrite goes through a `BatchDocument`: parse the Djot, work in the document's own
-//! text, serialise back. The parser owns the markup, so we cannot break it.
+//! Never by string surgery on `Content.data`. That field holds **Djot**, and the prose a
+//! writer sees is not the markup that carries it. Every prose rewrite goes through a
+//! `BatchDocument`: parse the Djot, splice **inside the document** at the offsets the parser
+//! itself reports (`find_and_replace`), serialise back. The parser owns the markup, so we
+//! cannot break it.
+//!
+//! That is not a nicety. Rewriting the exported Djot as a string — which is what this used to
+//! do — was wrong in two ways a writer would eventually have paid for:
+//!
+//!   * it rewrote the query wherever it appeared in the **markup**: inside a link's URL, an
+//!     image path, an attribute. Text they never typed into their sentence and cannot see.
+//!   * it **dropped the character formatting** under every match, so renaming a character
+//!     whose name reads `*Aurélien*` silently lost the emphasis — across the whole
+//!     manuscript, in one action, with autosave writing it to disk seconds later.
+//!
+//! `find_and_replace` also closes a race: it scans and splices without ever letting go of the
+//! document, so the ranges cannot address text that moved in between. Finding and then
+//! replacing in two calls does not *fail* when that happens — it rewrites the wrong words.
 //!
 //! ## Offsets never cross the review→commit boundary
 //!
@@ -49,7 +62,10 @@ use common::types::EntityId;
 use std::any::Any;
 use std::collections::HashSet;
 use text_document::matching::MatchOptions;
-use text_document::{BatchDocument, DjotExportOptions, DjotImportOptions, FindOptions};
+use text_document::{
+    BatchDocument, DjotExportOptions, DjotImportOptions, FindOptions, ReplaceFormatPolicy,
+    ReplaceOptions,
+};
 
 pub trait ReplaceInProjectUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn ReplaceInProjectUnitOfWorkTrait>;
@@ -195,7 +211,7 @@ impl ReplaceInProjectUseCase {
                     touched_items.insert(row.binder_item_id);
                     occurrences_replaced += hits.len() as u64;
                 }
-                // Prose. Through the parser, never through the markup.
+                // Prose. Spliced INSIDE the document — never surgery on the markup.
                 MatchField::Body | MatchField::Synopsis => {
                     let Some(mut content) = Self::content_of(&mut uow, row)? else {
                         skipped_stale.push(row.id);
@@ -205,7 +221,8 @@ impl ReplaceInProjectUseCase {
                     batch.set_djot(&content.data, &DjotImportOptions::default())?;
 
                     // Re-derive the matches inside the document. Never trust a position
-                    // captured at review time.
+                    // captured at review time — if the count no longer matches what the
+                    // writer reviewed, the scene moved under us and we refuse it.
                     let hits = batch.find_all(&search.query, &find_opts)?;
                     if hits.len() as u64 != row.occurrence_count {
                         skipped_stale.push(row.id);
@@ -215,22 +232,34 @@ impl ReplaceInProjectUseCase {
                         continue;
                     }
 
-                    // Phase 0.1b: rewrite the re-exported Djot.
+                    // The splice happens in the DOCUMENT, at the offsets the parser itself
+                    // reports, and the result is re-serialised by the exporter.
                     //
-                    // Honest about what this is: it validates against the PARSED prose
-                    // (`find_all`) and then rewrites the MARKUP as a string, so a query
-                    // that also occurs inside a link URL or an attribute would be
-                    // rewritten there too. A2's range splice removes this — it edits the
-                    // document in place, at the offsets `find_all` gave, and preserves
-                    // the character formatting this path currently drops. Nothing in the
-                    // UI calls replace yet, for exactly these two reasons.
-                    let djot = batch.to_djot(&DjotExportOptions::default())?;
-                    content.data =
-                        crate::matching::replace_all(&djot, &search.query, opts, &case_of);
+                    // This replaces a string rewrite of the re-exported Djot, which was wrong
+                    // in two ways a writer would eventually have paid for:
+                    //
+                    //   * it rewrote the query wherever it appeared in the MARKUP — inside a
+                    //     link's URL, an image's path, an attribute — text they never typed
+                    //     into their sentence and cannot see;
+                    //   * it dropped the character formatting under every match, so renaming a
+                    //     character whose name reads `*Aurélien*` silently lost the emphasis.
+                    //
+                    // `find_and_replace` scans and splices without letting go of the document,
+                    // so the ranges cannot address text that has moved in between; and
+                    // `PreserveIfFullyCovered` keeps the styling of a name that was wholly
+                    // styled, falling back to the historical behaviour when the range is only
+                    // partly styled rather than guessing.
+                    let replaced = batch.find_and_replace(
+                        &search.query,
+                        &ReplaceOptions::new(find_opts.clone())
+                            .with_format_policy(ReplaceFormatPolicy::PreserveIfFullyCovered),
+                        |matched, _| Some(case_of(matched)),
+                    )?;
 
+                    content.data = batch.to_djot(&DjotExportOptions::default())?;
                     uow.update_content(&content)?;
                     touched_items.insert(row.binder_item_id);
-                    occurrences_replaced += hits.len() as u64;
+                    occurrences_replaced += replaced as u64;
                 }
             }
         }

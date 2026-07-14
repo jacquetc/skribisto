@@ -349,3 +349,97 @@ fn preserve_case_keeps_the_case_it_found() {
         "no occurrence of the old name may survive: {out:?}"
     );
 }
+
+/// **A2: the splice happens inside the document, not on the markup.**
+///
+/// The prose path used to re-export the Djot and rewrite it as a *string*. That was wrong in
+/// two ways a writer would eventually have paid for:
+///
+///   * it rewrote the query wherever it appeared in the MARKUP — inside a link's URL, an
+///     image path, an attribute — text they never typed into their sentence and cannot see;
+///   * it dropped the character formatting under every match, so renaming a character whose
+///     name reads `*Aurélien*` silently lost the emphasis.
+///
+/// Both are gone: `find_and_replace` splices at the offsets the parser reports, and the
+/// exporter re-serialises. Nothing touches the markup.
+#[test]
+fn a_rename_spares_the_markup_and_keeps_the_styling() {
+    use frontend::commands::binder_item_commands;
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::entities::ContentRole;
+
+    let ctx = loaded_ctx();
+    let stack = Some(undo_redo_commands::create_new_stack(&ctx));
+
+    // A scene where the name is emphasised in the prose AND appears inside a link's URL.
+    let victim = binder_item_commands::get_all_binder_item(&ctx)
+        .unwrap()
+        .into_iter()
+        .filter(|i| i.activated)
+        .find_map(|i| {
+            let cids = binder_item_commands::get_binder_item_relationship(
+                &ctx,
+                &i.id,
+                &BinderItemRelationshipField::Contents,
+            )
+            .unwrap();
+            content_commands::get_content_multi(&ctx, &cids)
+                .unwrap()
+                .into_iter()
+                .flatten()
+                .find(|c| c.role == ContentRole::SceneText)
+        })
+        .expect("a scene with body text");
+
+    let source = "She called *Aurélien* home, then read \
+                  [the note](https://example.test/Aurélien-notes).";
+    content_commands::update_content(
+        &ctx,
+        None,
+        &frontend::content::dtos::UpdateContentDto {
+            id: victim.id,
+            created_at: victim.created_at,
+            updated_at: victim.updated_at,
+            activated: victim.activated,
+            role: victim.role.clone(),
+            data: source.to_string(),
+        },
+    )
+    .unwrap();
+
+    let mut q = search("Aurélien");
+    q.search_titles = false;
+    q.search_synopsis = false;
+    search_management_commands::run_search(&ctx, &q).expect("run_search");
+
+    search_management_commands::replace_in_project(
+        &ctx,
+        stack,
+        &ReplaceInProjectDto {
+            replacement: "Aurélian".to_string(),
+            preserve_case: true,
+            excluded_result_ids: vec![],
+        },
+    )
+    .expect("replace_in_project");
+
+    let out = content_commands::get_content(&ctx, &victim.id)
+        .unwrap()
+        .unwrap()
+        .data;
+
+    assert!(
+        out.contains("*Aurélian*"),
+        "the emphasis under the renamed name must survive — the old string rewrite dropped \
+         it: {out:?}"
+    );
+    assert!(
+        out.contains("https://example.test/Aurélien-notes"),
+        "the link's DESTINATION is markup, not prose. The writer never typed it into their \
+         sentence and cannot see it; a rename must not reach inside it: {out:?}"
+    );
+    assert!(
+        !out.contains("*Aurélien*"),
+        "the prose occurrence must actually have been renamed: {out:?}"
+    );
+}
