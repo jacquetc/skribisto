@@ -114,6 +114,7 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
         .title("Skribisto")
         .size(W, H)
         .min_size(W, H)
+        .max_size(W, H)
         .decorations(DecorationsMode::CustomChrome)
         // Consume an xdg-activation startup token (set by the desktop, or by
         // another instance's "open in new window") so a bare launch comes up
@@ -261,6 +262,7 @@ impl ProjectWindowFactory {
             .id(id)
             .title("Skribisto")
             .size(1200, 800)
+            .min_size(800, 600)
             .decorations(DecorationsMode::CustomChrome)
             // Consume an xdg-activation startup token (set by the desktop, or
             // by another instance's "open in new window") so this window comes
