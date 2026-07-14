@@ -263,6 +263,9 @@ impl RunSearchUseCase {
             .next()
             .ok_or_else(|| anyhow!("run_search: no Work in the store"))?;
 
+        // Resolved ONCE for the whole search, not re-parsed per item.
+        let wanted = Self::wanted_facets(dto);
+
         let mut fields = Vec::new();
         let binder_ids = uow.get_work_relationship(&work.id, &WorkRelationshipField::Binders)?;
         for binder in uow.get_binder_multi(&binder_ids)?.into_iter().flatten() {
@@ -290,10 +293,36 @@ impl RunSearchUseCase {
                 let locale = tags
                     .get(&item.id)
                     .map_or(FoldLocale::Root, |tag| FoldLocale::from_tag(tag));
-                self.item_fields(uow, item, dto, locale, &mut fields)?;
+                self.item_fields(uow, item, dto, locale, wanted.as_deref(), &mut fields)?;
             }
         }
         Ok(fields)
+    }
+
+    /// Which facet chips the writer actually ticked. `None` means **no filter**.
+    ///
+    /// Two ways to get `None`, and they mean the same thing to a reader:
+    ///
+    ///   * **Nothing ticked.** A filter with no selection does not select nothing — it selects
+    ///     everything. Get that backwards and the search panel opens showing zero results and
+    ///     the writer concludes it is broken.
+    ///   * **Nothing ticked that we recognise.** A code naming no facet can only come from a
+    ///     `search.toml` written by a version whose codes differed. Dropping such codes one by
+    ///     one is not enough: if they are ALL unknown, the list is still non-empty, filtering
+    ///     still runs, and it matches nothing — so an upgrade would silently leave someone
+    ///     unable to find their own prose. An unrecognisable filter is no filter.
+    fn wanted_facets(dto: &RunSearchDto) -> Option<Vec<SearchFacet>> {
+        if dto.facets.is_empty() {
+            return None;
+        }
+        let resolved: Vec<SearchFacet> = dto
+            .facets
+            .iter()
+            // A negative code cannot name a facet; the `as u64` wrap makes it a huge number,
+            // which `from_code` rejects like any other unknown.
+            .filter_map(|&code| SearchFacet::from_code(code as u64))
+            .collect();
+        (!resolved.is_empty()).then_some(resolved)
     }
 
     /// The searchable fields of one item, filtered by the requested scopes.
@@ -303,6 +332,7 @@ impl RunSearchUseCase {
         item: &BinderItem,
         dto: &RunSearchDto,
         locale: FoldLocale,
+        facets: Option<&[SearchFacet]>,
         out: &mut Vec<Field>,
     ) -> Result<()> {
         // How this item's prose folds. `whole_word` is deliberately absent: it decides which
@@ -321,22 +351,17 @@ impl RunSearchUseCase {
             return Ok(());
         }
 
-        // The facet chips. EMPTY means no filter at all — which is what a filter with nothing
-        // ticked means to a reader, and the opposite of what a naive `contains` would do (it
-        // would return nothing, and the writer would think the search was broken).
-        //
-        // A code naming no facet is *ignored*, never an error: it can only come from a stale
-        // `search.toml`, and a settings file left over from an older version must not stop
-        // someone finding their own prose.
-        if !dto.facets.is_empty() {
-            let facet = search_facet_of(&item.role, &item.sub_role);
-            let wanted = dto
-                .facets
-                .iter()
-                .filter_map(|&c| SearchFacet::from_code(c as u64))
-                .any(|f| Some(f) == facet);
-            if !wanted {
-                return Ok(());
+        if let Some(wanted) = facets {
+            match search_facet_of(&item.role, &item.sub_role) {
+                Some(f) if wanted.contains(&f) => {}
+                Some(_) => return Ok(()),
+                // A combination the matrix does not contain — which means it cannot exist, and
+                // yet here it is (the Plume importer and the legacy upgrader both synthesise
+                // sub_roles). **Never hide what we cannot name.** Filtering it out would make
+                // the item findable with no chips ticked and invisible with any chip ticked,
+                // which reads as the filter being broken rather than the item being malformed
+                // — and leaves the writer no way to reach the thing and fix it.
+                None => {}
             }
         }
 
@@ -472,15 +497,109 @@ impl RunSearchUseCase {
     }
 
     /// `SNIPPET_CONTEXT` chars either side of the match, on char boundaries.
+    ///
+    /// Walks `char_indices` rather than collecting the field into a `Vec<char>`. The
+    /// difference is not cosmetic: this runs for every matching row, up to `RESULT_CAP`, and a
+    /// manuscript of long scenes would otherwise materialise the *whole scene* at four bytes
+    /// per char — tens of megabytes of transient garbage, on the UI thread — to produce a
+    /// snippet of a couple of hundred characters.
     fn snippet(text: &str, char_start: usize, char_len: usize) -> (String, String, String) {
-        let chars: Vec<char> = text.chars().collect();
-        let end = (char_start + char_len).min(chars.len());
+        let end = char_start + char_len;
         let from = char_start.saturating_sub(SNIPPET_CONTEXT);
-        let to = (end + SNIPPET_CONTEXT).min(chars.len());
+        let to = end + SNIPPET_CONTEXT;
+
+        // One pass: the byte offset of each of the four char positions that bound the three
+        // pieces. Any that lies past the end of the text simply never gets set, and falls back
+        // to the end — which is what `.min(len)` did before, without the allocation.
+        let (mut b_from, mut b_start, mut b_end, mut b_to) = (None, None, None, None);
+        for (i, (byte, _)) in text.char_indices().enumerate() {
+            if i == from {
+                b_from = Some(byte);
+            }
+            if i == char_start {
+                b_start = Some(byte);
+            }
+            if i == end {
+                b_end = Some(byte);
+            }
+            if i == to {
+                b_to = Some(byte);
+                break;
+            }
+        }
+        let len = text.len();
+        let (b_from, b_start) = (b_from.unwrap_or(len), b_start.unwrap_or(len));
+        let (b_end, b_to) = (b_end.unwrap_or(len), b_to.unwrap_or(len));
+
         (
-            chars[from..char_start].iter().collect(),
-            chars[char_start..end].iter().collect(),
-            chars[end..to].iter().collect(),
+            text[b_from..b_start].to_string(),
+            text[b_start..b_end].to_string(),
+            text[b_end..b_to].to_string(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The snippet is cut on **char** boundaries, from text that is full of multi-byte chars —
+    /// slicing it by byte would panic in the middle of an `é`.
+    #[test]
+    fn a_snippet_is_cut_on_char_boundaries() {
+        let text = "Aurélien traversa la forêt où l'ombre s'étirait.";
+        let hit = text.chars().collect::<Vec<_>>();
+        let start = 21; // "forêt"
+        assert_eq!(hit[start..start + 5].iter().collect::<String>(), "forêt");
+
+        let (before, matched, after) = RunSearchUseCase::snippet(text, start, 5);
+        assert_eq!(matched, "forêt");
+        assert_eq!(before, "Aurélien traversa la ");
+        assert_eq!(after, " où l'ombre s'étirait.");
+        assert_eq!(
+            format!("{before}{matched}{after}"),
+            text,
+            "the three pieces must reassemble the text they came from"
+        );
+    }
+
+    /// A match at the very start and at the very end — the two places an off-by-one in the
+    /// byte-offset walk would show up as a panic or a truncated snippet.
+    #[test]
+    fn a_snippet_at_either_edge_of_the_text() {
+        let text = "Élena rentra chez ellé";
+
+        let (before, matched, after) = RunSearchUseCase::snippet(text, 0, 5);
+        assert_eq!(before, "");
+        assert_eq!(matched, "Élena");
+        assert_eq!(after, " rentra chez ellé");
+
+        let n = text.chars().count();
+        let (before, matched, after) = RunSearchUseCase::snippet(text, n - 4, 4);
+        assert_eq!(matched, "ellé");
+        assert_eq!(after, "", "nothing follows the last char");
+        assert_eq!(before, "Élena rentra chez ");
+    }
+
+    /// Context is clamped to `SNIPPET_CONTEXT` chars either side, not bytes — so an accented
+    /// scene does not get a shorter snippet than an ASCII one.
+    #[test]
+    fn a_snippet_is_clamped_to_the_context_in_chars() {
+        let text = format!("{}CIBLE{}", "é".repeat(200), "à".repeat(200));
+        let (before, matched, after) = RunSearchUseCase::snippet(&text, 200, 5);
+        assert_eq!(matched, "CIBLE");
+        assert_eq!(before.chars().count(), SNIPPET_CONTEXT);
+        assert_eq!(after.chars().count(), SNIPPET_CONTEXT);
+    }
+
+    /// The whole text is shorter than the context window: take what there is, and do not run
+    /// off the end.
+    #[test]
+    fn a_snippet_of_a_text_shorter_than_its_context() {
+        let (before, matched, after) = RunSearchUseCase::snippet("où", 0, 2);
+        assert_eq!(
+            (before.as_str(), matched.as_str(), after.as_str()),
+            ("", "où", "")
+        );
     }
 }

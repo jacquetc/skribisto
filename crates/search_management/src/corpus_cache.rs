@@ -57,18 +57,6 @@ use text_document::{DjotImportOptions, djot_to_plain_text};
 /// snippet is cut from, and what the match offsets address.
 pub type Corpus = FoldedText;
 
-/// What makes two corpora the same corpus: the same source text, folded by the same rules.
-///
-/// **`whole_word` is not part of it.** It decides which matches survive, not how a character
-/// folds — so one entry answers both kinds of query, and ticking the checkbox does not throw
-/// away a manuscript's worth of folding. That distinction lives in text-document's types
-/// (`FoldSpec` vs `MatchOptions`), which is why it cannot be got wrong here.
-#[derive(PartialEq, Eq, Hash, Clone)]
-struct Key {
-    source: String,
-    spec: FoldSpec,
-}
-
 /// How much heap the cache may hold before it is cleared. A 300k-word novel folds to roughly
 /// 20 MB, so this holds one comfortably, plus a long session's worth of edits.
 const MAX_HEAP: usize = 128 * 1024 * 1024;
@@ -80,27 +68,71 @@ static CACHE: RwLock<Option<Store>> = RwLock::new(None);
 /// The cache proper, with no global in it — so the tests below can exercise it
 /// deterministically. Rust runs tests in **parallel threads of one process**, and a global
 /// would make `clear()` in one test race an `Arc::ptr_eq` in another.
-#[derive(Default)]
+///
+/// ## Why the map is nested
+///
+/// The obvious shape is one map keyed by `(source, spec)`. It costs a **full copy of every
+/// scene's Djot on every lookup**, including hits: you cannot probe a `HashMap<(String, _), _>`
+/// without materialising the `String` half of the key. On a 300k-word manuscript that is
+/// ~1.7 MB allocated, memcpy'd and thrown away *per keystroke* — on the exact hot path this
+/// cache exists to make fast.
+///
+/// Nesting it by `FoldSpec` (of which there are a handful) leaves an inner map keyed by
+/// `String` alone, and `String: Borrow<str>` means it can be probed with a plain `&str`. The
+/// allocation now happens only on a **miss**, where a parse and a fold dwarf it anyway.
 struct Store {
-    entries: HashMap<Key, Arc<Corpus>>,
+    by_spec: HashMap<FoldSpec, HashMap<String, Arc<Corpus>>>,
     heap: usize,
+    /// The budget. A field rather than a `const` read straight from `insert`, so the tests can
+    /// exercise the two overflow paths with a small one instead of faking `heap` and hoping
+    /// the arithmetic still means what it meant.
+    max_heap: usize,
+}
+
+impl Default for Store {
+    fn default() -> Self {
+        Store {
+            by_spec: HashMap::new(),
+            heap: 0,
+            max_heap: MAX_HEAP,
+        }
+    }
 }
 
 impl Store {
-    fn get(&self, key: &Key) -> Option<Arc<Corpus>> {
-        self.entries.get(key).map(Arc::clone)
+    /// Borrowed probe: no allocation on a hit.
+    fn get(&self, djot: &str, spec: &FoldSpec) -> Option<Arc<Corpus>> {
+        self.by_spec.get(spec)?.get(djot).map(Arc::clone)
     }
 
-    fn insert(&mut self, key: Key, corpus: &Arc<Corpus>) {
-        let size = corpus.heap_size() + key.source.capacity();
+    fn insert(&mut self, djot: &str, spec: &FoldSpec, corpus: &Arc<Corpus>) {
+        // `heap_size()` is only stable once the word-boundary table exists — it is built
+        // lazily, on the first whole-word query, which for a cached entry is always *after*
+        // it was measured. Force it, so the size recorded here is the size actually held; a
+        // cache bounded by the sum of stale sizes holds materially more than it believes.
+        corpus.prepare_word_boundaries();
+        let size = corpus.heap_size() + djot.len();
+
+        // An entry that alone exceeds the budget is served but NOT cached. Clearing to make
+        // room for it would leave the cache over budget anyway, and the next insert would
+        // clear again — turning every single lookup into a cold one, for ever.
+        if size > self.max_heap {
+            return;
+        }
         // Cleared **wholesale** on overflow rather than evicted one entry at a time: the
         // working set is "the manuscript open right now", not a recency distribution, and the
         // cost of being wrong is one cold search.
-        if self.heap + size > MAX_HEAP {
-            self.entries.clear();
+        if self.heap + size > self.max_heap {
+            self.by_spec.clear();
             self.heap = 0;
         }
-        if self.entries.insert(key, Arc::clone(corpus)).is_none() {
+        if self
+            .by_spec
+            .entry(*spec)
+            .or_default()
+            .insert(djot.to_string(), Arc::clone(corpus))
+            .is_none()
+        {
             self.heap += size;
         }
     }
@@ -119,13 +151,8 @@ impl Store {
 ///
 /// Returns an `Arc` so the caller can hold it across the scan without keeping the lock.
 pub fn corpus_for(djot: &str, spec: &FoldSpec) -> Arc<Corpus> {
-    let key = Key {
-        source: djot.to_string(),
-        spec: *spec,
-    };
-
     if let Ok(guard) = CACHE.read()
-        && let Some(hit) = guard.as_ref().and_then(|s| s.get(&key))
+        && let Some(hit) = guard.as_ref().and_then(|s| s.get(djot, spec))
     {
         return hit;
     }
@@ -140,14 +167,20 @@ pub fn corpus_for(djot: &str, spec: &FoldSpec) -> Arc<Corpus> {
         // ours are equal by construction — same source, same rules — so either will do.
         guard
             .get_or_insert_with(Store::default)
-            .insert(key, &corpus);
+            .insert(djot, spec, &corpus);
     }
 
     corpus
 }
 
-/// Drop everything. Called when a project closes — not for correctness (the cache cannot go
-/// stale) but so a long-lived process does not hold the prose of a manuscript nobody has open.
+/// Drop everything.
+///
+/// Called when a project closes — **not** for correctness (the cache is content-addressed and
+/// cannot go stale) but because the app replaces the open project *in the same process* on
+/// four paths (New Work, Open Work, the switcher's "Open here", the import toast's "Open
+/// now"). Without this, the previous manuscript's corpus stays resident and permanently
+/// unreachable: its keys are prose no longer in the store, so nothing will ever hit them
+/// again, and only the overflow-clear would eventually free them.
 pub fn clear() {
     if let Ok(mut guard) = CACHE.write() {
         *guard = None;
@@ -181,16 +214,17 @@ mod tests {
 
     /// A lookup, done the way `corpus_for` does it: hit, or build-and-insert.
     fn get(store: &mut Store, djot: &str, spec: &FoldSpec) -> Arc<Corpus> {
-        let key = Key {
-            source: djot.to_string(),
-            spec: *spec,
-        };
-        if let Some(hit) = store.get(&key) {
+        if let Some(hit) = store.get(djot, spec) {
             return hit;
         }
         let corpus = Store::build(djot, spec);
-        store.insert(key, &corpus);
+        store.insert(djot, spec, &corpus);
         corpus
+    }
+
+    /// How many entries the cache holds, across every fold spec.
+    fn count(store: &Store) -> usize {
+        store.by_spec.values().map(|m| m.len()).sum()
     }
 
     /// The same prose, twice, is the same entry — which is the whole point.
@@ -201,7 +235,7 @@ mod tests {
         let a = get(&mut store, djot, &spec());
         let b = get(&mut store, djot, &spec());
         assert!(Arc::ptr_eq(&a, &b), "a second lookup must not re-parse");
-        assert_eq!(store.entries.len(), 1);
+        assert_eq!(count(&store), 1);
     }
 
     /// …and edited prose is a different key, so it cannot serve the old text. This is the
@@ -260,7 +294,7 @@ mod tests {
             1,
             "whole word: only the standalone one — from the SAME fold"
         );
-        assert_eq!(store.entries.len(), 1, "one fold answered both");
+        assert_eq!(count(&store), 1, "one fold answered both");
     }
 
     /// The per-scene language reaches the cache, and two languages are two entries: in Turkish
@@ -324,24 +358,78 @@ mod tests {
         }
     }
 
+    /// **The recorded size must be the size actually held.** `FoldedText`'s word-boundary table
+    /// is built lazily — on the first whole-word query, which for a cached entry is always
+    /// *after* it was measured — so an entry measured naively grows behind the cache's back,
+    /// and a budget summed from stale sizes bounds nothing.
+    #[test]
+    fn an_entrys_recorded_size_does_not_drift_when_whole_word_is_used() {
+        let mut store = fresh();
+        let djot = "un arbre, le marbre, et la forêt d'Aurélien. ".repeat(200);
+        let corpus = get(&mut store, &djot, &spec());
+        let recorded = store.heap;
+
+        // The first whole-word query is exactly when the lazy table would have been built.
+        corpus.find_all("arbre", true);
+
+        assert_eq!(
+            corpus.heap_size() + djot.len(),
+            recorded,
+            "the entry weighs what the cache recorded — the boundaries were prepared at insert"
+        );
+    }
+
     /// Overflow clears the cache rather than growing without bound. An afternoon's writing
     /// mints a new key on every edit, so it must have a ceiling.
     #[test]
     fn overflowing_the_budget_clears_rather_than_grows() {
         let mut store = fresh();
-        get(&mut store, &"mot ".repeat(2000), &spec());
-        assert_eq!(store.entries.len(), 1);
-        let held = store.heap;
-        assert!(held > 0);
+        // A budget big enough for one of these entries, but not two.
+        let one = get(&mut store, "la première scène", &spec());
+        store.max_heap = store.heap + 8;
+        assert_eq!(count(&store), 1);
+        drop(one);
 
-        store.heap = MAX_HEAP; // pretend we are at the ceiling
-        get(&mut store, "une autre scène", &spec());
+        get(&mut store, "la seconde scène, tout à fait autre", &spec());
         assert_eq!(
-            store.entries.len(),
+            count(&store),
             1,
             "the overflow cleared the old entries and kept only the new one"
         );
-        assert!(store.heap < held, "the byte accounting was reset too");
+        assert!(store.heap <= store.max_heap, "and the accounting was reset");
+    }
+
+    /// An entry that alone exceeds the budget is **served but not cached**. Caching it would
+    /// leave the store over budget the moment it landed, so the next insert would clear again
+    /// — turning every single lookup into a cold one, for ever.
+    #[test]
+    fn an_entry_too_big_for_the_budget_is_served_but_not_cached() {
+        let mut store = fresh();
+        let kept = get(&mut store, "une scène qui tient dans le budget", &spec());
+        let held = store.heap;
+        assert_eq!(count(&store), 1);
+
+        // Now nothing bigger than what we already hold may be cached.
+        store.max_heap = held;
+
+        let giant = "mot ".repeat(4000);
+        let corpus = get(&mut store, &giant, &spec());
+
+        // Served, and correct…
+        assert!(corpus.find_all("mot", false).len() >= 4000);
+        // …but not cached, and — crucially — it did NOT evict what was already there.
+        assert_eq!(count(&store), 1, "the giant entry was not cached");
+        assert_eq!(
+            store.heap, held,
+            "and nothing was evicted to make room for it"
+        );
+        assert!(
+            Arc::ptr_eq(
+                &kept,
+                &get(&mut store, "une scène qui tient dans le budget", &spec())
+            ),
+            "the entry that fits is still there"
+        );
     }
 
     /// The global path works, and `clear()` frees it. Kept as ONE test so it cannot race the

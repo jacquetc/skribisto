@@ -279,13 +279,12 @@ fn every_chip_finds_something() {
 }
 
 /// A code naming no facet is **ignored**, never an error. It can only come from a stale
-/// `search.toml` written by an older version — and a settings file left over from an upgrade
-/// must not stop someone finding their own prose.
+/// `search.toml` written by a version whose codes differed.
 #[test]
 fn an_unknown_facet_code_is_ignored_not_fatal() {
     let (ctx, kinds) = ctx_with_one_of_each();
 
-    // A real chip alongside a code that names nothing.
+    // A real chip alongside a code that names nothing: the real chip still works.
     search_management_commands::run_search(
         &ctx,
         &search(vec![SearchFacet::Scene.code() as i64, 9999]),
@@ -297,10 +296,68 @@ fn an_unknown_facet_code_is_ignored_not_fatal() {
         .map(|(_, id)| *id)
         .unwrap();
     assert_eq!(hit_ids(&ctx), vec![scene]);
+}
 
-    // …and a list of *nothing but* junk selects nothing, rather than silently selecting all.
-    // The writer asked for kinds that do not exist; honouring that is not the same as
-    // ignoring them.
-    search_management_commands::run_search(&ctx, &search(vec![9999])).expect("run_search");
-    assert!(hit_ids(&ctx).is_empty());
+/// **An unrecognisable filter is no filter.** Dropping unknown codes one at a time is not
+/// enough: if they are ALL unknown, the list is still non-empty, filtering still runs, and it
+/// matches nothing — so a `search.toml` left over from an upgrade would silently leave the
+/// writer unable to find their own prose, which is exactly what "ignored, never an error" is
+/// supposed to promise.
+#[test]
+fn a_filter_of_nothing_but_unknown_codes_filters_nothing() {
+    let (ctx, kinds) = ctx_with_one_of_each();
+
+    search_management_commands::run_search(&ctx, &search(vec![9999, -1, 0])).expect("run_search");
+    assert_eq!(
+        hit_ids(&ctx).len(),
+        kinds.len(),
+        "no code named a facet, so there is no filter — every kind must still be found"
+    );
+}
+
+/// An item whose (role, sub_role) is not in the matrix cannot be classified — and **must not
+/// be hidden**. Filtering it out would make it findable with no chips ticked and invisible
+/// with any chip ticked, which reads as the filter being broken rather than the item being
+/// malformed, and leaves the writer no way to reach the thing and fix it.
+#[test]
+fn an_item_of_an_unclassifiable_kind_is_never_hidden_by_a_facet() {
+    let (ctx, _) = ctx_with_one_of_each();
+
+    // `Folder/Scene` is not a row of the matrix — `search_facet_of` returns None for it.
+    // (The Plume importer and the legacy upgrader both synthesise sub_roles, so a shape the
+    // matrix does not contain is not merely hypothetical.)
+    assert_eq!(
+        skribisto_model::search_facet_of(&BinderItemRole::Folder, &BinderItemSubRole::Scene),
+        None,
+        "the fixture depends on this combination being unclassifiable"
+    );
+
+    let work = work_commands::get_all_work(&ctx).unwrap().pop().unwrap();
+    let binder =
+        work_commands::get_work_relationship(&ctx, &work.id, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
+    let odd = binder_item_commands::create_binder_item_multi(
+        &ctx,
+        None,
+        &[item(
+            BinderItemRole::Folder,
+            BinderItemSubRole::Scene,
+            &format!("{NEEDLE} — malformé"),
+        )],
+        binder,
+        -1,
+    )
+    .unwrap()
+    .pop()
+    .unwrap();
+
+    for facet in SearchFacet::ALL {
+        search_management_commands::run_search(&ctx, &search(vec![facet.code() as i64])).unwrap();
+        assert!(
+            hit_ids(&ctx).contains(&odd.id),
+            "the {facet:?} chip hid an item whose kind we cannot name — it is now unreachable"
+        );
+    }
 }

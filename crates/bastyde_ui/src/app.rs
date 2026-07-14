@@ -1237,6 +1237,30 @@ impl Widget for App {
             );
         }
 
+        // The search corpus cache holds the parsed, folded prose of every scene of the
+        // project that is open. When a project is **replaced or closed**, that prose is
+        // gone from the store — and because the cache is content-addressed, its keys are
+        // strings nothing will ever ask for again. Left alone it is dead weight: ~19 MB
+        // for a 300k-word novel, freed only when the 128 MB ceiling eventually trips.
+        //
+        // This is *not* a correctness hook. The cache cannot go stale (edited prose is a
+        // different key), which is the whole point of keying it on the text. It is purely
+        // about not carrying the previous manuscript around.
+        //
+        // All three events, because all three replace or drop the open project: New Work
+        // and Open Work (and the switcher's "Open here", and the import toast's "Open
+        // now") both go through `load_work`/`new_work`, which close the previous Work in
+        // the backend rather than via a UI-side `close_work`.
+        for event in [
+            WorkManagementEvent::LoadWork,
+            WorkManagementEvent::NewWork,
+            WorkManagementEvent::CloseWork,
+        ] {
+            ctx.subscribe_event(Origin::WorkManagement(event), move |_event: &Event| {
+                frontend::search_management::corpus_cache::clear();
+            });
+        }
+
         // On work close: forget the ids, empty the tree, drop the tabs, and clear
         // the singles (the store no longer holds the work).
         {

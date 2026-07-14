@@ -95,9 +95,14 @@ entities:
   - name: diacritic_sensitive
     type: boolean
   # Which KINDS of thing to show results from — the six SearchFacet chips, as
-  # skribisto_model::SearchFacet::code() values. EMPTY means no filter (all kinds), which is
-  # what a filter with nothing ticked means to a reader. A code naming no facet is ignored,
-  # never an error: it can only come from a stale settings file.
+  # skribisto_model::SearchFacet::code() values.
+  #
+  # EMPTY means no filter (all kinds), which is what a filter with nothing ticked means to a
+  # reader. A code naming no facet is ignored — and if NONE of the codes name a facet, the
+  # whole list is ignored, i.e. it is no filter at all. Dropping unknown codes one at a time
+  # is not enough: a search.toml written by a version whose codes differed would otherwise
+  # leave a non-empty list that matches nothing, and the writer would open the search panel
+  # to zero results with no error anywhere.
   - name: facets
     type: integer
     is_list: true

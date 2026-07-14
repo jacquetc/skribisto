@@ -174,7 +174,13 @@ fn how_much_does_a_keystroke_cost() {
 /// query into a box. 50 ms is deliberately loose against a measured ~9 ms — it is here to
 /// catch an order-of-magnitude regression (the cache silently missing, the fold's ASCII fast
 /// path lost), not to police milliseconds on a loaded CI box.
+/// **Release only.** A debug build is 10-30x slower and its timings mean nothing — a
+/// threshold loose enough to pass there would be too loose to catch anything here.
 #[test]
+#[cfg_attr(
+    debug_assertions,
+    ignore = "a perf guard is meaningless in a debug build — run with --release"
+)]
 fn a_warm_search_over_a_whole_novel_costs_a_few_milliseconds() {
     let ctx = big_manuscript();
 
@@ -198,6 +204,10 @@ fn a_warm_search_over_a_whole_novel_costs_a_few_milliseconds() {
 /// …and a **cold** search — the first one after the panel opens, with nothing cached — must
 /// still come in under the debounce, or the very first thing the writer sees is a stall.
 #[test]
+#[cfg_attr(
+    debug_assertions,
+    ignore = "a perf guard is meaningless in a debug build — run with --release"
+)]
 fn a_cold_search_still_comes_in_under_the_debounce() {
     let ctx = big_manuscript();
     search_management::corpus_cache::clear();
