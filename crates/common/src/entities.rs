@@ -74,6 +74,7 @@ pub struct Search {
     pub case_sensitive: bool,
     pub whole_word: bool,
     pub diacritic_sensitive: bool,
+    pub facets: Vec<i64>,
     pub search_body: bool,
     pub search_titles: bool,
     pub search_synopsis: bool,

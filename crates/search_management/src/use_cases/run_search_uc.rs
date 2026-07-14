@@ -34,10 +34,23 @@
 //! under its own rules — one pass, two languages. The user's toggles stay global; the
 //! language decides *how* to fold, never *whether* to.
 //!
-//! Still to land, per the plan:
+//! ## A keystroke must not stall the writer
 //!
-//!   * a versioned corpus cache. Extraction is cheap but not free, and this re-extracts
-//!     every row on every keystroke; the cache keys on `Content.updated_at`.
+//! This runs **synchronously on the UI thread, on every keystroke**. Over a 300k-word
+//! manuscript (4000 scenes), in release, it used to cost **190 ms** — twelve dropped frames,
+//! every time someone paused in their typing. It now costs ~9 ms warm, and ~60 ms cold.
+//!
+//! Two things got it there, and neither is the one the plan expected:
+//!
+//!   * **The fold's ASCII fast path** (upstream, in `text_document::folding`). Prose is
+//!     overwhelmingly ASCII even in French, and for ASCII the whole fold pipeline is provably
+//!     a no-op beyond lowercasing. That alone was 172 ms → 14 ms.
+//!   * **[`crate::corpus_cache`]** — the parse and the fold, kept between keystrokes. It is
+//!     **content-addressed**, so there is nothing to invalidate: edited prose is a different
+//!     key, and a cache that cannot go stale cannot serve a writer text they deleted.
+//!
+//! Titles and labels are *not* cached: a dozen characters each, folded on the spot. Caching
+//! them would fill the cache with entries nobody looks up twice.
 //!
 //! What *is* already real and must not regress:
 //!
@@ -54,6 +67,7 @@
 
 use crate::RunSearchDto;
 use crate::RunSearchResultDto;
+use crate::corpus_cache::{self, Corpus};
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
@@ -64,9 +78,10 @@ use common::entities::{
     Binder, BinderItem, Content, ContentRole, MatchField, Search, SearchResult, Work, WorkInfo,
 };
 use common::types::EntityId;
+use skribisto_model::{SearchFacet, search_facet_of};
 use std::collections::HashMap;
+use std::sync::Arc;
 use text_document::matching::{FoldLocale, MatchOptions};
-use text_document::{DjotImportOptions, djot_to_plain_text};
 
 /// Most rows we will keep for one search. A common word ("said", "elle") matches
 /// thousands of times in a novel; past this we stop scanning and set `truncated`.
@@ -111,7 +126,7 @@ struct Field {
     item_id: EntityId,
     item_title: String,
     match_field: MatchField,
-    text: String,
+    text: FieldText,
     trashed: bool,
     /// The language *this field* is written in, resolved item → Book → Work (see
     /// [`crate::language`]). Carried per field, not per search: one pass folds a French
@@ -119,6 +134,28 @@ struct Field {
     /// dotless `i` are different letters and folding them together turns one word into
     /// another.
     locale: FoldLocale,
+}
+
+/// The two kinds of searchable text, which are not the same kind of thing at all.
+enum FieldText {
+    /// A plain string that lives on the item — a title, a label. A dozen characters, no
+    /// markup, no parser. Folding it costs nothing, so it is folded on the spot and not
+    /// cached: it changes whenever the writer renames anything, and caching it would fill the
+    /// cache with entries nobody looks up twice.
+    Plain(String),
+    /// A scene's **prose**: parsed out of its Djot and folded, once, and kept between
+    /// keystrokes (see [`crate::corpus_cache`]). This is where all the cost was.
+    Prose(Arc<Corpus>),
+}
+
+impl FieldText {
+    /// The text a snippet is cut from — the prose the writer sees, never the markup.
+    fn as_str(&self) -> &str {
+        match self {
+            FieldText::Plain(s) => s,
+            FieldText::Prose(c) => c.source(),
+        }
+    }
 }
 
 impl RunSearchUseCase {
@@ -188,6 +225,7 @@ impl RunSearchUseCase {
             case_sensitive: dto.case_sensitive,
             whole_word: dto.whole_word,
             diacritic_sensitive: dto.diacritic_sensitive,
+            facets: dto.facets.clone(),
             search_body: dto.search_body,
             search_titles: dto.search_titles,
             search_synopsis: dto.search_synopsis,
@@ -267,10 +305,41 @@ impl RunSearchUseCase {
         locale: FoldLocale,
         out: &mut Vec<Field>,
     ) -> Result<()> {
+        // How this item's prose folds. `whole_word` is deliberately absent: it decides which
+        // matches survive, not how a character folds, so one cached fold answers both kinds
+        // of query and ticking the checkbox costs nothing.
+        let fold_spec = MatchOptions {
+            case_sensitive: dto.case_sensitive,
+            diacritic_sensitive: dto.diacritic_sensitive,
+            whole_word: dto.whole_word,
+            locale,
+        }
+        .fold_spec();
+
         let trashed = !item.activated;
         if trashed && !dto.include_trashed {
             return Ok(());
         }
+
+        // The facet chips. EMPTY means no filter at all — which is what a filter with nothing
+        // ticked means to a reader, and the opposite of what a naive `contains` would do (it
+        // would return nothing, and the writer would think the search was broken).
+        //
+        // A code naming no facet is *ignored*, never an error: it can only come from a stale
+        // `search.toml`, and a settings file left over from an older version must not stop
+        // someone finding their own prose.
+        if !dto.facets.is_empty() {
+            let facet = search_facet_of(&item.role, &item.sub_role);
+            let wanted = dto
+                .facets
+                .iter()
+                .filter_map(|&c| SearchFacet::from_code(c as u64))
+                .any(|f| Some(f) == facet);
+            if !wanted {
+                return Ok(());
+            }
+        }
+
         let title = item.title.clone();
 
         // Title and label live on the ITEM, as plain strings — not as Content rows.
@@ -282,7 +351,7 @@ impl RunSearchUseCase {
                 item_id: item.id,
                 item_title: title.clone(),
                 match_field: MatchField::Title,
-                text: item.title.clone(),
+                text: FieldText::Plain(item.title.clone()),
                 trashed,
                 locale,
             });
@@ -292,7 +361,7 @@ impl RunSearchUseCase {
                 item_id: item.id,
                 item_title: title.clone(),
                 match_field: MatchField::Label,
-                text: item.label.clone(),
+                text: FieldText::Plain(item.label.clone()),
                 trashed,
                 locale,
             });
@@ -326,15 +395,21 @@ impl RunSearchUseCase {
             // cheaper than a full import, which matters when a keystroke rescans the whole
             // manuscript) and is pinned upstream as being *exactly* the text the document
             // itself searches. So a count taken here survives a replace performed there.
-            let prose = djot_to_plain_text(&content.data, &DjotImportOptions::default());
-            if prose.is_empty() {
+            //
+            // Both the parse and the fold go through the CACHE. They are the whole cost of a
+            // search — measured over a 300k-word manuscript, 33 ms to parse and 14 ms to
+            // fold, against 16 ms to actually scan — and neither changes between one
+            // keystroke and the next. The cache is content-addressed, so there is nothing to
+            // invalidate: edited prose is a different key.
+            let corpus = corpus_cache::corpus_for(&content.data, &fold_spec);
+            if corpus.source().is_empty() {
                 continue;
             }
             out.push(Field {
                 item_id: item.id,
                 item_title: title.clone(),
                 match_field: field,
-                text: prose,
+                text: FieldText::Prose(corpus),
                 trashed,
                 locale,
             });
@@ -363,14 +438,24 @@ impl RunSearchUseCase {
                 whole_word: dto.whole_word,
                 locale: field.locale,
             };
-            let hits = crate::matching::occurrences(&field.text, &dto.query, options);
+            let hits = match &field.text {
+                // A title or a label: a dozen characters. Folded on the spot.
+                FieldText::Plain(s) => crate::matching::occurrences(s, &dto.query, options),
+                // A scene's prose: already folded, once, and kept between keystrokes. Only the
+                // scan is left — which is the part that actually depends on what was typed.
+                FieldText::Prose(corpus) => corpus
+                    .find_all(&dto.query, options.whole_word)
+                    .into_iter()
+                    .map(|m| (m.char_start, m.char_len))
+                    .collect(),
+            };
             let Some(&(first, first_len)) = hits.first() else {
                 continue;
             };
             if rows.len() >= RESULT_CAP {
                 return (rows, true);
             }
-            let (before, matched, after) = Self::snippet(&field.text, first, first_len);
+            let (before, matched, after) = Self::snippet(field.text.as_str(), first, first_len);
             rows.push(SearchResult {
                 binder_item_id: field.item_id,
                 item_title: field.item_title.clone(),

@@ -42,6 +42,7 @@ fn search(query: &str) -> RunSearchDto {
         case_sensitive: false,
         whole_word: false,
         diacritic_sensitive: false,
+        facets: vec![],
         search_body: true,
         search_titles: true,
         search_synopsis: true,

@@ -19,12 +19,16 @@ name = "search_management"
 
 [dependencies]
 # HAND-ADDED to a Qleany-GENERATED Cargo.toml — the same trap that has already
-# clobbered work_management / binder_item_management / import_management. Check this
-# line survives after any regen (`git diff -- crates/search_management/Cargo.toml`).
+# clobbered work_management / binder_item_management / import_management. Check these
+# lines survive after any regen (`git diff -- crates/search_management/Cargo.toml`).
 #
 # `replace_in_project` rewrites prose by parsing it, never by string-surgery on the
 # Djot: BatchDocument is what makes that possible without a thread per scene.
 text-document = { path = "../../../text-document/crates/public_api" }
+# `SearchFacet` — the collapse of the matrix's twelve (role, sub_role) combinations onto the
+# six kinds a writer actually filters by. It is derived FROM the matrix, in the one crate that
+# owns it, so a thirteenth combination cannot quietly become unfindable.
+skribisto_model = { workspace = true }
 anyhow = { workspace = true }
 common = { workspace = true }
 macros = { workspace = true }

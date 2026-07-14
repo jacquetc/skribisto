@@ -488,6 +488,86 @@ pub fn promote_targets(role: &Role, sub_role: &SubRole) -> Vec<PromoteTarget> {
     }
 }
 
+/// What *kind of thing* a match was found in, as a reader would name it.
+///
+/// The constraint matrix has **twelve** `(role, sub_role)` combinations, and a writer filtering
+/// their search results does not think in twelve. They think "show me the scenes" — and a
+/// scene is a scene whether the project stores its chapters flat or as folders, which is a
+/// storage decision they made once and should never have to remember again.
+///
+/// So this collapses the twelve onto six, and it is the *only* place that collapse is written
+/// down. Derived from the matrix rather than listed alongside it: a thirteenth combination
+/// added to `COMBINATIONS` fails [`the_facets_cover_every_combination`](self) until someone
+/// says which chip it belongs under, rather than quietly becoming unfindable.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SearchFacet {
+    /// A book: its container (`Folder/Book`) and both of its flat markers.
+    Book,
+    Part,
+    /// A chapter, in either of its two encodings — the writer chose one when they created the
+    /// project and does not think of it as a difference.
+    Chapter,
+    Scene,
+    Note,
+    /// Structure with no place in the book's spine: a plain folder, and the inert `Item/Text`
+    /// separator that only the Plume importer and the legacy upgrader produce.
+    Folder,
+}
+
+impl SearchFacet {
+    /// Every facet, in the order the chips are shown — outermost structure first.
+    pub const ALL: [SearchFacet; 6] = [
+        SearchFacet::Book,
+        SearchFacet::Part,
+        SearchFacet::Chapter,
+        SearchFacet::Scene,
+        SearchFacet::Note,
+        SearchFacet::Folder,
+    ];
+
+    /// A stable code, so a facet can cross a DTO (which carries scalars, not enums) and be
+    /// persisted in `search.toml` without the numbers shifting when a variant is added.
+    pub fn code(self) -> u64 {
+        match self {
+            SearchFacet::Book => 1,
+            SearchFacet::Part => 2,
+            SearchFacet::Chapter => 3,
+            SearchFacet::Scene => 4,
+            SearchFacet::Note => 5,
+            SearchFacet::Folder => 6,
+        }
+    }
+
+    /// `None` for a code that names no facet — a stale value in a settings file must be
+    /// ignored, not panic the search.
+    pub fn from_code(code: u64) -> Option<Self> {
+        Self::ALL.into_iter().find(|f| f.code() == code)
+    }
+}
+
+/// Which chip a `(role, sub_role)` belongs under. `None` for a combination that is not in the
+/// matrix at all — i.e. one that cannot exist.
+pub fn search_facet_of(role: &Role, sub_role: &SubRole) -> Option<SearchFacet> {
+    if !is_valid_combination(role, sub_role) {
+        return None;
+    }
+    Some(match sub_role {
+        // A book, however it is encoded: the container, and the two flat markers that stand
+        // for its beginning and its end.
+        SubRole::Book | SubRole::BookBegin | SubRole::BookEnd => SearchFacet::Book,
+        SubRole::Part => SearchFacet::Part,
+        // Both chapter encodings. `Item/ChapterScene` and `Folder/ChapterScene` differ only on
+        // the UI-only `role` axis; to a reader they are the same chapter.
+        SubRole::ChapterScene => SearchFacet::Chapter,
+        SubRole::Scene => SearchFacet::Scene,
+        SubRole::Note => SearchFacet::Note,
+        // `Folder/None` is a plain folder. `Item/Text` is the inert separator the Plume
+        // importer makes — no prose, no place in the book, nothing but a title. Both are
+        // structure the writer put there to organise themselves, so they share a chip.
+        SubRole::None | SubRole::Text => SearchFacet::Folder,
+    })
+}
+
 /// The single title role a combination carries, if any (`BookTitle` / `PartTitle` /
 /// `ChapterTitle`).
 ///
@@ -679,6 +759,86 @@ mod tests {
     #[test]
     fn the_matrix_has_twelve_combinations() {
         assert_eq!(COMBINATIONS.len(), 12);
+    }
+
+    /// **Every** combination has a search facet. A thirteenth row added to the matrix without
+    /// one would not fail to compile — it would just never appear under any chip, which the
+    /// writer meets as "the search cannot find my thing" with no error anywhere.
+    #[test]
+    fn the_facets_cover_every_combination() {
+        for c in COMBINATIONS {
+            assert!(
+                search_facet_of(&c.role, &c.sub_role).is_some(),
+                "{:?}/{:?} is a valid combination with no search facet — it would be \
+                 unfindable",
+                c.role,
+                c.sub_role
+            );
+        }
+    }
+
+    /// Twelve rows onto six chips, and **every chip is used**. A facet nothing maps to is a
+    /// filter that always returns nothing — a dead chip in the UI.
+    #[test]
+    fn every_facet_is_reachable_from_the_matrix() {
+        for facet in SearchFacet::ALL {
+            assert!(
+                COMBINATIONS
+                    .iter()
+                    .any(|c| search_facet_of(&c.role, &c.sub_role) == Some(facet)),
+                "{facet:?} is a chip no combination maps to — it would always show nothing"
+            );
+        }
+    }
+
+    /// A chapter is a chapter in either encoding. The writer picked `chapter_mode` once, when
+    /// they made the project; being asked to remember it while filtering a search would be a
+    /// storage detail leaking into their afternoon.
+    #[test]
+    fn both_chapter_encodings_land_on_the_same_chip() {
+        assert_eq!(
+            search_facet_of(&Role::Item, &SubRole::ChapterScene),
+            search_facet_of(&Role::Folder, &SubRole::ChapterScene),
+        );
+        assert_eq!(
+            search_facet_of(&Role::Item, &SubRole::ChapterScene),
+            Some(SearchFacet::Chapter)
+        );
+    }
+
+    /// …and the same for a book: its container and its two flat markers are one book.
+    #[test]
+    fn every_encoding_of_a_book_lands_on_the_book_chip() {
+        for (role, sub_role) in [
+            (Role::Folder, SubRole::Book),
+            (Role::Item, SubRole::BookBegin),
+            (Role::Item, SubRole::BookEnd),
+        ] {
+            assert_eq!(
+                search_facet_of(&role, &sub_role),
+                Some(SearchFacet::Book),
+                "{role:?}/{sub_role:?}"
+            );
+        }
+    }
+
+    /// A combination that is not in the matrix has no facet — it cannot exist, so it cannot
+    /// be found.
+    #[test]
+    fn an_invalid_combination_has_no_facet() {
+        assert_eq!(search_facet_of(&Role::Folder, &SubRole::Text), None);
+        assert_eq!(search_facet_of(&Role::Folder, &SubRole::Scene), None);
+    }
+
+    /// The codes are stable and round-trip: they cross a DTO and land in a settings file, so a
+    /// shifted number would silently re-point a writer's saved filter at a different chip.
+    #[test]
+    fn facet_codes_round_trip() {
+        for facet in SearchFacet::ALL {
+            assert_eq!(SearchFacet::from_code(facet.code()), Some(facet));
+        }
+        assert_eq!(SearchFacet::from_code(0), None);
+        assert_eq!(SearchFacet::from_code(99), None, "a stale code is ignored");
     }
 
     /// Every combination that carries *any* content also carries a synopsis — the

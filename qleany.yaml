@@ -94,6 +94,13 @@ entities:
     type: boolean
   - name: diacritic_sensitive
     type: boolean
+  # Which KINDS of thing to show results from — the six SearchFacet chips, as
+  # skribisto_model::SearchFacet::code() values. EMPTY means no filter (all kinds), which is
+  # what a filter with nothing ticked means to a reader. A code naming no facet is ignored,
+  # never an error: it can only come from a stale settings file.
+  - name: facets
+    type: integer
+    is_list: true
   - name: search_body
     type: boolean
   - name: search_titles
@@ -813,6 +820,10 @@ features:
         type: boolean
       - name: diacritic_sensitive
         type: boolean
+      # SearchFacet codes; empty = every kind. See the Search entity.
+      - name: facets
+        type: integer
+        is_list: true
       - name: search_body
         type: boolean
       - name: search_titles

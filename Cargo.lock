@@ -4424,6 +4424,7 @@ dependencies = [
  "serde_json",
  "skribisto-common",
  "skribisto-macros",
+ "skribisto-model",
  "text-document",
  "uuid",
 ]
