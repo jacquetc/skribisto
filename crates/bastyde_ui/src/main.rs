@@ -52,6 +52,7 @@ mod settings_backup;
 mod settings_panel;
 mod singles;
 mod tabs;
+mod version;
 mod view_models;
 mod welcome_panel;
 mod windows;

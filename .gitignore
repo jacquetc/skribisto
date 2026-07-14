@@ -125,6 +125,8 @@ temp_*/
 
 bck/
 build*
+# ...but a cargo build script is source, and `build*` above would swallow it.
+!crates/*/build.rs
 # LLM/AI tools
 .claude/
 .cursor/

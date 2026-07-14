@@ -561,6 +561,17 @@ impl Widget for WelcomePanel {
         // ── Brand block (top of the sidebar) ───────────────────────────────
         let mut title_style = ctx.theme().typography.body_bold.clone();
         title_style.size = 22.0;
+        // The tagline is set in one of the bundled writing serifs, italic, so the
+        // brand block closes on a line that looks *written* rather than chromed.
+        // The italic run comes from the `*…*` in the tagline's ftl value, which
+        // only means anything with `markup: true` below — without it the asterisks
+        // render literally. It needs the family's italic face: every serif in
+        // `register_editor_fonts` ships one, upright and italic under the same
+        // family name. EB Garamond is the calligraphic one of the three.
+        // `small` (12 px) is too small for Garamond's short x-height, hence 15.
+        let mut tagline_style = ctx.theme().typography.small.clone();
+        tagline_style.family = "EB Garamond".to_string();
+        tagline_style.size = 15.0;
         let logo = IconWidget::from_raster(res!("../../resources/icons/skribisto.png"), 60.0)
             .mode(IconMode::FullColor);
         let branding = bati!(
@@ -572,13 +583,14 @@ impl Widget for WelcomePanel {
                         style: title_style
                         color: TextRole::Primary
                     }
-                    TextWidget::new(lit!("Version 1.9.43 · Bastyde")) {
+                    TextWidget::new(tr!(welcome_version(version = crate::version::app_version()))) {
                         style: TextStyleRole::Small
                         color: TextRole::Secondary
                     }
                     TextWidget::new(tr!(welcome_tagline())) {
-                        style: TextStyleRole::Small
+                        style: tagline_style
                         color: TextRole::Secondary
+                        markup: true
                     }
                 }
             }

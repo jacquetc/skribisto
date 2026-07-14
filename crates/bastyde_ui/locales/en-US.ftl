@@ -149,6 +149,8 @@ settings-chapter-flat-hint = On: a chapter is a single row. You write into it, a
 
 ## Welcome
 welcome-title = Welcome to Skribisto
+# $version is stamped from the git tag at build time (see src/version.rs).
+welcome-version = Version { $version }
 welcome-search = Search works
 welcome-open = Open
 welcome-new-work = New Work
@@ -156,7 +158,9 @@ welcome-recent-works = Recent Works
 welcome-empty-recents = No recent works yet.
 welcome-learn-soon = Guides and tips are coming soon.
 welcome-about-blurb = Skribisto — a Rust + Bastyde rewrite of the writing app.
-welcome-tagline = A quiet place to write long things.
+# The *…* is inline markup, not decoration: it italicises the line (the widget
+# renders it in a serif italic). Keep the asterisks when translating.
+welcome-tagline = *A quiet place to write long things.*
 nav-works = Works
 nav-examples = Examples
 nav-learn = Learn

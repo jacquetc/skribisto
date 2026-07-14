@@ -149,6 +149,8 @@ settings-chapter-flat-hint = Activé : un chapitre est une seule ligne. Vous y �
 
 ## Accueil
 welcome-title = Bienvenue dans Skribisto
+# $version provient de l'étiquette git, apposée à la compilation (src/version.rs).
+welcome-version = Version { $version }
 welcome-search = Rechercher des œuvres
 welcome-open = Ouvrir
 welcome-new-work = Nouvelle œuvre
@@ -156,7 +158,9 @@ welcome-recent-works = Œuvres récentes
 welcome-empty-recents = Aucune œuvre récente.
 welcome-learn-soon = Guides et astuces à venir.
 welcome-about-blurb = Skribisto — une réécriture en Rust + Bastyde de l'application d'écriture.
-welcome-tagline = Un endroit calme pour écrire de longs textes.
+# Les *…* sont du balisage, pas de la décoration : ils mettent la ligne en
+# italique (rendue dans un serif italique). Conserver les astérisques.
+welcome-tagline = *Un endroit calme pour écrire de longs textes.*
 nav-works = Œuvres
 nav-examples = Exemples
 nav-learn = Apprendre
