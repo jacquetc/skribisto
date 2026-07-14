@@ -19,6 +19,7 @@ menu-quit = &Quitter
 ## Barre de menus — Affichage
 menu-view = &Affichage
 menu-outline = &Plan
+menu-search-preview = &Aperçu de recherche
 
 ## Menu contextuel du classeur
 ctx-add = &Ajouter

@@ -15,6 +15,11 @@ pub fn outline_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/outline.svg"))
 }
 
+/// The Search activity icon: a magnifier. Fronts the bottom preview band's rail.
+pub fn search_preview_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/search.svg"))
+}
+
 /// The Inspector activity icon: a right side-panel glyph.
 pub fn inspector_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/inspector.svg"))

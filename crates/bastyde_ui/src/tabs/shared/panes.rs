@@ -143,7 +143,15 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     // intrinsic-sized with its own scroll bar suppressed (see
     // `shared::writing_column`), so title, synopsis and prose scroll together here
     // instead of the prose scrolling inside a fixed pane.
-    tab_backdrop(ScrollArea::new().child(col))
+    //
+    // `prose` is the only one of the five `tab_backdrop` composites that gets the
+    // find banner: `heading` / `placeholder` / `folder_synopsis_only` have no main
+    // writing surface to search, and `folder_segmented` wraps a stream `Switcher`
+    // whose rows have no single "focused editor" to target.
+    crate::tabs::shared::editor::tab_backdrop_with_find(
+        crate::tabs::shared::editor::find_banner_signal(),
+        ScrollArea::new().child(col),
+    )
 }
 
 /// A title (+ optional subtitle / synopsis) form. Shared by the title-bearing item

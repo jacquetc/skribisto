@@ -19,6 +19,7 @@ menu-quit = &Quit
 ## Menu bar — View
 menu-view = &View
 menu-outline = &Outline
+menu-search-preview = Search &Preview
 
 ## Binder context menu
 ctx-add = &Add

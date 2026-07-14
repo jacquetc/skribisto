@@ -18,13 +18,7 @@ use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::settings::{Reloadable, SettingsExt, SettingsRegistry};
 use bastyde::tokens::SurfaceRole::Hover;
-use bastyde::widgets::{
-    Divider, DockOpenLocation, DockRail, DockSide, DockWidgetId, DockingLayout, DropRegion,
-    DropTarget, DropTargetVariant, EventContextMessageBoxExt, Expand, HStack, IconButton,
-    IconButtonSize, MessageBox, MessageBoxButton, MessageBoxButtons, NotificationArchiveModel,
-    NotificationCenterButton, RowDragData, Spacer, Splitter, StandardButton, StatusBar,
-    TabBarVisibility, TabWidget, TextWidget, Toast, ToastAction, VStack,
-};
+use bastyde::widgets::{Divider, DockCorner, DockOpenLocation, DockRail, DockRailItemSize, DockSide, DockWidgetId, DockingLayout, DropRegion, DropTarget, DropTargetVariant, EventContextMessageBoxExt, Expand, HStack, IconButton, IconButtonSize, MessageBox, MessageBoxButton, MessageBoxButtons, NotificationArchiveModel, NotificationCenterButton, RowDragData, Spacer, Splitter, StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast, ToastAction, VStack};
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
@@ -353,6 +347,8 @@ pub struct App {
     /// Stable id for the trailing Inspector dock (created once so a rebuild keeps
     /// the same dock in the `DockingModel`).
     inspector_dock: DockWidgetId,
+    /// Stable id for the bottom search-preview dock (Phase 0.2 stub).
+    preview_dock: DockWidgetId,
     root_child: Option<WidgetId>,
     /// Keeps `backup_settings`'s `Reloadable` registration alive in the app's
     /// shared `SettingsRegistry` (only a `Weak` is held internally — see
@@ -390,6 +386,7 @@ impl App {
             initial_loaded: false,
             editors: None,
             inspector_dock: DockWidgetId::fresh(),
+            preview_dock: DockWidgetId::fresh(),
             root_child: None,
             backup_settings_reloadable: None,
         }
@@ -654,6 +651,38 @@ impl Widget for App {
                 .primary(KeyStroke::new(Key::F9, Modifiers::NONE))
                 .build(),
         );
+        // Phase 0.2 stub — F10 collapses/reveals the BOTTOM band, so the probe can
+        // exercise the `visible_when` park/unpark path that dock content takes when
+        // its side hides. (F9 only relayouts; it never parks the bottom content.)
+        // Removed with the stub.
+        ctx.register_shortcut_global(
+            Shortcut::new("preview.toggle")
+                .name("Toggle Preview Band")
+                .primary(KeyStroke::new(Key::F10, Modifiers::NONE))
+                .build(),
+        );
+        {
+            let docking = self.outline.docking();
+            ctx.register_action_global(Action::new("preview.toggle").on_invoke(move |_i, _c| {
+                docking.toggle_side_visible(DockSide::Bottom);
+            }));
+        }
+        // Phase 0.2 stub — Ctrl+F opens the find banner at the top of the prose
+        // editor, so we can see on screen what the layout shift does to the caret.
+        // A *global* shortcut is resolved before the focused widget sees the key,
+        // which is what we want (the editor must not eat Ctrl+F). Removed with the
+        // stub, when the real per-editor FindViewModel lands.
+        ctx.register_shortcut_global(
+            Shortcut::new("editor.find")
+                .name("Find")
+                .primary(KeyStroke::ctrl(Key::F))
+                .build(),
+        );
+        ctx.register_action_global(Action::new("editor.find").on_invoke(|_i, _c| {
+            let open = crate::tabs::shared::editor::find_banner_signal();
+            let now = open.get();
+            open.set(!now);
+        }));
         {
             let outline = outline.clone();
             ctx.register_action_global(
@@ -1671,6 +1700,18 @@ impl Widget for App {
         let docking = outline.docking();
         docking.set_side_size(DockSide::Trailing, 300.0);
         docking.set_side_rail(DockSide::Trailing, 48.0);
+        // The bottom search-preview band. The bottom-LEADING corner belongs to the
+        // Leading side, so the binder column runs full height and the preview spans
+        // only the width beside it. (Default is `Bottom`, i.e. a full-width band
+        // under everything.)
+        docking.set_side_size(DockSide::Bottom, 180.0);
+        docking.set_corner(DockCorner::BottomLeading, DockSide::Leading);
+        // An activity bar, not a tab strip: `set_side_rail` switches the side's
+        // presentation from tabs to a rail of activity glyphs, and `Compact` keeps
+        // them at the standard icon-button size so the band spends its height on
+        // prose rather than on chrome.
+        docking.set_side_rail(DockSide::Bottom, 36.0);
+        docking.set_side_rail_size(DockSide::Bottom, DockRailItemSize::Compact);
         let layout = DockingLayout::new(outline.docking())
             .rail(
                 DockRail::new(DockSide::Leading)
@@ -1679,6 +1720,11 @@ impl Widget for App {
             )
             .rail(
                 DockRail::new(DockSide::Trailing)
+                    .background(SurfaceRole::Main)
+                    .divider(),
+            )
+            .rail(
+                DockRail::new(DockSide::Bottom)
                     .background(SurfaceRole::Main)
                     .divider(),
             )
@@ -1694,6 +1740,9 @@ impl Widget for App {
                 outline.clone(),
                 active_item,
                 self.inspector_dock,
+            ))
+            .dock(crate::docks::search_preview::search_preview_dock(
+                self.preview_dock,
             ));
         outline.open_in_layout();
         // Mount the inspector on the trailing side (otherwise the side shows the
@@ -1702,6 +1751,12 @@ impl Widget for App {
             self.inspector_dock,
             DockOpenLocation::side(DockSide::Trailing),
         );
+        // Phase 0.2 stub: mount the preview so the bottom band is visible on
+        // launch (a hidden bottom band collapses its rail entirely, so there is
+        // no affordance to reveal it by hand).
+        outline
+            .docking()
+            .open_dock(self.preview_dock, DockOpenLocation::side(DockSide::Bottom));
 
         // ── Status bar (thin) with the notification bell ─────────────────────
         let archive = ctx

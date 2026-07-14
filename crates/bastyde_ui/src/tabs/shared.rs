@@ -9,7 +9,7 @@
 //! All are re-exported here, so every tab module calls `shared::foo` without
 //! caring which file it lives in.
 
-mod editor;
+pub(crate) mod editor;
 mod panes;
 mod stream;
 

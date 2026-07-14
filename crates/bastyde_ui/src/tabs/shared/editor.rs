@@ -14,7 +14,7 @@ use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::rich_text::{EditorHandle, RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
     Expand, FixedSize, GroupHeader, HStack, MaxSize, MenuItem, MenuList, Padding, Panel,
-    RectWidget, Spacer, TextInput, VStack, ZStack,
+    RectWidget, Spacer, Switcher, TextInput, TextWidget, VStack, ZStack,
 };
 
 use crate::tabs::TitleField;
@@ -371,6 +371,102 @@ pub fn tab_backdrop(body: impl Widget + 'static) -> Box<dyn Widget> {
             }
         }
     ))
+}
+
+thread_local! {
+    /// Phase 0.2 stub: the app-wide "find banner is open" flag. The real feature
+    /// gives every `(item_id, field)` its own `FindViewModel`, held in a registry
+    /// on `EditorsViewModel`; this single shared signal exists only so a global
+    /// Ctrl+F can drive the banner on screen and show us the layout shift.
+    static FIND_BANNER_OPEN: Signal<bool> = Signal::new(false);
+}
+
+/// Phase 0.2 stub: the shared find-banner visibility signal.
+pub fn find_banner_signal() -> Signal<bool> {
+    FIND_BANNER_OPEN.with(|s| s.clone())
+}
+
+/// As [`tab_backdrop`], plus a **find banner** above the body — the IntelliJ
+/// shape: a full-width strip at the top of the editor, in normal flow, that
+/// pushes the prose down rather than floating over it (a top-right floating box
+/// covers the very match it just found, which is an open bug in VS Code itself).
+///
+/// It mounts here, **above the body**, and the body is the tab's outer
+/// `ScrollArea` — so the banner is pinned and never scrolls away with the prose.
+/// [`Collapse`] animates it to its natural height and honours reduced-motion.
+///
+/// Phase 0.2 stub: the row is a placeholder, and `visible` is driven by a global
+/// Ctrl+F. It exists to answer one question on screen — *what happens to the
+/// caret when the prose shifts down?* — before the real `FindViewModel` is built.
+pub fn tab_backdrop_with_find(
+    visible: Signal<bool>,
+    body: impl Widget + 'static,
+) -> Box<dyn Widget> {
+    // `Switcher`, not `Collapse`.
+    //
+    // `Collapse` looks like the right widget (it animates to natural height and
+    // honours reduced-motion) but it does not work here, and it has **zero other
+    // consumers anywhere in bastyde** — no crate, no example — so this stub was its
+    // first real user. Driven from an external signal it never leaves progress=0:
+    // `ctx.animated_signal()` mints a *fresh* signal on every `build()` while
+    // `ctx.effect()`'s observer survives rebuilds, so the effect keeps animating a
+    // signal that `layout_response` no longer reads. Verified on the live app: the
+    // action fires, the effect fires, `to_or_snap` runs — and nothing moves.
+    //
+    // `Switcher` is the proven pattern (the synopsis toggle a few lines up in
+    // `panes::prose` uses exactly this), and it mounts/unmounts rather than parking
+    // a zero-size child, so a closed banner stays out of the a11y tree and the Tab
+    // order — which is what we want anyway.
+    //
+    // The banner is wrapped in `Expand::horizontal` so it spans the editor: sized to
+    // its natural width it renders as a stub a few dozen pixels wide.
+    // `Expand::horizontal` must wrap the *Switcher*, not sit inside it. Both
+    // `Switcher` and `Collapse` size to their child's NATURAL width, and a row whose
+    // only stretchy element is an inner `Expand` has a natural width of roughly
+    // nothing — so the banner rendered as a ~55px stub in the corner. Expanding on
+    // the outside gives the page a bounded proposal to fill.
+    let page = visible.map(|on| if *on { 1 } else { 0 });
+    let column = VStack::new()
+        .spacing(0.0)
+        .child(
+            Expand::horizontal().child(
+                Switcher::new(page)
+                    .child(vspace(0.0))
+                    .child(find_banner_row()),
+            ),
+        )
+        .child(Expand::new().child(body));
+    Box::new(bati!(
+        Panel {
+            background: SurfaceRole::Content
+            corner_radius: 0.0
+            padding: 0.0
+            child: column
+        }
+    ))
+}
+
+/// The find banner's row (Phase 0.2 placeholder): a raised strip with a query
+/// field and a match counter, sized like the real thing so the layout shift it
+/// causes is the one we will actually ship.
+fn find_banner_row() -> impl Widget {
+    let row = HStack::new()
+        .spacing(8.0)
+        .child(
+            Expand::horizontal()
+                .child(TextInput::new(Signal::new(String::new())).placeholder(lit!("Find…"))),
+        )
+        .child(TextWidget::new(lit!("0 of 0")).color(TextRole::Secondary));
+    bati!(
+        Panel {
+            background: SurfaceRole::Raised
+            corner_radius: 0.0
+            padding: 0.0
+            child: Padding::symmetric(12.0, 6.0) {
+                child: row
+            }
+        }
+    )
 }
 
 /// A fixed vertical gap.

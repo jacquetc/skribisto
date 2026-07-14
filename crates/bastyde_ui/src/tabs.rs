@@ -52,7 +52,7 @@ mod item_note;
 mod item_part;
 mod item_scene;
 mod item_text;
-mod shared;
+pub(crate) mod shared;
 
 /// Which of the item's two names this field edits.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

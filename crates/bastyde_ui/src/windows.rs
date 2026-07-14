@@ -31,10 +31,7 @@ use std::rc::Rc;
 use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::primitives::icon_widget::IconMode;
-use bastyde::widgets::{
-    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButton, IconButtonSize, IconWidget,
-    MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar, VStack, WindowFrame,
-};
+use bastyde::widgets::{Center, CollapsePolicy, DeadZone, DockSide, Expand, HStack, IconButton, IconButtonSize, IconWidget, MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar, VStack, WindowFrame};
 
 use frontend::AppContext;
 use frontend::common::entities::WorkShape;
@@ -484,16 +481,31 @@ impl ProjectWindowFactory {
                             )
                         })
                         .menu(tr!(menu_view()), {
-                            // Reflect-only checkmark: mirrors the dock's truth
-                            // (`is_visible`) without writing it; the toggle is
-                            // driven by the `outline.toggle` intent (F9).
+                            // Reflect-only checkmarks: they mirror each dock's truth
+                            // without writing it; the toggles are driven by the
+                            // `outline.toggle` (F9) / `preview.toggle` (F10) intents.
                             let outline = outline.clone();
                             move |m| {
+                                // The bottom band has no persistent reveal affordance
+                                // of its own — a hidden top/bottom side collapses its
+                                // rail with it (unlike leading/trailing, whose rail
+                                // survives as the way back). So the menu entry is not
+                                // a convenience here, it is the only way to bring the
+                                // preview back once it is closed.
+                                let preview_visible = outline
+                                    .docking()
+                                    .side_visible_signal(DockSide::Bottom);
                                 m.item(
                                     MenuEntry::new(tr!(menu_outline()))
                                         .checked(outline.is_visible())
                                         .intent("outline.toggle")
                                         .shortcut("outline.toggle"),
+                                )
+                                .item(
+                                    MenuEntry::new(tr!(menu_search_preview()))
+                                        .checked(preview_visible)
+                                        .intent("preview.toggle")
+                                        .shortcut("preview.toggle"),
                                 )
                             }
                         });
