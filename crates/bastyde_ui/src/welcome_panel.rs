@@ -767,7 +767,11 @@ mod tests {
         assert_eq!(rule.x, sidebar.right(), "the rule abuts the sidebar");
         assert_eq!(rule.height, H, "the rule runs the full height");
         assert_eq!(pane.x, rule.right(), "the pane abuts the rule");
-        assert_eq!(pane.right(), W, "no gutter to the right of the content pane");
+        assert_eq!(
+            pane.right(),
+            W,
+            "no gutter to the right of the content pane"
+        );
         assert_eq!(pane.height, H, "the content pane fills the body height");
     }
 }

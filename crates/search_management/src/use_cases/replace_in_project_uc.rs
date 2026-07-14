@@ -48,6 +48,7 @@ use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::any::Any;
 use std::collections::HashSet;
+use text_document::matching::MatchOptions;
 use text_document::{BatchDocument, DjotExportOptions, DjotImportOptions, FindOptions};
 
 pub trait ReplaceInProjectUnitOfWorkFactoryTrait: Send + Sync {
@@ -121,13 +122,24 @@ impl ReplaceInProjectUseCase {
             .filter(|r| !excluded.contains(&r.id))
             .collect();
 
-        let opts = FindOptions {
+        // The same criteria, in the two shapes the two surfaces take: `find_opts` for a
+        // parsed `BatchDocument`, `opts` for a plain string (a title, a label).
+        //
+        // Both are fed by the SAME `Search` entity and both resolve to the same shared
+        // matcher underneath, so they cannot disagree about what counts as a match — a
+        // rename that renamed a scene's prose but not its title would be exactly the kind
+        // of half-done edit this use case exists to prevent.
+        let find_opts = FindOptions {
             case_sensitive: search.case_sensitive,
             whole_word: search.whole_word,
             // Regex is not exposed in the UI (a novelist is not the audience), and it
             // would need its own invalid-pattern handling and a second matching path.
             use_regex: false,
             search_backward: false,
+        };
+        let opts = MatchOptions {
+            case_sensitive: search.case_sensitive,
+            whole_word: search.whole_word,
         };
 
         // Snapshot AFTER the read-only planning above and BEFORE the first mutation —
@@ -167,22 +179,14 @@ impl ReplaceInProjectUseCase {
                         MatchField::Title => item.title.clone(),
                         _ => item.label.clone(),
                     };
-                    let hits = crate::matching::occurrences(
-                        &current,
-                        &search.query,
-                        search.case_sensitive,
-                    );
+                    let hits = crate::matching::occurrences(&current, &search.query, opts);
                     if hits.len() as u64 != row.occurrence_count {
                         // The field moved under us since the writer reviewed it.
                         skipped_stale.push(row.id);
                         continue;
                     }
-                    let rewritten = crate::matching::replace_all(
-                        &current,
-                        &search.query,
-                        search.case_sensitive,
-                        &case_of,
-                    );
+                    let rewritten =
+                        crate::matching::replace_all(&current, &search.query, opts, &case_of);
                     match row.match_field {
                         MatchField::Title => item.title = rewritten,
                         _ => item.label = rewritten,
@@ -202,7 +206,7 @@ impl ReplaceInProjectUseCase {
 
                     // Re-derive the matches inside the document. Never trust a position
                     // captured at review time.
-                    let hits = batch.find_all(&search.query, &opts)?;
+                    let hits = batch.find_all(&search.query, &find_opts)?;
                     if hits.len() as u64 != row.occurrence_count {
                         skipped_stale.push(row.id);
                         continue;
@@ -221,12 +225,8 @@ impl ReplaceInProjectUseCase {
                     // the character formatting this path currently drops. Nothing in the
                     // UI calls replace yet, for exactly these two reasons.
                     let djot = batch.to_djot(&DjotExportOptions::default())?;
-                    content.data = crate::matching::replace_all(
-                        &djot,
-                        &search.query,
-                        search.case_sensitive,
-                        &case_of,
-                    );
+                    content.data =
+                        crate::matching::replace_all(&djot, &search.query, opts, &case_of);
 
                     uow.update_content(&content)?;
                     touched_items.insert(row.binder_item_id);

@@ -393,3 +393,67 @@ fn a_case_insensitive_search_over_turkish_prose_does_not_panic() {
         "the matched span must be the match itself, not text shifted by the case fold"
     );
 }
+
+/// **`whole_word` is no longer a dead flag.**
+///
+/// The DTO accepted it and the `Search` entity stored it, but nothing read it — so the
+/// moment the UI bound a checkbox to it, the checkbox would have silently done nothing.
+/// It now reaches `text_document::matching`, the same matcher the editor's find uses.
+///
+/// And because that matcher treats an apostrophe as a word boundary, whole-word `Elena`
+/// finds `Elena's` — the miss that, in a Replace All, is a half-renamed manuscript.
+#[test]
+fn whole_word_reaches_the_matcher_and_finds_the_possessive() {
+    use frontend::commands::content_commands;
+    use frontend::common::entities::ContentRole;
+
+    let ctx = loaded_ctx();
+
+    // Put a known sentence into a real scene: one standalone name, one possessive, and
+    // one word that merely CONTAINS the name.
+    let victim = binder_item_commands::get_all_binder_item(&ctx)
+        .unwrap()
+        .into_iter()
+        .filter(|i| i.activated)
+        .find_map(|i| {
+            let cids = binder_item_commands::get_binder_item_relationship(
+                &ctx,
+                &i.id,
+                &frontend::common::direct_access::binder_item::BinderItemRelationshipField::Contents,
+            )
+            .unwrap();
+            content_commands::get_content_multi(&ctx, &cids)
+                .unwrap()
+                .into_iter()
+                .flatten()
+                .find(|c| c.role == ContentRole::SceneText)
+        })
+        .expect("a scene with body text");
+
+    content_commands::update_content(
+        &ctx,
+        None,
+        &frontend::content::dtos::UpdateContentDto {
+            id: victim.id,
+            created_at: victim.created_at,
+            updated_at: victim.updated_at,
+            activated: victim.activated,
+            role: victim.role.clone(),
+            data: "Elena went home. Elena's coat stayed. Elenamania spread.".to_string(),
+        },
+    )
+    .unwrap();
+
+    let mut q = dto("Elena");
+    q.search_titles = false;
+    q.search_synopsis = false;
+    q.whole_word = true;
+
+    let out = search_management_commands::run_search(&ctx, &q).expect("run_search");
+    assert_eq!(
+        out.match_count, 2,
+        "whole-word `Elena` must match the standalone name AND the possessive, but NOT \
+         `Elenamania` — if this is 3 the flag is still being ignored; if it is 1 the \
+         apostrophe is still gluing the possessive into one word"
+    );
+}

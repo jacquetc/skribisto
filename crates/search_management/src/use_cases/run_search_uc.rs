@@ -4,15 +4,24 @@
 //
 //! `run_search` — rebuild the project's `SearchResult` set for the current query.
 //!
-//! **Phase 0.1 vertical slice.** Matching here is deliberately the simplest thing
-//! that can possibly work: a literal, ASCII, case-sensitive substring scan over the
-//! raw `Content.data`. That is *not* the shipping matcher — it exists to prove the
-//! pipe (entities → use case → bulk writes → one coalesced event → UI projection)
-//! before the linguistic work goes in on top of it. What lands later, per the plan:
+//! ## Matching
 //!
-//!   * a prose-correct word boundary (whole-word `Elena` must match `Elena's`),
-//!   * per-scene language resolution + folding (`Aurelien` finds `Aurélien`),
-//!   * plain-text extraction from Djot (so markup punctuation never matches),
+//! Matching goes through **`text_document::matching`** — the *same* matcher the editor's
+//! own find and find-and-replace use. It is not this crate's own: two matchers drift, and
+//! a writer meets that drift as "the editor found it but the search panel didn't". So
+//! case folding (offset-correct, even where folding changes a string's length) and the
+//! prose-correct word boundary (whole-word `Elena` finds `Elena's`) are already right
+//! here, because they are right *there*.
+//!
+//! Still to land, per the plan:
+//!
+//!   * per-scene language resolution + diacritic folding (`Aurelien` finds `Aurélien`) —
+//!     until then `diacritic_sensitive` is a **dead** flag: the DTO takes it, the `Search`
+//!     entity stores it, and nothing reads it.
+//!   * **plain-text extraction from Djot.** This still scans the raw `Content.data`, which
+//!     is *markup*: a search for `http` hits link URLs, and an occurrence count taken from
+//!     the source will not agree with what a parsed replace re-derives — which would make
+//!     `replace_in_project`'s "the text moved under us" guard fire on perfectly good rows.
 //!   * a versioned corpus cache (re-parsing 4000 rows per keystroke is not viable).
 //!
 //! What *is* already real and must not regress:
@@ -40,6 +49,7 @@ use common::entities::{
     Binder, BinderItem, Content, ContentRole, MatchField, Search, SearchResult, Work, WorkInfo,
 };
 use common::types::EntityId;
+use text_document::matching::MatchOptions;
 
 /// Most rows we will keep for one search. A common word ("said", "elle") matches
 /// thousands of times in a novel; past this we stop scanning and set `truncated`.
@@ -271,9 +281,21 @@ impl RunSearchUseCase {
 
     /// Match every field, one row per field that hits. Stops at `RESULT_CAP`.
     fn scan(corpus: &[Field], dto: &RunSearchDto) -> (Vec<SearchResult>, bool) {
+        // The SHARED matcher's options — the same ones the editor's own find uses, so a
+        // writer can never be shown a result set the editor disagrees with.
+        //
+        // `whole_word` reaches the matcher now. It used to be a dead field: the DTO
+        // accepted it, the `Search` entity stored it, and nothing read it — a toggle that
+        // would have silently done nothing the moment the UI bound a checkbox to it.
+        // (`diacritic_sensitive` is still dead; it comes alive with the folding work.)
+        let options = MatchOptions {
+            case_sensitive: dto.case_sensitive,
+            whole_word: dto.whole_word,
+        };
+
         let mut rows = Vec::new();
         for field in corpus {
-            let hits = crate::matching::occurrences(&field.text, &dto.query, dto.case_sensitive);
+            let hits = crate::matching::occurrences(&field.text, &dto.query, options);
             let Some(&(first, first_len)) = hits.first() else {
                 continue;
             };

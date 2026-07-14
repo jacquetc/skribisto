@@ -757,8 +757,8 @@ dependencies = [
 name = "bastyde-resources"
 version = "0.6.2"
 dependencies = [
+ "bastyde-canvas",
  "proc-macro2",
- "quick-xml 0.40.1",
  "quote",
  "syn",
 ]
