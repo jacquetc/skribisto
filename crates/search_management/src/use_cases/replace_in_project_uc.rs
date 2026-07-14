@@ -52,16 +52,18 @@ use crate::ReplaceInProjectDto;
 use crate::ReplaceInProjectResultDto;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
+use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::search::SearchRelationshipField;
+use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    BinderItem, Content, ContentRole, MatchField, Search, SearchResult, Work, WorkInfo,
+    Binder, BinderItem, Content, ContentRole, MatchField, Search, SearchResult, Work, WorkInfo,
 };
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::any::Any;
-use std::collections::HashSet;
-use text_document::matching::MatchOptions;
+use std::collections::{HashMap, HashSet};
+use text_document::matching::{FoldLocale, MatchOptions};
 use text_document::{
     BatchDocument, DjotExportOptions, DjotImportOptions, FindOptions, ReplaceFormatPolicy,
     ReplaceOptions,
@@ -78,9 +80,17 @@ pub trait ReplaceInProjectUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "SearchResult", action = "GetMulti")]
 #[macros::uow_action(entity = "SearchResult", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "GetAll")]
+#[macros::uow_action(entity = "Work", action = "GetRelationship")]
 #[macros::uow_action(entity = "Work", action = "Snapshot")]
 #[macros::uow_action(entity = "Work", action = "Restore")]
+// Binders and the whole item list: needed to re-derive the language chain over the ordered
+// stream (item -> nearest Book -> Work). Re-derived rather than carried on the SearchResult
+// row, for the same reason the offsets are: a row is a record of what the writer *reviewed*,
+// and the manuscript may have moved since.
+#[macros::uow_action(entity = "Binder", action = "GetMulti")]
+#[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "Get")]
+#[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "Update")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
@@ -138,25 +148,16 @@ impl ReplaceInProjectUseCase {
             .filter(|r| !excluded.contains(&r.id))
             .collect();
 
-        // The same criteria, in the two shapes the two surfaces take: `find_opts` for a
-        // parsed `BatchDocument`, `opts` for a plain string (a title, a label).
+        // The language every item is written in, resolved item → nearest Book → Work over
+        // the binder's ORDERED stream — through the same function `run_search` used to find
+        // these rows. Two copies of that chain would drift, and a writer would meet the
+        // drift as a rename that found a word under one set of rules and rewrote it under
+        // another.
         //
-        // Both are fed by the SAME `Search` entity and both resolve to the same shared
-        // matcher underneath, so they cannot disagree about what counts as a match — a
-        // rename that renamed a scene's prose but not its title would be exactly the kind
-        // of half-done edit this use case exists to prevent.
-        let find_opts = FindOptions {
-            case_sensitive: search.case_sensitive,
-            whole_word: search.whole_word,
-            // Regex is not exposed in the UI (a novelist is not the audience), and it
-            // would need its own invalid-pattern handling and a second matching path.
-            use_regex: false,
-            search_backward: false,
-        };
-        let opts = MatchOptions {
-            case_sensitive: search.case_sensitive,
-            whole_word: search.whole_word,
-        };
+        // Re-derived here rather than carried on the `SearchResult` row, for the same
+        // reason the offsets are: a row records what the writer *reviewed*, and the
+        // manuscript may have moved since.
+        let languages = Self::resolve_languages(&mut uow, &work)?;
 
         // Snapshot AFTER the read-only planning above and BEFORE the first mutation —
         // the discipline `empty_trash` follows.
@@ -168,20 +169,56 @@ impl ReplaceInProjectUseCase {
         // the confirm dialog says "across N items", and it must not say two.
         let mut touched_items: HashSet<EntityId> = HashSet::new();
 
-        // How each individual occurrence is rewritten. With `preserve_case`, a rename
-        // keeps the case it found (AURÉLIEN → AURÉLIAN, not aurélian) — which is the
-        // whole point of a rename, and was silently ignored before.
-        let replacement = dto.replacement.clone();
-        let preserve = dto.preserve_case;
-        let case_of = move |matched: &str| -> String {
-            if preserve {
-                crate::matching::preserve_case(matched, &replacement)
-            } else {
-                replacement.clone()
-            }
-        };
-
         for row in &rows {
+            // The scene's own language, and it decides two things — both of which a
+            // profile-blind rename gets wrong, silently:
+            //
+            //   * what MATCHES. In Turkish `Ilse` and `İlse` are different words, and a
+            //     rename that folded them together would rewrite the wrong one.
+            //   * what the preserved case IS. The untailored uppercase of `i` is `I`, which
+            //     in Turkish is the capital of the *other* letter — so `ilk` would become
+            //     `ILK` where the prose needs `İLK`.
+            let tag = languages
+                .get(&row.binder_item_id)
+                .cloned()
+                .unwrap_or_default();
+            let locale = FoldLocale::from_tag(&tag);
+
+            // The same criteria, in the two shapes the two surfaces take: `find_opts` for a
+            // parsed `BatchDocument`, `opts` for a plain string (a title, a label).
+            //
+            // Both are fed by the SAME `Search` entity and both resolve to the same shared
+            // matcher underneath, so they cannot disagree about what counts as a match — a
+            // rename that renamed a scene's prose but not its title would be exactly the
+            // kind of half-done edit this use case exists to prevent.
+            let find_opts = FindOptions {
+                case_sensitive: search.case_sensitive,
+                whole_word: search.whole_word,
+                diacritic_sensitive: search.diacritic_sensitive,
+                language: tag,
+                // Regex is not exposed in the UI (a novelist is not the audience), and it
+                // would need its own invalid-pattern handling and a second matching path.
+                use_regex: false,
+                search_backward: false,
+            };
+            let opts = MatchOptions {
+                case_sensitive: search.case_sensitive,
+                whole_word: search.whole_word,
+                diacritic_sensitive: search.diacritic_sensitive,
+                locale,
+            };
+
+            // How each individual occurrence is rewritten. With `preserve_case`, a rename
+            // keeps the case it found (AURÉLIEN → AURÉLIAN, not aurélian) — which is the
+            // whole point of a rename, and was silently ignored before.
+            let case_of = |matched: &str| -> String {
+                if dto.preserve_case {
+                    text_document::matching::preserve_case(matched, &dto.replacement, locale)
+                } else {
+                    dto.replacement.clone()
+                }
+            };
+
             match row.match_field {
                 // Titles and labels are plain strings on the item, not Djot Content —
                 // no parser involved, so this is a direct string rewrite.
@@ -284,6 +321,33 @@ impl ReplaceInProjectUseCase {
             occurrences_replaced,
             skipped_stale,
         })
+    }
+
+    /// The language tag of every item in the Work, resolved item → nearest Book → Work.
+    ///
+    /// The chain runs over each binder's **ordered** item stream — "the book an item is in"
+    /// is the most recent `Book` before it, because the binder tree is organisational only
+    /// and book structure is a state machine over the flat stream. Delegated to
+    /// [`crate::language`], which is the *same* function `run_search` used to find these
+    /// rows: a second copy would drift, and the drift would show up as a rename that found
+    /// a word under one set of rules and rewrote it under another.
+    fn resolve_languages(
+        uow: &mut Box<dyn ReplaceInProjectUnitOfWorkTrait>,
+        work: &Work,
+    ) -> Result<HashMap<EntityId, String>> {
+        let mut tags = HashMap::new();
+        let binder_ids = uow.get_work_relationship(&work.id, &WorkRelationshipField::Binders)?;
+        for binder in uow.get_binder_multi(&binder_ids)?.into_iter().flatten() {
+            let item_ids =
+                uow.get_binder_relationship(&binder.id, &BinderRelationshipField::BinderItems)?;
+            let items: Vec<BinderItem> = uow
+                .get_binder_item_multi(&item_ids)?
+                .into_iter()
+                .flatten()
+                .collect();
+            crate::language::tags_in_binder(&work.dict_language, &items, &mut tags);
+        }
+        Ok(tags)
     }
 
     /// The `Content` row a result points at, matched by its role.

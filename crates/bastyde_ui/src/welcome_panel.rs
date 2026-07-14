@@ -55,7 +55,7 @@ use bastyde::widgets::{
 use frontend::AppContext;
 
 use crate::models::ExamplesListModel;
-use crate::view_models::WelcomeViewModel;
+use crate::view_models::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 
 /// The four left-rail sections, in order.
 #[derive(Clone, Copy)]
@@ -438,6 +438,110 @@ impl Widget for RecentRow {
 /// Width of the sidebar column, in dp.
 const SIDEBAR_W: f32 = 264.0;
 
+/// Gap between the nav and the social row beneath it, in dp.
+const SOCIAL_GAP: f32 = 10.0;
+
+/// Sidebar insets, in dp — `Padding::new`'s order: top, trailing, bottom,
+/// leading. The top one replaces the height the old inner title strip used to
+/// give the brand block; the side ones keep the brand — and the full-width nav
+/// pills — off the window edge and the divider; the bottom one keeps the social
+/// row off the window's bottom edge.
+const SIDEBAR_INSETS: (f32, f32, f32, f32) = (14.0, 16.0, 14.0, 16.0);
+
+/// The project's two public links, tucked under the sidebar nav — the pair
+/// v1.9.x offered: the GitHub repository and the Discord server. Clicking one
+/// hands its URL to the OS default handler (see
+/// [`WelcomeViewModel::open_link`]).
+///
+/// Icon-only `Plain` buttons: `Button` reads its **label** for the AT name
+/// whatever the icon location ([`IconLocation::IconOnly`] only drops it from the
+/// *drawn* content), so the same string serves as the tooltip and as what a
+/// screen reader announces — a labelled row, with no words of chrome under the
+/// nav.
+///
+/// **Both marks stay [`IconMode::Tintable`]** (the `IconWidget` default), so
+/// they resolve through the button's text role: they follow the theme into dark
+/// mode and pick up the same hover/press tint as everything else in the sidebar.
+/// The shipped artwork cannot do that by itself — the Octicons mark is a
+/// near-black `#1B1F23` silhouette (invisible on a dark sidebar) and the Discord
+/// logo is brand blurple, so drawing either in its own colors would leave a
+/// two-icon footer that agrees with neither the theme nor itself. Tinting costs
+/// only the blurple, which is not information here: the shape already says
+/// "Discord".
+fn social_links(vm: &WelcomeViewModel) -> impl Widget + 'static {
+    let github_vm = vm.clone();
+    let discord_vm = vm.clone();
+    // The Discord logo's viewBox is 71×55, not square — `SvgIcon` fits it into
+    // the icon box preserving aspect and centring, so it lands ~18×14 next to
+    // the square GitHub mark. That is the logo's own proportion, not a squash.
+    let github_icon =
+        IconWidget::from_svg_icon(res!("../../resources/icons/Octicons-mark-github.svg"))
+            .icon_size(18.0);
+    let discord_icon =
+        IconWidget::from_svg_icon(res!("../../resources/icons/Discord-Logo-Color.svg"))
+            .icon_size(18.0);
+
+    bati!(
+        Center {
+            HStack {
+                spacing: 2.0
+                Button::new(tr!(welcome_github())) {
+                    variant: ButtonVariant::Plain
+                    icon: github_icon, IconLocation::IconOnly
+                    tooltip: tr!(welcome_github())
+                    on_activate_fn: move |ctx| github_vm.open_link(GITHUB_URL, ctx)
+                }
+                Button::new(tr!(welcome_discord())) {
+                    variant: ButtonVariant::Plain
+                    icon: discord_icon, IconLocation::IconOnly
+                    tooltip: tr!(welcome_discord())
+                    on_activate_fn: move |ctx| discord_vm.open_link(DISCORD_URL, ctx)
+                }
+            }
+        }
+    )
+}
+
+/// The sidebar column: the brand block at the top, then — pushed to the bottom
+/// by the `Spacer` between them — the nav with the social row under it.
+///
+/// Split out of [`WelcomePanel::build`] for the same reason as
+/// [`welcome_body`]: the geometry is what regresses, and it can be laid out
+/// headlessly (see this module's tests) while the real panel needs a live
+/// backend. Nothing here decides what the three blocks *contain*.
+///
+/// The `Spacer` is what pins the bottom group, so nothing in this column may be
+/// given an unbounded height — a width-only `FixedSize` around the nav (which
+/// proposes `None` on the other axis) would collapse the `Spacer` and float the
+/// nav up under the brand block. It is also why the nav takes no height pin at
+/// all: a vertical `TabBar` already reports its own content height, and pinning
+/// it would additionally hide the sidebar's width from it and defeat
+/// `TabSizing::Fill`.
+///
+/// No "show at startup" control here — that setting lives in Settings ▸
+/// Appearance & Behaviour only (a launcher-local copy would hide the very screen
+/// you're looking at, with no way back).
+fn welcome_sidebar(
+    branding: impl Widget + 'static,
+    nav: impl Widget + 'static,
+    links: impl Widget + 'static,
+) -> impl Widget + 'static {
+    let (top, trailing, bottom, leading) = SIDEBAR_INSETS;
+    bati!(
+        Padding::new(top, trailing, bottom, leading) {
+            VStack {
+                spacing: 0.0
+                child: branding
+                Spacer
+                child: nav
+                Padding::new(SOCIAL_GAP, 0.0, 0.0, 0.0) {
+                    child: links
+                }
+            }
+        }
+    )
+}
+
 /// The Welcome body: fixed-width **sidebar** · vertical rule · flexible
 /// **content pane**, all three filling whatever the window offers — the whole
 /// layout, in one expression. Split out of [`WelcomePanel::build`] so the
@@ -648,30 +752,8 @@ impl Widget for WelcomePanel {
             .child(placeholder(tr!(welcome_learn_soon())))
             .child(placeholder(tr!(welcome_about_blurb())));
 
-        // ── Sidebar: brand block, a Spacer, the bottom-pinned nav ───────────
-        // No "show at startup" control here — that setting lives in Settings ▸
-        // Appearance & Behaviour only (a launcher-local copy would hide the very
-        // screen you're looking at, with no way back).
-        //
-        // Insets, clockwise from the top: the top one replaces the height the old
-        // inner title strip used to give the brand block; the side ones keep the
-        // brand — and the full-width nav pills — off the window edge and the
-        // divider; the bottom one keeps the nav off the window's bottom edge.
-        let sidebar = bati!(
-            Padding::new(14.0, 16.0, 14.0, 16.0) {
-                VStack {
-                    spacing: 0.0
-                    child: branding
-                    Spacer
-                    // No height pin: a vertical TabBar reports its own content
-                    // height (4 pills × 34 dp), so the `Spacer` above claims the
-                    // rest and pushes the nav to the sidebar bottom. A `FixedSize`
-                    // here would also hide the sidebar's width from the bar and
-                    // defeat `TabSizing::Fill`.
-                    child: bar
-                }
-            }
-        );
+        // ── Sidebar: brand block, a Spacer, the bottom-pinned nav + links ───
+        let sidebar = welcome_sidebar(branding, bar, social_links(&vm));
 
         // Two-tone: the content pane sits on a darker (Sunken) base, against the
         // sidebar's window surface (`surface_main` — the same fill the title bar
@@ -723,6 +805,68 @@ impl Widget for WelcomePanel {
 mod tests {
     use super::*;
     use bastyde::core::widget_tree::WidgetTree;
+    use bastyde::widgets::FixedSize;
+
+    /// A stand-in block of a known size — the sidebar test cares where the three
+    /// blocks land, not what they draw.
+    fn block(w: f32, h: f32) -> FixedSize {
+        FixedSize::new().width(w).height(h).child(Spacer::new())
+    }
+
+    /// **The social links sit under the nav, and the pair stays pinned to the
+    /// sidebar's bottom.** The `Spacer` above them is the only thing holding
+    /// them there, so this is the piece that breaks if anything in the column is
+    /// ever handed an unbounded height (see [`welcome_sidebar`]): the group
+    /// would ride up under the brand block instead.
+    ///
+    /// Laid out on stand-in blocks — the nav's own height is `TabBar`'s business,
+    /// and the column geometry must not depend on it.
+    #[test]
+    fn the_social_links_sit_below_the_bottom_pinned_nav() {
+        const H: f32 = 546.0;
+        const NAV_H: f32 = 136.0; // 4 pills × 34 dp, as the real bar reports
+        const LINKS_H: f32 = 30.0;
+        let (top, _trailing, bottom, leading) = SIDEBAR_INSETS;
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(welcome_sidebar(
+            block(120.0, 110.0),
+            block(SIDEBAR_W, NAV_H),
+            block(60.0, LINKS_H),
+        )));
+        tree.layout(SizeProposal::exact(SIDEBAR_W, H));
+
+        // Padding ▸ VStack ▸ [branding, Spacer, nav, Padding ▸ links]
+        let column = tree.children(id)[0];
+        let rows = tree.children(column);
+        assert_eq!(rows.len(), 4, "branding · Spacer · nav · the links row");
+        let branding = tree.bounds(rows[0]);
+        let nav = tree.bounds(rows[2]);
+        let links = tree.bounds(rows[3]);
+
+        assert_eq!(branding.y, top, "the brand block stays at the top");
+        assert_eq!(branding.x, leading, "…inside the leading inset");
+
+        assert_eq!(
+            links.y,
+            nav.bottom(),
+            "the links row starts where the nav ends (its own top gap is inside it)"
+        );
+        assert_eq!(
+            links.bottom(),
+            H - bottom,
+            "the links row — not the nav — is what now rides the bottom inset"
+        );
+        assert_eq!(
+            nav.bottom(),
+            H - bottom - LINKS_H - SOCIAL_GAP,
+            "the nav is pushed up by exactly the links row and its gap"
+        );
+        assert!(
+            nav.y > branding.bottom(),
+            "the Spacer still holds the bottom group away from the brand block"
+        );
+    }
 
     /// **The Welcome content is the window, not a card inside it.**
     ///

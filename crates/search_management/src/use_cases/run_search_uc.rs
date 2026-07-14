@@ -26,11 +26,16 @@
 //! document (27x cheaper than a full import — and a keystroke rescans the whole
 //! manuscript), pinned upstream as being *exactly* the text the document itself searches.
 //!
+//! ## The language is per SCENE
+//!
+//! A manuscript is not monolingual, and the language decides what folding *means*: in
+//! Turkish the dotted and dotless `i` are different letters. So each field carries the
+//! language it is written in (item → Book → Work, see [`crate::language`]) and is folded
+//! under its own rules — one pass, two languages. The user's toggles stay global; the
+//! language decides *how* to fold, never *whether* to.
+//!
 //! Still to land, per the plan:
 //!
-//!   * per-scene language resolution + diacritic folding (`Aurelien` finds `Aurélien`) —
-//!     until then `diacritic_sensitive` is a **dead** flag: the DTO takes it, the `Search`
-//!     entity stores it, and nothing reads it.
 //!   * a versioned corpus cache. Extraction is cheap but not free, and this re-extracts
 //!     every row on every keystroke; the cache keys on `Content.updated_at`.
 //!
@@ -59,7 +64,8 @@ use common::entities::{
     Binder, BinderItem, Content, ContentRole, MatchField, Search, SearchResult, Work, WorkInfo,
 };
 use common::types::EntityId;
-use text_document::matching::MatchOptions;
+use std::collections::HashMap;
+use text_document::matching::{FoldLocale, MatchOptions};
 use text_document::{DjotImportOptions, djot_to_plain_text};
 
 /// Most rows we will keep for one search. A common word ("said", "elle") matches
@@ -107,6 +113,12 @@ struct Field {
     match_field: MatchField,
     text: String,
     trashed: bool,
+    /// The language *this field* is written in, resolved item → Book → Work (see
+    /// [`crate::language`]). Carried per field, not per search: one pass folds a French
+    /// scene and a Turkish scene under different rules, because in Turkish the dotted and
+    /// dotless `i` are different letters and folding them together turns one word into
+    /// another.
+    locale: FoldLocale,
 }
 
 impl RunSearchUseCase {
@@ -201,8 +213,7 @@ impl RunSearchUseCase {
     }
 
     /// Walk Work → Binders → BinderItems → Contents and flatten every searchable
-    /// field into one list. (Phase 0.1: `Content.data` is raw Djot; A4's
-    /// `djot_to_plain_text` replaces this so markup can never match.)
+    /// field into one list, each carrying the language it is written in.
     fn collect_corpus(
         &self,
         uow: &mut Box<dyn RunSearchUnitOfWorkTrait>,
@@ -219,8 +230,29 @@ impl RunSearchUseCase {
         for binder in uow.get_binder_multi(&binder_ids)?.into_iter().flatten() {
             let item_ids =
                 uow.get_binder_relationship(&binder.id, &BinderRelationshipField::BinderItems)?;
-            for item in uow.get_binder_item_multi(&item_ids)?.into_iter().flatten() {
-                self.item_fields(uow, &item, dto, &mut fields)?;
+            let items: Vec<BinderItem> = uow
+                .get_binder_item_multi(&item_ids)?
+                .into_iter()
+                .flatten()
+                .collect();
+
+            // The language chain, resolved over the binder's ordered stream — the "nearest
+            // Book" of an item is simply the most recent `Book` before it, because the tree
+            // is organisational only and book structure is a state machine over the flat
+            // stream. Done once per binder rather than per item, and through the same
+            // function `replace_in_project` uses, so a rename cannot find a word under one
+            // set of rules and rewrite it under another.
+            let mut tags: HashMap<EntityId, String> = HashMap::new();
+            crate::language::tags_in_binder(&work.dict_language, &items, &mut tags);
+
+            for item in &items {
+                // A missing entry means "no tag anywhere up the chain" — untailored, which
+                // is also what a malformed tag resolves to. Never an error: it comes from a
+                // writer's project settings, and a typo there must not break searching.
+                let locale = tags
+                    .get(&item.id)
+                    .map_or(FoldLocale::Root, |tag| FoldLocale::from_tag(tag));
+                self.item_fields(uow, item, dto, locale, &mut fields)?;
             }
         }
         Ok(fields)
@@ -232,6 +264,7 @@ impl RunSearchUseCase {
         uow: &mut Box<dyn RunSearchUnitOfWorkTrait>,
         item: &BinderItem,
         dto: &RunSearchDto,
+        locale: FoldLocale,
         out: &mut Vec<Field>,
     ) -> Result<()> {
         let trashed = !item.activated;
@@ -251,6 +284,7 @@ impl RunSearchUseCase {
                 match_field: MatchField::Title,
                 text: item.title.clone(),
                 trashed,
+                locale,
             });
         }
         if dto.search_labels && !item.label.is_empty() {
@@ -260,6 +294,7 @@ impl RunSearchUseCase {
                 match_field: MatchField::Label,
                 text: item.label.clone(),
                 trashed,
+                locale,
             });
         }
 
@@ -301,6 +336,7 @@ impl RunSearchUseCase {
                 match_field: field,
                 text: prose,
                 trashed,
+                locale,
             });
         }
         Ok(())
@@ -308,20 +344,25 @@ impl RunSearchUseCase {
 
     /// Match every field, one row per field that hits. Stops at `RESULT_CAP`.
     fn scan(corpus: &[Field], dto: &RunSearchDto) -> (Vec<SearchResult>, bool) {
-        // The SHARED matcher's options — the same ones the editor's own find uses, so a
-        // writer can never be shown a result set the editor disagrees with.
-        //
-        // `whole_word` reaches the matcher now. It used to be a dead field: the DTO
-        // accepted it, the `Search` entity stored it, and nothing read it — a toggle that
-        // would have silently done nothing the moment the UI bound a checkbox to it.
-        // (`diacritic_sensitive` is still dead; it comes alive with the folding work.)
-        let options = MatchOptions {
-            case_sensitive: dto.case_sensitive,
-            whole_word: dto.whole_word,
-        };
-
         let mut rows = Vec::new();
         for field in corpus {
+            // The SHARED matcher's options — the same ones the editor's own find uses, so a
+            // writer can never be shown a result set the editor disagrees with.
+            //
+            // Built **per field**, because the locale is per field. The user's two toggles
+            // stay global: the language decides *how* to fold, never *whether* to, or the
+            // same checkbox would mean different things in different chapters of one book.
+            //
+            // Both `whole_word` and `diacritic_sensitive` reach the matcher now. Both spent
+            // time as dead fields — the DTO accepted them, the `Search` entity stored them,
+            // and nothing read them. A toggle that silently does nothing is worse than a
+            // missing one: the writer believes the search was narrowed when it was not.
+            let options = MatchOptions {
+                case_sensitive: dto.case_sensitive,
+                diacritic_sensitive: dto.diacritic_sensitive,
+                whole_word: dto.whole_word,
+                locale: field.locale,
+            };
             let hits = crate::matching::occurrences(&field.text, &dto.query, options);
             let Some(&(first, first_len)) = hits.first() else {
                 continue;

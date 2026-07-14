@@ -52,6 +52,11 @@ bastyde = { path = "../../../bastyde/crates/bastyde", features = [
 # Cross-instance IPC (multi-process window switching): Unix domain socket on
 # Linux/macOS, named pipe on Windows — one API.
 interprocess = "2"
+# Hand a URL to the OS default handler — the Welcome sidebar's GitHub / Discord
+# links (`WelcomeViewModel::open_link`). Already in the tree via
+# `bastyde-widgets` (rich tooltips open their `http(s)` links the same way), so
+# this edge adds no new dependency, only a name for it.
+open = "5.3"
 
 # PID-liveness check for reaping stale open-registry locks.
 [target.'cfg(unix)'.dependencies]

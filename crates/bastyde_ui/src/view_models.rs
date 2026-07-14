@@ -71,4 +71,4 @@ pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
 pub use settings::{EditorTypography, EditorTypographySet, SettingsViewModel};
 pub use stream::{SplitFlavour, StreamViewModel};
 pub(crate) use stream::{is_prose_bearing, is_synopsis_bearing};
-pub use welcome::WelcomeViewModel;
+pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};

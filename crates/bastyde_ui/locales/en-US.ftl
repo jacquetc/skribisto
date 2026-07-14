@@ -164,6 +164,10 @@ welcome-about-blurb = Skribisto — a Rust + Bastyde rewrite of the writing app.
 # The *…* is inline markup, not decoration: it italicises the line (the widget
 # renders it in a serif italic). Keep the asterisks when translating.
 welcome-tagline = *A quiet place to write long things.*
+# Tooltip and screen-reader name of the two icon links under the sidebar nav.
+# Product names: keep them as they are.
+welcome-github = GitHub
+welcome-discord = Discord
 nav-works = Works
 nav-examples = Examples
 nav-learn = Learn
@@ -260,6 +264,9 @@ tooltip-welcome = Welcome
 ## Toasts
 could-not-open-work = Could not open work: { $error }
 could-not-open-example = Could not open example: { $error }
+# The browser (or whatever handles http links) could not be started for one of
+# the Welcome sidebar's links. $url is shown so the address can still be copied.
+could-not-open-link = Could not open { $url }: { $error }
 could-not-create-work = Could not create work: { $error }
 saving-as-file = Saving as { $target }…
 saving-as-folder = Saving as { $target }/…

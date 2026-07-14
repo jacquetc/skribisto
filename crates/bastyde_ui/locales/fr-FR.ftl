@@ -164,6 +164,10 @@ welcome-about-blurb = Skribisto — une réécriture en Rust + Bastyde de l'appl
 # Les *…* sont du balisage, pas de la décoration : ils mettent la ligne en
 # italique (rendue dans un serif italique). Conserver les astérisques.
 welcome-tagline = *Un endroit calme pour écrire de longs textes.*
+# Infobulle et nom vocalisé des deux icônes de lien sous la barre de navigation.
+# Noms propres : à conserver tels quels.
+welcome-github = GitHub
+welcome-discord = Discord
 nav-works = Œuvres
 nav-examples = Exemples
 nav-learn = Apprendre
@@ -260,6 +264,10 @@ tooltip-welcome = Accueil
 ## Notifications
 could-not-open-work = Impossible d'ouvrir l'œuvre : { $error }
 could-not-open-example = Impossible d'ouvrir l'exemple : { $error }
+# Le navigateur (ou ce qui traite les liens http) n'a pas pu être lancé pour l'un
+# des liens de la barre latérale d'accueil. $url est affichée pour pouvoir être
+# copiée malgré tout.
+could-not-open-link = Impossible d'ouvrir { $url } : { $error }
 could-not-create-work = Impossible de créer l'œuvre : { $error }
 saving-as-file = Enregistrement sous { $target }…
 saving-as-folder = Enregistrement sous { $target }/…

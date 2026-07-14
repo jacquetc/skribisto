@@ -172,7 +172,6 @@ fn excluded_rows_are_left_untouched() {
     // The excluded field must still contain the original word.
     let item_contents = {
         use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
-        use frontend::common::entities::ContentRole;
         let cids = frontend::commands::binder_item_commands::get_binder_item_relationship(
             &ctx,
             &excluded_row.binder_item_id,
@@ -209,7 +208,6 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
     // Simulate the writer editing that very scene after reviewing the results: add one
     // more occurrence, so its count no longer matches what the row recorded.
     use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
-    use frontend::common::entities::ContentRole;
     let cids = frontend::commands::binder_item_commands::get_binder_item_relationship(
         &ctx,
         &row.binder_item_id,
@@ -271,7 +269,6 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
 fn preserve_case_keeps_the_case_it_found() {
     use frontend::commands::binder_item_commands;
     use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
-    use frontend::common::entities::ContentRole;
 
     let ctx = loaded_ctx();
     let stack = Some(undo_redo_commands::create_new_stack(&ctx));
@@ -295,7 +292,7 @@ fn preserve_case_keeps_the_case_it_found() {
                 .unwrap()
                 .into_iter()
                 .flatten()
-                .find(|c| c.role == ContentRole::SceneText)
+                .find(|c| c.role == frontend::common::entities::ContentRole::SceneText)
         })
         .expect("an item with a SceneText content row");
     content_commands::update_content(
@@ -366,7 +363,6 @@ fn preserve_case_keeps_the_case_it_found() {
 fn a_rename_spares_the_markup_and_keeps_the_styling() {
     use frontend::commands::binder_item_commands;
     use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
-    use frontend::common::entities::ContentRole;
 
     let ctx = loaded_ctx();
     let stack = Some(undo_redo_commands::create_new_stack(&ctx));
@@ -387,7 +383,7 @@ fn a_rename_spares_the_markup_and_keeps_the_styling() {
                 .unwrap()
                 .into_iter()
                 .flatten()
-                .find(|c| c.role == ContentRole::SceneText)
+                .find(|c| c.role == frontend::common::entities::ContentRole::SceneText)
         })
         .expect("a scene with body text");
 

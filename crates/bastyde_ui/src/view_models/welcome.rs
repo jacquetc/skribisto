@@ -61,6 +61,13 @@ pub const RECENTS_PAGE_EMPTY: usize = 0;
 pub const RECENTS_PAGE_NO_MATCH: usize = 1;
 pub const RECENTS_PAGE_LIST: usize = 2;
 
+/// The two public links the Welcome sidebar offers under its nav — the pair
+/// v1.9.x carried in its own welcome screen. They live here rather than in the
+/// view because *which* addresses the app advertises is a product fact, not a
+/// layout one (and the view is meant to be thin).
+pub const GITHUB_URL: &str = "https://github.com/jacquetc/skribisto";
+pub const DISCORD_URL: &str = "https://discord.gg/5BSkvQmyVH";
+
 #[derive(Clone)]
 pub struct WelcomeViewModel {
     show_welcome: Signal<bool>,
@@ -286,6 +293,27 @@ impl WelcomeViewModel {
             .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
             .size(600, 680),
         );
+    }
+
+    /// The sidebar's GitHub / Discord links — hand the URL to the OS default
+    /// handler, i.e. the user's browser.
+    ///
+    /// `that_detached`, not `that`: the latter keeps the spawned opener as a
+    /// child process and waits for it to exit, and the desktop opener a browser
+    /// is launched through does not reliably return before the browser itself
+    /// does — on a cold start that is the UI thread stalled for seconds.
+    /// Detaching hands the child to the OS and returns now.
+    ///
+    /// A launch that fails is reported: a click that silently does nothing reads
+    /// as a dead button, and a launcher sidebar has no other surface to notice
+    /// it on.
+    pub fn open_link(&self, url: &str, ctx: &mut EventContext) {
+        if let Err(e) = open::that_detached(url) {
+            ctx.show_toast(Toast::error(tr!(could_not_open_link(
+                url = url.to_string(),
+                error = e.to_string()
+            ))));
+        }
     }
 }
 

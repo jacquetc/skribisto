@@ -10,9 +10,16 @@
 //! in folded text is not valid in the original text** (`'İ'.to_lowercase()` is two chars,
 //! so a match found in a lowercased haystack lands in the wrong place in the source).
 //!
-//! What stays here is the part that is genuinely about *replacing*: rewriting a string
-//! and preserving the case it found. Both are string-level, and both move into
-//! text-document with A2 (`find_and_replace`) — at which point this module goes away.
+//! What stays here is the one thing text-document cannot do for us: rewrite a **plain
+//! string**. A title and a label are not documents — there is no parser, no format run and
+//! no `BatchDocument` to splice inside — so they get a string rewrite. Prose does not: it
+//! goes through `BatchDocument::find_and_replace`, which splices inside the parsed document
+//! at the offsets the parser itself reports.
+//!
+//! `preserve_case` used to live here too. It now comes from `text_document::matching`,
+//! because it needs the scene's **locale**: in Turkish the uppercase of `i` is `İ`, and a
+//! case-preserver blind to that would rewrite Turkish prose into a different word. That is
+//! the same class of knowledge as the fold, so it lives with the fold.
 
 use text_document::matching::{MatchOptions, find_all};
 
@@ -60,40 +67,16 @@ pub fn replace_all(
     out
 }
 
-/// Rewrite `replacement` to carry the case of the text it is replacing.
-///
-/// Three classes, which is what a rename actually needs: ALL CAPS stays all caps,
-/// Titlecase stays titlecase, anything else takes the replacement verbatim. Uppercasing
-/// operates on the first **character**, never a byte slice — `É` is two bytes, and
-/// slicing it would panic or silently mangle the very name we were asked to preserve.
-pub fn preserve_case(matched: &str, replacement: &str) -> String {
-    let letters: Vec<char> = matched.chars().filter(|c| c.is_alphabetic()).collect();
-    if letters.is_empty() {
-        return replacement.to_string();
-    }
-    let all_upper = letters.iter().all(|c| c.is_uppercase());
-    if all_upper && letters.len() > 1 {
-        return replacement.to_uppercase();
-    }
-    let title = letters[0].is_uppercase() && letters[1..].iter().all(|c| c.is_lowercase());
-    if title {
-        let mut cs = replacement.chars();
-        return match cs.next() {
-            Some(first) => first.to_uppercase().collect::<String>() + cs.as_str(),
-            None => String::new(),
-        };
-    }
-    replacement.to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use text_document::matching::{FoldLocale, preserve_case};
 
     fn opts(case_sensitive: bool, whole_word: bool) -> MatchOptions {
         MatchOptions {
             case_sensitive,
             whole_word,
+            ..MatchOptions::default()
         }
     }
 
@@ -133,9 +116,40 @@ mod tests {
             "Aurélien, AURÉLIEN and aurélien",
             "aurélien",
             opts(false, false),
-            |m| preserve_case(m, "aurélian"),
+            |m| preserve_case(m, "aurélian", FoldLocale::Root),
         );
         assert_eq!(out, "Aurélian, AURÉLIAN and aurélian");
+    }
+
+    /// A title in a Turkish scene. The case-preserver is the shared, **locale-aware** one:
+    /// the untailored uppercase of `i` is `I`, which in Turkish is the capital of a
+    /// different letter — so an unaware rename would write `ILK` where the prose needs
+    /// `İLK`, silently turning the word into another word.
+    #[test]
+    fn replace_preserves_turkish_case_correctly() {
+        let turkish = MatchOptions {
+            locale: FoldLocale::Turkic,
+            ..MatchOptions::default()
+        };
+        let out = replace_all("KISA yol", "kısa", turkish, |m| {
+            preserve_case(m, "ilk", FoldLocale::Turkic)
+        });
+        assert_eq!(out, "İLK yol");
+    }
+
+    /// A plain ASCII query finds accented prose — the fold reaches the plain-string fields
+    /// (a title, a label) too, not just the parsed prose.
+    #[test]
+    fn a_plain_query_folds_onto_an_accented_title() {
+        let hits = occurrences("La forêt d'Aurélien", "aurelien", opts(false, false));
+        assert_eq!(hits.len(), 1);
+        let out = replace_all(
+            "La forêt d'Aurélien",
+            "aurelien",
+            opts(false, false),
+            |m| preserve_case(m, "aurélian", FoldLocale::Root),
+        );
+        assert_eq!(out, "La forêt d'Aurélian");
     }
 
     #[test]
