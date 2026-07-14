@@ -480,17 +480,48 @@ fn flat_icon_button_style() -> RecipeButtonStyle {
     style
 }
 
-/// The project's two public links, tucked under the sidebar nav — the pair
-/// v1.9.x offered: the GitHub repository and the Discord server. Clicking one
-/// hands its URL to the OS default handler (see
-/// [`WelcomeViewModel::open_link`]).
+/// One flat icon link — an icon-only ghost [`Button`] that
+/// [`WelcomeViewModel::open_link`] opens in the browser, re-declared to
+/// assistive tech as a **link** rather than a button.
 ///
-/// Flat (ghost) icon-only buttons — see [`flat_icon_button_style`]: no border,
-/// no fill, just the mark, with a hover wash the size of the icon. `Button` reads
-/// its **label** for the AT name whatever the icon location
-/// ([`IconLocation::IconOnly`] only drops it from the *drawn* content), so the
-/// same string serves as the tooltip and as what a screen reader announces — a
-/// labelled row, with no words of chrome under the nav.
+/// **Why `.access_role(Role::Link)`.** A `Button` announces as `Role::Button`
+/// unconditionally ([`Button::accessibility`] hardcodes it) — but these controls
+/// *navigate* to an external URL, and for a screen-reader user "link" and
+/// "button" are different things they reach with different keys, from different
+/// lists. The generic builder override wins here because the a11y walker applies
+/// it *after* the widget's own `accessibility()`
+/// (`build_overridden_builder`: `widget.accessibility(b)` then
+/// `overrides.apply(b)`, whose `set_role` is unconditional), so no bespoke
+/// link-with-an-icon widget — or framework change — is needed to get the right
+/// role. Built as a plain builder (not a `bati!` `Button {}` block) because the
+/// override wraps the button in a `WidgetWithHandlers`, which must be the last
+/// call in the chain — after every `Button`-specific one.
+///
+/// `label` serves triple duty: the drawn content drops it
+/// ([`IconLocation::IconOnly`]), but `Button` still reads it for the AT name,
+/// and it is the tooltip — one string, so the tooltip and the spoken name can't
+/// drift.
+///
+/// The chrome is [`flat_icon_button_style`]; the mark stays
+/// [`IconMode::Tintable`] (see [`social_links`]).
+fn link_button(
+    icon: IconWidget,
+    label: LocalizedString,
+    on_activate: impl Fn(&mut EventContext) + 'static,
+) -> impl Widget + 'static {
+    Button::new(label.clone())
+        .variant(ButtonVariant::Ghost)
+        .style(flat_icon_button_style())
+        .icon(icon, IconLocation::IconOnly)
+        .tooltip(label)
+        .on_activate_fn(on_activate)
+        // Last: this wraps the Button, so every Button-specific call is above it.
+        .access_role(bastyde::core::accesskit::Role::Link)
+}
+
+/// The project's two public links, tucked under the sidebar nav — the pair
+/// v1.9.x offered: the GitHub repository and the Discord server. Each is a flat
+/// icon [`link_button`].
 ///
 /// **Both marks stay [`IconMode::Tintable`]** (the `IconWidget` default), so
 /// they resolve through the button's text role: they follow the theme into dark
@@ -502,8 +533,6 @@ fn flat_icon_button_style() -> RecipeButtonStyle {
 /// only the blurple, which is not information here: the shape already says
 /// "Discord".
 fn social_links(vm: &WelcomeViewModel) -> impl Widget + 'static {
-    let github_vm = vm.clone();
-    let discord_vm = vm.clone();
     // The Discord logo's viewBox is 71×55, not square — `SvgIcon` fits it into
     // the icon box preserving aspect and centring, so it lands ~18×14 next to
     // the square GitHub mark. That is the logo's own proportion, not a squash.
@@ -514,24 +543,18 @@ fn social_links(vm: &WelcomeViewModel) -> impl Widget + 'static {
         IconWidget::from_svg_icon(res!("../../resources/icons/Discord-Logo-Color.svg"))
             .icon_size(SOCIAL_ICON);
 
+    let github_vm = vm.clone();
+    let discord_vm = vm.clone();
     bati!(
         Center {
             HStack {
                 spacing: 4.0
-                Button::new(tr!(welcome_github())) {
-                    variant: ButtonVariant::Ghost
-                    style: flat_icon_button_style()
-                    icon: github_icon, IconLocation::IconOnly
-                    tooltip: tr!(welcome_github())
-                    on_activate_fn: move |ctx| github_vm.open_link(GITHUB_URL, ctx)
-                }
-                Button::new(tr!(welcome_discord())) {
-                    variant: ButtonVariant::Ghost
-                    style: flat_icon_button_style()
-                    icon: discord_icon, IconLocation::IconOnly
-                    tooltip: tr!(welcome_discord())
-                    on_activate_fn: move |ctx| discord_vm.open_link(DISCORD_URL, ctx)
-                }
+                child: link_button(github_icon, tr!(welcome_github()), move |ctx| {
+                    github_vm.open_link(GITHUB_URL, ctx)
+                })
+                child: link_button(discord_icon, tr!(welcome_discord()), move |ctx| {
+                    discord_vm.open_link(DISCORD_URL, ctx)
+                })
             }
         }
     )
@@ -846,6 +869,45 @@ mod tests {
     /// blocks land, not what they draw.
     fn block(w: f32, h: f32) -> FixedSize {
         FixedSize::new().width(w).height(h).child(Spacer::new())
+    }
+
+    /// **The two link marks announce to assistive tech as *links*, not buttons.**
+    /// They navigate to an external URL, so "link" is the role a screen-reader
+    /// user expects — and it is what `.access_role(Role::Link)` in
+    /// [`link_button`] declares, overriding the `Role::Button` a `Button` emits
+    /// by default. This is the crux of the whole helper; assert the role really
+    /// reaches the AT tree (and that the overridden Button role leaves nothing
+    /// behind on a sibling node).
+    #[test]
+    fn link_button_announces_as_a_link() {
+        use bastyde::core::accessibility::widget_id_to_node_id;
+        use bastyde::core::accesskit::Role;
+
+        let icon =
+            IconWidget::from_svg_icon(res!("../../resources/icons/Octicons-mark-github.svg"))
+                .icon_size(SOCIAL_ICON);
+
+        let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
+        let id = tree.add_boxed(Box::new(link_button(icon, lit!("GitHub"), |_| {})));
+        tree.layout(SizeProposal::exact(120.0, 40.0));
+        let _ = tree.render();
+        let update = tree.sync_accessibility();
+
+        let (_, node) = update
+            .nodes
+            .iter()
+            .find(|(nid, _)| *nid == widget_id_to_node_id(id))
+            .expect("the link button emits an AT node");
+        assert_eq!(
+            node.role(),
+            Role::Link,
+            "it opens a URL — a link, not a button"
+        );
+        assert_eq!(node.label(), Some("GitHub"), "…named by its label");
+        assert!(
+            !update.nodes.iter().any(|(_, n)| n.role() == Role::Button),
+            "the Button role is overridden in place, not left on a sibling node"
+        );
     }
 
     /// **The social links sit under the nav, and the pair stays pinned to the
