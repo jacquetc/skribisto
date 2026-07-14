@@ -35,6 +35,7 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
+use bastyde::canvas::EdgeInsets;
 use bastyde::core::styles::{PanelVariant, SharedStandardItemStyle, StandardItemStyleConfig};
 use bastyde::core::widget_builder::HandlerSet;
 use bastyde::data::{ListModel, SelectionMode, SelectionModel};
@@ -45,7 +46,7 @@ use bastyde::widgets::primitives::icon_widget::IconMode;
 // `InteractionState` (the hover/press state the standard-item chrome recipe
 // consumes) is not re-exported at the widgets root — reach it by module path.
 use bastyde::widgets::button::InteractionState;
-use bastyde::widgets::styles::RecipeStandardItemStyle;
+use bastyde::widgets::styles::{RecipeButtonStyle, RecipeStandardItemStyle};
 use bastyde::widgets::{
     ActivateOn, Button, ButtonVariant, Center, Divider, Expand, HStack, IconLocation, IconWidget,
     ListView, MinSize, Padding, Panel, SearchField, Spacer, StandardListItem, Switcher, TabBar,
@@ -448,16 +449,48 @@ const SOCIAL_GAP: f32 = 10.0;
 /// row off the window's bottom edge.
 const SIDEBAR_INSETS: (f32, f32, f32, f32) = (14.0, 16.0, 14.0, 16.0);
 
+/// Size of the two link marks, in dp.
+const SOCIAL_ICON: f32 = 18.0;
+
+/// The chrome of a flat icon button: IntUI's **Ghost** recipe (transparent fill
+/// and border until hover, where it takes the standard `SurfaceRole::Hover`
+/// wash) with one thing changed — its footprint.
+///
+/// Every stock recipe, Ghost included, carries `min_size: 72 × 24`: the width a
+/// *text* button needs so that "OK" and "Cancel" line up in a dialog. On an
+/// icon-only button that is nothing but dead area — invisible at rest, but the
+/// hover wash paints it, so an 18 dp mark would light up a 72 dp pill on
+/// mouseover, and two of them side by side would read as a button bar rather
+/// than a pair of glyphs. Squaring the box to the icon + its padding makes the
+/// hover state the icon's own outline, which is what "flat icon button" means
+/// everywhere else.
+///
+/// The recipe is edited rather than written from scratch so this stays a Ghost
+/// button — the fill/border/focus-ring states, and any theme that reshapes them,
+/// still apply.
+fn flat_icon_button_style() -> RecipeButtonStyle {
+    let mut style = RecipeButtonStyle::intui();
+    let ghost = style
+        .recipes
+        .get_mut(&ButtonVariant::Ghost)
+        .expect("IntUI defines a Ghost recipe");
+    // `EdgeInsets::symmetric` takes (horizontal, vertical).
+    ghost.padding = EdgeInsets::symmetric(6.0, 4.0);
+    ghost.min_size = Size::new(SOCIAL_ICON + 12.0, SOCIAL_ICON + 8.0);
+    style
+}
+
 /// The project's two public links, tucked under the sidebar nav — the pair
 /// v1.9.x offered: the GitHub repository and the Discord server. Clicking one
 /// hands its URL to the OS default handler (see
 /// [`WelcomeViewModel::open_link`]).
 ///
-/// Icon-only `Plain` buttons: `Button` reads its **label** for the AT name
-/// whatever the icon location ([`IconLocation::IconOnly`] only drops it from the
-/// *drawn* content), so the same string serves as the tooltip and as what a
-/// screen reader announces — a labelled row, with no words of chrome under the
-/// nav.
+/// Flat (ghost) icon-only buttons — see [`flat_icon_button_style`]: no border,
+/// no fill, just the mark, with a hover wash the size of the icon. `Button` reads
+/// its **label** for the AT name whatever the icon location
+/// ([`IconLocation::IconOnly`] only drops it from the *drawn* content), so the
+/// same string serves as the tooltip and as what a screen reader announces — a
+/// labelled row, with no words of chrome under the nav.
 ///
 /// **Both marks stay [`IconMode::Tintable`]** (the `IconWidget` default), so
 /// they resolve through the button's text role: they follow the theme into dark
@@ -476,23 +509,25 @@ fn social_links(vm: &WelcomeViewModel) -> impl Widget + 'static {
     // the square GitHub mark. That is the logo's own proportion, not a squash.
     let github_icon =
         IconWidget::from_svg_icon(res!("../../resources/icons/Octicons-mark-github.svg"))
-            .icon_size(18.0);
+            .icon_size(SOCIAL_ICON);
     let discord_icon =
         IconWidget::from_svg_icon(res!("../../resources/icons/Discord-Logo-Color.svg"))
-            .icon_size(18.0);
+            .icon_size(SOCIAL_ICON);
 
     bati!(
         Center {
             HStack {
-                spacing: 2.0
+                spacing: 4.0
                 Button::new(tr!(welcome_github())) {
-                    variant: ButtonVariant::Plain
+                    variant: ButtonVariant::Ghost
+                    style: flat_icon_button_style()
                     icon: github_icon, IconLocation::IconOnly
                     tooltip: tr!(welcome_github())
                     on_activate_fn: move |ctx| github_vm.open_link(GITHUB_URL, ctx)
                 }
                 Button::new(tr!(welcome_discord())) {
-                    variant: ButtonVariant::Plain
+                    variant: ButtonVariant::Ghost
+                    style: flat_icon_button_style()
                     icon: discord_icon, IconLocation::IconOnly
                     tooltip: tr!(welcome_discord())
                     on_activate_fn: move |ctx| discord_vm.open_link(DISCORD_URL, ctx)
