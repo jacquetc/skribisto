@@ -4,6 +4,17 @@
 //! block + a bottom-pinned vertical nav) and a right **content** area that
 //! switches with the nav selection.
 //!
+//! **It IS the window, it is not a card inside one.** The two columns fill the
+//! Launcher edge to edge: no rounded `Panel` card, no gutter, and no inner
+//! title strip — the window's own [`TitleBar`](bastyde::widgets::TitleBar)
+//! carries "Welcome to Skribisto" (`welcome_title()`, set in
+//! `windows::launcher_window_config`). Back when this was a modal it was a
+//! fixed 780×548 card centred in the window, which — once the modal became a
+//! real window — read as a second window drawn inside the first: a raised
+//! rectangle floating in a 20 dp margin, under a title strip that repeated
+//! what the title bar above it already said. Keep this greedy: anything that
+//! pins the root to a fixed size brings the gutters back.
+//!
 //! The nav is the framework's standalone vertical [`TabBar`] — it gives the 2 dp
 //! leading accent indicator, accent-on-selected label, keyboard nav, and
 //! `Role::TabList`/`Tab` accessibility for free (tablist/tab is the correct AT
@@ -36,8 +47,8 @@ use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::button::InteractionState;
 use bastyde::widgets::styles::RecipeStandardItemStyle;
 use bastyde::widgets::{
-    ActivateOn, Button, ButtonVariant, Center, Divider, Expand, FixedSize, HStack, IconLocation,
-    IconWidget, ListView, Padding, Panel, SearchField, Spacer, StandardListItem, Switcher, TabBar,
+    ActivateOn, Button, ButtonVariant, Center, Divider, Expand, HStack, IconLocation, IconWidget,
+    ListView, MinSize, Padding, Panel, SearchField, Spacer, StandardListItem, Switcher, TabBar,
     TabDelegate, TabId, TabIndicatorPosition, TabSizing, TextWidget, VStack,
 };
 
@@ -253,6 +264,21 @@ impl WelcomePanel {
     /// so no placeholder branch.
     fn examples_list(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
         let model = self.examples.list_model();
+
+        // Preselect the first example, exactly as `recents_list` does — and for
+        // the same reason. Attaching a `SelectionModel` only makes a highlight
+        // *possible*; something has to put the cursor somewhere for one to
+        // exist. Recents get theirs seeded here; examples used to get theirs
+        // from nowhere at all: rows are `ActivateOn::SingleClick`, so a click
+        // opens the example and tears the Launcher down rather than leaving a
+        // selected row behind, and the pane is never the window's initial focus.
+        // The result was a list that never showed a cursor in any state.
+        // Guarded on "nothing selected yet" so a rebuild can't yank the
+        // highlight back to the top after the user has arrowed away from it.
+        if !model.is_empty() && self.examples_selection.selected_indices().is_empty() {
+            self.examples_selection.select(0);
+        }
+
         let open_model = model.clone();
         let ex_vm = vm.clone();
         ListView::new(model, |_i, ex, selected| {
@@ -417,6 +443,54 @@ impl Widget for RecentRow {
     }
 }
 
+/// Width of the sidebar column, in dp.
+const SIDEBAR_W: f32 = 264.0;
+
+/// The Welcome body: fixed-width **sidebar** · vertical rule · flexible
+/// **content pane**, all three filling whatever the window offers — the whole
+/// layout, in one expression. Split out of [`WelcomePanel::build`] so the
+/// geometry can be laid out headlessly (see this module's tests): the panel
+/// itself needs a live backend and the project-window factory, its two panes
+/// don't decide any of the column geometry, and the column geometry is exactly
+/// what regressed.
+///
+/// **Why `MinSize::width` and not `FixedSize::width` for the sidebar.** A
+/// `FixedSize` proposes `None` on the axis it doesn't bind, so a width-only one
+/// would hand the sidebar an *unbounded height* — its `Spacer` would collapse
+/// and the nav would ride up under the brand block instead of pinning to the
+/// bottom. `MinSize` clamps the axis it constrains and passes the other one
+/// through untouched, so the sidebar is measured at 264 × the body height. It
+/// can't overflow that width either: the brand text wraps
+/// (`TextOverflow::Wrap`) against the 264 dp it is offered.
+///
+/// Each column claims the body height without a pin: `HStack` offers its height
+/// to every child (and defaults to `VAlignment::Center`, so a *content*-sized
+/// column would float in the middle instead). `Expand::vertical` takes that
+/// offered height while reporting `flex = 0` on the horizontal axis the stack
+/// is distributing — it claims height without stealing width from the content
+/// pane, which is the one column that does compete for it
+/// (`Expand::horizontal`).
+fn welcome_body(
+    sidebar: impl Widget + 'static,
+    content: impl Widget + 'static,
+) -> impl Widget + 'static {
+    bati!(
+        HStack {
+            spacing: 0.0
+            MinSize::width(SIDEBAR_W) {
+                child: sidebar
+            }
+            // Vertical rule between the sidebar and the content pane.
+            Expand::vertical {
+                Divider::vertical()
+            }
+            Expand::horizontal {
+                child: content
+            }
+        }
+    )
+}
+
 /// Muted top-aligned note shown in place of a list when it has no rows.
 fn empty_note(text: impl Into<LocalizedString>) -> impl Widget + 'static {
     bati!(
@@ -563,102 +637,47 @@ impl Widget for WelcomePanel {
             .child(placeholder(tr!(welcome_learn_soon())))
             .child(placeholder(tr!(welcome_about_blurb())));
 
-        // Deterministic heights: `HStack` defaults to `VAlignment::Center` (no
-        // stretch), so a content-sized sidebar would float in the middle. Both
-        // columns are pinned to the body height (548 − 44 header − 1 divider =
-        // 503) so they fill it exactly and the sidebar's `Spacer` can push the
-        // nav to the bottom.
-        const BODY_H: f32 = 503.0;
-
-        // Hard-bound the whole card to the modal size so the greedy inner
-        // `Expand`s fill exactly 780×548 (otherwise they stretch to the window
-        // height and the sidebar overflows below the card).
-        let root = bati!(ctx => FixedSize {
-                width: 780.0
-                height: 548.0
-                // The Raised card is the modal's lighter surface.
-                Panel {
-                    variant: PanelVariant::Raised
-                    corner_radius: 10.0
-                    padding: 0.0
-                    VStack {
-                        spacing: 0.0
-                        // ── Header strip: title (full width, fixed 44 dp). No
-                        // close button here any more — the Launcher is a real
-                        // window now, and its own `TitleBar` (see
-                        // `windows.rs::launcher_window_config`) already has the
-                        // window controls; a second, inner ✕ would be redundant
-                        // and ambiguous about what it even closes.
-                        // `Expand::horizontal` claims the VStack's full width; the
-                        // height-only `FixedSize` alone would leave the strip at its
-                        // natural (collapsed) width and squash the title.
-                        Expand::horizontal {
-                            FixedSize {
-                                height: 44.0
-                                Padding::symmetric(8.0, 14.0) {
-                                    TextWidget::new(tr!(welcome_title())) {
-                                        style: TextStyleRole::Small
-                                        color: TextRole::Secondary
-                                    }
-                                }
-                            }
-                        }
-                        // Full-width rule between the title strip and the body.
-                        Expand::horizontal {
-                            Divider
-                        }
-                        // ── Body: sidebar · vertical rule · content pane.
-                        HStack {
-                            spacing: 0.0
-                            // Sidebar: brand block, a Spacer, the bottom-pinned
-                            // nav. No "show at startup" control here — that
-                            // setting lives in Settings ▸ Appearance & Behaviour
-                            // only (a launcher-local copy would hide the very
-                            // screen you're looking at, with no way back).
-                            FixedSize {
-                                width: 264.0
-                                height: BODY_H
-                                // Side margins so the brand — and now the full-width
-                                // nav pills — don't hug the modal edge or the divider.
-                                Padding::new(0.0, 16.0, 0.0, 16.0) {
-                                    VStack {
-                                        spacing: 0.0
-                                        child: branding
-                                        Spacer
-                                        // No height pin: a vertical TabBar reports its
-                                        // own content height (4 pills × 34 dp), so the
-                                        // `Spacer` above claims the rest and pushes the
-                                        // nav to the sidebar bottom. A `FixedSize` here
-                                        // would also hide the sidebar's width from the
-                                        // bar and defeat `TabSizing::Fill`.
-                                        child: bar
-                                    }
-                                }
-                            }
-                            // Vertical rule between the sidebar and the content pane.
-                            FixedSize {
-                                height: BODY_H
-                                Divider::vertical()
-                            }
-                            // Two-tone: the content pane sits on a darker (Sunken)
-                            // base. A `Panel` stretches its child (unlike `ZStack`,
-                            // which centres and collapses the greedy content).
-                            Expand::horizontal {
-                                FixedSize {
-                                    height: BODY_H
-                                    Panel {
-                                        variant: PanelVariant::Sunken
-                                        corner_radius: 0.0
-                                        padding: 0.0
-                                        child: content
-                                    }
-                                }
-                            }
-                        }
-                    }
+        // ── Sidebar: brand block, a Spacer, the bottom-pinned nav ───────────
+        // No "show at startup" control here — that setting lives in Settings ▸
+        // Appearance & Behaviour only (a launcher-local copy would hide the very
+        // screen you're looking at, with no way back).
+        //
+        // Insets, clockwise from the top: the top one replaces the height the old
+        // inner title strip used to give the brand block; the side ones keep the
+        // brand — and the full-width nav pills — off the window edge and the
+        // divider; the bottom one keeps the nav off the window's bottom edge.
+        let sidebar = bati!(
+            Padding::new(14.0, 16.0, 14.0, 16.0) {
+                VStack {
+                    spacing: 0.0
+                    child: branding
+                    Spacer
+                    // No height pin: a vertical TabBar reports its own content
+                    // height (4 pills × 34 dp), so the `Spacer` above claims the
+                    // rest and pushes the nav to the sidebar bottom. A `FixedSize`
+                    // here would also hide the sidebar's width from the bar and
+                    // defeat `TabSizing::Fill`.
+                    child: bar
                 }
             }
         );
+
+        // Two-tone: the content pane sits on a darker (Sunken) base, against the
+        // sidebar's window surface (`surface_main` — the same fill the title bar
+        // above it paints, which is what makes the sidebar read as part of the
+        // window chrome rather than as a card on top of it). A `Panel` stretches
+        // its child (unlike `ZStack`, which centres and collapses the greedy
+        // content).
+        let content_pane = bati!(
+            Panel {
+                variant: PanelVariant::Sunken
+                corner_radius: 0.0
+                padding: 0.0
+                child: content
+            }
+        );
+
+        let root = ctx.add(welcome_body(sidebar, content_pane));
         self.root_child = Some(root);
         vec![root]
     }
@@ -678,13 +697,65 @@ impl Widget for WelcomePanel {
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        // Delegate to the fixed-size (non-greedy) root: it reports a bounded
-        // 780×548 card and bounds the inner greedy `Expand`s. Delegating to the
-        // inner `Panel` instead would fill the window (the modal-centering trap
-        // noted in `SettingsPanel`); the `FixedSize` avoids it.
+        // Delegate to the body: it is greedy, and the Launcher wants it that way
+        // — this panel *is* the window's content, so it takes the whole
+        // proposal. (Filling like this is the trap `SettingsPanel` documents,
+        // where a modal must NOT fill its host; here it is the requirement.)
         self.root_child
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)
             .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    /// **The Welcome content is the window, not a card inside it.**
+    ///
+    /// It used to be a fixed 780×548 `Panel` centred in the 820×590 Launcher —
+    /// a leftover from its modal days. Once the modal became a real window that
+    /// read as a window drawn inside a window: a raised, rounded rectangle
+    /// floating in a ~20 dp gutter, topped by its own title strip repeating the
+    /// title bar right above it. So: the body starts at x = 0, the content pane
+    /// ends at the right edge, and both columns are as tall as the window.
+    ///
+    /// Laid out on stand-in panes — the columns' geometry is what is under
+    /// test, and neither pane has a say in it. The sidebar stub keeps a
+    /// `Spacer`, like the real one: it is the piece that needs a *bounded*
+    /// height to push the nav to the bottom, so a sidebar that failed to fill
+    /// the body would collapse here rather than pass by accident.
+    #[test]
+    fn the_body_fills_the_window_edge_to_edge() {
+        const W: f32 = 820.0;
+        const H: f32 = 546.0;
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(welcome_body(
+            VStack::new().spacing(0.0).child(Spacer::new()),
+            Spacer::new(),
+        )));
+        tree.layout(SizeProposal::exact(W, H));
+
+        let body = tree.bounds(id);
+        assert_eq!(body.x, 0.0, "the body starts at the window's left edge");
+        assert_eq!(body.width, W, "the body spans the window's full width");
+
+        let cols = tree.children(id);
+        assert_eq!(cols.len(), 3, "sidebar · rule · content pane");
+        let sidebar = tree.bounds(cols[0]);
+        let rule = tree.bounds(cols[1]);
+        let pane = tree.bounds(cols[2]);
+
+        assert_eq!(sidebar.x, 0.0, "no gutter to the left of the sidebar");
+        assert_eq!(sidebar.width, SIDEBAR_W);
+        assert_eq!(sidebar.height, H, "the sidebar fills the body height");
+        assert_eq!(rule.x, sidebar.right(), "the rule abuts the sidebar");
+        assert_eq!(rule.height, H, "the rule runs the full height");
+        assert_eq!(pane.x, rule.right(), "the pane abuts the rule");
+        assert_eq!(pane.right(), W, "no gutter to the right of the content pane");
+        assert_eq!(pane.height, H, "the content pane fills the body height");
     }
 }

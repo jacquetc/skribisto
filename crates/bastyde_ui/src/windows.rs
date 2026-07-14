@@ -33,7 +33,7 @@ use bastyde::res;
 use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
     Center, CollapsePolicy, DeadZone, DockSide, Expand, HStack, IconButton, IconButtonSize,
-    IconWidget, MenuBar, MenuEntry, MenuModel, TextWidget, TitleBar, VStack, WindowFrame,
+    IconWidget, MenuBar, MenuEntry, MenuModel, Padding, TextWidget, TitleBar, VStack, WindowFrame,
 };
 
 use frontend::AppContext;
@@ -104,13 +104,18 @@ pub fn window_id_for(project: &str) -> String {
 /// closing it while it is the only window quits the process. That is the
 /// intended "close the launcher to exit" behaviour.
 pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
-    // Roughly `WelcomePanel`'s fixed 780×548 card plus breathing room; the
-    // card is `Center`-ed so a larger window just adds margin instead of
-    // stretching or clipping it.
+    // The Launcher is deliberately not resizable (min == max): `WelcomePanel`
+    // fills it edge to edge, so this is the one place its proportions — the
+    // 264 dp sidebar against the recents list — are decided.
     const W: u32 = 820;
     const H: u32 = 590;
     WindowConfig::new()
         .id(LAUNCHER_WINDOW_ID)
+        // The OS-level title (taskbar, alt-tab, window list) stays the app's
+        // name — that identifies the *process*. The visible custom title bar
+        // below says "Welcome to Skribisto": that names the *screen*, and it
+        // is the reason the Welcome content no longer carries a title strip of
+        // its own.
         .title("Skribisto")
         .size(W, H)
         .min_size(W, H)
@@ -128,9 +133,19 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
             // unavailable (mirrors the project window's fallback).
             let title_bar = match tree.title_bar_host() {
                 Some(host) => {
+                    // Leading inset: the icon is the first thing in the title
+                    // bar's centre slot, which starts at the window's left edge
+                    // — bare, it sits flush against it. The project window has
+                    // no such gap to close: its `MenuBar` hamburger leads, and
+                    // an `IconButton` carries its own inset.
                     let brand_icon = tree.add(
-                        IconWidget::from_raster(res!("../../resources/icons/skribisto.png"), 25.0)
+                        Padding::new(0.0, 0.0, 0.0, 8.0).child(
+                            IconWidget::from_raster(
+                                res!("../../resources/icons/skribisto.png"),
+                                25.0,
+                            )
                             .mode(IconMode::FullColor),
+                        ),
                     );
                     tree.add_boxed(Box::new(bati!(
                     TitleBar::new(host) {
@@ -142,7 +157,13 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
                                 #{brand_icon}
                                 Expand::horizontal {
                                     Center {
-                                        TextWidget::new(lit!("Skribisto")) {
+                                        // The window's title bar names the screen
+                                        // ("Welcome to Skribisto"), so the Welcome
+                                        // content below needs no title strip of its
+                                        // own — the two together were a window
+                                        // inside a window. Project windows keep the
+                                        // bare app name here.
+                                        TextWidget::new(tr!(welcome_title())) {
                                             style: theme.typography.body_bold.clone()
                                             color: TextRole::Primary
                                         }
@@ -154,10 +175,12 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
                     }
                     )))
                 }
-                None => tree.add(TextWidget::new(lit!("Skribisto"))),
+                None => tree.add(TextWidget::new(tr!(welcome_title()))),
             };
-            let body = tree
-                .add(Expand::new().child(Center::new().child(WelcomePanel::new(app_ctx.clone()))));
+            // No `Center`: the Welcome content fills the window (see
+            // `welcome_panel`'s module docs) — centring a fixed-size card in
+            // here is what put a gutter down each side of it.
+            let body = tree.add(Expand::new().child(WelcomePanel::new(app_ctx.clone())));
             let inner = tree.add(
                 VStack::new()
                     .spacing(0.0)
