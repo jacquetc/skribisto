@@ -146,8 +146,9 @@ pub struct ExportViewModel {
     /// The focused item the quick scope resolves from (the backend re-resolves the extent
     /// against its frozen snapshot from this anchor).
     anchor: Signal<Option<u64>>,
-    /// The chosen output format (remembered across opens); one of [`PANEL_FORMATS`].
-    format: Signal<Option<ExportFormat>>,
+    /// Index into [`PANEL_FORMATS`] — the chosen output format (remembered across opens),
+    /// bound by the format `RadioTileGroup`.
+    format_index: Signal<usize>,
     /// The chosen style; `None` until first opened, then the previous choice.
     preset: Signal<Option<Preset>>,
     /// The destination file path.
@@ -177,7 +178,7 @@ impl ExportViewModel {
             applicable: Signal::new(Vec::new()),
             scope: Signal::new(ExportScopeKind::CurrentBook),
             anchor: Signal::new(None),
-            format: Signal::new(Some(PANEL_FORMATS[0].clone())),
+            format_index: Signal::new(0),
             // Seed the first built-in style so the picker shows a real selection (and the
             // preview renders) from the first open, rather than an empty placeholder.
             preset: Signal::new(builtin_presets().into_iter().next()),
@@ -340,8 +341,9 @@ impl ExportViewModel {
         self.scope.get()
     }
     /// The chosen format, bound by the panel's format `ComboBox`.
-    pub fn format_signal(&self) -> Signal<Option<ExportFormat>> {
-        self.format.clone()
+    /// The chosen format index, bound by the panel's format `RadioTileGroup`.
+    pub fn format_index(&self) -> Signal<usize> {
+        self.format_index.clone()
     }
     pub fn preset_signal(&self) -> Signal<Option<Preset>> {
         self.preset.clone()
@@ -358,13 +360,13 @@ impl ExportViewModel {
         builtin_presets()
     }
 
-    /// The formats the picker offers (a `ComboBox`'s items).
+    /// The formats the picker offers (one `RadioTile` each).
     pub fn panel_formats() -> &'static [ExportFormat] {
         &PANEL_FORMATS
     }
 
     fn selected_format(&self) -> ExportFormat {
-        self.format.get().unwrap_or_else(|| PANEL_FORMATS[0].clone())
+        PANEL_FORMATS[self.format_index.get().min(PANEL_FORMATS.len() - 1)].clone()
     }
     fn selected_preset(&self) -> Preset {
         self.preset

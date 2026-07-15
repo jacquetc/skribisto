@@ -479,7 +479,7 @@ export-cancel = Cancel
 export-export = Export
 export-save-dialog-title = Export to file
 # Output formats
-export-format-docx = Word (.docx)
+export-format-docx = Word
 export-format-html = HTML
 export-format-markdown = Markdown
 export-format-djot = Djot

@@ -16,8 +16,8 @@ use bastyde::prelude::*;
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
     Button, ButtonVariant, Center, Checkbox, ComboBox, Divider, Expand, FilePickerField,
-    FilePickerKind, FixedSize, FormLayout, HStack, IconButton, Padding, Panel, ScrollArea, Spacer,
-    TextWidget, VStack,
+    FilePickerKind, FixedSize, FormLayout, HStack, IconButton, Padding, Panel, RadioTile,
+    RadioTileGroup, ScrollArea, Spacer, TextWidget, TileLayout, VStack,
 };
 
 use export_management::{ExportFormat, ExportScopeKind};
@@ -27,7 +27,7 @@ use crate::export_choose::ChooseTreeWidget;
 use crate::view_models::{ExportViewModel, SettingsViewModel, format_label, scope_label};
 
 const CARD_W: f32 = 940.0;
-const CARD_H: f32 = 600.0;
+const CARD_H: f32 = 660.0;
 /// The fixed width of the leading column (scope + controls); the preview fills the rest.
 const LEADING_W: f32 = 430.0;
 
@@ -51,13 +51,25 @@ fn field_label(text: LocalizedString) -> TextWidget {
 
 /// The format · style · file control rows (shared by both scope modes).
 fn controls_form(vm: &ExportViewModel) -> impl Widget + 'static {
-    // Format picker — a dropdown (a segmented control's six labels don't fit the narrow
-    // leading column, and this scales to EPUB/PDF). An effect keeps the path extension in step.
-    let format = ComboBox::from_items(
-        ExportViewModel::panel_formats().to_vec(),
-        vm.format_signal(),
-        |f: &ExportFormat| format_label(f),
-    );
+    // Format picker — a compact vertical radio-tile list (all formats visible at once, the
+    // New Work panel's shape). An effect keeps the path extension in step with the choice.
+    let mut format = RadioTileGroup::new(vm.format_index())
+        .layout(TileLayout::Vertical)
+        .row_height(34.0)
+        .line_spacing(2.0);
+    for f in ExportViewModel::panel_formats() {
+        let ext = match f {
+            ExportFormat::Docx => ".docx",
+            ExportFormat::Html => ".html",
+            ExportFormat::Markdown => ".md",
+            ExportFormat::Djot => ".dj",
+            ExportFormat::PlainText => ".txt",
+            ExportFormat::Latex => ".tex",
+            ExportFormat::Epub => ".epub",
+            ExportFormat::Pdf => ".pdf",
+        };
+        format = format.tile(RadioTile::new().title(format_label(f)).trailing(lit!(ext)));
+    }
 
     // Style picker — built-in styles for now (M4 unions the user's in).
     let style = ComboBox::from_items(vm.presets(), vm.preset_signal(), |p: &Preset| {
@@ -113,7 +125,7 @@ impl Widget for ExportPanel {
         // Keep the destination's extension in step with the chosen format.
         {
             let vm = self.vm.clone();
-            ctx.effect(&self.vm.format_signal(), move |_| vm.retarget_extension());
+            ctx.effect(&self.vm.format_index(), move |_| vm.retarget_extension());
         }
 
         let leading = LeadingColumn::new(self.vm.clone());

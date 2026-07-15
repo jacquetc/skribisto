@@ -480,7 +480,7 @@ export-cancel = Annuler
 export-export = Exporter
 export-save-dialog-title = Exporter vers un fichier
 # Formats de sortie
-export-format-docx = Word (.docx)
+export-format-docx = Word
 export-format-html = HTML
 export-format-markdown = Markdown
 export-format-djot = Djot
