@@ -132,21 +132,25 @@ impl Widget for ExportPanel {
                     padding: 0.0
                     VStack {
                         spacing: 0.0
-                        // Header
-                        FixedSize {
-                            height: 44.0
-                            Padding::symmetric(8.0, 14.0) {
-                                HStack {
-                                    spacing: 8.0
-                                    Expand::horizontal {
-                                        TextWidget::new(tr!(export_title())) {
-                                            style: TextStyleRole::Small
-                                            color: TextRole::Secondary
+                        // Header — wrapped in Expand::horizontal so the height-only
+                        // FixedSize doesn't collapse the row to its min width (which would
+                        // squeeze the title + close button into the top-left corner).
+                        Expand::horizontal {
+                            FixedSize {
+                                height: 44.0
+                                Padding::symmetric(8.0, 14.0) {
+                                    HStack {
+                                        spacing: 8.0
+                                        Expand::horizontal {
+                                            TextWidget::new(tr!(export_title())) {
+                                                style: TextStyleRole::Small
+                                                color: TextRole::Secondary
+                                            }
                                         }
-                                    }
-                                    IconButton::clear() {
-                                        tooltip: tr!(export_close())
-                                        on_activate_fn: |ctx| ctx.dismiss_modal()
+                                        IconButton::clear() {
+                                            tooltip: tr!(export_close())
+                                            on_activate_fn: |ctx| ctx.dismiss_modal()
+                                        }
                                     }
                                 }
                             }
@@ -167,21 +171,23 @@ impl Widget for ExportPanel {
                             child: preview
                         }
                         Expand::horizontal { Divider }
-                        // Footer
-                        FixedSize {
-                            height: 56.0
-                            Padding::symmetric(10.0, 22.0) {
-                                HStack {
-                                    spacing: 9.0
-                                    Spacer
-                                    Button::new(tr!(export_cancel())) {
-                                        variant: ButtonVariant::Plain
-                                        on_activate_fn: |ctx| ctx.dismiss_modal()
-                                    }
-                                    Button::new(tr!(export_export())) {
-                                        variant: ButtonVariant::Filled
-                                        enabled: export_can
-                                        on_activate_fn: move |ctx| export_vm.export(ctx)
+                        // Footer — wrapped so the Spacer can push the buttons to the right.
+                        Expand::horizontal {
+                            FixedSize {
+                                height: 56.0
+                                Padding::symmetric(10.0, 22.0) {
+                                    HStack {
+                                        spacing: 9.0
+                                        Spacer
+                                        Button::new(tr!(export_cancel())) {
+                                            variant: ButtonVariant::Plain
+                                            on_activate_fn: |ctx| ctx.dismiss_modal()
+                                        }
+                                        Button::new(tr!(export_export())) {
+                                            variant: ButtonVariant::Filled
+                                            enabled: export_can
+                                            on_activate_fn: move |ctx| export_vm.export(ctx)
+                                        }
                                     }
                                 }
                             }

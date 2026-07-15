@@ -164,7 +164,9 @@ impl ExportViewModel {
             scope: Signal::new(ExportScopeKind::CurrentBook),
             anchor: Signal::new(None),
             format_index: Signal::new(0),
-            preset: Signal::new(None),
+            // Seed the first built-in style so the picker shows a real selection (and the
+            // preview renders) from the first open, rather than an empty placeholder.
+            preset: Signal::new(builtin_presets().into_iter().next()),
             output_path: Signal::new(String::new()),
             active: Signal::new(None),
         }
