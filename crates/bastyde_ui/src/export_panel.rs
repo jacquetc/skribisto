@@ -16,18 +16,20 @@ use bastyde::prelude::*;
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
     Button, ButtonVariant, Center, Checkbox, ComboBox, Divider, Expand, FilePickerField,
-    FilePickerKind, FixedSize, FormLayout, HStack, IconButton, Padding, Panel, ScrollArea,
-    SegmentedControl, Spacer, TextWidget, VStack,
+    FilePickerKind, FixedSize, FormLayout, HStack, IconButton, Padding, Panel, ScrollArea, Spacer,
+    TextWidget, VStack,
 };
 
-use export_management::ExportScopeKind;
+use export_management::{ExportFormat, ExportScopeKind};
 use skribisto_compiler::Preset;
 
 use crate::export_choose::ChooseTreeWidget;
 use crate::view_models::{ExportViewModel, SettingsViewModel, format_label, scope_label};
 
-const CARD_W: f32 = 760.0;
-const CARD_H: f32 = 640.0;
+const CARD_W: f32 = 940.0;
+const CARD_H: f32 = 600.0;
+/// The fixed width of the leading column (scope + controls); the preview fills the rest.
+const LEADING_W: f32 = 430.0;
 
 pub struct ExportPanel {
     vm: ExportViewModel,
@@ -41,64 +43,63 @@ impl ExportPanel {
     pub fn new(vm: ExportViewModel) -> Self {
         Self { vm, root_child: None }
     }
+}
 
-    fn field_label(text: LocalizedString) -> TextWidget {
-        TextWidget::new(text).style(TextStyleRole::Small).color(TextRole::Secondary)
-    }
+fn field_label(text: LocalizedString) -> TextWidget {
+    TextWidget::new(text).style(TextStyleRole::Small).color(TextRole::Secondary)
+}
 
-    /// The four control rows: what · format · style · file.
-    fn controls(&self) -> impl Widget + 'static {
-        let vm = &self.vm;
+/// The format · style · file control rows (shared by both scope modes).
+fn controls_form(vm: &ExportViewModel) -> impl Widget + 'static {
+    // Format picker — a dropdown (a segmented control's six labels don't fit the narrow
+    // leading column, and this scales to EPUB/PDF). An effect keeps the path extension in step.
+    let format = ComboBox::from_items(
+        ExportViewModel::panel_formats().to_vec(),
+        vm.format_signal(),
+        |f: &ExportFormat| format_label(f),
+    );
 
-        // Format picker — the segments track `format_index`; the `App`-side effect keeps the
-        // path extension in step.
-        let mut format = SegmentedControl::new(vm.format_index());
-        for f in ExportViewModel::panel_formats() {
-            format = format.segment(format_label(f));
-        }
+    // Style picker — built-in styles for now (M4 unions the user's in).
+    let style = ComboBox::from_items(vm.presets(), vm.preset_signal(), |p: &Preset| {
+        lit!(p.name.clone())
+    });
 
-        // Style picker — built-in styles for now (M4 unions the user's in).
-        let style = ComboBox::from_items(vm.presets(), vm.preset_signal(), |p: &Preset| {
-            lit!(p.name.clone())
-        });
+    // Destination — a save-file picker bound to the output path.
+    let default_name = std::path::Path::new(&vm.output_path().get())
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("export")
+        .to_string();
+    let path = FilePickerField::new(vm.output_path())
+        .kind(FilePickerKind::SaveFile)
+        .default_file_name(default_name)
+        .add_filter("Export", &[current_extension(vm)]);
 
-        // Destination — a save-file picker bound to the output path.
-        let default_name = std::path::Path::new(&vm.output_path().get())
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("export")
-            .to_string();
-        let path = FilePickerField::new(vm.output_path())
-            .kind(FilePickerKind::SaveFile)
-            .default_file_name(default_name)
-            .add_filter("Export", &[Self::current_extension(vm)]);
+    FormLayout::new()
+        .label_gap(14.0)
+        .row_spacing(14.0)
+        .line(field_label(tr!(export_format_label())), format)
+        .line(field_label(tr!(export_style_label())), style)
+        .full_width(Divider::new())
+        .line(field_label(tr!(export_path_label())), path)
+}
 
-        FormLayout::new()
-            .label_gap(16.0)
-            .row_spacing(14.0)
-            .line(Self::field_label(tr!(export_format_label())), format)
-            .line(Self::field_label(tr!(export_style_label())), style)
-            .full_width(Divider::new())
-            .line(Self::field_label(tr!(export_path_label())), path)
-    }
-
-    /// The extension of the currently-selected format (for the save dialog filter).
-    fn current_extension(vm: &ExportViewModel) -> &'static str {
-        let name = vm.output_path().get();
-        std::path::Path::new(&name)
-            .extension()
-            .and_then(|e| e.to_str())
-            .map(|e| match e {
-                "docx" => "docx",
-                "html" => "html",
-                "md" => "md",
-                "dj" => "dj",
-                "txt" => "txt",
-                "tex" => "tex",
-                _ => "html",
-            })
-            .unwrap_or("html")
-    }
+/// The extension of the currently-selected format (for the save dialog filter).
+fn current_extension(vm: &ExportViewModel) -> &'static str {
+    let name = vm.output_path().get();
+    std::path::Path::new(&name)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| match e {
+            "docx" => "docx",
+            "html" => "html",
+            "md" => "md",
+            "dj" => "dj",
+            "txt" => "txt",
+            "tex" => "tex",
+            _ => "html",
+        })
+        .unwrap_or("html")
 }
 
 impl std::fmt::Debug for ExportPanel {
@@ -112,12 +113,12 @@ impl Widget for ExportPanel {
         // Keep the destination's extension in step with the chosen format.
         {
             let vm = self.vm.clone();
-            ctx.effect(&self.vm.format_index(), move |_| vm.retarget_extension());
+            ctx.effect(&self.vm.format_signal(), move |_| vm.retarget_extension());
         }
 
-        let scope_section = ScopeSection::new(self.vm.clone());
-        let controls = Padding::symmetric(20.0, 18.0).child(self.controls());
+        let leading = LeadingColumn::new(self.vm.clone());
         let preview = ExportPreviewBody::new(self.vm.clone());
+        let vdivider = Divider::vertical();
 
         let export_vm = self.vm.clone();
         let export_can = self.vm.can_export();
@@ -131,9 +132,8 @@ impl Widget for ExportPanel {
                     padding: 0.0
                     VStack {
                         spacing: 0.0
-                        // Header — wrapped in Expand::horizontal so the height-only
-                        // FixedSize doesn't collapse the row to its min width (which would
-                        // squeeze the title + close button into the top-left corner).
+                        // Header (full width) — wrapped in Expand::horizontal so the
+                        // height-only FixedSize doesn't collapse the row to its min width.
                         Expand::horizontal {
                             FixedSize {
                                 height: 44.0
@@ -155,25 +155,30 @@ impl Widget for ExportPanel {
                             }
                         }
                         Expand::horizontal { Divider }
-                        // Scope: a "What" line (quick scope) or the Choose… checkbox tree.
-                        child: scope_section
-                        Expand::horizontal { Divider }
-                        // Controls
-                        child: controls
-                        Expand::horizontal { Divider }
-                        // Preview label
-                        Padding::new(10.0, 20.0, 4.0, 20.0) {
-                            TextWidget::new(tr!(export_preview_label())) {
-                                style: TextStyleRole::Small
-                                color: TextRole::Secondary
+                        // Body: a fixed-width leading column (scope + controls) and the
+                        // preview filling the trailing side, full height.
+                        Expand::vertical {
+                            HStack {
+                                spacing: 0.0
+                                child: leading
+                                child: vdivider
+                                Expand::horizontal {
+                                    VStack {
+                                        spacing: 0.0
+                                        Padding::new(10.0, 20.0, 6.0, 20.0) {
+                                            TextWidget::new(tr!(export_preview_label())) {
+                                                style: TextStyleRole::Small
+                                                color: TextRole::Secondary
+                                            }
+                                        }
+                                        Expand::horizontal { Divider }
+                                        Expand::vertical { child: preview }
+                                    }
+                                }
                             }
                         }
-                        // Preview body (fills the remaining space)
-                        Expand::vertical {
-                            child: preview
-                        }
                         Expand::horizontal { Divider }
-                        // Footer — wrapped so the Spacer can push the buttons to the right.
+                        // Footer (full width) — wrapped so the Spacer pushes the buttons right.
                         Expand::horizontal {
                             FixedSize {
                                 height: 56.0
@@ -297,60 +302,88 @@ impl Widget for ExportPreviewBody {
     }
 }
 
-/// The scope section above the controls: a read-only "What" line for a quick scope, or the
-/// Choose… checkbox tree ([`ChoosePane`]) for the Custom scope. A concrete widget so the
-/// panel's `bati!` can host it (the branch types differ).
-struct ScopeSection {
+/// The fixed-width leading column: the scope selector (a "What" line for a quick scope, or
+/// the Choose… checkbox tree) above the format/style/path controls. Reports a fixed width and
+/// fills the body height, so the preview column takes the rest of the width and full height.
+struct LeadingColumn {
     vm: ExportViewModel,
     root_child: Option<WidgetId>,
 }
 
-impl ScopeSection {
+impl LeadingColumn {
     fn new(vm: ExportViewModel) -> Self {
         Self { vm, root_child: None }
     }
 }
 
-impl std::fmt::Debug for ScopeSection {
+impl std::fmt::Debug for LeadingColumn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ScopeSection").finish()
+        f.debug_struct("LeadingColumn").finish()
     }
 }
 
-impl Widget for ScopeSection {
+impl Widget for LeadingColumn {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let id = if self.vm.scope() == ExportScopeKind::Custom {
-            ctx.add(ChoosePane::new(self.vm.clone()))
+        let controls = Padding::symmetric(20.0, 16.0).child(controls_form(&self.vm));
+        let root = if self.vm.scope() == ExportScopeKind::Custom {
+            // Choose…: the checkbox tree fills the column; the controls sit below it.
+            let choose = ChoosePane::new(self.vm.clone());
+            bati!(ctx => VStack {
+                spacing: 0.0
+                Expand::vertical { child: choose }
+                Expand::horizontal { Divider }
+                child: controls
+            })
         } else {
-            ctx.add(
-                Padding::new(14.0, 20.0, 10.0, 20.0).child(
-                    HStack::new()
-                        .spacing(16.0)
-                        .child(
-                            TextWidget::new(tr!(export_scope_label()))
-                                .style(TextStyleRole::Small)
-                                .color(TextRole::Secondary),
-                        )
-                        .child(
-                            TextWidget::new(scope_label(&self.vm.scope())).color(TextRole::Primary),
-                        ),
-                ),
-            )
+            // A quick scope: a small "What: <scope>" line above the controls.
+            let what = Padding::new(14.0, 20.0, 12.0, 20.0).child(
+                HStack::new()
+                    .spacing(14.0)
+                    .child(field_label(tr!(export_scope_label())))
+                    .child(TextWidget::new(scope_label(&self.vm.scope())).color(TextRole::Primary)),
+            );
+            bati!(ctx => VStack {
+                spacing: 0.0
+                child: what
+                Expand::horizontal { Divider }
+                child: controls
+            })
         };
-        self.root_child = Some(id);
-        vec![id]
+        self.root_child = Some(root);
+        vec![root]
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        self.root_child
-            .and_then(|id| ctx.child_size(id, proposal))
-            .map(LayoutResponse::from)
-            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        // Fixed width; fill the body height (else the child's natural height).
+        let child_h = self
+            .root_child
+            .and_then(|id| ctx.child_size(id, SizeProposal::with_width(LEADING_W)))
+            .map(|s| s.height)
+            .unwrap_or(0.0);
+        Size::new(LEADING_W, proposal.height.unwrap_or(child_h)).into()
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = bounds.origin();
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
     }
 }
 
-/// The Choose… section: a "Show non-exportable" reveal toggle over the checkbox tree.
-/// Rebuilds the tree (preserving checks) when the toggle flips.
+/// The Choose… section: a "Show non-exportable" reveal toggle over the checkbox tree, which
+/// fills the leading column's vertical space. Rebuilds the tree (preserving checks) when the
+/// toggle flips.
 struct ChoosePane {
     vm: ExportViewModel,
     root_child: Option<WidgetId>,
@@ -388,12 +421,7 @@ impl Widget for ChoosePane {
                 Checkbox::new(show) {
                     label: tr!(export_show_non_exportable())
                 }
-                Expand::horizontal {
-                    FixedSize {
-                        height: 190.0
-                        child: tree
-                    }
-                }
+                Expand::vertical { child: tree }
             }
         });
         self.root_child = Some(root);
@@ -405,6 +433,23 @@ impl Widget for ChoosePane {
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)
             .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = bounds.origin();
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
     }
 }
 

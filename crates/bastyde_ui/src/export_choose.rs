@@ -19,7 +19,7 @@ use bastyde::core::ObserverHandle;
 use bastyde::data::{CheckState, NodeId, TreeModel};
 use bastyde::data::TreeCheckedModel;
 use bastyde::prelude::*;
-use bastyde::widgets::{Checkbox, HStack, Padding, TextWidget, TreeView};
+use bastyde::widgets::{StandardTreeItem, TextWidget, TreeView};
 
 use frontend::common::entities::BinderItemSubRole;
 use skrib_format::Gathered;
@@ -237,12 +237,11 @@ impl Widget for ChooseTreeWidget {
         let capture = expand_fn.clone();
         let view = TreeView::new_with_context(
             tree.clone(),
-            move |node: &ChooseNode, entry, _selected, rowctx| {
+            move |node: &ChooseNode, entry, selected, rowctx| {
                 if capture.borrow().is_none() {
                     let handle = rowctx.slice_handle().clone();
                     *capture.borrow_mut() = Some(Rc::new(move || handle.expand_all()));
                 }
-                let indent = entry.depth as f32 * 16.0;
                 let sig = checked.signal_for(entry.node_id);
                 let icon = if node.kind == "binder" {
                     crate::binder_icons::binder_icon()
@@ -254,21 +253,23 @@ impl Widget for ChooseTreeWidget {
                 } else {
                     TextRole::Secondary
                 };
+                // `StandardTreeItem` gives the depth indentation, the expand/collapse chevron
+                // (via has_children/is_expanded/on_toggle), the tri-state checkbox and the
+                // leading sub-role icon — the same chrome the outline tree uses.
                 Box::new(
-                    HStack::new()
-                        .spacing(6.0)
-                        .child(Padding::new(0.0, 0.0, 0.0, indent))
-                        .child(Checkbox::tristate(sig).labels_hidden(true))
-                        .child(icon)
-                        .child(
-                            TextWidget::new(lit!(node.title.clone()))
-                                .color(title_color)
-                                .style(TextStyleRole::Small),
-                        ),
+                    StandardTreeItem::new(lit!(node.title.clone()))
+                        .depth(entry.depth)
+                        .has_children(entry.has_children)
+                        .is_expanded(entry.is_expanded)
+                        .selected(selected)
+                        .on_toggle_rc(rowctx.toggle_callback())
+                        .tristate_checkbox(sig)
+                        .leading_slot(icon)
+                        .label_color(title_color),
                 ) as Box<dyn Widget>
             },
         )
-        .item_height(26.0);
+        .item_height(28.0);
 
         let id = ctx.add(view);
         // Fire the captured `expand_all` once, on the first frame after a row populated the

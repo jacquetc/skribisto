@@ -221,14 +221,8 @@ if adaptive:
     time.sleep(0.6)
     lbset = labels()
 
-    # Panel anchors: the format segments + a Preview label + the footer Export button.
-    want_formats = [f for f in ("Word (.docx)", "HTML", "Markdown", "Djot", "Text", "LaTeX")
-                    if f in lbset]
-    if len(want_formats) < 4:
-        failures.append(f"panel format segments missing (found {want_formats})")
-    else:
-        print(f"panel format segments: {want_formats}")
-
+    # The format + style pickers are ComboBoxes whose collapsed value renders inline (not as
+    # an AT label node), so they're verified visually rather than asserted here.
     # Structural anchors that surface as AT nodes: the Preview band label and the footer
     # Export button. (The FormLayout field labels + the Style ComboBox value render inline
     # and aren't exposed as label nodes, so they're verified visually, not asserted.)
