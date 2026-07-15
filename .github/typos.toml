@@ -17,8 +17,8 @@ extend-exclude = [
     "/tests/",
     # Vector artwork / icon path data — not prose.
     "*.svg",
-    # Non-English UI translations (en-US.ftl stays spell-checked).
-    "crates/bastyde_ui/locales/fr-FR.ftl",
+    # Non-English UI translations (the en-US/ locale stays spell-checked).
+    "crates/bastyde_ui/locales/fr-FR/*.ftl",
 ]
 
 [default.extend-words]

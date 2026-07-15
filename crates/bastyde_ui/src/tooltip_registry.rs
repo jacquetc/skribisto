@@ -124,8 +124,8 @@ mod tests {
     #[test]
     fn every_cascade_link_resolves_in_both_locales() {
         for (locale, ftl) in [
-            ("en-US", include_str!("../locales/en-US.ftl")),
-            ("fr-FR", include_str!("../locales/fr-FR.ftl")),
+            ("en-US", include_str!("../locales/en-US/tooltips.ftl")),
+            ("fr-FR", include_str!("../locales/fr-FR/tooltips.ftl")),
         ] {
             let targets = cascade_targets(ftl);
             assert!(
