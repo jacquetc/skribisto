@@ -13,7 +13,7 @@
 use bastyde::data::{ListModel, SortFilterListModel};
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Badge, Button, ButtonVariant, HStack, ListView, MinSize, Padding, SearchField,
+    Badge, Button, ButtonVariant, HStack, ListView, MinSize, Padding, SearchField, Spacer,
     StandardListItem, Switcher, TabWidget, TextWidget, VStack,
 };
 
@@ -34,14 +34,29 @@ pub fn dictionaries_pane(ctx: &mut BuildContext, vm: &DictionariesViewModel) -> 
 
 fn installed_tab(vm: &DictionariesViewModel) -> impl Widget {
     let model = vm.installed_model().list_model();
-    let vm = vm.clone();
+    let list_vm = vm.clone();
     let list = ListView::new(model, move |_i, row: &InstalledDictionaryRow, selected| {
-        Box::new(installed_row(&vm, row, selected))
+        Box::new(installed_row(&list_vm, row, selected))
     })
     .auto_item_height(52.0);
+
+    // A trailing "Add dictionary…" button opens the sideload modal (name + code + local
+    // `.aff`/`.dic`). Cloning the view-model into the handler lets it present over this window.
+    let add_vm = vm.clone();
+    let toolbar = HStack::new().spacing(8.0).child(Spacer::new()).child(
+        Button::new(tr!(dict_add_button()))
+            .variant(ButtonVariant::Tinted)
+            .on_activate_fn(move |c| {
+                crate::add_dictionary_panel::present_add_dictionary(c, add_vm.clone())
+            }),
+    );
+
     // A bounded height so the virtualised list actually shows rows and scrolls internally —
     // an `Expand::vertical` here would collapse to zero inside the settings pane's scroll.
-    Padding::symmetric(4.0, 8.0).child(MinSize::new(0.0, 360.0).child(list))
+    VStack::new()
+        .spacing(0.0)
+        .child(Padding::symmetric(8.0, 8.0).child(toolbar))
+        .child(Padding::symmetric(4.0, 0.0).child(MinSize::new(0.0, 340.0).child(list)))
 }
 
 fn installed_row(

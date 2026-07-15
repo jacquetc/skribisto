@@ -26,9 +26,12 @@ use bastyde::widgets::{
     RectWidget, TextWidget, Wrap, ZStack,
 };
 
+use std::collections::HashMap;
+
 use crate::dictionary_registry;
 use crate::models::OpenDocsStore;
 use crate::spellcheck::SpellcheckService;
+use crate::view_models::DictionariesViewModel;
 use skribisto_model::language;
 
 /// A writer for a new `dict_language` list — the caller persists it (and mirrors it into the
@@ -94,22 +97,35 @@ fn base_name(display: &str) -> &str {
 /// The **visible** pill face: the base language name followed by its BCP-47 code, e.g.
 /// `Français (fr-FR)`. The region/variant specificity is **not** on the face — it lives in the
 /// tooltip and the "+" menu (see [`pill_detail`] / the registry `display_name`). The code
-/// disambiguates variants that share a base name (the three French dictionaries). An
-/// unrecognised legacy tag falls back to its raw string.
-fn pill_name(tag: &str) -> String {
-    match dictionary_registry::resolve_token(tag).and_then(dictionary_registry::by_id) {
-        Some(e) => format!("{} ({})", base_name(&e.display_name), e.id),
-        None => tag.to_string(),
+/// disambiguates variants that share a base name (the three French dictionaries). A hand-added
+/// dictionary's code shows the user's name + code; an otherwise unrecognised tag falls back to
+/// its raw string.
+fn pill_name(tag: &str, user_names: &HashMap<String, String>) -> String {
+    // A hand-added dictionary's given name wins on its own code (consistent with the Installed
+    // list and with loading, which both prefer the user's copy over a later catalogue entry).
+    if let Some(name) = user_names.get(tag) {
+        format!("{name} ({tag})")
+    } else if let Some(e) =
+        dictionary_registry::resolve_token(tag).and_then(dictionary_registry::by_id)
+    {
+        format!("{} ({})", base_name(&e.display_name), e.id)
+    } else {
+        tag.to_string()
     }
 }
 
-/// The **full** human name *with* its region/variant, for the tooltip + accessibility, e.g.
-/// `Français (toutes variantes)`. This is exactly what the "+" menu lists.
-fn pill_detail(tag: &str) -> String {
-    dictionary_registry::resolve_token(tag)
-        .and_then(dictionary_registry::by_id)
-        .map(|e| e.display_name.clone())
-        .unwrap_or_else(|| tag.to_string())
+/// The **full** human name for the tooltip + accessibility: a hand-added dictionary's given name,
+/// else the registry's `display_name` (with its region/variant), else the raw tag.
+fn pill_detail(tag: &str, user_names: &HashMap<String, String>) -> String {
+    if let Some(name) = user_names.get(tag) {
+        name.clone()
+    } else if let Some(e) =
+        dictionary_registry::resolve_token(tag).and_then(dictionary_registry::by_id)
+    {
+        e.display_name.clone()
+    } else {
+        tag.to_string()
+    }
 }
 
 /// The list with `tag` removed (whitespace-normalised).
@@ -140,6 +156,26 @@ impl Widget for LanguagePillField {
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
+
+        // Hand-added dictionaries (from the app-state download view-model): a custom code shows
+        // its given name here and is offered in the "+" menu. Rebuild when the installed set
+        // changes (an add/remove bumps `changed`), sorted by name for a stable menu.
+        let mut user_dicts = match ctx.app_state::<DictionariesViewModel>().cloned() {
+            Some(vm) => {
+                vm.changed_signal().bind_to(
+                    ctx.self_id(),
+                    ctx.binding_registry(),
+                    BindingLevel::Rebuild,
+                );
+                vm.user_dictionaries()
+            }
+            None => Vec::new(),
+        };
+        user_dicts.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        let user_names: HashMap<String, String> = user_dicts
+            .iter()
+            .map(|u| (u.code.clone(), u.name.clone()))
+            .collect();
 
         let raw = self.value.get();
         let effective = if raw.trim().is_empty() {
@@ -177,8 +213,8 @@ impl Widget for LanguagePillField {
                 })
             };
 
-            let name = pill_name(&tag);
-            let detail = pill_detail(&tag);
+            let name = pill_name(&tag, &user_names);
+            let detail = pill_detail(&tag, &user_names);
             flow = flow.child(LanguagePill {
                 display: name.clone(),
                 tooltip: lit!(detail.clone()),
@@ -218,6 +254,25 @@ impl Widget for LanguagePillField {
             menu = menu.item(
                 MenuItem::new(lit!(entry.display_name.clone())).on_activate_fn(move |c| {
                     let new = with(&effective, &id);
+                    value.set(new.clone());
+                    set(new, c);
+                    reattach(c);
+                }),
+            );
+        }
+        // Then the hand-added dictionaries (offered by the name the user gave them), so a custom
+        // code can actually be selected for a document — the registry doesn't know it.
+        for ud in &user_dicts {
+            if present.contains(ud.code.as_str()) {
+                continue;
+            }
+            let set = self.set.clone();
+            let value = self.value.clone();
+            let effective = effective.clone();
+            let code = ud.code.clone();
+            menu = menu.item(
+                MenuItem::new(lit!(ud.name.clone())).on_activate_fn(move |c| {
+                    let new = with(&effective, &code);
                     value.set(new.clone());
                     set(new, c);
                     reattach(c);

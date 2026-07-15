@@ -40,6 +40,7 @@
 //!     outline-selection → editor-open effect in `app.rs`).
 //!   * Many-to-one / distant links graduate to the intent bus.
 
+mod add_dictionary;
 mod backup_scheduler;
 mod backup_settings;
 mod dictionaries;
@@ -59,9 +60,10 @@ mod settings;
 mod stream;
 mod welcome;
 
+pub use add_dictionary::AddDictionaryViewModel;
 pub use backup_scheduler::BackupSchedulerViewModel;
 pub use backup_settings::BackupSettingsViewModel;
-pub use dictionaries::{DictionariesViewModel, missing_from};
+pub use dictionaries::{DictionariesViewModel, InstallDictError, missing_from};
 pub use editors::{EditorsViewModel, Side};
 pub use find::FindViewModel;
 pub use import_plume::ImportPlumeViewModel;

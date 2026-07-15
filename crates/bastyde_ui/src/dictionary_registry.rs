@@ -140,6 +140,15 @@ pub fn resolve_token(raw: &str) -> Option<&'static str> {
     id_for_basename(raw).or_else(|| id_for_basename(&canon))
 }
 
+/// Whether `code` names — or, on a case-insensitive filesystem, would collide with — a catalogue
+/// dictionary. Used to refuse a **user-added** code that would shadow or clobber a built-in one:
+/// [`resolve_token`] catches the exact id, its underscore form, and system basenames; the
+/// case-insensitive `id` scan additionally catches a case variant (`EN-US` vs `en-US`), which on
+/// Windows/macOS would map to the same `{code}.aff` file in the download dir.
+pub fn collides_with_catalogue(code: &str) -> bool {
+    resolve_token(code).is_some() || entries().iter().any(|e| e.id.eq_ignore_ascii_case(code))
+}
+
 /// The bundled text of a licence, by its `license_asset` key. `None` for an unknown key
 /// (which the registry test below forbids for any entry actually in use).
 pub fn license_text(asset: &str) -> Option<&'static str> {

@@ -40,13 +40,32 @@ pub struct AcceptedLicense {
     pub license_text_hash: String,
 }
 
-/// The persisted dictionary settings — accepted licences only.
+/// A dictionary the user added by hand from local `.aff`/`.dic` files (Settings ▸ Dictionaries ▸
+/// *Add dictionary*). The **files** are copied into the download dir as `{code}.aff`/`.dic` — so
+/// the loader and the install scan find them exactly like a downloaded one, with no engine change
+/// — and this record supplies the human **name** they lack (a `.aff`/`.dic` carries no title) and
+/// makes the custom `code` offerable in the language picker. Removing the dictionary deletes both
+/// the files and this record.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct UserDictionary {
+    /// The `dict_language` value this dictionary satisfies — the on-disk basename of its copied
+    /// files (`{code}.aff`/`.dic`). Not a registry id (those are added through the catalogue).
+    pub code: String,
+    /// The display name the user gave it.
+    pub name: String,
+}
+
+/// The persisted dictionary settings — accepted licences and user-added dictionaries.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct DictionarySettingsFile {
     #[serde(default = "default_version")]
     pub version: u32,
     #[serde(default)]
     pub accepted: Vec<AcceptedLicense>,
+    /// Hand-added dictionaries (name + code); the files live in the download dir. `#[serde(default)]`
+    /// so a pre-existing `dictionaries.toml` (which never had this key) still loads.
+    #[serde(default)]
+    pub user_dictionaries: Vec<UserDictionary>,
 }
 
 fn default_version() -> u32 {
@@ -58,18 +77,29 @@ impl Default for DictionarySettingsFile {
         DictionarySettingsFile {
             version: DictionarySettingsFile::CURRENT_VERSION,
             accepted: Vec::new(),
+            user_dictionaries: Vec::new(),
         }
     }
 }
 
 impl Versioned for DictionarySettingsFile {
-    const CURRENT_VERSION: u32 = 1;
+    // v2 added `user_dictionaries`. The bump matters for *downgrades*: an older build (v1) reading
+    // a v2 file is refused by the Migrator (on-disk > current) and falls back rather than
+    // rewriting it — so it can't silently drop the `user_dictionaries` it doesn't know about.
+    const CURRENT_VERSION: u32 = 2;
     fn version(&self) -> u32 {
         self.version
     }
     fn set_version(&mut self, v: u32) {
         self.version = v;
     }
+}
+
+/// The migrator for `dictionaries.toml`. v1→v2 only added `user_dictionaries` (a `#[serde(default)]`
+/// field), so the step is the identity — the Migrator stamps the new version and serde fills the
+/// empty list. Shared by every load site so a v1 file on disk upgrades consistently.
+fn migrator() -> Migrator<DictionarySettingsFile> {
+    Migrator::new().step(1, |raw| Ok(raw))
 }
 
 /// The lowercase-hex BLAKE3 of a licence text — the canonical hashing used both when
@@ -88,14 +118,14 @@ pub struct DictionarySettingsService {
 impl DictionarySettingsService {
     /// Open `dictionaries.toml` under `paths` (cross-process safe by default).
     pub fn open(paths: &AppPaths) -> Result<Self, SettingsFileError> {
-        let file = SettingsFile::load(paths.config_file("dictionaries"), Migrator::new())?;
+        let file = SettingsFile::load(paths.config_file("dictionaries"), migrator())?;
         Ok(Self { file })
     }
 
     /// Open at an explicit path — used by tests.
     #[cfg_attr(not(test), allow(dead_code))]
     pub fn open_at(path: std::path::PathBuf) -> Result<Self, SettingsFileError> {
-        let file = SettingsFile::load(path, Migrator::new())?;
+        let file = SettingsFile::load(path, migrator())?;
         Ok(Self { file })
     }
 
@@ -104,12 +134,12 @@ impl DictionarySettingsService {
     pub fn in_memory_default() -> Self {
         let path =
             std::env::temp_dir().join(format!("skribisto-dictionaries-{}.toml", std::process::id()));
-        SettingsFile::load(path, Migrator::new())
+        SettingsFile::load(path, migrator())
             .map(|file| Self { file })
             .unwrap_or_else(|_| {
                 let file = SettingsFile::load(
                     std::path::PathBuf::from(".skribisto-dictionaries.toml"),
-                    Migrator::new(),
+                    migrator(),
                 )
                 .expect("in-memory dictionary settings fallback");
                 Self { file }
@@ -151,6 +181,34 @@ impl DictionarySettingsService {
             f.accepted.retain(|a| a.dictionary_id != dictionary_id);
             f.accepted.push(record);
         })
+    }
+
+    // ── user-added dictionaries ──
+
+    /// The hand-added dictionaries recorded here (name + code). The files themselves are in the
+    /// download dir; this is only the metadata a `.aff`/`.dic` cannot carry.
+    pub fn user_dictionaries(&self) -> Vec<UserDictionary> {
+        self.file.borrow().user_dictionaries.clone()
+    }
+
+    /// Record a user-added dictionary, replacing any prior record for the same `code` (a re-add
+    /// after replacing the files), so the file never accumulates duplicates.
+    pub fn add_user_dictionary(&self, code: &str, name: &str) -> Result<(), SettingsFileError> {
+        let record = UserDictionary {
+            code: code.to_string(),
+            name: name.to_string(),
+        };
+        self.file.mutate(|f| {
+            f.user_dictionaries.retain(|d| d.code != code);
+            f.user_dictionaries.push(record);
+        })
+    }
+
+    /// Drop the record for `code` (called when the dictionary is removed). A no-op if `code` was
+    /// never a user-added dictionary, so it is safe to call from the generic remove path.
+    pub fn remove_user_dictionary(&self, code: &str) -> Result<(), SettingsFileError> {
+        self.file
+            .mutate(|f| f.user_dictionaries.retain(|d| d.code != code))
     }
 }
 
@@ -199,5 +257,52 @@ mod tests {
         assert_eq!(svc.file.borrow().accepted.len(), 1, "one record per id");
         assert!(svc.has_accepted("en-US", &h2));
         assert!(!svc.has_accepted("en-US", &h1), "the old hash is gone");
+    }
+
+    #[test]
+    fn user_dictionaries_add_replace_remove() {
+        let svc = temp_service();
+        assert!(svc.user_dictionaries().is_empty());
+
+        svc.add_user_dictionary("fr-FR-x-mine", "My French").unwrap();
+        svc.add_user_dictionary("cy-GB", "Cymraeg").unwrap();
+        assert_eq!(svc.user_dictionaries().len(), 2);
+
+        // Re-adding the same code replaces (a renamed re-import), never duplicates.
+        svc.add_user_dictionary("fr-FR-x-mine", "My French (v2)").unwrap();
+        let list = svc.user_dictionaries();
+        assert_eq!(list.len(), 2, "one record per code");
+        assert_eq!(
+            list.iter().find(|d| d.code == "fr-FR-x-mine").unwrap().name,
+            "My French (v2)"
+        );
+
+        svc.remove_user_dictionary("fr-FR-x-mine").unwrap();
+        assert_eq!(svc.user_dictionaries().len(), 1);
+        // Removing a code that was never added is a harmless no-op (the generic remove path).
+        svc.remove_user_dictionary("not-there").unwrap();
+        assert_eq!(svc.user_dictionaries().len(), 1);
+    }
+
+    /// A v1 file on disk upgrades to v2 through the migrator on open — its `accepted` list is
+    /// preserved, `user_dictionaries` defaults empty, and the version is stamped forward.
+    #[test]
+    fn v1_file_upgrades_to_v2_on_open() {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static N: AtomicU64 = AtomicU64::new(0);
+        let n = N.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir()
+            .join(format!("skribisto-dictmig-{}-{n}.toml", std::process::id()));
+        std::fs::write(
+            &path,
+            "version = 1\n[[accepted]]\ndictionary_id = \"en-US\"\naccepted_at = \"t\"\nlicense_text_hash = \"h\"\n",
+        )
+        .unwrap();
+
+        let svc = DictionarySettingsService::open_at(path.clone()).expect("v1 upgrades to v2");
+        assert_eq!(svc.file.borrow().version, 2, "version stamped forward");
+        assert_eq!(svc.file.borrow().accepted.len(), 1, "acceptances preserved");
+        assert!(svc.user_dictionaries().is_empty(), "user list defaults empty");
+        let _ = std::fs::remove_file(&path);
     }
 }

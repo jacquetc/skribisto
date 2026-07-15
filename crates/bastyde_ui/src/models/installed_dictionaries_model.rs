@@ -51,13 +51,19 @@ pub struct InstalledDictionaryRow {
 #[derive(Clone)]
 pub struct InstalledDictionariesModel {
     model: ListModel<InstalledDictionaryRow>,
+    /// The live config service — the source of the user-given NAMES for hand-added dictionaries
+    /// (a copied `{code}.aff` on disk carries no title). Held (rather than reading a disk
+    /// snapshot) so the names are always in step with what the service just wrote, even in the
+    /// throwaway-temp-file fallback where the on-disk path differs from the standard one.
+    settings: crate::models::DictionarySettingsService,
 }
 
 impl InstalledDictionariesModel {
     /// Build and populate by scanning now.
-    pub fn new() -> Self {
+    pub fn new(settings: crate::models::DictionarySettingsService) -> Self {
         let me = Self {
             model: ListModel::new(),
+            settings,
         };
         me.refresh();
         me
@@ -69,20 +75,42 @@ impl InstalledDictionariesModel {
     }
 
     /// Re-scan the disk and replace the rows. Cheap (a directory listing), so it is safe to
-    /// call on every relevant change (install, remove, window focus-regain).
+    /// call on every relevant change (install, remove, window focus-regain). The user-added
+    /// names come from the in-memory config, not disk.
     pub fn refresh(&self) {
-        self.model.replace_all(source::scan());
+        let user_names: std::collections::HashMap<String, String> = self
+            .settings
+            .user_dictionaries()
+            .into_iter()
+            .map(|u| (u.code, u.name))
+            .collect();
+        self.model.replace_all(source::scan(&user_names));
     }
 
     /// Whether a dictionary with this registry id is installed (in either tier).
     pub fn is_installed(&self, id: &str) -> bool {
         (0..self.model.len()).any(|i| self.model.with_item(i, |r| r.id == id).unwrap_or(false))
     }
-}
 
-impl Default for InstalledDictionariesModel {
-    fn default() -> Self {
-        Self::new()
+    /// Whether a dictionary with this id is installed, compared **case-insensitively** — the Add
+    /// form uses it to flag a re-add on a case-insensitive filesystem (`EN-US` vs `en-US`), where
+    /// an exact match would miss it.
+    pub fn is_installed_ci(&self, id: &str) -> bool {
+        (0..self.model.len()).any(|i| {
+            self.model
+                .with_item(i, |r| r.id.eq_ignore_ascii_case(id))
+                .unwrap_or(false)
+        })
+    }
+
+    /// The display name of the installed dictionary with this id, if present — so a caller can
+    /// name a user-added dictionary (whose name only this scan knows) in a toast.
+    pub fn display_name(&self, id: &str) -> Option<String> {
+        (0..self.model.len()).find_map(|i| {
+            self.model
+                .with_item(i, |r| (r.id == id).then(|| r.display_name.clone()))
+                .flatten()
+        })
     }
 }
 
@@ -92,12 +120,14 @@ impl Default for InstalledDictionariesModel {
 mod source {
     use super::{DictOrigin, InstalledDictionaryRow};
     use crate::dictionary_registry;
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
     use std::path::{Path, PathBuf};
 
     /// Scan tier 1 (our downloads) then tier 2 (system), deduping by resolved `.dic` path so a
-    /// symlink alias or a both-tiers dictionary appears once, tier 1 winning.
-    pub(super) fn scan() -> Vec<InstalledDictionaryRow> {
+    /// symlink alias or a both-tiers dictionary appears once, tier 1 winning. `user_names`
+    /// (code → name, from the live config) supplies the name for a downloaded-dir file named by a
+    /// custom code — otherwise it would read as "⟨code⟩ (system)".
+    pub(super) fn scan(user_names: &HashMap<String, String>) -> Vec<InstalledDictionaryRow> {
         let mut rows: Vec<InstalledDictionaryRow> = Vec::new();
         let mut seen: HashSet<PathBuf> = HashSet::new();
         // The resolved .dic paths of tier-2, so a tier-1 row can flag "also on your system".
@@ -113,7 +143,7 @@ mod source {
                 continue;
             }
             let also_system = system_resolved.contains(&key);
-            rows.push(row_for(aff, dic, DictOrigin::Downloaded, also_system));
+            rows.push(row_for(aff, dic, DictOrigin::Downloaded, also_system, user_names));
         }
 
         for dir in system_dirs() {
@@ -122,7 +152,7 @@ mod source {
                 if !seen.insert(key) {
                     continue; // a symlink alias, or already taken by tier 1
                 }
-                rows.push(row_for(aff, dic, DictOrigin::System, false));
+                rows.push(row_for(aff, dic, DictOrigin::System, false, user_names));
             }
         }
         rows
@@ -156,6 +186,7 @@ mod source {
         dic: PathBuf,
         origin: DictOrigin,
         also_system: bool,
+        user_names: &std::collections::HashMap<String, String>,
     ) -> InstalledDictionaryRow {
         let stem = aff
             .file_stem()
@@ -167,14 +198,25 @@ mod source {
         let resolved = dictionary_registry::by_id(&stem)
             .map(|e| e.id.as_str())
             .or_else(|| dictionary_registry::id_for_basename(&stem));
-        let (id, display_name, matched) = match resolved {
-            Some(id) => {
-                let name = dictionary_registry::by_id(id)
-                    .map(|e| e.display_name.clone())
-                    .unwrap_or_else(|| id.to_string());
-                (id.to_string(), name, true)
-            }
-            None => (stem.clone(), format!("{stem} (system)"), false),
+        // A hand-added dictionary's record only ever names a file in the **download dir** (that is
+        // where the copy lands), so consult `user_names` for tier-1 rows only — otherwise a system
+        // package that merely shares a basename with a user code would be mislabeled and wrongly
+        // marked "matched" (hiding its "unusable" badge).
+        let user_name = (origin == DictOrigin::Downloaded)
+            .then(|| user_names.get(&stem))
+            .flatten();
+        let (id, display_name, matched) = if let Some(name) = user_name {
+            // The user named it, so that name holds even if a later release adds the same code to
+            // the catalogue (the copied file also takes precedence when loading, so name and
+            // content stay consistent).
+            (stem.clone(), name.clone(), true)
+        } else if let Some(id) = resolved {
+            let name = dictionary_registry::by_id(id)
+                .map(|e| e.display_name.clone())
+                .unwrap_or_else(|| id.to_string());
+            (id.to_string(), name, true)
+        } else {
+            (stem.clone(), format!("{stem} (system)"), false)
         };
         let encoding = match origin {
             // Our own downloads are UTF-8 by construction; skip the read.
@@ -212,17 +254,80 @@ mod source {
         }
         None
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        /// A downloaded-dir file named by a custom code takes its name from the user-dictionary
+        /// record — a matched row, not the "⟨stem⟩ (system)" fallback. (`Downloaded` origin reads
+        /// no bytes, so synthetic paths suffice.)
+        #[test]
+        fn user_dictionary_name_resolves_from_record() {
+            let mut names = std::collections::HashMap::new();
+            names.insert("fr-FR-x-mine".to_string(), "My French".to_string());
+
+            let row = row_for(
+                PathBuf::from("/data/dictionaries/fr-FR-x-mine.aff"),
+                PathBuf::from("/data/dictionaries/fr-FR-x-mine.dic"),
+                DictOrigin::Downloaded,
+                false,
+                &names,
+            );
+            assert_eq!(row.id, "fr-FR-x-mine");
+            assert_eq!(row.display_name, "My French");
+            assert!(row.matched, "a recorded user dictionary reads as matched");
+
+            // The user's name wins even on a code the registry *does* know (the future-catalogue
+            // case), consistent with the loader preferring the user's copy.
+            let mut shadowing = std::collections::HashMap::new();
+            shadowing.insert("en-US".to_string(), "My English".to_string());
+            let row = row_for(
+                PathBuf::from("/data/dictionaries/en-US.aff"),
+                PathBuf::from("/data/dictionaries/en-US.dic"),
+                DictOrigin::Downloaded,
+                false,
+                &shadowing,
+            );
+            assert_eq!(row.display_name, "My English", "user name overrides the catalogue name");
+
+            // A SYSTEM-tier file that merely shares a basename with a user code keeps its own
+            // identity — a user record only ever names a file in the download dir.
+            let sys = row_for(
+                PathBuf::from("/usr/share/hunspell/fr-FR-x-mine.aff"),
+                PathBuf::from("/usr/share/hunspell/fr-FR-x-mine.dic"),
+                DictOrigin::System,
+                false,
+                &names,
+            );
+            assert_ne!(sys.display_name, "My French", "user names don't leak onto system rows");
+            assert!(!sys.matched, "an unrecognised system basename stays unmatched");
+
+            // An unknown custom code with no record still falls back to "(system)".
+            let orphan = row_for(
+                PathBuf::from("/data/dictionaries/zz-unknown.aff"),
+                PathBuf::from("/data/dictionaries/zz-unknown.dic"),
+                DictOrigin::Downloaded,
+                false,
+                &names,
+            );
+            assert!(!orphan.matched);
+            assert_eq!(orphan.display_name, "zz-unknown (system)");
+        }
+    }
 }
 
 #[cfg(feature = "mocks")]
 mod source {
     use super::{DictOrigin, InstalledDictionaryRow};
     use crate::dictionary_registry;
+    use std::collections::HashMap;
     use std::path::PathBuf;
 
     /// Fabricated rows so the Installed tab renders in the mock build: one downloaded, one
-    /// system, drawn from real registry ids so the display names are consistent.
-    pub(super) fn scan() -> Vec<InstalledDictionaryRow> {
+    /// system, drawn from real registry ids so the display names are consistent. `_user_names`
+    /// is unused here — the mock fabricates its rows and never inspects hand-added dictionaries.
+    pub(super) fn scan(_user_names: &HashMap<String, String>) -> Vec<InstalledDictionaryRow> {
         let named = |id: &str, origin: DictOrigin, also_system: bool| {
             let display_name = dictionary_registry::by_id(id)
                 .map(|e| e.display_name.clone())

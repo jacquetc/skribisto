@@ -28,6 +28,7 @@
 //! old one. Getting this backwards quits the app.
 
 mod activity_icons;
+mod add_dictionary_panel;
 mod app;
 mod app_ids;
 mod backup;
@@ -403,10 +404,10 @@ fn main() {
                 .ok()
         })
         .unwrap_or_else(models::DictionarySettingsService::in_memory_default);
-    let dictionaries = view_models::DictionariesViewModel::new(
-        dictionary_settings,
-        models::InstalledDictionariesModel::new(),
-    );
+    let installed_dictionaries =
+        models::InstalledDictionariesModel::new(dictionary_settings.clone());
+    let dictionaries =
+        view_models::DictionariesViewModel::new(dictionary_settings, installed_dictionaries);
     // Reactive single-entity handles (Layer A). Created here so the title-bar menu
     // can bind the project title (Bug 1) and shape (Bug 2); `App::build` wires
     // their event subscriptions and re-points them on each `LoadWork`.

@@ -26,7 +26,7 @@ mod search_settings_file;
 mod stream_rows_model;
 
 pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
-pub use dictionary_settings_file::{DictionarySettingsService, license_hash};
+pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
 pub use installed_dictionaries_model::{
     DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
 };

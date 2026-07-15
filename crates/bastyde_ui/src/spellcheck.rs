@@ -131,6 +131,18 @@ fn load(id: &str) -> Option<Arc<spellbook::Dictionary>> {
     spellbook::Dictionary::new(&aff, &dic).ok().map(Arc::new)
 }
 
+/// Check that an `.aff`/`.dic` pair can actually be used, running the **exact** steps [`load`]
+/// does — read + transcode from the declared encoding, then parse with spellbook. Used by the
+/// "Add dictionary" flow to refuse a bad pair up front (which would otherwise install silently
+/// and simply never flag anything). A pair that validates here is one the engine can load.
+pub(crate) fn validate_dictionary_files(aff_path: &Path, dic_path: &Path) -> Result<(), String> {
+    let (aff, dic) = read_pair(aff_path, dic_path)
+        .ok_or_else(|| "could not read the .aff / .dic files".to_string())?;
+    spellbook::Dictionary::new(&aff, &dic)
+        .map(|_| ())
+        .map_err(|e| format!("not a valid Hunspell dictionary ({e:?})"))
+}
+
 /// Word tokens of a block, as `(char_offset, char_length, word)` — the coordinates
 /// [`HighlightContext::set_format`] expects (character positions, not bytes). UAX#29 word
 /// segmentation keeps contractions and elisions together (`don't`, `l'auteur`), for both the
@@ -283,6 +295,15 @@ impl SpellcheckService {
         *self.inner.personal.borrow_mut() = words;
     }
 
+    /// Drop the loaded-dictionary cache only (keeping session mutes + personal words), so the
+    /// next attach re-reads disk. Called when a dictionary is installed or removed: without this,
+    /// `dict()`'s per-id cache would keep serving a stale entry — a cached miss would hide a fresh
+    /// install, and a cached `Arc` would keep a just-removed dictionary alive (so squiggles would
+    /// neither appear nor degrade until the project is reopened).
+    pub fn invalidate_dictionaries(&self) {
+        self.inner.cache.borrow_mut().clear();
+    }
+
     /// Drop everything project-scoped — the dictionary cache, mutes, and personal words. Called
     /// on `close_work`; a fresh project reloads lazily and starts unmuted.
     pub fn clear(&self) {
@@ -407,6 +428,27 @@ mod tests {
         assert!(!hl.misspelled("hello"), "English word accepted");
         assert!(!hl.misspelled("bonjour"), "French word accepted");
         assert!(hl.misspelled("guten"), "a word neither knows is flagged");
+    }
+
+    /// `validate_dictionary_files` accepts a real pair and rejects garbage / missing files.
+    #[test]
+    fn validate_accepts_good_rejects_bad() {
+        let dir = std::env::temp_dir().join(format!("skrib-valdict-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let aff = dir.join("ok.aff");
+        let dic = dir.join("ok.dic");
+        std::fs::write(&aff, "SET UTF-8\n").unwrap();
+        std::fs::write(&dic, "1\nhello\n").unwrap();
+        assert!(validate_dictionary_files(&aff, &dic).is_ok(), "a real pair validates");
+
+        // A missing file is a read error, not a panic.
+        assert!(validate_dictionary_files(&dir.join("nope.aff"), &dic).is_err());
+
+        // A .dic whose count line is nonsense fails to parse (spellbook rejects it).
+        let bad = dir.join("bad.dic");
+        std::fs::write(&bad, "not-a-count\n\0\0garbage").unwrap();
+        assert!(validate_dictionary_files(&aff, &bad).is_err(), "garbage is rejected");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// The ISO-8859-1 transcode path: a `SET ISO8859-1` `.aff` decodes its bytes correctly.

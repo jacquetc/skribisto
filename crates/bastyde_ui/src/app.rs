@@ -589,16 +589,23 @@ impl Widget for App {
         // Squiggle colour from the theme's error role (re-attaches only on a real change, e.g.
         // a light/dark switch).
         spell_docs.set_squiggle_color(spell_underline_color(ctx.theme().colors.text_error));
-        // A dictionary installed or removed → re-attach every open document (install paints new
-        // squiggles; remove degrades gracefully, never rewriting `dict_language`).
+        // A dictionary installed or removed → drop the engine's per-id cache (so a cached miss
+        // can't hide a fresh install, nor a cached `Arc` keep a removed dictionary alive), then
+        // re-attach every open document (install paints new squiggles; remove degrades
+        // gracefully, never rewriting `dict_language`).
         {
             let docs = spell_docs.clone();
-            ctx.effect(&dictionaries.changed_signal(), move |_| docs.attach_all());
+            let spell = spellcheck.clone();
+            ctx.effect(&dictionaries.changed_signal(), move |_| {
+                spell.invalidate_dictionaries();
+                docs.attach_all();
+            });
         }
         // Cross-process staleness: a peer window may have installed/removed a dictionary while
-        // this one was unfocused. Re-scan + re-attach on the focus-regain rising edge.
+        // this one was unfocused. Re-scan on the focus-regain edge — `rescan()` bumps `changed`,
+        // whose effect (above) drops the engine cache and re-attaches every document, so this must
+        // NOT invalidate/attach again or each focus-regain would do all that work twice.
         {
-            let docs = spell_docs.clone();
             let dictionaries = dictionaries.clone();
             let was_active = std::cell::Cell::new(true);
             let wsig = ctx.window_active_signal();
@@ -607,7 +614,6 @@ impl Widget for App {
                 was_active.set(*active);
                 if regained {
                     dictionaries.rescan();
-                    docs.attach_all();
                 }
             });
         }

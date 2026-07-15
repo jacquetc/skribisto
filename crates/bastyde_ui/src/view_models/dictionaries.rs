@@ -46,6 +46,26 @@ fn user_agent() -> String {
 
 use crate::spellcheck::downloaded_dictionaries_dir as dictionaries_dir;
 
+/// Why an "Add dictionary" install was refused. Deliberately carries **no** user-facing prose —
+/// the caller ([`crate::view_models::AddDictionaryViewModel`]) maps each variant to a localized
+/// message, so a toast is never half-translated. `Unusable`/`Io` carry a technical detail (a
+/// spellbook parse error, a filesystem error) that has no useful translation.
+#[derive(Debug)]
+pub enum InstallDictError {
+    /// The name field was blank.
+    NameRequired,
+    /// The code is empty or has characters unsafe in a filename.
+    InvalidCode,
+    /// The code names (or, on a case-insensitive filesystem, case-folds onto) a catalogue code.
+    Reserved,
+    /// A dictionary with this code (or its case variant) is already installed.
+    AlreadyInstalled,
+    /// The `.aff`/`.dic` don't read or don't parse as a Hunspell dictionary.
+    Unusable(String),
+    /// A filesystem failure (no data dir, copy, or config write).
+    Io(String),
+}
+
 #[derive(Clone)]
 pub struct DictionariesViewModel {
     inner: Rc<Inner>,
@@ -113,6 +133,12 @@ impl DictionariesViewModel {
     }
     pub fn is_downloading(&self, id: &str) -> bool {
         self.inner.downloading.get().contains(id)
+    }
+
+    /// The user-added dictionaries recorded in the config (name + code) — so the language picker
+    /// can offer them and show their names, alongside the catalogue.
+    pub fn user_dictionaries(&self) -> Vec<crate::models::UserDictionary> {
+        self.inner.settings.user_dictionaries()
     }
 
     // ── licence acceptance (the download gate) ──
@@ -224,16 +250,86 @@ impl DictionariesViewModel {
     /// Delete a downloaded dictionary's files and refresh. Bumps `changed` so the spell-checker
     /// re-attaches (degrading any open document that used it — never rewriting `dict_language`).
     pub fn remove(&self, id: &str, ctx: &mut EventContext) {
+        let name = self.display_of_installed(id);
         if let Some(dir) = dictionaries_dir() {
             let _ = std::fs::remove_file(dir.join(format!("{id}.aff")));
             let _ = std::fs::remove_file(dir.join(format!("{id}.dic")));
         }
+        // Drop any user-added record for this code — a no-op for a downloaded registry dictionary.
+        let _ = self.inner.settings.remove_user_dictionary(id);
         self.inner.installed.refresh();
         self.bump_changed();
         ctx.show_toast(
-            Toast::info(tr!(dict_removed(name = display_of(id))))
-                .auto_dismiss_after(Duration::from_secs(3)),
+            Toast::info(tr!(dict_removed(name = name))).auto_dismiss_after(Duration::from_secs(3)),
         );
+    }
+
+    /// Install a dictionary the user picked from local `.aff`/`.dic` files. Validates that the
+    /// pair actually parses (the same read+transcode+spellbook path the loader uses), copies both
+    /// into the download dir as `{code}.aff`/`.dic` — so the loader and the install scan find it
+    /// exactly like a downloaded one, with no engine change — and records its display name. The
+    /// files are local and small, so this is synchronous (unlike a network download). Returns a
+    /// human-readable error the caller surfaces; on success it refreshes the installed list and
+    /// bumps `changed` so open documents re-attach and pick the new dictionary up live.
+    pub fn install_user_dictionary(
+        &self,
+        name: &str,
+        code: &str,
+        aff_src: &std::path::Path,
+        dic_src: &std::path::Path,
+    ) -> Result<(), InstallDictError> {
+        use InstallDictError as E;
+        let name = name.trim();
+        let code = code.trim();
+        if name.is_empty() {
+            return Err(E::NameRequired);
+        }
+        if !is_valid_code(code) {
+            return Err(E::InvalidCode);
+        }
+        // A custom code must not shadow a catalogue dictionary (those are added through "Get
+        // more"). Case-insensitive, because the download dir is case-insensitive on Windows/macOS
+        // — `EN-US.aff` and `en-US.aff` are one file there, so `EN-US` would clobber `en-US`.
+        if dictionary_registry::collides_with_catalogue(code) {
+            return Err(E::Reserved);
+        }
+        crate::spellcheck::validate_dictionary_files(aff_src, dic_src).map_err(E::Unusable)?;
+        let dest = dictionaries_dir().ok_or_else(|| E::Io("no data directory available".into()))?;
+        std::fs::create_dir_all(&dest).map_err(|e| E::Io(format!("create dir: {e}")))?;
+        // Refuse if either destination already exists. `exists()` honours the filesystem's own
+        // case sensitivity, so this catches a re-add AND a case-variant collision on Win/macOS —
+        // otherwise the copy below would silently overwrite an installed dictionary.
+        let aff_dest = dest.join(format!("{code}.aff"));
+        let dic_dest = dest.join(format!("{code}.dic"));
+        if aff_dest.exists() || dic_dest.exists() {
+            return Err(E::AlreadyInstalled);
+        }
+        copy_pair(code, aff_src, dic_src, &dest).map_err(E::Io)?;
+        // Record the name; if that write fails, roll the copied files back so we never orphan
+        // files with no name record (which would then read as "⟨code⟩ (system)" and block re-add).
+        if let Err(e) = self.inner.settings.add_user_dictionary(code, name) {
+            let _ = std::fs::remove_file(&aff_dest);
+            let _ = std::fs::remove_file(&dic_dest);
+            return Err(E::Io(format!("could not save the dictionary record: {e}")));
+        }
+        self.inner.installed.refresh();
+        self.bump_changed();
+        Ok(())
+    }
+
+    /// Whether an installed dictionary carries `code`, case-insensitively — for the Add form to
+    /// flag a re-add before the install refuses it.
+    pub fn is_installed_ci(&self, code: &str) -> bool {
+        self.inner.installed.is_installed_ci(code)
+    }
+
+    /// The installed list's display name for `id` (so a removed *user* dictionary's toast shows
+    /// the name the user gave it, not just its code); falls back to the registry, then the id.
+    fn display_of_installed(&self, id: &str) -> String {
+        self.inner
+            .installed
+            .display_name(id)
+            .unwrap_or_else(|| display_of(id))
     }
 
     /// Re-scan disk without any change of our own — for the window-focus-regain path, where a
@@ -362,6 +458,40 @@ fn zip_member(zip_bytes: &[u8], member: &str) -> Result<Vec<u8>, String> {
     Ok(buf)
 }
 
+/// Whether `code` is usable as an on-disk basename (`{code}.aff`): non-empty, at least one
+/// alphanumeric, and only characters safe in a filename and a BCP-47-ish tag. This keeps a custom
+/// code from smuggling a path separator into the copy destination.
+fn is_valid_code(code: &str) -> bool {
+    !code.is_empty()
+        && code.chars().any(|c| c.is_ascii_alphanumeric())
+        && code
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+}
+
+/// Copy a local `.aff`/`.dic` pair into `dest_dir` as `{code}.aff`/`.dic`, together: the bytes
+/// are read first (so a missing source fails before anything is written), and if the second write
+/// fails the first is rolled back — no half-install for the scan to mistake for a whole one. The
+/// bytes are copied **raw**, preserving the `.aff`'s `SET` encoding directive so the loader
+/// transcodes it correctly later.
+fn copy_pair(
+    code: &str,
+    aff_src: &std::path::Path,
+    dic_src: &std::path::Path,
+    dest_dir: &std::path::Path,
+) -> Result<(), String> {
+    let aff_bytes = std::fs::read(aff_src).map_err(|e| format!("read .aff: {e}"))?;
+    let dic_bytes = std::fs::read(dic_src).map_err(|e| format!("read .dic: {e}"))?;
+    let aff_dest = dest_dir.join(format!("{code}.aff"));
+    let dic_dest = dest_dir.join(format!("{code}.dic"));
+    write_atomic(&aff_dest, &aff_bytes)?;
+    if let Err(e) = write_atomic(&dic_dest, &dic_bytes) {
+        let _ = std::fs::remove_file(&aff_dest); // roll back the half-install
+        return Err(e);
+    }
+    Ok(())
+}
+
 /// Write `bytes` to `final_path` atomically: a per-process-unique temp sibling, then `rename`.
 fn write_atomic(final_path: &std::path::Path, bytes: &[u8]) -> Result<(), String> {
     static COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -392,6 +522,44 @@ mod tests {
         let missing = missing_from(&tags, installed);
 
         assert_eq!(missing, vec!["fr-FR".to_string()]);
+    }
+
+    /// The custom-code guard: accepts tag-shaped codes, rejects empty, separator-bearing, and
+    /// all-punctuation ones (which would smuggle a path into the copy destination).
+    #[test]
+    fn is_valid_code_guards_the_basename() {
+        assert!(is_valid_code("fr-FR-x-custom"));
+        assert!(is_valid_code("cy_GB"));
+        assert!(is_valid_code("la"));
+        assert!(!is_valid_code(""), "empty");
+        assert!(!is_valid_code("../etc"), "path separator");
+        assert!(!is_valid_code("a/b"), "slash");
+        assert!(!is_valid_code("fr FR"), "space");
+        assert!(!is_valid_code("--."), "no alphanumeric");
+    }
+
+    /// `copy_pair` lands both files under the code, and a missing source fails before writing
+    /// anything (no half-install).
+    #[test]
+    fn copy_pair_lands_both_or_nothing() {
+        let dir = std::env::temp_dir().join(format!("skrib-cp-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let aff_src = dir.join("src.aff");
+        let dic_src = dir.join("src.dic");
+        std::fs::write(&aff_src, b"SET UTF-8\n").unwrap();
+        std::fs::write(&dic_src, b"1\nhello\n").unwrap();
+        let dest = dir.join("dest");
+        std::fs::create_dir_all(&dest).unwrap();
+
+        copy_pair("fr-x", &aff_src, &dic_src, &dest).unwrap();
+        assert_eq!(std::fs::read(dest.join("fr-x.aff")).unwrap(), b"SET UTF-8\n");
+        assert_eq!(std::fs::read(dest.join("fr-x.dic")).unwrap(), b"1\nhello\n");
+
+        // A missing .dic source: the read fails before any write, so nothing lands.
+        let bad = copy_pair("gg-x", &aff_src, &dir.join("nope.dic"), &dest);
+        assert!(bad.is_err());
+        assert!(!dest.join("gg-x.aff").exists(), "nothing written on a source read error");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// A round-trip through the atomic writer leaves the exact bytes at the final path and no
