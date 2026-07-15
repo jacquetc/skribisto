@@ -58,6 +58,7 @@ mod settings_panel;
 mod singles;
 mod spellcheck;
 mod tabs;
+mod tooltip_registry;
 mod version;
 mod view_models;
 mod welcome_panel;
@@ -573,6 +574,9 @@ fn main() {
         // Ship the writing serifs so the manuscript defaults render everywhere
         // and the typeface picker lists them (additive; Inter stays the default).
         .register_fonts(register_editor_fonts())
+        // Writing-model rich tooltips (the "＋ Create" / "Convert to" explainers).
+        // Registered here so their `[label](:key)` bodies cascade to one another.
+        .register_tooltips(tooltip_registry::writing_model_tooltips())
         .i18n(i18n)
         .install_inspector_in_debug()
         .install_automation_bridge_in_debug()

@@ -1,18 +1,22 @@
-//! Localized labels + rich tooltips for the context-dependent "Create"
-//! recommendations. Keeps `skribisto_model` UI-string-free: the model returns
-//! `(role, sub_role, relation)`, and this module maps each to `tr!` keys — so
+//! Localized labels + the placement hint + rich-tooltip *keys* for the
+//! context-dependent "Create" / "Convert to" vocabulary. Keeps
+//! `skribisto_model` UI-string-free: the model returns
+//! `(role, sub_role, relation)`, and this module maps each to `tr!` keys, so
 //! all i18n stays in `bastyde_ui`.
 //!
-//! Both the header [`CreateSplitButton`](crate::docks::create_split_button) and
-//! the outline "Add ▸" context submenu render through these helpers, so a type's
-//! name and tooltip read identically wherever it's offered.
+//! The rich-tooltip *content* is not built here — it is registered once in
+//! [`crate::tooltip_registry`] and referenced by key, so a type's explainer
+//! reads identically across the header [`CreateSplitButton`](crate::docks::create_split_button),
+//! the outline "Add ▸" submenu, and the "Convert to ▸" menu, and so cited types
+//! cascade to their own tooltips. This module only maps a `CreateType` /
+//! `PromoteTarget` to its registry key.
 
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*; // tr!
-use bastyde::widgets::tooltip::TooltipContent;
 
+use crate::tooltip_registry as tt;
 use frontend::common::entities::ContentRole;
-use skribisto_model::{CreateType, PromoteTarget, Recommendation, Relation};
+use skribisto_model::{CreateType, PromoteTarget, Relation};
 
 /// The human label for a logical [`CreateType`] — the SplitButton title text and
 /// each menu row's label. Icons come from
@@ -63,28 +67,47 @@ pub fn content_role_label(role: &ContentRole) -> LocalizedString {
     }
 }
 
-/// A rich tooltip describing what the recommendation creates and where it lands.
-/// `anchor_title` is the selected/right-clicked row's title, or `None` at the
-/// top level (no item anchor) — which selects the "at the top level" phrasing.
-pub fn recommendation_tooltip(rec: &Recommendation, anchor_title: Option<&str>) -> TooltipContent {
-    let kind = recommendation_label(rec.create_type).resolve_now();
-    // A stable-ish key per (type, relation); inline content doesn't require
-    // registry uniqueness, but a key keeps the sticky-tooltip identity sensible.
-    let key = format!("create-tip-{:?}-{:?}", rec.create_type, rec.relation);
-    let text = match (anchor_title, rec.relation) {
-        (Some(t), Relation::Child) => {
-            tr!(create_tooltip_child(kind = kind, target = t.to_string()))
-        }
-        (Some(t), Relation::Sibling) => {
-            tr!(create_tooltip_sibling(kind = kind, target = t.to_string()))
-        }
-        (Some(t), Relation::ParentSibling) => {
-            tr!(create_tooltip_parent_sibling(
-                kind = kind,
-                target = t.to_string()
-            ))
-        }
-        (None, _) => tr!(create_tooltip_top(kind = kind)),
-    };
-    TooltipContent::new(key, text)
+/// The [`crate::tooltip_registry`] key for a create type's rich tooltip. Both
+/// the header SplitButton and the "Add ▸" submenu bind rows by this key
+/// (`.rich_tooltip(key)`), so the row tooltip and every `[label](:key)` cascade
+/// link that cites the type render identical, registered content.
+pub fn recommendation_tooltip_key(create_type: CreateType) -> &'static str {
+    match create_type {
+        CreateType::Book => tt::WM_BOOK,
+        CreateType::Part => tt::WM_PART,
+        CreateType::Chapter => tt::WM_CHAPTER,
+        CreateType::Scene => tt::WM_SCENE,
+        CreateType::Note => tt::WM_NOTE,
+        CreateType::NoteFolder => tt::WM_NOTE_FOLDER,
+        CreateType::Folder => tt::WM_FOLDER,
+        CreateType::EndOfBook => tt::WM_END_OF_BOOK,
+    }
+}
+
+/// The registry key for a promote target's rich tooltip — reused by the
+/// "Convert to ▸" menu. Both chapter encodings (`ChapterFolder`, `FlatChapter`)
+/// point at the one `wm-chapter` tooltip, which already explains the two shapes.
+pub fn promote_target_tooltip_key(target: PromoteTarget) -> &'static str {
+    use PromoteTarget as T;
+    match target {
+        T::Folder => tt::WM_FOLDER,
+        T::ChapterFolder | T::FlatChapter => tt::WM_CHAPTER,
+        T::PartFolder => tt::WM_PART,
+        T::BookFolder => tt::WM_BOOK,
+        T::NoteFolder => tt::WM_NOTE_FOLDER,
+        T::Scene => tt::WM_SCENE,
+        T::Note => tt::WM_NOTE,
+    }
+}
+
+/// The trailing "where it lands" hint shown on each create row — the placement
+/// that used to be buried in the tooltip, now always visible. `anchor` is the
+/// selected / right-clicked row's title, or `None` at the top level.
+pub fn recommendation_placement(anchor: Option<&str>, relation: Relation) -> LocalizedString {
+    match (anchor, relation) {
+        (Some(_), Relation::Child) => tr!(placement_inside()),
+        (Some(_), Relation::Sibling) => tr!(placement_after()),
+        (Some(_), Relation::ParentSibling) => tr!(placement_after_parent()),
+        (None, _) => tr!(placement_top_level()),
+    }
 }

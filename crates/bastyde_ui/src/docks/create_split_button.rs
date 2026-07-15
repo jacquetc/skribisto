@@ -15,7 +15,9 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::{ButtonVariant, IconWidget, MenuItem, SplitButton};
 
-use crate::create_labels::{recommendation_label, recommendation_tooltip};
+use crate::create_labels::{
+    recommendation_label, recommendation_placement, recommendation_tooltip_key,
+};
 use crate::intents::AppIntent;
 use crate::view_models::OutlineViewModel;
 
@@ -73,13 +75,18 @@ impl Widget for CreateSplitButton {
 
         for rec in &recs {
             let label = recommendation_label(rec.create_type);
-            let tip = recommendation_tooltip(rec, anchor_title.as_deref());
+            let key = recommendation_tooltip_key(rec.create_type);
+            // Placement now lives inline on the row's trailing slot (always
+            // visible), so the rich tooltip is the pure type explainer.
+            let placement =
+                recommendation_placement(anchor_title.as_deref(), rec.relation).resolve_now();
             let create_type = rec.create_type;
             let relation = rec.relation;
             btn = btn.item(
                 MenuItem::new(label)
                     .icon(crate::binder_icons::create_type_icon(rec.create_type))
-                    .rich_tooltip_content(tip)
+                    .shortcut_label(placement)
+                    .rich_tooltip(key)
                     .on_activate_fn(move |ctx| {
                         ctx.send_intent(AppIntent::NewItem {
                             create_type,
@@ -89,10 +96,11 @@ impl Widget for CreateSplitButton {
             );
         }
 
-        // Main-region tooltip = the default (top) recommendation's tooltip, so it
-        // adapts to the selection alongside the title.
+        // Main-region tooltip = the default (top) recommendation's type
+        // explainer, so it adapts to the selection alongside the title. (No
+        // trailing slot on the main button, so placement stays on the rows.)
         if let Some(top) = recs.first() {
-            btn = btn.rich_tooltip_content(recommendation_tooltip(top, anchor_title.as_deref()));
+            btn = btn.rich_tooltip(recommendation_tooltip_key(top.create_type));
         }
 
         let id = ctx.add(btn);
