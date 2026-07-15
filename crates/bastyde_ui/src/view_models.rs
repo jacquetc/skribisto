@@ -42,6 +42,7 @@
 
 mod backup_scheduler;
 mod backup_settings;
+mod dictionaries;
 mod editors;
 mod find;
 mod import_plume;
@@ -60,6 +61,7 @@ mod welcome;
 
 pub use backup_scheduler::BackupSchedulerViewModel;
 pub use backup_settings::BackupSettingsViewModel;
+pub use dictionaries::{DictionariesViewModel, missing_from};
 pub use editors::{EditorsViewModel, Side};
 pub use find::FindViewModel;
 pub use import_plume::ImportPlumeViewModel;

@@ -18,19 +18,25 @@
 //! difference lives below it in `SingleContent` / `SingleBinderItem`, exactly as
 //! for the other Layer-A models.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use bastyde::prelude::Signal;
+use bastyde::text_document::{Color, SessionId, SyntaxHighlighter};
 
 use frontend::AppContext;
-use frontend::commands::{binder_item_commands, content_commands};
+use frontend::commands::{
+    binder_commands, binder_item_commands, content_commands, work_commands,
+};
+use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use frontend::common::direct_access::work::WorkRelationshipField;
+use frontend::common::entities::{BinderItem, BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::direct_access::ContentDto;
 
 use crate::singles::SingleBinderItem;
+use crate::spellcheck::SpellcheckService;
 use crate::tabs::{
     ProseField, ProseKind, TitleField, TitlePart, prose_field, prose_kind_for, title_field,
 };
@@ -51,6 +57,12 @@ pub struct OpenDoc {
     /// The store's aggregate "an edit happened" counter — bumped by every edit,
     /// observed by the debounced autosave timer.
     edited: Signal<u64>,
+    /// The spell-check highlight session on the main / synopsis document, if attached. Held so
+    /// a re-attach (dictionary installed/removed, mute, language change) can `remove_session`
+    /// exactly *this* layer without disturbing any other (a future find highlighter). `Cell`
+    /// because attaching only reads `&self` (the doc is shared by `Rc`).
+    spell_main: Cell<Option<SessionId>>,
+    spell_synopsis: Cell<Option<SessionId>>,
 }
 
 impl OpenDoc {
@@ -84,6 +96,8 @@ impl OpenDoc {
             synopsis: None,
             dirty: Signal::new(false),
             edited,
+            spell_main: Cell::new(None),
+            spell_synopsis: Cell::new(None),
         };
         for cr in skribisto_model::allowed_content(role, sub_role) {
             let existing = contents.iter().find(|c| &c.role == cr);
@@ -161,6 +175,31 @@ impl OpenDoc {
         }
         self.dirty.set(false);
     }
+
+    /// (Re)install the spell-check highlight session on this doc's prose documents for the
+    /// effective language list `tags`, in the squiggle `color`. Idempotent: it removes this
+    /// doc's previous spell session (if any) and adds a fresh one — or, when nothing resolves
+    /// to an installed dictionary, removes it and adds none (the degrade path). Only the two
+    /// prose fields carry a session; the title/subtitle are plain `Signal<String>`.
+    pub fn attach_spell(&self, spell: &SpellcheckService, tags: &str, color: Color) {
+        let highlighter = spell.build_highlighter(tags, color);
+        Self::attach_field(&self.main, &self.spell_main, &highlighter);
+        Self::attach_field(&self.synopsis, &self.spell_synopsis, &highlighter);
+    }
+
+    fn attach_field(
+        field: &Option<ProseField>,
+        session: &Cell<Option<SessionId>>,
+        highlighter: &Option<std::sync::Arc<dyn SyntaxHighlighter>>,
+    ) {
+        let Some(f) = field else { return };
+        if let Some(old) = session.take() {
+            f.doc.remove_session(old);
+        }
+        if let Some(hl) = highlighter {
+            session.set(Some(f.doc.add_syntax_session(hl.clone())));
+        }
+    }
 }
 
 struct Entry {
@@ -175,6 +214,15 @@ struct Inner {
     item_probe: SingleBinderItem,
     /// Aggregate "an edit happened" counter shared by every open doc.
     edited: Signal<u64>,
+    /// The spell-check engine, set once by `App`. `None` until then (headless tests, or before
+    /// the first project loads) — every attach is then a no-op, so opening still works.
+    spell: RefCell<Option<SpellcheckService>>,
+    /// The squiggle colour, resolved from a theme role by `App` (updated on theme change).
+    squiggle: Cell<Color>,
+    /// The open project, for resolving each item's effective language (item → nearest Book →
+    /// Work). Set by `App` on `LoadWork`/`NewWork`.
+    work_id: Cell<Option<u64>>,
+    work_lang: RefCell<String>,
 }
 
 /// The app-wide store of open documents (cheap `Rc` handle, shared by clone).
@@ -191,8 +239,137 @@ impl OpenDocsStore {
                 item_probe: SingleBinderItem::new(app_ctx.clone()),
                 app_ctx,
                 edited: Signal::new(0),
+                spell: RefCell::new(None),
+                // A sensible default until `App` resolves the theme's error role.
+                squiggle: Cell::new(Color::rgb(202, 66, 60)),
+                work_id: Cell::new(None),
+                work_lang: RefCell::new(String::new()),
             }),
         }
+    }
+
+    /// Install the spell-check engine (once, from `App`). Until this is set, spell attaches are
+    /// no-ops and the app behaves exactly as before spell-check existed.
+    pub fn set_spellcheck(&self, spell: SpellcheckService) {
+        *self.inner.spell.borrow_mut() = Some(spell);
+    }
+
+    /// Set the squiggle colour (a theme error role, resolved by `App`). Re-attaches only when
+    /// the colour actually changed (a theme switch) — `App` calls this on every rebuild, so an
+    /// unconditional re-attach would be needless churn.
+    pub fn set_squiggle_color(&self, color: Color) {
+        if self.inner.squiggle.get() != color {
+            self.inner.squiggle.set(color);
+            self.attach_all();
+        }
+    }
+
+    /// Point the store at the open project's default language, for the effective-language
+    /// resolution. Called on `LoadWork`/`NewWork`; does not itself re-attach (the caller pairs
+    /// it with [`attach_all`](Self::attach_all) once personal words are also loaded).
+    pub fn set_project_language(&self, work_id: Option<u64>, work_lang: String) {
+        self.inner.work_id.set(work_id);
+        *self.inner.work_lang.borrow_mut() = work_lang;
+    }
+
+    /// Re-attach the spell-checker to **every** open document — the single path for install,
+    /// remove, mute, language-change, focus-regain, and theme change. Recomputes each item's
+    /// effective language through the same resolver search uses.
+    pub fn attach_all(&self) {
+        let Some(spell) = self.inner.spell.borrow().clone() else {
+            return;
+        };
+        let color = self.inner.squiggle.get();
+        let map = self.language_map();
+        let work_lang = self.inner.work_lang.borrow().clone();
+        let docs: Vec<Rc<OpenDoc>> = self
+            .inner
+            .open
+            .borrow()
+            .values()
+            .map(|e| e.doc.clone())
+            .collect();
+        for doc in docs {
+            let tags = map
+                .get(&doc.item_id)
+                .cloned()
+                .unwrap_or_else(|| work_lang.clone());
+            doc.attach_spell(&spell, &tags, color);
+        }
+    }
+
+    /// Attach the spell-checker to one freshly-built doc (on open / rebuild).
+    fn attach_one(&self, doc: &Rc<OpenDoc>) {
+        let Some(spell) = self.inner.spell.borrow().clone() else {
+            return;
+        };
+        let map = self.language_map();
+        let tags = map
+            .get(&doc.item_id)
+            .cloned()
+            .unwrap_or_else(|| self.inner.work_lang.borrow().clone());
+        doc.attach_spell(&spell, &tags, self.inner.squiggle.get());
+    }
+
+    /// Every distinct language tag the open project actually uses — the union across every
+    /// item's effective list plus the Work's default. Drives the post-open missing-dictionary
+    /// scan (Step 10).
+    pub fn project_languages(&self) -> std::collections::BTreeSet<String> {
+        let mut out: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+        for list in self.language_map().values() {
+            out.extend(skribisto_model::language::all(list).map(str::to_string));
+        }
+        out.extend(
+            skribisto_model::language::all(&self.inner.work_lang.borrow()).map(str::to_string),
+        );
+        out
+    }
+
+    /// The effective language list of one item (item → nearest Book → Work), for the
+    /// Inspector's inherited-language placeholder. Falls back to the Work's default.
+    pub fn effective_language(&self, item_id: u64) -> String {
+        self.language_map()
+            .get(&item_id)
+            .cloned()
+            .unwrap_or_else(|| self.inner.work_lang.borrow().clone())
+    }
+
+    /// The effective language tag list of every item in the open project, resolved through the
+    /// **shared** `skribisto_model::language` chain (item → nearest Book → Work) so spell-check
+    /// and search never disagree about what language a scene is in.
+    fn language_map(&self) -> HashMap<u64, String> {
+        let mut map = HashMap::new();
+        let Some(work_id) = self.inner.work_id.get() else {
+            return map;
+        };
+        let work_lang = self.inner.work_lang.borrow().clone();
+        let ctx = &*self.inner.app_ctx;
+        let binder_ids =
+            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
+                .unwrap_or_default();
+        for binder_id in binder_ids {
+            let item_ids = binder_commands::get_binder_relationship(
+                ctx,
+                &binder_id,
+                &BinderRelationshipField::BinderItems,
+            )
+            .unwrap_or_default();
+            // Only the three fields the resolver reads; document order is preserved by
+            // `get_binder_item_multi` (relationship order), which the "nearest Book" scan needs.
+            let items: Vec<BinderItem> = binder_item_commands::get_binder_item_multi(ctx, &item_ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .map(|dto| BinderItem {
+                    id: dto.id,
+                    sub_role: dto.sub_role.clone(),
+                    dict_language: dto.dict_language.clone(),
+                    ..Default::default()
+                })
+                .collect();
+            skribisto_model::language::tags_in_binder(&work_lang, &items, &mut map);
+        }
+        map
     }
 
     /// The aggregate edit signal — bind the debounced autosave to it.
@@ -227,6 +404,7 @@ impl OpenDocsStore {
                 refs: 1,
             },
         );
+        self.attach_one(&doc);
         Some(doc)
     }
 
@@ -263,6 +441,7 @@ impl OpenDocsStore {
         if let Some(entry) = self.inner.open.borrow_mut().get_mut(&item_id) {
             entry.doc = fresh.clone();
         }
+        self.attach_one(&fresh);
         Some(fresh)
     }
 

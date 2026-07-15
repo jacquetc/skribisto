@@ -16,7 +16,9 @@
 mod backup_settings_file;
 mod binder_binder_items_tree_model;
 mod binder_list_model;
+mod dictionary_settings_file;
 mod examples_list_model;
+mod installed_dictionaries_model;
 mod open_docs;
 mod recent_work_list_model;
 mod search_results_model;
@@ -24,6 +26,10 @@ mod search_settings_file;
 mod stream_rows_model;
 
 pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
+pub use dictionary_settings_file::{DictionarySettingsService, license_hash};
+pub use installed_dictionaries_model::{
+    DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
+};
 pub use binder_binder_items_tree_model::{
     BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters, TreeNode,
 };

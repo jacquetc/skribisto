@@ -182,7 +182,9 @@ impl ReplaceInProjectUseCase {
                 .get(&row.binder_item_id)
                 .cloned()
                 .unwrap_or_default();
-            let locale = FoldLocale::from_tag(&tag);
+            // `dict_language` is a tag *list* now; folding is monolingual, so fold under the
+            // primary (first) tag — the language the scene is chiefly written in.
+            let locale = FoldLocale::from_tag(crate::language::primary(&tag));
 
             // The same criteria, in the two shapes the two surfaces take: `find_opts` for a
             // parsed `BatchDocument`, `opts` for a plain string (a title, a label).

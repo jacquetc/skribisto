@@ -575,3 +575,47 @@ find-replace-placeholder = Remplacer par…
 find-replace = Remplacer
 find-replace-all = Tout remplacer
 find-preserve-case = Conserver la casse
+
+## Dictionnaires et vérification orthographique
+# Notifications de téléchargement (local, pas une opération longue du backend)
+dict-download-title = Téléchargement de { $name }…
+dict-download-done = { $name } installé
+dict-download-failed = Impossible de télécharger { $name } : { $error }
+dict-removed = { $name } supprimé
+dict-accept-first = Acceptez la licence avant de télécharger { $name }
+# Réglages ▸ Dictionnaires
+settings-dict-tab-installed = Installés
+settings-dict-tab-get-more = En obtenir plus
+settings-dict-tab-personal = Mots personnels
+dict-installed-empty = Aucun dictionnaire trouvé sur cet ordinateur pour l'instant.
+dict-get-more-search = Rechercher une langue
+dict-system-badge = sur votre système
+dict-unusable-badge = inutilisable
+dict-download-button = Télécharger
+dict-downloading = Téléchargement…
+dict-installed-label = Installé
+dict-remove = Supprimer
+dict-view-license = Voir la licence
+dict-approx-size = ~{ $size }
+dict-personal-empty = Aucun mot personnel dans ce projet pour l'instant.
+dict-personal-add = Ajouter
+dict-personal-placeholder = Ajouter un mot…
+# Proposition d'installer les dictionnaires manquants à l'ouverture d'un projet
+dict-missing-toast = Ce projet utilise { $count } dictionnaires que vous n'avez pas installés
+dict-missing-action = Obtenir les dictionnaires
+# Fenêtre de licence
+dict-license-title = Licence de { $name }
+dict-license-accept = Accepter et télécharger
+dict-license-cancel = Annuler
+dict-license-close = Fermer
+# Le champ de langues à pastilles (Inspecteur + Réglages)
+inspector-dict-language = Langue
+settings-page-language = Langue
+settings-field-dict-language = Langues
+dict-tradeoff-hint = Chaque langue supplémentaire accepte plus de mots, donc moins de fautes sont détectées.
+lang-inherit-hint = Hérité — cette scène utilise les langues du livre ou du projet.
+lang-pill-list = Langues
+lang-pill-add = Ajouter une langue
+lang-pill-remove = Retirer { $name }
+lang-pill-mute = Désactiver la correction pour { $name }
+lang-pill-unmute = Activer la correction pour { $name }

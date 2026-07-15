@@ -574,3 +574,47 @@ find-replace-placeholder = Replace with…
 find-replace = Replace
 find-replace-all = Replace all
 find-preserve-case = Preserve case
+
+## Dictionaries & spell-checking
+# Download toasts (app-local download, not a backend long operation)
+dict-download-title = Downloading { $name }…
+dict-download-done = Installed { $name }
+dict-download-failed = Couldn't download { $name }: { $error }
+dict-removed = Removed { $name }
+dict-accept-first = Accept the licence before downloading { $name }
+# Settings ▸ Dictionaries pane
+settings-dict-tab-installed = Installed
+settings-dict-tab-get-more = Get more
+settings-dict-tab-personal = Personal words
+dict-installed-empty = No dictionaries found on this computer yet.
+dict-get-more-search = Search languages
+dict-system-badge = on your system
+dict-unusable-badge = unusable
+dict-download-button = Download
+dict-downloading = Downloading…
+dict-installed-label = Installed
+dict-remove = Remove
+dict-view-license = View licence
+dict-approx-size = ~{ $size }
+dict-personal-empty = No personal words in this project yet.
+dict-personal-add = Add
+dict-personal-placeholder = Add a word…
+# Missing-dictionary prompt after opening a project
+dict-missing-toast = This project uses { $count } dictionaries you don't have installed
+dict-missing-action = Get dictionaries
+# Licence modal
+dict-license-title = { $name } licence
+dict-license-accept = Accept & Download
+dict-license-cancel = Cancel
+dict-license-close = Close
+# The language pill field (Inspector + Settings)
+inspector-dict-language = Language
+settings-page-language = Language
+settings-field-dict-language = Languages
+dict-tradeoff-hint = Each extra language accepts more words, so fewer mistakes are caught.
+lang-inherit-hint = Inherited — this scene uses the book's or project's languages.
+lang-pill-list = Languages
+lang-pill-add = Add a language
+lang-pill-remove = Remove { $name }
+lang-pill-mute = Turn spell-checking off for { $name }
+lang-pill-unmute = Turn spell-checking on for { $name }

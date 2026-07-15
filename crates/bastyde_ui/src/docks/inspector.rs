@@ -39,6 +39,7 @@ pub fn inspector_dock(
 }
 
 struct Inspector {
+    app_ctx: Rc<AppContext>,
     outline: OutlineViewModel,
     focus: Signal<Option<u64>>,
     probe: SingleBinderItem,
@@ -48,9 +49,10 @@ struct Inspector {
 impl Inspector {
     fn new(app_ctx: Rc<AppContext>, outline: OutlineViewModel, focus: Signal<Option<u64>>) -> Self {
         Self {
+            probe: SingleBinderItem::new(app_ctx.clone()),
+            app_ctx,
             outline,
             focus,
-            probe: SingleBinderItem::new(app_ctx),
             root_child: None,
         }
     }
@@ -110,6 +112,33 @@ impl Widget for Inspector {
                         )
                         .content(promote_menu(outline, key)),
                     );
+                }
+                // Per-item language override (Step 9): the pill field over this item's own
+                // `dict_language`, with the inherited list (item → Book → Work) as the
+                // placeholder shown when the item declares none of its own.
+                if let Some(spell) = ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned()
+                {
+                    let inherited = ctx
+                        .app_state::<crate::models::OpenDocsStore>()
+                        .map(|s| s.effective_language(d.id));
+                    let value = Signal::new(d.dict_language.clone());
+                    // A probe fixed to *this* item, so the write targets it even after focus
+                    // moves on (unlike the shared `self.probe`).
+                    let item_probe = SingleBinderItem::new(self.app_ctx.clone());
+                    item_probe.set_id(Some(d.id));
+                    let stack = self.outline.ids().stack_id.get();
+                    let set: crate::language_pill_field::SetLanguages = {
+                        let value = value.clone();
+                        Rc::new(move |new: String, _c| {
+                            let _ = item_probe.set_dict_language(&new, stack);
+                            value.set(new);
+                        })
+                    };
+                    col = col
+                        .child(TextWidget::new(tr!(inspector_dict_language())).style(TextStyleRole::Tiny).color(TextRole::Secondary))
+                        .child(crate::language_pill_field::LanguagePillField::new(
+                            value, set, spell, inherited,
+                        ));
                 }
                 Box::new(Padding::symmetric(16.0, 16.0).child(col))
             }

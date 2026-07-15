@@ -1,0 +1,249 @@
+// The compiled-in dictionary catalogue. See `src/dictionary_registry.rs`.
+//
+// One entry per installable dictionary VARIANT. `id` is the `dict_language` value;
+// `system_basenames` matches a system-installed copy under /usr/share/hunspell.
+//
+// Verified live (2026-07-15): every URL returned HTTP 200, every `SET` encoding was read from
+// the `.aff`, every licence was read from the source. Sizes are the `.dic` Content-Length.
+//
+// Encoding note: pl-PL is ISO8859-2 and all three German dicts are ISO8859-1 (not UTF-8) — the
+// loader (`spellcheck::read_pair`) transcodes from the `.aff` `SET` directive, so these load
+// correctly whether downloaded or found on the system.
+//
+// French mapping follows the product decision "bare fr-FR = toutes variantes (tolerant)":
+//   fr-FR            → toutes-variantes  (the default a French project gets)
+//   fr-FR-x-classique → classique
+//   fr-FR-x-1990     → réforme 1990
+[
+    DictionaryEntry(
+        id: "en-US",
+        display_name: "English (United States)",
+        system_basenames: ["en_US"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.dic",
+        ),
+        license_asset: "gpl-2.0",
+        license_name: "GNU General Public License v2.0 (GPL-2.0)",
+        approx_size_bytes: 551762,
+    ),
+    DictionaryEntry(
+        id: "en-GB",
+        display_name: "English (United Kingdom)",
+        system_basenames: ["en_GB"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_GB.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_GB.dic",
+        ),
+        license_asset: "gpl-2.0",
+        license_name: "GNU General Public License v2.0 (GPL-2.0)",
+        approx_size_bytes: 1230571,
+    ),
+    DictionaryEntry(
+        id: "en-CA",
+        display_name: "English (Canada)",
+        system_basenames: ["en_CA"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_CA.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_CA.dic",
+        ),
+        license_asset: "gpl-2.0",
+        license_name: "GNU General Public License v2.0 (GPL-2.0)",
+        approx_size_bytes: 551583,
+    ),
+    DictionaryEntry(
+        id: "en-AU",
+        display_name: "English (Australia)",
+        system_basenames: ["en_AU"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_AU.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_AU.dic",
+        ),
+        license_asset: "gpl-2.0",
+        license_name: "GNU General Public License v2.0 (GPL-2.0)",
+        approx_size_bytes: 554336,
+    ),
+    DictionaryEntry(
+        id: "fr-FR",
+        display_name: "Français (toutes variantes)",
+        system_basenames: ["fr-toutesvariantes", "fr", "fr_FR"],
+        source: ZipMember(
+            zip_url: "https://www.grammalecte.net/dic/hunspell-french-dictionaries-v7.7.zip",
+            aff_member: "fr-toutesvariantes.aff",
+            dic_member: "fr-toutesvariantes.dic",
+        ),
+        license_asset: "mpl-2.0",
+        license_name: "Mozilla Public License 2.0 (MPL-2.0)",
+        approx_size_bytes: 1270292,
+    ),
+    DictionaryEntry(
+        id: "fr-FR-x-classique",
+        display_name: "Français — classique",
+        system_basenames: ["fr-classique"],
+        source: ZipMember(
+            zip_url: "https://www.grammalecte.net/dic/hunspell-french-dictionaries-v7.7.zip",
+            aff_member: "fr-classique.aff",
+            dic_member: "fr-classique.dic",
+        ),
+        license_asset: "mpl-2.0",
+        license_name: "Mozilla Public License 2.0 (MPL-2.0)",
+        approx_size_bytes: 1236490,
+    ),
+    DictionaryEntry(
+        id: "fr-FR-x-1990",
+        display_name: "Français — réforme 1990",
+        system_basenames: ["fr-reforme1990"],
+        source: ZipMember(
+            zip_url: "https://www.grammalecte.net/dic/hunspell-french-dictionaries-v7.7.zip",
+            aff_member: "fr-reforme1990.aff",
+            dic_member: "fr-reforme1990.dic",
+        ),
+        license_asset: "mpl-2.0",
+        license_name: "Mozilla Public License 2.0 (MPL-2.0)",
+        approx_size_bytes: 1210222,
+    ),
+    DictionaryEntry(
+        id: "de-DE",
+        display_name: "Deutsch (Deutschland)",
+        system_basenames: ["de_DE_frami", "de_DE"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/de/de_DE_frami.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/de/de_DE_frami.dic",
+        ),
+        license_asset: "gpl-3.0",
+        license_name: "GNU GPL v2 or v3 (bundling v3 text)",
+        approx_size_bytes: 4356903,
+    ),
+    DictionaryEntry(
+        id: "de-AT",
+        display_name: "Deutsch (Österreich)",
+        system_basenames: ["de_AT_frami", "de_AT"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/de/de_AT_frami.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/de/de_AT_frami.dic",
+        ),
+        license_asset: "gpl-3.0",
+        license_name: "GNU GPL v2 or v3 (bundling v3 text)",
+        approx_size_bytes: 4359309,
+    ),
+    DictionaryEntry(
+        id: "de-CH",
+        display_name: "Deutsch (Schweiz)",
+        system_basenames: ["de_CH_frami", "de_CH"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/de/de_CH_frami.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/de/de_CH_frami.dic",
+        ),
+        license_asset: "gpl-3.0",
+        license_name: "GNU GPL v2 or v3 (bundling v3 text)",
+        approx_size_bytes: 4358308,
+    ),
+    DictionaryEntry(
+        id: "es-ES",
+        display_name: "Español (España)",
+        system_basenames: ["es_ES"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/es/es_ES.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/es/es_ES.dic",
+        ),
+        license_asset: "mpl-1.1",
+        license_name: "GPL-3.0, LGPL-3.0, or MPL-1.1 (bundling MPL-1.1 text)",
+        approx_size_bytes: 715989,
+    ),
+    DictionaryEntry(
+        id: "it-IT",
+        display_name: "Italiano (Italia)",
+        system_basenames: ["it_IT"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/it_IT/it_IT.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/it_IT/it_IT.dic",
+        ),
+        license_asset: "gpl-3.0",
+        license_name: "GNU General Public License v3.0 (GPL-3.0)",
+        approx_size_bytes: 1295083,
+    ),
+    DictionaryEntry(
+        id: "pt-PT",
+        display_name: "Português (Portugal)",
+        system_basenames: ["pt_PT"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pt_PT/pt_PT.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pt_PT/pt_PT.dic",
+        ),
+        license_asset: "gpl-2.0",
+        license_name: "GPL v2-or-later and/or BSD (bundling GPL-2.0 text)",
+        approx_size_bytes: 1485977,
+    ),
+    DictionaryEntry(
+        id: "pt-BR",
+        display_name: "Português (Brasil)",
+        system_basenames: ["pt_BR"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pt_BR/pt_BR.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pt_BR/pt_BR.dic",
+        ),
+        license_asset: "lgpl-3.0",
+        license_name: "LGPL-3.0 and/or Mozilla Public License (bundling LGPL-3.0 text)",
+        approx_size_bytes: 4477695,
+    ),
+    DictionaryEntry(
+        id: "nl-NL",
+        display_name: "Nederlands (Nederland)",
+        system_basenames: ["nl_NL", "nl"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/nl_NL/nl_NL.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/nl_NL/nl_NL.dic",
+        ),
+        license_asset: "bsd-revised",
+        license_name: "BSD-3-Clause and/or CC-BY-3.0 (bundling BSD-3-Clause text)",
+        approx_size_bytes: 2488246,
+    ),
+    DictionaryEntry(
+        id: "pl-PL",
+        display_name: "Polski (Polska)",
+        system_basenames: ["pl_PL"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pl_PL/pl_PL.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pl_PL/pl_PL.dic",
+        ),
+        license_asset: "cc-by-4.0",
+        license_name: "GPL-2.0 / LGPL-2.1 / MPL-1.1 / Apache-2.0 / CC-BY-4.0 (bundling CC-BY-4.0 text)",
+        approx_size_bytes: 5252096,
+    ),
+    DictionaryEntry(
+        id: "ru-RU",
+        display_name: "Русский (Россия)",
+        system_basenames: ["ru_RU"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/ru_RU/ru_RU.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/ru_RU/ru_RU.dic",
+        ),
+        license_asset: "ru-lebedev",
+        license_name: "Modified BSD-style licence (Lebedev), bundled verbatim",
+        approx_size_bytes: 3473191,
+    ),
+    DictionaryEntry(
+        id: "sv-SE",
+        display_name: "Svenska (Sverige)",
+        system_basenames: ["sv_SE"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/sv_SE/dictionaries/sv_SE.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/sv_SE/dictionaries/sv_SE.dic",
+        ),
+        license_asset: "lgpl-3.0",
+        license_name: "GNU Lesser General Public License v3.0 (LGPL-3.0)",
+        approx_size_bytes: 2344202,
+    ),
+    DictionaryEntry(
+        id: "ca",
+        display_name: "Català",
+        system_basenames: ["ca", "ca_ES"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/ca/dictionaries/ca.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/ca/dictionaries/ca.dic",
+        ),
+        license_asset: "ca-unspecified",
+        license_name: "GPL and/or LGPL (version unstated by source)",
+        approx_size_bytes: 3086130,
+    ),
+]

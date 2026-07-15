@@ -88,6 +88,9 @@ enum Pane {
     Backup,
     /// Per-project backup override (under the open Work's section).
     WorkBackup,
+    /// Per-project spell-check language(s) (under the open Work's section). Appended last so
+    /// the earlier discriminants — and the `Switcher` order they index — stay put.
+    WorkLanguage,
 }
 
 impl Pane {
@@ -113,6 +116,7 @@ impl Pane {
             Pane::WorkStructure => tr!(settings_page_structure()),
             Pane::Backup => tr!(settings_page_backup()),
             Pane::WorkBackup => tr!(settings_page_work_backup()),
+            Pane::WorkLanguage => tr!(settings_page_language()),
         }
     }
 }
@@ -629,6 +633,59 @@ impl SettingsPanel {
         )
     }
 
+    /// Work: `<name>` ▸ Language — the project's default spell-check language(s), edited with
+    /// the shared [`LanguagePillField`](crate::language_pill_field::LanguagePillField) over the
+    /// live `SingleWork::dict_language` signal. Adding a language persists it and saves; a hint
+    /// states the multi-language trade-off.
+    fn work_language_pane(
+        ctx: &mut BuildContext,
+        work: &SingleWork,
+        stack: Signal<Option<u64>>,
+        work_title: String,
+    ) -> impl Widget {
+        // Build the whole form per branch so the pill field is added through FormLayout's own
+        // `full_width(widget)` **deferred insertion** (which parents it to the FormLayout). The
+        // earlier `ctx.add_boxed(field)` + `full_width_id` route parented the field to *this*
+        // build context instead, orphaning it into an arena root — which the layout pass then
+        // placed at the window origin (0,0) with the full window size, leaking a stray pill row
+        // to the top-left that even survived closing Settings.
+        let base = FormLayout::new()
+            .label(tr!(settings_page_language()))
+            .label_gap(16.0)
+            .row_spacing(12.0)
+            .full_width(group(tr!(settings_field_dict_language())));
+        let form = match ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned() {
+            Some(spell) => {
+                let value = work.dict_language();
+                let set: crate::language_pill_field::SetLanguages = {
+                    let work = work.clone();
+                    Rc::new(move |new: String, _c| {
+                        work.set_dict_language(new);
+                        work.save(stack.get());
+                    })
+                };
+                // The Work is the root of the inheritance chain — nothing to inherit from.
+                base.full_width(crate::language_pill_field::LanguagePillField::new(
+                    value, set, spell, None,
+                ))
+            }
+            None => base.full_width(TextWidget::new(tr!(settings_field_dict_language()))),
+        }
+        .full_width(hint(tr!(dict_tradeoff_hint())));
+
+        pane_frame(
+            crumb(
+                Some(lit!(format!(
+                    "{}: {}",
+                    tr!(settings_sec_work()).resolve_now(),
+                    work_title
+                ))),
+                tr!(settings_page_language()),
+            ),
+            form,
+        )
+    }
+
     /// The category tree (left rail). Builds the `TreeModel`, seeds selection to
     /// the active page, and wires selection → `selected_pane`. Returns the
     /// `TreeView`, the search's page→node map, and the model for lookups.
@@ -722,8 +779,12 @@ impl SettingsPanel {
                 model.insert_child(wk, 0, Node::Page(Pane::WorkStructure)),
             );
             nodes.insert(
+                Pane::WorkLanguage,
+                model.insert_child(wk, 1, Node::Page(Pane::WorkLanguage)),
+            );
+            nodes.insert(
                 Pane::WorkBackup,
-                model.insert_child(wk, 1, Node::Page(Pane::WorkBackup)),
+                model.insert_child(wk, 2, Node::Page(Pane::WorkBackup)),
             );
             work_node = Some(wk);
         }
@@ -913,13 +974,46 @@ impl Widget for SettingsPanel {
             .unwrap_or_else(|| Signal::new(None));
         let work_title = work.as_ref().map(|w| w.title().get()).unwrap_or_default();
         let structure_pane: Box<dyn Widget> = match &work {
-            Some(w) => Box::new(Self::work_structure_pane(ctx, w, stack, work_title)),
+            Some(w) => Box::new(Self::work_structure_pane(
+                ctx,
+                w,
+                stack.clone(),
+                work_title.clone(),
+            )),
             None => Box::new(empty_pane(
                 None,
                 tr!(settings_page_structure()),
                 res!("assets/icons/binder/book.svg"),
             )),
         };
+        let language_pane: Box<dyn Widget> = match &work {
+            Some(w) => Box::new(Self::work_language_pane(
+                ctx,
+                w,
+                stack.clone(),
+                work_title.clone(),
+            )),
+            None => Box::new(empty_pane(
+                None,
+                tr!(settings_page_language()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+        // Spelling ▸ Dictionaries — the management pane (Installed / Get more), wrapped in the
+        // shared `pane_frame` like every other pane. Always available (dictionaries are a
+        // machine-wide resource, independent of any open project).
+        let dictionaries_pane: Box<dyn Widget> =
+            match ctx.app_state::<crate::view_models::DictionariesViewModel>().cloned() {
+                Some(vm) => Box::new(pane_frame(
+                    crumb(Some(tr!(settings_sec_spelling())), tr!(settings_page_dictionaries())),
+                    crate::settings_dictionaries::dictionaries_pane(ctx, &vm),
+                )),
+                None => Box::new(empty_pane(
+                    Some(tr!(settings_sec_spelling())),
+                    tr!(settings_page_dictionaries()),
+                    Sec::Spelling.icon_svg(),
+                )),
+            };
 
         // ── Backup ("Copies de secours") panes ──
         // Wrapped in the shared `pane_frame` (breadcrumb · rule · scrollable,
@@ -1019,11 +1113,7 @@ impl Widget for SettingsPanel {
                 tr!(settings_page_corkboard()),
                 Sec::Editor.icon_svg(),
             ))
-            .child(empty_pane(
-                Some(tr!(settings_sec_spelling())),
-                tr!(settings_page_dictionaries()),
-                Sec::Spelling.icon_svg(),
-            ))
+            .child_boxed(dictionaries_pane)
             .child(Self::autosave_pane(&vm))
             .child(empty_pane(
                 Some(tr!(settings_sec_compile())),
@@ -1037,7 +1127,8 @@ impl Widget for SettingsPanel {
             ))
             .child_boxed(structure_pane)
             .child_boxed(backup_pane)
-            .child_boxed(work_backup_pane);
+            .child_boxed(work_backup_pane)
+            .child_boxed(language_pane);
 
         let footer = self.footer(vm, scale, not_defaults);
         let right = VStack::new()
@@ -1205,5 +1296,6 @@ mod tests {
         assert_eq!(Pane::WorkStructure.index(), 13);
         assert_eq!(Pane::Backup.index(), 14);
         assert_eq!(Pane::WorkBackup.index(), 15);
+        assert_eq!(Pane::WorkLanguage.index(), 16);
     }
 }

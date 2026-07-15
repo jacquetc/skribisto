@@ -290,9 +290,11 @@ impl RunSearchUseCase {
                 // A missing entry means "no tag anywhere up the chain" — untailored, which
                 // is also what a malformed tag resolves to. Never an error: it comes from a
                 // writer's project settings, and a typo there must not break searching.
-                let locale = tags
-                    .get(&item.id)
-                    .map_or(FoldLocale::Root, |tag| FoldLocale::from_tag(tag));
+                // `dict_language` is a tag *list* now; folding is monolingual, so fold under
+                // the primary (first) tag — the language the scene is chiefly written in.
+                let locale = tags.get(&item.id).map_or(FoldLocale::Root, |tag| {
+                    FoldLocale::from_tag(crate::language::primary(tag))
+                });
                 self.item_fields(uow, item, dto, locale, wanted.as_deref(), &mut fields)?;
             }
         }

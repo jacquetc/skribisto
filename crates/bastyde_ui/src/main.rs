@@ -38,20 +38,25 @@ mod binder_icons;
 mod binder_placement;
 mod binder_switcher_button;
 mod create_labels;
+mod dictionary_registry;
 mod find_icons;
 mod docks;
 mod editor_icons;
 mod import_plume_panel;
 mod intents;
 mod ipc;
+mod language_pill_field;
+mod license_panel;
 mod models;
 mod new_work_panel;
 mod open_registry;
 mod project_switcher_button;
 mod save_indicator;
 mod settings_backup;
+mod settings_dictionaries;
 mod settings_panel;
 mod singles;
+mod spellcheck;
 mod tabs;
 mod version;
 mod view_models;
@@ -379,6 +384,28 @@ fn main() {
     // so the split editor's two panes (and any future view) share one document per
     // item — the documents are usable outside the `TabWidget`s.
     let open_docs = OpenDocsStore::new(app_ctx.clone());
+    // Spell-checking (Step 6): the engine is shared by every open document (one
+    // `spellbook::Dictionary` per language), and the open-docs store owns the attach
+    // loop — so hand the engine to the store, and register it as `app_state` so the
+    // language-pill field and the personal-word list reach the same instance (mute set,
+    // personal words).
+    let spellcheck = spellcheck::SpellcheckService::new();
+    open_docs.set_spellcheck(spellcheck.clone());
+    // Dictionary management: accepted-licence store (cross-process, like `backup.toml`),
+    // on-disk discovery, and the download view-model. App-local (a downloaded `.dic` is a
+    // machine-wide resource, not `Work` state) — degrades to a throwaway temp settings
+    // file if the config dir is unavailable, exactly as backup settings do.
+    let dictionary_settings = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| {
+            models::DictionarySettingsService::open(&paths)
+                .map_err(|e| eprintln!("dictionary settings: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(models::DictionarySettingsService::in_memory_default);
+    let dictionaries = view_models::DictionariesViewModel::new(
+        dictionary_settings,
+        models::InstalledDictionariesModel::new(),
+    );
     // Reactive single-entity handles (Layer A). Created here so the title-bar menu
     // can bind the project title (Bug 1) and shape (Bug 2); `App::build` wires
     // their event subscriptions and re-points them on each `LoadWork`.
@@ -567,6 +594,8 @@ fn main() {
         .event_source(EventHubSource { client })
         .app_state(ids.clone())
         .app_state(open_docs.clone())
+        .app_state(spellcheck.clone())
+        .app_state(dictionaries.clone())
         .app_state(single_work.clone())
         .app_state(single_work_info.clone())
         .app_state(outline.clone())

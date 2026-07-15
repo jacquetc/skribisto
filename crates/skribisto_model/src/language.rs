@@ -29,8 +29,23 @@
 //! Both `run_search` and `replace_in_project` resolve through this one function. Two copies
 //! would drift, and the way a writer meets that drift is a rename that finds a word under
 //! one set of rules and rewrites it under another.
+//!
+//! ## The tag *list* — one field, two readers
+//!
+//! `dict_language` is not a single tag but a **space-separated list** of BCP-47 tags; the
+//! first is the *primary*. The field names *which languages the text is in* and nothing else
+//! — mute state and dictionary availability live elsewhere. Two readers consume it, and they
+//! read it differently:
+//!
+//! - **Search folds under [`primary`]** — a single language, because case-folding is
+//!   inherently monolingual (Turkish `i` and French rules cannot both apply to one fold).
+//! - **Spell-check accepts the union of [`all`] the tags** — a word is a mistake only when
+//!   *every* listed dictionary rejects it (the Firefox model).
+//!
+//! A single-tag value is a one-element list, so every existing project keeps behaving
+//! exactly as before.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 use common::entities::{BinderItem, BinderItemSubRole};
 use common::types::EntityId;
@@ -74,6 +89,56 @@ pub fn tags_in_binder(
             out.insert(item.id, effective.to_string());
         }
     }
+}
+
+/// The **primary** language of a tag list — the first tag, the one search folds under.
+///
+/// Empty when the list is empty. Whitespace-tolerant (a stray double space or a trailing
+/// space never yields an empty primary while a real tag remains).
+pub fn primary(tags: &str) -> &str {
+    tags.split_whitespace().next().unwrap_or("")
+}
+
+/// **Every** tag in a list, in order, skipping empty gaps — the set spell-check accepts.
+///
+/// A single-tag value yields one element; the empty string yields none.
+pub fn all(tags: &str) -> impl Iterator<Item = &str> {
+    tags.split_whitespace()
+}
+
+/// Best-effort *syntactic* canonicalisation of one legacy tag toward BCP-47: underscores
+/// become hyphens (`en_US` → `en-US`, `de_DE_frami` → `de-DE-frami`), applied per token so a
+/// list is canonicalised whole.
+///
+/// This is deliberately only the part that needs **no registry** — mapping an editorial
+/// basename like `de-DE-frami` or a merged `fr-classique+reforme1990` to a real dictionary id
+/// requires the registry's `system_basenames`, which lives in the UI layer. A caller that
+/// wants the full resolution runs this first, then a registry lookup.
+pub fn canonicalize(tags: &str) -> String {
+    all(tags)
+        .map(|t| t.replace('_', "-"))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Every distinct language tag a project actually *uses*, for the missing-dictionary scan.
+///
+/// Resolves each item's effective tag through [`tags_in_binder`] (so inheritance is honoured)
+/// and unions the individual tags across every item's whole list, plus the Work's own list.
+/// Operates on **one binder's** items in document order — a multi-binder caller extends one
+/// set across binders (`BTreeSet` unions for free), exactly as the search use case walks
+/// Work → Binders → BinderItems.
+pub fn effective_languages(work_language: &str, items: &[BinderItem]) -> BTreeSet<String> {
+    let mut map = HashMap::new();
+    tags_in_binder(work_language, items, &mut map);
+
+    let mut langs: BTreeSet<String> = BTreeSet::new();
+    for list in map.values() {
+        langs.extend(all(list).map(str::to_string));
+    }
+    // A Work language with no items still names a language worth having installed.
+    langs.extend(all(work_language).map(str::to_string));
+    langs
 }
 
 #[cfg(test)]
@@ -174,5 +239,58 @@ mod tests {
         let got = resolve("tr", &[scene(1, ""), book(2, ""), scene(3, "")]);
         assert_eq!(got.len(), 3);
         assert!(got.values().all(|t| t == "tr"));
+    }
+
+    /// The primary is the first tag; a single-tag list is its own primary.
+    #[test]
+    fn primary_is_the_first_tag() {
+        assert_eq!(primary("fr-FR"), "fr-FR");
+        assert_eq!(primary("fr-FR en-US la"), "fr-FR");
+        assert_eq!(primary(""), "");
+        assert_eq!(primary("  fr-FR  en-US "), "fr-FR", "whitespace-tolerant");
+    }
+
+    /// `all` yields every tag, and nothing for the empty string.
+    #[test]
+    fn all_yields_every_tag() {
+        assert_eq!(all("fr-FR en-US la").collect::<Vec<_>>(), ["fr-FR", "en-US", "la"]);
+        assert_eq!(all("fr-FR").collect::<Vec<_>>(), ["fr-FR"]);
+        assert!(all("").next().is_none());
+        assert!(all("   ").next().is_none());
+    }
+
+    /// Syntactic canonicalisation flips underscores to hyphens, per token.
+    #[test]
+    fn canonicalize_hyphenates_underscores() {
+        assert_eq!(canonicalize("en_US"), "en-US");
+        assert_eq!(canonicalize("de_DE_frami"), "de-DE-frami");
+        assert_eq!(canonicalize("fr-FR en_US"), "fr-FR en-US");
+        assert_eq!(canonicalize(""), "");
+    }
+
+    /// The scan collects the distinct union across a project's whole list per item.
+    #[test]
+    fn effective_languages_unions_the_lists() {
+        let got = effective_languages(
+            "fr-FR",
+            &[
+                scene(1, ""),               // inherits fr-FR
+                book(2, "de-DE en-US"),     // a bilingual book
+                scene(3, ""),               // inherits "de-DE en-US"
+                scene(4, "la"),             // its own Latin
+            ],
+        );
+        let want: BTreeSet<String> = ["fr-FR", "de-DE", "en-US", "la"]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+        assert_eq!(got, want);
+    }
+
+    /// An untagged project with a Work language still names that language for install.
+    #[test]
+    fn effective_languages_includes_the_bare_work_language() {
+        let got = effective_languages("fr-FR", &[scene(1, ""), scene(2, "")]);
+        assert_eq!(got, ["fr-FR"].into_iter().map(str::to_string).collect());
     }
 }

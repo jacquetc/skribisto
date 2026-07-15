@@ -32,6 +32,32 @@ skrib_format = { workspace = true }
 # bump would silently orphan every one of them. Already in the tree via
 # `skrib_format` (the `.skrib` content fingerprint), so this costs nothing.
 blake3 = "1"
+# Parse the compiled-in dictionary registry (`assets/dictionaries/registry.ron`)
+# and the accepted-licences settings file. `skrib_format` pins its own `ron` and
+# re-exports nothing, so this is a real (one-line) edge, not a free ride.
+ron = "0.8"
+# Dictionary downloads: a blocking HTTP GET on a `spawn_blocking` worker thread
+# (no async runtime needed). `ureq` 3 ships rustls by default — no OpenSSL
+# system-ABI dependency, which matters for a Flatpak/AppImage build where the
+# host's OpenSSL is unpredictable. Already resolved in the workspace lockfile at
+# 3.3.0, so this names an existing edge.
+ureq = "3"
+# Extract the three French variants from grammalecte.net's single shared zip
+# (the `ZipMember` registry source). Locked at 0.6.6 already (transitive), so no
+# new version enters the tree.
+zip = "0.6"
+# The spell-checker itself — a pure-Rust, Hunspell-compatible engine (no C++
+# toolchain, no system library, MPL-2.0). Fed the same `.aff`/`.dic` a hunspell
+# dictionary ships.
+spellbook = "0.4"
+# UAX#29 word segmentation — spellbook delegates tokenisation to the caller, and
+# a naive `split_whitespace` would butcher accented words and contractions.
+unicode-segmentation = "1"
+# Transcode a system dictionary that declares a legacy 8-bit encoding (`SET
+# ISO8859-1`) to UTF-8 before spellbook, which takes `&str` and does not itself
+# honour the `.aff` `SET` directive. Our own downloads are UTF-8, so this only
+# ever runs on tier-2 system dictionaries.
+encoding_rs = "0.8"
 # `automation` enables the debug-only in-app automation bridge
 # (`install_automation_bridge_in_debug()`); a no-op in release. `async` enables
 # the main-thread async executor (`ctx.spawn_local`/`spawn_local_with` +

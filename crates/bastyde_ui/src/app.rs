@@ -300,6 +300,69 @@ pub(crate) fn guard_unsaved_exit(
     }
 }
 
+/// Convert a theme colour role to the `text_document` colour a highlight span carries. Used to
+/// paint spell-check squiggles in the theme's `text_error` role — a semantic role, not a hex
+/// literal, so light/dark both work.
+fn spell_underline_color(c: bastyde::tokens::Color) -> bastyde::text_document::Color {
+    let [r, g, b, _] = c.to_array();
+    let to_u8 = |x: f32| (x.clamp(0.0, 1.0) * 255.0).round() as u8;
+    bastyde::text_document::Color::rgb(to_u8(r), to_u8(g), to_u8(b))
+}
+
+/// Refresh the spell-checker for the freshly-live project: reload its personal words from
+/// `DictWord`, point the open-docs store at the project's default language, and re-attach every
+/// open document. Called from both the `LoadWork` and `NewWork` subscribers.
+fn refresh_project_spellcheck(
+    app_ctx: &AppContext,
+    docs: &crate::models::OpenDocsStore,
+    spell: &crate::spellcheck::SpellcheckService,
+    work_id: Option<u64>,
+    work_lang: String,
+) {
+    let personal: std::collections::HashSet<String> =
+        frontend::commands::dict_word_commands::get_all_dict_word(app_ctx)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|w| w.word)
+            .collect();
+    spell.set_personal(personal);
+    docs.set_project_language(work_id, work_lang);
+    docs.attach_all();
+}
+
+/// After a project becomes live, offer to install any dictionary its declared languages need
+/// but the machine lacks — one aggregated toast (never one per language), whose action opens
+/// Settings ▸ Dictionaries with the missing set highlighted. Purely additive and dismissible,
+/// so a toast, not a modal.
+fn offer_missing_dictionaries(
+    docs: &crate::models::OpenDocsStore,
+    dictionaries: &crate::view_models::DictionariesViewModel,
+    ctx: &mut EventContext,
+) {
+    let missing = dictionaries.missing_for(&docs.project_languages());
+    if missing.is_empty() {
+        return;
+    }
+    dictionaries.set_highlight(missing.clone());
+    let n = missing.len() as i64;
+    ctx.show_toast(
+        bastyde::widgets::Toast::info(tr!(dict_missing_toast(count = n)))
+            .id("dict.missing")
+            .action(bastyde::widgets::ToastAction::primary(
+                tr!(dict_missing_action()),
+                move |c| {
+                    c.present_modal(
+                        ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
+                            .presentation(ModalPresentation::InTree)
+                            .title("Settings")
+                            .size(920, 620)
+                            .close_behavior(ModalCloseBehavior::Manual),
+                    );
+                },
+            )),
+    );
+}
+
 pub struct App {
     app_ctx: Rc<AppContext>,
     /// The outline view-model is created in `main` (the title-bar menu needs a
@@ -371,6 +434,9 @@ pub struct App {
     /// applying a peer process's `backup.toml` writes to this handle for as
     /// long as `App` lives. Registered once, on first build.
     backup_settings_reloadable: Option<Rc<dyn Reloadable>>,
+    /// Keeps the dictionary accepted-licence store's `Reloadable` registration alive in the
+    /// shared `SettingsRegistry` (mirrors `backup_settings_reloadable`).
+    dictionary_settings_reloadable: Option<Rc<dyn Reloadable>>,
 }
 
 impl App {
@@ -407,6 +473,7 @@ impl App {
             search_settings_reloadable: None,
             root_child: None,
             backup_settings_reloadable: None,
+            dictionary_settings_reloadable: None,
         }
     }
 }
@@ -504,6 +571,54 @@ impl Widget for App {
                 )
             })
             .clone();
+
+        // ── Spell-checking wiring (Step 6). `docs` above was moved into the editors VM, so
+        // re-fetch the shared handles for the attach loop. ──
+        let spell_docs = ctx
+            .app_state::<crate::models::OpenDocsStore>()
+            .cloned()
+            .expect("OpenDocsStore registered in main");
+        let spellcheck = ctx
+            .app_state::<crate::spellcheck::SpellcheckService>()
+            .cloned()
+            .expect("SpellcheckService registered in main");
+        let dictionaries = ctx
+            .app_state::<crate::view_models::DictionariesViewModel>()
+            .cloned()
+            .expect("DictionariesViewModel registered in main");
+        // Squiggle colour from the theme's error role (re-attaches only on a real change, e.g.
+        // a light/dark switch).
+        spell_docs.set_squiggle_color(spell_underline_color(ctx.theme().colors.text_error));
+        // A dictionary installed or removed → re-attach every open document (install paints new
+        // squiggles; remove degrades gracefully, never rewriting `dict_language`).
+        {
+            let docs = spell_docs.clone();
+            ctx.effect(&dictionaries.changed_signal(), move |_| docs.attach_all());
+        }
+        // Cross-process staleness: a peer window may have installed/removed a dictionary while
+        // this one was unfocused. Re-scan + re-attach on the focus-regain rising edge.
+        {
+            let docs = spell_docs.clone();
+            let dictionaries = dictionaries.clone();
+            let was_active = std::cell::Cell::new(true);
+            let wsig = ctx.window_active_signal();
+            ctx.effect(&wsig, move |active| {
+                let regained = *active && !was_active.get();
+                was_active.set(*active);
+                if regained {
+                    dictionaries.rescan();
+                    docs.attach_all();
+                }
+            });
+        }
+        // Live cross-process reload for `dictionaries.toml` (accepted licences), mirroring the
+        // backup-settings registration below.
+        if self.dictionary_settings_reloadable.is_none()
+            && let Some(registry) = ctx.app_state::<SettingsRegistry>().cloned()
+        {
+            self.dictionary_settings_reloadable =
+                Some(registry.register(dictionaries.settings_reloadable()));
+        }
 
         // "Unsaved" is *derived*: the work has edits not on disk iff more mutations
         // have happened than the last completed save covered. Recomputed whenever
@@ -1129,6 +1244,8 @@ impl Widget for App {
             let editors = editors.clone();
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
+            let spell_docs = spell_docs.clone();
+            let spellcheck = spellcheck.clone();
             // An open tab does not follow its item by itself: `TabInfo::title` is a plain
             // string baked in at open time, and the `ContentTab` payload is built once for
             // the item's `(role, sub_role)`. So a rename must push the new caption, and a
@@ -1166,6 +1283,17 @@ impl Widget for App {
                     if let Some(path) = single_work_info.file_name().get() {
                         crate::open_registry::replace_claim(&path, &single_work.title().get());
                     }
+                    // Spell-check the freshly-loaded project (Step 6): load its personal words,
+                    // point the store at its default language. Documents re-open *after* this,
+                    // so each `open()` then attaches with the right language; this call's own
+                    // `attach_all` is a harmless no-op here (tabs were just closed).
+                    refresh_project_spellcheck(
+                        &app_ctx,
+                        &spell_docs,
+                        &spellcheck,
+                        ids.work_id.get(),
+                        single_work.dict_language().get(),
+                    );
                     // NOTE: the on-open backup trigger is fired from the SECOND
                     // `LoadWork` subscriber below (T2-4), once `backup_mode` is
                     // known — firing it here, before that sniff runs, could pump a
@@ -1376,6 +1504,8 @@ impl Widget for App {
             let dirty_seq = self.dirty_seq.clone();
             let backup_mode = self.backup_mode.clone();
             let backup_context = self.backup_context.clone();
+            let spell_docs = spell_docs.clone();
+            let spellcheck = spellcheck.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::NewWork),
                 move |_event: &Event| {
@@ -1396,10 +1526,34 @@ impl Widget for App {
                     if let Some(path) = single_work_info.file_name().get() {
                         crate::open_registry::replace_claim(&path, &single_work.title().get());
                     }
+                    // Spell-check the new project (Step 6) — same as LoadWork.
+                    refresh_project_spellcheck(
+                        &app_ctx,
+                        &spell_docs,
+                        &spellcheck,
+                        ids.work_id.get(),
+                        single_work.dict_language().get(),
+                    );
                     // A brand-new project is never a backup.
                     backup_mode.set(false);
                     backup_context.set(None);
                     editors.save_to_disk();
+                },
+            );
+        }
+
+        // After a project becomes live (Load or New), offer any missing dictionaries its
+        // declared languages need. Registered *after* the spell-wiring subscribers above, which
+        // set the project language `offer_missing_dictionaries` reads — so it runs once those
+        // have populated it. Needs an `EventContext` (to raise the toast), hence a separate
+        // `subscribe_event_with_ctx` per event.
+        for event in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
+            let docs = spell_docs.clone();
+            let dictionaries = dictionaries.clone();
+            ctx.subscribe_event_with_ctx(
+                Origin::WorkManagement(event),
+                move |_e: &Event, c: &mut EventContext| {
+                    offer_missing_dictionaries(&docs, &dictionaries, c)
                 },
             );
         }
@@ -1438,6 +1592,7 @@ impl Widget for App {
             let single_work_info = single_work_info.clone();
             let backup_mode = self.backup_mode.clone();
             let backup_context = self.backup_context.clone();
+            let spellcheck = spellcheck.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::CloseWork),
                 move |_event: &Event| {
@@ -1450,6 +1605,9 @@ impl Widget for App {
                     if let Some(path) = single_work_info.file_name().get() {
                         crate::open_registry::release(&path);
                     }
+                    // Drop this project's dictionaries, mutes, and personal words (Step 6):
+                    // a fresh project reloads lazily and starts unmuted.
+                    spellcheck.clear();
                     ids.clear();
                     outline.set_binder_filter(None);
                     outline.clear_search();

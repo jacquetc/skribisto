@@ -172,6 +172,25 @@ mod imp {
             self.write_name(sub_title, TitlePart::SubTitle, stack)
         }
 
+        /// Set the item's `dict_language` (the space-separated language list). A scalar field
+        /// with no mirrored `Content` row, so a plain read-modify-write — but the **full** DTO
+        /// (`update_binder_item` replaces every scalar, so a partial one would blank the
+        /// title/role/sub_role/indent). Undoable on `stack`.
+        pub fn set_dict_language(&self, tags: &str, stack: Option<u64>) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            let Some(it) = self.dto() else {
+                anyhow::bail!("SingleBinderItem: item {id} not loaded");
+            };
+            let mut dto = update_dto(&it);
+            dto.dict_language = tags.to_string();
+            dto.updated_at = chrono::Utc::now();
+            binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
+            self.refresh();
+            Ok(())
+        }
+
         fn write_name(
             &self,
             text: &str,
@@ -386,6 +405,14 @@ mod imp {
         pub fn set_sub_title(&self, sub_title: &str, _stack: Option<u64>) -> anyhow::Result<()> {
             if let Some(mut d) = self.inner.dto.get() {
                 d.sub_title = sub_title.to_string();
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
+        }
+
+        pub fn set_dict_language(&self, tags: &str, _stack: Option<u64>) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.dict_language = tags.to_string();
                 self.inner.dto.set(Some(d));
             }
             Ok(())

@@ -19,6 +19,10 @@ use common::entities::BinderItemSubRole as SubRole;
 use common::entities::ContentRole;
 use common::entities::ContentRole::*;
 
+/// Which language a scene is written in: the per-item → nearest-Book → Work resolution chain,
+/// plus the `dict_language` tag-list grammar shared by search folding and spell-checking.
+pub mod language;
+
 /// The per-project chapter storage mode — generated on the `Work` entity, re-exported
 /// here so `CreateType::combo` and the UI can name it via `skribisto_model`.
 pub use common::entities::ChapterMode;

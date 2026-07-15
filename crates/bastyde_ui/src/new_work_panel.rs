@@ -81,21 +81,17 @@ impl NewWorkPanel {
             .color(TextRole::Secondary)
     }
 
-    /// The `"<endonym> (<tag>)"` language dropdown, populated from the app's
-    /// supported locales and bound to the VM's language tag. Endonyms are data
-    /// (never translated), so the item labels use `localized(..)`, not `tr!`.
-    /// A plain `ComboBox` — NOT `LanguageSwitcher`, which would change the app's
-    /// own UI locale on select.
+    /// The project language dropdown, populated from the **dictionary registry** (the languages
+    /// a writer can spell-check in) — NOT the app's UI-translation locales, which are a
+    /// different, unrelated list (a French-UI user may well write an English novel). Bound to
+    /// the VM's language tag; a plain `ComboBox`, not `LanguageSwitcher` (which would change the
+    /// app's own UI locale). Display names are data → `localized(..)`, never `tr!`.
     fn language_combo(&self) -> ComboBox<String> {
-        let locales = bastyde::i18n::current_supported_locales().unwrap_or_default();
-        let tags: Vec<String> = locales.iter().map(|l| l.to_string()).collect();
-        let labels: HashMap<String, String> = locales
+        let entries = crate::dictionary_registry::entries();
+        let tags: Vec<String> = entries.iter().map(|e| e.id.clone()).collect();
+        let labels: HashMap<String, String> = entries
             .iter()
-            .map(|l| {
-                let tag = l.to_string();
-                let endonym = bastyde::i18n::language_endonym(l).unwrap_or_else(|| tag.clone());
-                (tag.clone(), format!("{endonym} ({tag})"))
-            })
+            .map(|e| (e.id.clone(), format!("{} ({})", e.display_name, e.id)))
             .collect();
         ComboBox::from_items(tags, self.vm.language(), move |tag: &String| {
             let display = labels.get(tag).cloned().unwrap_or_else(|| tag.clone());
