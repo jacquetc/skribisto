@@ -21,7 +21,8 @@ use crate::{
     NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY,
     NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT,
     NOTES_PARA_SPACING_AFTER_KEY, NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_PARA_SPACING_BEFORE_KEY,
-    NOTES_SIZE_DEFAULT, NOTES_SIZE_KEY, SCENE_FIRST_LINE_INDENT_DEFAULT,
+    NOTES_SIZE_DEFAULT, NOTES_SIZE_KEY, PREVIEW_WIDTH_DEFAULT, PREVIEW_WIDTH_KEY,
+    SCENE_FIRST_LINE_INDENT_DEFAULT,
     SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT, SCENE_FONT_FAMILY_KEY,
     SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT,
     SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY,
@@ -63,6 +64,7 @@ pub struct SettingsViewModel {
     dark: Signal<bool>,
     locale: Signal<String>,
     column_width: Signal<f32>,
+    preview_width: Signal<f32>,
     autosave: Signal<bool>,
     show_welcome: Signal<bool>,
     // ── Editor typography (per type) ──
@@ -83,6 +85,7 @@ impl SettingsViewModel {
             dark: store.signal(DARK_KEY, false),
             locale: store.signal(LOCALE_KEY, "en-US".to_string()),
             column_width: store.signal(EDITOR_WIDTH_KEY, EDITOR_WIDTH_DEFAULT),
+            preview_width: store.signal(PREVIEW_WIDTH_KEY, PREVIEW_WIDTH_DEFAULT),
             autosave: store.signal(AUTOSAVE_KEY, false),
             show_welcome: store.signal(SHOW_WELCOME_KEY, true),
             scene_typo: EditorTypography {
@@ -159,6 +162,10 @@ impl SettingsViewModel {
     pub fn column_width(&self) -> Signal<f32> {
         self.column_width.clone()
     }
+    /// Max width of the search preview editor (bottom band).
+    pub fn preview_width(&self) -> Signal<f32> {
+        self.preview_width.clone()
+    }
     pub fn dark(&self) -> Signal<bool> {
         self.dark.clone()
     }
@@ -211,11 +218,17 @@ impl SettingsViewModel {
         self.column_width.set(w);
     }
 
+    /// Set the search preview editor's max width (persisted).
+    pub fn set_preview_width(&self, w: f32) {
+        self.preview_width.set(w);
+    }
+
     /// Reset every setting this VM owns to its default (used by the Settings
     /// window's "Reset to defaults"). Theme / locale / text-scale live outside
     /// this VM, so the panel resets those alongside this call.
     pub fn reset_editor_defaults(&self) {
         self.column_width.set(EDITOR_WIDTH_DEFAULT);
+        self.preview_width.set(PREVIEW_WIDTH_DEFAULT);
         self.autosave.set(false);
         self.show_welcome.set(true);
         // Scene

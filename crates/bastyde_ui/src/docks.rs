@@ -8,4 +8,6 @@
 pub mod create_split_button;
 pub mod inspector;
 pub mod outline;
+pub mod search;
 pub mod search_preview;
+pub mod search_replace_flow;

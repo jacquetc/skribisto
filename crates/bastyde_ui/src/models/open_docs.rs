@@ -306,6 +306,27 @@ impl OpenDocsStore {
         self.inner.open.borrow_mut().clear();
     }
 
+    /// Reload only the docs among `item_ids` that are **currently open**, discarding
+    /// their live edits and re-reading each present field from disk.
+    ///
+    /// For a use case that rewrote a `Content` row out from under a live editor — a
+    /// project-wide replace being the case here: `replace_in_project` edits the
+    /// persisted prose directly, so any open tab of a touched item now shows the
+    /// old text until it is re-read. Unlike [`open`](Self::open)+`reload`+`release`,
+    /// this never *builds* a doc that wasn't already open (that would parse the
+    /// whole item only to evict it a line later), and unlike [`rebuild`](Self::rebuild)
+    /// it keeps the same `Rc<OpenDoc>` (the `(role, sub_role)` didn't change, only
+    /// the text) so live tab views stay bound. The caller must pump a frame after
+    /// (`set_djot` only queues a document event).
+    pub fn reload_open(&self, item_ids: &[u64]) {
+        let map = self.inner.open.borrow();
+        for id in item_ids {
+            if let Some(entry) = map.get(id) {
+                entry.doc.reload();
+            }
+        }
+    }
+
     /// Read an item's content rows, keeping only the roles the constraint matrix
     /// allows for its `(role, sub_role)`. `Content.data` is Djot.
     fn load_contents(

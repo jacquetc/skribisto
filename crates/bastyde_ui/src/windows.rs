@@ -529,6 +529,15 @@ impl ProjectWindowFactory {
                                         .intent("outline.toggle")
                                         .shortcut("outline.toggle"),
                                 )
+                                // Reveal the leading search & replace dock. A plain
+                                // action (not a reflect-only checkbox): the search
+                                // dock is one of two switchable leading tabs, not a
+                                // side that is simply shown or hidden.
+                                .item(
+                                    MenuEntry::new(tr!(menu_search()))
+                                        .intent("search.show")
+                                        .shortcut("search.show"),
+                                )
                                 .item(
                                     MenuEntry::new(tr!(menu_search_preview()))
                                         .checked(preview_visible)

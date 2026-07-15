@@ -86,6 +86,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             &tab.column_width,
             tab.main_typography(),
             tab.mark_dirty_fn(),
+            None, // the container's own page has no find banner (no top strip here)
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
@@ -137,12 +138,17 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             ),
         ));
     }
+    // The per-editor find banner's view-model (Ctrl+F). `Some` for every prose
+    // tab — Scene / ChapterScene / Note all have a main field. The editor built by
+    // `writing_section` attaches its handle to this vm; the banner above binds it.
+    let find = tab.find().cloned();
     if let Some(m) = tab.main() {
         col = col.child(vspace(10.0)).child(writing_section(
             &m.doc,
             &tab.column_width,
             tab.main_typography(),
             tab.mark_dirty_fn(),
+            find.clone(),
         ));
     }
     // The whole dual-pane body scrolls as one flowing page: the main editor is
@@ -154,10 +160,13 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     // find banner: `heading` / `placeholder` / `folder_synopsis_only` have no main
     // writing surface to search, and `folder_segmented` wraps a stream `Switcher`
     // whose rows have no single "focused editor" to target.
-    crate::tabs::shared::editor::tab_backdrop_with_find(
-        crate::tabs::shared::editor::find_banner_signal(),
-        ScrollArea::new().child(col),
-    )
+    match find {
+        Some(find) => crate::tabs::shared::editor::tab_backdrop_with_find(
+            find,
+            ScrollArea::new().child(col),
+        ),
+        None => crate::tabs::shared::editor::tab_backdrop(ScrollArea::new().child(col)),
+    }
 }
 
 /// A title (+ optional subtitle / synopsis) form. Shared by the title-bearing item

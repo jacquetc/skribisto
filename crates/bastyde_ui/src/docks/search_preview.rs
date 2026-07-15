@@ -1,38 +1,38 @@
-//! **Phase 0.2 de-risking stub** — the search preview dock (bottom side).
+//! The search **preview** dock (bottom band): a full-width, **editable** view of
+//! the currently-selected result's paragraph.
 //!
-//! This exists to answer one question before the real search feature is built:
-//! *can an editable `RichTextEditor` live inside a dock at all?* No editable
-//! widget exists inside any `DockWidget` in this codebase or in bastyde's own
-//! examples — every dock so far is a tree, a list, or read-only text. A side's
-//! content is `visible_when`-parked while the side is collapsed
-//! (`bastyde-widgets/src/docking.rs`), and that path has only ever been
-//! exercised by non-focusable content.
+//! It binds the *same* `Rc<OpenDoc>` an editor tab does — obtained from the
+//! shared [`OpenDocsStore`](crate::models::OpenDocsStore) via the
+//! [`SearchReplaceViewModel`], refcounted so it is neither evicted while a tab
+//! still holds it nor pinned forever — so fixing a typo here **is** editing the
+//! manuscript: one document, two views. Edits mark the doc dirty
+//! ([`OpenDoc::mark_dirty_fn`](crate::models::OpenDoc)) so autosave persists them,
+//! exactly as a tab's edits do.
 //!
-//! So: mount a real editor here, collapse and reveal the bottom band a few
-//! times, and confirm the caret, the keyboard focus and the editor's own local
-//! undo survive the cycle. If they don't, the search feature's editable preview
-//! needs a different shape and it is far cheaper to learn that now.
-//!
-//! Replaced by the real preview (bound to the selected result's `OpenDoc`) once
-//! this is answered.
+//! The body rebuilds when the selected result changes (a `BindingLevel::Rebuild`
+//! bind on the view-model's selection signal), swapping in the new document — or
+//! an empty state when nothing is selected, or when the match was in a field with
+//! no editable prose (a title / label).
 
+use bastyde::core::binding::BindingLevel;
+use bastyde::core::widget::WidgetPlacement;
 use bastyde::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
 use bastyde::prelude::*;
-use bastyde::text_document::TextDocument;
-use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
+use bastyde::tokens::HAlignment;
 use bastyde::widgets::{
-    DockOpenLocation, DockSide, DockWidget, DockWidgetId, Expand, FocusScope, Padding,
-    TraversalScopePolicy,
+    Button, ButtonVariant, Center, DockOpenLocation, DockSide, DockWidget, DockWidgetId, FocusScope,
+    IconLocation, Padding, ScrollArea, TextWidget, TraversalScopePolicy, VStack,
 };
+use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 
-/// An editor that paints **no background of its own**, so it sits flush on whatever
-/// surface the dock is painted with.
-///
-/// The default `RichTextEditor` style draws a rounded `SurfaceRole::Content` rect —
-/// which reads as a floating white card dropped onto the dock, not as part of it.
-/// Rather than hard-code the dock's role here (and have the two drift apart the next
-/// time the theme moves), draw nothing: the dock's own surface shows through, so the
-/// two can never disagree.
+use frontend::common::entities::MatchField;
+
+use crate::models::OpenDoc;
+use crate::tabs::ProseField;
+use crate::view_models::SearchReplaceViewModel;
+
+/// An editor that paints **no background of its own**, so it sits flush on the
+/// dock's surface (rather than reading as a floating card dropped onto it).
 struct SeamlessEditorStyle;
 
 impl RichTextEditorStyle for SeamlessEditorStyle {
@@ -44,39 +44,217 @@ impl RichTextEditorStyle for SeamlessEditorStyle {
     }
 }
 
-/// A scratch document with enough prose to show a caret moving around.
-fn scratch_doc() -> TextDocument {
-    let doc = TextDocument::new();
-    let _ = doc
-        .set_djot(
-            "Le vent s'était levé d'un coup. Elle appela « Aurélien ! Aurélien, réponds-moi » — \
-             sa voix se perdit dans les arbres. Elle se souvint alors de la promesse d'Aurélien, \
-             celle qu'il n'avait jamais eu l'intention de tenir.",
-        )
-        .and_then(|op| op.wait());
-    doc
-}
-
-/// The bottom-side preview dock. `FocusScope` with `Continue` (not `Cycle`):
-/// groups the dock's tab order without trapping the keyboard inside it — the
-/// same policy the outline dock uses for its tree.
-pub fn search_preview_dock(dock_id: DockWidgetId) -> DockWidget {
-    DockWidget::new(dock_id, lit!("Preview (stub)"), move |_id| {
-        FocusScope::new(TraversalScopePolicy::Continue).child(
-            Padding::symmetric(12.0, 8.0).child(
-                Expand::new().child(
-                    RichTextEditor::editor(scratch_doc())
-                        .style(SeamlessEditorStyle)
-                        .content_padding_symmetric(8.0, 8.0)
-                        .v_scroll_policy(ScrollPolicy::Auto),
-                ),
-            ),
-        )
+/// The bottom-side preview dock. `FocusScope` with `Continue` (groups its Tab
+/// order without trapping the keyboard), no header (the band's height is spent on
+/// prose, not chrome), fronted by a rail glyph so a hidden band can be reopened.
+pub fn search_preview_dock(vm: SearchReplaceViewModel, dock_id: DockWidgetId) -> DockWidget {
+    DockWidget::new(dock_id, tr!(search_preview()), move |_id| {
+        FocusScope::new(TraversalScopePolicy::Continue).child(PreviewBody::new(vm.clone()))
     })
-    // The bottom side is a RAIL (an activity bar), not a tab strip: the dock is
-    // identified by its glyph there, so it needs no title tab and no header bar —
-    // both would spend the band's scarce height on chrome instead of prose.
     .icon(crate::activity_icons::search_preview_icon)
     .show_header(false)
     .default_location(DockOpenLocation::side(DockSide::Bottom))
+}
+
+/// The dock body: rebuilds on selection change, hosting the selected result's
+/// editable document or an empty state.
+struct PreviewBody {
+    vm: SearchReplaceViewModel,
+    child_id: Option<WidgetId>,
+    /// The find-highlight layer over the previewed document — so the shown
+    /// paragraph highlights the same query the result list matched. Recreated per
+    /// previewed doc (dropped, and its highlights with it, when the preview
+    /// changes or clears).
+    find: std::rc::Rc<std::cell::RefCell<Option<bastyde::widgets::rich_text::FindSession>>>,
+}
+
+impl PreviewBody {
+    fn new(vm: SearchReplaceViewModel) -> Self {
+        Self {
+            vm,
+            child_id: None,
+            find: std::rc::Rc::new(std::cell::RefCell::new(None)),
+        }
+    }
+
+    /// Attach (or replace) a find-highlight session over the previewed document
+    /// `doc`, seeded with the current search query, and keep it live: re-run on a
+    /// query/option change and re-derive after an edit. The session is
+    /// paint-only, so the previewed prose shows every match the result list found.
+    fn install_find_highlight(
+        &self,
+        ctx: &mut BuildContext,
+        doc: &bastyde::text_document::TextDocument,
+    ) {
+        use bastyde::widgets::rich_text::FindSession;
+
+        let colors = &ctx.theme().colors;
+        let current = crate::tabs::shared::editor::highlight_of(
+            SurfaceRole::Accent,
+            Some(TextRole::OnAccent),
+            colors,
+        );
+        let other =
+            crate::tabs::shared::editor::highlight_of(SurfaceRole::AccentSubtle, None, colors);
+        let mut session = FindSession::new(doc, current, other);
+        session.set_query(&self.vm.query_signal().get(), &self.vm.find_options());
+        *self.find.borrow_mut() = Some(session);
+
+        // Re-run when the query or the matching options change; the preview does
+        // not rebuild on those (only on a selection change), so the stored session
+        // is updated in place.
+        let update = {
+            let find = self.find.clone();
+            let vm = self.vm.clone();
+            move || {
+                if let Some(s) = find.borrow_mut().as_mut() {
+                    s.set_query(&vm.query_signal().get(), &vm.find_options());
+                }
+            }
+        };
+        macro_rules! on_change {
+            ($sig:expr) => {{
+                let update = update.clone();
+                ctx.effect(&$sig, move |_| update());
+            }};
+        }
+        on_change!(self.vm.query_signal());
+        on_change!(self.vm.case_sensitive_signal());
+        on_change!(self.vm.whole_word_signal());
+        on_change!(self.vm.diacritic_sensitive_signal());
+
+        // Re-derive the matches if an edit (here or in an open tab of the same
+        // document) moved the offsets, keeping the highlight boxes aligned.
+        let find = self.find.clone();
+        let tick = ctx.frame_tick();
+        ctx.effect(&tick, move |_| {
+            if let Some(s) = find.borrow_mut().as_mut() {
+                s.refresh_if_stale();
+            }
+        });
+    }
+}
+
+impl std::fmt::Debug for PreviewBody {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PreviewBody").finish()
+    }
+}
+
+impl Widget for PreviewBody {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Rebuild whenever the selected result changes — that is exactly when the
+        // previewed document (and its matched field) changes.
+        self.vm.selected_result_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+
+        let doc = self.vm.preview_signal().get();
+        let field = self.vm.preview_field_signal().get();
+        let child: Box<dyn Widget> = match doc.as_ref().and_then(|d| editable_field(d, field)) {
+            Some((open_doc, prose)) => {
+                self.install_find_highlight(ctx, &prose.doc);
+                // Cap the editor's width like a scene column, so a wide paragraph
+                // stays readable (Settings ▸ preview width). Flowing (intrinsic
+                // height, inner scroll off) inside an outer `ScrollArea` — the same
+                // shape the scene tabs use — so the band scrolls a long paragraph.
+                let width =
+                    crate::view_models::SettingsViewModel::new(ctx.settings()).preview_width();
+                let editor = RichTextEditor::editor(prose.doc.clone())
+                    .style(SeamlessEditorStyle)
+                    .on_change(open_doc.mark_dirty_fn())
+                    .content_padding_symmetric(8.0, 8.0)
+                    .v_scroll_policy(ScrollPolicy::AlwaysOff);
+                Box::new(
+                    ScrollArea::new().child(
+                        Padding::symmetric(12.0, 8.0)
+                            .child(crate::tabs::shared::editor::centered(editor, &width)),
+                    ),
+                )
+            }
+            None => {
+                // Nothing previewed — drop any highlight layer.
+                *self.find.borrow_mut() = None;
+                Box::new(empty_state(&self.vm, doc.is_some()))
+            }
+        };
+        self.child_id = Some(ctx.add_boxed(child));
+        self.child_id.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        match self.child_id.and_then(|id| ctx.child_size(id, proposal)) {
+            Some(size) => size.into(),
+            None => proposal.resolve(0.0, 0.0).into(),
+        }
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = bounds.origin();
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
+    }
+}
+
+/// The editable prose field to preview for a match, and the doc that owns it (for
+/// the dirty hook). A synopsis match shows the synopsis; everything else (body,
+/// and title/label matches, which have no rich field of their own) shows the main
+/// prose — falling back to whichever field the item actually has. `None` when the
+/// item has no editable prose at all (a folder / heading).
+fn editable_field(
+    open_doc: &std::rc::Rc<OpenDoc>,
+    field: Option<MatchField>,
+) -> Option<(std::rc::Rc<OpenDoc>, &ProseField)> {
+    let prose = match field {
+        Some(MatchField::Synopsis) => open_doc.synopsis.as_ref().or(open_doc.main.as_ref()),
+        _ => open_doc.main.as_ref().or(open_doc.synopsis.as_ref()),
+    }?;
+    Some((open_doc.clone(), prose))
+}
+
+/// The empty state. With a result selected but no editable prose, a plain note.
+/// With nothing selected, an invitation to search — text plus a button that
+/// reveals the leading search dock, so the band is never a dead end.
+fn empty_state(vm: &SearchReplaceViewModel, has_doc: bool) -> impl Widget {
+    if has_doc {
+        return Center::new().child(
+            Padding::symmetric(24.0, 16.0).child(
+                TextWidget::new(tr!(search_preview_no_prose()))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+            ),
+        );
+    }
+    let vm = vm.clone();
+    Center::new().child(
+        Padding::symmetric(24.0, 16.0).child(
+            VStack::new()
+                .spacing(12.0)
+                .alignment(HAlignment::Center)
+                .child(
+                    TextWidget::new(tr!(search_preview_prompt()))
+                        .style(TextStyleRole::Small)
+                        .color(TextRole::Secondary),
+                )
+                .child(
+                    Button::new(tr!(search_preview_open_search()))
+                        .variant(ButtonVariant::Tinted)
+                        .icon(crate::activity_icons::search_icon(), IconLocation::Leading)
+                        .on_activate_fn(move |_| vm.reveal_search()),
+                ),
+        ),
+    )
 }

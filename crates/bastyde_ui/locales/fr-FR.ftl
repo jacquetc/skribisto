@@ -19,6 +19,7 @@ menu-quit = &Quitter
 ## Barre de menus — Affichage
 menu-view = &Affichage
 menu-outline = &Plan
+menu-search = &Rechercher dans le projet
 menu-search-preview = &Aperçu de recherche
 
 ## Menu contextuel du classeur
@@ -82,6 +83,7 @@ french = Français
 light = Clair
 dark = Sombre
 settings-text-width = Largeur du texte
+settings-preview-width = Largeur de l'aperçu de recherche
 settings-autosave = Enregistrement automatique sur le disque
 settings-show-welcome = Afficher le lanceur au démarrage (sinon, rouvrir le dernier projet)
 
@@ -460,3 +462,116 @@ backup-details = Détails
 backup-issues-title = Problèmes de sauvegarde
 backup-failed-title = Échec de la sauvegarde
 backup-complete-prune-warning = Sauvegarde terminée ({ $ok } enregistrée(s), { $skipped } déjà à jour) — certaines anciennes sauvegardes n'ont pas pu être supprimées
+
+# Recherche et remplacement
+search = Rechercher
+search-query-placeholder = Rechercher…
+search-replace-placeholder = Remplacer par…
+search-replace-toggle = Afficher le remplacement
+search-replace-all = Tout remplacer
+search-preserve-case = Conserver la casse
+search-opt-case = Respecter la casse
+search-opt-whole-word = Mot entier
+search-opt-diacritics = Respecter les accents
+search-scope-body = Corps
+search-scope-title = Titre
+search-scope-synopsis = Synopsis
+search-scope-label = Étiquette
+search-facet-book = Livres
+search-facet-part = Parties
+search-facet-chapter = Chapitres
+search-facet-scene = Scènes
+search-facet-note = Notes
+search-facet-folder = Dossiers
+# Info-bulles détaillées des options
+search-tip-case = Respecter la casse — les majuscules et les minuscules sont distinctes, « Elena » et « elena » sont des résultats différents.
+search-tip-whole-word = Mot entier — ne trouver que les mots complets ; « chat » n’est pas trouvé dans « château ».
+search-tip-diacritics = Respecter les accents — les lettres accentuées sont distinctes ; « cafe » ne trouve pas « café ».
+search-tip-body = Corps — rechercher dans la prose des scènes et des notes.
+search-tip-title = Titre — rechercher dans les titres des éléments du classeur.
+search-tip-synopsis = Synopsis — rechercher dans le résumé de chaque ligne d’écriture.
+search-tip-label = Étiquette — rechercher dans la note affichée sous le titre d’un élément.
+search-tip-book = Livres — le conteneur du livre et ses marqueurs de début / fin.
+search-tip-part = Parties — les séparateurs de partie.
+search-tip-chapter = Chapitres — les chapitres, quel que soit leur stockage.
+search-tip-scene = Scènes — les lignes qui contiennent votre prose.
+search-tip-note = Notes — les notes libres.
+search-tip-folder = Dossiers — les simples dossiers d’organisation et séparateurs.
+search-tip-replace = Remplacer — afficher le champ de remplacement et « Tout remplacer ».
+search-error = Échec de la recherche : { $message }
+search-no-matches = Aucun résultat
+search-count =
+    { $matches ->
+        [one] { $matches } résultat
+       *[other] { $matches } résultats
+    } dans { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    }
+search-count-truncated =
+    { $matches ->
+        [one] { $matches } résultat
+       *[other] { $matches } résultats
+    } dans { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    } (premiers résultats seulement)
+search-occurrences = ×{ $count }
+search-field-body = Corps
+search-field-title = Titre
+search-field-synopsis = Synopsis
+search-field-label = Étiquette
+search-include-in-replace = Inclure dans « Tout remplacer »
+search-replace-nothing = (rien)
+search-replace-confirm-title = Remplacer tous les résultats ?
+search-replace-confirm-text =
+    Remplacer { $occurrences ->
+        [one] { $occurrences } occurrence
+       *[other] { $occurrences } occurrences
+    } de « { $query } » par « { $replacement } » dans { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    } ? Vous pourrez annuler depuis la notification.
+search-replace-done-title = Remplacement terminé
+search-replace-done =
+    { $occurrences ->
+        [one] { $occurrences } occurrence remplacée
+       *[other] { $occurrences } occurrences remplacées
+    } dans { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    }.
+search-replace-done-skipped =
+    { $occurrences ->
+        [one] { $occurrences } occurrence remplacée
+       *[other] { $occurrences } occurrences remplacées
+    } dans { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    }. { $skipped ->
+        [one] { $skipped } champ ignoré
+       *[other] { $skipped } champs ignorés
+    } (modifiés depuis la recherche).
+search-replace-undo = Annuler
+search-replace-failed-title = Échec du remplacement
+search-replace-undo-failed-title = Échec de l'annulation
+search-preview = Aperçu
+search-preview-empty = Sélectionnez un résultat pour l'afficher ici
+search-preview-no-prose = Ce résultat n'a pas de texte modifiable
+search-preview-prompt = Pour afficher un aperçu ici, lancez une recherche.
+search-preview-open-search = Rechercher dans le projet
+
+# Barre de recherche par éditeur (Ctrl+F)
+find-placeholder = Rechercher dans ce document…
+find-count = { $current } sur { $total }
+find-no-results = Aucun résultat
+find-close = Fermer la recherche
+find-previous = Résultat précédent (Maj+Entrée)
+find-next = Résultat suivant (Entrée)
+find-opt-case = Respecter la casse
+find-opt-whole-word = Mot entier
+find-replace-toggle = Afficher le remplacement (Ctrl+R)
+find-replace-placeholder = Remplacer par…
+find-replace = Remplacer
+find-replace-all = Tout remplacer
+find-preserve-case = Conserver la casse

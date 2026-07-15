@@ -19,6 +19,8 @@ mod binder_list_model;
 mod examples_list_model;
 mod open_docs;
 mod recent_work_list_model;
+mod search_results_model;
+mod search_settings_file;
 mod stream_rows_model;
 
 pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
@@ -29,4 +31,6 @@ pub use binder_list_model::{BinderListModel, BinderRow};
 pub use examples_list_model::ExamplesListModel;
 pub use open_docs::{OpenDoc, OpenDocsStore};
 pub use recent_work_list_model::RecentWorkListModel;
+pub use search_results_model::SearchResultsModel;
+pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use stream_rows_model::{StreamLevel, StreamRow, StreamRowsModel};

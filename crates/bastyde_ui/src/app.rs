@@ -43,8 +43,8 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ImportPlumeViewModel,
-    OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel, SettingsViewModel,
-    Side, SpinnerGate, UnsavedDecision, unsaved_decision,
+    OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
+    SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision, unsaved_decision,
 };
 
 /// Build one editor pane's `TabWidget`: dynamic tabs, cross-pane migration
@@ -353,8 +353,17 @@ pub struct App {
     /// Stable id for the trailing Inspector dock (created once so a rebuild keeps
     /// the same dock in the `DockingModel`).
     inspector_dock: DockWidgetId,
-    /// Stable id for the bottom search-preview dock (Phase 0.2 stub).
+    /// Stable id for the bottom search-preview dock.
     preview_dock: DockWidgetId,
+    /// Stable id for the leading search & replace dock.
+    search_dock: DockWidgetId,
+    /// The search feature's shared view-model, created once on first build (like
+    /// [`editors`](Self::editors) — its debounce/signals want a live context).
+    search: Option<SearchReplaceViewModel>,
+    /// Keeps this window's `SearchSettingsService` `Reloadable` registration alive
+    /// in the shared `SettingsRegistry`, so a peer process's `search.toml` writes
+    /// are picked up live — the same story as [`backup_settings_reloadable`](Self::backup_settings_reloadable).
+    search_settings_reloadable: Option<Rc<dyn Reloadable>>,
     root_child: Option<WidgetId>,
     /// Keeps `backup_settings`'s `Reloadable` registration alive in the app's
     /// shared `SettingsRegistry` (only a `Weak` is held internally — see
@@ -393,9 +402,28 @@ impl App {
             editors: None,
             inspector_dock: DockWidgetId::fresh(),
             preview_dock: DockWidgetId::fresh(),
+            search_dock: DockWidgetId::fresh(),
+            search: None,
+            search_settings_reloadable: None,
             root_child: None,
             backup_settings_reloadable: None,
         }
+    }
+}
+
+/// Open the persistent search-settings service (`<config_dir>/search.toml`),
+/// degrading to a throwaway per-process temp file if the config dir is
+/// unavailable — so the app still runs, search preferences just won't persist.
+fn open_search_settings() -> crate::models::SearchSettingsService {
+    use crate::models::SearchSettingsService;
+    match bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto") {
+        Some(paths) => {
+            SearchSettingsService::open(&paths).unwrap_or_else(|e| {
+                eprintln!("search settings: open failed ({e}); using an in-memory fallback");
+                SearchSettingsService::in_memory_default()
+            })
+        }
+        None => SearchSettingsService::in_memory_default(),
     }
 }
 
@@ -498,6 +526,73 @@ impl Widget for App {
         }
 
         let outline = self.outline.clone();
+
+        // ── The search feature's shared view-model (both docks clone it) ──────
+        // Created once; it holds the results model, the persisted `search.toml`
+        // service, the shared open-docs store (so its preview edits the same
+        // document a tab does), and the DockingModel (to reveal the bottom band).
+        let search = {
+            let app_ctx = self.app_ctx.clone();
+            let ids = self.outline.ids();
+            let docs = ctx
+                .app_state::<crate::models::OpenDocsStore>()
+                .cloned()
+                .expect("OpenDocsStore registered in main");
+            let docking = outline.docking();
+            let search_dock = self.search_dock;
+            let preview_dock = self.preview_dock;
+            self.search
+                .get_or_insert_with(|| {
+                    let settings_svc = open_search_settings();
+                    let results = crate::models::SearchResultsModel::new(
+                        app_ctx.clone(),
+                        ids.work_info_id.clone(),
+                    );
+                    SearchReplaceViewModel::new(
+                        app_ctx,
+                        ids,
+                        results,
+                        settings_svc,
+                        docs,
+                        docking,
+                        preview_dock,
+                        search_dock,
+                    )
+                })
+                .clone()
+        };
+        // Live cross-process reload for `search.toml` — register this window's
+        // service into the shared `SettingsRegistry` once (same story as
+        // `backup_settings` above).
+        if self.search_settings_reloadable.is_none()
+            && let Some(registry) = ctx.app_state::<SettingsRegistry>().cloned()
+        {
+            self.search_settings_reloadable =
+                Some(registry.register(search.settings_reloadable()));
+        }
+        // Re-seed the search inputs from the opened project's saved preferences,
+        // and drop any preview held for the previous project.
+        {
+            let s = search.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::LoadWork),
+                move |_e: &Event| s.restore_for_project(),
+            );
+        }
+        {
+            let s = search.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::NewWork),
+                move |_e: &Event| s.restore_for_project(),
+            );
+        }
+        {
+            let s = search.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::CloseWork),
+                move |_e: &Event| s.clear_preview(),
+            );
+        }
 
         // Persist live theme / interface-language changes into the keys the
         // startup restore reads. The Settings window drives these via the
@@ -673,22 +768,94 @@ impl Widget for App {
                 docking.toggle_side_visible(DockSide::Bottom);
             }));
         }
-        // Phase 0.2 stub — Ctrl+F opens the find banner at the top of the prose
-        // editor, so we can see on screen what the layout shift does to the caret.
-        // A *global* shortcut is resolved before the focused widget sees the key,
-        // which is what we want (the editor must not eat Ctrl+F). Removed with the
-        // stub, when the real per-editor FindViewModel lands.
+        // Ctrl+F opens the per-editor find banner in the focused pane's active
+        // tab (its `FindViewModel`). A *global* shortcut is resolved before the
+        // focused widget sees the key — the editor must not eat Ctrl+F — but the
+        // action reads which tab is focused, so it targets the right editor even
+        // in a split view.
         ctx.register_shortcut_global(
             Shortcut::new("editor.find")
                 .name("Find")
                 .primary(KeyStroke::ctrl(Key::F))
                 .build(),
         );
-        ctx.register_action_global(Action::new("editor.find").on_invoke(|_i, _c| {
-            let open = crate::tabs::shared::editor::find_banner_signal();
-            let now = open.get();
-            open.set(!now);
-        }));
+        {
+            let editors = editors.clone();
+            ctx.register_action_global(
+                Action::new("editor.find").on_invoke(move |_i, _c| editors.open_find()),
+            );
+        }
+        // Ctrl+R opens the find banner in replace mode; F3 / Shift+F3 step through
+        // matches — the common find-bar chords, all targeting the focused tab.
+        ctx.register_shortcut_global(
+            Shortcut::new("editor.replace")
+                .name("Replace")
+                .primary(KeyStroke::ctrl(Key::R))
+                .build(),
+        );
+        ctx.register_shortcut_global(
+            Shortcut::new("editor.find_next")
+                .name("Next Match")
+                .primary(KeyStroke::new(Key::F3, Modifiers::NONE))
+                .build(),
+        );
+        ctx.register_shortcut_global(
+            Shortcut::new("editor.find_prev")
+                .name("Previous Match")
+                .primary(KeyStroke::new(Key::F3, Modifiers::SHIFT))
+                .build(),
+        );
+        {
+            let editors = editors.clone();
+            ctx.register_action_global(
+                Action::new("editor.replace").on_invoke(move |_i, _c| editors.open_find_replace()),
+            );
+        }
+        {
+            let editors = editors.clone();
+            ctx.register_action_global(
+                Action::new("editor.find_next").on_invoke(move |_i, c| editors.find_next(c)),
+            );
+        }
+        {
+            let editors = editors.clone();
+            ctx.register_action_global(
+                Action::new("editor.find_prev").on_invoke(move |_i, c| editors.find_prev(c)),
+            );
+        }
+        // Ctrl+Shift+F reveals the search & replace dock; Ctrl+Shift+H reveals it
+        // *and* discloses the replace row. Global (resolved before a focused
+        // editor), and Shift-qualified so neither shadows Ctrl+F (find banner) or
+        // an editor chord. Only ever fired by keystroke, so — like `work.open` /
+        // `editor.save` — they are global actions with no `AppIntent` variant.
+        ctx.register_shortcut_global(
+            Shortcut::new("search.show")
+                .name("Search in Project")
+                .primary(KeyStroke::new(Key::F, Modifiers::CTRL | Modifiers::SHIFT))
+                .build(),
+        );
+        ctx.register_shortcut_global(
+            Shortcut::new("search.replace")
+                .name("Replace in Project")
+                .primary(KeyStroke::new(Key::H, Modifiers::CTRL | Modifiers::SHIFT))
+                .build(),
+        );
+        {
+            let docking = outline.docking();
+            let search_dock = self.search_dock;
+            ctx.register_action_global(Action::new("search.show").on_invoke(move |_i, _c| {
+                docking.reveal_dock(search_dock);
+            }));
+        }
+        {
+            let docking = outline.docking();
+            let search_dock = self.search_dock;
+            let search = search.clone();
+            ctx.register_action_global(Action::new("search.replace").on_invoke(move |_i, _c| {
+                docking.reveal_dock(search_dock);
+                search.set_show_replace(true);
+            }));
+        }
         {
             let outline = outline.clone();
             ctx.register_action_global(
@@ -1771,19 +1938,41 @@ impl Widget for App {
                 active_item,
                 self.inspector_dock,
             ))
+            .dock(crate::docks::search::search_dock(
+                search.clone(),
+                self.search_dock,
+            ))
             .dock(crate::docks::search_preview::search_preview_dock(
+                search.clone(),
                 self.preview_dock,
             ));
-        outline.open_in_layout();
+        // The leading side hosts TWO activity docks (binder + search) as separate
+        // switchable rail tabs — VS Code style: the rail shows both glyphs, and
+        // selecting one shows only its panel. `.new_tab()` is what makes them
+        // distinct tabs; the default `side()` placement *stacks* (a vertical
+        // split showing both at once, which starves the binder). The binder is
+        // revealed last so it is the selected leading panel on launch.
+        {
+            let docking = outline.docking();
+            docking.open_dock(
+                outline.dock_id(),
+                DockOpenLocation::side(DockSide::Leading).new_tab(),
+            );
+            docking.open_dock(
+                self.search_dock,
+                DockOpenLocation::side(DockSide::Leading).new_tab(),
+            );
+            docking.reveal_dock(outline.dock_id());
+        }
         // Mount the inspector on the trailing side (otherwise the side shows the
         // empty "drop a panel here" placeholder).
         outline.docking().open_dock(
             self.inspector_dock,
             DockOpenLocation::side(DockSide::Trailing),
         );
-        // Phase 0.2 stub: mount the preview so the bottom band is visible on
-        // launch (a hidden bottom band collapses its rail entirely, so there is
-        // no affordance to reveal it by hand).
+        // Mount the bottom preview band. A hidden bottom band collapses its rail
+        // entirely, so — like the leading docks — it is opened here; a result
+        // click reveals it thereafter (`reveal_dock`).
         outline
             .docking()
             .open_dock(self.preview_dock, DockOpenLocation::side(DockSide::Bottom));

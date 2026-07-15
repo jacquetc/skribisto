@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Match case — an uppercase A beside a lowercase a -->
+  <path d="M1.7 12.5 L4.2 4.3 L6.7 12.5"/>
+  <path d="M2.7 9.7 H5.7"/>
+  <circle cx="10.6" cy="10.2" r="2.1"/>
+  <path d="M12.7 8.4 V12.5"/>
+</svg>

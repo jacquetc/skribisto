@@ -19,6 +19,7 @@ menu-quit = &Quit
 ## Menu bar — View
 menu-view = &View
 menu-outline = &Outline
+menu-search = &Search in Project
 menu-search-preview = Search &Preview
 
 ## Binder context menu
@@ -82,6 +83,7 @@ french = French
 light = Light
 dark = Dark
 settings-text-width = Text width
+settings-preview-width = Search preview width
 settings-autosave = Autosave to disk
 settings-show-welcome = Show the launcher at startup (otherwise, reopen the last project)
 
@@ -459,3 +461,116 @@ backup-details = Details
 backup-issues-title = Backup issues
 backup-failed-title = Backup failed
 backup-complete-prune-warning = Backup complete ({ $ok } saved, { $skipped } already current) — some old backups could not be removed
+
+# Search & Replace
+search = Search
+search-query-placeholder = Search…
+search-replace-placeholder = Replace with…
+search-replace-toggle = Toggle replace
+search-replace-all = Replace All
+search-preserve-case = Preserve case
+search-opt-case = Match case
+search-opt-whole-word = Whole word
+search-opt-diacritics = Match accents
+search-scope-body = Body
+search-scope-title = Title
+search-scope-synopsis = Synopsis
+search-scope-label = Label
+search-facet-book = Books
+search-facet-part = Parts
+search-facet-chapter = Chapters
+search-facet-scene = Scenes
+search-facet-note = Notes
+search-facet-folder = Folders
+# Rich tooltips for the option toggles
+search-tip-case = Match case — treat uppercase and lowercase as different, so “Elena” and “elena” are separate matches.
+search-tip-whole-word = Whole word — match only complete words, so “cat” is not found inside “category”.
+search-tip-diacritics = Match accents — treat accented letters as distinct, so “cafe” does not match “café”.
+search-tip-body = Body — search the prose of scenes and notes.
+search-tip-title = Title — search the titles of binder items.
+search-tip-synopsis = Synopsis — search each writing row’s summary.
+search-tip-label = Label — search the short note shown under a binder item’s title.
+search-tip-book = Books — the book container and its begin / end markers.
+search-tip-part = Parts — part-level dividers.
+search-tip-chapter = Chapters — chapters, in whichever way the project stores them.
+search-tip-scene = Scenes — the rows that hold your prose.
+search-tip-note = Notes — free-form notes.
+search-tip-folder = Folders — plain organising folders and separators.
+search-tip-replace = Replace — show the replacement field and Replace All.
+search-error = Search failed: { $message }
+search-no-matches = No matches
+search-count =
+    { $matches ->
+        [one] { $matches } match
+       *[other] { $matches } matches
+    } in { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    }
+search-count-truncated =
+    { $matches ->
+        [one] { $matches } match
+       *[other] { $matches } matches
+    } in { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    } (first results only)
+search-occurrences = ×{ $count }
+search-field-body = Body
+search-field-title = Title
+search-field-synopsis = Synopsis
+search-field-label = Label
+search-include-in-replace = Include in Replace All
+search-replace-nothing = (nothing)
+search-replace-confirm-title = Replace all matches?
+search-replace-confirm-text =
+    Replace { $occurrences ->
+        [one] { $occurrences } occurrence
+       *[other] { $occurrences } occurrences
+    } of "{ $query }" with "{ $replacement }" across { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    }? You can undo this from the notification afterwards.
+search-replace-done-title = Replace complete
+search-replace-done =
+    { $occurrences ->
+        [one] { $occurrences } occurrence
+       *[other] { $occurrences } occurrences
+    } replaced in { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    }.
+search-replace-done-skipped =
+    { $occurrences ->
+        [one] { $occurrences } occurrence
+       *[other] { $occurrences } occurrences
+    } replaced in { $items ->
+        [one] { $items } document
+       *[other] { $items } documents
+    }. { $skipped ->
+        [one] { $skipped } field
+       *[other] { $skipped } fields
+    } skipped (changed since the search).
+search-replace-undo = Undo
+search-replace-failed-title = Replace failed
+search-replace-undo-failed-title = Undo failed
+search-preview = Preview
+search-preview-empty = Select a result to preview it here
+search-preview-no-prose = This match has no editable text
+search-preview-prompt = To see a preview here, run a search.
+search-preview-open-search = Search in Project
+
+# Per-editor find banner (Ctrl+F)
+find-placeholder = Find in this document…
+find-count = { $current } of { $total }
+find-no-results = No results
+find-close = Close find
+find-previous = Previous match (Shift+Enter)
+find-next = Next match (Enter)
+find-opt-case = Match case
+find-opt-whole-word = Whole word
+find-replace-toggle = Toggle replace (Ctrl+R)
+find-replace-placeholder = Replace with…
+find-replace = Replace
+find-replace-all = Replace all
+find-preserve-case = Preserve case

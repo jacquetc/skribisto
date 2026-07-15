@@ -491,6 +491,12 @@ impl SettingsPanel {
                     format!("{} px", v.round() as i32)
                 }),
             )
+            .line(
+                field_label(tr!(settings_preview_width())),
+                slider_field(vm.preview_width(), 400.0, 1200.0, 20.0, |v| {
+                    format!("{} px", v.round() as i32)
+                }),
+            )
             .full_width(Checkbox::new(vm.synopsis_pane()).label(tr!(settings_synopsis_pane())))
             .full_width(Checkbox::new(vm.typewriter()).label(tr!(settings_typewriter())))
             .full_width(

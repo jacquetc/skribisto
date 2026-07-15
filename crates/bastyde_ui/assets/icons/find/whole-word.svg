@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Whole word — a word bounded on both sides (an underline with end stops) -->
+  <path d="M2.3 11.5 H13.7"/>
+  <path d="M2.3 11.5 V8.7"/>
+  <path d="M13.7 11.5 V8.7"/>
+  <path d="M5.2 8.3 h2 M9 8.3 h2"/>
+</svg>

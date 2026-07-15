@@ -15,6 +15,12 @@ pub fn outline_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/outline.svg"))
 }
 
+/// The Search activity icon: a magnifier. Fronts the **leading** search &
+/// replace dock's rail (its query, options, and result list).
+pub fn search_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/search.svg"))
+}
+
 /// The Search activity icon: a magnifier. Fronts the bottom preview band's rail.
 pub fn search_preview_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/search.svg"))

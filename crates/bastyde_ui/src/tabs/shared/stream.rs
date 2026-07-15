@@ -91,6 +91,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     MAIN_MIN_LINES,
                     tab.mark_dirty_fn(),
                     Option::None,
+                    Option::None,
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
@@ -232,6 +233,7 @@ fn stream_row(
                         min_lines,
                         on_change,
                         split,
+                        Option::None,
                     ));
                 }
             }

@@ -38,6 +38,7 @@ mod binder_icons;
 mod binder_placement;
 mod binder_switcher_button;
 mod create_labels;
+mod find_icons;
 mod docks;
 mod editor_icons;
 mod import_plume_panel;
@@ -157,6 +158,10 @@ pub const LOCALE_KEY: &str = "ui.locale";
 /// Max width (px) of the centered main-text writing column.
 pub const EDITOR_WIDTH_KEY: &str = "editor.column_width";
 pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;
+/// Max width (px) of the search preview editor (bottom band), so a too-wide
+/// paragraph stays readable — same treatment as the scene column.
+pub const PREVIEW_WIDTH_KEY: &str = "search.preview_width";
+pub const PREVIEW_WIDTH_DEFAULT: f32 = 700.0;
 /// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
 pub const AUTOSAVE_KEY: &str = "editor.autosave";
 /// When on (default) and no work was passed on the command line, a bare

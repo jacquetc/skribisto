@@ -166,6 +166,7 @@ impl EditorsViewModel {
         self.docs.edited_any()
     }
 
+
     /// The dynamic-tab model for a pane's `TabWidget::dynamic_model`.
     pub fn tabs(&self, side: Side) -> ListModel<TabHandle> {
         self.pane(side).tabs.clone()
@@ -212,6 +213,57 @@ impl EditorsViewModel {
         if self.active_item.get() != active {
             self.active_item.set(active);
         }
+    }
+
+    /// Open the find banner (Ctrl+F) in the **focused** pane's active tab, if that
+    /// tab has a prose surface to search. A no-op on a heading / folder / empty
+    /// tab. The banner's own state lives on the tab's `FindViewModel`, so a split
+    /// view's two editors keep independent finds.
+    pub fn open_find(&self) {
+        if let Some(find) = self.focused_find() {
+            find.open();
+        }
+    }
+
+    /// Open the find banner in **replace** mode in the focused tab (Ctrl+R).
+    pub fn open_find_replace(&self) {
+        if let Some(find) = self.focused_find() {
+            find.open_with_replace();
+        }
+    }
+
+    /// Step to the next / previous match in the focused tab's find (F3 / Shift+F3).
+    /// A no-op when no find banner is open there.
+    pub fn find_next(&self, ctx: &mut bastyde::prelude::EventContext) {
+        if let Some(find) = self.focused_find() {
+            find.next(ctx);
+        }
+    }
+    pub fn find_prev(&self, ctx: &mut bastyde::prelude::EventContext) {
+        if let Some(find) = self.focused_find() {
+            find.prev(ctx);
+        }
+    }
+
+    /// The `FindViewModel` of the focused pane's active tab — `None` when nothing
+    /// is open there or the active tab has no main prose field.
+    fn focused_find(&self) -> Option<crate::view_models::FindViewModel> {
+        let side = self.focused_side.get();
+        let pane = self.pane(side);
+        let tab_id = pane.selected.get()?;
+        (0..pane.tabs.len()).find_map(|i| {
+            pane.tabs
+                .with_item(i, |h| {
+                    if h.id == tab_id {
+                        h.payload
+                            .downcast_ref::<ContentTab>()
+                            .and_then(|t| t.find().cloned())
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
+        })
     }
 
     // ── Open ────────────────────────────────────────────────────────────────

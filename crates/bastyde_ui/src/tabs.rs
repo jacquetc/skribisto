@@ -101,6 +101,10 @@ pub struct ContentTab {
     stream: Option<StreamViewModel>,
     /// The app's entity ids — needed for the undo stack when a name field commits.
     ids: AppIds,
+    /// The per-editor find banner (Ctrl+F) — `Some` only when this tab has a main
+    /// prose field to search. Persisted on the tab so it survives tab rebuilds
+    /// (its `FindSession` + query outlive the widget tree it draws into).
+    find: Option<crate::view_models::FindViewModel>,
     /// Selected segment for the folder container's `SegmentedControl` — per-tab
     /// (each pane keeps its own segment).
     pub segment: Signal<usize>,
@@ -260,15 +264,27 @@ impl ContentTab {
             &open_doc.role,
             &open_doc.sub_role,
         );
+        // A find banner only for a tab with a main prose surface to search.
+        let find = open_doc
+            .main
+            .as_ref()
+            .map(|m| crate::view_models::FindViewModel::new(m.doc.clone()));
         Self {
             open_doc,
             stream,
             ids,
+            find,
             segment: Signal::new(0),
             column_width,
             show_synopsis,
             typography,
         }
+    }
+
+    /// The per-editor find banner's view-model — `Some` only when the tab has a
+    /// main prose field (Scene / ChapterScene / Note).
+    pub fn find(&self) -> Option<&crate::view_models::FindViewModel> {
+        self.find.as_ref()
     }
 
     /// The `BinderItem` this tab edits.
