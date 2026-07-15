@@ -191,6 +191,25 @@ mod imp {
             Ok(())
         }
 
+        /// Set the item's `is_exportable` flag (the per-item "include in exports" toggle).
+        /// A scalar field with no mirrored `Content` row — a plain read-modify-write of the
+        /// **full** DTO (like [`set_dict_language`](Self::set_dict_language)). Undoable on
+        /// `stack`; a subtree "apply to children" wraps a run of these in one composite step.
+        pub fn set_exportable(&self, on: bool, stack: Option<u64>) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            let Some(it) = self.dto() else {
+                anyhow::bail!("SingleBinderItem: item {id} not loaded");
+            };
+            let mut dto = update_dto(&it);
+            dto.is_exportable = on;
+            dto.updated_at = chrono::Utc::now();
+            binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
+            self.refresh();
+            Ok(())
+        }
+
         fn write_name(
             &self,
             text: &str,
@@ -413,6 +432,14 @@ mod imp {
         pub fn set_dict_language(&self, tags: &str, _stack: Option<u64>) -> anyhow::Result<()> {
             if let Some(mut d) = self.inner.dto.get() {
                 d.dict_language = tags.to_string();
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
+        }
+
+        pub fn set_exportable(&self, on: bool, _stack: Option<u64>) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.is_exportable = on;
                 self.inner.dto.set(Some(d));
             }
             Ok(())

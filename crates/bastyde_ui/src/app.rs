@@ -36,6 +36,7 @@ use frontend::work_management::{LoadWorkDto, NewWorkDto};
 use crate::app_ids::AppIds;
 use crate::export_panel::ExportPanel;
 use crate::import_plume_panel::ImportPlumePanel;
+use export_management::ExportScopeKind;
 use crate::intents::AppIntent;
 use crate::models::TreeNode;
 use crate::new_work_panel::NewWorkPanel;
@@ -535,6 +536,19 @@ pub fn can_save(unsaved: &Signal<bool>, backup_mode: &Signal<bool>) -> Signal<bo
     unsaved.and(&backup_mode.not())
 }
 
+/// Present the shared Export modal over an already-`prepare`d [`ExportViewModel`]. Both the
+/// `export.scope` (quick scope) and `work.export` (Choose…) actions funnel through here so
+/// the modal chrome stays identical.
+fn present_export_panel(ctx: &mut EventContext, vm: ExportViewModel) {
+    ctx.present_modal(
+        ModalRequest::deferred(move |t| t.add(ExportPanel::new(vm)))
+            .presentation(ModalPresentation::InTree)
+            .title("Export")
+            .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+            .size(760, 640),
+    );
+}
+
 impl std::fmt::Debug for App {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("App").finish()
@@ -894,6 +908,13 @@ impl Widget for App {
                 .primary(KeyStroke::new(Key::F10, Modifiers::NONE))
                 .build(),
         );
+        // Ctrl+Shift+E → the Export Choose… picker (Ctrl+E is the editor's centre-align).
+        ctx.register_shortcut_global(
+            Shortcut::new("work.export")
+                .name("Export…")
+                .primary(KeyStroke::new(Key::E, Modifiers::CTRL | Modifiers::SHIFT))
+                .build(),
+        );
         {
             let docking = self.outline.docking();
             ctx.register_action_global(Action::new("preview.toggle").on_invoke(move |_i, _c| {
@@ -1032,14 +1053,22 @@ impl Widget for App {
                 editors.flush_all();
                 let anchor = editors.active_item().get();
                 vm.prepare(scope, anchor);
-                let panel_vm = vm.clone();
-                c.present_modal(
-                    ModalRequest::deferred(move |t| t.add(ExportPanel::new(panel_vm)))
-                        .presentation(ModalPresentation::InTree)
-                        .title("Export")
-                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                        .size(760, 640),
-                );
+                present_export_panel(c, vm);
+            }));
+        }
+        // The Choose… entry point (File ▸ Export ▸ Choose…, the split-button dropdown, and
+        // Ctrl+Shift+E): open the panel straight into the checkbox tree (Custom scope),
+        // independent of focus. Not Ctrl+E — that is the editor's centre-align.
+        {
+            let editors = editors.clone();
+            ctx.register_action_global(Action::new("work.export").on_invoke(move |_i, c| {
+                let Some(vm) = c.app_state::<ExportViewModel>().cloned() else {
+                    return;
+                };
+                editors.flush_all();
+                let anchor = editors.active_item().get();
+                vm.prepare(ExportScopeKind::Custom, anchor);
+                present_export_panel(c, vm);
             }));
         }
         // Ctrl+S: flush every editor to the store, then save the project to disk.

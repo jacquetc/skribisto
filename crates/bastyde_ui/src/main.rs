@@ -43,6 +43,7 @@ mod dictionary_registry;
 mod find_icons;
 mod docks;
 mod editor_icons;
+mod export_choose;
 mod export_panel;
 mod export_split_button;
 mod import_plume_panel;

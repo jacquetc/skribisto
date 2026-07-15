@@ -446,6 +446,9 @@ impl ProjectWindowFactory {
                                         .item(entry(ExportScopeKind::CurrentScene))
                                         .item(entry(ExportScopeKind::CurrentNote))
                                         .item(entry(ExportScopeKind::CurrentFolder))
+                                        // Choose… — the checkbox-tree picker (always
+                                        // available with a project open).
+                                        .item(entry(ExportScopeKind::Custom))
                                         .item(
                                             MenuEntry::new(tr!(menu_export_none()))
                                                 .visible(

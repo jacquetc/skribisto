@@ -15,13 +15,15 @@ use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
-    Button, ButtonVariant, Center, ComboBox, Divider, Expand, FilePickerField, FilePickerKind,
-    FixedSize, FormLayout, HStack, IconButton, Padding, Panel, ScrollArea, SegmentedControl, Spacer,
-    TextWidget, VStack,
+    Button, ButtonVariant, Center, Checkbox, ComboBox, Divider, Expand, FilePickerField,
+    FilePickerKind, FixedSize, FormLayout, HStack, IconButton, Padding, Panel, ScrollArea,
+    SegmentedControl, Spacer, TextWidget, VStack,
 };
 
+use export_management::ExportScopeKind;
 use skribisto_compiler::Preset;
 
+use crate::export_choose::ChooseTreeWidget;
 use crate::view_models::{ExportViewModel, SettingsViewModel, format_label, scope_label};
 
 const CARD_W: f32 = 760.0;
@@ -74,10 +76,6 @@ impl ExportPanel {
         FormLayout::new()
             .label_gap(16.0)
             .row_spacing(14.0)
-            .line(
-                Self::field_label(tr!(export_scope_label())),
-                TextWidget::new(scope_label(&vm.scope())).color(TextRole::Primary),
-            )
             .line(Self::field_label(tr!(export_format_label())), format)
             .line(Self::field_label(tr!(export_style_label())), style)
             .full_width(Divider::new())
@@ -117,6 +115,7 @@ impl Widget for ExportPanel {
             ctx.effect(&self.vm.format_index(), move |_| vm.retarget_extension());
         }
 
+        let scope_section = ScopeSection::new(self.vm.clone());
         let controls = Padding::symmetric(20.0, 18.0).child(self.controls());
         let preview = ExportPreviewBody::new(self.vm.clone());
 
@@ -155,6 +154,9 @@ impl Widget for ExportPanel {
                                 }
                             }
                         }
+                        Expand::horizontal { Divider }
+                        // Scope: a "What" line (quick scope) or the Choose… checkbox tree.
+                        child: scope_section
                         Expand::horizontal { Divider }
                         // Controls
                         child: controls
@@ -229,9 +231,15 @@ impl std::fmt::Debug for ExportPreviewBody {
 
 impl Widget for ExportPreviewBody {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Rebuild when the style changes — that is exactly when the compiled document does.
-        // (Scope + anchor are fixed for the panel's lifetime; format is a write-time knob.)
+        // Rebuild when the style changes, or — under Choose… — when the checkbox selection
+        // changes (`custom_changed`). (Scope + anchor are fixed for the panel's lifetime;
+        // format is a write-time knob.)
         self.vm.preset_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        self.vm.custom_changed().bind_to(
             ctx.self_id(),
             ctx.binding_registry(),
             BindingLevel::Rebuild,
@@ -286,6 +294,117 @@ impl Widget for ExportPreviewBody {
 
     fn children(&self) -> Vec<WidgetId> {
         self.child_id.into_iter().collect()
+    }
+}
+
+/// The scope section above the controls: a read-only "What" line for a quick scope, or the
+/// Choose… checkbox tree ([`ChoosePane`]) for the Custom scope. A concrete widget so the
+/// panel's `bati!` can host it (the branch types differ).
+struct ScopeSection {
+    vm: ExportViewModel,
+    root_child: Option<WidgetId>,
+}
+
+impl ScopeSection {
+    fn new(vm: ExportViewModel) -> Self {
+        Self { vm, root_child: None }
+    }
+}
+
+impl std::fmt::Debug for ScopeSection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ScopeSection").finish()
+    }
+}
+
+impl Widget for ScopeSection {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let id = if self.vm.scope() == ExportScopeKind::Custom {
+            ctx.add(ChoosePane::new(self.vm.clone()))
+        } else {
+            ctx.add(
+                Padding::new(14.0, 20.0, 10.0, 20.0).child(
+                    HStack::new()
+                        .spacing(16.0)
+                        .child(
+                            TextWidget::new(tr!(export_scope_label()))
+                                .style(TextStyleRole::Small)
+                                .color(TextRole::Secondary),
+                        )
+                        .child(
+                            TextWidget::new(scope_label(&self.vm.scope())).color(TextRole::Primary),
+                        ),
+                ),
+            )
+        };
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+}
+
+/// The Choose… section: a "Show non-exportable" reveal toggle over the checkbox tree.
+/// Rebuilds the tree (preserving checks) when the toggle flips.
+struct ChoosePane {
+    vm: ExportViewModel,
+    root_child: Option<WidgetId>,
+}
+
+impl ChoosePane {
+    fn new(vm: ExportViewModel) -> Self {
+        Self { vm, root_child: None }
+    }
+}
+
+impl std::fmt::Debug for ChoosePane {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ChoosePane").finish()
+    }
+}
+
+impl Widget for ChoosePane {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Flipping the reveal toggle rebuilds this pane, which rebuilds the tree with (or
+        // without) the non-exportable rows — `ensure_choose` does the work + preserves checks.
+        self.vm.show_non_exportable().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        self.vm.ensure_choose();
+
+        let tree = ScrollArea::new().child(ChooseTreeWidget::new(self.vm.choose_model()));
+        let show = self.vm.show_non_exportable();
+
+        let root = bati!(ctx => Padding::new(10.0, 20.0, 8.0, 20.0) {
+            VStack {
+                spacing: 8.0
+                Checkbox::new(show) {
+                    label: tr!(export_show_non_exportable())
+                }
+                Expand::horizontal {
+                    FixedSize {
+                        height: 190.0
+                        child: tree
+                    }
+                }
+            }
+        });
+        self.root_child = Some(root);
+        vec![root]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
     }
 }
 

@@ -474,6 +474,8 @@ export-path-label = Fichier
 export-browse = Parcourir…
 export-preview-label = Aperçu
 export-preview-empty = Rien à prévisualiser pour cette sélection.
+export-show-non-exportable = Afficher les non-exportables
+export-choose-empty = Aucun projet à sélectionner.
 export-cancel = Annuler
 export-export = Exporter
 export-save-dialog-title = Exporter vers un fichier
@@ -675,6 +677,10 @@ dict-add-code-taken = Un dictionnaire pour ce code est déjà installé.
 dict-add-done = { $name } ajouté
 dict-add-unusable = Ces fichiers ne sont pas un dictionnaire utilisable : { $error }
 dict-add-failed = Impossible d'ajouter le dictionnaire : { $error }
+# Les contrôles d'export par élément dans l'Inspecteur (M3)
+inspector-export = Export
+inspector-exportable = Inclure dans les exports
+inspector-apply-to-children = Appliquer aux enfants
 # Le champ de langues à pastilles (Inspecteur + Réglages)
 inspector-dict-language = Langue
 settings-page-language = Langue

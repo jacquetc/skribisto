@@ -594,6 +594,43 @@ impl OutlineViewModel {
         self.reload();
     }
 
+    /// The item ids strictly *below* `item_id` in the binder tree (its subtree, excluding
+    /// itself), in document order. Empty for a leaf — the Inspector uses that to decide
+    /// whether to offer "Apply to children".
+    pub fn subtree_descendants(&self, item_id: u64) -> Vec<u64> {
+        let Some(binder) = self.model.binder_of(&BinderTreeKey::Item(item_id)) else {
+            return Vec::new();
+        };
+        let (order, meta) = self.ordered_meta(binder);
+        let Some(pos) = order.iter().position(|&x| x == item_id) else {
+            return Vec::new();
+        };
+        let base = meta.get(&item_id).map(|(i, _)| *i).unwrap_or(0);
+        let end = binder_placement::subtree_end(&order, &meta, pos, base);
+        order[pos + 1..end].to_vec()
+    }
+
+    /// Set every descendant's `is_exportable` to `value` in **one** undo step (the outline's
+    /// composite pattern). The item itself is not touched — the Inspector's own toggle owns
+    /// that; this is the "apply to children" affordance beside it.
+    pub fn apply_exportable_to_subtree(&self, item_id: u64, value: bool) {
+        let descendants = self.subtree_descendants(item_id);
+        if descendants.is_empty() {
+            return;
+        }
+        let ctx = &*self.app_ctx;
+        let stack = self.stack();
+        let _ = undo_redo_commands::begin_composite(ctx, stack);
+        for id in descendants {
+            // A probe fixed to each descendant, reusing the tested full-DTO write.
+            let probe = SingleBinderItem::new(self.app_ctx.clone());
+            probe.set_id(Some(id));
+            let _ = probe.set_exportable(value, stack);
+        }
+        undo_redo_commands::end_composite(ctx);
+        self.reload();
+    }
+
     /// Create a new binder in the open Work, switch the switcher to it, and open
     /// the rename dialog so the user names it. Backs the popover's "New binder…".
     pub fn new_binder(&self, ctx: &mut EventContext) {

@@ -18,6 +18,7 @@
 //! diverge (given the same store state). The panel is modal, so no prose edit can slip in
 //! between opening it (which flushes the editors) and exporting.
 
+use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::Duration;
@@ -48,6 +49,7 @@ use skribisto_model::compile::{
 
 use super::long_op::{event_id, parse_payload, payload_id};
 use crate::app_ids::AppIds;
+use crate::export_choose::ChooseModel;
 
 /// Update-in-place key for the single toast an export drives (loading → progress →
 /// success / cancelled / error).
@@ -152,6 +154,18 @@ pub struct ExportViewModel {
     output_path: Signal<String>,
     /// The in-flight export op id (set on start, cleared on completion / cancel / failure).
     active: Signal<Option<String>>,
+
+    // ── Choose… (Custom scope) state ─────────────────────────────────────────
+    /// Whether the Choose tree reveals items marked non-exportable (default off).
+    show_non_exportable: Signal<bool>,
+    /// The current Choose tree + check model (built lazily from the store on a Custom open).
+    choose: Rc<RefCell<Option<ChooseModel>>>,
+    /// The `show_non_exportable` value the current `choose` model was built for — so
+    /// `ensure_choose` rebuilds only when the toggle actually flipped.
+    choose_show: Rc<Cell<bool>>,
+    /// Bumped on any check change; stable across rebuilds so the preview binding survives a
+    /// "show non-exportable" toggle.
+    custom_changed: Signal<u64>,
 }
 
 #[allow(dead_code)]
@@ -169,6 +183,10 @@ impl ExportViewModel {
             preset: Signal::new(builtin_presets().into_iter().next()),
             output_path: Signal::new(String::new()),
             active: Signal::new(None),
+            show_non_exportable: Signal::new(false),
+            choose: Rc::new(RefCell::new(None)),
+            choose_show: Rc::new(Cell::new(false)),
+            custom_changed: Signal::new(0),
         }
     }
 
@@ -191,38 +209,40 @@ impl ExportViewModel {
     }
 
     fn compute_applicable(&self, active: Option<u64>) -> Vec<ExportScopeKind> {
-        let Some(active) = active else {
-            return Vec::new();
-        };
-        let Ok(g) = self.client_gather() else {
-            return Vec::new();
-        };
-        let metas = skribisto_compiler::item_metas(&g);
-        let Some(pos) = metas.iter().position(|m| m.id == active) else {
-            return Vec::new();
-        };
-        let item = &metas[pos];
         let mut out: Vec<ExportScopeKind> = Vec::new();
-        // The focused item's own facet (Scene / Note / Chapter / Folder / …) — enabled only
-        // when it actually resolves (a bare `Scene` sub_role for Scene; a non-empty extent).
-        if let Some(primary) = primary_scope(&item.role, &item.sub_role) {
-            if resolve_scope(&metas, pos, primary).is_some() {
-                out.push(from_scope_kind(primary));
+        // The focus-driven quick scopes (skipped entirely when nothing is focused).
+        if let Some(active) = active
+            && let Ok(g) = self.client_gather()
+        {
+            let metas = skribisto_compiler::item_metas(&g);
+            if let Some(pos) = metas.iter().position(|m| m.id == active) {
+                let item = &metas[pos];
+                // The focused item's own facet — enabled only when it actually resolves.
+                if let Some(primary) = primary_scope(&item.role, &item.sub_role) {
+                    if resolve_scope(&metas, pos, primary).is_some() {
+                        out.push(from_scope_kind(primary));
+                    }
+                }
+                // Then the enclosing structural containers, coarser outward.
+                for (level, sk) in [
+                    (StreamLevel::Chapter, ScopeKind::Chapter),
+                    (StreamLevel::Part, ScopeKind::Part),
+                    (StreamLevel::Book, ScopeKind::Book),
+                ] {
+                    let es = from_scope_kind(sk);
+                    if !out.contains(&es)
+                        && enclosing_head(&metas, pos, level).is_some()
+                        && resolve_scope(&metas, pos, sk).is_some()
+                    {
+                        out.push(es);
+                    }
+                }
             }
         }
-        // Then the enclosing structural containers, coarser outward.
-        for (level, sk) in [
-            (StreamLevel::Chapter, ScopeKind::Chapter),
-            (StreamLevel::Part, ScopeKind::Part),
-            (StreamLevel::Book, ScopeKind::Book),
-        ] {
-            let es = from_scope_kind(sk);
-            if !out.contains(&es)
-                && enclosing_head(&metas, pos, level).is_some()
-                && resolve_scope(&metas, pos, sk).is_some()
-            {
-                out.push(es);
-            }
+        // Choose… is always available once a project is open — it exports whatever the
+        // checkbox tree selects, independent of focus.
+        if self.ids.work_id.get().is_some() {
+            out.push(ExportScopeKind::Custom);
         }
         out
     }
@@ -234,9 +254,60 @@ impl ExportViewModel {
     /// The caller (`App`'s `export.scope` action) flushes the editors first, so the preview
     /// and the committed export both see current prose.
     pub fn prepare(&self, scope: ExportScopeKind, anchor: Option<u64>) {
+        let is_custom = scope == ExportScopeKind::Custom;
         self.scope.set(scope);
         self.anchor.set(anchor);
         self.output_path.set(self.default_output_path());
+        // A fresh Choose session each open: drop any prior tree so `ensure_choose` rebuilds
+        // from the current store (with the default seed).
+        if is_custom {
+            self.choose.replace(None);
+            self.ensure_choose();
+        }
+    }
+
+    // ── Choose… (Custom scope) ───────────────────────────────────────────────
+
+    /// The reveal toggle bound by the panel's "Show non-exportable" checkbox.
+    pub fn show_non_exportable(&self) -> Signal<bool> {
+        self.show_non_exportable.clone()
+    }
+
+    /// Bumped on any check change — the preview binds this so it refreshes as the user checks.
+    pub fn custom_changed(&self) -> Signal<u64> {
+        self.custom_changed.clone()
+    }
+
+    /// Ensure the Choose tree is built for the current `show_non_exportable` value, rebuilding
+    /// (and preserving the user's checks) only when it flipped or the tree is absent. Called
+    /// from the panel's Choose pane build.
+    pub fn ensure_choose(&self) {
+        let want_show = self.show_non_exportable.get();
+        let need = self.choose.borrow().is_none() || self.choose_show.get() != want_show;
+        if !need {
+            return;
+        }
+        let prev = self.choose.borrow().as_ref().map(|m| m.checked_item_ids());
+        let Ok(g) = self.client_gather() else {
+            self.choose.replace(None);
+            return;
+        };
+        let model = ChooseModel::build(&g, want_show, self.custom_changed.clone());
+        if let Some(prev_ids) = prev {
+            model.apply_checked(&prev_ids);
+        }
+        self.choose_show.set(want_show);
+        self.choose.replace(Some(model));
+    }
+
+    /// The current Choose model (a clone of the `Rc`-backed handles), if built.
+    pub fn choose_model(&self) -> Option<ChooseModel> {
+        self.choose.borrow().clone()
+    }
+
+    /// The checked item ids for the `Custom` scope's include set.
+    pub fn checked_item_ids(&self) -> Vec<u64> {
+        self.choose.borrow().as_ref().map(|m| m.checked_item_ids()).unwrap_or_default()
     }
 
     fn default_output_path(&self) -> String {
@@ -317,11 +388,25 @@ impl ExportViewModel {
         self.output_path.set(with_ext.to_string_lossy().into_owned());
     }
 
-    /// Whether "Export" may fire: a non-blank destination and a resolvable anchor.
+    /// Whether "Export" may fire: a non-blank destination and something to export — a
+    /// resolvable anchor for a quick scope, or at least one checked item for Choose…
+    /// (reactive on the checkbox tree via `custom_changed`).
     pub fn can_export(&self) -> Signal<bool> {
         let path_ok = self.output_path.map(|p| !p.trim().is_empty());
-        let anchor_ok = self.anchor.map(|a| a.is_some());
-        path_ok.and(&anchor_ok)
+        let scope = self.scope.clone();
+        let choose = self.choose.clone();
+        let sel_ok = self.custom_changed.zip(&self.anchor).map(move |(_, anchor)| {
+            if scope.get() == ExportScopeKind::Custom {
+                choose
+                    .borrow()
+                    .as_ref()
+                    .map(|m| !m.checked_item_ids().is_empty())
+                    .unwrap_or(false)
+            } else {
+                anchor.is_some()
+            }
+        });
+        path_ok.and(&sel_ok)
     }
 
     /// An explicit single-item / Choose… selection keeps note items regardless of the
@@ -363,9 +448,10 @@ impl ExportViewModel {
     /// The ordered include ids for the current scope + anchor, resolved against the live
     /// tree exactly as the backend resolves them against its frozen one.
     fn resolve_include(&self, metas: &[ItemMeta]) -> Option<Vec<u64>> {
-        // M2 offers only quick scopes; Custom (Choose…) arrives in M3.
+        // Choose… supplies its ids directly from the checkbox tree.
         if self.scope.get() == ExportScopeKind::Custom {
-            return None;
+            let ids = self.checked_item_ids();
+            return (!ids.is_empty()).then_some(ids);
         }
         let anchor = self.anchor.get()?;
         let pos = metas.iter().position(|m| m.id == anchor)?;
@@ -426,15 +512,21 @@ impl ExportViewModel {
 
     fn dto(&self) -> Option<ExportWorkDto> {
         let work_id = self.ids.work_id.get()? as i64;
-        let anchor = self.anchor.get()?;
         let preset_json = serde_json::to_string(&self.selected_preset()).ok()?;
+        // A quick scope carries its focused anchor (the backend re-resolves the extent);
+        // Choose… carries the full checked set.
+        let binder_item_ids: Vec<i64> = if self.scope.get() == ExportScopeKind::Custom {
+            self.checked_item_ids().into_iter().map(|i| i as i64).collect()
+        } else {
+            vec![self.anchor.get()? as i64]
+        };
         Some(ExportWorkDto {
             work_id,
             output_path: self.output_path.get(),
             format: self.selected_format(),
             scope_kind: self.scope.get(),
             preset_json,
-            binder_item_ids: vec![anchor as i64],
+            binder_item_ids,
         })
     }
 
@@ -648,9 +740,32 @@ mod tests {
     }
 
     #[test]
-    fn no_focus_offers_no_scopes() {
+    fn no_focus_offers_only_choose() {
+        // With a project open but nothing focused, the quick scopes drop out but Choose…
+        // (Custom) stays — it exports whatever the checkbox tree selects, focus or not.
         let (vm, _) = loaded_vm();
-        assert!(vm.compute_applicable(None).is_empty());
+        assert_eq!(vm.compute_applicable(None), vec![ExportScopeKind::Custom]);
+    }
+
+    #[test]
+    fn a_focused_item_offers_choose_last() {
+        let (vm, items) = loaded_vm();
+        // Whatever the focused item, Choose… is always the final entry.
+        let with_scopes = items.iter().find(|&&id| vm.compute_applicable(Some(id)).len() > 1);
+        if let Some(&id) = with_scopes {
+            let scopes = vm.compute_applicable(Some(id));
+            assert_eq!(scopes.last(), Some(&ExportScopeKind::Custom));
+        }
+    }
+
+    #[test]
+    fn custom_scope_exports_the_checked_tree() {
+        let (vm, _) = loaded_vm();
+        vm.prepare(ExportScopeKind::Custom, None);
+        // The default seed checks the prose rows, so the include set is non-empty and the
+        // preview renders — without any anchor.
+        assert!(!vm.checked_item_ids().is_empty(), "prose rows are checked by default");
+        assert!(vm.preview_document().is_some(), "Custom previews the checked selection");
     }
 
     #[test]

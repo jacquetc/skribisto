@@ -13,7 +13,7 @@ use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     Button, ButtonVariant, DockOpenLocation, DockSide, DockWidget, DockWidgetId, Padding,
-    PopoverButton, TextWidget, VStack,
+    PopoverButton, TextWidget, Toggle, VStack,
 };
 
 use frontend::AppContext;
@@ -139,6 +139,45 @@ impl Widget for Inspector {
                         .child(crate::language_pill_field::LanguagePillField::new(
                             value, set, spell, inherited,
                         ));
+                }
+                // Per-item **export** toggle (M3): whether this item is included when a
+                // structural scope (Book / Chapter / Folder) sweeps it in. On by default; an
+                // explicit Export Scene/Note or a checked Choose… item overrides it. Beside
+                // it, "Apply to children" pushes this value across the whole subtree in one
+                // undo step (shown only when the item actually has a subtree).
+                {
+                    let value = Signal::new(d.is_exportable);
+                    let item_probe = SingleBinderItem::new(self.app_ctx.clone());
+                    item_probe.set_id(Some(d.id));
+                    let stack = self.outline.ids().stack_id.get();
+                    {
+                        let probe = item_probe.clone();
+                        // Write only on a genuine change — never on the initial seed nor the
+                        // post-write echo (the entity Updated event rebuilds this panel), so
+                        // the toggle can't feed back into itself.
+                        ctx.effect(&value, move |on| {
+                            if probe.dto().map(|d| d.is_exportable) != Some(*on) {
+                                let _ = probe.set_exportable(*on, stack);
+                            }
+                        });
+                    }
+                    col = col.child(
+                        TextWidget::new(tr!(inspector_export()))
+                            .style(TextStyleRole::Tiny)
+                            .color(TextRole::Secondary),
+                    );
+                    col = col.child(Toggle::new(value.clone()).label(tr!(inspector_exportable())));
+                    if !self.outline.subtree_descendants(d.id).is_empty() {
+                        let outline = self.outline.clone();
+                        let id = d.id;
+                        col = col.child(
+                            Button::new(tr!(inspector_apply_to_children()))
+                                .variant(ButtonVariant::Plain)
+                                .on_activate_fn(move |_c| {
+                                    outline.apply_exportable_to_subtree(id, value.get())
+                                }),
+                        );
+                    }
                 }
                 Box::new(Padding::symmetric(16.0, 16.0).child(col))
             }
