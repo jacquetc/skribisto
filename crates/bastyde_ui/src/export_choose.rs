@@ -12,6 +12,7 @@
 //! explicit per-export override). The default check = `activated && is_exportable && prose`
 //! (scenes + notes); folders derive their state by aggregation.
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use bastyde::core::ObserverHandle;
@@ -226,35 +227,62 @@ impl Widget for ChooseTreeWidget {
         };
         let checked = model.checked.clone();
         let tree = model.tree.clone();
-        let view = TreeView::new(tree.clone(), move |node: &ChooseNode, entry, _selected| {
-            let indent = entry.depth as f32 * 16.0;
-            let sig = checked.signal_for(entry.node_id);
-            let icon = if node.kind == "binder" {
-                crate::binder_icons::binder_icon()
-            } else {
-                crate::binder_icons::sub_role_icon(&node.sub_role)
-            };
-            let title_color = if node.exportable {
-                TextRole::Primary
-            } else {
-                TextRole::Secondary
-            };
-            Box::new(
-                HStack::new()
-                    .spacing(6.0)
-                    .child(Padding::new(0.0, 0.0, 0.0, indent))
-                    .child(Checkbox::tristate(sig).labels_hidden(true))
-                    .child(icon)
-                    .child(
-                        TextWidget::new(lit!(node.title.clone()))
-                            .color(title_color)
-                            .style(TextStyleRole::Small),
-                    ),
-            ) as Box<dyn Widget>
-        })
+        // A "choose what to export" tree is most useful fully open — the writer sees every
+        // scene to check/uncheck without hunting through collapsed binders. The TreeView owns
+        // its expand state (defaults collapsed) with no pre-expand builder; the only handle to
+        // the slice is the per-row `TreeRowContext`. Capture it on the first row built, then
+        // `expand_all` from a frame-tick effect — NOT inside the delegate, where the slice is
+        // already borrowed (that re-entrant borrow panics).
+        let expand_fn: Rc<RefCell<Option<Rc<dyn Fn()>>>> = Rc::new(RefCell::new(None));
+        let capture = expand_fn.clone();
+        let view = TreeView::new_with_context(
+            tree.clone(),
+            move |node: &ChooseNode, entry, _selected, rowctx| {
+                if capture.borrow().is_none() {
+                    let handle = rowctx.slice_handle().clone();
+                    *capture.borrow_mut() = Some(Rc::new(move || handle.expand_all()));
+                }
+                let indent = entry.depth as f32 * 16.0;
+                let sig = checked.signal_for(entry.node_id);
+                let icon = if node.kind == "binder" {
+                    crate::binder_icons::binder_icon()
+                } else {
+                    crate::binder_icons::sub_role_icon(&node.sub_role)
+                };
+                let title_color = if node.exportable {
+                    TextRole::Primary
+                } else {
+                    TextRole::Secondary
+                };
+                Box::new(
+                    HStack::new()
+                        .spacing(6.0)
+                        .child(Padding::new(0.0, 0.0, 0.0, indent))
+                        .child(Checkbox::tristate(sig).labels_hidden(true))
+                        .child(icon)
+                        .child(
+                            TextWidget::new(lit!(node.title.clone()))
+                                .color(title_color)
+                                .style(TextStyleRole::Small),
+                        ),
+                ) as Box<dyn Widget>
+            },
+        )
         .item_height(26.0);
 
         let id = ctx.add(view);
+        // Fire the captured `expand_all` once, on the first frame after a row populated the
+        // slice handle — safely outside the delegate's borrow.
+        let done = Rc::new(std::cell::Cell::new(false));
+        let tick = ctx.frame_tick();
+        ctx.effect(&tick, move |_| {
+            if !done.get()
+                && let Some(f) = expand_fn.borrow().clone()
+            {
+                f();
+                done.set(true);
+            }
+        });
         self.root_child = Some(id);
         vec![id]
     }

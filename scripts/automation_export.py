@@ -266,6 +266,26 @@ if adaptive:
             else:
                 failures.append("clicking Export produced no output file")
 
+# ── 5. Choose… (Custom scope) via Ctrl+Shift+E: the checkbox tree. ───────────────
+call("inject_key", {"key": "Escape"})  # dismiss the quick-scope panel
+settle()
+call("inject_key", {"key": "e", "ctrl": True, "shift": True})
+settle()
+time.sleep(0.6)
+lb = labels()
+# The Choose pane shows the "Show non-exportable" reveal toggle + the binder tree (the
+# fixture's item titles appear as checkbox-row labels inside the panel).
+if "Show non-exportable" not in lb:
+    failures.append("Choose… panel missing the 'Show non-exportable' toggle")
+tree_rows = [l for l in lb if l in ("1.1 Zeus", "1.2 Mars", "Chapter 1", "Chapter 2", "Sol")]
+if len(tree_rows) < 2:
+    failures.append(f"Choose… tree shows too few binder rows: {tree_rows}")
+else:
+    print(f"Choose… tree rows: {tree_rows}")
+if "Export" not in lb:
+    failures.append("Choose… panel missing the Export button")
+shot("export_3_choose")
+
 # ── report ──────────────────────────────────────────────────────────────────────
 print()
 if failures:

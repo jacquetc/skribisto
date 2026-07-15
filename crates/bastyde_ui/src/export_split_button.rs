@@ -17,6 +17,8 @@ use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{Button, ButtonVariant, MenuItem, SplitButton};
 
+use export_management::ExportScopeKind;
+
 use crate::intents::AppIntent;
 use crate::view_models::{ExportViewModel, scope_label};
 
@@ -49,11 +51,22 @@ impl Widget for ExportSplitButton {
 
         let scopes = self.vm.applicable_signal().get();
         let id = if scopes.is_empty() {
-            // Nothing exportable is focused — a disabled affordance, not a dead-end.
+            // No project open — a disabled affordance, not a dead-end.
             ctx.add(
                 Button::new(tr!(export_title()))
                     .variant(ButtonVariant::Tinted)
                     .enabled(false),
+            )
+        } else if scopes.as_slice() == [ExportScopeKind::Custom] {
+            // A project is open but nothing exportable is focused: no quick scope applies, so
+            // the primary is a plain "Export" that opens the Choose… picker (reads as an
+            // export action, not a bare "Choose…").
+            ctx.add(
+                Button::new(tr!(export_title()))
+                    .variant(ButtonVariant::Tinted)
+                    .on_activate_fn(|ctx| {
+                        ctx.send_intent(AppIntent::ExportScoped { scope: ExportScopeKind::Custom });
+                    }),
             )
         } else {
             // `new_static`: the primary region stays pinned to index 0 (the focused item's own
