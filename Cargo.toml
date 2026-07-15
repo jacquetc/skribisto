@@ -16,6 +16,7 @@ members = [
     "crates/frontend",
     "crates/skribisto_model",
     "crates/skrib_format",
+    "crates/skribisto_compiler",
     "crates/bastyde_ui",
     ]
 
@@ -56,6 +57,7 @@ import_management = { package = "skribisto-import-management", version = "0.0.1"
 search_management = { package = "skribisto-search-management", version = "0.0.1", path = "crates/search_management" }
 skribisto_model = { package = "skribisto-model", version = "0.0.1", path = "crates/skribisto_model" }
 skrib_format = { package = "skribisto-skrib-format", version = "0.0.1", path = "crates/skrib_format" }
+skribisto_compiler = { package = "skribisto-compiler", version = "0.0.1", path = "crates/skribisto_compiler" }
 
 [profile.release]
 lto = "fat"

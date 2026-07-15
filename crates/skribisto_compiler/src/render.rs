@@ -1,0 +1,602 @@
+//! Assemble an export scope into **one** `TextDocument` and render it to a format.
+//!
+//! The whole book is compiled to a single Djot string — generated headings (`#` syntax),
+//! scene breaks, and each scene's own Djot prose appended verbatim — then parsed once with
+//! `set_djot`. Djot's parser gives clean headings-vs-paragraphs structure (a programmatic
+//! block build would have every block inherit the previous one's heading level). A single
+//! `to_<format>` call then renders it, so every format reads the same parsed graph and none
+//! can diverge. Text direction is set on the document from the export's language.
+
+use std::fs;
+use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use anyhow::{Result, anyhow};
+use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole};
+use skrib_format::Gathered;
+use skribisto_model::SubRoleExt;
+use skribisto_model::language;
+use text_document::{TextDirection, TextDocument};
+
+use crate::headings::{self, Level};
+use crate::preset::{DirectionMode, ExportFormat, HeadingLanguage, HeadingScheme, Preset, SceneBreak};
+
+/// Everything a render needs: the frozen tree, the ordered ids to include, the style, the
+/// format, and the Work's fallback language.
+pub struct RenderRequest<'a> {
+    pub gathered: &'a Gathered,
+    pub include: &'a [u64],
+    pub preset: &'a Preset,
+    pub format: ExportFormat,
+    pub work_lang: &'a str,
+}
+
+/// What a render produced, for the result DTO / a toast.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RenderStats {
+    pub items: usize,
+    pub words: usize,
+}
+
+/// One included item, resolved: the entity, its content rows, and its effective language.
+struct Row<'a> {
+    item: &'a BinderItem,
+    contents: &'a [Content],
+    lang: String,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public entry points
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Render a text format (Djot / plain text / Markdown / HTML / LaTeX) to a `String`.
+pub fn render_to_string(req: &RenderRequest) -> Result<String> {
+    if !req.format.is_text() {
+        return Err(anyhow!("{:?} is not a text format", req.format));
+    }
+    let (doc, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
+    text_render(&doc, req.format)
+}
+
+/// Render an HTML preview (used by the UI live preview regardless of the chosen format).
+pub fn render_preview_html(req: &RenderRequest) -> Result<String> {
+    let (doc, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
+    Ok(doc.to_html()?)
+}
+
+/// Render to `path`, honouring `progress` (0..1) and `cancel`. Handles every format: text
+/// formats are assembled + written; DOCX is written by text-document's own writer.
+pub fn render_to_file(
+    req: &RenderRequest,
+    path: &Path,
+    progress: &dyn Fn(f32),
+    cancel: &AtomicBool,
+) -> Result<RenderStats> {
+    let (doc, stats) = assemble(req, progress, cancel)?;
+    if cancel.load(Ordering::Relaxed) {
+        return Err(anyhow!("operation cancelled"));
+    }
+    match req.format {
+        f if f.is_text() => {
+            let text = text_render(&doc, f)?;
+            fs::write(path, text).map_err(|e| anyhow!("writing '{}': {e}", path.display()))?;
+        }
+        ExportFormat::Docx => {
+            let out = path.to_string_lossy().into_owned();
+            doc.to_docx(&out)?
+                .wait()
+                .map_err(|e| anyhow!("writing DOCX '{out}': {e:#}"))?;
+        }
+        other => return Err(anyhow!("{other:?} export is not implemented yet")),
+    }
+    progress(1.0);
+    Ok(stats)
+}
+
+fn text_render(doc: &TextDocument, format: ExportFormat) -> Result<String> {
+    Ok(match format {
+        ExportFormat::Djot => doc.to_djot()?,
+        ExportFormat::PlainText => doc.to_plain_text()?,
+        ExportFormat::Markdown => doc.to_markdown()?,
+        ExportFormat::Html => doc.to_html()?,
+        ExportFormat::Latex => doc.to_latex("article", true)?,
+        other => return Err(anyhow!("{other:?} is not a text format")),
+    })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Assembly
+// ─────────────────────────────────────────────────────────────────────────────
+
+fn assemble(
+    req: &RenderRequest,
+    progress: &dyn Fn(f32),
+    cancel: &AtomicBool,
+) -> Result<(TextDocument, RenderStats)> {
+    let rows = flatten(req);
+    let preset = req.preset;
+
+    // Heading levels are dense over the structural levels actually present, so a
+    // chapter-only export starts at h1 and a book+chapter export (no parts) uses h1/h2.
+    let mut present_depths: Vec<u8> = rows
+        .iter()
+        .filter_map(|r| level_of(&r.item.sub_role))
+        .map(depth)
+        .collect();
+    present_depths.sort_unstable();
+    present_depths.dedup();
+
+    let mut out = String::new();
+    let mut counters = Counters::default();
+    let mut words = 0usize;
+    let mut last = Emitted::Nothing;
+
+    let work_rtl = is_rtl_row(preset, req.work_lang);
+
+    // Optional title page (front matter) for a book export.
+    if preset.book_title_page && rows.iter().any(|r| r.item.sub_role.opens_book()) {
+        let w = &req.gathered.work;
+        if !w.title.is_empty() {
+            push_heading(&mut out, 1, &w.title, work_rtl);
+            last = Emitted::Heading;
+        }
+        if !w.author_name.is_empty() {
+            push_para(&mut out, &w.author_name, work_rtl);
+        }
+    }
+
+    let total = rows.len().max(1);
+    for (i, row) in rows.iter().enumerate() {
+        if cancel.load(Ordering::Relaxed) {
+            return Err(anyhow!("operation cancelled"));
+        }
+        let heading_lang = match &preset.heading_language {
+            HeadingLanguage::Fixed(l) => l.clone(),
+            HeadingLanguage::Auto => row.lang.clone(),
+        };
+        let row_rtl = is_rtl_row(preset, &row.lang);
+        let heading_rtl = is_rtl_row(preset, &heading_lang);
+
+        // 1. A structural heading, if this item opens a level.
+        if let Some(level) = level_of(&row.item.sub_role) {
+            counters.bump(level);
+            // A book is titled, not numbered — and the title page (if on) already carries
+            // it, so the opener then emits nothing. Parts/chapters use their own schemes.
+            let scheme = match level {
+                Level::Book if preset.book_title_page => HeadingScheme::None,
+                Level::Book => HeadingScheme::TitleOnly,
+                Level::Part => preset.part_heading,
+                Level::Chapter => preset.chapter_heading,
+            };
+            if let Some(text) = heading_text(row, level, &counters, &heading_lang, preset, scheme) {
+                let lvl = present_depths
+                    .iter()
+                    .position(|&d| d == depth(level))
+                    .map(|p| (p + 1).min(6))
+                    .unwrap_or(1) as u8;
+                push_heading(&mut out, lvl, &text, heading_rtl);
+                last = Emitted::Heading;
+            }
+        }
+
+        // 2. The main prose (a scene's SceneText, a note's NoteText) — appended verbatim
+        //    since it is already Djot.
+        if let Some(role) = main_prose_role(&row.item.sub_role) {
+            if let Some(prose) = content_of(row.contents, role) {
+                let is_scene = row.item.sub_role.carries_scene();
+                if is_scene && last == Emitted::SceneProse {
+                    push_scene_break(&mut out, &preset.scene_break);
+                }
+                push_prose(&mut out, prose, row_rtl);
+                words += prose.split_whitespace().count();
+                last = if is_scene { Emitted::SceneProse } else { Emitted::OtherProse };
+            }
+        }
+
+        // 3. The synopsis, if the preset keeps it.
+        if preset.include_synopses {
+            if let Some(syn) = content_of(row.contents, ContentRole::SynopsisText) {
+                push_prose(&mut out, syn, row_rtl);
+            }
+        }
+
+        progress(0.9 * (i as f32 + 1.0) / total as f32);
+    }
+
+    let doc = TextDocument::new();
+    if !out.trim().is_empty() {
+        doc.set_djot(&out)?
+            .wait()
+            .map_err(|e| anyhow!("parsing the compiled document: {e:#}"))?;
+    }
+    // Document text direction from the export's language (v1 is whole-document; a mixed
+    // LTR/RTL book uses its dominant language here — per-scene direction is a refinement).
+    if let Some(dir) = document_direction(req, &rows) {
+        doc.set_text_direction(dir)?;
+    }
+
+    Ok((doc, RenderStats { items: rows.len(), words }))
+}
+
+/// Flatten the frozen tree into the included rows, in document order, each with its
+/// resolved language. `include` decides membership; document order decides sequence (so a
+/// Choose… selection still exports top-to-bottom). `activated` is a defensive guard — a
+/// trashed item never exports even if its id reaches the set.
+fn flatten<'a>(req: &'a RenderRequest) -> Vec<Row<'a>> {
+    let want: std::collections::HashSet<u64> = req.include.iter().copied().collect();
+    let mut rows = Vec::new();
+    for bwi in &req.gathered.binders {
+        let items: Vec<BinderItem> = bwi.items.iter().map(|iwc| iwc.item.clone()).collect();
+        let mut langs = std::collections::HashMap::new();
+        language::tags_in_binder(req.work_lang, &items, &mut langs);
+        for iwc in &bwi.items {
+            if want.contains(&iwc.item.id) && iwc.item.activated {
+                let lang = langs
+                    .get(&iwc.item.id)
+                    .cloned()
+                    .unwrap_or_else(|| req.work_lang.to_string());
+                rows.push(Row { item: &iwc.item, contents: &iwc.contents, lang });
+            }
+        }
+    }
+    rows
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Djot builders
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A Djot block-attribute line that sets direction, or empty. `{direction=rtl}` on the line
+/// before a block is what text-document's own Djot exporter writes and its importer reads.
+fn dir_attr(rtl: bool) -> &'static str {
+    if rtl { "{direction=rtl}\n" } else { "" }
+}
+
+fn push_heading(out: &mut String, level: u8, text: &str, rtl: bool) {
+    out.push_str(dir_attr(rtl));
+    for _ in 0..level.clamp(1, 6) {
+        out.push('#');
+    }
+    out.push(' ');
+    out.push_str(text.trim());
+    out.push_str("\n\n");
+}
+
+fn push_para(out: &mut String, text: &str, rtl: bool) {
+    out.push_str(dir_attr(rtl));
+    out.push_str(text.trim());
+    out.push_str("\n\n");
+}
+
+/// Append a scene's prose. It is already Djot, so it goes in verbatim (never touched — the
+/// exporter generates furniture, it does not rewrite prose). For RTL each of the scene's
+/// blank-line-separated blocks gets a `{direction=rtl}` attribute.
+fn push_prose(out: &mut String, djot: &str, rtl: bool) {
+    let trimmed = djot.trim();
+    if !rtl {
+        out.push_str(trimmed);
+        out.push_str("\n\n");
+        return;
+    }
+    for block in trimmed.split("\n\n") {
+        let b = block.trim();
+        if b.is_empty() {
+            continue;
+        }
+        out.push_str("{direction=rtl}\n");
+        out.push_str(b);
+        out.push_str("\n\n");
+    }
+}
+
+fn push_scene_break(out: &mut String, sep: &SceneBreak) {
+    match sep {
+        // The blank line between blocks is already the gap.
+        SceneBreak::None | SceneBreak::BlankLine => {}
+        // Escape a leading Djot block-marker so the glyph stays literal text — an
+        // unescaped `#` is a heading, `* * *` / `---` a (dropped) thematic break.
+        SceneBreak::Glyph(g) => {
+            out.push_str(&escape_block_leading(g.trim()));
+            out.push_str("\n\n");
+        }
+    }
+}
+
+/// Escape a leading Djot block-special character so a one-line glyph is a plain paragraph.
+fn escape_block_leading(s: &str) -> String {
+    match s.chars().next() {
+        Some(c) if "#*-_+>~:|=`".contains(c) || c.is_ascii_digit() => format!("\\{s}"),
+        _ => s.to_string(),
+    }
+}
+
+/// Whether a row's text lays out right-to-left, honouring a forced preset direction.
+fn is_rtl_row(preset: &Preset, lang: &str) -> bool {
+    match preset.direction {
+        DirectionMode::ForceRtl => true,
+        DirectionMode::ForceLtr => false,
+        DirectionMode::Auto => language::is_rtl(lang),
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Small helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[derive(Default)]
+struct Counters {
+    book: usize,
+    part: usize,
+    chapter: usize,
+}
+impl Counters {
+    fn bump(&mut self, level: Level) {
+        match level {
+            Level::Book => self.book += 1,
+            Level::Part => self.part += 1,
+            Level::Chapter => self.chapter += 1,
+        }
+    }
+    fn number(&self, level: Level) -> usize {
+        match level {
+            Level::Book => self.book,
+            Level::Part => self.part,
+            Level::Chapter => self.chapter,
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Copy)]
+enum Emitted {
+    Nothing,
+    Heading,
+    SceneProse,
+    OtherProse,
+}
+
+fn level_of(sr: &BinderItemSubRole) -> Option<Level> {
+    if sr.opens_book() {
+        Some(Level::Book)
+    } else if sr.opens_part() {
+        Some(Level::Part)
+    } else if sr.opens_chapter() {
+        Some(Level::Chapter)
+    } else {
+        None
+    }
+}
+
+fn depth(level: Level) -> u8 {
+    match level {
+        Level::Book => 0,
+        Level::Part => 1,
+        Level::Chapter => 2,
+    }
+}
+
+fn main_prose_role(sr: &BinderItemSubRole) -> Option<ContentRole> {
+    if sr.carries_scene() {
+        Some(ContentRole::SceneText)
+    } else if matches!(sr, BinderItemSubRole::Note) {
+        Some(ContentRole::NoteText)
+    } else {
+        None
+    }
+}
+
+fn content_of(contents: &[Content], role: ContentRole) -> Option<&str> {
+    contents
+        .iter()
+        .find(|c| c.role == role && c.activated && !c.data.is_empty())
+        .map(|c| c.data.as_str())
+}
+
+/// The item's own title content (ChapterTitle / PartTitle / BookTitle), falling back to the
+/// binder-tree title.
+fn title_of<'a>(row: &'a Row) -> Option<&'a str> {
+    for role in [ContentRole::ChapterTitle, ContentRole::PartTitle, ContentRole::BookTitle] {
+        if let Some(t) = content_of(row.contents, role) {
+            return Some(t);
+        }
+    }
+    (!row.item.title.is_empty()).then(|| row.item.title.as_str())
+}
+
+fn heading_text(
+    row: &Row,
+    level: Level,
+    counters: &Counters,
+    lang: &str,
+    preset: &Preset,
+    scheme: HeadingScheme,
+) -> Option<String> {
+    let numbered = || headings::numbered(lang, level, counters.number(level), preset.digit_style);
+    match scheme {
+        HeadingScheme::None => None,
+        HeadingScheme::Numbered => Some(numbered()),
+        HeadingScheme::TitleOnly => title_of(row).map(str::to_string).or_else(|| Some(numbered())),
+        HeadingScheme::NumberAndTitle => Some(match title_of(row) {
+            Some(t) => format!("{} — {t}", numbered()),
+            None => numbered(),
+        }),
+    }
+}
+
+fn document_direction(req: &RenderRequest, rows: &[Row]) -> Option<TextDirection> {
+    match req.preset.direction {
+        DirectionMode::ForceRtl => Some(TextDirection::RightToLeft),
+        DirectionMode::ForceLtr => Some(TextDirection::LeftToRight),
+        DirectionMode::Auto => {
+            let lang = if !req.work_lang.is_empty() {
+                req.work_lang
+            } else {
+                rows.first().map(|r| r.lang.as_str()).unwrap_or("")
+            };
+            language::is_rtl(lang).then_some(TextDirection::RightToLeft)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::entities::{Binder, BinderItem, BinderItemRole, BinderItemSubRole as SR, Work};
+    use skrib_format::{BinderWithItems, ItemWithContents};
+
+    use crate::preset::builtin_presets;
+
+    fn c(id: u64, role: ContentRole, data: &str) -> Content {
+        Content { id, activated: true, role, data: data.to_string(), ..Default::default() }
+    }
+
+    fn iwc(id: u64, sub_role: SR, lang: &str, contents: Vec<Content>) -> ItemWithContents {
+        ItemWithContents {
+            item: BinderItem {
+                id,
+                role: BinderItemRole::Item,
+                sub_role,
+                dict_language: lang.to_string(),
+                is_exportable: true,
+                activated: true,
+                ..Default::default()
+            },
+            contents,
+        }
+    }
+
+    fn gathered(items: Vec<ItemWithContents>, work_lang: &str) -> Gathered {
+        Gathered {
+            work: Work {
+                id: 1,
+                title: "My Novel".into(),
+                author_name: "A. Writer".into(),
+                dict_language: work_lang.into(),
+                ..Default::default()
+            },
+            tags: vec![],
+            dict_words: vec![],
+            trash_infos: vec![],
+            binders: vec![BinderWithItems { binder: Binder { id: 10, ..Default::default() }, items }],
+            work_info: None,
+        }
+    }
+
+    fn preset(id: &str) -> Preset {
+        builtin_presets().into_iter().find(|p| p.id == id).unwrap()
+    }
+
+    /// A flat one-book fixture: book title, one chapter with two scenes.
+    fn flat_book() -> Gathered {
+        gathered(
+            vec![
+                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "en",
+                    vec![
+                        c(2, ContentRole::ChapterTitle, "Storms"),
+                        c(3, ContentRole::SceneText, "The wind rose over the hills."),
+                    ],
+                ),
+                iwc(
+                    102,
+                    SR::Scene,
+                    "en",
+                    vec![c(4, ContentRole::SceneText, "She walked on into the dark.")],
+                ),
+            ],
+            "en",
+        )
+    }
+
+    fn req<'a>(g: &'a Gathered, include: &'a [u64], p: &'a Preset, f: ExportFormat) -> RenderRequest<'a> {
+        RenderRequest { gathered: g, include, preset: p, format: f, work_lang: "en" }
+    }
+
+    #[test]
+    fn renders_a_flat_book_to_html_with_headings_and_prose() {
+        let g = flat_book();
+        let p = preset("neutral");
+        let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
+        assert!(html.contains("My Novel"), "book title: {html}");
+        assert!(html.contains("Chapter 1 — Storms"), "chapter heading: {html}");
+        assert!(html.contains("The wind rose over the hills."), "{html}");
+        assert!(html.contains("She walked on into the dark."), "{html}");
+        // The prose must NOT become a heading.
+        assert!(!html.contains("<h2>The wind"), "prose leaked into a heading: {html}");
+    }
+
+    #[test]
+    fn every_text_format_renders_the_prose() {
+        let g = flat_book();
+        let p = preset("neutral");
+        for f in [
+            ExportFormat::Djot,
+            ExportFormat::PlainText,
+            ExportFormat::Markdown,
+            ExportFormat::Html,
+            ExportFormat::Latex,
+        ] {
+            let out = render_to_string(&req(&g, &[100, 101, 102], &p, f)).unwrap();
+            assert!(out.contains("She walked on into the dark"), "{f:?}: {out}");
+        }
+    }
+
+    #[test]
+    fn chapter_heading_localizes_to_the_preset_language() {
+        let g = flat_book();
+        let p = preset("manuscript-fr"); // heading_language = Fixed("fr")
+        let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
+        assert!(html.contains("Chapitre 1"), "french heading: {html}");
+        assert!(!html.contains("Chapter 1"));
+    }
+
+    #[test]
+    fn an_arabic_work_sets_rtl_direction() {
+        let g = gathered(
+            vec![iwc(200, SR::Scene, "ar", vec![c(9, ContentRole::SceneText, "نص عربي هنا.")])],
+            "ar",
+        );
+        let p = preset("neutral");
+        let html = render_to_string(&req(&g, &[200], &p, ExportFormat::Html)).unwrap();
+        assert!(html.contains("rtl"), "RTL direction should reach the HTML: {html}");
+    }
+
+    #[test]
+    fn a_glyph_scene_break_separates_two_scenes() {
+        let g = flat_book();
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(txt.contains("###"), "scene break glyph between the two scenes: {txt}");
+    }
+
+    #[test]
+    fn docx_export_writes_a_non_empty_file() {
+        let g = flat_book();
+        let p = preset("neutral");
+        let path = std::env::temp_dir().join(format!("skrib-export-{}.docx", std::process::id()));
+        let stats = render_to_file(
+            &req(&g, &[100, 101, 102], &p, ExportFormat::Docx),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert!(path.exists(), "docx file should be written");
+        assert!(std::fs::metadata(&path).unwrap().len() > 0, "docx should be non-empty");
+        assert!(stats.items >= 2);
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn a_trashed_row_in_the_include_set_is_dropped_defensively() {
+        let mut g = flat_book();
+        g.binders[0].items[2].item.activated = false; // scene 102 trashed
+        let p = preset("neutral");
+        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(txt.contains("The wind rose"));
+        assert!(!txt.contains("She walked on"), "trashed scene must be excluded: {txt}");
+    }
+}

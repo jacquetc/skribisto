@@ -4586,6 +4586,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "skribisto-compiler"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-model",
+ "skribisto-skrib-format",
+ "text-document",
+]
+
+[[package]]
 name = "skribisto-direct-access"
 version = "0.0.1"
 dependencies = [
