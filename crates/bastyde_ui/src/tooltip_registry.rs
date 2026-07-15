@@ -82,15 +82,22 @@ pub fn writing_model_tooltips() -> Vec<TooltipContent> {
 mod tests {
     use super::*;
 
-    /// Extract every `(:key)` cascade target from a Fluent source blob.
+    /// Extract every `(:key)` cascade target from a Fluent source blob,
+    /// skipping comment lines (`#` / `##` / `###`) — a comment may carry a
+    /// literal `[label](:key)` example that is not a real cascade link.
     fn cascade_targets(ftl: &str) -> Vec<String> {
         let mut out = Vec::new();
-        let mut rest = ftl;
-        while let Some(i) = rest.find("(:") {
-            rest = &rest[i + 2..];
-            let end = rest.find(')').unwrap_or(rest.len());
-            out.push(rest[..end].to_string());
-            rest = &rest[end..];
+        for line in ftl.lines() {
+            if line.trim_start().starts_with('#') {
+                continue;
+            }
+            let mut rest = line;
+            while let Some(i) = rest.find("(:") {
+                rest = &rest[i + 2..];
+                let end = rest.find(')').unwrap_or(rest.len());
+                out.push(rest[..end].to_string());
+                rest = &rest[end..];
+            }
         }
         out
     }
