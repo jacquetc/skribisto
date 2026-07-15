@@ -4620,7 +4620,10 @@ dependencies = [
  "serde",
  "serde_json",
  "skribisto-common",
+ "skribisto-compiler",
  "skribisto-macros",
+ "skribisto-model",
+ "skribisto-skrib-format",
  "uuid",
 ]
 

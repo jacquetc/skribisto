@@ -584,6 +584,29 @@ features:
       - name: output_path
         type: string
       - name: format
+        type: enum
+        enum_name: ExportFormat
+        enum_values:
+        - Djot
+        - PlainText
+        - Markdown
+        - Html
+        - Latex
+        - Docx
+        - Epub
+        - Pdf
+      - name: scope_kind
+        type: enum
+        enum_name: ExportScopeKind
+        enum_values:
+        - CurrentBook
+        - CurrentPart
+        - CurrentChapter
+        - CurrentScene
+        - CurrentNote
+        - CurrentFolder
+        - Custom
+      - name: preset_json
         type: string
       - name: binder_item_ids
         type: integer
