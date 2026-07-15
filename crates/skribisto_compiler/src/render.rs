@@ -68,6 +68,15 @@ pub fn render_preview_html(req: &RenderRequest) -> Result<String> {
     Ok(doc.to_html()?)
 }
 
+/// Assemble the compiled document for the UI live preview: the *same* `TextDocument`
+/// [`render_to_file`] would render (generated headings + scene breaks + prose, with
+/// per-block direction), handed back so the panel can show it in a read-only editor. This
+/// is why the preview and the committed export cannot diverge — one assembly path.
+pub fn render_preview_document(req: &RenderRequest) -> Result<TextDocument> {
+    let (doc, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
+    Ok(doc)
+}
+
 /// Render to `path`, honouring `progress` (0..1) and `cancel`. Handles every format: text
 /// formats are assembled + written; DOCX is written by text-document's own writer.
 pub fn render_to_file(

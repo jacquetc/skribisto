@@ -34,6 +34,7 @@ use frontend::common::event::{
 use frontend::work_management::{LoadWorkDto, NewWorkDto};
 
 use crate::app_ids::AppIds;
+use crate::export_panel::ExportPanel;
 use crate::import_plume_panel::ImportPlumePanel;
 use crate::intents::AppIntent;
 use crate::models::TreeNode;
@@ -42,8 +43,8 @@ use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ImportPlumeViewModel,
-    OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
+    BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ExportViewModel,
+    ImportPlumeViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
     SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision, unsaved_decision,
 };
 
@@ -646,6 +647,16 @@ impl Widget for App {
             ctx.effect(&editors.saved_seq(), move |_| recompute());
         }
 
+        // Export: keep the focus-adaptive quick-scope list in step with the focused editor
+        // item, so the title-bar Export split-button and the File ▸ Export submenu both
+        // re-derive whenever the selection changes. (A reactive trigger can't dispatch an
+        // intent, but it can query + set a signal — which is all this does.)
+        if let Some(export_vm) = ctx.app_state::<ExportViewModel>().cloned() {
+            let active = editors.active_item();
+            export_vm.recompute_applicable(active.get()); // seed for the current focus
+            ctx.effect(&active, move |id| export_vm.recompute_applicable(*id));
+        }
+
         let outline = self.outline.clone();
 
         // ── The search feature's shared view-model (both docks clone it) ──────
@@ -1002,6 +1013,34 @@ impl Widget for App {
                     }
                 },
             ));
+        }
+        // Export a quick scope resolved from the current focus. Fired (with the scope as
+        // payload) by the title-bar Export split-button and the File ▸ Export submenu.
+        // Flushes the editors + reads the anchor here, so the panel's preview and the
+        // committed export both see current prose; the panel is modal, so no edit slips in
+        // behind it.
+        {
+            let editors = editors.clone();
+            ctx.register_action_global(Action::new("export.scope").on_invoke(move |i, c| {
+                let Some(AppIntent::ExportScoped { scope }) = AppIntent::from_intent(i) else {
+                    return;
+                };
+                let scope = scope.clone();
+                let Some(vm) = c.app_state::<ExportViewModel>().cloned() else {
+                    return;
+                };
+                editors.flush_all();
+                let anchor = editors.active_item().get();
+                vm.prepare(scope, anchor);
+                let panel_vm = vm.clone();
+                c.present_modal(
+                    ModalRequest::deferred(move |t| t.add(ExportPanel::new(panel_vm)))
+                        .presentation(ModalPresentation::InTree)
+                        .title("Export")
+                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                        .size(760, 640),
+                );
+            }));
         }
         // Ctrl+S: flush every editor to the store, then save the project to disk.
         // Gated on `can_save` (dirty && !backup mode) at *both* ends: the shortcut
@@ -1420,6 +1459,40 @@ impl Widget for App {
             }
             {
                 let vm = import_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Failed),
+                    move |e: &Event, c| vm.on_long_op_failed(c, e),
+                );
+            }
+        }
+
+        // Route the Export long operation's events to the shared `ExportViewModel`, which
+        // drives its progress / cancel / success / error toast. Filters by op id, so the
+        // save / import / backup long ops are ignored.
+        if let Some(export_vm) = ctx.app_state::<ExportViewModel>().cloned() {
+            {
+                let vm = export_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Progress),
+                    move |e: &Event, c| vm.on_long_op_progress(c, e),
+                );
+            }
+            {
+                let vm = export_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Completed),
+                    move |e: &Event, c| vm.on_long_op_completed(c, e),
+                );
+            }
+            {
+                let vm = export_vm.clone();
+                ctx.subscribe_event_with_ctx(
+                    Origin::LongOperation(LongOperationEvent::Cancelled),
+                    move |e: &Event, c| vm.on_long_op_cancelled(c, e),
+                );
+            }
+            {
+                let vm = export_vm.clone();
                 ctx.subscribe_event_with_ctx(
                     Origin::LongOperation(LongOperationEvent::Failed),
                     move |e: &Event, c| vm.on_long_op_failed(c, e),

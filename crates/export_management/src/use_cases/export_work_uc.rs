@@ -12,7 +12,7 @@ use common::direct_access::work::WorkRelationshipField;
 use common::entities::{Binder, BinderItem, BinderTag, Content, Work};
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
-use skrib_format::{Gathered, TreeReader, gather};
+use skrib_format::{TreeReader, gather};
 use skribisto_model::compile::{ItemMeta, ScopeKind, resolve_scope};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -113,7 +113,7 @@ fn run_export(
     let g = gather(uow, progress, cancel)?;
     let work_id = g.work.id;
 
-    let items = item_metas(&g);
+    let items = skribisto_compiler::item_metas(&g);
     let include = resolve_include(dto, &items)?;
 
     // The style travels as JSON so its schema stays owned by `skribisto_compiler`.
@@ -152,26 +152,6 @@ fn run_export(
             output_path: dto.output_path.clone(),
         },
     ))
-}
-
-/// The flat, ordered stream the scope resolver needs, built from the gathered tree across
-/// every binder in document order.
-fn item_metas(g: &Gathered) -> Vec<ItemMeta> {
-    let mut v = Vec::new();
-    for bwi in &g.binders {
-        for iwc in &bwi.items {
-            let it = &iwc.item;
-            v.push(ItemMeta {
-                id: it.id,
-                role: it.role.clone(),
-                sub_role: it.sub_role.clone(),
-                indent: it.indent as i32,
-                activated: it.activated,
-                is_exportable: it.is_exportable,
-            });
-        }
-    }
-    v
 }
 
 /// The ordered ids to include: the Choose… set for `Custom`, else the quick scope resolved

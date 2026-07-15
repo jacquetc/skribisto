@@ -7,6 +7,15 @@ menu-new-work = &New Work
 menu-open-work = &Open Work…
 menu-import-from = &Import from
 menu-import-plume = &Plume Creator (.plume)…
+menu-export = &Export
+menu-export-book = Export Book
+menu-export-part = Export Part
+menu-export-chapter = Export Chapter
+menu-export-scene = Export Scene
+menu-export-note = Export Note
+menu-export-folder = Export Folder
+menu-export-choose = Choose…
+menu-export-none = Open a document to export
 menu-save = &Save
 menu-save-as-file = Save as single &file…
 menu-save-as-folder = Save as fol&der…
@@ -453,6 +462,39 @@ import-plume-open-now = Open now
 # Error toast: a short reason in the body, the full technical chain behind Details
 import-plume-error-title = Could not import the project
 import-plume-error-details = Details
+
+## Export dialog
+export-title = Export
+export-close = Close
+export-scope-label = What
+export-format-label = Format
+export-style-label = Style
+export-path-label = File
+export-browse = Browse…
+export-preview-label = Preview
+export-preview-empty = Nothing to preview for this selection.
+export-cancel = Cancel
+export-export = Export
+export-save-dialog-title = Export to file
+# Output formats
+export-format-docx = Word (.docx)
+export-format-html = HTML
+export-format-markdown = Markdown
+export-format-djot = Djot
+export-format-text = Text
+export-format-latex = LaTeX
+export-format-epub = EPUB
+export-format-pdf = PDF
+# Overwrite confirmation
+export-overwrite-title = Replace existing file?
+export-overwrite-text = “{ $name }” already exists. Replace it?
+# Progress toast (the export runs as a long operation)
+export-progress-title = Exporting…
+export-cancelled = Export cancelled
+export-done = Exported { $count } item(s)
+# Error toast: a short reason in the body, the full technical chain behind Details
+export-error-title = Could not export
+export-error-details = Details
 
 ## Backup scheduler (progress toast + failure/prune-warning details — backup review, T1-2/T1-7/T2-3/T2-8/T2-9)
 backup-progress-start = Starting…

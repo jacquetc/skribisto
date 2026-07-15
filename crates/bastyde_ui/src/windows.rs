@@ -41,9 +41,14 @@ use frontend::common::entities::WorkShape;
 
 use crate::app::{App, PendingAction, PendingExit, guard_unsaved_exit};
 use crate::project_switcher_button::ProjectSwitcherButton;
+use crate::export_split_button::ExportSplitButton;
+use crate::intents::AppIntent;
 use crate::singles::{SingleWork, SingleWorkInfo};
-use crate::view_models::{BackupSchedulerViewModel, OutlineViewModel, SaveAsViewModel};
+use crate::view_models::{
+    BackupSchedulerViewModel, ExportViewModel, OutlineViewModel, SaveAsViewModel, scope_label,
+};
 use crate::welcome_panel::WelcomePanel;
+use export_management::ExportScopeKind;
 
 /// Stable window-persistence string_id for the Launcher window. One process
 /// only ever shows one Launcher at a time (it closes the moment a project
@@ -209,6 +214,7 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
 pub struct ProjectWindowFactory {
     app_ctx: Rc<AppContext>,
     outline: OutlineViewModel,
+    export: ExportViewModel,
     single_work: SingleWork,
     single_work_info: SingleWorkInfo,
     autosave_menu: Signal<bool>,
@@ -231,6 +237,7 @@ impl ProjectWindowFactory {
     pub fn new(
         app_ctx: Rc<AppContext>,
         outline: OutlineViewModel,
+        export: ExportViewModel,
         single_work: SingleWork,
         single_work_info: SingleWorkInfo,
         autosave_menu: Signal<bool>,
@@ -245,6 +252,7 @@ impl ProjectWindowFactory {
         Self {
             app_ctx,
             outline,
+            export,
             single_work,
             single_work_info,
             autosave_menu,
@@ -270,6 +278,7 @@ impl ProjectWindowFactory {
 
         let app_ctx_root = self.app_ctx.clone();
         let outline = self.outline.clone();
+        let export = self.export.clone();
         let single_work = self.single_work.clone();
         let single_work_info = self.single_work_info.clone();
         let autosave_menu = self.autosave_menu.clone();
@@ -347,6 +356,7 @@ impl ProjectWindowFactory {
                     Some(host) => {
                         // Model-style menu, collapsed to a hamburger (☰).
                         let menu_ctx = app_ctx_root.clone();
+                        let export_for_menu = export.clone();
                         let menu_work = single_work.clone();
                         let menu_work_info = single_work_info.clone();
                         let menu_autosave = autosave_menu.clone();
@@ -407,6 +417,43 @@ impl ProjectWindowFactory {
                                     MenuEntry::new(tr!(menu_import_plume()))
                                         .intent("work.import_plume"),
                                 )
+                            })
+                            // The same focus-adaptive quick-export list the title-bar
+                            // Export split-button shows — one source (the view-model's
+                            // `applicable` scopes), two surfaces. Each visible entry fires
+                            // the data-bearing `export.scope` intent; the disabled hint keeps
+                            // the submenu from ever being empty.
+                            .submenu(tr!(menu_export()), {
+                                let ex = export_for_menu.clone();
+                                move |s| {
+                                    let entry = |scope: ExportScopeKind| {
+                                        let seen = scope.clone();
+                                        let fire = scope.clone();
+                                        MenuEntry::new(scope_label(&scope))
+                                            .visible(
+                                                ex.applicable_signal()
+                                                    .map(move |v| v.contains(&seen)),
+                                            )
+                                            .on_activate(move |c| {
+                                                c.send_intent(AppIntent::ExportScoped {
+                                                    scope: fire.clone(),
+                                                })
+                                            })
+                                    };
+                                    s.item(entry(ExportScopeKind::CurrentBook))
+                                        .item(entry(ExportScopeKind::CurrentPart))
+                                        .item(entry(ExportScopeKind::CurrentChapter))
+                                        .item(entry(ExportScopeKind::CurrentScene))
+                                        .item(entry(ExportScopeKind::CurrentNote))
+                                        .item(entry(ExportScopeKind::CurrentFolder))
+                                        .item(
+                                            MenuEntry::new(tr!(menu_export_none()))
+                                                .visible(
+                                                    ex.applicable_signal().map(|v| v.is_empty()),
+                                                )
+                                                .enabled(false),
+                                        )
+                                }
                             })
                             .separator()
                             // Flush editors to the store + write to disk (also Ctrl+S).
@@ -555,6 +602,8 @@ impl ProjectWindowFactory {
                             TitleBar::new(host) {
                                 background: SurfaceRole::Main
                                 leading: menubar
+                                // Focus-adaptive Export control, left of the window buttons.
+                                trailing: ExportSplitButton::new(export.clone())
                                 center: Expand::horizontal {
                                     HStack {
                                         spacing: 5.0

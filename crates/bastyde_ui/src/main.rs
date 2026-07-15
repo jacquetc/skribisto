@@ -43,6 +43,8 @@ mod dictionary_registry;
 mod find_icons;
 mod docks;
 mod editor_icons;
+mod export_panel;
+mod export_split_button;
 mod import_plume_panel;
 mod intents;
 mod ipc;
@@ -86,12 +88,12 @@ use app_ids::AppIds;
 use models::{BackupSettingsService, OpenDocsStore};
 use singles::{SingleWork, SingleWorkInfo};
 use view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel,
-    ProjectSwitchViewModel, RestoreViewModel, SaveAsViewModel,
+    BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel,
+    OutlineViewModel, ProjectSwitchViewModel, RestoreViewModel, SaveAsViewModel,
 };
 
 /// The currently-open project's path (from `WorkInfo`), if any.
-fn current_project_path(ctx: &AppContext) -> Option<String> {
+pub(crate) fn current_project_path(ctx: &AppContext) -> Option<String> {
     work_info_commands::get_all_work_info(ctx)
         .ok()?
         .into_iter()
@@ -102,7 +104,7 @@ fn current_project_path(ctx: &AppContext) -> Option<String> {
 /// The open work's base name (no extension), or `"work"` — pre-fills the
 /// "Save as" dialog's file name. A folder work's entry is `…/project.skrib`
 /// (the on-disk manifest name), so its directory name is used.
-fn project_stem(ctx: &AppContext) -> String {
+pub(crate) fn project_stem(ctx: &AppContext) -> String {
     use std::path::Path;
     current_project_path(ctx)
         .as_deref()
@@ -436,6 +438,11 @@ fn main() {
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
     let import_plume = ImportPlumeViewModel::new(app_ctx.clone());
+    // The Export view-model is a singleton: it owns the focus-adaptive scope list (driving
+    // both the title-bar Export split-button and the File ▸ Export submenu), the panel's
+    // state, and the in-flight export job. Registered as app-state so the title-bar chrome
+    // (built outside `App`) and `App::build`'s wiring reach the one instance.
+    let export = ExportViewModel::new(app_ctx.clone(), ids.clone());
     // Backup-mode state: `backup_mode` is true while a *backup file* is open in
     // this window (Save + auto-backup off; the file is read-only, the content is
     // still editable). `backup_context` carries the open backup's details (drives
@@ -543,6 +550,7 @@ fn main() {
     let project_factory = windows::ProjectWindowFactory::new(
         app_ctx.clone(),
         outline.clone(),
+        export.clone(),
         single_work.clone(),
         single_work_info.clone(),
         autosave_menu.clone(),
@@ -620,6 +628,7 @@ fn main() {
         .app_state(single_work_info.clone())
         .app_state(outline.clone())
         .app_state(import_plume.clone())
+        .app_state(export.clone())
         .app_state(save_as_vm.clone())
         .app_state(backup_settings.clone())
         .app_state(backup_scheduler.clone())

@@ -418,7 +418,8 @@ mod tests {
     use crate::models::BackupSettingsService;
     use crate::singles::{SingleWork, SingleWorkInfo};
     use crate::view_models::{
-        BackupSchedulerViewModel, BackupSettingsViewModel, OutlineViewModel, SaveAsViewModel,
+        BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, OutlineViewModel,
+        SaveAsViewModel,
     };
 
     /// A minimal, fully in-memory `ProjectWindowFactory` — enough plumbing to
@@ -427,6 +428,7 @@ mod tests {
     fn test_factory(app_ctx: Rc<AppContext>) -> ProjectWindowFactory {
         let ids = AppIds::new();
         let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
+        let export = ExportViewModel::new(app_ctx.clone(), ids.clone());
         let single_work = SingleWork::new(app_ctx.clone());
         let single_work_info = SingleWorkInfo::new(app_ctx.clone());
         let backup_mode = Signal::new(false);
@@ -450,6 +452,7 @@ mod tests {
         ProjectWindowFactory::new(
             app_ctx,
             outline,
+            export,
             single_work,
             single_work_info,
             Signal::new(false),

@@ -25,6 +25,13 @@ skribisto_model = { workspace = true }
 # retention policy type + the retention/fingerprint/sniff helpers used by the
 # backup scheduler, backups list, and open-a-backup flow.
 skrib_format = { workspace = true }
+# The export compiler (Preset schema + built-in styles + one-TextDocument assembly)
+# drives the Export panel's live preview *client-side* — the same code path the
+# `export_work` long op runs, so preview and committed export cannot diverge.
+skribisto_compiler = { workspace = true }
+# The `export_work` DTO + its `ExportFormat` / `ExportScopeKind` enums, carried by the
+# `export.scope` intent and dispatched from the Export panel.
+export_management = { workspace = true }
 # Stable content hash for the per-project window-persistence id
 # (`windows::window_id_for`). NOT `std::hash::DefaultHasher`: its output is
 # explicitly not guaranteed stable across Rust releases, and this id is

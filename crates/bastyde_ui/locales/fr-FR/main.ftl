@@ -7,6 +7,15 @@ menu-new-work = &Nouvelle œuvre
 menu-open-work = &Ouvrir une œuvre…
 menu-import-from = &Importer depuis
 menu-import-plume = &Plume Creator (.plume)…
+menu-export = E&xporter
+menu-export-book = Exporter le livre
+menu-export-part = Exporter la partie
+menu-export-chapter = Exporter le chapitre
+menu-export-scene = Exporter la scène
+menu-export-note = Exporter la note
+menu-export-folder = Exporter le dossier
+menu-export-choose = Choisir…
+menu-export-none = Ouvrez un document à exporter
 menu-save = &Enregistrer
 menu-save-as-file = Enregistrer comme fichier &unique…
 menu-save-as-folder = Enregistrer comme &dossier…
@@ -454,6 +463,39 @@ import-plume-open-now = Ouvrir maintenant
 # Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
 import-plume-error-title = Impossible d'importer le projet
 import-plume-error-details = Détails
+
+## Dialogue d'exportation
+export-title = Exporter
+export-close = Fermer
+export-scope-label = Quoi
+export-format-label = Format
+export-style-label = Style
+export-path-label = Fichier
+export-browse = Parcourir…
+export-preview-label = Aperçu
+export-preview-empty = Rien à prévisualiser pour cette sélection.
+export-cancel = Annuler
+export-export = Exporter
+export-save-dialog-title = Exporter vers un fichier
+# Formats de sortie
+export-format-docx = Word (.docx)
+export-format-html = HTML
+export-format-markdown = Markdown
+export-format-djot = Djot
+export-format-text = Texte
+export-format-latex = LaTeX
+export-format-epub = EPUB
+export-format-pdf = PDF
+# Confirmation de remplacement
+export-overwrite-title = Remplacer le fichier existant ?
+export-overwrite-text = « { $name } » existe déjà. Le remplacer ?
+# Toast de progression (l'export est une opération longue)
+export-progress-title = Exportation…
+export-cancelled = Exportation annulée
+export-done = { $count } élément(s) exporté(s)
+# Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
+export-error-title = Impossible d'exporter
+export-error-details = Détails
 
 ## Planificateur de sauvegardes (toast de progression + détails d'échec/d'avertissement de purge — revue backup, T1-2/T1-7/T2-3/T2-8/T2-9)
 backup-progress-start = Démarrage…

@@ -12,6 +12,7 @@
 
 use bastyde::IntentKind; // derive macro
 
+use export_management::ExportScopeKind;
 use skribisto_model::{CreateType, Relation};
 
 #[allow(dead_code)]
@@ -96,6 +97,16 @@ pub enum AppIntent {
     Indent,
     #[name = "binder.outdent"]
     Outdent,
+
+    /// Open the Export panel pre-scoped to a quick scope resolved from the
+    /// current focus (Export Book / Part / Chapter / Scene / Note / Folder).
+    /// Fired by name+payload from the focus-adaptive Export split-button in the
+    /// title bar and the matching File ▸ Export submenu; the concrete anchor
+    /// (the focused item) is read by the `export.scope` global action at
+    /// dispatch time, so the payload carries only the scope. Consumed in
+    /// `App::build`.
+    #[name = "export.scope"]
+    ExportScoped { scope: ExportScopeKind },
 }
 
 #[cfg(test)]
@@ -140,6 +151,22 @@ mod tests {
         match AppIntent::from_intent(&intent) {
             Some(AppIntent::TrashBinder { binder_id }) => assert_eq!(*binder_id, 42),
             other => panic!("expected TrashBinder, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn export_scoped_round_trips_its_scope() {
+        // The split-button/menu fire the scope across the bus; a lost payload would
+        // export the wrong extent (a whole book instead of one scene).
+        let intent: Intent = AppIntent::ExportScoped {
+            scope: ExportScopeKind::CurrentScene,
+        }
+        .into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::ExportScoped { scope }) => {
+                assert_eq!(*scope, ExportScopeKind::CurrentScene)
+            }
+            other => panic!("expected ExportScoped, got {other:?}"),
         }
     }
 
