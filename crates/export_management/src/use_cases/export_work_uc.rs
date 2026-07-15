@@ -121,12 +121,20 @@ fn run_export(
         .map_err(|e| anyhow!("invalid export style: {e}"))?;
 
     let work_lang = g.work.dict_language.clone();
+    // An explicit selection (Export Scene / Export Note, or the Choose… checkbox tree) keeps
+    // note items regardless of the preset's `include_notes`; a swept structural scope honours
+    // the toggle.
+    let explicit_selection = matches!(
+        dto.scope_kind,
+        ExportScopeKind::CurrentScene | ExportScopeKind::CurrentNote | ExportScopeKind::Custom
+    );
     let req = skribisto_compiler::RenderRequest {
         gathered: &g,
         include: &include,
         preset: &preset,
         format: map_format(&dto.format),
         work_lang: &work_lang,
+        explicit_selection,
     };
 
     // gather already reported up to ~90 %; map the renderer's 0..1 into the final 90..100.

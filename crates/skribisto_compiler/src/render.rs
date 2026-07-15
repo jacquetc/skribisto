@@ -29,6 +29,10 @@ pub struct RenderRequest<'a> {
     pub preset: &'a Preset,
     pub format: ExportFormat,
     pub work_lang: &'a str,
+    /// The include set was *explicitly chosen* (Export Scene / Export Note, or a Choose…
+    /// checkbox tree) rather than swept from a structural scope. When set, note items in the
+    /// set always render, overriding `preset.include_notes` — the user pointed at them.
+    pub explicit_selection: bool,
 }
 
 /// What a render produced, for the result DTO / a toast.
@@ -146,18 +150,33 @@ fn assemble(
     }
 
     let total = rows.len().max(1);
+    let report = |p: usize| progress(0.9 * (p as f32 + 1.0) / total as f32);
+    // Scene titles (if kept) sit one heading level below the deepest structural level
+    // present; a title-less scene export starts them at h1.
+    let scene_title_level = (present_depths.len() as u8 + 1).clamp(1, 6);
+    let mut emitted_items = 0usize;
     for (i, row) in rows.iter().enumerate() {
         if cancel.load(Ordering::Relaxed) {
             return Err(anyhow!("operation cancelled"));
         }
+        // A note swept into a structural scope is dropped unless the preset keeps notes, or
+        // the selection was explicit (Export Note / a checked Choose… item — the user
+        // pointed at it, which overrides the toggle).
+        let is_note = matches!(row.item.sub_role, BinderItemSubRole::Note);
+        if is_note && !preset.include_notes && !req.explicit_selection {
+            report(i);
+            continue;
+        }
+
         let heading_lang = match &preset.heading_language {
             HeadingLanguage::Fixed(l) => l.clone(),
             HeadingLanguage::Auto => row.lang.clone(),
         };
         let row_rtl = is_rtl_row(preset, &row.lang);
         let heading_rtl = is_rtl_row(preset, &heading_lang);
+        let mut contributed = false;
 
-        // 1. A structural heading, if this item opens a level.
+        // 1. A structural heading, if this item opens a level; else a scene title, if kept.
         if let Some(level) = level_of(&row.item.sub_role) {
             counters.bump(level);
             // A book is titled, not numbered — and the title page (if on) already carries
@@ -176,6 +195,16 @@ fn assemble(
                     .unwrap_or(1) as u8;
                 push_heading(&mut out, lvl, &text, heading_rtl);
                 last = Emitted::Heading;
+                contributed = true;
+            }
+        } else if preset.include_scene_titles && row.item.sub_role.carries_scene() {
+            // A plain titled Scene (never a ChapterScene — that already emitted its chapter
+            // heading above): the title heading stands in for the scene break.
+            let t = row.item.title.trim();
+            if !t.is_empty() {
+                push_heading(&mut out, scene_title_level, t, row_rtl);
+                last = Emitted::Heading;
+                contributed = true;
             }
         }
 
@@ -190,6 +219,7 @@ fn assemble(
                 push_prose(&mut out, prose, row_rtl);
                 words += prose.split_whitespace().count();
                 last = if is_scene { Emitted::SceneProse } else { Emitted::OtherProse };
+                contributed = true;
             }
         }
 
@@ -197,10 +227,14 @@ fn assemble(
         if preset.include_synopses {
             if let Some(syn) = content_of(row.contents, ContentRole::SynopsisText) {
                 push_prose(&mut out, syn, row_rtl);
+                contributed = true;
             }
         }
 
-        progress(0.9 * (i as f32 + 1.0) / total as f32);
+        if contributed {
+            emitted_items += 1;
+        }
+        report(i);
     }
 
     let doc = TextDocument::new();
@@ -215,7 +249,7 @@ fn assemble(
         doc.set_text_direction(dir)?;
     }
 
-    Ok((doc, RenderStats { items: rows.len(), words }))
+    Ok((doc, RenderStats { items: emitted_items, words }))
 }
 
 /// Flatten the frozen tree into the included rows, in document order, each with its
@@ -511,7 +545,7 @@ mod tests {
     }
 
     fn req<'a>(g: &'a Gathered, include: &'a [u64], p: &'a Preset, f: ExportFormat) -> RenderRequest<'a> {
-        RenderRequest { gathered: g, include, preset: p, format: f, work_lang: "en" }
+        RenderRequest { gathered: g, include, preset: p, format: f, work_lang: "en", explicit_selection: false }
     }
 
     #[test]
@@ -598,5 +632,76 @@ mod tests {
         let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
         assert!(txt.contains("The wind rose"));
         assert!(!txt.contains("She walked on"), "trashed scene must be excluded: {txt}");
+    }
+
+    fn titled(mut iwc: ItemWithContents, title: &str) -> ItemWithContents {
+        iwc.item.title = title.to_string();
+        iwc
+    }
+
+    /// A book with a chapter (one scene) and a research note swept in after it.
+    fn book_with_note() -> Gathered {
+        gathered(
+            vec![
+                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "en",
+                    vec![
+                        c(2, ContentRole::ChapterTitle, "Storms"),
+                        c(3, ContentRole::SceneText, "The wind rose over the hills."),
+                    ],
+                ),
+                iwc(102, SR::Note, "en", vec![c(4, ContentRole::NoteText, "Research: local weather.")]),
+            ],
+            "en",
+        )
+    }
+
+    #[test]
+    fn a_swept_note_is_dropped_unless_the_preset_or_an_explicit_pick_keeps_it() {
+        let g = book_with_note();
+        let mut p = preset("neutral"); // include_notes = false
+        // Swept into a whole-book export: the note is dropped by default.
+        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(txt.contains("The wind rose"), "{txt}");
+        assert!(!txt.contains("Research"), "a swept note must be dropped by default: {txt}");
+        // The preset keeps notes → included.
+        p.include_notes = true;
+        let with = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(with.contains("Research"), "include_notes should keep the note: {with}");
+        // An explicit pick (Export Note / a checked item) overrides the toggle being off.
+        p.include_notes = false;
+        let ids = [102u64];
+        let explicit =
+            RenderRequest { explicit_selection: true, ..req(&g, &ids, &p, ExportFormat::PlainText) };
+        let only = render_to_string(&explicit).unwrap();
+        assert!(only.contains("Research"), "an explicit note pick overrides the toggle: {only}");
+    }
+
+    #[test]
+    fn scene_titles_are_emitted_only_when_the_preset_keeps_them() {
+        let g = gathered(
+            vec![
+                titled(
+                    iwc(300, SR::Scene, "en", vec![c(1, ContentRole::SceneText, "Alpha prose.")]),
+                    "Opening",
+                ),
+                titled(
+                    iwc(301, SR::Scene, "en", vec![c(2, ContentRole::SceneText, "Closing prose.")]),
+                    "Ending",
+                ),
+            ],
+            "en",
+        );
+        let mut p = preset("neutral"); // include_scene_titles = false
+        let without = render_to_string(&req(&g, &[300, 301], &p, ExportFormat::Html)).unwrap();
+        assert!(!without.contains("Opening"), "scene titles must not leak when off: {without}");
+        // Turned on: the titles head each scene (h1 here — no structural levels present).
+        p.include_scene_titles = true;
+        let with = render_to_string(&req(&g, &[300, 301], &p, ExportFormat::Html)).unwrap();
+        assert!(with.contains("Opening") && with.contains("Ending"), "scene titles: {with}");
+        assert!(with.contains("<h1"), "scene titles head at h1 with no structural levels: {with}");
     }
 }
