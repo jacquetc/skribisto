@@ -658,7 +658,7 @@ impl StreamViewModel {
             role,
             sub_role,
             activated: true,
-            is_printable: true,
+            is_exportable: true,
             indent,
             ..Default::default()
         };
@@ -751,7 +751,7 @@ fn update_item_dto(it: &BinderItemDto) -> UpdateBinderItemDto {
         label: it.label.clone(),
         activated: it.activated,
         is_favorite: it.is_favorite,
-        is_printable: it.is_printable,
+        is_exportable: it.is_exportable,
         indent: it.indent,
         word_count_goal: it.word_count_goal,
         char_count_goal: it.char_count_goal,

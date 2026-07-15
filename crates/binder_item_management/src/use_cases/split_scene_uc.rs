@@ -169,7 +169,7 @@ impl SplitSceneUseCase {
             role: BinderItemRole::Item,
             sub_role: BinderItemSubRole::Scene,
             activated: true,
-            is_printable: true,
+            is_exportable: true,
             indent,
             ..Default::default()
         })?;

@@ -26,7 +26,13 @@
 //! [`crate::models`]).
 
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
-use skribisto_model::SubRoleExt;
+// The stream-folding primitives now live in `skribisto_model::compile` (one definition,
+// shared with the backend exporter). Re-exported so this module's public surface and its
+// callers (`view_models::stream`, `tabs::shared::stream`) are unchanged. Under `mocks` the
+// real `imp` (the only `row_indices` caller) is cfg'd out, so allow the unused re-export
+// there — exactly as the lifted functions carried `allow(dead_code)` before.
+#[cfg_attr(feature = "mocks", allow(unused_imports))]
+pub use skribisto_model::compile::{StreamLevel, row_indices};
 
 /// One row in a stream. Carries the full `(role, sub_role)` — the view needs it to
 /// pick the row's chrome (part heading / chapter heading / scene header) and to ask
@@ -37,84 +43,6 @@ pub struct StreamRow {
     pub item_id: u64,
     pub role: BinderItemRole,
     pub sub_role: BinderItemSubRole,
-}
-
-/// Which kind of container a stream is showing — it selects the boundary rule.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum StreamLevel {
-    Chapter,
-    Part,
-    Book,
-}
-
-impl StreamLevel {
-    /// The level for a container head, or `None` if this `(role, sub_role)` has no
-    /// stream. **The single place that decision is made** — `ContentTab::new` and
-    /// `StreamViewModel::new` both gate on this rather than each matching on
-    /// `(role, sub_role)` themselves, so there is no second partial function to keep
-    /// in sync by hand.
-    ///
-    /// Only *folder* containers get a stream. A flat `Item/ChapterScene` keeps its
-    /// dual-pane writing editor — that one flowing page is the point of it — and its
-    /// scenes still stream inside the enclosing Full Part / Full Book, where it
-    /// appears as a chapter-heading row carrying its own prose.
-    pub fn for_container(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Option<Self> {
-        if *role != BinderItemRole::Folder {
-            return None;
-        }
-        match sub_role {
-            BinderItemSubRole::ChapterScene => Some(Self::Chapter),
-            BinderItemSubRole::Part => Some(Self::Part),
-            BinderItemSubRole::Book => Some(Self::Book),
-            _ => None,
-        }
-    }
-}
-
-/// Does `sr` close a container at `level`?
-// The mock row model fabricates its rows, so under `--features mocks` these pure
-// functions are exercised only by the tests below.
-#[cfg_attr(feature = "mocks", allow(dead_code))]
-fn is_boundary(level: StreamLevel, sr: &BinderItemSubRole) -> bool {
-    match level {
-        // A chapter ends at the next chapter, part or book.
-        StreamLevel::Chapter => {
-            sr.opens_chapter() || sr.opens_part() || sr.opens_book() || sr.closes_book()
-        }
-        // A part ends at the next part or book — chapters live *inside* it.
-        StreamLevel::Part => sr.opens_part() || sr.opens_book() || sr.closes_book(),
-        // A book ends only at the next book, or at its explicit end marker.
-        StreamLevel::Book => sr.opens_book() || sr.closes_book(),
-    }
-}
-
-/// Is `sr` worth a row? Scene-bearing items are the prose; chapter and part heads
-/// are the structure headings that make a Full Book read as a manuscript.
-#[cfg_attr(feature = "mocks", allow(dead_code))]
-fn is_row(sr: &BinderItemSubRole) -> bool {
-    sr.carries_scene() || sr.opens_chapter() || sr.opens_part()
-}
-
-/// Indices (into `sub_roles`) of the rows belonging to the container head at `head`:
-/// every row-worthy item forward from `head + 1` until `level`'s boundary (or the end
-/// of the stream).
-///
-/// The head itself is never a row — it is the pane header, and its own prose/synopsis
-/// is the pane's own section. (This matters now that a chapter folder `carries_scene()`
-/// like any scene: without the `skip`, a `Folder/ChapterScene` head would list itself.)
-/// `indent` / folder nesting is deliberately not consulted.
-#[cfg_attr(feature = "mocks", allow(dead_code))]
-pub fn row_indices(sub_roles: &[BinderItemSubRole], head: usize, level: StreamLevel) -> Vec<usize> {
-    let mut out = Vec::new();
-    for (i, sr) in sub_roles.iter().enumerate().skip(head + 1) {
-        if is_boundary(level, sr) {
-            break;
-        }
-        if is_row(sr) {
-            out.push(i);
-        }
-    }
-    out
 }
 
 #[cfg(not(feature = "mocks"))]

@@ -23,6 +23,10 @@ use common::entities::ContentRole::*;
 /// plus the `dict_language` tag-list grammar shared by search folding and spell-checking.
 pub mod language;
 
+/// The compile spine: fold the flat `(role, sub_role)` item stream into an export scope.
+/// Shares its structural predicates with the UI's Full Chapter/Part/Book stream view.
+pub mod compile;
+
 /// The per-project chapter storage mode — generated on the `Work` entity, re-exported
 /// here so `CreateType::combo` and the UI can name it via `skribisto_model`.
 pub use common::entities::ChapterMode;

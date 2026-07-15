@@ -1,46 +1,21 @@
-//! Shared "read the open Work tree and serialise it" support for `save_work`
-//! and the two `migrate_to_*` use cases. Each use case's UoW trait exposes the
-//! same generated read methods, so a thin [`TreeReader`] impl per UoW lets one
-//! [`gather`] do the ordered read + relationship hydration once.
+//! Save-side helpers for the open Work tree.
+//!
+//! The ordered *read* — [`TreeReader`] / [`Gathered`] / [`gather`] — now lives in
+//! `skrib_format::tree_read` so `export_management` can share it without a
+//! feature-to-feature dependency; it is re-exported here so `save_work` / `save_as` /
+//! `backup_now` are unchanged. The *write* half ([`resolve_target`],
+//! [`serialize_and_write`]) and the store-clearing [`WorkCloser`] / [`close_current_work`]
+//! (used by load / new / close) stay here — they are `.skrib`-specific and save-only.
+
+use std::path::Path;
 
 use anyhow::{Result, anyhow};
-use common::direct_access::binder::BinderRelationshipField;
-use common::direct_access::binder_item::BinderItemRelationshipField;
-use common::direct_access::work::WorkRelationshipField;
-use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work, WorkInfo, WorkShape,
-};
-use common::long_operation::OperationProgress;
+use common::entities::{WorkInfo, WorkShape};
 use common::types::EntityId;
-use skrib_format::{self as skrib, BinderWithItems, ItemWithContents, ShapeTag, SkribShape};
-use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
+use skrib_format::{self as skrib, ShapeTag, SkribShape};
 
-/// The read surface needed to serialise the Work subtree. Implemented for each
-/// use case's `dyn …UnitOfWorkTrait` (the generated method names are identical).
-pub trait TreeReader {
-    fn all_work(&self) -> Result<Vec<Work>>;
-    fn all_work_info(&self) -> Result<Vec<WorkInfo>>;
-    fn all_trash_info(&self) -> Result<Vec<TrashInfo>>;
-    fn work_rel(&self, id: &EntityId, field: &WorkRelationshipField) -> Result<Vec<EntityId>>;
-    fn binder_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Binder>>>;
-    fn binder_rel(&self, id: &EntityId, field: &BinderRelationshipField) -> Result<Vec<EntityId>>;
-    fn item_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<BinderItem>>>;
-    fn item_rel(&self, id: &EntityId, field: &BinderItemRelationshipField)
-    -> Result<Vec<EntityId>>;
-    fn tag_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<BinderTag>>>;
-    fn dict_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<DictWord>>>;
-    fn content_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Content>>>;
-}
-
-pub struct Gathered {
-    pub work: Work,
-    pub tags: Vec<BinderTag>,
-    pub dict_words: Vec<DictWord>,
-    pub trash_infos: Vec<TrashInfo>,
-    pub binders: Vec<BinderWithItems>,
-    pub work_info: Option<WorkInfo>,
-}
+// Relocated to `skrib_format::tree_read`; re-exported so existing callers are unchanged.
+pub use skrib_format::tree_read::{Gathered, TreeReader, gather};
 
 /// The write surface needed to clear the open work from the store: list every id
 /// of each entity type and remove them. Implemented per use case's
@@ -82,67 +57,6 @@ pub fn close_current_work<C: WorkCloser + ?Sized>(c: &C) -> Result<()> {
     c.remove_work_infos(&c.work_info_ids()?)?;
     c.remove_works(&c.work_ids()?)?;
     Ok(())
-}
-
-/// Read the single open Work, its tags/dict-words/trash, and every binder →
-/// item → content in order, hydrating each entity's relationship id vectors
-/// (which `get` does not populate). Honours `cancel`; reports `progress`.
-pub fn gather<R: TreeReader + ?Sized>(
-    reader: &R,
-    progress: &(dyn Fn(OperationProgress) + Send),
-    cancel: &AtomicBool,
-) -> Result<Gathered> {
-    let mut work = reader
-        .all_work()?
-        .into_iter()
-        .next()
-        .ok_or_else(|| anyhow!("no open work"))?;
-    let work_info = reader.all_work_info()?.into_iter().next();
-    let work_id = work.id;
-
-    work.tags = reader.work_rel(&work_id, &WorkRelationshipField::Tags)?;
-    work.dict_words = reader.work_rel(&work_id, &WorkRelationshipField::DictWords)?;
-    work.binders = reader.work_rel(&work_id, &WorkRelationshipField::Binders)?;
-
-    let tags = fetch_multi(&work.tags, |ids| reader.tag_multi(ids))?;
-    let dict_words = fetch_multi(&work.dict_words, |ids| reader.dict_multi(ids))?;
-    let trash_infos = reader.all_trash_info()?;
-
-    let binder_entities = fetch_multi(&work.binders, |ids| reader.binder_multi(ids))?;
-    let count = binder_entities.len().max(1);
-    let mut binders = Vec::with_capacity(binder_entities.len());
-    for (idx, mut binder) in binder_entities.into_iter().enumerate() {
-        if cancel.load(Ordering::Relaxed) {
-            return Err(anyhow!("operation cancelled"));
-        }
-        let item_ids = reader.binder_rel(&binder.id, &BinderRelationshipField::BinderItems)?;
-        binder.binder_items = item_ids.clone();
-
-        let item_entities = fetch_multi(&item_ids, |ids| reader.item_multi(ids))?;
-        let mut items = Vec::with_capacity(item_entities.len());
-        for mut item in item_entities {
-            item.contents = reader.item_rel(&item.id, &BinderItemRelationshipField::Contents)?;
-            item.references =
-                reader.item_rel(&item.id, &BinderItemRelationshipField::References)?;
-            item.tags = reader.item_rel(&item.id, &BinderItemRelationshipField::Tags)?;
-            let contents = fetch_multi(&item.contents, |ids| reader.content_multi(ids))?;
-            items.push(ItemWithContents { item, contents });
-        }
-        binders.push(BinderWithItems { binder, items });
-        progress(OperationProgress::new(
-            10.0 + 80.0 * (idx as f32 + 1.0) / count as f32,
-            Some("Reading project…".to_string()),
-        ));
-    }
-
-    Ok(Gathered {
-        work,
-        tags,
-        dict_words,
-        trash_infos,
-        binders,
-        work_info,
-    })
 }
 
 /// Decide the output path + shape. `forced` pins the shape (the migrate cases);
@@ -203,16 +117,4 @@ pub fn serialize_and_write(
     );
     skrib::write_bundle(&target, shape, &bundle).map_err(|e| anyhow!("writing '{target}': {e}"))?;
     Ok(target)
-}
-
-fn fetch_multi<T>(
-    ids: &[EntityId],
-    get: impl FnOnce(&[EntityId]) -> Result<Vec<Option<T>>>,
-) -> Result<Vec<T>> {
-    let fetched = get(ids)?;
-    let mut out = Vec::with_capacity(fetched.len());
-    for (id, opt) in ids.iter().zip(fetched) {
-        out.push(opt.ok_or_else(|| anyhow!("entity {id} vanished mid-read"))?);
-    }
-    Ok(out)
 }

@@ -293,7 +293,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
                 label: i.label.clone(),
                 activated: i.activated,
                 is_favorite: i.is_favorite,
-                is_printable: i.is_printable,
+                is_exportable: i.is_exportable,
                 indent: i.indent,
                 word_count_goal: i.word_count_goal,
                 char_count_goal: i.char_count_goal,
@@ -512,7 +512,7 @@ fn create_trunk(
 
 /// Adapt the legacy SQLite reader's output to the neutral graph, assigning
 /// internally-consistent file ids and reproducing the historic defaults
-/// (`is_printable = true`, trashed items stay in place indexed by TrashInfo).
+/// (`is_exportable = true`, trashed items stay in place indexed by TrashInfo).
 fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork {
     use skrib::{LoadedBinder, LoadedItem, LoadedTrash};
 
@@ -627,7 +627,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     sub_role: it.sub_role.clone(),
                     label: it.label.clone(),
                     activated: it.activated,
-                    is_printable: true,
+                    is_exportable: true,
                     indent: it.indent,
                     ..Default::default()
                 },

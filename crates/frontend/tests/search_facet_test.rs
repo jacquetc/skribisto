@@ -38,7 +38,7 @@ fn item(role: BinderItemRole, sub_role: BinderItemSubRole, title: &str) -> Creat
         label: String::new(),
         activated: true,
         is_favorite: false,
-        is_printable: true,
+        is_exportable: true,
         indent: 0,
         word_count_goal: 0,
         char_count_goal: 0,

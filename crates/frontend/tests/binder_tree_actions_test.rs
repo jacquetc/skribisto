@@ -64,7 +64,7 @@ fn mk_item(
         role,
         sub_role: BinderItemSubRole::Text,
         activated: true,
-        is_printable: true,
+        is_exportable: true,
         indent,
         ..Default::default()
     };
@@ -758,7 +758,7 @@ fn mk_scene(fx: &Fixture, title: &str) -> EntityId {
         role: BinderItemRole::Item,
         sub_role: BinderItemSubRole::Scene,
         activated: true,
-        is_printable: true,
+        is_exportable: true,
         indent: 0,
         ..Default::default()
     };
@@ -1148,7 +1148,7 @@ fn set_sub_role(fx: &Fixture, item_id: EntityId, sub_role: BinderItemSubRole) {
             label: dto.label,
             activated: dto.activated,
             is_favorite: dto.is_favorite,
-            is_printable: dto.is_printable,
+            is_exportable: dto.is_exportable,
             indent: dto.indent,
             word_count_goal: dto.word_count_goal,
             char_count_goal: dto.char_count_goal,

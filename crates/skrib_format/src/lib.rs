@@ -31,6 +31,9 @@ mod slug;
 mod sniff;
 #[cfg(test)]
 mod tests;
+/// One ordered, relationship-hydrated read of the open Work tree, shared by every use
+/// case that snapshots it (`save_work` / `save_as` / `backup_now` / `export_work`).
+pub mod tree_read;
 mod writer;
 mod zip_io;
 
@@ -50,6 +53,7 @@ pub use reader::{peek_manifest, read_bundle};
 pub use shape::{SkribShape, detect_shape};
 pub use slug::{binder_dir_name, prose_file_name, prose_kind, prose_relpath, slugify};
 pub use sniff::{BackupSniff, sniff_backup, sniff_backup_filename};
+pub use tree_read::{Gathered, TreeReader, gather};
 pub use writer::{mark_existing_as_backup, verify_backup_at, write_bundle};
 
 /// Generate a fresh, stable project identity string (UUID v4). Used to mint a

@@ -55,7 +55,7 @@ pub struct TemplateItem {
     pub sub_role: BinderItemSubRole,
     pub title: String,
     pub indent: i64,
-    pub is_printable: bool,
+    pub is_exportable: bool,
     /// Already filtered to model-valid `(role, sub_role, content_role)` triples.
     pub contents: Vec<(ContentRole, String)>,
 }
@@ -74,7 +74,7 @@ fn item(
     sub_role: BinderItemSubRole,
     title: impl Into<String>,
     indent: i64,
-    is_printable: bool,
+    is_exportable: bool,
     contents: Vec<(ContentRole, String)>,
 ) -> TemplateItem {
     let contents = contents
@@ -86,7 +86,7 @@ fn item(
         sub_role,
         title: title.into(),
         indent,
-        is_printable,
+        is_exportable,
         contents,
     }
 }

@@ -776,7 +776,7 @@ mod tests {
                 role: BinderItemRole::Folder,
                 sub_role: BinderItemSubRole::ChapterScene,
                 activated: true,
-                is_printable: true,
+                is_exportable: true,
                 ..Default::default()
             },
             binder.id,

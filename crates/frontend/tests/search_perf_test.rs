@@ -76,7 +76,7 @@ fn big_manuscript() -> AppContext {
             label: String::new(),
             activated: true,
             is_favorite: false,
-            is_printable: true,
+            is_exportable: true,
             indent: 0,
             word_count_goal: 0,
             char_count_goal: 0,

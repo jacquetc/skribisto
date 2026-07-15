@@ -294,7 +294,7 @@ entities:
     type: boolean
   - name: is_favorite
     type: boolean
-  - name: is_printable
+  - name: is_exportable
     type: boolean
   - name: indent
     type: integer

@@ -132,7 +132,7 @@ fn sample_inputs() -> (
             label: "1st plot point".into(),
             activated: true,
             is_favorite: i % 2 == 0,
-            is_printable: true,
+            is_exportable: true,
             indent: (i % 3) as i64,
             word_count_goal: 1000,
             char_count_goal: 5000,
@@ -269,7 +269,7 @@ fn disallowed_content_is_dropped() {
         title: "Scene".into(),
         role: BinderItemRole::Item,
         sub_role: BinderItemSubRole::Scene,
-        is_printable: true,
+        is_exportable: true,
         ..Default::default()
     };
     let contents = vec![

@@ -237,7 +237,7 @@ impl NewWorkUseCase {
                     title: ti.title,
                     role: ti.role,
                     sub_role: ti.sub_role,
-                    is_printable: ti.is_printable,
+                    is_exportable: ti.is_exportable,
                     indent: ti.indent,
                     activated: true,
                     ..Default::default()

@@ -141,6 +141,42 @@ pub fn effective_languages(work_language: &str, items: &[BinderItem]) -> BTreeSe
     langs
 }
 
+/// Whether a BCP-47 language tag is written right-to-left.
+///
+/// The export compiler sets each block's text direction from this so an Arabic or
+/// Hebrew scene lays out correctly (and a book that mixes LTR and RTL scenes is handled
+/// per block). An **explicit script subtag wins** — `az-Arab` is RTL, `ku-Latn` and
+/// romanised `ar-Latn` are LTR — matching how [`WritingSystem`] detection treats scripts.
+/// With no script subtag the primary language decides. Whitespace/casing tolerant, `_`
+/// accepted as a separator; an empty or unknown tag is LTR (never fail on a writer's typo).
+///
+/// [`WritingSystem`]: https://en.wikipedia.org/wiki/Writing_system
+pub fn is_rtl(tag: &str) -> bool {
+    let lower = tag.trim().replace('_', "-").to_ascii_lowercase();
+    if lower.is_empty() {
+        return false;
+    }
+    let mut subtags = lower.split('-');
+    let language = subtags.next().unwrap_or("");
+    // BCP-47 places the script (if any) immediately after the language, as 4 letters.
+    let script = subtags
+        .next()
+        .filter(|s| s.len() == 4 && s.bytes().all(|b| b.is_ascii_alphabetic()));
+    if let Some(script) = script {
+        // The script overrides the language default in both directions.
+        return matches!(
+            script,
+            "arab" | "hebr" | "syrc" | "thaa" | "nkoo" | "samr" | "mand" | "rohg" | "yezi"
+                | "adlm" | "mend" | "phlp"
+        );
+    }
+    matches!(
+        language,
+        "ar" | "he" | "iw" | "fa" | "prs" | "ur" | "ps" | "sd" | "ug" | "yi" | "ji" | "dv"
+            | "ckb" | "ku" | "ks" | "syr" | "arc" | "nqo" | "sam" | "rhg"
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -292,5 +328,33 @@ mod tests {
     fn effective_languages_includes_the_bare_work_language() {
         let got = effective_languages("fr-FR", &[scene(1, ""), scene(2, "")]);
         assert_eq!(got, ["fr-FR"].into_iter().map(str::to_string).collect());
+    }
+
+    /// RTL languages are RTL; Latin-script European languages are not.
+    #[test]
+    fn is_rtl_by_primary_language() {
+        for t in ["ar", "ar-EG", "he", "he-IL", "iw", "fa", "fa-IR", "ur", "ps", "ckb", "yi", "dv"] {
+            assert!(is_rtl(t), "{t} should be RTL");
+        }
+        for t in ["", "en", "en-US", "fr-FR", "de", "es-419", "tr", "ru", "zh-Hans"] {
+            assert!(!is_rtl(t), "{t} should be LTR");
+        }
+    }
+
+    /// An explicit script subtag overrides the language default, both ways.
+    #[test]
+    fn is_rtl_script_subtag_wins() {
+        assert!(is_rtl("az-Arab"), "Azerbaijani in Arabic script is RTL");
+        assert!(!is_rtl("ku-Latn"), "Kurdish in Latin script is LTR");
+        assert!(!is_rtl("ar-Latn"), "romanised Arabic is LTR");
+        assert!(is_rtl("sr-Arab"), "any language in the Arabic script is RTL");
+    }
+
+    /// Casing and the `_` separator are tolerated; a region subtag is not a script.
+    #[test]
+    fn is_rtl_is_separator_and_case_tolerant() {
+        assert!(is_rtl("AR_eg"));
+        assert!(is_rtl("HE"));
+        assert!(!is_rtl("EN_us"), "US is a region, not an RTL script");
     }
 }

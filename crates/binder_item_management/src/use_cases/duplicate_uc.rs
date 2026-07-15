@@ -154,7 +154,7 @@ impl DuplicateUseCase {
                     label: src.label.clone(),
                     activated: src.activated,
                     is_favorite: src.is_favorite,
-                    is_printable: src.is_printable,
+                    is_exportable: src.is_exportable,
                     indent: src.indent,
                     word_count_goal: src.word_count_goal,
                     char_count_goal: src.char_count_goal,

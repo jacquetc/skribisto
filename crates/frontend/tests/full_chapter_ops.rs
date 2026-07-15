@@ -115,7 +115,7 @@ fn make_item(
             role,
             sub_role,
             activated: true,
-            is_printable: true,
+            is_exportable: true,
             ..Default::default()
         },
         binder,

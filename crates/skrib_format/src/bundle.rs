@@ -167,7 +167,7 @@ pub struct BinderItemFile {
     pub label: String,
     pub activated: bool,
     pub is_favorite: bool,
-    pub is_printable: bool,
+    pub is_exportable: bool,
     pub indent: i64,
     pub word_count_goal: i64,
     pub char_count_goal: i64,
