@@ -94,9 +94,11 @@ enum Pane {
     Backup,
     /// Per-project backup override (under the open Work's section).
     WorkBackup,
-    /// Per-project spell-check language(s) (under the open Work's section). Appended last so
-    /// the earlier discriminants — and the `Switcher` order they index — stay put.
+    /// Per-project spell-check language(s) (under the open Work's section).
     WorkLanguage,
+    /// Per-project personal dictionary (under the open Work's section). Appended last so
+    /// the earlier discriminants — and the `Switcher` order they index — stay put.
+    WorkDictionary,
 }
 
 impl Pane {
@@ -123,6 +125,7 @@ impl Pane {
             Pane::Backup => tr!(settings_page_backup()),
             Pane::WorkBackup => tr!(settings_page_work_backup()),
             Pane::WorkLanguage => tr!(settings_page_language()),
+            Pane::WorkDictionary => tr!(settings_page_personal_dictionary()),
         }
     }
 }
@@ -887,6 +890,10 @@ impl SettingsPanel {
                 Pane::WorkBackup,
                 model.insert_child(wk, 2, Node::Page(Pane::WorkBackup)),
             );
+            nodes.insert(
+                Pane::WorkDictionary,
+                model.insert_child(wk, 3, Node::Page(Pane::WorkDictionary)),
+            );
             work_node = Some(wk);
         }
         // The dynamic section label needs the title inside the row closure.
@@ -1176,6 +1183,34 @@ impl Widget for SettingsPanel {
             )),
         };
 
+        // Work ▸ Personal dictionary — the per-project word-list manager, over the
+        // shared `UserDictionaryViewModel`. Present in the Switcher regardless, an
+        // empty placeholder when no project is open (same as the other Work panes).
+        let dictionary_pane: Box<dyn Widget> = match (
+            ctx.app_state::<crate::view_models::UserDictionaryViewModel>().cloned(),
+            &work,
+        ) {
+            (Some(vm), Some(w)) if w.id().is_some() => {
+                let title = w.title().get();
+                Box::new(pane_frame(
+                    crumb(
+                        Some(lit!(format!(
+                            "{}: {}",
+                            tr!(settings_sec_work()).resolve_now(),
+                            title
+                        ))),
+                        tr!(settings_page_personal_dictionary()),
+                    ),
+                    crate::settings_user_dictionary::user_dictionary_pane(ctx, &vm),
+                ))
+            }
+            _ => Box::new(empty_pane(
+                None,
+                tr!(settings_page_personal_dictionary()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+
         // ── Left rail: search + category tree ───────────────────────────────
         let (tree, selection, nodes) = self.build_tree(ctx);
         let search = self.search_field(selection, nodes);
@@ -1235,7 +1270,8 @@ impl Widget for SettingsPanel {
             .child_boxed(structure_pane)
             .child_boxed(backup_pane)
             .child_boxed(work_backup_pane)
-            .child_boxed(language_pane);
+            .child_boxed(language_pane)
+            .child_boxed(dictionary_pane);
 
         let footer = self.footer(vm, scale, not_defaults);
         let right = VStack::new()
@@ -1404,6 +1440,7 @@ mod tests {
         assert_eq!(Pane::Backup.index(), 14);
         assert_eq!(Pane::WorkBackup.index(), 15);
         assert_eq!(Pane::WorkLanguage.index(), 16);
+        assert_eq!(Pane::WorkDictionary.index(), 17);
     }
 
     /// The Goals pane bridges `CountingMethodSetting` to the `RadioGroup`'s `usize`

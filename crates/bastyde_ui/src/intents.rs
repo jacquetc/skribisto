@@ -116,6 +116,14 @@ pub enum AppIntent {
     /// `App::build`.
     #[name = "export.scope"]
     ExportScoped { scope: ExportScopeKind },
+
+    /// Add word(s) to the open project's personal dictionary — fired from the
+    /// editor's "Add to dictionary" context-menu item with the resolved
+    /// selection/caret words. The menu mounts at the arena root, so it reaches
+    /// only a **global** action (`editor.add_to_dictionary`), which delegates to
+    /// `UserDictionaryViewModel::add_words` + shows the added-toast.
+    #[name = "editor.add_to_dictionary"]
+    AddWordsToDictionary { words: Vec<String> },
 }
 
 #[cfg(test)]
@@ -176,6 +184,22 @@ mod tests {
                 assert_eq!(*scope, ExportScopeKind::CurrentScene)
             }
             other => panic!("expected ExportScoped, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn add_words_to_dictionary_round_trips_its_payload() {
+        // The editor menu carries the resolved words across the bus to the global
+        // action; a lost payload would add nothing (or the wrong words).
+        let intent: Intent = AppIntent::AddWordsToDictionary {
+            words: vec!["Gandalf".into(), "Skribisto".into()],
+        }
+        .into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::AddWordsToDictionary { words }) => {
+                assert_eq!(words, &["Gandalf".to_string(), "Skribisto".to_string()]);
+            }
+            other => panic!("expected AddWordsToDictionary, got {other:?}"),
         }
     }
 

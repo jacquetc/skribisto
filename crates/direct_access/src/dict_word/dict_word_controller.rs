@@ -391,4 +391,55 @@ mod tests {
         ctx.undo.undo(None).unwrap();
         assert!(get(&ctx.db, &created.id).unwrap().is_some());
     }
+
+    // -----------------------------------------------------------------------
+    // remove reconciles the owner (Work.dict_words) — no dangling id — and
+    // undo/redo round-trip the relationship. This settles that the personal
+    // dictionary can use a plain `remove_dict_word`, no detach-then-remove
+    // composite (the `bastyde_ui` UserDictionaryViewModel relies on this).
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_remove_reconciles_owner_relationship_and_undo_restores() {
+        use common::direct_access::work::WorkRelationshipField;
+
+        let mut ctx = TestContext::new();
+        let work_id = create_owner_chain(&mut ctx);
+
+        let word = |w: &str| CreateDictWordDto {
+            word: w.to_string(),
+            ..Default::default()
+        };
+        let a = create(&ctx.db, &ctx.hub, &mut ctx.undo, None, &word("alpha"), work_id, -1).unwrap();
+        let b = create(&ctx.db, &ctx.hub, &mut ctx.undo, None, &word("beta"), work_id, -1).unwrap();
+
+        let words = |ctx: &TestContext| {
+            let mut ids =
+                work_controller::get_relationship(&ctx.db, &work_id, &WorkRelationshipField::DictWords)
+                    .unwrap();
+            ids.sort();
+            ids
+        };
+        let mut ab = vec![a.id, b.id];
+        ab.sort();
+        assert_eq!(words(&ctx), ab, "both words are linked to the Work");
+
+        // Remove A: it must be gone as an entity AND stripped from Work.dict_words.
+        remove(&ctx.db, &ctx.hub, &mut ctx.undo, None, &a.id).unwrap();
+        assert!(get(&ctx.db, &a.id).unwrap().is_none());
+        assert_eq!(
+            words(&ctx),
+            vec![b.id],
+            "remove must strip the id from Work.dict_words (no dangling id)"
+        );
+
+        // Undo restores A as an entity and back in the relationship.
+        ctx.undo.undo(None).unwrap();
+        assert!(get(&ctx.db, &a.id).unwrap().is_some());
+        assert_eq!(words(&ctx), ab, "undo restores the relationship");
+
+        // Redo re-removes it.
+        ctx.undo.redo(None).unwrap();
+        assert_eq!(words(&ctx), vec![b.id], "redo re-removes");
+    }
 }

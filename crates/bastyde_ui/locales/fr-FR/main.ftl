@@ -843,3 +843,29 @@ lang-pill-add = Ajouter une langue
 lang-pill-remove = Retirer { $name }
 lang-pill-mute = Désactiver la correction pour { $name }
 lang-pill-unmute = Activer la correction pour { $name }
+
+## Réglages — Projet ▸ Dictionnaire personnel (liste de mots par projet)
+settings-page-personal-dictionary = Dictionnaire personnel
+settings-user-dict-desc = Mots que le correcteur doit considérer comme corrects dans ce projet.
+settings-user-dict-add-placeholder = Ajouter un mot…
+settings-user-dict-add = Ajouter
+settings-user-dict-search = Rechercher des mots…
+settings-user-dict-rename = Renommer
+settings-user-dict-remove = Retirer
+settings-user-dict-empty = Aucun mot pour l’instant. Ajoutez des mots à ignorer, ou importez une liste.
+settings-user-dict-import = Importer…
+settings-user-dict-export = Exporter…
+settings-user-dict-txt-filter = Fichiers texte
+settings-user-dict-duplicate = Déjà dans le dictionnaire
+settings-user-dict-imported = { $count } mots importés ({ $duplicates } déjà présents).
+settings-user-dict-import-failed = Impossible de lire la liste de mots : { $error }
+settings-user-dict-exported = { $count } mots enregistrés.
+settings-user-dict-export-failed = Impossible d’enregistrer la liste de mots : { $error }
+
+## Éditeur — Ajouter au dictionnaire (menu contextuel + notification)
+editor-menu-add-to-dictionary = Ajouter « { $word } » au dictionnaire
+editor-menu-add-words-to-dictionary = Ajouter les mots sélectionnés au dictionnaire
+editor-menu-add-to-dictionary-generic = Ajouter au dictionnaire
+editor-dict-added = « { $word } » ajouté à votre dictionnaire.
+editor-dict-added-multi = { $count } mots ajoutés à votre dictionnaire.
+toast-undo = Annuler

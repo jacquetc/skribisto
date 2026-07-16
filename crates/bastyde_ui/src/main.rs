@@ -67,6 +67,7 @@ mod settings_backup;
 mod settings_dictionaries;
 mod settings_export_styles;
 mod settings_panel;
+mod settings_user_dictionary;
 mod singles;
 mod spellcheck;
 mod tabs;
@@ -95,7 +96,7 @@ use frontend::common::event::{Event, Origin};
 use app::PendingExit;
 use app_ids::AppIds;
 use models::{BackupSettingsService, OpenDocsStore, WorkspaceLayoutService};
-use singles::{SingleWork, SingleWorkInfo};
+use singles::{SingleDictWord, SingleWork, SingleWorkInfo};
 use view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel,
     OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel, RestoreViewModel, SaveAsViewModel,
@@ -490,6 +491,14 @@ fn main() {
         })
         .unwrap_or_else(models::ExportStylesService::in_memory_default);
     let export_styles = view_models::ExportStylesViewModel::new(export_styles_service);
+    // Personal-dictionary feature (per-project `DictWord`): a reactive list model
+    // + a single (for inline rename), composed by the view-model. Registered as
+    // app-state so the Settings pane and the editor's "Add to dictionary" global
+    // action reach the one instance; `App::build` wires its subscriptions.
+    let dict_words = models::DictWordListModel::new(app_ctx.clone());
+    let single_dict_word = SingleDictWord::new(app_ctx.clone());
+    let user_dictionary =
+        view_models::UserDictionaryViewModel::new(dict_words, single_dict_word, ids.clone());
     // Backup-mode state: `backup_mode` is true while a *backup file* is open in
     // this window (Save + auto-backup off; the file is read-only, the content is
     // still editable). `backup_context` carries the open backup's details (drives
@@ -691,6 +700,7 @@ fn main() {
         .app_state(import_plume.clone())
         .app_state(export.clone())
         .app_state(export_styles.clone())
+        .app_state(user_dictionary.clone())
         .app_state(save_as_vm.clone())
         .app_state(backup_settings.clone())
         .app_state(backup_scheduler.clone())

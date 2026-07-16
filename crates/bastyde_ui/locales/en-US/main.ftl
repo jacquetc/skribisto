@@ -841,3 +841,29 @@ lang-pill-add = Add a language
 lang-pill-remove = Remove { $name }
 lang-pill-mute = Turn spell-checking off for { $name }
 lang-pill-unmute = Turn spell-checking on for { $name }
+
+## Settings — Work ▸ Personal dictionary (per-project word list)
+settings-page-personal-dictionary = Personal dictionary
+settings-user-dict-desc = Words the spell-checker should treat as correct in this project.
+settings-user-dict-add-placeholder = Add a word…
+settings-user-dict-add = Add
+settings-user-dict-search = Search words…
+settings-user-dict-rename = Rename
+settings-user-dict-remove = Remove
+settings-user-dict-empty = No words yet. Add words the spell-checker should ignore, or import a list.
+settings-user-dict-import = Import…
+settings-user-dict-export = Export…
+settings-user-dict-txt-filter = Text files
+settings-user-dict-duplicate = Already in the dictionary
+settings-user-dict-imported = Imported { $count } words ({ $duplicates } already present).
+settings-user-dict-import-failed = Could not read the word list: { $error }
+settings-user-dict-exported = Saved { $count } words.
+settings-user-dict-export-failed = Could not save the word list: { $error }
+
+## Editor — Add to dictionary (context menu + toast)
+editor-menu-add-to-dictionary = Add “{ $word }” to dictionary
+editor-menu-add-words-to-dictionary = Add selected words to dictionary
+editor-menu-add-to-dictionary-generic = Add to dictionary
+editor-dict-added = Added “{ $word }” to your dictionary.
+editor-dict-added-multi = Added { $count } words to your dictionary.
+toast-undo = Undo

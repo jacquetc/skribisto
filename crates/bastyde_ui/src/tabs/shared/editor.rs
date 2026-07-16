@@ -26,6 +26,7 @@ use bastyde::widgets::{
 /// a search page, not a compact IntelliJ-style bar.
 const FIND_FIELD_MAX_WIDTH: f32 = 240.0;
 
+use crate::intents::AppIntent;
 use crate::spellcheck::SpellSession;
 use crate::tabs::TitleField;
 use crate::view_models::{EditorTypography, FindViewModel};
@@ -82,16 +83,24 @@ pub fn writing_column(
     if let Some(find) = &find {
         find.attach_handle(editor.handle());
     }
-    if let Some(split) = split {
-        // Replace the built-in menu with the standard editing actions (rebuilt
-        // through the editor handle) plus "Split scene" at the caret.
+    // Replace the built-in menu with our own — the standard editing actions, an
+    // "Add to dictionary" item, and (in a stream) "Split scene". Installed
+    // unconditionally so the flat scene tab gets it too. The factory first moves
+    // the caret to the click point (unless inside a selection) so Paste lands
+    // there and "Add to dictionary" targets the right-clicked word.
+    {
         let handle = editor.handle();
         let cursor = editor.cursor_position_signal();
-        editor = editor.context_menu(move |_pt, _ctx| {
-            Some(Box::new(scene_editor_menu(
+        let doc = doc.clone();
+        let spell = spell.clone();
+        editor = editor.context_menu(move |pt, _ctx| {
+            handle.reposition_caret_for_context_menu(pt);
+            Some(Box::new(editor_context_menu(
                 handle.clone(),
                 cursor.clone(),
                 split.clone(),
+                doc.clone(),
+                spell.clone(),
             )))
         });
     }
@@ -105,17 +114,38 @@ pub fn writing_column(
     ))
 }
 
-/// A writing editor's right-click menu: Cut / Copy / Paste / Paste Unformatted /
-/// Select All (via the editor handle) plus **Split scene** at the caret. Offered on
-/// both of a row's surfaces — which text the split cuts is implicit in which editor
-/// was right-clicked (see `StreamViewModel::split_row`).
-fn scene_editor_menu(handle: EditorHandle, cursor: Signal<usize>, split: SplitFn) -> MenuList {
+/// A writing editor's right-click menu: the standard edit actions (Cut / Copy /
+/// Paste / Paste Unformatted / Select All, via the editor handle), an **Add to
+/// dictionary** item for the current selection or the word under the caret, and —
+/// when a split is offered — **Split scene** at the caret.
+///
+/// Built fresh on each right-click, *after* the factory has moved the caret to the
+/// click point, so the resolved word and any Paste act where the user clicked.
+/// The "Add to dictionary" item is disabled when nothing word-like resolves; its
+/// label names the word so a wrong target is visible before committing.
+fn editor_context_menu(
+    handle: EditorHandle,
+    cursor: Signal<usize>,
+    split: Option<SplitFn>,
+    doc: TextDocument,
+    spell: Option<Rc<SpellSession>>,
+) -> MenuList {
+    // Only misspelled words are offered — the resolution filters through this
+    // editor's live spell-checker (matches the squiggles exactly).
+    let words = super::dictionary_menu::resolve_words(&doc, &handle, spell.as_deref());
+    let add_label = match words.as_slice() {
+        [] => tr!(editor_menu_add_to_dictionary_generic()),
+        [w] => tr!(editor_menu_add_to_dictionary(word = w.clone())),
+        _ => tr!(editor_menu_add_words_to_dictionary()),
+    };
+    let add_enabled = !words.is_empty();
+
     let cut = handle.clone();
     let copy = handle.clone();
     let paste = handle.clone();
     let paste_plain = handle.clone();
     let select = handle;
-    MenuList::new()
+    let mut list = MenuList::new()
         .item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)))
         .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
         .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
@@ -126,7 +156,21 @@ fn scene_editor_menu(handle: EditorHandle, cursor: Signal<usize>, split: SplitFn
         .separator()
         .item(MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()))
         .separator()
-        .item(MenuItem::new(tr!(split_scene())).on_activate_fn(move |ctx| split(ctx, cursor.get())))
+        .item(
+            MenuItem::new(add_label)
+                .enabled(add_enabled)
+                .on_activate_fn(move |ctx| {
+                    ctx.send_intent(AppIntent::AddWordsToDictionary {
+                        words: words.clone(),
+                    });
+                }),
+        );
+    if let Some(split) = split {
+        list = list.separator().item(
+            MenuItem::new(tr!(split_scene())).on_activate_fn(move |ctx| split(ctx, cursor.get())),
+        );
+    }
+    list
 }
 
 /// How tall a *growing* synopsis editor starts: enough to invite a couple of lines,
@@ -175,14 +219,19 @@ pub fn synopsis_editor(
             .min_lines(SYNOPSIS_MIN_LINES)
             .v_scroll_policy(ScrollPolicy::AlwaysOff),
     };
-    if let Some(split) = split {
+    {
         let handle = editor.handle();
         let cursor = editor.cursor_position_signal();
-        editor = editor.context_menu(move |_pt, _ctx| {
-            Some(Box::new(scene_editor_menu(
+        let doc = doc.clone();
+        let spell = spell.clone();
+        editor = editor.context_menu(move |pt, _ctx| {
+            handle.reposition_caret_for_context_menu(pt);
+            Some(Box::new(editor_context_menu(
                 handle.clone(),
                 cursor.clone(),
                 split.clone(),
+                doc.clone(),
+                spell.clone(),
             )))
         });
     }

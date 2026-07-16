@@ -64,6 +64,7 @@ mod save_queue;
 mod search_replace;
 mod save_status;
 mod settings;
+mod user_dictionary;
 mod word_count_status;
 mod workspace_layout;
 mod writing_session;
@@ -97,5 +98,6 @@ pub use writing_session::{
 pub use search_replace::SearchReplaceViewModel;
 pub use settings::{EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel};
 pub use stream::{SplitFlavour, StreamViewModel};
+pub use user_dictionary::{ImportSummary, UserDictionaryViewModel};
 pub(crate) use stream::{is_prose_bearing, is_synopsis_bearing};
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};

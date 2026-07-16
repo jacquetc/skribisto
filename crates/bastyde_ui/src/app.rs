@@ -331,6 +331,23 @@ fn spell_underline_color(c: bastyde::tokens::Color) -> bastyde::text_document::C
     bastyde::text_document::Color::rgb(to_u8(r), to_u8(g), to_u8(b))
 }
 
+/// Reload the open Work's personal words (`DictWord`) into the checker's personal
+/// set. The narrow half of [`refresh_project_spellcheck`]: no language re-point
+/// (that only changes on a project switch), no re-attach — the caller re-attaches
+/// so a project switch attaches once, not twice.
+fn reload_personal_words(
+    app_ctx: &AppContext,
+    spell: &crate::spellcheck::SpellcheckService,
+) {
+    let personal: std::collections::HashSet<String> =
+        frontend::commands::dict_word_commands::get_all_dict_word(app_ctx)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|w| w.word)
+            .collect();
+    spell.set_personal(personal);
+}
+
 /// Refresh the spell-checker for the freshly-live project: reload its personal words from
 /// `DictWord`, point the open-docs store at the project's default language, and re-attach every
 /// open document. Called from both the `LoadWork` and `NewWork` subscribers.
@@ -341,13 +358,7 @@ fn refresh_project_spellcheck(
     work_id: Option<u64>,
     work_lang: String,
 ) {
-    let personal: std::collections::HashSet<String> =
-        frontend::commands::dict_word_commands::get_all_dict_word(app_ctx)
-            .unwrap_or_default()
-            .into_iter()
-            .map(|w| w.word)
-            .collect();
-    spell.set_personal(personal);
+    reload_personal_words(app_ctx, spell);
     docs.set_project_language(work_id, work_lang);
     docs.attach_all();
 }
@@ -654,6 +665,28 @@ impl Widget for App {
                 docs.attach_all();
             });
         }
+        // A personal-dictionary change — a word added/removed from the Settings
+        // pane or the editor's "Add to dictionary", including its undo/redo —
+        // re-runs the live spell-check: reload the personal words and re-attach
+        // every open document so squiggles update immediately. This is the single
+        // place a `DictWord` mutation touches the checker; the pane and the
+        // context menu both just create/remove the entity.
+        for dict_word_event in [
+            EntityEvent::Created,
+            EntityEvent::Updated,
+            EntityEvent::Removed,
+        ] {
+            let app_ctx = self.app_ctx.clone();
+            let docs = spell_docs.clone();
+            let spell = spellcheck.clone();
+            ctx.subscribe_event(
+                Origin::DirectAccess(DirectAccessEntity::DictWord(dict_word_event)),
+                move |_event: &Event| {
+                    reload_personal_words(&app_ctx, &spell);
+                    docs.attach_all();
+                },
+            );
+        }
         // Cross-process staleness: a peer window may have installed/removed a dictionary while
         // this one was unfocused. Re-scan on the focus-regain edge — `rescan()` bumps `changed`,
         // whose effect (above) drops the engine cache and re-attaches every document, so this must
@@ -831,6 +864,14 @@ impl Widget for App {
             .expect("SingleWorkInfo registered in main");
         single_work.wire(ctx);
         single_work_info.wire(ctx);
+        // The personal-dictionary view-model (registered in `main`) — wire its
+        // held list-model + single so the Settings pane stays live and the
+        // editor's "Add to dictionary" reaches a wired handle.
+        if let Some(user_dictionary) =
+            ctx.app_state::<crate::view_models::UserDictionaryViewModel>().cloned()
+        {
+            user_dictionary.wire(ctx);
+        }
         // Backup scheduler + settings (registered in `main`). The scheduler drives
         // every trigger and holds the singles; the settings VM tracks the active
         // project for the per-project settings pane.
@@ -1079,6 +1120,30 @@ impl Widget for App {
                     {
                         editors.open_to_side(*item_id, title);
                     }
+                },
+            ));
+        }
+        // Add the resolved selection/caret word(s) to the personal dictionary,
+        // fired from the editor's "Add to dictionary" context-menu item. The menu
+        // mounts at the arena root, so only a **global** action reaches it. The
+        // resulting `DictWord(Created)` event drives the live squiggle refresh
+        // (the subscription above); here we just create the entities and toast.
+        {
+            ctx.register_action_global(Action::new("editor.add_to_dictionary").on_invoke(
+                move |i, c| {
+                    let Some(AppIntent::AddWordsToDictionary { words }) = AppIntent::from_intent(i)
+                    else {
+                        return;
+                    };
+                    let Some(vm) = c
+                        .app_state::<crate::view_models::UserDictionaryViewModel>()
+                        .cloned()
+                    else {
+                        return;
+                    };
+                    let sample = words.first().cloned();
+                    let ids = vm.add_words(words);
+                    vm.added_toast(c, ids, sample);
                 },
             ));
         }

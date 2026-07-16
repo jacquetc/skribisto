@@ -157,7 +157,10 @@ pub(crate) fn validate_dictionary_files(aff_path: &Path, dic_path: &Path) -> Res
 /// [`HighlightContext::set_format`] expects (character positions, not bytes). UAX#29 word
 /// segmentation keeps contractions and elisions together (`don't`, `l'auteur`), for both the
 /// straight `'` and the curly `’`.
-fn word_positions(text: &str) -> Vec<(usize, usize, &str)> {
+///
+/// `pub(crate)` so the editor's "Add to dictionary" menu resolves selection/caret words with the
+/// **same** tokenizer the squiggles use — what is addable and what is flagged can never disagree.
+pub(crate) fn word_positions(text: &str) -> Vec<(usize, usize, &str)> {
     use unicode_segmentation::UnicodeSegmentation;
     let mut out = Vec::new();
     // Running byte→char cursor so the whole pass is O(n), not O(n) per word.
@@ -183,7 +186,9 @@ pub struct SpellChecker {
     /// Active dictionaries, primary first; empty is never built (a checker with no dictionary is
     /// never produced — the caller clears the session instead).
     dicts: Vec<Arc<spellbook::Dictionary>>,
-    /// The Work's personal words — checked first, so removing one is just removing the entity.
+    /// The Work's personal words — the **last** checker, consulted only after every installed
+    /// dictionary has rejected the word: the project's own fallback for words no dictionary knows.
+    /// Removing one is just removing the entity.
     personal: HashSet<String>,
 }
 
@@ -193,12 +198,13 @@ impl SpellChecker {
         if !word.chars().any(|c| c.is_alphabetic()) {
             return false;
         }
-        if self.personal.contains(word) {
+        // The true dictionaries first — correctly-spelled prose is accepted by the primary and
+        // never reaches the personal set (`any` short-circuits). Only a word that *no* installed
+        // dictionary knows falls through to the project's own word list, the final checker.
+        if self.dicts.iter().any(|d| d.check(word)) {
             return false;
         }
-        // A mistake only when EVERY active dictionary rejects it — `any` short-circuits on the
-        // primary for correctly-spelled prose.
-        !self.dicts.iter().any(|d| d.check(word))
+        !self.personal.contains(word)
     }
 }
 
@@ -446,6 +452,20 @@ impl SpellSession {
         self.apply_exemption();
     }
 
+    /// Whether `word` is currently flagged as a misspelling by this document's
+    /// active checker — the same predicate that draws the squiggle. `false` when
+    /// no checker is active (no installed dictionary → nothing is "wrong"), which
+    /// is why the editor's "Add to dictionary" item only offers flagged words. A
+    /// word already in the personal dictionary is not flagged, so it is never
+    /// re-offered.
+    pub(crate) fn is_misspelled(&self, word: &str) -> bool {
+        self.checker
+            .borrow()
+            .as_ref()
+            .map(|c| c.misspelled(word))
+            .unwrap_or(false)
+    }
+
     /// A view gained focus and becomes the caret source. `caret` reads the **live** offset.
     pub fn on_focus(&self, view: WidgetId, caret: Rc<dyn Fn() -> usize>) {
         *self.focused.borrow_mut() = Some((view, caret));
@@ -601,7 +621,9 @@ mod tests {
 
     /// A personal word overrides the dictionary — checked first, so no dictionary mutation.
     #[test]
-    fn personal_words_win() {
+    fn personal_words_are_the_final_fallback() {
+        // The project's own word list is the last checker: a word no installed dictionary knows is
+        // rescued by the personal set; an unknown word absent from both stays flagged.
         let dict = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
         let mut personal = HashSet::new();
         personal.insert("Skribisto".to_string());

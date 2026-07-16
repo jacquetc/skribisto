@@ -12,6 +12,7 @@
 //! All are re-exported here, so every tab module calls `shared::foo` without
 //! caring which file it lives in.
 
+pub(crate) mod dictionary_menu;
 pub(crate) mod editor;
 mod pace_pane;
 mod panes;
