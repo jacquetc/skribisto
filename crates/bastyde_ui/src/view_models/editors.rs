@@ -733,7 +733,14 @@ impl EditorsViewModel {
     /// other holder — a split pane, a stream row — picks up the fresh one too rather than
     /// being handed the stale cached `Rc`.
     fn retype(&self, item_id: u64, it: &BinderItemDto) -> bool {
-        let stale = |t: &ContentTab| t.role() != &it.role || t.sub_role() != &it.sub_role;
+        // Only *this item's own* tab going stale should force a rebuild. Without the
+        // `item_id` guard, `needs_rebuild` fired whenever **any** open tab had a different
+        // type than the updated item — so editing a Book's word-count goal while a Scene
+        // tab was also open rebuilt the Book's tab (fresh `ContentTab`, its Pace segment
+        // reset to 0), even though the Book's own type never changed.
+        let stale = |t: &ContentTab| {
+            t.item_id() == item_id && (t.role() != &it.role || t.sub_role() != &it.sub_role)
+        };
         let needs_rebuild = [Side::Primary, Side::Secondary].iter().any(|&side| {
             let pane = self.pane(side);
             (0..pane.tabs.len()).any(|i| {
@@ -944,6 +951,50 @@ mod tests {
         vm.open_or_focus(42, "Scene"); // already open → focuses, no backend hit
         assert_eq!(vm.tabs(Side::Primary).len(), 1);
         assert_eq!(vm.selected(Side::Primary).get(), Some(id));
+    }
+
+    /// The segment signal of the open tab for `item_id` in `side`, if any.
+    #[cfg(feature = "mocks")]
+    fn tab_segment(vm: &EditorsViewModel, side: Side, item_id: u64) -> Option<Signal<usize>> {
+        let pane = vm.pane(side);
+        (0..pane.tabs.len()).find_map(|i| {
+            pane.tabs
+                .with_item(i, |h| {
+                    h.payload
+                        .downcast_ref::<ContentTab>()
+                        .filter(|t| t.item_id() == item_id)
+                        .map(|t| t.segment.clone())
+                })
+                .flatten()
+        })
+    }
+
+    /// Editing one item's scalar (a word-count goal, a rename) fires `BinderItem::Updated`
+    /// → `items_updated` → `retype`. `retype` must rebuild **only the updated item's own
+    /// tab, and only if that item's type actually changed** — never a tab merely because
+    /// some *other* open tab has a different type. This regressions the "set a Book's goal
+    /// and the Pace segment jumps back to Book" bug: with a differently-typed tab (a Scene)
+    /// also open, the goal edit rebuilt the Book's tab (fresh `ContentTab`, segment → 0).
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn updating_an_item_does_not_rebuild_a_differently_typed_open_tab() {
+        let vm = editors();
+        vm.open_or_focus(101, "Book One"); // Folder/Book (mock fixture)
+        vm.open_or_focus(103, "Scene at dawn"); // Item/Scene — a *different* type
+        // Put the Book tab on the Pace segment (index 3).
+        tab_segment(&vm, Side::Primary, 101)
+            .expect("book tab open")
+            .set(3);
+        // Editing the Book's word-count goal fires `BinderItem::Updated` for the Book.
+        vm.items_updated(&[101]);
+        // The Book's tab must be the SAME one (its type did not change), so its segment
+        // must still be Pace — not reset to 0 by a spurious rebuild.
+        assert_eq!(
+            tab_segment(&vm, Side::Primary, 101).map(|s| s.get()),
+            Some(3),
+            "editing the Book's goal rebuilt its tab (segment reset) because another \
+             differently-typed tab was open"
+        );
     }
 
     #[test]
