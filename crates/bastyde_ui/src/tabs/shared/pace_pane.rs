@@ -14,9 +14,9 @@ use bastyde::data::{ChartDatum, ChartModel, ChartSeries};
 use bastyde::prelude::*;
 use bastyde::tokens::{CornerRadius, FontWeight, TextStyle};
 use bastyde::widgets::{
-    Button, Center, DateEdit, DateRange, DateRangeEdit, Expand, FixedSize, FormLayout, HStack,
-    IconButton, MasonryLayout, Padding, Panel, RectWidget, ScrollArea, SpinBox, StepType, Switcher,
-    TextInput, TextWidget, Toggle, VStack, Wrap, ZStack,
+    Button, Center, ColumnFlow, DateEdit, DateRange, DateRangeEdit, Expand, FixedSize, FormLayout,
+    HStack, IconButton, Padding, Panel, RectWidget, ScrollArea, SpinBox, StepType, TextInput,
+    TextWidget, Toggle, VStack, Wrap, ZStack,
 };
 use bastyde_charts::{BarChart, LineChart};
 
@@ -27,7 +27,7 @@ use crate::date_convert::{jiff_to_naive, naive_to_jiff, naive_to_jiff_opt};
 use crate::tabs::ContentTab;
 use crate::view_models::PaceViewModel;
 
-use super::{centered, tab_backdrop, vspace};
+use super::{tab_backdrop, vspace};
 
 /// (bit, ftl label) for the seven weekday chips. Mon = 1, … Sun = 64 - the mask
 /// convention `is_scheduled_day` uses.
@@ -51,11 +51,6 @@ pub fn pace_pane(tab: &ContentTab) -> Box<dyn Widget> {
             Center::new().child(TextWidget::new(tr!(pace_placeholder())).color(TextRole::Secondary)),
         );
     };
-    // The Pace pane is a stats dashboard, not a prose column, so it uses a wider
-    // sensible max width than the reading-column width (which the form + charts +
-    // stat-card masonry all read for their layout).
-    let cw = Signal::new(880.0);
-
     // Local mirror signals for the two-way-bound fields, seeded from the VM and
     // kept in sync by `PaceWire` (external edits) / written back to the VM by it.
     let goal_local = Signal::new(vm.goal_words().get().max(0));
@@ -64,23 +59,97 @@ pub fn pace_pane(tab: &ContentTab) -> Box<dyn Widget> {
     // Switcher index (a real signal, not derived): 0 = no schedule yet, 1 = planner.
     let has_pace = Signal::new(vm.pace_id().get().is_some() as usize);
 
-    let planner: Box<dyn Widget> = Box::new(planner(&vm, &goal_local, &end_local, &active_local));
-    let empty: Box<dyn Widget> = Box::new(empty_state(&vm));
-
     let body = VStack::new()
         .spacing(0.0)
         .child(PaceWire::new(
+            vm.clone(),
+            goal_local.clone(),
+            end_local.clone(),
+            active_local.clone(),
+            has_pace.clone(),
+        ))
+        .child(vspace(18.0))
+        // The empty/planner swap is a layout-forwarding composing widget, **not** a
+        // `Switcher`: a Switcher measures *all* its children with an unbounded width (to
+        // size to the largest), which pins the planner's `ColumnFlow` to its maximum
+        // column count at every viewport width. `PaceBody` builds only the active child
+        // and forwards layout to it, so the scroll viewport's bounded width reaches the
+        // flow and it reflows.
+        .child(PaceBody::new(vm, goal_local, end_local, active_local, has_pace))
+        .child(vspace(28.0));
+
+    // A stats dashboard, not a prose column: fill the scroll viewport's width and let the
+    // planner's `ColumnFlow` reflow into as many columns as it affords, rather than hugging
+    // to a centred reading column (which is what collapsed it to one column before). Just
+    // horizontal breathing room on the sides.
+    tab_backdrop(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(body)))
+}
+
+/// The Pace pane's body below the wiring: the empty "start planning" state, or the
+/// planner dashboard once a Pace exists. A **layout-forwarding** composing widget rather
+/// than a `Switcher` (see [`pace_pane`]): it builds only the active child and forwards
+/// layout straight to it, so the scroll viewport's bounded width reaches the planner's
+/// `ColumnFlow` and it reflows. Rebuilds on `has_pace` (1 = a Pace exists), which
+/// [`PaceWire`] keeps in step with `vm.pace_id()`.
+struct PaceBody {
+    vm: PaceViewModel,
+    goal_local: Signal<i64>,
+    end_local: Signal<Option<Date>>,
+    active_local: Signal<bool>,
+    has_pace: Signal<usize>,
+    root: Option<WidgetId>,
+}
+
+impl PaceBody {
+    fn new(
+        vm: PaceViewModel,
+        goal_local: Signal<i64>,
+        end_local: Signal<Option<Date>>,
+        active_local: Signal<bool>,
+        has_pace: Signal<usize>,
+    ) -> Self {
+        Self {
             vm,
             goal_local,
             end_local,
             active_local,
-            has_pace.clone(),
-        ))
-        .child(vspace(18.0))
-        .child(Switcher::new(has_pace).child_boxed(empty).child_boxed(planner))
-        .child(vspace(28.0));
+            has_pace,
+            root: None,
+        }
+    }
+}
 
-    tab_backdrop(ScrollArea::new().child(centered(body, &cw)))
+impl std::fmt::Debug for PaceBody {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PaceBody").finish()
+    }
+}
+
+impl Widget for PaceBody {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.has_pace
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        let child: Box<dyn Widget> = if self.has_pace.get() == 1 {
+            Box::new(planner(
+                &self.vm,
+                &self.goal_local,
+                &self.end_local,
+                &self.active_local,
+            ))
+        } else {
+            Box::new(empty_state(&self.vm))
+        };
+        let id = ctx.add_boxed(child);
+        self.root = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
 }
 
 /// One dashboard section: a titled Panel wrapping its body.
@@ -118,133 +187,65 @@ fn empty_state(vm: &PaceViewModel) -> impl Widget {
         }))
 }
 
-/// The planner, once a Pace exists: a responsive dashboard of section Panels.
+/// The planner, once a Pace exists: the schedule, statistics, charts, holidays and
+/// milestones as section Panels flowed through a [`ColumnFlow`], which reflows them into
+/// as many columns as the width affords (one when narrow, up to three when wide) and
+/// re-partitions to balance the columns' heights. Each section drives its own reactivity,
+/// so the flow itself never rebuilds - it only relayouts when a section's height changes.
 fn planner(
     vm: &PaceViewModel,
     goal_local: &Signal<i64>,
     end_local: &Signal<Option<Date>>,
     active_local: &Signal<bool>,
 ) -> impl Widget {
-    PaceDashboard::new(
-        vm.clone(),
-        goal_local.clone(),
-        end_local.clone(),
-        active_local.clone(),
-    )
-}
+    let today = Utc::now().date_naive();
 
-/// The dashboard: the schedule, statistics, charts, holidays and milestones as
-/// section Panels laid out in a responsive [`MasonryLayout`]. A masonry *fills*
-/// its offered width (dividing it into columns), so the whole pane uses the
-/// available width - one column when narrow, two or three when wide - rather than
-/// hugging the form's natural width the way a `VStack` would. Rebuilt on the
-/// column count, derived from the measured width.
-struct PaceDashboard {
-    vm: PaceViewModel,
-    goal_local: Signal<i64>,
-    end_local: Signal<Option<Date>>,
-    active_local: Signal<bool>,
-    cols: Signal<usize>,
-    root: Option<WidgetId>,
-}
+    // Schedule section: goal + deadline + weekdays + active.
+    let goal_field = FixedSize::new().width(160.0).child(
+        SpinBox::new(goal_local.clone(), 0_i64, 100_000_000)
+            .step_type(StepType::Adaptive)
+            .on_value_changed({
+                let vm = vm.clone();
+                move |v, _c| vm.set_goal_words(v)
+            }),
+    );
+    let deadline_field = FixedSize::new().width(200.0).child(
+        DateEdit::new(end_local.clone())
+            .min_date(naive_to_jiff(today).unwrap_or_else(|| Date::new(2000, 1, 1).unwrap())),
+    );
+    let schedule_body = VStack::new()
+        .spacing(10.0)
+        .child(
+            FormLayout::new()
+                .row_spacing(10.0)
+                .line(field_label(tr!(pace_goal())), goal_field)
+                .line(field_label(tr!(pace_deadline())), deadline_field),
+        )
+        .child(WeekdayChips::new(vm.clone()))
+        .child(Toggle::new(active_local.clone()).label(tr!(pace_active())));
 
-impl PaceDashboard {
-    fn new(
-        vm: PaceViewModel,
-        goal_local: Signal<i64>,
-        end_local: Signal<Option<Date>>,
-        active_local: Signal<bool>,
-    ) -> Self {
-        Self {
-            vm,
-            goal_local,
-            end_local,
-            active_local,
-            cols: Signal::new(1),
-            root: None,
-        }
-    }
-
-    /// Section panels want ~340px to be comfortable (a chart, a form).
-    fn columns_for(width: f32) -> usize {
-        ((width / 340.0).floor() as usize).clamp(1, 3)
-    }
-}
-
-impl std::fmt::Debug for PaceDashboard {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PaceDashboard").finish()
-    }
-}
-
-impl Widget for PaceDashboard {
-    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.cols
-            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
-        let today = Utc::now().date_naive();
-        let vm = &self.vm;
-
-        // Schedule section: goal + deadline + weekdays + active.
-        let goal_field = FixedSize::new().width(160.0).child(
-            SpinBox::new(self.goal_local.clone(), 0_i64, 100_000_000)
-                .step_type(StepType::Adaptive)
-                .on_value_changed({
-                    let vm = vm.clone();
-                    move |v, _c| vm.set_goal_words(v)
-                }),
-        );
-        let deadline_field = FixedSize::new().width(200.0).child(
-            DateEdit::new(self.end_local.clone())
-                .min_date(naive_to_jiff(today).unwrap_or_else(|| Date::new(2000, 1, 1).unwrap())),
-        );
-        let schedule_body = VStack::new()
-            .spacing(10.0)
-            .child(
-                FormLayout::new()
-                    .row_spacing(10.0)
-                    .line(field_label(tr!(pace_goal())), goal_field)
-                    .line(field_label(tr!(pace_deadline())), deadline_field),
-            )
-            .child(WeekdayChips::new(vm.clone()))
-            .child(Toggle::new(self.active_local.clone()).label(tr!(pace_active())));
-
-        let m = MasonryLayout::new(self.cols.get().max(1))
-            .column_spacing(12.0)
-            .item_spacing(12.0)
-            .child(panel_section(tr!(pace_section_schedule()), schedule_body))
-            .child(panel_section(
-                tr!(pace_section_progress()),
-                StatCards::new(vm.clone(), today),
-            ))
-            .child(panel_section(
-                tr!(pace_advancement()),
-                PaceCharts::new(vm.clone()),
-            ))
-            .child(panel_section(
-                tr!(pace_section_holidays()),
-                HolidayEditor::new(vm.clone()),
-            ))
-            .child(panel_section(
-                tr!(pace_section_milestones()),
-                MilestoneList::new(vm.clone()),
-            ));
-
-        self.root = Some(ctx.add(m));
-        self.root.into_iter().collect()
-    }
-
-    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        if let Some(w) = proposal.width {
-            let want = Self::columns_for(w);
-            if self.cols.get() != want {
-                self.cols.set(want);
-            }
-        }
-        self.root
-            .and_then(|id| ctx.child_size(id, proposal))
-            .map(LayoutResponse::from)
-            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
-    }
+    ColumnFlow::new()
+        .min_column_width(300.0)
+        .max_columns(3)
+        .column_spacing(12.0)
+        .item_spacing(12.0)
+        .child(panel_section(tr!(pace_section_schedule()), schedule_body))
+        .child(panel_section(
+            tr!(pace_section_progress()),
+            StatCards::new(vm.clone(), today),
+        ))
+        .child(panel_section(
+            tr!(pace_advancement()),
+            PaceCharts::new(vm.clone()),
+        ))
+        .child(panel_section(
+            tr!(pace_section_holidays()),
+            HolidayEditor::new(vm.clone()),
+        ))
+        .child(panel_section(
+            tr!(pace_section_milestones()),
+            MilestoneList::new(vm.clone()),
+        ))
 }
 
 /// A short, locale-neutral day label for a chart category (`7/16`).
@@ -758,27 +759,18 @@ fn stat_card(
     )
 }
 
-/// The derived statistics, laid out as a responsive [`MasonryLayout`] of cards.
-/// Rebuilt on the view-model's `version` (a data change) and on the column count
-/// (a width change). bastyde's masonry takes a fixed column count, so the count
-/// is derived from the measured width in [`layout_response`](Self::layout_response),
-/// which packs the varying-height cards efficiently.
+/// The derived statistics, flowed through a [`ColumnFlow`] of cards — one to four columns
+/// by width, height-balanced. Rebuilt only on the view-model's `version` (a data change);
+/// the column count is `ColumnFlow`'s own responsibility, so no width-measuring here.
 struct StatCards {
     vm: PaceViewModel,
     today: NaiveDate,
-    cols: Signal<usize>,
     root: Option<WidgetId>,
 }
 
 impl StatCards {
     fn new(vm: PaceViewModel, today: NaiveDate) -> Self {
-        Self { vm, today, cols: Signal::new(2), root: None }
-    }
-
-    /// How many card columns a given width affords (each card stays readable down
-    /// to ~165px, so a narrow split pane still shows two).
-    fn columns_for(width: f32) -> usize {
-        ((width / 175.0).floor() as usize).clamp(1, 4)
+        Self { vm, today, root: None }
     }
 }
 
@@ -790,10 +782,9 @@ impl std::fmt::Debug for StatCards {
 
 impl Widget for StatCards {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let sid = ctx.self_id();
-        let reg = ctx.binding_registry();
-        self.vm.version().bind_to(sid, reg, BindingLevel::Rebuild);
-        self.cols.bind_to(sid, reg, BindingLevel::Rebuild);
+        self.vm
+            .version()
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
         // A big, bold number style derived from the theme's body style.
         let big = TextStyle {
@@ -804,18 +795,20 @@ impl Widget for StatCards {
         let vm = &self.vm;
         let today = self.today;
 
-        let mut m = MasonryLayout::new(self.cols.get().max(1))
+        let mut cf = ColumnFlow::new()
+            .min_column_width(150.0)
+            .max_columns(4)
             .column_spacing(10.0)
             .item_spacing(10.0);
 
-        m = m.child(stat_card(
+        cf = cf.child(stat_card(
             &big,
             commafy(vm.current_words()),
             tr!(pace_card_written()),
             TextRole::Accent,
         ));
         if let Some(p) = vm.percent_done() {
-            m = m.child(stat_card(
+            cf = cf.child(stat_card(
                 &big,
                 format!("{}%", (p * 100.0).round() as i64),
                 tr!(pace_card_of_goal()),
@@ -823,17 +816,17 @@ impl Widget for StatCards {
             ));
         }
         if let Some(r) = vm.words_per_writing_day(today) {
-            m = m.child(stat_card(&big, commafy(r), tr!(pace_card_rate()), TextRole::Accent));
+            cf = cf.child(stat_card(&big, commafy(r), tr!(pace_card_rate()), TextRole::Accent));
         }
         if vm.end().get().is_some() {
-            m = m.child(stat_card(
+            cf = cf.child(stat_card(
                 &big,
                 vm.writing_days_left(today).to_string(),
                 tr!(pace_card_days_left()),
                 TextRole::Accent,
             ));
         }
-        m = m.child(stat_card(
+        cf = cf.child(stat_card(
             &big,
             vm.streak(today).to_string(),
             tr!(pace_card_streak()),
@@ -845,23 +838,14 @@ impl Widget for StatCards {
             } else {
                 (commafy(-d), tr!(pace_card_behind()), TextRole::Warning)
             };
-            m = m.child(stat_card(&big, num, caption, color));
+            cf = cf.child(stat_card(&big, num, caption, color));
         }
 
-        self.root = Some(ctx.add(m));
+        self.root = Some(ctx.add(cf));
         self.root.into_iter().collect()
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        // Derive the column count from the available width; a change re-runs
-        // build (bound above) on the next frame. The masonry fills whatever
-        // width it is given regardless of the count, so this cannot oscillate.
-        if let Some(w) = proposal.width {
-            let want = Self::columns_for(w);
-            if self.cols.get() != want {
-                self.cols.set(want);
-            }
-        }
         self.root
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)

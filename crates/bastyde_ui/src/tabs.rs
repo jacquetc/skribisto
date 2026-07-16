@@ -552,6 +552,102 @@ mod tests {
         }
     }
 
+    /// First node at/under `root` whose fully-qualified type name ends with `suffix`
+    /// (DFS pre-order); type names come from `std::any::type_name`, so match the leaf.
+    fn first_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str) -> Option<WidgetId> {
+        if tree
+            .widget_type_name(root)
+            .is_some_and(|n| n.ends_with(suffix))
+        {
+            return Some(root);
+        }
+        tree.children(root)
+            .into_iter()
+            .find_map(|c| first_of_type(tree, c, suffix))
+    }
+
+    /// The Book's Pace dashboard **must reflow with width**. `pace_pane` drops the
+    /// prose-column `centered()` wrapper and flows its section panels through a `ColumnFlow`
+    /// under the scroll viewport, with the empty/planner swap done by a *layout-forwarding*
+    /// composing widget (`PaceBody`), not a `Switcher`. This pins that the resulting chain —
+    /// `ScrollArea > Padding > VStack > (forwarding swap) > ColumnFlow` — carries the
+    /// viewport's **bounded** width all the way to the flow, so it packs into several short
+    /// columns when wide and one tall column when narrow.
+    ///
+    /// Two traps this guards, both of which reported one column at *every* width: the old
+    /// `centered()` measured the content at its **hugging** width, and a `Switcher` measures
+    /// *all* its children with an **unbounded** width to size to the largest. Five 200px
+    /// panels: wide ≈ two rows, narrow ≈ five.
+    #[test]
+    fn column_flow_reflows_in_the_pace_scaffold() {
+        use bastyde::widgets::{ColumnFlow, FixedSize, Padding, RectWidget, ScrollArea, VStack};
+
+        let flow_height = |width: f32| -> f32 {
+            let mut flow = ColumnFlow::new()
+                .min_column_width(300.0)
+                .max_columns(3)
+                .column_spacing(12.0)
+                .item_spacing(12.0);
+            for _ in 0..5 {
+                flow = flow.child(FixedSize::new().height(200.0).child(RectWidget::new()));
+            }
+            // `Forwarder` stands in for `pace_pane`'s `PaceBody` swap: it forwards layout to
+            // its one child, so (unlike a `Switcher`) the parent's bounded width reaches it.
+            let body = VStack::new().child(Forwarder {
+                child: Some(Box::new(flow)),
+                root: None,
+            });
+            let scaffold = ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(body));
+
+            let mut tree = WidgetTree::new();
+            let root = tree.add_boxed(Box::new(scaffold));
+            tree.layout(bastyde::prelude::SizeProposal::exact(width, 4000.0));
+            first_of_type(&tree, root, "ColumnFlow")
+                .map(|id| tree.bounds(id).height)
+                .expect("the scaffold contains a ColumnFlow")
+        };
+
+        let wide = flow_height(1200.0);
+        let narrow = flow_height(360.0);
+        assert!(
+            wide > 0.0 && narrow > 0.0,
+            "scaffold laid out (wide {wide}, narrow {narrow})"
+        );
+        // Wide packs five panels into three columns (≈ two rows); narrow stacks all five.
+        // A generous margin, not a pixel assertion — it only has to have reflowed at all.
+        assert!(
+            wide * 1.5 < narrow,
+            "wide dashboard ({wide}px) must reflow far shorter than narrow ({narrow}px) — \
+             the viewport's bounded width did not reach the ColumnFlow"
+        );
+    }
+
+    /// A one-child composing widget that forwards its layout to that child — the layout
+    /// shape of `pace_pane`'s `PaceBody`. Proves the empty/planner swap does not, unlike a
+    /// `Switcher`, drop the parent's bounded width proposal.
+    struct Forwarder {
+        child: Option<Box<dyn Widget>>,
+        root: Option<WidgetId>,
+    }
+    impl std::fmt::Debug for Forwarder {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("Forwarder").finish()
+        }
+    }
+    impl Widget for Forwarder {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let id = ctx.add_boxed(self.child.take().expect("Forwarder built once"));
+            self.root = Some(id);
+            vec![id]
+        }
+        fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+            self.root
+                .and_then(|id| ctx.child_size(id, proposal))
+                .map(LayoutResponse::from)
+                .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        }
+    }
+
     /// A writing item exposes the fields the matrix allows: a Scene gets main +
     /// synopsis prose; a ChapterScene adds a title; a BookBegin gets two titles
     /// plus the book's synopsis (symmetric with the Folder/Book container).
