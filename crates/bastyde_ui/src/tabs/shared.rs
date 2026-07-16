@@ -10,9 +10,11 @@
 //! caring which file it lives in.
 
 pub(crate) mod editor;
+mod pace_pane;
 mod panes;
 mod stream;
 
 pub use editor::*;
+pub use pace_pane::*;
 pub use panes::*;
 pub use stream::*;

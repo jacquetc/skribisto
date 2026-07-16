@@ -626,7 +626,16 @@ mod tests {
                 test_typography(),
                 &AppIds::new(),
             );
-            let mut tree = WidgetTree::new();
+            // A real text backend is required for a faithful narrow-window
+            // check: `single_line` labels (the segment bar) only report a shrink
+            // weight — so an over-constrained stack truncates them with an
+            // ellipsis instead of overflowing — through the real text-layout
+            // path. The no-backend 8px/char fallback returns a rigid size, so
+            // the bar's labels would spill exactly as they never do in the live
+            // app (which always has a backend).
+            let mut tree = WidgetTree::new().with_text_backend(std::rc::Rc::new(
+                std::cell::RefCell::new(bastyde::canvas::MockTextBackend::new()),
+            ));
             let id = tree.add_boxed(tab_pane(&tab));
             tree.layout(bastyde::prelude::SizeProposal::exact(BOX_W, 700.0));
 

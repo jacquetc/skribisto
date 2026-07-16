@@ -279,17 +279,27 @@ pub fn folder_segmented(
     tab: &ContentTab,
     own_label: impl Into<LocalizedString>,
     manuscript_label: impl Into<LocalizedString>,
+    extra: Option<(LocalizedString, Box<dyn Widget>)>,
 ) -> Box<dyn Widget> {
-    let bar = SegmentedControl::new(tab.segment.clone())
+    // An optional container-specific segment (the Book's "Pace") is inserted **before**
+    // the two disabled placeholders, so every existing index stays put and the
+    // SegmentedControl↔Switcher positional contract holds (disabled segments never become
+    // the current index).
+    let mut bar = SegmentedControl::new(tab.segment.clone())
         .segment(Segment::new(own_label))
         .segment(Segment::new(manuscript_label))
-        .segment(Segment::new(tr!(full_synopsis())))
-        .segment(Segment::new(tr!(corkboard())).disabled(true))
-        .segment(Segment::new(tr!(overview())).disabled(true));
-    let content = Switcher::new(tab.segment.clone())
+        .segment(Segment::new(tr!(full_synopsis())));
+    let mut content = Switcher::new(tab.segment.clone())
         .child(folder_own_pane(tab))
         .child(stream_pane(tab, SplitFlavour::Prose))
         .child(stream_pane(tab, SplitFlavour::Synopsis));
+    if let Some((label, pane)) = extra {
+        bar = bar.segment(Segment::new(label));
+        content = content.child_boxed(pane);
+    }
+    let bar = bar
+        .segment(Segment::new(tr!(corkboard())).disabled(true))
+        .segment(Segment::new(tr!(overview())).disabled(true));
 
     let col = VStack::new()
         .spacing(8.0)

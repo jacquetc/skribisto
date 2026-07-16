@@ -10,5 +10,5 @@ use bastyde::prelude::*;
 use super::{ContentTab, shared};
 
 pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
-    shared::folder_segmented(tab, tr!(segment_part()), tr!(full_part()))
+    shared::folder_segmented(tab, tr!(segment_part()), tr!(full_part()), None)
 }

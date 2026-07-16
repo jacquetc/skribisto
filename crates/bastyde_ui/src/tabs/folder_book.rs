@@ -11,5 +11,11 @@ use bastyde::prelude::*;
 use super::{ContentTab, shared};
 
 pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
-    shared::folder_segmented(tab, tr!(segment_book()), tr!(full_book()))
+    // Only the Book gets the "Pace" segment (the manuscript-wide writing plan).
+    shared::folder_segmented(
+        tab,
+        tr!(segment_book()),
+        tr!(full_book()),
+        Some((tr!(segment_pace()), shared::pace_pane(tab))),
+    )
 }

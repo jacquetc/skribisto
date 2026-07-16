@@ -646,6 +646,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bastyde-charts"
+version = "0.6.2"
+dependencies = [
+ "bastyde-canvas",
+ "bastyde-core",
+ "bastyde-data",
+ "bastyde-i18n",
+ "bastyde-tokens",
+]
+
+[[package]]
 name = "bastyde-core"
 version = "0.6.2"
 dependencies = [
@@ -836,10 +847,12 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "bastyde",
+ "bastyde-charts",
  "blake3",
  "chrono",
  "encoding_rs",
  "interprocess",
+ "jiff",
  "libc",
  "open",
  "ron",

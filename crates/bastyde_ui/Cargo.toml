@@ -82,6 +82,12 @@ bastyde = { path = "../../../bastyde/crates/bastyde", features = [
     "automation",
     "async-std",
 ] }
+# The Pace planner's progression / words-per-day charts (not re-exported by the
+# umbrella crate — a direct dependency, like the example widget catalog).
+bastyde-charts = { path = "../../../bastyde/crates/bastyde-charts" }
+# Calendar dates for the Pace end-date + weekday picker (the bastyde date widgets
+# speak `jiff::civil::Date`); `date_convert` bridges it to the entities' chrono.
+jiff = "0.2"
 # Cross-instance IPC (multi-process window switching): Unix domain socket on
 # Linux/macOS, named pipe on Windows — one API.
 interprocess = "2"
