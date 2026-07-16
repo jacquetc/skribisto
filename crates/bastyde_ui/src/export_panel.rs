@@ -443,9 +443,17 @@ impl Widget for LeadingColumn {
         if is_custom {
             col = col.child(Expand::vertical().child(ChoosePane::new(self.vm.clone())));
         }
+        // The style picker offers built-ins ∪ the user's saved styles (Settings ▸ Export
+        // Formats), read from app-state; it falls back to the panel VM's built-ins when the
+        // styles view-model isn't registered (e.g. headless tests).
+        let catalogue = ctx
+            .app_state::<crate::view_models::ExportStylesViewModel>()
+            .cloned()
+            .map(|s| s.all_presets())
+            .unwrap_or_else(|| self.vm.presets());
         col = col
             .child(section(tr!(export_format_label()), format_grid(&self.vm)))
-            .child(self.style_section())
+            .child(self.style_section(catalogue))
             .child(section(tr!(export_section_destination()), destination_field(&self.vm)));
         if !is_custom {
             col = col.child(Spacer::new());
@@ -510,9 +518,10 @@ impl Widget for LeadingColumn {
 }
 
 impl LeadingColumn {
-    /// The "Style preset" section: the style picker + a wrap of read-only summary chips.
-    fn style_section(&self) -> VStack {
-        let style = ComboBox::from_items(self.vm.presets(), self.vm.preset_signal(), |p: &Preset| {
+    /// The "Style preset" section: the style picker (over `catalogue` = built-ins ∪ user
+    /// styles) + a wrap of read-only summary chips.
+    fn style_section(&self, catalogue: Vec<Preset>) -> VStack {
+        let style = ComboBox::from_items(catalogue, self.vm.preset_signal(), |p: &Preset| {
             lit!(p.name.clone())
         });
         VStack::new()

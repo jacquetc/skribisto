@@ -177,6 +177,46 @@ settings-group-chapters = Chapitres
 settings-chapter-flat = Chapitres à plat
 settings-chapter-flat-hint = Activé : un chapitre est une seule ligne. Vous y écrivez, et il ne contient aucune scène. Désactivé : un chapitre est un dossier. Vous y écrivez également, mais il peut en outre contenir des scènes. Les nouveaux chapitres suivent ce réglage ; les existants se convertissent via Promouvoir.
 
+## Paramètres — Styles d'export (Compilation et export ▸ Formats d'export)
+settings-styles-builtin = Styles intégrés
+settings-styles-user = Mes styles
+settings-styles-builtin-badge = Intégré
+settings-styles-duplicate = Dupliquer
+settings-styles-edit = Modifier
+settings-styles-delete = Supprimer
+settings-styles-import = Importer…
+settings-styles-export = Exporter…
+settings-styles-copy-suffix = (copie)
+settings-styles-json-filter = Style d'export
+settings-styles-editor-title = Modifier le style
+settings-styles-editor-none = Sélectionnez un style personnalisé à modifier, ou dupliquez-en un intégré.
+settings-styles-imported = Style importé
+settings-styles-import-failed = Impossible d'importer le style
+settings-styles-exported = Style exporté
+settings-styles-export-failed = Impossible d'exporter le style
+# Libellés des champs de l'éditeur
+settings-styles-field-name = Nom
+settings-styles-field-chapters = Titres de chapitre
+settings-styles-field-parts = Titres de partie
+settings-styles-field-scene-break = Saut de scène
+settings-styles-field-spacing = Interligne
+settings-styles-field-justify = Justifier le texte
+settings-styles-field-notes = Inclure les notes
+settings-styles-field-synopses = Inclure les synopsis
+settings-styles-field-scene-titles = Inclure les titres de scène
+# Options de schéma de titre
+settings-styles-heading-none = Aucun titre
+settings-styles-heading-numbered = Numéro seul
+settings-styles-heading-title = Titre seul
+settings-styles-heading-both = Numéro + titre
+# Options de saut de scène (les glyphes restent tels quels)
+settings-styles-break-blank = Ligne vide
+settings-styles-break-none = Aucun
+# Options d'interligne
+settings-styles-spacing-single = Simple
+settings-styles-spacing-onehalf = 1½
+settings-styles-spacing-double = Double
+
 ## Accueil
 welcome-title = Bienvenue dans Skribisto
 # $version provient de l'étiquette git, apposée à la compilation (src/version.rs).

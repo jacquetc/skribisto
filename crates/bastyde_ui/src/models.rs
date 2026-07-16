@@ -18,6 +18,7 @@ mod binder_binder_items_tree_model;
 mod binder_list_model;
 mod dictionary_settings_file;
 mod examples_list_model;
+mod export_styles_file;
 mod installed_dictionaries_model;
 mod open_docs;
 mod pace_model;
@@ -37,6 +38,7 @@ pub use binder_binder_items_tree_model::{
 };
 pub use binder_list_model::{BinderListModel, BinderRow};
 pub use examples_list_model::ExamplesListModel;
+pub use export_styles_file::ExportStylesService;
 pub use open_docs::{OpenDoc, OpenDocsStore};
 pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};
 pub use recent_work_list_model::RecentWorkListModel;

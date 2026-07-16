@@ -177,6 +177,46 @@ settings-group-chapters = Chapters
 settings-chapter-flat = Flat chapters
 settings-chapter-flat-hint = On: a chapter is a single row. You write into it, and it holds no scenes. Off: a chapter is a folder. You still write into it, but it can hold scenes as well. New chapters follow this setting; existing ones convert via Promote.
 
+## Settings — Export styles (Compile & Export ▸ Export Formats)
+settings-styles-builtin = Built-in styles
+settings-styles-user = My styles
+settings-styles-builtin-badge = Built-in
+settings-styles-duplicate = Duplicate
+settings-styles-edit = Edit
+settings-styles-delete = Delete
+settings-styles-import = Import…
+settings-styles-export = Export…
+settings-styles-copy-suffix = (copy)
+settings-styles-json-filter = Export style
+settings-styles-editor-title = Edit style
+settings-styles-editor-none = Select a custom style to edit it, or duplicate a built-in one.
+settings-styles-imported = Style imported
+settings-styles-import-failed = Could not import style
+settings-styles-exported = Style exported
+settings-styles-export-failed = Could not export style
+# Editor field labels
+settings-styles-field-name = Name
+settings-styles-field-chapters = Chapter headings
+settings-styles-field-parts = Part headings
+settings-styles-field-scene-break = Scene break
+settings-styles-field-spacing = Line spacing
+settings-styles-field-justify = Justify text
+settings-styles-field-notes = Include notes
+settings-styles-field-synopses = Include synopses
+settings-styles-field-scene-titles = Include scene titles
+# Heading-scheme options
+settings-styles-heading-none = No heading
+settings-styles-heading-numbered = Number only
+settings-styles-heading-title = Title only
+settings-styles-heading-both = Number + title
+# Scene-break options (glyph values stay as typed)
+settings-styles-break-blank = Blank line
+settings-styles-break-none = None
+# Line-spacing options
+settings-styles-spacing-single = Single
+settings-styles-spacing-onehalf = 1½
+settings-styles-spacing-double = Double
+
 ## Welcome
 welcome-title = Welcome to Skribisto
 # $version is stamped from the git tag at build time (see src/version.rs).

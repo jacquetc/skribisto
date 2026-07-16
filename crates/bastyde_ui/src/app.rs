@@ -439,6 +439,9 @@ pub struct App {
     /// Keeps the dictionary accepted-licence store's `Reloadable` registration alive in the
     /// shared `SettingsRegistry` (mirrors `backup_settings_reloadable`).
     dictionary_settings_reloadable: Option<Rc<dyn Reloadable>>,
+    /// Keeps the user export-styles store's `Reloadable` registration alive in the shared
+    /// `SettingsRegistry` (mirrors `dictionary_settings_reloadable`).
+    export_styles_reloadable: Option<Rc<dyn Reloadable>>,
 }
 
 impl App {
@@ -476,6 +479,7 @@ impl App {
             root_child: None,
             backup_settings_reloadable: None,
             dictionary_settings_reloadable: None,
+            export_styles_reloadable: None,
         }
     }
 }
@@ -639,6 +643,15 @@ impl Widget for App {
         {
             self.dictionary_settings_reloadable =
                 Some(registry.register(dictionaries.settings_reloadable()));
+        }
+        // Live cross-process reload for `export_styles.toml` (user styles), pulled from
+        // app-state since `App` doesn't own the view-model.
+        if self.export_styles_reloadable.is_none()
+            && let Some(registry) = ctx.app_state::<SettingsRegistry>().cloned()
+            && let Some(styles) =
+                ctx.app_state::<crate::view_models::ExportStylesViewModel>().cloned()
+        {
+            self.export_styles_reloadable = Some(registry.register(styles.settings_reloadable()));
         }
 
         // "Unsaved" is *derived*: the work has edits not on disk iff more mutations

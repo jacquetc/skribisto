@@ -1014,6 +1014,20 @@ impl Widget for SettingsPanel {
                     Sec::Spelling.icon_svg(),
                 )),
             };
+        // Compile & Export ▸ Export Formats — the export-style manager (built-in + user styles,
+        // duplicate-to-edit, JSON import/export), wrapped in `pane_frame` like every other pane.
+        let export_styles_pane: Box<dyn Widget> =
+            match ctx.app_state::<crate::view_models::ExportStylesViewModel>().cloned() {
+                Some(vm) => Box::new(pane_frame(
+                    crumb(Some(tr!(settings_sec_compile())), tr!(settings_page_export())),
+                    crate::settings_export_styles::export_styles_pane(ctx, &vm),
+                )),
+                None => Box::new(empty_pane(
+                    Some(tr!(settings_sec_compile())),
+                    tr!(settings_page_export()),
+                    Sec::CompileExport.icon_svg(),
+                )),
+            };
 
         // ── Backup ("Copies de secours") panes ──
         // Wrapped in the shared `pane_frame` (breadcrumb · rule · scrollable,
@@ -1115,11 +1129,7 @@ impl Widget for SettingsPanel {
             ))
             .child_boxed(dictionaries_pane)
             .child(Self::autosave_pane(&vm))
-            .child(empty_pane(
-                Some(tr!(settings_sec_compile())),
-                tr!(settings_page_export()),
-                Sec::CompileExport.icon_svg(),
-            ))
+            .child_boxed(export_styles_pane)
             .child(empty_pane(
                 None,
                 tr!(settings_page_keymap()),

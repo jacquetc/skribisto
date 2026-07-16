@@ -62,6 +62,7 @@ mod session_status_item;
 mod word_count_indicator;
 mod settings_backup;
 mod settings_dictionaries;
+mod settings_export_styles;
 mod settings_panel;
 mod singles;
 mod spellcheck;
@@ -453,6 +454,18 @@ fn main() {
     // state, and the in-flight export job. Registered as app-state so the title-bar chrome
     // (built outside `App`) and `App::build`'s wiring reach the one instance.
     let export = ExportViewModel::new(app_ctx.clone(), ids.clone());
+    // Export styles ("Compile & Export" formats) — the user's editable style presets, opened
+    // eagerly here so the Settings pane and the Export panel's picker both read one instance.
+    // App-local config (a style outlives any project); degrades to a throwaway temp file if the
+    // config dir is unavailable, exactly as backup settings do.
+    let export_styles_service = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| {
+            models::ExportStylesService::open(&paths)
+                .map_err(|e| eprintln!("export styles: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(models::ExportStylesService::in_memory_default);
+    let export_styles = view_models::ExportStylesViewModel::new(export_styles_service);
     // Backup-mode state: `backup_mode` is true while a *backup file* is open in
     // this window (Save + auto-backup off; the file is read-only, the content is
     // still editable). `backup_context` carries the open backup's details (drives
@@ -640,6 +653,7 @@ fn main() {
         .app_state(progress_recorder.clone())
         .app_state(import_plume.clone())
         .app_state(export.clone())
+        .app_state(export_styles.clone())
         .app_state(save_as_vm.clone())
         .app_state(backup_settings.clone())
         .app_state(backup_scheduler.clone())
