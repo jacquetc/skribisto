@@ -20,6 +20,7 @@ mod dictionary_settings_file;
 mod examples_list_model;
 mod installed_dictionaries_model;
 mod open_docs;
+mod pace_model;
 mod recent_work_list_model;
 mod search_results_model;
 mod search_settings_file;
@@ -37,6 +38,7 @@ pub use binder_binder_items_tree_model::{
 pub use binder_list_model::{BinderListModel, BinderRow};
 pub use examples_list_model::ExamplesListModel;
 pub use open_docs::{OpenDoc, OpenDocsStore};
+pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};
 pub use recent_work_list_model::RecentWorkListModel;
 pub use search_results_model::SearchResultsModel;
 pub use stats_model::StatsModel;

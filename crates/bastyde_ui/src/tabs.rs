@@ -36,7 +36,7 @@ use frontend::direct_access::ContentDto;
 use crate::app_ids::AppIds;
 use crate::models::{OpenDoc, OpenDocsStore};
 use crate::singles::{SingleBinderItem, SingleContent};
-use crate::view_models::{EditorTypography, EditorTypographySet, StreamViewModel};
+use crate::view_models::{EditorTypography, EditorTypographySet, PaceViewModel, StreamViewModel};
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
 // (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
@@ -99,6 +99,12 @@ pub struct ContentTab {
     /// cycle and make `OpenDocsStore::clear()` re-enter its own `RefCell`. See
     /// [`StreamViewModel`].
     stream: Option<StreamViewModel>,
+    /// The Book's writing-plan view-model — `Some` only for a `Folder/Book`
+    /// container, the one combination with a "Pace" segment. Like `stream`, it
+    /// lives on the tab (not the shared `OpenDoc`) and reads through the backend,
+    /// not through documents. Consumed by the Pace pane (built out over M4c/M4d).
+    #[allow(dead_code)]
+    pace: Option<PaceViewModel>,
     /// The app's entity ids — needed for the undo stack when a name field commits.
     ids: AppIds,
     /// The per-editor find banner (Ctrl+F) — `Some` only when this tab has a main
@@ -256,6 +262,16 @@ impl ContentTab {
         show_synopsis: Signal<bool>,
         typography: EditorTypographySet,
     ) -> Self {
+        // The Pace view-model gates on the same `StreamLevel::for_container` as
+        // the stream (Book only). Built first, so it can borrow `app_ctx` before
+        // `StreamViewModel::new` consumes it.
+        let pace = PaceViewModel::new(
+            app_ctx.clone(),
+            ids.clone(),
+            open_doc.item_id,
+            &open_doc.role,
+            &open_doc.sub_role,
+        );
         let stream = StreamViewModel::new(
             app_ctx,
             ids.clone(),
@@ -272,6 +288,7 @@ impl ContentTab {
         Self {
             open_doc,
             stream,
+            pace,
             ids,
             find,
             segment: Signal::new(0),
@@ -319,6 +336,13 @@ impl ContentTab {
     /// Book) has one.
     pub fn stream(&self) -> Option<&StreamViewModel> {
         self.stream.as_ref()
+    }
+
+    /// The Book's writing-plan (Pace) view-model — `Some` only for a `Folder/Book`
+    /// container. The Pace pane binds its signals and calls its methods.
+    #[allow(dead_code)] // consumed by the Pace pane (M4c/M4d)
+    pub fn pace(&self) -> Option<&PaceViewModel> {
+        self.pace.as_ref()
     }
 
     /// Persist every changed field back to its `Content` row via the shared
