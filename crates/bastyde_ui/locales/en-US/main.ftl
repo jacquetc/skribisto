@@ -478,6 +478,28 @@ export-choose-empty = No project to choose from.
 export-cancel = Cancel
 export-export = Export
 export-save-dialog-title = Export to file
+# Left-pane section headers (normal case) + scope segmented control
+export-section-what = What to export
+export-section-style = Style preset
+export-section-destination = Destination
+export-custom-selection = Custom selection
+export-selected-count = { $count } selected
+# Live-preview header
+export-preview-compiled = compiled
+export-preview-live = Live preview
+# Style-preset summary chips
+export-chip-chapters-none = Chapters: none
+export-chip-chapters-numbered = Chapters: numbered
+export-chip-chapters-title = Chapters: title only
+export-chip-chapters-both = Chapters: number + title
+export-chip-scene-break-glyph = Scene break: { $glyph }
+export-chip-scene-break-blank = Scene break: blank line
+export-chip-scene-break-none = Scene break: none
+export-chip-spacing-single = Spacing: single
+export-chip-spacing-onehalf = Spacing: 1½
+export-chip-spacing-double = Spacing: double
+export-chip-notes-included = Notes included
+export-chip-notes-excluded = Notes excluded
 # Output formats
 export-format-docx = Word
 export-format-html = HTML

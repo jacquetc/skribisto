@@ -243,6 +243,9 @@ impl Preset {
 pub fn builtin_presets() -> Vec<Preset> {
     vec![
         Preset::base("neutral", "Neutral"),
+        // The manuscript presets differ by typography + scene break only; heading words stay
+        // `HeadingLanguage::Auto` (base default) so "Chapter"/"Chapitre"/"Kapitel" follow each
+        // scene's own resolved language rather than being forced by the chosen style.
         Preset {
             id: "manuscript-shunn".to_string(),
             name: "Standard Manuscript (Shunn)".to_string(),
@@ -251,7 +254,6 @@ pub fn builtin_presets() -> Vec<Preset> {
             first_line_indent_in: 0.5,
             scene_break: SceneBreak::Glyph("#".to_string()),
             book_title_page: true,
-            heading_language: HeadingLanguage::Fixed("en".to_string()),
             ..Preset::base("manuscript-shunn", "")
         },
         Preset {
@@ -259,14 +261,12 @@ pub fn builtin_presets() -> Vec<Preset> {
             name: "Manuscrit (français)".to_string(),
             font_family: "Times New Roman".to_string(),
             scene_break: SceneBreak::Glyph("*".to_string()),
-            heading_language: HeadingLanguage::Fixed("fr".to_string()),
             ..Preset::base("manuscript-fr", "")
         },
         Preset {
             id: "manuscript-de".to_string(),
             name: "Manuskript (Normseite)".to_string(),
             font_family: "Courier New".to_string(),
-            heading_language: HeadingLanguage::Fixed("de".to_string()),
             ..Preset::base("manuscript-de", "")
         },
         Preset {

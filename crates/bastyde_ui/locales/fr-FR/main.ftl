@@ -479,6 +479,28 @@ export-choose-empty = Aucun projet à sélectionner.
 export-cancel = Annuler
 export-export = Exporter
 export-save-dialog-title = Exporter vers un fichier
+# En-têtes de sections du panneau + contrôle segmenté de portée
+export-section-what = Quoi exporter
+export-section-style = Style
+export-section-destination = Destination
+export-custom-selection = Sélection personnalisée
+export-selected-count = { $count } sélectionné(s)
+# En-tête de l'aperçu en direct
+export-preview-compiled = compilé
+export-preview-live = Aperçu en direct
+# Étiquettes récapitulatives du style
+export-chip-chapters-none = Chapitres : aucun
+export-chip-chapters-numbered = Chapitres : numérotés
+export-chip-chapters-title = Chapitres : titre seul
+export-chip-chapters-both = Chapitres : numéro + titre
+export-chip-scene-break-glyph = Saut de scène : { $glyph }
+export-chip-scene-break-blank = Saut de scène : ligne vide
+export-chip-scene-break-none = Saut de scène : aucun
+export-chip-spacing-single = Interligne : simple
+export-chip-spacing-onehalf = Interligne : 1½
+export-chip-spacing-double = Interligne : double
+export-chip-notes-included = Notes incluses
+export-chip-notes-excluded = Notes exclues
 # Formats de sortie
 export-format-docx = Word
 export-format-html = HTML

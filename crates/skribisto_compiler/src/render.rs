@@ -589,11 +589,27 @@ mod tests {
     }
 
     #[test]
-    fn chapter_heading_localizes_to_the_preset_language() {
+    fn chapter_heading_follows_content_language_by_default() {
+        // The built-in manuscript presets no longer force a language — headings follow each
+        // scene's own resolved language (the fixture's scenes are "en").
         let g = flat_book();
-        let p = preset("manuscript-fr"); // heading_language = Fixed("fr")
+        let p = preset("manuscript-fr");
         let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
-        assert!(html.contains("Chapitre 1"), "french heading: {html}");
+        assert!(html.contains("Chapter 1"), "content-language heading: {html}");
+        assert!(!html.contains("Chapitre 1"));
+    }
+
+    #[test]
+    fn a_fixed_heading_language_overrides_the_content_language() {
+        // A preset MAY still pin a heading language (`HeadingLanguage::Fixed`); when it does,
+        // that wins over the scene's own language.
+        let g = flat_book();
+        let p = Preset {
+            heading_language: HeadingLanguage::Fixed("fr".to_string()),
+            ..preset("manuscript-fr")
+        };
+        let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
+        assert!(html.contains("Chapitre 1"), "forced french heading: {html}");
         assert!(!html.contains("Chapter 1"));
     }
 

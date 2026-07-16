@@ -41,7 +41,8 @@ use frontend::common::event::Event;
 
 use skrib_format::{BinderWithItems, Gathered, ItemWithContents};
 use skribisto_compiler::{
-    ExportFormat as CFormat, Preset, RenderRequest, builtin_presets, render_preview_document,
+    ExportFormat as CFormat, HeadingScheme, LineSpacing, Preset, RenderRequest, SceneBreak,
+    builtin_presets, render_preview_document,
 };
 use skribisto_model::compile::{
     ItemMeta, ScopeKind, StreamLevel, enclosing_head, primary_scope, resolve_scope,
@@ -143,6 +144,13 @@ pub struct ExportViewModel {
     applicable: Signal<Vec<ExportScopeKind>>,
     /// The scope the panel is currently exporting.
     scope: Signal<ExportScopeKind>,
+    /// The quick (non-`Custom`) scope this panel session may switch back to via the "What to
+    /// export" segmented control — `Some` when a focusable anchor resolved one, else `None`
+    /// (opened from Choose… with nothing focused, so only Custom is offered).
+    quick_scope: Signal<Option<ExportScopeKind>>,
+    /// The scope segmented control's selection: 0 = the quick scope, 1 = Custom selection.
+    /// An effect maps a change here onto [`scope`] via [`apply_segment`].
+    segment_index: Signal<usize>,
     /// The focused item the quick scope resolves from (the backend re-resolves the extent
     /// against its frozen snapshot from this anchor).
     anchor: Signal<Option<u64>>,
@@ -177,6 +185,8 @@ impl ExportViewModel {
             ids,
             applicable: Signal::new(Vec::new()),
             scope: Signal::new(ExportScopeKind::CurrentBook),
+            quick_scope: Signal::new(None),
+            segment_index: Signal::new(0),
             anchor: Signal::new(None),
             format_index: Signal::new(0),
             // Seed the first built-in style so the picker shows a real selection (and the
@@ -256,6 +266,21 @@ impl ExportViewModel {
     /// and the committed export both see current prose.
     pub fn prepare(&self, scope: ExportScopeKind, anchor: Option<u64>) {
         let is_custom = scope == ExportScopeKind::Custom;
+        // The quick scope the "What to export" toggle can switch back to: the opening scope
+        // when it isn't Custom, otherwise the focused item's own primary facet (if any), so a
+        // panel opened via Choose… on a focused scene still offers "the current scene" beside
+        // "Custom selection".
+        let quick = if is_custom {
+            anchor.and_then(|a| {
+                self.compute_applicable(Some(a))
+                    .into_iter()
+                    .find(|s| *s != ExportScopeKind::Custom)
+            })
+        } else {
+            Some(scope.clone())
+        };
+        self.quick_scope.set(quick);
+        self.segment_index.set(if is_custom { 1 } else { 0 });
         self.scope.set(scope);
         self.anchor.set(anchor);
         self.output_path.set(self.default_output_path());
@@ -263,6 +288,41 @@ impl ExportViewModel {
         // from the current store (with the default seed).
         if is_custom {
             self.choose.replace(None);
+            self.ensure_choose();
+        }
+    }
+
+    /// The quick (non-`Custom`) scope this session may switch to, if any — the label for the
+    /// first segment of the "What to export" control.
+    pub fn quick_scope(&self) -> Option<ExportScopeKind> {
+        self.quick_scope.get()
+    }
+
+    /// The scope segmented control's selection signal (0 = quick scope, 1 = Custom).
+    pub fn segment_index(&self) -> Signal<usize> {
+        self.segment_index.clone()
+    }
+
+    /// The active scope signal — the leading column, preview, and `can_export` bind this so
+    /// flipping the segmented control re-renders them.
+    pub fn scope_signal(&self) -> Signal<ExportScopeKind> {
+        self.scope.clone()
+    }
+
+    /// Fold the segmented control's index onto the active scope. Called from a panel effect on
+    /// `segment_index`: index 0 restores the quick scope (a no-op when none exists), index 1
+    /// switches to Custom and lazily builds the checkbox tree.
+    pub fn apply_segment(&self) {
+        let next = if self.segment_index.get() == 0 {
+            self.quick_scope.get()
+        } else {
+            Some(ExportScopeKind::Custom)
+        };
+        let Some(next) = next else { return };
+        if self.scope.get() != next {
+            self.scope.set(next.clone());
+        }
+        if next == ExportScopeKind::Custom {
             self.ensure_choose();
         }
     }
@@ -309,6 +369,12 @@ impl ExportViewModel {
     /// The checked item ids for the `Custom` scope's include set.
     pub fn checked_item_ids(&self) -> Vec<u64> {
         self.choose.borrow().as_ref().map(|m| m.checked_item_ids()).unwrap_or_default()
+    }
+
+    /// The number of checked items in the Choose tree — the Choose footer's "{n} selected"
+    /// count. Read by a small reactive label that binds `custom_changed` to refresh it.
+    pub fn checked_count(&self) -> usize {
+        self.choose.borrow().as_ref().map(|m| m.checked_item_ids().len()).unwrap_or(0)
     }
 
     fn default_output_path(&self) -> String {
@@ -360,6 +426,36 @@ impl ExportViewModel {
         builtin_presets()
     }
 
+    /// A short, read-only summary of the selected style's structural choices — the chips
+    /// shown under the style picker (chapters · scene break · notes · spacing). Localized,
+    /// so the panel binds `preset_signal` and rebuilds these on a style change.
+    pub fn preset_chips(&self) -> Vec<bastyde::i18n::LocalizedString> {
+        let p = self.selected_preset();
+        vec![
+            match p.chapter_heading {
+                HeadingScheme::None => tr!(export_chip_chapters_none()),
+                HeadingScheme::Numbered => tr!(export_chip_chapters_numbered()),
+                HeadingScheme::TitleOnly => tr!(export_chip_chapters_title()),
+                HeadingScheme::NumberAndTitle => tr!(export_chip_chapters_both()),
+            },
+            match &p.scene_break {
+                SceneBreak::Glyph(g) => tr!(export_chip_scene_break_glyph(glyph = g.clone())),
+                SceneBreak::BlankLine => tr!(export_chip_scene_break_blank()),
+                SceneBreak::None => tr!(export_chip_scene_break_none()),
+            },
+            if p.include_notes {
+                tr!(export_chip_notes_included())
+            } else {
+                tr!(export_chip_notes_excluded())
+            },
+            match p.line_spacing {
+                LineSpacing::Single => tr!(export_chip_spacing_single()),
+                LineSpacing::OneAndHalf => tr!(export_chip_spacing_onehalf()),
+                LineSpacing::Double => tr!(export_chip_spacing_double()),
+            },
+        ]
+    }
+
     /// The formats the picker offers (one `RadioTile` each).
     pub fn panel_formats() -> &'static [ExportFormat] {
         &PANEL_FORMATS
@@ -367,6 +463,18 @@ impl ExportViewModel {
 
     fn selected_format(&self) -> ExportFormat {
         PANEL_FORMATS[self.format_index.get().min(PANEL_FORMATS.len() - 1)].clone()
+    }
+
+    /// The localized name of the currently-chosen output format — the preview header's
+    /// "compiled · <format> · …" subtitle (rebuilt on a `format_index` change).
+    pub fn current_format_label(&self) -> bastyde::i18n::LocalizedString {
+        format_label(&self.selected_format())
+    }
+
+    /// The name of the currently-chosen style — the preview subtitle's trailing segment
+    /// (data, so it stays `lit!`; rebuilt on a `preset_signal` change).
+    pub fn current_preset_name(&self) -> String {
+        self.selected_preset().name
     }
     fn selected_preset(&self) -> Preset {
         self.preset
@@ -393,19 +501,21 @@ impl ExportViewModel {
     /// (reactive on the checkbox tree via `custom_changed`).
     pub fn can_export(&self) -> Signal<bool> {
         let path_ok = self.output_path.map(|p| !p.trim().is_empty());
-        let scope = self.scope.clone();
         let choose = self.choose.clone();
-        let sel_ok = self.custom_changed.zip(&self.anchor).map(move |(_, anchor)| {
-            if scope.get() == ExportScopeKind::Custom {
-                choose
-                    .borrow()
-                    .as_ref()
-                    .map(|m| !m.checked_item_ids().is_empty())
-                    .unwrap_or(false)
-            } else {
-                anchor.is_some()
-            }
-        });
+        // Recompute when the checks change, the anchor changes, or the scope is switched via
+        // the segmented control — so flipping quick ↔ Custom re-evaluates the Export button.
+        let sel_ok =
+            self.custom_changed.zip(&self.anchor).zip(&self.scope).map(move |((_, anchor), scope)| {
+                if *scope == ExportScopeKind::Custom {
+                    choose
+                        .borrow()
+                        .as_ref()
+                        .map(|m| !m.checked_item_ids().is_empty())
+                        .unwrap_or(false)
+                } else {
+                    anchor.is_some()
+                }
+            });
         path_ok.and(&sel_ok)
     }
 
