@@ -519,6 +519,8 @@ mod tests {
             tags: vec![],
             dict_words: vec![],
             trash_infos: vec![],
+            paces: vec![],
+            progress_snapshots: vec![],
             binders: vec![BinderWithItems { binder: Binder { id: 10, ..Default::default() }, items }],
             work_info: None,
         }
