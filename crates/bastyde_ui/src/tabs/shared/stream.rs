@@ -92,6 +92,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     tab.mark_dirty_fn(),
                     Option::None,
                     Option::None,
+                    tab.open_doc.spell_main(),
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
@@ -99,6 +100,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     &typo,
                     tab.mark_dirty_fn(),
                     Option::None,
+                    tab.open_doc.spell_synopsis(),
                 )),
             };
             col = col.child(vspace(6.0));
@@ -234,6 +236,7 @@ fn stream_row(
                         on_change,
                         split,
                         Option::None,
+                        doc.spell_main(),
                     ));
                 }
             }
@@ -245,6 +248,7 @@ fn stream_row(
                         typo,
                         on_change,
                         split,
+                        doc.spell_synopsis(),
                     ));
                 }
             }

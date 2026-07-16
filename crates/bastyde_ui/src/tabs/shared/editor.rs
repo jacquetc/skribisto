@@ -23,6 +23,7 @@ use bastyde::widgets::{
 /// a search page, not a compact IntelliJ-style bar.
 const FIND_FIELD_MAX_WIDTH: f32 = 240.0;
 
+use crate::spellcheck::SpellSession;
 use crate::tabs::TitleField;
 use crate::view_models::{EditorTypography, FindViewModel};
 
@@ -62,6 +63,7 @@ pub fn writing_column(
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
     find: Option<crate::view_models::FindViewModel>,
+    spell: Option<Rc<SpellSession>>,
 ) -> CenterColumnFlowing {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -94,7 +96,7 @@ pub fn writing_column(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
             Expand::horizontal {
-                child: TypographyBoundEditor::new(editor, typo.clone())
+                child: TypographyBoundEditor::new(editor, typo.clone(), spell)
             }
         }
     ))
@@ -150,6 +152,7 @@ pub fn synopsis_editor(
     fit: SynopsisFit,
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
+    spell: Option<Rc<SpellSession>>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -186,7 +189,7 @@ pub fn synopsis_editor(
             border_color: BorderRole::Default
             border_width: 1.0
             corner_radius: 6.0
-            child: TypographyBoundEditor::new(editor, typo.clone())
+            child: TypographyBoundEditor::new(editor, typo.clone(), spell)
         }
     )
 }
@@ -294,6 +297,7 @@ pub fn synopsis_section(
     column_width: &Signal<f32>,
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
+    spell: Option<Rc<SpellSession>>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
@@ -313,6 +317,7 @@ pub fn synopsis_section(
                             SynopsisFit::Compact,
                             on_change,
                             Option::None,
+                            spell,
                         )
                     }
                 }
@@ -336,13 +341,14 @@ pub fn synopsis_column(
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
+    spell: Option<Rc<SpellSession>>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(
         MaxSize::width(synopsis_width.get()) {
             max_width: synopsis_width.clone()
             Expand::horizontal {
-                child: synopsis_editor(doc, typo, SynopsisFit::Growing, on_change, split)
+                child: synopsis_editor(doc, typo, SynopsisFit::Growing, on_change, split, spell)
             }
         }
     ))
@@ -357,6 +363,7 @@ pub fn writing_section(
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
     find: Option<crate::view_models::FindViewModel>,
+    spell: Option<Rc<SpellSession>>,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -373,6 +380,7 @@ pub fn writing_section(
             on_change,
             None,
             find,
+            spell,
         ))
 }
 
@@ -854,18 +862,80 @@ fn push_typography(handle: &EditorHandle, typo: &EditorTypography) {
 /// `zip` signal — `zip`/`zip3` build a *derived* signal, which panics on
 /// `.observe()`; the `SettingsStore` signals are mutable, so per-field effects
 /// are safe.
+/// Wire a prose editor's `handle` to its document's caret-aware [`SpellSession`]: feed this view's
+/// focus + caret (read **live** via `EditorHandle::cursor_position()` — the caret signal lags a
+/// frame behind a just-typed character, so the effects only *ping* "something changed") and drive
+/// the per-frame recompute via `frame_tick`. Returns the view token (`ctx.self_id()`), which the
+/// caller stores and must pass to [`SpellSession::on_blur`] when the widget is torn down (its `Drop`)
+/// so a destroyed focused view doesn't pin a stale exemption for a sibling view of the same document
+/// (split pane / stream row / the search-preview band). Shared by [`TypographyBoundEditor`] and the
+/// Search & Replace preview editor.
+pub(crate) fn wire_spell(
+    ctx: &mut BuildContext,
+    handle: &EditorHandle,
+    spell: &Rc<SpellSession>,
+) -> WidgetId {
+    let token = ctx.self_id();
+    {
+        let s = spell.clone();
+        ctx.effect(&handle.cursor_position_signal(), move |_| s.on_caret(token));
+    }
+    {
+        let s = spell.clone();
+        let h = handle.clone();
+        ctx.effect(&handle.focused_signal(), move |&focused| {
+            if focused {
+                let hh = h.clone();
+                s.on_focus(token, Rc::new(move || hh.cursor_position()));
+            } else {
+                s.on_blur(token);
+            }
+        });
+    }
+    {
+        let s = spell.clone();
+        let tick = ctx.frame_tick();
+        ctx.effect(&tick, move |_| s.tick());
+    }
+    token
+}
+
 struct TypographyBoundEditor {
     editor: Option<RichTextEditor>,
     typo: EditorTypography,
+    /// The caret-aware spell session for this editor's document, if spell-check applies. The
+    /// editor feeds it this view's focus + caret; `None` disables the wiring (e.g. a read-only or
+    /// non-prose surface).
+    spell: Option<Rc<crate::spellcheck::SpellSession>>,
+    /// This editor's stable identity as the spell session's "view" — set in `build` from
+    /// `ctx.self_id()`, read by `Drop` to un-focus the session when the widget is torn down.
+    token: Option<WidgetId>,
     child_id: Option<WidgetId>,
 }
 
 impl TypographyBoundEditor {
-    fn new(editor: RichTextEditor, typo: EditorTypography) -> Self {
+    fn new(
+        editor: RichTextEditor,
+        typo: EditorTypography,
+        spell: Option<Rc<crate::spellcheck::SpellSession>>,
+    ) -> Self {
         Self {
             editor: Some(editor),
             typo,
+            spell,
+            token: None,
             child_id: None,
+        }
+    }
+}
+
+impl Drop for TypographyBoundEditor {
+    fn drop(&mut self) {
+        // If this view held the spell session's caret focus, release it — otherwise a sibling
+        // view of the same document (a split pane / stream row) would keep a stale caret reader
+        // and pin a frozen exemption.
+        if let (Some(spell), Some(token)) = (&self.spell, self.token) {
+            spell.on_blur(token);
         }
     }
 }
@@ -914,10 +984,14 @@ impl Widget for TypographyBoundEditor {
             });
         }
         {
-            let (h, t) = (handle, self.typo.clone());
+            let (h, t) = (handle.clone(), self.typo.clone());
             ctx.effect(&self.typo.para_spacing_after, move |_| {
                 push_typography(&h, &t)
             });
+        }
+        // Caret-aware spell-check: feed this view's focus + caret and drive the per-frame recompute.
+        if let Some(spell) = self.spell.clone() {
+            self.token = Some(wire_spell(ctx, &handle, &spell));
         }
         vec![id]
     }

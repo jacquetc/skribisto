@@ -3,9 +3,11 @@
 //!
 //! It loads a [`spellbook::Dictionary`] per language **once**, shared by every open document
 //! that needs it (reversing the old app's one-instance-per-editor-tab waste), and produces a
-//! [`SyntaxHighlighter`] that squiggles misspellings. The *wiring* — adding/removing the
-//! highlight session on a document, and the five call sites that re-attach — lives in
-//! `models::open_docs` and `app.rs` (Step 6); this module is pure engine.
+//! [`SpellChecker`] — a pure misspell predicate. A per-document, **caret-aware** [`SpellSession`]
+//! (a host-driven *range session*, mirroring the find feature's `FindSession`) queries that
+//! predicate to push the squiggle ranges, omitting the word under the caret. The re-attach
+//! *wiring* (dictionary install/remove, mute, language change, `close_work`) lives in
+//! `models::open_docs` and `app.rs`; the caret wiring lives in `tabs::shared::editor`.
 //!
 //! ## The Firefox model
 //!
@@ -28,14 +30,19 @@
 //! to UTF-8 before handing the strings to spellbook. A dictionary that still fails to parse is
 //! simply absent (cached as `None`), never a crash.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
+use bastyde::core::WidgetId;
 use bastyde::prelude::Signal;
-use bastyde::text_document::{Color, HighlightContext, HighlightFormat, SyntaxHighlighter, UnderlineStyle};
+use bastyde::text_document::{
+    Color, DocumentEvent, HighlightFormat, RangeHighlight, SessionId, Subscription, TextDocument,
+    UnderlineStyle,
+};
 
 use crate::dictionary_registry;
 use skribisto_model::language;
@@ -163,20 +170,21 @@ fn word_positions(text: &str) -> Vec<(usize, usize, &str)> {
     out
 }
 
-/// A misspelling highlighter over one document's **active** dictionaries. Immutable and
-/// `Send + Sync` (the trait's bound), so it is cheaply `Arc`-shared into the document even
-/// though it is only ever built and read on the UI thread.
-struct SpellHighlighter {
-    /// Active dictionaries, primary first; empty is never installed (a highlighter with no
-    /// dictionary is never attached).
+/// A misspelling predicate over one document's **active** dictionaries — the pure engine a
+/// per-document [`SpellSession`] queries per word. Immutable: a snapshot of the active
+/// dictionaries (primary first) + the Work's personal words. Built by
+/// [`SpellcheckService::build_checker`]. `Clone` is cheap — `Arc` dictionaries — so one build can
+/// feed both the main and synopsis sessions.
+#[derive(Clone)]
+pub struct SpellChecker {
+    /// Active dictionaries, primary first; empty is never built (a checker with no dictionary is
+    /// never produced — the caller clears the session instead).
     dicts: Vec<Arc<spellbook::Dictionary>>,
     /// The Work's personal words — checked first, so removing one is just removing the entity.
     personal: HashSet<String>,
-    /// Squiggle colour, resolved from a theme role at attach time (never a hex literal here).
-    color: Color,
 }
 
-impl SpellHighlighter {
+impl SpellChecker {
     fn misspelled(&self, word: &str) -> bool {
         // Numbers, punctuation runs, and the like are not spell-checkable.
         if !word.chars().any(|c| c.is_alphabetic()) {
@@ -191,21 +199,14 @@ impl SpellHighlighter {
     }
 }
 
-impl SyntaxHighlighter for SpellHighlighter {
-    fn highlight_block(&self, text: &str, ctx: &mut HighlightContext) {
-        for (char_off, len, word) in word_positions(text) {
-            if self.misspelled(word) {
-                ctx.set_format(
-                    char_off,
-                    len,
-                    HighlightFormat {
-                        underline_style: Some(UnderlineStyle::SpellCheckUnderline),
-                        underline_color: Some(self.color),
-                        ..Default::default()
-                    },
-                );
-            }
-        }
+/// The wavy spell-check underline format in `color` (never a hex literal — the caller resolves
+/// `color` from a theme role). Paint-only, so it stays out of the accessibility tree and takes the
+/// cheap recolour path.
+fn spell_format(color: Color) -> HighlightFormat {
+    HighlightFormat {
+        underline_style: Some(UnderlineStyle::SpellCheckUnderline),
+        underline_color: Some(color),
+        ..Default::default()
     }
 }
 
@@ -336,29 +337,225 @@ impl SpellcheckService {
         out
     }
 
-    /// Build a highlighter for a document's tag list, or `None` when nothing is active/installed
-    /// (the caller then removes any existing session — the degrade path). `color` is the
-    /// squiggle colour, resolved from a theme role by the caller.
-    pub fn build_highlighter(
-        &self,
-        tags: &str,
-        color: Color,
-    ) -> Option<Arc<dyn SyntaxHighlighter>> {
+    /// Build a [`SpellChecker`] for a document's tag list, or `None` when nothing is
+    /// active/installed (the caller then clears its session — the degrade path).
+    pub fn build_checker(&self, tags: &str) -> Option<SpellChecker> {
         let dicts = self.active_dicts(tags);
         if dicts.is_empty() {
             return None;
         }
-        Some(Arc::new(SpellHighlighter {
+        Some(SpellChecker {
             dicts,
             personal: self.inner.personal.borrow().clone(),
-            color,
-        }))
+        })
     }
 }
 
 impl Default for SpellcheckService {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// A per-document, **caret-aware** spell-check highlighter — one host-driven *range session* on a
+/// `TextDocument`. It recomputes the misspelled ranges on every edit and every caret-word change,
+/// **omitting the word the caret currently sits in**, and pushes them with `set_session_ranges`.
+/// That is the Word/Google-Docs behaviour: don't flag the word you're mid-typing; reveal it once
+/// the caret leaves (a space / newline / punctuation, or a click / arrow away).
+///
+/// It mirrors `bastyde::widgets::rich_text::FindSession`'s lifecycle — a held `Subscription`, a
+/// `dirty` flag drained by a per-frame `tick`, and a `Drop` that retires the layer. The caret is
+/// read **live** at recompute time (via the closure a focused view supplies): the editor batches a
+/// printable keystroke a frame behind the caret signal, so a value pushed earlier would be stale
+/// exactly when a just-typed space should reveal the word.
+pub struct SpellSession {
+    doc: TextDocument,
+    session: SessionId,
+    /// Set by the `on_change` subscription (a `Send + Sync` closure) on an offset-moving edit;
+    /// hence `Arc<AtomicBool>`, exactly like `FindSession.dirty`.
+    content_dirty: Arc<AtomicBool>,
+    /// Set by the caret / focus effects (UI thread only). Kept apart from `content_dirty` so a
+    /// caret-only move re-derives the exemption from the cached misspelling set — O(misspellings) —
+    /// rather than re-tokenising the whole document.
+    caret_dirty: Cell<bool>,
+    /// Held so the subscription lives as long as the session (dropping it unsubscribes).
+    _sub: Subscription,
+    checker: RefCell<Option<SpellChecker>>,
+    color: Cell<Color>,
+    /// The one focused view of this document, if any: `(widget id, a LIVE caret reader)`. Only its
+    /// caret exempts a word; `None` = no view focused = nothing exempt. The reader is a closure so
+    /// a headless test can inject a caret without a mounted editor (production reads
+    /// `EditorHandle::cursor_position`).
+    focused: RefCell<Option<(WidgetId, Rc<dyn Fn() -> usize>)>>,
+    /// Every misspelling in the document, exemption **not** applied — the cache a caret move
+    /// re-filters instead of re-scanning.
+    all_ranges: RefCell<Vec<RangeHighlight>>,
+    /// The last set pushed, so an unchanged recompute skips the repaint (`RangeHighlight: Eq`).
+    last_ranges: RefCell<Vec<RangeHighlight>>,
+}
+
+impl SpellSession {
+    /// Create the range session on `doc` and subscribe to its edits. No checker yet — the ranges
+    /// stay empty until [`set_checker`](Self::set_checker).
+    pub fn new(doc: &TextDocument) -> Rc<Self> {
+        let session = doc.add_range_session();
+        let content_dirty = Arc::new(AtomicBool::new(false));
+        let sub = {
+            let content_dirty = content_dirty.clone();
+            doc.on_change(move |event| {
+                // Only offset-moving events need a re-scan — and never `HighlightPaintChanged`,
+                // which our own `set_session_ranges` emits (reacting to it would self-loop). Same
+                // filter `FindSession` uses.
+                if matches!(
+                    event,
+                    DocumentEvent::ContentsChanged { .. }
+                        | DocumentEvent::DocumentReset
+                        | DocumentEvent::BlockCountChanged(_)
+                        | DocumentEvent::FlowElementsInserted { .. }
+                        | DocumentEvent::FlowElementsRemoved { .. }
+                ) {
+                    content_dirty.store(true, Ordering::Relaxed);
+                }
+            })
+        };
+        Rc::new(Self {
+            doc: doc.clone(),
+            session,
+            content_dirty,
+            caret_dirty: Cell::new(false),
+            _sub: sub,
+            checker: RefCell::new(None),
+            color: Cell::new(Color::rgb(220, 50, 50)),
+            focused: RefCell::new(None),
+            all_ranges: RefCell::new(Vec::new()),
+            last_ranges: RefCell::new(Vec::new()),
+        })
+    }
+
+    /// Set the active checker + squiggle colour and recompute now. Called from app-level effects
+    /// (dictionary install/remove, mute, language change) — a safe context, never inside a doc
+    /// event, so recomputing directly cannot re-enter the `on_change` dispatch. `None` clears the
+    /// squiggles (the degrade path) while leaving the cheap empty session attached.
+    pub fn set_checker(&self, checker: Option<SpellChecker>, color: Color) {
+        *self.checker.borrow_mut() = checker;
+        self.color.set(color);
+        self.rebuild_all_ranges();
+        self.apply_exemption();
+    }
+
+    /// A view gained focus and becomes the caret source. `caret` reads the **live** offset.
+    pub fn on_focus(&self, view: WidgetId, caret: Rc<dyn Fn() -> usize>) {
+        *self.focused.borrow_mut() = Some((view, caret));
+        self.caret_dirty.set(true);
+    }
+
+    /// A view lost focus or was torn down: if it was the caret source, nothing is exempt now.
+    pub fn on_blur(&self, view: WidgetId) {
+        let was_source = self
+            .focused
+            .borrow()
+            .as_ref()
+            .is_some_and(|(v, _)| *v == view);
+        if was_source {
+            *self.focused.borrow_mut() = None;
+            self.caret_dirty.set(true);
+        }
+    }
+
+    /// The focused view's caret moved — re-derive the exemption next tick. (Ignored for a view
+    /// that isn't the current caret source, so a background split pane can't steal the exemption.)
+    pub fn on_caret(&self, view: WidgetId) {
+        let is_source = self
+            .focused
+            .borrow()
+            .as_ref()
+            .is_some_and(|(v, _)| *v == view);
+        if is_source {
+            self.caret_dirty.set(true);
+        }
+    }
+
+    /// Per frame: recompute only if something changed. A content edit re-tokenises the whole
+    /// document; a caret-only move just re-filters the cache. Coalesces a burst of events into one
+    /// recompute + at most one push.
+    pub fn tick(&self) {
+        let content = self.content_dirty.swap(false, Ordering::Relaxed);
+        let caret = self.caret_dirty.replace(false);
+        if !content && !caret {
+            return;
+        }
+        if content {
+            self.rebuild_all_ranges();
+        }
+        self.apply_exemption();
+    }
+
+    /// Re-tokenise the whole document into `all_ranges` (every misspelling, no exemption). Empty
+    /// when no checker is active. Char offsets are document-absolute (`block.position()` + the
+    /// block-local char offset), the space `set_session_ranges` expects.
+    ///
+    /// This runs O(document) on each content edit (coalesced to once per frame by `tick`). That is
+    /// fine for Skribisto's documents — one scene or one chapter, a few thousand words, ≈1-2 ms —
+    /// which is why a caret-only move re-filters the cache instead (`apply_exemption`) rather than
+    /// re-running this. If a single document ever grew unbounded, the follow-up is per-block range
+    /// caching keyed off `ContentsChanged { position }` (re-tokenise only the edited block).
+    fn rebuild_all_ranges(&self) {
+        let mut ranges = Vec::new();
+        if let Some(checker) = self.checker.borrow().as_ref() {
+            let color = self.color.get();
+            for block in self.doc.blocks() {
+                let base = block.position();
+                let text = block.text();
+                for (char_off, len, word) in word_positions(&text) {
+                    if checker.misspelled(word) {
+                        ranges.push(RangeHighlight {
+                            start: base + char_off,
+                            length: len,
+                            format: spell_format(color),
+                        });
+                    }
+                }
+            }
+        }
+        *self.all_ranges.borrow_mut() = ranges;
+    }
+
+    /// Filter the cached misspellings by the live caret — drop the one word it sits in (inclusive
+    /// of both ends, so typing at a word's end keeps it exempt) — and push, but only if the result
+    /// changed since the last push (so typing *within* the exempt word repaints nothing).
+    fn apply_exemption(&self) {
+        let caret = self.focused.borrow().as_ref().map(|(_, f)| f());
+        // Exempt **at most one** word — the first the caret falls in. This matters only where two
+        // misspelled words touch with no separator (adjacent CJK / Hiragana characters, which
+        // UAX#29 splits into one-char tokens): a caret on the shared boundary is inclusive-in both,
+        // and without this cap both would drop. The contract is "the word the caret sits in",
+        // singular. For separator-delimited scripts at most one ever matches, so this is a no-op.
+        let mut exempted = false;
+        let next: Vec<RangeHighlight> = self
+            .all_ranges
+            .borrow()
+            .iter()
+            .filter(|r| match caret {
+                Some(c) if !exempted && c >= r.start && c <= r.start + r.length => {
+                    exempted = true;
+                    false
+                }
+                _ => true,
+            })
+            .cloned()
+            .collect();
+        if *self.last_ranges.borrow() != next {
+            self.doc.set_session_ranges(self.session, next.clone());
+            *self.last_ranges.borrow_mut() = next;
+        }
+    }
+}
+
+impl Drop for SpellSession {
+    fn drop(&mut self) {
+        // The `Subscription`'s own drop stops callback delivery but does NOT retire the highlight
+        // layer — remove it explicitly, exactly as `FindSession` does.
+        self.doc.remove_session(self.session);
     }
 }
 
@@ -389,10 +586,9 @@ mod tests {
     fn highlighter_flags_only_the_misspelling() {
         let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n")
             .expect("tiny dictionary parses");
-        let hl = SpellHighlighter {
+        let hl = SpellChecker {
             dicts: vec![Arc::new(dict)],
             personal: HashSet::new(),
-            color: Color::rgb(220, 50, 50),
         };
         assert!(hl.misspelled("helo"), "a misspelling is flagged");
         assert!(!hl.misspelled("hello"), "a good word is not");
@@ -406,10 +602,9 @@ mod tests {
         let dict = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
         let mut personal = HashSet::new();
         personal.insert("Skribisto".to_string());
-        let hl = SpellHighlighter {
+        let hl = SpellChecker {
             dicts: vec![Arc::new(dict)],
             personal,
-            color: Color::rgb(220, 50, 50),
         };
         assert!(!hl.misspelled("Skribisto"), "a personal word is accepted");
         assert!(hl.misspelled("Skrib"), "but not an unrelated unknown word");
@@ -420,10 +615,9 @@ mod tests {
     fn a_word_any_active_dictionary_knows_is_accepted() {
         let en = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
         let fr = spellbook::Dictionary::new("SET UTF-8\n", "1\nbonjour\n").unwrap();
-        let hl = SpellHighlighter {
+        let hl = SpellChecker {
             dicts: vec![Arc::new(en), Arc::new(fr)],
             personal: HashSet::new(),
-            color: Color::rgb(220, 50, 50),
         };
         assert!(!hl.misspelled("hello"), "English word accepted");
         assert!(!hl.misspelled("bonjour"), "French word accepted");
@@ -459,5 +653,149 @@ mod tests {
         // 0xE9 is 'é' in Latin-1.
         let (decoded, _, _) = enc.decode(b"caf\xe9");
         assert_eq!(decoded, "café");
+    }
+
+    // ── SpellSession (the caret-aware range highlighter) ──
+
+    fn tiny_doc(text: &str) -> TextDocument {
+        let d = TextDocument::new();
+        d.set_plain_text(text).unwrap();
+        d
+    }
+
+    /// A checker knowing `hello`/`world` — so `helo`/`wrld` are misspelled.
+    fn en_checker() -> SpellChecker {
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n").unwrap();
+        SpellChecker {
+            dicts: vec![Arc::new(dict)],
+            personal: HashSet::new(),
+        }
+    }
+
+    /// Focus a single view whose caret is read from `cell` (the closure production supplies is
+    /// `move || handle.cursor_position()`; a test injects a plain cell instead).
+    fn focus_at(session: &SpellSession, cell: &Rc<Cell<usize>>) {
+        let c = cell.clone();
+        session.on_focus(WidgetId::default(), Rc::new(move || c.get()));
+    }
+
+    fn starts(session: &SpellSession) -> Vec<usize> {
+        session.last_ranges.borrow().iter().map(|r| r.start).collect()
+    }
+
+    #[test]
+    fn session_exempts_the_caret_word_and_flags_the_rest() {
+        let doc = tiny_doc("helo wrld"); // both misspelled
+        let session = SpellSession::new(&doc);
+        let caret = Rc::new(Cell::new(2usize)); // inside "helo" [0,4]
+        focus_at(&session, &caret);
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        assert_eq!(starts(&session), vec![5], "caret word exempt; only wrld (char 5) flagged");
+    }
+
+    #[test]
+    fn no_focused_view_flags_every_misspelling() {
+        let doc = tiny_doc("helo wrld");
+        let session = SpellSession::new(&doc);
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        assert_eq!(starts(&session), vec![0, 5], "no exemption without a focused caret");
+    }
+
+    #[test]
+    fn caret_at_the_word_end_keeps_it_exempt() {
+        let doc = tiny_doc("helo wrld");
+        let session = SpellSession::new(&doc);
+        let caret = Rc::new(Cell::new(4usize)); // the END of "helo" [0,4] — still typing it
+        focus_at(&session, &caret);
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        assert_eq!(starts(&session), vec![5], "inclusive end keeps the just-typed word exempt");
+    }
+
+    #[test]
+    fn caret_exempts_at_most_one_word_at_a_zero_gap_boundary() {
+        // Two TOUCHING misspelled ranges — [0,1) and [1,2) — as adjacent CJK/Hiragana characters
+        // produce (UAX#29 splits them, and no CJK dictionary means both are "misspelled"). A caret
+        // exactly on the shared boundary (char 1) is inclusive-in both; only the first must drop.
+        let doc = tiny_doc("ab");
+        let session = SpellSession::new(&doc);
+        let fmt = || spell_format(Color::rgb(220, 50, 50));
+        *session.all_ranges.borrow_mut() = vec![
+            RangeHighlight { start: 0, length: 1, format: fmt() },
+            RangeHighlight { start: 1, length: 1, format: fmt() },
+        ];
+        let caret = Rc::new(Cell::new(1usize));
+        focus_at(&session, &caret);
+        session.apply_exemption();
+        assert_eq!(starts(&session), vec![1], "only the first touching word is exempt, not both");
+    }
+
+    #[test]
+    fn moving_the_caret_reveals_the_word_left_and_hides_the_word_entered() {
+        let doc = tiny_doc("helo wrld");
+        let session = SpellSession::new(&doc);
+        let caret = Rc::new(Cell::new(2usize)); // in "helo"
+        focus_at(&session, &caret);
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        assert_eq!(starts(&session), vec![5], "helo exempt, wrld flagged");
+
+        caret.set(6); // move into "wrld" [5,9]
+        session.on_caret(WidgetId::default());
+        session.tick();
+        assert_eq!(starts(&session), vec![0], "now helo is flagged and wrld exempt");
+    }
+
+    #[test]
+    fn a_content_edit_re_derives_on_the_next_tick() {
+        let doc = tiny_doc("hello"); // correct → nothing flagged
+        let session = SpellSession::new(&doc);
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        assert!(session.last_ranges.borrow().is_empty(), "correct prose has no squiggle");
+
+        doc.set_plain_text("helo").unwrap(); // now misspelled — fires an offset-moving event
+        session.tick();
+        assert_eq!(starts(&session), vec![0], "the edit is picked up on the tick");
+    }
+
+    #[test]
+    fn char_offsets_are_document_absolute_through_accents() {
+        // "café" is correct; "wrld" is the misspelling. A byte offset would place it at 6 (é is two
+        // bytes); the char offset is 5.
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\ncafé\nworld\n").unwrap();
+        let checker = SpellChecker {
+            dicts: vec![Arc::new(dict)],
+            personal: HashSet::new(),
+        };
+        let doc = tiny_doc("café wrld");
+        let session = SpellSession::new(&doc);
+        session.set_checker(Some(checker), Color::rgb(220, 50, 50));
+        assert_eq!(starts(&session), vec![5], "char offset, not byte offset");
+    }
+
+    #[test]
+    fn a_second_paragraph_gets_absolute_offsets() {
+        let doc = tiny_doc("hello\nwrld"); // block 2 ("wrld") starts one past block 1 ("hello")
+        let session = SpellSession::new(&doc);
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        assert_eq!(starts(&session), vec![6], "wrld sits at char 6 (5 + the 1-char block gap)");
+    }
+
+    #[test]
+    fn no_checker_clears_the_squiggles() {
+        let doc = tiny_doc("helo wrld");
+        let session = SpellSession::new(&doc);
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        assert!(!session.last_ranges.borrow().is_empty());
+        session.set_checker(None, Color::rgb(220, 50, 50)); // degrade
+        assert!(session.last_ranges.borrow().is_empty(), "no checker → no ranges, session kept");
+    }
+
+    #[test]
+    fn an_idle_tick_is_a_no_op() {
+        let doc = tiny_doc("helo wrld");
+        let session = SpellSession::new(&doc);
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        let before = session.last_ranges.borrow().clone();
+        session.tick(); // nothing dirty
+        assert_eq!(*session.last_ranges.borrow(), before, "an idle tick changes nothing");
     }
 }

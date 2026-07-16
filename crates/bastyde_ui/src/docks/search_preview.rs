@@ -66,6 +66,12 @@ struct PreviewBody {
     /// previewed doc (dropped, and its highlights with it, when the preview
     /// changes or clears).
     find: std::rc::Rc<std::cell::RefCell<Option<bastyde::widgets::rich_text::FindSession>>>,
+    /// The document spell session this preview view currently feeds (its caret) and drives (per
+    /// frame), with the view token. The preview is another live view of a shared `OpenDoc`
+    /// document, so it participates in the caret-aware exemption like any editor. Tracked here to
+    /// release it on a doc-switch rebuild (the effects tear down but never fire `on_blur`) and on
+    /// drop — otherwise a stale caret reader would pin a frozen exemption for that document.
+    spell_view: Option<(std::rc::Rc<crate::spellcheck::SpellSession>, WidgetId)>,
 }
 
 impl PreviewBody {
@@ -74,6 +80,7 @@ impl PreviewBody {
             vm,
             child_id: None,
             find: std::rc::Rc::new(std::cell::RefCell::new(None)),
+            spell_view: None,
         }
     }
 
@@ -135,6 +142,16 @@ impl PreviewBody {
     }
 }
 
+impl Drop for PreviewBody {
+    fn drop(&mut self) {
+        // Release the document's spell session so a destroyed preview doesn't pin a stale caret
+        // exemption for a scene tab still showing the same document.
+        if let Some((spell, token)) = self.spell_view.take() {
+            spell.on_blur(token);
+        }
+    }
+}
+
 impl std::fmt::Debug for PreviewBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PreviewBody").finish()
@@ -151,10 +168,16 @@ impl Widget for PreviewBody {
             BindingLevel::Rebuild,
         );
 
+        // Release the spell session this preview fed on the previous build. A doc-switch rebuild
+        // tears the caret effects down but never fires `on_blur`, so do it here (and on drop);
+        // the current document is re-wired below.
+        if let Some((old, tok)) = self.spell_view.take() {
+            old.on_blur(tok);
+        }
         let doc = self.vm.preview_signal().get();
         let field = self.vm.preview_field_signal().get();
         let child: Box<dyn Widget> = match doc.as_ref().and_then(|d| editable_field(d, field)) {
-            Some((open_doc, prose)) => {
+            Some((open_doc, prose, spell)) => {
                 self.install_find_highlight(ctx, &prose.doc);
                 // Cap the editor's width like a scene column, so a wide paragraph
                 // stays readable (Settings ▸ preview width). Flowing (intrinsic
@@ -167,6 +190,15 @@ impl Widget for PreviewBody {
                     .on_change(open_doc.mark_dirty_fn())
                     .content_padding_symmetric(8.0, 8.0)
                     .v_scroll_policy(ScrollPolicy::AlwaysOff);
+                // The preview is another live view of a shared document. Feed its caret and drive
+                // the doc's spell session's per-frame recompute — otherwise an edit here would
+                // never re-tick the squiggles (stale), and the caret word wouldn't be exempt,
+                // whenever no scene tab of the same document is open to tick it.
+                if let Some(spell) = &spell {
+                    let handle = editor.handle();
+                    let token = crate::tabs::shared::editor::wire_spell(ctx, &handle, spell);
+                    self.spell_view = Some((spell.clone(), token));
+                }
                 Box::new(
                     ScrollArea::new().child(
                         Padding::symmetric(12.0, 8.0)
@@ -217,12 +249,24 @@ impl Widget for PreviewBody {
 fn editable_field(
     open_doc: &std::rc::Rc<OpenDoc>,
     field: Option<MatchField>,
-) -> Option<(std::rc::Rc<OpenDoc>, &ProseField)> {
-    let prose = match field {
-        Some(MatchField::Synopsis) => open_doc.synopsis.as_ref().or(open_doc.main.as_ref()),
-        _ => open_doc.main.as_ref().or(open_doc.synopsis.as_ref()),
-    }?;
-    Some((open_doc.clone(), prose))
+) -> Option<(
+    std::rc::Rc<OpenDoc>,
+    &ProseField,
+    Option<std::rc::Rc<crate::spellcheck::SpellSession>>,
+)> {
+    // Pair the resolved prose field with ITS spell session (main vs synopsis), honouring the same
+    // fallback, so the preview drives the right document's squiggles.
+    let (prose, spell) = match field {
+        Some(MatchField::Synopsis) => match open_doc.synopsis.as_ref() {
+            Some(p) => (p, open_doc.spell_synopsis()),
+            None => (open_doc.main.as_ref()?, open_doc.spell_main()),
+        },
+        _ => match open_doc.main.as_ref() {
+            Some(p) => (p, open_doc.spell_main()),
+            None => (open_doc.synopsis.as_ref()?, open_doc.spell_synopsis()),
+        },
+    };
+    Some((open_doc.clone(), prose, spell))
 }
 
 /// The empty state. With a result selected but no editable prose, a plain note.

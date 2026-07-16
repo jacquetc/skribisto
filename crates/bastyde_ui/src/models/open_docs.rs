@@ -23,7 +23,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use bastyde::prelude::Signal;
-use bastyde::text_document::{Color, SessionId, SyntaxHighlighter};
+use bastyde::text_document::Color;
 
 use frontend::AppContext;
 use frontend::commands::{
@@ -36,7 +36,7 @@ use frontend::common::entities::{BinderItem, BinderItemRole, BinderItemSubRole, 
 use frontend::direct_access::ContentDto;
 
 use crate::singles::SingleBinderItem;
-use crate::spellcheck::SpellcheckService;
+use crate::spellcheck::{SpellSession, SpellcheckService};
 use crate::tabs::{
     ProseField, ProseKind, TitleField, TitlePart, prose_field, prose_kind_for, title_field,
 };
@@ -57,12 +57,12 @@ pub struct OpenDoc {
     /// The store's aggregate "an edit happened" counter — bumped by every edit,
     /// observed by the debounced autosave timer.
     edited: Signal<u64>,
-    /// The spell-check highlight session on the main / synopsis document, if attached. Held so
-    /// a re-attach (dictionary installed/removed, mute, language change) can `remove_session`
-    /// exactly *this* layer without disturbing any other (a future find highlighter). `Cell`
-    /// because attaching only reads `&self` (the doc is shared by `Rc`).
-    spell_main: Cell<Option<SessionId>>,
-    spell_synopsis: Cell<Option<SessionId>>,
+    /// The caret-aware spell-check range session on the main / synopsis document, if that field
+    /// exists. Created once in [`build`](Self::build); `attach_spell` sets its checker (dictionary
+    /// install/remove, mute, language change) and the editor feeds it the focused view's caret.
+    /// `Rc` so the editor build can hold a clone to drive it.
+    spell_main: Option<Rc<SpellSession>>,
+    spell_synopsis: Option<Rc<SpellSession>>,
 }
 
 impl OpenDoc {
@@ -96,8 +96,8 @@ impl OpenDoc {
             synopsis: None,
             dirty: Signal::new(false),
             edited,
-            spell_main: Cell::new(None),
-            spell_synopsis: Cell::new(None),
+            spell_main: None,
+            spell_synopsis: None,
         };
         for cr in skribisto_model::allowed_content(role, sub_role) {
             let existing = contents.iter().find(|c| &c.role == cr);
@@ -119,6 +119,11 @@ impl OpenDoc {
                 }
             }
         }
+        // Give each present prose document its caret-aware spell-check range session. Empty until
+        // `attach_spell` sets a checker; it lives as long as the `OpenDoc` (its `Drop` retires the
+        // highlight layer).
+        doc.spell_main = doc.main.as_ref().map(|f| SpellSession::new(&f.doc));
+        doc.spell_synopsis = doc.synopsis.as_ref().map(|f| SpellSession::new(&f.doc));
         doc
     }
 
@@ -176,29 +181,30 @@ impl OpenDoc {
         self.dirty.set(false);
     }
 
-    /// (Re)install the spell-check highlight session on this doc's prose documents for the
-    /// effective language list `tags`, in the squiggle `color`. Idempotent: it removes this
-    /// doc's previous spell session (if any) and adds a fresh one — or, when nothing resolves
-    /// to an installed dictionary, removes it and adds none (the degrade path). Only the two
-    /// prose fields carry a session; the title/subtitle are plain `Signal<String>`.
+    /// Point this doc's spell sessions at the effective language list `tags`, in the squiggle
+    /// `color`. Builds one [`SpellChecker`](crate::spellcheck) and hands it to each present prose
+    /// session, which recomputes immediately; `None` (nothing installed/active) clears the
+    /// squiggles — the degrade path. Only the two prose fields carry a session; the title/subtitle
+    /// are plain `Signal<String>`.
     pub fn attach_spell(&self, spell: &SpellcheckService, tags: &str, color: Color) {
-        let highlighter = spell.build_highlighter(tags, color);
-        Self::attach_field(&self.main, &self.spell_main, &highlighter);
-        Self::attach_field(&self.synopsis, &self.spell_synopsis, &highlighter);
+        let checker = spell.build_checker(tags);
+        if let Some(s) = &self.spell_main {
+            s.set_checker(checker.clone(), color);
+        }
+        if let Some(s) = &self.spell_synopsis {
+            s.set_checker(checker, color);
+        }
     }
 
-    fn attach_field(
-        field: &Option<ProseField>,
-        session: &Cell<Option<SessionId>>,
-        highlighter: &Option<std::sync::Arc<dyn SyntaxHighlighter>>,
-    ) {
-        let Some(f) = field else { return };
-        if let Some(old) = session.take() {
-            f.doc.remove_session(old);
-        }
-        if let Some(hl) = highlighter {
-            session.set(Some(f.doc.add_syntax_session(hl.clone())));
-        }
+    /// The caret-aware spell session on the main prose document, if any — the editor build feeds it
+    /// the focused view's caret. `None` for a doc with no main prose (a pure container).
+    pub fn spell_main(&self) -> Option<Rc<SpellSession>> {
+        self.spell_main.clone()
+    }
+
+    /// The caret-aware spell session on the synopsis document, if any.
+    pub fn spell_synopsis(&self) -> Option<Rc<SpellSession>> {
+        self.spell_synopsis.clone()
     }
 }
 

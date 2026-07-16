@@ -76,6 +76,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 &tab.typography.synopsis,
                 tab.mark_dirty_fn(),
                 Option::None,
+                tab.open_doc.spell_synopsis(),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -87,6 +88,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             tab.main_typography(),
             tab.mark_dirty_fn(),
             None, // the container's own page has no find banner (no top strip here)
+            tab.open_doc.spell_main(),
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
@@ -135,6 +137,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
                 &tab.column_width,
                 &tab.typography.synopsis,
                 tab.mark_dirty_fn(),
+                tab.open_doc.spell_synopsis(),
             ),
         ));
     }
@@ -149,6 +152,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             tab.main_typography(),
             tab.mark_dirty_fn(),
             find.clone(),
+            tab.open_doc.spell_main(),
         ));
     }
     // The whole dual-pane body scrolls as one flowing page: the main editor is
@@ -214,6 +218,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 &tab.typography.synopsis,
                 tab.mark_dirty_fn(),
                 Option::None,
+                tab.open_doc.spell_synopsis(),
             ));
     }
     tab_backdrop(ScrollArea::new().child(col.child(vspace(28.0))))
@@ -253,6 +258,7 @@ pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
                 &tab.typography.synopsis,
                 tab.mark_dirty_fn(),
                 Option::None,
+                tab.open_doc.spell_synopsis(),
             ));
     }
     tab_backdrop(ScrollArea::new().child(col.child(vspace(28.0))))
