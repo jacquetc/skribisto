@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `ExportViewModel` — the Export feature's business logic.
 //!
 //! Single-instance live state, created once in `main.rs` and registered as app-state so the

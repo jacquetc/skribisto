@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `Folder/ChapterScene` — a chapter whose extent is its child scenes (the container
 //! encoding of a chapter; the flat one is `Item/ChapterScene`, and promote/demote
 //! converts between them losslessly).

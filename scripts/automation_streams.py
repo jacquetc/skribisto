@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Drive a live Skribisto and verify the manuscript streams end to end.
 
 For each container (chapter folder, part, book) it opens the item, switches to the

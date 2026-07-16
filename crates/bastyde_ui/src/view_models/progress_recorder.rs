@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `ProgressRecorder` - the app-level cadence that keeps the `ProgressSnapshot`
 //! history current, feeding the Book's Pace charts.
 //!

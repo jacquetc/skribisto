@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The compiled-in catalogue of downloadable Hunspell dictionaries.
 //!
 //! This is static, curated data — one entry per installable dictionary *variant* (French

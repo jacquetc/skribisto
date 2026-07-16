@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Clicking the ProjectSwitcherButton must move keyboard focus INTO the popover.
 
 It didn't. `PopoverButton` does focus its content's first focusable descendant

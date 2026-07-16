@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 // Custom implementation: soft-delete (trash) a set of BinderItems and their
 // subtrees. Trashed items stay in place in the binder; `activated` flips to
 // false and one TrashInfo per requested root is indexed under Work.trash_infos.

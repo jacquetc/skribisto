@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! "Show me only the scenes."
 //!
 //! The constraint matrix has **twelve** `(role, sub_role)` combinations. A writer filtering

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SingleMilestone` — the Inspector's read+write probe for the one `Milestone`
 //! that pins a target date on a given Part/Chapter inside a Book's writing `Pace`.
 //!

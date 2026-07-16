@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- SPDX-FileCopyrightText: 2026 Cyril Jacquet -->
+
 # Save-system concurrency review
 
 **Scope:** correctness of Skribisto's save/backup/export path under concurrency — specifically the fear that *"other actions corrupt the internal storage while a save has not fetched/frozen all the needed entities."*

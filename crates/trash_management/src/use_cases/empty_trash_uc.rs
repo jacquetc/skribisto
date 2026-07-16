@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 // Custom implementation: permanently delete everything indexed by
 // Work.trash_infos. Trashed binders (with their items + contents) are removed
 // and dropped from their Work; trashed item subtrees (with their contents) are

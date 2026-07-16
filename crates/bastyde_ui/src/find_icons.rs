@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Icons for the search feature's option toggles — the matching options (case /
 //! whole-word / accents), the field scopes (body / title / synopsis / label), and
 //! the replace glyph. Line-style, `stroke="currentColor"`, so they follow the

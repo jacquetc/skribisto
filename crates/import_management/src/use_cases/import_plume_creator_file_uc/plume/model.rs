@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The intermediate, in-memory Plume model produced by the parsers and consumed
 //! by the mapper.
 //!

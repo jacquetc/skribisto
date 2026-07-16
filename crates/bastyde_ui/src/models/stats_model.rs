@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `StatsModel` — live word/char counts derived from the open documents.
 //!
 //! A thin, cloneable Layer-A handle over [`OpenDocsStore`] + the pure

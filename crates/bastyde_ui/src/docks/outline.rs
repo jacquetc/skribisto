@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The binder **outline** dock: the leading-side tree of the open work's binder
 //! items, fronted by the switcher + search header, with per-row context menus
 //! and key handling. [`outline_dock`] packages it as a `DockWidget` for `App` to

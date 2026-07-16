@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 name: Rust Next
 
 # Early-warning canary against beta/nightly Rust. winit / wgpu / naga are the

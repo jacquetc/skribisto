@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The **manuscript stream** pane — one body, two flavours, three containers.
 //!
 //! A Scrivener-"Scrivenings"-style continuous, editable view of everything inside a

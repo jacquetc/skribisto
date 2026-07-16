@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 name: Packaging manifests
 
 # Cheap PR guard: validate the packaging metadata when it changes, so a broken

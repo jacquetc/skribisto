@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `BackupChoicePanel` — the modal shown when a **backup file** is opened.
 //!
 //! Three choices: **Open the backup** (the default — edit freely; changes can

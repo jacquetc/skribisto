@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Stamps the release the binary was built from into `SKRIBISTO_GIT_DESCRIBE`,
 //! which [`crate::version`] turns into the string the welcome window shows.
 //!

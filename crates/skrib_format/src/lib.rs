@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The `.skrib` document format.
 //!
 //! A Skribisto document is RON manifests + Djot prose, stored either as a single

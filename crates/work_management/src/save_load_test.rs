@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! End-to-end backend test for the save loop: write a new-format folder, load
 //! it into a real in-memory store via `load_work`, save it back out via
 //! `save_work`, and assert the project survives the store round-trip (ids are

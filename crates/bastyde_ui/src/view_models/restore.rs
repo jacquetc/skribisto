@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `RestoreViewModel` — "restore this project to this backup".
 //!
 //! A backup is opened read-only-file in its own window (see [`crate::backup`]).

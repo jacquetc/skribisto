@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SingleContent` — a reactive **read+write** handle over one `Content` row.
 //!
 //! Content rows are the only entity the UI edits *directly* (prose in the editor,

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Integration tests for the app-lifecycle use cases — `initialize_app`
 //! (startup seed) and `clean_up_before_exit` (exit teardown) — and the
 //! single-Root/single-System invariant they establish across load/new opens.

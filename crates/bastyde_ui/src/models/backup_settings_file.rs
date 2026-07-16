@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Persistent backup ("Copies de secours") configuration.
 //!
 //! A `SettingsFile<BackupSettingsFile>` at `<config_dir>/backup.toml` holding one

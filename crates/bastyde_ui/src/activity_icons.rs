@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Activity-rail icons — the glyphs shown in the leading dock's VS Code-style
 //! activity bar (one per activity: Outline, and later Search/Characters/…).
 //!

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Path naming for the exploded form: binder directory names and prose file
 //! names. Slugs are cosmetic and diff-friendly, and keep the title's actual
 //! (non-ASCII) characters — titles are visible, git-tracked file names, so

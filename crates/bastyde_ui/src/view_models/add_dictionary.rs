@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `AddDictionaryViewModel` — the "Add dictionary" form (Settings ▸ Spelling ▸ Dictionaries).
 //!
 //! A thin form view-model over [`DictionariesViewModel`], the shape of [`ImportPlumeViewModel`]:

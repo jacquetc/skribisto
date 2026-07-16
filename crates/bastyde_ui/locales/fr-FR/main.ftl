@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 # Skribisto — chaînes de l'interface (français).
 # Un simple « & » marque le mnémonique d'un libellé de menu ; « && » est un « & » littéral.
 

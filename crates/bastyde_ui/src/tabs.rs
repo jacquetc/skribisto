@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Per-`(role, sub_role)` editor tabs.
 //!
 //! Every valid `(role, sub_role)` combination has its **own module** — a single

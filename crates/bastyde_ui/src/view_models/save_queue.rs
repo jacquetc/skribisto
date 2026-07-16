@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SaveQueue` — one `save_work` at a time, with coalescing.
 //!
 //! Three independent triggers ask for a disk save: the autosave debounce, the

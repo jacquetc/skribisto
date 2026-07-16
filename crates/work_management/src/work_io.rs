@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Save-side helpers for the open Work tree.
 //!
 //! The ordered *read* — [`TreeReader`] / [`Gathered`] / [`gather`] — now lives in

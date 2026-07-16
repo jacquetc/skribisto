@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The Export **Choose…** checkbox tree — the "Customize selection" surface.
 //!
 //! A self-contained tri-state tree built from the client-gathered Work snapshot (the same

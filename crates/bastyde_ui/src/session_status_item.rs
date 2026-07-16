@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SessionStatusItem` — the status bar's writing-session control.
 //!
 //! A configure gear + a play/pause toggle; once running, a red→green gauge (when a word

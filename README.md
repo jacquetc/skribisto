@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- SPDX-FileCopyrightText: 2015 Cyril Jacquet -->
+
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md) 
 
 - [Skribisto](#skribisto)
@@ -29,6 +32,10 @@
   * [Translation](#translation)
     + [Transifex integration with Skribisto](#transifex-integration-with-skribisto)
   * [To contact me](#to-contact-me)
+  * [License](#license)
+  * [Contributing](#contributing)
+  * [Commercial support](#commercial-support)
+  * [Trademark](#trademark)
   
 # Skribisto
 
@@ -427,6 +434,38 @@ Thank you to the Scribus project to have written a clean way to automatise trans
 ## To contact me
 
 cyril.jacquet@skribisto.eu (UTC+1)
+
+## License
+
+Skribisto is free software under the **GNU General Public License v3.0** — see
+[LICENSE](LICENSE). It is developed as **open core**: the community edition is, and will
+remain, GPLv3, while a separate commercial edition ("Skribisto Pro") with additional
+features may be offered under proprietary terms.
+
+## Contributing
+
+Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md). Because Skribisto
+is developed open-core, contributions are accepted under a **Contributor License Agreement**
+([CLA.md](CLA.md)) rather than a bare sign-off: you keep the copyright to your work, you let
+it serve both the community and commercial editions, and in return your contribution is
+guaranteed to always remain available under the GPL. You agree by signing off your commits
+(`git commit -s`).
+
+## Commercial support
+
+A commercial edition ("Skribisto Pro") is planned. For commercial-licensing or
+priority-support enquiries, contact <support@ferntech.eu>. For everyone else, the
+[issue tracker](https://github.com/jacquetc/skribisto/issues) and the
+[Discord](https://discord.gg/5BSkvQmyVH) are the right places.
+
+## Trademark
+
+Skribisto™ is a trademark of Cyril Jacquet. The GPL source license does **not** grant
+trademark rights. Forks and derivative works may use the source code under the GPL but must
+adopt a **distinct name and distinct branding** when distributed (compare Firefox /
+Iceweasel, Chromium / Chrome). Nominative use ("built on Skribisto", "a Skribisto import
+filter", articles describing Skribisto) is fine. For other uses, contact
+<trademarks@ferntech.eu>.
 
 
 

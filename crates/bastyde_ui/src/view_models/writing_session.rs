@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The **writing session** — an ephemeral sprint timer + word tracker.
 //!
 //! A play/pause control in the status bar starts a focused writing sprint: an optional

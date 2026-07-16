@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 // Custom implementation: merge row B (source) into row A (target). A survives and
 // receives B's SceneText (after a blank line) and its SynopsisText (concatenated);
 // B is then sent to Trash (`activated = false` + one TrashInfo under Work).

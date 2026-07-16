@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! A stable, content-only fingerprint of a [`WorkBundle`].
 //!
 //! Used for skip-if-unchanged: two backups of byte-identical *content* taken

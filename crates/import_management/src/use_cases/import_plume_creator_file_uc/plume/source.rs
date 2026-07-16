@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Reading a `.plume` project's raw members, from either container Plume ever
 //! used:
 //!  - the modern **single-file zip** (`tree`/`info`/`attendance` + `text/`,

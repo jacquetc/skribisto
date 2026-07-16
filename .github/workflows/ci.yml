@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 name: CI
 
 on:
@@ -39,7 +42,7 @@ jobs:
   # passed. Set branch protection to require this "CI" job, not each leg.
   ci:
     name: CI
-    needs: [test-linux, test-cross, check, rustfmt, clippy, docs]
+    needs: [test-linux, test-cross, check, rustfmt, clippy, docs, spdx]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -50,7 +53,8 @@ jobs:
              [[ "${{ needs.check.result }}" != "success" ]] || \
              [[ "${{ needs.rustfmt.result }}" != "success" ]] || \
              [[ "${{ needs.clippy.result }}" != "success" ]] || \
-             [[ "${{ needs.docs.result }}" != "success" ]]; then
+             [[ "${{ needs.docs.result }}" != "success" ]] || \
+             [[ "${{ needs.spdx.result }}" != "success" ]]; then
             echo "One or more jobs failed"
             exit 1
           fi
@@ -246,3 +250,19 @@ jobs:
       # RUSTDOCFLAGS: -D warnings once the tree is known-clean.
       - name: Build documentation
         run: cargo doc --workspace --no-deps
+
+  spdx:
+    name: SPDX headers
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          # The checker derives each file's copyright year from its first
+          # commit (`git log --diff-filter=A`); a shallow clone would lose
+          # that history and report every file as outdated.
+          fetch-depth: 0
+
+      - name: Check SPDX headers
+        run: python3 tools/check_spdx_headers.py --check

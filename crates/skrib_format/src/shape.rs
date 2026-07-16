@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Detect what a path holds: a zipped `.skrib`, an exploded folder, or a legacy
 //! SQLite `.skrib`.
 

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Classify whether a `.skrib` path is a point-in-time **backup** copy.
 //!
 //! The authoritative signal is the manifest's [`BundleKind::Backup`] marker

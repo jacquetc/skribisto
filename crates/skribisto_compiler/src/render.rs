@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Assemble an export scope into **one** `TextDocument` and render it to a format.
 //!
 //! The whole book is compiled to a single Djot string — generated headings (`#` syntax),

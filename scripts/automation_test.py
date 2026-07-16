@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Drive a live Skribisto via the bastyde automation MCP bridge and assert that
 the project given on the command line actually loaded.
 

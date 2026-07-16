@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Reactive model for the binder-item tree, backed by a Bastyde
 //! [`TreeDataSlice`] so a `TreeView` can render, navigate, expand and
 //! **drag-reorder** it. The flat item stream nests via each item's `indent`;

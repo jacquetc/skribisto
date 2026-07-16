@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Reactive list model over the recently-opened works — backed by a **persisted**
 //! `bastyde::settings::MruList`, so the list **survives app restarts**.
 //!

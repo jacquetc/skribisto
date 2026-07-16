@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! A manuscript is not monolingual, and the language decides what folding **means**.
 //!
 //! One `Work`, two scenes: one French, one Turkish. In Turkish the dotted `i` and the

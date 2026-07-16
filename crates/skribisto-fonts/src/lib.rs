@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The app's bundled OFL writing serifs, as raw font bytes — a single source of truth shared
 //! by the desktop app (the editor's `register_editor_fonts`) and the headless exporter (the
 //! PDF backend feeds these bytes to Typst). Keeping the `.ttf` blobs in one crate is why the

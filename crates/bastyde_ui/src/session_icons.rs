@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Writing-session chrome icons — the status-bar play/pause + configure glyphs.
 //! Like [`editor_icons`](crate::editor_icons), `res!` embeds each asset at compile time
 //! and the icon follows the theme via `TextRole` tinting of `currentColor`.

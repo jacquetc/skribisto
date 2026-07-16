@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `BackupBanner` — the permanent warning strip shown while a backup file is open.
 //!
 //! A tiny reactive widget: zero children (and zero height) when no backup is open,

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Settings ▸ Compile & Export ▸ **Export Formats** — the export-style manager.
 //!
 //! Two sections over the [`ExportStylesViewModel`]:

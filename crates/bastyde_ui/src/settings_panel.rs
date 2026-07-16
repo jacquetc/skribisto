@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The Settings modal — Skribisto's full preferences window.
 //!
 //! Presented as an in-tree modal (see the `app.settings` action in `app.rs`). A

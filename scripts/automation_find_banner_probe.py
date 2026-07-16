@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Phase 0.2 de-risking probe — **the find banner's layout shift**.
 
 The banner is the IntelliJ shape: a full-width strip at the top of the editor, in

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Per-instance IPC: a tiny local socket other instances use to ask this one to
 //! raise its window (the ProjectSwitcher "switch to an already-open project").
 //!

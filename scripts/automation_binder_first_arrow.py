@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """The binder outline is a `TreeView`, and it carried the same keyboard bug the
 Welcome list did: with no cursor yet, the first ArrowDown stepped to the SECOND
 row, silently skipping the first (`focused_index` was `None`, `unwrap_or(0)`

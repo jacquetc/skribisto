@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Registered rich-tooltip content for the writing-model vocabulary.
 //!
 //! Skribisto's "＋ Create" affordances (the outline header

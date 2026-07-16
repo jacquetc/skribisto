@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Drive a live Skribisto and verify the **status-bar save indicator**.
 
 The indicator is the quiet answer to "is my last paragraph on disk?" — the one

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Shared root-tag and version gating for the Plume parsers.
 //!
 //! Plume's DOCTYPE is decorative and unreliable (its own bootstrap code leaves it

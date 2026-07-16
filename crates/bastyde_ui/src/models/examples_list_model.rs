@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Layer-A model: the bundled example works listed in the Welcome dialog's
 //! "Examples" pane.
 //!

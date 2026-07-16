@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Replace All — the confirmation dialog, the execution, and the undo.
 //!
 //! This is the one piece of the search feature that needs an `EventContext` (a

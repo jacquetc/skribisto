@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2025 Cyril Jacquet
 
 echo "🚀 Setting up Qt GUI development environment..."
 

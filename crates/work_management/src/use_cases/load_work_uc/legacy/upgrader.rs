@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! In-schema version-step upgrader for legacy `.skrib` SQLite files.
 //!
 //! Rust port of the C++ `Upgrader::upgradeSQLite` chain (1.0 → 2.0). It runs on a

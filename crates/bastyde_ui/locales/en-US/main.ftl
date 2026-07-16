@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 # Skribisto — UI strings (source locale).
 # A single `&` marks the keyboard mnemonic of a menu label; `&&` is a literal `&`.
 

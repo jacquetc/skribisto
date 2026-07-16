@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The only mutable state the app itself holds: entity **ids**.
 //!
 //! Per the writing-model architecture, the UI reads entity *data* reactively

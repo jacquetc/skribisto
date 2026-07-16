@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SingleWork` — a reactive handle over the open `Work` entity.
 //!
 //! Holds one `Work` by id; exposes `title` / `author_name` / `dict_language` as

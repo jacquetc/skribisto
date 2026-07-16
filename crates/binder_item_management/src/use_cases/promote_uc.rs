@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 // Custom implementation: "promote" converts a binder item to another type. It is no
 // longer a single paired toggle: a folder may become any *other* kind of folder (a
 // plain folder into a chapter, a part, a book, a notes folder), which is what lets a

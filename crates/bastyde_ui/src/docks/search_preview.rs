@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The search **preview** dock (bottom band): a full-width, **editable** view of
 //! the currently-selected result's paragraph.
 //!

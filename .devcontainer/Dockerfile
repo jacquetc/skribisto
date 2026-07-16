@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2025 Cyril Jacquet
+
 FROM fedora:42
 
 # Install Qt6, development tools, and X11 support

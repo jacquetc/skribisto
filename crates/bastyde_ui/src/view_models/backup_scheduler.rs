@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `BackupSchedulerViewModel` — drives every automatic + manual backup trigger.
 //!
 //! One place that starts a `backup_now` long operation (manual / on-open /

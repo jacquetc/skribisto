@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Drive a live Skribisto and verify the Book-only **"Pace" segment**.
 
 The Pace planner is the manuscript-wide writing plan (deadline + schedule +

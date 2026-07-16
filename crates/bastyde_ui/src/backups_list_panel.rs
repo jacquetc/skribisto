@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `BackupsListPanel` — browse the backup **files** for the open project.
 //!
 //! Scans the project's effective destinations (+ its own folder) for this

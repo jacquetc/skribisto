@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SaveIndicator` — the status bar's save state, next to the binder toggle.
 //!
 //! A flat icon button showing whether the manuscript is on disk: a save glyph with

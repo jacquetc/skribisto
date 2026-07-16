@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The Book's writing **Pace** - deadline + schedule + progress statistics.
 //!
 //! Per the house rules the arithmetic decisions live in the pure, date-injected

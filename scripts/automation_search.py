@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """End-to-end check of the search & replace docks (Part D) against the live app.
 
 Launches the real backend on a real project, reveals the leading search dock

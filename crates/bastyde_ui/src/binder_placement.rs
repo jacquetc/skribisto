@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Where a new binder item lands — the pure topological half of "create".
 //!
 //! [`skribisto_model::recommendations`] says *what* to create and *how* it relates

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Which half of a search is expensive — the parse, or the fold?
 //!
 //! The plan assumed the **parse** (`djot_to_plain_text`, once per scene) dominated, and that

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `BackupSettingsViewModel` — a cloneable handle over [`BackupSettingsService`].
 //!
 //! Registered as `app_state`; the settings panes and the backup scheduler each

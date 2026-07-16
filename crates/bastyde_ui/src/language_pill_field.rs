@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `LanguagePillField` — the reusable language selector: a wrapping flow of pill chips (one
 //! per language of the text) ending in a "+" popover. Used by both the Settings ▸ Work ▸
 //! Language pane and the Inspector, over any `dict_language` string.

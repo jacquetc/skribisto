@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 // Custom implementation: restore trashed entities indexed by the given
 // TrashInfos. A TrashedBinder reactivates the binder and all its items; a
 // TrashedBinderItem reactivates the item and its contiguous subtree in place.

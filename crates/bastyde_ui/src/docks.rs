@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Dock widgets placed on the app's `DockingLayout`. Each dock owns its own
 //! content builder and packages it as a `DockWidget` for `App` to mount on a
 //! side; `App` only wires the cross-view-model effects around them.

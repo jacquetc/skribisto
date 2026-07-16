@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Drive a live Skribisto via the bastyde automation MCP bridge and verify that the
 "Save" affordances are disabled while there is nothing to save.
 

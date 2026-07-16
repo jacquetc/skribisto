@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Layer-A backend seam for a Book's writing **Pace** - its schedule (start/end
 //! dates, the counted-weekday mask, the active flag), its Holidays and
 //! Milestones, the Book's word-count goal, and the recorded ProgressSnapshot

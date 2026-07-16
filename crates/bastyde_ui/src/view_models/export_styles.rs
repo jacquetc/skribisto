@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `ExportStylesViewModel` — the business logic behind Settings ▸ Compile & Export ▸ **Export
 //! Formats** and the Export panel's style picker.
 //!

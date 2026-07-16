@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Reactive list of the open Work's binders — the data behind the binder
 //! switcher popover (id, display name, activated-item count).
 //!

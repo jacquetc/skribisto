@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `Item/BookBegin` — the book-start marker: the book title + subtitle + the
 //! book's synopsis (symmetric with the `Folder/Book` container). Shares the
 //! [`heading`](super::shared::heading) form.

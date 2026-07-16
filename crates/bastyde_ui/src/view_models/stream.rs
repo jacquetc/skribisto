@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `StreamViewModel` — business logic for a container tab's **manuscript streams**:
 //! the Full Chapter / Full Part / Full Book view and its Full Synopsis twin.
 //!

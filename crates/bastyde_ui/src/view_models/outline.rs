@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `OutlineViewModel` — the binder/outline dock: its tree, its selection, and its
 //! visibility. Visibility is *delegated* to the `DockingModel` (which is itself a
 //! cloneable model handle); the view-model adds no visibility state of its own —

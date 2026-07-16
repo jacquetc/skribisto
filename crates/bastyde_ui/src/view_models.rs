@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Layer B — UI **view-models** (the VM in MVVM).
 //!
 //! A *view-model* is a cloneable handle that owns one UI feature's **state**

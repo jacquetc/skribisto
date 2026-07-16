@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Skribisto desktop UI (Bastyde). Wires the Qleany backend to a Bastyde shell.
 //!
 //! ## The launcher-window model
@@ -245,6 +248,12 @@ pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
 /// (Skribisto's signature layout). Consumed live by the `shared::prose` body.
 pub const SYNOPSIS_PANE_KEY: &str = "editor.synopsis_pane";
 pub const SYNOPSIS_PANE_DEFAULT: bool = true;
+/// Remember, per container item type (Book / Part / Chapter), the last
+/// `SegmentedControl` view used — so opening a new chapter lands on the same view
+/// (e.g. Full Chapter) as the last chapter. The per-type indices live under
+/// `editor.last_view.*` (see [`view_models::EditorViewMemory`]).
+pub const REMEMBER_VIEW_KEY: &str = "editor.remember_view";
+pub const REMEMBER_VIEW_DEFAULT: bool = true;
 /// Keep the caret line vertically centred while typing.
 pub const TYPEWRITER_KEY: &str = "editor.typewriter_scroll";
 pub const TYPEWRITER_DEFAULT: bool = true;

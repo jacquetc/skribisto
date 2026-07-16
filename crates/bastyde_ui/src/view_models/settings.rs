@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SettingsViewModel` — a facade over the persisted UI settings.
 //!
 //! Store-backed: holds only cached settings `Signal`s, so every instance is a

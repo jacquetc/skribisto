@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `EditorsViewModel` — the split editor: two panes of open tabs (a primary and a
 //! secondary/side pane) over the shared [`OpenDocsStore`].
 //!

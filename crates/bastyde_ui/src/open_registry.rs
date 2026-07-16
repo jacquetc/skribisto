@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Cross-instance "open project" registry.
 //!
 //! Skribisto is multi-process today (each running instance is its own window),

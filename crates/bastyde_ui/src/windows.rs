@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Window-construction factories for the launcher-window model.
 //!
 //! Skribisto is one process per project (see `main.rs`'s module docs), and a

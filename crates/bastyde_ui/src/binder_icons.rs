@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Binder icons — the single `sub_role → icon` decision, shared by the outline
 //! tree (view) and the editor tabs (view-model) so both surfaces stay in sync.
 //!

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Bridge between the entities' `chrono::DateTime<Utc>` (the Pace/Milestone/Holiday dates
 //! round-trip through the store as datetimes) and the bastyde date widgets'
 //! `jiff::civil::Date` (a calendar day, no time-of-day).

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 # Skribisto — writing-model rich tooltips (source locale).
 # Registered in tooltip_registry.rs and attached by key from the "＋ Create" /
 # "Convert to" menus. The wm-*-more bodies cascade to one another via

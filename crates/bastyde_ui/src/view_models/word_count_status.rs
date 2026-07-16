@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The status-bar word count's display decision — pure.
 //!
 //! A live count of the **focused** editor item's prose, sitting quietly in the status bar

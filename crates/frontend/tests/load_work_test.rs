@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Integration test for the ported `load_work` use case.
 //!
 //! Loads the bundled legacy fixture (`tbl_tree` schema, db version 1.8) and

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Phase 0.2 de-risking probe — **can an editable RichTextEditor live in a dock?**
 
 No editable widget exists inside any `DockWidget` in Skribisto or in bastyde's

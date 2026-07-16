@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Read the open Work tree into one ordered, relationship-hydrated snapshot.
 //!
 //! Relocated out of `work_management::work_io` so it can be shared **without a

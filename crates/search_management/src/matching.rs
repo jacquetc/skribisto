@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Replace-side helpers, over the **shared** matcher.
 //!
 //! Finding is *not* done here. It is done by `text_document::matching`, the one

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The neutral, entity-typed graph that a reader produces and the load use case
 //! materialises into the store. Both the new-format reader (`bundle_to_loaded`)
 //! and the legacy SQLite reader feed this, so there is a single, lossless

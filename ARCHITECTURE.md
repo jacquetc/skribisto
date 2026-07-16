@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- SPDX-FileCopyrightText: 2025 Cyril Jacquet -->
+
 ### Skribisto Architecture Overview
 
 This document explains the pragmatic architectural style used in Skribisto, how the codebase is organized, how modules

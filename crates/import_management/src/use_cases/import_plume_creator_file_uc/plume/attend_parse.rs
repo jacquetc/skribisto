@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Parse the `attendance` member into a version-neutral [`PlumeAttendance`].
 //!
 //! Normalizes every attendance version (0.1–0.6), mirroring

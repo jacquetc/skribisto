@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Pure transforms between store entities, the on-disk [`WorkBundle`], and the
 //! neutral [`LoadedWork`] graph the materialiser consumes. No I/O here.
 

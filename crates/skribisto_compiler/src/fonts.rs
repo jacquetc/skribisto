@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Font-byte selection for the PDF exporter.
 //!
 //! text-document's PDF backend renders with ONLY the font bytes it is handed (no system-font

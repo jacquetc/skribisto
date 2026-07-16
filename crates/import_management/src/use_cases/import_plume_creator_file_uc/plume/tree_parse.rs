@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Parse the `tree` member into a version-neutral [`PlumeTree`].
 //!
 //! Lenient by design (it normalizes every Plume tree version, 0.2–0.5, in one

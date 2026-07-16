@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Integration tests for the binder-tree action use cases: move_items,
 //! duplicate, and the four trash_management use cases — plus their undo/redo.
 //!

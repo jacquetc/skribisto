@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SingleBinder` — a reactive **read** handle over one `Binder`.
 //!
 //! Caches the full `BinderDto` reactively (refreshed on `Binder` `Updated`

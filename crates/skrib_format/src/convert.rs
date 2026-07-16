@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Content conversion for the legacy upgrade chain, backed by `text-document`.
 //!
 //! The C++ upgrader used `MarkdownTextDocument`, a Qt `QTextDocument` subclass

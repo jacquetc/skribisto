@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Map the parsed, version-neutral Plume model into a [`skrib_format::WorkBundle`]
 //! at the newest `.skrib` format version.
 //!

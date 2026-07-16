@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 // Custom implementation: split scene A (source) at the caret into two. A keeps
 // the before-caret half; a new Scene is created immediately after A carrying the
 // after-caret half. Both writing roles are reassigned: `SceneText` from

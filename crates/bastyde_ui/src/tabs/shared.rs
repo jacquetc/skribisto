@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Shared building blocks for the per-combination editor tabs.
 //!
 //! [`editor`] holds the low-level primitives (writing / synopsis columns, the

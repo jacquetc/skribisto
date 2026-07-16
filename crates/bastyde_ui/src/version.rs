@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The app version shown in the UI, derived from git at build time.
 //!
 //! `build.rs` stamps `git describe --tags --always` into `SKRIBISTO_GIT_DESCRIBE`;

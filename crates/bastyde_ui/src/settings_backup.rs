@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The two backup ("Copies de secours") settings panes:
 //!
 //! - [`general_pane`] — the app-wide default policy (`Sec::BackupSync`).

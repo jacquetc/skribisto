@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Exercise the *drive* side of the bastyde automation MCP against a live
 Skribisto: load a work, then open a binder item by invoking its AT action (and,
 as a fallback, a synthetic pointer click), and verify an editor tab appears.

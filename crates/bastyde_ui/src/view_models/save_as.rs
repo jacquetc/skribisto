@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SaveAsViewModel` — records the new path/shape into `WorkInfo` after a
 //! background "Save As" completes.
 //!

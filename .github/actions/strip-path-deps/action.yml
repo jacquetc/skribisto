@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 name: "Strip external path dependencies"
 description: "Remove ../ (external sibling) path attributes from every crate manifest so bastyde* / text-document resolve from crates.io, leaving internal workspace paths intact"
 

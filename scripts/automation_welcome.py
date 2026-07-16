@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Drive a live Skribisto via the bastyde automation MCP bridge and verify the
 **launcher-window** model end-to-end (the Welcome UI is a real window now, not
 a modal — see `bastyde_ui::main`'s module docs).

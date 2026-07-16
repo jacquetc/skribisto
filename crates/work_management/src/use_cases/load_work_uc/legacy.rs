@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Reader for legacy Skribisto `.skrib` files (SQLite).
 //!
 //! Two stages, mirroring the C++ `LegacyUpgrader`:

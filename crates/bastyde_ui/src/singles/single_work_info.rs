@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SingleWorkInfo` — a reactive handle over the open project's `WorkInfo`.
 //!
 //! `WorkInfo` records the on-disk identity of the open project: its `file_name`

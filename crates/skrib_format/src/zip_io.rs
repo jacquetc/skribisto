@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Zip read/write. The zip is a single binary file, so it is always rewritten
 //! whole (diff-minimal only matters for the exploded folder under git). Open
 //! extracts to a tempdir and reuses the folder reader; save writes the folder

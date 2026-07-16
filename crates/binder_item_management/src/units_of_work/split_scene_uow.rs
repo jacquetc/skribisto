@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 // Custom UoW for SplitScene — action macros must match the trait in
 // ../use_cases/split_scene_uc.rs.
 

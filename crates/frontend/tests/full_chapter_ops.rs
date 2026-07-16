@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Integration tests for the Full Chapter view's new backend use cases —
 //! `merge_two_scenes` and `split_scene` — against a real in-memory store.
 

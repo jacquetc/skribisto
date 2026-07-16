@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `WelcomeViewModel` — the Launcher's Welcome content.
 //!
 //! The business actions (open a recent/example work, pick a file, create a new

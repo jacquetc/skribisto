@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `FindViewModel` — the per-editor find banner's state (Ctrl+F).
 //!
 //! One per prose tab (held on its [`ContentTab`](crate::tabs::ContentTab)), over

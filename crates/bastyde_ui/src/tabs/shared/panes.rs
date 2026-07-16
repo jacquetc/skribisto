@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Composite pane renders shared across several `(role, sub_role)` tabs.
 //!
 //! Each function here is a whole tab body that more than one combination reuses:

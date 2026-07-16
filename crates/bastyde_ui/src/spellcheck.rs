@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The spell-checking engine — an internal service, no reactive state of its own (the same
 //! shelf as `open_registry` / `ipc`).
 //!

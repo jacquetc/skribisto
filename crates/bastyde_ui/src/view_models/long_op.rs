@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Shared helpers for consuming `Origin::LongOperation(...)` events in view-models.
 //!
 //! The long-operation manager emits its lifecycle events with a JSON `data`

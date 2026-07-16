@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The flat, binder-major `(item_id, title)` stream of a Work — a **one-shot**
 //! snapshot in the authoritative relationship order that a save writes and a load
 //! reproduces. Read here (Layer A) so the raw entity reads don't live in the

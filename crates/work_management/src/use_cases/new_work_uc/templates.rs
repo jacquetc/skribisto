@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Pure, store-independent builders for the `NewWork` project templates.
 //!
 //! Each template is expressed as a flat, ordered list of binders → items →

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Two-process end-to-end test for cross-process settings correctness.
 
 Launches TWO live `skribisto` instances — one process per project, exactly

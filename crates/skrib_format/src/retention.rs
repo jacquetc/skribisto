@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Backup rotation: decide which of a destination's backup files to delete.
 //!
 //! Two policies — keep-last-N and tiered/GFS (grandfather-father-son) — over the

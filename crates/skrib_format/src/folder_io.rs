@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Exploded-folder read/write. Writes are atomic (tmp + rename), manifest-last
 //! (the `project.skrib` is the commit point), and **diff-minimal**: a blob is
 //! only touched when its bytes actually change, and orphaned blobs/dirs are

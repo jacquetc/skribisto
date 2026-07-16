@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Shared backup helpers for the UI layer: destination reachability, and the
 //! open-a-backup detection (`is_backup_path` / `BackupContext`).
 

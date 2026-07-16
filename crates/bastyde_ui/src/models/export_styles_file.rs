@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Persistent **user export styles** — a `SettingsFile<ExportStylesFile>` at
 //! `<config_dir>/export_styles.toml`, the exact shape and cross-process story as
 //! [`crate::models::dictionary_settings_file`]: one locked read-modify-write per mutation,

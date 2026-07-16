@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The trailing **Inspector** dock: a context panel that adapts to the focused
 //! binder item (the active editor tab). It shows the item's title and — for any
 //! item with a promote pair (Chapter, ChapterScene, Scene, Note, Folder, Note

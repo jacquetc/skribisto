@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Reactive list of the open project's [`SearchResult`] rows — the data behind
 //! the search dock's result list.
 //!

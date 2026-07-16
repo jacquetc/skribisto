@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Localized labels + the placement hint + rich-tooltip *keys* for the
 //! context-dependent "Create" / "Convert to" vocabulary. Keeps
 //! `skribisto_model` UI-string-free: the model returns

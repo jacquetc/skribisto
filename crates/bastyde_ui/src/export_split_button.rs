@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The title-bar **Export** split-button: its primary region names *what the focused item
 //! is* — Export Scene / Note / Chapter / Folder / Book — and its dropdown adds the enclosing
 //! structural containers.

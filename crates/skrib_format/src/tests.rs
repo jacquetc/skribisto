@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Round-trip, validation, and diff-minimal tests for the `.skrib` serializer.
 
 use super::bundle::{BinderWithItems, ItemWithContents};

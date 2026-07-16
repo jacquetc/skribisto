@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `SearchReplaceViewModel` — the single shared handle behind both search docks:
 //! the leading dock (query, options, scopes, facet chips, result list) and the
 //! bottom dock (the editable preview of the selected match).

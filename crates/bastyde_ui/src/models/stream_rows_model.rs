@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Reactive, ordered list of the rows belonging to one **container** — the data
 //! behind the Full Chapter / Full Part / Full Book streams and their Full Synopsis
 //! twins.

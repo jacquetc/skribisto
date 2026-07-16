@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 # Skribisto — infobulles enrichies du modèle d’écriture (français).
 # Enregistrées dans tooltip_registry.rs et attachées par clé depuis les menus
 # « ＋ Créer » / « Convertir en ». Les corps wm-*-more se renvoient l’un à

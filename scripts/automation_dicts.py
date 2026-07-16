@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 """Drive the worktree build to verify the Dictionaries + Work-Language settings panes
 and the per-item language field render. Reuses the launch/connect scaffolding shape of
 the sibling automation_*.py scripts, pointed at the feature worktree binary."""

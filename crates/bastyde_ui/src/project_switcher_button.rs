@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Project switcher for the title bar.
 //!
 //! A flat dropdown button whose main slot shows the **currently-open project's**

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The Welcome content — Skribisto's start screen, hosted as the Launcher
 //! window's root (see [`crate::windows::launcher_window_config`]) rather than
 //! a modal — the launcher-window model. Two panes: a left **sidebar** (brand

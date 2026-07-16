@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The application body: a `DockingLayout` whose leading dock is the binder
 //! tree and whose center is a `TabWidget` of editor tabs (Phase 3), with a thin
 //! status bar underneath. The window chrome (custom `TitleBar` + hamburger menu)

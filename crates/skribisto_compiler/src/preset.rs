@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! An **export style** — a format-agnostic bundle of typography, structure, content
 //! inclusion, and localization choices. The output *format* is chosen separately at export
 //! time; a style applies wherever the format supports each knob (free text formats ignore

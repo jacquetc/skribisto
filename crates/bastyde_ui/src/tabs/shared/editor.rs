@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Low-level editor primitives shared by the per-combination tabs: the quiet
 //! writing-editor style, the centered/capped writing column, the synopsis box,
 //! the title field, and the live typography plumbing. Composite pane renders

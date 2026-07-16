@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! End-to-end test for the `export_work` long operation: load a real project into the
 //! store, export the whole thing through the frozen-read → gather → compile → render path,
 //! and assert a non-empty file lands on disk.

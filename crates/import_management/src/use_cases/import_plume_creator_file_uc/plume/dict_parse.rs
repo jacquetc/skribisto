@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Parse `dicts/userDict.dict_plume` — Plume's personal spell-check word list,
 //! a `;`-separated string.
 

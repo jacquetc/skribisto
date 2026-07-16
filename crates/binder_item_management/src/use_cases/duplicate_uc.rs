@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 // Custom implementation: deep-copy each selected BinderItem subtree (items +
 // their Content rows + tag links, NOT references) and insert each new subtree
 // immediately after its source subtree in the binder. Undoable via a scoped

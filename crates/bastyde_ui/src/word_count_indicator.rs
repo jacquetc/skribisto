@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `WordCountIndicator` — the status bar's live word count of the focused item.
 //!
 //! A quiet, secondary-coloured count sitting after the save glyph, showing the words in

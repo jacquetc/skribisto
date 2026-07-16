@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Forward migration chain for the on-disk format, keyed on `format_version`.
 //!
 //! v1 → v2 added `WorkFile.unique_id`. That change is purely additive and RON is

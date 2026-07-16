@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Editor-chrome icons — the split-view toggle glyphs for the tab-strip trailing
 //! slots. Like [`binder_icons`](crate::binder_icons), `res!` embeds each asset at
 //! compile time (a literal path per call site) and the icon follows the theme via

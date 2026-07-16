@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 name: "Install Linux system dependencies"
 description: "Install the Wayland / X11 / keyboard libraries that winit and wgpu need to build Skribisto on Linux"
 

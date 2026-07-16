@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Plume Creator (`.plume`) → newest-version `.skrib` importer.
 //!
 //! One-directional, version-neutral, and a **pure file→file transform**: it reads

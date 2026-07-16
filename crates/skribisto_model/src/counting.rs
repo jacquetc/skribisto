@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Counting **policy** + a content-addressed cache over Djot scene prose.
 //!
 //! `text-document` owns the pure primitive ([`count_djot`], language-agnostic — the method

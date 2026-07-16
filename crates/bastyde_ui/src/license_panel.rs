@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The dictionary **licence** modal — shown to read a licence (from a "View licence" button)
 //! and to accept one before downloading (the licence gate, §7 of the plan).
 //!

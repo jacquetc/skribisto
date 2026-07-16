@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The **search & replace** dock (leading side): the query, the matching options,
 //! the field scopes, the six facet chips, and the result list. It is fronted by a
 //! second activity-bar glyph beside the binder outline; activating a result

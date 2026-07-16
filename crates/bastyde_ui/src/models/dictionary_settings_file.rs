@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Persistent dictionary bookkeeping — **which licences the user has accepted**.
 //!
 //! A `SettingsFile<DictionarySettingsFile>` at `<config_dir>/dictionaries.toml`, the exact

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Persistent search & replace configuration.
 //!
 //! A `SettingsFile<SearchSettingsFile>` at `<config_dir>/search.toml` holding one

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The save indicator's state — what the status-bar save button shows.
 //!
 //! Saving is otherwise almost invisible: the only feedback the app has ever given

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Which language is *this scene* written in?
 //!
 //! A manuscript is not monolingual. A novel can carry a Turkish chapter inside a French

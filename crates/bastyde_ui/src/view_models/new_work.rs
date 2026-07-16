@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `NewWorkViewModel` — the New Work dialog's business logic.
 //!
 //! Single-instance live state (like `EditorsViewModel`): it owns the form's

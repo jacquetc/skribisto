@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The Outline dock header's context-dependent **Create** control: a
 //! `SplitButton` whose title (an add icon + the top recommended type, e.g.
 //! "＋ Scene"), dropdown, and tooltips all track the current outline selection.

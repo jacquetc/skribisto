@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The prose of every scene, parsed and folded — kept between keystrokes.
 //!
 //! ## What it is for

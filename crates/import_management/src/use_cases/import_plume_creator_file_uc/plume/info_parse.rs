@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Parse the `info` member for the authoritative project title + best-effort
 //! creation/modification dates (from the `<prj>` element). The `info` file's
 //! `<prj name=…>` — not the tree root's vestigial `projectName` — is the real

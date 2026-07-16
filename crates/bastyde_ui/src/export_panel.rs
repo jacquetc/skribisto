@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The Export modal — pick a scope + format + style + destination, watch a live preview, and
 //! export.
 //!

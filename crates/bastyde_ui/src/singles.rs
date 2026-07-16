@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Layer A — reactive **single-entity** handles (`SingleX`).
 //!
 //! A *single* mirrors Qleany's C++ `SingleWork`: it holds one entity by id,

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Phase 0.1b vertical slice — the replace pipe, and its safety net.
 //!
 //! `run_search` → the writer reviews and unticks some rows → `replace_in_project`

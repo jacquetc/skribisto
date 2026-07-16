@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Layer-A model: the Hunspell dictionaries actually present on this machine.
 //!
 //! Feeds the Settings ▸ Dictionaries ▸ *Installed* tab. Two tiers, tier 1 winning on a

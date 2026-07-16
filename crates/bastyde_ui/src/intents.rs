@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! App-wide commands as typed intents — the scriptable command surface.
 //!
 //! An intent is a named command any handler can fire (`ctx.send_intent(...)`),

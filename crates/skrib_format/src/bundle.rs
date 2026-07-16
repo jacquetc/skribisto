@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! On-disk DTOs for the `.skrib` bundle format (v1) plus the in-memory
 //! [`WorkBundle`] that ties them together.
 //!

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The **Add dictionary** modal — install a Hunspell dictionary from local `.aff`/`.dic` files.
 //!
 //! Same chrome and shape as [`crate::import_plume_panel`]: a title strip, a two-column

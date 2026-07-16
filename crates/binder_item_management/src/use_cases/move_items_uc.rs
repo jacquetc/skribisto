@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 // Custom implementation: reorder / reparent a set of BinderItems (with their
 // contiguous subtrees) within or across Binders. Undoable via a scoped
 // snapshot/restore of the affected binder subtree(s) (v1.8 restore reverts only

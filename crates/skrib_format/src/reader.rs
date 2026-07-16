@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Dispatch a read by detected shape, then run the format migration chain.
 
 use anyhow::{Context, Result};

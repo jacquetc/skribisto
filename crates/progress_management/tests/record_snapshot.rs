@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! End-to-end: `record_progress_snapshot` upserts the daily row on the open WorkInfo.
 
 use std::sync::Arc;

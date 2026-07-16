@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Compile an export scope into one `text_document::TextDocument` and render it.
 //!
 //! The single place a `TextDocument` is built for export. Given a frozen [`Gathered`] tree

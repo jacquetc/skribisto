@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `WorkspaceLayoutViewModel` — captures and restores a project's **desk**: the
 //! open editor tabs (both panes, their selection, the split) and the dock layout,
 //! persisted per work via [`WorkspaceLayoutService`].

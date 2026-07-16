@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Phase 0.1 vertical slice — the search pipe, end to end.
 //!
 //! Loads a real project, runs a search, and asserts the whole chain works before any

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Domain rules for Skribisto's writing model — the hand-written counterpart to
 //! the Qleany-generated enums in `common::entities`.
 //!

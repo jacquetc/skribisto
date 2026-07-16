@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! What does a keystroke actually cost?
 //!
 //! `run_search` runs on every keystroke of a search box (behind a debounce). It walks every

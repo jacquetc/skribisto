@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `OpenDocsStore` + `OpenDoc` — the app's shared holder of open editing state.
 //!
 //! An [`OpenDoc`] is one binder item's **live, shareable** editing state: its main

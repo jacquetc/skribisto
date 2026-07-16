@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The compile spine: fold the flat, ordered `(role, sub_role)` item stream into the
 //! *selection* an exporter renders.
 //!

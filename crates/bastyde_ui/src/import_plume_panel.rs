@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The Import Plume Creator modal — pick a `.plume`/`.plume_backup` project and a
 //! destination, then convert it into a new `.skrib`.
 //!

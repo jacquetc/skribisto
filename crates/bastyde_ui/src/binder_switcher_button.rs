@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! The Outline dock's header controls: a **binder switcher** and a **tree
 //! search**, both on one row above the tree.
 //!

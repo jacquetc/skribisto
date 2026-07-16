@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Per-work **workspace layout**: the open editor tabs (both panes + selection +
 //! split) and the dock layout, so re-opening a project restores the desk exactly
 //! as it was left.

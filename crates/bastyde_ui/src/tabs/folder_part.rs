@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! `Folder/Part` — a part container: its chapters and their scenes.
 //!
 //! Shares the [`folder_segmented`](super::shared::folder_segmented) body with the

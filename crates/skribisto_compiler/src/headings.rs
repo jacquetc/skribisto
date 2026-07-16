@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Generated structural words — "Chapter 3" / "Chapitre 3" / "الفصل ٣" — localized from
 //! the scene's language and the preset's digit style.
 //!
