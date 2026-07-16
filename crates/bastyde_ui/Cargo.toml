@@ -29,6 +29,7 @@ skrib_format = { workspace = true }
 # drives the Export panel's live preview *client-side* — the same code path the
 # `export_work` long op runs, so preview and committed export cannot diverge.
 skribisto_compiler = { workspace = true }
+skribisto_fonts = { workspace = true }
 # The `export_work` DTO + its `ExportFormat` / `ExportScopeKind` enums, carried by the
 # `export.scope` intent and dispatched from the Export panel.
 export_management = { workspace = true }
@@ -110,6 +111,10 @@ windows = { version = "0.61", features = [
 [features]
 # Build-with-mocks: render the UI with fabricated data, no real backend needed.
 mocks = []
+# Opt-in PDF export (embedded Typst). OFF by default so the standard build carries no Typst
+# dependency (~34 MB / ~60 s); the shipping/release build turns it on. When off, choosing PDF
+# in the export panel fails with a "PDF support not compiled" error rather than being absent.
+pdf = ["skribisto_compiler/pdf"]
 
 [dev-dependencies]
 # Import-panel validation tests probe the filesystem for an existing target.

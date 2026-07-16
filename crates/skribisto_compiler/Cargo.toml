@@ -23,6 +23,15 @@ skrib_format = { workspace = true }
 serde = { workspace = true }
 serde_json = "1.0"
 text-document = { path = "../../../text-document/crates/public_api" }
+skribisto_fonts = { workspace = true }
+# Bundled Noto RTL faces for PDF export (byte accessors only). Explicit features so the
+# accessors always exist regardless of feature unification.
+bastyde-text = { path = "../../../bastyde/crates/bastyde-text", features = ["fonts-arabic", "fonts-hebrew"] }
+
+[features]
+# Opt-in: enables text-document's Typst-backed PDF exporter. Off by default so the standard
+# build carries no Typst dependency; `bastyde_ui`'s own `pdf` feature turns this on.
+pdf = ["text-document/pdf"]
 
 [lints]
 workspace = true

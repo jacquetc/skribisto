@@ -10,6 +10,7 @@
 //!
 //! [`Gathered`]: skrib_format::Gathered
 
+mod fonts;
 mod headings;
 mod preset;
 mod render;

@@ -1,0 +1,10 @@
+[package]
+name = "skribisto-fonts"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "skribisto_fonts"
+path = "src/lib.rs"
+
+[dependencies]

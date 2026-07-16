@@ -16,7 +16,9 @@ use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole};
 use skrib_format::Gathered;
 use skribisto_model::SubRoleExt;
 use skribisto_model::language;
-use text_document::{DocxExportOptions, EpubExportOptions, TextDirection, TextDocument};
+use text_document::{
+    DocxExportOptions, EpubExportOptions, PdfExportOptions, TextDirection, TextDocument,
+};
 
 use crate::headings::{self, Level};
 use crate::preset::{
@@ -124,10 +126,65 @@ pub fn render_to_file(
                 .wait()
                 .map_err(|e| anyhow!("writing EPUB '{out}': {e:#}"))?;
         }
+        ExportFormat::Pdf => {
+            let out = path.to_string_lossy().into_owned();
+            let w = &req.gathered.work;
+            let lang = if w.dict_language.trim().is_empty() {
+                req.work_lang.to_string()
+            } else {
+                w.dict_language.clone()
+            };
+            // Effective languages of the *included* rows drive which RTL faces to embed.
+            let langs: std::collections::BTreeSet<String> =
+                flatten(req).into_iter().map(|r| r.lang).collect();
+            let (page_w, page_h) = pdf_page_mm(req.preset.page_size);
+            let m = &req.preset.margin;
+            let in_to_mm = |i: f32| i * 25.4;
+            let opts = PdfExportOptions {
+                page_width_mm: page_w,
+                page_height_mm: page_h,
+                margin_top_mm: in_to_mm(m.top_in),
+                margin_bottom_mm: in_to_mm(m.bottom_in),
+                margin_left_mm: in_to_mm(m.left_in),
+                margin_right_mm: in_to_mm(m.right_in),
+                // The family name must match the bytes actually fed (substitute-aware).
+                font_family: crate::fonts::pdf_body_family(req.preset),
+                font_bytes: crate::fonts::pdf_font_bytes(req.preset, &langs),
+                font_size_pt: req.preset.font_size_pt,
+                // Typst `leading` (extra baseline gap), in em: single / 1½ / double manuscript.
+                line_spacing: match req.preset.line_spacing {
+                    LineSpacing::Single => 0.65,
+                    LineSpacing::OneAndHalf => 1.0,
+                    LineSpacing::Double => 1.5,
+                },
+                first_line_indent_mm: (req.preset.first_line_indent_in > 0.0)
+                    .then(|| in_to_mm(req.preset.first_line_indent_in)),
+                paragraph_spacing_pt: (req.preset.paragraph_spacing_pt > 0.0)
+                    .then_some(req.preset.paragraph_spacing_pt),
+                justify: req.preset.justify,
+                base_rtl: is_rtl_row(req.preset, &lang),
+                lang: Some(lang),
+                title: (!w.title.trim().is_empty()).then(|| w.title.clone()),
+                author: (!w.author_name.trim().is_empty()).then(|| w.author_name.clone()),
+                include_preamble: true,
+            };
+            doc.to_pdf_with_options(&out, opts)?
+                .wait()
+                .map_err(|e| anyhow!("writing PDF '{out}': {e:#}"))?;
+        }
         other => return Err(anyhow!("{other:?} export is not implemented yet")),
     }
     progress(1.0);
     Ok(stats)
+}
+
+/// A preset [`PageSize`] as (width, height) in millimetres — the unit `PdfExportOptions` uses.
+fn pdf_page_mm(size: PageSize) -> (f32, f32) {
+    match size {
+        PageSize::A4 => (210.0, 297.0),
+        PageSize::Letter => (215.9, 279.4),
+        PageSize::A5 => (148.0, 210.0),
+    }
 }
 
 /// One inch in twips (DOCX's twentieth-of-a-point length unit).
@@ -729,6 +786,29 @@ mod tests {
             Some("Mara Vane / THE LIGHTHOUSE"),
             "author / TITLE running header"
         );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn pdf_export_writes_a_valid_pdf() {
+        // manuscript-shunn names "Times New Roman" (no bundled bytes) → exercises the
+        // EB Garamond substitution + a real embedded font.
+        let g = flat_book();
+        let p = preset("manuscript-shunn");
+        let path = std::env::temp_dir().join(format!("skrib-export-{}.pdf", std::process::id()));
+        let stats = render_to_file(
+            &req(&g, &[100, 101, 102], &p, ExportFormat::Pdf),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert!(path.exists(), "pdf file should be written");
+        let bytes = std::fs::read(&path).unwrap();
+        assert!(bytes.starts_with(b"%PDF-"), "valid PDF magic bytes");
+        assert!(bytes.len() > 500, "non-trivial PDF");
+        assert!(stats.items >= 2);
+        let _ = std::fs::remove_file(&path);
     }
 
     #[test]

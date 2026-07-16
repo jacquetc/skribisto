@@ -265,20 +265,9 @@ fn register_editor_fonts() -> bastyde::text::VecFontRegistrar {
         is_default: false,
         default_size_px: 16.0,
     };
-    VecFontRegistrar::new(vec![
-        face(include_bytes!("../assets/fonts/Literata-Variable.ttf")),
-        face(include_bytes!(
-            "../assets/fonts/Literata-Italic-Variable.ttf"
-        )),
-        face(include_bytes!("../assets/fonts/EBGaramond-Variable.ttf")),
-        face(include_bytes!(
-            "../assets/fonts/EBGaramond-Italic-Variable.ttf"
-        )),
-        face(include_bytes!("../assets/fonts/SourceSerif4-Variable.ttf")),
-        face(include_bytes!(
-            "../assets/fonts/SourceSerif4-Italic-Variable.ttf"
-        )),
-    ])
+    // Bytes come from the shared `skribisto_fonts` crate — the same blobs the PDF exporter
+    // feeds to Typst, so the editor and an exported PDF render in the identical face.
+    VecFontRegistrar::new(skribisto_fonts::all_faces().into_iter().map(face).collect())
 }
 
 /// Adapts the Qleany-generated `EventHubClient` to Bastyde's `EventSource`
