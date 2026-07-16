@@ -15,6 +15,7 @@
 
 mod backup_settings_file;
 mod binder_binder_items_tree_model;
+mod binder_stream;
 mod binder_list_model;
 mod dictionary_settings_file;
 mod examples_list_model;
@@ -38,6 +39,7 @@ pub use binder_binder_items_tree_model::{
     BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters, TreeNode,
 };
 pub use binder_list_model::{BinderListModel, BinderRow};
+pub use binder_stream::ordered_binder_items;
 pub use examples_list_model::ExamplesListModel;
 pub use export_styles_file::ExportStylesService;
 pub use open_docs::{OpenDoc, OpenDocsStore};

@@ -1362,7 +1362,6 @@ impl Widget for App {
             let single_work_info = single_work_info.clone();
             let spell_docs = spell_docs.clone();
             let spellcheck = spellcheck.clone();
-            let workspace_layout = workspace_layout.clone();
             // An open tab does not follow its item by itself: `TabInfo::title` is a plain
             // string baked in at open time, and the `ContentTab` payload is built once for
             // the item's `(role, sub_role)`. So a rename must push the new caption, and a
@@ -1416,14 +1415,12 @@ impl Widget for App {
                     // known — firing it here, before that sniff runs, could pump a
                     // freshly-opened *backup* file into the real project's
                     // retention pool before anyone knew it was a backup.
-
-                    // Restore this project's saved desk (open tabs + docks), or apply
-                    // the defaults. Runs last: the store is loaded, the singles point
-                    // at the new project (so `unique_id` is known), and `close_all`
-                    // has cleared the outgoing tabs — the clean slate restore fills.
-                    if let Some(layout) = &workspace_layout {
-                        layout.restore();
-                    }
+                    //
+                    // The workspace-layout restore (open tabs + docks) is likewise
+                    // driven from that SECOND subscriber: it already sniffs whether
+                    // the file is a backup, and restore needs that answer (a backup
+                    // gets a clean default desk, not the source project's) — so it is
+                    // supplied there rather than re-sniffed here.
                 },
             );
         }
@@ -1441,6 +1438,7 @@ impl Widget for App {
             let single_work = single_work.clone();
             let backup_settings = backup_settings.clone();
             let backup_scheduler = backup_scheduler.clone();
+            let workspace_layout = workspace_layout.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_e: &Event, c: &mut EventContext| {
@@ -1448,7 +1446,17 @@ impl Widget for App {
                         .ok()
                         .and_then(|v| v.into_iter().next())
                         .and_then(|wi| wi.file_name);
-                    match path.as_deref().and_then(crate::backup::backup_context_for) {
+                    // Sniff the manifest once: drives both the backup-mode branch
+                    // below and the workspace-layout restore.
+                    let backup = path.as_deref().and_then(crate::backup::backup_context_for);
+                    // Restore the desk now that backup-ness is known: a backup gets a
+                    // clean default desk (its saved layout is the *source's*), a normal
+                    // project its saved tabs + docks. The first `LoadWork` subscriber
+                    // has already re-seeded the ids/singles and cleared the old tabs.
+                    if let Some(layout) = &workspace_layout {
+                        layout.restore(backup.is_some());
+                    }
+                    match backup {
                         Some(bc) => {
                             backup_mode.set(true);
                             backup_context.set(Some(bc.clone()));
@@ -1737,9 +1745,9 @@ impl Widget for App {
                     // A fresh project has a fresh `unique_id` and so no saved layout:
                     // this resets the docks to the default (bottom hidden) — dropping
                     // any arrangement inherited from an in-place switch — over an
-                    // empty desk.
+                    // empty desk. Never a backup.
                     if let Some(layout) = &workspace_layout {
-                        layout.restore();
+                        layout.restore(false);
                     }
                 },
             );

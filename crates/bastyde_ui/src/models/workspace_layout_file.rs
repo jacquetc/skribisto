@@ -41,6 +41,12 @@ use serde::{Deserialize, Serialize};
 /// (see [`SearchSettingsService`](super::SearchSettingsService)).
 const SETTINGS_DEBOUNCE: Duration = Duration::from_millis(500);
 
+/// Cap on the number of project rows kept in `workspace.toml` — a backstop
+/// against unbounded growth: orphan rows for deleted projects, or a legacy
+/// uid-less `.skrib` that mints a fresh `unique_id` on every open. Generous (a
+/// user rarely juggles this many distinct projects); newest kept, oldest evicted.
+const MAX_PROJECTS: usize = 128;
+
 /// One editor pane's persisted tabs.
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct PaneLayout {
@@ -75,9 +81,6 @@ pub struct PerProjectLayout {
     /// The secondary (side) editor pane.
     #[serde(default)]
     pub secondary: PaneLayout,
-    /// The side pane was shown.
-    #[serde(default)]
-    pub split_active: bool,
     /// The secondary pane was the focused one (drives the open-item marker).
     #[serde(default)]
     pub focus_secondary: bool,
@@ -108,7 +111,15 @@ where
     D: serde::Deserializer<'de>,
 {
     let value = toml::Value::deserialize(d)?;
-    Ok(DockLayoutState::deserialize(value).ok())
+    match DockLayoutState::deserialize(value) {
+        Ok(state) => Ok(Some(state)),
+        // Log the dropped blob so a *genuine* serialization bug is distinguishable
+        // from the intended tolerance of a future-incompatible schema.
+        Err(e) => {
+            eprintln!("skribisto: workspace layout: unreadable dock state dropped ({e})");
+            Ok(None)
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -200,19 +211,41 @@ impl WorkspaceLayoutService {
             .cloned()
     }
 
-    /// Persist `layout` as `layout.work_uid`'s entry (upsert). A no-op when the uid
-    /// is empty (a brand-new unsaved project has no uid yet — see
-    /// [`super::uid_is_usable`]): keying `""` would collide across unrelated
-    /// projects.
+    /// Persist `layout` as its project's entry (upsert). A no-op when:
+    ///  - the uid is empty (a brand-new unsaved project — keying `""` would
+    ///    collide across unrelated projects); or
+    ///  - the stored row is already byte-identical (an autosave whose desk hasn't
+    ///    changed must not rewrite the whole file).
+    ///
+    /// Otherwise it replaces any prior row for this **uid** *and* any row for the
+    /// same **path** — a legacy uid-less `.skrib` mints a fresh uid every open, so
+    /// the path is what actually identifies the file, and de-duping on it keeps one
+    /// row per project instead of one per open. The row list is bounded at
+    /// [`MAX_PROJECTS`] (oldest evicted).
     pub fn set(&self, layout: PerProjectLayout) -> Result<(), SettingsFileError> {
         if !super::uid_is_usable(&layout.work_uid) {
             return Ok(());
         }
+        // Fast-path: skip a no-op write (unchanged desk on an autosave tick).
+        if self
+            .file
+            .borrow()
+            .projects
+            .iter()
+            .find(|p| p.work_uid == layout.work_uid)
+            == Some(&layout)
+        {
+            return Ok(());
+        }
         self.file.mutate(|f| {
-            if let Some(pos) = f.projects.iter().position(|p| p.work_uid == layout.work_uid) {
-                f.projects[pos] = layout;
-            } else {
-                f.projects.push(layout);
+            let path = layout.last_path.clone();
+            f.projects.retain(|p| {
+                p.work_uid != layout.work_uid && (path.is_empty() || p.last_path != path)
+            });
+            f.projects.push(layout); // newest at the end
+            let len = f.projects.len();
+            if len > MAX_PROJECTS {
+                f.projects.drain(0..len - MAX_PROJECTS); // evict the oldest
             }
         })
     }
@@ -240,7 +273,8 @@ mod tests {
     fn sample(uid: &str) -> PerProjectLayout {
         PerProjectLayout {
             work_uid: uid.to_string(),
-            last_path: "/x/a.skrib".to_string(),
+            // Distinct paths per uid — a real project is one file (dedup-by-path).
+            last_path: format!("/x/{uid}.skrib"),
             primary: PaneLayout {
                 tabs: vec![3, 7, 1],
                 selected: Some(7),
@@ -249,7 +283,6 @@ mod tests {
                 tabs: vec![9],
                 selected: Some(9),
             },
-            split_active: true,
             focus_secondary: false,
             editor_splitter: None,
             docks: Some(DockLayoutState::default()),
@@ -270,8 +303,50 @@ mod tests {
         assert_eq!(got.primary.tabs, vec![3, 7, 1]);
         assert_eq!(got.primary.selected, Some(7));
         assert_eq!(got.secondary.tabs, vec![9]);
-        assert!(got.split_active);
         assert!(got.docks.is_some());
+    }
+
+    #[test]
+    fn dedup_by_path_keeps_one_row_per_file() {
+        // A legacy uid-less .skrib mints a fresh uid every open, so the same path
+        // arrives under a new uid each time — keep one row (the latest), not one
+        // orphan per open.
+        let d = tempdir().unwrap();
+        let s = svc(d.path());
+        let mut open1 = sample("uid-open-1");
+        open1.last_path = "/x/legacy.skrib".to_string();
+        let mut open2 = sample("uid-open-2");
+        open2.last_path = "/x/legacy.skrib".to_string();
+        s.set(open1).unwrap();
+        s.set(open2).unwrap();
+        assert_eq!(s.file.borrow().projects.len(), 1, "one row per file path");
+        assert!(s.get("uid-open-1").is_none(), "the earlier open's orphan row is gone");
+        assert!(s.get("uid-open-2").is_some());
+    }
+
+    #[test]
+    fn no_op_write_is_skipped() {
+        // Re-setting an identical desk must not grow or reorder the file.
+        let d = tempdir().unwrap();
+        let s = svc(d.path());
+        s.set(sample("uid-A")).unwrap();
+        s.set(sample("uid-A")).unwrap();
+        s.set(sample("uid-A")).unwrap();
+        assert_eq!(s.file.borrow().projects.len(), 1);
+    }
+
+    #[test]
+    fn row_count_is_capped() {
+        let d = tempdir().unwrap();
+        let s = svc(d.path());
+        for i in 0..(MAX_PROJECTS + 20) {
+            s.set(sample(&format!("uid-{i}"))).unwrap();
+        }
+        let f = s.file.borrow();
+        assert_eq!(f.projects.len(), MAX_PROJECTS, "bounded at the cap");
+        // Oldest evicted, newest kept.
+        assert!(f.projects.iter().all(|p| p.work_uid != "uid-0"));
+        assert!(f.projects.iter().any(|p| p.work_uid == format!("uid-{}", MAX_PROJECTS + 19)));
     }
 
     #[test]
@@ -385,7 +460,7 @@ leading = 12345
         let got = s.get("uid-A").unwrap();
         assert_eq!(got.primary.tabs, vec![0, 2]);
         assert_eq!(got.primary.selected, None);
-        assert!(!got.split_active);
+        assert!(!got.focus_secondary);
         assert!(got.docks.is_none());
         assert!(got.secondary.is_empty());
     }

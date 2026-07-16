@@ -38,12 +38,11 @@ use bastyde::prelude::Signal;
 use bastyde::widgets::{DockLayoutState, DockSide, DockingModel};
 
 use frontend::AppContext;
-use frontend::commands::{binder_commands, binder_item_commands, work_commands};
-use frontend::common::direct_access::binder::BinderRelationshipField;
-use frontend::common::direct_access::work::WorkRelationshipField;
 
 use crate::app_ids::AppIds;
-use crate::models::{PaneLayout, PerProjectLayout, WorkspaceLayoutService, uid_is_usable};
+use crate::models::{
+    PaneLayout, PerProjectLayout, WorkspaceLayoutService, ordered_binder_items, uid_is_usable,
+};
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{EditorsViewModel, Side};
 
@@ -141,29 +140,17 @@ impl WorkspaceLayoutViewModel {
         let order = self.ordered_items();
         let index_of: HashMap<u64, usize> =
             order.iter().enumerate().map(|(i, (id, _))| (*id, i)).collect();
-        let to_ordinals = |ids: Vec<u64>| -> Vec<usize> {
-            ids.iter().filter_map(|id| index_of.get(id).copied()).collect()
-        };
-        let ordinal_of = |id: Option<u64>| -> Option<usize> {
-            id.and_then(|i| index_of.get(&i).copied())
-        };
-
-        let primary = PaneLayout {
-            tabs: to_ordinals(editors.tab_item_ids(Side::Primary)),
-            selected: ordinal_of(editors.selected_item(Side::Primary)),
-        };
-        let secondary = PaneLayout {
-            tabs: to_ordinals(editors.tab_item_ids(Side::Secondary)),
-            selected: ordinal_of(editors.selected_item(Side::Secondary)),
+        let pane = |side| PaneLayout {
+            tabs: to_ordinals(&index_of, &editors.tab_item_ids(side)),
+            selected: editors.selected_item(side).and_then(|id| index_of.get(&id).copied()),
         };
         let split_active = editors.split_active().get();
 
         let record = PerProjectLayout {
             work_uid: uid,
             last_path: self.single_work_info.file_name().get().unwrap_or_default(),
-            primary,
-            secondary,
-            split_active,
+            primary: pane(Side::Primary),
+            secondary: pane(Side::Secondary),
             focus_secondary: editors.focused_side() == Side::Secondary,
             editor_splitter: split_active.then(|| editors.splitter().export_state()),
             docks: Some(self.docking.export_state()),
@@ -177,18 +164,17 @@ impl WorkspaceLayoutViewModel {
 
     /// Apply the open project's saved desk (or the defaults). Call after the
     /// id-seeding subscriber has run for this `LoadWork` / `NewWork`.
-    pub fn restore(&self) {
+    ///
+    /// `is_backup` — the just-loaded file is a *backup*. A backup shares its source
+    /// project's `unique_id` (retention correlates on it), so its saved layout is
+    /// the *source's*; importing it would show the live project's docks + tabs
+    /// (resolved against the backup's own, possibly older, item stream) behind the
+    /// backup-choice modal. A backup gets a clean default desk instead — symmetric
+    /// with `capture` being inert in backup mode. The flag is supplied by the caller
+    /// (the backup-detection subscriber, which has already sniffed the manifest), so
+    /// restore doesn't sniff it a second time.
+    pub fn restore(&self, is_backup: bool) {
         let uid = self.single_work.unique_id().get();
-        // A backup file shares its source project's `unique_id` (retention
-        // correlates on it), so its saved layout is the *source's*. Never import it
-        // into a backup view: that would show the live project's docks + tabs
-        // (resolved against the backup's own, possibly older, item stream) behind
-        // the backup-choice modal. Give a backup a clean default desk instead —
-        // symmetric with `capture` being inert in backup mode. Sniffed here from the
-        // path because `backup_mode` is only set by a *later* `LoadWork` subscriber.
-        let path = self.single_work_info.file_name().get().unwrap_or_default();
-        let is_backup =
-            !path.trim().is_empty() && crate::backup::backup_context_for(&path).is_some();
         let saved = if !is_backup && uid_is_usable(&uid) {
             self.service.get(&uid)
         } else {
@@ -222,20 +208,15 @@ impl WorkspaceLayoutViewModel {
         // persisted list length, or an all-stale side pane would show up empty.
         let order = self.ordered_items();
         let resolve = |ord: usize| -> Option<(u64, String)> { order.get(ord).cloned() };
-        let primary_tabs: Vec<(u64, String)> =
-            rec.primary.tabs.iter().filter_map(|&o| resolve(o)).collect();
-        let secondary_tabs: Vec<(u64, String)> =
-            rec.secondary.tabs.iter().filter_map(|&o| resolve(o)).collect();
+        let primary_tabs = resolve_ordinals(&order, &rec.primary.tabs);
+        let secondary_tabs = resolve_ordinals(&order, &rec.secondary.tabs);
 
         for (id, title) in &primary_tabs {
             editors.open_in(Side::Primary, *id, title);
         }
-        if secondary_tabs.is_empty() {
-            // Nothing resolved for the side pane — never show an empty split, even if
-            // one was saved active.
-            editors.set_split(false);
-        } else {
-            editors.set_split(true);
+        let (split, focus) = split_and_focus(secondary_tabs.len(), rec.focus_secondary);
+        editors.set_split(split); // never an empty split (side collapses if nothing resolved)
+        if split {
             for (id, title) in &secondary_tabs {
                 editors.open_in(Side::Secondary, *id, title);
             }
@@ -252,20 +233,14 @@ impl WorkspaceLayoutViewModel {
         {
             editors.select_item(Side::Primary, id);
         }
-        if !secondary_tabs.is_empty()
+        if split
             && let Some(ord) = rec.secondary.selected
             && let Some((id, _)) = resolve(ord)
         {
             editors.select_item(Side::Secondary, id);
         }
 
-        // Re-mark the focused pane (drives the binder's open-item accent) — the side
-        // pane only if it actually restored tabs.
-        let focus = if rec.focus_secondary && !secondary_tabs.is_empty() {
-            Side::Secondary
-        } else {
-            Side::Primary
-        };
+        // Re-mark the focused pane (drives the binder's open-item accent).
         editors.set_focused(focus);
     }
 
@@ -279,39 +254,89 @@ impl WorkspaceLayoutViewModel {
     // ── Backend enumeration ─────────────────────────────────────────────────────
 
     /// The open project's binder items as `(item_id, title)`, in the flat,
-    /// binder-major stream order — the authoritative relationship order that a save
-    /// writes and a load reproduces. Empty when no project is open.
+    /// binder-major stream order (through Layer A). Empty when no project is open.
     fn ordered_items(&self) -> Vec<(u64, String)> {
-        let ctx = &self.app_ctx;
-        let Some(work_id) = self.ids.work_id.get() else {
-            return Vec::new();
-        };
-        let mut out = Vec::new();
-        let binder_ids =
-            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
-                .unwrap_or_default();
-        for binder_id in binder_ids {
-            let item_ids = binder_commands::get_binder_relationship(
-                ctx,
-                &binder_id,
-                &BinderRelationshipField::BinderItems,
-            )
-            .unwrap_or_default();
-            // `get_binder_item_multi` returns `Vec<Option<..>>` in db-key order (not
-            // request order), so index by id and walk `item_ids` (the authoritative
-            // relationship order) to build the stream.
-            let title_of: HashMap<u64, String> =
-                binder_item_commands::get_binder_item_multi(ctx, &item_ids)
-                    .unwrap_or_default()
-                    .into_iter()
-                    .flatten()
-                    .map(|it| (it.id, it.title))
-                    .collect();
-            for id in item_ids {
-                let title = title_of.get(&id).cloned().unwrap_or_default();
-                out.push((id, title));
-            }
+        match self.ids.work_id.get() {
+            Some(work_id) => ordered_binder_items(&self.app_ctx, work_id),
+            None => Vec::new(),
         }
-        out
+    }
+}
+
+// ── Pure ordinal translation (headless-testable) ────────────────────────────────
+
+/// Item ids → their ordinals in the stream, dropping any not present (a tab whose
+/// item left the binder since capture).
+fn to_ordinals(index_of: &HashMap<u64, usize>, ids: &[u64]) -> Vec<usize> {
+    ids.iter().filter_map(|id| index_of.get(id).copied()).collect()
+}
+
+/// Ordinals → their `(id, title)` in the stream, dropping any out of range (a
+/// stale ordinal whose position no longer exists).
+fn resolve_ordinals(order: &[(u64, String)], ords: &[usize]) -> Vec<(u64, String)> {
+    ords.iter().filter_map(|&o| order.get(o).cloned()).collect()
+}
+
+/// Decide the side pane's visibility + the focused pane from what actually
+/// resolved — never a shown-but-empty side pane, and focus the side only when it
+/// has tabs. Keyed on the resolved count, not the persisted list length.
+fn split_and_focus(secondary_count: usize, want_focus_secondary: bool) -> (bool, Side) {
+    let split = secondary_count > 0;
+    let focus = if want_focus_secondary && split {
+        Side::Secondary
+    } else {
+        Side::Primary
+    };
+    (split, focus)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn stream() -> Vec<(u64, String)> {
+        vec![
+            (10, "A".into()),
+            (20, "B".into()),
+            (30, "C".into()),
+            (40, "D".into()),
+        ]
+    }
+
+    #[test]
+    fn ordinals_round_trip_through_the_stream() {
+        let order = stream();
+        let index_of: HashMap<u64, usize> =
+            order.iter().enumerate().map(|(i, (id, _))| (*id, i)).collect();
+        // capture: item ids → ordinals (tab order preserved).
+        let ords = to_ordinals(&index_of, &[30, 10, 40]);
+        assert_eq!(ords, vec![2, 0, 3]);
+        // restore: ordinals → the same ids, same order.
+        let resolved: Vec<u64> = resolve_ordinals(&order, &ords).into_iter().map(|(id, _)| id).collect();
+        assert_eq!(resolved, vec![30, 10, 40]);
+    }
+
+    #[test]
+    fn a_removed_item_drops_from_capture_and_a_stale_ordinal_drops_from_restore() {
+        let order = stream();
+        let index_of: HashMap<u64, usize> =
+            order.iter().enumerate().map(|(i, (id, _))| (*id, i)).collect();
+        // An open tab for an item no longer in the stream (99) is dropped at capture.
+        assert_eq!(to_ordinals(&index_of, &[20, 99, 40]), vec![1, 3]);
+        // An ordinal past the (now shorter) stream is dropped at restore.
+        let resolved: Vec<u64> =
+            resolve_ordinals(&order, &[1, 7, 3]).into_iter().map(|(id, _)| id).collect();
+        assert_eq!(resolved, vec![20, 40]);
+    }
+
+    #[test]
+    fn split_never_shows_an_empty_side_pane() {
+        // Nothing resolved for the side → collapse + focus primary, even if the side
+        // was saved focused (the finding-driven "no empty split" rule).
+        assert_eq!(split_and_focus(0, true), (false, Side::Primary));
+        assert_eq!(split_and_focus(0, false), (false, Side::Primary));
+        // Side has tabs → show it; focus it only when it was the focused pane.
+        assert_eq!(split_and_focus(2, true), (true, Side::Secondary));
+        assert_eq!(split_and_focus(2, false), (true, Side::Primary));
     }
 }
