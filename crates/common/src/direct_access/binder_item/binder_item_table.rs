@@ -215,9 +215,14 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
             // Clean up backward references (uses the owning entity's forward junction)
 
             delete_from_backward_junction(&self.store.jn_binder_item_from_binder_binder_items, id);
+            delete_from_backward_junction(&self.store.jn_binder_item_from_pace_book_item, id);
             // self-referential backward: same forward junction
             delete_from_backward_junction(
                 &self.store.jn_binder_item_from_binder_item_references,
+                id,
+            );
+            delete_from_backward_junction(
+                &self.store.jn_binder_item_from_milestone_target_item,
                 id,
             );
             delete_from_backward_junction(

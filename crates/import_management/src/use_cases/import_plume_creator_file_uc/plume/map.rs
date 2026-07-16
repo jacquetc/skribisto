@@ -146,6 +146,9 @@ pub fn build_bundle(
         tags: Vec::new(),
         dict_words: dict,
         trash_infos: Vec::new(),
+        // Plume has no writing-plan or progress-history concept to import.
+        paces: Vec::new(),
+        progress_snapshots: Vec::new(),
         binders,
     };
 

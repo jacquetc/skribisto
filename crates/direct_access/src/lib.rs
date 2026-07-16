@@ -13,6 +13,9 @@ pub mod system;
 // WorkInfo
 pub mod work_info;
 
+// ProgressSnapshot
+pub mod progress_snapshot;
+
 // Search
 pub mod search;
 
@@ -27,6 +30,15 @@ pub mod work;
 
 // TrashInfo
 pub mod trash_info;
+
+// Pace
+pub mod pace;
+
+// Holiday
+pub mod holiday;
+
+// Milestone
+pub mod milestone;
 
 // Binder
 pub mod binder;
@@ -54,6 +66,9 @@ pub use system::system_controller;
 pub use work_info::dtos::*;
 pub use work_info::work_info_controller;
 
+pub use progress_snapshot::dtos::*;
+pub use progress_snapshot::progress_snapshot_controller;
+
 pub use search::dtos::*;
 pub use search::search_controller;
 
@@ -68,6 +83,15 @@ pub use work::work_controller;
 
 pub use trash_info::dtos::*;
 pub use trash_info::trash_info_controller;
+
+pub use pace::dtos::*;
+pub use pace::pace_controller;
+
+pub use holiday::dtos::*;
+pub use holiday::holiday_controller;
+
+pub use milestone::dtos::*;
+pub use milestone::milestone_controller;
 
 pub use binder::binder_controller;
 pub use binder::dtos::*;

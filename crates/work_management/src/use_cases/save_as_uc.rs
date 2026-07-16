@@ -16,9 +16,12 @@ use anyhow::{Result, anyhow};
 use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
+use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
+use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work, WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot, TrashInfo, Work,
+    WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
@@ -43,6 +46,12 @@ pub trait SaveAsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO")]
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Pace", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Pace", action = "GetRelationshipRO")]
+#[macros::uow_action(entity = "Holiday", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Milestone", action = "GetMultiRO")]
+#[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipRO")]
+#[macros::uow_action(entity = "ProgressSnapshot", action = "GetMultiRO")]
 pub trait SaveAsUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
     fn publish_save_as_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -84,6 +93,31 @@ impl<'a> TreeReader for dyn SaveAsUnitOfWorkTrait + 'a {
     }
     fn content_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Content>>> {
         self.get_content_multi(ids)
+    }
+    fn reads_paces(&self) -> bool {
+        true
+    }
+    fn pace_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Pace>>> {
+        self.get_pace_multi(ids)
+    }
+    fn pace_rel(&self, id: &EntityId, field: &PaceRelationshipField) -> Result<Vec<EntityId>> {
+        self.get_pace_relationship(id, field)
+    }
+    fn holiday_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Holiday>>> {
+        self.get_holiday_multi(ids)
+    }
+    fn milestone_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Milestone>>> {
+        self.get_milestone_multi(ids)
+    }
+    fn work_info_rel(
+        &self,
+        id: &EntityId,
+        field: &WorkInfoRelationshipField,
+    ) -> Result<Vec<EntityId>> {
+        self.get_work_info_relationship(id, field)
+    }
+    fn progress_snapshot_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<ProgressSnapshot>>> {
+        self.get_progress_snapshot_multi(ids)
     }
 }
 

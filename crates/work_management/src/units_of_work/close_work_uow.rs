@@ -6,7 +6,8 @@ use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work, WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot, TrashInfo, Work,
+    WorkInfo,
 };
 use common::event::WorkManagementEvent::CloseWork;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
@@ -123,6 +124,14 @@ impl CommandUnitOfWork for CloseWorkUnitOfWork {
 #[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
 #[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Pace", action = "GetAll")]
+#[macros::uow_action(entity = "Pace", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Holiday", action = "GetAll")]
+#[macros::uow_action(entity = "Holiday", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Milestone", action = "GetAll")]
+#[macros::uow_action(entity = "Milestone", action = "RemoveMulti")]
+#[macros::uow_action(entity = "ProgressSnapshot", action = "GetAll")]
+#[macros::uow_action(entity = "ProgressSnapshot", action = "RemoveMulti")]
 #[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
 #[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 impl CloseWorkUnitOfWorkTrait for CloseWorkUnitOfWork {

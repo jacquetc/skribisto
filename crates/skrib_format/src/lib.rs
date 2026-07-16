@@ -42,12 +42,16 @@ mod zip_io;
 // `from_entities` builds one from store entities.
 pub use bundle::{
     BinderFile, BinderItemFile, BinderTagFile, BinderWithItems, BundleKind, BundledBinder,
-    BundledItem, DictWordFile, FORMAT_VERSION, InlineContent, ItemWithContents, ItemsFile,
-    ProjectManifest, ProseRef, ShapeTag, TrashInfoFile, WorkBundle, WorkFile,
+    BundledItem, DictWordFile, FORMAT_VERSION, HolidayFile, InlineContent, ItemWithContents,
+    ItemsFile, MilestoneFile, PaceFile, PaceWithChildren, ProgressSnapshotFile, ProjectManifest,
+    ProseRef, ShapeTag, TrashInfoFile, WorkBundle, WorkFile,
 };
 pub use convert::{html_to_djot, markdown_to_html};
 pub use fingerprint::content_fingerprint;
-pub use loaded::{LoadedBinder, LoadedItem, LoadedTrash, LoadedWork};
+pub use loaded::{
+    LoadedBinder, LoadedHoliday, LoadedItem, LoadedMilestone, LoadedPace, LoadedProgressSnapshot,
+    LoadedTrash, LoadedWork,
+};
 pub use mapping::{bundle_to_loaded, from_entities, mark_as_backup};
 pub use reader::{peek_manifest, read_bundle};
 pub use shape::{SkribShape, detect_shape};

@@ -17,6 +17,15 @@ pub mod write {
             dict_word::{
                 dict_word_repository::DictWordRepository, dict_word_table::DictWordHashMapTable,
             },
+            holiday::{holiday_repository::HolidayRepository, holiday_table::HolidayHashMapTable},
+            milestone::{
+                milestone_repository::MilestoneRepository, milestone_table::MilestoneHashMapTable,
+            },
+            pace::{pace_repository::PaceRepository, pace_table::PaceHashMapTable},
+            progress_snapshot::{
+                progress_snapshot_repository::ProgressSnapshotRepository,
+                progress_snapshot_table::ProgressSnapshotHashMapTable,
+            },
             recent_work::{
                 recent_work_repository::RecentWorkRepository,
                 recent_work_table::RecentWorkHashMapTable,
@@ -59,6 +68,16 @@ pub mod write {
         ))
     }
 
+    pub fn create_progress_snapshot_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<ProgressSnapshotRepository<'_>> {
+        let progress_snapshot_table = ProgressSnapshotHashMapTable::new(transaction.get_store());
+        Ok(ProgressSnapshotRepository::new(
+            Box::new(progress_snapshot_table),
+            transaction,
+        ))
+    }
+
     pub fn create_search_repository(transaction: &'_ Transaction) -> Result<SearchRepository<'_>> {
         let search_table = SearchHashMapTable::new(transaction.get_store());
         Ok(SearchRepository::new(Box::new(search_table), transaction))
@@ -95,6 +114,28 @@ pub mod write {
         let trash_info_table = TrashInfoHashMapTable::new(transaction.get_store());
         Ok(TrashInfoRepository::new(
             Box::new(trash_info_table),
+            transaction,
+        ))
+    }
+
+    pub fn create_pace_repository(transaction: &'_ Transaction) -> Result<PaceRepository<'_>> {
+        let pace_table = PaceHashMapTable::new(transaction.get_store());
+        Ok(PaceRepository::new(Box::new(pace_table), transaction))
+    }
+
+    pub fn create_holiday_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<HolidayRepository<'_>> {
+        let holiday_table = HolidayHashMapTable::new(transaction.get_store());
+        Ok(HolidayRepository::new(Box::new(holiday_table), transaction))
+    }
+
+    pub fn create_milestone_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<MilestoneRepository<'_>> {
+        let milestone_table = MilestoneHashMapTable::new(transaction.get_store());
+        Ok(MilestoneRepository::new(
+            Box::new(milestone_table),
             transaction,
         ))
     }
@@ -161,6 +202,18 @@ pub mod read {
             dict_word::{
                 dict_word_repository::DictWordRepositoryRO, dict_word_table::DictWordHashMapTableRO,
             },
+            holiday::{
+                holiday_repository::HolidayRepositoryRO, holiday_table::HolidayHashMapTableRO,
+            },
+            milestone::{
+                milestone_repository::MilestoneRepositoryRO,
+                milestone_table::MilestoneHashMapTableRO,
+            },
+            pace::{pace_repository::PaceRepositoryRO, pace_table::PaceHashMapTableRO},
+            progress_snapshot::{
+                progress_snapshot_repository::ProgressSnapshotRepositoryRO,
+                progress_snapshot_table::ProgressSnapshotHashMapTableRO,
+            },
             recent_work::{
                 recent_work_repository::RecentWorkRepositoryRO,
                 recent_work_table::RecentWorkHashMapTableRO,
@@ -203,6 +256,15 @@ pub mod read {
         Ok(WorkInfoRepositoryRO::new(Box::new(work_info_table)))
     }
 
+    pub fn create_progress_snapshot_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<ProgressSnapshotRepositoryRO<'_>> {
+        let progress_snapshot_table = ProgressSnapshotHashMapTableRO::new(transaction.get_store());
+        Ok(ProgressSnapshotRepositoryRO::new(Box::new(
+            progress_snapshot_table,
+        )))
+    }
+
     pub fn create_search_repository(
         transaction: &'_ Transaction,
     ) -> Result<SearchRepositoryRO<'_>> {
@@ -234,6 +296,25 @@ pub mod read {
     ) -> Result<TrashInfoRepositoryRO<'_>> {
         let trash_info_table = TrashInfoHashMapTableRO::new(transaction.get_store());
         Ok(TrashInfoRepositoryRO::new(Box::new(trash_info_table)))
+    }
+
+    pub fn create_pace_repository(transaction: &'_ Transaction) -> Result<PaceRepositoryRO<'_>> {
+        let pace_table = PaceHashMapTableRO::new(transaction.get_store());
+        Ok(PaceRepositoryRO::new(Box::new(pace_table)))
+    }
+
+    pub fn create_holiday_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<HolidayRepositoryRO<'_>> {
+        let holiday_table = HolidayHashMapTableRO::new(transaction.get_store());
+        Ok(HolidayRepositoryRO::new(Box::new(holiday_table)))
+    }
+
+    pub fn create_milestone_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<MilestoneRepositoryRO<'_>> {
+        let milestone_table = MilestoneHashMapTableRO::new(transaction.get_store());
+        Ok(MilestoneRepositoryRO::new(Box::new(milestone_table)))
     }
 
     pub fn create_binder_repository(

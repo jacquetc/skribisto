@@ -15,14 +15,16 @@ use chrono::{DateTime, Utc};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
+use common::direct_access::milestone::MilestoneRelationshipField;
+use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::root::RootRelationshipField;
 use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, RecentWork, Root, Search, System, TrashInfo,
-    Work, WorkInfo, WorkShape,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
+    RecentWork, Root, Search, System, TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use skrib_format::{self as skrib, LoadedWork, SkribShape};
@@ -45,12 +47,18 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
 #[macros::uow_action(entity = "WorkInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Pace", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Holiday", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Milestone", action = "CreateOrphan")]
+#[macros::uow_action(entity = "ProgressSnapshot", action = "CreateOrphan")]
 #[macros::uow_action(entity = "System", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Root", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
+#[macros::uow_action(entity = "Pace", action = "SetRelationship")]
+#[macros::uow_action(entity = "Milestone", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "WorkInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "Search", action = "CreateOrphan")]
@@ -77,6 +85,14 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
 #[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Pace", action = "GetAll")]
+#[macros::uow_action(entity = "Pace", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Holiday", action = "GetAll")]
+#[macros::uow_action(entity = "Holiday", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Milestone", action = "GetAll")]
+#[macros::uow_action(entity = "Milestone", action = "RemoveMulti")]
+#[macros::uow_action(entity = "ProgressSnapshot", action = "GetAll")]
+#[macros::uow_action(entity = "ProgressSnapshot", action = "RemoveMulti")]
 #[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
 #[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 pub trait LoadWorkUnitOfWorkTrait: CommandUnitOfWork {
@@ -121,6 +137,26 @@ impl<'a> WorkCloser for dyn LoadWorkUnitOfWorkTrait + 'a {
             .map(|e| e.id)
             .collect())
     }
+    fn pace_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self.get_all_pace()?.into_iter().map(|e| e.id).collect())
+    }
+    fn holiday_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self.get_all_holiday()?.into_iter().map(|e| e.id).collect())
+    }
+    fn milestone_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_milestone()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn progress_snapshot_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_progress_snapshot()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
     fn work_info_ids(&self) -> Result<Vec<EntityId>> {
         Ok(self
             .get_all_work_info()?
@@ -148,6 +184,18 @@ impl<'a> WorkCloser for dyn LoadWorkUnitOfWorkTrait + 'a {
     }
     fn remove_trashes(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_trash_info_multi(ids)
+    }
+    fn remove_paces(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_pace_multi(ids)
+    }
+    fn remove_holidays(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_holiday_multi(ids)
+    }
+    fn remove_milestones(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_milestone_multi(ids)
+    }
+    fn remove_progress_snapshots(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_progress_snapshot_multi(ids)
     }
     fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_work_info_multi(ids)
@@ -201,6 +249,9 @@ impl LoadWorkUseCase {
 
 struct Materialized {
     work_id: EntityId,
+    /// ProgressSnapshot orphans built here (they need `item_map` to remap `book_item_ids`),
+    /// wired onto the freshly-created WorkInfo in `create_trunk`.
+    progress_snapshot_ids: Vec<EntityId>,
 }
 
 /// Materialise the Work subtree (lossless: every scalar field, content row,
@@ -388,6 +439,67 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
         trash_info_ids.push(info.id);
     }
 
+    // Paces (Work trunk). Children are created first, then the Pace, then wired; the
+    // weak `book_item`/`target_item` back-links are remapped through `item_map` (an
+    // unresolvable id is simply dropped, same posture as trash back-links).
+    let mut pace_ids: Vec<EntityId> = Vec::new();
+    for lp in &loaded.paces {
+        let mut holiday_ids: Vec<EntityId> = Vec::new();
+        for h in &lp.holidays {
+            let created = uow.create_orphan_holiday(&Holiday {
+                created_at: h.created_at,
+                updated_at: h.updated_at,
+                label: h.label.clone(),
+                start_date: h.start_date,
+                end_date: h.end_date,
+                ..Default::default()
+            })?;
+            holiday_ids.push(created.id);
+        }
+        let mut milestone_ids: Vec<EntityId> = Vec::new();
+        for ms in &lp.milestones {
+            let created = uow.create_orphan_milestone(&Milestone {
+                created_at: ms.created_at,
+                updated_at: ms.updated_at,
+                label: ms.label.clone(),
+                target_date: ms.target_date,
+                target_word_count: ms.target_word_count,
+                ..Default::default()
+            })?;
+            if let Some(it) = ms.target_item.and_then(|i| item_map.get(&i).copied()) {
+                uow.set_milestone_relationship(
+                    &created.id,
+                    &MilestoneRelationshipField::TargetItem,
+                    &[it],
+                )?;
+            }
+            milestone_ids.push(created.id);
+        }
+        let pace = uow.create_orphan_pace(&Pace {
+            created_at: lp.created_at,
+            updated_at: lp.updated_at,
+            start_date: lp.start_date,
+            end_date: lp.end_date,
+            weekday_mask: lp.weekday_mask,
+            active: lp.active,
+            ..Default::default()
+        })?;
+        if let Some(bi) = lp.book_item.and_then(|i| item_map.get(&i).copied()) {
+            uow.set_pace_relationship(&pace.id, &PaceRelationshipField::BookItem, &[bi])?;
+        }
+        if !holiday_ids.is_empty() {
+            uow.set_pace_relationship(&pace.id, &PaceRelationshipField::Holidays, &holiday_ids)?;
+        }
+        if !milestone_ids.is_empty() {
+            uow.set_pace_relationship(
+                &pace.id,
+                &PaceRelationshipField::Milestones,
+                &milestone_ids,
+            )?;
+        }
+        pace_ids.push(pace.id);
+    }
+
     // Work's owned collections.
     uow.set_work_relationship(&work.id, &WorkRelationshipField::Binders, &binder_ids)?;
     if !tag_ids.is_empty() {
@@ -404,8 +516,38 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             &trash_info_ids,
         )?;
     }
+    if !pace_ids.is_empty() {
+        uow.set_work_relationship(&work.id, &WorkRelationshipField::Paces, &pace_ids)?;
+    }
 
-    Ok(Materialized { work_id: work.id })
+    // ProgressSnapshots — created here (needs `item_map` to remap the per-Book breakdown
+    // ids), wired onto the fresh WorkInfo back in `create_trunk`. Both parallel arrays are
+    // filtered in lockstep so an unresolvable book id drops its paired count too.
+    let mut progress_snapshot_ids: Vec<EntityId> = Vec::new();
+    for s in &loaded.progress_snapshots {
+        let (book_ids, book_counts): (Vec<u64>, Vec<i64>) = s
+            .book_item_ids
+            .iter()
+            .zip(&s.book_word_counts)
+            .filter_map(|(fid, wc)| item_map.get(fid).copied().map(|id| (id, *wc)))
+            .unzip();
+        let created = uow.create_orphan_progress_snapshot(&ProgressSnapshot {
+            created_at: s.created_at,
+            updated_at: s.updated_at,
+            day: s.day,
+            total_word_count: s.total_word_count,
+            total_char_count: s.total_char_count,
+            book_item_ids: book_ids,
+            book_word_counts: book_counts,
+            ..Default::default()
+        })?;
+        progress_snapshot_ids.push(created.id);
+    }
+
+    Ok(Materialized {
+        work_id: work.id,
+        progress_snapshot_ids,
+    })
 }
 
 /// Build the non-undoable trunk: System + RecentWork + WorkInfo (records the
@@ -490,6 +632,15 @@ fn create_trunk(
         &WorkInfoRelationshipField::Work,
         &[mat.work_id],
     )?;
+    // Hydrate the daily history onto the fresh WorkInfo (the reach-through-WorkInfo the
+    // save path mirrors). The snapshot orphans were built in `materialize`.
+    if !mat.progress_snapshot_ids.is_empty() {
+        uow.set_work_info_relationship(
+            &work_info.id,
+            &WorkInfoRelationshipField::ProgressSnapshots,
+            &mat.progress_snapshot_ids,
+        )?;
+    }
 
     // Reuse the single shared Root (one per process; multiple Works hang off it).
     let root_id = match uow.get_all_root()?.into_iter().next() {
@@ -629,6 +780,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     activated: it.activated,
                     is_exportable: true,
                     indent: it.indent,
+                    word_count_goal: it.word_count_goal,
+                    char_count_goal: it.char_count_goal,
                     ..Default::default()
                 },
                 contents,
@@ -666,6 +819,9 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         dict_words,
         binders,
         trash_infos,
+        // Legacy projects never had a writing plan.
+        paces: Vec::new(),
+        progress_snapshots: Vec::new(),
         references,
         absolute_path: p.absolute_path.clone(),
     }

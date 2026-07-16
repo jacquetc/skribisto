@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WorkInfoRelationshipField {
+    ProgressSnapshots,
     Search,
     Work,
 }
@@ -294,11 +295,14 @@ impl<'a> WorkInfoRepository<'a> {
         // get all strong forward relationship fields
 
         let search = entity.search.clone();
+        let progress_snapshots = entity.progress_snapshots.clone();
 
         // remove all strong relationships, initiating a cascade remove
 
         repository_factory::write::create_search_repository(self.transaction)?
             .remove(event_buffer, &search)?;
+        repository_factory::write::create_progress_snapshot_repository(self.transaction)?
+            .remove_multi(event_buffer, &progress_snapshots)?;
         // Before removal, find which owner(s) reference this entity
         let affected_owner_ids: Vec<EntityId> = {
             let owner_repo = repository_factory::write::create_system_repository(self.transaction)?;
@@ -350,11 +354,25 @@ impl<'a> WorkInfoRepository<'a> {
             .iter()
             .filter_map(|entity| entity.as_ref().map(|entity| entity.search))
             .collect();
+        let mut progress_snapshots_ids: Vec<EntityId> = entities
+            .iter()
+            .flat_map(|entity| {
+                entity
+                    .as_ref()
+                    .map(|entity| entity.progress_snapshots.clone())
+            })
+            .flatten()
+            .collect();
+        // remove duplicates
+        progress_snapshots_ids.sort();
+        progress_snapshots_ids.dedup();
 
         // remove all strong relationships, initiating a cascade remove
 
         repository_factory::write::create_search_repository(self.transaction)?
             .remove_multi(event_buffer, &search_ids)?;
+        repository_factory::write::create_progress_snapshot_repository(self.transaction)?
+            .remove_multi(event_buffer, &progress_snapshots_ids)?;
         // Before removal, find which owner(s) reference these entities
         let affected_owner_ids: Vec<EntityId> = {
             let owner_repo = repository_factory::write::create_system_repository(self.transaction)?;
@@ -447,6 +465,25 @@ impl<'a> WorkInfoRepository<'a> {
             .collect();
         if !all_right_ids.is_empty() {
             match field {
+                WorkInfoRelationshipField::ProgressSnapshots => {
+                    let child_repo =
+                        repository_factory::write::create_progress_snapshot_repository(
+                            self.transaction,
+                        )?;
+                    let found = child_repo.get_multi(&all_right_ids)?;
+                    let missing: Vec<_> = all_right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship_multi",
+                            ids: missing,
+                        });
+                    }
+                }
                 WorkInfoRelationshipField::Search => {
                     let child_repo =
                         repository_factory::write::create_search_repository(self.transaction)?;
@@ -513,6 +550,25 @@ impl<'a> WorkInfoRepository<'a> {
         // Validate that all right_ids exist
         if !right_ids.is_empty() {
             match field {
+                WorkInfoRelationshipField::ProgressSnapshots => {
+                    let child_repo =
+                        repository_factory::write::create_progress_snapshot_repository(
+                            self.transaction,
+                        )?;
+                    let found = child_repo.get_multi(right_ids)?;
+                    let missing: Vec<_> = right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship",
+                            ids: missing,
+                        });
+                    }
+                }
                 WorkInfoRelationshipField::Search => {
                     let child_repo =
                         repository_factory::write::create_search_repository(self.transaction)?;
@@ -713,6 +769,34 @@ impl<'a> WorkInfoRepository<'a> {
                     .restore_subtree(event_buffer, snap, &child_ids, visited)?;
             }
         }
+        {
+            let mut child_ids: Vec<EntityId> = Vec::new();
+            for id in to_create.iter().chain(to_update.iter()) {
+                if let Some(list) = snap
+                    .jn_progress_snapshot_from_work_info_progress_snapshots
+                    .get(id)
+                {
+                    child_ids.extend(list.iter().copied());
+                }
+            }
+            {
+                let live_jn = store
+                    .jn_progress_snapshot_from_work_info_progress_snapshots
+                    .read()
+                    .unwrap();
+                for id in &ids {
+                    if let Some(list) = live_jn.get(id) {
+                        child_ids.extend(list.iter().copied());
+                    }
+                }
+            }
+            child_ids.sort();
+            child_ids.dedup();
+            if !child_ids.is_empty() {
+                repository_factory::write::create_progress_snapshot_repository(self.transaction)?
+                    .restore_subtree(event_buffer, snap, &child_ids, visited)?;
+            }
+        }
 
         // 2. Entity rows: revert/re-add from snapshot, delete the ones created after it.
         {
@@ -729,6 +813,28 @@ impl<'a> WorkInfoRepository<'a> {
 
         // 3. This entity's own forward junctions (strong + weak): restored wholesale because the
         //    junction key is in-scope (owned exclusively by this trunk).
+        {
+            let mut live_jn = store
+                .jn_progress_snapshot_from_work_info_progress_snapshots
+                .write()
+                .unwrap();
+            for id in to_create.iter().chain(to_update.iter()) {
+                match snap
+                    .jn_progress_snapshot_from_work_info_progress_snapshots
+                    .get(id)
+                {
+                    Some(v) => {
+                        live_jn.insert(*id, v.clone());
+                    }
+                    None => {
+                        live_jn.remove(id);
+                    }
+                }
+            }
+            for id in &to_delete {
+                live_jn.remove(id);
+            }
+        }
         {
             let mut live_jn = store.jn_search_from_work_info_search.write().unwrap();
             for id in to_create.iter().chain(to_update.iter()) {

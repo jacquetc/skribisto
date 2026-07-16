@@ -15,6 +15,7 @@ pub struct WorkInfoDto {
     pub shape: WorkShape,
     pub work: Option<EntityId>,
     pub search: EntityId,
+    pub progress_snapshots: Vec<EntityId>,
 }
 
 impl From<WorkInfoDto> for WorkInfo {
@@ -27,6 +28,7 @@ impl From<WorkInfoDto> for WorkInfo {
             shape: dto.shape,
             work: dto.work,
             search: dto.search,
+            progress_snapshots: dto.progress_snapshots,
         }
     }
 }
@@ -41,6 +43,7 @@ impl From<&WorkInfoDto> for WorkInfo {
             shape: dto.shape.clone(),
             work: dto.work.clone(),
             search: dto.search.clone(),
+            progress_snapshots: dto.progress_snapshots.clone(),
         }
     }
 }
@@ -55,6 +58,7 @@ impl From<WorkInfo> for WorkInfoDto {
             shape: entity.shape,
             work: entity.work,
             search: entity.search,
+            progress_snapshots: entity.progress_snapshots,
         }
     }
 }
@@ -67,6 +71,7 @@ pub struct CreateWorkInfoDto {
     pub shape: WorkShape,
     pub work: Option<EntityId>,
     pub search: EntityId,
+    pub progress_snapshots: Vec<EntityId>,
 }
 
 impl From<CreateWorkInfoDto> for WorkInfo {
@@ -79,6 +84,7 @@ impl From<CreateWorkInfoDto> for WorkInfo {
             shape: dto.shape,
             work: dto.work,
             search: dto.search,
+            progress_snapshots: dto.progress_snapshots,
         }
     }
 }
@@ -93,6 +99,7 @@ impl From<&CreateWorkInfoDto> for WorkInfo {
             shape: dto.shape.clone(),
             work: dto.work.clone(),
             search: dto.search.clone(),
+            progress_snapshots: dto.progress_snapshots.clone(),
         }
     }
 }
@@ -106,6 +113,7 @@ impl From<WorkInfo> for CreateWorkInfoDto {
             shape: entity.shape,
             work: entity.work,
             search: entity.search,
+            progress_snapshots: entity.progress_snapshots,
         }
     }
 }
@@ -128,6 +136,7 @@ impl From<UpdateWorkInfoDto> for WorkInfo {
             shape: dto.shape,
             work: Default::default(),
             search: Default::default(),
+            progress_snapshots: Default::default(),
         }
     }
 }
@@ -142,6 +151,7 @@ impl From<&UpdateWorkInfoDto> for WorkInfo {
             shape: dto.shape.clone(),
             work: Default::default(),
             search: Default::default(),
+            progress_snapshots: Default::default(),
         }
     }
 }

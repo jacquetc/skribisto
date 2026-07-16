@@ -49,6 +49,7 @@ pub struct WorkInfo {
     pub shape: WorkShape,
     pub work: Option<EntityId>,
     pub search: EntityId,
+    pub progress_snapshots: Vec<EntityId>,
 }
 
 impl HasId for WorkInfo {
@@ -61,6 +62,27 @@ pub enum WorkShape {
     #[default]
     Zip,
     Folder,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct ProgressSnapshot {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub day: chrono::DateTime<chrono::Utc>,
+    pub total_word_count: i64,
+    pub total_char_count: Option<i64>,
+    pub book_item_ids: Vec<u64>,
+    pub book_word_counts: Vec<i64>,
+}
+
+impl HasId for ProgressSnapshot {
+    fn id(&self) -> EntityId {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -156,6 +178,7 @@ pub struct Work {
     pub tags: Vec<EntityId>,
     pub dict_words: Vec<EntityId>,
     pub trash_infos: Vec<EntityId>,
+    pub paces: Vec<EntityId>,
 }
 
 impl HasId for Work {
@@ -185,6 +208,70 @@ pub struct TrashInfo {
 }
 
 impl HasId for TrashInfo {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct Pace {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub book_item: Option<EntityId>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub start_date: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub end_date: chrono::DateTime<chrono::Utc>,
+    pub weekday_mask: i64,
+    pub active: bool,
+    pub holidays: Vec<EntityId>,
+    pub milestones: Vec<EntityId>,
+}
+
+impl HasId for Pace {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct Holiday {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub label: String,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub start_date: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds_option")]
+    pub end_date: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+impl HasId for Holiday {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct Milestone {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub label: String,
+    pub target_item: Option<EntityId>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub target_date: chrono::DateTime<chrono::Utc>,
+    pub target_word_count: Option<i64>,
+}
+
+impl HasId for Milestone {
     fn id(&self) -> EntityId {
         self.id
     }

@@ -4,7 +4,8 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::entities::{
-    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, TrashInfo, Work,
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, ProgressSnapshot, TrashInfo,
+    Work,
 };
 use skribisto_model::content_allowed;
 use std::collections::BTreeMap;
@@ -32,11 +33,14 @@ fn parse_dt(s: &str) -> Result<DateTime<Utc>> {
 /// Content rows are filtered through `skribisto_model::content_allowed`, so an
 /// invalid `(role, sub_role, content_role)` triple can never be written; valid
 /// rows are split into inline title contents vs `.djot` prose blobs.
+#[allow(clippy::too_many_arguments)]
 pub fn from_entities(
     work: &Work,
     tags: &[BinderTag],
     dict_words: &[DictWord],
     trash_infos: &[TrashInfo],
+    paces: &[PaceWithChildren],
+    progress_snapshots: &[ProgressSnapshot],
     binders: &[BinderWithItems],
     shape: ShapeTag,
 ) -> WorkBundle {
@@ -173,6 +177,57 @@ pub fn from_entities(
                 origin_binder_id: ti.origin_binder_id,
                 trashed_binder: ti.trashed_binder,
                 trashed_binder_item: ti.trashed_binder_item,
+            })
+            .collect(),
+        paces: paces
+            .iter()
+            .map(|pwc| PaceFile {
+                file_id: pwc.pace.id,
+                created_at: fmt_dt(&pwc.pace.created_at),
+                updated_at: fmt_dt(&pwc.pace.updated_at),
+                book_item: pwc.pace.book_item,
+                start_date: fmt_dt(&pwc.pace.start_date),
+                end_date: fmt_dt(&pwc.pace.end_date),
+                weekday_mask: pwc.pace.weekday_mask,
+                active: pwc.pace.active,
+                holidays: pwc
+                    .holidays
+                    .iter()
+                    .map(|h| HolidayFile {
+                        file_id: h.id,
+                        created_at: fmt_dt(&h.created_at),
+                        updated_at: fmt_dt(&h.updated_at),
+                        label: h.label.clone(),
+                        start_date: fmt_dt(&h.start_date),
+                        end_date: h.end_date.as_ref().map(fmt_dt),
+                    })
+                    .collect(),
+                milestones: pwc
+                    .milestones
+                    .iter()
+                    .map(|ms| MilestoneFile {
+                        file_id: ms.id,
+                        created_at: fmt_dt(&ms.created_at),
+                        updated_at: fmt_dt(&ms.updated_at),
+                        label: ms.label.clone(),
+                        target_item: ms.target_item,
+                        target_date: fmt_dt(&ms.target_date),
+                        target_word_count: ms.target_word_count,
+                    })
+                    .collect(),
+            })
+            .collect(),
+        progress_snapshots: progress_snapshots
+            .iter()
+            .map(|s| ProgressSnapshotFile {
+                file_id: s.id,
+                created_at: fmt_dt(&s.created_at),
+                updated_at: fmt_dt(&s.updated_at),
+                day: fmt_dt(&s.day),
+                total_word_count: s.total_word_count,
+                total_char_count: s.total_char_count,
+                book_item_ids: s.book_item_ids.clone(),
+                book_word_counts: s.book_word_counts.clone(),
             })
             .collect(),
         binders: bundled_binders,
@@ -336,12 +391,78 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         })
         .collect::<Result<Vec<_>>>()?;
 
+    // Ids (`book_item` / `target_item`) stay as file ids here; the materialiser remaps
+    // them against the same `item_map` it uses for trash-info back-links.
+    let paces = bundle
+        .paces
+        .iter()
+        .map(|p| {
+            Ok(LoadedPace {
+                created_at: parse_dt(&p.created_at)?,
+                updated_at: parse_dt(&p.updated_at)?,
+                book_item: p.book_item,
+                start_date: parse_dt(&p.start_date)?,
+                end_date: parse_dt(&p.end_date)?,
+                weekday_mask: p.weekday_mask,
+                active: p.active,
+                holidays: p
+                    .holidays
+                    .iter()
+                    .map(|h| {
+                        Ok(LoadedHoliday {
+                            created_at: parse_dt(&h.created_at)?,
+                            updated_at: parse_dt(&h.updated_at)?,
+                            label: h.label.clone(),
+                            start_date: parse_dt(&h.start_date)?,
+                            end_date: h.end_date.as_deref().map(parse_dt).transpose()?,
+                        })
+                    })
+                    .collect::<Result<Vec<_>>>()?,
+                milestones: p
+                    .milestones
+                    .iter()
+                    .map(|ms| {
+                        Ok(LoadedMilestone {
+                            created_at: parse_dt(&ms.created_at)?,
+                            updated_at: parse_dt(&ms.updated_at)?,
+                            label: ms.label.clone(),
+                            target_item: ms.target_item,
+                            target_date: parse_dt(&ms.target_date)?,
+                            target_word_count: ms.target_word_count,
+                        })
+                    })
+                    .collect::<Result<Vec<_>>>()?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    // `book_item_ids` stay as file ids here; the materialiser remaps them against
+    // `item_map` (index-paired with `book_word_counts`, dropping unresolvable ids in
+    // lockstep) — same posture as the pace/trash back-links.
+    let progress_snapshots = bundle
+        .progress_snapshots
+        .iter()
+        .map(|s| {
+            Ok(LoadedProgressSnapshot {
+                created_at: parse_dt(&s.created_at)?,
+                updated_at: parse_dt(&s.updated_at)?,
+                day: parse_dt(&s.day)?,
+                total_word_count: s.total_word_count,
+                total_char_count: s.total_char_count,
+                book_item_ids: s.book_item_ids.clone(),
+                book_word_counts: s.book_word_counts.clone(),
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
     Ok(LoadedWork {
         work,
         tags,
         dict_words,
         binders: loaded_binders,
         trash_infos,
+        paces,
+        progress_snapshots,
         references,
         absolute_path: absolute_path.to_string(),
     })

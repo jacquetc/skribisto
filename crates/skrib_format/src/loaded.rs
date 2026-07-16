@@ -16,6 +16,8 @@ pub struct LoadedWork {
     pub dict_words: Vec<DictWord>,
     pub binders: Vec<LoadedBinder>,
     pub trash_infos: Vec<LoadedTrash>,
+    pub paces: Vec<LoadedPace>,
+    pub progress_snapshots: Vec<LoadedProgressSnapshot>,
     /// (source file id, destination file id) cross-link pairs.
     pub references: Vec<(u64, u64)>,
     /// Absolute path recorded in `RecentWork` (the opened file/folder).
@@ -45,4 +47,47 @@ pub struct LoadedTrash {
     /// Binder / item file ids of the trashed entity (one of them set).
     pub trashed_binder: Option<u64>,
     pub trashed_binder_item: Option<u64>,
+}
+
+pub struct LoadedPace {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    /// Book item **file id** (remapped at materialise time); `None` if it no longer resolves.
+    pub book_item: Option<u64>,
+    pub start_date: chrono::DateTime<chrono::Utc>,
+    pub end_date: chrono::DateTime<chrono::Utc>,
+    pub weekday_mask: i64,
+    pub active: bool,
+    pub holidays: Vec<LoadedHoliday>,
+    pub milestones: Vec<LoadedMilestone>,
+}
+
+pub struct LoadedHoliday {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub label: String,
+    pub start_date: chrono::DateTime<chrono::Utc>,
+    pub end_date: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+pub struct LoadedMilestone {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub label: String,
+    /// Target Part/Chapter item **file id** (remapped at materialise time).
+    pub target_item: Option<u64>,
+    pub target_date: chrono::DateTime<chrono::Utc>,
+    pub target_word_count: Option<i64>,
+}
+
+pub struct LoadedProgressSnapshot {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub day: chrono::DateTime<chrono::Utc>,
+    pub total_word_count: i64,
+    pub total_char_count: Option<i64>,
+    /// Per-Book breakdown: item **file ids** (remapped at materialise time), index-paired
+    /// with `book_word_counts`.
+    pub book_item_ids: Vec<u64>,
+    pub book_word_counts: Vec<i64>,
 }

@@ -121,6 +121,61 @@ pub struct TrashInfoFile {
     pub trashed_binder_item: Option<u64>,
 }
 
+/// A skipped-days stretch inside a `PaceFile` (nested in `paces.ron`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HolidayFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub label: String,
+    pub start_date: String,
+    pub end_date: Option<String>,
+}
+
+/// A per-Part/Chapter deadline inside a `PaceFile`. `target_item` is a weak reference
+/// (item `file_id`), `None` when it no longer resolves.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MilestoneFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub label: String,
+    pub target_item: Option<u64>,
+    pub target_date: String,
+    pub target_word_count: Option<i64>,
+}
+
+/// `paces.ron` — one per-Book writing plan, children nested inline.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PaceFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    /// The Book item this plan targets (weak reference, item `file_id`).
+    pub book_item: Option<u64>,
+    pub start_date: String,
+    pub end_date: String,
+    pub weekday_mask: i64,
+    pub active: bool,
+    pub holidays: Vec<HolidayFile>,
+    pub milestones: Vec<MilestoneFile>,
+}
+
+/// `snapshots.ron` — one day's writing-progress totals. `book_item_ids` /
+/// `book_word_counts` are index-paired parallel arrays (the per-Book breakdown); the item
+/// ids are weak references remapped on load.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProgressSnapshotFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub day: String,
+    pub total_word_count: i64,
+    pub total_char_count: Option<i64>,
+    pub book_item_ids: Vec<u64>,
+    pub book_word_counts: Vec<i64>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinderFile {
     pub file_id: u64,
@@ -197,6 +252,8 @@ pub struct WorkBundle {
     pub tags: Vec<BinderTagFile>,
     pub dict_words: Vec<DictWordFile>,
     pub trash_infos: Vec<TrashInfoFile>,
+    pub paces: Vec<PaceFile>,
+    pub progress_snapshots: Vec<ProgressSnapshotFile>,
     pub binders: Vec<BundledBinder>,
 }
 
@@ -223,4 +280,12 @@ pub struct BinderWithItems {
 pub struct ItemWithContents {
     pub item: common::entities::BinderItem,
     pub contents: Vec<common::entities::Content>,
+}
+
+/// Pre-fetched Pace + its child Holiday/Milestone entities, handed to
+/// [`super::from_entities`] at save time (mirrors [`BinderWithItems`]).
+pub struct PaceWithChildren {
+    pub pace: common::entities::Pace,
+    pub holidays: Vec<common::entities::Holiday>,
+    pub milestones: Vec<common::entities::Milestone>,
 }

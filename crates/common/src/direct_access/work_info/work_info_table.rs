@@ -32,6 +32,11 @@ impl<'a> WorkInfoHashMapTable<'a> {
         field: &WorkInfoRelationshipField,
     ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
         match field {
+            WorkInfoRelationshipField::ProgressSnapshots => {
+                &self
+                    .store
+                    .jn_progress_snapshot_from_work_info_progress_snapshots
+            }
             WorkInfoRelationshipField::Search => &self.store.jn_search_from_work_info_search,
             WorkInfoRelationshipField::Work => &self.store.jn_work_from_work_info_work,
         }
@@ -47,6 +52,12 @@ impl<'a> WorkInfoHashMapTable<'a> {
         {
             entity.search = val;
         }
+        entity.progress_snapshots = junction_get(
+            &self
+                .store
+                .jn_progress_snapshot_from_work_info_progress_snapshots,
+            &entity.id,
+        );
     }
 }
 
@@ -92,6 +103,13 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
 
             work_info_map.insert(new_entity.id, new_entity.clone());
 
+            junction_set(
+                &self
+                    .store
+                    .jn_progress_snapshot_from_work_info_progress_snapshots,
+                new_entity.id,
+                new_entity.progress_snapshots.clone(),
+            );
             junction_set(
                 &self.store.jn_search_from_work_info_search,
                 new_entity.id,
@@ -196,6 +214,13 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
                 entity.id,
                 vec![entity.search],
             );
+            junction_set(
+                &self
+                    .store
+                    .jn_progress_snapshot_from_work_info_progress_snapshots,
+                entity.id,
+                entity.progress_snapshots.clone(),
+            );
         }
         drop(work_info_map);
         let ids: Vec<EntityId> = entities.iter().map(|e| e.id).collect();
@@ -216,6 +241,12 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
 
             junction_remove(&self.store.jn_work_from_work_info_work, id);
             junction_remove(&self.store.jn_search_from_work_info_search, id);
+            junction_remove(
+                &self
+                    .store
+                    .jn_progress_snapshot_from_work_info_progress_snapshots,
+                id,
+            );
 
             // Clean up backward references (uses the owning entity's forward junction)
 
@@ -241,6 +272,11 @@ impl<'a> WorkInfoHashMapTableRO<'a> {
         field: &WorkInfoRelationshipField,
     ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
         match field {
+            WorkInfoRelationshipField::ProgressSnapshots => {
+                &self
+                    .store
+                    .jn_progress_snapshot_from_work_info_progress_snapshots
+            }
             WorkInfoRelationshipField::Search => &self.store.jn_search_from_work_info_search,
             WorkInfoRelationshipField::Work => &self.store.jn_work_from_work_info_work,
         }
@@ -256,6 +292,12 @@ impl<'a> WorkInfoHashMapTableRO<'a> {
         {
             entity.search = val;
         }
+        entity.progress_snapshots = junction_get(
+            &self
+                .store
+                .jn_progress_snapshot_from_work_info_progress_snapshots,
+            &entity.id,
+        );
     }
 }
 

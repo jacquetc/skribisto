@@ -31,6 +31,10 @@ pub trait WorkCloser {
     fn tag_ids(&self) -> Result<Vec<EntityId>>;
     fn dict_ids(&self) -> Result<Vec<EntityId>>;
     fn trash_ids(&self) -> Result<Vec<EntityId>>;
+    fn pace_ids(&self) -> Result<Vec<EntityId>>;
+    fn holiday_ids(&self) -> Result<Vec<EntityId>>;
+    fn milestone_ids(&self) -> Result<Vec<EntityId>>;
+    fn progress_snapshot_ids(&self) -> Result<Vec<EntityId>>;
     fn work_info_ids(&self) -> Result<Vec<EntityId>>;
     fn remove_works(&self, ids: &[EntityId]) -> Result<()>;
     fn remove_binders(&self, ids: &[EntityId]) -> Result<()>;
@@ -39,6 +43,10 @@ pub trait WorkCloser {
     fn remove_tags(&self, ids: &[EntityId]) -> Result<()>;
     fn remove_dicts(&self, ids: &[EntityId]) -> Result<()>;
     fn remove_trashes(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_paces(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_holidays(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_milestones(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_progress_snapshots(&self, ids: &[EntityId]) -> Result<()>;
     fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()>;
 }
 
@@ -54,6 +62,12 @@ pub fn close_current_work<C: WorkCloser + ?Sized>(c: &C) -> Result<()> {
     c.remove_tags(&c.tag_ids()?)?;
     c.remove_dicts(&c.dict_ids()?)?;
     c.remove_trashes(&c.trash_ids()?)?;
+    // Pace children before Pace before Work (children-before-parent).
+    c.remove_milestones(&c.milestone_ids()?)?;
+    c.remove_holidays(&c.holiday_ids()?)?;
+    c.remove_paces(&c.pace_ids()?)?;
+    // ProgressSnapshots hang off WorkInfo — remove them before it.
+    c.remove_progress_snapshots(&c.progress_snapshot_ids()?)?;
     c.remove_work_infos(&c.work_info_ids()?)?;
     c.remove_works(&c.work_ids()?)?;
     Ok(())
@@ -112,6 +126,8 @@ pub fn serialize_and_write(
         &g.tags,
         &g.dict_words,
         &g.trash_infos,
+        &g.paces,
+        &g.progress_snapshots,
         &g.binders,
         shape_tag,
     );

@@ -63,6 +63,11 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         &root.join("trash.ron"),
         to_ron(&bundle.trash_infos)?.as_bytes(),
     )?;
+    write_if_changed(&root.join("paces.ron"), to_ron(&bundle.paces)?.as_bytes())?;
+    write_if_changed(
+        &root.join("snapshots.ron"),
+        to_ron(&bundle.progress_snapshots)?.as_bytes(),
+    )?;
 
     let mut expected_binder_dirs: BTreeSet<String> = BTreeSet::new();
 
@@ -151,6 +156,10 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     let tags = read_ron_vec(&root.join("tags.ron"), "tags.ron")?;
     let dict_words = read_ron_vec(&root.join("dictionary.ron"), "dictionary.ron")?;
     let trash_infos = read_ron_vec(&root.join("trash.ron"), "trash.ron")?;
+    // Additive: a pre-Pace bundle has no `paces.ron`; `read_ron_vec` treats a missing
+    // file as an empty vec, so old projects load with zero paces (no version bump).
+    let paces = read_ron_vec(&root.join("paces.ron"), "paces.ron")?;
+    let progress_snapshots = read_ron_vec(&root.join("snapshots.ron"), "snapshots.ron")?;
 
     // Index every binder by its file id (dir names are cosmetic).
     let mut by_id: std::collections::HashMap<u64, (ItemsFile, PathBuf)> =
@@ -194,6 +203,8 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         tags,
         dict_words,
         trash_infos,
+        paces,
+        progress_snapshots,
         binders,
     })
 }

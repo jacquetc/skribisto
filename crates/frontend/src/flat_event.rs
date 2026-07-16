@@ -31,6 +31,9 @@ pub enum FlatEventKind {
     WorkInfoCreated,
     WorkInfoUpdated,
     WorkInfoRemoved,
+    ProgressSnapshotCreated,
+    ProgressSnapshotUpdated,
+    ProgressSnapshotRemoved,
     SearchCreated,
     SearchUpdated,
     SearchRemoved,
@@ -46,6 +49,15 @@ pub enum FlatEventKind {
     TrashInfoCreated,
     TrashInfoUpdated,
     TrashInfoRemoved,
+    PaceCreated,
+    PaceUpdated,
+    PaceRemoved,
+    HolidayCreated,
+    HolidayUpdated,
+    HolidayRemoved,
+    MilestoneCreated,
+    MilestoneUpdated,
+    MilestoneRemoved,
     BinderCreated,
     BinderUpdated,
     BinderRemoved,
@@ -138,6 +150,15 @@ impl From<Event> for FlatEvent {
                 DirectAccessEntity::WorkInfo(EntityEvent::Removed) => {
                     FlatEventKind::WorkInfoRemoved
                 }
+                DirectAccessEntity::ProgressSnapshot(EntityEvent::Created) => {
+                    FlatEventKind::ProgressSnapshotCreated
+                }
+                DirectAccessEntity::ProgressSnapshot(EntityEvent::Updated) => {
+                    FlatEventKind::ProgressSnapshotUpdated
+                }
+                DirectAccessEntity::ProgressSnapshot(EntityEvent::Removed) => {
+                    FlatEventKind::ProgressSnapshotRemoved
+                }
                 DirectAccessEntity::Search(EntityEvent::Created) => FlatEventKind::SearchCreated,
                 DirectAccessEntity::Search(EntityEvent::Updated) => FlatEventKind::SearchUpdated,
                 DirectAccessEntity::Search(EntityEvent::Removed) => FlatEventKind::SearchRemoved,
@@ -170,6 +191,21 @@ impl From<Event> for FlatEvent {
                 }
                 DirectAccessEntity::TrashInfo(EntityEvent::Removed) => {
                     FlatEventKind::TrashInfoRemoved
+                }
+                DirectAccessEntity::Pace(EntityEvent::Created) => FlatEventKind::PaceCreated,
+                DirectAccessEntity::Pace(EntityEvent::Updated) => FlatEventKind::PaceUpdated,
+                DirectAccessEntity::Pace(EntityEvent::Removed) => FlatEventKind::PaceRemoved,
+                DirectAccessEntity::Holiday(EntityEvent::Created) => FlatEventKind::HolidayCreated,
+                DirectAccessEntity::Holiday(EntityEvent::Updated) => FlatEventKind::HolidayUpdated,
+                DirectAccessEntity::Holiday(EntityEvent::Removed) => FlatEventKind::HolidayRemoved,
+                DirectAccessEntity::Milestone(EntityEvent::Created) => {
+                    FlatEventKind::MilestoneCreated
+                }
+                DirectAccessEntity::Milestone(EntityEvent::Updated) => {
+                    FlatEventKind::MilestoneUpdated
+                }
+                DirectAccessEntity::Milestone(EntityEvent::Removed) => {
+                    FlatEventKind::MilestoneRemoved
                 }
                 DirectAccessEntity::Binder(EntityEvent::Created) => FlatEventKind::BinderCreated,
                 DirectAccessEntity::Binder(EntityEvent::Updated) => FlatEventKind::BinderUpdated,
@@ -296,6 +332,9 @@ pub fn is_mutation(kind: &FlatEventKind) -> bool {
             | WorkInfoCreated
             | WorkInfoUpdated
             | WorkInfoRemoved
+            | ProgressSnapshotCreated
+            | ProgressSnapshotUpdated
+            | ProgressSnapshotRemoved
             | SearchCreated
             | SearchUpdated
             | SearchRemoved
@@ -311,6 +350,15 @@ pub fn is_mutation(kind: &FlatEventKind) -> bool {
             | TrashInfoCreated
             | TrashInfoUpdated
             | TrashInfoRemoved
+            | PaceCreated
+            | PaceUpdated
+            | PaceRemoved
+            | HolidayCreated
+            | HolidayUpdated
+            | HolidayRemoved
+            | MilestoneCreated
+            | MilestoneUpdated
+            | MilestoneRemoved
             | BinderCreated
             | BinderUpdated
             | BinderRemoved
@@ -369,6 +417,10 @@ mod tests {
         assert!(is_mutation(&FlatEventKind::WorkInfoUpdated));
         assert!(is_mutation(&FlatEventKind::WorkInfoRemoved));
 
+        assert!(is_mutation(&FlatEventKind::ProgressSnapshotCreated));
+        assert!(is_mutation(&FlatEventKind::ProgressSnapshotUpdated));
+        assert!(is_mutation(&FlatEventKind::ProgressSnapshotRemoved));
+
         assert!(is_mutation(&FlatEventKind::SearchCreated));
         assert!(is_mutation(&FlatEventKind::SearchUpdated));
         assert!(is_mutation(&FlatEventKind::SearchRemoved));
@@ -388,6 +440,18 @@ mod tests {
         assert!(is_mutation(&FlatEventKind::TrashInfoCreated));
         assert!(is_mutation(&FlatEventKind::TrashInfoUpdated));
         assert!(is_mutation(&FlatEventKind::TrashInfoRemoved));
+
+        assert!(is_mutation(&FlatEventKind::PaceCreated));
+        assert!(is_mutation(&FlatEventKind::PaceUpdated));
+        assert!(is_mutation(&FlatEventKind::PaceRemoved));
+
+        assert!(is_mutation(&FlatEventKind::HolidayCreated));
+        assert!(is_mutation(&FlatEventKind::HolidayUpdated));
+        assert!(is_mutation(&FlatEventKind::HolidayRemoved));
+
+        assert!(is_mutation(&FlatEventKind::MilestoneCreated));
+        assert!(is_mutation(&FlatEventKind::MilestoneUpdated));
+        assert!(is_mutation(&FlatEventKind::MilestoneRemoved));
 
         assert!(is_mutation(&FlatEventKind::BinderCreated));
         assert!(is_mutation(&FlatEventKind::BinderUpdated));

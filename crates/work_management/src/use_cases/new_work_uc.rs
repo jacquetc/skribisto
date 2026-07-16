@@ -17,8 +17,8 @@ use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, RecentWork, Root, Search,
-    System, TrashInfo, Work, WorkInfo, WorkShape,
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
+    RecentWork, Root, Search, System, TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use std::path::Path;
@@ -68,6 +68,14 @@ pub trait NewWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
 #[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Pace", action = "GetAll")]
+#[macros::uow_action(entity = "Pace", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Holiday", action = "GetAll")]
+#[macros::uow_action(entity = "Holiday", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Milestone", action = "GetAll")]
+#[macros::uow_action(entity = "Milestone", action = "RemoveMulti")]
+#[macros::uow_action(entity = "ProgressSnapshot", action = "GetAll")]
+#[macros::uow_action(entity = "ProgressSnapshot", action = "RemoveMulti")]
 #[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
 #[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 pub trait NewWorkUnitOfWorkTrait: CommandUnitOfWork {
@@ -113,6 +121,26 @@ impl<'a> WorkCloser for dyn NewWorkUnitOfWorkTrait + 'a {
             .map(|e| e.id)
             .collect())
     }
+    fn pace_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self.get_all_pace()?.into_iter().map(|e| e.id).collect())
+    }
+    fn holiday_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self.get_all_holiday()?.into_iter().map(|e| e.id).collect())
+    }
+    fn milestone_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_milestone()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn progress_snapshot_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_progress_snapshot()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
     fn work_info_ids(&self) -> Result<Vec<EntityId>> {
         Ok(self
             .get_all_work_info()?
@@ -140,6 +168,18 @@ impl<'a> WorkCloser for dyn NewWorkUnitOfWorkTrait + 'a {
     }
     fn remove_trashes(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_trash_info_multi(ids)
+    }
+    fn remove_paces(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_pace_multi(ids)
+    }
+    fn remove_holidays(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_holiday_multi(ids)
+    }
+    fn remove_milestones(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_milestone_multi(ids)
+    }
+    fn remove_progress_snapshots(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_progress_snapshot_multi(ids)
     }
     fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_work_info_multi(ids)

@@ -45,11 +45,15 @@ pub enum DirectAccessEntity {
     Root(EntityEvent),
     System(EntityEvent),
     WorkInfo(EntityEvent),
+    ProgressSnapshot(EntityEvent),
     Search(EntityEvent),
     SearchResult(EntityEvent),
     RecentWork(EntityEvent),
     Work(EntityEvent),
     TrashInfo(EntityEvent),
+    Pace(EntityEvent),
+    Holiday(EntityEvent),
+    Milestone(EntityEvent),
     Binder(EntityEvent),
     BinderItem(EntityEvent),
     BinderTag(EntityEvent),
@@ -139,6 +143,9 @@ impl Event {
                 DirectAccessEntity::WorkInfo(event) => {
                     format!("direct_access_work_info_{:?}", event)
                 }
+                DirectAccessEntity::ProgressSnapshot(event) => {
+                    format!("direct_access_progress_snapshot_{:?}", event)
+                }
                 DirectAccessEntity::Search(event) => format!("direct_access_search_{:?}", event),
                 DirectAccessEntity::SearchResult(event) => {
                     format!("direct_access_search_result_{:?}", event)
@@ -149,6 +156,11 @@ impl Event {
                 DirectAccessEntity::Work(event) => format!("direct_access_work_{:?}", event),
                 DirectAccessEntity::TrashInfo(event) => {
                     format!("direct_access_trash_info_{:?}", event)
+                }
+                DirectAccessEntity::Pace(event) => format!("direct_access_pace_{:?}", event),
+                DirectAccessEntity::Holiday(event) => format!("direct_access_holiday_{:?}", event),
+                DirectAccessEntity::Milestone(event) => {
+                    format!("direct_access_milestone_{:?}", event)
                 }
                 DirectAccessEntity::Binder(event) => format!("direct_access_binder_{:?}", event),
                 DirectAccessEntity::BinderItem(event) => {

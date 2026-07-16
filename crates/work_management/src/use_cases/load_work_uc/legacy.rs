@@ -41,6 +41,8 @@ pub struct LegacyItem {
     pub label: String,
     pub activated: bool,
     pub indent: i64,
+    pub word_count_goal: i64,
+    pub char_count_goal: i64,
     pub contents: Vec<LegacyContent>,
     pub tag_old_ids: Vec<i64>,
 }
@@ -190,13 +192,19 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
         }
     }
 
-    // --- Per-item properties we care about (section_type, label) ---
+    // --- Per-item properties we care about (section_type, label, word/char goals) ---
+    // Legacy stored per-item goals as generic key-value rows in `tbl_tree_property`
+    // (`word_count_goal` / `char_count_goal`, an integer-as-string, empty/0 = no goal).
+    // The old QtWidgets desktop app displayed counts but never surfaced goals; the mobile
+    // app did. Either way we migrate both so no writer's goal is silently dropped.
     let mut section_types: HashMap<i64, String> = HashMap::new();
     let mut labels: HashMap<i64, String> = HashMap::new();
+    let mut word_count_goals: HashMap<i64, i64> = HashMap::new();
+    let mut char_count_goals: HashMap<i64, i64> = HashMap::new();
     {
         let mut stmt = conn.prepare(
             "SELECT l_tree_code, t_name, m_value FROM tbl_tree_property \
-             WHERE t_name IN ('section_type','label')",
+             WHERE t_name IN ('section_type','label','word_count_goal','char_count_goal')",
         )?;
         let rows = stmt.query_map([], |r| {
             Ok((
@@ -207,10 +215,22 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
         })?;
         for row in rows {
             let (code, name, value) = row?;
-            if name == "section_type" {
-                section_types.insert(code, value);
-            } else {
-                labels.insert(code, value);
+            match name.as_str() {
+                "section_type" => {
+                    section_types.insert(code, value);
+                }
+                "label" => {
+                    labels.insert(code, value);
+                }
+                // A malformed/empty legacy value degrades to "no goal" (0), matching the
+                // `0 == no goal` sentinel the new schema already uses.
+                "word_count_goal" => {
+                    word_count_goals.insert(code, value.trim().parse().unwrap_or(0));
+                }
+                "char_count_goal" => {
+                    char_count_goals.insert(code, value.trim().parse().unwrap_or(0));
+                }
+                _ => {}
             }
         }
     }
@@ -273,7 +293,9 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
                      effective_indent: i64,
                      section_types: &HashMap<i64, String>,
                      labels: &HashMap<i64, String>,
-                     item_tags: &HashMap<i64, Vec<i64>>|
+                     item_tags: &HashMap<i64, Vec<i64>>,
+                     word_count_goals: &HashMap<i64, i64>,
+                     char_count_goals: &HashMap<i64, i64>|
      -> Option<LegacyItem> {
         let section_type = section_types
             .get(&row.old_id)
@@ -353,6 +375,8 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
             label: labels.get(&row.old_id).cloned().unwrap_or_default(),
             activated: !row.trashed,
             indent: (effective_indent - 2).max(0),
+            word_count_goal: word_count_goals.get(&row.old_id).copied().unwrap_or(0),
+            char_count_goal: char_count_goals.get(&row.old_id).copied().unwrap_or(0),
             contents,
             tag_old_ids: item_tags.get(&row.old_id).cloned().unwrap_or_default(),
         })
@@ -378,6 +402,8 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
                 &section_types,
                 &labels,
                 &item_tags,
+                &word_count_goals,
+                &char_count_goals,
             ) {
                 binder.items.push(item);
             }
@@ -398,9 +424,16 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
     {
         let first_is_note = binders[0].is_note;
         for row in &strays {
-            if let Some(item) =
-                make_item(row, first_is_note, 2, &section_types, &labels, &item_tags)
-            {
+            if let Some(item) = make_item(
+                row,
+                first_is_note,
+                2,
+                &section_types,
+                &labels,
+                &item_tags,
+                &word_count_goals,
+                &char_count_goals,
+            ) {
                 binders[0].items.push(item);
             }
         }

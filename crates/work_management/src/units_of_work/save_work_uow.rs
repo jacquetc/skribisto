@@ -12,7 +12,8 @@ use common::database::QueryUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, TrashInfo, Work, WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot, TrashInfo, Work,
+    WorkInfo,
 };
 use common::event::WorkManagementEvent::SaveWork;
 use common::event::{Event, EventHub, Origin};
@@ -84,6 +85,12 @@ impl QueryUnitOfWork for SaveWorkUnitOfWork {
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "Pace", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "Pace", action = "GetRelationshipRO", thread_safe = true)]
+#[macros::uow_action(entity = "Holiday", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "Milestone", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipRO", thread_safe = true)]
+#[macros::uow_action(entity = "ProgressSnapshot", action = "GetMultiRO", thread_safe = true)]
 impl SaveWorkUnitOfWorkTrait for SaveWorkUnitOfWork {
     fn publish_save_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

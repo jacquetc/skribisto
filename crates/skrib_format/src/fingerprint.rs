@@ -46,6 +46,28 @@ fn strip_volatile(b: &mut WorkBundle) {
         ti.updated_at.clear();
         ti.trashed_at.clear();
     }
+    // Only the bookkeeping timestamps are volatile — a Pace's plan dates (start/end/
+    // holiday/milestone dates) are CONTENT, so a changed deadline must change the
+    // fingerprint (else skip-if-unchanged would drop a backup of a real edit).
+    for p in &mut b.paces {
+        p.created_at.clear();
+        p.updated_at.clear();
+        for h in &mut p.holidays {
+            h.created_at.clear();
+            h.updated_at.clear();
+        }
+        for ms in &mut p.milestones {
+            ms.created_at.clear();
+            ms.updated_at.clear();
+        }
+    }
+    // `day` is NOT stripped — for a snapshot the day IS the content, so two different
+    // days with the same total must not fingerprint identically (that would make backup
+    // skip a genuinely changed day).
+    for s in &mut b.progress_snapshots {
+        s.created_at.clear();
+        s.updated_at.clear();
+    }
     for bb in &mut b.binders {
         bb.binder.created_at.clear();
         bb.binder.updated_at.clear();
@@ -93,6 +115,8 @@ mod tests {
             tags: vec![],
             dict_words: vec![],
             trash_infos: vec![],
+            paces: vec![],
+            progress_snapshots: vec![],
             binders: vec![],
         }
     }

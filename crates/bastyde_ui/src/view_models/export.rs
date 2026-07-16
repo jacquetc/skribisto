@@ -503,6 +503,10 @@ impl ExportViewModel {
             tags: Vec::new(),
             dict_words: Vec::new(),
             trash_infos: Vec::new(),
+            // Export only needs the item stream for scope resolution, not the writing plan
+            // or the progress history.
+            paces: Vec::new(),
+            progress_snapshots: Vec::new(),
             binders,
             work_info: None,
         })

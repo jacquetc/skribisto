@@ -71,6 +71,38 @@ entities:
     entity: Search
     relationship: one_to_one
     strong: true
+  - name: progress_snapshots
+    type: entity
+    entity: ProgressSnapshot
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: day
+  undoable: false
+# The daily writing-progress history (words per day). Hangs off WorkInfo and is
+# `undoable: false` — you don't Ctrl+Z a fact about what you wrote yesterday, and it must
+# never enter the manuscript's undo history. UNLIKE the search surface, though, this DOES
+# round-trip through the .skrib (a `snapshots.ron`, hydrated onto the fresh WorkInfo on
+# load) so a writer's streak survives moving the project — the first `undoable: false`
+# entity that is also persisted. `day` is truncated to UTC midnight by the writer;
+# `book_item_ids`/`book_word_counts` are index-paired parallel arrays (a per-Book
+# breakdown, almost always length-1).
+- name: ProgressSnapshot
+  inherits_from: EntityBase
+  fields:
+  - name: day
+    type: datetime
+  - name: total_word_count
+    type: integer
+  - name: total_char_count
+    type: integer
+    optional: true
+  - name: book_item_ids
+    type: uinteger
+    is_list: true
+  - name: book_word_counts
+    type: integer
+    is_list: true
   undoable: false
 # The live search surface. It hangs off WorkInfo (not Work) and is `undoable: false`
 # deliberately: WorkInfo has no per-instance undo stack the way Work does, and a
@@ -222,6 +254,13 @@ entities:
     strong: true
     list_model: true
     list_model_displayed_field: trashed_at
+  - name: paces
+    type: entity
+    entity: Pace
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: start_date
   undoable: true
 - name: TrashInfo
   inherits_from: EntityBase
@@ -239,6 +278,73 @@ entities:
     type: entity
     entity: BinderItem
     relationship: many_to_one
+    optional: true
+  undoable: true
+# The per-Book writing plan ("Pace"): a target word count (read through `book_item`'s
+# `word_count_goal`, never duplicated), a date range, which weekdays count, plus child
+# Holiday (skipped days) and Milestone (per Part/Chapter deadline) collections. On the
+# Work undo trunk, so editing a deadline is undoable and travels in the .skrib.
+- name: Pace
+  inherits_from: EntityBase
+  fields:
+  - name: book_item
+    type: entity
+    entity: BinderItem
+    relationship: many_to_one
+    optional: true
+  - name: start_date
+    type: datetime
+  - name: end_date
+    type: datetime
+  # Bit set of counted weekdays: Mon=1, Tue=2, Wed=4, Thu=8, Fri=16, Sat=32, Sun=64.
+  # The UI sets it explicitly (a fresh Pace defaults to 0 = no writing days).
+  - name: weekday_mask
+    type: integer
+  - name: active
+    type: boolean
+  - name: holidays
+    type: entity
+    entity: Holiday
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: label
+  - name: milestones
+    type: entity
+    entity: Milestone
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: label
+  undoable: true
+# A stretch of days the writer does not write — excluded from the pace schedule.
+- name: Holiday
+  inherits_from: EntityBase
+  fields:
+  - name: label
+    type: string
+  - name: start_date
+    type: datetime
+  - name: end_date
+    type: datetime
+    optional: true
+  undoable: true
+# A per-Part/Chapter deadline shown in the Book's Pace view. Weakly references the target
+# BinderItem (no strong ownership: deleting the item must not cascade-delete the Pace).
+- name: Milestone
+  inherits_from: EntityBase
+  fields:
+  - name: label
+    type: string
+  - name: target_item
+    type: entity
+    entity: BinderItem
+    relationship: many_to_one
+    optional: true
+  - name: target_date
+    type: datetime
+  - name: target_word_count
+    type: integer
     optional: true
   undoable: true
 - name: Binder

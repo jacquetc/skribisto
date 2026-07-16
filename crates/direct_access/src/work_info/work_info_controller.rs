@@ -392,10 +392,13 @@ mod tests {
     fn test_get_relationship_default() {
         let mut ctx = TestContext::new();
         let created = create_one(&mut ctx);
-        let rel_ids =
-            get_relationship(&ctx.db, &created.id, &WorkInfoRelationshipField::Search).unwrap();
-        // Required OneToOne: default EntityId (0) is stored as a relationship entry
-        assert_eq!(rel_ids.len(), 1);
+        let rel_ids = get_relationship(
+            &ctx.db,
+            &created.id,
+            &WorkInfoRelationshipField::ProgressSnapshots,
+        )
+        .unwrap();
+        assert!(rel_ids.is_empty());
     }
 
     // -----------------------------------------------------------------------
@@ -406,10 +409,12 @@ mod tests {
     fn test_get_relationship_count_default() {
         let mut ctx = TestContext::new();
         let created = create_one(&mut ctx);
-        let count =
-            get_relationship_count(&ctx.db, &created.id, &WorkInfoRelationshipField::Search)
-                .unwrap();
-        // Required OneToOne: default EntityId (0) is stored as a relationship entry
-        assert_eq!(count, 1);
+        let count = get_relationship_count(
+            &ctx.db,
+            &created.id,
+            &WorkInfoRelationshipField::ProgressSnapshots,
+        )
+        .unwrap();
+        assert_eq!(count, 0);
     }
 }

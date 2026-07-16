@@ -100,6 +100,7 @@ fn sample_bundle() -> WorkBundle {
         dict_words: vec![20],
         binders: vec![100, 101],
         trash_infos: vec![],
+        paces: vec![],
     };
     let tags = vec![
         BinderTag {
@@ -216,6 +217,8 @@ fn sample_bundle() -> WorkBundle {
         &tags,
         &dict_words,
         &trash,
+        &[],
+        &[],
         &[manuscript, characters],
         ShapeTag::Folder,
     )
@@ -420,6 +423,213 @@ fn legacy_load_preserves_unique_id() {
         bundle.manifest.work.unique_id, "o7R0QHFMHp0p",
         "the legacy project's unique id must be preserved"
     );
+}
+
+/// A legacy `.skrib` (SQLite) storing per-item `word_count_goal` / `char_count_goal`
+/// rows in `tbl_tree_property` must carry those goals into the modern `BinderItem`
+/// fields — before this fix the legacy loader silently dropped them.
+#[test]
+fn legacy_load_preserves_word_and_char_count_goals() {
+    let fixture = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../resources/test/skribisto_test_project.skrib"
+    );
+    let dir = tempfile::tempdir().unwrap();
+    // The fixture is read-only in the repo — copy it so we can inject goal rows.
+    let copy = dir.path().join("with_goals.skrib");
+    std::fs::copy(fixture, &copy).unwrap();
+    {
+        let conn = rusqlite::Connection::open(&copy).unwrap();
+        // Stamp a goal on every real item (indent > 1); at least one survives as a
+        // BinderItem regardless of which rows the migration keeps.
+        conn.execute(
+            "INSERT INTO tbl_tree_property (l_tree_code, t_name, m_value) \
+             SELECT l_tree_id, 'word_count_goal', '1500' FROM tbl_tree WHERE l_indent > 1",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO tbl_tree_property (l_tree_code, t_name, m_value) \
+             SELECT l_tree_id, 'char_count_goal', '9000' FROM tbl_tree WHERE l_indent > 1",
+            [],
+        )
+        .unwrap();
+    }
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: copy.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load legacy .skrib with goals");
+
+    let bundle = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    let goal_item = bundle
+        .binders
+        .iter()
+        .flat_map(|bb| &bb.items)
+        .map(|bi| &bi.item)
+        .find(|f| f.word_count_goal == 1500)
+        .expect("a migrated item must carry the legacy word_count_goal");
+    assert_eq!(
+        goal_item.char_count_goal, 9000,
+        "the legacy char_count_goal must migrate on the same item"
+    );
+}
+
+/// A per-Book Pace (with a Holiday and a Milestone) must survive the full store
+/// round-trip — written to a `.skrib`, loaded into the store (ids remapped), and saved
+/// back out — with its dates, weekday mask, children and weak back-links intact.
+#[test]
+fn paces_survive_a_save_load_round_trip() {
+    const T: &str = "2020-01-01T00:00:00+00:00";
+    let mut bundle = sample_bundle();
+    // Item 300 is the "The Lighthouse" Book folder; 302 is a manuscript item.
+    bundle.paces = vec![skrib::PaceFile {
+        file_id: 400,
+        created_at: T.into(),
+        updated_at: T.into(),
+        book_item: Some(300),
+        start_date: "2020-02-01T00:00:00+00:00".into(),
+        end_date: "2020-06-01T00:00:00+00:00".into(),
+        weekday_mask: 31, // Mon–Fri
+        active: true,
+        holidays: vec![skrib::HolidayFile {
+            file_id: 410,
+            created_at: T.into(),
+            updated_at: T.into(),
+            label: "Spring break".into(),
+            start_date: "2020-03-01T00:00:00+00:00".into(),
+            end_date: Some("2020-03-08T00:00:00+00:00".into()),
+        }],
+        milestones: vec![skrib::MilestoneFile {
+            file_id: 420,
+            created_at: T.into(),
+            updated_at: T.into(),
+            label: "Act I done".into(),
+            target_item: Some(302),
+            target_date: "2020-04-01T00:00:00+00:00".into(),
+            target_word_count: Some(20_000),
+        }],
+    }];
+
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("WithPace");
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load bundle with a pace");
+
+    let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    assert_eq!(out.paces.len(), 1, "the pace must round-trip through the store");
+    let p = &out.paces[0];
+    assert_eq!(p.weekday_mask, 31);
+    assert!(p.active);
+    assert!(p.start_date.starts_with("2020-02-01"));
+    assert!(p.end_date.starts_with("2020-06-01"));
+    assert_eq!(p.holidays.len(), 1);
+    assert_eq!(p.holidays[0].label, "Spring break");
+    assert!(p.holidays[0].end_date.is_some());
+    assert_eq!(p.milestones.len(), 1);
+    assert_eq!(p.milestones[0].label, "Act I done");
+    assert_eq!(p.milestones[0].target_word_count, Some(20_000));
+    // Weak back-links survive (ids are reassigned by the store, so just assert they resolve).
+    assert!(p.book_item.is_some(), "book_item must resolve after id remap");
+    assert!(
+        p.milestones[0].target_item.is_some(),
+        "milestone target_item must resolve after id remap"
+    );
+}
+
+/// ProgressSnapshots hang off WorkInfo — which is torn down and rebuilt fresh on every
+/// load and normally never round-trips. They must nevertheless survive a **double** cycle
+/// (load A → save → load B → save): a single cycle wouldn't catch a hydration that only
+/// works the first time (this is the invariant-break the design deliberately makes).
+#[test]
+fn progress_snapshots_survive_a_double_round_trip() {
+    const T: &str = "2020-01-01T00:00:00+00:00";
+    let mut bundle = sample_bundle();
+    bundle.progress_snapshots = vec![
+        skrib::ProgressSnapshotFile {
+            file_id: 500,
+            created_at: T.into(),
+            updated_at: T.into(),
+            day: "2020-05-01T00:00:00+00:00".into(),
+            total_word_count: 1200,
+            total_char_count: Some(6800),
+            book_item_ids: vec![300], // the "The Lighthouse" Book folder
+            book_word_counts: vec![1200],
+        },
+        skrib::ProgressSnapshotFile {
+            file_id: 501,
+            created_at: T.into(),
+            updated_at: T.into(),
+            day: "2020-05-02T00:00:00+00:00".into(),
+            total_word_count: 1850,
+            total_char_count: None,
+            book_item_ids: vec![],
+            book_word_counts: vec![],
+        },
+    ];
+
+    let dir = tempfile::tempdir().unwrap();
+    let a = dir.path().join("A");
+    skrib::write_bundle(a.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    // Cycle 1: load A → save → bundle B.
+    let db1 = DbContext::new().unwrap();
+    let hub1 = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db1,
+        &hub1,
+        &LoadWorkDto { file_name: a.to_str().unwrap().to_string() },
+    )
+    .unwrap();
+    let b_path = dir.path().join("B");
+    let bundle_b = store_to_bundle(&db1, &hub1, &b_path);
+    assert_eq!(bundle_b.progress_snapshots.len(), 2, "first save must keep both days");
+
+    // Cycle 2: load B (a *fresh* store + WorkInfo) → save → assert still intact.
+    let db2 = DbContext::new().unwrap();
+    let hub2 = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db2,
+        &hub2,
+        &LoadWorkDto {
+            // store_to_bundle wrote B as a folder next to the out path.
+            file_name: b_path.to_str().unwrap().to_string(),
+        },
+    )
+    .unwrap();
+    let out = store_to_bundle(&db2, &hub2, &dir.path().join("C"));
+
+    assert_eq!(
+        out.progress_snapshots.len(),
+        2,
+        "both days must survive TWO load→save cycles (the WorkInfo-rehydration path)"
+    );
+    let mut days: Vec<_> = out.progress_snapshots.iter().collect();
+    days.sort_by_key(|s| s.day.clone());
+    assert!(days[0].day.starts_with("2020-05-01"));
+    assert_eq!(days[0].total_word_count, 1200);
+    assert_eq!(days[0].total_char_count, Some(6800));
+    assert_eq!(days[0].book_word_counts, vec![1200]);
+    assert!(days[0].book_item_ids.len() == 1, "the per-Book id must remap and survive");
+    assert!(days[1].day.starts_with("2020-05-02"));
+    assert_eq!(days[1].total_word_count, 1850);
+    assert_eq!(days[1].total_char_count, None);
 }
 
 /// A pre-v2 bundle whose `project.skrib` lacks `unique_id` must still load

@@ -34,6 +34,7 @@ impl<'a> WorkHashMapTable<'a> {
         match field {
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
+            WorkRelationshipField::Paces => &self.store.jn_pace_from_work_paces,
             WorkRelationshipField::Tags => &self.store.jn_binder_tag_from_work_tags,
             WorkRelationshipField::TrashInfos => &self.store.jn_trash_info_from_work_trash_infos,
         }
@@ -45,6 +46,7 @@ impl<'a> WorkHashMapTable<'a> {
         entity.dict_words = junction_get(&self.store.jn_dict_word_from_work_dict_words, &entity.id);
         entity.trash_infos =
             junction_get(&self.store.jn_trash_info_from_work_trash_infos, &entity.id);
+        entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);
     }
 }
 
@@ -86,6 +88,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 &self.store.jn_dict_word_from_work_dict_words,
                 new_entity.id,
                 new_entity.dict_words.clone(),
+            );
+            junction_set(
+                &self.store.jn_pace_from_work_paces,
+                new_entity.id,
+                new_entity.paces.clone(),
             );
             junction_set(
                 &self.store.jn_binder_tag_from_work_tags,
@@ -186,6 +193,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 entity.id,
                 entity.trash_infos.clone(),
             );
+            junction_set(
+                &self.store.jn_pace_from_work_paces,
+                entity.id,
+                entity.paces.clone(),
+            );
         }
         drop(work_map);
         let ids: Vec<EntityId> = entities.iter().map(|e| e.id).collect();
@@ -208,6 +220,7 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
             junction_remove(&self.store.jn_binder_tag_from_work_tags, id);
             junction_remove(&self.store.jn_dict_word_from_work_dict_words, id);
             junction_remove(&self.store.jn_trash_info_from_work_trash_infos, id);
+            junction_remove(&self.store.jn_pace_from_work_paces, id);
 
             // Clean up backward references (uses the owning entity's forward junction)
 
@@ -236,6 +249,7 @@ impl<'a> WorkHashMapTableRO<'a> {
         match field {
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
+            WorkRelationshipField::Paces => &self.store.jn_pace_from_work_paces,
             WorkRelationshipField::Tags => &self.store.jn_binder_tag_from_work_tags,
             WorkRelationshipField::TrashInfos => &self.store.jn_trash_info_from_work_trash_infos,
         }
@@ -247,6 +261,7 @@ impl<'a> WorkHashMapTableRO<'a> {
         entity.dict_words = junction_get(&self.store.jn_dict_word_from_work_dict_words, &entity.id);
         entity.trash_infos =
             junction_get(&self.store.jn_trash_info_from_work_trash_infos, &entity.id);
+        entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);
     }
 }
 
