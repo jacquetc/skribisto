@@ -91,6 +91,14 @@ statusbar-word-count = { $count ->
    *[other] { $count } mots
 }
 statusbar-word-count-tooltip = Mots dans la scène en cours d'édition
+# Mots + caractères, quand « Afficher les caractères » est activé (Réglages ▸ Objectifs).
+statusbar-word-char-count = { $words ->
+    [one] { $words } mot
+   *[other] { $words } mots
+} · { $chars ->
+    [one] { $chars } caractère
+   *[other] { $chars } caractères
+}
 # La session d'écriture (minuteur de sprint + compteur de mots, barre d'état).
 session-toggle = Session d'écriture — démarrer ou mettre en pause un sprint
 session-configure = Définir l'objectif de mots et la limite de temps
@@ -168,6 +176,15 @@ settings-field-language = Langue de l'interface
 settings-synopsis-pane = Afficher le synopsis au-dessus du manuscrit
 settings-typewriter = Défilement machine à écrire (garder la ligne du curseur centrée)
 settings-highlight-sentence = Surligner la phrase courante
+# Volet Objectifs et comptage des mots
+settings-group-counting = Comptage des mots
+settings-counting-auto = Automatique (selon la langue)
+settings-counting-whitespace = Découper aux espaces
+settings-counting-unicode-words = Mots Unicode
+settings-counting-cjk-hybrid = Adapté au CJC (par caractère)
+settings-counting-hint = Le mode automatique compte le chinois et le japonais par caractère, et toutes les autres langues par mot. Ne le changez que si le comptage semble incorrect pour votre langue.
+settings-group-goals-display = Affichage
+settings-show-characters = Afficher le nombre de caractères dans la barre d'état
 settings-autosave-hint = Les modifications sont enregistrées automatiquement au fil de l'écriture.
 
 ## Paramètres — Œuvre (le projet ouvert)
@@ -799,6 +816,10 @@ dict-add-failed = Impossible d'ajouter le dictionnaire : { $error }
 inspector-export = Export
 inspector-exportable = Inclure dans les exports
 inspector-apply-to-children = Appliquer aux enfants
+# La date de jalon par Partie/Chapitre de l'inspecteur (M5), montrée sur le Rythme du Livre.
+inspector-milestone = Date de jalon
+inspector-milestone-none = Aucune date
+inspector-milestone-clear = Effacer
 # Le champ de langues à pastilles (Inspecteur + Réglages)
 inspector-dict-language = Langue
 settings-page-language = Langue

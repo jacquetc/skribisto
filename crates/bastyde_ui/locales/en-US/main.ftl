@@ -91,6 +91,14 @@ statusbar-word-count = { $count ->
    *[other] { $count } words
 }
 statusbar-word-count-tooltip = Words in the scene you're editing
+# Words + characters, shown when "Show character count" is on (Settings ▸ Goals).
+statusbar-word-char-count = { $words ->
+    [one] { $words } word
+   *[other] { $words } words
+} · { $chars ->
+    [one] { $chars } character
+   *[other] { $chars } characters
+}
 # The writing session (status-bar sprint timer + word tracker).
 session-toggle = Writing session — start or pause a focused sprint
 session-configure = Set the session's word goal and time limit
@@ -168,6 +176,15 @@ settings-field-language = Interface language
 settings-synopsis-pane = Show synopsis pane above the manuscript
 settings-typewriter = Typewriter scrolling (keep caret line centred)
 settings-highlight-sentence = Highlight the current sentence
+# Goals & Word Count pane
+settings-group-counting = Word counting
+settings-counting-auto = Automatic (by language)
+settings-counting-whitespace = Split on spaces
+settings-counting-unicode-words = Unicode words
+settings-counting-cjk-hybrid = CJK-aware (per character)
+settings-counting-hint = Automatic counts Chinese and Japanese by character and every other language by word. Change it only if the count looks wrong for your language.
+settings-group-goals-display = Display
+settings-show-characters = Show the character count in the status bar
 settings-autosave-hint = Changes are written to disk automatically as you write.
 
 ## Settings — Work (the open project)
@@ -798,6 +815,10 @@ dict-add-failed = Couldn't add the dictionary: { $error }
 inspector-export = Export
 inspector-exportable = Include in exports
 inspector-apply-to-children = Apply to children
+# The Inspector's per-Part/Chapter milestone date (M5), shown on the Book's Pace.
+inspector-milestone = Milestone date
+inspector-milestone-none = No date
+inspector-milestone-clear = Clear
 # The language pill field (Inspector + Settings)
 inspector-dict-language = Language
 settings-page-language = Language

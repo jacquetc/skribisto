@@ -15,8 +15,11 @@
 use bastyde::prelude::*; // EventContext, Signal, intui
 use bastyde::settings::SettingsStore;
 
+use skribisto_model::counting::CountingMethodSetting;
+
 use crate::{
-    AUTOSAVE_KEY, DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
+    AUTOSAVE_KEY, DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
+    GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
     HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
     NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY,
     NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT,
@@ -75,6 +78,9 @@ pub struct SettingsViewModel {
     synopsis_pane: Signal<bool>,
     typewriter: Signal<bool>,
     highlight_sentence: Signal<bool>,
+    // ── Goals & word count ──
+    counting_method: Signal<CountingMethodSetting>,
+    show_characters: Signal<bool>,
 }
 
 // Accessors/setters are the feature's public API; bound to widgets incrementally.
@@ -143,6 +149,9 @@ impl SettingsViewModel {
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
             typewriter: store.signal(TYPEWRITER_KEY, TYPEWRITER_DEFAULT),
             highlight_sentence: store.signal(HIGHLIGHT_SENTENCE_KEY, HIGHLIGHT_SENTENCE_DEFAULT),
+            counting_method: store
+                .signal(GOALS_COUNTING_METHOD_KEY, CountingMethodSetting::default()),
+            show_characters: store.signal(GOALS_SHOW_CHARACTERS_KEY, GOALS_SHOW_CHARACTERS_DEFAULT),
         }
     }
 
@@ -196,6 +205,17 @@ impl SettingsViewModel {
     /// Highlight the current sentence.
     pub fn highlight_sentence(&self) -> Signal<bool> {
         self.highlight_sentence.clone()
+    }
+
+    /// The word-counting method for the live status-bar / focused count (a global
+    /// USER preference). `Auto` resolves per scene language; the canonical progress
+    /// snapshot ignores this and always counts with `Auto`.
+    pub fn counting_method(&self) -> Signal<CountingMethodSetting> {
+        self.counting_method.clone()
+    }
+    /// Show the character count beside the word count in the status bar.
+    pub fn show_characters(&self) -> Signal<bool> {
+        self.show_characters.clone()
     }
 
     // ── business API ──
@@ -281,6 +301,8 @@ impl SettingsViewModel {
         self.synopsis_pane.set(SYNOPSIS_PANE_DEFAULT);
         self.typewriter.set(TYPEWRITER_DEFAULT);
         self.highlight_sentence.set(HIGHLIGHT_SENTENCE_DEFAULT);
+        self.counting_method.set(CountingMethodSetting::default());
+        self.show_characters.set(GOALS_SHOW_CHARACTERS_DEFAULT);
     }
 }
 

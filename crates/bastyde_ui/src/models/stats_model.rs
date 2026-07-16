@@ -25,9 +25,10 @@ struct Inner {
     open_docs: OpenDocsStore,
     /// The focused editor tab's item id (`EditorsViewModel::active_item`).
     active_item: Signal<Option<u64>>,
-    /// The user's counting-method preference. `Auto` until the Goals settings pane
-    /// (M5) wires it; resolved per scene from the effective language at count time.
-    method: CountingMethodSetting,
+    /// The user's counting-method preference (the Goals settings pane's
+    /// `goals.counting_method`, live). Resolved per scene from the effective language
+    /// at count time; `Auto` picks CJK-smart for zh/ja and Unicode words elsewhere.
+    method: Signal<CountingMethodSetting>,
 }
 
 /// Cloneable handle over the open-documents counting surface.
@@ -37,12 +38,16 @@ pub struct StatsModel {
 }
 
 impl StatsModel {
-    pub fn new(open_docs: OpenDocsStore, active_item: Signal<Option<u64>>) -> Self {
+    pub fn new(
+        open_docs: OpenDocsStore,
+        active_item: Signal<Option<u64>>,
+        method: Signal<CountingMethodSetting>,
+    ) -> Self {
         Self {
             inner: Rc::new(Inner {
                 open_docs,
                 active_item,
-                method: CountingMethodSetting::Auto,
+                method,
             }),
         }
     }
@@ -56,6 +61,13 @@ impl StatsModel {
     /// refreshes as the writer types.
     pub fn edited_signal(&self) -> Signal<u64> {
         self.inner.open_docs.edited_any()
+    }
+
+    /// The live counting-method preference — bind it so the count re-derives when the
+    /// writer changes the method in Settings (the status bar is behind that modal, so
+    /// nothing else would trigger a rebuild).
+    pub fn method_signal(&self) -> Signal<CountingMethodSetting> {
+        self.inner.method.clone()
     }
 
     /// The live word count of the focused item's main prose, or `None` when nothing
@@ -78,7 +90,7 @@ impl StatsModel {
         let text = field.doc.to_plain_text().ok()?;
         let lang = self.inner.open_docs.effective_language(id);
         let method = counting::resolve_method(
-            self.inner.method,
+            self.inner.method.get(),
             CountMethod::UnicodeWords,
             language::primary(&lang),
         );

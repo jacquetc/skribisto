@@ -32,16 +32,17 @@ use bastyde::settings::{SettingsExt, TEXT_SCALE_KEY};
 use bastyde::widgets::{
     Breadcrumb, BreadcrumbItem, Button, ButtonVariant, Center, Checkbox, Divider, Expand,
     FixedSize, FontPicker, FormLayout, GroupHeader, HStack, IconButton, IconWidget,
-    LanguageSwitcher, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, Panel, ScrollArea,
-    SearchField, Slider, Spacer, StandardButton, StandardTreeItem, Switcher, TextScaleControl,
-    TextWidget, ThemeSwitcher, Toggle, TreeView, VStack,
+    LanguageSwitcher, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, Panel, RadioButton,
+    RadioGroup, ScrollArea, SearchField, Slider, Spacer, StandardButton, StandardTreeItem, Switcher,
+    TextScaleControl, TextWidget, ThemeSwitcher, Toggle, TreeView, VStack,
 };
 
 use crate::app_ids::AppIds;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{BackupSettingsViewModel, EditorTypography, SettingsViewModel};
 use crate::{
-    EDITOR_WIDTH_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT, NOTES_FIRST_LINE_INDENT_DEFAULT,
+    EDITOR_WIDTH_DEFAULT, GOALS_SHOW_CHARACTERS_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT,
+    NOTES_FIRST_LINE_INDENT_DEFAULT,
     NOTES_FONT_FAMILY_DEFAULT, NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT,
     NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_SIZE_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT,
     SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT, SCENE_PARA_SPACING_AFTER_DEFAULT,
@@ -51,6 +52,7 @@ use crate::{
     SYNOPSIS_SIZE_DEFAULT, TYPEWRITER_DEFAULT,
 };
 use skribisto_model::ChapterMode;
+use skribisto_model::counting::CountingMethodSetting;
 
 /// Card dimensions (a compact two-pane preferences window).
 const CARD_W: f32 = 920.0;
@@ -282,6 +284,11 @@ fn build_not_defaults(
         vm.typewriter().map(|s| *s != TYPEWRITER_DEFAULT),
         vm.highlight_sentence()
             .map(|s| *s != HIGHLIGHT_SENTENCE_DEFAULT),
+        // ── Goals & word count ──
+        vm.counting_method()
+            .map(|m| *m != CountingMethodSetting::default()),
+        vm.show_characters()
+            .map(|s| *s != GOALS_SHOW_CHARACTERS_DEFAULT),
     ];
     if let Some(loc) = locale {
         // Compare against a once-parsed default rather than allocating a String
@@ -392,6 +399,26 @@ fn empty_pane(
     icon: &'static SvgIcon,
 ) -> impl Widget {
     pane_frame(crumb(parent, current), empty_content(icon))
+}
+
+/// `CountingMethodSetting` ⟷ the `RadioGroup`'s `usize` selection. The order here
+/// is the radio order in `goals_pane`; keep the two in step.
+fn method_to_index(m: CountingMethodSetting) -> usize {
+    match m {
+        CountingMethodSetting::Auto => 0,
+        CountingMethodSetting::Whitespace => 1,
+        CountingMethodSetting::UnicodeWords => 2,
+        CountingMethodSetting::CjkHybrid => 3,
+    }
+}
+
+fn index_to_method(i: usize) -> CountingMethodSetting {
+    match i {
+        1 => CountingMethodSetting::Whitespace,
+        2 => CountingMethodSetting::UnicodeWords,
+        3 => CountingMethodSetting::CjkHybrid,
+        _ => CountingMethodSetting::Auto,
+    }
 }
 
 pub struct SettingsPanel {
@@ -512,6 +539,64 @@ impl SettingsPanel {
                 Some(tr!(settings_sec_editor())),
                 tr!(settings_page_editor_behavior()),
             ),
+            form,
+        )
+    }
+
+    /// Editor ▸ Goals — the word-**counting method** (a global USER preference that
+    /// drives only the live status-bar count; the canonical progress snapshot always
+    /// counts with `Auto`) and whether the status bar shows characters beside words.
+    /// The 4-variant method is bridged to the `RadioGroup`'s `usize` selection with two
+    /// guarded effects — the shape `work_structure_pane` uses for `ChapterMode`.
+    fn goals_pane(ctx: &mut BuildContext, vm: &SettingsViewModel) -> impl Widget {
+        let method = vm.counting_method();
+        let index: Signal<usize> = Signal::new(method_to_index(method.get()));
+        {
+            let index = index.clone();
+            ctx.effect(&method, move |m| {
+                let i = method_to_index(*m);
+                if index.get() != i {
+                    index.set(i);
+                }
+            });
+        }
+        {
+            let method = method.clone();
+            ctx.effect(&index, move |i| {
+                let m = index_to_method(*i);
+                if method.get() != m {
+                    method.set(m);
+                }
+            });
+        }
+
+        let form = FormLayout::new()
+            .label(tr!(settings_page_goals()))
+            .label_gap(16.0)
+            .row_spacing(14.0)
+            .full_width(group(tr!(settings_group_counting())))
+            .full_width(
+                RadioGroup::new()
+                    .radio(RadioButton::new(0, index.clone()).label(tr!(settings_counting_auto())))
+                    .radio(
+                        RadioButton::new(1, index.clone())
+                            .label(tr!(settings_counting_whitespace())),
+                    )
+                    .radio(
+                        RadioButton::new(2, index.clone())
+                            .label(tr!(settings_counting_unicode_words())),
+                    )
+                    .radio(
+                        RadioButton::new(3, index.clone())
+                            .label(tr!(settings_counting_cjk_hybrid())),
+                    ),
+            )
+            .full_width(hint(tr!(settings_counting_hint())))
+            .full_width(group(tr!(settings_group_goals_display())))
+            .full_width(Toggle::new(vm.show_characters()).label(tr!(settings_show_characters())));
+
+        pane_frame(
+            crumb(Some(tr!(settings_sec_editor())), tr!(settings_page_goals())),
             form,
         )
     }
@@ -1117,11 +1202,7 @@ impl Widget for SettingsPanel {
                 &typo.notes,
             ))
             .child(Self::editor_behavior_pane(&vm))
-            .child(empty_pane(
-                Some(editor.clone()),
-                tr!(settings_page_goals()),
-                Sec::Editor.icon_svg(),
-            ))
+            .child(Self::goals_pane(ctx, &vm))
             .child(empty_pane(
                 Some(editor),
                 tr!(settings_page_corkboard()),
@@ -1307,5 +1388,24 @@ mod tests {
         assert_eq!(Pane::Backup.index(), 14);
         assert_eq!(Pane::WorkBackup.index(), 15);
         assert_eq!(Pane::WorkLanguage.index(), 16);
+    }
+
+    /// The Goals pane bridges `CountingMethodSetting` to the `RadioGroup`'s `usize`
+    /// selection; the two conversions must round-trip and cover every variant, or a
+    /// stored method would render as the wrong (or default) radio.
+    #[test]
+    fn counting_method_index_bridge_round_trips_every_variant() {
+        for m in [
+            CountingMethodSetting::Auto,
+            CountingMethodSetting::Whitespace,
+            CountingMethodSetting::UnicodeWords,
+            CountingMethodSetting::CjkHybrid,
+        ] {
+            assert_eq!(index_to_method(method_to_index(m)), m);
+        }
+        // The four radios map to 0..=3; anything else falls back to Auto (never panics).
+        assert_eq!(method_to_index(CountingMethodSetting::Auto), 0);
+        assert_eq!(method_to_index(CountingMethodSetting::CjkHybrid), 3);
+        assert_eq!(index_to_method(99), CountingMethodSetting::Auto);
     }
 }
