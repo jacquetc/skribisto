@@ -52,6 +52,7 @@ mod long_op;
 mod new_work;
 mod outline;
 mod pace;
+mod progress_recorder;
 mod project_switch;
 mod restore;
 mod save_as;
@@ -75,6 +76,7 @@ pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;
 pub use pace::PaceViewModel;
+pub use progress_recorder::ProgressRecorder;
 pub use project_switch::{
     PendingSwitch, ProjectSwitchViewModel, UnsavedDecision, unsaved_decision,
 };

@@ -94,7 +94,7 @@ use models::{BackupSettingsService, OpenDocsStore};
 use singles::{SingleWork, SingleWorkInfo};
 use view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel,
-    OutlineViewModel, ProjectSwitchViewModel, RestoreViewModel, SaveAsViewModel,
+    OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel, RestoreViewModel, SaveAsViewModel,
 };
 
 /// The currently-open project's path (from `WorkInfo`), if any.
@@ -439,6 +439,11 @@ fn main() {
     // title-bar menu can bind its reactive checkmark and the whole app can reach
     // it via `ctx.app_state::<OutlineViewModel>()`.
     let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
+    // The progress recorder (writing-cadence): on each save it recounts the
+    // project's words and records a daily `ProgressSnapshot` feeding the Pace
+    // charts. Registered as app-state so `App::build` can route the save +
+    // `count_words` long-operation events to it (and a future manual "recount").
+    let progress_recorder = ProgressRecorder::new(app_ctx.clone(), ids.clone());
     // The Import-Plume view-model is a singleton (form + in-flight job + progress
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
@@ -632,6 +637,7 @@ fn main() {
         .app_state(single_work.clone())
         .app_state(single_work_info.clone())
         .app_state(outline.clone())
+        .app_state(progress_recorder.clone())
         .app_state(import_plume.clone())
         .app_state(export.clone())
         .app_state(save_as_vm.clone())

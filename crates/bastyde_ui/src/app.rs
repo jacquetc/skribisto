@@ -1548,6 +1548,42 @@ impl Widget for App {
             );
         }
 
+        // The progress-recorder cadence (silent, no toast): each `save_work`
+        // fires a throttled `count_words`, and its completion records today's
+        // `ProgressSnapshot`. Plain `subscribe_event` (no `EventContext`) — it
+        // shows no UI. Filters the completion by op id, so save / import /
+        // export / backup long ops are ignored.
+        if let Some(recorder) = ctx.app_state::<crate::view_models::ProgressRecorder>().cloned() {
+            {
+                let r = recorder.clone();
+                ctx.subscribe_event(
+                    Origin::WorkManagement(WorkManagementEvent::SaveWork),
+                    move |_e: &Event| r.recount_throttled(),
+                );
+            }
+            {
+                let r = recorder.clone();
+                ctx.subscribe_event(
+                    Origin::LongOperation(LongOperationEvent::Completed),
+                    move |e: &Event| r.on_completed(e),
+                );
+            }
+            {
+                let r = recorder.clone();
+                ctx.subscribe_event(
+                    Origin::LongOperation(LongOperationEvent::Failed),
+                    move |e: &Event| r.on_failed_or_cancelled(e),
+                );
+            }
+            {
+                let r = recorder.clone();
+                ctx.subscribe_event(
+                    Origin::LongOperation(LongOperationEvent::Cancelled),
+                    move |e: &Event| r.on_failed_or_cancelled(e),
+                );
+            }
+        }
+
         // Route the backup long operation's progress/completion/failure to the
         // shared `BackupSchedulerViewModel`, which records the per-destination
         // success hash + path, shows a progress toast (retention now runs
