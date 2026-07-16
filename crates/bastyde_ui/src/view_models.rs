@@ -95,7 +95,7 @@ pub use writing_session::{
     WritingSessionViewModel, format_mmss, gauge_role, remaining, words_progress,
 };
 pub use search_replace::SearchReplaceViewModel;
-pub use settings::{EditorTypography, EditorTypographySet, SettingsViewModel};
+pub use settings::{EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel};
 pub use stream::{SplitFlavour, StreamViewModel};
 pub(crate) use stream::{is_prose_bearing, is_synopsis_bearing};
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};

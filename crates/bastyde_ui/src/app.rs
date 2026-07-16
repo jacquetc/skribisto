@@ -590,6 +590,7 @@ impl Widget for App {
         let column_width = settings.column_width();
         let show_synopsis = settings.synopsis_pane();
         let typography = settings.editor_typography();
+        let view_memory = crate::view_models::EditorViewMemory::new(ctx.settings());
         let ids = self.outline.ids();
         let docs = ctx
             .app_state::<crate::models::OpenDocsStore>()
@@ -605,6 +606,7 @@ impl Widget for App {
                     column_width,
                     show_synopsis,
                     typography,
+                    view_memory,
                     ids,
                     docs,
                     backup_mode_for_editors,

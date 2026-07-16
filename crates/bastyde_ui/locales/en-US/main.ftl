@@ -179,6 +179,14 @@ settings-field-language = Interface language
 settings-synopsis-pane = Show synopsis pane above the manuscript
 settings-typewriter = Typewriter scrolling (keep caret line centred)
 settings-highlight-sentence = Highlight the current sentence
+settings-group-container-views = Container views
+settings-remember-view = Remember the last view for each item type
+settings-remember-view-tip = Open a container on the view you last used for that type
+settings-remember-view-tip-more =
+    A Book, Part and Chapter each offer several views (its own page, the full
+    manuscript, the full synopsis). Turn this on and each type reopens on the
+    view you last chose for it — e.g. switch one Chapter to Full Chapter and the
+    next Chapter you open shows Full Chapter too. Each type remembers its own view.
 # Goals & Word Count pane
 settings-group-counting = Word counting
 settings-counting-auto = Automatic (by language)

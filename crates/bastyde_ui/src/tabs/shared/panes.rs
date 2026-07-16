@@ -13,6 +13,7 @@
 //! group. The manuscript-stream pane the containers share lives in
 //! [`stream`](super::stream).
 
+use bastyde::core::widget::WidgetPlacement;
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::widgets::{
@@ -20,8 +21,10 @@ use bastyde::widgets::{
     VStack,
 };
 
+use frontend::common::entities::BinderItemSubRole;
+
 use crate::tabs::ContentTab;
-use crate::view_models::SplitFlavour;
+use crate::view_models::{EditorViewMemory, SplitFlavour};
 
 use super::{
     VisibleWhen, centered, stream_pane, synopsis_column, synopsis_section, tab_backdrop,
@@ -317,5 +320,72 @@ pub fn folder_segmented(
         // Fill the remaining height so the selected segment (especially a stream's
         // `ScrollArea`) gets a bounded viewport to fill.
         .child(Expand::new().child(content));
-    tab_backdrop(col)
+    // Persist the chosen view per container type, so a new tab of this type inherits
+    // it (gated by the `editor.remember_view` toggle inside the memory).
+    Box::new(RememberSegment {
+        segment: tab.segment.clone(),
+        memory: tab.view_memory.clone(),
+        sub_role: tab.sub_role().clone(),
+        child: Some(tab_backdrop(col)),
+        child_id: None,
+    })
+}
+
+/// Transparent passthrough that persists the container's `SegmentedControl`
+/// selection into the per-type [`EditorViewMemory`] whenever it changes, so a
+/// newly-opened tab of the same item type inherits it.
+///
+/// `SegmentedControl` has no change-callback and [`folder_segmented`] has no build
+/// context, so the effect is set up here (in a widget's `build`). Mirrors
+/// `editor::DirtyOnEdit`: it adds one child and forwards layout to it unchanged.
+struct RememberSegment {
+    segment: Signal<usize>,
+    memory: EditorViewMemory,
+    sub_role: BinderItemSubRole,
+    child: Option<Box<dyn Widget>>,
+    child_id: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for RememberSegment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RememberSegment").finish_non_exhaustive()
+    }
+}
+
+impl Widget for RememberSegment {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let child = self.child.take().expect("RememberSegment built once");
+        let id = ctx.add_boxed(child);
+        self.child_id = Some(id);
+        let (memory, sub_role) = (self.memory.clone(), self.sub_role.clone());
+        ctx.effect(&self.segment, move |v| memory.remember(&sub_role, *v));
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.child_id
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = Point::new(bounds.x, bounds.y);
+            child.size = bounds.size();
+        }
+    }
+
+    // A filling child must be reported here too (not just from `build`), or the
+    // layout pass never places it — the container's segmented bar + panes vanish.
+    // (Mirrors `editor::VisibleWhen`, which wraps the same kind of boxed body.)
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
+    }
 }

@@ -92,6 +92,8 @@ pub struct EditorsViewModel {
     column_width: Signal<f32>,
     show_synopsis: Signal<bool>,
     typography: EditorTypographySet,
+    /// Per-container-type "last view" memory, threaded into every `ContentTab`.
+    view_memory: crate::view_models::EditorViewMemory,
     /// Id-only global state (work + undo-stack ids); write-back lands on
     /// `ids.stack_id` so it shares the tree edits' Ctrl+Z history.
     ids: AppIds,
@@ -121,6 +123,7 @@ impl EditorsViewModel {
         column_width: Signal<f32>,
         show_synopsis: Signal<bool>,
         typography: EditorTypographySet,
+        view_memory: crate::view_models::EditorViewMemory,
         ids: AppIds,
         docs: OpenDocsStore,
         backup_mode: Signal<bool>,
@@ -152,6 +155,7 @@ impl EditorsViewModel {
             column_width,
             show_synopsis,
             typography,
+            view_memory,
             ids,
             docs,
             backup_mode,
@@ -292,6 +296,7 @@ impl EditorsViewModel {
             self.column_width.clone(),
             self.show_synopsis.clone(),
             self.typography.clone(),
+            self.view_memory.clone(),
         );
         let tab_title = if title.is_empty() {
             tr!(untitled())
@@ -781,6 +786,7 @@ impl EditorsViewModel {
                     self.column_width.clone(),
                     self.show_synopsis.clone(),
                     self.typography.clone(),
+                    self.view_memory.clone(),
                 );
                 let caption = if it.title.is_empty() {
                     tr!(untitled())
@@ -915,6 +921,7 @@ mod tests {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
             ids,
             docs,
             Signal::new(false),
@@ -935,6 +942,7 @@ mod tests {
             vm.column_width.clone(),
             vm.show_synopsis.clone(),
             vm.typography.clone(),
+            vm.view_memory.clone(),
             &vm.ids,
         );
         vm.pane(side).tabs.push(TabHandle::dynamic(
@@ -1085,6 +1093,7 @@ mod tests {
                 vm.column_width.clone(),
                 vm.show_synopsis.clone(),
                 vm.typography.clone(),
+                vm.view_memory.clone(),
                 &vm.ids,
             ),
         );

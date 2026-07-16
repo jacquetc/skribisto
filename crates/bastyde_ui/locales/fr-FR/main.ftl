@@ -179,6 +179,15 @@ settings-field-language = Langue de l'interface
 settings-synopsis-pane = Afficher le synopsis au-dessus du manuscrit
 settings-typewriter = Défilement machine à écrire (garder la ligne du curseur centrée)
 settings-highlight-sentence = Surligner la phrase courante
+settings-group-container-views = Vues des conteneurs
+settings-remember-view = Mémoriser la dernière vue pour chaque type d'élément
+settings-remember-view-tip = Ouvrir un conteneur sur la vue utilisée en dernier pour ce type
+settings-remember-view-tip-more =
+    Un Livre, une Partie et un Chapitre offrent chacun plusieurs vues (sa propre
+    page, le manuscrit complet, le synopsis complet). Activez cette option et
+    chaque type se rouvre sur la vue choisie en dernier — par exemple, passez un
+    Chapitre en Chapitre complet et le prochain Chapitre ouvert s'affichera aussi
+    en Chapitre complet. Chaque type mémorise sa propre vue.
 # Volet Objectifs et comptage des mots
 settings-group-counting = Comptage des mots
 settings-counting-auto = Automatique (selon la langue)

@@ -32,6 +32,7 @@ use bastyde::i18n::{LocalizedString, current_locale, localized};
 use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::settings::{SettingsExt, TEXT_SCALE_KEY};
+use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{
     Breadcrumb, BreadcrumbItem, Button, ButtonVariant, Center, Checkbox, Divider, Expand,
     FixedSize, FontPicker, FormLayout, GroupHeader, HStack, IconButton, IconWidget,
@@ -535,6 +536,18 @@ impl SettingsPanel {
             .full_width(Checkbox::new(vm.typewriter()).label(tr!(settings_typewriter())))
             .full_width(
                 Checkbox::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())),
+            )
+            .full_width(group(tr!(settings_group_container_views())))
+            .full_width(
+                Checkbox::new(vm.remember_view())
+                    .label(tr!(settings_remember_view()))
+                    .rich_tooltip_content(
+                        TooltipContent::new(
+                            "settings.remember_view",
+                            tr!(settings_remember_view_tip()),
+                        )
+                        .with_more(tr!(settings_remember_view_tip_more())),
+                    ),
             );
 
         pane_frame(

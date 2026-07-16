@@ -125,6 +125,10 @@ pub struct ContentTab {
     /// shared live from Settings. Every editor this tab builds reads its bundle
     /// from here, so a preference change fans out to all open tabs at once.
     pub typography: EditorTypographySet,
+    /// Per-container-type "last view" memory: seeds this tab's initial [`Self::segment`]
+    /// and (for a folder container) is written back when the user switches view, so a
+    /// new tab of the same type inherits it. Shared live from Settings.
+    pub view_memory: crate::view_models::EditorViewMemory,
 }
 
 /// Which prose kind a dual-pane main-text editor is, so it can pick the Scene vs
@@ -204,6 +208,7 @@ pub fn tab_for(
     column_width: Signal<f32>,
     show_synopsis: Signal<bool>,
     typography: EditorTypographySet,
+    view_memory: crate::view_models::EditorViewMemory,
     ids: &AppIds,
 ) -> ContentTab {
     let open_doc = Rc::new(OpenDoc::build(
@@ -222,6 +227,7 @@ pub fn tab_for(
         column_width,
         show_synopsis,
         typography,
+        view_memory,
     )
 }
 
@@ -264,6 +270,7 @@ impl ContentTab {
         column_width: Signal<f32>,
         show_synopsis: Signal<bool>,
         typography: EditorTypographySet,
+        view_memory: crate::view_models::EditorViewMemory,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
         // the stream (Book only). Built first, so it can borrow `app_ctx` before
@@ -288,16 +295,20 @@ impl ContentTab {
             .main
             .as_ref()
             .map(|m| crate::view_models::FindViewModel::new(m.doc.clone()));
+        // Seed the container's view from the per-type memory (own page = 0 when
+        // disabled or for a non-segmented type).
+        let segment = Signal::new(view_memory.initial(&open_doc.sub_role));
         Self {
             open_doc,
             stream,
             pace,
             ids,
             find,
-            segment: Signal::new(0),
+            segment,
             column_width,
             show_synopsis,
             typography,
+            view_memory,
         }
     }
 
@@ -526,6 +537,7 @@ mod tests {
                 Signal::new(700.0),
                 Signal::new(true),
                 test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
                 &AppIds::new(),
             );
             // Prose tabs carry a kind + a main editor; every other combination has
@@ -553,6 +565,92 @@ mod tests {
                 "{role:?}/{sub_role:?} laid out to zero width"
             );
         }
+    }
+
+    /// The three folder containers (Book / Part / Chapter) render a `SegmentedControl`
+    /// bar. The per-type "last view" memory wraps that body in a `RememberSegment`
+    /// passthrough; this pins that the wrapper doesn't swallow the bar's layout (the
+    /// bar must still be present **and** lay out to a non-zero size).
+    #[test]
+    fn segmented_containers_lay_out_their_bar() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        for sub_role in [Book, Part, ChapterScene] {
+            let tab = tab_for(
+                &ctx,
+                1,
+                &Folder,
+                &sub_role,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
+                &AppIds::new(),
+            );
+            let mut tree = WidgetTree::new();
+            let id = tree.add_boxed(tab_pane(&tab));
+            tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+            let bar = first_of_type(&tree, id, "SegmentedControl")
+                .unwrap_or_else(|| panic!("Folder/{sub_role:?} has no SegmentedControl in its tree"));
+            let b = tree.bounds(bar);
+            assert!(
+                b.width > 0.0 && b.height > 0.0,
+                "Folder/{sub_role:?} segmented bar laid out to zero size ({b:?})"
+            );
+        }
+    }
+
+    /// Switching a container's view persists it per type, and a newly-opened tab of
+    /// the same type inherits it — the whole "remember last view" chain: the built
+    /// tab's `RememberSegment` effect writes `EditorViewMemory` on a segment change,
+    /// and `ContentTab::new` seeds a new tab's segment from it.
+    #[test]
+    fn switching_a_container_view_persists_and_a_new_tab_inherits() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let mem = crate::view_models::EditorViewMemory::detached(true);
+        let open = |id: u64| {
+            tab_for(
+                &ctx,
+                id,
+                &Folder,
+                &ChapterScene,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                mem.clone(),
+                &AppIds::new(),
+            )
+        };
+        // Open a chapter; it starts on its own page.
+        let chapter1 = open(1);
+        assert_eq!(chapter1.segment.get(), 0);
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(tab_pane(&chapter1)); // sets up the persist effect
+        tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+        // Switch it to "Full Chapter" (index 1).
+        chapter1.segment.set(1);
+        assert_eq!(mem.initial(&ChapterScene), 1, "the chosen view was remembered");
+        // A newly-opened chapter inherits it.
+        assert_eq!(open(2).segment.get(), 1, "a new chapter opens on Full Chapter");
+        // ...but a Scene (no segmented control) is unaffected.
+        let scene = tab_for(
+            &ctx,
+            3,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            mem.clone(),
+            &AppIds::new(),
+        );
+        assert_eq!(scene.segment.get(), 0);
     }
 
     /// First node at/under `root` whose fully-qualified type name ends with `suffix`
@@ -669,6 +767,7 @@ mod tests {
                 Signal::new(700.0),
                 Signal::new(true),
                 test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
                 &AppIds::new(),
             )
         };
@@ -747,6 +846,7 @@ mod tests {
                 Signal::new(CAP),
                 Signal::new(true),
                 test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
                 &AppIds::new(),
             );
             // A real text backend is required for a faithful narrow-window
@@ -789,6 +889,7 @@ mod tests {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         let mut tree = WidgetTree::new();
@@ -828,6 +929,7 @@ mod tests {
                 Signal::new(700.0),
                 Signal::new(show),
                 test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
                 &AppIds::new(),
             );
             let mut tree = WidgetTree::new();
@@ -925,6 +1027,7 @@ mod tests {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         let title = tab.title().expect("a chapter folder has a title field");
@@ -977,6 +1080,7 @@ mod tests {
                 Signal::new(700.0),
                 Signal::new(true),
                 test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
                 &AppIds::new(),
             )
         };
