@@ -464,6 +464,28 @@ impl PaceViewModel {
         ))
     }
 
+    /// The even-pace daily target: the goal spread over every scheduled day.
+    /// `None` until a start, end and goal are all set. The words-per-day chart
+    /// flags any day below this as behind pace.
+    pub fn target_daily_rate(&self) -> Option<i64> {
+        let start = self.inner.start.get()?;
+        let end = self.inner.end.get()?;
+        let goal = self.inner.goal_words.get();
+        if goal <= 0 {
+            return None;
+        }
+        let total = writing_days_in_range(
+            start,
+            end,
+            self.inner.weekday_mask.get(),
+            &self.holiday_ranges(),
+        );
+        if total == 0 {
+            return None;
+        }
+        Some((goal as f64 / total as f64).round() as i64)
+    }
+
     fn holiday_ranges(&self) -> Vec<HolidayRange> {
         self.inner
             .holidays

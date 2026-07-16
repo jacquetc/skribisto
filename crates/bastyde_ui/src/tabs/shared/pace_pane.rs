@@ -10,7 +10,7 @@
 //! Milestones, holidays and the progression / words-per-day charts land in M4d.
 
 use bastyde::core::BindingLevel;
-use bastyde::data::{ChartModel, ChartSeries};
+use bastyde::data::{ChartDatum, ChartModel, ChartSeries};
 use bastyde::prelude::*;
 use bastyde::tokens::{CornerRadius, FontWeight, TextStyle};
 use bastyde::widgets::{
@@ -479,11 +479,22 @@ impl Widget for PaceCharts {
             .grid(true)
             .legend(true);
 
-        // Words written per day.
-        let mut per_day = ChartSeries::new(tr!(pace_series_words_per_day()).resolve_now());
-        for (date, words) in self.vm.words_per_day() {
-            per_day.push(day_label(date), words as f32);
-        }
+        // Words written per day, each bar tinted red when that day fell below the
+        // even-pace daily target (and accent otherwise).
+        let rate = self.vm.target_daily_rate();
+        let points: Vec<ChartDatum<String>> = self
+            .vm
+            .words_per_day()
+            .into_iter()
+            .map(|(date, words)| {
+                let datum = ChartDatum::new(day_label(date), words as f32);
+                match rate {
+                    Some(r) if words < r => datum.with_color(SurfaceRole::StatusError),
+                    _ => datum.with_color(SurfaceRole::Accent),
+                }
+            })
+            .collect();
+        let per_day = ChartSeries::new(tr!(pace_series_words_per_day()).resolve_now()).data(points);
         let bars = BarChart::new(ChartModel::from_series_vec(vec![per_day]))
             .grid(true)
             .legend(false);
