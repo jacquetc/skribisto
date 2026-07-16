@@ -16,7 +16,7 @@ use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole};
 use skrib_format::Gathered;
 use skribisto_model::SubRoleExt;
 use skribisto_model::language;
-use text_document::{DocxExportOptions, TextDirection, TextDocument};
+use text_document::{DocxExportOptions, EpubExportOptions, TextDirection, TextDocument};
 
 use crate::headings::{self, Level};
 use crate::preset::{
@@ -103,6 +103,26 @@ pub fn render_to_file(
             doc.to_docx_with_options(&out, opts)?
                 .wait()
                 .map_err(|e| anyhow!("writing DOCX '{out}': {e:#}"))?;
+        }
+        ExportFormat::Epub => {
+            let out = path.to_string_lossy().into_owned();
+            let w = &req.gathered.work;
+            // The book's language drives the EPUB `dc:language` + reading direction; fall back
+            // to the work-level language when the document carries none.
+            let lang = if w.dict_language.trim().is_empty() {
+                req.work_lang.to_string()
+            } else {
+                w.dict_language.clone()
+            };
+            let opts = EpubExportOptions {
+                title: w.title.clone(),
+                author: w.author_name.clone(),
+                rtl: is_rtl_row(req.preset, &lang),
+                language: lang,
+            };
+            doc.to_epub_with_options(&out, opts)?
+                .wait()
+                .map_err(|e| anyhow!("writing EPUB '{out}': {e:#}"))?;
         }
         other => return Err(anyhow!("{other:?} export is not implemented yet")),
     }
@@ -709,6 +729,24 @@ mod tests {
             Some("Mara Vane / THE LIGHTHOUSE"),
             "author / TITLE running header"
         );
+    }
+
+    #[test]
+    fn epub_export_writes_a_non_empty_file() {
+        let g = flat_book();
+        let p = preset("neutral");
+        let path = std::env::temp_dir().join(format!("skrib-export-{}.epub", std::process::id()));
+        let stats = render_to_file(
+            &req(&g, &[100, 101, 102], &p, ExportFormat::Epub),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert!(path.exists(), "epub file should be written");
+        assert!(std::fs::metadata(&path).unwrap().len() > 0, "epub should be non-empty");
+        assert!(stats.items >= 2);
+        let _ = std::fs::remove_file(&path);
     }
 
     #[test]

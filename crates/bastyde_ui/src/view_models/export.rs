@@ -56,11 +56,12 @@ use crate::export_choose::ChooseModel;
 /// success / cancelled / error).
 const EXPORT_TOAST_ID: &str = "export.work";
 
-/// The output formats the panel offers in this milestone — every one has a complete
-/// renderer in `skribisto_compiler`. EPUB (M6) and PDF (M7) join once implemented; DOCX
-/// typography lands in M5, but a structural DOCX is already valid here.
-const PANEL_FORMATS: [ExportFormat; 6] = [
+/// The output formats the panel offers — every one has a complete renderer in
+/// `skribisto_compiler`. DOCX gained manuscript typography in M5; EPUB 3 landed in M6. PDF
+/// (M7) joins once implemented.
+const PANEL_FORMATS: [ExportFormat; 7] = [
     ExportFormat::Docx,
+    ExportFormat::Epub,
     ExportFormat::Html,
     ExportFormat::Markdown,
     ExportFormat::Djot,
