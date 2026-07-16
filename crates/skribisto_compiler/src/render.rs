@@ -63,13 +63,13 @@ pub fn render_to_string(req: &RenderRequest) -> Result<String> {
     if !req.format.is_text() {
         return Err(anyhow!("{:?} is not a text format", req.format));
     }
-    let (doc, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
+    let (doc, _, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
     text_render(&doc, req.format)
 }
 
 /// Render an HTML preview (used by the UI live preview regardless of the chosen format).
 pub fn render_preview_html(req: &RenderRequest) -> Result<String> {
-    let (doc, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
+    let (doc, _, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
     Ok(doc.to_html()?)
 }
 
@@ -78,7 +78,7 @@ pub fn render_preview_html(req: &RenderRequest) -> Result<String> {
 /// per-block direction), handed back so the panel can show it in a read-only editor. This
 /// is why the preview and the committed export cannot diverge — one assembly path.
 pub fn render_preview_document(req: &RenderRequest) -> Result<TextDocument> {
-    let (doc, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
+    let (doc, _, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
     Ok(doc)
 }
 
@@ -90,7 +90,7 @@ pub fn render_to_file(
     progress: &dyn Fn(f32),
     cancel: &AtomicBool,
 ) -> Result<RenderStats> {
-    let (doc, stats) = assemble(req, progress, cancel)?;
+    let (doc, stats, langs) = assemble(req, progress, cancel)?;
     if cancel.load(Ordering::Relaxed) {
         return Err(anyhow!("operation cancelled"));
     }
@@ -134,9 +134,8 @@ pub fn render_to_file(
             } else {
                 w.dict_language.clone()
             };
-            // Effective languages of the *included* rows drive which RTL faces to embed.
-            let langs: std::collections::BTreeSet<String> =
-                flatten(req).into_iter().map(|r| r.lang).collect();
+            // Effective languages of the included rows (computed once by `assemble`) drive
+            // which RTL faces to embed.
             let (page_w, page_h) = pdf_page_mm(req.preset.page_size);
             let m = &req.preset.margin;
             let in_to_mm = |i: f32| i * 25.4;
@@ -151,11 +150,14 @@ pub fn render_to_file(
                 font_family: crate::fonts::pdf_body_family(req.preset),
                 font_bytes: crate::fonts::pdf_font_bytes(req.preset, &langs),
                 font_size_pt: req.preset.font_size_pt,
-                // Typst `leading` (extra baseline gap), in em: single / 1½ / double manuscript.
+                // Typst `leading` (the gap *between* lines, not a line-height multiple — Typst
+                // has no direct multiple), in em. Approximated as `multiple - 0.35`, anchoring
+                // single on Typst's own 0.65em default and scaling up for 1½ / double so a
+                // "double-spaced" manuscript reads visibly more open than 1½.
                 line_spacing: match req.preset.line_spacing {
                     LineSpacing::Single => 0.65,
-                    LineSpacing::OneAndHalf => 1.0,
-                    LineSpacing::Double => 1.5,
+                    LineSpacing::OneAndHalf => 1.15,
+                    LineSpacing::Double => 1.65,
                 },
                 first_line_indent_mm: (req.preset.first_line_indent_in > 0.0)
                     .then(|| in_to_mm(req.preset.first_line_indent_in)),
@@ -260,9 +262,14 @@ fn assemble(
     req: &RenderRequest,
     progress: &dyn Fn(f32),
     cancel: &AtomicBool,
-) -> Result<(TextDocument, RenderStats)> {
+) -> Result<(TextDocument, RenderStats, std::collections::BTreeSet<String>)> {
     let rows = flatten(req);
     let preset = req.preset;
+
+    // The effective languages of the included rows — the PDF arm uses these to decide which
+    // RTL faces to embed, so it needn't re-flatten the tree just to recompute them.
+    let langs: std::collections::BTreeSet<String> =
+        rows.iter().map(|r| r.lang.clone()).collect();
 
     // Heading levels are dense over the structural levels actually present, so a
     // chapter-only export starts at h1 and a book+chapter export (no parts) uses h1/h2.
@@ -393,7 +400,7 @@ fn assemble(
         doc.set_text_direction(dir)?;
     }
 
-    Ok((doc, RenderStats { items: emitted_items, words }))
+    Ok((doc, RenderStats { items: emitted_items, words }, langs))
 }
 
 /// Flatten the frozen tree into the included rows, in document order, each with its

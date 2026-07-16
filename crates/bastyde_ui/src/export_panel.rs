@@ -106,6 +106,8 @@ fn current_extension(vm: &ExportViewModel) -> &'static str {
         .and_then(|e| e.to_str())
         .map(|e| match e {
             "docx" => "docx",
+            "pdf" => "pdf",
+            "epub" => "epub",
             "html" => "html",
             "md" => "md",
             "dj" => "dj",

@@ -57,12 +57,24 @@ use crate::export_choose::ChooseModel;
 const EXPORT_TOAST_ID: &str = "export.work";
 
 /// The output formats the panel offers — every one has a complete renderer in
-/// `skribisto_compiler`. DOCX gained manuscript typography in M5; EPUB 3 in M6; PDF (Typst) in
-/// M7. PDF is always offered, but requires the app's `pdf` cargo feature at build time — a
-/// build without it reports "PDF support not compiled" when PDF is chosen.
+/// `skribisto_compiler` (DOCX manuscript typography M5; EPUB 3 M6; PDF via Typst M7). PDF is
+/// **only offered when the app was built with the `pdf` feature** — a build without it can't
+/// produce a PDF and would only surface a build-config error, so the option is omitted entirely
+/// rather than shown as a format that always fails.
+#[cfg(feature = "pdf")]
 const PANEL_FORMATS: [ExportFormat; 8] = [
     ExportFormat::Docx,
     ExportFormat::Pdf,
+    ExportFormat::Epub,
+    ExportFormat::Html,
+    ExportFormat::Markdown,
+    ExportFormat::Djot,
+    ExportFormat::PlainText,
+    ExportFormat::Latex,
+];
+#[cfg(not(feature = "pdf"))]
+const PANEL_FORMATS: [ExportFormat; 7] = [
+    ExportFormat::Docx,
     ExportFormat::Epub,
     ExportFormat::Html,
     ExportFormat::Markdown,
