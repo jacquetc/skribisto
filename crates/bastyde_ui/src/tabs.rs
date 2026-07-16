@@ -653,6 +653,61 @@ mod tests {
         assert_eq!(scene.segment.get(), 0);
     }
 
+    /// Two open tabs of the same container type share one per-type memory: each of
+    /// their `SegmentedControl` switches writes it, and the *last switch wins* — a
+    /// tab's own switch never fights a peer's. This works only because `ctx.effect`
+    /// fires on *changes*, not on setup (proven by the counter-test above, which
+    /// starts each on its own page and confirms nothing is written until a switch):
+    /// so merely having a second same-type tab open — or a tab rebuilding — installs
+    /// observers that stay quiet, and only a real switch persists.
+    ///
+    /// (Built at segment 0 / the own page throughout: a non-zero segment mounts the
+    /// manuscript-stream pane, whose event wiring needs an app-level event source
+    /// the headless `WidgetTree` doesn't provide — so the switches are made via the
+    /// signal, which fires the persist effect without swapping the mounted pane.)
+    #[test]
+    fn same_type_tabs_share_one_last_view_and_the_last_switch_wins() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let mem = crate::view_models::EditorViewMemory::detached(true);
+        let open = |id: u64| {
+            tab_for(
+                &ctx,
+                id,
+                &Folder,
+                &ChapterScene,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                mem.clone(),
+                &AppIds::new(),
+            )
+        };
+        // Both open on their own page (memory starts at 0), so no stream mounts.
+        let a = open(1);
+        let b = open(2);
+        assert_eq!(a.segment.get(), 0);
+        assert_eq!(b.segment.get(), 0);
+        let build = |tab: &ContentTab| {
+            let mut tree = WidgetTree::new();
+            tree.add_boxed(tab_pane(tab));
+            tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+            tree // keep alive so the effect it installed stays live
+        };
+        let _ta = build(&a);
+        let _tb = build(&b);
+        // Merely opening + building a second same-type tab wrote nothing.
+        assert_eq!(mem.initial(&ChapterScene), 0);
+        a.segment.set(1); // A switches → Full Chapter
+        assert_eq!(mem.initial(&ChapterScene), 1);
+        b.segment.set(2); // B switches → Full Synopsis: last switch wins
+        assert_eq!(mem.initial(&ChapterScene), 2);
+        a.segment.set(0); // A switches back → its switch wins in turn
+        assert_eq!(mem.initial(&ChapterScene), 0);
+    }
+
     /// First node at/under `root` whose fully-qualified type name ends with `suffix`
     /// (DFS pre-order); type names come from `std::any::type_name`, so match the leaf.
     fn first_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str) -> Option<WidgetId> {

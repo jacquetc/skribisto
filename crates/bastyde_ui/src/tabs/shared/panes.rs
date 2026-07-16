@@ -358,6 +358,11 @@ impl Widget for RememberSegment {
         let id = ctx.add_boxed(child);
         self.child_id = Some(id);
         let (memory, sub_role) = (self.memory.clone(), self.sub_role.clone());
+        // `ctx.effect` fires only on *changes*, not on setup — so a rebuild installs
+        // a fresh observer that stays quiet until the user actually switches the
+        // `SegmentedControl`. That's what keeps a rebuild of one tab from writing its
+        // segment over the view another same-type tab just chose (regression-tested by
+        // `tabs::tests::same_type_tabs_share_one_last_view_and_the_last_switch_wins`).
         ctx.effect(&self.segment, move |v| memory.remember(&sub_role, *v));
         vec![id]
     }
