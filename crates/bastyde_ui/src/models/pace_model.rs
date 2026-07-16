@@ -1,4 +1,4 @@
-//! Layer-A backend seam for a Book's writing **Pace** — its schedule (start/end
+//! Layer-A backend seam for a Book's writing **Pace** - its schedule (start/end
 //! dates, the counted-weekday mask, the active flag), its Holidays and
 //! Milestones, the Book's word-count goal, and the recorded ProgressSnapshot
 //! history for the open Work.
@@ -10,8 +10,8 @@
 //! [`load`](imp::PaceModel::load) after every mutation and on the matching
 //! backend `Updated` events.
 //!
-//! Two `#[cfg]`-gated `mod imp` variants share one public surface — the real one
-//! over `frontend` commands, the mock one over an in-memory `RefCell` — per the
+//! Two `#[cfg]`-gated `mod imp` variants share one public surface - the real one
+//! over `frontend` commands, the mock one over an in-memory `RefCell` - per the
 //! model-layer convention (see [`crate::models`]). The plain data types below are
 //! declared once, un-gated, so both variants and the view-model speak the same
 //! vocabulary.
@@ -48,7 +48,7 @@ pub struct DailyCount {
 }
 
 /// A full snapshot of a Book's pace state, loaded in one shot. `pace_id` is
-/// `None` until the Pace entity is first created — creation is lazy, on the
+/// `None` until the Pace entity is first created - creation is lazy, on the
 /// first edit, so merely viewing a Book never writes one.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PaceState {
@@ -91,7 +91,7 @@ mod imp {
 
     use super::{DailyCount, HolidayRow, MilestoneRow, PaceState, MON_TO_FRI};
 
-    /// UTC midnight for a calendar day — the on-disk convention (`record_progress_snapshot`
+    /// UTC midnight for a calendar day - the on-disk convention (`record_progress_snapshot`
     /// truncates to UTC midnight, so dates round-trip through the same instant).
     fn to_utc(d: NaiveDate) -> DateTime<Utc> {
         d.and_hms_opt(0, 0, 0).expect("midnight is valid").and_utc()
@@ -145,7 +145,7 @@ mod imp {
             // returns rows in the store's arbitrary `HashMap` order, so a first-wins
             // `dedup_by_key` could keep a stale count (and even flip between app runs);
             // a cumulative count only grows, so keep the largest per day. The normal
-            // single-writer upsert never produces duplicates — a hand-edited or
+            // single-writer upsert never produces duplicates - a hand-edited or
             // merge-conflicted `snapshots.ron` can.
             history.dedup_by(|a, b| {
                 if a.date == b.date {
@@ -206,7 +206,7 @@ mod imp {
             }
         }
 
-        /// Setting the deadline is the deliberate "plan my Book" action — the one
+        /// Setting the deadline is the deliberate "plan my Book" action - the one
         /// mutator that may *create* the Pace (with the writer's own dates). Every
         /// other edit only refines an already-created schedule, so none of them
         /// fabricates a Pace from a stray click.
@@ -231,7 +231,7 @@ mod imp {
             }
         }
 
-        /// The goal is a field on the **BinderItem**, not the Pace — write it the
+        /// The goal is a field on the **BinderItem**, not the Pace - write it the
         /// same way the outline / stream do (scalar `UpdateBinderItemDto`).
         pub fn set_goal_words(&self, goal: i64) {
             let ctx = &self.app_ctx;
@@ -251,7 +251,7 @@ mod imp {
 
         pub fn add_holiday(&self, label: String, start: NaiveDate, end: Option<NaiveDate>) {
             // Take the existing list from the fetched Pace, not a second
-            // relationship read — a swallowed read error there would feed an
+            // relationship read - a swallowed read error there would feed an
             // empty list into the REPLACE-semantics `set_children` and wipe the
             // other holidays.
             let Some(pace) = self.find_pace() else { return };
@@ -280,7 +280,7 @@ mod imp {
                 .filter(|&id| id != holiday_id)
                 .collect();
             self.set_children(pace.id, PaceRelationshipField::Holidays, ids);
-            // Detaching leaves the row orphaned (Holiday has no owner) — delete it.
+            // Detaching leaves the row orphaned (Holiday has no owner) - delete it.
             let _ = holiday_commands::remove_holiday(&self.app_ctx, self.stack(), &holiday_id);
         }
 
@@ -342,14 +342,14 @@ mod imp {
                 .find(|p| p.book_item == Some(self.book_item_id))
         }
 
-        /// The id of this Book's Pace *if one already exists* — never creates.
+        /// The id of this Book's Pace *if one already exists* - never creates.
         fn existing_pace_id(&self) -> Option<u64> {
             self.find_pace().map(|p| p.id)
         }
 
         /// The Pace for this Book, creating one with sensible defaults if none
         /// exists yet. Returns its id. Only [`set_dates`](Self::set_dates) calls
-        /// this — see its doc.
+        /// this - see its doc.
         fn ensure_pace(&self) -> Option<u64> {
             if let Some(p) = self.find_pace() {
                 return Some(p.id);
@@ -376,7 +376,7 @@ mod imp {
         }
 
         /// Read a Pace, apply a scalar edit, write it back. Relationship fields
-        /// (holidays/milestones/book_item) are untouched — `UpdatePaceDto` has
+        /// (holidays/milestones/book_item) are untouched - `UpdatePaceDto` has
         /// only the scalars.
         fn update_scalars(&self, pace_id: u64, edit: impl FnOnce(&mut UpdatePaceDto)) {
             let ctx = &self.app_ctx;
@@ -486,7 +486,7 @@ mod imp {
         }
 
         // `set_dates` creates the Pace (assigns `pace_id`); the others only
-        // refine an existing one — the same contract as the real seam.
+        // refine an existing one - the same contract as the real seam.
         pub fn set_dates(&self, start: NaiveDate, end: NaiveDate) {
             let mut s = self.state.borrow_mut();
             s.pace_id.get_or_insert(1);

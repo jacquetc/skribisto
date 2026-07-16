@@ -3,7 +3,7 @@
 //! `jiff::civil::Date` (a calendar day, no time-of-day).
 //!
 //! Convention: a Pace date is semantically a *calendar day*, but the entity layer stores a
-//! full moment, so [`from_jiff_date`] normalises to **midnight UTC** — round-tripping a day
+//! full moment, so [`from_jiff_date`] normalises to **midnight UTC** - round-tripping a day
 //! through the entity layer is then lossless for the day part. Conversions to jiff are
 //! fallible (`jiff` years are `i16`); a corrupt out-of-range date reads as `None` (treated
 //! as "no date"), never a panic.
@@ -37,7 +37,7 @@ pub fn from_jiff_date_opt(d: Option<Date>) -> Option<DateTime<Utc>> {
 
 /// A `chrono::NaiveDate` → a jiff calendar date. `None` if the year is outside
 /// jiff's `i16` range. (The Pace view-model speaks `NaiveDate`; the date widgets
-/// speak jiff — this is the direct day-to-day bridge, no datetime hop.)
+/// speak jiff - this is the direct day-to-day bridge, no datetime hop.)
 pub fn naive_to_jiff(nd: NaiveDate) -> Option<Date> {
     let year = i16::try_from(nd.year()).ok()?;
     Date::new(year, nd.month() as i8, nd.day() as i8).ok()
@@ -47,7 +47,7 @@ pub fn naive_to_jiff_opt(nd: Option<NaiveDate>) -> Option<Date> {
     nd.and_then(naive_to_jiff)
 }
 
-/// A jiff calendar date → a `chrono::NaiveDate` (always valid — a jiff `Date` is
+/// A jiff calendar date → a `chrono::NaiveDate` (always valid - a jiff `Date` is
 /// a valid Gregorian day).
 pub fn jiff_to_naive(d: Date) -> NaiveDate {
     NaiveDate::from_ymd_opt(d.year() as i32, d.month() as u32, d.day() as u32)

@@ -1,11 +1,11 @@
-//! The Book's writing **Pace** — deadline + schedule + progress statistics.
+//! The Book's writing **Pace** - deadline + schedule + progress statistics.
 //!
 //! Per the house rules the arithmetic decisions live in the pure, date-injected
 //! functions at the top (unit-tested, no `Signal`s, no backend); the view-model
 //! below is the thin reactive shell that mirrors a [`PaceModel`] into `Signal`s,
 //! refreshes on the matching backend events, and exposes the statistics by
 //! calling the pure functions with the current values. It exists only for a
-//! **Book** container — `PaceViewModel::new` returns `None` otherwise, gated on
+//! **Book** container - `PaceViewModel::new` returns `None` otherwise, gated on
 //! the same [`StreamLevel::for_container`] the stream and the tab use.
 //!
 //! "Current words" is the last recorded `ProgressSnapshot`'s per-book count, not
@@ -28,14 +28,14 @@ use crate::models::{DailyCount, HolidayRow, MilestoneRow, PaceModel, StreamLevel
 // ─────────────────────────── pure stats core ───────────────────────────────
 
 /// Words actually written on a day = the rise in the cumulative count since the
-/// previously recorded day (never negative — a shrink counts as zero written).
+/// previously recorded day (never negative - a shrink counts as zero written).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DailyDelta {
     pub date: NaiveDate,
     pub words_written: i64,
 }
 
-/// A holiday span, inclusive of both ends — writing is not scheduled inside it.
+/// A holiday span, inclusive of both ends - writing is not scheduled inside it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HolidayRange {
     pub start: NaiveDate,
@@ -60,8 +60,8 @@ pub fn daily_deltas(history: &[DailyCount]) -> Vec<DailyDelta> {
 /// The current writing streak: consecutive calendar days ending at `today` on
 /// which the writer actually wrote (a delta with `words_written > 0`).
 ///
-/// A calendar gap — no snapshot that day (a weekend, or the app was not opened)
-/// — breaks the streak exactly like a zero-word day: the streak is "did you
+/// A calendar gap - no snapshot that day (a weekend, or the app was not opened)
+/// - breaks the streak exactly like a zero-word day: the streak is "did you
 /// write", not "were you scheduled to".
 pub fn streak(deltas: &[DailyDelta], today: NaiveDate) -> u32 {
     let mut count = 0;
@@ -77,7 +77,7 @@ pub fn streak(deltas: &[DailyDelta], today: NaiveDate) -> u32 {
     count
 }
 
-/// Is `date` a scheduled writing day — its weekday is in the mask and it is not
+/// Is `date` a scheduled writing day - its weekday is in the mask and it is not
 /// inside any holiday? Bit convention: Mon = 1, Tue = 2, Wed = 4, Thu = 8,
 /// Fri = 16, Sat = 32, Sun = 64.
 pub fn is_scheduled_day(date: NaiveDate, weekday_mask: i64, holidays: &[HolidayRange]) -> bool {
@@ -111,7 +111,7 @@ pub fn writing_days_in_range(
     n
 }
 
-/// Scheduled writing days remaining from `today` to `end` inclusive — `today`
+/// Scheduled writing days remaining from `today` to `end` inclusive - `today`
 /// itself counts if scheduled; 0 once `today > end`.
 pub fn writing_days_left(
     today: NaiveDate,
@@ -122,7 +122,7 @@ pub fn writing_days_left(
     writing_days_in_range(today, end, weekday_mask, holidays)
 }
 
-/// Words that *should* be done by the start of `today` to stay on an even pace —
+/// Words that *should* be done by the start of `today` to stay on an even pace -
 /// `goal` spread across every scheduled day in `[start, end]`, times the days
 /// already elapsed (`[start, today - 1]`, i.e. "by end of yesterday"; today's own
 /// quota is not due yet). Clamped to `[0, goal]`.
@@ -154,7 +154,7 @@ pub fn ahead_behind(actual_words: i64, expected_words: i64) -> i64 {
 /// The ideal cumulative word count *by the end of* `date` on an even pace: the
 /// goal spread over every scheduled day in `[start, end]`, times the scheduled
 /// days elapsed through `date` inclusive. Clamped to `[0, goal]`. This is the
-/// target line the progression chart plots against the actual cumulative — note
+/// target line the progression chart plots against the actual cumulative - note
 /// it counts `date` itself (a target *line*), unlike [`expected_words_by`] which
 /// stops at yesterday (words *due* so far).
 pub fn target_cumulative(
@@ -204,7 +204,7 @@ pub fn effective_start(today: NaiveDate, plan_start: Option<NaiveDate>) -> Naive
 
 struct Inner {
     model: PaceModel,
-    /// This Book's item id — used to ignore `BinderItem(Updated)` events for
+    /// This Book's item id - used to ignore `BinderItem(Updated)` events for
     /// *other* items (only this Book's own goal edit is relevant).
     book_item_id: u64,
     pace_id: Signal<Option<u64>>,
@@ -216,17 +216,17 @@ struct Inner {
     holidays: Signal<Vec<HolidayRow>>,
     milestones: Signal<Vec<MilestoneRow>>,
     history: Signal<Vec<DailyCount>>,
-    /// The last recorded cumulative Book word count — cached from `history` on
+    /// The last recorded cumulative Book word count - cached from `history` on
     /// each reload so the hot stats accessors read one `i64` instead of cloning
     /// the whole history `Vec` on every call.
     current_words: Signal<i64>,
-    /// Bumped on every reload — a single "something changed" trigger the pane's
+    /// Bumped on every reload - a single "something changed" trigger the pane's
     /// derived stat text binds to, so the statistics (which combine several
     /// signals plus `today`) recompute on any change without zipping them all.
     version: Signal<u64>,
 }
 
-/// The Book's writing-plan view-model — a cloneable handle over one `PaceModel`.
+/// The Book's writing-plan view-model - a cloneable handle over one `PaceModel`.
 #[derive(Clone)]
 pub struct PaceViewModel {
     inner: Rc<Inner>,
@@ -235,7 +235,7 @@ pub struct PaceViewModel {
 // Not every affordance has a caller until the Pace pane (M4c) is built out.
 #[allow(dead_code)]
 impl PaceViewModel {
-    /// A Pace view-model for this container, or `None` unless it is a Book — the
+    /// A Pace view-model for this container, or `None` unless it is a Book - the
     /// gate is [`StreamLevel::for_container`], the same one the tab and stream use.
     pub fn new(
         app_ctx: Rc<AppContext>,
@@ -316,7 +316,7 @@ impl PaceViewModel {
     }
 
     /// Pull a fresh `PaceState` and push
-    /// each field into its `Signal` — only when it changed, to avoid needless
+    /// each field into its `Signal` - only when it changed, to avoid needless
     /// repaints on an unrelated event.
     fn reload(&self) {
         let s = self.inner.model.load();
@@ -371,9 +371,9 @@ impl PaceViewModel {
         self.inner.history.clone()
     }
 
-    // ── derived statistics (inject `today` — the pane passes the real date) ──
+    // ── derived statistics (inject `today` - the pane passes the real date) ──
 
-    /// The last recorded cumulative Book word count (0 with no history) — read
+    /// The last recorded cumulative Book word count (0 with no history) - read
     /// from the cached `Signal`, not by re-scanning `history`.
     pub fn current_words(&self) -> i64 {
         self.inner.current_words.get()
@@ -388,7 +388,7 @@ impl PaceViewModel {
     }
 
     /// Scheduled writing days remaining to the deadline. Counts from the later of
-    /// `today` and the plan's `start` — a schedule that has not begun yet
+    /// `today` and the plan's `start` - a schedule that has not begun yet
     /// (`today < start`) must not count the days before it started as "left".
     pub fn writing_days_left(&self, today: NaiveDate) -> u32 {
         let Some(end) = self.inner.end.get() else {
@@ -399,7 +399,7 @@ impl PaceViewModel {
     }
 
     /// The daily rate needed to hit the goal by the deadline, or `None` when no
-    /// goal is set — mirroring [`percent_done`](Self::percent_done) and
+    /// goal is set - mirroring [`percent_done`](Self::percent_done) and
     /// [`ahead_behind`](Self::ahead_behind) rather than reporting a spurious `0`.
     pub fn words_per_writing_day(&self, today: NaiveDate) -> Option<i64> {
         let goal = self.inner.goal_words.get();
@@ -430,14 +430,14 @@ impl PaceViewModel {
         Some(ahead_behind(self.current_words(), expected))
     }
 
-    /// The recorded cumulative Book word count per day — the progression chart's
+    /// The recorded cumulative Book word count per day - the progression chart's
     /// "actual" line, ascending by date.
     pub fn actual_series(&self) -> Vec<(NaiveDate, i64)> {
         self.inner.history.get().iter().map(|d| (d.date, d.words)).collect()
     }
 
     /// Words actually written each day (the rise since the previous recorded day)
-    /// — the words-per-day bar chart. Drops the first (baseline) day.
+    /// - the words-per-day bar chart. Drops the first (baseline) day.
     pub fn words_per_day(&self) -> Vec<(NaiveDate, i64)> {
         daily_deltas(&self.inner.history.get())
             .into_iter()
@@ -445,7 +445,7 @@ impl PaceViewModel {
             .collect()
     }
 
-    /// The ideal cumulative words by `date` on an even pace — the progression
+    /// The ideal cumulative words by `date` on an even pace - the progression
     /// chart's target line. `None` until a start, end, and goal are all set.
     pub fn target_for(&self, date: NaiveDate) -> Option<i64> {
         let start = self.inner.start.get()?;
@@ -512,7 +512,7 @@ impl PaceViewModel {
     }
 }
 
-/// Set a `Signal` only if its value actually changed — avoids repaint churn when
+/// Set a `Signal` only if its value actually changed - avoids repaint churn when
 /// an unrelated backend event triggers a reload.
 fn set_changed<T: Clone + PartialEq + 'static>(sig: &Signal<T>, v: T) {
     if sig.get() != v {

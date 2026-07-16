@@ -1,17 +1,17 @@
-//! `ProgressRecorder` — the app-level cadence that keeps the `ProgressSnapshot`
+//! `ProgressRecorder` - the app-level cadence that keeps the `ProgressSnapshot`
 //! history current, feeding the Book's Pace charts.
 //!
 //! It is *not* a view-model (no view); like [`super::save_queue`] it is a small
 //! orchestration service wired once in `App::build`. On each `save_work` it fires
 //! the read-only `count_words` long operation (throttled, and never overlapping
 //! itself), and when that operation completes it records one `ProgressSnapshot`
-//! for today — upserted by day, so many saves in a day just refresh today's row.
+//! for today - upserted by day, so many saves in a day just refresh today's row.
 //!
 //! Triggering only on `SaveWork` (never directly on `LoadWork`/`NewWork`) means
 //! the recount always runs *after* the project's ids are seeded, so the
 //! session-guard id it captures is correct; a brand-new project's baseline is
 //! covered by the `save_to_disk` that `NewWork` issues, and a loaded project that
-//! is merely read (never saved) correctly gets no new point — its historical
+//! is merely read (never saved) correctly gets no new point - its historical
 //! snapshots are already in the store from `load_work`.
 
 use std::cell::{Cell, RefCell};
@@ -29,7 +29,7 @@ use crate::app_ids::AppIds;
 
 use super::long_op::event_id;
 
-/// Don't recount more than once per minute on the save path — autosave fires
+/// Don't recount more than once per minute on the save path - autosave fires
 /// every few seconds, and today's snapshot only needs to be roughly current.
 const THROTTLE: Duration = Duration::from_secs(60);
 
@@ -38,7 +38,7 @@ struct Inner {
     ids: AppIds,
     /// The in-flight `count_words` operation id, if one is running.
     active: RefCell<Option<String>>,
-    /// The `WorkInfo` id captured when the count was fired — the completion only
+    /// The `WorkInfo` id captured when the count was fired - the completion only
     /// records if the same project is still open (a close/switch mid-count must
     /// not land project A's total on project B).
     fired_for: Cell<Option<u64>>,
@@ -65,7 +65,7 @@ impl ProgressRecorder {
         }
     }
 
-    /// Recount now, unconditionally — for an explicit "refresh" affordance
+    /// Recount now, unconditionally - for an explicit "refresh" affordance
     /// (wired by the Pace pane in M4c).
     #[allow(dead_code)]
     pub fn recount(&self) {
@@ -99,7 +99,7 @@ impl ProgressRecorder {
         }
     }
 
-    /// A long operation completed — if it is our in-flight `count_words`, record
+    /// A long operation completed - if it is our in-flight `count_words`, record
     /// today's snapshot. Ignores every other long op (save / import / export /
     /// backup) by matching the operation id.
     pub fn on_completed(&self, event: &Event) {
@@ -131,7 +131,7 @@ impl ProgressRecorder {
         let _ = progress_management_commands::record_progress_snapshot(&self.inner.app_ctx, &dto);
     }
 
-    /// A long operation failed or was cancelled — clear our in-flight marker if
+    /// A long operation failed or was cancelled - clear our in-flight marker if
     /// it was ours, so the next save can recount again.
     pub fn on_failed_or_cancelled(&self, event: &Event) {
         let _ = self.take_if_ours(event);

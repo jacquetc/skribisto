@@ -1,4 +1,4 @@
-//! The Book's **Pace** segment — the writing-schedule planner.
+//! The Book's **Pace** segment - the writing-schedule planner.
 //!
 //! Only the Book container shows it (see `folder_book`): the writer sets a
 //! word-count goal and a deadline, picks which weekdays count, and Skribisto
@@ -12,10 +12,11 @@
 use bastyde::core::BindingLevel;
 use bastyde::data::{ChartModel, ChartSeries};
 use bastyde::prelude::*;
-use bastyde::tokens::CornerRadius;
+use bastyde::tokens::{CornerRadius, FontWeight, TextStyle};
 use bastyde::widgets::{
-    Button, Center, DateEdit, Expand, FixedSize, FormLayout, HStack, IconButton, RectWidget,
-    ScrollArea, SpinBox, StepType, Switcher, TextInput, TextWidget, Toggle, VStack, Wrap, ZStack,
+    Button, Center, DateEdit, DateRange, DateRangeEdit, Expand, FixedSize, FormLayout, HStack,
+    IconButton, MasonryLayout, Padding, Panel, RectWidget, ScrollArea, SpinBox, StepType, Switcher,
+    TextInput, TextWidget, Toggle, VStack, Wrap, ZStack,
 };
 use bastyde_charts::{BarChart, LineChart};
 
@@ -28,7 +29,7 @@ use crate::view_models::PaceViewModel;
 
 use super::{centered, tab_backdrop, vspace};
 
-/// (bit, ftl label) for the seven weekday chips. Mon = 1, … Sun = 64 — the mask
+/// (bit, ftl label) for the seven weekday chips. Mon = 1, … Sun = 64 - the mask
 /// convention `is_scheduled_day` uses.
 fn weekdays() -> [(i64, LocalizedString); 7] {
     [
@@ -45,12 +46,15 @@ fn weekdays() -> [(i64, LocalizedString); 7] {
 pub fn pace_pane(tab: &ContentTab) -> Box<dyn Widget> {
     let Some(vm) = tab.pace().cloned() else {
         // Only a Book has a Pace view-model; the segment is Book-only, so this is
-        // unreachable — fall back to the shell text rather than panic.
+        // unreachable - fall back to the shell text rather than panic.
         return Box::new(
             Center::new().child(TextWidget::new(tr!(pace_placeholder())).color(TextRole::Secondary)),
         );
     };
-    let cw = tab.column_width.clone();
+    // The Pace pane is a stats dashboard, not a prose column, so it uses a wider
+    // sensible max width than the reading-column width (which the form + charts +
+    // stat-card masonry all read for their layout).
+    let cw = Signal::new(880.0);
 
     // Local mirror signals for the two-way-bound fields, seeded from the VM and
     // kept in sync by `PaceWire` (external edits) / written back to the VM by it.
@@ -79,7 +83,7 @@ pub fn pace_pane(tab: &ContentTab) -> Box<dyn Widget> {
     tab_backdrop(ScrollArea::new().child(centered(body, &cw)))
 }
 
-/// A section heading — normal case (never all-caps, per house style), spaced above.
+/// A section heading - normal case (never all-caps, per house style), spaced above.
 fn section(label: LocalizedString) -> impl Widget {
     VStack::new()
         .child(vspace(6.0))
@@ -91,7 +95,7 @@ fn section(label: LocalizedString) -> impl Widget {
         .child(vspace(2.0))
 }
 
-/// The "no schedule yet" state — an invitation to create one. `Start planning`
+/// The "no schedule yet" state - an invitation to create one. `Start planning`
 /// sets a default 90-day deadline, which lazily creates the Pace.
 fn empty_state(vm: &PaceViewModel) -> impl Widget {
     let vm = vm.clone();
@@ -140,18 +144,21 @@ fn planner(
         .full_width(WeekdayChips::new(vm.clone()))
         .full_width(Toggle::new(active_local.clone()).label(tr!(pace_active())));
 
+    // The stat masonry, charts and editors are wrapped in `Expand::horizontal`
+    // so they claim the full available width, pulling the column out to fill the
+    // pane rather than hugging the widest fixed element (the weekday chip row).
     VStack::new()
         .spacing(6.0)
         .child(section(tr!(pace_section_schedule())))
         .child(schedule)
         .child(section(tr!(pace_section_progress())))
-        .child(PaceStats::new(vm.clone(), today))
+        .child(Expand::horizontal().child(StatCards::new(vm.clone(), today)))
         .child(vspace(10.0))
-        .child(PaceCharts::new(vm.clone()))
+        .child(Expand::horizontal().child(PaceCharts::new(vm.clone())))
         .child(section(tr!(pace_section_holidays())))
-        .child(HolidayEditor::new(vm.clone()))
+        .child(Expand::horizontal().child(HolidayEditor::new(vm.clone())))
         .child(section(tr!(pace_section_milestones())))
-        .child(MilestoneList::new(vm.clone()))
+        .child(Expand::horizontal().child(MilestoneList::new(vm.clone())))
 }
 
 /// A short, locale-neutral day label for a chart category (`7/16`).
@@ -159,7 +166,7 @@ fn day_label(date: NaiveDate) -> String {
     format!("{}/{}", date.month(), date.day())
 }
 
-/// A form-row label — small, secondary, single line (matches the settings panes).
+/// A form-row label - small, secondary, single line (matches the settings panes).
 fn field_label(label: LocalizedString) -> impl Widget {
     FixedSize::new().width(120.0).child(
         TextWidget::new(label)
@@ -173,7 +180,7 @@ fn field_label(label: LocalizedString) -> impl Widget {
 
 /// Zero-size child that, on build, wires the view-model (its event subscriptions)
 /// and registers the effects syncing the local field mirrors with the view-model
-/// — the one place in the pane's tree that has a `BuildContext`.
+/// - the one place in the pane's tree that has a `BuildContext`.
 struct PaceWire {
     vm: PaceViewModel,
     goal_local: Signal<i64>,
@@ -432,15 +439,14 @@ fn holiday_span(start: NaiveDate, end: NaiveDate) -> String {
 
 // ── HolidayEditor: list of paused spans + an add row ────────────────────────
 
-/// The Book's holidays — spans excluded from the schedule. A version-bound list
+/// The Book's holidays - spans excluded from the schedule. A version-bound list
 /// (each row removable) plus an add row (label + start + optional end). Mirrors
 /// the settings `DestinationsEditor` pattern; the add-row inputs are widget
 /// fields, so they persist across the list's rebuilds.
 struct HolidayEditor {
     vm: PaceViewModel,
     label: Signal<String>,
-    start: Signal<Option<Date>>,
-    end: Signal<Option<Date>>,
+    range: Signal<Option<DateRange>>,
     root: Option<WidgetId>,
 }
 
@@ -449,8 +455,7 @@ impl HolidayEditor {
         Self {
             vm,
             label: Signal::new(String::new()),
-            start: Signal::new(None),
-            end: Signal::new(None),
+            range: Signal::new(None),
             root: None,
         }
     }
@@ -500,24 +505,25 @@ impl Widget for HolidayEditor {
             col = col.child(row);
         }
 
-        // Add row: label + start (required) + optional end.
+        // Add row: a name and a single date-range control (start plus optional
+        // end, one popover) rather than two separate date pickers.
         let add = {
             let vm = self.vm.clone();
             let label = self.label.clone();
-            let start = self.start.clone();
-            let end = self.end.clone();
+            let range = self.range.clone();
             Button::new(tr!(pace_add_holiday())).on_activate_fn(move |_c| {
                 let text = label.get();
                 if text.trim().is_empty() {
                     return;
                 }
-                let Some(s) = start.get() else {
+                let Some(r) = range.get() else {
                     return;
                 };
-                vm.add_holiday(text, jiff_to_naive(s), end.get().map(jiff_to_naive));
+                // A DateRange carries both ends; a single-day holiday is start == end.
+                let end = if r.end == r.start { None } else { Some(jiff_to_naive(r.end)) };
+                vm.add_holiday(text, jiff_to_naive(r.start), end);
                 label.set(String::new());
-                start.set(None);
-                end.set(None);
+                range.set(None);
             })
         };
         let add_row = HStack::new()
@@ -526,8 +532,7 @@ impl Widget for HolidayEditor {
                 Expand::horizontal()
                     .child(TextInput::new(self.label.clone()).placeholder(tr!(pace_holiday_label()))),
             )
-            .child(FixedSize::new().width(130.0).child(DateEdit::new(self.start.clone())))
-            .child(FixedSize::new().width(130.0).child(DateEdit::new(self.end.clone())))
+            .child(FixedSize::new().width(220.0).child(DateRangeEdit::new(self.range.clone())))
             .child(add);
         col = col.child(vspace(4.0)).child(add_row);
 
@@ -613,100 +618,153 @@ impl Widget for MilestoneList {
     }
 }
 
-// ── PaceStats: the reactive statistics readout ──────────────────────────────
+// ── StatCards: the statistics as a responsive masonry of cards ──────────────
 
-/// The derived statistics. A composing widget bound to the view-model's `version`
-/// at `Rebuild`, so the localized readout recomputes on any change (an edit, or a
-/// freshly recorded snapshot). `today` is captured at build — it only matters
-/// across a midnight roll-over, which a rebuild resolves.
-struct PaceStats {
+/// A thousands-separated integer (`12,345`).
+fn commafy(n: i64) -> String {
+    let neg = n < 0;
+    let digits = n.unsigned_abs().to_string();
+    let bytes = digits.as_bytes();
+    let mut out = String::new();
+    for (i, b) in bytes.iter().enumerate() {
+        if i > 0 && (bytes.len() - i) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(*b as char);
+    }
+    if neg { format!("-{out}") } else { out }
+}
+
+/// One stat card: a big number over a small caption, inside a Panel.
+fn stat_card(
+    big: &TextStyle,
+    number: String,
+    caption: LocalizedString,
+    number_color: TextRole,
+) -> impl Widget {
+    Panel::new().child(
+        Padding::uniform(14.0).child(
+            VStack::new()
+                .spacing(2.0)
+                .child(
+                    TextWidget::new(lit!(number))
+                        .style(big.clone())
+                        .color(number_color)
+                        .single_line(),
+                )
+                .child(
+                    TextWidget::new(caption)
+                        .style(TextStyleRole::Small)
+                        .color(TextRole::Secondary),
+                ),
+        ),
+    )
+}
+
+/// The derived statistics, laid out as a responsive [`MasonryLayout`] of cards.
+/// Rebuilt on the view-model's `version` (a data change) and on the column count
+/// (a width change). bastyde's masonry takes a fixed column count, so the count
+/// is derived from the measured width in [`layout_response`](Self::layout_response),
+/// which packs the varying-height cards efficiently.
+struct StatCards {
     vm: PaceViewModel,
     today: NaiveDate,
+    cols: Signal<usize>,
     root: Option<WidgetId>,
 }
 
-impl PaceStats {
+impl StatCards {
     fn new(vm: PaceViewModel, today: NaiveDate) -> Self {
-        Self { vm, today, root: None }
+        Self { vm, today, cols: Signal::new(2), root: None }
     }
 
-    fn line(text: LocalizedString, dim: bool) -> impl Widget {
-        TextWidget::new(text).color(if dim { TextRole::Secondary } else { TextRole::Primary })
+    /// How many card columns a given width affords (each card stays readable down
+    /// to ~165px, so a narrow split pane still shows two).
+    fn columns_for(width: f32) -> usize {
+        ((width / 175.0).floor() as usize).clamp(1, 4)
     }
 }
 
-impl std::fmt::Debug for PaceStats {
+impl std::fmt::Debug for StatCards {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PaceStats").finish()
+        f.debug_struct("StatCards").finish()
     }
 }
 
-impl Widget for PaceStats {
+impl Widget for StatCards {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.vm
-            .version()
-            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        let sid = ctx.self_id();
+        let reg = ctx.binding_registry();
+        self.vm.version().bind_to(sid, reg, BindingLevel::Rebuild);
+        self.cols.bind_to(sid, reg, BindingLevel::Rebuild);
+
+        // A big, bold number style derived from the theme's body style.
+        let big = TextStyle {
+            size: 24.0,
+            weight: FontWeight::BOLD,
+            ..ctx.theme().typography.body_bold.clone()
+        };
         let vm = &self.vm;
         let today = self.today;
 
-        // Progress toward the goal.
-        let progress = match vm.percent_done() {
-            Some(_) => Self::line(
-                tr!(pace_stat_words(
-                    current = vm.current_words(),
-                    goal = vm.goal_words().get()
-                )),
-                false,
-            ),
-            None => Self::line(tr!(pace_stat_no_goal()), true),
-        };
-        let pct = vm
-            .percent_done()
-            .map(|p| Self::line(tr!(pace_stat_percent(pct = (p * 100.0).round() as i64)), true));
+        let mut m = MasonryLayout::new(self.cols.get().max(1))
+            .column_spacing(10.0)
+            .item_spacing(10.0);
 
-        // Streak.
-        let streak = match vm.streak(today) {
-            0 => Self::line(tr!(pace_stat_streak_none()), true),
-            n => Self::line(tr!(pace_stat_streak(days = n as i64)), false),
-        };
-
-        // Deadline-derived: days left, needed rate, ahead/behind.
-        let (days_left, rate, delta) = if vm.end().get().is_some() {
-            let dl = vm.writing_days_left(today);
-            let rate = match vm.words_per_writing_day(today) {
-                Some(r) => Self::line(tr!(pace_stat_rate(words = r)), false),
-                None => Self::line(tr!(pace_stat_no_goal()), true),
-            };
-            let delta = match vm.ahead_behind(today) {
-                Some(d) if d > 0 => Self::line(tr!(pace_stat_ahead(words = d)), false),
-                Some(d) if d < 0 => Self::line(tr!(pace_stat_behind(words = -d)), false),
-                Some(_) => Self::line(tr!(pace_stat_on_track()), false),
-                None => Self::line(tr!(pace_stat_no_goal()), true),
-            };
-            (
-                Self::line(tr!(pace_stat_days_left(days = dl as i64)), false),
-                rate,
-                delta,
-            )
-        } else {
-            (
-                Self::line(tr!(pace_stat_no_deadline()), true),
-                Self::line(tr!(pace_stat_no_deadline()), true),
-                Self::line(tr!(pace_stat_no_deadline()), true),
-            )
-        };
-
-        let mut col = VStack::new().spacing(4.0).child(progress);
-        if let Some(pct) = pct {
-            col = col.child(pct);
+        m = m.child(stat_card(
+            &big,
+            commafy(vm.current_words()),
+            tr!(pace_card_written()),
+            TextRole::Accent,
+        ));
+        if let Some(p) = vm.percent_done() {
+            m = m.child(stat_card(
+                &big,
+                format!("{}%", (p * 100.0).round() as i64),
+                tr!(pace_card_of_goal()),
+                TextRole::Accent,
+            ));
         }
-        col = col.child(streak).child(days_left).child(rate).child(delta);
+        if let Some(r) = vm.words_per_writing_day(today) {
+            m = m.child(stat_card(&big, commafy(r), tr!(pace_card_rate()), TextRole::Accent));
+        }
+        if vm.end().get().is_some() {
+            m = m.child(stat_card(
+                &big,
+                vm.writing_days_left(today).to_string(),
+                tr!(pace_card_days_left()),
+                TextRole::Accent,
+            ));
+        }
+        m = m.child(stat_card(
+            &big,
+            vm.streak(today).to_string(),
+            tr!(pace_card_streak()),
+            TextRole::Accent,
+        ));
+        if let Some(d) = vm.ahead_behind(today) {
+            let (num, caption, color) = if d >= 0 {
+                (commafy(d), tr!(pace_card_ahead()), TextRole::Success)
+            } else {
+                (commafy(-d), tr!(pace_card_behind()), TextRole::Warning)
+            };
+            m = m.child(stat_card(&big, num, caption, color));
+        }
 
-        self.root = Some(ctx.add(col));
+        self.root = Some(ctx.add(m));
         self.root.into_iter().collect()
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        // Derive the column count from the available width; a change re-runs
+        // build (bound above) on the next frame. The masonry fills whatever
+        // width it is given regardless of the count, so this cannot oscillate.
+        if let Some(w) = proposal.width {
+            let want = Self::columns_for(w);
+            if self.cols.get() != want {
+                self.cols.set(want);
+            }
+        }
         self.root
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)
