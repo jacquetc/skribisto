@@ -197,6 +197,10 @@ struct Inner {
     /// each reload so the hot stats accessors read one `i64` instead of cloning
     /// the whole history `Vec` on every call.
     current_words: Signal<i64>,
+    /// Bumped on every reload — a single "something changed" trigger the pane's
+    /// derived stat text binds to, so the statistics (which combine several
+    /// signals plus `today`) recompute on any change without zipping them all.
+    version: Signal<u64>,
 }
 
 /// The Book's writing-plan view-model — a cloneable handle over one `PaceModel`.
@@ -237,6 +241,7 @@ impl PaceViewModel {
                 milestones: Signal::new(Vec::new()),
                 history: Signal::new(Vec::new()),
                 current_words: Signal::new(0),
+                version: Signal::new(0),
             }),
         };
         vm.reload();
@@ -303,6 +308,14 @@ impl PaceViewModel {
         set_changed(&self.inner.milestones, s.milestones);
         set_changed(&self.inner.history, s.history);
         set_changed(&self.inner.current_words, current);
+        let v = &self.inner.version;
+        v.set(v.get().wrapping_add(1));
+    }
+
+    /// Bumped on every reload; the pane binds derived stat text to it so the
+    /// statistics recompute on any change.
+    pub fn version(&self) -> Signal<u64> {
+        self.inner.version.clone()
     }
 
     // ── reactive reads (bind these) ──

@@ -242,11 +242,11 @@ else:
         print("  'Pace' segment present on the Book ✓")
         if not click("Pace", "(segment)", minx=PANE_X):
             failures.append("Book One: 'Pace' segment did not click")
-        elif not text_present("Pace planner"):
+        elif not (text_present("Word goal") or text_present("Schedule")):
             shot("pace-book-pane-empty")
-            failures.append("Book One/Pace: the placeholder pane did not render")
+            failures.append("Book One/Pace: the planner did not render (no schedule form)")
         else:
-            print("  Pace pane renders (placeholder present) ✓")
+            print("  Pace planner renders (schedule form present) ✓")
             shot("pace-book-pane")
 
 # ── 2. A Chapter and a Part must NOT expose a Pace segment ──────────────────────

@@ -35,6 +35,25 @@ pub fn from_jiff_date_opt(d: Option<Date>) -> Option<DateTime<Utc>> {
     d.map(from_jiff_date)
 }
 
+/// A `chrono::NaiveDate` → a jiff calendar date. `None` if the year is outside
+/// jiff's `i16` range. (The Pace view-model speaks `NaiveDate`; the date widgets
+/// speak jiff — this is the direct day-to-day bridge, no datetime hop.)
+pub fn naive_to_jiff(nd: NaiveDate) -> Option<Date> {
+    let year = i16::try_from(nd.year()).ok()?;
+    Date::new(year, nd.month() as i8, nd.day() as i8).ok()
+}
+
+pub fn naive_to_jiff_opt(nd: Option<NaiveDate>) -> Option<Date> {
+    nd.and_then(naive_to_jiff)
+}
+
+/// A jiff calendar date → a `chrono::NaiveDate` (always valid — a jiff `Date` is
+/// a valid Gregorian day).
+pub fn jiff_to_naive(d: Date) -> NaiveDate {
+    NaiveDate::from_ymd_opt(d.year() as i32, d.month() as u32, d.day() as u32)
+        .expect("a jiff Date is a valid Gregorian day")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -67,5 +86,15 @@ mod tests {
     fn out_of_range_year_is_none_not_a_panic() {
         // jiff years are i16; a corrupt far-future date can't convert.
         assert_eq!(to_jiff_date(utc(40000, 1, 1, 0, 0)), None);
+    }
+
+    #[test]
+    fn naive_jiff_round_trip() {
+        let nd = NaiveDate::from_ymd_opt(2026, 7, 16).unwrap();
+        let jd = naive_to_jiff(nd).unwrap();
+        assert_eq!((jd.year(), jd.month(), jd.day()), (2026, 7, 16));
+        assert_eq!(jiff_to_naive(jd), nd);
+        assert_eq!(naive_to_jiff_opt(None), None);
+        assert_eq!(naive_to_jiff(NaiveDate::from_ymd_opt(40000, 1, 1).unwrap()), None);
     }
 }
