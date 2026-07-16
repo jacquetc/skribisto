@@ -16,10 +16,13 @@ use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole};
 use skrib_format::Gathered;
 use skribisto_model::SubRoleExt;
 use skribisto_model::language;
-use text_document::{TextDirection, TextDocument};
+use text_document::{DocxExportOptions, TextDirection, TextDocument};
 
 use crate::headings::{self, Level};
-use crate::preset::{DirectionMode, ExportFormat, HeadingLanguage, HeadingScheme, Preset, SceneBreak};
+use crate::preset::{
+    DirectionMode, ExportFormat, HeadingLanguage, HeadingScheme, LineSpacing, PageSize, Preset,
+    SceneBreak,
+};
 
 /// Everything a render needs: the frozen tree, the ordered ids to include, the style, the
 /// format, and the Work's fallback language.
@@ -96,7 +99,8 @@ pub fn render_to_file(
         }
         ExportFormat::Docx => {
             let out = path.to_string_lossy().into_owned();
-            doc.to_docx(&out)?
+            let opts = docx_options(req.preset, &req.gathered.work.title, &req.gathered.work.author_name);
+            doc.to_docx_with_options(&out, opts)?
                 .wait()
                 .map_err(|e| anyhow!("writing DOCX '{out}': {e:#}"))?;
         }
@@ -104,6 +108,60 @@ pub fn render_to_file(
     }
     progress(1.0);
     Ok(stats)
+}
+
+/// One inch in twips (DOCX's twentieth-of-a-point length unit).
+const TWIPS_PER_IN: f32 = 1440.0;
+
+/// Map a [`Preset`] onto DOCX page geometry + base typography (all in DOCX units), plus a
+/// manuscript running header from the Work's author + title. Only DOCX (and later PDF) honour
+/// these; the free text formats ignore them. This is where the manuscript presets become
+/// *effective* — page size, margins, font, double-spacing, first-line indent, ragged/justified
+/// alignment, and page-numbered header all flow from here; per-block RTL is emitted by the
+/// exporter itself from each block's direction, so it needs no option.
+fn docx_options(preset: &Preset, work_title: &str, work_author: &str) -> DocxExportOptions {
+    let (page_w, page_h) = match preset.page_size {
+        // Twips = inch × 1440. A4 = 210×297 mm, A5 = 148×210 mm, US Letter = 8.5×11 in.
+        PageSize::A4 => (11906u32, 16838u32),
+        PageSize::Letter => (12240, 15840),
+        PageSize::A5 => (8391, 11906),
+    };
+    let m = &preset.margin;
+    let in_to_twips = |i: f32| (i * TWIPS_PER_IN).round() as i32;
+    DocxExportOptions {
+        page_width_twips: Some(page_w),
+        page_height_twips: Some(page_h),
+        margin_top_twips: Some(in_to_twips(m.top_in)),
+        margin_bottom_twips: Some(in_to_twips(m.bottom_in)),
+        margin_left_twips: Some(in_to_twips(m.left_in)),
+        margin_right_twips: Some(in_to_twips(m.right_in)),
+        font_family: (!preset.font_family.trim().is_empty()).then(|| preset.font_family.clone()),
+        font_half_points: Some((preset.font_size_pt * 2.0).round().max(2.0) as usize),
+        line_spacing_twips: Some(match preset.line_spacing {
+            LineSpacing::Single => 240,
+            LineSpacing::OneAndHalf => 360,
+            LineSpacing::Double => 480,
+        }),
+        first_line_indent_twips: (preset.first_line_indent_in > 0.0)
+            .then(|| in_to_twips(preset.first_line_indent_in)),
+        paragraph_spacing_after_twips: (preset.paragraph_spacing_pt > 0.0)
+            .then(|| (preset.paragraph_spacing_pt * 20.0).round() as i32),
+        justify: preset.justify,
+        page_numbers: true,
+        running_header: manuscript_header(work_title, work_author),
+    }
+}
+
+/// The right-aligned running header text — `"Author / TITLE"`, or one side, or `None` when both
+/// are blank (the page number is emitted regardless).
+fn manuscript_header(title: &str, author: &str) -> Option<String> {
+    let (title, author) = (title.trim(), author.trim());
+    match (author.is_empty(), title.is_empty()) {
+        (true, true) => None,
+        (false, true) => Some(author.to_string()),
+        (true, false) => Some(title.to_uppercase()),
+        (false, false) => Some(format!("{author} / {}", title.to_uppercase())),
+    }
 }
 
 fn text_render(doc: &TextDocument, format: ExportFormat) -> Result<String> {
@@ -631,6 +689,26 @@ mod tests {
         p.scene_break = SceneBreak::Glyph("###".to_string());
         let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
         assert!(txt.contains("###"), "scene break glyph between the two scenes: {txt}");
+    }
+
+    #[test]
+    fn docx_options_map_the_manuscript_preset() {
+        // Shunn: Times New Roman 12pt, double-spaced, 0.5" first-line indent, A4, ragged.
+        let p = preset("manuscript-shunn");
+        let o = docx_options(&p, "The Lighthouse", "Mara Vane");
+        assert_eq!(o.font_family.as_deref(), Some("Times New Roman"));
+        assert_eq!(o.font_half_points, Some(24), "12pt → 24 half-points");
+        assert_eq!(o.line_spacing_twips, Some(480), "double spacing");
+        assert_eq!(o.first_line_indent_twips, Some(720), "0.5\" → 720 twips");
+        assert_eq!(o.page_width_twips, Some(11906), "A4 width");
+        assert_eq!(o.margin_left_twips, Some(1440), "1\" margins by default");
+        assert!(!o.justify, "Shunn manuscripts are ragged-right");
+        assert!(o.page_numbers, "manuscript pages are numbered");
+        assert_eq!(
+            o.running_header.as_deref(),
+            Some("Mara Vane / THE LIGHTHOUSE"),
+            "author / TITLE running header"
+        );
     }
 
     #[test]
