@@ -85,6 +85,23 @@ statusbar-save-unsaved = Unsaved changes — click to save
 statusbar-save-saved = All changes saved
 statusbar-save-autosave = Autosave is on — changes are saved as you write
 statusbar-saving = Saving…
+# The focused item's live word count (status bar).
+statusbar-word-count = { $count ->
+    [one] { $count } word
+   *[other] { $count } words
+}
+statusbar-word-count-tooltip = Words in the scene you're editing
+# The writing session (status-bar sprint timer + word tracker).
+session-toggle = Writing session — start or pause a focused sprint
+session-configure = Set the session's word goal and time limit
+session-configure-title = Writing session
+session-word-goal = Word goal
+session-time-limit = Time limit
+session-no-goal = No goal
+session-no-limit = No limit
+session-reset = Reset session
+session-readout = { $words } words · { $time }
+session-readout-timed = { $words } words · { $time } left
 
 ## Settings
 language = Language

@@ -85,6 +85,23 @@ statusbar-save-unsaved = Modifications non enregistrées — cliquez pour enregi
 statusbar-save-saved = Toutes les modifications sont enregistrées
 statusbar-save-autosave = L'enregistrement automatique est activé — les modifications sont enregistrées au fil de l'écriture
 statusbar-saving = Enregistrement…
+# Le nombre de mots en direct de l'élément ciblé (barre d'état).
+statusbar-word-count = { $count ->
+    [one] { $count } mot
+   *[other] { $count } mots
+}
+statusbar-word-count-tooltip = Mots dans la scène en cours d'édition
+# La session d'écriture (minuteur de sprint + compteur de mots, barre d'état).
+session-toggle = Session d'écriture — démarrer ou mettre en pause un sprint
+session-configure = Définir l'objectif de mots et la limite de temps
+session-configure-title = Session d'écriture
+session-word-goal = Objectif de mots
+session-time-limit = Limite de temps
+session-no-goal = Aucun objectif
+session-no-limit = Aucune limite
+session-reset = Réinitialiser la session
+session-readout = { $words } mots · { $time }
+session-readout-timed = { $words } mots · { $time } restant
 
 ## Paramètres
 language = Langue

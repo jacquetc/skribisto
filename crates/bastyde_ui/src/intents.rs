@@ -22,6 +22,12 @@ pub enum AppIntent {
     #[name = "outline.toggle"]
     ToggleOutline,
 
+    /// Start or pause the status-bar writing session. Fired by name (palette /
+    /// automation); the play/pause button is the primary control. Consumed by a
+    /// global `session.toggle` action in `App::build`.
+    #[name = "session.toggle"]
+    ToggleWritingSession,
+
     /// Show the Welcome modal (start screen). Fired at startup (unless a work
     /// path was passed), from the File ▸ Welcome… menu, and from the brand
     /// icon button. Consumed by a global `welcome.show` action in `App::build`.

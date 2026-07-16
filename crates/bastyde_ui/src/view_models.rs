@@ -58,6 +58,8 @@ mod save_queue;
 mod search_replace;
 mod save_status;
 mod settings;
+mod word_count_status;
+mod writing_session;
 mod stream;
 mod welcome;
 
@@ -77,6 +79,10 @@ pub use project_switch::{
 pub use restore::RestoreViewModel;
 pub use save_as::SaveAsViewModel;
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
+pub use word_count_status::{CountDisplay, count_display};
+pub use writing_session::{
+    WritingSessionViewModel, format_mmss, gauge_role, remaining, words_progress,
+};
 pub use search_replace::SearchReplaceViewModel;
 pub use settings::{EditorTypography, EditorTypographySet, SettingsViewModel};
 pub use stream::{SplitFlavour, StreamViewModel};

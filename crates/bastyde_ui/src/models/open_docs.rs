@@ -377,6 +377,13 @@ impl OpenDocsStore {
         self.inner.edited.clone()
     }
 
+    /// Look up an **already-open** doc without changing its reference count — for a
+    /// read-only consumer (the status-bar word count) that must not perturb the
+    /// open/release lifecycle the editor panes own. `None` if the item isn't open.
+    pub fn peek(&self, item_id: u64) -> Option<Rc<OpenDoc>> {
+        self.inner.open.borrow().get(&item_id).map(|e| e.doc.clone())
+    }
+
     /// Open item `item_id`, building its [`OpenDoc`] the first time and reusing it
     /// (bumping the refcount) thereafter. `None` if the item can't be read.
     pub fn open(&self, item_id: u64) -> Option<Rc<OpenDoc>> {

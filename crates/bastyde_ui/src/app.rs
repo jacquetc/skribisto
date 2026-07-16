@@ -2267,6 +2267,36 @@ impl Widget for App {
             self.save_spinner.clone(),
             self.save_spinner_visible.clone(),
         );
+        // The focused item's live word count sits right after the save glyph — the
+        // quiet "how many words in this scene" a writer glances at. Counts the open
+        // document's live text (so it tracks typing), off `StatsModel` over the shared
+        // `OpenDocsStore`.
+        let stats = crate::models::StatsModel::new(
+            ctx.app_state::<crate::models::OpenDocsStore>()
+                .cloned()
+                .expect("OpenDocsStore registered in main"),
+            editors.active_item(),
+        );
+        let word_count_indicator = crate::word_count_indicator::WordCountIndicator::new(
+            stats.clone(),
+            single_work_info.shape().map(|s| s.is_some()),
+        );
+        // The writing session: a play/pause sprint timer + word tracker (ephemeral —
+        // only its targets persist). Sits on the right of the status bar.
+        let session_vm =
+            crate::view_models::WritingSessionViewModel::new(stats.clone(), ctx.settings());
+        let session_item = crate::session_status_item::SessionStatusItem::new(
+            session_vm.clone(),
+            single_work_info.shape().map(|s| s.is_some()),
+        );
+        // `session.toggle` — scriptable start/pause (palette / automation); the play
+        // button is the primary control. Global so it fires regardless of focus.
+        {
+            let vm = session_vm.clone();
+            ctx.register_action_global(
+                Action::new("session.toggle").on_invoke(move |_i, _c| vm.toggle()),
+            );
+        }
         let status = StatusBar::new().background(SurfaceRole::Main).child(
             HStack::new()
                 .spacing(8.0)
@@ -2279,7 +2309,9 @@ impl Widget for App {
                         .on_activate_fn(move |_| dock_lead.toggle_side_visible(DockSide::Leading)),
                 )
                 .child(save_indicator)
+                .child(word_count_indicator)
                 .child(Spacer::new())
+                .child(session_item)
                 .child(
                     IconButton::new(crate::activity_icons::inspector_icon())
                         .size(IconButtonSize::Compact)

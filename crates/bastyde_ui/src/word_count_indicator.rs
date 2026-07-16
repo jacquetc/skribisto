@@ -1,0 +1,71 @@
+//! `WordCountIndicator` — the status bar's live word count of the focused item.
+//!
+//! A quiet, secondary-coloured count sitting after the save glyph, showing the words in
+//! the scene the writer is editing. It appears only when a project is open and something
+//! prose-bearing is focused (a container tab / an unopened item shows nothing and takes no
+//! width). The count is one scene, cheap to recompute, so it tracks typing live — no
+//! spinner-style hysteresis. Thin per the house rules: the decision is the pure
+//! [`crate::view_models::count_display`] table and the number comes from [`StatsModel`].
+
+use bastyde::core::BindingLevel;
+use bastyde::prelude::*;
+use bastyde::widgets::TextWidget;
+
+use crate::models::StatsModel;
+use crate::view_models::{CountDisplay, count_display};
+
+pub struct WordCountIndicator {
+    stats: StatsModel,
+    /// A project is open at all (same test the save indicator uses).
+    has_work: Signal<bool>,
+    root_child: Option<WidgetId>,
+}
+
+impl WordCountIndicator {
+    pub fn new(stats: StatsModel, has_work: Signal<bool>) -> Self {
+        Self { stats, has_work, root_child: None }
+    }
+
+    fn render(&self, ctx: &mut BuildContext, display: CountDisplay) -> Option<WidgetId> {
+        match display {
+            CountDisplay::Hidden => None,
+            CountDisplay::Words(n) => Some(
+                ctx.add(
+                    TextWidget::new(tr!(statusbar_word_count(count = n as i64)))
+                        .color(TextRole::Secondary)
+                        .single_line(),
+                ),
+            ),
+        }
+    }
+}
+
+impl std::fmt::Debug for WordCountIndicator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WordCountIndicator").finish()
+    }
+}
+
+impl Widget for WordCountIndicator {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let sid = ctx.self_id();
+        let reg = ctx.binding_registry();
+        // Focus change → recount immediately; any edit → recount (cheap, one scene).
+        self.has_work.bind_to(sid, reg, BindingLevel::Rebuild);
+        self.stats.active_item().bind_to(sid, reg, BindingLevel::Rebuild);
+        self.stats.edited_signal().bind_to(sid, reg, BindingLevel::Rebuild);
+
+        let display = count_display(self.has_work.get(), self.stats.focused_word_count());
+        self.root_child = self.render(ctx, display);
+        self.root_child.into_iter().collect()
+    }
+
+    /// Zero-sized when hidden (no project / a container tab), so it takes no width of
+    /// its own there — the surrounding `HStack` spacing still leaves a small gap.
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+}
