@@ -232,6 +232,7 @@ pace-empty-body = Set a word goal and a deadline, and Skribisto works out the da
 pace-start-planning = Start planning
 pace-section-schedule = Schedule
 pace-section-progress = Progress
+pace-advancement = Advancement
 pace-goal = Word goal
 pace-deadline = Deadline
 pace-active = Pace active

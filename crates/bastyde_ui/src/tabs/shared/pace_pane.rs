@@ -83,16 +83,20 @@ pub fn pace_pane(tab: &ContentTab) -> Box<dyn Widget> {
     tab_backdrop(ScrollArea::new().child(centered(body, &cw)))
 }
 
-/// A section heading - normal case (never all-caps, per house style), spaced above.
-fn section(label: LocalizedString) -> impl Widget {
-    VStack::new()
-        .child(vspace(6.0))
-        .child(
-            TextWidget::new(label)
-                .style(TextStyleRole::BodyBold)
-                .color(TextRole::Primary),
-        )
-        .child(vspace(2.0))
+/// One dashboard section: a titled Panel wrapping its body.
+fn panel_section(title: LocalizedString, body: impl Widget + 'static) -> impl Widget {
+    Panel::new().child(
+        Padding::uniform(14.0).child(
+            VStack::new()
+                .spacing(10.0)
+                .child(
+                    TextWidget::new(title)
+                        .style(TextStyleRole::BodyBold)
+                        .color(TextRole::Primary),
+                )
+                .child(body),
+        ),
+    )
 }
 
 /// The "no schedule yet" state - an invitation to create one. `Start planning`
@@ -114,51 +118,133 @@ fn empty_state(vm: &PaceViewModel) -> impl Widget {
         }))
 }
 
-/// The schedule form + statistics, shown once a Pace exists.
+/// The planner, once a Pace exists: a responsive dashboard of section Panels.
 fn planner(
     vm: &PaceViewModel,
     goal_local: &Signal<i64>,
     end_local: &Signal<Option<Date>>,
     active_local: &Signal<bool>,
 ) -> impl Widget {
-    let today = Utc::now().date_naive();
+    PaceDashboard::new(
+        vm.clone(),
+        goal_local.clone(),
+        end_local.clone(),
+        active_local.clone(),
+    )
+}
 
-    let goal_field = FixedSize::new().width(160.0).child(
-        SpinBox::new(goal_local.clone(), 0_i64, 100_000_000)
-            .step_type(StepType::Adaptive)
-            .on_value_changed({
-                let vm = vm.clone();
-                move |v, _c| vm.set_goal_words(v)
-            }),
-    );
+/// The dashboard: the schedule, statistics, charts, holidays and milestones as
+/// section Panels laid out in a responsive [`MasonryLayout`]. A masonry *fills*
+/// its offered width (dividing it into columns), so the whole pane uses the
+/// available width - one column when narrow, two or three when wide - rather than
+/// hugging the form's natural width the way a `VStack` would. Rebuilt on the
+/// column count, derived from the measured width.
+struct PaceDashboard {
+    vm: PaceViewModel,
+    goal_local: Signal<i64>,
+    end_local: Signal<Option<Date>>,
+    active_local: Signal<bool>,
+    cols: Signal<usize>,
+    root: Option<WidgetId>,
+}
 
-    let deadline_field = FixedSize::new().width(200.0).child(
-        DateEdit::new(end_local.clone())
-            .min_date(naive_to_jiff(today).unwrap_or_else(|| Date::new(2000, 1, 1).unwrap())),
-    );
+impl PaceDashboard {
+    fn new(
+        vm: PaceViewModel,
+        goal_local: Signal<i64>,
+        end_local: Signal<Option<Date>>,
+        active_local: Signal<bool>,
+    ) -> Self {
+        Self {
+            vm,
+            goal_local,
+            end_local,
+            active_local,
+            cols: Signal::new(1),
+            root: None,
+        }
+    }
 
-    let schedule = FormLayout::new()
-        .row_spacing(10.0)
-        .line(field_label(tr!(pace_goal())), goal_field)
-        .line(field_label(tr!(pace_deadline())), deadline_field)
-        .full_width(WeekdayChips::new(vm.clone()))
-        .full_width(Toggle::new(active_local.clone()).label(tr!(pace_active())));
+    /// Section panels want ~340px to be comfortable (a chart, a form).
+    fn columns_for(width: f32) -> usize {
+        ((width / 340.0).floor() as usize).clamp(1, 3)
+    }
+}
 
-    // The stat masonry, charts and editors are wrapped in `Expand::horizontal`
-    // so they claim the full available width, pulling the column out to fill the
-    // pane rather than hugging the widest fixed element (the weekday chip row).
-    VStack::new()
-        .spacing(6.0)
-        .child(section(tr!(pace_section_schedule())))
-        .child(schedule)
-        .child(section(tr!(pace_section_progress())))
-        .child(Expand::horizontal().child(StatCards::new(vm.clone(), today)))
-        .child(vspace(10.0))
-        .child(Expand::horizontal().child(PaceCharts::new(vm.clone())))
-        .child(section(tr!(pace_section_holidays())))
-        .child(Expand::horizontal().child(HolidayEditor::new(vm.clone())))
-        .child(section(tr!(pace_section_milestones())))
-        .child(Expand::horizontal().child(MilestoneList::new(vm.clone())))
+impl std::fmt::Debug for PaceDashboard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PaceDashboard").finish()
+    }
+}
+
+impl Widget for PaceDashboard {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.cols
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        let today = Utc::now().date_naive();
+        let vm = &self.vm;
+
+        // Schedule section: goal + deadline + weekdays + active.
+        let goal_field = FixedSize::new().width(160.0).child(
+            SpinBox::new(self.goal_local.clone(), 0_i64, 100_000_000)
+                .step_type(StepType::Adaptive)
+                .on_value_changed({
+                    let vm = vm.clone();
+                    move |v, _c| vm.set_goal_words(v)
+                }),
+        );
+        let deadline_field = FixedSize::new().width(200.0).child(
+            DateEdit::new(self.end_local.clone())
+                .min_date(naive_to_jiff(today).unwrap_or_else(|| Date::new(2000, 1, 1).unwrap())),
+        );
+        let schedule_body = VStack::new()
+            .spacing(10.0)
+            .child(
+                FormLayout::new()
+                    .row_spacing(10.0)
+                    .line(field_label(tr!(pace_goal())), goal_field)
+                    .line(field_label(tr!(pace_deadline())), deadline_field),
+            )
+            .child(WeekdayChips::new(vm.clone()))
+            .child(Toggle::new(self.active_local.clone()).label(tr!(pace_active())));
+
+        let m = MasonryLayout::new(self.cols.get().max(1))
+            .column_spacing(12.0)
+            .item_spacing(12.0)
+            .child(panel_section(tr!(pace_section_schedule()), schedule_body))
+            .child(panel_section(
+                tr!(pace_section_progress()),
+                StatCards::new(vm.clone(), today),
+            ))
+            .child(panel_section(
+                tr!(pace_advancement()),
+                PaceCharts::new(vm.clone()),
+            ))
+            .child(panel_section(
+                tr!(pace_section_holidays()),
+                HolidayEditor::new(vm.clone()),
+            ))
+            .child(panel_section(
+                tr!(pace_section_milestones()),
+                MilestoneList::new(vm.clone()),
+            ));
+
+        self.root = Some(ctx.add(m));
+        self.root.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        if let Some(w) = proposal.width {
+            let want = Self::columns_for(w);
+            if self.cols.get() != want {
+                self.cols.set(want);
+            }
+        }
+        self.root
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
 }
 
 /// A short, locale-neutral day label for a chart category (`7/16`).

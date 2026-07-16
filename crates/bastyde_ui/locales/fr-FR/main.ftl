@@ -232,6 +232,7 @@ pace-empty-body = Fixez un objectif de mots et une échéance : Skribisto calcul
 pace-start-planning = Commencer la planification
 pace-section-schedule = Calendrier
 pace-section-progress = Progression
+pace-advancement = Avancement
 pace-goal = Objectif de mots
 pace-deadline = Échéance
 pace-active = Rythme actif
