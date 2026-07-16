@@ -151,6 +151,29 @@ pub fn ahead_behind(actual_words: i64, expected_words: i64) -> i64 {
     actual_words - expected_words
 }
 
+/// The ideal cumulative word count *by the end of* `date` on an even pace: the
+/// goal spread over every scheduled day in `[start, end]`, times the scheduled
+/// days elapsed through `date` inclusive. Clamped to `[0, goal]`. This is the
+/// target line the progression chart plots against the actual cumulative — note
+/// it counts `date` itself (a target *line*), unlike [`expected_words_by`] which
+/// stops at yesterday (words *due* so far).
+pub fn target_cumulative(
+    date: NaiveDate,
+    start: NaiveDate,
+    end: NaiveDate,
+    weekday_mask: i64,
+    holidays: &[HolidayRange],
+    goal: i64,
+) -> i64 {
+    let total = writing_days_in_range(start, end, weekday_mask, holidays);
+    if total == 0 || goal <= 0 {
+        return 0;
+    }
+    let elapsed = writing_days_in_range(start, date, weekday_mask, holidays);
+    let per_day = goal as f64 / total as f64;
+    ((per_day * elapsed as f64).round() as i64).clamp(0, goal)
+}
+
 /// Fraction of the goal reached, clamped to `[0, 1]`, or `None` when no goal is
 /// set (`goal <= 0`).
 pub fn percent_done(current_words: i64, goal_words: i64) -> Option<f32> {
@@ -407,6 +430,40 @@ impl PaceViewModel {
         Some(ahead_behind(self.current_words(), expected))
     }
 
+    /// The recorded cumulative Book word count per day — the progression chart's
+    /// "actual" line, ascending by date.
+    pub fn actual_series(&self) -> Vec<(NaiveDate, i64)> {
+        self.inner.history.get().iter().map(|d| (d.date, d.words)).collect()
+    }
+
+    /// Words actually written each day (the rise since the previous recorded day)
+    /// — the words-per-day bar chart. Drops the first (baseline) day.
+    pub fn words_per_day(&self) -> Vec<(NaiveDate, i64)> {
+        daily_deltas(&self.inner.history.get())
+            .into_iter()
+            .map(|d| (d.date, d.words_written))
+            .collect()
+    }
+
+    /// The ideal cumulative words by `date` on an even pace — the progression
+    /// chart's target line. `None` until a start, end, and goal are all set.
+    pub fn target_for(&self, date: NaiveDate) -> Option<i64> {
+        let start = self.inner.start.get()?;
+        let end = self.inner.end.get()?;
+        let goal = self.inner.goal_words.get();
+        if goal <= 0 {
+            return None;
+        }
+        Some(target_cumulative(
+            date,
+            start,
+            end,
+            self.inner.weekday_mask.get(),
+            &self.holiday_ranges(),
+            goal,
+        ))
+    }
+
     fn holiday_ranges(&self) -> Vec<HolidayRange> {
         self.inner
             .holidays
@@ -595,6 +652,31 @@ mod tests {
         );
         // No scheduled days → 0, never a divide-by-zero.
         assert_eq!(expected_words_by(d(2026, 7, 15), start, end, 0, &[], 1000), 0);
+    }
+
+    #[test]
+    fn target_cumulative_is_the_inclusive_pace_line() {
+        // 10 scheduled days (Mon 13th → Fri 24th), goal 1000 → 100/scheduled-day.
+        let start = d(2026, 7, 13);
+        let end = d(2026, 7, 24);
+        // By end of the 2nd scheduled day (Tue 14th): 2 days elapsed inclusive → 200.
+        assert_eq!(
+            target_cumulative(d(2026, 7, 14), start, end, MON_TO_FRI_TEST, &[], 1000),
+            200
+        );
+        // The start day itself counts (inclusive) → 100, unlike expected_words_by=0.
+        assert_eq!(
+            target_cumulative(start, start, end, MON_TO_FRI_TEST, &[], 1000),
+            100
+        );
+        // At/after the deadline → the whole goal.
+        assert_eq!(
+            target_cumulative(end, start, end, MON_TO_FRI_TEST, &[], 1000),
+            1000
+        );
+        // No goal / no scheduled days → 0, never a divide-by-zero.
+        assert_eq!(target_cumulative(end, start, end, MON_TO_FRI_TEST, &[], 0), 0);
+        assert_eq!(target_cumulative(end, start, end, 0, &[], 1000), 0);
     }
 
     #[test]

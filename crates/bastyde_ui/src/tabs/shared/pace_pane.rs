@@ -10,14 +10,16 @@
 //! Milestones, holidays and the progression / words-per-day charts land in M4d.
 
 use bastyde::core::BindingLevel;
+use bastyde::data::{ChartModel, ChartSeries};
 use bastyde::prelude::*;
 use bastyde::tokens::CornerRadius;
 use bastyde::widgets::{
     Button, Center, DateEdit, FixedSize, FormLayout, RectWidget, ScrollArea, SpinBox, StepType,
     Switcher, TextWidget, Toggle, VStack, Wrap, ZStack,
 };
+use bastyde_charts::{BarChart, LineChart};
 
-use chrono::{Duration, NaiveDate, Utc};
+use chrono::{Datelike, Duration, NaiveDate, Utc};
 use jiff::civil::Date;
 
 use crate::date_convert::{jiff_to_naive, naive_to_jiff, naive_to_jiff_opt};
@@ -144,6 +146,13 @@ fn planner(
         .child(schedule)
         .child(section(tr!(pace_section_progress())))
         .child(PaceStats::new(vm.clone(), today))
+        .child(vspace(10.0))
+        .child(PaceCharts::new(vm.clone()))
+}
+
+/// A short, locale-neutral day label for a chart category (`7/16`).
+fn day_label(date: NaiveDate) -> String {
+    format!("{}/{}", date.month(), date.day())
 }
 
 /// A form-row label — small, secondary, single line (matches the settings panes).
@@ -306,6 +315,97 @@ impl Widget for WeekdayChips {
             row = row.child(FixedSize::new().width(46.0).height(30.0).child(chip));
         }
         self.root = Some(ctx.add(row));
+        self.root.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+}
+
+// ── PaceCharts: progression (actual vs target) + words-per-day ──────────────
+
+/// The two progress charts, rebuilt on the view-model's `version` (a new snapshot
+/// or a schedule edit): a line chart of the recorded cumulative words against the
+/// even-pace target, and a bar chart of words written per day. Until any progress
+/// is recorded there is nothing to plot, so it shows a hint instead.
+struct PaceCharts {
+    vm: PaceViewModel,
+    root: Option<WidgetId>,
+}
+
+impl PaceCharts {
+    fn new(vm: PaceViewModel) -> Self {
+        Self { vm, root: None }
+    }
+}
+
+impl std::fmt::Debug for PaceCharts {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PaceCharts").finish()
+    }
+}
+
+impl Widget for PaceCharts {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.vm
+            .version()
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+
+        let actual = self.vm.actual_series();
+        if actual.is_empty() {
+            self.root = Some(ctx.add(
+                TextWidget::new(tr!(pace_charts_empty())).color(TextRole::Secondary),
+            ));
+            return self.root.into_iter().collect();
+        }
+
+        // Progression: recorded cumulative vs the even-pace target.
+        let mut actual_series = ChartSeries::new(tr!(pace_series_actual()).resolve_now());
+        for (date, words) in &actual {
+            actual_series.push(day_label(*date), *words as f32);
+        }
+        let mut line_series = vec![actual_series];
+        // Only plot the target once a start/end/goal exist.
+        if actual.iter().any(|(d, _)| self.vm.target_for(*d).is_some()) {
+            let mut target = ChartSeries::new(tr!(pace_series_target()).resolve_now());
+            for (date, _) in &actual {
+                target.push(day_label(*date), self.vm.target_for(*date).unwrap_or(0) as f32);
+            }
+            line_series.push(target);
+        }
+        let line = LineChart::new(ChartModel::from_series_vec(line_series))
+            .points(true)
+            .grid(true)
+            .legend(true);
+
+        // Words written per day.
+        let mut per_day = ChartSeries::new(tr!(pace_series_words_per_day()).resolve_now());
+        for (date, words) in self.vm.words_per_day() {
+            per_day.push(day_label(date), words as f32);
+        }
+        let bars = BarChart::new(ChartModel::from_series_vec(vec![per_day]))
+            .grid(true)
+            .legend(false);
+
+        let col = VStack::new()
+            .spacing(12.0)
+            .child(
+                TextWidget::new(tr!(pace_chart_progression()))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+            )
+            .child(FixedSize::new().height(180.0).child(line))
+            .child(
+                TextWidget::new(tr!(pace_chart_words_per_day()))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+            )
+            .child(FixedSize::new().height(140.0).child(bars));
+        self.root = Some(ctx.add(col));
         self.root.into_iter().collect()
     }
 
