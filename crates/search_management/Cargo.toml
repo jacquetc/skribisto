@@ -24,7 +24,7 @@ name = "search_management"
 #
 # `replace_in_project` rewrites prose by parsing it, never by string-surgery on the
 # Djot: BatchDocument is what makes that possible without a thread per scene.
-text-document = { path = "../../../text-document/crates/public_api" }
+text-document = { path = "../../../text-document/crates/public_api", version = "1.7" }
 # `SearchFacet` — the collapse of the matrix's twelve (role, sub_role) combinations onto the
 # six kinds a writer actually filters by. It is derived FROM the matrix, in the one crate that
 # owns it, so a thirteenth combination cannot quietly become unfindable.

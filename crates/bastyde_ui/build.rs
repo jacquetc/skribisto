@@ -27,6 +27,38 @@ fn main() {
         .unwrap_or_default();
 
     println!("cargo:rustc-env=SKRIBISTO_GIT_DESCRIBE={describe}");
+
+    #[cfg(windows)]
+    embed_windows_resources();
+}
+
+/// On Windows, embed the app icon + version metadata into `skribisto.exe` as
+/// Win32 resources so the taskbar, Explorer, and the Inno Setup installer show
+/// the branded icon and correct version.
+///
+/// `#[cfg(windows)]` gates on the *host* (build scripts run on the host). The
+/// Windows release is always built natively on a Windows runner (host ==
+/// target), and the macOS/Linux builds cross-compile only among their own
+/// platforms, so host-gating matches target-gating for every configuration we
+/// build — and non-Windows hosts skip `winresource` (a `cfg(windows)`
+/// build-dependency) entirely. winit 0.30 sets PerMonitorV2 DPI awareness
+/// programmatically, so no application manifest is embedded here.
+#[cfg(windows)]
+fn embed_windows_resources() {
+    const ICON: &str = "../../resources/windows/skribisto.ico";
+    println!("cargo:rerun-if-changed={ICON}");
+
+    let mut res = winresource::WindowsResource::new();
+    res.set_icon(ICON);
+    // FileVersion / ProductVersion default to CARGO_PKG_VERSION; add the rest.
+    res.set("ProductName", "Skribisto");
+    res.set("FileDescription", "Skribisto — writing software");
+    res.set("LegalCopyright", "GPL-3.0-only");
+    if let Err(e) = res.compile() {
+        // A resource-embedding failure must not hard-fail the build; the exe is
+        // still functional, just without the branded icon.
+        println!("cargo:warning=failed to embed Windows resources: {e}");
+    }
 }
 
 /// `v3.0.0-alpha1` on a tag, `v3.0.0-alpha1-31-g5c62c8cac` off one, the bare

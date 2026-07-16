@@ -1,0 +1,41 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [master, bastyde-migration]
+    paths:
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+  pull_request:
+    paths:
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+  schedule:
+    - cron: "0 0 * * *" # Daily — new advisories land against a static Cargo.lock
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: cargo audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # cargo-audit reads Cargo.lock (self-contained); stripping the external
+      # path deps keeps the manifest consistent if the lock is regenerated.
+      - name: Strip path dependencies
+        uses: ./.github/actions/strip-path-deps
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@cargo-audit
+
+      - name: Audit dependencies
+        run: cargo audit

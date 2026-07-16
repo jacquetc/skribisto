@@ -12,6 +12,28 @@ publish = false
 name = "skribisto"
 path = "src/main.rs"
 
+# macOS packaging via cargo-packager (consumed by .github/workflows/release-macos.yml).
+# `signing_identity` is deliberately ABSENT: cargo-packager codesigns only when
+# it is set, so the unsigned CI path never attempts to sign with a missing
+# certificate. The signed path injects the identity at build time via `--config`.
+# cargo itself ignores [package.metadata.*], so this has no effect on builds.
+[package.metadata.packager]
+product-name = "Skribisto"
+identifier = "eu.skribisto.skribisto"
+category = "Productivity"
+icons = [
+    "../../resources/unix/icons/icons/hicolor/256x256/apps/skribisto.png",
+    "../../resources/unix/icons/icons/hicolor/512x512/apps/skribisto.png",
+]
+
+[package.metadata.packager.macos]
+minimum-system-version = "11.0"
+
+[package.metadata.packager.dmg]
+window-size = { width = 660, height = 400 }
+app-position = { x = 180, y = 170 }
+application-folder-position = { x = 480, y = 170 }
+
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
@@ -79,13 +101,13 @@ encoding_rs = "0.8"
 # would install an executor with **no reactor**, which works for our
 # `spawn_blocking`-only futures but silently never wakes if anything ever awaits
 # a native future (a timer, a socket) — a runtime hang, not a compile error.
-bastyde = { path = "../../../bastyde/crates/bastyde", features = [
+bastyde = { path = "../../../bastyde/crates/bastyde", version = "0.6.2", features = [
     "automation",
     "async-std",
 ] }
 # The Pace planner's progression / words-per-day charts (not re-exported by the
 # umbrella crate — a direct dependency, like the example widget catalog).
-bastyde-charts = { path = "../../../bastyde/crates/bastyde-charts" }
+bastyde-charts = { path = "../../../bastyde/crates/bastyde-charts", version = "0.6.2" }
 # Calendar dates for the Pace end-date + weekday picker (the bastyde date widgets
 # speak `jiff::civil::Date`); `date_convert` bridges it to the entities' chrono.
 jiff = "0.2"
@@ -107,6 +129,15 @@ windows = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_System_Threading",
 ] }
+
+# Embed the app icon (taskbar / exe / installer) + version metadata as Win32
+# resources via build.rs. Maintained successor to the abandoned `winres`. Only
+# pulled in when building on a Windows host (the release target is built
+# natively on windows-latest), so Linux/macOS builds skip it. winit 0.30 sets
+# PerMonitorV2 DPI awareness programmatically, so no application manifest is
+# needed here.
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
 
 [features]
 # Build-with-mocks: render the UI with fabricated data, no real backend needed.

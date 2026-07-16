@@ -1,0 +1,236 @@
+name: Release
+
+# Cuts a GitHub Release on a version tag and attaches the Linux Flatpak bundle
+# and the Windows installer + portable zip. macOS is built by the separate
+# (currently deactivated) release-macos.yml and is intentionally absent here.
+#
+# The release version is a GIT fact (the tag), not a Cargo one: every crate
+# shares the placeholder version = "0.0.1", and build.rs stamps the tag into the
+# binary via SKRIBISTO_GIT_DESCRIBE. So there is no "Cargo version matches tag"
+# gate — the tag IS the version.
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*" # pre-releases: v3.0.0-beta.1
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Prove the tag builds and tests before producing any artifact.
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/install-linux-deps
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/strip-path-deps
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: linux
+      - name: Test
+        run: cargo test --workspace
+
+  # -------- Linux: single .flatpak bundle --------
+  flatpak:
+    name: Flatpak bundle
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Strips external path deps, regenerates Cargo.lock against crates.io, and
+      # vendors every crate into package/flatpak/cargo-sources.json — everything
+      # the offline flatpak-builder step needs. Requires bastyde*/text-document
+      # to be published (plan prerequisites P1/P2).
+      - name: Vendor cargo dependencies for offline build
+        run: ./package/flatpak/gen-cargo-sources.sh
+
+      - name: Install flatpak + flatpak-builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
+          flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+
+      # If bubblewrap/user-namespace sandboxing ever fails on the bare runner,
+      # switch this job to run inside
+      # `container: { image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08, options: --privileged }`
+      # and install a Rust toolchain there for the vendor step above.
+      - name: Build and bundle the Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: skribisto.flatpak
+          manifest-path: package/flatpak/eu.skribisto.skribisto.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+
+      - name: Upload Flatpak bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: skribisto-flatpak
+          path: skribisto.flatpak
+          if-no-files-found: error
+
+  # -------- Windows: installer + portable zip --------
+  windows:
+    name: Windows package
+    needs: validate
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      # Stamp the release version into the binary (build.rs reads this).
+      SKRIBISTO_GIT_DESCRIBE: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - uses: ./.github/actions/strip-path-deps
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: windows
+
+      # Statically link the VC runtime so the exe has zero vcruntime140.dll
+      # dependency (the UCRT stays dynamic — it is an inbox Windows component).
+      - name: Configure static CRT
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path .cargo | Out-Null
+          @"
+          [target.'cfg(all(windows, target_env = "msvc"))']
+          rustflags = ["-C", "target-feature=+crt-static"]
+          "@ | Set-Content -Path .cargo/config.toml -Encoding utf8
+
+      - name: Build release exe (pdf)
+        run: cargo build --release --target x86_64-pc-windows-msvc -p bastyde_ui --features pdf
+
+      - name: Compute version
+        id: ver
+        shell: bash
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Stage portable zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item target/x86_64-pc-windows-msvc/release/skribisto.exe dist/
+          Compress-Archive -Path dist/skribisto.exe -DestinationPath dist/Skribisto-portable.zip -Force
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --version=6.4.3 --no-progress -y
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+            /DMyAppVersion=${{ steps.ver.outputs.version }} `
+            "/DMySourceExe=target\x86_64-pc-windows-msvc\release\skribisto.exe" `
+            /O"dist" /F"Skribisto-setup" `
+            package\windows\setup.iss
+
+      # ---- Optional Authenticode signing via SignPath (no-op until enrolled) ----
+      - name: Determine signing mode
+        id: sign
+        shell: bash
+        env:
+          HAS_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        run: |
+          if [ -n "$HAS_TOKEN" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; else echo "enabled=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Upload unsigned artifacts (for SignPath)
+        if: steps.sign.outputs.enabled == 'true'
+        id: unsigned
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-unsigned
+          path: |
+            dist/Skribisto-portable.zip
+            dist/Skribisto-setup.exe
+
+      - name: Submit signing request
+        if: steps.sign.outputs.enabled == 'true'
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: skribisto
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: dist
+      # ---- end optional signing ----
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: skribisto-windows
+          path: |
+            dist/Skribisto-portable.zip
+            dist/Skribisto-setup.exe
+          if-no-files-found: error
+
+  # -------- Assemble the GitHub Release --------
+  release:
+    name: Create Release
+    needs: [flatpak, windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name "*.flatpak" -o -name "*.zip" -o -name "*-setup.exe" \) \
+            -exec cp {} release/ \;
+          ls -la release/
+
+      - name: Generate checksums
+        run: |
+          cd release
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Extract release notes from NEWS.yml
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          # Pull the Description bullets of the NEWS.yml block for this version.
+          awk -v ver="$VERSION" '
+            /^Version:/  { cur=$2; gsub(/[" ]/,"",cur) }
+            /^Description:/ { indesc=(cur==ver); next }
+            /^---/       { indesc=0 }
+            indesc && /^- / { line=$0; sub(/^- +/,"- ",line); gsub(/^- +"?|"$/,"",line); print "- " line }
+          ' NEWS.yml > release_notes.md || true
+          if [ ! -s release_notes.md ]; then
+            echo "Release ${GITHUB_REF_NAME}." > release_notes.md
+          fi
+          echo "----- notes -----"; cat release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release_notes.md
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: release/*
+          fail_on_unmatched_files: true

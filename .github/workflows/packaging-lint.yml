@@ -1,0 +1,45 @@
+name: Packaging manifests
+
+# Cheap PR guard: validate the packaging metadata when it changes, so a broken
+# .desktop / metainfo / Flatpak manifest is caught in seconds without running a
+# full packaging build (which only runs on tags, in release.yml).
+
+on:
+  pull_request:
+    paths:
+      - "eu.skribisto.skribisto.metainfo.xml"
+      - "resources/unix/applications/*.desktop"
+      - "package/flatpak/**"
+  push:
+    branches: [master, bastyde-migration]
+    paths:
+      - "eu.skribisto.skribisto.metainfo.xml"
+      - "resources/unix/applications/*.desktop"
+      - "package/flatpak/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate desktop + metainfo
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install validators
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y appstream desktop-file-utils
+
+      - name: Validate .desktop entry
+        run: desktop-file-validate resources/unix/applications/eu.skribisto.skribisto.desktop
+
+      # Informational for now: the metainfo predates the Rust rewrite (stale
+      # <releases>, legacy license string) and would fail a strict validation.
+      # Surfaces issues without blocking the PR; tighten to a hard check once the
+      # metainfo is cleaned up.
+      - name: Validate AppStream metainfo
+        continue-on-error: true
+        run: appstreamcli validate --no-net eu.skribisto.skribisto.metainfo.xml

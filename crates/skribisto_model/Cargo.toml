@@ -14,7 +14,7 @@ name = "skribisto_model"
 
 [dependencies]
 common = { workspace = true }
-text-document = { path = "../../../text-document/crates/public_api" }
+text-document = { path = "../../../text-document/crates/public_api", version = "1.7" }
 serde = { version = "1.0", features = ["derive"] }
 
 [lints]

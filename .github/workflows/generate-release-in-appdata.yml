@@ -1,43 +1,47 @@
-# This is a basic workflow to help you get started with Actions
+name: Generate releases in metainfo from NEWS.yml
 
-name: Generate releases in .appdata.xml from NEWS.yml
+# Keeps the AppStream <releases> block in eu.skribisto.skribisto.metainfo.xml in
+# sync with NEWS.yml. Runs when NEWS.yml changes on the active branch; commits
+# the regenerated metainfo back if it changed.
 
-# Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ develop ]
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches: [master, bastyde-migration]
+    paths:
+      - "NEWS.yml"
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+permissions:
+  contents: write
+
 jobs:
-
-  generate-release-in-appdata:
+  generate:
+    name: NEWS.yml -> metainfo
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    timeout-minutes: 10
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Install AppStream
-        run: sudo apt install appstream
-
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - id: git-diff
-        run: echo "::set-output name=diff-output::$(git diff origin/master...origin/develop -- NEWS.yml)"
-
-      - name: Run a multi-line script
+      - name: Install AppStream
         run: |
-          git checkout develop
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          appstreamcli news-to-metainfo --limit=1 ./NEWS.yml ./eu.skribisto.skribisto.appdata.xml
-          git add .
-          git commit -m "releases in AppData generated"
+          sudo apt-get update
+          sudo apt-get install -y appstream
+
+      - name: Regenerate metainfo releases from NEWS.yml
+        run: |
+          appstreamcli news-to-metainfo --limit=1 ./NEWS.yml ./eu.skribisto.skribisto.metainfo.xml
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- eu.skribisto.skribisto.metainfo.xml; then
+            echo "metainfo already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add eu.skribisto.skribisto.metainfo.xml
+          git commit -m "chore(metainfo): regenerate releases from NEWS.yml"
           git push
-        if: steps.git-diff.outputs.diff-output != 0
-          
