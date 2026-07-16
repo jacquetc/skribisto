@@ -4644,6 +4644,7 @@ dependencies = [
  "skribisto-handling-app-lifecycle",
  "skribisto-import-management",
  "skribisto-model",
+ "skribisto-progress-management",
  "skribisto-search-management",
  "skribisto-trash-management",
  "skribisto-work-management",
@@ -4697,6 +4698,25 @@ dependencies = [
  "serde",
  "skribisto-common",
  "text-document",
+]
+
+[[package]]
+name = "skribisto-progress-management"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-compiler",
+ "skribisto-direct-access",
+ "skribisto-macros",
+ "skribisto-model",
+ "skribisto-skrib-format",
+ "skribisto-work-management",
+ "tempfile",
+ "uuid",
 ]
 
 [[package]]

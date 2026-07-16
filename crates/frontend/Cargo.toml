@@ -29,6 +29,7 @@ common = { workspace = true }
 direct_access = { workspace = true }
 work_management = { workspace = true }
 export_management = { workspace = true }
+progress_management = { workspace = true }
 trash_management = { workspace = true }
 binder_item_management = { workspace = true }
 handling_app_lifecycle = { workspace = true }

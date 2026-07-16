@@ -8,6 +8,7 @@ members = [
     "crates/macros",
     "crates/work_management",
     "crates/export_management",
+    "crates/progress_management",
     "crates/trash_management",
     "crates/binder_item_management",
     "crates/handling_app_lifecycle",
@@ -50,6 +51,7 @@ direct_access = { package = "skribisto-direct-access", version = "0.0.1", path =
 frontend = { package = "skribisto-frontend", version = "0.0.1", path = "crates/frontend" }
 work_management = { package = "skribisto-work-management", version = "0.0.1", path = "crates/work_management" }
 export_management = { package = "skribisto-export-management", version = "0.0.1", path = "crates/export_management" }
+progress_management = { package = "skribisto-progress-management", version = "0.0.1", path = "crates/progress_management" }
 trash_management = { package = "skribisto-trash-management", version = "0.0.1", path = "crates/trash_management" }
 binder_item_management = { package = "skribisto-binder-item-management", version = "0.0.1", path = "crates/binder_item_management" }
 handling_app_lifecycle = { package = "skribisto-handling-app-lifecycle", version = "0.0.1", path = "crates/handling_app_lifecycle" }

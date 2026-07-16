@@ -724,6 +724,57 @@ features:
         type: integer
       - name: output_path
         type: string
+- name: progress_management
+  use_cases:
+  # Read-only pass over the open Work: sum SceneText prose of every
+  # activated && is_exportable item, bucketed per Book. Modelled on save_work /
+  # export_work (QueryUnitOfWork, long operation). Scopes to the single open Work,
+  # so no dto_in.
+  - name: count_words
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_out:
+      name: WordCountResultDto
+      fields:
+      - name: total_word_count
+        type: integer
+      - name: total_char_count
+        type: integer
+      - name: book_item_ids
+        type: uinteger
+        is_list: true
+      - name: book_word_counts
+        type: integer
+        is_list: true
+  # Short synchronous command: upsert today's ProgressSnapshot on the open
+  # WorkInfo (find by day -> update, else create + append).
+  - name: record_progress_snapshot
+    entities:
+    - WorkInfo
+    - ProgressSnapshot
+    undoable: false
+    dto_in:
+      name: RecordProgressSnapshotDto
+      fields:
+      - name: day
+        type: datetime
+      - name: total_word_count
+        type: integer
+      - name: total_char_count
+        type: integer
+      - name: book_item_ids
+        type: uinteger
+        is_list: true
+      - name: book_word_counts
+        type: integer
+        is_list: true
 - name: trash_management
   use_cases:
   - name: trash_binder_items

@@ -14,7 +14,8 @@ use std::collections::HashMap;
 use std::sync::RwLock;
 
 use serde::{Deserialize, Serialize};
-use text_document::{CountMethod, WordCharCounts, count_djot};
+use text_document::count_djot;
+pub use text_document::{CountMethod, WordCharCounts};
 
 /// The writer's counting-method preference — a global user setting (like typography). `Auto`
 /// resolves per scene from its effective language; the others force one method everywhere.

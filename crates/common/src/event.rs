@@ -77,6 +77,12 @@ pub enum ExportManagementEvent {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+pub enum ProgressManagementEvent {
+    CountWords,
+    RecordProgressSnapshot,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub enum TrashManagementEvent {
     TrashBinderItems,
     TrashBinder,
@@ -118,6 +124,7 @@ pub enum Origin {
 
     WorkManagement(WorkManagementEvent),
     ExportManagement(ExportManagementEvent),
+    ProgressManagement(ProgressManagementEvent),
     TrashManagement(TrashManagementEvent),
     BinderItemManagement(BinderItemManagementEvent),
     HandlingAppLifecycle(HandlingAppLifecycleEvent),
@@ -179,6 +186,7 @@ impl Event {
             // features
             Origin::WorkManagement(event) => format!("work_management_{:?}", event),
             Origin::ExportManagement(event) => format!("export_management_{:?}", event),
+            Origin::ProgressManagement(event) => format!("progress_management_{:?}", event),
             Origin::TrashManagement(event) => format!("trash_management_{:?}", event),
             Origin::BinderItemManagement(event) => format!("binder_item_management_{:?}", event),
             Origin::HandlingAppLifecycle(event) => format!("handling_app_lifecycle_{:?}", event),

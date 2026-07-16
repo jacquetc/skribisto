@@ -10,7 +10,8 @@
 use common::event::{
     AllEvent, BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event,
     ExportManagementEvent, HandlingAppLifecycleEvent, ImportManagementEvent, LongOperationEvent,
-    Origin, SearchManagementEvent, TrashManagementEvent, UndoRedoEvent, WorkManagementEvent,
+    Origin, ProgressManagementEvent, SearchManagementEvent, TrashManagementEvent, UndoRedoEvent,
+    WorkManagementEvent,
 };
 use common::types::EntityId;
 
@@ -83,6 +84,9 @@ pub enum FlatEventKind {
     WorkManagementNewWork,
 
     ExportManagementExportWork,
+
+    ProgressManagementCountWords,
+    ProgressManagementRecordProgressSnapshot,
 
     TrashManagementTrashBinderItems,
     TrashManagementTrashBinder,
@@ -252,6 +256,12 @@ impl From<Event> for FlatEvent {
             },
             Origin::ExportManagement(fe) => match fe {
                 ExportManagementEvent::ExportWork => FlatEventKind::ExportManagementExportWork,
+            },
+            Origin::ProgressManagement(fe) => match fe {
+                ProgressManagementEvent::CountWords => FlatEventKind::ProgressManagementCountWords,
+                ProgressManagementEvent::RecordProgressSnapshot => {
+                    FlatEventKind::ProgressManagementRecordProgressSnapshot
+                }
             },
             Origin::TrashManagement(fe) => match fe {
                 TrashManagementEvent::TrashBinderItems => {

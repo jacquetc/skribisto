@@ -16,6 +16,10 @@ pub mod system_commands;
 pub mod trash_info_commands;
 pub mod work_commands;
 pub mod work_info_commands;
+pub mod pace_commands;
+pub mod holiday_commands;
+pub mod milestone_commands;
+pub mod progress_snapshot_commands;
 
 pub mod binder_item_management_commands;
 pub mod export_management_commands;
@@ -23,6 +27,7 @@ pub mod handling_app_lifecycle_commands;
 pub mod import_management_commands;
 // Hand-written, feature-agnostic (long-operation cancellation by operation id).
 pub mod long_operation_commands;
+pub mod progress_management_commands;
 pub mod search_management_commands;
 pub mod trash_management_commands;
 pub mod undo_redo_commands;
