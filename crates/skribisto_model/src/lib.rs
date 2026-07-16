@@ -27,6 +27,10 @@ pub mod language;
 /// Shares its structural predicates with the UI's Full Chapter/Part/Book stream view.
 pub mod compile;
 
+/// Word/char counting **policy** (which method) + a content-addressed cache over scene
+/// prose. The mechanical primitive lives in `text-document`; this owns the method choice.
+pub mod counting;
+
 /// The per-project chapter storage mode — generated on the `Work` entity, re-exported
 /// here so `CreateType::combo` and the UI can name it via `skribisto_model`.
 pub use common::entities::ChapterMode;
@@ -174,6 +178,15 @@ pub fn allowed_content(role: &Role, sub_role: &SubRole) -> &'static [ContentRole
 /// Whether a single content role is permitted for `(role, sub_role)`.
 pub fn content_allowed(role: &Role, sub_role: &SubRole, content: &ContentRole) -> bool {
     allowed_content(role, sub_role).contains(content)
+}
+
+/// Whether this `(role, sub_role)` carries countable manuscript prose — i.e. it owns a
+/// `SceneText` body. The single predicate word counting keys off, so "words counted" tracks
+/// exactly the scene prose the exporter emits (`Item/Scene`, `Item/ChapterScene`,
+/// `Folder/ChapterScene`). Notes carry `NoteText`, not `SceneText`, and are deliberately
+/// excluded from the manuscript count.
+pub fn counts_prose(role: &Role, sub_role: &SubRole) -> bool {
+    content_allowed(role, sub_role, &SceneText)
 }
 
 /// Validate a complete item: the `(role, sub_role)` must be a known combination

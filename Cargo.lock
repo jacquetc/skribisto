@@ -4694,7 +4694,9 @@ dependencies = [
 name = "skribisto-model"
 version = "0.0.1"
 dependencies = [
+ "serde",
  "skribisto-common",
+ "text-document",
 ]
 
 [[package]]
