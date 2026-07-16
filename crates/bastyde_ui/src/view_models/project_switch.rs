@@ -249,6 +249,12 @@ impl ProjectSwitchViewModel {
     /// Do the switch. The point of no return: both use cases close the open Work
     /// first, so everything not already in the store (or on disk) is gone.
     fn perform(&self, ctx: &mut EventContext, switch: PendingSwitch) {
+        // Persist the outgoing project's desk (open tabs + docks) while its store is
+        // still alive — the in-place switches fire no `CloseWork`, and `load_work` /
+        // `new_work` close the current Work before anyone could translate a tab into
+        // its persistable ordinal. (For New Work, the form is only *shown* here; the
+        // current desk captured now is the one being left.)
+        crate::app::capture_workspace_layout(ctx);
         match switch {
             PendingSwitch::None => {}
             PendingSwitch::NewWork => {

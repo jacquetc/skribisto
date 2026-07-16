@@ -62,6 +62,7 @@ mod search_replace;
 mod save_status;
 mod settings;
 mod word_count_status;
+mod workspace_layout;
 mod writing_session;
 mod stream;
 mod welcome;
@@ -86,6 +87,7 @@ pub use restore::RestoreViewModel;
 pub use save_as::SaveAsViewModel;
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
 pub use word_count_status::{CountDisplay, count_display};
+pub use workspace_layout::WorkspaceLayoutViewModel;
 pub use writing_session::{
     WritingSessionViewModel, format_mmss, gauge_role, remaining, words_progress,
 };

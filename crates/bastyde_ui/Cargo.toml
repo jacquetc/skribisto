@@ -41,6 +41,12 @@ serde = { workspace = true }
 # Parse the LongOperation event payloads (id/percentage/message/error JSON) that
 # drive the import progress toast.
 serde_json = "1.0"
+# Lenient deserialize of the per-work `workspace.toml`'s embedded `DockLayoutState`
+# (bastyde's dock-layout snapshot): a future non-additive change to that *external*
+# type would otherwise fail-load the whole file for every project — so its blob is
+# parsed via a `toml::Value` and dropped to `None` on error. Matches the version
+# bastyde-settings already resolves.
+toml = "0.8"
 frontend = { workspace = true }
 skribisto_model = { workspace = true }
 # Direct edge (bypassing the generated `frontend` crate) for the backup settings'

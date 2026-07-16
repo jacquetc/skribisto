@@ -27,6 +27,7 @@ mod search_results_model;
 mod search_settings_file;
 mod stats_model;
 mod stream_rows_model;
+mod workspace_layout_file;
 
 pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
 pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
@@ -46,3 +47,4 @@ pub use search_results_model::SearchResultsModel;
 pub use stats_model::StatsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use stream_rows_model::{StreamLevel, StreamRow, StreamRowsModel};
+pub use workspace_layout_file::{PaneLayout, PerProjectLayout, WorkspaceLayoutService};

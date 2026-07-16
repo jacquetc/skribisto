@@ -321,6 +321,44 @@ impl EditorsViewModel {
         self.open_in(Side::Secondary, item_id, title);
     }
 
+    // ── Session snapshot / restore ────────────────────────────────────────────
+
+    /// The ordered `BinderItem` ids of the open editor tabs in `side` (tab order).
+    /// Read by the per-work session restore to persist which items were open.
+    pub fn tab_item_ids(&self, side: Side) -> Vec<u64> {
+        let pane = self.pane(side);
+        (0..pane.tabs.len())
+            .filter_map(|i| {
+                pane.tabs
+                    .with_item(i, |h| {
+                        h.payload.downcast_ref::<ContentTab>().map(|t| t.item_id())
+                    })
+                    .flatten()
+            })
+            .collect()
+    }
+
+    /// The `BinderItem` id of the selected editor tab in `side`, if any.
+    pub fn selected_item(&self, side: Side) -> Option<u64> {
+        let tab = self.pane(side).selected.get()?;
+        self.item_of_tab(side, tab)
+    }
+
+    /// Which pane currently feeds `active_item` (the focused pane) — captured so
+    /// restore can re-mark the same pane focused.
+    pub fn focused_side(&self) -> Side {
+        self.focused_side.get()
+    }
+
+    /// Select the already-open tab for `item_id` in `side` — the session-restore
+    /// step that re-marks the selected tab after re-opening the pane's items. A
+    /// no-op if no tab there shows that item.
+    pub fn select_item(&self, side: Side, item_id: u64) {
+        if let Some(tid) = self.find_open(side, item_id) {
+            self.pane(side).selected.set(Some(tid));
+        }
+    }
+
     // ── Split ───────────────────────────────────────────────────────────────
 
     /// Show or collapse the side pane. Collapsing **closes** the side pane's tabs
@@ -609,6 +647,16 @@ impl EditorsViewModel {
     /// mutation) this is the truth behind "unsaved".
     pub fn saved_seq(&self) -> Signal<u64> {
         self.saved_seq.clone()
+    }
+
+    /// Whether the store holds edits not yet on disk (`dirty_seq > saved_seq`) —
+    /// the same derivation `App` publishes as `unsaved`, read synchronously (no
+    /// dependence on the derived-signal effect having fired). The workspace-layout
+    /// capture consults this: persisting tab **ordinals** while dirty could record
+    /// positions against an in-store structure the on-disk file (what a reload
+    /// resolves against) doesn't share.
+    pub fn is_unsaved(&self) -> bool {
+        self.dirty_seq.get() > self.saved_seq.get()
     }
 
     /// A disk save is in flight.
@@ -993,6 +1041,46 @@ mod tests {
             "no duplicate in the side pane"
         );
         assert_eq!(vm.selected(Side::Secondary).get(), Some(existing));
+    }
+
+    #[test]
+    fn snapshot_helpers_report_order_selection_and_focus() {
+        let vm = editors();
+        // Primary: three tabs in order; select the middle one.
+        let a = push_tab(&vm, Side::Primary, 10);
+        let _b = push_tab(&vm, Side::Primary, 20);
+        let _c = push_tab(&vm, Side::Primary, 30);
+        vm.pane(Side::Primary).selected.set(Some(a));
+        assert_eq!(vm.tab_item_ids(Side::Primary), vec![10, 20, 30], "tab order");
+        assert_eq!(vm.selected_item(Side::Primary), Some(10), "selected tab's item");
+
+        // Secondary pane + focus tracking.
+        vm.set_split(true);
+        let s = push_tab(&vm, Side::Secondary, 99);
+        vm.pane(Side::Secondary).selected.set(Some(s));
+        assert_eq!(vm.tab_item_ids(Side::Secondary), vec![99]);
+        assert_eq!(vm.selected_item(Side::Secondary), Some(99));
+
+        vm.set_focused(Side::Secondary);
+        assert_eq!(vm.focused_side(), Side::Secondary);
+        vm.set_focused(Side::Primary);
+        assert_eq!(vm.focused_side(), Side::Primary);
+    }
+
+    #[test]
+    fn select_item_reselects_the_tab_for_an_item() {
+        // The restore step: after re-opening a pane's tabs, re-mark the one that was
+        // selected — by item id, since the `TabId`s are freshly minted on restore.
+        let vm = editors();
+        let first = push_tab(&vm, Side::Primary, 10);
+        let _second = push_tab(&vm, Side::Primary, 20);
+        // Currently the first is selected; ask to select item 20's tab.
+        vm.pane(Side::Primary).selected.set(Some(first));
+        vm.select_item(Side::Primary, 20);
+        assert_eq!(vm.selected_item(Side::Primary), Some(20));
+        // An item with no open tab is a no-op (selection unchanged).
+        vm.select_item(Side::Primary, 12345);
+        assert_eq!(vm.selected_item(Side::Primary), Some(20));
     }
 
     #[test]

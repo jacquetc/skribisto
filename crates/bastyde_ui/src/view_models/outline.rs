@@ -119,7 +119,16 @@ impl OutlineViewModel {
         // presentation (a `DockActivityBar` icon rail); the layout sizes the
         // rail from the `DockRail` config.
         docking.set_side_rail(DockSide::Leading, 48.0);
-        Self::new(app_ctx, ids, model, docking, DockWidgetId::fresh(), filters)
+        // A *stable* id (not `fresh()`) so the per-work dock-layout restore can
+        // match this dock across launches — see `crate::docks` module docs.
+        Self::new(
+            app_ctx,
+            ids,
+            model,
+            docking,
+            DockWidgetId::from_raw(crate::docks::OUTLINE_DOCK_ID),
+            filters,
+        )
     }
 
     /// Inject the model's drag-reorder closure. **Cycle-safety:** it captures

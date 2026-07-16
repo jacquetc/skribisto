@@ -175,6 +175,10 @@ impl PendingAction {
 /// this function performs the actual close itself, via `close_window_forced`,
 /// rather than deferring to the guard's own return value.
 pub fn close_work_and_return_to_launcher(app_ctx: &Rc<AppContext>, ctx: &mut EventContext) {
+    // Capture the desk (open tabs + docks) while the store is still alive —
+    // `close_work` tears the Work subtree out *before* publishing `CloseWork`, so a
+    // subscriber could no longer translate a tab into its persistable ordinal.
+    capture_workspace_layout(ctx);
     let _ = work_management_commands::close_work(app_ctx);
     ctx.open_window(crate::windows::launcher_window_config(app_ctx.clone()));
     ctx.close_window_forced();
@@ -193,8 +197,21 @@ pub fn close_work_and_return_to_launcher(app_ctx: &Rc<AppContext>, ctx: &mut Eve
 /// `close_window_forced`, rather than deferring to the guard's own return
 /// value.
 pub fn quit_app(app_ctx: &Rc<AppContext>, ctx: &mut EventContext) {
+    // Persist the desk before the store is torn down — see
+    // [`close_work_and_return_to_launcher`].
+    capture_workspace_layout(ctx);
     let _ = work_management_commands::close_work(app_ctx);
     ctx.close_window_forced();
+}
+
+/// Persist the open project's workspace layout (open tabs + dock arrangement)
+/// through the shared [`WorkspaceLayoutViewModel`]. Called at each "leave the
+/// project" door while its store is still alive. A no-op if the view-model isn't
+/// registered (e.g. a launcher window) or no project is open.
+pub(crate) fn capture_workspace_layout(ctx: &mut EventContext) {
+    if let Some(layout) = ctx.app_state::<crate::view_models::WorkspaceLayoutViewModel>().cloned() {
+        layout.capture();
+    }
 }
 
 /// Perform `outcome` immediately — `close_work_and_return_to_launcher` for
@@ -471,9 +488,11 @@ impl App {
             initial_action: Some(initial_action),
             initial_loaded: false,
             editors: None,
-            inspector_dock: DockWidgetId::fresh(),
-            preview_dock: DockWidgetId::fresh(),
-            search_dock: DockWidgetId::fresh(),
+            // *Stable* ids (not `fresh()`) so the per-work dock-layout restore
+            // can match these docks across launches — see `crate::docks` docs.
+            inspector_dock: DockWidgetId::from_raw(crate::docks::INSPECTOR_DOCK_ID),
+            preview_dock: DockWidgetId::from_raw(crate::docks::PREVIEW_DOCK_ID),
+            search_dock: DockWidgetId::from_raw(crate::docks::SEARCH_DOCK_ID),
             search: None,
             search_settings_reloadable: None,
             root_child: None,
@@ -590,6 +609,16 @@ impl Widget for App {
                 )
             })
             .clone();
+
+        // Hand the editors to the per-work workspace-layout restore. It was created
+        // in `main` (before any `ctx.settings()`), so it starts editor-less and is
+        // wired here, on every build — idempotent (`set_editors` just re-points).
+        // Kept as a local so the Load/New subscribers can drive its restore.
+        let workspace_layout =
+            ctx.app_state::<crate::view_models::WorkspaceLayoutViewModel>().cloned();
+        if let Some(layout) = &workspace_layout {
+            layout.set_editors(editors.clone());
+        }
 
         // ── Spell-checking wiring (Step 6). `docs` above was moved into the editors VM, so
         // re-fetch the shared handles for the attach loop. ──
@@ -1333,6 +1362,7 @@ impl Widget for App {
             let single_work_info = single_work_info.clone();
             let spell_docs = spell_docs.clone();
             let spellcheck = spellcheck.clone();
+            let workspace_layout = workspace_layout.clone();
             // An open tab does not follow its item by itself: `TabInfo::title` is a plain
             // string baked in at open time, and the `ContentTab` payload is built once for
             // the item's `(role, sub_role)`. So a rename must push the new caption, and a
@@ -1386,6 +1416,14 @@ impl Widget for App {
                     // known — firing it here, before that sniff runs, could pump a
                     // freshly-opened *backup* file into the real project's
                     // retention pool before anyone knew it was a backup.
+
+                    // Restore this project's saved desk (open tabs + docks), or apply
+                    // the defaults. Runs last: the store is loaded, the singles point
+                    // at the new project (so `unique_id` is known), and `close_all`
+                    // has cleared the outgoing tabs — the clean slate restore fills.
+                    if let Some(layout) = &workspace_layout {
+                        layout.restore();
+                    }
                 },
             );
         }
@@ -1663,6 +1701,7 @@ impl Widget for App {
             let backup_context = self.backup_context.clone();
             let spell_docs = spell_docs.clone();
             let spellcheck = spellcheck.clone();
+            let workspace_layout = workspace_layout.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::NewWork),
                 move |_event: &Event| {
@@ -1695,6 +1734,13 @@ impl Widget for App {
                     backup_mode.set(false);
                     backup_context.set(None);
                     editors.save_to_disk();
+                    // A fresh project has a fresh `unique_id` and so no saved layout:
+                    // this resets the docks to the default (bottom hidden) — dropping
+                    // any arrangement inherited from an in-place switch — over an
+                    // empty desk.
+                    if let Some(layout) = &workspace_layout {
+                        layout.restore();
+                    }
                 },
             );
         }
@@ -1967,6 +2013,7 @@ impl Widget for App {
             let exit_seq = self.exit_seq.clone();
             let scheduler = backup_scheduler.clone();
             let switch = project_switch.clone();
+            let workspace_layout = workspace_layout.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Completed),
                 move |e: &Event, c| {
@@ -1976,6 +2023,14 @@ impl Widget for App {
                     let Some(landed) = editors.on_save_completed(e) else {
                         return;
                     };
+                    // The store now matches disk — keep the persisted desk fresh and
+                    // ordinal-aligned with the file, so a later hard exit (crash /
+                    // kill, with no graceful close to capture at) still restores. A
+                    // no-op if a follow-up save is due (still dirty): `capture` self-
+                    // gates on `is_unsaved`, so only the final clean save persists.
+                    if let Some(layout) = &workspace_layout {
+                        layout.capture();
+                    }
                     // That follow-up could not be issued: nothing further is coming
                     // for anything still parked beyond what just landed, so drop it
                     // rather than let it wait forever.
@@ -2209,21 +2264,31 @@ impl Widget for App {
         //    dock content itself lives in `docks::outline`. ───────────────────
         // The trailing side hosts the context Inspector (a rail dock, like the
         // outline), sized + rail-fronted on the shared DockingModel.
-        let docking = outline.docking();
-        docking.set_side_size(DockSide::Trailing, 300.0);
-        docking.set_side_rail(DockSide::Trailing, 48.0);
-        // The bottom search-preview band. The bottom-LEADING corner belongs to the
-        // Leading side, so the binder column runs full height and the preview spans
-        // only the width beside it. (Default is `Bottom`, i.e. a full-width band
-        // under everything.)
-        docking.set_side_size(DockSide::Bottom, 180.0);
-        docking.set_corner(DockCorner::BottomLeading, DockSide::Leading);
-        // An activity bar, not a tab strip: `set_side_rail` switches the side's
-        // presentation from tabs to a rail of activity glyphs, and `Compact` keeps
-        // them at the standard icon-button size so the band spends its height on
-        // prose rather than on chrome.
-        docking.set_side_rail(DockSide::Bottom, 36.0);
-        docking.set_side_rail_size(DockSide::Bottom, DockRailItemSize::Compact);
+        //
+        // These are the DEFAULT dock config + arrangement, established **once** (on
+        // first build): the shared `DockingModel` persists across widget rebuilds,
+        // and the per-work restore below imports each project's saved sizes /
+        // selected side-tab on `LoadWork`, so re-running these on every rebuild would
+        // stomp a restored (or user-adjusted) layout. The `.dock(...)` registrations
+        // on `DockingLayout::new(...)` still run every build — they rebuild the dock
+        // *content*, not the arrangement.
+        if !self.initial_loaded {
+            let docking = outline.docking();
+            docking.set_side_size(DockSide::Trailing, 300.0);
+            docking.set_side_rail(DockSide::Trailing, 48.0);
+            // The bottom search-preview band. The bottom-LEADING corner belongs to
+            // the Leading side, so the binder column runs full height and the preview
+            // spans only the width beside it. (Default is `Bottom`, i.e. a full-width
+            // band under everything.)
+            docking.set_side_size(DockSide::Bottom, 180.0);
+            docking.set_corner(DockCorner::BottomLeading, DockSide::Leading);
+            // An activity bar, not a tab strip: `set_side_rail` switches the side's
+            // presentation from tabs to a rail of activity glyphs, and `Compact` keeps
+            // them at the standard icon-button size so the band spends its height on
+            // prose rather than on chrome.
+            docking.set_side_rail(DockSide::Bottom, 36.0);
+            docking.set_side_rail_size(DockSide::Bottom, DockRailItemSize::Compact);
+        }
         let layout = DockingLayout::new(outline.docking())
             .rail(
                 DockRail::new(DockSide::Leading)
@@ -2261,13 +2326,15 @@ impl Widget for App {
                 search.clone(),
                 self.preview_dock,
             ));
-        // The leading side hosts TWO activity docks (binder + search) as separate
-        // switchable rail tabs — VS Code style: the rail shows both glyphs, and
-        // selecting one shows only its panel. `.new_tab()` is what makes them
-        // distinct tabs; the default `side()` placement *stacks* (a vertical
-        // split showing both at once, which starves the binder). The binder is
-        // revealed last so it is the selected leading panel on launch.
-        {
+        // First-build-only default arrangement (see the config block above on why
+        // it must not re-run on rebuilds).
+        if !self.initial_loaded {
+            // The leading side hosts TWO activity docks (binder + search) as separate
+            // switchable rail tabs — VS Code style: the rail shows both glyphs, and
+            // selecting one shows only its panel. `.new_tab()` is what makes them
+            // distinct tabs; the default `side()` placement *stacks* (a vertical
+            // split showing both at once, which starves the binder). The binder is
+            // revealed last so it is the selected leading panel on launch.
             let docking = outline.docking();
             docking.open_dock(
                 outline.dock_id(),
@@ -2278,19 +2345,28 @@ impl Widget for App {
                 DockOpenLocation::side(DockSide::Leading).new_tab(),
             );
             docking.reveal_dock(outline.dock_id());
+            // Mount the inspector on the trailing side (otherwise the side shows the
+            // empty "drop a panel here" placeholder).
+            docking.open_dock(
+                self.inspector_dock,
+                DockOpenLocation::side(DockSide::Trailing),
+            );
+            // Mount the bottom preview band, then hide it: it is the transient
+            // search-preview band, always hidden at start (a result click reveals it
+            // thereafter). `open_dock` makes its side visible as a side effect, so the
+            // hide must follow the mount — and it is *immediate* to avoid an
+            // opening-then-closing flash on launch.
+            docking.open_dock(self.preview_dock, DockOpenLocation::side(DockSide::Bottom));
+            docking.set_side_visible_immediate(DockSide::Bottom, false);
+            // Snapshot this pristine arrangement as the reset target for a project
+            // that has no saved layout (so an in-place switch to an unconfigured
+            // project doesn't inherit the previous one's docks).
+            if let Some(layout_vm) =
+                ctx.app_state::<crate::view_models::WorkspaceLayoutViewModel>().cloned()
+            {
+                layout_vm.set_default_docks(docking.export_state());
+            }
         }
-        // Mount the inspector on the trailing side (otherwise the side shows the
-        // empty "drop a panel here" placeholder).
-        outline.docking().open_dock(
-            self.inspector_dock,
-            DockOpenLocation::side(DockSide::Trailing),
-        );
-        // Mount the bottom preview band. A hidden bottom band collapses its rail
-        // entirely, so — like the leading docks — it is opened here; a result
-        // click reveals it thereafter (`reveal_dock`).
-        outline
-            .docking()
-            .open_dock(self.preview_dock, DockOpenLocation::side(DockSide::Bottom));
 
         // ── Status bar (thin) with the notification bell ─────────────────────
         let archive = ctx
@@ -2325,10 +2401,12 @@ impl Widget for App {
                 .cloned()
                 .expect("OpenDocsStore registered in main"),
             editors.active_item(),
+            settings.counting_method(),
         );
         let word_count_indicator = crate::word_count_indicator::WordCountIndicator::new(
             stats.clone(),
             single_work_info.shape().map(|s| s.is_some()),
+            settings.show_characters(),
         );
         // The writing session: a play/pause sprint timer + word tracker (ephemeral —
         // only its targets persist). Sits on the right of the status bar.

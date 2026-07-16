@@ -91,11 +91,12 @@ use frontend::common::event::{Event, Origin};
 
 use app::PendingExit;
 use app_ids::AppIds;
-use models::{BackupSettingsService, OpenDocsStore};
+use models::{BackupSettingsService, OpenDocsStore, WorkspaceLayoutService};
 use singles::{SingleWork, SingleWorkInfo};
 use view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel,
     OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel, RestoreViewModel, SaveAsViewModel,
+    WorkspaceLayoutViewModel,
 };
 
 /// The currently-open project's path (from `WorkInfo`), if any.
@@ -250,6 +251,17 @@ pub const TYPEWRITER_DEFAULT: bool = true;
 /// Highlight the sentence the caret is in.
 pub const HIGHLIGHT_SENTENCE_KEY: &str = "editor.highlight_sentence";
 pub const HIGHLIGHT_SENTENCE_DEFAULT: bool = false;
+
+// ── Goals & word count (Settings ▸ Editor ▸ Goals) ────────────────────────────
+/// How words are counted for the live status-bar / focused count: `Auto` (per the
+/// scene's language — CJK-smart for zh/ja, Unicode words elsewhere) or a forced
+/// method. A global USER preference; it drives only the *displayed* live count,
+/// never the canonical progress snapshot (which is always `Auto`). Persisted as
+/// the serialized `CountingMethodSetting`; the default is supplied by the VM.
+pub const GOALS_COUNTING_METHOD_KEY: &str = "goals.counting_method";
+/// Show the character count alongside the word count in the status bar.
+pub const GOALS_SHOW_CHARACTERS_KEY: &str = "goals.show_characters";
+pub const GOALS_SHOW_CHARACTERS_DEFAULT: bool = false;
 
 /// The bundled writing typefaces (OFL-1.1), registered additively into the
 /// shared typesetter at startup so the defaults render on every machine and the
@@ -429,6 +441,20 @@ fn main() {
     // title-bar menu can bind its reactive checkmark and the whole app can reach
     // it via `ctx.app_state::<OutlineViewModel>()`.
     let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
+    // Per-work workspace layout (open editor tabs + dock arrangement): opened
+    // eagerly here so the restore fires on the first `LoadWork`. App-local config
+    // (`workspace.toml`, keyed by `Work.unique_id`), orthogonal to the `.skrib`
+    // document — degrades to a throwaway temp file if the config dir is
+    // unavailable, exactly as the backup/search settings do. The VM reads the
+    // project uid/path from the singles, drives the shared `DockingModel` (via the
+    // outline handle), and is handed the editors once `App::build` creates them.
+    let workspace_layout_service = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| {
+            WorkspaceLayoutService::open(&paths)
+                .map_err(|e| eprintln!("workspace layout: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(WorkspaceLayoutService::in_memory_default);
     // The progress recorder (writing-cadence): on each save it recounts the
     // project's words and records a daily `ProgressSnapshot` feeding the Pace
     // charts. Registered as app-state so `App::build` can route the save +
@@ -462,6 +488,18 @@ fn main() {
     // `backup_mode` (to hide Save / Back up now); `App::build` sets them on load.
     let backup_mode = Signal::new(false);
     let backup_context: Signal<Option<backup::BackupContext>> = Signal::new(None);
+    // Per-work workspace layout view-model (built here, once `backup_mode` exists —
+    // capture is inert in backup mode). It drives the shared `DockingModel` (via the
+    // outline handle) and is handed the editors once `App::build` creates them.
+    let workspace_layout = WorkspaceLayoutViewModel::new(
+        app_ctx.clone(),
+        workspace_layout_service,
+        outline.docking(),
+        single_work.clone(),
+        single_work_info.clone(),
+        ids.clone(),
+        backup_mode.clone(),
+    );
     // The Save-As view-model records the new path/shape into WorkInfo on the UI
     // thread when a background "Save As" completes (save_as itself is read-only).
     // It also clears backup mode on success — a Save As out of a backup window makes
@@ -639,6 +677,7 @@ fn main() {
         .app_state(single_work.clone())
         .app_state(single_work_info.clone())
         .app_state(outline.clone())
+        .app_state(workspace_layout.clone())
         .app_state(progress_recorder.clone())
         .app_state(import_plume.clone())
         .app_state(export.clone())

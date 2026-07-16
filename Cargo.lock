@@ -890,6 +890,7 @@ dependencies = [
  "skribisto-skrib-format",
  "spellbook",
  "tempfile",
+ "toml 0.8.23",
  "unicode-segmentation",
  "ureq",
  "windows 0.61.3",
