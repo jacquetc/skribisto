@@ -94,6 +94,8 @@ pub struct EditorsViewModel {
     typography: EditorTypographySet,
     /// Per-container-type "last view" memory, threaded into every `ContentTab`.
     view_memory: crate::view_models::EditorViewMemory,
+    /// Corkboard default presentation, threaded into every container `ContentTab`.
+    corkboard_defaults: crate::view_models::CorkboardDefaults,
     /// Id-only global state (work + undo-stack ids); write-back lands on
     /// `ids.stack_id` so it shares the tree edits' Ctrl+Z history.
     ids: AppIds,
@@ -124,6 +126,7 @@ impl EditorsViewModel {
         show_synopsis: Signal<bool>,
         typography: EditorTypographySet,
         view_memory: crate::view_models::EditorViewMemory,
+        corkboard_defaults: crate::view_models::CorkboardDefaults,
         ids: AppIds,
         docs: OpenDocsStore,
         backup_mode: Signal<bool>,
@@ -156,6 +159,7 @@ impl EditorsViewModel {
             show_synopsis,
             typography,
             view_memory,
+            corkboard_defaults,
             ids,
             docs,
             backup_mode,
@@ -172,7 +176,6 @@ impl EditorsViewModel {
     pub fn edited_signal(&self) -> Signal<u64> {
         self.docs.edited_any()
     }
-
 
     /// The dynamic-tab model for a pane's `TabWidget::dynamic_model`.
     pub fn tabs(&self, side: Side) -> ListModel<TabHandle> {
@@ -297,6 +300,7 @@ impl EditorsViewModel {
             self.show_synopsis.clone(),
             self.typography.clone(),
             self.view_memory.clone(),
+            self.corkboard_defaults.clone(),
         );
         let tab_title = if title.is_empty() {
             tr!(untitled())
@@ -787,6 +791,7 @@ impl EditorsViewModel {
                     self.show_synopsis.clone(),
                     self.typography.clone(),
                     self.view_memory.clone(),
+                    self.corkboard_defaults.clone(),
                 );
                 let caption = if it.title.is_empty() {
                     tr!(untitled())
@@ -922,6 +927,7 @@ mod tests {
             Signal::new(true),
             test_typography(),
             crate::view_models::EditorViewMemory::detached(false),
+            crate::view_models::CorkboardDefaults::detached(),
             ids,
             docs,
             Signal::new(false),
@@ -1114,8 +1120,16 @@ mod tests {
         let _b = push_tab(&vm, Side::Primary, 20);
         let _c = push_tab(&vm, Side::Primary, 30);
         vm.pane(Side::Primary).selected.set(Some(a));
-        assert_eq!(vm.tab_item_ids(Side::Primary), vec![10, 20, 30], "tab order");
-        assert_eq!(vm.selected_item(Side::Primary), Some(10), "selected tab's item");
+        assert_eq!(
+            vm.tab_item_ids(Side::Primary),
+            vec![10, 20, 30],
+            "tab order"
+        );
+        assert_eq!(
+            vm.selected_item(Side::Primary),
+            Some(10),
+            "selected tab's item"
+        );
 
         // Secondary pane + focus tracking.
         vm.set_split(true);

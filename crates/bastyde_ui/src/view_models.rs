@@ -46,6 +46,7 @@
 mod add_dictionary;
 mod backup_scheduler;
 mod backup_settings;
+mod corkboard;
 mod dictionaries;
 mod editors;
 mod export;
@@ -61,19 +62,20 @@ mod project_switch;
 mod restore;
 mod save_as;
 mod save_queue;
-mod search_replace;
 mod save_status;
+mod search_replace;
 mod settings;
+mod stream;
 mod user_dictionary;
+mod welcome;
 mod word_count_status;
 mod workspace_layout;
 mod writing_session;
-mod stream;
-mod welcome;
 
 pub use add_dictionary::AddDictionaryViewModel;
 pub use backup_scheduler::BackupSchedulerViewModel;
 pub use backup_settings::BackupSettingsViewModel;
+pub use corkboard::CorkboardViewModel;
 pub use dictionaries::{DictionariesViewModel, InstallDictError, missing_from};
 pub use editors::{EditorsViewModel, Side};
 pub use export::{ExportViewModel, format_label, scope_label};
@@ -90,14 +92,16 @@ pub use project_switch::{
 pub use restore::RestoreViewModel;
 pub use save_as::SaveAsViewModel;
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
+pub use search_replace::SearchReplaceViewModel;
+pub use settings::{
+    CorkboardDefaults, EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel,
+};
+pub use stream::{SplitFlavour, StreamViewModel};
+pub(crate) use stream::{is_prose_bearing, is_synopsis_bearing};
+pub use user_dictionary::{ImportSummary, UserDictionaryViewModel};
+pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 pub use word_count_status::{CountDisplay, count_display};
 pub use workspace_layout::WorkspaceLayoutViewModel;
 pub use writing_session::{
     WritingSessionViewModel, format_mmss, gauge_role, remaining, words_progress,
 };
-pub use search_replace::SearchReplaceViewModel;
-pub use settings::{EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel};
-pub use stream::{SplitFlavour, StreamViewModel};
-pub use user_dictionary::{ImportSummary, UserDictionaryViewModel};
-pub(crate) use stream::{is_prose_bearing, is_synopsis_bearing};
-pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};

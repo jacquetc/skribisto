@@ -22,23 +22,26 @@ use frontend::common::entities::BinderItemSubRole;
 use skribisto_model::counting::CountingMethodSetting;
 
 use crate::{
-    AUTOSAVE_KEY, DARK_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
+    AUTOSAVE_KEY, CORKBOARD_CARD_SIZE_DEFAULT, CORKBOARD_CARD_SIZE_KEY, CORKBOARD_NESTED_DEFAULT,
+    CORKBOARD_NESTED_KEY, CORKBOARD_SHOW_WORD_COUNT_DEFAULT, CORKBOARD_SHOW_WORD_COUNT_KEY,
+    DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
     GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
     HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
     NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY,
     NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT,
     NOTES_PARA_SPACING_AFTER_KEY, NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_PARA_SPACING_BEFORE_KEY,
     NOTES_SIZE_DEFAULT, NOTES_SIZE_KEY, PREVIEW_WIDTH_DEFAULT, PREVIEW_WIDTH_KEY,
-    SCENE_FIRST_LINE_INDENT_DEFAULT,
+    REMEMBER_VIEW_DEFAULT, REMEMBER_VIEW_KEY, SCENE_FIRST_LINE_INDENT_DEFAULT,
     SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT, SCENE_FONT_FAMILY_KEY,
     SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT,
     SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY,
-    SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
-    SYNOPSIS_FIRST_LINE_INDENT_KEY, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY,
-    SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT,
-    SYNOPSIS_PANE_KEY, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
+    SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT,
+    SPELLCHECK_ENABLED_KEY, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY,
+    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY, SYNOPSIS_LINE_HEIGHT_DEFAULT,
+    SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PANE_KEY,
+    SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
     SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_SIZE_DEFAULT,
-    REMEMBER_VIEW_DEFAULT, REMEMBER_VIEW_KEY, SYNOPSIS_SIZE_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
+    SYNOPSIS_SIZE_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
 };
 
 /// One editor type's four typography knobs. Cheap to clone — every field is a
@@ -150,6 +153,30 @@ impl EditorViewMemory {
     }
 }
 
+/// The corkboard's default presentation, shared live into every container tab's
+/// [`CorkboardViewModel`](crate::view_models::CorkboardViewModel). Every field is a
+/// store-backed signal, so editing it in Settings fans out to open boards at once.
+#[derive(Clone)]
+pub struct CorkboardDefaults {
+    pub nested: Signal<bool>,
+    pub card_size: Signal<f32>,
+    pub show_word_count: Signal<bool>,
+    pub counting_method: Signal<CountingMethodSetting>,
+}
+
+impl CorkboardDefaults {
+    /// Fresh, unshared signals at the built-in defaults — for a standalone tab
+    /// (tests) that has no `SettingsStore` to bind against.
+    pub fn detached() -> Self {
+        Self {
+            nested: Signal::new(CORKBOARD_NESTED_DEFAULT),
+            card_size: Signal::new(CORKBOARD_CARD_SIZE_DEFAULT),
+            show_word_count: Signal::new(CORKBOARD_SHOW_WORD_COUNT_DEFAULT),
+            counting_method: Signal::new(CountingMethodSetting::default()),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct SettingsViewModel {
     dark: Signal<bool>,
@@ -171,6 +198,10 @@ pub struct SettingsViewModel {
     // ── Goals & word count ──
     counting_method: Signal<CountingMethodSetting>,
     show_characters: Signal<bool>,
+    // ── Corkboard ──
+    corkboard_nested: Signal<bool>,
+    corkboard_card_size: Signal<f32>,
+    corkboard_show_word_count: Signal<bool>,
 }
 
 // Accessors/setters are the feature's public API; bound to widgets incrementally.
@@ -183,8 +214,7 @@ impl SettingsViewModel {
             column_width: store.signal(EDITOR_WIDTH_KEY, EDITOR_WIDTH_DEFAULT),
             preview_width: store.signal(PREVIEW_WIDTH_KEY, PREVIEW_WIDTH_DEFAULT),
             autosave: store.signal(AUTOSAVE_KEY, false),
-            spellcheck_enabled: store
-                .signal(SPELLCHECK_ENABLED_KEY, SPELLCHECK_ENABLED_DEFAULT),
+            spellcheck_enabled: store.signal(SPELLCHECK_ENABLED_KEY, SPELLCHECK_ENABLED_DEFAULT),
             show_welcome: store.signal(SHOW_WELCOME_KEY, true),
             scene_typo: EditorTypography {
                 font_family: store
@@ -245,6 +275,12 @@ impl SettingsViewModel {
             counting_method: store
                 .signal(GOALS_COUNTING_METHOD_KEY, CountingMethodSetting::default()),
             show_characters: store.signal(GOALS_SHOW_CHARACTERS_KEY, GOALS_SHOW_CHARACTERS_DEFAULT),
+            corkboard_nested: store.signal(CORKBOARD_NESTED_KEY, CORKBOARD_NESTED_DEFAULT),
+            corkboard_card_size: store.signal(CORKBOARD_CARD_SIZE_KEY, CORKBOARD_CARD_SIZE_DEFAULT),
+            corkboard_show_word_count: store.signal(
+                CORKBOARD_SHOW_WORD_COUNT_KEY,
+                CORKBOARD_SHOW_WORD_COUNT_DEFAULT,
+            ),
         }
     }
 
@@ -324,6 +360,34 @@ impl SettingsViewModel {
     /// Show the character count beside the word count in the status bar.
     pub fn show_characters(&self) -> Signal<bool> {
         self.show_characters.clone()
+    }
+
+    // ── Corkboard (default mode + card presentation; shared live into every tab) ──
+    /// Default corkboard mode: `true` = nested (direct children, drillable),
+    /// `false` = flat (all descendant leaves).
+    pub fn corkboard_nested(&self) -> Signal<bool> {
+        self.corkboard_nested.clone()
+    }
+    /// Corkboard card size (minimum tile width, px) — the size slider drives it.
+    pub fn corkboard_card_size(&self) -> Signal<f32> {
+        self.corkboard_card_size.clone()
+    }
+    /// Show a card's word count in its footer.
+    pub fn corkboard_show_word_count(&self) -> Signal<bool> {
+        self.corkboard_show_word_count.clone()
+    }
+
+    /// The corkboard defaults bundle threaded into every container tab's
+    /// [`CorkboardViewModel`](crate::view_models::CorkboardViewModel). Bundled so a
+    /// tab constructor takes one handle rather than five signals. `counting_method`
+    /// is the same live setting the status-bar word count uses.
+    pub fn corkboard_defaults(&self) -> CorkboardDefaults {
+        CorkboardDefaults {
+            nested: self.corkboard_nested.clone(),
+            card_size: self.corkboard_card_size.clone(),
+            show_word_count: self.corkboard_show_word_count.clone(),
+            counting_method: self.counting_method.clone(),
+        }
     }
 
     // ── business API ──
@@ -412,6 +476,10 @@ impl SettingsViewModel {
         self.highlight_sentence.set(HIGHLIGHT_SENTENCE_DEFAULT);
         self.counting_method.set(CountingMethodSetting::default());
         self.show_characters.set(GOALS_SHOW_CHARACTERS_DEFAULT);
+        self.corkboard_nested.set(CORKBOARD_NESTED_DEFAULT);
+        self.corkboard_card_size.set(CORKBOARD_CARD_SIZE_DEFAULT);
+        self.corkboard_show_word_count
+            .set(CORKBOARD_SHOW_WORD_COUNT_DEFAULT);
     }
 }
 
@@ -490,7 +558,11 @@ mod tests {
         let m = EditorViewMemory::detached(true);
         m.remember(&Part, 2); // recorded while enabled
         m.enabled().set(false);
-        assert_eq!(m.initial(&Part), 0, "disabled always starts on the own page");
+        assert_eq!(
+            m.initial(&Part),
+            0,
+            "disabled always starts on the own page"
+        );
         m.remember(&Part, 1); // no-op while disabled
         m.enabled().set(true);
         assert_eq!(m.initial(&Part), 2, "the disabled write was ignored");

@@ -74,13 +74,19 @@ pub enum AppIntent {
     OpenItemToSide { item_id: u64, title: String },
 
     /// Create a new binder item of a logical `CreateType`, placed by `relation`
-    /// relative to the current selection. The header "Create" SplitButton fires
-    /// this with the recommended type + relation; the concrete `(role, sub_role)`
-    /// is resolved from the project's chapter mode at execution time.
+    /// relative to an anchor. The header "Create" SplitButton fires this with the
+    /// recommended type + relation; the concrete `(role, sub_role)` is resolved
+    /// from the project's chapter mode at execution time.
+    ///
+    /// `anchor_item_id` names the item the new one is placed relative to.
+    /// `None` = the current Outline selection (the outline dock's own "Create").
+    /// The corkboard passes `Some(current_container)` because its drilled-into
+    /// container is independent of the Outline's selection.
     #[name = "binder.new_item"]
     NewItem {
         create_type: CreateType,
         relation: Relation,
+        anchor_item_id: Option<u64>,
     },
 
     /// Rename the selected binder/item (presents an input dialog).

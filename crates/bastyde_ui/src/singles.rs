@@ -25,6 +25,7 @@
 mod single_binder;
 mod single_binder_item;
 mod single_content;
+mod single_corkboard_card;
 mod single_dict_word;
 mod single_milestone;
 mod single_work;
@@ -33,6 +34,7 @@ mod single_work_info;
 pub use single_binder::SingleBinder;
 pub use single_binder_item::SingleBinderItem;
 pub use single_content::SingleContent;
+pub use single_corkboard_card::SingleCorkboardCard;
 pub use single_dict_word::SingleDictWord;
 pub use single_milestone::SingleMilestone;
 pub use single_work::SingleWork;

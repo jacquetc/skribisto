@@ -108,6 +108,9 @@ pub struct ContentTab {
     /// not through documents. Consumed by the Pace pane (built out over M4c/M4d).
     #[allow(dead_code)]
     pace: Option<PaceViewModel>,
+    /// The Corkboard view-model — `Some` only for a folder container (Chapter /
+    /// Part / Book), gated on the same [`StreamLevel::for_container`] as `stream`.
+    corkboard: Option<crate::view_models::CorkboardViewModel>,
     /// The app's entity ids — needed for the undo stack when a name field commits.
     ids: AppIds,
     /// The per-editor find banner (Ctrl+F) — `Some` only when this tab has a main
@@ -234,6 +237,7 @@ pub fn tab_for(
         show_synopsis,
         typography,
         view_memory,
+        crate::view_models::CorkboardDefaults::detached(),
     )
 }
 
@@ -277,6 +281,7 @@ impl ContentTab {
         show_synopsis: Signal<bool>,
         typography: EditorTypographySet,
         view_memory: crate::view_models::EditorViewMemory,
+        corkboard_defaults: crate::view_models::CorkboardDefaults,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
         // the stream (Book only). Built first, so it can borrow `app_ctx` before
@@ -288,6 +293,26 @@ impl ContentTab {
             &open_doc.role,
             &open_doc.sub_role,
         );
+        // The Corkboard exists for exactly the folder containers a stream does. Built
+        // before `stream` consumes `app_ctx`.
+        let corkboard =
+            crate::models::StreamLevel::for_container(&open_doc.role, &open_doc.sub_role).map(
+                |_| {
+                    let cd = &corkboard_defaults;
+                    crate::view_models::CorkboardViewModel::new(
+                        app_ctx.clone(),
+                        ids.clone(),
+                        docs.clone(),
+                        open_doc.item_id,
+                        cd.nested.clone(),
+                        cd.card_size.clone(),
+                        cd.show_word_count.clone(),
+                        cd.counting_method.clone(),
+                        typography.synopsis.clone(),
+                        column_width.clone(),
+                    )
+                },
+            );
         let stream = StreamViewModel::new(
             app_ctx,
             ids.clone(),
@@ -308,6 +333,7 @@ impl ContentTab {
             open_doc,
             stream,
             pace,
+            corkboard,
             ids,
             find,
             segment,
@@ -316,6 +342,11 @@ impl ContentTab {
             typography,
             view_memory,
         }
+    }
+
+    /// The Corkboard view-model — `Some` only for a folder container.
+    pub fn corkboard(&self) -> Option<&crate::view_models::CorkboardViewModel> {
+        self.corkboard.as_ref()
     }
 
     /// The per-editor find banner's view-model — `Some` only when the tab has a
@@ -599,8 +630,9 @@ mod tests {
             let mut tree = WidgetTree::new();
             let id = tree.add_boxed(tab_pane(&tab));
             tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
-            let bar = first_of_type(&tree, id, "SegmentedControl")
-                .unwrap_or_else(|| panic!("Folder/{sub_role:?} has no SegmentedControl in its tree"));
+            let bar = first_of_type(&tree, id, "SegmentedControl").unwrap_or_else(|| {
+                panic!("Folder/{sub_role:?} has no SegmentedControl in its tree")
+            });
             let b = tree.bounds(bar);
             assert!(
                 b.width > 0.0 && b.height > 0.0,
@@ -641,9 +673,17 @@ mod tests {
         tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
         // Switch it to "Full Chapter" (index 1).
         chapter1.segment.set(1);
-        assert_eq!(mem.initial(&ChapterScene), 1, "the chosen view was remembered");
+        assert_eq!(
+            mem.initial(&ChapterScene),
+            1,
+            "the chosen view was remembered"
+        );
         // A newly-opened chapter inherits it.
-        assert_eq!(open(2).segment.get(), 1, "a new chapter opens on Full Chapter");
+        assert_eq!(
+            open(2).segment.get(),
+            1,
+            "a new chapter opens on Full Chapter"
+        );
         // ...but a Scene (no segmented control) is unaffected.
         let scene = tab_for(
             &ctx,

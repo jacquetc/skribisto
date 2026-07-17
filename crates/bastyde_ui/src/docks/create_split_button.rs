@@ -94,6 +94,8 @@ impl Widget for CreateSplitButton {
                         ctx.send_intent(AppIntent::NewItem {
                             create_type,
                             relation,
+                            // The outline's Create anchors on the current selection.
+                            anchor_item_id: None,
                         });
                     }),
             );

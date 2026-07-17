@@ -42,13 +42,14 @@ mod binder_icons;
 mod binder_placement;
 mod binder_switcher_button;
 mod create_labels;
+mod date_convert;
 mod dictionary_registry;
-mod find_icons;
 mod docks;
 mod editor_icons;
 mod export_choose;
 mod export_panel;
 mod export_split_button;
+mod find_icons;
 mod import_plume_panel;
 mod intents;
 mod ipc;
@@ -58,11 +59,9 @@ mod models;
 mod new_work_panel;
 mod open_registry;
 mod project_switcher_button;
-mod date_convert;
 mod save_indicator;
 mod session_icons;
 mod session_status_item;
-mod word_count_indicator;
 mod settings_backup;
 mod settings_dictionaries;
 mod settings_export_styles;
@@ -77,6 +76,7 @@ mod version;
 mod view_models;
 mod welcome_panel;
 mod windows;
+mod word_count_indicator;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -286,6 +286,23 @@ pub const GOALS_COUNTING_METHOD_KEY: &str = "goals.counting_method";
 /// Show the character count alongside the word count in the status bar.
 pub const GOALS_SHOW_CHARACTERS_KEY: &str = "goals.show_characters";
 pub const GOALS_SHOW_CHARACTERS_DEFAULT: bool = false;
+
+// ── Corkboard (Settings ▸ Editor ▸ Corkboard) ─────────────────────────────────
+/// Corkboard default mode: `true` = nested (a container's direct children; a
+/// folder card drills in), `false` = flat (all descendant leaves at once).
+pub const CORKBOARD_NESTED_KEY: &str = "corkboard.nested";
+pub const CORKBOARD_NESTED_DEFAULT: bool = true;
+/// Corkboard card size — the minimum tile width in px the size slider drives.
+pub const CORKBOARD_CARD_SIZE_KEY: &str = "corkboard.card_size";
+pub const CORKBOARD_CARD_SIZE_DEFAULT: f32 = 240.0;
+/// The card-size slider range (shared by the header slider and the settings pane).
+/// A wide span: compact index cards (210) up to near-full-width review cards (680).
+pub const CORKBOARD_CARD_SIZE_MIN: f32 = 210.0;
+pub const CORKBOARD_CARD_SIZE_MAX: f32 = 680.0;
+pub const CORKBOARD_CARD_SIZE_STEP: f32 = 10.0;
+/// Show a card's word count in its footer.
+pub const CORKBOARD_SHOW_WORD_COUNT_KEY: &str = "corkboard.show_word_count";
+pub const CORKBOARD_SHOW_WORD_COUNT_DEFAULT: bool = true;
 
 /// The bundled writing typefaces (OFL-1.1), registered additively into the
 /// shared typesetter at startup so the defaults render on every machine and the

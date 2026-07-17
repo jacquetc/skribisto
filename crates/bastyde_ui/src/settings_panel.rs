@@ -37,8 +37,8 @@ use bastyde::widgets::{
     Breadcrumb, BreadcrumbItem, Button, ButtonVariant, Center, Checkbox, Divider, Expand,
     FixedSize, FontPicker, FormLayout, GroupHeader, HStack, IconButton, IconWidget,
     LanguageSwitcher, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, Panel, RadioButton,
-    RadioGroup, ScrollArea, SearchField, Slider, Spacer, StandardButton, StandardTreeItem, Switcher,
-    TextScaleControl, TextWidget, ThemeSwitcher, Toggle, TreeView, VStack,
+    RadioGroup, ScrollArea, SearchField, Slider, Spacer, StandardButton, StandardTreeItem,
+    Switcher, TextScaleControl, TextWidget, ThemeSwitcher, Toggle, TreeView, VStack,
 };
 
 use crate::app_ids::AppIds;
@@ -46,14 +46,13 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{BackupSettingsViewModel, EditorTypography, SettingsViewModel};
 use crate::{
     EDITOR_WIDTH_DEFAULT, GOALS_SHOW_CHARACTERS_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT,
-    NOTES_FIRST_LINE_INDENT_DEFAULT,
-    NOTES_FONT_FAMILY_DEFAULT, NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT,
-    NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_SIZE_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT,
-    SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT, SCENE_PARA_SPACING_AFTER_DEFAULT,
-    SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_SIZE_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
-    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_PANE_DEFAULT,
-    SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT,
-    SYNOPSIS_SIZE_DEFAULT, TYPEWRITER_DEFAULT,
+    NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FONT_FAMILY_DEFAULT, NOTES_LINE_HEIGHT_DEFAULT,
+    NOTES_PARA_SPACING_AFTER_DEFAULT, NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_SIZE_DEFAULT,
+    SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT,
+    SCENE_PARA_SPACING_AFTER_DEFAULT, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_SIZE_DEFAULT,
+    SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_LINE_HEIGHT_DEFAULT,
+    SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
+    SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_SIZE_DEFAULT, TYPEWRITER_DEFAULT,
 };
 use skribisto_model::ChapterMode;
 use skribisto_model::counting::CountingMethodSetting;
@@ -642,6 +641,68 @@ impl SettingsPanel {
         )
     }
 
+    /// Editor ▸ Corkboard — the card-board defaults: nested-vs-flat mode, card
+    /// size, and what a card shows. All store-backed, so a change fans out live to
+    /// every open board. The nested/flat radio bridges a `usize` selection to the
+    /// `corkboard_nested` bool via two guarded effects — the shape `goals_pane` uses.
+    fn corkboard_pane(ctx: &mut BuildContext, vm: &SettingsViewModel) -> impl Widget {
+        let nested = vm.corkboard_nested();
+        // 0 = Nested, 1 = Flat.
+        let index: Signal<usize> = Signal::new(if nested.get() { 0 } else { 1 });
+        {
+            let index = index.clone();
+            ctx.effect(&nested, move |n| {
+                let i = if *n { 0 } else { 1 };
+                if index.get() != i {
+                    index.set(i);
+                }
+            });
+        }
+        {
+            let nested = nested.clone();
+            ctx.effect(&index, move |i| {
+                let n = *i == 0;
+                if nested.get() != n {
+                    nested.set(n);
+                }
+            });
+        }
+
+        let form = FormLayout::new()
+            .label(tr!(settings_page_corkboard()))
+            .label_gap(16.0)
+            .row_spacing(14.0)
+            .full_width(group(tr!(settings_group_corkboard_layout())))
+            .full_width(
+                RadioGroup::new()
+                    .radio(RadioButton::new(0, index.clone()).label(tr!(corkboard_view_nested())))
+                    .radio(RadioButton::new(1, index.clone()).label(tr!(corkboard_view_flat()))),
+            )
+            .full_width(hint(tr!(corkboard_layout_hint())))
+            .full_width(group(tr!(settings_group_corkboard_cards())))
+            .line(
+                field_label(tr!(corkboard_card_size())),
+                Slider::new(
+                    vm.corkboard_card_size(),
+                    crate::CORKBOARD_CARD_SIZE_MIN,
+                    crate::CORKBOARD_CARD_SIZE_MAX,
+                )
+                .step(crate::CORKBOARD_CARD_SIZE_STEP)
+                .label(tr!(corkboard_card_size())),
+            )
+            .full_width(
+                Toggle::new(vm.corkboard_show_word_count()).label(tr!(corkboard_show_word_count())),
+            );
+
+        pane_frame(
+            crumb(
+                Some(tr!(settings_sec_editor())),
+                tr!(settings_page_corkboard()),
+            ),
+            form,
+        )
+    }
+
     /// Appearance & Behaviour ▸ Appearance — interface language, the app-wide
     /// **Theme** and **Interface text size** (both relocated here from the old
     /// Manuscript pane, where "Editor theme"/"Text size" were misnomers for
@@ -805,7 +866,10 @@ impl SettingsPanel {
             .label_gap(16.0)
             .row_spacing(12.0)
             .full_width(group(tr!(settings_field_dict_language())));
-        let form = match ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned() {
+        let form = match ctx
+            .app_state::<crate::spellcheck::SpellcheckService>()
+            .cloned()
+        {
             Some(spell) => {
                 let value = work.dict_language();
                 let set: crate::language_pill_field::SetLanguages = {
@@ -1185,32 +1249,42 @@ impl Widget for SettingsPanel {
         // Spelling ▸ Dictionaries — the management pane (Installed / Get more), wrapped in the
         // shared `pane_frame` like every other pane. Always available (dictionaries are a
         // machine-wide resource, independent of any open project).
-        let dictionaries_pane: Box<dyn Widget> =
-            match ctx.app_state::<crate::view_models::DictionariesViewModel>().cloned() {
-                Some(vm) => Box::new(pane_frame(
-                    crumb(Some(tr!(settings_sec_spelling())), tr!(settings_page_dictionaries())),
-                    crate::settings_dictionaries::dictionaries_pane(ctx, &vm),
-                )),
-                None => Box::new(empty_pane(
+        let dictionaries_pane: Box<dyn Widget> = match ctx
+            .app_state::<crate::view_models::DictionariesViewModel>()
+            .cloned()
+        {
+            Some(vm) => Box::new(pane_frame(
+                crumb(
                     Some(tr!(settings_sec_spelling())),
                     tr!(settings_page_dictionaries()),
-                    Sec::Spelling.icon_svg(),
-                )),
-            };
+                ),
+                crate::settings_dictionaries::dictionaries_pane(ctx, &vm),
+            )),
+            None => Box::new(empty_pane(
+                Some(tr!(settings_sec_spelling())),
+                tr!(settings_page_dictionaries()),
+                Sec::Spelling.icon_svg(),
+            )),
+        };
         // Compile & Export ▸ Export Formats — the export-style manager (built-in + user styles,
         // duplicate-to-edit, JSON import/export), wrapped in `pane_frame` like every other pane.
-        let export_styles_pane: Box<dyn Widget> =
-            match ctx.app_state::<crate::view_models::ExportStylesViewModel>().cloned() {
-                Some(vm) => Box::new(pane_frame(
-                    crumb(Some(tr!(settings_sec_compile())), tr!(settings_page_export())),
-                    crate::settings_export_styles::export_styles_pane(ctx, &vm),
-                )),
-                None => Box::new(empty_pane(
+        let export_styles_pane: Box<dyn Widget> = match ctx
+            .app_state::<crate::view_models::ExportStylesViewModel>()
+            .cloned()
+        {
+            Some(vm) => Box::new(pane_frame(
+                crumb(
                     Some(tr!(settings_sec_compile())),
                     tr!(settings_page_export()),
-                    Sec::CompileExport.icon_svg(),
-                )),
-            };
+                ),
+                crate::settings_export_styles::export_styles_pane(ctx, &vm),
+            )),
+            None => Box::new(empty_pane(
+                Some(tr!(settings_sec_compile())),
+                tr!(settings_page_export()),
+                Sec::CompileExport.icon_svg(),
+            )),
+        };
 
         // ── Backup ("Copies de secours") panes ──
         // Wrapped in the shared `pane_frame` (breadcrumb · rule · scrollable,
@@ -1262,7 +1336,8 @@ impl Widget for SettingsPanel {
         // shared `UserDictionaryViewModel`. Present in the Switcher regardless, an
         // empty placeholder when no project is open (same as the other Work panes).
         let dictionary_pane: Box<dyn Widget> = match (
-            ctx.app_state::<crate::view_models::UserDictionaryViewModel>().cloned(),
+            ctx.app_state::<crate::view_models::UserDictionaryViewModel>()
+                .cloned(),
             &work,
         ) {
             (Some(vm), Some(w)) if w.id().is_some() => {
@@ -1302,7 +1377,6 @@ impl Widget for SettingsPanel {
         // its child slotted in the middle, made every Work pane show its neighbour) —
         // each child is tagged with the `Pane` it serves and the order is asserted.
         let ab = tr!(settings_sec_appearance_behaviour());
-        let editor = tr!(settings_sec_editor());
         let typo = vm.editor_typography();
         let panes: Vec<(Pane, Box<dyn Widget>)> = vec![
             (
@@ -1356,11 +1430,7 @@ impl Widget for SettingsPanel {
             (Pane::Goals, Box::new(Self::goals_pane(ctx, &vm))),
             (
                 Pane::Corkboard,
-                Box::new(empty_pane(
-                    Some(editor),
-                    tr!(settings_page_corkboard()),
-                    Sec::Editor.icon_svg(),
-                )),
+                Box::new(Self::corkboard_pane(ctx, &vm)),
             ),
             (Pane::Dictionaries, dictionaries_pane),
             (Pane::Autosave, Box::new(Self::autosave_pane(&vm))),

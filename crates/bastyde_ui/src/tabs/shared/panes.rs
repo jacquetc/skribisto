@@ -171,10 +171,9 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     // writing surface to search, and `folder_segmented` wraps a stream `Switcher`
     // whose rows have no single "focused editor" to target.
     match find {
-        Some(find) => crate::tabs::shared::editor::tab_backdrop_with_find(
-            find,
-            ScrollArea::new().child(col),
-        ),
+        Some(find) => {
+            crate::tabs::shared::editor::tab_backdrop_with_find(find, ScrollArea::new().child(col))
+        }
         None => crate::tabs::shared::editor::tab_backdrop(ScrollArea::new().child(col)),
     }
 }
@@ -309,9 +308,11 @@ pub fn folder_segmented(
         bar = bar.segment(Segment::new(label));
         content = content.child_boxed(pane);
     }
-    let bar = bar
-        .segment(Segment::new(tr!(corkboard())).disabled(true))
-        .segment(Segment::new(tr!(overview())).disabled(true));
+    // Corkboard is a real segment now; its Switcher child must sit at the same
+    // positional index (Overview stays a disabled placeholder).
+    bar = bar.segment(Segment::new(tr!(corkboard())));
+    content = content.child_boxed(super::corkboard::corkboard_pane(tab));
+    let bar = bar.segment(Segment::new(tr!(overview())).disabled(true));
 
     let col = VStack::new()
         .spacing(8.0)

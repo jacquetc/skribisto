@@ -276,6 +276,39 @@ nav-about = About
 synopsis = Synopsis
 corkboard = Corkboard
 overview = Overview
+
+## Corkboard
+corkboard-card-count = { $count ->
+    [one] { $count } card
+   *[other] { $count } cards
+}
+corkboard-child-count = { $count ->
+    [one] { $count } item
+   *[other] { $count } items
+}
+corkboard-view-nested = Nested
+corkboard-view-flat = Flat
+corkboard-layout-hint = Nested shows a container's direct children — open a folder card to go inside it. Flat shows every scene in the whole container at once.
+corkboard-card-size = Card size
+corkboard-search-placeholder = Filter cards…
+corkboard-empty-title = Nothing here yet
+corkboard-empty-hint = Use “＋ New” above to add the first one.
+corkboard-new = New
+corkboard-grid-label = Corkboard cards
+corkboard-rename-field = Rename item
+corkboard-expand-synopsis = Expand synopsis
+corkboard-synopsis-modal-title = Synopsis
+corkboard-badge-scene = Scene
+corkboard-badge-chapter = Chapter
+corkboard-badge-part = Part
+corkboard-badge-book = Book
+corkboard-badge-note = Note
+corkboard-badge-folder = Folder
+corkboard-badge-text = Text
+corkboard-badge-end = End
+settings-group-corkboard-layout = Layout
+settings-group-corkboard-cards = Cards
+corkboard-show-word-count = Show word count on cards
 text-heading = Text
 no-content = This item has no editable content.
 untitled = Untitled

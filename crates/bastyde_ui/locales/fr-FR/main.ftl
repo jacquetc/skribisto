@@ -277,6 +277,39 @@ nav-about = À propos
 synopsis = Synopsis
 corkboard = Tableau d'affichage
 overview = Aperçu
+
+## Corkboard
+corkboard-card-count = { $count ->
+    [one] { $count } carte
+   *[other] { $count } cartes
+}
+corkboard-child-count = { $count ->
+    [one] { $count } élément
+   *[other] { $count } éléments
+}
+corkboard-view-nested = Imbriqué
+corkboard-view-flat = À plat
+corkboard-layout-hint = « Imbriqué » affiche les enfants directs d'un conteneur — ouvrez une carte dossier pour y entrer. « À plat » affiche toutes les scènes du conteneur d'un coup.
+corkboard-card-size = Taille des cartes
+corkboard-search-placeholder = Filtrer les cartes…
+corkboard-empty-title = Rien ici pour l'instant
+corkboard-empty-hint = Utilisez « ＋ Nouveau » ci-dessus pour ajouter le premier élément.
+corkboard-new = Nouveau
+corkboard-grid-label = Cartes du tableau
+corkboard-rename-field = Renommer l’élément
+corkboard-expand-synopsis = Agrandir le synopsis
+corkboard-synopsis-modal-title = Synopsis
+corkboard-badge-scene = Scène
+corkboard-badge-chapter = Chapitre
+corkboard-badge-part = Partie
+corkboard-badge-book = Livre
+corkboard-badge-note = Note
+corkboard-badge-folder = Dossier
+corkboard-badge-text = Texte
+corkboard-badge-end = Fin
+settings-group-corkboard-layout = Disposition
+settings-group-corkboard-cards = Cartes
+corkboard-show-word-count = Afficher le nombre de mots sur les cartes
 text-heading = Texte
 no-content = Cet élément n'a pas de contenu modifiable.
 untitled = Sans titre

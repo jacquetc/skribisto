@@ -18,8 +18,9 @@
 
 mod backup_settings_file;
 mod binder_binder_items_tree_model;
-mod binder_stream;
 mod binder_list_model;
+mod binder_stream;
+mod corkboard_cards_model;
 mod dict_word_list_model;
 mod dictionary_settings_file;
 mod examples_list_model;
@@ -35,23 +36,24 @@ mod stream_rows_model;
 mod workspace_layout_file;
 
 pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
-pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
-pub use installed_dictionaries_model::{
-    DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
-};
 pub use binder_binder_items_tree_model::{
     BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters, TreeNode,
 };
 pub use binder_list_model::{BinderListModel, BinderRow};
 pub use binder_stream::ordered_binder_items;
+pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
 pub use dict_word_list_model::{DictWordListModel, DictWordRow};
+pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
 pub use examples_list_model::ExamplesListModel;
 pub use export_styles_file::ExportStylesService;
+pub use installed_dictionaries_model::{
+    DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
+};
 pub use open_docs::{OpenDoc, OpenDocsStore};
 pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};
 pub use recent_work_list_model::RecentWorkListModel;
 pub use search_results_model::SearchResultsModel;
-pub use stats_model::StatsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
+pub use stats_model::StatsModel;
 pub use stream_rows_model::{StreamLevel, StreamRow, StreamRowsModel};
 pub use workspace_layout_file::{PaneLayout, PerProjectLayout, WorkspaceLayoutService};

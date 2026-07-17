@@ -39,7 +39,6 @@ use frontend::work_management::{LoadWorkDto, NewWorkDto};
 use crate::app_ids::AppIds;
 use crate::export_panel::ExportPanel;
 use crate::import_plume_panel::ImportPlumePanel;
-use export_management::ExportScopeKind;
 use crate::intents::AppIntent;
 use crate::models::TreeNode;
 use crate::new_work_panel::NewWorkPanel;
@@ -49,8 +48,10 @@ use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ExportViewModel,
     ImportPlumeViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
-    SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision, unsaved_decision,
+    SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision,
+    unsaved_decision,
 };
+use export_management::ExportScopeKind;
 
 /// Build one editor pane's `TabWidget`: dynamic tabs, cross-pane migration
 /// (`accept_external_tabs` + `on_tab_received` dedup + `on_transfer_out`
@@ -212,7 +213,10 @@ pub fn quit_app(app_ctx: &Rc<AppContext>, ctx: &mut EventContext) {
 /// project" door while its store is still alive. A no-op if the view-model isn't
 /// registered (e.g. a launcher window) or no project is open.
 pub(crate) fn capture_workspace_layout(ctx: &mut EventContext) {
-    if let Some(layout) = ctx.app_state::<crate::view_models::WorkspaceLayoutViewModel>().cloned() {
+    if let Some(layout) = ctx
+        .app_state::<crate::view_models::WorkspaceLayoutViewModel>()
+        .cloned()
+    {
         layout.capture();
     }
 }
@@ -335,10 +339,7 @@ fn spell_underline_color(c: bastyde::tokens::Color) -> bastyde::text_document::C
 /// set. The narrow half of [`refresh_project_spellcheck`]: no language re-point
 /// (that only changes on a project switch), no re-attach — the caller re-attaches
 /// so a project switch attaches once, not twice.
-fn reload_personal_words(
-    app_ctx: &AppContext,
-    spell: &crate::spellcheck::SpellcheckService,
-) {
+fn reload_personal_words(app_ctx: &AppContext, spell: &crate::spellcheck::SpellcheckService) {
     let personal: std::collections::HashSet<String> =
         frontend::commands::dict_word_commands::get_all_dict_word(app_ctx)
             .unwrap_or_default()
@@ -529,12 +530,10 @@ impl App {
 fn open_search_settings() -> crate::models::SearchSettingsService {
     use crate::models::SearchSettingsService;
     match bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto") {
-        Some(paths) => {
-            SearchSettingsService::open(&paths).unwrap_or_else(|e| {
-                eprintln!("search settings: open failed ({e}); using an in-memory fallback");
-                SearchSettingsService::in_memory_default()
-            })
-        }
+        Some(paths) => SearchSettingsService::open(&paths).unwrap_or_else(|e| {
+            eprintln!("search settings: open failed ({e}); using an in-memory fallback");
+            SearchSettingsService::in_memory_default()
+        }),
         None => SearchSettingsService::in_memory_default(),
     }
 }
@@ -608,6 +607,7 @@ impl Widget for App {
         let show_synopsis = settings.synopsis_pane();
         let typography = settings.editor_typography();
         let view_memory = crate::view_models::EditorViewMemory::new(ctx.settings());
+        let corkboard_defaults = settings.corkboard_defaults();
         let ids = self.outline.ids();
         let docs = ctx
             .app_state::<crate::models::OpenDocsStore>()
@@ -624,6 +624,7 @@ impl Widget for App {
                     show_synopsis,
                     typography,
                     view_memory,
+                    corkboard_defaults,
                     ids,
                     docs,
                     backup_mode_for_editors,
@@ -636,8 +637,9 @@ impl Widget for App {
         // in `main` (before any `ctx.settings()`), so it starts editor-less and is
         // wired here, on every build — idempotent (`set_editors` just re-points).
         // Kept as a local so the Load/New subscribers can drive its restore.
-        let workspace_layout =
-            ctx.app_state::<crate::view_models::WorkspaceLayoutViewModel>().cloned();
+        let workspace_layout = ctx
+            .app_state::<crate::view_models::WorkspaceLayoutViewModel>()
+            .cloned();
         if let Some(layout) = &workspace_layout {
             layout.set_editors(editors.clone());
         }
@@ -726,8 +728,9 @@ impl Widget for App {
         // app-state since `App` doesn't own the view-model.
         if self.export_styles_reloadable.is_none()
             && let Some(registry) = ctx.app_state::<SettingsRegistry>().cloned()
-            && let Some(styles) =
-                ctx.app_state::<crate::view_models::ExportStylesViewModel>().cloned()
+            && let Some(styles) = ctx
+                .app_state::<crate::view_models::ExportStylesViewModel>()
+                .cloned()
         {
             self.export_styles_reloadable = Some(registry.register(styles.settings_reloadable()));
         }
@@ -804,8 +807,7 @@ impl Widget for App {
         if self.search_settings_reloadable.is_none()
             && let Some(registry) = ctx.app_state::<SettingsRegistry>().cloned()
         {
-            self.search_settings_reloadable =
-                Some(registry.register(search.settings_reloadable()));
+            self.search_settings_reloadable = Some(registry.register(search.settings_reloadable()));
         }
         // Re-seed the search inputs from the opened project's saved preferences,
         // and drop any preview held for the previous project.
@@ -878,8 +880,9 @@ impl Widget for App {
         // The personal-dictionary view-model (registered in `main`) — wire its
         // held list-model + single so the Settings pane stays live and the
         // editor's "Add to dictionary" reaches a wired handle.
-        if let Some(user_dictionary) =
-            ctx.app_state::<crate::view_models::UserDictionaryViewModel>().cloned()
+        if let Some(user_dictionary) = ctx
+            .app_state::<crate::view_models::UserDictionaryViewModel>()
+            .cloned()
         {
             user_dictionary.wire(ctx);
         }
@@ -1400,11 +1403,13 @@ impl Widget for App {
                 if let Some(AppIntent::NewItem {
                     create_type,
                     relation,
+                    anchor_item_id,
                 }) = AppIntent::from_intent(i)
                 {
-                    // Anchored on the current selection (None), placed by relation.
+                    // `None` anchors on the current Outline selection; a corkboard
+                    // passes its drilled-into container id explicitly.
                     outline.add_recommended(
-                        None,
+                        anchor_item_id.map(crate::models::BinderTreeKey::Item),
                         &skribisto_model::Recommendation {
                             create_type: *create_type,
                             relation: *relation,
@@ -1726,7 +1731,10 @@ impl Widget for App {
         // `ProgressSnapshot`. Plain `subscribe_event` (no `EventContext`) — it
         // shows no UI. Filters the completion by op id, so save / import /
         // export / backup long ops are ignored.
-        if let Some(recorder) = ctx.app_state::<crate::view_models::ProgressRecorder>().cloned() {
+        if let Some(recorder) = ctx
+            .app_state::<crate::view_models::ProgressRecorder>()
+            .cloned()
+        {
             {
                 let r = recorder.clone();
                 ctx.subscribe_event(
@@ -1992,7 +2000,8 @@ impl Widget for App {
         // Settings ▸ Spelling row writes the signal directly and shows no toast, which is
         // tolerable precisely there: Dictionaries is the next page down the same tree.
         {
-            self.spellcheck_menu.set(settings.spellcheck_enabled().get());
+            self.spellcheck_menu
+                .set(settings.spellcheck_enabled().get());
             let menu = self.spellcheck_menu.clone();
             let spell = spellcheck.clone();
             let docs = spell_docs.clone();
@@ -2014,7 +2023,9 @@ impl Widget for App {
         {
             let docs = spell_docs.clone();
             docs.set_synopsis_visible(settings.synopsis_pane().get());
-            ctx.effect(&settings.synopsis_pane(), move |v| docs.set_synopsis_visible(*v));
+            ctx.effect(&settings.synopsis_pane(), move |v| {
+                docs.set_synopsis_visible(*v)
+            });
         }
         // Dirty tracking + debounced autosave-to-disk. Every mutation (editor
         // typing via the editors' `edited` signal, plus tree/metadata events)
@@ -2520,8 +2531,9 @@ impl Widget for App {
             // Snapshot this pristine arrangement as the reset target for a project
             // that has no saved layout (so an in-place switch to an unconfigured
             // project doesn't inherit the previous one's docks).
-            if let Some(layout_vm) =
-                ctx.app_state::<crate::view_models::WorkspaceLayoutViewModel>().cloned()
+            if let Some(layout_vm) = ctx
+                .app_state::<crate::view_models::WorkspaceLayoutViewModel>()
+                .cloned()
             {
                 layout_vm.set_default_docks(docking.export_state());
             }
