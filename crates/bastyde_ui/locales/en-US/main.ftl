@@ -865,7 +865,6 @@ settings-user-dict-export-failed = Could not save the word list: { $error }
 editor-menu-no-suggestions = No suggestions
 editor-menu-add-to-dictionary = Add “{ $word }” to dictionary
 editor-menu-add-words-to-dictionary = Add selected words to dictionary
-editor-menu-add-to-dictionary-generic = Add to dictionary
 editor-dict-added = Added “{ $word }” to your dictionary.
 editor-dict-added-multi = Added { $count } words to your dictionary.
 toast-undo = Undo

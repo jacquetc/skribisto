@@ -867,7 +867,6 @@ settings-user-dict-export-failed = Impossible d’enregistrer la liste de mots :
 editor-menu-no-suggestions = Aucune suggestion
 editor-menu-add-to-dictionary = Ajouter « { $word } » au dictionnaire
 editor-menu-add-words-to-dictionary = Ajouter les mots sélectionnés au dictionnaire
-editor-menu-add-to-dictionary-generic = Ajouter au dictionnaire
 editor-dict-added = « { $word } » ajouté à votre dictionnaire.
 editor-dict-added-multi = { $count } mots ajoutés à votre dictionnaire.
 toast-undo = Annuler

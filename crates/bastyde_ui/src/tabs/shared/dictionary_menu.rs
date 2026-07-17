@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Resolve what an editor's right-click menu can do about spelling: the word(s) its "Add to
-//! dictionary" item should act on ([`resolve_words`]), and the misspelled word its correction
-//! items should replace ([`resolve_correction`]) — both from the current selection or the word
-//! under the caret.
+//! Resolve what an editor's right-click menu can do about spelling — the word(s) its "Add to
+//! dictionary" item should act on and the flagged word its corrections should replace — from the
+//! current selection or the word under the caret.
+//!
+//! [`resolve_spelling`] answers both in **one** pass, returning a [`SpellingMenu`]. They are the
+//! same question asked twice: resolving them separately meant walking the blocks, tokenising and
+//! spell-checking the same word twice per right-click, with two code paths obliged to keep
+//! agreeing forever about where a word begins.
 //!
 //! Kept out of the already-large `editor.rs` and, crucially, uses the **same**
 //! tokenizer the spell-check squiggles use (`crate::spellcheck::word_positions`),
@@ -14,7 +18,7 @@
 //! Document char offsets are absolute (`block.position()` + block-local offset),
 //! the same space [`SpellSession`](crate::spellcheck) works in. A bare right-click
 //! now moves the caret to the click point (bastyde's `RichTextEditor` fix), so
-//! [`resolve_words`] reads the live caret/selection without needing the pixel.
+//! [`resolve_spelling`] reads the live caret/selection without needing the pixel.
 
 use bastyde::text_document::TextDocument;
 use bastyde::widgets::rich_text::EditorHandle;
@@ -27,32 +31,85 @@ use crate::spellcheck::{SpellSession, word_positions};
 const MAX_SELECTION_CHARS: usize = 120;
 const MAX_SELECTION_WORDS: usize = 15;
 
-/// The word token(s) to offer "Add to dictionary" for, given the editor's live
-/// caret/selection. Empty ⇒ the menu item is disabled.
+/// Everything the right-click menu's spelling group needs, resolved from the editor's live
+/// caret/selection in **one** pass.
 ///
-/// With a selection, the word tokens it overlaps (same block, bounded); with no
-/// selection, the single word under the caret. **Only words the spell-checker
-/// flags** are kept — the offer matches exactly what is squiggled, and a word
-/// already in the dictionary (hence not flagged) is never re-offered. Without an
-/// active checker nothing is "wrong", so nothing is offered. Deduped case-exactly,
-/// first casing wins.
-pub(crate) fn resolve_words(
+/// One resolution rather than two: "which words can be added" and "which word can be corrected"
+/// are the same question asked twice, and answering them independently meant walking the blocks,
+/// tokenising and spell-checking the same token twice per right-click — with two code paths that
+/// had to keep agreeing forever about where a word begins.
+#[derive(Default)]
+pub(crate) struct SpellingMenu {
+    /// The flagged words "Add to dictionary" should act on. Empty ⇒ the item is disabled.
+    pub words: Vec<String>,
+    /// The single flagged word the corrections replace, if the gesture names exactly one.
+    pub correction: Option<Correction>,
+}
+
+/// Resolve the spelling group for the editor's live caret/selection.
+///
+/// **Only words the spell-checker flags** are offered — the group matches exactly what is
+/// squiggled, and a word already in the dictionary (hence not flagged) is never re-offered.
+/// Without an active checker nothing is "wrong", so nothing is offered.
+///
+/// Three gestures, in order:
+///
+/// - **No selection** — the word under the caret (where a right-click leaves it). Correctable.
+/// - **A selection spanning exactly one word token** — correctable too. This is the gesture a
+///   double-click makes, and `reposition_caret_for_context_menu` deliberately preserves a
+///   selection the right-click lands inside; treating any selection as uncorrectable would mean
+///   double-click-then-right-click, one of the two normal ways to reach this menu, silently
+///   offered no corrections at all.
+/// - **A wider or partial selection** — the "add these words" gesture: every flagged token it
+///   overlaps (same block, bounded), deduped case-exactly, first casing wins. No single target,
+///   so no corrections.
+pub(crate) fn resolve_spelling(
     doc: &TextDocument,
     handle: &EditorHandle,
     spell: Option<&SpellSession>,
-) -> Vec<String> {
+) -> SpellingMenu {
     let Some(spell) = spell else {
-        return Vec::new();
+        return SpellingMenu::default();
     };
     let pos = handle.cursor_position();
     let anchor = handle.cursor_anchor_signal().get();
-    let (start, end) = (anchor.min(pos), anchor.max(pos));
-    let words = if start != end {
-        words_in_range(doc, start, end)
+    let (sel_start, sel_end) = (anchor.min(pos), anchor.max(pos));
+
+    // The single-word target, if this gesture names one. A selection is still held to
+    // [`MAX_SELECTION_CHARS`]: one "word" can be huge (a pasted hash or URL with no internal
+    // break is a single UAX#29 token), and the broad-drag guard must not be escapable just by
+    // landing exactly on a token's edges.
+    let single = if sel_start == sel_end {
+        word_range_at(doc, pos)
+    } else if sel_end - sel_start <= MAX_SELECTION_CHARS {
+        word_spanning(doc, sel_start, sel_end).map(|w| (sel_start, sel_end, w))
     } else {
-        word_at(doc, pos).into_iter().collect()
+        None
     };
-    keep_misspelled(words, |w| spell.is_misspelled(w))
+    if let Some((start, end, word)) = single {
+        if !spell.is_misspelled(&word) {
+            return SpellingMenu::default();
+        }
+        let suggestions = spell.suggest(&word);
+        return SpellingMenu {
+            words: vec![word],
+            correction: Some(Correction {
+                start,
+                end,
+                suggestions,
+            }),
+        };
+    }
+    if sel_start != sel_end {
+        let words = keep_misspelled(words_in_range(doc, sel_start, sel_end), |w| {
+            spell.is_misspelled(w)
+        });
+        return SpellingMenu {
+            words,
+            correction: None,
+        };
+    }
+    SpellingMenu::default()
 }
 
 /// Keep only the flagged words, then dedup case-exactly (first casing wins).
@@ -91,14 +148,15 @@ pub(crate) fn words_in_range(doc: &TextDocument, start: usize, end: usize) -> Ve
     Vec::new()
 }
 
-/// A misspelled word the menu can correct in place: the word, its **absolute document char
-/// range** `[start, end)`, and the ranked corrections to offer.
+/// Where a correction lands and what it may replace the text with: the flagged word's **absolute
+/// document char range** `[start, end)` plus the ranked corrections to offer.
 ///
-/// The range is what separates this from [`resolve_words`]: adding a word to the dictionary only
-/// needs its text, but *replacing* it needs the exact span, in the same char space
-/// [`EditorHandle::replace_range`] works in.
+/// The range is the whole point: adding a word to the dictionary only needs its text (which
+/// [`SpellingMenu::words`] already carries), but *replacing* it needs the exact span, in the same
+/// char space
+/// [`EditorHandle::replace_range`](bastyde::widgets::rich_text::EditorHandle::replace_range)
+/// works in.
 pub(crate) struct Correction {
-    pub word: String,
     pub start: usize,
     pub end: usize,
     /// Possibly empty — a flagged word nothing can correct is a real outcome, and the menu says
@@ -106,46 +164,12 @@ pub(crate) struct Correction {
     pub suggestions: Vec<String>,
 }
 
-/// The single misspelled word under the caret, with its span and its corrections.
+/// The word token whose span contains the char offset `pos` (inclusive of both ends, so a caret
+/// at a word's edge still resolves it — the same rule the squiggle-exemption uses), with its
+/// absolute char range `[start, end)`. `None` when `pos` is not in a word-like token.
 ///
-/// `None` — no suggestion section at all — when there is no active checker, when the caret is not
-/// inside a word-like token, when that word is not flagged, or when **a selection is active**: a
-/// correction rewrites exactly one word, so a multi-word selection has no single target (that
-/// gesture means "add these words", which [`resolve_words`] still handles). After a right-click
-/// the caret sits in the clicked word with no selection, so this is the everyday path.
-pub(crate) fn resolve_correction(
-    doc: &TextDocument,
-    handle: &EditorHandle,
-    spell: Option<&SpellSession>,
-) -> Option<Correction> {
-    let spell = spell?;
-    let pos = handle.cursor_position();
-    if handle.cursor_anchor_signal().get() != pos {
-        return None;
-    }
-    let (start, end, word) = word_range_at(doc, pos)?;
-    if !spell.is_misspelled(&word) {
-        return None;
-    }
-    let suggestions = spell.suggest(&word);
-    Some(Correction {
-        word,
-        start,
-        end,
-        suggestions,
-    })
-}
-
-/// The word token whose span contains the caret char offset `pos` (inclusive of
-/// both ends, so a caret at a word's edge still resolves it — the same rule the
-/// squiggle-exemption uses). `None` when the caret is not in a word-like token.
-pub(crate) fn word_at(doc: &TextDocument, pos: usize) -> Option<String> {
-    word_range_at(doc, pos).map(|(_, _, word)| word)
-}
-
-/// As [`word_at`], but also reporting the token's absolute char range `[start, end)` — what a
-/// replacement needs. Offsets are `block.position()` + the block-local char offset, the space
-/// `EditorHandle` cursor/selection APIs use.
+/// Offsets are `block.position()` + the block-local char offset, the space `EditorHandle`'s
+/// cursor / selection / replacement APIs use.
 fn word_range_at(doc: &TextDocument, pos: usize) -> Option<(usize, usize, String)> {
     for block in doc.blocks() {
         let base = block.position();
@@ -159,6 +183,32 @@ fn word_range_at(doc: &TextDocument, pos: usize) -> Option<(usize, usize, String
             let wend = wstart + len;
             if pos >= wstart && pos <= wend {
                 return is_wordlike(word).then(|| (wstart, wend, word.to_string()));
+            }
+        }
+        return None;
+    }
+    None
+}
+
+/// The word token occupying **exactly** the char range `[start, end)` — a selection that names
+/// one whole word and nothing else, as a double-click makes. `None` for a partial word, a span
+/// covering several tokens, or one that also swallows surrounding punctuation.
+///
+/// Deliberately an exact-span match rather than "the token at `start`": where two word tokens
+/// touch with no separator (adjacent CJK characters, which UAX#29 splits into one-char tokens) a
+/// boundary offset is ambiguous, and guessing there would rewrite the neighbouring character.
+fn word_spanning(doc: &TextDocument, start: usize, end: usize) -> Option<String> {
+    for block in doc.blocks() {
+        let base = block.position();
+        let text = block.text();
+        let block_end = base + text.chars().count();
+        if start < base || end > block_end {
+            continue; // not (wholly) in this block — same-block scope
+        }
+        for (char_off, len, word) in word_positions(&text) {
+            let wstart = base + char_off;
+            if wstart == start && wstart + len == end {
+                return is_wordlike(word).then(|| word.to_string());
             }
         }
         return None;
@@ -181,11 +231,167 @@ fn dedup_keep_first(words: Vec<String>) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::spellcheck::SpellChecker;
+    use bastyde::core::widget_tree::WidgetTree;
+    use bastyde::text_document::Color;
+    use bastyde::widgets::rich_text::RichTextEditor;
+    use std::rc::Rc;
 
     fn doc(text: &str) -> TextDocument {
         let d = TextDocument::new();
         d.set_plain_text(text).unwrap();
         d
+    }
+
+    /// A live editor over `text` plus a spell session that knows `hello`/`world` and holds
+    /// `Skribisto` as a personal word — so `wrld` is flagged by the dictionary and `skribisto`
+    /// is flagged by exact-case matching.
+    ///
+    /// The `WidgetTree` is returned and must be kept alive: the handle reads the editor's state,
+    /// and the editor is owned by the tree. Laid out once so the cursor APIs have a real layout.
+    fn editor(text: &str) -> (TextDocument, EditorHandle, Rc<SpellSession>, WidgetTree) {
+        let d = doc(text);
+        let ed = RichTextEditor::editor(d.clone());
+        let handle = ed.handle();
+        let mut tree = WidgetTree::new();
+        tree.add(ed);
+        tree.layout(bastyde::prelude::SizeProposal::exact(600.0, 400.0));
+
+        let spell = SpellSession::new(&d);
+        spell.set_checker(
+            Some(SpellChecker::for_tests(&["hello", "world"], &["Skribisto"])),
+            Color::rgb(220, 50, 50),
+        );
+        (d, handle, spell, tree)
+    }
+
+    // ── resolve_spelling (the whole menu group, against a live editor) ──
+
+    #[test]
+    fn caret_in_a_flagged_word_offers_it_for_correction_and_for_adding() {
+        let (d, handle, spell, _tree) = editor("hello wrld");
+        handle.select_range(8, 8); // caret inside "wrld", no selection
+        let menu = resolve_spelling(&d, &handle, Some(&spell));
+
+        assert_eq!(menu.words, ["wrld"], "the flagged word is addable");
+        let c = menu.correction.expect("a flagged word under the caret is correctable");
+        assert_eq!((c.start, c.end), (6, 10), "the span the replacement rewrites");
+        assert!(
+            c.suggestions.contains(&"world".to_string()),
+            "the dictionary corrects it, got {:?}",
+            c.suggestions
+        );
+    }
+
+    /// The double-click gesture. Regression guard: a selection used to make the correction
+    /// resolve to `None`, so double-click-then-right-click silently offered no corrections at
+    /// all — and `reposition_caret_for_context_menu` keeps that selection alive by design.
+    #[test]
+    fn a_selection_spanning_exactly_one_word_is_still_correctable() {
+        let (d, handle, spell, _tree) = editor("hello wrld");
+        handle.select_range(6, 10); // exactly "wrld", as a double-click selects it
+        let menu = resolve_spelling(&d, &handle, Some(&spell));
+
+        let c = menu.correction.expect("one selected word is a correction target");
+        assert_eq!((c.start, c.end), (6, 10));
+        assert!(c.suggestions.contains(&"world".to_string()));
+        assert_eq!(menu.words, ["wrld"]);
+    }
+
+    /// A backwards selection (dragged right-to-left) puts the anchor after the caret; the span
+    /// must still resolve.
+    #[test]
+    fn a_backwards_selection_of_one_word_resolves_the_same() {
+        let (d, handle, spell, _tree) = editor("hello wrld");
+        handle.select_range(10, 6); // anchor 10, caret 6
+        let menu = resolve_spelling(&d, &handle, Some(&spell));
+        let c = menu.correction.expect("direction must not matter");
+        assert_eq!((c.start, c.end), (6, 10));
+    }
+
+    /// The broad-drag guard must not be escapable by landing exactly on a token's edges. One
+    /// "word" can be huge — a pasted hash or URL with no internal break is a single UAX#29 token,
+    /// which a double-click selects whole.
+    #[test]
+    fn an_oversized_single_word_selection_still_hits_the_broad_drag_cap() {
+        let long = "a".repeat(MAX_SELECTION_CHARS + 80);
+        let (d, handle, spell, _tree) = editor(&long);
+        handle.select_range(0, long.chars().count());
+        let menu = resolve_spelling(&d, &handle, Some(&spell));
+        assert!(
+            menu.correction.is_none(),
+            "a {}-char token is a broad drag, not a correction target",
+            long.len()
+        );
+        assert!(menu.words.is_empty(), "and it is not whitelistable either");
+    }
+
+    #[test]
+    fn a_multi_word_selection_adds_but_does_not_correct() {
+        let (d, handle, spell, _tree) = editor("wrld helo");
+        handle.select_range(0, 9); // both words
+        let menu = resolve_spelling(&d, &handle, Some(&spell));
+
+        assert!(
+            menu.correction.is_none(),
+            "no single target, so nothing to correct"
+        );
+        assert_eq!(menu.words, ["wrld", "helo"], "both flagged words are addable");
+    }
+
+    #[test]
+    fn a_correctly_spelled_word_offers_nothing() {
+        let (d, handle, spell, _tree) = editor("hello wrld");
+        handle.select_range(2, 2); // caret inside "hello"
+        let menu = resolve_spelling(&d, &handle, Some(&spell));
+        assert!(menu.correction.is_none());
+        assert!(menu.words.is_empty(), "a good word is never re-offered");
+    }
+
+    #[test]
+    fn without_a_checker_nothing_is_offered() {
+        let (d, handle, _spell, _tree) = editor("hello wrld");
+        handle.select_range(8, 8);
+        let menu = resolve_spelling(&d, &handle, None);
+        assert!(menu.correction.is_none());
+        assert!(menu.words.is_empty(), "no checker ⇒ nothing is 'wrong'");
+    }
+
+    /// The personal-dictionary payoff, end to end through the resolver: the stored casing is
+    /// offered for a word only the project knows.
+    #[test]
+    fn a_personal_word_typed_in_the_wrong_case_is_correctable() {
+        let (d, handle, spell, _tree) = editor("hello skribisto");
+        handle.select_range(9, 9); // caret inside "skribisto"
+        let menu = resolve_spelling(&d, &handle, Some(&spell));
+
+        let c = menu.correction.expect("exact-case matching flags it");
+        assert_eq!(menu.words, ["skribisto"]);
+        assert_eq!(
+            c.suggestions.first().map(String::as_str),
+            Some("Skribisto"),
+            "the project's own casing leads, got {:?}",
+            c.suggestions
+        );
+    }
+
+    #[test]
+    fn a_caret_outside_any_word_offers_nothing() {
+        let (d, handle, spell, _tree) = editor("hello wrld");
+        handle.select_range(5, 5); // on the space — but inclusive edges make this "hello"
+        let menu = resolve_spelling(&d, &handle, Some(&spell));
+        assert!(menu.words.is_empty(), "'hello' is correct, so nothing is offered");
+
+        let (d2, handle2, spell2, _tree2) = editor("12 345");
+        handle2.select_range(1, 1);
+        let menu2 = resolve_spelling(&d2, &handle2, Some(&spell2));
+        assert!(menu2.correction.is_none(), "digits are never correctable");
+        assert!(menu2.words.is_empty());
+    }
+
+    /// Just the word, for the cases that don't care about the span.
+    fn word_at(d: &TextDocument, pos: usize) -> Option<String> {
+        word_range_at(d, pos).map(|(_, _, w)| w)
     }
 
     #[test]
@@ -203,6 +409,19 @@ mod tests {
         assert_eq!(word_at(&doc("I don't"), 4).as_deref(), Some("don't"));
         // A caret in a run of digits / punctuation resolves to nothing addable.
         assert_eq!(word_at(&doc("12 345"), 1), None);
+    }
+
+    #[test]
+    fn word_spanning_matches_only_an_exact_whole_word() {
+        let d = doc("Hello wrld today");
+        // The double-click gesture: the selection covers "wrld" exactly.
+        assert_eq!(word_spanning(&d, 6, 10).as_deref(), Some("wrld"));
+        assert_eq!(word_spanning(&d, 0, 5).as_deref(), Some("Hello"));
+        // A partial word, a span with a trailing space, and a two-word span all decline.
+        assert_eq!(word_spanning(&d, 6, 9), None, "partial word");
+        assert_eq!(word_spanning(&d, 6, 11), None, "word plus the following space");
+        assert_eq!(word_spanning(&d, 0, 10), None, "two words");
+        assert_eq!(word_spanning(&doc("12 345"), 0, 2), None, "not word-like");
     }
 
     #[test]

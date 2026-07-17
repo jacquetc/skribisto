@@ -125,9 +125,12 @@ pub fn writing_column(
 /// The spelling group leads, as it does in every browser and word processor: the
 /// corrections are the reason the menu was opened on a squiggle, and they sit flat
 /// at the top rather than behind a submenu, one click from the fix. "Add to
-/// dictionary" belongs with them — it is the other answer to the same squiggle. It
-/// is disabled when nothing word-like resolves; its label names the word so a wrong
-/// target is visible before committing.
+/// dictionary" belongs with them — it is the other answer to the same squiggle, and
+/// its label names the word so a wrong target is visible before committing.
+///
+/// The whole group is **omitted** when nothing flagged resolves here, rather than
+/// shown greyed out: a right-click on ordinary prose opens straight at Cut instead
+/// of pinning a dead item to the top of the most-used menu in the app.
 fn editor_context_menu(
     handle: EditorHandle,
     cursor: Signal<usize>,
@@ -135,38 +138,49 @@ fn editor_context_menu(
     doc: TextDocument,
     spell: Option<Rc<SpellSession>>,
 ) -> MenuList {
-    // Only misspelled words are offered — both resolutions filter through this
-    // editor's live spell-checker (so they match the squiggles exactly).
-    let words = super::dictionary_menu::resolve_words(&doc, &handle, spell.as_deref());
-    let add_label = match words.as_slice() {
-        [] => tr!(editor_menu_add_to_dictionary_generic()),
-        [w] => tr!(editor_menu_add_to_dictionary(word = w.clone())),
-        _ => tr!(editor_menu_add_words_to_dictionary()),
-    };
-    let add_enabled = !words.is_empty();
+    // One resolution for the whole spelling group — only misspelled words are
+    // offered, filtered through this editor's live spell-checker so the group
+    // matches the squiggles exactly.
+    let spelling = super::dictionary_menu::resolve_spelling(&doc, &handle, spell.as_deref());
 
     let mut list = MenuList::new();
 
-    // The corrections for the single flagged word under the caret. Absent entirely
-    // for ordinary prose (nothing to correct) and for a multi-word selection (no
-    // single target); present-but-disabled when the word is flagged and nothing can
-    // correct it, so the writer knows we looked rather than that we forgot.
-    if let Some(c) = super::dictionary_menu::resolve_correction(&doc, &handle, spell.as_deref()) {
-        if c.suggestions.is_empty() {
-            list = list.item(MenuItem::new(tr!(editor_menu_no_suggestions())).enabled(false));
-        } else {
-            for suggestion in c.suggestions {
-                // The span is captured now, from the same resolution that produced
-                // the word: the menu is rebuilt per right-click, so these offsets
-                // cannot drift out from under the item.
+    // The spelling group, present only when there is something to say about
+    // spelling here — ordinary prose gets a menu that starts at Cut, rather than a
+    // greyed item nailed to the top of every right-click.
+    if !spelling.words.is_empty() {
+        if let Some(c) = &spelling.correction {
+            if c.suggestions.is_empty() {
+                // Flagged but uncorrectable: say so, rather than leave a gap that
+                // reads as "we forgot to look".
+                list = list.item(MenuItem::new(tr!(editor_menu_no_suggestions())).enabled(false));
+            }
+            for suggestion in &c.suggestions {
+                // The span comes from the same resolution that produced the word,
+                // and the menu is rebuilt per right-click, so it cannot drift out
+                // from under the item.
                 let (h, start, end) = (handle.clone(), c.start, c.end);
+                let suggestion = suggestion.clone();
                 list = list.item(
                     MenuItem::new(lit!(suggestion.clone())) // a word, not UI chrome — never translated
                         .on_activate_fn(move |_ctx| h.replace_range(start, end, &suggestion)),
                 );
             }
         }
-        list = list.separator();
+        let add_label = match spelling.words.as_slice() {
+            [w] => tr!(editor_menu_add_to_dictionary(word = w.clone())),
+            _ => tr!(editor_menu_add_words_to_dictionary()),
+        };
+        let words = spelling.words;
+        list = list
+            .item(
+                MenuItem::new(add_label).on_activate_fn(move |ctx| {
+                    ctx.send_intent(AppIntent::AddWordsToDictionary {
+                        words: words.clone(),
+                    });
+                }),
+            )
+            .separator();
     }
 
     let cut = handle.clone();
@@ -175,16 +189,6 @@ fn editor_context_menu(
     let paste_plain = handle.clone();
     let select = handle;
     list = list
-        .item(
-            MenuItem::new(add_label)
-                .enabled(add_enabled)
-                .on_activate_fn(move |ctx| {
-                    ctx.send_intent(AppIntent::AddWordsToDictionary {
-                        words: words.clone(),
-                    });
-                }),
-        )
-        .separator()
         .item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)))
         .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
         .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))

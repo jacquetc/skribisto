@@ -195,12 +195,21 @@ pub struct SpellChecker {
 /// How many corrections the context menu offers at most. The suggestions sit flat at the top of
 /// the menu, so this is a menu-length budget as much as a relevance one — past a handful, a list
 /// of guesses is harder to scan than retyping the word.
-pub(crate) const MAX_SUGGESTIONS: usize = 6;
+const MAX_SUGGESTIONS: usize = 6;
 
 /// The largest edit distance at which a *personal* word is offered as a correction. Two edits is
 /// the usual typo radius (Hunspell's own replacement table works in the same neighbourhood);
 /// wider than that and a short project term starts "correcting" to every other project term.
 const MAX_PERSONAL_DISTANCE: usize = 2;
+
+/// How many of [`MAX_SUGGESTIONS`] are held back for *distant* personal matches when any exist.
+///
+/// Without a reservation the project's own term is unreachable exactly when it matters. A
+/// two-edit typo of a coined word (`Skiibsto` for `Skribisto`) is a word no installed dictionary
+/// knows, which is precisely when Hunspell's ngram search is at its most talkative — it happily
+/// returns six unrelated English guesses. Appending the personal matches after those and then
+/// truncating would drop the only correction the writer wanted.
+const PERSONAL_SUGGESTION_FLOOR: usize = 2;
 
 impl SpellChecker {
     fn misspelled(&self, word: &str) -> bool {
@@ -232,28 +241,22 @@ impl SpellChecker {
     /// A personal word within **one** edit goes first: for an invented word the installed
     /// dictionary has nothing real to offer, and its ngram guesses are noise next to the term the
     /// writer actually meant. The dictionary's own ranked suggestions follow (they are the right
-    /// answer for a typo of an ordinary word), and the looser personal matches come last.
+    /// answer for a typo of an ordinary word), and the looser personal matches come last — but
+    /// with [`PERSONAL_SUGGESTION_FLOOR`] slots reserved for them, so a talkative dictionary can
+    /// never crowd the project's own term off the end of the list.
     pub(crate) fn suggest(&self, word: &str) -> Vec<String> {
         if !word.chars().any(|c| c.is_alphabetic()) {
             return Vec::new();
         }
-        let personal = self.personal_suggestions(word);
-        let mut out: Vec<String> = Vec::new();
-        for (_, w) in personal.iter().filter(|(d, _)| *d <= 1) {
-            push_unique(&mut out, w.clone());
-        }
-        let mut buf = Vec::new();
-        for dict in &self.dicts {
-            dict.suggest(word, &mut buf); // clears `buf` itself before filling it
-            for s in buf.drain(..) {
-                push_unique(&mut out, s);
-            }
-        }
-        for (_, w) in personal.iter().filter(|(d, _)| *d > 1) {
-            push_unique(&mut out, w.clone());
-        }
-        out.truncate(MAX_SUGGESTIONS);
-        out
+        // Each dictionary's suggestions, concatenated **lazily**: `map` + `flatten` pull one
+        // dictionary at a time, so a second language's ngram search never runs once
+        // `merge_suggestions` has stopped taking.
+        let dict = self.dicts.iter().flat_map(|d| {
+            let mut buf = Vec::new();
+            d.suggest(word, &mut buf); // clears `buf` itself before filling it
+            buf
+        });
+        merge_suggestions(word, self.personal_suggestions(word), dict)
     }
 
     /// Personal words within [`MAX_PERSONAL_DISTANCE`] edits of `word`, as `(distance, word)`,
@@ -266,12 +269,14 @@ impl SpellChecker {
     ///
     /// Ties break alphabetically: `personal` is a `HashSet`, whose iteration order varies run to
     /// run, and a context menu whose items reshuffle between right-clicks is unusable.
+    ///
+    /// The typed word itself is *not* filtered here — [`push_unique`] is the single gate that
+    /// drops it, so every source is held to the same rule.
     fn personal_suggestions(&self, word: &str) -> Vec<(usize, String)> {
         let needle = word.to_lowercase();
         let mut scored: Vec<(usize, String)> = self
             .personal
             .iter()
-            .filter(|w| w.as_str() != word) // never suggest the word the writer already typed
             .filter_map(|w| {
                 bounded_levenshtein(&needle, &w.to_lowercase(), MAX_PERSONAL_DISTANCE)
                     .map(|d| (d, w.clone()))
@@ -282,10 +287,90 @@ impl SpellChecker {
     }
 }
 
-/// Push `s` unless an equal string is already there — keeps the first (better-ranked) occurrence
-/// when two dictionaries suggest the same correction.
-fn push_unique(out: &mut Vec<String>, s: String) {
-    if !out.iter().any(|e| e == &s) {
+#[cfg(test)]
+impl SpellChecker {
+    /// A checker over one tiny in-memory dictionary plus a personal set.
+    ///
+    /// The seam the menu-resolution tests need: the production path
+    /// ([`SpellcheckService::build_checker`]) reads installed `.aff`/`.dic` pairs off disk, which
+    /// a unit test has no business depending on.
+    pub(crate) fn for_tests(dic_words: &[&str], personal: &[&str]) -> Self {
+        let dic = format!("{}\n{}\n", dic_words.len(), dic_words.join("\n"));
+        let dict =
+            spellbook::Dictionary::new("SET UTF-8\n", &dic).expect("tiny dictionary parses");
+        Self {
+            dicts: vec![Arc::new(dict)],
+            personal: personal.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+}
+
+/// Rank and budget the suggestion sources into the final list.
+///
+/// Split out from [`SpellChecker::suggest`] as a pure function over its three inputs because the
+/// budget cannot be tested through a real dictionary: a synthetic test dictionary has no `TRY`
+/// table and so cannot be provoked into the ngram chattiness this exists to defend against, while
+/// a real one would drag installed `.aff`/`.dic` files into a unit test.
+///
+/// `personal` is `(distance, word)` nearest-first; `dict` is pulled **lazily** and only as far as
+/// the budget allows, so an unconsumed dictionary's suggester never runs.
+fn merge_suggestions(
+    typed: &str,
+    personal: Vec<(usize, String)>,
+    mut dict: impl Iterator<Item = String>,
+) -> Vec<String> {
+    // `near` (<= 1 edit) leads; `far` (2 edits) trails but is guaranteed room.
+    let (near, far): (Vec<_>, Vec<_>) = personal.into_iter().partition(|(d, _)| *d <= 1);
+    let mut out: Vec<String> = Vec::new();
+
+    // Everything before the reserved slots shares one ceiling — `near` included. `near` is not
+    // exempt just because it ranks first: `personal_suggestions` caps distance, not *count*, and
+    // a glossary of similar short terms (a Kai / Kal / Kar naming family) can yield more one-edit
+    // matches than the whole menu holds, which would push `far` past the end.
+    let ceiling = MAX_SUGGESTIONS.saturating_sub(far.len().min(PERSONAL_SUGGESTION_FLOOR));
+    for (_, w) in &near {
+        if out.len() >= ceiling {
+            break;
+        }
+        push_unique(&mut out, typed, w.clone());
+    }
+    // Pull only while there is room to keep what comes back: `for s in dict` would fetch one more
+    // and discard it, and since the sources are concatenated lazily that wasted pull can cross
+    // into the next dictionary and run a whole ngram search for an item this drops on the floor.
+    while out.len() < ceiling {
+        match dict.next() {
+            Some(s) => push_unique(&mut out, typed, s),
+            None => break,
+        }
+    }
+    for (_, w) in &far {
+        if out.len() >= MAX_SUGGESTIONS {
+            break;
+        }
+        push_unique(&mut out, typed, w.clone());
+    }
+    // A `far` word that merely repeated something already listed leaves its reserved slot empty —
+    // give it back to the dictionary rather than hand back a short menu while suggestions remain.
+    while out.len() < MAX_SUGGESTIONS {
+        match dict.next() {
+            Some(s) => push_unique(&mut out, typed, s),
+            None => break,
+        }
+    }
+    // Every push above is gated on a ceiling, so no trailing truncate is needed — and none should
+    // be added back: a truncate here is what silently ate the reserved slots before.
+    out
+}
+
+/// Push `s` unless it is the word the writer typed, or an equal suggestion is already there.
+///
+/// The single gate every source passes through. Deduping keeps the first (better-ranked)
+/// occurrence when two dictionaries offer the same correction; rejecting `typed` means no source
+/// can echo the input back as its own correction — a menu item that would edit nothing. Only the
+/// personal set used to be held to that rule, which left the dictionaries free to suggest the
+/// input via a case or split-word variant.
+fn push_unique(out: &mut Vec<String>, typed: &str, s: String) {
+    if s != typed && !out.iter().any(|e| e == &s) {
         out.push(s);
     }
 }
@@ -845,6 +930,128 @@ mod tests {
             !hl.suggest("Skibisto").contains(&"Bastyde".to_string()),
             "an unrelated personal word is not a correction"
         );
+    }
+
+    /// A dictionary chatty enough to fill every slot on its own — what Hunspell's ngram search
+    /// does for a coined word nothing knows. Synthesised, because a test-sized dictionary has no
+    /// `TRY` table and cannot be provoked into guessing that freely.
+    fn chatty_dict() -> Vec<String> {
+        ["aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg", "hhh"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect()
+    }
+
+    /// **The reserved slots.** Without [`PERSONAL_SUGGESTION_FLOOR`] a two-edit personal match is
+    /// appended past the cap and truncated away — so for `Skiibsto` the writer would get six
+    /// unrelated English guesses and never the project's own term.
+    #[test]
+    fn a_distant_personal_word_survives_a_talkative_dictionary() {
+        let personal = vec![(2usize, "Helios".to_string())];
+        let got = merge_suggestions("helo", personal, chatty_dict().into_iter());
+        assert!(
+            got.contains(&"Helios".to_string()),
+            "the 2-edit personal word keeps its reserved slot, got {got:?}"
+        );
+        assert_eq!(got.len(), MAX_SUGGESTIONS, "and the list is still full: {got:?}");
+        assert_eq!(
+            got.last().map(String::as_str),
+            Some("Helios"),
+            "it trails the dictionary's own ranked guesses"
+        );
+    }
+
+    /// No personal matches ⇒ nothing is reserved and the dictionary gets every slot.
+    #[test]
+    fn without_personal_matches_the_dictionary_fills_the_list() {
+        let got = merge_suggestions("helo", vec![], chatty_dict().into_iter());
+        assert_eq!(
+            got.len(),
+            MAX_SUGGESTIONS,
+            "the floor must not shrink the list when there is nothing to reserve for: {got:?}"
+        );
+    }
+
+    /// A one-edit personal match leads *and* still leaves the dictionary its slots.
+    #[test]
+    fn a_near_personal_word_leads_without_reserving() {
+        let personal = vec![(1usize, "Helo2".to_string())];
+        let got = merge_suggestions("helo", personal, chatty_dict().into_iter());
+        assert_eq!(got.first().map(String::as_str), Some("Helo2"), "{got:?}");
+        assert_eq!(got.len(), MAX_SUGGESTIONS);
+    }
+
+    /// **`near` is not exempt from the ceiling.** A glossary of similar short terms (a
+    /// Kai/Kal/Kar naming family) yields more one-edit matches than the menu holds; those used to
+    /// be pushed before the ceiling existed, so the *reserved* far slots were appended past the
+    /// cap and truncated away — the reservation silently evicted by the very list it leads.
+    #[test]
+    fn a_crowd_of_near_personal_words_cannot_evict_the_reserved_far_slots() {
+        let personal = vec![
+            (1usize, "Kai".to_string()),
+            (1, "Kal".to_string()),
+            (1, "Kar".to_string()),
+            (1, "Kaz".to_string()),
+            (1, "Kay".to_string()),
+            (1, "Kah".to_string()),
+            (2, "Kaito".to_string()),
+            (2, "Kalim".to_string()),
+        ];
+        let got = merge_suggestions("Kax", personal, chatty_dict().into_iter());
+        assert_eq!(got.len(), MAX_SUGGESTIONS, "{got:?}");
+        assert!(
+            got.contains(&"Kaito".to_string()) && got.contains(&"Kalim".to_string()),
+            "both reserved far slots survive a crowd of near matches, got {got:?}"
+        );
+        assert_eq!(
+            got.iter().filter(|w| w.len() == 3).count(),
+            4,
+            "near is capped at the ceiling (6 - 2 reserved), got {got:?}"
+        );
+    }
+
+    /// **A wasted reserved slot is given back.** When a far word merely repeats something already
+    /// listed, `push_unique` drops it — the slot must go back to the dictionary rather than hand
+    /// back a short menu while suggestions remain unfetched.
+    #[test]
+    fn a_far_word_colliding_with_a_dictionary_suggestion_backfills() {
+        // "aaa" is both the project's own term and the dictionary's first guess.
+        let personal = vec![(2usize, "aaa".to_string())];
+        let got = merge_suggestions("typed", personal, chatty_dict().into_iter());
+        assert_eq!(
+            got.len(),
+            MAX_SUGGESTIONS,
+            "the collided slot is refilled from the dictionary, got {got:?}"
+        );
+        assert_eq!(got.iter().filter(|w| *w == "aaa").count(), 1, "and not duplicated");
+    }
+
+    /// The dictionary is never pulled past the budget — the early-exit that keeps a second
+    /// language's ngram search from running once the list is full.
+    #[test]
+    fn the_dictionary_is_not_pulled_past_the_budget() {
+        let pulled = Cell::new(0usize);
+        let dict = (0..100).map(|i| {
+            pulled.set(pulled.get() + 1);
+            format!("w{i}")
+        });
+        let got = merge_suggestions("helo", vec![(2, "Helios".into())], dict);
+        assert_eq!(got.len(), MAX_SUGGESTIONS);
+        // 5 dictionary slots (6 minus the one reserved), so the 6th pull never happens.
+        assert_eq!(
+            pulled.get(),
+            MAX_SUGGESTIONS - 1,
+            "the suggester must stop at the budget, not run dry"
+        );
+    }
+
+    /// No source may echo the typed word back as its own correction — a menu item that edits
+    /// nothing. The personal set was already filtered; the dictionaries were not.
+    #[test]
+    fn the_typed_word_is_never_its_own_correction() {
+        let dict = vec!["helo".to_string(), "hello".to_string()];
+        let got = merge_suggestions("helo", vec![(0, "helo".into())], dict.into_iter());
+        assert_eq!(got, ["hello"], "the input is dropped from every source: {got:?}");
     }
 
     /// Ties are ordered deterministically — `personal` is a `HashSet`, and a menu that reshuffles
