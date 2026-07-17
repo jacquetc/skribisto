@@ -172,6 +172,7 @@ fn toolbar_row(vm: &UserDictionaryViewModel, query: Signal<String>) -> impl Widg
         Button::new(tr!(settings_user_dict_import()))
             .variant(ButtonVariant::Plain)
             .icon(import_glyph(), IconLocation::Leading)
+            .tooltip(tr!(settings_user_dict_import_tip()))
             .on_activate_fn(move |ctx| present_import(ctx, vm.clone()))
     };
     let export_btn = {
@@ -179,6 +180,7 @@ fn toolbar_row(vm: &UserDictionaryViewModel, query: Signal<String>) -> impl Widg
         Button::new(tr!(settings_user_dict_export()))
             .variant(ButtonVariant::Plain)
             .icon(export_glyph(), IconLocation::Leading)
+            .tooltip(tr!(settings_user_dict_export_tip()))
             .on_activate_fn(move |ctx| present_export(ctx, vm.clone()))
     };
 

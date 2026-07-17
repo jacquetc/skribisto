@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-# Skribisto — UI strings (source locale).
+# Skribisto: UI strings (source locale).
 # A single `&` marks the keyboard mnemonic of a menu label; `&&` is a literal `&`.
 
-## Menu bar — File
+## Menu bar: File
 menu-file = &File
 menu-new-work = &New Work
 menu-open-work = &Open Work…
@@ -28,7 +28,7 @@ menu-welcome = &Welcome…
 menu-settings = S&ettings
 menu-quit = &Quit
 
-## Menu bar — View
+## Menu bar: View
 menu-view = &View
 menu-outline = &Outline
 menu-search = &Search in Project
@@ -44,7 +44,7 @@ ctx-duplicate = &Duplicate
 ctx-trash = Move to &Trash
 ctx-open-to-side = Open to the &Side
 
-## Create recommendations — logical type labels (SplitButton title + Add ▸ rows)
+## Create recommendations: logical type labels (SplitButton title + Add ▸ rows)
 create-book = Book
 create-part = Part
 create-chapter = Chapter
@@ -54,7 +54,7 @@ create-note-folder = Note folder
 create-folder = Folder
 create-book-end = End of Book
 
-## Create recommendations — trailing placement hint on each row
+## Create recommendations: trailing placement hint on each row
 placement-inside = inside
 placement-after = after
 placement-after-parent = after parent
@@ -62,7 +62,7 @@ placement-top-level = top level
 
 # (Writing-model rich tooltips live in this locale's tooltips.ftl.)
 
-## Promote — convert a binder item to its paired type
+## Promote: convert a binder item to its paired type
 ctx-promote = &Convert to
 promote-chapter-folder = Chapter folder
 promote-flat-chapter = Flat chapter
@@ -85,9 +85,9 @@ inspector-promote = Convert to…
 statusbar-toggle-outline = Toggle the binder
 statusbar-toggle-inspector = Toggle the inspector
 # The save indicator (status bar, next to the binder toggle).
-statusbar-save-unsaved = Unsaved changes — click to save
+statusbar-save-unsaved = Unsaved changes. Click to save
 statusbar-save-saved = All changes saved
-statusbar-save-autosave = Autosave is on — changes are saved as you write
+statusbar-save-autosave = Autosave is on. Changes are saved as you write
 statusbar-saving = Saving…
 # The focused item's live word count (status bar).
 statusbar-word-count = { $count ->
@@ -104,7 +104,7 @@ statusbar-word-char-count = { $words ->
    *[other] { $chars } characters
 }
 # The writing session (status-bar sprint timer + word tracker).
-session-toggle = Writing session — start or pause a focused sprint
+session-toggle = Writing session: start or pause a focused sprint
 session-configure = Set the session's word goal and time limit
 session-configure-title = Writing session
 session-word-goal = Word goal
@@ -127,7 +127,7 @@ settings-preview-width = Search preview width
 settings-autosave = Autosave to disk
 settings-show-welcome = Show the launcher at startup (otherwise, reopen the last project)
 
-## Settings window — chrome
+## Settings window: chrome
 settings-title = Settings
 settings-close = Close
 settings-search = Search settings
@@ -141,7 +141,7 @@ settings-reset-confirm-body = This restores every setting on all pages to its fa
 settings-empty-title = No settings here yet
 settings-empty-hint = This section will gain options in a future update.
 
-## Settings window — categories
+## Settings window: categories
 settings-sec-appearance-behaviour = Appearance & Behaviour
 settings-sec-editor = Editor
 settings-sec-spelling = Spelling
@@ -161,7 +161,7 @@ settings-page-autosave = Autosave
 settings-page-export = Export Formats
 settings-page-keymap = Keymap
 
-## Settings window — fields
+## Settings window: fields
 settings-group-typography = Typography
 settings-group-writing-column = Writing column
 settings-group-theme = Theme
@@ -186,7 +186,7 @@ settings-remember-view-tip = Open a container on the view you last used for that
 settings-remember-view-tip-more =
     A Book, Part and Chapter each offer several views (its own page, the full
     manuscript, the full synopsis). Turn this on and each type reopens on the
-    view you last chose for it — e.g. switch one Chapter to Full Chapter and the
+    view you last chose for it, e.g. switch one Chapter to Full Chapter and the
     next Chapter you open shows Full Chapter too. Each type remembers its own view.
 # Goals & Word Count pane
 settings-group-counting = Word counting
@@ -199,14 +199,14 @@ settings-group-goals-display = Display
 settings-show-characters = Show the character count in the status bar
 settings-autosave-hint = Changes are written to disk automatically as you write.
 
-## Settings — Work (the open project)
+## Settings: Work (the open project)
 settings-sec-work = Work
 settings-page-structure = Structure
 settings-group-chapters = Chapters
 settings-chapter-flat = Flat chapters
 settings-chapter-flat-hint = On: a chapter is a single row. You write into it, and it holds no scenes. Off: a chapter is a folder. You still write into it, but it can hold scenes as well. New chapters follow this setting; existing ones convert via Promote.
 
-## Settings — Export styles (Compile & Export ▸ Export Formats)
+## Settings: Export styles (Compile & Export ▸ Export Formats)
 settings-styles-builtin = Built-in styles
 settings-styles-user = My styles
 settings-styles-builtin-badge = Built-in
@@ -255,11 +255,11 @@ welcome-open = Open
 welcome-new-work = New Work
 welcome-recent-works = Recent Works
 welcome-empty-recents = No recent works yet.
-# Shown in place of the recents list when the search matched none of them —
+# Shown in place of the recents list when the search matched none of them,
 # distinct from having no recent works at all.
 welcome-no-matches = No recent work matches your search.
 welcome-learn-soon = Guides and tips are coming soon.
-welcome-about-blurb = Skribisto — a Rust + Bastyde rewrite of the writing app.
+welcome-about-blurb = Skribisto, a Rust + Bastyde rewrite of the writing app.
 # The *…* is inline markup, not decoration: it italicises the line (the widget
 # renders it in a serif italic). Keep the asterisks when translating.
 welcome-tagline = *A quiet place to write long things.*
@@ -386,7 +386,7 @@ close-work-question = Save changes before closing the work?
 quit-question = Save changes before quitting?
 unsaved-changes = This work has unsaved changes.
 # Replacing the open work in this window (New Work, Open Work, "Open here", the
-# import toast's "Open now") — the same guard as closing, since the open work is
+# import toast's "Open now"), the same guard as closing, since the open work is
 # closed either way.
 new-work-unsaved-question = Save changes before creating a new work?
 open-work-unsaved-question = Save changes before opening another work?
@@ -419,18 +419,18 @@ backup-partial = Backup finished: { $ok } saved, { $failed } destination(s) fail
 backup-no-destination-title = No backup location available
 backup-no-destination-text = None of the configured backup destinations can be reached (for example, an external drive may be unplugged). Plug it in and retry, or exit without backing up.
 backup-failed-close-title = The backup could not be saved
-backup-failed-close-text = No backup copy could be written before closing — every destination failed (the drive may have been removed, or it may be full or write-protected). Fix it and retry, or exit without backing up.
+backup-failed-close-text = No backup copy could be written before closing. Every destination failed (the drive may have been removed, or it may be full or write-protected). Fix it and retry, or exit without backing up.
 
 ## Open-a-backup (choice modal + permanent banner + restore)
 backup-choice-title = Backup file
 backup-choice-heading = You've opened a backup copy
 backup-choice-subtitle = This is a point-in-time backup of a project.
 backup-choice-subtitle-dated = Backup taken { $date }.
-backup-choice-body = You can open it and edit freely, but changes can only be kept with Save As — the original project file is not touched. Or restore this project to exactly this backup.
+backup-choice-body = You can open it and edit freely, but changes can only be kept with Save As. The original project file is not touched. Or restore this project to exactly this backup.
 backup-choice-open = Open the backup
 backup-choice-restore = Restore this project to this point…
 backup-choice-not-a-backup = No, open it normally
-backup-banner-title = Backup copy — changes can't be saved here
+backup-banner-title = Backup copy: changes can't be saved here
 backup-banner-description = Use Save As to keep your edits in a new file, or Restore to replace the original project with this backup.
 backup-banner-restore = Restore…
 backup-banner-save-as = Save As…
@@ -481,7 +481,7 @@ settings-backup-on-close = Back up when closing the project
 settings-backup-on-open = Back up when opening the project
 settings-backup-interval = Back up periodically, every
 settings-backup-destinations = Backup destinations
-settings-backup-dest-none = No destinations — backups are saved next to the project.
+settings-backup-dest-none = No destinations. Backups are saved next to the project.
 settings-backup-dest-remove = Remove
 settings-backup-dest-add = Add folder…
 settings-backup-dest-refresh = Refresh
@@ -570,7 +570,7 @@ import-plume-location-missing = This folder does not exist
 import-plume-location-not-folder = This path is not a folder
 import-plume-location-readonly = This folder is not writable
 import-plume-name-required = Enter a file name
-import-plume-name-exists = A file with this name already exists here — Import will confirm overwrite
+import-plume-name-exists = A file with this name already exists here. Import will confirm overwrite
 # Overwrite confirmation
 import-plume-overwrite-title = Replace existing file?
 import-plume-overwrite-text = “{ $name }” already exists. Replace it with the imported project?
@@ -645,7 +645,7 @@ export-done = Exported { $count } item(s)
 export-error-title = Could not export
 export-error-details = Details
 
-## Backup scheduler (progress toast + failure/prune-warning details — backup review, T1-2/T1-7/T2-3/T2-8/T2-9)
+## Backup scheduler (progress toast + failure/prune-warning details, backup review, T1-2/T1-7/T2-3/T2-8/T2-9)
 backup-progress-start = Starting…
 backup-progress-retention = Cleaning up old backups…
 backup-progress-done = Done
@@ -653,7 +653,7 @@ backup-progress-destination = Destination { $i } of { $n }
 backup-details = Details
 backup-issues-title = Backup issues
 backup-failed-title = Backup failed
-backup-complete-prune-warning = Backup complete ({ $ok } saved, { $skipped } already current) — some old backups could not be removed
+backup-complete-prune-warning = Backup complete ({ $ok } saved, { $skipped } already current). Some old backups could not be removed
 
 # Search & Replace
 search = Search
@@ -676,20 +676,20 @@ search-facet-scene = Scenes
 search-facet-note = Notes
 search-facet-folder = Folders
 # Rich tooltips for the option toggles
-search-tip-case = Match case — treat uppercase and lowercase as different, so “Elena” and “elena” are separate matches.
-search-tip-whole-word = Whole word — match only complete words, so “cat” is not found inside “category”.
-search-tip-diacritics = Match accents — treat accented letters as distinct, so “cafe” does not match “café”.
-search-tip-body = Body — search the prose of scenes and notes.
-search-tip-title = Title — search the titles of binder items.
-search-tip-synopsis = Synopsis — search each writing row’s summary.
-search-tip-label = Label — search the short note shown under a binder item’s title.
-search-tip-book = Books — the book container and its begin / end markers.
-search-tip-part = Parts — part-level dividers.
-search-tip-chapter = Chapters — chapters, in whichever way the project stores them.
-search-tip-scene = Scenes — the rows that hold your prose.
-search-tip-note = Notes — free-form notes.
-search-tip-folder = Folders — plain organising folders and separators.
-search-tip-replace = Replace — show the replacement field and Replace All.
+search-tip-case = Match case: treat uppercase and lowercase as different, so “Elena” and “elena” are separate matches.
+search-tip-whole-word = Whole word: match only complete words, so “cat” is not found inside “category”.
+search-tip-diacritics = Match accents: treat accented letters as distinct, so “cafe” does not match “café”.
+search-tip-body = Body: search the prose of scenes and notes.
+search-tip-title = Title: search the titles of binder items.
+search-tip-synopsis = Synopsis: search each writing row’s summary.
+search-tip-label = Label: search the short note shown under a binder item’s title.
+search-tip-book = Books: the book container and its begin / end markers.
+search-tip-part = Parts: part-level dividers.
+search-tip-chapter = Chapters: chapters, in whichever way the project stores them.
+search-tip-scene = Scenes: the rows that hold your prose.
+search-tip-note = Notes: free-form notes.
+search-tip-folder = Folders: plain organising folders and separators.
+search-tip-replace = Replace: show the replacement field and Replace All.
 search-error = Search failed: { $message }
 search-no-matches = No matches
 search-count =
@@ -808,7 +808,7 @@ dict-add-name = Name
 dict-add-name-placeholder = e.g. My Latin dictionary
 dict-add-code = Language code
 dict-add-code-placeholder = e.g. la or fr-FR-x-custom
-dict-add-code-hint = A short tag of your choosing — this is what you pick as a document's language.
+dict-add-code-hint = A short tag of your choosing. This is what you pick as a document's language.
 dict-add-aff = Affix file (.aff)
 dict-add-dic = Word list (.dic)
 dict-add-submit = Add
@@ -816,7 +816,7 @@ dict-add-cancel = Cancel
 dict-add-name-required = Give the dictionary a name.
 dict-add-code-required = Enter a language code.
 dict-add-code-invalid = Use only letters, digits, and - _ .
-dict-add-code-reserved = That is a built-in dictionary code — choose another.
+dict-add-code-reserved = That is a built-in dictionary code. Choose another.
 dict-add-file-required = Choose a file.
 dict-add-file-missing = That file does not exist.
 dict-add-code-taken = A dictionary for that code is already installed.
@@ -837,14 +837,14 @@ inspector-apply-language-to-children = Apply language to children
 settings-page-language = Language
 settings-field-dict-language = Languages
 dict-tradeoff-hint = Each extra language accepts more words, so fewer mistakes are caught.
-lang-inherit-hint = Inherited — this scene uses the book's or project's languages.
+lang-inherit-hint = Inherited: this scene uses the book's or project's languages.
 lang-pill-list = Languages
 lang-pill-add = Add a language
 lang-pill-remove = Remove { $name }
 lang-pill-mute = Turn spell-checking off for { $name }
 lang-pill-unmute = Turn spell-checking on for { $name }
 
-## Settings — Work ▸ Personal dictionary (per-project word list)
+## Settings: Work ▸ Personal dictionary (per-project word list)
 settings-page-personal-dictionary = Personal dictionary
 settings-user-dict-desc = Words you add here are treated as correctly spelled everywhere in the app, and never flagged again.
 settings-user-dict-add-placeholder = Add a word…
@@ -859,6 +859,8 @@ settings-user-dict-remove = Remove
 settings-user-dict-empty = No words yet. Add words the spell-checker should ignore, or import a list.
 settings-user-dict-import = Import…
 settings-user-dict-export = Export…
+settings-user-dict-import-tip = Add words from a plain text file, one word per line. Existing words are kept.
+settings-user-dict-export-tip = Save the whole list to a plain text file, one word per line.
 settings-user-dict-txt-filter = Text files
 settings-user-dict-duplicate = Already in the dictionary
 settings-user-dict-imported = Imported { $count } words ({ $duplicates } already present).
@@ -866,7 +868,7 @@ settings-user-dict-import-failed = Could not read the word list: { $error }
 settings-user-dict-exported = Saved { $count } words.
 settings-user-dict-export-failed = Could not save the word list: { $error }
 
-## Editor — spelling (context menu + toast)
+## Editor: spelling (context menu + toast)
 # Shown in place of the corrections when a flagged word has none to offer.
 editor-menu-no-suggestions = No suggestions
 editor-menu-add-to-dictionary = Add “{ $word }” to dictionary
@@ -875,9 +877,9 @@ editor-dict-added = Added “{ $word }” to your dictionary.
 editor-dict-added-multi = Added { $count } words to your dictionary.
 toast-undo = Undo
 
-## Spell-check — the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
-titlebar-spellcheck-on = Spell-checking is on — click to stop checking (F7)
-titlebar-spellcheck-off = Spell-checking is off — click to check again (F7)
+## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
+titlebar-spellcheck-on = Spell-checking is on. Click to stop checking (F7)
+titlebar-spellcheck-off = Spell-checking is off. Click to check again (F7)
 menu-spellcheck = &Check spelling
 settings-page-spellcheck = Spell-checking
 settings-group-spellcheck = Spell-checking

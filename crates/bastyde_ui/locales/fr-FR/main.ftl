@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-# Skribisto — chaînes de l'interface (français).
+# Skribisto: chaînes de l'interface (français).
 # Un simple « & » marque le mnémonique d'un libellé de menu ; « && » est un « & » littéral.
 
-## Barre de menus — Fichier
+## Barre de menus: Fichier
 menu-file = &Fichier
 menu-new-work = &Nouvelle œuvre
 menu-open-work = &Ouvrir une œuvre…
@@ -28,7 +28,7 @@ menu-welcome = &Bienvenue…
 menu-settings = &Paramètres
 menu-quit = &Quitter
 
-## Barre de menus — Affichage
+## Barre de menus: Affichage
 menu-view = &Affichage
 menu-outline = &Plan
 menu-search = &Rechercher dans le projet
@@ -44,7 +44,7 @@ ctx-duplicate = &Dupliquer
 ctx-trash = Mettre à la &corbeille
 ctx-open-to-side = Ouvrir &sur le côté
 
-## Recommandations de création — libellés de types (titre du SplitButton + Ajouter ▸)
+## Recommandations de création: libellés de types (titre du SplitButton + Ajouter ▸)
 create-book = Livre
 create-part = Partie
 create-chapter = Chapitre
@@ -54,7 +54,7 @@ create-note-folder = Dossier de notes
 create-folder = Dossier
 create-book-end = Fin du livre
 
-## Recommandations de création — indication de placement en fin de ligne
+## Recommandations de création: indication de placement en fin de ligne
 placement-inside = à l’intérieur
 placement-after = après
 placement-after-parent = après le parent
@@ -62,7 +62,7 @@ placement-top-level = au niveau supérieur
 
 # (Les infobulles enrichies du modèle d’écriture sont dans le tooltips.ftl de cette locale.)
 
-## Promouvoir — convertir un élément du classeur vers son type apparié
+## Promouvoir: convertir un élément du classeur vers son type apparié
 ctx-promote = &Convertir en
 promote-chapter-folder = Dossier de chapitre
 promote-flat-chapter = Chapitre à plat
@@ -85,9 +85,9 @@ inspector-promote = Convertir en…
 statusbar-toggle-outline = Afficher/masquer le classeur
 statusbar-toggle-inspector = Afficher/masquer l'inspecteur
 # L'indicateur d'enregistrement (barre d'état, à côté de la bascule du classeur).
-statusbar-save-unsaved = Modifications non enregistrées — cliquez pour enregistrer
+statusbar-save-unsaved = Modifications non enregistrées. Cliquez pour enregistrer
 statusbar-save-saved = Toutes les modifications sont enregistrées
-statusbar-save-autosave = L'enregistrement automatique est activé — les modifications sont enregistrées au fil de l'écriture
+statusbar-save-autosave = L'enregistrement automatique est activé. Les modifications sont enregistrées au fil de l'écriture
 statusbar-saving = Enregistrement…
 # Le nombre de mots en direct de l'élément ciblé (barre d'état).
 statusbar-word-count = { $count ->
@@ -104,7 +104,7 @@ statusbar-word-char-count = { $words ->
    *[other] { $chars } caractères
 }
 # La session d'écriture (minuteur de sprint + compteur de mots, barre d'état).
-session-toggle = Session d'écriture — démarrer ou mettre en pause un sprint
+session-toggle = Session d'écriture : démarrer ou mettre en pause un sprint
 session-configure = Définir l'objectif de mots et la limite de temps
 session-configure-title = Session d'écriture
 session-word-goal = Objectif de mots
@@ -127,7 +127,7 @@ settings-preview-width = Largeur de l'aperçu de recherche
 settings-autosave = Enregistrement automatique sur le disque
 settings-show-welcome = Afficher le lanceur au démarrage (sinon, rouvrir le dernier projet)
 
-## Fenêtre des paramètres — cadre
+## Fenêtre des paramètres: cadre
 settings-title = Paramètres
 settings-close = Fermer
 settings-search = Rechercher un paramètre
@@ -141,7 +141,7 @@ settings-reset-confirm-body = Cela rétablit la valeur d'usine de chaque paramè
 settings-empty-title = Aucun paramètre ici pour l'instant
 settings-empty-hint = Cette section proposera des options dans une prochaine mise à jour.
 
-## Fenêtre des paramètres — catégories
+## Fenêtre des paramètres: catégories
 settings-sec-appearance-behaviour = Apparence et comportement
 settings-sec-editor = Éditeur
 settings-sec-spelling = Orthographe
@@ -161,7 +161,7 @@ settings-page-autosave = Enregistrement automatique
 settings-page-export = Formats d'export
 settings-page-keymap = Raccourcis clavier
 
-## Fenêtre des paramètres — champs
+## Fenêtre des paramètres: champs
 settings-group-typography = Typographie
 settings-group-writing-column = Colonne d'écriture
 settings-group-theme = Thème
@@ -186,7 +186,7 @@ settings-remember-view-tip = Ouvrir un conteneur sur la vue utilisée en dernier
 settings-remember-view-tip-more =
     Un Livre, une Partie et un Chapitre offrent chacun plusieurs vues (sa propre
     page, le manuscrit complet, le synopsis complet). Activez cette option et
-    chaque type se rouvre sur la vue choisie en dernier — par exemple, passez un
+    chaque type se rouvre sur la vue choisie en dernier, par exemple, passez un
     Chapitre en Chapitre complet et le prochain Chapitre ouvert s'affichera aussi
     en Chapitre complet. Chaque type mémorise sa propre vue.
 # Volet Objectifs et comptage des mots
@@ -200,14 +200,14 @@ settings-group-goals-display = Affichage
 settings-show-characters = Afficher le nombre de caractères dans la barre d'état
 settings-autosave-hint = Les modifications sont enregistrées automatiquement au fil de l'écriture.
 
-## Paramètres — Œuvre (le projet ouvert)
+## Paramètres: Œuvre (le projet ouvert)
 settings-sec-work = Œuvre
 settings-page-structure = Structure
 settings-group-chapters = Chapitres
 settings-chapter-flat = Chapitres à plat
 settings-chapter-flat-hint = Activé : un chapitre est une seule ligne. Vous y écrivez, et il ne contient aucune scène. Désactivé : un chapitre est un dossier. Vous y écrivez également, mais il peut en outre contenir des scènes. Les nouveaux chapitres suivent ce réglage ; les existants se convertissent via Promouvoir.
 
-## Paramètres — Styles d'export (Compilation et export ▸ Formats d'export)
+## Paramètres: Styles d'export (Compilation et export ▸ Formats d'export)
 settings-styles-builtin = Styles intégrés
 settings-styles-user = Mes styles
 settings-styles-builtin-badge = Intégré
@@ -257,10 +257,10 @@ welcome-new-work = Nouvelle œuvre
 welcome-recent-works = Œuvres récentes
 welcome-empty-recents = Aucune œuvre récente.
 # Affiché à la place de la liste des œuvres récentes lorsque la recherche n'en
-# trouve aucune — à distinguer du cas où il n'y a aucune œuvre récente.
+# trouve aucune, à distinguer du cas où il n'y a aucune œuvre récente.
 welcome-no-matches = Aucune œuvre récente ne correspond à votre recherche.
 welcome-learn-soon = Guides et astuces à venir.
-welcome-about-blurb = Skribisto — une réécriture en Rust + Bastyde de l'application d'écriture.
+welcome-about-blurb = Skribisto, une réécriture en Rust + Bastyde de l'application d'écriture.
 # Les *…* sont du balisage, pas de la décoration : ils mettent la ligne en
 # italique (rendue dans un serif italique). Conserver les astérisques.
 welcome-tagline = *Un endroit calme pour écrire de longs textes.*
@@ -387,7 +387,7 @@ close-work-question = Enregistrer les modifications avant de fermer l'œuvre ?
 quit-question = Enregistrer les modifications avant de quitter ?
 unsaved-changes = Cette œuvre a des modifications non enregistrées.
 # Remplacement de l'œuvre ouverte dans cette fenêtre (Nouvelle œuvre, Ouvrir une
-# œuvre, « Ouvrir ici », « Ouvrir maintenant » du bandeau d'import) — même garde
+# œuvre, « Ouvrir ici », « Ouvrir maintenant » du bandeau d'import), même garde
 # que la fermeture, puisque l'œuvre ouverte est fermée dans tous les cas.
 new-work-unsaved-question = Enregistrer les modifications avant de créer une nouvelle œuvre ?
 open-work-unsaved-question = Enregistrer les modifications avant d'ouvrir une autre œuvre ?
@@ -428,11 +428,11 @@ backup-choice-title = Copie de secours
 backup-choice-heading = Vous avez ouvert une copie de secours
 backup-choice-subtitle = Il s'agit d'une copie de secours d'un projet, à un instant donné.
 backup-choice-subtitle-dated = Copie de secours du { $date }.
-backup-choice-body = Vous pouvez l'ouvrir et la modifier librement, mais les changements ne peuvent être conservés qu'avec « Enregistrer sous » — le fichier du projet d'origine n'est pas modifié. Ou restaurez ce projet exactement à cette copie de secours.
+backup-choice-body = Vous pouvez l'ouvrir et la modifier librement, mais les changements ne peuvent être conservés qu'avec « Enregistrer sous ». Le fichier du projet d'origine n'est pas modifié. Ou restaurez ce projet exactement à cette copie de secours.
 backup-choice-open = Ouvrir la copie de secours
 backup-choice-restore = Restaurer le projet à ce point…
 backup-choice-not-a-backup = Non, l'ouvrir normalement
-backup-banner-title = Copie de secours — les changements ne peuvent pas être enregistrés ici
+backup-banner-title = Copie de secours : les changements ne peuvent pas être enregistrés ici
 backup-banner-description = Utilisez « Enregistrer sous » pour conserver vos modifications dans un nouveau fichier, ou « Restaurer » pour remplacer le projet d'origine par cette copie.
 backup-banner-restore = Restaurer…
 backup-banner-save-as = Enregistrer sous…
@@ -483,7 +483,7 @@ settings-backup-on-close = À la fermeture du projet
 settings-backup-on-open = À l'ouverture du projet
 settings-backup-interval = Régulièrement, toutes les
 settings-backup-destinations = Destinations des copies de secours
-settings-backup-dest-none = Aucune destination — les copies sont enregistrées à côté du projet.
+settings-backup-dest-none = Aucune destination. Les copies sont enregistrées à côté du projet.
 settings-backup-dest-remove = Retirer
 settings-backup-dest-add = Ajouter un dossier…
 settings-backup-dest-refresh = Actualiser
@@ -572,7 +572,7 @@ import-plume-location-missing = Ce dossier n'existe pas
 import-plume-location-not-folder = Ce chemin n'est pas un dossier
 import-plume-location-readonly = Ce dossier n'est pas accessible en écriture
 import-plume-name-required = Saisissez un nom de fichier
-import-plume-name-exists = Un fichier de ce nom existe déjà ici — l'import demandera confirmation du remplacement
+import-plume-name-exists = Un fichier de ce nom existe déjà ici. L'import demandera confirmation du remplacement
 # Confirmation de remplacement
 import-plume-overwrite-title = Remplacer le fichier existant ?
 import-plume-overwrite-text = « { $name } » existe déjà. Le remplacer par le projet importé ?
@@ -647,7 +647,7 @@ export-done = { $count } élément(s) exporté(s)
 export-error-title = Impossible d'exporter
 export-error-details = Détails
 
-## Planificateur de sauvegardes (toast de progression + détails d'échec/d'avertissement de purge — revue backup, T1-2/T1-7/T2-3/T2-8/T2-9)
+## Planificateur de sauvegardes (toast de progression + détails d'échec/d'avertissement de purge, revue backup, T1-2/T1-7/T2-3/T2-8/T2-9)
 backup-progress-start = Démarrage…
 backup-progress-retention = Nettoyage des anciennes sauvegardes…
 backup-progress-done = Terminé
@@ -655,7 +655,7 @@ backup-progress-destination = Destination { $i } sur { $n }
 backup-details = Détails
 backup-issues-title = Problèmes de sauvegarde
 backup-failed-title = Échec de la sauvegarde
-backup-complete-prune-warning = Sauvegarde terminée ({ $ok } enregistrée(s), { $skipped } déjà à jour) — certaines anciennes sauvegardes n'ont pas pu être supprimées
+backup-complete-prune-warning = Sauvegarde terminée ({ $ok } enregistrée(s), { $skipped } déjà à jour). Certaines anciennes sauvegardes n'ont pas pu être supprimées
 
 # Recherche et remplacement
 search = Rechercher
@@ -678,20 +678,20 @@ search-facet-scene = Scènes
 search-facet-note = Notes
 search-facet-folder = Dossiers
 # Info-bulles détaillées des options
-search-tip-case = Respecter la casse — les majuscules et les minuscules sont distinctes, « Elena » et « elena » sont des résultats différents.
-search-tip-whole-word = Mot entier — ne trouver que les mots complets ; « chat » n’est pas trouvé dans « château ».
-search-tip-diacritics = Respecter les accents — les lettres accentuées sont distinctes ; « cafe » ne trouve pas « café ».
-search-tip-body = Corps — rechercher dans la prose des scènes et des notes.
-search-tip-title = Titre — rechercher dans les titres des éléments du classeur.
-search-tip-synopsis = Synopsis — rechercher dans le résumé de chaque ligne d’écriture.
-search-tip-label = Étiquette — rechercher dans la note affichée sous le titre d’un élément.
-search-tip-book = Livres — le conteneur du livre et ses marqueurs de début / fin.
-search-tip-part = Parties — les séparateurs de partie.
-search-tip-chapter = Chapitres — les chapitres, quel que soit leur stockage.
-search-tip-scene = Scènes — les lignes qui contiennent votre prose.
-search-tip-note = Notes — les notes libres.
-search-tip-folder = Dossiers — les simples dossiers d’organisation et séparateurs.
-search-tip-replace = Remplacer — afficher le champ de remplacement et « Tout remplacer ».
+search-tip-case = Respecter la casse : les majuscules et les minuscules sont distinctes, « Elena » et « elena » sont des résultats différents.
+search-tip-whole-word = Mot entier : ne trouver que les mots complets ; « chat » n’est pas trouvé dans « château ».
+search-tip-diacritics = Respecter les accents : les lettres accentuées sont distinctes ; « cafe » ne trouve pas « café ».
+search-tip-body = Corps : rechercher dans la prose des scènes et des notes.
+search-tip-title = Titre : rechercher dans les titres des éléments du classeur.
+search-tip-synopsis = Synopsis : rechercher dans le résumé de chaque ligne d’écriture.
+search-tip-label = Étiquette : rechercher dans la note affichée sous le titre d’un élément.
+search-tip-book = Livres : le conteneur du livre et ses marqueurs de début / fin.
+search-tip-part = Parties : les séparateurs de partie.
+search-tip-chapter = Chapitres : les chapitres, quel que soit leur stockage.
+search-tip-scene = Scènes : les lignes qui contiennent votre prose.
+search-tip-note = Notes : les notes libres.
+search-tip-folder = Dossiers : les simples dossiers d’organisation et séparateurs.
+search-tip-replace = Remplacer : afficher le champ de remplacement et « Tout remplacer ».
 search-error = Échec de la recherche : { $message }
 search-no-matches = Aucun résultat
 search-count =
@@ -810,7 +810,7 @@ dict-add-name = Nom
 dict-add-name-placeholder = ex. Mon dictionnaire latin
 dict-add-code = Code de langue
 dict-add-code-placeholder = ex. la ou fr-FR-x-perso
-dict-add-code-hint = Une étiquette courte de votre choix — c'est ce que vous choisirez comme langue d'un document.
+dict-add-code-hint = Une étiquette courte de votre choix. C'est ce que vous choisirez comme langue d'un document.
 dict-add-aff = Fichier d'affixes (.aff)
 dict-add-dic = Liste de mots (.dic)
 dict-add-submit = Ajouter
@@ -818,7 +818,7 @@ dict-add-cancel = Annuler
 dict-add-name-required = Donnez un nom au dictionnaire.
 dict-add-code-required = Saisissez un code de langue.
 dict-add-code-invalid = Utilisez uniquement des lettres, chiffres et - _ .
-dict-add-code-reserved = Ce code correspond à un dictionnaire intégré — choisissez-en un autre.
+dict-add-code-reserved = Ce code correspond à un dictionnaire intégré. Choisissez-en un autre.
 dict-add-file-required = Choisissez un fichier.
 dict-add-file-missing = Ce fichier n'existe pas.
 dict-add-code-taken = Un dictionnaire pour ce code est déjà installé.
@@ -839,14 +839,14 @@ inspector-apply-language-to-children = Appliquer la langue aux enfants
 settings-page-language = Langue
 settings-field-dict-language = Langues
 dict-tradeoff-hint = Chaque langue supplémentaire accepte plus de mots, donc moins de fautes sont détectées.
-lang-inherit-hint = Hérité — cette scène utilise les langues du livre ou du projet.
+lang-inherit-hint = Hérité : cette scène utilise les langues du livre ou du projet.
 lang-pill-list = Langues
 lang-pill-add = Ajouter une langue
 lang-pill-remove = Retirer { $name }
 lang-pill-mute = Désactiver la correction pour { $name }
 lang-pill-unmute = Activer la correction pour { $name }
 
-## Réglages — Projet ▸ Dictionnaire personnel (liste de mots par projet)
+## Réglages: Projet ▸ Dictionnaire personnel (liste de mots par projet)
 settings-page-personal-dictionary = Dictionnaire personnel
 settings-user-dict-desc = Les mots que vous ajoutez ici sont considérés comme correctement orthographiés partout dans l’application et ne sont plus jamais signalés.
 settings-user-dict-add-placeholder = Ajouter un mot…
@@ -861,6 +861,8 @@ settings-user-dict-remove = Retirer
 settings-user-dict-empty = Aucun mot pour l’instant. Ajoutez des mots à ignorer, ou importez une liste.
 settings-user-dict-import = Importer…
 settings-user-dict-export = Exporter…
+settings-user-dict-import-tip = Ajoute les mots d’un fichier texte brut, un mot par ligne. Les mots existants sont conservés.
+settings-user-dict-export-tip = Enregistre toute la liste dans un fichier texte brut, un mot par ligne.
 settings-user-dict-txt-filter = Fichiers texte
 settings-user-dict-duplicate = Déjà dans le dictionnaire
 settings-user-dict-imported = { $count } mots importés ({ $duplicates } déjà présents).
@@ -868,7 +870,7 @@ settings-user-dict-import-failed = Impossible de lire la liste de mots : { $erro
 settings-user-dict-exported = { $count } mots enregistrés.
 settings-user-dict-export-failed = Impossible d’enregistrer la liste de mots : { $error }
 
-## Éditeur — orthographe (menu contextuel + notification)
+## Éditeur: orthographe (menu contextuel + notification)
 # Affiché à la place des corrections quand un mot signalé n’en a aucune.
 editor-menu-no-suggestions = Aucune suggestion
 editor-menu-add-to-dictionary = Ajouter « { $word } » au dictionnaire
@@ -877,9 +879,9 @@ editor-dict-added = « { $word } » ajouté à votre dictionnaire.
 editor-dict-added-multi = { $count } mots ajoutés à votre dictionnaire.
 toast-undo = Annuler
 
-## Orthographe — l'interrupteur principal (barre de titre / menu Affichage / F7 / Paramètres ▸ Orthographe)
-titlebar-spellcheck-on = La vérification orthographique est active — cliquez pour l'arrêter (F7)
-titlebar-spellcheck-off = La vérification orthographique est désactivée — cliquez pour la réactiver (F7)
+## Orthographe: l'interrupteur principal (barre de titre / menu Affichage / F7 / Paramètres ▸ Orthographe)
+titlebar-spellcheck-on = La vérification orthographique est active. Cliquez pour l'arrêter (F7)
+titlebar-spellcheck-off = La vérification orthographique est désactivée. Cliquez pour la réactiver (F7)
 menu-spellcheck = &Vérifier l'orthographe
 settings-page-spellcheck = Vérification orthographique
 settings-group-spellcheck = Vérification orthographique
