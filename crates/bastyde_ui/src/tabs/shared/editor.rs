@@ -75,6 +75,11 @@ pub fn writing_column(
         .content_padding_symmetric(8.0, 12.0)
         .min_lines(min_lines)
         .v_scroll_policy(ScrollPolicy::AlwaysOff)
+        // Bastard mode: the editor is laid out at full document height and the
+        // tab's outer ScrollArea scrolls the page. Window the render to the
+        // visible clip so a 13k-word scene only rasterizes the rows on screen
+        // instead of the whole document on every paint.
+        .window_to_clip(true)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
     // Hand this editor's handle to the find banner so it can select + scroll the
@@ -247,10 +252,13 @@ pub fn synopsis_editor(
             .max_lines(6)
             .v_scroll_policy(ScrollPolicy::Auto),
         // No `max_lines` → the editor sizes to its content; its own scroll bar is
-        // suppressed so the page scrolls instead. Mirrors `writing_column`.
+        // suppressed so the page scrolls instead. Mirrors `writing_column`, so it
+        // windows the render to the visible clip too. (Compact stays self-scrolling
+        // and must NOT window — its cull follows its own scroll offset.)
         SynopsisFit::Growing => editor
             .min_lines(SYNOPSIS_MIN_LINES)
-            .v_scroll_policy(ScrollPolicy::AlwaysOff),
+            .v_scroll_policy(ScrollPolicy::AlwaysOff)
+            .window_to_clip(true),
     };
     {
         let handle = editor.handle();
