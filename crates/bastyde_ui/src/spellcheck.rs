@@ -273,12 +273,23 @@ impl SpellChecker {
     /// The typed word itself is *not* filtered here — [`push_unique`] is the single gate that
     /// drops it, so every source is held to the same rule.
     fn personal_suggestions(&self, word: &str) -> Vec<(usize, String)> {
-        let needle = word.to_lowercase();
+        // Collected once: the needle is invariant across the scan, and this runs over every
+        // personal word (an imported list may hold thousands).
+        let needle: Vec<char> = word.to_lowercase().chars().collect();
         let mut scored: Vec<(usize, String)> = self
             .personal
             .iter()
             .filter_map(|w| {
-                bounded_levenshtein(&needle, &w.to_lowercase(), MAX_PERSONAL_DISTANCE)
+                let lower = w.to_lowercase();
+                // Rule the candidate out on length before building its char vector: a gap wider
+                // than the cap cannot be closed by any number of edits, and counting allocates
+                // nothing. Counted on the *lower-cased* form, since lowercasing can change a
+                // word's length (`İ` becomes two chars) and the distance is measured there.
+                if lower.chars().count().abs_diff(needle.len()) > MAX_PERSONAL_DISTANCE {
+                    return None;
+                }
+                let candidate: Vec<char> = lower.chars().collect();
+                bounded_levenshtein(&needle, &candidate, MAX_PERSONAL_DISTANCE)
                     .map(|d| (d, w.clone()))
             })
             .collect();
@@ -377,13 +388,15 @@ fn push_unique(out: &mut Vec<String>, typed: &str, s: String) {
 
 /// Levenshtein distance between `a` and `b`, or `None` once it is known to exceed `max`.
 ///
-/// The cap is what keeps this cheap enough to run over the whole personal set on a right-click:
-/// a length difference alone rules most candidates out without touching the matrix, and any
-/// survivor bails as soon as every path through a row is already too far. Operates on `char`s, so
-/// accented terms measure in letters rather than UTF-8 bytes.
-fn bounded_levenshtein(a: &str, b: &str, max: usize) -> Option<usize> {
-    let a: Vec<char> = a.chars().collect();
-    let b: Vec<char> = b.chars().collect();
+/// The cap is what keeps this cheap enough to run over the whole personal set on a right-click: a
+/// survivor bails as soon as every path through a row is already too far, so a candidate costs a
+/// few rows rather than a full matrix.
+///
+/// Takes **already-lower-cased `char` slices** rather than `&str`. Both are the caller's to
+/// prepare: the needle is invariant across a scan and would otherwise be re-collected for every
+/// candidate, and the cheap length gate belongs *before* a candidate's vector is built, not after
+/// — measuring in `char`s, so accented terms count in letters rather than UTF-8 bytes.
+fn bounded_levenshtein(a: &[char], b: &[char], max: usize) -> Option<usize> {
     if a.len().abs_diff(b.len()) > max {
         return None;
     }
@@ -1076,15 +1089,41 @@ mod tests {
     /// accented words measure in characters.
     #[test]
     fn bounded_levenshtein_measures_chars_and_honours_the_cap() {
-        assert_eq!(bounded_levenshtein("abc", "abc", 2), Some(0));
-        assert_eq!(bounded_levenshtein("abc", "abd", 2), Some(1)); // substitution
-        assert_eq!(bounded_levenshtein("abc", "ab", 2), Some(1)); // deletion
-        assert_eq!(bounded_levenshtein("abc", "abcd", 2), Some(1)); // insertion
-        assert_eq!(bounded_levenshtein("abc", "xyz", 2), None, "3 edits exceeds the cap");
+        let d = |a: &str, b: &str| {
+            let (a, b): (Vec<char>, Vec<char>) = (a.chars().collect(), b.chars().collect());
+            bounded_levenshtein(&a, &b, 2)
+        };
+        assert_eq!(d("abc", "abc"), Some(0));
+        assert_eq!(d("abc", "abd"), Some(1)); // substitution
+        assert_eq!(d("abc", "ab"), Some(1)); // deletion
+        assert_eq!(d("abc", "abcd"), Some(1)); // insertion
+        assert_eq!(d("abc", "xyz"), None, "3 edits exceeds the cap");
         // A length gap alone exceeds the cap — rejected without building the matrix.
-        assert_eq!(bounded_levenshtein("a", "abcdef", 2), None);
+        assert_eq!(d("a", "abcdef"), None);
         // "café" vs "cafe" is one char edit, not two bytes' worth.
-        assert_eq!(bounded_levenshtein("café", "cafe", 2), Some(1));
+        assert_eq!(d("café", "cafe"), Some(1));
+        // Empty on either side is the other's length, still subject to the cap.
+        assert_eq!(d("", "ab"), Some(2));
+        assert_eq!(d("ab", ""), Some(2));
+        assert_eq!(d("", ""), Some(0));
+    }
+
+    /// The length gate must not reject a candidate whose *lower-cased* form is within the cap
+    /// even though its raw form is not — `İ` lower-cases to two chars, so counting the raw word
+    /// would measure the wrong length.
+    #[test]
+    fn a_candidate_is_gated_on_its_lower_cased_length() {
+        // "İ" (U+0130) lower-cases to "i̇" — 1 char becomes 2.
+        assert_eq!("İ".chars().count(), 1);
+        assert_eq!("İ".to_lowercase().chars().count(), 2);
+        // A personal word whose lower-cased form is exactly the typed word must be found.
+        let hl = SpellChecker::for_tests(&["hello"], &["İstanbul"]);
+        let got = hl.suggest("i\u{307}stanbul"); // the lower-cased spelling, typed by the writer
+        assert_eq!(
+            got.first().map(String::as_str),
+            Some("İstanbul"),
+            "the stored casing is offered, got {got:?}"
+        );
     }
 
     /// The multi-dictionary union: a word only one language knows is still accepted.

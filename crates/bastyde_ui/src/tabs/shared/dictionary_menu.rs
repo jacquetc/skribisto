@@ -71,8 +71,13 @@ pub(crate) fn resolve_spelling(
     let Some(spell) = spell else {
         return SpellingMenu::default();
     };
-    let pos = handle.cursor_position();
-    let anchor = handle.cursor_anchor_signal().get();
+    // One read for both ends. Pairing the live `cursor_position()` with the
+    // `cursor_anchor_signal()` mirror would mix two moments in time: the mirror only
+    // refreshes on sync, and this crate already knows it lags (`wire_spell` reads the
+    // caret live for exactly that reason). A stale anchor against a fresh caret invents
+    // a selection that isn't there — and the whole spelling group then silently
+    // vanishes from the menu.
+    let (anchor, pos) = handle.selection();
     let (sel_start, sel_end) = (anchor.min(pos), anchor.max(pos));
 
     // The single-word target, if this gesture names one. A selection is still held to
