@@ -1254,59 +1254,107 @@ impl Widget for SettingsPanel {
             .child(Expand::vertical().child(Padding::symmetric(2.0, 6.0).child(tree)));
 
         // ── Right pane: the per-page content behind the selection Switcher ──
-        // Child order MUST equal the `Pane` discriminant order (guarded by
-        // `pane_indices_match_switcher_order`).
+        // The Switcher is indexed by `Pane::index()`, so its child at position i must
+        // be pane i's body. Rather than trust a hand-kept `.child()` chain — where a
+        // pane inserted mid-list silently shifts every later pane's content by one (a
+        // real bug: the app-wide Spellcheck pane, its discriminant appended last but
+        // its child slotted in the middle, made every Work pane show its neighbour) —
+        // each child is tagged with the `Pane` it serves and the order is asserted.
         let ab = tr!(settings_sec_appearance_behaviour());
         let editor = tr!(settings_sec_editor());
         let typo = vm.editor_typography();
-        let content = Switcher::new(self.selected_pane.map(|p| p.index()))
-            .child(Self::appearance_pane(&vm, scale.clone()))
-            .child(empty_pane(
-                Some(ab.clone()),
-                tr!(settings_page_menus()),
-                Sec::AppearanceBehaviour.icon_svg(),
-            ))
-            .child(empty_pane(
-                Some(ab),
-                tr!(settings_page_notifications()),
-                Sec::AppearanceBehaviour.icon_svg(),
-            ))
-            .child(Self::typography_pane(
-                ctx,
-                tr!(settings_page_scene()),
-                &typo.scene,
-            ))
-            .child(Self::typography_pane(
-                ctx,
-                tr!(settings_page_synopsis()),
-                &typo.synopsis,
-            ))
-            .child(Self::typography_pane(
-                ctx,
-                tr!(settings_page_notes()),
-                &typo.notes,
-            ))
-            .child(Self::editor_behavior_pane(&vm))
-            .child(Self::goals_pane(ctx, &vm))
-            .child(empty_pane(
-                Some(editor),
-                tr!(settings_page_corkboard()),
-                Sec::Editor.icon_svg(),
-            ))
-            .child(Self::spellcheck_pane(&vm))
-            .child_boxed(dictionaries_pane)
-            .child(Self::autosave_pane(&vm))
-            .child_boxed(export_styles_pane)
-            .child(empty_pane(
-                None,
-                tr!(settings_page_keymap()),
-                res!("assets/icons/settings/keymap.svg"),
-            ))
-            .child_boxed(structure_pane)
-            .child_boxed(backup_pane)
-            .child_boxed(work_backup_pane)
-            .child_boxed(language_pane)
-            .child_boxed(dictionary_pane);
+        let panes: Vec<(Pane, Box<dyn Widget>)> = vec![
+            (
+                Pane::Appearance,
+                Box::new(Self::appearance_pane(&vm, scale.clone())),
+            ),
+            (
+                Pane::MenusToolbars,
+                Box::new(empty_pane(
+                    Some(ab.clone()),
+                    tr!(settings_page_menus()),
+                    Sec::AppearanceBehaviour.icon_svg(),
+                )),
+            ),
+            (
+                Pane::Notifications,
+                Box::new(empty_pane(
+                    Some(ab),
+                    tr!(settings_page_notifications()),
+                    Sec::AppearanceBehaviour.icon_svg(),
+                )),
+            ),
+            (
+                Pane::SceneTypography,
+                Box::new(Self::typography_pane(
+                    ctx,
+                    tr!(settings_page_scene()),
+                    &typo.scene,
+                )),
+            ),
+            (
+                Pane::SynopsisTypography,
+                Box::new(Self::typography_pane(
+                    ctx,
+                    tr!(settings_page_synopsis()),
+                    &typo.synopsis,
+                )),
+            ),
+            (
+                Pane::NotesTypography,
+                Box::new(Self::typography_pane(
+                    ctx,
+                    tr!(settings_page_notes()),
+                    &typo.notes,
+                )),
+            ),
+            (
+                Pane::EditorBehavior,
+                Box::new(Self::editor_behavior_pane(&vm)),
+            ),
+            (Pane::Goals, Box::new(Self::goals_pane(ctx, &vm))),
+            (
+                Pane::Corkboard,
+                Box::new(empty_pane(
+                    Some(editor),
+                    tr!(settings_page_corkboard()),
+                    Sec::Editor.icon_svg(),
+                )),
+            ),
+            (Pane::Dictionaries, dictionaries_pane),
+            (Pane::Autosave, Box::new(Self::autosave_pane(&vm))),
+            (Pane::ExportFormats, export_styles_pane),
+            (
+                Pane::Keymap,
+                Box::new(empty_pane(
+                    None,
+                    tr!(settings_page_keymap()),
+                    res!("assets/icons/settings/keymap.svg"),
+                )),
+            ),
+            (Pane::WorkStructure, structure_pane),
+            (Pane::Backup, backup_pane),
+            (Pane::WorkBackup, work_backup_pane),
+            (Pane::WorkLanguage, language_pane),
+            (Pane::WorkDictionary, dictionary_pane),
+            (Pane::Spellcheck, Box::new(Self::spellcheck_pane(&vm))),
+        ];
+        if let Some((slot, (pane, _))) =
+            panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)
+        {
+            // A pane inserted at the wrong slot shifts every later pane's content by one — the
+            // failure that shipped once already. Catch it the instant the panel builds.
+            debug_assert!(
+                false,
+                "settings Switcher child {slot} serves a pane whose discriminant is {}, \
+                 not {slot} — insert it at its discriminant position",
+                pane.index()
+            );
+        }
+        let content = panes.into_iter().fold(
+            Switcher::new(self.selected_pane.map(|p| p.index())),
+            |sw, (_, body)| sw.child_boxed(body),
+        );
 
         let footer = self.footer(vm, scale, not_defaults);
         let right = VStack::new()
@@ -1453,30 +1501,49 @@ mod tests {
     // `scripts/automation_settings.py` rather than headlessly — the same boundary
     // the settings-dependent `WelcomePanel` sits on.
 
-    /// Pane discriminants are the `Switcher` child order — guard the mapping so a
-    /// reordering can't silently desync the tree selection from the shown pane.
-    /// Also fixes the ten-page contract the search index + tree rely on.
+    /// The `Switcher` is indexed by `Pane::index()`, so its child at slot i must be pane i's
+    /// body. `build()` tags each child with the `Pane` it serves and a `debug_assert` trips if
+    /// any lands at the wrong slot — the failure that shipped when the Spellcheck pane's child
+    /// was inserted mid-chain while its discriminant went last, shifting ten Work/Spelling panes
+    /// onto their neighbour's content.
+    ///
+    /// This test guards the half of the contract reachable headlessly: the discriminants form a
+    /// gap-free `0..N` from `Appearance`, so `index()` is a valid dense `Switcher` slot for every
+    /// pane. (The child↔pane pairing needs a built panel, which depends on `SettingsStore`
+    /// app-state a bare `WidgetTree` can't provide — hence the build-time `debug_assert` and the
+    /// live `run-app` check.)
     #[test]
-    fn pane_indices_match_switcher_order() {
-        assert_eq!(Pane::Appearance.index(), 0);
-        assert_eq!(Pane::MenusToolbars.index(), 1);
-        assert_eq!(Pane::Notifications.index(), 2);
-        assert_eq!(Pane::SceneTypography.index(), 3);
-        assert_eq!(Pane::SynopsisTypography.index(), 4);
-        assert_eq!(Pane::NotesTypography.index(), 5);
-        assert_eq!(Pane::EditorBehavior.index(), 6);
-        assert_eq!(Pane::Goals.index(), 7);
-        assert_eq!(Pane::Corkboard.index(), 8);
-        assert_eq!(Pane::Dictionaries.index(), 9);
-        assert_eq!(Pane::Autosave.index(), 10);
-        assert_eq!(Pane::ExportFormats.index(), 11);
-        assert_eq!(Pane::Keymap.index(), 12);
-        assert_eq!(Pane::WorkStructure.index(), 13);
-        assert_eq!(Pane::Backup.index(), 14);
-        assert_eq!(Pane::WorkBackup.index(), 15);
-        assert_eq!(Pane::WorkLanguage.index(), 16);
-        assert_eq!(Pane::WorkDictionary.index(), 17);
-        assert_eq!(Pane::Spellcheck.index(), 18);
+    fn pane_discriminants_are_a_gap_free_range() {
+        // Every variant, in declaration order — a new pane must be appended here too.
+        let all = [
+            Pane::Appearance,
+            Pane::MenusToolbars,
+            Pane::Notifications,
+            Pane::SceneTypography,
+            Pane::SynopsisTypography,
+            Pane::NotesTypography,
+            Pane::EditorBehavior,
+            Pane::Goals,
+            Pane::Corkboard,
+            Pane::Dictionaries,
+            Pane::Autosave,
+            Pane::ExportFormats,
+            Pane::Keymap,
+            Pane::WorkStructure,
+            Pane::Backup,
+            Pane::WorkBackup,
+            Pane::WorkLanguage,
+            Pane::WorkDictionary,
+            Pane::Spellcheck,
+        ];
+        for (i, pane) in all.iter().enumerate() {
+            assert_eq!(
+                pane.index(),
+                i,
+                "{} is not at slot {i}",
+                pane.label().resolve_now()
+            );
+        }
     }
 
     /// The Goals pane bridges `CountingMethodSetting` to the `RadioGroup`'s `usize`

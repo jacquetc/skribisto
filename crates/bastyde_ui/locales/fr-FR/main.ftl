@@ -848,10 +848,14 @@ lang-pill-unmute = Activer la correction pour { $name }
 
 ## Réglages — Projet ▸ Dictionnaire personnel (liste de mots par projet)
 settings-page-personal-dictionary = Dictionnaire personnel
-settings-user-dict-desc = Mots que le correcteur doit considérer comme corrects dans ce projet.
+settings-user-dict-desc = Les mots que vous ajoutez ici sont considérés comme correctement orthographiés partout dans l’application et ne sont plus jamais signalés.
 settings-user-dict-add-placeholder = Ajouter un mot…
-settings-user-dict-add = Ajouter
-settings-user-dict-search = Rechercher des mots…
+settings-user-dict-add = Ajouter le mot
+settings-user-dict-search = Filtrer les mots
+settings-user-dict-count = { $count ->
+    [one] { $count } mot
+   *[other] { $count } mots
+}
 settings-user-dict-rename = Renommer
 settings-user-dict-remove = Retirer
 settings-user-dict-empty = Aucun mot pour l’instant. Ajoutez des mots à ignorer, ou importez une liste.

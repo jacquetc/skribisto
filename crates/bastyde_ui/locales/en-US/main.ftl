@@ -846,10 +846,14 @@ lang-pill-unmute = Turn spell-checking on for { $name }
 
 ## Settings — Work ▸ Personal dictionary (per-project word list)
 settings-page-personal-dictionary = Personal dictionary
-settings-user-dict-desc = Words the spell-checker should treat as correct in this project.
+settings-user-dict-desc = Words you add here are treated as correctly spelled everywhere in the app, and never flagged again.
 settings-user-dict-add-placeholder = Add a word…
-settings-user-dict-add = Add
-settings-user-dict-search = Search words…
+settings-user-dict-add = Add word
+settings-user-dict-search = Filter words
+settings-user-dict-count = { $count ->
+    [one] { $count } word
+   *[other] { $count } words
+}
 settings-user-dict-rename = Rename
 settings-user-dict-remove = Remove
 settings-user-dict-empty = No words yet. Add words the spell-checker should ignore, or import a list.
