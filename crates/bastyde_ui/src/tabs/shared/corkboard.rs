@@ -789,32 +789,22 @@ fn synopsis_split_fn(
     }))
 }
 
-/// Build the shared editable synopsis column. It uses the **scene main editor**'s
-/// column (`writing_column`), so the synopsis edits *borderless* — like the main
-/// prose editor, not the Full-Synopsis view's bordered box — while still carrying
-/// the same typography, spell-check, and the right-click menu with **Split scene**.
-/// `width` caps the writing column (narrow on the card, wide in a modal).
+/// Build the shared editable synopsis. It uses the borderless, internally-scrolling
+/// `card_synopsis_editor` — like the scene main editor, but bounded so a long
+/// synopsis scrolls instead of overflowing the card/modal — with the same
+/// typography, spell-check and the right-click menu (incl. **Split scene**). Wrap
+/// the result in an `Expand` to fill the target box.
 fn synopsis_editor(
     vm: &CorkboardViewModel,
     card: &CorkboardCard,
     doc: &bastyde::text_document::TextDocument,
-    width: Signal<f32>,
-) -> super::editor::CenterColumnFlowing {
+) -> impl Widget {
     let on_change = vm.synopsis_on_change(card.item_id);
     let split = synopsis_split_fn(vm, card);
     let spell = vm
         .synopsis_open_doc(card.item_id)
         .and_then(|d| d.spell_synopsis());
-    super::editor::writing_column(
-        doc,
-        &width,
-        &vm.synopsis_typo(),
-        1,
-        on_change,
-        split,
-        None,
-        spell,
-    )
+    super::editor::card_synopsis_editor(doc, vm.synopsis_typo(), on_change, split, spell)
 }
 
 /// The card's synopsis body: a read-only viewer that becomes an inline editor when
@@ -847,12 +837,9 @@ impl Widget for CardSynopsis {
         // on the synopsis enters inline edit mode.
         let body = if editing {
             match self.vm.synopsis_edit_document(id) {
-                Some(doc) => ctx.add(synopsis_editor(
-                    &self.vm,
-                    &self.card,
-                    &doc,
-                    self.vm.column_width(),
-                )),
+                Some(doc) => {
+                    ctx.add(Expand::new().child(synopsis_editor(&self.vm, &self.card, &doc)))
+                }
                 None => ctx.add(
                     RichTextEditor::read_only(self.read_doc.clone())
                         .v_scroll_policy(ScrollPolicy::Auto),
@@ -929,7 +916,7 @@ impl Widget for SynopsisModal {
         // one word per line). The column scrolls internally for a long synopsis.
         let cid = match self.vm.synopsis_edit_document(id) {
             Some(doc) => {
-                let editor = synopsis_editor(&self.vm, &self.card, &doc, Signal::new(600.0));
+                let editor = synopsis_editor(&self.vm, &self.card, &doc);
                 ctx.add(
                     FixedSize::new()
                         .width(680.0)

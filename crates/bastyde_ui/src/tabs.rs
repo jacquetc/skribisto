@@ -309,7 +309,6 @@ impl ContentTab {
                         cd.show_word_count.clone(),
                         cd.counting_method.clone(),
                         typography.synopsis.clone(),
-                        column_width.clone(),
                     )
                 },
             );

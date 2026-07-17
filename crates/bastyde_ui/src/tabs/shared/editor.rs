@@ -287,6 +287,45 @@ pub fn synopsis_editor(
     )
 }
 
+/// The corkboard card's editable synopsis: **borderless** (like the scene main
+/// editor) and **bounded** — it fills the caller's box and scrolls internally
+/// (`Auto`) rather than growing, so a long synopsis never overflows the fixed-height
+/// card or the expand modal. Same right-click menu (incl. **Split scene**) as the
+/// Full-* editors. Wrap the result in an `Expand` to fill the target box.
+pub fn card_synopsis_editor(
+    doc: &TextDocument,
+    typo: EditorTypography,
+    on_change: impl Fn() + 'static,
+    split: Option<SplitFn>,
+    spell: Option<Rc<SpellSession>>,
+) -> impl Widget {
+    let mut editor = RichTextEditor::editor(doc.clone())
+        .style(WritingEditorStyle)
+        .on_change(on_change)
+        .content_padding_symmetric(4.0, 8.0)
+        .min_lines(1)
+        .v_scroll_policy(ScrollPolicy::Auto)
+        .typography_defaults(typo_defaults(&typo))
+        .zoom(typo.size.get());
+    {
+        let handle = editor.handle();
+        let cursor = editor.cursor_position_signal();
+        let doc = doc.clone();
+        let spell = spell.clone();
+        editor = editor.context_menu(move |pt, _ctx| {
+            handle.reposition_caret_for_context_menu(pt);
+            Some(Box::new(editor_context_menu(
+                handle.clone(),
+                cursor.clone(),
+                split.clone(),
+                doc.clone(),
+                spell.clone(),
+            )))
+        });
+    }
+    TypographyBoundEditor::new(editor, typo.clone(), spell)
+}
+
 /// A one-line name input bound to `field.value`, wired so an edit marks the tab dirty.
 ///
 /// `TextInput` has no `on_change` hook and its text is a plain `Signal`, so the edit is

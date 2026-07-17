@@ -94,10 +94,9 @@ struct Inner {
     editing_doc: RefCell<Option<(u64, Rc<OpenDoc>)>>,
     /// The app-wide open-document store (shared with the editor panes).
     docs: OpenDocsStore,
-    /// Synopsis typography + the editor column width, so the card's synopsis
-    /// editor renders identically to the Full-Synopsis view.
+    /// Synopsis typography, so the card's synopsis editor renders like the scene
+    /// editor.
     synopsis_typo: EditorTypography,
-    column_width: Signal<f32>,
 
     cards: CorkboardCardsModel,
     projection: SortFilterListModel<CorkboardCard>,
@@ -128,7 +127,6 @@ impl CorkboardViewModel {
         show_word_count: Signal<bool>,
         counting_method: Signal<CountingMethodSetting>,
         synopsis_typo: EditorTypography,
-        column_width: Signal<f32>,
     ) -> Self {
         let current_container = Signal::new(container_id);
         let cards = CorkboardCardsModel::new(
@@ -162,7 +160,6 @@ impl CorkboardViewModel {
                 editing_doc: RefCell::new(None),
                 docs,
                 synopsis_typo,
-                column_width,
                 cards,
                 projection,
                 container_probe,
@@ -423,11 +420,6 @@ impl CorkboardViewModel {
     pub fn synopsis_typo(&self) -> EditorTypography {
         self.inner.synopsis_typo.clone()
     }
-    /// The editor column width (shared with the main editors).
-    pub fn column_width(&self) -> Signal<f32> {
-        self.inner.column_width.clone()
-    }
-
     /// Whether this card can be split — only a prose-bearing scene has two halves
     /// to cut. The backend enforces the same rule.
     pub fn can_split(&self, card: &CorkboardCard) -> bool {
@@ -913,7 +905,6 @@ mod tests {
             Signal::new(true),
             Signal::new(CountingMethodSetting::default()),
             typo(),
-            Signal::new(600.0),
         )
     }
 
