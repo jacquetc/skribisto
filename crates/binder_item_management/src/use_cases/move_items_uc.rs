@@ -9,16 +9,30 @@
 // The binder's `binder_items` relationship is an ordered flat list; an item's
 // subtree is the contiguous run of following items whose `indent` is strictly
 // greater than the item's. All traversal uses the binder's relationship-vec
-// order (never raw entity-scan order).
+// order (never raw entity-scan order). The pure ordering math lives in the
+// shared `binder_ordering` crate (also used by trash_management::restore_items_to).
 use crate::MoveDto;
 use crate::MovePlace;
 use anyhow::{Result, anyhow};
+use binder_ordering::{
+    DropPlace, anchor_for_binder_target, expand_to_subtrees, insert_block, resolve_item_target,
+};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::entities::{Binder, BinderItem, BinderItemRole};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
+
+/// Map the feature-local `MovePlace` DTO enum onto the shared `binder_ordering`
+/// `DropPlace` (Qleany DTO enums can't be shared across crates).
+fn to_drop_place(place: &MovePlace) -> DropPlace {
+    match place {
+        MovePlace::Before => DropPlace::Before,
+        MovePlace::After => DropPlace::After,
+        MovePlace::Into => DropPlace::Into,
+    }
+}
 
 pub trait MoveItemsUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn MoveItemsUnitOfWorkTrait>;
@@ -98,34 +112,11 @@ impl MoveItemsUseCase {
         // Expand requested ids to their full contiguous subtrees, in src order,
         // deduplicating nested selections.
         let requested: HashSet<EntityId> = dto.item_ids.iter().copied().collect();
-        let mut full_move_ids: Vec<EntityId> = Vec::new();
-        let mut move_set: HashSet<EntityId> = HashSet::new();
-        let mut i = 0usize;
-        while i < src_order.len() {
-            let id = src_order[i];
-            if requested.contains(&id) && !move_set.contains(&id) {
-                let root_indent = *indent.get(&id).unwrap_or(&0);
-                let mut j = i;
-                loop {
-                    let cur = src_order[j];
-                    full_move_ids.push(cur);
-                    move_set.insert(cur);
-                    j += 1;
-                    if j >= src_order.len() {
-                        break;
-                    }
-                    if *indent.get(&src_order[j]).unwrap_or(&0) <= root_indent {
-                        break;
-                    }
-                }
-                i = j;
-            } else {
-                i += 1;
-            }
-        }
+        let full_move_ids = expand_to_subtrees(&src_order, &indent, &requested);
         if full_move_ids.is_empty() {
             return Err(anyhow!("move_items: nothing to move"));
         }
+        let move_set: HashSet<EntityId> = full_move_ids.iter().copied().collect();
         let root_old_indent = *indent.get(&full_move_ids[0]).unwrap_or(&0);
 
         // Resolve destination binder, the new base indent for the moved root,
@@ -138,11 +129,8 @@ impl MoveItemsUseCase {
             }
             let dest_order =
                 uow.get_binder_relationship(&target_id, &BinderRelationshipField::BinderItems)?;
-            // Into / Before a binder = top of the list; After = bottom.
-            let anchor = match dto.move_place {
-                MovePlace::After => None,
-                _ => dest_order.iter().copied().find(|id| !move_set.contains(id)),
-            };
+            let anchor =
+                anchor_for_binder_target(&dest_order, to_drop_place(&dto.move_place), &move_set);
             (target_id, 0, anchor)
         } else {
             if move_set.contains(&target_id) {
@@ -170,33 +158,16 @@ impl MoveItemsUseCase {
                 }
                 order
             };
-            let target_pos = dest_order
-                .iter()
-                .position(|&x| x == target_id)
-                .ok_or_else(|| anyhow!("move_items: target not found in its binder order"))?;
-            let target_indent = target_item.indent;
-            let into_folder = matches!(dto.move_place, MovePlace::Into)
-                && target_item.role == BinderItemRole::Folder;
-            // Into a leaf item is meaningless → fall back to After it.
-            let effective = match dto.move_place.clone() {
-                MovePlace::Into if !into_folder => MovePlace::After,
-                other => other,
-            };
-            let base_indent = if into_folder {
-                target_indent + 1
-            } else {
-                target_indent
-            };
-            let idx = match effective {
-                MovePlace::Before => target_pos,
-                MovePlace::After | MovePlace::Into => {
-                    subtree_end(&dest_order, &indent, target_pos, target_indent)
-                }
-            };
-            let anchor = dest_order[idx..]
-                .iter()
-                .copied()
-                .find(|id| !move_set.contains(id));
+            let target_is_folder = target_item.role == BinderItemRole::Folder;
+            let (base_indent, anchor) = resolve_item_target(
+                &dest_order,
+                &indent,
+                target_id,
+                target_item.indent,
+                target_is_folder,
+                to_drop_place(&dto.move_place),
+                &move_set,
+            )?;
             (dest_binder, base_indent, anchor)
         };
 
@@ -261,42 +232,6 @@ impl MoveItemsUseCase {
         self.snap_after = Some(snap_after);
         Ok(())
     }
-}
-
-/// First index `j > pos` whose item indent is `<= base_indent`, or `len` — i.e.
-/// the end (exclusive) of the subtree rooted at `pos`.
-fn subtree_end(
-    order: &[EntityId],
-    indent: &HashMap<EntityId, i64>,
-    pos: usize,
-    base_indent: i64,
-) -> usize {
-    let mut j = pos + 1;
-    while j < order.len() {
-        if *indent.get(&order[j]).unwrap_or(&0) <= base_indent {
-            break;
-        }
-        j += 1;
-    }
-    j
-}
-
-/// Insert `block` into `base` immediately before `anchor` (or at the end when
-/// `anchor` is `None`). `block` ids are assumed absent from `base`.
-fn insert_block(base: &[EntityId], block: &[EntityId], anchor: Option<EntityId>) -> Vec<EntityId> {
-    let mut out = Vec::with_capacity(base.len() + block.len());
-    let mut inserted = false;
-    for &id in base {
-        if Some(id) == anchor {
-            out.extend_from_slice(block);
-            inserted = true;
-        }
-        out.push(id);
-    }
-    if !inserted {
-        out.extend_from_slice(block);
-    }
-    out
 }
 
 use common::undo_redo::UndoRedoCommand;

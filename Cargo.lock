@@ -5558,10 +5558,19 @@ dependencies = [
  "chrono",
  "serde",
  "serde_json",
+ "skribisto-binder-ordering",
  "skribisto-common",
  "skribisto-macros",
  "skribisto-model",
  "uuid",
+]
+
+[[package]]
+name = "skribisto-binder-ordering"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "skribisto-common",
 ]
 
 [[package]]
