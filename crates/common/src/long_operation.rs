@@ -115,12 +115,13 @@
 
 use crate::event::{Event, EventHub, LongOperationEvent, Origin};
 use anyhow::Result;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{
-    Arc, Mutex,
+    Arc, Condvar, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 use std::thread;
+use std::time::Duration;
 
 // Status of a long operation
 #[derive(Debug, Clone, PartialEq)]
@@ -177,6 +178,99 @@ fn lock_or_recover<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
         .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
+/// The completion signal every operation publishes to when it ends.
+///
+/// This is what lets a caller **block until** an operation finishes instead of
+/// re-checking it on a timer. A worker marks its id finished here as the very
+/// last thing it does — after the result is stored, the event emitted, and the
+/// final status set — so a waiter woken by it is guaranteed to observe all
+/// three. In particular, `is_finished(id) == true` implies
+/// [`LongOperationManager::get_operation_result`] already has the result (for a
+/// `Completed` operation), which is what makes an event-free blocking wait
+/// correct.
+///
+/// Obtain one via [`LongOperationManager::completion_signal`] and block on it
+/// **after** releasing any lock guarding the manager — see that method.
+pub struct OperationCompletion {
+    /// Ids that reached a final status. Deliberately never pruned: it mirrors
+    /// the manager's `results` map, so a wait on an already-finished (even
+    /// cleaned-up) operation returns at once instead of blocking on a signal
+    /// that can no longer come.
+    finished: Mutex<HashSet<String>>,
+    condvar: Condvar,
+}
+
+impl OperationCompletion {
+    fn new() -> Self {
+        Self {
+            finished: Mutex::new(HashSet::new()),
+            condvar: Condvar::new(),
+        }
+    }
+
+    /// Publish `id` as finished and wake every waiter.
+    ///
+    /// `notify_all`, not `notify_one`: waiters block on one shared condvar but
+    /// each waits for its *own* id, so waking a single arbitrary thread could
+    /// wake one waiting on a different operation and leave the right one asleep.
+    fn mark_finished(&self, id: &str) {
+        let mut finished = lock_or_recover(&self.finished);
+        finished.insert(id.to_string());
+        drop(finished);
+        self.condvar.notify_all();
+    }
+
+    /// Has `id` already reached a final status?
+    pub fn is_finished(&self, id: &str) -> bool {
+        lock_or_recover(&self.finished).contains(id)
+    }
+
+    /// Block until `id` reaches a final status; `true` once it has.
+    ///
+    /// There is no lost-wakeup window: the finished-set is inspected while
+    /// holding the very mutex the condvar is paired with, and a worker must take
+    /// that same mutex to publish — so an operation that ends between a caller's
+    /// check and its wait is already recorded and returns immediately.
+    ///
+    /// `timeout` bounds one wait, not the whole call, and exists only as a
+    /// backstop for a signal that can never arrive (e.g. a worker killed before
+    /// publishing). `None` waits indefinitely.
+    pub fn wait_for(&self, id: &str, timeout: Option<Duration>) -> bool {
+        let mut finished = lock_or_recover(&self.finished);
+        loop {
+            if finished.contains(id) {
+                return true;
+            }
+            match timeout {
+                Some(t) => {
+                    let (guard, outcome) = self
+                        .condvar
+                        .wait_timeout(finished, t)
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    finished = guard;
+                    if outcome.timed_out() {
+                        return finished.contains(id);
+                    }
+                }
+                None => {
+                    finished = self
+                        .condvar
+                        .wait(finished)
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                }
+            }
+        }
+    }
+}
+
+impl std::fmt::Debug for OperationCompletion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OperationCompletion")
+            .field("finished_len", &lock_or_recover(&self.finished).len())
+            .finish()
+    }
+}
+
 // Concrete handle implementation
 struct OperationHandle {
     status: Arc<Mutex<OperationStatus>>,
@@ -216,6 +310,9 @@ pub struct LongOperationManager {
     next_id: Arc<Mutex<u64>>,
     results: Arc<Mutex<HashMap<String, String>>>, // Store serialized results
     event_hub: Option<Arc<EventHub>>,
+    /// Signalled by each worker as it ends; lets callers block until an
+    /// operation finishes rather than polling. See [`OperationCompletion`].
+    completion: Arc<OperationCompletion>,
 }
 
 impl std::fmt::Debug for LongOperationManager {
@@ -240,6 +337,7 @@ impl LongOperationManager {
             next_id: Arc::new(Mutex::new(0)),
             results: Arc::new(Mutex::new(HashMap::new())),
             event_hub: None,
+            completion: Arc::new(OperationCompletion::new()),
         }
     }
 
@@ -275,6 +373,7 @@ impl LongOperationManager {
         let results_clone = self.results.clone();
         let id_clone = id.clone();
         let event_hub_opt = self.event_hub.clone();
+        let completion_clone = self.completion.clone();
 
         let join_handle = thread::spawn(move || {
             let progress_callback = {
@@ -361,6 +460,12 @@ impl LongOperationManager {
             }
 
             *lock_or_recover(&status_clone) = final_status;
+
+            // Publish completion **last** — after the result is stored, the
+            // event emitted and the final status written — so any thread woken
+            // by this observes a fully-settled operation rather than racing the
+            // bookkeeping that follows it.
+            completion_clone.mark_finished(&id_clone);
         });
 
         let handle = OperationHandle {
@@ -447,6 +552,35 @@ impl LongOperationManager {
         let results = lock_or_recover(&self.results);
         results.get(id).cloned()
     }
+
+    /// A cloneable handle to the completion signal — the supported way to
+    /// **block** until an operation finishes instead of re-checking it on a
+    /// timer.
+    ///
+    /// Handed out as an `Arc` by design. A manager is normally reached through a
+    /// shared lock, and blocking while holding that lock would stall every other
+    /// operation query for as long as the wait lasts. So take the handle, drop
+    /// the manager lock, *then* wait:
+    ///
+    /// ```rust,ignore
+    /// let completion = ctx.long_operation_manager.lock().completion_signal();
+    /// // manager lock released here
+    /// completion.wait_for(&op_id, Some(Duration::from_secs(30)));
+    /// let result = ctx.long_operation_manager.lock().get_operation_result(&op_id);
+    /// ```
+    pub fn completion_signal(&self) -> Arc<OperationCompletion> {
+        Arc::clone(&self.completion)
+    }
+
+    /// Block until `id` finishes; `true` once it has.
+    ///
+    /// Convenience for an owner holding the manager directly. **Do not call this
+    /// through a shared lock** — it blocks for the operation's whole duration and
+    /// would hold that lock the entire time; take
+    /// [`completion_signal`](Self::completion_signal) and wait on that instead.
+    pub fn wait_for_operation(&self, id: &str, timeout: Option<Duration>) -> bool {
+        self.completion.wait_for(id, timeout)
+    }
 }
 
 impl Default for LongOperationManager {
@@ -496,6 +630,103 @@ mod tests {
             progress_callback(OperationProgress::new(100.0, Some("Completed".to_string())));
             Ok(())
         }
+    }
+
+    /// An operation that finishes at once and returns a value — the shape of a
+    /// small import, and the case a blocking wait must add no latency to.
+    pub struct InstantOperation;
+
+    impl LongOperation for InstantOperation {
+        type Output = u32;
+
+        fn execute(
+            &self,
+            _progress_callback: Box<dyn Fn(OperationProgress) + Send>,
+            _cancel_flag: Arc<AtomicBool>,
+        ) -> Result<Self::Output> {
+            Ok(42)
+        }
+    }
+
+    /// The whole point of the completion signal: a caller is woken the moment the
+    /// worker publishes, with no polling interval and no fixed sleep floor. A
+    /// trivial operation must therefore settle in far less than a timer tick —
+    /// this is what stops N sequential small operations costing N × a poll period.
+    #[test]
+    fn wait_for_returns_as_soon_as_the_operation_finishes() {
+        let manager = LongOperationManager::new();
+        let completion = manager.completion_signal();
+        let started = std::time::Instant::now();
+        let op_id = manager.start_operation(InstantOperation);
+
+        assert!(completion.wait_for(&op_id, Some(Duration::from_secs(5))));
+        let elapsed = started.elapsed();
+
+        // The result is stored *before* completion is published, so a woken
+        // waiter can always read it straight back.
+        assert_eq!(
+            manager.get_operation_result(&op_id).as_deref(),
+            Some("42"),
+            "completion must imply the result is already retrievable"
+        );
+        assert!(
+            elapsed < Duration::from_millis(50),
+            "a trivial operation must not wait out a polling tick (took {elapsed:?})"
+        );
+    }
+
+    /// Waiting on an operation that has already finished returns at once, instead
+    /// of blocking for a signal that was sent before the caller arrived.
+    #[test]
+    fn wait_for_an_already_finished_operation_returns_immediately() {
+        let manager = LongOperationManager::new();
+        let completion = manager.completion_signal();
+        let op_id = manager.start_operation(InstantOperation);
+        assert!(completion.wait_for(&op_id, Some(Duration::from_secs(5))));
+
+        // The finished record persists, so a second wait is instant.
+        let started = std::time::Instant::now();
+        assert!(completion.wait_for(&op_id, Some(Duration::from_secs(5))));
+        assert!(started.elapsed() < Duration::from_millis(50));
+        assert!(completion.is_finished(&op_id));
+    }
+
+    /// The timeout bounds one wait; it is not a deadline for the operation. A
+    /// still-running operation reports `false` and leaves the caller free to wait
+    /// again.
+    #[test]
+    fn wait_for_times_out_while_the_operation_is_still_running() {
+        let manager = LongOperationManager::new();
+        let completion = manager.completion_signal();
+        let op_id = manager.start_operation(FileProcessingOperation {
+            _file_path: "/tmp/test".to_string(),
+            total_files: 5,
+        });
+
+        assert!(
+            !completion.wait_for(&op_id, Some(Duration::from_millis(50))),
+            "a running operation has published no completion"
+        );
+        assert!(!completion.is_finished(&op_id));
+        manager.cancel_operation(&op_id);
+    }
+
+    /// A cancelled operation must still publish completion — otherwise a caller
+    /// blocked on it would be stranded forever.
+    #[test]
+    fn a_cancelled_operation_still_publishes_completion() {
+        let manager = LongOperationManager::new();
+        let completion = manager.completion_signal();
+        let op_id = manager.start_operation(FileProcessingOperation {
+            _file_path: "/tmp/test".to_string(),
+            total_files: 5,
+        });
+        manager.cancel_operation(&op_id);
+
+        assert!(
+            completion.wait_for(&op_id, Some(Duration::from_secs(5))),
+            "cancellation must wake a blocked waiter, not strand it"
+        );
     }
 
     #[test]

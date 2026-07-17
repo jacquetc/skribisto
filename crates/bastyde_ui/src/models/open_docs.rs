@@ -23,9 +23,11 @@
 
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-use bastyde::prelude::Signal;
+use bastyde::prelude::{BuildContext, Signal};
 use bastyde::text_document::Color;
 
 use frontend::AppContext;
@@ -36,6 +38,7 @@ use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItem, BinderItemRole, BinderItemSubRole, ContentRole};
+use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 use frontend::direct_access::ContentDto;
 
 use crate::singles::SingleBinderItem;
@@ -232,6 +235,42 @@ struct Inner {
     /// Work). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
     work_lang: RefCell<String>,
+    /// The memoised [`language_map`](OpenDocsStore::language_map), with the binder
+    /// [fingerprint](LangFingerprint) it was built from.
+    ///
+    /// Resolving one item's language means resolving *every* item's (the walk is
+    /// backwards from an item to its nearest Book), so the uncached call fetched and
+    /// cloned every `BinderItem` in the project. `open()` attaches spell-check to each
+    /// freshly-built doc, so a container stream opening one document per row paid that
+    /// whole-project walk once per row — O(rows × items). Cached, the walk happens once
+    /// per structural change instead.
+    lang_cache: RefCell<Option<(LangFingerprint, HashMap<u64, String>)>>,
+}
+
+/// What the cached language map is keyed on: the open work, its default language, and
+/// every binder item id **in document order**.
+///
+/// Order is part of it because the resolver walks backwards from an item to its nearest
+/// Book — moving a scene under a different Book changes its inherited language without
+/// changing any item's own fields. Creates, removals and reorders all change the id
+/// sequence, so all three drop the cache.
+///
+/// Deliberately *not* covered: an item's own `dict_language` or `sub_role` changing in
+/// place, which leaves the id sequence identical. Detecting those here would mean
+/// re-reading every item — exactly the cost this exists to avoid — so they are caught
+/// from the other side instead, by [`OpenDocsStore::wire`]'s subscription to the
+/// `BinderItem::Updated` event. Shape is fingerprinted; in-place fields are pushed.
+/// Between them the cache has no blind spot.
+type LangFingerprint = u64;
+
+/// Fingerprint the inputs the language map is derived from that are cheap to read:
+/// the work, its default language, and the ordered item ids of every binder.
+fn fingerprint_of(work_id: Option<u64>, work_lang: &str, shape: &[Vec<u64>]) -> LangFingerprint {
+    let mut hasher = DefaultHasher::new();
+    work_id.hash(&mut hasher);
+    work_lang.hash(&mut hasher);
+    shape.hash(&mut hasher);
+    hasher.finish()
 }
 
 /// The app-wide store of open documents (cheap `Rc` handle, shared by clone).
@@ -253,6 +292,7 @@ impl OpenDocsStore {
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
                 work_id: Cell::new(None),
                 work_lang: RefCell::new(String::new()),
+                lang_cache: RefCell::new(None),
             }),
         }
     }
@@ -261,6 +301,33 @@ impl OpenDocsStore {
     /// no-ops and the app behaves exactly as before spell-check existed.
     pub fn set_spellcheck(&self, spell: SpellcheckService) {
         *self.inner.spell.borrow_mut() = Some(spell);
+    }
+
+    /// Subscribe the cached language map to the edits its
+    /// [fingerprint](LangFingerprint) cannot see.
+    ///
+    /// The fingerprint covers the binder's *shape*, so a create, a removal or a move
+    /// invalidates the map on its own. An item's own `dict_language` or `sub_role`
+    /// changing in place leaves that shape byte-for-byte identical, and re-reading every
+    /// item to notice is the very cost the cache exists to avoid — so the entity event
+    /// pushes it instead. `BinderItem::Updated` covers both: the Inspector's language
+    /// pill writes `dict_language` through it, and a Promote rewrites `sub_role` through
+    /// it.
+    ///
+    /// Call from `build`, on **every** build. `BuildContext::subscribe_event` scopes a
+    /// subscription to the widget's current build and drops it on the next, so a
+    /// "subscribe once" guard would make the store go deaf the first time `App` rebuilt;
+    /// re-subscribing cannot duplicate, because the old callback is already gone.
+    ///
+    /// The closure may hold the store by value — unlike the stream view-model's, this
+    /// subscription is owned by the widget tree, not by the thing it captures, so there
+    /// is no `Rc` cycle to close.
+    pub fn wire(&self, ctx: &mut BuildContext) {
+        let me = self.clone();
+        ctx.subscribe_event(
+            Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Updated)),
+            move |_event: &Event| me.invalidate_language_cache(),
+        );
     }
 
     /// Set the squiggle colour (a theme error role, resolved by `App`). Re-attaches only when
@@ -279,6 +346,8 @@ impl OpenDocsStore {
     pub fn set_project_language(&self, work_id: Option<u64>, work_lang: String) {
         self.inner.work_id.set(work_id);
         *self.inner.work_lang.borrow_mut() = work_lang;
+        // A different project (or default language) resolves every item differently.
+        self.invalidate_language_cache();
     }
 
     /// Re-attach the spell-checker to **every** open document — the single path for install,
@@ -289,7 +358,11 @@ impl OpenDocsStore {
             return;
         };
         let color = self.inner.squiggle.get();
-        let map = self.language_map();
+        // Belt and braces. [`wire`](Self::wire) already drops the map when an item's
+        // language changes, but every language edit also funnels through here, and
+        // `attach_all` is rare enough that re-resolving costs nothing. It also keeps a
+        // store that was never wired (a headless test) correct.
+        self.invalidate_language_cache();
         let work_lang = self.inner.work_lang.borrow().clone();
         let docs: Vec<Rc<OpenDoc>> = self
             .inner
@@ -298,11 +371,19 @@ impl OpenDocsStore {
             .values()
             .map(|e| e.doc.clone())
             .collect();
-        for doc in docs {
-            let tags = map
-                .get(&doc.item_id)
-                .cloned()
-                .unwrap_or_else(|| work_lang.clone());
+        // Resolve every doc's tags under one borrow of the map, then attach outside it.
+        let attachments: Vec<(Rc<OpenDoc>, String)> = self.with_language_map(|map| {
+            docs.into_iter()
+                .map(|doc| {
+                    let tags = map
+                        .get(&doc.item_id)
+                        .cloned()
+                        .unwrap_or_else(|| work_lang.clone());
+                    (doc, tags)
+                })
+                .collect()
+        });
+        for (doc, tags) in attachments {
             doc.attach_spell(&spell, &tags, color);
         }
     }
@@ -312,11 +393,7 @@ impl OpenDocsStore {
         let Some(spell) = self.inner.spell.borrow().clone() else {
             return;
         };
-        let map = self.language_map();
-        let tags = map
-            .get(&doc.item_id)
-            .cloned()
-            .unwrap_or_else(|| self.inner.work_lang.borrow().clone());
+        let tags = self.language_for(doc.item_id);
         doc.attach_spell(&spell, &tags, self.inner.squiggle.get());
     }
 
@@ -325,9 +402,11 @@ impl OpenDocsStore {
     /// scan (Step 10).
     pub fn project_languages(&self) -> std::collections::BTreeSet<String> {
         let mut out: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-        for list in self.language_map().values() {
-            out.extend(skribisto_model::language::all(list).map(str::to_string));
-        }
+        self.with_language_map(|map| {
+            for list in map.values() {
+                out.extend(skribisto_model::language::all(list).map(str::to_string));
+            }
+        });
         out.extend(
             skribisto_model::language::all(&self.inner.work_lang.borrow()).map(str::to_string),
         );
@@ -337,35 +416,91 @@ impl OpenDocsStore {
     /// The effective language list of one item (item → nearest Book → Work), for the
     /// Inspector's inherited-language placeholder. Falls back to the Work's default.
     pub fn effective_language(&self, item_id: u64) -> String {
-        self.language_map()
-            .get(&item_id)
-            .cloned()
+        self.language_for(item_id)
+    }
+
+    /// One item's effective language list, read through the cached map.
+    fn language_for(&self, item_id: u64) -> String {
+        self.with_language_map(|map| map.get(&item_id).cloned())
             .unwrap_or_else(|| self.inner.work_lang.borrow().clone())
+    }
+
+    /// Drop the cached language map, forcing the next read to re-resolve from the items.
+    ///
+    /// For the edits the fingerprint cannot see — an item's own `dict_language` or
+    /// `sub_role` changing in place. See [`LangFingerprint`].
+    fn invalidate_language_cache(&self) {
+        *self.inner.lang_cache.borrow_mut() = None;
+    }
+
+    /// Run `f` against the project's language map, rebuilding it first if the binder's
+    /// shape changed since it was cached.
+    ///
+    /// Passes the map by reference rather than returning it: a clone would be one
+    /// `String` allocation per item on every call, which is most of what the cache is
+    /// here to avoid.
+    fn with_language_map<R>(&self, f: impl FnOnce(&HashMap<u64, String>) -> R) -> R {
+        let shape = self.binder_shape();
+        let fingerprint = fingerprint_of(
+            self.inner.work_id.get(),
+            &self.inner.work_lang.borrow(),
+            &shape,
+        );
+        let fresh = matches!(&*self.inner.lang_cache.borrow(), Some((fp, _)) if *fp == fingerprint);
+        if !fresh {
+            // Build before taking the cache's mutable borrow — the build reads the
+            // backend, never the cache.
+            let map = self.build_language_map(&shape);
+            *self.inner.lang_cache.borrow_mut() = Some((fingerprint, map));
+        }
+        let cache = self.inner.lang_cache.borrow();
+        match &*cache {
+            Some((_, map)) => f(map),
+            // Unreachable: just filled above. Total rather than `expect`.
+            None => f(&HashMap::new()),
+        }
+    }
+
+    /// The open project's binder item ids, per binder, in document order.
+    ///
+    /// The cheap half of language resolution: ids only — no `BinderItem` is fetched or
+    /// cloned — which is what makes it affordable to check on every read.
+    fn binder_shape(&self) -> Vec<Vec<u64>> {
+        let Some(work_id) = self.inner.work_id.get() else {
+            return Vec::new();
+        };
+        let ctx = &*self.inner.app_ctx;
+        work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|binder_id| {
+                binder_commands::get_binder_relationship(
+                    ctx,
+                    &binder_id,
+                    &BinderRelationshipField::BinderItems,
+                )
+                .unwrap_or_default()
+            })
+            .collect()
     }
 
     /// The effective language tag list of every item in the open project, resolved through the
     /// **shared** `skribisto_model::language` chain (item → nearest Book → Work) so spell-check
     /// and search never disagree about what language a scene is in.
-    fn language_map(&self) -> HashMap<u64, String> {
+    ///
+    /// The expensive half: one `BinderItem` fetched and cloned per item. Called only when
+    /// [`binder_shape`](Self::binder_shape) says the project changed.
+    fn build_language_map(&self, shape: &[Vec<u64>]) -> HashMap<u64, String> {
         let mut map = HashMap::new();
-        let Some(work_id) = self.inner.work_id.get() else {
+        if self.inner.work_id.get().is_none() {
             return map;
-        };
+        }
         let work_lang = self.inner.work_lang.borrow().clone();
         let ctx = &*self.inner.app_ctx;
-        let binder_ids =
-            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
-                .unwrap_or_default();
-        for binder_id in binder_ids {
-            let item_ids = binder_commands::get_binder_relationship(
-                ctx,
-                &binder_id,
-                &BinderRelationshipField::BinderItems,
-            )
-            .unwrap_or_default();
+        for item_ids in shape {
             // Only the three fields the resolver reads; document order is preserved by
             // `get_binder_item_multi` (relationship order), which the "nearest Book" scan needs.
-            let items: Vec<BinderItem> = binder_item_commands::get_binder_item_multi(ctx, &item_ids)
+            let items: Vec<BinderItem> = binder_item_commands::get_binder_item_multi(ctx, item_ids)
                 .unwrap_or_default()
                 .into_iter()
                 .flatten()
@@ -499,6 +634,9 @@ impl OpenDocsStore {
     /// outgoing work is already saved (or discarded) by the close/load flow.
     pub fn clear(&self) {
         self.inner.open.borrow_mut().clear();
+        // The incoming project re-resolves from scratch; don't hold the old map's
+        // strings until then.
+        self.invalidate_language_cache();
     }
 
     /// Reload only the docs among `item_ids` that are **currently open**, discarding
@@ -568,6 +706,58 @@ impl OpenDocsStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The language cache is only as good as what its fingerprint distinguishes. It is
+    /// the *shape* half of the contract on [`LangFingerprint`]: every structural change
+    /// that can move an item under a different Book — and so change the language it
+    /// inherits — must change the fingerprint.
+    #[test]
+    fn fingerprint_distinguishes_every_structural_change() {
+        let base = fingerprint_of(Some(1), "en-US", &[vec![10, 11, 12]]);
+
+        assert_eq!(
+            base,
+            fingerprint_of(Some(1), "en-US", &[vec![10, 11, 12]]),
+            "same shape must reuse the cache"
+        );
+        assert_ne!(
+            base,
+            fingerprint_of(Some(2), "en-US", &[vec![10, 11, 12]]),
+            "a different work resolves every item differently"
+        );
+        assert_ne!(
+            base,
+            fingerprint_of(Some(1), "fr-FR", &[vec![10, 11, 12]]),
+            "the work's default language is the fallback for every item"
+        );
+        assert_ne!(
+            base,
+            fingerprint_of(Some(1), "en-US", &[vec![10, 11, 12, 13]]),
+            "a created item"
+        );
+        assert_ne!(
+            base,
+            fingerprint_of(Some(1), "en-US", &[vec![10, 12]]),
+            "a removed item"
+        );
+        // The load-bearing one: a move keeps the same ids, so only *order* betrays it —
+        // and order is exactly what decides which Book an item inherits from.
+        assert_ne!(
+            base,
+            fingerprint_of(Some(1), "en-US", &[vec![12, 11, 10]]),
+            "a reorder can change which Book an item sits under"
+        );
+        assert_ne!(
+            base,
+            fingerprint_of(Some(1), "en-US", &[vec![10, 11], vec![12]]),
+            "the same ids split across two binders is a different shape"
+        );
+        assert_ne!(
+            base,
+            fingerprint_of(None, "en-US", &[vec![10, 11, 12]]),
+            "no open project"
+        );
+    }
 
     /// `open()` reuses an already-open doc (bumping refs), `release()` decrements
     /// and keeps it while other references remain, and evicts only at zero — the

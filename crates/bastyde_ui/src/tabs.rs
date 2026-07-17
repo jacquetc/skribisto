@@ -167,7 +167,13 @@ pub(crate) fn prose_field(
 ) -> ProseField {
     let content = SingleContent::for_field(ctx.clone(), item_id, role, existing);
     let doc = TextDocument::new();
-    let _ = doc.set_djot(&content.data().get()).and_then(|op| op.wait());
+    // `set_djot_sync`, not `set_djot(..).wait()`: this is a *load*, and the async
+    // form spawns a worker thread only for us to block on it — overhead that does
+    // not shrink with the text, so an empty scene paid it in full. A container
+    // stream opens one document per row up front (see `tabs::shared::stream`), so
+    // that per-load cost is multiplied by the whole book: it is what made
+    // switching a Book to Full Book / Full Synopsis freeze for seconds.
+    let _ = doc.set_djot_sync(&content.data().get());
     doc.set_modified(false);
     ProseField { doc, content }
 }
@@ -466,7 +472,8 @@ impl ProseField {
     pub(crate) fn reload(&self) {
         self.content.reload();
         let data = self.content.data().get();
-        let _ = self.doc.set_djot(&data).and_then(|op| op.wait());
+        // A load, like `prose_field` — same reason for the synchronous form.
+        let _ = self.doc.set_djot_sync(&data);
         self.doc.set_modified(false);
     }
 

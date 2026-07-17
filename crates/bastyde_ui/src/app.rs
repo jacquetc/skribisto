@@ -642,6 +642,11 @@ impl Widget for App {
             .app_state::<crate::models::OpenDocsStore>()
             .cloned()
             .expect("OpenDocsStore registered in main");
+        // Keep the store's cached language map honest: an item's `dict_language` or
+        // `sub_role` edited in place leaves the binder's shape unchanged, so only the
+        // entity event can invalidate it. Every build — the subscription is scoped to
+        // this one (see `OpenDocsStore::wire`).
+        spell_docs.wire(ctx);
         let spellcheck = ctx
             .app_state::<crate::spellcheck::SpellcheckService>()
             .cloned()
