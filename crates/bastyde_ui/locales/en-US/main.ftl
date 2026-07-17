@@ -860,7 +860,9 @@ settings-user-dict-import-failed = Could not read the word list: { $error }
 settings-user-dict-exported = Saved { $count } words.
 settings-user-dict-export-failed = Could not save the word list: { $error }
 
-## Editor — Add to dictionary (context menu + toast)
+## Editor — spelling (context menu + toast)
+# Shown in place of the corrections when a flagged word has none to offer.
+editor-menu-no-suggestions = No suggestions
 editor-menu-add-to-dictionary = Add “{ $word }” to dictionary
 editor-menu-add-words-to-dictionary = Add selected words to dictionary
 editor-menu-add-to-dictionary-generic = Add to dictionary

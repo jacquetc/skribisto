@@ -862,7 +862,9 @@ settings-user-dict-import-failed = Impossible de lire la liste de mots : { $erro
 settings-user-dict-exported = { $count } mots enregistrés.
 settings-user-dict-export-failed = Impossible d’enregistrer la liste de mots : { $error }
 
-## Éditeur — Ajouter au dictionnaire (menu contextuel + notification)
+## Éditeur — orthographe (menu contextuel + notification)
+# Affiché à la place des corrections quand un mot signalé n’en a aucune.
+editor-menu-no-suggestions = Aucune suggestion
 editor-menu-add-to-dictionary = Ajouter « { $word } » au dictionnaire
 editor-menu-add-words-to-dictionary = Ajouter les mots sélectionnés au dictionnaire
 editor-menu-add-to-dictionary-generic = Ajouter au dictionnaire

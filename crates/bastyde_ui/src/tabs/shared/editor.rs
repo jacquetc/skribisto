@@ -114,15 +114,20 @@ pub fn writing_column(
     ))
 }
 
-/// A writing editor's right-click menu: the standard edit actions (Cut / Copy /
-/// Paste / Paste Unformatted / Select All, via the editor handle), an **Add to
-/// dictionary** item for the current selection or the word under the caret, and —
+/// A writing editor's right-click menu: the **spelling group** (corrections for the
+/// right-clicked word, then *Add to dictionary*), the standard edit actions (Cut /
+/// Copy / Paste / Paste Unformatted / Select All, via the editor handle), and —
 /// when a split is offered — **Split scene** at the caret.
 ///
 /// Built fresh on each right-click, *after* the factory has moved the caret to the
 /// click point, so the resolved word and any Paste act where the user clicked.
-/// The "Add to dictionary" item is disabled when nothing word-like resolves; its
-/// label names the word so a wrong target is visible before committing.
+///
+/// The spelling group leads, as it does in every browser and word processor: the
+/// corrections are the reason the menu was opened on a squiggle, and they sit flat
+/// at the top rather than behind a submenu, one click from the fix. "Add to
+/// dictionary" belongs with them — it is the other answer to the same squiggle. It
+/// is disabled when nothing word-like resolves; its label names the word so a wrong
+/// target is visible before committing.
 fn editor_context_menu(
     handle: EditorHandle,
     cursor: Signal<usize>,
@@ -130,8 +135,8 @@ fn editor_context_menu(
     doc: TextDocument,
     spell: Option<Rc<SpellSession>>,
 ) -> MenuList {
-    // Only misspelled words are offered — the resolution filters through this
-    // editor's live spell-checker (matches the squiggles exactly).
+    // Only misspelled words are offered — both resolutions filter through this
+    // editor's live spell-checker (so they match the squiggles exactly).
     let words = super::dictionary_menu::resolve_words(&doc, &handle, spell.as_deref());
     let add_label = match words.as_slice() {
         [] => tr!(editor_menu_add_to_dictionary_generic()),
@@ -140,22 +145,36 @@ fn editor_context_menu(
     };
     let add_enabled = !words.is_empty();
 
+    let mut list = MenuList::new();
+
+    // The corrections for the single flagged word under the caret. Absent entirely
+    // for ordinary prose (nothing to correct) and for a multi-word selection (no
+    // single target); present-but-disabled when the word is flagged and nothing can
+    // correct it, so the writer knows we looked rather than that we forgot.
+    if let Some(c) = super::dictionary_menu::resolve_correction(&doc, &handle, spell.as_deref()) {
+        if c.suggestions.is_empty() {
+            list = list.item(MenuItem::new(tr!(editor_menu_no_suggestions())).enabled(false));
+        } else {
+            for suggestion in c.suggestions {
+                // The span is captured now, from the same resolution that produced
+                // the word: the menu is rebuilt per right-click, so these offsets
+                // cannot drift out from under the item.
+                let (h, start, end) = (handle.clone(), c.start, c.end);
+                list = list.item(
+                    MenuItem::new(lit!(suggestion.clone())) // a word, not UI chrome — never translated
+                        .on_activate_fn(move |_ctx| h.replace_range(start, end, &suggestion)),
+                );
+            }
+        }
+        list = list.separator();
+    }
+
     let cut = handle.clone();
     let copy = handle.clone();
     let paste = handle.clone();
     let paste_plain = handle.clone();
     let select = handle;
-    let mut list = MenuList::new()
-        .item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)))
-        .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
-        .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
-        .item(
-            MenuItem::new(tr!(menu_paste_unformatted()))
-                .on_activate_fn(move |ctx| paste_plain.paste_unformatted(ctx)),
-        )
-        .separator()
-        .item(MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()))
-        .separator()
+    list = list
         .item(
             MenuItem::new(add_label)
                 .enabled(add_enabled)
@@ -164,7 +183,17 @@ fn editor_context_menu(
                         words: words.clone(),
                     });
                 }),
-        );
+        )
+        .separator()
+        .item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)))
+        .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
+        .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
+        .item(
+            MenuItem::new(tr!(menu_paste_unformatted()))
+                .on_activate_fn(move |ctx| paste_plain.paste_unformatted(ctx)),
+        )
+        .separator()
+        .item(MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()));
     if let Some(split) = split {
         list = list.separator().item(
             MenuItem::new(tr!(split_scene())).on_activate_fn(move |ctx| split(ctx, cursor.get())),

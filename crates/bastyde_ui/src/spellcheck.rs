@@ -192,6 +192,16 @@ pub struct SpellChecker {
     personal: HashSet<String>,
 }
 
+/// How many corrections the context menu offers at most. The suggestions sit flat at the top of
+/// the menu, so this is a menu-length budget as much as a relevance one — past a handful, a list
+/// of guesses is harder to scan than retyping the word.
+pub(crate) const MAX_SUGGESTIONS: usize = 6;
+
+/// The largest edit distance at which a *personal* word is offered as a correction. Two edits is
+/// the usual typo radius (Hunspell's own replacement table works in the same neighbourhood);
+/// wider than that and a short project term starts "correcting" to every other project term.
+const MAX_PERSONAL_DISTANCE: usize = 2;
+
 impl SpellChecker {
     fn misspelled(&self, word: &str) -> bool {
         // Numbers, punctuation runs, and the like are not spell-checkable.
@@ -206,6 +216,108 @@ impl SpellChecker {
         }
         !self.personal.contains(word)
     }
+
+    /// Ranked corrections for a misspelled `word`, drawn from **both** the installed dictionaries
+    /// and the Work's own personal words. At most [`MAX_SUGGESTIONS`], deduped exact-case.
+    ///
+    /// ## Why the personal set is searched separately
+    ///
+    /// [`spellbook::Dictionary::suggest`] is closed over the *compiled* dictionary: it cannot see
+    /// [`personal`](Self::personal) at all, so a typo of a project's own coined term would never
+    /// be corrected to it — the one case a writer most needs. Those near-matches are therefore
+    /// found here, by bounded edit distance over the personal set.
+    ///
+    /// ## The ordering
+    ///
+    /// A personal word within **one** edit goes first: for an invented word the installed
+    /// dictionary has nothing real to offer, and its ngram guesses are noise next to the term the
+    /// writer actually meant. The dictionary's own ranked suggestions follow (they are the right
+    /// answer for a typo of an ordinary word), and the looser personal matches come last.
+    pub(crate) fn suggest(&self, word: &str) -> Vec<String> {
+        if !word.chars().any(|c| c.is_alphabetic()) {
+            return Vec::new();
+        }
+        let personal = self.personal_suggestions(word);
+        let mut out: Vec<String> = Vec::new();
+        for (_, w) in personal.iter().filter(|(d, _)| *d <= 1) {
+            push_unique(&mut out, w.clone());
+        }
+        let mut buf = Vec::new();
+        for dict in &self.dicts {
+            dict.suggest(word, &mut buf); // clears `buf` itself before filling it
+            for s in buf.drain(..) {
+                push_unique(&mut out, s);
+            }
+        }
+        for (_, w) in personal.iter().filter(|(d, _)| *d > 1) {
+            push_unique(&mut out, w.clone());
+        }
+        out.truncate(MAX_SUGGESTIONS);
+        out
+    }
+
+    /// Personal words within [`MAX_PERSONAL_DISTANCE`] edits of `word`, as `(distance, word)`,
+    /// nearest first.
+    ///
+    /// Distance is measured on the **lower-cased** forms, so a personal word differing only in
+    /// casing comes back at distance 0. That is not a curiosity but the common case: the personal
+    /// set is matched exact-case, so typing `skribisto` when the project stores `Skribisto` *is* a
+    /// misspelling — and the correction to offer is the stored casing.
+    ///
+    /// Ties break alphabetically: `personal` is a `HashSet`, whose iteration order varies run to
+    /// run, and a context menu whose items reshuffle between right-clicks is unusable.
+    fn personal_suggestions(&self, word: &str) -> Vec<(usize, String)> {
+        let needle = word.to_lowercase();
+        let mut scored: Vec<(usize, String)> = self
+            .personal
+            .iter()
+            .filter(|w| w.as_str() != word) // never suggest the word the writer already typed
+            .filter_map(|w| {
+                bounded_levenshtein(&needle, &w.to_lowercase(), MAX_PERSONAL_DISTANCE)
+                    .map(|d| (d, w.clone()))
+            })
+            .collect();
+        scored.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+        scored
+    }
+}
+
+/// Push `s` unless an equal string is already there — keeps the first (better-ranked) occurrence
+/// when two dictionaries suggest the same correction.
+fn push_unique(out: &mut Vec<String>, s: String) {
+    if !out.iter().any(|e| e == &s) {
+        out.push(s);
+    }
+}
+
+/// Levenshtein distance between `a` and `b`, or `None` once it is known to exceed `max`.
+///
+/// The cap is what keeps this cheap enough to run over the whole personal set on a right-click:
+/// a length difference alone rules most candidates out without touching the matrix, and any
+/// survivor bails as soon as every path through a row is already too far. Operates on `char`s, so
+/// accented terms measure in letters rather than UTF-8 bytes.
+fn bounded_levenshtein(a: &str, b: &str, max: usize) -> Option<usize> {
+    let a: Vec<char> = a.chars().collect();
+    let b: Vec<char> = b.chars().collect();
+    if a.len().abs_diff(b.len()) > max {
+        return None;
+    }
+    let mut prev: Vec<usize> = (0..=b.len()).collect();
+    let mut cur = vec![0usize; b.len() + 1];
+    for i in 1..=a.len() {
+        cur[0] = i;
+        let mut row_min = cur[0];
+        for j in 1..=b.len() {
+            let cost = usize::from(a[i - 1] != b[j - 1]);
+            cur[j] = (prev[j] + 1).min(cur[j - 1] + 1).min(prev[j - 1] + cost);
+            row_min = row_min.min(cur[j]);
+        }
+        if row_min > max {
+            return None;
+        }
+        std::mem::swap(&mut prev, &mut cur);
+    }
+    Some(prev[b.len()]).filter(|d| *d <= max)
 }
 
 /// The wavy spell-check underline format in `color` (never a hex literal — the caller resolves
@@ -466,6 +578,18 @@ impl SpellSession {
             .unwrap_or(false)
     }
 
+    /// Ranked corrections for `word` from this document's active checker — the installed
+    /// dictionaries *and* the Work's personal words (see [`SpellChecker::suggest`]). Empty when no
+    /// checker is active, and empty is a legitimate answer for a word nothing can correct: the
+    /// menu says so rather than hiding the fact it looked.
+    pub(crate) fn suggest(&self, word: &str) -> Vec<String> {
+        self.checker
+            .borrow()
+            .as_ref()
+            .map(|c| c.suggest(word))
+            .unwrap_or_default()
+    }
+
     /// A view gained focus and becomes the caret source. `caret` reads the **live** offset.
     pub fn on_focus(&self, view: WidgetId, caret: Rc<dyn Fn() -> usize>) {
         *self.focused.borrow_mut() = Some((view, caret));
@@ -633,6 +757,127 @@ mod tests {
         };
         assert!(!hl.misspelled("Skribisto"), "a personal word is accepted");
         assert!(hl.misspelled("Skrib"), "but not an unrelated unknown word");
+    }
+
+    // ── Suggestions (the context-menu corrections) ──
+
+    /// The installed dictionary corrects a typo of an ordinary word.
+    #[test]
+    fn suggest_offers_dictionary_corrections() {
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n").unwrap();
+        let hl = SpellChecker {
+            dicts: vec![Arc::new(dict)],
+            personal: HashSet::new(),
+        };
+        let got = hl.suggest("helo");
+        assert!(got.contains(&"hello".to_string()), "expected 'hello' in {got:?}");
+        assert!(got.len() <= MAX_SUGGESTIONS, "capped at {MAX_SUGGESTIONS}: {got:?}");
+        // Nothing alphabetic is not correctable.
+        assert!(hl.suggest("123").is_empty(), "a number has no corrections");
+    }
+
+    /// **The personal-dictionary suggestion.** `spellbook` cannot see the personal set, so a typo
+    /// of a project's coined term is only ever corrected by our own near-match pass — and it must
+    /// outrank the dictionary's guesses for an invented word.
+    #[test]
+    fn suggest_offers_personal_words_the_dictionary_cannot_know() {
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n").unwrap();
+        let mut personal = HashSet::new();
+        personal.insert("Skribisto".to_string());
+        let hl = SpellChecker {
+            dicts: vec![Arc::new(dict)],
+            personal,
+        };
+        // Sanity: the dictionary alone knows nothing of it.
+        let mut raw = Vec::new();
+        hl.dicts[0].suggest("Skibisto", &mut raw);
+        assert!(
+            !raw.contains(&"Skribisto".to_string()),
+            "precondition: spellbook cannot suggest a personal word ({raw:?})"
+        );
+        // But we can — and it comes first, being one edit away.
+        let got = hl.suggest("Skibisto");
+        assert_eq!(
+            got.first().map(String::as_str),
+            Some("Skribisto"),
+            "a one-edit personal word leads the list, got {got:?}"
+        );
+    }
+
+    /// A personal word differing only in **casing** is a distance-0 match. This is the everyday
+    /// case: the personal set is matched exact-case, so `skribisto` is genuinely flagged, and the
+    /// correction to offer is the project's own casing.
+    #[test]
+    fn suggest_corrects_the_casing_of_a_personal_word() {
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
+        let mut personal = HashSet::new();
+        personal.insert("Skribisto".to_string());
+        let hl = SpellChecker {
+            dicts: vec![Arc::new(dict)],
+            personal,
+        };
+        assert!(hl.misspelled("skribisto"), "precondition: exact-case matching flags it");
+        assert_eq!(
+            hl.suggest("skribisto").first().map(String::as_str),
+            Some("Skribisto"),
+            "the stored casing is offered"
+        );
+    }
+
+    /// A personal word is never suggested for itself, and a distant one is not suggested at all.
+    #[test]
+    fn suggest_skips_the_typed_word_and_distant_personal_words() {
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
+        let mut personal = HashSet::new();
+        personal.insert("Skribisto".to_string());
+        personal.insert("Bastyde".to_string());
+        let hl = SpellChecker {
+            dicts: vec![Arc::new(dict)],
+            personal,
+        };
+        // "Skribisto" itself is not flagged, but even asked directly it must not echo back.
+        assert!(
+            !hl.suggest("Skribisto").contains(&"Skribisto".to_string()),
+            "a word is never its own correction"
+        );
+        // "Bastyde" is far from "Skibisto" — beyond the typo radius, so it is not offered.
+        assert!(
+            !hl.suggest("Skibisto").contains(&"Bastyde".to_string()),
+            "an unrelated personal word is not a correction"
+        );
+    }
+
+    /// Ties are ordered deterministically — `personal` is a `HashSet`, and a menu that reshuffles
+    /// between right-clicks is unusable.
+    #[test]
+    fn personal_suggestions_are_stable_across_runs() {
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
+        // Three terms all exactly one edit from "Xan" — the tie the HashSet would shuffle.
+        let personal: HashSet<String> = ["Xen", "Xin", "Xon"].iter().map(|s| s.to_string()).collect();
+        let hl = SpellChecker {
+            dicts: vec![Arc::new(dict)],
+            personal,
+        };
+        let first = hl.suggest("Xan");
+        assert_eq!(first, ["Xen", "Xin", "Xon"], "equal-distance ties sort alphabetically");
+        for _ in 0..5 {
+            assert_eq!(hl.suggest("Xan"), first, "the order must not vary between calls");
+        }
+    }
+
+    /// The bounded edit distance itself: case is folded by the caller, the cap is honoured, and
+    /// accented words measure in characters.
+    #[test]
+    fn bounded_levenshtein_measures_chars_and_honours_the_cap() {
+        assert_eq!(bounded_levenshtein("abc", "abc", 2), Some(0));
+        assert_eq!(bounded_levenshtein("abc", "abd", 2), Some(1)); // substitution
+        assert_eq!(bounded_levenshtein("abc", "ab", 2), Some(1)); // deletion
+        assert_eq!(bounded_levenshtein("abc", "abcd", 2), Some(1)); // insertion
+        assert_eq!(bounded_levenshtein("abc", "xyz", 2), None, "3 edits exceeds the cap");
+        // A length gap alone exceeds the cap — rejected without building the matrix.
+        assert_eq!(bounded_levenshtein("a", "abcdef", 2), None);
+        // "café" vs "cafe" is one char edit, not two bytes' worth.
+        assert_eq!(bounded_levenshtein("café", "cafe", 2), Some(1));
     }
 
     /// The multi-dictionary union: a word only one language knows is still accepted.
