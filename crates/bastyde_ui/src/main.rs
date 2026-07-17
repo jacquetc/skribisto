@@ -222,9 +222,11 @@ pub const SCENE_FONT_FAMILY_DEFAULT: &str = "Literata";
 pub const SCENE_SIZE_KEY: &str = "editor.scene.size";
 pub const SCENE_SIZE_DEFAULT: f32 = 1.0;
 pub const SCENE_LINE_HEIGHT_KEY: &str = "editor.scene.line_height";
-pub const SCENE_LINE_HEIGHT_DEFAULT: f32 = 1.5;
+pub const SCENE_LINE_HEIGHT_DEFAULT: f32 = 1.6;
 pub const SCENE_FIRST_LINE_INDENT_KEY: &str = "editor.scene.first_line_indent";
-pub const SCENE_FIRST_LINE_INDENT_DEFAULT: f32 = 28.0;
+// ≈ one line-height (1.6 × 18 ≈ 29 px) is the classic book indent; 24 px reads as
+// a clear paragraph cue without shoving prose too far off the margin.
+pub const SCENE_FIRST_LINE_INDENT_DEFAULT: f32 = 24.0;
 pub const SCENE_PARA_SPACING_BEFORE_KEY: &str = "editor.scene.para_spacing_before";
 pub const SCENE_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
 pub const SCENE_PARA_SPACING_AFTER_KEY: &str = "editor.scene.para_spacing_after";
@@ -234,7 +236,9 @@ pub const SCENE_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
 pub const SYNOPSIS_FONT_FAMILY_KEY: &str = "editor.synopsis.font_family";
 pub const SYNOPSIS_FONT_FAMILY_DEFAULT: &str = "Literata";
 pub const SYNOPSIS_SIZE_KEY: &str = "editor.synopsis.size";
-pub const SYNOPSIS_SIZE_DEFAULT: f32 = 0.95;
+// 85 % of the scene face (≈ 15 px against the 18 px anchor) — clearly subordinate
+// summary text, not near-parity with the manuscript.
+pub const SYNOPSIS_SIZE_DEFAULT: f32 = 0.85;
 pub const SYNOPSIS_LINE_HEIGHT_KEY: &str = "editor.synopsis.line_height";
 pub const SYNOPSIS_LINE_HEIGHT_DEFAULT: f32 = 1.35;
 pub const SYNOPSIS_FIRST_LINE_INDENT_KEY: &str = "editor.synopsis.first_line_indent";
@@ -242,7 +246,9 @@ pub const SYNOPSIS_FIRST_LINE_INDENT_DEFAULT: f32 = 0.0;
 pub const SYNOPSIS_PARA_SPACING_BEFORE_KEY: &str = "editor.synopsis.para_spacing_before";
 pub const SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
 pub const SYNOPSIS_PARA_SPACING_AFTER_KEY: &str = "editor.synopsis.para_spacing_after";
-pub const SYNOPSIS_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
+// Block-style spacing: with no first-line indent, a paragraph must be delimited by
+// vertical space or multi-paragraph summaries run together into one wall of text.
+pub const SYNOPSIS_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
 
 /// Notes editor typography.
 pub const NOTES_FONT_FAMILY_KEY: &str = "editor.notes.font_family";
@@ -256,7 +262,9 @@ pub const NOTES_FIRST_LINE_INDENT_DEFAULT: f32 = 0.0;
 pub const NOTES_PARA_SPACING_BEFORE_KEY: &str = "editor.notes.para_spacing_before";
 pub const NOTES_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
 pub const NOTES_PARA_SPACING_AFTER_KEY: &str = "editor.notes.para_spacing_after";
-pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
+// Block-style spacing (notes have no indent) — notes are fragments/lists, so a
+// paragraph gap is what a notes surface is expected to look like.
+pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
 
 // ── Editor behaviour (Settings ▸ Editor ▸ Editor Behavior) ───────────────────
 /// Show the synopsis pane above the manuscript in the dual-pane writing editor
@@ -316,7 +324,11 @@ fn register_editor_fonts() -> bastyde::text::VecFontRegistrar {
     let face = |bytes: &'static [u8]| FontFaceSpec {
         data: Arc::new(bytes.to_vec()),
         is_default: false,
-        default_size_px: 16.0,
+        // The writing-serif design size: this is what a Scene / Synopsis editor's
+        // `size` = 100 % resolves to (the `size` setting is a zoom multiplier, so the
+        // absolute px is anchored here). 18 px is the comfortable long-form drafting
+        // size; a Synopsis pane scales down from it via its 0.85 default.
+        default_size_px: 18.0,
     };
     // Bytes come from the shared `skribisto_fonts` crate — the same blobs the PDF exporter
     // feeds to Typst, so the editor and an exported PDF render in the identical face.
