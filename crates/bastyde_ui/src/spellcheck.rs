@@ -633,6 +633,12 @@ pub struct SpellSession {
     /// caret-only move re-derives the exemption from the cached misspelling set — O(misspellings) —
     /// rather than re-tokenising the whole document.
     caret_dirty: Cell<bool>,
+    /// Whether this session's document is currently *shown* anywhere (default `true`). The
+    /// synopsis session is set inactive while the synopsis pane is hidden (a global setting), so a
+    /// re-attach — dictionary install, mute, language change, project load — does not pay a full
+    /// O(document) re-tokenise of a 20k-word synopsis nobody can see. Turning it back on schedules
+    /// one catch-up rebuild. The main-text session is always active.
+    active: Cell<bool>,
     /// Held so the subscription lives as long as the session (dropping it unsubscribes).
     _sub: Subscription,
     checker: RefCell<Option<SpellChecker>>,
@@ -647,6 +653,18 @@ pub struct SpellSession {
     all_ranges: RefCell<Vec<RangeHighlight>>,
     /// The last set pushed, so an unchanged recompute skips the repaint (`RangeHighlight: Eq`).
     last_ranges: RefCell<Vec<RangeHighlight>>,
+    /// Identity `(start, length)` of the range the caret exempted at the last recompute, or
+    /// `None` if it exempted nothing. The caret ticks every time it *moves*, but it stays inside
+    /// the same word across a whole burst of keystrokes — and while it does, the exempted range
+    /// is unchanged, so the filtered set is byte-identical to what was already pushed. Caching
+    /// this identity lets a same-word caret move skip the O(all_ranges) filter + clone entirely
+    /// (see [`apply_exemption`](Self::apply_exemption)); on a densely-flagged document that clone
+    /// is the per-keystroke cost, run whether or not anything changed.
+    last_exempt: Cell<Option<(usize, usize)>>,
+    /// Test-only: how many times the slow path (the filter + clone) actually ran, so a test can
+    /// prove a same-word caret move takes the fast path.
+    #[cfg(test)]
+    exemption_recomputes: Cell<usize>,
 }
 
 impl SpellSession {
@@ -678,12 +696,16 @@ impl SpellSession {
             session,
             content_dirty,
             caret_dirty: Cell::new(false),
+            active: Cell::new(true),
             _sub: sub,
             checker: RefCell::new(None),
             color: Cell::new(Color::rgb(220, 50, 50)),
             focused: RefCell::new(None),
             all_ranges: RefCell::new(Vec::new()),
             last_ranges: RefCell::new(Vec::new()),
+            last_exempt: Cell::new(None),
+            #[cfg(test)]
+            exemption_recomputes: Cell::new(0),
         })
     }
 
@@ -694,8 +716,26 @@ impl SpellSession {
     pub fn set_checker(&self, checker: Option<SpellChecker>, color: Color) {
         *self.checker.borrow_mut() = checker;
         self.color.set(color);
-        self.rebuild_all_ranges();
-        self.apply_exemption();
+        // An invisible pane (a hidden synopsis) stores the new checker but defers the actual
+        // O(document) re-tokenise until it is shown — flagging the rebuild as owed. A visible
+        // pane rebuilds now; `forced` because `all_ranges` was just rebuilt, so the cached
+        // exemption identity is stale and the fast path must not trust it.
+        if self.active.get() {
+            self.rebuild_all_ranges();
+            self.apply_exemption(true);
+        } else {
+            self.content_dirty.store(true, Ordering::Relaxed);
+        }
+    }
+
+    /// Show or hide this session (the synopsis session follows the global synopsis-pane setting;
+    /// the main session stays active). Returning to active schedules one catch-up rebuild for any
+    /// edit or re-attach that landed while it was hidden — drained on the next `tick`.
+    pub fn set_active(&self, active: bool) {
+        let was = self.active.replace(active);
+        if active && !was {
+            self.content_dirty.store(true, Ordering::Relaxed);
+        }
     }
 
     /// Whether `word` is currently flagged as a misspelling by this document's
@@ -760,6 +800,11 @@ impl SpellSession {
     /// document; a caret-only move just re-filters the cache. Coalesces a burst of events into one
     /// recompute + at most one push.
     pub fn tick(&self) {
+        // A hidden pane does no work and — crucially — leaves its dirty flags *set*, so the
+        // catch-up rebuild it owes survives until it is shown again.
+        if !self.active.get() {
+            return;
+        }
         let content = self.content_dirty.swap(false, Ordering::Relaxed);
         let caret = self.caret_dirty.replace(false);
         if !content && !caret {
@@ -768,7 +813,9 @@ impl SpellSession {
         if content {
             self.rebuild_all_ranges();
         }
-        self.apply_exemption();
+        // A content edit rebuilt `all_ranges`, so force a full recompute; a caret-only move
+        // leaves `all_ranges` intact and may take the fast path.
+        self.apply_exemption(content);
     }
 
     /// Re-tokenise the whole document into `all_ranges` (every misspelling, no exemption). Empty
@@ -801,11 +848,40 @@ impl SpellSession {
         *self.all_ranges.borrow_mut() = ranges;
     }
 
+    /// The identity `(start, length)` of the **first** cached range the caret falls in (inclusive
+    /// of both ends), or `None`. A cheap comparison-only scan with an early exit — no clone — so
+    /// it is safe to run on every caret move purely to decide whether the pushed set can change.
+    fn caret_exempt_identity(&self, caret: Option<usize>) -> Option<(usize, usize)> {
+        let c = caret?;
+        self.all_ranges
+            .borrow()
+            .iter()
+            .find(|r| c >= r.start && c <= r.start + r.length)
+            .map(|r| (r.start, r.length))
+    }
+
     /// Filter the cached misspellings by the live caret — drop the one word it sits in (inclusive
     /// of both ends, so typing at a word's end keeps it exempt) — and push, but only if the result
     /// changed since the last push (so typing *within* the exempt word repaints nothing).
-    fn apply_exemption(&self) {
+    ///
+    /// `forced` must be set whenever `all_ranges` was just rebuilt (a content edit / a new
+    /// checker): the fast path below trusts the *cached* exemption identity, which only means
+    /// anything while `all_ranges` is unchanged.
+    ///
+    /// The fast path is the point of this. The caret ticks on every move, but stays inside one
+    /// word across a burst of typing; while it does, the exempted range is unchanged and the
+    /// filtered set is byte-for-byte what was already pushed. Recognising that from the cached
+    /// identity skips the O(all_ranges) filter + clone — on a Lorem-Ipsum-dense document, the
+    /// dominant per-keystroke cost, previously paid every tick whether or not anything changed.
+    fn apply_exemption(&self, forced: bool) {
         let caret = self.focused.borrow().as_ref().map(|(_, f)| f());
+        let exempt = self.caret_exempt_identity(caret);
+        if !forced && self.last_exempt.get() == exempt {
+            return; // same word exempt, `all_ranges` unchanged → nothing to rebuild or push
+        }
+        self.last_exempt.set(exempt);
+        #[cfg(test)]
+        self.exemption_recomputes.set(self.exemption_recomputes.get() + 1);
         // Exempt **at most one** word — the first the caret falls in. This matters only where two
         // misspelled words touch with no separator (adjacent CJK / Hiragana characters, which
         // UAX#29 splits into one-char tokens): a caret on the shared boundary is inclusive-in both,
@@ -839,6 +915,7 @@ impl Drop for SpellSession {
         self.doc.remove_session(self.session);
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -1358,7 +1435,7 @@ mod tests {
         ];
         let caret = Rc::new(Cell::new(1usize));
         focus_at(&session, &caret);
-        session.apply_exemption();
+        session.apply_exemption(true); // forced: `all_ranges` was poked in directly
         assert_eq!(starts(&session), vec![1], "only the first touching word is exempt, not both");
     }
 
@@ -1375,6 +1452,76 @@ mod tests {
         session.on_caret(WidgetId::default());
         session.tick();
         assert_eq!(starts(&session), vec![0], "now helo is flagged and wrld exempt");
+    }
+
+    /// The B2-M0 fast path: a caret move that stays inside the same exempted word must not
+    /// re-run the O(all_ranges) filter+clone. Typing within a word ticks the caret on every
+    /// keystroke, so on a densely-flagged document that clone was the per-keystroke cost.
+    #[test]
+    fn a_same_word_caret_move_skips_the_filter() {
+        let doc = tiny_doc("helo wrld"); // both misspelled
+        let session = SpellSession::new(&doc);
+        let caret = Rc::new(Cell::new(1usize)); // inside "helo" [0,4]
+        focus_at(&session, &caret);
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        let after_first = session.exemption_recomputes.get();
+        assert_eq!(starts(&session), vec![5], "helo exempt, wrld flagged");
+
+        // Three caret moves that never leave "helo" [0,4] — the exempted range is unchanged.
+        for pos in [0usize, 2, 4] {
+            caret.set(pos);
+            session.on_caret(WidgetId::default());
+            session.tick();
+        }
+        assert_eq!(
+            session.exemption_recomputes.get(),
+            after_first,
+            "staying inside the exempt word takes the fast path — no re-filter"
+        );
+        assert_eq!(starts(&session), vec![5], "and the pushed set is unchanged");
+
+        // Crossing into "wrld" [5,9] genuinely changes the exemption, so it must recompute.
+        caret.set(6);
+        session.on_caret(WidgetId::default());
+        session.tick();
+        assert_eq!(
+            session.exemption_recomputes.get(),
+            after_first + 1,
+            "leaving the word recomputes exactly once"
+        );
+        assert_eq!(starts(&session), vec![0], "wrld now exempt, helo flagged");
+    }
+
+    /// B2-M0b: an inactive (hidden) session defers the eager rebuild `set_checker` would do,
+    /// then catches up on the first tick after it is shown. This is what stops a re-attach
+    /// (dictionary install / mute / language change) from re-tokenising a hidden 20k-word
+    /// synopsis nobody can see.
+    #[test]
+    fn a_hidden_session_defers_its_rebuild_until_shown() {
+        let doc = tiny_doc("helo wrld"); // both misspelled
+        let session = SpellSession::new(&doc);
+        session.set_active(false);
+
+        // A checker arrives while hidden — stored, but no ranges computed yet.
+        session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
+        assert!(
+            session.all_ranges.borrow().is_empty(),
+            "a hidden pane does not tokenise on set_checker"
+        );
+        assert!(session.last_ranges.borrow().is_empty(), "and nothing is pushed");
+
+        // A tick while still hidden stays a no-op (and must not consume the owed rebuild).
+        session.tick();
+        assert!(session.all_ranges.borrow().is_empty(), "still nothing while hidden");
+
+        // Shown again → the next tick performs the deferred rebuild.
+        session.set_active(true);
+        session.tick();
+        assert_eq!(
+            starts(&session),
+            vec![0, 5],
+            "the catch-up rebuild runs once the pane is shown (no focused caret → both flagged)"
+        );
     }
 
     #[test]

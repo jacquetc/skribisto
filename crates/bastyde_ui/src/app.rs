@@ -2005,6 +2005,15 @@ impl Widget for App {
                 }
             });
         }
+        // A hidden synopsis pane should not cost a full re-tokenise of its (often huge) text on
+        // every re-attach. Mirror the global synopsis-pane setting into the store, which puts each
+        // open doc's synopsis spell session to sleep while the pane is hidden and wakes it (with
+        // one catch-up rebuild) when it returns. Seed it before the first document opens.
+        {
+            let docs = spell_docs.clone();
+            docs.set_synopsis_visible(settings.synopsis_pane().get());
+            ctx.effect(&settings.synopsis_pane(), move |v| docs.set_synopsis_visible(*v));
+        }
         // Dirty tracking + debounced autosave-to-disk. Every mutation (editor
         // typing via the editors' `edited` signal, plus tree/metadata events)
         // marks the work `unsaved` and — when autosave is on — (re)schedules a

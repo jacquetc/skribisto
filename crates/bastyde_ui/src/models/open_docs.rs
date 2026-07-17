@@ -231,6 +231,10 @@ struct Inner {
     spell: RefCell<Option<SpellcheckService>>,
     /// The squiggle colour, resolved from a theme role by `App` (updated on theme change).
     squiggle: Cell<Color>,
+    /// Whether the synopsis pane is currently shown (the global setting, mirrored here by `App`).
+    /// A freshly-opened doc's synopsis spell session inherits this, so a re-attach never
+    /// re-tokenises a hidden synopsis. Default `true`.
+    synopsis_visible: Cell<bool>,
     /// The open project, for resolving each item's effective language (its own tag, else
     /// the Work's). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
@@ -292,6 +296,7 @@ impl OpenDocsStore {
                 spell: RefCell::new(None),
                 // A sensible default until `App` resolves the theme's error role.
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
+                synopsis_visible: Cell::new(true),
                 work_id: Cell::new(None),
                 work_lang: RefCell::new(String::new()),
                 lang_cache: RefCell::new(None),
@@ -339,6 +344,19 @@ impl OpenDocsStore {
         if self.inner.squiggle.get() != color {
             self.inner.squiggle.set(color);
             self.attach_all();
+        }
+    }
+
+    /// Track whether the synopsis pane is shown (the global setting), and push it to every open
+    /// doc's synopsis spell session. Hidden → that session goes inactive and stops paying for
+    /// re-attaches it can't display; shown → it schedules one catch-up rebuild. `App` calls this
+    /// on the setting's change and once to seed it.
+    pub fn set_synopsis_visible(&self, visible: bool) {
+        self.inner.synopsis_visible.set(visible);
+        for entry in self.inner.open.borrow().values() {
+            if let Some(s) = entry.doc.spell_synopsis() {
+                s.set_active(visible);
+            }
         }
     }
 
@@ -395,6 +413,12 @@ impl OpenDocsStore {
         let Some(spell) = self.inner.spell.borrow().clone() else {
             return;
         };
+        // Inherit the current synopsis visibility *before* attaching, so a doc opened while the
+        // synopsis pane is hidden never eagerly tokenises its (possibly huge) synopsis — its
+        // `set_checker` sees the inactive flag and defers.
+        if let Some(s) = doc.spell_synopsis() {
+            s.set_active(self.inner.synopsis_visible.get());
+        }
         let tags = self.language_for(doc.item_id);
         doc.attach_spell(&spell, &tags, self.inner.squiggle.get());
     }
