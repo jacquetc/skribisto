@@ -385,7 +385,7 @@ fn offer_missing_dictionaries(
                 tr!(dict_missing_action()),
                 move |c| {
                     c.present_modal(
-                        ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
+                        ModalRequest::deferred(|t| t.add(SettingsPanel::open_to_dictionaries()))
                             .presentation(ModalPresentation::InTree)
                             .title("Settings")
                             .size(920, 620)
@@ -1614,11 +1614,13 @@ impl Widget for App {
                                 c.show_toast(Toast::warning(tr!(backup_nudge_text())).action(
                                     ToastAction::primary(tr!(backup_nudge_action()), |c| {
                                         c.present_modal(
-                                            ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
-                                                .presentation(ModalPresentation::InTree)
-                                                .title("Settings")
-                                                .size(920, 620)
-                                                .close_behavior(ModalCloseBehavior::Manual),
+                                            ModalRequest::deferred(|t| {
+                                                t.add(SettingsPanel::open_to_backup())
+                                            })
+                                            .presentation(ModalPresentation::InTree)
+                                            .title("Settings")
+                                            .size(920, 620)
+                                            .close_behavior(ModalCloseBehavior::Manual),
                                         );
                                     }),
                                 ));

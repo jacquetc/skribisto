@@ -442,8 +442,25 @@ pub struct SettingsPanel {
 
 impl SettingsPanel {
     pub fn new() -> Self {
+        Self::opening_at(Pane::SceneTypography)
+    }
+
+    /// Open straight to Spelling ▸ Dictionaries — the target of the "install the
+    /// missing dictionaries" toast (`offer_missing_dictionaries`). The tree seeds
+    /// its selection to that page and expands the owning section on open.
+    pub fn open_to_dictionaries() -> Self {
+        Self::opening_at(Pane::Dictionaries)
+    }
+
+    /// Open straight to Backup & Sync ▸ Backup — the target of the
+    /// "no backups configured" nudge toast.
+    pub fn open_to_backup() -> Self {
+        Self::opening_at(Pane::Backup)
+    }
+
+    fn opening_at(pane: Pane) -> Self {
         Self {
-            selected_pane: Signal::new(Pane::SceneTypography),
+            selected_pane: Signal::new(pane),
             root_child: None,
         }
     }
@@ -992,6 +1009,30 @@ impl SettingsPanel {
         tree.collapse(ce);
         if let Some(wk) = work_node {
             tree.expand(wk);
+        }
+        // Reveal the section owning the page we opened at, so a deep-link open
+        // (e.g. the toast that jumps straight to Dictionaries, under the
+        // otherwise-collapsed Spelling section) shows its highlighted tree node.
+        // Idempotent with the design-state expansion above.
+        let section_of = |p: Pane| match p {
+            Pane::Appearance | Pane::MenusToolbars | Pane::Notifications => Some(ab),
+            Pane::SceneTypography
+            | Pane::SynopsisTypography
+            | Pane::NotesTypography
+            | Pane::EditorBehavior
+            | Pane::Goals
+            | Pane::Corkboard => Some(ed),
+            Pane::Spellcheck | Pane::Dictionaries => Some(sp),
+            Pane::Autosave | Pane::Backup => Some(bk),
+            Pane::ExportFormats => Some(ce),
+            Pane::WorkStructure
+            | Pane::WorkLanguage
+            | Pane::WorkBackup
+            | Pane::WorkDictionary => work_node,
+            Pane::Keymap => None,
+        };
+        if let Some(sec) = section_of(self.selected_pane.get()) {
+            tree.expand(sec);
         }
 
         (tree, selection, nodes)
