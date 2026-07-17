@@ -5768,6 +5768,7 @@ dependencies = [
  "chrono",
  "serde",
  "serde_json",
+ "skribisto-binder-ordering",
  "skribisto-common",
  "skribisto-macros",
  "uuid",

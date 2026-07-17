@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-// Custom implementation: permanently delete everything indexed by
-// Work.trash_infos. Trashed binders (with their items + contents) are removed
-// and dropped from their Work; trashed item subtrees (with their contents) are
-// removed and dropped from their binder's order. All TrashInfos are removed and
-// the index cleared. Undoable via a Work-scoped snapshot/restore: post-reparent
-// TrashInfo lives in the Work trunk alongside the items/binders, so the whole
-// Work is the undo scope.
+// Custom implementation: permanently delete a caller-chosen SUBSET of trash
+// entries (per-entry "Delete forever"), sharing the purge core with empty_trash.
+// A stale id (one no longer in Work.trash_infos, e.g. from an outdated UI
+// snapshot) is ignored, not an error. The shared plan folds in any collateral
+// TrashInfo whose target is swept up by the requested purge (see purge.rs), so a
+// subset delete never leaves a dangling trash row. Undoable via a Work-scoped
+// snapshot/restore; the UI, not the backend, decides whether to clear the undo
+// stack after a grace period.
+use crate::DeleteTrashEntriesDto;
 use crate::purge;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
@@ -15,13 +17,15 @@ use common::direct_access::work::WorkRelationshipField;
 use common::entities::{BinderItem, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
+use std::collections::HashSet;
 
-pub trait EmptyTrashUnitOfWorkFactoryTrait: Send + Sync {
-    fn create(&self) -> Box<dyn EmptyTrashUnitOfWorkTrait>;
+pub trait DeleteTrashEntriesUnitOfWorkFactoryTrait: Send + Sync {
+    fn create(&self) -> Box<dyn DeleteTrashEntriesUnitOfWorkTrait>;
 }
 
 // The same macro set must appear on the impl block in
-// ../units_of_work/empty_trash_uow.rs.
+// ../units_of_work/delete_trash_entries_uow.rs. It matches empty_trash's set:
+// both drive the shared purge core (crate::purge::PurgeAccess).
 #[macros::uow_action(entity = "TrashInfo", action = "GetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "GetAll")]
@@ -37,41 +41,53 @@ pub trait EmptyTrashUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Content", action = "RemoveMulti")]
-pub trait EmptyTrashUnitOfWorkTrait: CommandUnitOfWork {
-    fn publish_empty_trash_event(&self, ids: Vec<EntityId>, data: Option<String>);
+pub trait DeleteTrashEntriesUnitOfWorkTrait: CommandUnitOfWork {
+    fn publish_delete_trash_entries_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
-pub struct EmptyTrashUseCase {
-    uow_factory: Box<dyn EmptyTrashUnitOfWorkFactoryTrait>,
+pub struct DeleteTrashEntriesUseCase {
+    uow_factory: Box<dyn DeleteTrashEntriesUnitOfWorkFactoryTrait>,
     snap_before: Option<EntityTreeSnapshot>,
     snap_after: Option<EntityTreeSnapshot>,
 }
 
-impl EmptyTrashUseCase {
-    pub fn new(uow_factory: Box<dyn EmptyTrashUnitOfWorkFactoryTrait>) -> Self {
-        EmptyTrashUseCase {
+impl DeleteTrashEntriesUseCase {
+    pub fn new(uow_factory: Box<dyn DeleteTrashEntriesUnitOfWorkFactoryTrait>) -> Self {
+        DeleteTrashEntriesUseCase {
             uow_factory,
             snap_before: None,
             snap_after: None,
         }
     }
 
-    pub fn execute(&mut self) -> Result<()> {
+    pub fn execute(&mut self, dto: &DeleteTrashEntriesDto) -> Result<()> {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-
-        // Purge EVERYTHING currently indexed by Work.trash_infos. The planning
-        // pass is read-only; the Work-scoped snapshot is taken right before the
-        // first mutation. (The shared purge core is also used by
-        // delete_trash_entries for a caller-chosen subset.)
         let work_id = work_id(uow.as_ref())?;
-        let all_ids = uow.get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?;
-        let plan = purge::plan_purge(uow.as_ref(), work_id, &all_ids)?;
+
+        // Keep only ids still in the index (stale ids → no-op, not error).
+        let indexed: HashSet<EntityId> = uow
+            .get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?
+            .into_iter()
+            .collect();
+        let ids: Vec<EntityId> = dto
+            .trash_info_ids
+            .iter()
+            .copied()
+            .filter(|id| indexed.contains(id))
+            .collect();
+
+        // Snapshot unconditionally so undo/redo work even for a no-op delete.
         let snap_before = uow.snapshot_work(&[work_id])?;
-        let removed_items = purge::apply_purge(uow.as_ref(), work_id, &all_ids, &plan)?;
+        let removed_items = if ids.is_empty() {
+            Vec::new()
+        } else {
+            let plan = purge::plan_purge(uow.as_ref(), work_id, &ids)?;
+            purge::apply_purge(uow.as_ref(), work_id, &ids, &plan)?
+        };
         let snap_after = uow.snapshot_work(&[work_id])?;
         uow.commit()?;
-        uow.publish_empty_trash_event(removed_items, None);
+        uow.publish_delete_trash_entries_event(removed_items, None);
 
         self.snap_before = Some(snap_before);
         self.snap_after = Some(snap_after);
@@ -79,22 +95,22 @@ impl EmptyTrashUseCase {
     }
 }
 
-fn work_id(uow: &dyn EmptyTrashUnitOfWorkTrait) -> Result<EntityId> {
+fn work_id(uow: &dyn DeleteTrashEntriesUnitOfWorkTrait) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()
         .next()
         .map(|w| w.id)
-        .ok_or_else(|| anyhow!("empty_trash: no Work entity in store"))
+        .ok_or_else(|| anyhow!("delete_trash_entries: no Work entity in store"))
 }
 
 use common::undo_redo::UndoRedoCommand;
 use std::any::Any;
-impl UndoRedoCommand for EmptyTrashUseCase {
+impl UndoRedoCommand for DeleteTrashEntriesUseCase {
     fn undo(&mut self) -> Result<()> {
         let snap = self
             .snap_before
             .as_ref()
-            .ok_or_else(|| anyhow!("empty_trash: nothing to undo"))?;
+            .ok_or_else(|| anyhow!("delete_trash_entries: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
         uow.restore_work(snap)?;
@@ -106,7 +122,7 @@ impl UndoRedoCommand for EmptyTrashUseCase {
         let snap = self
             .snap_after
             .as_ref()
-            .ok_or_else(|| anyhow!("empty_trash: nothing to redo"))?;
+            .ok_or_else(|| anyhow!("delete_trash_entries: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
         uow.restore_work(snap)?;

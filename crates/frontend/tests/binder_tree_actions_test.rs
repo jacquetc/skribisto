@@ -30,7 +30,10 @@ use binder_item_management::{
     DuplicateDto, MergeTwoScenesDto, MoveDto, MovePlace, PromoteDto, SplitSceneDto,
 };
 use skribisto_model::PromoteTarget;
-use trash_management::{RestoreItemsDto, TrashBinderDto, TrashBinderItemsDto};
+use trash_management::{
+    DeleteTrashEntriesDto, DropPosition, RestoreItemsDto, RestoreItemsToDto, TrashBinderDto,
+    TrashBinderItemsDto,
+};
 
 // ───────────────────────────── fixture helpers ─────────────────────────────
 
@@ -1334,4 +1337,451 @@ fn duplicate_reverts_cloned_tag_links() {
         "shared tag must not be deleted"
     );
     assert_eq!(item_tags(&fx, source), vec![tag], "source keeps its tag");
+}
+
+// ──────────────────── restore_items_to (item-keyed relocate) ────────────────────
+
+/// The live trash index for the fixture's Work (`restore_items`/`restore_items_to`
+/// unlink consumed entries here but leave the orphan entity in the store, so this
+/// — not `get_all_trash_info()` — is the source of truth for "what's in the trash",
+/// exactly as the trash UI reads it).
+fn indexed_trash(fx: &Fixture) -> Vec<EntityId> {
+    work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::TrashInfos)
+        .unwrap_or_default()
+}
+
+/// Trash a subtree rooted at `root` and return the created TrashInfo id.
+fn trash_item(fx: &Fixture, stack: u64, root: EntityId) -> EntityId {
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(stack),
+        &TrashBinderItemsDto {
+            binder_item_ids: vec![root as i64],
+            origin_binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash");
+    trash_info_commands::get_all_trash_info(&fx.ctx)
+        .unwrap()
+        .into_iter()
+        .find(|i| i.trashed_binder_item == Some(root))
+        .expect("trash info for root")
+        .id
+}
+
+#[test]
+fn restore_descendant_out_of_larger_trashed_subtree_leaves_ancestor_trashed() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.a); // trashes a, a1, a2 (one TrashInfo at a)
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            binder_item_ids: vec![fx.a2],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 1);
+    assert!(!res.orphaned);
+
+    // The descendant is reactivated and relocated; its ancestor stays trashed.
+    assert!(activated(&fx.ctx, fx.a2));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.a2]);
+    assert_eq!(indent(&fx.ctx, fx.a2), 0);
+    assert!(!activated(&fx.ctx, fx.a));
+    assert!(!activated(&fx.ctx, fx.a1));
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.b, fx.b1, fx.c]
+    );
+    // The root's TrashInfo survives (only partially peeled).
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder_item, Some(fx.a));
+}
+
+#[test]
+fn restore_whole_root_via_its_own_item_id_consumes_its_trash_info() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.a);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            binder_item_ids: vec![fx.a],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 1);
+    // Whole subtree relocated together, relative indents preserved.
+    assert!(activated(&fx.ctx, fx.a));
+    assert!(activated(&fx.ctx, fx.a1));
+    assert!(activated(&fx.ctx, fx.a2));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.a, fx.a1, fx.a2]);
+    assert_eq!(indent(&fx.ctx, fx.a), 0);
+    assert_eq!(indent(&fx.ctx, fx.a1), 1);
+    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.b, fx.b1, fx.c]);
+    // Root fully restored → its TrashInfo unlinked from the index.
+    assert!(indexed_trash(&fx).is_empty());
+}
+
+#[test]
+fn restore_items_to_undo_redo() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.c);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            binder_item_ids: vec![fx.c],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert!(activated(&fx.ctx, fx.c));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.c]);
+    assert!(indexed_trash(&fx).is_empty());
+
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo");
+    assert!(!activated(&fx.ctx, fx.c));
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+    assert!(order(&fx.ctx, fx.binder2).is_empty());
+    assert_eq!(indexed_trash(&fx).len(), 1);
+
+    undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo");
+    assert!(activated(&fx.ctx, fx.c));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.c]);
+}
+
+#[test]
+fn restore_items_to_rejects_a_deactivated_destination_binder() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderDto {
+            binder_id: fx.binder2 as i64,
+        },
+    )
+    .expect("trash binder2");
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s2, fx.c);
+
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s3),
+        &RestoreItemsToDto {
+            binder_item_ids: vec![fx.c],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    );
+    assert!(res.is_err(), "restoring into a trashed binder must fail");
+    // Nothing changed.
+    assert!(!activated(&fx.ctx, fx.c));
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+}
+
+#[test]
+fn restore_items_to_recovers_a_dangling_orphan_singleton() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.c);
+    // Strip c from its binder's order (leaves the entity dangling).
+    wire_binder(
+        &fx.ctx,
+        fx.setup,
+        fx.binder1,
+        &[fx.a, fx.a1, fx.a2, fx.b, fx.b1],
+    );
+    // Plain restore can't place it.
+    let info = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap()[0].id;
+    let plain = trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(undo_redo_commands::create_new_stack(&fx.ctx)),
+        &RestoreItemsDto {
+            trash_info_ids: vec![info as i64],
+        },
+    )
+    .expect("restore");
+    assert!(plain.orphaned);
+
+    // restore_items_to recovers it into a chosen destination.
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            binder_item_ids: vec![fx.c],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 1);
+    assert!(!res.orphaned);
+    assert!(activated(&fx.ctx, fx.c));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.c]);
+}
+
+#[test]
+fn restore_items_to_peels_from_a_wholly_trashed_binder() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderDto {
+            binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash binder1");
+
+    // Peel `c` out of the wholly-trashed binder1 into the active binder2.
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            binder_item_ids: vec![fx.c],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 1);
+    assert!(!res.orphaned);
+    assert!(activated(&fx.ctx, fx.c));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.c]);
+    // binder1 stays trashed, minus the peeled item.
+    assert!(
+        !binder_commands::get_binder(&fx.ctx, &fx.binder1)
+            .unwrap()
+            .unwrap()
+            .activated
+    );
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1]
+    );
+    // The whole-binder TrashInfo is untouched by the sweep.
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder, Some(fx.binder1));
+}
+
+#[test]
+fn restore_items_to_marks_orphaned_for_an_already_active_item() {
+    let fx = make_fixture();
+    let s = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s),
+        &RestoreItemsToDto {
+            binder_item_ids: vec![fx.b], // never trashed
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 0);
+    assert!(res.orphaned);
+    assert!(order(&fx.ctx, fx.binder2).is_empty());
+    assert!(activated(&fx.ctx, fx.b));
+}
+
+// ──────────────────── delete_trash_entries (per-entry purge) ────────────────────
+
+#[test]
+fn delete_trash_entries_purges_only_the_requested_subtree() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let info_a = trash_item(&fx, s1, fx.a); // a, a1, a2
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s2, fx.b); // b, b1
+
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s3),
+        &DeleteTrashEntriesDto {
+            trash_info_ids: vec![info_a],
+        },
+    )
+    .expect("delete");
+
+    // a's subtree gone; b's entry + entities survive.
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a)
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.b, fx.b1, fx.c]);
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.b1)
+            .unwrap()
+            .is_some()
+    );
+    assert!(!activated(&fx.ctx, fx.b1));
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder_item, Some(fx.b));
+}
+
+#[test]
+fn delete_trash_entries_removes_content_of_purged_subtree_only() {
+    let fx = make_fixture();
+    add_content(&fx, fx.a1, ContentRole::SceneText, "doomed");
+    add_content(&fx, fx.b1, ContentRole::SceneText, "kept");
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let info_a = trash_item(&fx, s1, fx.a);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s2, fx.b);
+
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s3),
+        &DeleteTrashEntriesDto {
+            trash_info_ids: vec![info_a],
+        },
+    )
+    .expect("delete");
+
+    let contents = content_commands::get_all_content(&fx.ctx).unwrap();
+    assert!(contents.iter().any(|c| c.data == "kept"));
+    assert!(!contents.iter().any(|c| c.data == "doomed"));
+}
+
+#[test]
+fn delete_trash_entries_undo_redo() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let info_c = trash_item(&fx, s1, fx.c);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s2),
+        &DeleteTrashEntriesDto {
+            trash_info_ids: vec![info_c],
+        },
+    )
+    .expect("delete");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.c)
+            .unwrap()
+            .is_none()
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.c)
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+    assert_eq!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .len(),
+        1
+    );
+
+    undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.c)
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
+fn delete_trash_entries_sweeps_collateral_stale_entries() {
+    let fx = make_fixture();
+    // Trash a descendant on its own, then trash its ancestor folder separately:
+    // two TrashInfos, one (a1) nested inside the other (a)'s subtree.
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let _info_a1 = trash_item(&fx, s1, fx.a1);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let info_a = trash_item(&fx, s2, fx.a);
+    assert_eq!(
+        trash_info_commands::get_all_trash_info(&fx.ctx).unwrap().len(),
+        2
+    );
+
+    // Delete forever only the ancestor's entry — a1's entity is hard-removed as
+    // collateral, so a1's now-dangling TrashInfo must be swept too.
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s3),
+        &DeleteTrashEntriesDto {
+            trash_info_ids: vec![info_a],
+        },
+    )
+    .expect("delete");
+
+    assert!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .is_empty(),
+        "both the requested and the collateral TrashInfo are gone"
+    );
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a1)
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
+fn delete_trash_entries_on_a_stale_id_is_a_noop() {
+    let fx = make_fixture();
+    let s = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s),
+        &DeleteTrashEntriesDto {
+            trash_info_ids: vec![999_999],
+        },
+    )
+    .expect("stale delete is Ok");
+    // Nothing changed.
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
 }

@@ -95,6 +95,8 @@ pub enum FlatEventKind {
     TrashManagementTrashBinder,
     TrashManagementRestoreItems,
     TrashManagementEmptyTrash,
+    TrashManagementRestoreItemsTo,
+    TrashManagementDeleteTrashEntries,
 
     BinderItemManagementDuplicate,
     BinderItemManagementMoveItems,
@@ -273,6 +275,12 @@ impl From<Event> for FlatEvent {
                 TrashManagementEvent::TrashBinder => FlatEventKind::TrashManagementTrashBinder,
                 TrashManagementEvent::RestoreItems => FlatEventKind::TrashManagementRestoreItems,
                 TrashManagementEvent::EmptyTrash => FlatEventKind::TrashManagementEmptyTrash,
+                TrashManagementEvent::RestoreItemsTo => {
+                    FlatEventKind::TrashManagementRestoreItemsTo
+                }
+                TrashManagementEvent::DeleteTrashEntries => {
+                    FlatEventKind::TrashManagementDeleteTrashEntries
+                }
             },
             Origin::BinderItemManagement(fe) => match fe {
                 BinderItemManagementEvent::Duplicate => {

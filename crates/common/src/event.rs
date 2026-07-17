@@ -91,6 +91,8 @@ pub enum TrashManagementEvent {
     TrashBinder,
     RestoreItems,
     EmptyTrash,
+    RestoreItemsTo,
+    DeleteTrashEntries,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]

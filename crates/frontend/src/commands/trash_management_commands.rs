@@ -8,8 +8,8 @@
 use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use trash_management::{
-    RestoreItemsDto, RestoreResultDto, TrashBinderDto, TrashBinderItemsDto,
-    trash_management_controller,
+    DeleteTrashEntriesDto, RestoreItemsDto, RestoreItemsToDto, RestoreItemsToResultDto,
+    RestoreResultDto, TrashBinderDto, TrashBinderItemsDto, trash_management_controller,
 };
 
 pub fn trash_binder_items(
@@ -65,4 +65,36 @@ pub fn empty_trash(ctx: &AppContext, stack_id: Option<u64>) -> Result<()> {
         stack_id,
     )
     .context("empty_trash")
+}
+
+pub fn restore_items_to(
+    ctx: &AppContext,
+    stack_id: Option<u64>,
+    dto: &RestoreItemsToDto,
+) -> Result<RestoreItemsToResultDto> {
+    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    trash_management_controller::restore_items_to(
+        &ctx.db_context,
+        &ctx.event_hub,
+        &mut undo_redo_manager,
+        stack_id,
+        dto,
+    )
+    .context("restore_items_to")
+}
+
+pub fn delete_trash_entries(
+    ctx: &AppContext,
+    stack_id: Option<u64>,
+    dto: &DeleteTrashEntriesDto,
+) -> Result<()> {
+    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    trash_management_controller::delete_trash_entries(
+        &ctx.db_context,
+        &ctx.event_hub,
+        &mut undo_redo_manager,
+        stack_id,
+        dto,
+    )
+    .context("delete_trash_entries")
 }

@@ -834,6 +834,52 @@ features:
     - BinderItem
     - Content
     undoable: true
+  - name: restore_items_to
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: RestoreItemsToDto
+      fields:
+      - name: binder_item_ids
+        type: uinteger
+        is_list: true
+      - name: destination_binder_id
+        type: uinteger
+      - name: anchor_item_id
+        type: uinteger
+        optional: true
+      - name: drop_position
+        type: enum
+        enum_name: DropPosition
+        enum_values:
+        - Before
+        - After
+        - Into
+    dto_out:
+      name: RestoreItemsToResultDto
+      fields:
+      - name: restored_count
+        type: integer
+      - name: orphaned
+        type: boolean
+  - name: delete_trash_entries
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: DeleteTrashEntriesDto
+      fields:
+      - name: trash_info_ids
+        type: uinteger
+        is_list: true
 - name: binder_item_management
   use_cases:
   - name: duplicate
