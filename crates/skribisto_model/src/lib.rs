@@ -22,7 +22,7 @@ use common::entities::BinderItemSubRole as SubRole;
 use common::entities::ContentRole;
 use common::entities::ContentRole::*;
 
-/// Which language a scene is written in: the per-item → nearest-Book → Work resolution chain,
+/// Which language a scene is written in: the per-item → Work resolution chain,
 /// plus the `dict_language` tag-list grammar shared by search folding and spell-checking.
 pub mod language;
 

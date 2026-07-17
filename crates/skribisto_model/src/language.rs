@@ -15,19 +15,28 @@
 //! fold, never *whether* to, or the same checkbox would mean different things in different
 //! chapters of one book.
 //!
-//! ## The chain
+//! ## The chain — two levels, no magic
 //!
-//! `BinderItem.dict_language` → the nearest **Book** above it → `Work.dict_language`. An
-//! empty tag at any level means "inherit"; a tag that is unknown or **malformed** folds
-//! untailored rather than failing, because it comes from a writer's project settings and a
-//! typo there must not break searching.
+//! `BinderItem.dict_language` → `Work.dict_language`. That is the whole rule. An empty tag
+//! means "use the Work's"; a tag that is unknown or **malformed** folds untailored rather
+//! than failing, because it comes from a writer's project settings and a typo there must not
+//! break searching.
 //!
-//! ## "Nearest Book" is a scan, not a climb
+//! ## Why there is no implicit scope
 //!
-//! The binder tree is **organisational only**. Book structure is a state machine over the
-//! flat, ordered item stream, so the book an item belongs to is simply *the most recent
-//! `Book` item before it* — no parent pointers, no recursion. That is also why the scope
-//! resets at each binder: two binders are two streams.
+//! An earlier design let the nearest preceding `Book` supply a language to everything after
+//! it. It was removed deliberately: the binder tree is **organisational only** and book
+//! structure is a state machine over the flat item stream, so "the Book above" was a
+//! stream-position rule that no other container could share. A language set on a *chapter*
+//! folder silently did nothing, which is exactly the confusion a writer meets first — and the
+//! rule could not be generalised, because `Work.chapter_mode` encodes a chapter either as a
+//! real indent-nested folder (`Folder`) or as a bare positional marker with no nesting at all
+//! (`Flat`).
+//!
+//! Propagation is now **explicit**: an item with a subtree offers "Apply to children", which
+//! writes the value onto every descendant in one undo step (see
+//! `OutlineViewModel::apply_dict_language_to_subtree`). Every item then means exactly what it
+//! says, and what the Inspector shows on an item is what that item is checked against.
 //!
 //! Both `run_search` and `replace_in_project` resolve through this one function. Two copies
 //! would drift, and the way a writer meets that drift is a rename that finds a word under
@@ -50,14 +59,15 @@
 
 use std::collections::{BTreeSet, HashMap};
 
-use common::entities::{BinderItem, BinderItemSubRole};
+use common::entities::BinderItem;
 use common::types::EntityId;
 
-/// The effective language tag of every item in one binder, in stream order.
+/// The effective language tag of every item in one binder.
 ///
-/// `items` **must** be in document order — the order `BinderItems` is stored in, which is
-/// the order the writer sees. Out of order, an item would inherit from whichever Book
-/// happened to be visited last, which is not a language it is written in.
+/// Each item resolves independently: its own `dict_language` if it has one, else the Work's.
+/// Nothing an item's *neighbours* do can change its answer, so — unlike the Book-scope rule
+/// this replaced — `items` need not be in any particular order, and a caller may resolve one
+/// item without its siblings.
 ///
 /// Items whose effective tag is empty are simply absent from the map; a caller reading a
 /// missing entry as "untailored" is correct, and it keeps the map small (the overwhelmingly
@@ -67,23 +77,9 @@ pub fn tags_in_binder(
     items: &[BinderItem],
     out: &mut HashMap<EntityId, String>,
 ) {
-    // The book currently in scope. Reset at the start of every binder: a second binder is a
-    // second stream, not a continuation of the first.
-    let mut book_language = String::new();
-
     for item in items {
-        // A `Book` item opens a new book, and its tag governs everything after it until the
-        // next one. An *untagged* Book deliberately clears the scope rather than leaving the
-        // previous book's language in place — it inherits from the Work, and so does
-        // everything under it.
-        if item.sub_role == BinderItemSubRole::Book {
-            book_language = item.dict_language.clone();
-        }
-
         let effective = if !item.dict_language.is_empty() {
             item.dict_language.as_str()
-        } else if !book_language.is_empty() {
-            book_language.as_str()
         } else {
             work_language
         };
@@ -183,6 +179,7 @@ pub fn is_rtl(tag: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use common::entities::BinderItemSubRole;
 
     fn item(id: EntityId, sub_role: BinderItemSubRole, dict_language: &str) -> BinderItem {
         BinderItem {
@@ -214,54 +211,66 @@ mod tests {
         assert_eq!(got[&2], "tr-TR");
     }
 
-    /// With no tag of its own, a scene takes the book it is in — which is the most recent
-    /// `Book` *before it in the stream*, because containment is organisational only.
+    /// **A Book no longer supplies a language to anything but itself.** An untagged scene
+    /// takes the *Work's* language even when it sits after a tagged Book — the writer
+    /// propagates a language with "Apply to children", which writes a real tag onto each
+    /// descendant, and this function then simply reads it back.
+    ///
+    /// This is the deliberate replacement for the old Book-scope rule; it is what makes a
+    /// language set on a *chapter* folder behave the same as one set on a Book (neither
+    /// reaches a descendant on its own).
     #[test]
-    fn a_scene_takes_the_book_it_is_in() {
+    fn a_book_does_not_lend_its_language_to_what_follows_it() {
         let got = resolve(
             "fr-FR",
             &[
-                scene(1, ""),     // before any book: the Work's language
-                book(2, "tr-TR"), // a Turkish book opens
-                scene(3, ""),     //   …so this scene is Turkish
-                scene(4, ""),     //   …and so is this one
-                book(5, "de-DE"), // a German book opens
-                scene(6, ""),     //   …the scope changed
+                scene(1, ""),     // the Work's language
+                book(2, "tr-TR"), // a Turkish book — Turkish for ITSELF only
+                scene(3, ""),     //   …still the Work's language, not Turkish
+                scene(4, "tr-TR"),//   …Turkish only because it says so (post "apply to children")
             ],
         );
-        assert_eq!(got[&1], "fr-FR", "before the first book: the Work");
-        assert_eq!(got[&3], "tr-TR");
-        assert_eq!(got[&4], "tr-TR");
-        assert_eq!(got[&6], "de-DE", "the next Book replaces the scope");
+        assert_eq!(got[&1], "fr-FR");
+        assert_eq!(got[&2], "tr-TR", "the Book's own tag is its own");
+        assert_eq!(got[&3], "fr-FR", "no implicit scope: the Work's language wins");
+        assert_eq!(got[&4], "tr-TR", "an explicit tag is honoured");
     }
 
-    /// An untagged Book clears the scope rather than leaving the previous book's language
-    /// standing. A book with no language of its own is written in the Work's language — not
-    /// in whatever the book before it happened to use.
+    /// Every container behaves alike. A chapter folder's tag reaches nothing on its own —
+    /// exactly as a Book's does not — so the Inspector never shows a language that silently
+    /// does nothing for one container type but works for another.
     #[test]
-    fn an_untagged_book_falls_back_to_the_work_rather_than_the_previous_book() {
-        let got = resolve(
-            "fr-FR",
-            &[book(1, "tr-TR"), scene(2, ""), book(3, ""), scene(4, "")],
-        );
-        assert_eq!(got[&2], "tr-TR");
+    fn a_chapter_folder_and_a_book_scope_identically_which_is_to_say_not_at_all() {
+        let chapter = item(2, BinderItemSubRole::ChapterScene, "de-DE");
+        let got = resolve("fr-FR", &[book(1, "tr-TR"), chapter, scene(3, "")]);
+        assert_eq!(got[&1], "tr-TR");
+        assert_eq!(got[&2], "de-DE");
         assert_eq!(
-            got[&4], "fr-FR",
-            "the second book is untagged, so it is in the Work's language — NOT Turkish"
+            got[&3], "fr-FR",
+            "neither the Book nor the chapter folder reaches the scene"
         );
     }
 
-    /// Two binders are two streams. A book in one must not leak into the other.
+    /// Resolution is per-item, so order carries no meaning — the same items shuffled resolve
+    /// identically. (Under the old Book-scope rule this was false, which is why the caller
+    /// had to promise document order.)
     #[test]
-    fn the_book_scope_does_not_leak_across_binders() {
+    fn order_does_not_change_any_items_answer() {
+        let forward = resolve("fr-FR", &[book(1, "tr-TR"), scene(2, ""), scene(3, "la")]);
+        let shuffled = resolve("fr-FR", &[scene(3, "la"), scene(2, ""), book(1, "tr-TR")]);
+        assert_eq!(forward, shuffled);
+    }
+
+    /// Two binders resolve independently — trivially so now, but pinned because the caller
+    /// (`OpenDocsStore::build_language_map`) still folds several binders into one map.
+    #[test]
+    fn separate_binders_fold_into_one_map_without_interfering() {
         let mut out = HashMap::new();
         tags_in_binder("fr-FR", &[book(1, "tr-TR"), scene(2, "")], &mut out);
         tags_in_binder("fr-FR", &[scene(3, "")], &mut out);
-        assert_eq!(out[&2], "tr-TR");
-        assert_eq!(
-            out[&3], "fr-FR",
-            "a second binder starts a fresh stream — no Turkish book is in scope"
-        );
+        assert_eq!(out[&1], "tr-TR");
+        assert_eq!(out[&2], "fr-FR");
+        assert_eq!(out[&3], "fr-FR");
     }
 
     /// No tags anywhere: nothing to record, and a caller reading a missing entry as
@@ -313,9 +322,9 @@ mod tests {
         let got = effective_languages(
             "fr-FR",
             &[
-                scene(1, ""),               // inherits fr-FR
-                book(2, "de-DE en-US"),     // a bilingual book
-                scene(3, ""),               // inherits "de-DE en-US"
+                scene(1, ""),               // the Work's fr-FR
+                book(2, "de-DE en-US"),     // a bilingual book — for itself
+                scene(3, ""),               // the Work's fr-FR (the Book lends nothing)
                 scene(4, "la"),             // its own Latin
             ],
         );

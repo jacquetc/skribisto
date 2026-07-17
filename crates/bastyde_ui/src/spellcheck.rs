@@ -442,8 +442,14 @@ struct Inner {
     cache: RefCell<HashMap<String, Option<Arc<spellbook::Dictionary>>>>,
     /// Session-muted language keys (resolved registry ids). Cleared on `close_work`.
     muted: RefCell<HashSet<String>>,
-    /// Bumped on every mute change so a language-pill field can rebuild its check marks.
+    /// Bumped on every mute change **and every master-switch flip** so a language-pill field
+    /// rebuilds its check marks — the pills bind this and nothing else, so a switch that did
+    /// not bump it would leave them looking live while nothing was being checked.
     mute_version: Signal<u64>,
+    /// The master switch (`SPELLCHECK_ENABLED_KEY`, default on). Mirrored here by `App` from
+    /// the settings store so [`build_checker`](SpellcheckService::build_checker) — the single
+    /// gate every document passes through — can answer "off" before touching a dictionary.
+    enabled: Cell<bool>,
     /// The open Work's personal words (`DictWord`).
     personal: RefCell<HashSet<String>>,
 }
@@ -455,6 +461,7 @@ impl SpellcheckService {
                 cache: RefCell::new(HashMap::new()),
                 muted: RefCell::new(HashSet::new()),
                 mute_version: Signal::new(0),
+                enabled: Cell::new(true),
                 personal: RefCell::new(HashSet::new()),
             }),
         }
@@ -464,6 +471,27 @@ impl SpellcheckService {
     /// rebuild its green checks live (from either the Inspector or the Settings pane).
     pub fn mute_version(&self) -> Signal<u64> {
         self.inner.mute_version.clone()
+    }
+
+    /// Whether spell-checking is on at all (the master switch).
+    pub fn is_enabled(&self) -> bool {
+        self.inner.enabled.get()
+    }
+
+    /// Drive the master switch. Returns whether it actually changed, so the caller only
+    /// re-attaches on a real flip.
+    ///
+    /// A real flip also bumps [`mute_version`](Self::mute_version): the language pills bind
+    /// that signal alone, so without this they would keep showing live green checks while the
+    /// switch was off — the same "the UI says one thing, the engine does another" bug the
+    /// switch exists to end.
+    pub fn set_enabled(&self, on: bool) -> bool {
+        let changed = self.inner.enabled.replace(on) != on;
+        if changed {
+            let v = self.inner.mute_version.get();
+            self.inner.mute_version.set(v.wrapping_add(1));
+        }
+        changed
     }
 
     /// The cache key for a tag: its resolved registry id, or the tag itself if unrecognised —
@@ -559,6 +587,14 @@ impl SpellcheckService {
     /// Build a [`SpellChecker`] for a document's tag list, or `None` when nothing is
     /// active/installed (the caller then clears its session — the degrade path).
     pub fn build_checker(&self, tags: &str) -> Option<SpellChecker> {
+        // The master switch, checked first: every document's checker is built here, so one
+        // early return turns spell-check off everywhere — squiggles, `is_misspelled`, and the
+        // context menu's corrections alike — without loading a dictionary or walking a tag.
+        // Off reuses the existing degrade path (`None` → the session clears its ranges and
+        // keeps its cheap empty layer attached), so nothing new has to be torn down.
+        if !self.inner.enabled.get() {
+            return None;
+        }
         let dicts = self.active_dicts(tags);
         if dicts.is_empty() {
             return None;
@@ -807,6 +843,87 @@ impl Drop for SpellSession {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── the master switch (Settings ▸ Spelling / the title-bar toggle / F7) ──
+
+    /// A service whose `en-US` dictionary is already in the cache, so these tests never touch
+    /// the disk and never depend on what this machine happens to have installed.
+    fn service_with_tiny_dict() -> SpellcheckService {
+        let svc = SpellcheckService::new();
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n").unwrap();
+        svc.inner
+            .cache
+            .borrow_mut()
+            .insert("en-US".to_string(), Some(Arc::new(dict)));
+        svc
+    }
+
+    /// Spell-check is on out of the box — the switch is an escape hatch, not an opt-in.
+    #[test]
+    fn spellcheck_is_enabled_by_default() {
+        assert!(SpellcheckService::new().is_enabled());
+    }
+
+    #[test]
+    fn set_enabled_reports_change_only_on_a_real_flip() {
+        let svc = SpellcheckService::new();
+        assert!(!svc.set_enabled(true), "already on — not a change");
+        assert!(svc.set_enabled(false), "on -> off is a change");
+        assert!(!svc.set_enabled(false), "already off — not a change");
+        assert!(svc.set_enabled(true), "off -> on is a change");
+    }
+
+    /// The pills bind `mute_version` and nothing else, so a flip must bump it or they keep
+    /// showing live green checks while the switch is off.
+    #[test]
+    fn set_enabled_bumps_mute_version_on_a_real_flip() {
+        let svc = SpellcheckService::new();
+        let v = svc.mute_version();
+        let before = v.get();
+        svc.set_enabled(false);
+        assert_eq!(v.get(), before + 1, "a real flip rebuilds the pill field");
+        svc.set_enabled(false);
+        assert_eq!(v.get(), before + 1, "a no-op flip must not churn the UI");
+    }
+
+    /// The one gate: off means every document's checker is `None`, which is the same degrade
+    /// path a missing dictionary already takes.
+    #[test]
+    fn build_checker_short_circuits_when_disabled_and_resumes_when_re_enabled() {
+        let svc = service_with_tiny_dict();
+        assert!(svc.build_checker("en-US").is_some(), "on by default");
+
+        svc.set_enabled(false);
+        assert!(svc.build_checker("en-US").is_none(), "off — no checker at all");
+
+        svc.set_enabled(true);
+        let checker = svc.build_checker("en-US").expect("back on");
+        assert!(checker.misspelled("helo"), "and it checks again");
+    }
+
+    /// Off must beat everything downstream — a document that would otherwise be checked (an
+    /// installed, unmuted language) still gets nothing.
+    #[test]
+    fn the_master_switch_overrides_an_otherwise_checkable_document() {
+        let svc = service_with_tiny_dict();
+        assert!(!svc.is_muted("en-US"), "precondition: nothing muted");
+        svc.set_enabled(false);
+        assert!(
+            svc.build_checker("en-US").is_none(),
+            "an installed, unmuted language is still not checked when the switch is off"
+        );
+    }
+
+    /// `clear()` is `close_work`: it drops **project** state (dictionary cache, session mutes,
+    /// personal words). The master switch is an app-wide preference and must survive — a
+    /// writer who turned spell-check off does not expect the next project to turn it back on.
+    #[test]
+    fn close_work_does_not_reset_the_master_switch() {
+        let svc = SpellcheckService::new();
+        svc.set_enabled(false);
+        svc.clear();
+        assert!(!svc.is_enabled(), "the switch is app-wide, not project state");
+    }
 
     /// Char offsets are correct through accented text (a byte offset would be wrong here).
     #[test]

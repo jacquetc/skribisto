@@ -231,16 +231,15 @@ struct Inner {
     spell: RefCell<Option<SpellcheckService>>,
     /// The squiggle colour, resolved from a theme role by `App` (updated on theme change).
     squiggle: Cell<Color>,
-    /// The open project, for resolving each item's effective language (item → nearest Book →
-    /// Work). Set by `App` on `LoadWork`/`NewWork`.
+    /// The open project, for resolving each item's effective language (its own tag, else
+    /// the Work's). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
     work_lang: RefCell<String>,
     /// The memoised [`language_map`](OpenDocsStore::language_map), with the binder
     /// [fingerprint](LangFingerprint) it was built from.
     ///
-    /// Resolving one item's language means resolving *every* item's (the walk is
-    /// backwards from an item to its nearest Book), so the uncached call fetched and
-    /// cloned every `BinderItem` in the project. `open()` attaches spell-check to each
+    /// The uncached call fetched and cloned every `BinderItem` in the project to build
+    /// the whole map at once. `open()` attaches spell-check to each
     /// freshly-built doc, so a container stream opening one document per row paid that
     /// whole-project walk once per row — O(rows × items). Cached, the walk happens once
     /// per structural change instead.
@@ -248,19 +247,22 @@ struct Inner {
 }
 
 /// What the cached language map is keyed on: the open work, its default language, and
-/// every binder item id **in document order**.
+/// every binder item id.
 ///
-/// Order is part of it because the resolver walks backwards from an item to its nearest
-/// Book — moving a scene under a different Book changes its inherited language without
-/// changing any item's own fields. Creates, removals and reorders all change the id
-/// sequence, so all three drop the cache.
+/// Creates and removals change the id sequence, so both drop the cache. Order is folded in
+/// too, which is now *conservative* rather than load-bearing: an item's language no longer
+/// depends on its neighbours (`skribisto_model::language::tags_in_binder` resolves an item's
+/// own tag, else the Work's), so a pure reorder cannot change any answer. It stays in the
+/// hash because a reorder is rare and cheap to over-invalidate, and because dropping it
+/// would buy a subtle dependency on the resolver never regaining a positional rule.
 ///
-/// Deliberately *not* covered: an item's own `dict_language` or `sub_role` changing in
-/// place, which leaves the id sequence identical. Detecting those here would mean
-/// re-reading every item — exactly the cost this exists to avoid — so they are caught
-/// from the other side instead, by [`OpenDocsStore::wire`]'s subscription to the
-/// `BinderItem::Updated` event. Shape is fingerprinted; in-place fields are pushed.
-/// Between them the cache has no blind spot.
+/// Deliberately *not* covered: an item's own `dict_language` changing in place, which leaves
+/// the id sequence identical. Detecting that here would mean re-reading every item — exactly
+/// the cost this exists to avoid — so it is caught from the other side instead, by
+/// [`OpenDocsStore::wire`]'s subscription to the `BinderItem::Updated` event. Shape is
+/// fingerprinted; in-place fields are pushed. Between them the cache has no blind spot —
+/// including "Apply to children", which writes `dict_language` on every descendant through
+/// that same event.
 type LangFingerprint = u64;
 
 /// Fingerprint the inputs the language map is derived from that are cheap to read:
@@ -413,8 +415,8 @@ impl OpenDocsStore {
         out
     }
 
-    /// The effective language list of one item (item → nearest Book → Work), for the
-    /// Inspector's inherited-language placeholder. Falls back to the Work's default.
+    /// The effective language list of one item (its own tag, else the Work's), for the
+    /// Inspector's placeholder. Falls back to the Work's default.
     pub fn effective_language(&self, item_id: u64) -> String {
         self.language_for(item_id)
     }
@@ -485,8 +487,8 @@ impl OpenDocsStore {
     }
 
     /// The effective language tag list of every item in the open project, resolved through the
-    /// **shared** `skribisto_model::language` chain (item → nearest Book → Work) so spell-check
-    /// and search never disagree about what language a scene is in.
+    /// **shared** `skribisto_model::language` rule (an item's own tag, else the Work's) so
+    /// spell-check and search never disagree about what language a scene is in.
     ///
     /// The expensive half: one `BinderItem` fetched and cloned per item. Called only when
     /// [`binder_shape`](Self::binder_shape) says the project changed.
@@ -498,8 +500,8 @@ impl OpenDocsStore {
         let work_lang = self.inner.work_lang.borrow().clone();
         let ctx = &*self.inner.app_ctx;
         for item_ids in shape {
-            // Only the three fields the resolver reads; document order is preserved by
-            // `get_binder_item_multi` (relationship order), which the "nearest Book" scan needs.
+            // Only the fields the resolver reads. Order is irrelevant to the resolver now
+            // (each item answers for itself), but relationship order is what we get anyway.
             let items: Vec<BinderItem> = binder_item_commands::get_binder_item_multi(ctx, item_ids)
                 .unwrap_or_default()
                 .into_iter()

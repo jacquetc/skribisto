@@ -33,6 +33,7 @@ menu-view = &Affichage
 menu-outline = &Plan
 menu-search = &Rechercher dans le projet
 menu-search-preview = &Aperçu de recherche
+menu-tools = &Outils
 
 ## Menu contextuel du classeur
 ctx-add = &Ajouter
@@ -834,6 +835,7 @@ inspector-milestone-none = Aucune date
 inspector-milestone-clear = Effacer
 # Le champ de langues à pastilles (Inspecteur + Réglages)
 inspector-dict-language = Langue
+inspector-apply-language-to-children = Appliquer la langue aux enfants
 settings-page-language = Langue
 settings-field-dict-language = Langues
 dict-tradeoff-hint = Chaque langue supplémentaire accepte plus de mots, donc moins de fautes sont détectées.
@@ -870,3 +872,12 @@ editor-menu-add-words-to-dictionary = Ajouter les mots sélectionnés au diction
 editor-dict-added = « { $word } » ajouté à votre dictionnaire.
 editor-dict-added-multi = { $count } mots ajoutés à votre dictionnaire.
 toast-undo = Annuler
+
+## Orthographe — l'interrupteur principal (barre de titre / menu Affichage / F7 / Paramètres ▸ Orthographe)
+titlebar-spellcheck-on = La vérification orthographique est active — cliquez pour l'arrêter (F7)
+titlebar-spellcheck-off = La vérification orthographique est désactivée — cliquez pour la réactiver (F7)
+menu-spellcheck = &Vérifier l'orthographe
+settings-page-spellcheck = Vérification orthographique
+settings-group-spellcheck = Vérification orthographique
+settings-spellcheck-enabled = Vérifier l'orthographe pendant que j'écris
+settings-spellcheck-hint = Souligne les mots qu'aucun dictionnaire installé ne connaît. Désactiver cette option arrête toute vérification, dans tous les projets, jusqu'à ce que vous la réactiviez. Pour ne cesser de vérifier qu'une seule langue, décochez-la dans le champ Langue de l'œuvre ou d'un élément.

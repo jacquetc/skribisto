@@ -10,7 +10,7 @@
 //!
 //! Get either half wrong and there is no error, no warning, and no way for the writer to
 //! notice until they read it: their Turkish prose has simply been rewritten into other
-//! words. That is why the language is resolved **per item** (item → nearest Book → Work) and
+//! words. That is why the language is resolved **per item** (its own tag, else the Work's) and
 //! not per search.
 //!
 //! The user's toggles (`case_sensitive`, `diacritic_sensitive`) stay **global** throughout:

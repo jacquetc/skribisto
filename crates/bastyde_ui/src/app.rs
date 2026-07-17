@@ -405,6 +405,10 @@ pub struct App {
     /// (outside `App`) to hide the manual "Save" item. `App::build` mirrors the
     /// store-backed setting into it.
     autosave_menu: Signal<bool>,
+    /// Plain mirror of the persisted master spell-check switch, read by the title-bar
+    /// (outside `App`) for the toggle's icon + the View ▸ Check spelling checkmark.
+    /// `App::build` mirrors the store-backed setting into it.
+    spellcheck_menu: Signal<bool>,
     /// `true` while the open work has edits not yet written to disk. Read by the
     /// close guard, `work.close` and the switch guard to decide whether to prompt,
     /// and by `can_save` for the Save affordances.
@@ -481,6 +485,7 @@ impl App {
         app_ctx: Rc<AppContext>,
         outline: OutlineViewModel,
         autosave_menu: Signal<bool>,
+        spellcheck_menu: Signal<bool>,
         unsaved: Signal<bool>,
         pending_exit: Signal<PendingExit>,
         backup_mode: Signal<bool>,
@@ -491,6 +496,7 @@ impl App {
             app_ctx,
             outline,
             autosave_menu,
+            spellcheck_menu,
             unsaved,
             dirty_seq: Signal::new(0),
             pending_exit,
@@ -991,6 +997,16 @@ impl Widget for App {
                 .primary(KeyStroke::new(Key::F9, Modifiers::NONE))
                 .build(),
         );
+        // F7 — the spell-check key every office suite has used for thirty years. A bare
+        // function key for the same reason F9 is: a Global shortcut resolves before the
+        // focused widget sees the raw key, so any Ctrl+letter here would shadow one of
+        // `RichTextEditor`'s built-in commands.
+        ctx.register_shortcut_global(
+            Shortcut::new("spellcheck.toggle")
+                .name("Check Spelling")
+                .primary(KeyStroke::new(Key::F7, Modifiers::NONE))
+                .build(),
+        );
         // Phase 0.2 stub — F10 collapses/reveals the BOTTOM band, so the probe can
         // exercise the `visible_when` park/unpark path that dock content takes when
         // its side hides. (F9 only relayouts; it never parks the bottom content.)
@@ -1107,6 +1123,27 @@ impl Widget for App {
             ctx.register_action_global(
                 Action::new("outline.toggle").on_invoke(move |_i, _c| outline.toggle()),
             );
+        }
+        // The master spell-check switch. Flips the *setting* and nothing else — the effect
+        // above owns the engine, so there is exactly one path from the key to `set_enabled`
+        // no matter which surface fired. The toast lives here rather than in that effect
+        // because only an action gets an `EventContext`.
+        {
+            let enabled = SettingsViewModel::new(ctx.settings()).spellcheck_enabled();
+            let docs = spell_docs.clone();
+            let dicts = dictionaries.clone();
+            ctx.register_action_global(Action::new("spellcheck.toggle").on_invoke(
+                move |_i, c: &mut EventContext| {
+                    let now_on = !enabled.get();
+                    enabled.set(now_on);
+                    // Turning it back on with no dictionary installed reproduces the exact
+                    // symptom this switch exists to end: a silent absence of squiggles.
+                    // `offer_missing_dictionaries` otherwise only ever fires on Load/New.
+                    if now_on {
+                        offer_missing_dictionaries(&docs, &dicts, c);
+                    }
+                },
+            ));
         }
         {
             let editors = editors.clone();
@@ -1939,6 +1976,34 @@ impl Widget for App {
             self.autosave_menu.set(settings.autosave().get());
             let menu = self.autosave_menu.clone();
             ctx.effect(&settings.autosave(), move |a| menu.set(*a));
+        }
+        // ── The master spell-check switch ────────────────────────────────────
+        // One setting, four surfaces (title-bar toggle, View ▸ Check spelling, F7,
+        // Settings ▸ Spelling) — they all write `SPELLCHECK_ENABLED_KEY`, and this effect is
+        // the only place that reads it into the engine. `set_enabled` gates `build_checker`,
+        // so `attach_all` then rebuilds every open document through the existing degrade
+        // path: off clears the squiggles, on paints them back.
+        //
+        // The *toast* for "you turned it on but have no dictionary" cannot live here —
+        // `ctx.effect` gets no `EventContext` — so it hangs off the `spellcheck.toggle`
+        // action below, which does. That covers the title bar, the menu and F7; the
+        // Settings ▸ Spelling row writes the signal directly and shows no toast, which is
+        // tolerable precisely there: Dictionaries is the next page down the same tree.
+        {
+            self.spellcheck_menu.set(settings.spellcheck_enabled().get());
+            let menu = self.spellcheck_menu.clone();
+            let spell = spellcheck.clone();
+            let docs = spell_docs.clone();
+            // Seed the engine before the first attach, or a launch with the switch off
+            // would paint one frame of squiggles before the effect caught up.
+            spell.set_enabled(settings.spellcheck_enabled().get());
+            ctx.effect(&settings.spellcheck_enabled(), move |on| {
+                menu.set(*on);
+                // Not a real flip → don't re-attach every open document for nothing.
+                if spell.set_enabled(*on) {
+                    docs.attach_all();
+                }
+            });
         }
         // Dirty tracking + debounced autosave-to-disk. Every mutation (editor
         // typing via the editors' `edited` signal, plus tree/metadata events)

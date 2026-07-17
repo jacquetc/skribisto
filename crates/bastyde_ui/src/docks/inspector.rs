@@ -185,8 +185,10 @@ impl Widget for Inspector {
                     );
                 }
                 // Per-item language override (Step 9): the pill field over this item's own
-                // `dict_language`, with the inherited list (item → Book → Work) as the
-                // placeholder shown when the item declares none of its own.
+                // `dict_language`, with the Work's list as the placeholder shown when the item
+                // declares none of its own. Nothing inherits from a container — an item's tag
+                // reaches only that item (see `skribisto_model::language`) — so "Apply to
+                // children" beside it is the *only* way a language spreads down a subtree.
                 if let Some(spell) = ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned()
                 {
                     let inherited = ctx
@@ -208,8 +210,39 @@ impl Widget for Inspector {
                     col = col
                         .child(TextWidget::new(tr!(inspector_dict_language())).style(TextStyleRole::Tiny).color(TextRole::Secondary))
                         .child(crate::language_pill_field::LanguagePillField::new(
-                            value, set, spell, inherited,
+                            value.clone(),
+                            set,
+                            spell,
+                            inherited.clone(),
                         ));
+                    // Push this language down the subtree, one undo step (shown only when the
+                    // item actually has a subtree — the same gate the export toggle uses).
+                    //
+                    // It applies the list the pills **display**, not the raw field: when the
+                    // item declares nothing of its own the pills show the Work's language, and
+                    // stamping something else than what the writer is looking at would be a
+                    // lie. The consequence is deliberate — the descendants end up carrying a
+                    // real tag, so a later change to the Work's language no longer reaches
+                    // them. That is what "apply" means here, and one Undo takes it back.
+                    if !self.outline.subtree_descendants(d.id).is_empty() {
+                        let outline = self.outline.clone();
+                        let id = d.id;
+                        let value = value.clone();
+                        let placeholder = inherited.unwrap_or_default();
+                        col = col.child(
+                            Button::new(tr!(inspector_apply_language_to_children()))
+                                .variant(ButtonVariant::Plain)
+                                .on_activate_fn(move |_c| {
+                                    let raw = value.get();
+                                    let tags = if raw.trim().is_empty() {
+                                        placeholder.clone()
+                                    } else {
+                                        raw
+                                    };
+                                    outline.apply_dict_language_to_subtree(id, &tags);
+                                }),
+                        );
+                    }
                 }
                 // Per-item **export** toggle (M3): whether this item is included when a
                 // structural scope (Book / Chapter / Folder) sweeps it in. On by default; an

@@ -643,6 +643,37 @@ impl OutlineViewModel {
         self.reload();
     }
 
+    /// Write `tags` onto every descendant's `dict_language` in **one** undo step — the
+    /// explicit half of the language model.
+    ///
+    /// Nothing propagates a language implicitly (`skribisto_model::language::tags_in_binder`
+    /// resolves an item's own tag, else the Work's — there is no container scope). This is
+    /// how a writer says "this whole chapter is in Turkish" and means it: each descendant
+    /// ends up carrying a real tag, so what the Inspector shows on an item is what that item
+    /// is actually checked against.
+    ///
+    /// The item itself is not touched — the pill field beside this button owns that — and an
+    /// **empty** `tags` is a legitimate value to push: it clears the descendants back to
+    /// inheriting the Work's language, which is the only way to undo an over-broad apply
+    /// without visiting each child.
+    pub fn apply_dict_language_to_subtree(&self, item_id: u64, tags: &str) {
+        let descendants = self.subtree_descendants(item_id);
+        if descendants.is_empty() {
+            return;
+        }
+        let ctx = &*self.app_ctx;
+        let stack = self.stack();
+        let _ = undo_redo_commands::begin_composite(ctx, stack);
+        for id in descendants {
+            // A probe fixed to each descendant, reusing the tested full-DTO write.
+            let probe = SingleBinderItem::new(self.app_ctx.clone());
+            probe.set_id(Some(id));
+            let _ = probe.set_dict_language(tags, stack);
+        }
+        undo_redo_commands::end_composite(ctx);
+        self.reload();
+    }
+
     /// Create a new binder in the open Work, switch the switcher to it, and open
     /// the rename dialog so the user names it. Backs the popover's "New binder…".
     pub fn new_binder(&self, ctx: &mut EventContext) {
@@ -1071,7 +1102,7 @@ mod tests {
 
         /// Seed an empty Work + Binder; return a VM wired to it (reloaded) and the
         /// binder id.
-        fn seed() -> (OutlineViewModel, u64) {
+        pub(super) fn seed() -> (OutlineViewModel, u64) {
             let app_ctx = Rc::new(AppContext::new());
             let work = work_commands::create_orphan_work(
                 &app_ctx,
@@ -1099,7 +1130,7 @@ mod tests {
         }
 
         /// Append an item to `binder` at `index` (sequential = append) and reload.
-        fn seed_item(
+        pub(super) fn seed_item(
             outline: &OutlineViewModel,
             binder: u64,
             role: BinderItemRole,
@@ -1502,6 +1533,109 @@ mod tests {
                 assert_eq!(dto.role, BinderItemRole::Folder);
                 assert_eq!(dto.sub_role, want, "promoting to {target:?}");
             }
+        }
+    }
+
+    // ── explicit language propagation ("Apply to children") ──
+    //
+    // Nothing inherits a language from a container any more (`skribisto_model::language`
+    // resolves an item's own tag, else the Work's), so this button is the *only* way a
+    // language reaches a subtree. These assert the write itself; `skribisto_model` owns the
+    // resolution rule these values then feed.
+    #[cfg(not(feature = "mocks"))]
+    mod apply_language {
+        use super::recommend::{seed, seed_item};
+        use super::*;
+        use std::collections::HashMap;
+
+        /// Book > Chapter > Scene, plus an outsider after the chapter's subtree, so the
+        /// blast radius is observable in both directions.
+        fn seed_tree(outline: &OutlineViewModel, binder: u64) -> (u64, u64, u64, u64) {
+            let book = seed_item(outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
+            let chapter = seed_item(outline, binder, BinderItemRole::Folder, BinderItemSubRole::ChapterScene, 1, 1);
+            let scene = seed_item(outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 2, 2);
+            // A sibling scene back at the Book's level — NOT part of the chapter's subtree.
+            let outsider = seed_item(outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 3);
+            (book, chapter, scene, outsider)
+        }
+
+        fn lang_of(outline: &OutlineViewModel, id: u64) -> String {
+            outline.item_dto(id).map(|d| d.dict_language).unwrap_or_default()
+        }
+
+        #[test]
+        fn writes_every_descendant_and_leaves_everything_else_alone() {
+            let (outline, binder) = seed();
+            let (book, chapter, scene, outsider) = seed_tree(&outline, binder);
+
+            outline.apply_dict_language_to_subtree(chapter, "tr-TR");
+
+            assert_eq!(lang_of(&outline, scene), "tr-TR", "the descendant is written");
+            assert_eq!(lang_of(&outline, book), "", "an ancestor is untouched");
+            assert_eq!(lang_of(&outline, outsider), "", "a non-descendant is untouched");
+            assert_eq!(
+                lang_of(&outline, chapter),
+                "",
+                "the item itself is untouched — the pill field beside the button owns that"
+            );
+        }
+
+        /// The whole point of the composite: an over-broad apply is one Ctrl+Z, not one per
+        /// descendant.
+        #[test]
+        fn is_a_single_undo_step() {
+            let (outline, binder) = seed();
+            outline.init_stack();
+            let (_book, chapter, scene, _outsider) = seed_tree(&outline, binder);
+            let stack = outline.stack();
+
+            outline.apply_dict_language_to_subtree(chapter, "tr-TR");
+            assert_eq!(lang_of(&outline, scene), "tr-TR");
+
+            undo_redo_commands::undo(&outline.app_ctx, stack).unwrap();
+            assert_eq!(
+                lang_of(&outline, scene),
+                "",
+                "one undo reverses the whole apply, not just the last descendant"
+            );
+
+            undo_redo_commands::redo(&outline.app_ctx, stack).unwrap();
+            assert_eq!(lang_of(&outline, scene), "tr-TR", "and redo puts it back");
+        }
+
+        /// An empty list is a legitimate value to push: it resets the subtree to inheriting
+        /// the Work's language — the only way to undo an over-broad apply after the fact
+        /// without visiting every child by hand.
+        #[test]
+        fn an_empty_list_resets_descendants_to_the_work_language() {
+            let (outline, binder) = seed();
+            let (_book, chapter, scene, _outsider) = seed_tree(&outline, binder);
+            outline.apply_dict_language_to_subtree(chapter, "tr-TR");
+            assert_eq!(lang_of(&outline, scene), "tr-TR");
+
+            outline.apply_dict_language_to_subtree(chapter, "");
+            assert_eq!(lang_of(&outline, scene), "", "cleared back to inheriting");
+
+            // And the resolver then hands it the Work's language — the two halves meeting.
+            let items = vec![frontend::common::entities::BinderItem {
+                id: scene,
+                dict_language: lang_of(&outline, scene),
+                ..Default::default()
+            }];
+            let mut out = HashMap::new();
+            skribisto_model::language::tags_in_binder("en-US", &items, &mut out);
+            assert_eq!(out[&scene], "en-US");
+        }
+
+        /// A leaf has no subtree, so the button is never offered — and the call is inert if
+        /// it somehow fires anyway.
+        #[test]
+        fn a_leaf_has_no_descendants_and_the_call_is_a_noop() {
+            let (outline, binder) = seed();
+            let (_book, _chapter, scene, _outsider) = seed_tree(&outline, binder);
+            assert!(outline.subtree_descendants(scene).is_empty(), "the button's own gate");
+            outline.apply_dict_language_to_subtree(scene, "tr-TR");
+            assert_eq!(lang_of(&outline, scene), "", "an inert call writes nothing");
         }
     }
 }

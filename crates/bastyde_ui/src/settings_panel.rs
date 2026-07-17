@@ -99,6 +99,10 @@ enum Pane {
     /// Per-project personal dictionary (under the open Work's section). Appended last so
     /// the earlier discriminants — and the `Switcher` order they index — stay put.
     WorkDictionary,
+    /// The app-wide master spell-check switch (under Spelling, above Dictionaries in the
+    /// tree). Appended last, same rule: a new discriminant must never renumber the ones the
+    /// `Switcher` already indexes.
+    Spellcheck,
 }
 
 impl Pane {
@@ -126,6 +130,7 @@ impl Pane {
             Pane::WorkBackup => tr!(settings_page_work_backup()),
             Pane::WorkLanguage => tr!(settings_page_language()),
             Pane::WorkDictionary => tr!(settings_page_personal_dictionary()),
+            Pane::Spellcheck => tr!(settings_page_spellcheck()),
         }
     }
 }
@@ -660,6 +665,31 @@ impl SettingsPanel {
     }
 
     /// Backup & Sync ▸ Autosave — migrates the autosave preference.
+    /// Settings ▸ Spelling ▸ Spell-checking — the app-wide master switch, the same
+    /// `SPELLCHECK_ENABLED_KEY` the title-bar toggle / View menu / F7 drive. A plain
+    /// store-backed `Toggle`: writing the signal persists, and `App::build`'s effect turns it
+    /// into `set_enabled` + a re-attach. No per-language controls here — those live on the
+    /// Work's / an item's Language field (the hint says so).
+    fn spellcheck_pane(vm: &SettingsViewModel) -> impl Widget {
+        let form = FormLayout::new()
+            .label(tr!(settings_page_spellcheck()))
+            .label_gap(16.0)
+            .row_spacing(12.0)
+            .full_width(group(tr!(settings_group_spellcheck())))
+            .full_width(
+                Toggle::new(vm.spellcheck_enabled()).label(tr!(settings_spellcheck_enabled())),
+            )
+            .full_width(hint(tr!(settings_spellcheck_hint())));
+
+        pane_frame(
+            crumb(
+                Some(tr!(settings_sec_spelling())),
+                tr!(settings_page_spellcheck()),
+            ),
+            form,
+        )
+    }
+
     fn autosave_pane(vm: &SettingsViewModel) -> impl Widget {
         let form = FormLayout::new()
             .label(tr!(settings_page_autosave()))
@@ -846,8 +876,12 @@ impl SettingsPanel {
 
         let sp = model.insert_root(2, Node::Section(Sec::Spelling));
         nodes.insert(
+            Pane::Spellcheck,
+            model.insert_child(sp, 0, Node::Page(Pane::Spellcheck)),
+        );
+        nodes.insert(
             Pane::Dictionaries,
-            model.insert_child(sp, 0, Node::Page(Pane::Dictionaries)),
+            model.insert_child(sp, 1, Node::Page(Pane::Dictionaries)),
         );
 
         let bk = model.insert_root(3, Node::Section(Sec::BackupSync));
@@ -1259,6 +1293,7 @@ impl Widget for SettingsPanel {
                 tr!(settings_page_corkboard()),
                 Sec::Editor.icon_svg(),
             ))
+            .child(Self::spellcheck_pane(&vm))
             .child_boxed(dictionaries_pane)
             .child(Self::autosave_pane(&vm))
             .child_boxed(export_styles_pane)
@@ -1441,6 +1476,7 @@ mod tests {
         assert_eq!(Pane::WorkBackup.index(), 15);
         assert_eq!(Pane::WorkLanguage.index(), 16);
         assert_eq!(Pane::WorkDictionary.index(), 17);
+        assert_eq!(Pane::Spellcheck.index(), 18);
     }
 
     /// The Goals pane bridges `CountingMethodSetting` to the `RadioGroup`'s `usize`

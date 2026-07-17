@@ -31,3 +31,15 @@ pub fn save_unsaved() -> IconWidget {
 pub fn save_saved() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/editor/save-saved.svg")).icon_size(ICON_SIZE)
 }
+
+/// Spell-check **on** — the title-bar toggle's glyph when checking is enabled.
+pub fn spellcheck_on() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/spellcheck.svg")).icon_size(ICON_SIZE)
+}
+
+/// Spell-check **off** — the same glyph struck through. A separate asset rather than a tint:
+/// the control must read as off at a glance and against either theme, and colour alone would
+/// carry the whole meaning (which it must never do — see the title bar's other toggles).
+pub fn spellcheck_off() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/spellcheck-off.svg")).icon_size(ICON_SIZE)
+}

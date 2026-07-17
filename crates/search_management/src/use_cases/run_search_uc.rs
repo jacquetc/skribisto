@@ -33,7 +33,7 @@
 //!
 //! A manuscript is not monolingual, and the language decides what folding *means*: in
 //! Turkish the dotted and dotless `i` are different letters. So each field carries the
-//! language it is written in (item → Book → Work, see [`crate::language`]) and is folded
+//! language it is written in (its own tag, else the Work's, see [`crate::language`]) and is folded
 //! under its own rules — one pass, two languages. The user's toggles stay global; the
 //! language decides *how* to fold, never *whether* to.
 //!
@@ -131,7 +131,7 @@ struct Field {
     match_field: MatchField,
     text: FieldText,
     trashed: bool,
-    /// The language *this field* is written in, resolved item → Book → Work (see
+    /// The language *this field* is written in, resolved per item (own tag, else the Work) (see
     /// [`crate::language`]). Carried per field, not per search: one pass folds a French
     /// scene and a Turkish scene under different rules, because in Turkish the dotted and
     /// dotless `i` are different letters and folding them together turns one word into

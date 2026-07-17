@@ -22,7 +22,7 @@ use frontend::common::entities::BinderItemSubRole;
 use skribisto_model::counting::CountingMethodSetting;
 
 use crate::{
-    AUTOSAVE_KEY, DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
+    AUTOSAVE_KEY, DARK_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
     GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
     HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
     NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY,
@@ -157,6 +157,7 @@ pub struct SettingsViewModel {
     column_width: Signal<f32>,
     preview_width: Signal<f32>,
     autosave: Signal<bool>,
+    spellcheck_enabled: Signal<bool>,
     show_welcome: Signal<bool>,
     // ── Editor typography (per type) ──
     scene_typo: EditorTypography,
@@ -182,6 +183,8 @@ impl SettingsViewModel {
             column_width: store.signal(EDITOR_WIDTH_KEY, EDITOR_WIDTH_DEFAULT),
             preview_width: store.signal(PREVIEW_WIDTH_KEY, PREVIEW_WIDTH_DEFAULT),
             autosave: store.signal(AUTOSAVE_KEY, false),
+            spellcheck_enabled: store
+                .signal(SPELLCHECK_ENABLED_KEY, SPELLCHECK_ENABLED_DEFAULT),
             show_welcome: store.signal(SHOW_WELCOME_KEY, true),
             scene_typo: EditorTypography {
                 font_family: store
@@ -249,6 +252,16 @@ impl SettingsViewModel {
     /// Store-backed, so toggling it persists.
     pub fn autosave(&self) -> Signal<bool> {
         self.autosave.clone()
+    }
+
+    /// The master spell-check switch (default **on**) — the one truth behind the title-bar
+    /// toggle, View ▸ Check spelling, F7 and the Settings ▸ Spelling row. Store-backed, so
+    /// every surface reads the same signal and toggling it persists.
+    ///
+    /// Distinct from the per-language pill mutes (session-only, one dictionary each): this is
+    /// the "no squiggles at all" answer a writer actually looks for.
+    pub fn spellcheck_enabled(&self) -> Signal<bool> {
+        self.spellcheck_enabled.clone()
     }
 
     /// Whether to show the Welcome modal at startup (default on). Same cached
@@ -345,6 +358,7 @@ impl SettingsViewModel {
         self.column_width.set(EDITOR_WIDTH_DEFAULT);
         self.preview_width.set(PREVIEW_WIDTH_DEFAULT);
         self.autosave.set(false);
+        self.spellcheck_enabled.set(SPELLCHECK_ENABLED_DEFAULT);
         self.show_welcome.set(true);
         // Scene
         self.scene_typo

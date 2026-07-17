@@ -70,6 +70,7 @@ mod settings_panel;
 mod settings_user_dictionary;
 mod singles;
 mod spellcheck;
+mod spellcheck_toggle_button;
 mod tabs;
 mod tooltip_registry;
 mod version;
@@ -184,6 +185,19 @@ pub const PREVIEW_WIDTH_KEY: &str = "search.preview_width";
 pub const PREVIEW_WIDTH_DEFAULT: f32 = 700.0;
 /// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
 pub const AUTOSAVE_KEY: &str = "editor.autosave";
+/// The master spell-check switch (default **on**) — the title-bar toggle, View ▸ Check
+/// spelling, F7, and Settings ▸ Spelling all drive this one key.
+///
+/// App-wide and persisted here rather than on the `Work`: whether squiggles are drawn is a
+/// preference of the person reading the screen, not a property of the manuscript, so it
+/// follows the writer across projects and does not travel inside a `.skrib`.
+///
+/// It is deliberately *not* the same thing as the per-language pill checkmarks, which mute one
+/// dictionary for the session. Under the union model (a word is wrong only when **every**
+/// active dictionary rejects it) unchecking one of several languages changes nothing visible —
+/// which is exactly why an unmistakable master switch has to exist beside them.
+pub const SPELLCHECK_ENABLED_KEY: &str = "editor.spellcheck";
+pub const SPELLCHECK_ENABLED_DEFAULT: bool = true;
 /// When on (default) and no work was passed on the command line, a bare
 /// launch opens the Launcher window (the Welcome UI). When off, a bare launch
 /// instead opens the most recent *reachable* project directly — falling back
@@ -375,7 +389,7 @@ fn main() {
 
     // Read persisted UI prefs before constructing the app (same AppPaths the
     // builder will use via `.application(...)`).
-    let (dark, locale_str, autosave_init, show_welcome_init) = read_prefs();
+    let (dark, locale_str, autosave_init, spellcheck_init, show_welcome_init) = read_prefs();
 
     let theme = if dark { intui::dark() } else { intui::light() };
 
@@ -568,6 +582,10 @@ fn main() {
     // autosave setting is mirrored into this plain signal by `App::build` and read
     // by the menu to hide the "Save" item. Seeded from the persisted value.
     let autosave_menu = Signal::new(autosave_init);
+    // Same trick for the master spell-check switch: the title-bar toggle + View menu live
+    // outside `App`, so `App::build` mirrors the persisted key into this plain signal.
+    // Seeded from the store so a launch with it off never flashes the "on" icon.
+    let spellcheck_menu = Signal::new(spellcheck_init);
     // Exit-guard state shared between the window close guard / Close Work menu and
     // `App` (which maintains `unsaved` and performs the deferred close on save).
     let unsaved = Signal::new(false);
@@ -622,6 +640,7 @@ fn main() {
         single_work.clone(),
         single_work_info.clone(),
         autosave_menu.clone(),
+        spellcheck_menu.clone(),
         save_as_vm.clone(),
         backup_mode.clone(),
         backup_context.clone(),
@@ -756,9 +775,15 @@ fn main() {
 /// `ctx.settings()` inside `App::build`) because it decides whether a bare
 /// launch's *initial window* is the Launcher or a project — a decision made
 /// in `main`, before any widget tree (hence any `BuildContext`) exists.
-fn read_prefs() -> (bool, String, bool, bool) {
+fn read_prefs() -> (bool, String, bool, bool, bool) {
     let Some(paths) = AppPaths::new("eu", "skribisto", "Skribisto") else {
-        return (false, "en-US".to_string(), false, true);
+        return (
+            false,
+            "en-US".to_string(),
+            false,
+            SPELLCHECK_ENABLED_DEFAULT,
+            true,
+        );
     };
     // `config_file` appends `.toml`, and the settings bundle opens its K/V
     // store under the name "general" (-> general.toml). Pass the bare name
@@ -769,9 +794,18 @@ fn read_prefs() -> (bool, String, bool, bool) {
             store.signal(DARK_KEY, false).get(),
             store.signal(LOCALE_KEY, "en-US".to_string()).get(),
             store.signal(AUTOSAVE_KEY, false).get(),
+            store
+                .signal(SPELLCHECK_ENABLED_KEY, SPELLCHECK_ENABLED_DEFAULT)
+                .get(),
             store.signal(SHOW_WELCOME_KEY, true).get(),
         ),
-        Err(_) => (false, "en-US".to_string(), false, true),
+        Err(_) => (
+            false,
+            "en-US".to_string(),
+            false,
+            SPELLCHECK_ENABLED_DEFAULT,
+            true,
+        ),
     }
 }
 

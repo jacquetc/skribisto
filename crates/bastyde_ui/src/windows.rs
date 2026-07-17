@@ -45,6 +45,7 @@ use frontend::common::entities::WorkShape;
 use crate::app::{App, PendingAction, PendingExit, guard_unsaved_exit};
 use crate::project_switcher_button::ProjectSwitcherButton;
 use crate::export_split_button::ExportSplitButton;
+use crate::spellcheck_toggle_button::SpellcheckToggleButton;
 use crate::intents::AppIntent;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{
@@ -221,6 +222,9 @@ pub struct ProjectWindowFactory {
     single_work: SingleWork,
     single_work_info: SingleWorkInfo,
     autosave_menu: Signal<bool>,
+    /// Plain mirror of the master spell-check switch — the title-bar toggle's icon and
+    /// the View ▸ Check spelling checkmark read it. `App::build` keeps it in sync.
+    spellcheck_menu: Signal<bool>,
     save_as_vm: SaveAsViewModel,
     backup_mode: Signal<bool>,
     backup_context: Signal<Option<crate::backup::BackupContext>>,
@@ -244,6 +248,7 @@ impl ProjectWindowFactory {
         single_work: SingleWork,
         single_work_info: SingleWorkInfo,
         autosave_menu: Signal<bool>,
+        spellcheck_menu: Signal<bool>,
         save_as_vm: SaveAsViewModel,
         backup_mode: Signal<bool>,
         backup_context: Signal<Option<crate::backup::BackupContext>>,
@@ -259,6 +264,7 @@ impl ProjectWindowFactory {
             single_work,
             single_work_info,
             autosave_menu,
+            spellcheck_menu,
             save_as_vm,
             backup_mode,
             backup_context,
@@ -285,6 +291,7 @@ impl ProjectWindowFactory {
         let single_work = self.single_work.clone();
         let single_work_info = self.single_work_info.clone();
         let autosave_menu = self.autosave_menu.clone();
+        let spellcheck_menu = self.spellcheck_menu.clone();
         let save_as_vm = self.save_as_vm.clone();
         let backup_mode = self.backup_mode.clone();
         let backup_context = self.backup_context.clone();
@@ -363,6 +370,9 @@ impl ProjectWindowFactory {
                         let menu_work = single_work.clone();
                         let menu_work_info = single_work_info.clone();
                         let menu_autosave = autosave_menu.clone();
+        // The menu closure below is `move`, so give it its own clone — the title-bar toggle
+        // still needs the original (same reason `menu_autosave` exists).
+        let menu_spellcheck = spellcheck_menu.clone();
                         let menu_save_as = save_as_vm.clone();
                         let menu_backup_mode = backup_mode.clone();
                         let menu_unsaved = unsaved.clone();
@@ -598,6 +608,21 @@ impl ProjectWindowFactory {
                                         .shortcut("preview.toggle"),
                                 )
                             }
+                        })
+                        // Tools — where every office suite keeps spell-check. Its own
+                        // top-level section rather than a View entry: View toggles what a
+                        // *dock* shows, whereas this changes how the manuscript is *processed*.
+                        .menu(tr!(menu_tools()), move |m| {
+                            // The master spell-check switch. `checked(..)` is Bastyde's
+                            // **reflect-only** mark — it mirrors the setting read-only and the
+                            // intent is what drives it. NOT `.checkable()`, which would write
+                            // the signal on click and fight the store-backed value.
+                            m.item(
+                                MenuEntry::new(tr!(menu_spellcheck()))
+                                    .checked(menu_spellcheck.clone())
+                                    .intent("spellcheck.toggle")
+                                    .shortcut("spellcheck.toggle"),
+                            )
                         });
                         let menubar = MenuBar::from_model(menu)
                             .collapse_policy(CollapsePolicy::Always)
@@ -608,8 +633,15 @@ impl ProjectWindowFactory {
                             TitleBar::new(host) {
                                 background: SurfaceRole::Main
                                 leading: menubar
-                                // Focus-adaptive Export control, left of the window buttons.
-                                trailing: ExportSplitButton::new(export.clone())
+                                // Left of the window buttons: the master spell-check switch,
+                                // then the focus-adaptive Export control. The `trailing` slot
+                                // takes one widget, so they share an HStack.
+                                trailing: HStack {
+                                    spacing: 5.0
+                                    alignment: bastyde::tokens::VAlignment::Center
+                                    SpellcheckToggleButton::new(spellcheck_menu.clone())
+                                    ExportSplitButton::new(export.clone())
+                                }
                                 center: Expand::horizontal {
                                     HStack {
                                         spacing: 5.0
@@ -660,6 +692,7 @@ impl ProjectWindowFactory {
                     app_ctx_root.clone(),
                     outline.clone(),
                     autosave_menu.clone(),
+                    spellcheck_menu.clone(),
                     unsaved.clone(),
                     pending_exit.clone(),
                     backup_mode.clone(),

@@ -87,7 +87,7 @@ pub trait ReplaceInProjectUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Work", action = "Snapshot")]
 #[macros::uow_action(entity = "Work", action = "Restore")]
 // Binders and the whole item list: needed to re-derive the language chain over the ordered
-// stream (item -> nearest Book -> Work). Re-derived rather than carried on the SearchResult
+// stream (its own tag, else the Work's). Re-derived rather than carried on the SearchResult
 // row, for the same reason the offsets are: a row is a record of what the writer *reviewed*,
 // and the manuscript may have moved since.
 #[macros::uow_action(entity = "Binder", action = "GetMulti")]
@@ -151,7 +151,7 @@ impl ReplaceInProjectUseCase {
             .filter(|r| !excluded.contains(&r.id))
             .collect();
 
-        // The language every item is written in, resolved item → nearest Book → Work over
+        // The language every item is written in, resolved per item (own tag, else the Work) over
         // the binder's ORDERED stream — through the same function `run_search` used to find
         // these rows. Two copies of that chain would drift, and a writer would meet the
         // drift as a rename that found a word under one set of rules and rewrote it under
@@ -328,7 +328,7 @@ impl ReplaceInProjectUseCase {
         })
     }
 
-    /// The language tag of every item in the Work, resolved item → nearest Book → Work.
+    /// The language tag of every item in the Work, resolved per item (own tag, else the Work).
     ///
     /// The chain runs over each binder's **ordered** item stream — "the book an item is in"
     /// is the most recent `Book` before it, because the binder tree is organisational only

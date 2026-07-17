@@ -458,7 +458,8 @@ mod tests {
             export,
             single_work,
             single_work_info,
-            Signal::new(false),
+            Signal::new(false), // autosave_menu
+            Signal::new(true),  // spellcheck_menu (default on)
             save_as_vm,
             backup_mode,
             backup_context,

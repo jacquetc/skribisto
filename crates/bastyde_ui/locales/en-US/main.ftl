@@ -33,6 +33,7 @@ menu-view = &View
 menu-outline = &Outline
 menu-search = &Search in Project
 menu-search-preview = Search &Preview
+menu-tools = &Tools
 
 ## Binder context menu
 ctx-add = &Add
@@ -832,6 +833,7 @@ inspector-milestone-none = No date
 inspector-milestone-clear = Clear
 # The language pill field (Inspector + Settings)
 inspector-dict-language = Language
+inspector-apply-language-to-children = Apply language to children
 settings-page-language = Language
 settings-field-dict-language = Languages
 dict-tradeoff-hint = Each extra language accepts more words, so fewer mistakes are caught.
@@ -868,3 +870,12 @@ editor-menu-add-words-to-dictionary = Add selected words to dictionary
 editor-dict-added = Added “{ $word }” to your dictionary.
 editor-dict-added-multi = Added { $count } words to your dictionary.
 toast-undo = Undo
+
+## Spell-check — the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
+titlebar-spellcheck-on = Spell-checking is on — click to stop checking (F7)
+titlebar-spellcheck-off = Spell-checking is off — click to check again (F7)
+menu-spellcheck = &Check spelling
+settings-page-spellcheck = Spell-checking
+settings-group-spellcheck = Spell-checking
+settings-spellcheck-enabled = Check spelling as I write
+settings-spellcheck-hint = Underlines words no installed dictionary knows. Turning this off stops all checking, in every project, until you turn it back on. To stop checking one language only, clear its check mark on the Language field of the work or of an item.
