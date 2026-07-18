@@ -97,6 +97,7 @@ pub use project_switch::{
 };
 pub use backup_restore::BackupRestoreViewModel;
 pub use save_as::SaveAsViewModel;
+pub(crate) use save_queue::{DeferredResume, resume_deferred};
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
 pub use search_replace::SearchReplaceViewModel;
 pub use settings::{

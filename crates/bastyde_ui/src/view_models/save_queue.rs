@@ -174,6 +174,57 @@ impl SaveQueue {
     }
 }
 
+/// What a landed save means for whatever was parked behind it.
+///
+/// Two flows park on a save: a deferred **close** (Ctrl+W / Ctrl+Q / the window's X /
+/// File ▸ Close Work) and a deferred **project switch** (New Work / Open Work / "Open
+/// here" / the import toast, when the user chose Save). Both wait on the edit *sequence*
+/// their save covers, never on "a save finished" — see this module's docs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DeferredResume {
+    /// The follow-up save could not be issued. Nothing further is coming for anything
+    /// still parked, so drop it rather than let it wait forever.
+    Abandon,
+    /// A close is armed and the sequence it needs is on disk. Perform it.
+    Close,
+    /// A close is armed but its write has not landed yet. Keep waiting — and in
+    /// particular do **not** let a parked switch through in the meantime.
+    Wait,
+    /// No close is armed; let the parked switch (if any) decide for itself.
+    Switch,
+}
+
+/// Decide what a completed save releases.
+///
+/// **A close outranks a switch.** The project is leaving this window entirely, so a switch
+/// parked behind the same save is moot either way. Crucially that holds even when the
+/// close is *not yet* covered ([`DeferredResume::Wait`]): letting a switch parked on an
+/// earlier sequence fire would replace the project out from under a close still waiting
+/// for its own write.
+///
+/// `exit_seq` is `None` only if a close were armed without a covered sequence ever being
+/// recorded — unreachable today, since arming either records one or disarms. It maps to
+/// `Wait` rather than `Close`, which is the safe side: a close that never fires leaves the
+/// window open and retryable, where a close that fires early discards unwritten edits.
+pub(crate) fn resume_deferred(
+    follow_up_failed: bool,
+    saved_seq: u64,
+    close_armed: bool,
+    exit_seq: Option<u64>,
+) -> DeferredResume {
+    if follow_up_failed {
+        return DeferredResume::Abandon;
+    }
+    if close_armed {
+        return if exit_seq.is_some_and(|s| saved_seq >= s) {
+            DeferredResume::Close
+        } else {
+            DeferredResume::Wait
+        };
+    }
+    DeferredResume::Switch
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -311,6 +362,66 @@ mod tests {
             q.request(t),
             SaveRequest::StartNow,
             "the new project saves fresh"
+        );
+    }
+
+    // ── resume_deferred ──────────────────────────────────────────────────────
+
+    /// A follow-up save that could not be issued strands everything parked — no further
+    /// completion or failure event is coming, so waiting would hang the close forever.
+    #[test]
+    fn a_failed_follow_up_abandons_everything_parked() {
+        assert_eq!(
+            resume_deferred(true, 9, true, Some(4)),
+            DeferredResume::Abandon,
+            "even a close whose sequence is already covered"
+        );
+        assert_eq!(
+            resume_deferred(true, 0, false, None),
+            DeferredResume::Abandon
+        );
+    }
+
+    #[test]
+    fn a_close_fires_once_its_own_sequence_is_on_disk() {
+        assert_eq!(resume_deferred(false, 7, true, Some(7)), DeferredResume::Close);
+        assert_eq!(
+            resume_deferred(false, 9, true, Some(7)),
+            DeferredResume::Close,
+            "a later save covers an earlier requirement"
+        );
+    }
+
+    /// **The precedence rule.** A close armed but not yet covered must return `Wait`, not
+    /// fall through to the switch: a switch parked on an earlier sequence would otherwise
+    /// replace the project out from under a close still waiting for its own write.
+    #[test]
+    fn an_uncovered_close_keeps_waiting_and_blocks_a_parked_switch() {
+        assert_eq!(
+            resume_deferred(false, 6, true, Some(7)),
+            DeferredResume::Wait,
+            "the close's write has not landed — nothing else may proceed"
+        );
+    }
+
+    /// Defensive: armed with no recorded sequence waits rather than closing. A close that
+    /// never fires leaves the window open and retryable; one that fires early discards
+    /// unwritten edits.
+    #[test]
+    fn a_close_with_no_recorded_sequence_waits_rather_than_firing() {
+        assert_eq!(resume_deferred(false, 99, true, None), DeferredResume::Wait);
+    }
+
+    #[test]
+    fn with_no_close_armed_the_switch_decides() {
+        assert_eq!(
+            resume_deferred(false, 3, false, None),
+            DeferredResume::Switch
+        );
+        assert_eq!(
+            resume_deferred(false, 3, false, Some(1)),
+            DeferredResume::Switch,
+            "a stale exit_seq with nothing armed does not resurrect a close"
         );
     }
 }

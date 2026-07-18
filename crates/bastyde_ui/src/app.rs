@@ -46,9 +46,9 @@ use crate::settings_panel::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ExportViewModel,
-    ImportPlumeViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
-    SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision,
+    BackupSchedulerViewModel, BackupSettingsViewModel, DeferredResume, EditorsViewModel,
+    ExportViewModel, ImportPlumeViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel,
+    SaveAsViewModel, SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision,
     unsaved_decision,
 };
 use export_management::ExportScopeKind;
@@ -2141,23 +2141,22 @@ impl Widget for App {
                     if let Some(layout) = &workspace_layout {
                         layout.capture();
                     }
-                    // That follow-up could not be issued: nothing further is coming
-                    // for anything still parked beyond what just landed, so drop it
-                    // rather than let it wait forever.
-                    if landed.follow_up_failed {
-                        abandon_deferred(c, &pending, &exit_seq, &switch, None);
-                        return;
-                    }
+                    // The precedence rule (a close outranks a switch, even an
+                    // uncovered one) lives in `view_models::save_queue` as a pure
+                    // decision, so it is unit-tested rather than only reachable
+                    // through a real async save.
                     let saved = landed.saved_seq;
                     let pe = pending.get();
-                    // A close outranks a switch: the project is leaving this window
-                    // entirely, so a switch parked behind a save is moot either way.
-                    // Note this returns even when the close is *not yet* covered —
-                    // otherwise a switch parked on an earlier sequence would fire and
-                    // replace the project out from under a close that is still
-                    // waiting for its own write.
-                    if pe != PendingExit::None {
-                        if exit_seq.get().is_some_and(|s| saved >= s) {
+                    match crate::view_models::resume_deferred(
+                        landed.follow_up_failed,
+                        saved,
+                        pe != PendingExit::None,
+                        exit_seq.get(),
+                    ) {
+                        DeferredResume::Abandon => {
+                            abandon_deferred(c, &pending, &exit_seq, &switch, None)
+                        }
+                        DeferredResume::Close => {
                             pending.set(PendingExit::None);
                             exit_seq.set(None);
                             switch.cancel();
@@ -2167,9 +2166,9 @@ impl Widget for App {
                             // once.
                             scheduler.on_close_flow(c, pe);
                         }
-                        return;
+                        DeferredResume::Wait => {}
+                        DeferredResume::Switch => switch.on_saved(c, saved),
                     }
-                    switch.on_saved(c, saved);
                 },
             );
         }
