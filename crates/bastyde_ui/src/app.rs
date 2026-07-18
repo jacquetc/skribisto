@@ -1006,6 +1006,10 @@ impl Widget for App {
         // Keep the outline tree reactive to *all* structural mutations (incl. the
         // manuscript streams' rename/merge/split/add), not just the outline's own.
         self.outline.wire(ctx);
+        // The trash model must be wired here too — at `App` (a stable root), not
+        // lazily from its dock content — so it stays subscribed even while the
+        // trash tab is a background rail tab and survives hide/reveal cycles.
+        trash.wire(ctx);
 
         // ── App-global commands (the scriptable surface) ─────────────────────
         // Registered with `register_action_global` so they're reachable as a
@@ -1545,6 +1549,7 @@ impl Widget for App {
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
             let spell_docs = spell_docs.clone();
+            let trash = trash.clone();
             let spellcheck = spellcheck.clone();
             // An open tab does not follow its item by itself: `TabInfo::title` is a plain
             // string baked in at open time, and the `ContentTab` payload is built once for
@@ -1578,6 +1583,9 @@ impl Widget for App {
                     outline.set_binder_filter(None);
                     outline.clear_search();
                     outline.reload();
+                    // Source the freshly-loaded project's trash (the model was
+                    // last sourced at construction, when no work was open yet).
+                    trash.reload();
                     editors.close_all();
                     single_work.set_id(ids.work_id.get());
                     single_work_info.set_id(ids.work_info_id.get());
@@ -1632,6 +1640,12 @@ impl Widget for App {
             let backup_settings = backup_settings.clone();
             let backup_scheduler = backup_scheduler.clone();
             let workspace_layout = workspace_layout.clone();
+            // A saved per-work layout serialized before the trash dock existed
+            // won't contain it; re-mounting it after restore keeps the trash panel
+            // reachable in every project (and it re-saves with trash thereafter).
+            let trash_docking = outline.docking();
+            let trash_dock = self.trash_dock;
+            let outline_dock = outline.dock_id();
             ctx.subscribe_event_with_ctx(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_e: &Event, c: &mut EventContext| {
@@ -1648,6 +1662,16 @@ impl Widget for App {
                     // has already re-seeded the ids/singles and cleared the old tabs.
                     if let Some(layout) = &workspace_layout {
                         layout.restore(backup.is_some());
+                    }
+                    // Ensure the trash dock survives restoring a pre-trash layout.
+                    // `open_dock` selects the new tab, so re-reveal the outline to
+                    // keep it the foreground leading panel on launch (the app default).
+                    if !trash_docking.dock_open_signal(trash_dock).get() {
+                        trash_docking.open_dock(
+                            trash_dock,
+                            DockOpenLocation::side(DockSide::Leading).new_tab(),
+                        );
+                        trash_docking.reveal_dock(outline_dock);
                     }
                     match backup {
                         Some(bc) => {
@@ -1908,6 +1932,7 @@ impl Widget for App {
             let spell_docs = spell_docs.clone();
             let spellcheck = spellcheck.clone();
             let workspace_layout = workspace_layout.clone();
+            let trash = trash.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::NewWork),
                 move |_event: &Event| {
@@ -1916,6 +1941,8 @@ impl Widget for App {
                     outline.set_binder_filter(None);
                     outline.clear_search();
                     outline.reload();
+                    // Clear any trash left over from an in-place project switch.
+                    trash.reload();
                     editors.close_all();
                     single_work.set_id(ids.work_id.get());
                     single_work_info.set_id(ids.work_info_id.get());
@@ -2002,6 +2029,7 @@ impl Widget for App {
             let backup_mode = self.backup_mode.clone();
             let backup_context = self.backup_context.clone();
             let spellcheck = spellcheck.clone();
+            let trash = trash.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::CloseWork),
                 move |_event: &Event| {
@@ -2021,6 +2049,7 @@ impl Widget for App {
                     outline.set_binder_filter(None);
                     outline.clear_search();
                     outline.reload();
+                    trash.reload(); // clear the closed project's trash panel
                     editors.close_all();
                     single_work.set_id(None);
                     single_work_info.set_id(None);

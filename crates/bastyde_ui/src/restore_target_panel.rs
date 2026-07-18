@@ -16,7 +16,7 @@
 
 use std::rc::Rc;
 
-use bastyde::core::modal::{ModalPresentation, ModalRequest};
+use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::core::styles::PanelVariant;
 use bastyde::data::{KeyedSelectionModel, SelectionMode, TreeDataSource};
 use bastyde::prelude::*;
@@ -55,6 +55,9 @@ pub fn present_restore_target(
             ))
         })
         .presentation(ModalPresentation::InTree)
+        // Manual close (buttons only): an Esc/click-outside dismissal would not run
+        // the Cancel/Restore handlers and would strand the orphan-restore queue.
+        .close_behavior(ModalCloseBehavior::Manual)
         .title(tr!(trash_restore_picker_title()))
         .size(CARD_W as u32, CARD_H as u32),
     );
@@ -191,10 +194,13 @@ impl Widget for RestoreTargetPanel {
                         }
                         match trash.restore_to(item_id, dest, anchor, pos.clone()) {
                             Ok(_) => {
-                                ctx2.show_toast(Toast::success(tr!(trash_restored_ok(count = 1))));
-                                // `on_result`'s ctx is root-anchored — dismiss the
-                                // topmost overlay (this picker), not by source.
+                                // Dismiss the picker FIRST, then toast: `on_result`'s
+                                // ctx is root-anchored, so `dismiss_top_overlay`
+                                // targets the topmost overlay — showing the toast
+                                // first would make it that overlay and leave the
+                                // modal open (matches the export/import ordering).
                                 ctx2.dismiss_top_overlay();
+                                ctx2.show_toast(Toast::success(tr!(trash_restored_ok(count = 1))));
                                 (on_done)(ctx2);
                             }
                             Err(e) => {
@@ -208,7 +214,12 @@ impl Widget for RestoreTargetPanel {
             }
         };
 
+        // Every close path (header ✕, footer Cancel) advances the orphan queue,
+        // so a multi-item restore never stalls. (The modal is Manual-close — see
+        // `present_restore_target` — so there is no Esc/click-outside path that
+        // could skip these.)
         let cancel_done = self.on_done.clone();
+        let cancel_done2 = self.on_done.clone();
 
         let root = bati!(ctx => FixedSize {
             width: CARD_W
@@ -251,7 +262,7 @@ impl Widget for RestoreTargetPanel {
                                     Spacer
                                     Button::new(tr!(trash_restore_picker_cancel())) {
                                         variant: ButtonVariant::Plain
-                                        on_activate_fn: move |ctx| { ctx.dismiss_modal(); }
+                                        on_activate_fn: move |ctx| { ctx.dismiss_modal(); (cancel_done2)(ctx); }
                                     }
                                     Button::new(tr!(trash_restore_picker_restore_here())) {
                                         variant: ButtonVariant::Filled

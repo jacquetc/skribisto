@@ -440,7 +440,7 @@ impl EditorsViewModel {
     /// A pane's `TabWidget::on_close` hook: flush the tab, remove it, release its
     /// document. Closing the **last** side tab auto-collapses the split.
     pub fn close_in(&self, side: Side, tab_id: TabId) {
-        self.close_tab(side, tab_id, true);
+        self.close_tab(side, tab_id, true, true);
     }
 
     /// Flush + remove `tab_id` from `side`, reselect within the pane, and release
@@ -451,20 +451,26 @@ impl EditorsViewModel {
     /// tab is always removable, so a stray non-`ContentTab` tab can never wedge a
     /// caller (e.g. a collapse loop); flush + document-release happen only for an
     /// editor tab.
-    fn close_tab(&self, side: Side, tab_id: TabId, auto_collapse: bool) {
+    fn close_tab(&self, side: Side, tab_id: TabId, auto_collapse: bool, flush: bool) {
         let stack = self.ids.stack_id.get();
         let pane = self.pane(side);
         let mut idx = None;
         let mut item = None;
         for i in 0..pane.tabs.len() {
             // `Some(item_opt)` when the id matches (item_opt = the editor item id,
-            // flushed here, or `None` for a non-editor tab); `None` otherwise.
+            // flushed here unless `flush` is false, or `None` for a non-editor tab);
+            // `None` otherwise.
             let matched = pane
                 .tabs
                 .with_item(i, |h| {
                     (h.id == tab_id).then(|| {
                         h.payload.downcast_ref::<ContentTab>().map(|t| {
-                            let _ = t.flush(stack);
+                            // Skip the flush when the item was hard-removed (Delete
+                            // Forever / Empty Trash): its `Content` rows are already
+                            // gone, so saving would error or resurrect an orphan.
+                            if flush {
+                                let _ = t.flush(stack);
+                            }
                             t.item_id()
                         })
                     })
@@ -762,7 +768,8 @@ impl EditorsViewModel {
         for &id in item_ids {
             for side in [Side::Primary, Side::Secondary] {
                 if let Some(tid) = self.find_open(side, id) {
-                    self.close_in(side, tid);
+                    // No flush: the item + its content are already hard-removed.
+                    self.close_tab(side, tid, true, false);
                 }
             }
         }

@@ -357,18 +357,20 @@ impl TrashViewModel {
                 .action(ToastAction::primary(tr!(trash_undo()), move |_c| {
                     let _ = undo_redo_commands::undo(&undo_ctx, stack);
                 }))
-                .on_dismiss(move |cause, _c| match cause {
-                    // The window lapsed or the user dismissed it → point of no return.
-                    ToastDismissCause::Timeout
-                    | ToastDismissCause::CloseClicked
-                    | ToastDismissCause::EscapePressed => {
-                        undo_redo_commands::clear_all_stacks(&clear_ctx);
+                .on_dismiss(move |cause, _c| {
+                    // Only the grace timer expiring is the point of no return: it
+                    // clears the project's undo history so the deletion can't be
+                    // reverted. Every other dismissal — Undo clicked, the user
+                    // closing the toast (✕/Esc), eviction, shutdown — leaves the op
+                    // undoable. (Dismissing a notification must not silently wipe
+                    // the undo history; and clear only THIS work's stack, not every
+                    // stack.)
+                    if cause == ToastDismissCause::Timeout {
+                        match stack {
+                            Some(sid) => undo_redo_commands::clear_stack(&clear_ctx, sid),
+                            None => undo_redo_commands::clear_all_stacks(&clear_ctx),
+                        }
                     }
-                    // Undo already ran; eviction / shutdown must not force-commit.
-                    ToastDismissCause::ActionInvoked
-                    | ToastDismissCause::SlotPoolFull
-                    | ToastDismissCause::HostShutdown
-                    | ToastDismissCause::Programmatic => {}
                 }),
         );
     }
