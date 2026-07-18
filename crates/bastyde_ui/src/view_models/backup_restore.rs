@@ -59,7 +59,7 @@ use crate::singles::SingleWork;
 
 use super::long_op::{event_id, parse_payload};
 
-struct RestorePending {
+struct BackupRestorePending {
     op_id: String,
     /// The real project path being restored over.
     target: String,
@@ -78,7 +78,7 @@ pub struct BackupRestoreViewModel {
     single_work: SingleWork,
     backup_mode: Signal<bool>,
     backup_context: Signal<Option<BackupContext>>,
-    pending: Rc<RefCell<Option<RestorePending>>>,
+    pending: Rc<RefCell<Option<BackupRestorePending>>>,
     /// Pushes the live editor buffers into the store (`editors.flush_all()`),
     /// installed by `App::build`. See the module docs: a restore serializes the
     /// store, so it must flush first. Shared cell → visible on every clone.
@@ -124,7 +124,7 @@ impl BackupRestoreViewModel {
         // Resolve the original. If it can't be located, the user's escape hatch is
         // Save As (still available in backup mode) — say so rather than guessing.
         let Some(target) = bc.backup_of.clone().filter(|p| Path::new(p).exists()) else {
-            ctx.show_toast(Toast::error(tr!(restore_original_missing())));
+            ctx.show_toast(Toast::error(tr!(backup_restore_original_missing())));
             return;
         };
         self.check_open_elsewhere(ctx, target);
@@ -143,10 +143,10 @@ impl BackupRestoreViewModel {
         };
         let pid = entry.pid;
         let me = self.clone();
-        MessageBox::warning(tr!(restore_close_elsewhere_title()))
-            .text(tr!(restore_close_elsewhere_text()))
+        MessageBox::warning(tr!(backup_restore_close_elsewhere_title()))
+            .text(tr!(backup_restore_close_elsewhere_text()))
             .buttons(MessageBoxButtons::Custom(vec![
-                MessageBoxButton::standard(StandardButton::Open).label(tr!(restore_focus_window())),
+                MessageBoxButton::standard(StandardButton::Open).label(tr!(backup_restore_focus_window())),
                 MessageBoxButton::standard(StandardButton::Retry),
                 MessageBoxButton::standard(StandardButton::Cancel),
             ]))
@@ -169,10 +169,10 @@ impl BackupRestoreViewModel {
     /// Final confirmation — the current on-disk version will be safety-copied first.
     fn confirm(&self, ctx: &mut EventContext, target: String) {
         let me = self.clone();
-        MessageBox::question(tr!(restore_confirm_title()))
-            .text(tr!(restore_confirm_text()))
+        MessageBox::question(tr!(backup_restore_confirm_title()))
+            .text(tr!(backup_restore_confirm_text()))
             .buttons(MessageBoxButtons::Custom(vec![
-                MessageBoxButton::standard(StandardButton::Ok).label(tr!(restore_confirm_ok())),
+                MessageBoxButton::standard(StandardButton::Ok).label(tr!(backup_restore_confirm_ok())),
                 MessageBoxButton::standard(StandardButton::Cancel),
             ]))
             .default_button(StandardButton::Ok)
@@ -207,7 +207,7 @@ impl BackupRestoreViewModel {
         let safety_backup_path = match safety_copy(&target) {
             Ok(p) => p,
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(restore_error(error = e.to_string()))));
+                ctx.show_toast(Toast::error(tr!(backup_restore_error(error = e.to_string()))));
                 return;
             }
         };
@@ -239,7 +239,7 @@ impl BackupRestoreViewModel {
             },
         ) {
             Ok(op_id) => {
-                *self.pending.borrow_mut() = Some(RestorePending {
+                *self.pending.borrow_mut() = Some(BackupRestorePending {
                     op_id,
                     target,
                     temp_target: temp_target.to_string_lossy().into_owned(),
@@ -249,7 +249,7 @@ impl BackupRestoreViewModel {
                 });
             }
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(restore_error(error = e.to_string()))));
+                ctx.show_toast(Toast::error(tr!(backup_restore_error(error = e.to_string()))));
             }
         }
     }
@@ -284,7 +284,7 @@ impl BackupRestoreViewModel {
             // swap failed, so nothing has been lost. Leave it in place (don't
             // delete it) so the user can retry or recover it manually, and
             // leave the original untouched — still viewing the backup here.
-            ctx.show_toast(Toast::error(tr!(restore_error(error = e.to_string()))));
+            ctx.show_toast(Toast::error(tr!(backup_restore_error(error = e.to_string()))));
             return;
         }
 
@@ -316,8 +316,8 @@ impl BackupRestoreViewModel {
         crate::open_registry::replace_claim(&pending.target, &self.single_work.title().get());
 
         let msg = match &pending.safety_backup_path {
-            Some(p) => tr!(restored_with_safety(path = p.clone())),
-            None => tr!(restored_ok()),
+            Some(p) => tr!(backup_restored_with_safety(path = p.clone())),
+            None => tr!(backup_restored_ok()),
         };
         ctx.show_toast(Toast::success(msg));
     }
@@ -346,7 +346,7 @@ impl BackupRestoreViewModel {
         let error = parse_payload(event)
             .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
             .unwrap_or_default();
-        ctx.show_toast(Toast::error(tr!(restore_error(error = error))));
+        ctx.show_toast(Toast::error(tr!(backup_restore_error(error = error))));
         // State unchanged — still viewing the backup in backup mode.
     }
 }

@@ -38,7 +38,7 @@ const CARD_H: f32 = 520.0;
 /// Present the destination picker for `item_id` over the current window.
 /// `on_done` fires after the modal closes (restore *or* cancel) — the orphan
 /// chain uses it to advance to the next item.
-pub fn present_restore_target(
+pub fn present_trash_restore_target(
     ctx: &mut EventContext,
     trash: TrashViewModel,
     item_id: u64,
@@ -47,7 +47,7 @@ pub fn present_restore_target(
 ) {
     ctx.present_modal(
         ModalRequest::deferred(move |t| {
-            t.add(RestoreTargetPanel::new(
+            t.add(TrashRestoreTargetPanel::new(
                 trash.clone(),
                 item_id,
                 entry_title.clone(),
@@ -63,7 +63,7 @@ pub fn present_restore_target(
     );
 }
 
-pub struct RestoreTargetPanel {
+pub struct TrashRestoreTargetPanel {
     trash: TrashViewModel,
     item_id: u64,
     entry_title: String,
@@ -73,7 +73,7 @@ pub struct RestoreTargetPanel {
     root_child: Option<WidgetId>,
 }
 
-impl RestoreTargetPanel {
+impl TrashRestoreTargetPanel {
     pub fn new(
         trash: TrashViewModel,
         item_id: u64,
@@ -100,15 +100,15 @@ impl RestoreTargetPanel {
 
 }
 
-impl std::fmt::Debug for RestoreTargetPanel {
+impl std::fmt::Debug for TrashRestoreTargetPanel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("RestoreTargetPanel")
+        f.debug_struct("TrashRestoreTargetPanel")
             .field("item_id", &self.item_id)
             .finish()
     }
 }
 
-impl Widget for RestoreTargetPanel {
+impl Widget for TrashRestoreTargetPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         // Keep the tree live while the modal is open.
         self.picker_model.wire(ctx);
@@ -170,7 +170,7 @@ impl Widget for RestoreTargetPanel {
             let item_id = self.item_id;
             let entry_title = self.entry_title.clone();
             let on_done = self.on_done.clone();
-            let resolve_self = RestoreTargetResolver {
+            let resolve_self = TrashRestoreTargetResolver {
                 model: model.clone(),
             };
             move |ctx: &mut EventContext| {
@@ -216,7 +216,7 @@ impl Widget for RestoreTargetPanel {
 
         // Every close path (header ✕, footer Cancel) advances the orphan queue,
         // so a multi-item restore never stalls. (The modal is Manual-close — see
-        // `present_restore_target` — so there is no Esc/click-outside path that
+        // `present_trash_restore_target` — so there is no Esc/click-outside path that
         // could skip these.)
         let cancel_done = self.on_done.clone();
         let cancel_done2 = self.on_done.clone();
@@ -290,11 +290,11 @@ impl Widget for RestoreTargetPanel {
 
 /// Tiny helper so the confirm closure can resolve a key without borrowing the
 /// panel (which `build` has mutably).
-struct RestoreTargetResolver {
+struct TrashRestoreTargetResolver {
     model: BinderBinderItemsTreeModel,
 }
 
-impl RestoreTargetResolver {
+impl TrashRestoreTargetResolver {
     fn resolve(&self, key: BinderTreeKey) -> (u64, Option<u64>, DropPosition) {
         match key {
             BinderTreeKey::Binder(b) => (b, None, DropPosition::Into),
