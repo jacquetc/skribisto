@@ -16,14 +16,14 @@
 
 use std::rc::Rc;
 
-use bastyde::canvas::EdgeInsets;
+use bastyde::canvas::{EdgeInsets, Rect};
 use bastyde::core::BindingLevel;
+use bastyde::core::widget::WidgetPlacement;
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::data::ListDataSource;
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::res;
-use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
     Badge, Breadcrumb, BreadcrumbItem, ButtonVariant, Center, DragTransferMode, Expand, FixedSize,
     GridSizing, GridView, HStack, IconButton, IconWidget, MenuItem, MenuList, Padding, Panel,
@@ -40,7 +40,7 @@ use frontend::common::entities::BinderItemSubRole;
 use crate::create_labels::{
     recommendation_label, recommendation_placement, recommendation_tooltip_key,
 };
-use crate::models::CorkboardCard;
+use crate::models::{CorkboardCard, OpenDoc};
 use crate::singles::SingleCorkboardCard;
 use crate::view_models::CorkboardViewModel;
 
@@ -49,15 +49,24 @@ fn add_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/add.svg")).icon_size(14.0)
 }
 
+/// Total vertical padding a card's `Padding::uniform(12)` removes from the tile
+/// height before [`CardColumn`] lays out the header / synopsis / footer.
+const CARD_PADDING: f32 = 24.0;
+
+/// The pixel height of a card at slider width `w` — index-card proportion (wider
+/// than tall), floored so a small card still fits its header + a line or two +
+/// footer. Shared by the grid sizing and the per-card synopsis height.
+fn card_tile_height(w: f32) -> f32 {
+    (w * 0.72).max(146.0)
+}
+
 /// Map the card-size slider (a minimum tile width) to an adaptive grid sizing —
 /// as many ≥ `w`-wide columns as fit, stretched, with a card-shaped height.
 fn sizing_for(w: f32) -> GridSizing {
     GridSizing::Adaptive {
         min_width: w,
         max_width: Some(w * 1.6),
-        // A card is wider than tall (index-card proportion), enough for the header,
-        // a few excerpt lines, and the footer.
-        height: (w * 0.72).max(146.0),
+        height: card_tile_height(w),
     }
 }
 
@@ -85,6 +94,14 @@ struct WireCorkboard {
 impl std::fmt::Debug for WireCorkboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("WireCorkboard").finish()
+    }
+}
+impl Drop for WireCorkboard {
+    fn drop(&mut self) {
+        // The pane is being torn down (segment switch / tab close): flush + release
+        // every synopsis doc the board held open, so no card edit is stranded.
+        // `enter()` already covers drill in/out; this covers leaving the board.
+        self.vm.release_all_synopses();
     }
 }
 impl Widget for WireCorkboard {
@@ -553,16 +570,23 @@ impl Widget for CorkboardTile {
             )
             .child(card_menu(&self.vm, &self.card));
 
-        // The synopsis: read-only by default, editable in place on click (over the
-        // *shared* document, so a card and an editor tab never diverge), plus an
-        // expand button that opens a larger editor in a modal. Fills the card's
-        // middle and pins the footer below it.
-        let body = Expand::new().child(CardSynopsis {
+        // The synopsis: a *live* editor over the item's **shared** `OpenDoc` (the
+        // same document an editor tab of this item uses — one source of truth), plus
+        // an expand button that opens a roomier editor in a modal. Opened once per
+        // container visit and reused across tile rebuilds; the VM flushes + releases
+        // it when the board is left.
+        //
+        // The synopsis is the middle slot of a `CardColumn` (see it) — the header +
+        // footer take their intrinsic height and the synopsis fills the exact rest,
+        // scrolling its overflow. `CardColumn` measures the header, so the title
+        // swapping in its taller edit field just shrinks the synopsis instead of
+        // overflowing the card.
+        let synopsis = CardSynopsis {
             vm: self.vm.clone(),
             card: self.card.clone(),
-            read_doc: single.synopsis_doc(),
+            open_doc: self.vm.synopsis_doc_for(self.card.item_id),
             root: None,
-        });
+        };
 
         // Footer: an "expand synopsis" button at the bottom-left, then the count
         // pushed to the bottom-right (pinned there by the filling synopsis above).
@@ -587,19 +611,28 @@ impl Widget for CorkboardTile {
                 root: None,
             });
 
-        // header → the free-text label (its "status", directly under the title) →
-        // the scrollable synopsis filling the middle (pins the footer to the
-        // card's bottom) → the footer. So the word count is always bottom-right.
-        let mut inner = VStack::new().spacing(6.0).child(header);
+        // The `top` slot: the header, then the free-text status label directly under
+        // the title (when present). `CardColumn` measures this and the footer, so the
+        // synopsis in the middle fills exactly the rest.
+        let mut top = VStack::new().spacing(6.0).child(header);
         if !self.card.label.is_empty() {
-            inner = inner.child(
+            top = top.child(
                 TextWidget::new(lit!(self.card.label.clone()))
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary)
                     .max_lines(1),
             );
         }
-        let inner = inner.child(body).child(footer);
+        // The card's inner content height (tile height minus its `Padding`), from the
+        // size slider — the fixed-height GridView tile only proposes a card its width.
+        let total = Signal::new(card_tile_height(self.vm.card_size().get()) - CARD_PADDING);
+        {
+            let t = total.clone();
+            ctx.effect(&self.vm.card_size(), move |w| {
+                t.set(card_tile_height(*w) - CARD_PADDING)
+            });
+        }
+        let inner = CardColumn::new(total, 6.0, top, synopsis, footer);
 
         // Selection shows as the border accent *only* — no fill, no stripe.
         // Reactive (RepaintOnly, no tile rebuild): a click repaints the border
@@ -623,14 +656,14 @@ impl Widget for CorkboardTile {
         let mid_vm = self.vm.clone();
         let mid_card = self.card.clone();
 
-        // A Panel proposes its child the (bounded) tile height, so the VStack's
-        // Spacer fills — the whole card fills its tile slot rather than shrinking.
+        // `Padding` insets the content; `CardColumn` inside sizes itself from the
+        // slider (the tile forces the Panel to the card height, so no `Expand` needed).
         let card = Panel::new()
             .background(SurfaceRole::Content)
             .corner_radius(10.0)
             .border_color(border_role)
             .border_width(1.0)
-            .child(Expand::new().child(Padding::uniform(12.0).child(inner)))
+            .child(Padding::uniform(12.0).child(inner))
             .on_pointer_event(move |ev, ctx| {
                 if let WidgetEvent::PointerDown {
                     button: PointerButton::Middle,
@@ -670,10 +703,11 @@ fn refocus_grid(vm: &CorkboardViewModel, ctx: &mut EventContext) {
     }
 }
 
-/// The card's title, editable in place. Normally a one-line label; double-click it
-/// (or F2 / the ⋮ menu on the selection) swaps in a focused text field. Enter or
-/// clicking away commits; Esc restores the old name. Only the card whose id matches
-/// the view-model's `editing_item` is in edit mode, so exactly one edits at a time.
+/// The card's title, editable in place. Normally a one-line label; a single click on
+/// it (or F2 / the ⋮ menu on the selection) swaps in a focused text field. Enter or
+/// clicking away commits; Esc restores the old name; a blank name is rejected (the
+/// old title stands). Only the card whose id matches the view-model's `editing_item`
+/// is in edit mode, so exactly one edits at a time.
 struct InlineTitle {
     vm: CorkboardViewModel,
     item_id: u64,
@@ -755,7 +789,24 @@ impl Widget for InlineTitle {
                 TextWidget::new(lit!(self.title.clone()))
                     .style(TextStyleRole::SmallBold)
                     .max_lines(1)
-                    .on_double_tap(move |_tap, _ctx| vm.begin_rename(item_id)),
+                    // A text cursor advertises the click-to-edit affordance on hover.
+                    .cursor(CursorIcon::Text)
+                    // A single primary click enters rename — and is **consumed**, so
+                    // it never reaches the GridView. Otherwise the click would select
+                    // the tile and a second one would activate it, opening the card in
+                    // a tab (the double-click-opens-while-editing bug). F2 and the ⋮
+                    // menu's Rename are the other ways in.
+                    .on_pointer_event(move |ev, _ctx| {
+                        if let WidgetEvent::PointerDown {
+                            button: PointerButton::Primary,
+                            ..
+                        } = ev
+                        {
+                            vm.begin_rename(item_id);
+                            return EventResponse::Handled;
+                        }
+                        EventResponse::Ignored
+                    }),
             )
         };
         self.root = Some(id);
@@ -789,32 +840,160 @@ fn synopsis_split_fn(
     }))
 }
 
-/// Build the shared editable synopsis. It uses the borderless, internally-scrolling
-/// `card_synopsis_editor` — like the scene main editor, but bounded so a long
-/// synopsis scrolls instead of overflowing the card/modal — with the same
-/// typography, spell-check and the right-click menu (incl. **Split scene**). Wrap
-/// the result in an `Expand` to fill the target box.
+/// Build the card's editable synopsis over its shared `OpenDoc`. It uses the
+/// borderless, greedy, internally-scrolling `card_synopsis_editor` — like the scene
+/// main editor, but bounded so a long synopsis scrolls (and follows the caret)
+/// instead of overflowing the card/modal — with the same typography, spell-check and
+/// right-click menu (incl. **Split scene**). Edits write straight through to the
+/// shared doc: `on_change` marks it dirty (autosave + the save indicator see it).
+/// Wrap the result in an `Expand` (or a `FixedSize`) so the target box bounds it.
 fn synopsis_editor(
     vm: &CorkboardViewModel,
     card: &CorkboardCard,
-    doc: &bastyde::text_document::TextDocument,
+    open_doc: &Rc<OpenDoc>,
 ) -> impl Widget {
-    let on_change = vm.synopsis_on_change(card.item_id);
+    // Every writing row has a `SynopsisText` field; the `None` fallback is only the
+    // defensive path (a card whose type carries no synopsis) — the callers already
+    // gate on `synopsis.is_some()`.
+    let doc = open_doc
+        .synopsis
+        .as_ref()
+        .map(|f| f.doc.clone())
+        .unwrap_or_else(bastyde::text_document::TextDocument::new);
+    let on_change = open_doc.mark_dirty_fn();
     let split = synopsis_split_fn(vm, card);
-    let spell = vm
-        .synopsis_open_doc(card.item_id)
-        .and_then(|d| d.spell_synopsis());
+    let spell = open_doc.spell_synopsis();
     super::editor::card_synopsis_editor(doc, vm.synopsis_typo(), on_change, split, spell)
 }
 
-/// The card's synopsis body: a read-only viewer that becomes an inline editor when
-/// this card is the one being edited (`editing_synopsis`), plus an expand button
-/// that opens the same editor in a roomier modal.
+/// A card's vertical layout: `top` (header + optional status label) and `bottom`
+/// (footer) take their intrinsic height; `middle` (the synopsis editor) fills the
+/// **exact** remaining height and is *proposed* that height — so the greedy editor
+/// consumes it, fills the card width, and scrolls its overflow.
+///
+/// Why not `VStack` + `Expand`? Two reasons this layout has to be bespoke:
+/// - `Expand` proposes an *unspecified* height to its flex child, so a greedy editor
+///   collapses to its ~100px fallback (overflow, centred, scrollbar pinned).
+/// - The card's height must come from the size slider (`total`), because the
+///   fixed-height GridView tile only ever proposes a *width* to a card.
+///
+/// Measuring the header (rather than assuming a fixed chrome height) is what keeps it
+/// correct when the title swaps its one-line label for its taller edit field: the
+/// synopsis simply shrinks to fit, instead of the footer overflowing the card.
+struct CardColumn {
+    /// The card's inner content height (tile height minus its frame), from the slider.
+    total: Signal<f32>,
+    spacing: f32,
+    top: Option<Box<dyn Widget>>,
+    middle: Option<Box<dyn Widget>>,
+    bottom: Option<Box<dyn Widget>>,
+    ids: Vec<WidgetId>,
+}
+impl CardColumn {
+    fn new(
+        total: Signal<f32>,
+        spacing: f32,
+        top: impl Widget + 'static,
+        middle: impl Widget + 'static,
+        bottom: impl Widget + 'static,
+    ) -> Self {
+        Self {
+            total,
+            spacing,
+            top: Some(Box::new(top)),
+            middle: Some(Box::new(middle)),
+            bottom: Some(Box::new(bottom)),
+            ids: Vec::new(),
+        }
+    }
+    /// Intrinsic height of `top`/`bottom` at width `w`; the middle gets the exact
+    /// remainder of `avail` (min 24px). Used with `total` at measure time and with the
+    /// real placed height at place time, so the column fills whatever height it lands in.
+    fn slot_heights(&self, w: Option<f32>, avail: f32, ctx: &LayoutContext) -> (f32, f32, f32) {
+        let intrinsic = |id: WidgetId| {
+            ctx.child_size(
+                id,
+                SizeProposal {
+                    width: w,
+                    height: None,
+                },
+            )
+            .map(|s| s.height)
+            .unwrap_or(0.0)
+        };
+        let top_h = self.ids.first().copied().map(intrinsic).unwrap_or(0.0);
+        let bot_h = self.ids.get(2).copied().map(intrinsic).unwrap_or(0.0);
+        let mid_h = (avail - top_h - bot_h - 2.0 * self.spacing).max(24.0);
+        (top_h, mid_h, bot_h)
+    }
+}
+impl std::fmt::Debug for CardColumn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CardColumn").finish()
+    }
+}
+impl Widget for CardColumn {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.ids = vec![
+            ctx.add_boxed(self.top.take().expect("built once")),
+            ctx.add_boxed(self.middle.take().expect("built once")),
+            ctx.add_boxed(self.bottom.take().expect("built once")),
+        ];
+        self.total
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Relayout);
+        self.ids.clone()
+    }
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        // The tile proposes only a width, so take the height from `total` (the slider).
+        let avail = self.total.get().max(0.0);
+        let (_, mid_h, _) = self.slot_heights(proposal.width, avail, ctx);
+        // Hand the middle its exact height (and forward the card width) so the greedy
+        // editor bounds itself and scrolls.
+        if let Some(&mid) = self.ids.get(1) {
+            let _ = ctx.child_size(
+                mid,
+                SizeProposal {
+                    width: proposal.width,
+                    height: Some(mid_h),
+                },
+            );
+        }
+        Size::new(proposal.width.unwrap_or(0.0), avail).into()
+    }
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _p: SizeProposal,
+        children: &mut [WidgetPlacement],
+        ctx: &LayoutContext,
+    ) {
+        // Fill the *actual* placed height, so a frame/rounding difference never leaves
+        // the footer overflowing or floating.
+        let (top_h, mid_h, bot_h) = self.slot_heights(Some(bounds.width), bounds.height, ctx);
+        let heights = [top_h, mid_h, bot_h];
+        let mut y = bounds.y;
+        for (i, child) in children.iter_mut().enumerate() {
+            let h = heights.get(i).copied().unwrap_or(0.0);
+            child.origin = Point::new(bounds.x, y);
+            child.size = Size::new(bounds.width, h);
+            y += h + self.spacing;
+        }
+    }
+    fn children(&self) -> Vec<WidgetId> {
+        self.ids.clone()
+    }
+}
+
+/// The card's synopsis body: a **live editor** over the item's shared `OpenDoc`
+/// (no read-only ⇄ editable swap — the editor *is* the card, so there is no font /
+/// size / scroll jump on click), plus an expand button that opens the same editor in
+/// a roomier modal. A quiet placeholder if the item couldn't be opened.
 struct CardSynopsis {
     vm: CorkboardViewModel,
     card: CorkboardCard,
-    /// The read-only document for view mode (lazy, from `SingleCorkboardCard`).
-    read_doc: bastyde::text_document::TextDocument,
+    /// The shared open document for this card's synopsis (from the VM's per-card
+    /// store). `None` only if the item couldn't be opened.
+    open_doc: Option<Rc<OpenDoc>>,
     root: Option<WidgetId>,
 }
 impl std::fmt::Debug for CardSynopsis {
@@ -824,38 +1003,18 @@ impl std::fmt::Debug for CardSynopsis {
 }
 impl Widget for CardSynopsis {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.vm.editing_synopsis().bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Rebuild,
-        );
-        let id = self.card.item_id;
-        let editing = self.vm.editing_synopsis().get() == Some(id);
-
-        // `ctx.add` each concrete branch (no boxing): the editable column, or a
-        // read-only, hit-transparent viewer under a tap-catcher — a click anywhere
-        // on the synopsis enters inline edit mode.
-        let body = if editing {
-            match self.vm.synopsis_edit_document(id) {
-                Some(doc) => {
-                    ctx.add(Expand::new().child(synopsis_editor(&self.vm, &self.card, &doc)))
-                }
-                None => ctx.add(
-                    RichTextEditor::read_only(self.read_doc.clone())
-                        .v_scroll_policy(ScrollPolicy::Auto),
-                ),
+        // Always the editor over the shared doc — one widget, one document, so
+        // clicking to type never swaps typography or resets the scroll position.
+        // The caller wraps this in a `FixedSize`, which hands the greedy editor an
+        // *exact* height to consume (so it scrolls + follows the caret); this widget
+        // just force-fills that box (see `place_children`).
+        let body = match &self.open_doc {
+            Some(doc) if doc.synopsis.is_some() => {
+                ctx.add(synopsis_editor(&self.vm, &self.card, doc))
             }
-        } else {
-            let vm = self.vm.clone();
-            ctx.add(
-                Expand::new()
-                    .child(
-                        RichTextEditor::read_only(self.read_doc.clone())
-                            .v_scroll_policy(ScrollPolicy::Auto)
-                            .hit_transparent(true),
-                    )
-                    .on_tap(move |_tap, _ctx| vm.begin_edit_synopsis(id)),
-            )
+            // No synopsis field (or unreadable): an empty filler so the card still
+            // lays out.
+            _ => ctx.add(bastyde::widgets::Spacer::new()),
         };
         self.root = Some(body);
         vec![body]
@@ -866,16 +1025,30 @@ impl Widget for CardSynopsis {
             .unwrap_or_else(|| p.resolve(0.0, 0.0))
             .into()
     }
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _p: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        // Force the editor to fill our (FixedSize-bounded) box — a no-op default
+        // place would leave the greedy editor at its measured fallback height, the
+        // very bug that made the text overflow, centered, scrollbar pinned.
+        for child in children.iter_mut() {
+            child.origin = bounds.origin();
+            child.size = bounds.size();
+        }
+    }
     fn children(&self) -> Vec<WidgetId> {
         self.root.into_iter().collect()
     }
 }
 
 /// Open the synopsis in a roomier modal editor over the **same** shared document as
-/// the inline card editor (edits reflect in both). Entering edit mode first ensures
-/// the document is open.
+/// the inline card editor — the card holds it open, so this is the very same
+/// `OpenDoc` and edits reflect in both instantly.
 fn present_synopsis_modal(vm: &CorkboardViewModel, card: &CorkboardCard, ctx: &mut EventContext) {
-    vm.begin_edit_synopsis(card.item_id);
     let vm = vm.clone();
     let card = card.clone();
     ctx.present_modal(
@@ -910,21 +1083,26 @@ impl std::fmt::Debug for SynopsisModal {
 impl Widget for SynopsisModal {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         let id = self.card.item_id;
-        // The self-centering writing column needs a *bounded* width proposal. The
-        // in-tree modal sizes to its content, so declare the surface size explicitly
-        // (an `Expand` would leave the column an unbounded width and it collapses to
-        // one word per line). The column scrolls internally for a long synopsis.
-        let cid = match self.vm.synopsis_edit_document(id) {
-            Some(doc) => {
+        // The editor needs a *bounded* box: the in-tree modal sizes to its content,
+        // so declare the surface size explicitly (a plain `Expand` would leave the
+        // greedy editor no height to consume). `FixedSize` gives it 680×500; the
+        // editor fills it and scrolls internally for a long synopsis.
+        let cid = match self.vm.synopsis_doc_for(id) {
+            Some(doc) if doc.synopsis.is_some() => {
                 let editor = synopsis_editor(&self.vm, &self.card, &doc);
+                // `FixedSize` → `Padding` forward an *exact* bounded height to the
+                // greedy editor, which is what makes it consume that height and
+                // scroll. An `Expand` in between would measure the editor with an
+                // unspecified height (its 100px fallback), so it never learns the
+                // box height — the editor then overflows, centered, scrollbar pinned.
                 ctx.add(
                     FixedSize::new()
                         .width(680.0)
                         .height(500.0)
-                        .child(Padding::uniform(16.0).child(Expand::new().child(editor))),
+                        .child(Padding::uniform(16.0).child(editor)),
                 )
             }
-            None => {
+            _ => {
                 ctx.add(Padding::uniform(16.0).child(TextWidget::new(tr!(corkboard_empty_hint()))))
             }
         };

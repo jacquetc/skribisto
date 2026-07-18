@@ -668,6 +668,7 @@ impl SettingsPanel {
             });
         }
 
+        let typo = vm.corkboard_typo();
         let form = FormLayout::new()
             .label(tr!(settings_page_corkboard()))
             .label_gap(16.0)
@@ -692,6 +693,41 @@ impl SettingsPanel {
             )
             .full_width(
                 Toggle::new(vm.corkboard_show_word_count()).label(tr!(corkboard_show_word_count())),
+            )
+            // The card's own synopsis typography — mirrors the Scene / Synopsis / Notes
+            // pages, so cards can read distinctly from the Full-Synopsis pane.
+            .full_width(group(tr!(settings_group_typography())))
+            .line(
+                field_label(tr!(settings_field_typeface())),
+                Self::font_picker(ctx, typo.font_family.clone()),
+            )
+            .line(
+                field_label(tr!(settings_field_size())),
+                slider_field(typo.size.clone(), 0.7, 1.6, 0.05, |v| {
+                    format!("{:.0}%", v * 100.0)
+                }),
+            )
+            .line(
+                field_label(tr!(settings_field_line_height())),
+                slider_field(typo.line_height.clone(), 1.0, 2.4, 0.02, |v| format!("{v:.2}")),
+            )
+            .line(
+                field_label(tr!(settings_field_first_line_indent())),
+                slider_field(typo.first_line_indent.clone(), 0.0, 60.0, 2.0, |v| {
+                    format!("{} px", v.round() as i32)
+                }),
+            )
+            .line(
+                field_label(tr!(settings_field_paragraph_spacing_before())),
+                slider_field(typo.para_spacing_before.clone(), 0.0, 40.0, 2.0, |v| {
+                    format!("{} px", v.round() as i32)
+                }),
+            )
+            .line(
+                field_label(tr!(settings_field_paragraph_spacing_after())),
+                slider_field(typo.para_spacing_after.clone(), 0.0, 40.0, 2.0, |v| {
+                    format!("{} px", v.round() as i32)
+                }),
             );
 
         pane_frame(

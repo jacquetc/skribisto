@@ -8,8 +8,9 @@
 //! - **Nested** — the container's *direct children* (the `indent == base + 1`
 //!   window over the binder's flat item stream). A folder child is a card the
 //!   writer can drill into; a leaf child opens in the editor.
-//! - **Flat** — every *leaf* descendant (`role == Item`) of the container,
-//!   depth-first in reading order — the whole subtree flattened to one card list.
+//! - **Flat** — every descendant of the container (leaves *and* containers — a
+//!   Part / Chapter / folder carries a synopsis too), depth-first in reading order:
+//!   the whole subtree flattened to one card list.
 //!
 //! Built the same "framework way" the Outline tree is (`bastyde::data`): the
 //! model owns a [`ListModel<CorkboardCard>`] synced to the Qleany backend via the
@@ -417,11 +418,18 @@ mod imp {
                 out.push(card(it, is_container, child_count));
             }
         } else {
-            // Flat: every leaf (a writing row) in the whole subtree, in order.
-            for it in subtree {
-                if matches!(it.role, BinderItemRole::Item) {
-                    out.push(card(it, false, 0));
-                }
+            // Flat: every descendant in the whole subtree, in reading order — leaves
+            // *and* containers (a Part / Chapter / folder carries its own synopsis too,
+            // so flattening must not drop them). A container card is not drillable here
+            // (flat has no drill); activating it opens its own editor.
+            for (i, it) in subtree.iter().enumerate() {
+                let is_container = matches!(it.role, BinderItemRole::Folder);
+                let child_count = if is_container {
+                    count_direct_children(&subtree[i + 1..], it.indent)
+                } else {
+                    0
+                };
+                out.push(card(it, is_container, child_count));
             }
         }
         out
@@ -514,13 +522,21 @@ mod imp {
         }
 
         #[test]
-        fn flat_shows_all_leaf_descendants() {
+        fn flat_shows_all_descendants_including_containers() {
             let flat = fixture();
-            // Part(1) flattened: every leaf under it — scenes 3, 4 and flat chapter 5.
+            // Part(1) flattened: every descendant in reading order — the chapter-folder(2)
+            // (a container, kept because it has its own synopsis), its scenes 3 and 4,
+            // and the flat chapter 5.
             let cards = cards_for(&flat, 1, false);
             let ids: Vec<u64> = cards.iter().map(|c| c.item_id).collect();
-            assert_eq!(ids, vec![3, 4, 5]);
-            assert!(cards.iter().all(|c| !c.is_container));
+            assert_eq!(ids, vec![2, 3, 4, 5]);
+            let folder = &cards[0];
+            assert!(folder.is_container, "the chapter-folder is kept in flat mode");
+            assert_eq!(folder.child_count, 2, "and still reports its scene count");
+            assert!(
+                cards[1..].iter().all(|c| !c.is_container),
+                "3, 4, 5 are leaves"
+            );
         }
 
         #[test]
@@ -577,8 +593,10 @@ mod imp {
                 card(104, Folder, ChapterScene, "The Keeper", true, 3),
                 card(302, Item, ChapterScene, "The ferry", false, 0),
             ],
-            // A part, flat: every leaf under it.
+            // A part, flat: every descendant — the chapter-folder (kept for its own
+            // synopsis) plus every leaf under it.
             (301, false) => vec![
+                card(104, Folder, ChapterScene, "The Keeper", true, 3),
                 card(201, Item, Scene, "Into the Dark", false, 0),
                 card(202, Item, Scene, "The light returns", false, 0),
                 card(203, Item, Note, "First night", false, 0),

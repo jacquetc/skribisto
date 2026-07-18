@@ -290,10 +290,24 @@ pub fn synopsis_editor(
 /// The corkboard card's editable synopsis: **borderless** (like the scene main
 /// editor) and **bounded** — it fills the caller's box and scrolls internally
 /// (`Auto`) rather than growing, so a long synopsis never overflows the fixed-height
-/// card or the expand modal. Same right-click menu (incl. **Split scene**) as the
-/// Full-* editors. Wrap the result in an `Expand` to fill the target box.
+/// card or the expand modal, and the caret stays in view while typing. Same
+/// right-click menu (incl. **Split scene**) as the Full-* editors.
+///
+/// **Greedy on purpose:** it sets neither `min_lines` nor `max_lines`, so it
+/// *consumes the proposal* — the bounded height its parent hands it — instead of
+/// growing to the text's intrinsic height. That is what makes `ScrollPolicy::Auto`
+/// engage: an intrinsic (`min_lines`) editor reports the whole document's height and
+/// so never has an overflowing viewport to scroll or to keep the caret inside. A
+/// bounded box + greedy sizing + `Auto` is the standard "fill this and scroll"
+/// editor (it is the plain `RichTextEditor::editor` default).
+///
+/// **Give it its height with a `FixedSize`, never an `Expand`.** A greedy editor
+/// only bounds when its parent *proposes an exact height* in its layout pass;
+/// `Expand` measures its child with an unspecified height (a ~100 px fallback), so
+/// the editor never learns the box and overflows — vertically centered, scrollbar
+/// pinned. Both call sites (the card and the modal) wrap this in a `FixedSize`.
 pub fn card_synopsis_editor(
-    doc: &TextDocument,
+    doc: TextDocument,
     typo: EditorTypography,
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
@@ -303,7 +317,6 @@ pub fn card_synopsis_editor(
         .style(WritingEditorStyle)
         .on_change(on_change)
         .content_padding_symmetric(4.0, 8.0)
-        .min_lines(1)
         .v_scroll_policy(ScrollPolicy::Auto)
         .typography_defaults(typo_defaults(&typo))
         .zoom(typo.size.get());
@@ -1250,5 +1263,59 @@ impl Widget for CenterColumnFlowing {
 
     fn children(&self) -> Vec<WidgetId> {
         self.child_id.into_iter().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    fn test_typo() -> EditorTypography {
+        EditorTypography {
+            font_family: Signal::new("Literata".to_string()),
+            size: Signal::new(1.0),
+            line_height: Signal::new(1.5),
+            first_line_indent: Signal::new(0.0),
+            para_spacing_before: Signal::new(0.0),
+            para_spacing_after: Signal::new(0.0),
+        }
+    }
+
+    /// A long synopsis must **scroll** inside the fixed-height card / expand modal,
+    /// never overflow it — and the caret must stay in view while typing. Two things
+    /// make that work, and this pins both:
+    ///
+    /// 1. The editor is *greedy* (neither `min_lines` nor `max_lines`), so it consumes
+    ///    the height its box proposes instead of growing to the whole document's
+    ///    intrinsic height. An intrinsic (`min_lines`) editor reports the full document
+    ///    height, so there's no bounded viewport for `ScrollPolicy::Auto` to scroll.
+    /// 2. It must be given that height by a widget that *proposes an exact height*
+    ///    (`FixedSize`), NOT an `Expand` — an `Expand` measures its child with an
+    ///    unspecified height (a 100 px fallback), so the greedy editor never learns the
+    ///    box height and overflows, vertically centered, scrollbar pinned. The card
+    ///    and the modal both wrap this editor in a `FixedSize` for exactly this reason.
+    ///
+    /// Here a 60-paragraph synopsis inside a `FixedSize` 320×200 box must still measure
+    /// ~200 px tall — proving it stayed bounded. A value near the (much taller) document
+    /// height would mean the editor reverted to intrinsic sizing and overflowed.
+    #[test]
+    fn card_synopsis_editor_in_a_fixed_box_bounds_a_tall_synopsis_so_it_scrolls() {
+        use bastyde::widgets::FixedSize;
+        let doc = TextDocument::new();
+        let _ =
+            doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(60));
+        let editor = card_synopsis_editor(doc, test_typo(), || {}, None, None);
+        let mut tree = WidgetTree::new();
+        let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
+        // Propose an *unbounded* height, the way the corkboard's GridView tile does —
+        // the `FixedSize` must still pin the editor to 200 px regardless.
+        tree.layout(SizeProposal::with_width(320.0));
+        let h = tree.bounds(id).height;
+        assert!(
+            (h - 200.0).abs() < 2.0,
+            "the synopsis editor in a FixedSize(200) box must stay 200px (scroll the \
+             overflow), got {h:.1}px — a taller value means it grew past the card/modal"
+        );
     }
 }

@@ -308,7 +308,7 @@ impl ContentTab {
                         cd.card_size.clone(),
                         cd.show_word_count.clone(),
                         cd.counting_method.clone(),
-                        typography.synopsis.clone(),
+                        typography.corkboard.clone(),
                     )
                 },
             );
@@ -536,6 +536,7 @@ mod tests {
             scene: bundle("Literata"),
             synopsis: bundle("Literata"),
             notes: bundle("Inter"),
+            corkboard: bundle("Literata"),
         }
     }
 

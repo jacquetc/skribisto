@@ -914,6 +914,7 @@ mod tests {
             scene: bundle("Literata"),
             synopsis: bundle("Literata"),
             notes: bundle("Inter"),
+            corkboard: bundle("Literata"),
         }
     }
 

@@ -312,6 +312,24 @@ pub const CORKBOARD_CARD_SIZE_STEP: f32 = 10.0;
 pub const CORKBOARD_SHOW_WORD_COUNT_KEY: &str = "corkboard.show_word_count";
 pub const CORKBOARD_SHOW_WORD_COUNT_DEFAULT: bool = true;
 
+/// Corkboard card synopsis typography — its own bundle (like Scene / Synopsis /
+/// Notes), so the index-card summaries can read distinctly from the manuscript's
+/// synopsis pane. Sensible defaults: the same serif as the synopsis, a touch smaller
+/// and tighter for a compact card, block-style (no indent, a little space between
+/// paragraphs).
+pub const CORKBOARD_FONT_FAMILY_KEY: &str = "corkboard.font_family";
+pub const CORKBOARD_FONT_FAMILY_DEFAULT: &str = "Literata";
+pub const CORKBOARD_SIZE_KEY: &str = "corkboard.size";
+pub const CORKBOARD_SIZE_DEFAULT: f32 = 0.8;
+pub const CORKBOARD_LINE_HEIGHT_KEY: &str = "corkboard.line_height";
+pub const CORKBOARD_LINE_HEIGHT_DEFAULT: f32 = 1.3;
+pub const CORKBOARD_FIRST_LINE_INDENT_KEY: &str = "corkboard.first_line_indent";
+pub const CORKBOARD_FIRST_LINE_INDENT_DEFAULT: f32 = 0.0;
+pub const CORKBOARD_PARA_SPACING_BEFORE_KEY: &str = "corkboard.para_spacing_before";
+pub const CORKBOARD_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const CORKBOARD_PARA_SPACING_AFTER_KEY: &str = "corkboard.para_spacing_after";
+pub const CORKBOARD_PARA_SPACING_AFTER_DEFAULT: f32 = 6.0;
+
 /// The bundled writing typefaces (OFL-1.1), registered additively into the
 /// shared typesetter at startup so the defaults render on every machine and the
 /// `FontPicker` lists them. Inter (sans, the Notes default) stays the app-wide

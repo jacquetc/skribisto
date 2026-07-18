@@ -22,8 +22,13 @@ use frontend::common::entities::BinderItemSubRole;
 use skribisto_model::counting::CountingMethodSetting;
 
 use crate::{
-    AUTOSAVE_KEY, CORKBOARD_CARD_SIZE_DEFAULT, CORKBOARD_CARD_SIZE_KEY, CORKBOARD_NESTED_DEFAULT,
-    CORKBOARD_NESTED_KEY, CORKBOARD_SHOW_WORD_COUNT_DEFAULT, CORKBOARD_SHOW_WORD_COUNT_KEY,
+    AUTOSAVE_KEY, CORKBOARD_CARD_SIZE_DEFAULT, CORKBOARD_CARD_SIZE_KEY,
+    CORKBOARD_FIRST_LINE_INDENT_DEFAULT, CORKBOARD_FIRST_LINE_INDENT_KEY,
+    CORKBOARD_FONT_FAMILY_DEFAULT, CORKBOARD_FONT_FAMILY_KEY, CORKBOARD_LINE_HEIGHT_DEFAULT,
+    CORKBOARD_LINE_HEIGHT_KEY, CORKBOARD_NESTED_DEFAULT, CORKBOARD_NESTED_KEY,
+    CORKBOARD_PARA_SPACING_AFTER_DEFAULT, CORKBOARD_PARA_SPACING_AFTER_KEY,
+    CORKBOARD_PARA_SPACING_BEFORE_DEFAULT, CORKBOARD_PARA_SPACING_BEFORE_KEY, CORKBOARD_SIZE_DEFAULT,
+    CORKBOARD_SIZE_KEY, CORKBOARD_SHOW_WORD_COUNT_DEFAULT, CORKBOARD_SHOW_WORD_COUNT_KEY,
     DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
     GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
     HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
@@ -60,13 +65,16 @@ pub struct EditorTypography {
     pub para_spacing_after: Signal<f32>,
 }
 
-/// The three per-editor-type typography bundles (Scene / Synopsis / Notes),
+/// The per-editor-type typography bundles (Scene / Synopsis / Notes / Corkboard),
 /// created once and threaded through `EditorsViewModel` into every `ContentTab`.
 #[derive(Clone)]
 pub struct EditorTypographySet {
     pub scene: EditorTypography,
     pub synopsis: EditorTypography,
     pub notes: EditorTypography,
+    /// The corkboard card's synopsis editor — its own bundle so cards can read
+    /// distinctly from the Full-Synopsis pane.
+    pub corkboard: EditorTypography,
 }
 
 /// Per-container-type "last view" memory: the `SegmentedControl` index a freshly
@@ -190,6 +198,7 @@ pub struct SettingsViewModel {
     scene_typo: EditorTypography,
     synopsis_typo: EditorTypography,
     notes_typo: EditorTypography,
+    corkboard_typo: EditorTypography,
     // ── Editor behaviour ──
     synopsis_pane: Signal<bool>,
     typewriter: Signal<bool>,
@@ -268,6 +277,27 @@ impl SettingsViewModel {
                     NOTES_PARA_SPACING_AFTER_DEFAULT,
                 ),
             },
+            corkboard_typo: EditorTypography {
+                font_family: store.signal(
+                    CORKBOARD_FONT_FAMILY_KEY,
+                    CORKBOARD_FONT_FAMILY_DEFAULT.to_string(),
+                ),
+                size: store.signal(CORKBOARD_SIZE_KEY, CORKBOARD_SIZE_DEFAULT),
+                line_height: store
+                    .signal(CORKBOARD_LINE_HEIGHT_KEY, CORKBOARD_LINE_HEIGHT_DEFAULT),
+                first_line_indent: store.signal(
+                    CORKBOARD_FIRST_LINE_INDENT_KEY,
+                    CORKBOARD_FIRST_LINE_INDENT_DEFAULT,
+                ),
+                para_spacing_before: store.signal(
+                    CORKBOARD_PARA_SPACING_BEFORE_KEY,
+                    CORKBOARD_PARA_SPACING_BEFORE_DEFAULT,
+                ),
+                para_spacing_after: store.signal(
+                    CORKBOARD_PARA_SPACING_AFTER_KEY,
+                    CORKBOARD_PARA_SPACING_AFTER_DEFAULT,
+                ),
+            },
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
             typewriter: store.signal(TYPEWRITER_KEY, TYPEWRITER_DEFAULT),
             highlight_sentence: store.signal(HIGHLIGHT_SENTENCE_KEY, HIGHLIGHT_SENTENCE_DEFAULT),
@@ -321,7 +351,7 @@ impl SettingsViewModel {
         self.locale.clone()
     }
 
-    /// The three per-editor-type typography bundles (Scene / Synopsis / Notes).
+    /// The per-editor-type typography bundles (Scene / Synopsis / Notes / Corkboard).
     /// Every call returns clones of the same live signals, so a settings edit
     /// fans out to every open editor tab that holds them.
     pub fn editor_typography(&self) -> EditorTypographySet {
@@ -329,7 +359,14 @@ impl SettingsViewModel {
             scene: self.scene_typo.clone(),
             synopsis: self.synopsis_typo.clone(),
             notes: self.notes_typo.clone(),
+            corkboard: self.corkboard_typo.clone(),
         }
+    }
+
+    /// The corkboard card synopsis typography bundle — bound by the Corkboard
+    /// settings pane, read by every open board's cards.
+    pub fn corkboard_typo(&self) -> EditorTypography {
+        self.corkboard_typo.clone()
     }
 
     /// Show the synopsis pane above the manuscript. Consumed live by the writing
@@ -471,6 +508,23 @@ impl SettingsViewModel {
         self.notes_typo
             .para_spacing_after
             .set(NOTES_PARA_SPACING_AFTER_DEFAULT);
+        // Corkboard card synopsis
+        self.corkboard_typo
+            .font_family
+            .set(CORKBOARD_FONT_FAMILY_DEFAULT.to_string());
+        self.corkboard_typo.size.set(CORKBOARD_SIZE_DEFAULT);
+        self.corkboard_typo
+            .line_height
+            .set(CORKBOARD_LINE_HEIGHT_DEFAULT);
+        self.corkboard_typo
+            .first_line_indent
+            .set(CORKBOARD_FIRST_LINE_INDENT_DEFAULT);
+        self.corkboard_typo
+            .para_spacing_before
+            .set(CORKBOARD_PARA_SPACING_BEFORE_DEFAULT);
+        self.corkboard_typo
+            .para_spacing_after
+            .set(CORKBOARD_PARA_SPACING_AFTER_DEFAULT);
         self.synopsis_pane.set(SYNOPSIS_PANE_DEFAULT);
         self.typewriter.set(TYPEWRITER_DEFAULT);
         self.highlight_sentence.set(HIGHLIGHT_SENTENCE_DEFAULT);
@@ -487,8 +541,9 @@ impl SettingsViewModel {
 mod tests {
     use super::*;
     use crate::{
-        NOTES_FONT_FAMILY_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FONT_FAMILY_DEFAULT,
-        SCENE_LINE_HEIGHT_DEFAULT, SCENE_SIZE_DEFAULT, SYNOPSIS_SIZE_DEFAULT,
+        CORKBOARD_SIZE_DEFAULT, NOTES_FONT_FAMILY_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT,
+        SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT, SCENE_SIZE_DEFAULT,
+        SYNOPSIS_SIZE_DEFAULT,
     };
     use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -503,14 +558,14 @@ mod tests {
         SettingsStore::open(path).expect("open temp settings store")
     }
 
-    /// Reset restores all 12 per-type typography signals (the biggest, most
-    /// error-prone part of the VM) to their `_DEFAULT` constants.
+    /// Reset restores every per-type typography signal (the biggest, most
+    /// error-prone part of the VM) to its `_DEFAULT` constant — all four bundles.
     #[test]
-    fn reset_editor_defaults_restores_all_three_typography_bundles() {
+    fn reset_editor_defaults_restores_all_typography_bundles() {
         let store = temp_store();
         let vm = SettingsViewModel::new(&store);
         let t = vm.editor_typography();
-        for b in [&t.scene, &t.synopsis, &t.notes] {
+        for b in [&t.scene, &t.synopsis, &t.notes, &t.corkboard] {
             b.font_family.set("EB Garamond".into());
             b.size.set(1.3);
             b.line_height.set(2.1);
@@ -529,8 +584,9 @@ mod tests {
         );
         assert_eq!(t.synopsis.size.get(), SYNOPSIS_SIZE_DEFAULT);
         assert_eq!(t.notes.font_family.get(), NOTES_FONT_FAMILY_DEFAULT);
-        // None of the three still holds the mutated value.
-        for b in [&t.scene, &t.synopsis, &t.notes] {
+        assert_eq!(t.corkboard.size.get(), CORKBOARD_SIZE_DEFAULT);
+        // None of the four still holds the mutated value.
+        for b in [&t.scene, &t.synopsis, &t.notes, &t.corkboard] {
             assert_ne!(b.font_family.get(), "EB Garamond");
             assert_ne!(b.first_line_indent.get(), 40.0);
         }

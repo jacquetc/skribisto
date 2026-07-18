@@ -15,10 +15,10 @@
 //! Plain Rust → headless-testable.
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use bastyde::core::ObserverHandle;
-use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::data::{SelectionMode, SelectionModel, SortDirection, SortFilterListModel};
 use bastyde::prelude::*; // Signal, BuildContext, EventContext
 use bastyde::text_document::{MoveMode, TextDocument};
@@ -84,14 +84,15 @@ struct Inner {
     /// title editor returns focus here when it commits/cancels, so a screen
     /// reader (and keyboard nav) lands back on the card instead of the window.
     grid_id: Signal<Option<WidgetId>>,
-    /// The card whose *synopsis* is being edited in place (`None` = none). One at
-    /// a time; the matching card swaps its read-only viewer for a live editor.
-    editing_synopsis: Signal<Option<u64>>,
-    /// The shared open document backing the currently-edited synopsis — held so
-    /// its refcount stays up while editing, released (and flushed) when editing
-    /// ends. The document is the **same** `OpenDoc` an editor tab would use, so a
-    /// card and an open tab never diverge.
-    editing_doc: RefCell<Option<(u64, Rc<OpenDoc>)>>,
+    /// The shared open documents backing the visible cards' synopsis editors — one
+    /// per card realized since the container was entered, keyed by item id. Every
+    /// card renders its synopsis in a *live* editor over the **same** `OpenDoc` an
+    /// editor tab uses (one source of truth: an edit on a card, in the expand modal,
+    /// or in a tab is one edit, one undo, one save). Held here (a strong ref) so the
+    /// refcount stays up while the container is shown, and flushed + released
+    /// together when the container changes or the pane is torn down. Mirrors
+    /// `StreamViewModel`'s per-row `row_handles`.
+    open_synopses: RefCell<HashMap<u64, Rc<OpenDoc>>>,
     /// The app-wide open-document store (shared with the editor panes).
     docs: OpenDocsStore,
     /// Synopsis typography, so the card's synopsis editor renders like the scene
@@ -156,8 +157,7 @@ impl CorkboardViewModel {
                 scroll_y: Signal::new(0.0),
                 editing_item: Signal::new(None),
                 grid_id: Signal::new(None),
-                editing_synopsis: Signal::new(None),
-                editing_doc: RefCell::new(None),
+                open_synopses: RefCell::new(HashMap::new()),
                 docs,
                 synopsis_typo,
                 cards,
@@ -240,8 +240,9 @@ impl CorkboardViewModel {
     }
 
     fn enter(&self, container_id: u64) {
-        // Leaving the level ends any in-flight synopsis edit (flush + release).
-        self.end_edit_synopsis();
+        // Leaving the level flushes + releases every synopsis doc held for the old
+        // container's cards, so their edits persist before the grid re-scopes.
+        self.release_all_synopses();
         self.inner.current_container.set(container_id);
         self.inner.container_probe.set_id(Some(container_id));
         self.inner.selection.clear();
@@ -352,67 +353,38 @@ impl CorkboardViewModel {
         self.inner.editing_item.set(None);
     }
 
-    // ── Inline synopsis editing (one shared document with the editor panes) ───
+    // ── Shared synopsis documents (one per card, shared with the editor panes) ──
 
-    /// The card whose synopsis is being edited in place (`None` = none).
-    pub fn editing_synopsis(&self) -> Signal<Option<u64>> {
-        self.inner.editing_synopsis.clone()
-    }
-
-    /// Enter synopsis-edit mode for `id`: open the item's **shared** `OpenDoc` (so
-    /// the card and any editor tab of the same item are literally one document —
-    /// edits, saving and undo all match the editor) and hold its handle. Ends any
-    /// prior synopsis edit first — only one card edits at a time.
-    pub fn begin_edit_synopsis(&self, id: u64) {
-        if self.inner.editing_synopsis.get() == Some(id) {
-            return;
+    /// The shared `OpenDoc` for a card's synopsis, opened once and reused while the
+    /// container is shown. A realized tile calls this to render its synopsis in a
+    /// live editor over the **same** document any editor tab of the item uses — so an
+    /// edit on the card, in the expand modal, or in a tab is one edit. `None` if the
+    /// item can't be read.
+    pub fn synopsis_doc_for(&self, id: u64) -> Option<Rc<OpenDoc>> {
+        if let Some(doc) = self.inner.open_synopses.borrow().get(&id) {
+            return Some(doc.clone());
         }
-        self.end_edit_synopsis();
-        if let Some(doc) = self.inner.docs.open(id) {
-            *self.inner.editing_doc.borrow_mut() = Some((id, doc));
-            self.inner.editing_synopsis.set(Some(id));
-        }
+        let doc = self.inner.docs.open(id)?;
+        self.inner.open_synopses.borrow_mut().insert(id, doc.clone());
+        Some(doc)
     }
 
-    /// Leave synopsis-edit mode: flush the shared document to the store and release
-    /// the handle (the document survives if an editor tab still references it).
-    pub fn end_edit_synopsis(&self) {
-        let held = self.inner.editing_doc.borrow_mut().take();
-        if let Some((id, doc)) = held {
-            let _ = doc.flush(self.stack());
-            self.inner.docs.release(id, self.stack());
-        }
-        if self.inner.editing_synopsis.get().is_some() {
-            self.inner.editing_synopsis.set(None);
-        }
-    }
-
-    /// The shared `OpenDoc` for the card currently editing `id` (else `None`). The
-    /// view reads its synopsis `TextDocument` + `mark_dirty_fn` from it.
-    pub fn synopsis_open_doc(&self, id: u64) -> Option<Rc<OpenDoc>> {
-        self.inner
-            .editing_doc
-            .borrow()
-            .as_ref()
-            .and_then(|(hid, doc)| (*hid == id).then(|| doc.clone()))
-    }
-
-    /// The synopsis document to edit for `id`, if it is in edit mode and carries a
-    /// synopsis field (every writing row does).
-    pub fn synopsis_edit_document(&self, id: u64) -> Option<TextDocument> {
-        self.synopsis_open_doc(id)
-            .and_then(|doc| doc.synopsis.as_ref().map(|f| f.doc.clone()))
-    }
-
-    /// The `on_change` hook for the synopsis editor: mark the shared document dirty
-    /// (bumps the store's edit counter → the save indicator + autosave notice it),
-    /// exactly as the main editor's own editors do.
-    pub fn synopsis_on_change(&self, id: u64) -> impl Fn() + 'static {
-        let doc = self.synopsis_open_doc(id);
-        move || {
-            if let Some(doc) = &doc {
-                (doc.mark_dirty_fn())();
-            }
+    /// Flush + release every synopsis doc this corkboard holds. Called when the
+    /// container changes (drill in/out) and when the pane is torn down (segment
+    /// switch / tab close), so no card's edit is stranded. `OpenDocsStore::release`
+    /// flushes on the **last** reference; a doc an editor tab still holds is only
+    /// decremented (it owns the flush). Idempotent — a second call finds an empty map.
+    pub fn release_all_synopses(&self) {
+        let stack = self.stack();
+        let ids: Vec<u64> = self
+            .inner
+            .open_synopses
+            .borrow_mut()
+            .drain()
+            .map(|(id, _)| id)
+            .collect();
+        for id in ids {
+            self.inner.docs.release(id, stack);
         }
     }
 
@@ -431,7 +403,7 @@ impl CorkboardViewModel {
     /// whole on the source. Mirrors [`StreamViewModel::split_row`] for the synopsis
     /// flavour, over the same shared `OpenDoc`.
     pub fn split_synopsis(&self, ctx: &mut EventContext, id: u64, caret: usize) {
-        let Some(doc) = self.synopsis_open_doc(id) else {
+        let Some(doc) = self.synopsis_doc_for(id) else {
             return;
         };
         let stack = self.stack();
