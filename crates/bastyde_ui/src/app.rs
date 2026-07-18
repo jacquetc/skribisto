@@ -2138,15 +2138,17 @@ impl Widget for App {
         // one-shot wake ~1.5 s out. `wake_at` keeps the loop asleep until the
         // deadline (no 60 fps drain); the `frame_tick` effect only runs on the
         // frames that actually pump, and fires the save when the deadline passes.
+        // The countdown policy lives in `view_models::timers` (pure, `now`-injected,
+        // unit-tested); `App` keeps only the two effects it must own — arming the
+        // framework's `wake_at` and actually writing to disk.
         {
-            use std::time::{Duration, Instant};
-            let deadline: Rc<std::cell::Cell<Option<Instant>>> =
-                Rc::new(std::cell::Cell::new(None));
+            use std::time::Instant;
+            let countdown = Rc::new(crate::view_models::AutosaveCountdown::new());
             let wake = ctx.wake_at_handle();
             let autosave = settings.autosave();
 
             let on_mutation = {
-                let deadline = deadline.clone();
+                let countdown = countdown.clone();
                 let wake = wake.clone();
                 let autosave = autosave.clone();
                 let dirty_seq = self.dirty_seq.clone();
@@ -2155,9 +2157,7 @@ impl Widget for App {
                     // the last save covered, so the derived `unsaved` goes true —
                     // and stays true if the save in flight (if any) predates it.
                     dirty_seq.set(dirty_seq.get() + 1);
-                    if autosave.get() {
-                        let at = Instant::now() + Duration::from_millis(1500);
-                        deadline.set(Some(at));
+                    if let Some(at) = countdown.on_mutation(Instant::now(), autosave.get()) {
                         wake.set(Some(at));
                     }
                 })
@@ -2172,17 +2172,14 @@ impl Widget for App {
             }
             {
                 let editors = editors.clone();
-                let deadline = deadline.clone();
                 let autosave = autosave.clone();
                 let tick = ctx.frame_tick();
                 ctx.effect(&tick, move |_| {
-                    let Some(at) = deadline.get() else { return };
-                    if Instant::now() >= at {
-                        deadline.set(None);
-                        if autosave.get() {
-                            editors.save_to_disk();
-                        }
-                    } else {
+                    let (save, resleep) = countdown.tick(Instant::now(), autosave.get());
+                    if save {
+                        editors.save_to_disk();
+                    }
+                    if let Some(at) = resleep {
                         wake.set(Some(at));
                     }
                 });
@@ -2195,46 +2192,22 @@ impl Widget for App {
         // re-arms. The interval (and whether it's on) comes from the open project's
         // effective policy via the scheduler; `None` disarms it.
         {
+            use crate::view_models::IntervalTick;
             use std::time::{Duration, Instant};
-            let deadline: Rc<std::cell::Cell<Option<Instant>>> =
-                Rc::new(std::cell::Cell::new(None));
-            // Last `completed_epoch` we armed against: ANY backup (manual, on-open,
-            // on-close, or our own tick) restarts the countdown, so "every N hours"
-            // means N hours since the last backup — not since the timer last armed.
-            let seen_epoch: Rc<std::cell::Cell<u64>> =
-                Rc::new(std::cell::Cell::new(backup_scheduler.completed_epoch()));
+            let countdown = crate::view_models::IntervalCountdown::new(
+                backup_scheduler.completed_epoch(),
+            );
             let wake = ctx.wake_at_handle();
             let scheduler = backup_scheduler.clone();
             let tick = ctx.frame_tick();
             ctx.effect(&tick, move |_| {
-                let Some(secs) = scheduler.interval_secs() else {
-                    deadline.set(None); // interval off / no project open
-                    return;
-                };
-                let epoch = scheduler.completed_epoch();
-                if epoch != seen_epoch.get() {
-                    // A backup just completed — restart the countdown from now.
-                    seen_epoch.set(epoch);
-                    let at = Instant::now() + Duration::from_secs(secs);
-                    deadline.set(Some(at));
-                    wake.set(Some(at));
-                    return;
-                }
-                match deadline.get() {
-                    None => {
-                        let at = Instant::now() + Duration::from_secs(secs);
-                        deadline.set(Some(at));
-                        wake.set(Some(at));
-                    }
-                    Some(at) => {
-                        if Instant::now() >= at {
-                            scheduler.interval_tick();
-                            let next = Instant::now() + Duration::from_secs(secs);
-                            deadline.set(Some(next));
-                            wake.set(Some(next));
-                        } else {
-                            wake.set(Some(at));
-                        }
+                let interval = scheduler.interval_secs().map(Duration::from_secs);
+                match countdown.tick(Instant::now(), interval, scheduler.completed_epoch()) {
+                    IntervalTick::Disarmed => {}
+                    IntervalTick::Sleep(at) => wake.set(Some(at)),
+                    IntervalTick::Fire(next) => {
+                        scheduler.interval_tick();
+                        wake.set(Some(next));
                     }
                 }
             });
