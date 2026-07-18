@@ -74,6 +74,7 @@ mod timers;
 mod trash;
 mod user_dictionary;
 mod welcome;
+mod work_settings;
 mod word_count_status;
 mod workspace_layout;
 mod writing_session;
@@ -112,6 +113,7 @@ pub(crate) use timers::{AutosaveCountdown, IntervalCountdown, IntervalTick};
 pub use trash::TrashViewModel;
 pub use user_dictionary::{ImportSummary, UserDictionaryViewModel};
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
+pub use work_settings::WorkSettingsViewModel;
 pub use word_count_status::{CountDisplay, count_display};
 pub use workspace_layout::WorkspaceLayoutViewModel;
 pub use writing_session::{

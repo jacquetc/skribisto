@@ -30,6 +30,8 @@ use bastyde::core::styles::{PanelVariant, Theme};
 use bastyde::data::{KeyedSelectionModel, NodeId, SelectionMode, TreeModel};
 use bastyde::i18n::{LocalizedString, current_locale, localized};
 use bastyde::prelude::*;
+
+mod panes;
 use bastyde::res;
 use bastyde::settings::{SettingsExt, TEXT_SCALE_KEY};
 use bastyde::widgets::tooltip::TooltipContent;
@@ -43,7 +45,9 @@ use bastyde::widgets::{
 
 use crate::app_ids::AppIds;
 use crate::singles::{SingleWork, SingleWorkInfo};
-use crate::view_models::{BackupSettingsViewModel, EditorTypography, SettingsViewModel};
+use crate::view_models::{
+    BackupSettingsViewModel, EditorTypography, SettingsViewModel, WorkSettingsViewModel,
+};
 use crate::{
     EDITOR_WIDTH_DEFAULT, GOALS_SHOW_CHARACTERS_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT,
     NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FONT_FAMILY_DEFAULT, NOTES_LINE_HEIGHT_DEFAULT,
@@ -464,479 +468,8 @@ impl SettingsPanel {
         }
     }
 
-    /// A `FontPicker` bound to a persisted typeface `Signal<String>` (bridged to
-    /// the picker's `Option<String>` selection; the effect mirrors external
-    /// changes — Reset — back into the picker). Self-populates from the shared
-    /// typesetter's real font database, including the bundled writing serifs, so
-    /// every offered name renders.
-    fn font_picker(ctx: &mut BuildContext, persisted: Signal<String>) -> impl Widget {
-        let selection: Signal<Option<String>> = Signal::new(Some(persisted.get()));
-        {
-            let selection = selection.clone();
-            ctx.effect(&persisted, move |p: &String| {
-                if selection.get().as_deref() != Some(p.as_str()) {
-                    selection.set(Some(p.clone()));
-                }
-            });
-        }
-        let write_back = persisted.clone();
-        FixedSize::new().width(240.0).child(
-            FontPicker::new(selection)
-                .placeholder(tr!(settings_field_typeface()))
-                .on_select(move |f: &str, _ctx| write_back.set(f.to_string())),
-        )
-    }
-
-    /// One per-editor-type typography page (Scene / Synopsis / Notes): Typeface /
-    /// Size / Line height / First-line indent, bound to `typo`'s live signals.
-    fn typography_pane(
-        ctx: &mut BuildContext,
-        page: LocalizedString,
-        typo: &EditorTypography,
-    ) -> impl Widget {
-        let form = FormLayout::new()
-            .label(page.clone())
-            .label_gap(16.0)
-            .row_spacing(14.0)
-            .full_width(group(tr!(settings_group_typography())))
-            .line(
-                field_label(tr!(settings_field_typeface())),
-                Self::font_picker(ctx, typo.font_family.clone()),
-            )
-            .line(
-                field_label(tr!(settings_field_size())),
-                slider_field(typo.size.clone(), 0.7, 1.6, 0.05, |v| {
-                    format!("{:.0}%", v * 100.0)
-                }),
-            )
-            .line(
-                field_label(tr!(settings_field_line_height())),
-                slider_field(typo.line_height.clone(), 1.0, 2.4, 0.02, |v| {
-                    format!("{v:.2}")
-                }),
-            )
-            .line(
-                field_label(tr!(settings_field_first_line_indent())),
-                slider_field(typo.first_line_indent.clone(), 0.0, 60.0, 2.0, |v| {
-                    format!("{} px", v.round() as i32)
-                }),
-            )
-            .line(
-                field_label(tr!(settings_field_paragraph_spacing_before())),
-                slider_field(typo.para_spacing_before.clone(), 0.0, 40.0, 2.0, |v| {
-                    format!("{} px", v.round() as i32)
-                }),
-            )
-            .line(
-                field_label(tr!(settings_field_paragraph_spacing_after())),
-                slider_field(typo.para_spacing_after.clone(), 0.0, 40.0, 2.0, |v| {
-                    format!("{} px", v.round() as i32)
-                }),
-            );
-        pane_frame(crumb(Some(tr!(settings_sec_editor())), page), form)
-    }
-
-    /// Editor ▸ Editor Behavior — the non-typographic writing settings: the
-    /// centered-column width + the synopsis-pane / typewriter / highlight toggles.
-    fn editor_behavior_pane(vm: &SettingsViewModel) -> impl Widget {
-        let form = FormLayout::new()
-            .label(tr!(settings_page_editor_behavior()))
-            .label_gap(16.0)
-            .row_spacing(14.0)
-            .full_width(group(tr!(settings_group_writing_column())))
-            .line(
-                field_label(tr!(settings_text_width())),
-                slider_field(vm.column_width(), 400.0, 1200.0, 20.0, |v| {
-                    format!("{} px", v.round() as i32)
-                }),
-            )
-            .line(
-                field_label(tr!(settings_preview_width())),
-                slider_field(vm.preview_width(), 400.0, 1200.0, 20.0, |v| {
-                    format!("{} px", v.round() as i32)
-                }),
-            )
-            .full_width(Checkbox::new(vm.synopsis_pane()).label(tr!(settings_synopsis_pane())))
-            .full_width(Checkbox::new(vm.typewriter()).label(tr!(settings_typewriter())))
-            .full_width(
-                Checkbox::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())),
-            )
-            .full_width(group(tr!(settings_group_container_views())))
-            .full_width(
-                Checkbox::new(vm.remember_view())
-                    .label(tr!(settings_remember_view()))
-                    .rich_tooltip_content(
-                        TooltipContent::new(
-                            "settings.remember_view",
-                            tr!(settings_remember_view_tip()),
-                        )
-                        .with_more(tr!(settings_remember_view_tip_more())),
-                    ),
-            );
-
-        pane_frame(
-            crumb(
-                Some(tr!(settings_sec_editor())),
-                tr!(settings_page_editor_behavior()),
-            ),
-            form,
-        )
-    }
-
-    /// Editor ▸ Goals — the word-**counting method** (a global USER preference that
-    /// drives only the live status-bar count; the canonical progress snapshot always
-    /// counts with `Auto`) and whether the status bar shows characters beside words.
-    /// The 4-variant method is bridged to the `RadioGroup`'s `usize` selection with two
-    /// guarded effects — the shape `work_structure_pane` uses for `ChapterMode`.
-    fn goals_pane(ctx: &mut BuildContext, vm: &SettingsViewModel) -> impl Widget {
-        let method = vm.counting_method();
-        let index: Signal<usize> = Signal::new(method_to_index(method.get()));
-        {
-            let index = index.clone();
-            ctx.effect(&method, move |m| {
-                let i = method_to_index(*m);
-                if index.get() != i {
-                    index.set(i);
-                }
-            });
-        }
-        {
-            let method = method.clone();
-            ctx.effect(&index, move |i| {
-                let m = index_to_method(*i);
-                if method.get() != m {
-                    method.set(m);
-                }
-            });
-        }
-
-        let form = FormLayout::new()
-            .label(tr!(settings_page_goals()))
-            .label_gap(16.0)
-            .row_spacing(14.0)
-            .full_width(group(tr!(settings_group_counting())))
-            .full_width(
-                RadioGroup::new()
-                    .radio(RadioButton::new(0, index.clone()).label(tr!(settings_counting_auto())))
-                    .radio(
-                        RadioButton::new(1, index.clone())
-                            .label(tr!(settings_counting_whitespace())),
-                    )
-                    .radio(
-                        RadioButton::new(2, index.clone())
-                            .label(tr!(settings_counting_unicode_words())),
-                    )
-                    .radio(
-                        RadioButton::new(3, index.clone())
-                            .label(tr!(settings_counting_cjk_hybrid())),
-                    ),
-            )
-            .full_width(hint(tr!(settings_counting_hint())))
-            .full_width(group(tr!(settings_group_goals_display())))
-            .full_width(Toggle::new(vm.show_characters()).label(tr!(settings_show_characters())));
-
-        pane_frame(
-            crumb(Some(tr!(settings_sec_editor())), tr!(settings_page_goals())),
-            form,
-        )
-    }
-
-    /// Editor ▸ Corkboard — the card-board defaults: nested-vs-flat mode, card
-    /// size, and what a card shows. All store-backed, so a change fans out live to
-    /// every open board. The nested/flat radio bridges a `usize` selection to the
-    /// `corkboard_nested` bool via two guarded effects — the shape `goals_pane` uses.
-    fn corkboard_pane(ctx: &mut BuildContext, vm: &SettingsViewModel) -> impl Widget {
-        let nested = vm.corkboard_nested();
-        // 0 = Nested, 1 = Flat.
-        let index: Signal<usize> = Signal::new(if nested.get() { 0 } else { 1 });
-        {
-            let index = index.clone();
-            ctx.effect(&nested, move |n| {
-                let i = if *n { 0 } else { 1 };
-                if index.get() != i {
-                    index.set(i);
-                }
-            });
-        }
-        {
-            let nested = nested.clone();
-            ctx.effect(&index, move |i| {
-                let n = *i == 0;
-                if nested.get() != n {
-                    nested.set(n);
-                }
-            });
-        }
-
-        let typo = vm.corkboard_typo();
-        let form = FormLayout::new()
-            .label(tr!(settings_page_corkboard()))
-            .label_gap(16.0)
-            .row_spacing(14.0)
-            .full_width(group(tr!(settings_group_corkboard_layout())))
-            .full_width(
-                RadioGroup::new()
-                    .radio(RadioButton::new(0, index.clone()).label(tr!(corkboard_view_nested())))
-                    .radio(RadioButton::new(1, index.clone()).label(tr!(corkboard_view_flat()))),
-            )
-            .full_width(hint(tr!(corkboard_layout_hint())))
-            .full_width(group(tr!(settings_group_corkboard_cards())))
-            .line(
-                field_label(tr!(corkboard_card_size())),
-                Slider::new(
-                    vm.corkboard_card_size(),
-                    crate::CORKBOARD_CARD_SIZE_MIN,
-                    crate::CORKBOARD_CARD_SIZE_MAX,
-                )
-                .step(crate::CORKBOARD_CARD_SIZE_STEP)
-                .label(tr!(corkboard_card_size())),
-            )
-            .full_width(
-                Toggle::new(vm.corkboard_show_word_count()).label(tr!(corkboard_show_word_count())),
-            )
-            // The card's own synopsis typography — mirrors the Scene / Synopsis / Notes
-            // pages, so cards can read distinctly from the Full-Synopsis pane.
-            .full_width(group(tr!(settings_group_typography())))
-            .line(
-                field_label(tr!(settings_field_typeface())),
-                Self::font_picker(ctx, typo.font_family.clone()),
-            )
-            .line(
-                field_label(tr!(settings_field_size())),
-                slider_field(typo.size.clone(), 0.7, 1.6, 0.05, |v| {
-                    format!("{:.0}%", v * 100.0)
-                }),
-            )
-            .line(
-                field_label(tr!(settings_field_line_height())),
-                slider_field(typo.line_height.clone(), 1.0, 2.4, 0.02, |v| format!("{v:.2}")),
-            )
-            .line(
-                field_label(tr!(settings_field_first_line_indent())),
-                slider_field(typo.first_line_indent.clone(), 0.0, 60.0, 2.0, |v| {
-                    format!("{} px", v.round() as i32)
-                }),
-            )
-            .line(
-                field_label(tr!(settings_field_paragraph_spacing_before())),
-                slider_field(typo.para_spacing_before.clone(), 0.0, 40.0, 2.0, |v| {
-                    format!("{} px", v.round() as i32)
-                }),
-            )
-            .line(
-                field_label(tr!(settings_field_paragraph_spacing_after())),
-                slider_field(typo.para_spacing_after.clone(), 0.0, 40.0, 2.0, |v| {
-                    format!("{} px", v.round() as i32)
-                }),
-            );
-
-        pane_frame(
-            crumb(
-                Some(tr!(settings_sec_editor())),
-                tr!(settings_page_corkboard()),
-            ),
-            form,
-        )
-    }
-
-    /// Appearance & Behaviour ▸ Appearance — interface language, the app-wide
-    /// **Theme** and **Interface text size** (both relocated here from the old
-    /// Manuscript pane, where "Editor theme"/"Text size" were misnomers for
-    /// app-wide controls), and the "show welcome at startup" preference.
-    fn appearance_pane(vm: &SettingsViewModel, scale: Signal<f32>) -> impl Widget {
-        let form = FormLayout::new()
-            .label(tr!(settings_page_appearance()))
-            .label_gap(16.0)
-            .row_spacing(14.0)
-            .full_width(group(tr!(settings_group_language())))
-            .line(
-                field_label(tr!(settings_field_language())),
-                FixedSize::new().width(240.0).child(LanguageSwitcher::new()),
-            )
-            .full_width(group(tr!(settings_group_theme())))
-            .line(
-                field_label(tr!(settings_field_app_theme())),
-                FixedSize::new()
-                    .width(240.0)
-                    .child(ThemeSwitcher::new().system(true)),
-            )
-            .line(
-                field_label(tr!(settings_field_text_scale())),
-                FixedSize::new()
-                    .width(300.0)
-                    .child(TextScaleControl::new(scale)),
-            )
-            .full_width(group(tr!(settings_group_startup())))
-            .full_width(Checkbox::new(vm.show_welcome()).label(tr!(settings_show_welcome())));
-
-        pane_frame(
-            crumb(
-                Some(tr!(settings_sec_appearance_behaviour())),
-                tr!(settings_page_appearance()),
-            ),
-            form,
-        )
-    }
-
-    /// Backup & Sync ▸ Autosave — migrates the autosave preference.
-    /// Settings ▸ Spelling ▸ Spell-checking — the app-wide master switch, the same
-    /// `SPELLCHECK_ENABLED_KEY` the title-bar toggle / View menu / F7 drive. A plain
-    /// store-backed `Toggle`: writing the signal persists, and `App::build`'s effect turns it
-    /// into `set_enabled` + a re-attach. No per-language controls here — those live on the
-    /// Work's / an item's Language field (the hint says so).
-    fn spellcheck_pane(vm: &SettingsViewModel) -> impl Widget {
-        let form = FormLayout::new()
-            .label(tr!(settings_page_spellcheck()))
-            .label_gap(16.0)
-            .row_spacing(12.0)
-            .full_width(group(tr!(settings_group_spellcheck())))
-            .full_width(
-                Toggle::new(vm.spellcheck_enabled()).label(tr!(settings_spellcheck_enabled())),
-            )
-            .full_width(hint(tr!(settings_spellcheck_hint())));
-
-        pane_frame(
-            crumb(
-                Some(tr!(settings_sec_spelling())),
-                tr!(settings_page_spellcheck()),
-            ),
-            form,
-        )
-    }
-
-    fn autosave_pane(vm: &SettingsViewModel) -> impl Widget {
-        let form = FormLayout::new()
-            .label(tr!(settings_page_autosave()))
-            .label_gap(16.0)
-            .row_spacing(12.0)
-            .full_width(group(tr!(settings_group_autosave())))
-            .full_width(Toggle::new(vm.autosave()).label(tr!(settings_autosave())))
-            .full_width(hint(tr!(settings_autosave_hint())));
-
-        pane_frame(
-            crumb(
-                Some(tr!(settings_sec_backup())),
-                tr!(settings_page_autosave()),
-            ),
-            form,
-        )
-    }
-
-    /// Work: `<name>` ▸ Structure — the per-project chapter storage mode, backed by
-    /// the shared `SingleWork` (entity-backed, undoable via the Work's stack). The
-    /// `Toggle` is bridged to `chapter_mode` (checked = flat) with two effects: one
-    /// mirrors external changes (refresh/undo) into the toggle, the other writes +
-    /// saves on a user toggle. Both guard on the current value to avoid a loop.
-    fn work_structure_pane(
-        ctx: &mut BuildContext,
-        work: &SingleWork,
-        stack: Signal<Option<u64>>,
-        work_title: String,
-    ) -> impl Widget {
-        let mode = work.chapter_mode();
-        let flat: Signal<bool> = Signal::new(matches!(mode.get(), ChapterMode::Flat));
-        {
-            let flat = flat.clone();
-            ctx.effect(&mode, move |m| {
-                let is_flat = matches!(m, ChapterMode::Flat);
-                if flat.get() != is_flat {
-                    flat.set(is_flat);
-                }
-            });
-        }
-        {
-            let work = work.clone();
-            let mode = mode.clone();
-            ctx.effect(&flat, move |f| {
-                let want = if *f {
-                    ChapterMode::Flat
-                } else {
-                    ChapterMode::Folder
-                };
-                if mode.get() != want {
-                    work.set_chapter_mode(want.clone());
-                    work.save(stack.get());
-                }
-            });
-        }
-
-        let form = FormLayout::new()
-            .label(tr!(settings_page_structure()))
-            .label_gap(16.0)
-            .row_spacing(12.0)
-            .full_width(group(tr!(settings_group_chapters())))
-            .full_width(Toggle::new(flat).label(tr!(settings_chapter_flat())))
-            .full_width(hint(tr!(settings_chapter_flat_hint())));
-
-        pane_frame(
-            crumb(
-                Some(lit!(format!(
-                    "{}: {}",
-                    tr!(settings_sec_work()).resolve_now(),
-                    work_title
-                ))),
-                tr!(settings_page_structure()),
-            ),
-            form,
-        )
-    }
-
-    /// Work: `<name>` ▸ Language — the project's default spell-check language(s), edited with
-    /// the shared [`LanguagePillField`](crate::language_pill_field::LanguagePillField) over the
-    /// live `SingleWork::dict_language` signal. Adding a language persists it and saves; a hint
-    /// states the multi-language trade-off.
-    fn work_language_pane(
-        ctx: &mut BuildContext,
-        work: &SingleWork,
-        stack: Signal<Option<u64>>,
-        work_title: String,
-    ) -> impl Widget {
-        // Build the whole form per branch so the pill field is added through FormLayout's own
-        // `full_width(widget)` **deferred insertion** (which parents it to the FormLayout). The
-        // earlier `ctx.add_boxed(field)` + `full_width_id` route parented the field to *this*
-        // build context instead, orphaning it into an arena root — which the layout pass then
-        // placed at the window origin (0,0) with the full window size, leaking a stray pill row
-        // to the top-left that even survived closing Settings.
-        let base = FormLayout::new()
-            .label(tr!(settings_page_language()))
-            .label_gap(16.0)
-            .row_spacing(12.0)
-            .full_width(group(tr!(settings_field_dict_language())));
-        let form = match ctx
-            .app_state::<crate::spellcheck::SpellcheckService>()
-            .cloned()
-        {
-            Some(spell) => {
-                let value = work.dict_language();
-                let set: crate::language_pill_field::SetLanguages = {
-                    let work = work.clone();
-                    Rc::new(move |new: String, _c| {
-                        work.set_dict_language(new);
-                        work.save(stack.get());
-                    })
-                };
-                // The Work is the root of the inheritance chain — nothing to inherit from.
-                base.full_width(crate::language_pill_field::LanguagePillField::new(
-                    value, set, spell, None,
-                ))
-            }
-            None => base.full_width(TextWidget::new(tr!(settings_field_dict_language()))),
-        }
-        .full_width(hint(tr!(dict_tradeoff_hint())));
-
-        pane_frame(
-            crumb(
-                Some(lit!(format!(
-                    "{}: {}",
-                    tr!(settings_sec_work()).resolve_now(),
-                    work_title
-                ))),
-                tr!(settings_page_language()),
-            ),
-            form,
-        )
-    }
-
+    // The per-page bodies live in `settings_panel::panes` — one module per page.
+    // This impl keeps only the shell: the category tree, the search field and the footer.
     /// The category tree (left rail). Builds the `TreeModel`, seeds selection to
     /// the active page, and wires selection → `selected_pane`. Returns the
     /// `TreeView`, the search's page→node map, and the model for lookups.
@@ -1256,11 +789,15 @@ impl Widget for SettingsPanel {
             .map(|i| i.stack_id.clone())
             .unwrap_or_else(|| Signal::new(None));
         let work_title = work.as_ref().map(|w| w.title().get()).unwrap_or_default();
-        let structure_pane: Box<dyn Widget> = match &work {
-            Some(w) => Box::new(Self::work_structure_pane(
+        // The two Work pages edit the *entity*, not the settings store, so they go through
+        // their own view-model rather than calling `SingleWork::set_*` + `save` from a pane.
+        let work_vm = work
+            .as_ref()
+            .map(|w| WorkSettingsViewModel::new(w.clone(), stack.clone()));
+        let structure_pane: Box<dyn Widget> = match &work_vm {
+            Some(vm) => Box::new(panes::work_structure::work_structure_pane(
                 ctx,
-                w,
-                stack.clone(),
+                vm,
                 work_title.clone(),
             )),
             None => Box::new(empty_pane(
@@ -1269,11 +806,10 @@ impl Widget for SettingsPanel {
                 res!("assets/icons/binder/book.svg"),
             )),
         };
-        let language_pane: Box<dyn Widget> = match &work {
-            Some(w) => Box::new(Self::work_language_pane(
+        let language_pane: Box<dyn Widget> = match &work_vm {
+            Some(vm) => Box::new(panes::work_language::work_language_pane(
                 ctx,
-                w,
-                stack.clone(),
+                vm,
                 work_title.clone(),
             )),
             None => Box::new(empty_pane(
@@ -1417,7 +953,7 @@ impl Widget for SettingsPanel {
         let panes: Vec<(Pane, Box<dyn Widget>)> = vec![
             (
                 Pane::Appearance,
-                Box::new(Self::appearance_pane(&vm, scale.clone())),
+                Box::new(panes::appearance::appearance_pane(&vm, scale.clone())),
             ),
             (
                 Pane::MenusToolbars,
@@ -1437,7 +973,7 @@ impl Widget for SettingsPanel {
             ),
             (
                 Pane::SceneTypography,
-                Box::new(Self::typography_pane(
+                Box::new(panes::typography::typography_pane(
                     ctx,
                     tr!(settings_page_scene()),
                     &typo.scene,
@@ -1445,7 +981,7 @@ impl Widget for SettingsPanel {
             ),
             (
                 Pane::SynopsisTypography,
-                Box::new(Self::typography_pane(
+                Box::new(panes::typography::typography_pane(
                     ctx,
                     tr!(settings_page_synopsis()),
                     &typo.synopsis,
@@ -1453,7 +989,7 @@ impl Widget for SettingsPanel {
             ),
             (
                 Pane::NotesTypography,
-                Box::new(Self::typography_pane(
+                Box::new(panes::typography::typography_pane(
                     ctx,
                     tr!(settings_page_notes()),
                     &typo.notes,
@@ -1461,15 +997,15 @@ impl Widget for SettingsPanel {
             ),
             (
                 Pane::EditorBehavior,
-                Box::new(Self::editor_behavior_pane(&vm)),
+                Box::new(panes::editor_behavior::editor_behavior_pane(&vm)),
             ),
-            (Pane::Goals, Box::new(Self::goals_pane(ctx, &vm))),
+            (Pane::Goals, Box::new(panes::goals::goals_pane(ctx, &vm))),
             (
                 Pane::Corkboard,
-                Box::new(Self::corkboard_pane(ctx, &vm)),
+                Box::new(panes::corkboard::corkboard_pane(ctx, &vm)),
             ),
             (Pane::Dictionaries, dictionaries_pane),
-            (Pane::Autosave, Box::new(Self::autosave_pane(&vm))),
+            (Pane::Autosave, Box::new(panes::autosave::autosave_pane(&vm))),
             (Pane::ExportFormats, export_styles_pane),
             (
                 Pane::Keymap,
@@ -1484,7 +1020,7 @@ impl Widget for SettingsPanel {
             (Pane::WorkBackup, work_backup_pane),
             (Pane::WorkLanguage, language_pane),
             (Pane::WorkDictionary, dictionary_pane),
-            (Pane::Spellcheck, Box::new(Self::spellcheck_pane(&vm))),
+            (Pane::Spellcheck, Box::new(panes::spellcheck::spellcheck_pane(&vm))),
         ];
         if let Some((slot, (pane, _))) =
             panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)
