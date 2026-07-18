@@ -461,6 +461,10 @@ pub struct App {
     /// The search feature's shared view-model, created once on first build (like
     /// [`editors`](Self::editors) — its debounce/signals want a live context).
     search: Option<SearchReplaceViewModel>,
+    /// Stable id for the leading trash dock (third rail tab).
+    trash_dock: DockWidgetId,
+    /// The trash feature's shared view-model, created once on first build.
+    trash: Option<crate::view_models::TrashViewModel>,
     /// Keeps this window's `SearchSettingsService` `Reloadable` registration alive
     /// in the shared `SettingsRegistry`, so a peer process's `search.toml` writes
     /// are picked up live — the same story as [`backup_settings_reloadable`](Self::backup_settings_reloadable).
@@ -515,6 +519,8 @@ impl App {
             preview_dock: DockWidgetId::from_raw(crate::docks::PREVIEW_DOCK_ID),
             search_dock: DockWidgetId::from_raw(crate::docks::SEARCH_DOCK_ID),
             search: None,
+            trash_dock: DockWidgetId::from_raw(crate::docks::TRASH_DOCK_ID),
+            trash: None,
             search_settings_reloadable: None,
             root_child: None,
             backup_settings_reloadable: None,
@@ -798,6 +804,23 @@ impl Widget for App {
                         preview_dock,
                         search_dock,
                     )
+                })
+                .clone()
+        };
+
+        // ── The trash feature's shared view-model ────────────────────────────
+        // Shares the outline's DockingModel (the leading rail hosts several tabs)
+        // and a distinct dock id; created once, not registered as app_state.
+        let trash = {
+            let app_ctx = self.app_ctx.clone();
+            let ids = self.outline.ids();
+            let docking = outline.docking();
+            let trash_dock = self.trash_dock;
+            self.trash
+                .get_or_insert_with(|| {
+                    let model =
+                        crate::models::TrashTreeModel::new(app_ctx.clone(), ids.work_id.clone());
+                    crate::view_models::TrashViewModel::new(app_ctx, ids, model, docking, trash_dock)
                 })
                 .clone()
         };
@@ -1120,6 +1143,50 @@ impl Widget for App {
                 docking.reveal_dock(search_dock);
                 search.set_show_replace(true);
             }));
+        }
+        // ── Trash dock commands ──────────────────────────────────────────────
+        {
+            let docking = outline.docking();
+            let trash_dock = self.trash_dock;
+            ctx.register_action_global(Action::new("trash.show").on_invoke(move |_i, _c| {
+                docking.reveal_dock(trash_dock);
+            }));
+        }
+        {
+            let trash = trash.clone();
+            ctx.register_action_global(
+                Action::new("trash.empty").on_invoke(move |_i, c| trash.confirm_empty_trash(c)),
+            );
+        }
+        {
+            let trash = trash.clone();
+            ctx.register_action_global(Action::new("trash.restore").on_invoke(move |i, c| {
+                if let Some(AppIntent::RestoreTrashed { trash_info_ids }) =
+                    AppIntent::from_intent(i)
+                {
+                    trash.restore(c, trash_info_ids);
+                }
+            }));
+        }
+        {
+            let trash = trash.clone();
+            ctx.register_action_global(Action::new("trash.restore_item").on_invoke(move |i, c| {
+                if let Some(AppIntent::RestoreTrashedItem { item_id }) = AppIntent::from_intent(i) {
+                    trash.restore_item(c, *item_id);
+                }
+            }));
+        }
+        {
+            let trash = trash.clone();
+            ctx.register_action_global(Action::new("trash.delete_forever").on_invoke(
+                move |i, c| {
+                    if let Some(AppIntent::DeleteTrashForever { trash_info_ids }) =
+                        AppIntent::from_intent(i)
+                    {
+                        trash.confirm_delete_forever(c, trash_info_ids);
+                    }
+                },
+            ));
         }
         {
             let outline = outline.clone();
@@ -2479,7 +2546,7 @@ impl Widget for App {
             .dock(crate::docks::outline::outline_dock(
                 outline.clone(),
                 self.app_ctx.clone(),
-                on_open,
+                on_open.clone(),
                 active_item.clone(),
             ))
             .dock(crate::docks::inspector::inspector_dock(
@@ -2495,6 +2562,11 @@ impl Widget for App {
             .dock(crate::docks::search_preview::search_preview_dock(
                 search.clone(),
                 self.preview_dock,
+            ))
+            .dock(crate::docks::trash::trash_dock(
+                trash.clone(),
+                self.trash_dock,
+                on_open,
             ));
         // First-build-only default arrangement (see the config block above on why
         // it must not re-run on rebuilds).
@@ -2512,6 +2584,10 @@ impl Widget for App {
             );
             docking.open_dock(
                 self.search_dock,
+                DockOpenLocation::side(DockSide::Leading).new_tab(),
+            );
+            docking.open_dock(
+                self.trash_dock,
                 DockOpenLocation::side(DockSide::Leading).new_tab(),
             );
             docking.reveal_dock(outline.dock_id());

@@ -123,6 +123,23 @@ pub enum AppIntent {
     #[name = "export.scope"]
     ExportScoped { scope: ExportScopeKind },
 
+    /// Restore one or more trashed roots in place (from the trash dock's context
+    /// menu / automation). If the backend reports `orphaned`, the destination
+    /// picker opens automatically. Consumed by the global `trash.restore` action.
+    #[name = "trash.restore"]
+    RestoreTrashed { trash_info_ids: Vec<u64> },
+
+    /// Restore a single trashed item to a chosen destination — fired by the
+    /// editor's trash banner (which has the item id, not a TrashInfo). Opens the
+    /// destination picker. Consumed by the global `trash.restore_item` action.
+    #[name = "trash.restore_item"]
+    RestoreTrashedItem { item_id: u64 },
+
+    /// Permanently delete one or more trashed roots (behind a confirmation +
+    /// undo-grace toast). Consumed by the global `trash.delete_forever` action.
+    #[name = "trash.delete_forever"]
+    DeleteTrashForever { trash_info_ids: Vec<u64> },
+
     /// Add word(s) to the open project's personal dictionary — fired from the
     /// editor's "Add to dictionary" context-menu item with the resolved
     /// selection/caret words. The menu mounts at the arena root, so it reaches
@@ -206,6 +223,43 @@ mod tests {
                 assert_eq!(words, &["Gandalf".to_string(), "Skribisto".to_string()]);
             }
             other => panic!("expected AddWordsToDictionary, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn restore_trashed_round_trips_its_payload() {
+        let intent: Intent = AppIntent::RestoreTrashed {
+            trash_info_ids: vec![7, 9],
+        }
+        .into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::RestoreTrashed { trash_info_ids }) => {
+                assert_eq!(trash_info_ids, &[7, 9])
+            }
+            other => panic!("expected RestoreTrashed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn restore_trashed_item_round_trips_its_payload() {
+        let intent: Intent = AppIntent::RestoreTrashedItem { item_id: 8200 }.into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::RestoreTrashedItem { item_id }) => assert_eq!(*item_id, 8200),
+            other => panic!("expected RestoreTrashedItem, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn delete_trash_forever_round_trips_its_payload() {
+        let intent: Intent = AppIntent::DeleteTrashForever {
+            trash_info_ids: vec![3],
+        }
+        .into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::DeleteTrashForever { trash_info_ids }) => {
+                assert_eq!(trash_info_ids, &[3])
+            }
+            other => panic!("expected DeleteTrashForever, got {other:?}"),
         }
     }
 

@@ -52,6 +52,7 @@ serde_json = "1.0"
 toml = "0.8"
 frontend = { workspace = true }
 skribisto_model = { workspace = true }
+binder_ordering = { workspace = true }
 # Direct edge (bypassing the generated `frontend` crate) for the backup settings'
 # retention policy type + the retention/fingerprint/sniff helpers used by the
 # backup scheduler, backups list, and open-a-backup flow.

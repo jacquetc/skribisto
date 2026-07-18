@@ -601,6 +601,11 @@ impl ProjectWindowFactory {
                                         .intent("search.show")
                                         .shortcut("search.show"),
                                 )
+                                // Reveal the trash dock — like Search, a plain action
+                                // (a switchable leading tab, not a shown/hidden side).
+                                .item(
+                                    MenuEntry::new(tr!(menu_trash())).intent("trash.show"),
+                                )
                                 .item(
                                     MenuEntry::new(tr!(menu_search_preview()))
                                         .checked(preview_visible)

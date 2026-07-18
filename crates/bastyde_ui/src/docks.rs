@@ -32,6 +32,8 @@ pub const SEARCH_DOCK_ID: u64 = DOCK_ID_BASE + 2;
 pub const INSPECTOR_DOCK_ID: u64 = DOCK_ID_BASE + 3;
 /// The bottom search-preview band.
 pub const PREVIEW_DOCK_ID: u64 = DOCK_ID_BASE + 4;
+/// The trash panel (leading rail, third tab).
+pub const TRASH_DOCK_ID: u64 = DOCK_ID_BASE + 5;
 
 pub mod create_split_button;
 pub mod inspector;
@@ -39,3 +41,4 @@ pub mod outline;
 pub mod search;
 pub mod search_preview;
 pub mod search_replace_flow;
+pub mod trash;

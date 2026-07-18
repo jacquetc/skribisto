@@ -66,6 +66,7 @@ mod save_status;
 mod search_replace;
 mod settings;
 mod stream;
+mod trash;
 mod user_dictionary;
 mod welcome;
 mod word_count_status;
@@ -98,6 +99,7 @@ pub use settings::{
 };
 pub use stream::{SplitFlavour, StreamViewModel};
 pub(crate) use stream::{is_prose_bearing, is_synopsis_bearing};
+pub use trash::TrashViewModel;
 pub use user_dictionary::{ImportSummary, UserDictionaryViewModel};
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 pub use word_count_status::{CountDisplay, count_display};

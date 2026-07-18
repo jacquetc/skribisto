@@ -291,6 +291,14 @@ impl BinderBinderItemsTreeModel {
         self.slice.with_key(key, |n| (n.item_id, n.title.clone()))
     }
 
+    /// True when `key` is a folder-kind item row (drop-target resolution: a drop
+    /// lands *into* a folder, *after* a leaf).
+    pub fn node_is_folder(&self, key: &BinderTreeKey) -> bool {
+        self.slice
+            .with_key(key, |n| n.kind == "folder")
+            .unwrap_or(false)
+    }
+
     /// The owning binder id for any key.
     pub fn binder_of(&self, key: &BinderTreeKey) -> Option<u64> {
         match key {

@@ -29,6 +29,12 @@ pub fn search_preview_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/search.svg"))
 }
 
+/// The Trash activity icon: a wastebasket. Fronts the leading rail's third tab
+/// (beside Outline and Search) and the trash panel's Empty Trash… button.
+pub fn trash_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/trash.svg"))
+}
+
 /// The Inspector activity icon: a right side-panel glyph.
 pub fn inspector_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/inspector.svg"))
