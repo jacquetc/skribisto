@@ -23,8 +23,8 @@ use bastyde::prelude::*;
 use frontend::direct_access::RecentWorkDto;
 
 use crate::intents::AppIntent;
-use crate::open_registry::OpenEntry;
-use crate::process;
+use crate::shell::open_registry::OpenEntry;
+use crate::shell::process;
 
 /// One row of the **Currently open** section.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -85,7 +85,7 @@ pub fn sections(entries: Vec<OpenEntry>, recents: &[RecentWorkDto], my_pid: u32)
 /// process cannot raise itself unprompted.
 pub fn raise_instance(ctx: &mut EventContext, pid: u32) {
     ctx.request_activation_token_self(Box::new(move |tok| {
-        let _ = crate::ipc::send_raise(pid, tok);
+        let _ = crate::shell::ipc::send_raise(pid, tok);
     }));
 }
 

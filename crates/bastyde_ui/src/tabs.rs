@@ -290,7 +290,7 @@ pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
 /// The permanent "this item is in the Trash" warning banner shown above a trashed
 /// item's editor. Its Restore button fires [`AppIntent::RestoreTrashedItem`], which
 /// the trash view-model turns into the destination picker. No `on_dismiss` ⇒ a
-/// permanent reminder (the [`crate::backup_banner`] technique).
+/// permanent reminder (the [`crate::backup::banner`] technique).
 fn trash_banner(item_id: u64) -> impl Widget {
     Banner::warning(tr!(trash_banner_title()))
         .description(tr!(trash_banner_description()))

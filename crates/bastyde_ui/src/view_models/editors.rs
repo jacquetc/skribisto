@@ -320,7 +320,7 @@ impl EditorsViewModel {
                 .title(tab_title)
                 .closable(true)
                 .icon(move || {
-                    crate::binder_icons::sub_role_icon(&sub_role).color(icon_color.clone())
+                    crate::binder::icons::sub_role_icon(&sub_role).color(icon_color.clone())
                 }),
             tab,
         ));
@@ -853,7 +853,7 @@ impl EditorsViewModel {
                         TabInfo::new()
                             .title(caption)
                             .closable(true)
-                            .icon(move || crate::binder_icons::sub_role_icon(&sub_role)),
+                            .icon(move || crate::binder::icons::sub_role_icon(&sub_role)),
                         tab,
                     ),
                 );

@@ -36,7 +36,7 @@ use std::time::Duration;
 use bastyde::prelude::*;
 use bastyde::widgets::Toast;
 
-use crate::dictionary_registry::{self, DictionaryEntry, Source};
+use crate::spellcheck::dictionary_registry::{self, DictionaryEntry, Source};
 use crate::models::{DictionarySettingsService, InstalledDictionariesModel, license_hash};
 
 /// One toast surface for the whole download activity, updated in place by id.

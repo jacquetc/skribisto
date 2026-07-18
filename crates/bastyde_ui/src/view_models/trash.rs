@@ -220,7 +220,7 @@ impl TrashViewModel {
         let q = queue.clone();
         let on_done: Rc<dyn Fn(&mut EventContext)> =
             Rc::new(move |c| vm.present_next_orphan(c, q.clone()));
-        crate::restore_target_panel::present_trash_restore_target(
+        crate::trash::restore_target_panel::present_trash_restore_target(
             ctx,
             self.clone(),
             item_id,
@@ -235,7 +235,7 @@ impl TrashViewModel {
     /// descendant "Restore to…" entry point).
     pub fn restore_item(&self, ctx: &mut EventContext, item_id: u64) {
         let title = self.item_title(item_id);
-        crate::restore_target_panel::present_trash_restore_target(
+        crate::trash::restore_target_panel::present_trash_restore_target(
             ctx,
             self.clone(),
             item_id,

@@ -174,7 +174,7 @@ impl ProjectLifecycleViewModel {
         // window). `replace_claim` drops any claim this window already held: Load supersedes
         // New/Load/Restore with no `CloseWork` in between.
         if let Some(path) = i.single_work_info.file_name().get() {
-            crate::open_registry::replace_claim(&path, &i.single_work.title().get());
+            crate::shell::open_registry::replace_claim(&path, &i.single_work.title().get());
         }
         self.refresh_spellcheck();
     }
@@ -233,7 +233,7 @@ impl ProjectLifecycleViewModel {
         // `(pid, path)`, so a window that one day holds several projects must not drop the
         // others' claims when one closes.
         if let Some(path) = i.single_work_info.file_name().get() {
-            crate::open_registry::release(&path);
+            crate::shell::open_registry::release(&path);
         }
         // Drop this project's dictionaries, mutes and personal words: the next project
         // reloads lazily and starts unmuted.

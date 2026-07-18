@@ -13,9 +13,9 @@
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
 
-use crate::import_plume_panel::ImportPlumePanel;
+use crate::panels::import_plume::ImportPlumePanel;
 use crate::intents::AppIntent;
-use crate::settings_panel::SettingsPanel;
+use crate::settings::SettingsPanel;
 use crate::view_models::{ImportPlumeViewModel, PendingSwitch};
 
 use super::super::{PendingExit, guard_unsaved_exit, open_work_flow};

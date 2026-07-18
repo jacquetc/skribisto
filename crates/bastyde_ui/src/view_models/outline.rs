@@ -32,7 +32,7 @@ use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 use skribisto_model::{PromoteTarget, Recommendation, Relation, SubRoleExt};
 
 use crate::app_ids::AppIds;
-use crate::binder_placement;
+use crate::binder::placement;
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters};
 use crate::singles::{SingleBinder, SingleBinderItem};
 
@@ -467,7 +467,7 @@ impl OutlineViewModel {
         let Some(pos) = order.iter().position(|&x| x == item_id) else {
             return 0;
         };
-        binder_placement::subtree_end(&order, &meta, pos, dto.indent) - (pos + 1)
+        placement::subtree_end(&order, &meta, pos, dto.indent) - (pos + 1)
     }
 
     /// Convert a binder item to `target` (undoable). The use case re-validates the
@@ -613,7 +613,7 @@ impl OutlineViewModel {
             return Vec::new();
         };
         let base = meta.get(&item_id).map(|(i, _)| *i).unwrap_or(0);
-        let end = binder_placement::subtree_end(&order, &meta, pos, base);
+        let end = placement::subtree_end(&order, &meta, pos, base);
         order[pos + 1..end].to_vec()
     }
 
@@ -797,8 +797,8 @@ impl OutlineViewModel {
                 let (order, meta) = self.ordered_meta(binder);
                 let pos = order.iter().position(|&x| x == i)?;
                 let (anchor_indent, _) = *meta.get(&i)?;
-                // Shared with `StreamViewModel` — see `crate::binder_placement`.
-                let (index, indent) = binder_placement::insertion_point_for_item(
+                // Shared with `StreamViewModel` — see `crate::binder::placement`.
+                let (index, indent) = placement::insertion_point_for_item(
                     &order,
                     &meta,
                     pos,
@@ -877,7 +877,7 @@ impl OutlineViewModel {
         let Some((book_pos, book_indent)) = Self::enclosing_book(&order, &meta, pos) else {
             return;
         };
-        let end = binder_placement::subtree_end(&order, &meta, book_pos, book_indent);
+        let end = placement::subtree_end(&order, &meta, book_pos, book_indent);
         let has_end = order[book_pos..end]
             .iter()
             .any(|id| meta.get(id).is_some_and(|(_, sr)| sr.closes_book()));

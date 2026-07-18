@@ -37,7 +37,7 @@ use bastyde::widgets::{
 use frontend::AppContext;
 use frontend::common::entities::BinderItemSubRole;
 
-use crate::create_labels::{
+use crate::binder::create_labels::{
     recommendation_label, recommendation_placement, recommendation_tooltip_key,
 };
 use crate::models::{CorkboardCard, OpenDoc};

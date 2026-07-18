@@ -86,7 +86,7 @@ pub fn inspector_dock(
     DockWidget::new(dock_id, tr!(inspector()), move |_id| {
         Inspector::new(app_ctx.clone(), outline.clone(), focus.clone())
     })
-    .icon(crate::activity_icons::inspector_icon)
+    .icon(crate::icons::activity::inspector_icon)
     .default_location(DockOpenLocation::side(DockSide::Trailing))
 }
 
@@ -200,7 +200,7 @@ impl Widget for Inspector {
                     let item_probe = SingleBinderItem::new(self.app_ctx.clone());
                     item_probe.set_id(Some(d.id));
                     let stack = self.outline.ids().stack_id.get();
-                    let set: crate::language_pill_field::SetLanguages = {
+                    let set: crate::spellcheck::language_pill_field::SetLanguages = {
                         let value = value.clone();
                         Rc::new(move |new: String, _c| {
                             let _ = item_probe.set_dict_language(&new, stack);
@@ -209,7 +209,7 @@ impl Widget for Inspector {
                     };
                     col = col
                         .child(TextWidget::new(tr!(inspector_dict_language())).style(TextStyleRole::Tiny).color(TextRole::Secondary))
-                        .child(crate::language_pill_field::LanguagePillField::new(
+                        .child(crate::spellcheck::language_pill_field::LanguagePillField::new(
                             value.clone(),
                             set,
                             spell,

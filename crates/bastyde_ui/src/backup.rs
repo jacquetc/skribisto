@@ -4,6 +4,10 @@
 //! Shared backup helpers for the UI layer: destination reachability, and the
 //! open-a-backup detection (`is_backup_path` / `BackupContext`).
 
+pub(crate) mod banner;
+pub(crate) mod choice_panel;
+pub(crate) mod list_panel;
+
 use std::path::Path;
 
 use skrib_format::sniff_backup;

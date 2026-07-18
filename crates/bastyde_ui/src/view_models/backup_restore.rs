@@ -133,10 +133,10 @@ impl BackupRestoreViewModel {
     /// Refuse to overwrite an original that a *different* process has open; ask the
     /// user to close it there (offering to focus that window), then retry.
     fn check_open_elsewhere(&self, ctx: &mut EventContext, target: String) {
-        let canon = crate::open_registry::canonical(&target);
-        let peer = crate::open_registry::scan().into_iter().find(|e| {
-            e.pid != crate::open_registry::my_pid()
-                && crate::open_registry::canonical(&e.path) == canon
+        let canon = crate::shell::open_registry::canonical(&target);
+        let peer = crate::shell::open_registry::scan().into_iter().find(|e| {
+            e.pid != crate::shell::open_registry::my_pid()
+                && crate::shell::open_registry::canonical(&e.path) == canon
         });
         let Some(entry) = peer else {
             return self.confirm(ctx, target);
@@ -157,7 +157,7 @@ impl BackupRestoreViewModel {
                 // retry once they've closed it there.
                 StandardButton::Open => {
                     c.request_activation_token_self(Box::new(move |tok| {
-                        let _ = crate::ipc::send_raise(pid, tok);
+                        let _ = crate::shell::ipc::send_raise(pid, tok);
                     }));
                 }
                 StandardButton::Retry => me.check_open_elsewhere(c, target.clone()),
@@ -195,10 +195,10 @@ impl BackupRestoreViewModel {
         self.flush();
 
         // Re-check the peer race just before writing (advisory, best-effort).
-        let canon = crate::open_registry::canonical(&target);
-        if crate::open_registry::scan().into_iter().any(|e| {
-            e.pid != crate::open_registry::my_pid()
-                && crate::open_registry::canonical(&e.path) == canon
+        let canon = crate::shell::open_registry::canonical(&target);
+        if crate::shell::open_registry::scan().into_iter().any(|e| {
+            e.pid != crate::shell::open_registry::my_pid()
+                && crate::shell::open_registry::canonical(&e.path) == canon
         }) {
             return self.check_open_elsewhere(ctx, target);
         }
@@ -313,7 +313,7 @@ impl BackupRestoreViewModel {
         // (T1-5's `replace_claim`, not a bare additive `claim`).
         self.backup_mode.set(false);
         self.backup_context.set(None);
-        crate::open_registry::replace_claim(&pending.target, &self.single_work.title().get());
+        crate::shell::open_registry::replace_claim(&pending.target, &self.single_work.title().get());
 
         let msg = match &pending.safety_backup_path {
             Some(p) => tr!(backup_restored_with_safety(path = p.clone())),

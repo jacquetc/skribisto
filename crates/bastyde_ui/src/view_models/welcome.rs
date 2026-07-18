@@ -47,8 +47,8 @@ use frontend::direct_access::RecentWorkDto;
 use crate::SHOW_WELCOME_KEY;
 use crate::app::PendingAction;
 use crate::models::RecentWorkListModel;
-use crate::new_work_panel::NewWorkPanel;
-use crate::windows::ProjectWindowFactory;
+use crate::panels::new_work::NewWorkPanel;
+use crate::shell::windows::ProjectWindowFactory;
 
 /// The recents projection's one filter column. `SortFilterListModel` keys
 /// predicates by column id (it is built for `TableView` headers); the recents
@@ -56,7 +56,7 @@ use crate::windows::ProjectWindowFactory;
 const RECENTS_QUERY: &str = "query";
 
 /// Pages of the recents region, in the order [`WelcomePanel`] stacks them into
-/// its `Switcher` (`crate::welcome_panel::WelcomePanel::recents_list`). Three,
+/// its `Switcher` (`crate::panels::welcome::WelcomePanel::recents_list`). Three,
 /// not two: "you have no recent works" and "your search matched none of them"
 /// are different facts, and showing the first when the second is true reads as
 /// *the recents list is gone*.
@@ -212,7 +212,7 @@ impl WelcomeViewModel {
                 // process's project) — see the backup-mode invariant.
                 if is_backup {
                     ectx.request_activation_token_self(Box::new(move |tok| {
-                        crate::process::spawn_new_process(&path, tok);
+                        crate::shell::process::spawn_new_process(&path, tok);
                     }));
                     return;
                 }
@@ -261,7 +261,7 @@ impl WelcomeViewModel {
                     move |is_backup, ectx2| {
                         if is_backup {
                             ectx2.request_activation_token_self(Box::new(move |tok| {
-                                crate::process::spawn_new_process(&file, tok);
+                                crate::shell::process::spawn_new_process(&file, tok);
                             }));
                             return;
                         }

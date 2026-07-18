@@ -772,7 +772,7 @@ impl Widget for FindBanner {
         let find_row = HStack::new()
             .spacing(3.0)
             .child(
-                IconButton::new(crate::find_icons::replace_icon())
+                IconButton::new(crate::icons::find::replace_icon())
                     .toolbar()
                     .toggle(self.find.replace_mode_signal())
                     .tooltip(tr!(find_replace_toggle())),
@@ -787,25 +787,25 @@ impl Widget for FindBanner {
                 ),
             )
             .child(
-                IconButton::new(crate::find_icons::nav_prev_icon())
+                IconButton::new(crate::icons::find::nav_prev_icon())
                     .toolbar()
                     .tooltip(tr!(find_previous()))
                     .on_activate_fn(move |ctx| prev.prev(ctx)),
             )
             .child(
-                IconButton::new(crate::find_icons::nav_next_icon())
+                IconButton::new(crate::icons::find::nav_next_icon())
                     .toolbar()
                     .tooltip(tr!(find_next()))
                     .on_activate_fn(move |ctx| next.next(ctx)),
             )
             .child(
-                IconButton::new(crate::find_icons::case_icon())
+                IconButton::new(crate::icons::find::case_icon())
                     .toolbar()
                     .toggle(self.find.case_sensitive_signal())
                     .tooltip(tr!(find_opt_case())),
             )
             .child(
-                IconButton::new(crate::find_icons::whole_word_icon())
+                IconButton::new(crate::icons::find::whole_word_icon())
                     .toolbar()
                     .toggle(self.find.whole_word_signal())
                     .tooltip(tr!(find_opt_whole_word())),

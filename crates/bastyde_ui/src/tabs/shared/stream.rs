@@ -275,7 +275,7 @@ fn row_header(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
 
     HStack::new()
         .spacing(8.0)
-        .child(crate::binder_icons::sub_role_icon(&row.sub_role).icon_size(14.0))
+        .child(crate::binder::icons::sub_role_icon(&row.sub_role).icon_size(14.0))
         .child(
             TextWidget::new(lit!(""))
                 .text(vm.row_title(id))

@@ -30,55 +30,27 @@
 //! so every transition above always opens the new window *before* closing the
 //! old one. Getting this backwards quits the app.
 
-mod activity_icons;
-mod add_dictionary_panel;
+mod icons;
+mod statusbar;
+mod shell;
+mod trash;
+mod export;
+mod binder;
+mod panels;
 mod app;
 mod app_ids;
 mod backup;
-mod backup_banner;
-mod backup_choice_panel;
-mod backups_list_panel;
-mod binder_icons;
-mod binder_placement;
-mod binder_switcher_button;
-mod create_labels;
 mod date_convert;
-mod dictionary_registry;
 mod docks;
-mod editor_icons;
-mod export_choose;
-mod export_panel;
-mod export_split_button;
-mod find_icons;
-mod import_plume_panel;
 mod intents;
-mod ipc;
-mod language_pill_field;
-mod license_panel;
 mod models;
-mod new_work_panel;
-mod open_registry;
-mod process;
-mod project_switcher_button;
-mod restore_target_panel;
-mod save_indicator;
-mod session_icons;
-mod session_status_item;
-mod settings_backup;
-mod settings_dictionaries;
-mod settings_export_styles;
-mod settings_panel;
-mod settings_user_dictionary;
+mod settings;
 mod singles;
 mod spellcheck;
-mod spellcheck_toggle_button;
 mod tabs;
 mod tooltip_registry;
 mod version;
 mod view_models;
-mod welcome_panel;
-mod windows;
-mod word_count_indicator;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -90,6 +62,8 @@ use bastyde::core::app_event::AppEvent;
 use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
 use bastyde::settings::{AppPaths, SettingsStore};
 use bastyde::widgets::framework_locales;
+
+use shell::{ipc, open_registry, windows};
 
 use frontend::AppContext;
 use frontend::EventHubClient;
@@ -811,8 +785,8 @@ fn main() {
     // its project(s) stop showing as open in other instances' switchers, and
     // unlink this instance's IPC socket so a later `scan()` never has to reap
     // it as stale.
-    crate::open_registry::release_all();
-    crate::ipc::cleanup_own_socket();
+    crate::shell::open_registry::release_all();
+    crate::shell::ipc::cleanup_own_socket();
     if let Err(e) = handling_app_lifecycle_commands::clean_up_before_exit(&app_ctx) {
         eprintln!("clean_up_before_exit failed: {e:#}");
     }

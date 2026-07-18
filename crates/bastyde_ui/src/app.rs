@@ -40,10 +40,10 @@ use frontend::common::event::{
 use frontend::work_management::{LoadWorkDto, NewWorkDto};
 
 use crate::app_ids::AppIds;
-use crate::export_panel::ExportPanel;
+use crate::export::panel::ExportPanel;
 use crate::models::TreeNode;
-use crate::new_work_panel::NewWorkPanel;
-use crate::settings_panel::SettingsPanel;
+use crate::panels::new_work::NewWorkPanel;
+use crate::settings::SettingsPanel;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
@@ -157,7 +157,7 @@ pub enum PendingAction {
 
 impl PendingAction {
     /// The on-disk path this action targets — used to derive the project
-    /// window's persistence id ([`crate::windows::window_id_for`]) before the
+    /// window's persistence id ([`crate::shell::windows::window_id_for`]) before the
     /// action itself has run.
     pub fn target_path(&self) -> &str {
         match self {
@@ -184,7 +184,7 @@ pub fn close_work_and_return_to_launcher(app_ctx: &Rc<AppContext>, ctx: &mut Eve
     // subscriber could no longer translate a tab into its persistable ordinal.
     capture_workspace_layout(ctx);
     let _ = work_management_commands::close_work(app_ctx);
-    ctx.open_window(crate::windows::launcher_window_config(app_ctx.clone()));
+    ctx.open_window(crate::shell::windows::launcher_window_config(app_ctx.clone()));
     ctx.close_window_forced();
 }
 
@@ -1074,7 +1074,7 @@ impl Widget for App {
                             let backup_context_for_panel = backup_context.clone();
                             c.present_modal(
                                 ModalRequest::deferred(move |t| {
-                                    t.add(crate::backup_choice_panel::BackupChoicePanel::new(
+                                    t.add(crate::backup::choice_panel::BackupChoicePanel::new(
                                         restore.clone(),
                                         bc.clone(),
                                         backup_mode_for_panel.clone(),
@@ -1530,7 +1530,7 @@ impl Widget for App {
                 let dirs = backup_settings.effective_for(&uid).destinations;
                 c.present_modal(
                     ModalRequest::deferred(move |t| {
-                        t.add(crate::backups_list_panel::BackupsListPanel::new(
+                        t.add(crate::backup::list_panel::BackupsListPanel::new(
                             uid.clone(),
                             path.clone(),
                             dirs.clone(),
@@ -1555,7 +1555,7 @@ impl Widget for App {
         // between panes (`accept_external_tabs` + `on_tab_received` dedup).
         let split_button = {
             let editors = editors.clone();
-            IconButton::new(crate::editor_icons::split())
+            IconButton::new(crate::icons::editor::split())
                 .tooltip(tr!(split_editor()))
                 .icon_role(split_active.map(|on| {
                     if *on {
@@ -1568,7 +1568,7 @@ impl Widget for App {
         };
         let close_split_button = {
             let editors = editors.clone();
-            IconButton::new(crate::editor_icons::close_split())
+            IconButton::new(crate::icons::editor::close_split())
                 .tooltip(tr!(close_split_view()))
                 .on_activate_fn(move |_ctx| editors.close_split())
         };
@@ -1777,7 +1777,7 @@ impl Widget for App {
         // there answer to "is my last paragraph on disk?" — the one thing autosave
         // mode had no way to tell you (it hides Save + Ctrl+S). Failures are toasts;
         // this is only the steady state.
-        let save_indicator = crate::save_indicator::SaveIndicator::new(
+        let save_indicator = crate::statusbar::save_indicator::SaveIndicator::new(
             editors.clone(),
             self.unsaved.clone(),
             settings.autosave(),
@@ -1799,7 +1799,7 @@ impl Widget for App {
             editors.active_item(),
             settings.counting_method(),
         );
-        let word_count_indicator = crate::word_count_indicator::WordCountIndicator::new(
+        let word_count_indicator = crate::statusbar::word_count_indicator::WordCountIndicator::new(
             stats.clone(),
             single_work_info.shape().map(|s| s.is_some()),
             settings.show_characters(),
@@ -1808,7 +1808,7 @@ impl Widget for App {
         // only its targets persist). Sits on the right of the status bar.
         let session_vm =
             crate::view_models::WritingSessionViewModel::new(stats.clone(), ctx.settings());
-        let session_item = crate::session_status_item::SessionStatusItem::new(
+        let session_item = crate::statusbar::session_status_item::SessionStatusItem::new(
             session_vm.clone(),
             single_work_info.shape().map(|s| s.is_some()),
         );
@@ -1826,7 +1826,7 @@ impl Widget for App {
                 // Leading (binder) toggle on the left; trailing (inspector) toggle
                 // pushed to the right next to the notification bell.
                 .child(
-                    IconButton::new(crate::activity_icons::sidebar_icon())
+                    IconButton::new(crate::icons::activity::sidebar_icon())
                         .size(IconButtonSize::Compact)
                         .tooltip(tr!(statusbar_toggle_outline()))
                         .on_activate_fn(move |_| dock_lead.toggle_side_visible(DockSide::Leading)),
@@ -1836,7 +1836,7 @@ impl Widget for App {
                 .child(Spacer::new())
                 .child(session_item)
                 .child(
-                    IconButton::new(crate::activity_icons::inspector_icon())
+                    IconButton::new(crate::icons::activity::inspector_icon())
                         .size(IconButtonSize::Compact)
                         .tooltip(tr!(statusbar_toggle_inspector()))
                         .on_activate_fn(move |_| {
@@ -1848,7 +1848,7 @@ impl Widget for App {
 
         // The permanent backup banner sits above everything while a backup file is
         // open (zero height otherwise).
-        let backup_banner = crate::backup_banner::BackupBanner::new(
+        let backup_banner = crate::backup::banner::BackupBanner::new(
             self.backup_context.clone(),
             restore_vm.clone(),
             ctx.app_state::<SaveAsViewModel>()
@@ -2000,7 +2000,7 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ctx: &mut EventContext) {
                     // Nothing here is destroyed, so there is nothing to guard.
                     if is_backup {
                         ectx2.request_activation_token_self(Box::new(move |tok| {
-                            crate::process::spawn_new_process(&file, tok);
+                            crate::shell::process::spawn_new_process(&file, tok);
                         }));
                         return;
                     }

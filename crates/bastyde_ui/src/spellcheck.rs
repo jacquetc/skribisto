@@ -33,6 +33,11 @@
 //! to UTF-8 before handing the strings to spellbook. A dictionary that still fails to parse is
 //! simply absent (cached as `None`), never a crash.
 
+pub(crate) mod toggle_button;
+pub(crate) mod dictionary_registry;
+pub(crate) mod add_dictionary_panel;
+pub(crate) mod language_pill_field;
+
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -47,7 +52,6 @@ use bastyde::text_document::{
     UnderlineStyle,
 };
 
-use crate::dictionary_registry;
 use skribisto_model::language;
 
 /// `<data_dir>/dictionaries` — where our downloads live and the loader looks first. The single

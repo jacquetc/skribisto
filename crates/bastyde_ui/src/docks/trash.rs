@@ -34,7 +34,7 @@ pub fn trash_dock(trash: TrashViewModel, dock_id: DockWidgetId, on_open: OpenIte
                 .child(trash_panel(trash.clone(), on_open.clone())),
         )
     })
-    .icon(crate::activity_icons::trash_icon)
+    .icon(crate::icons::activity::trash_icon)
     .show_header(true)
     .default_location(DockOpenLocation::side(DockSide::Leading))
 }
@@ -91,9 +91,9 @@ fn trash_tree(trash: TrashViewModel, on_open: OpenItemFn) -> impl Widget {
                 item = item.subtitle(lit!(node.label.clone()));
             }
             let icon = if node.is_root && node.item_id.is_none() {
-                crate::binder_icons::binder_icon() // whole-binder root
+                crate::binder::icons::binder_icon() // whole-binder root
             } else {
-                crate::binder_icons::sub_role_icon(&node.sub_role)
+                crate::binder::icons::sub_role_icon(&node.sub_role)
             };
             item = item.leading_slot(icon);
             // Cascade (descendant) rows read as a dimmed, non-actionable preview.

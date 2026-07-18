@@ -21,7 +21,7 @@
 //!
 //! **Layering.** This sits *below* the view-models and *above* `frontend`: it is allowed to
 //! issue `frontend::commands` calls, and it owns no state of its own. The pure ordering math
-//! it builds on lives further down still, in [`crate::binder_placement`] (UI-side) and the
+//! it builds on lives further down still, in [`crate::binder::placement`] (UI-side) and the
 //! `binder_ordering` crate (backend-side) — neither of which may touch a unit of work, which
 //! is precisely why these backend-touching helpers could not live there.
 
@@ -40,7 +40,7 @@ use frontend::direct_access::{BinderItemDto, CreateBinderItemDto, UpdateBinderIt
 use skribisto_model::SubRoleExt;
 
 use crate::app_ids::AppIds;
-use crate::binder_placement::{self, ItemMeta};
+use crate::binder::placement::{self, ItemMeta};
 
 // ── Backend reads ────────────────────────────────────────────────────────────
 
@@ -88,7 +88,7 @@ pub(crate) fn locate(
     None
 }
 
-/// `{id -> (indent, sub_role)}` for a binder's items — the data [`crate::binder_placement`]
+/// `{id -> (indent, sub_role)}` for a binder's items — the data [`crate::binder::placement`]
 /// walks to turn "put it after this one" into a concrete `(index, indent)`.
 pub(crate) fn item_meta(app_ctx: &AppContext, order: &[u64]) -> ItemMeta {
     binder_item_commands::get_binder_item_multi(app_ctx, order)
@@ -133,7 +133,7 @@ pub(crate) fn create_by_recommendation(
     let meta = item_meta(app_ctx, &order);
     let anchor_indent = meta.get(&anchor_id).map(|(i, _)| *i).unwrap_or(0);
     let (index, indent) =
-        binder_placement::insertion_point_for_item(&order, &meta, pos, anchor_indent, rec.relation);
+        placement::insertion_point_for_item(&order, &meta, pos, anchor_indent, rec.relation);
 
     let dto = CreateBinderItemDto {
         title: title.to_string(),

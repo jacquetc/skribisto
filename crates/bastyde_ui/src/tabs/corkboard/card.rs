@@ -38,7 +38,7 @@ impl Widget for CorkboardTile {
         // it in place.
         let header = HStack::new()
             .spacing(7.0)
-            .child(crate::binder_icons::sub_role_icon(&self.card.sub_role).icon_size(15.0))
+            .child(crate::binder::icons::sub_role_icon(&self.card.sub_role).icon_size(15.0))
             .child(Expand::horizontal().child(InlineTitle {
                 vm: self.vm.clone(),
                 item_id: self.card.item_id,

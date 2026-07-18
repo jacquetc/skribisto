@@ -122,7 +122,7 @@ impl InstalledDictionariesModel {
 #[cfg(not(feature = "mocks"))]
 mod source {
     use super::{DictOrigin, InstalledDictionaryRow};
-    use crate::dictionary_registry;
+    use crate::spellcheck::dictionary_registry;
     use std::collections::{HashMap, HashSet};
     use std::path::{Path, PathBuf};
 
@@ -323,7 +323,7 @@ mod source {
 #[cfg(feature = "mocks")]
 mod source {
     use super::{DictOrigin, InstalledDictionaryRow};
-    use crate::dictionary_registry;
+    use crate::spellcheck::dictionary_registry;
     use std::collections::HashMap;
     use std::path::PathBuf;
 
@@ -374,7 +374,7 @@ mod tests {
 
         // The basename → registry id mapping is the load-bearing bit the scan relies on.
         assert_eq!(
-            crate::dictionary_registry::id_for_basename("en_US"),
+            crate::spellcheck::dictionary_registry::id_for_basename("en_US"),
             Some("en-US")
         );
         let _ = std::fs::remove_dir_all(&dir);

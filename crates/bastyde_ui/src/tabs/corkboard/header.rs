@@ -237,7 +237,7 @@ impl Widget for CorkboardCreateButton {
             let vm = self.vm.clone();
             btn = btn.item(
                 MenuItem::new(recommendation_label(rec.create_type))
-                    .icon(crate::binder_icons::create_type_icon(rec.create_type))
+                    .icon(crate::binder::icons::create_type_icon(rec.create_type))
                     .shortcut_label(placement)
                     .rich_tooltip(recommendation_tooltip_key(rec.create_type))
                     .on_activate_fn(move |ctx| {

@@ -25,8 +25,8 @@ use frontend::AppContext;
 
 use skribisto_model::PromoteTarget;
 
-use crate::binder_switcher_button::{BinderSwitcherButton, binder_search_button};
-use crate::create_labels::{
+use crate::binder::switcher_button::{BinderSwitcherButton, binder_search_button};
+use crate::binder::create_labels::{
     recommendation_label, recommendation_placement, recommendation_tooltip_key,
 };
 use crate::docks::create_split_button::CreateSplitButton;
@@ -72,7 +72,7 @@ pub fn outline_dock(
             )),
         )
     })
-    .icon(crate::activity_icons::outline_icon)
+    .icon(crate::icons::activity::outline_icon)
     // Show the sole-pane dock's header bar (title + actions) and pin the
     // context-dependent "Create" SplitButton into it as a custom toolbar item.
     .show_header(true)
@@ -118,9 +118,9 @@ fn binder_tree(
             // Leading icon chosen purely by sub_role (binder rows get the binder
             // glyph); tint follows the theme via `TextRole::Primary`.
             let mut icon = if node.kind == "binder" {
-                crate::binder_icons::binder_icon()
+                crate::binder::icons::binder_icon()
             } else {
-                crate::binder_icons::sub_role_icon(&node.sub_role)
+                crate::binder::icons::sub_role_icon(&node.sub_role)
             };
             // Persistent "open document" marker: the row whose item is the
             // active editor tab shows an accent title + icon — independent of
@@ -345,9 +345,9 @@ pub fn promote_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
         let (_, sub_role) = target.combo();
         let vm = outline.clone();
         menu = menu.item(
-            MenuItem::new(crate::create_labels::promote_target_label(target))
-                .icon(crate::binder_icons::sub_role_icon(&sub_role))
-                .rich_tooltip(crate::create_labels::promote_target_tooltip_key(target))
+            MenuItem::new(crate::binder::create_labels::promote_target_label(target))
+                .icon(crate::binder::icons::sub_role_icon(&sub_role))
+                .rich_tooltip(crate::binder::create_labels::promote_target_tooltip_key(target))
                 .on_activate_fn(move |ctx| promote_with_guard(&vm, key, target, ctx)),
         );
     }
@@ -381,12 +381,12 @@ pub fn promote_with_guard(
     if !lost.is_empty() {
         let kinds = lost
             .iter()
-            .map(|r| crate::create_labels::content_role_label(r).resolve_now())
+            .map(|r| crate::binder::create_labels::content_role_label(r).resolve_now())
             .collect::<Vec<_>>()
             .join(", ");
         MessageBox::warning(tr!(promote_lossy_title()))
             .text(tr!(promote_lossy_text(
-                target = crate::create_labels::promote_target_label(target).resolve_now(),
+                target = crate::binder::create_labels::promote_target_label(target).resolve_now(),
                 kinds = kinds
             )))
             .buttons(MessageBoxButtons::Ok)
@@ -415,7 +415,7 @@ fn add_recommendations_menu(outline: OutlineViewModel, key: BinderTreeKey) -> Me
             recommendation_placement(anchor_title.as_deref(), rec.relation).resolve_now();
         menu = menu.item(
             MenuItem::new(recommendation_label(rec.create_type))
-                .icon(crate::binder_icons::create_type_icon(rec.create_type))
+                .icon(crate::binder::icons::create_type_icon(rec.create_type))
                 .shortcut_label(placement)
                 .rich_tooltip(recommendation_tooltip_key(rec.create_type))
                 .on_activate_fn(move |_| vm.add_recommended(Some(key), &rec_owned)),

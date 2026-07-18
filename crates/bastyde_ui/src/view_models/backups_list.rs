@@ -34,7 +34,7 @@ use bastyde::widgets::Toast;
 
 use skrib_format::retention;
 
-use crate::process;
+use crate::shell::process;
 
 /// Toast id, so a burst of delete failures replaces rather than stacks.
 const DELETE_TOAST_ID: &str = "backups.delete";

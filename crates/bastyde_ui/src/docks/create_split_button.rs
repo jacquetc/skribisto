@@ -8,7 +8,7 @@
 //! The recommendation logic lives in `skribisto_model` +
 //! [`OutlineViewModel`]; this widget only
 //! renders it. `SplitButton`'s item list is fixed at `build()` time, so — like
-//! [`BinderSwitcherButton`](crate::binder_switcher_button::BinderSwitcherButton) —
+//! [`BinderSwitcherButton`](crate::binder::switcher_button::BinderSwitcherButton) —
 //! this widget binds `selection_signal()` at `BindingLevel::Rebuild` and
 //! reconstructs itself whenever the selection changes. Picking a row fires
 //! `AppIntent::NewItem { .., relation }` (the scriptable command surface).
@@ -18,7 +18,7 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::{ButtonVariant, IconWidget, MenuItem, SplitButton};
 
-use crate::create_labels::{
+use crate::binder::create_labels::{
     recommendation_label, recommendation_placement, recommendation_tooltip_key,
 };
 use crate::intents::AppIntent;
@@ -87,7 +87,7 @@ impl Widget for CreateSplitButton {
             let relation = rec.relation;
             btn = btn.item(
                 MenuItem::new(label)
-                    .icon(crate::binder_icons::create_type_icon(rec.create_type))
+                    .icon(crate::binder::icons::create_type_icon(rec.create_type))
                     .shortcut_label(placement)
                     .rich_tooltip(key)
                     .on_activate_fn(move |ctx| {

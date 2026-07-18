@@ -32,7 +32,7 @@ use frontend::commands::work_management_commands;
 use frontend::work_management::{NewWorkDto, NewWorkTemplate};
 
 use crate::app::PendingAction;
-use crate::windows::ProjectWindowFactory;
+use crate::shell::windows::ProjectWindowFactory;
 
 /// Build the `NewWorkDto` for the New Work dialog.
 ///

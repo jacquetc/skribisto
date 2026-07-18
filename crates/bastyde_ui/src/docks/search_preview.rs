@@ -54,7 +54,7 @@ pub fn search_preview_dock(vm: SearchReplaceViewModel, dock_id: DockWidgetId) ->
     DockWidget::new(dock_id, tr!(search_preview()), move |_id| {
         FocusScope::new(TraversalScopePolicy::Continue).child(PreviewBody::new(vm.clone()))
     })
-    .icon(crate::activity_icons::search_preview_icon)
+    .icon(crate::icons::activity::search_preview_icon)
     .show_header(false)
     .default_location(DockOpenLocation::side(DockSide::Bottom))
 }
@@ -299,7 +299,7 @@ fn empty_state(vm: &SearchReplaceViewModel, has_doc: bool) -> impl Widget {
                 .child(
                     Button::new(tr!(search_preview_open_search()))
                         .variant(ButtonVariant::Tinted)
-                        .icon(crate::activity_icons::search_icon(), IconLocation::Leading)
+                        .icon(crate::icons::activity::search_icon(), IconLocation::Leading)
                         .on_activate_fn(move |_| vm.reveal_search()),
                 ),
         ),

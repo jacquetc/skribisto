@@ -18,7 +18,7 @@ use std::time::Duration;
 use bastyde::prelude::*;
 use bastyde::widgets::{Toast, ValidationState};
 
-use crate::dictionary_registry;
+use crate::spellcheck::dictionary_registry;
 use crate::view_models::{DictionariesViewModel, InstallDictError};
 
 #[derive(Clone)]

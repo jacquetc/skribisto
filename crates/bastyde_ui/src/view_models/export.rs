@@ -53,7 +53,7 @@ use skribisto_model::compile::{
 
 use super::long_op::{event_id, parse_payload, payload_id};
 use crate::app_ids::AppIds;
-use crate::export_choose::ChooseModel;
+use crate::export::choose::ChooseModel;
 
 /// Update-in-place key for the single toast an export drives (loading → progress →
 /// success / cancelled / error).

@@ -42,7 +42,7 @@ pub fn search_dock(vm: SearchReplaceViewModel, dock_id: DockWidgetId) -> DockWid
             FocusScope::new(TraversalScopePolicy::Continue).child(search_panel(vm.clone())),
         )
     })
-    .icon(crate::activity_icons::search_icon)
+    .icon(crate::icons::activity::search_icon)
     .show_header(true)
     .default_location(DockOpenLocation::side(DockSide::Leading))
 }
@@ -93,7 +93,7 @@ fn query_row(vm: SearchReplaceViewModel) -> impl Widget {
             // A distinct replace glyph (two swap arrows), NOT the search magnifier
             // — the toggle used to read as a second search field. Rich tooltip
             // explains it discloses the replacement row.
-            IconButton::new(crate::find_icons::replace_icon())
+            IconButton::new(crate::icons::find::replace_icon())
                 .toolbar()
                 .toggle(vm.show_replace_signal())
                 .rich_tooltip_content(TooltipContent::new(
@@ -136,7 +136,7 @@ fn replace_row(vm: SearchReplaceViewModel) -> impl Widget {
                     // set for accessibility + the tooltip.
                     Button::new(tr!(search_replace_all()))
                         .variant(ButtonVariant::Filled)
-                        .icon(crate::find_icons::replace_icon(), IconLocation::IconOnly)
+                        .icon(crate::icons::find::replace_icon(), IconLocation::IconOnly)
                         .tooltip(tr!(search_replace_all()))
                         .enabled(enabled)
                         .on_activate_fn(move |ctx| {
@@ -168,7 +168,7 @@ fn option_toggle(
 /// How a match is compared — case / whole word / accents. Flat toggle icons that
 /// flow onto the next line when the dock is narrow.
 fn matching_options(vm: SearchReplaceViewModel) -> impl Widget {
-    use crate::find_icons as ic;
+    use crate::icons::find as ic;
     Wrap::new()
         .spacing(3.0)
         .child(option_toggle(
@@ -193,7 +193,7 @@ fn matching_options(vm: SearchReplaceViewModel) -> impl Widget {
 
 /// Which fields to search — body / title / synopsis / label.
 fn scope_options(vm: SearchReplaceViewModel) -> impl Widget {
-    use crate::find_icons as ic;
+    use crate::icons::find as ic;
     Wrap::new()
         .spacing(3.0)
         .child(option_toggle(
@@ -354,7 +354,7 @@ fn facet_icon(facet: SearchFacet) -> IconWidget {
         SearchFacet::Note => BinderItemSubRole::Note,
         SearchFacet::Folder => BinderItemSubRole::None,
     };
-    crate::binder_icons::sub_role_icon(&sub_role)
+    crate::binder::icons::sub_role_icon(&sub_role)
 }
 
 /// A per-result checkbox that ticks whether Replace All includes this field.
