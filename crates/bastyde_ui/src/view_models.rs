@@ -46,6 +46,7 @@
 mod add_dictionary;
 mod backup_scheduler;
 mod backup_settings;
+mod binder_ops;
 mod corkboard;
 mod dictionaries;
 mod editors;
@@ -98,7 +99,7 @@ pub use settings::{
     CorkboardDefaults, EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel,
 };
 pub use stream::{SplitFlavour, StreamViewModel};
-pub(crate) use stream::{is_prose_bearing, is_synopsis_bearing};
+pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};
 pub use trash::TrashViewModel;
 pub use user_dictionary::{ImportSummary, UserDictionaryViewModel};
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};

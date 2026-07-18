@@ -24,9 +24,7 @@ use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
-use frontend::direct_access::{
-    CreateBinderDto, CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto,
-};
+use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, UpdateBinderDto};
 
 use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace, PromoteDto};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
@@ -37,6 +35,8 @@ use crate::app_ids::AppIds;
 use crate::binder_placement;
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters};
 use crate::singles::{SingleBinder, SingleBinderItem};
+
+use super::binder_ops::{self, update_item_dto};
 
 #[derive(Clone)]
 pub struct OutlineViewModel {
@@ -491,12 +491,7 @@ impl OutlineViewModel {
     /// encoded — read from the open Work's `chapter_mode` field (defaults to
     /// folder mode when no Work is open).
     fn chapter_mode(&self) -> skribisto_model::ChapterMode {
-        self.ids
-            .work_id
-            .get()
-            .and_then(|id| work_commands::get_work(&self.app_ctx, &id).ok().flatten())
-            .map(|w| w.chapter_mode)
-            .unwrap_or_default()
+        binder_ops::chapter_mode(&self.app_ctx, &self.ids)
     }
 
     /// Begin a rename: present a modal `InputDialog`, applying `rename` on OK.
@@ -961,27 +956,6 @@ impl OutlineViewModel {
             undo_redo_commands::end_composite(ctx);
         }
         self.reload();
-    }
-}
-
-/// Build a scalar-only `UpdateBinderItemDto` from a fetched item.
-fn update_item_dto(it: &frontend::direct_access::BinderItemDto) -> UpdateBinderItemDto {
-    UpdateBinderItemDto {
-        id: it.id,
-        created_at: it.created_at,
-        updated_at: it.updated_at,
-        title: it.title.clone(),
-        sub_title: it.sub_title.clone(),
-        role: it.role.clone(),
-        sub_role: it.sub_role.clone(),
-        label: it.label.clone(),
-        activated: it.activated,
-        is_favorite: it.is_favorite,
-        is_exportable: it.is_exportable,
-        indent: it.indent,
-        word_count_goal: it.word_count_goal,
-        char_count_goal: it.char_count_goal,
-        dict_language: it.dict_language.clone(),
     }
 }
 

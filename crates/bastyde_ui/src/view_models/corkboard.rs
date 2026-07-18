@@ -21,31 +21,25 @@ use std::rc::Rc;
 use bastyde::core::ObserverHandle;
 use bastyde::data::{SelectionMode, SelectionModel, SortDirection, SortFilterListModel};
 use bastyde::prelude::*; // Signal, BuildContext, EventContext
-use bastyde::text_document::{MoveMode, TextDocument};
 use bastyde::widgets::InputDialog;
 
 use frontend::AppContext;
-use frontend::binder_item_management::{MergeTwoScenesDto, MoveDto, MovePlace, SplitSceneDto};
+use frontend::binder_item_management::{MergeTwoScenesDto, MovePlace, SplitSceneDto};
 use frontend::commands::{
-    binder_commands, binder_item_commands, binder_item_management_commands,
-    trash_management_commands, work_commands,
+    binder_item_commands, binder_item_management_commands, trash_management_commands,
 };
-use frontend::common::direct_access::binder::BinderRelationshipField;
-use frontend::common::direct_access::work::WorkRelationshipField;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
-use frontend::direct_access::{BinderItemDto, CreateBinderItemDto, UpdateBinderItemDto};
 use frontend::trash_management::TrashBinderItemsDto;
 
-use skribisto_model::SubRoleExt;
 use skribisto_model::counting::CountingMethodSetting;
 use skribisto_model::{CreateType, Recommendation, Relation};
 
 use crate::app_ids::AppIds;
-use crate::binder_placement::{self, ItemMeta};
 use crate::intents::AppIntent;
 use crate::models::{CorkboardCard, CorkboardCardsModel, OpenDoc, OpenDocsStore};
 use crate::singles::SingleBinderItem;
 use crate::view_models::EditorTypography;
+
+use super::binder_ops::{self, is_prose_bearing, opens_a_section, split_djot, update_item_dto};
 
 /// The sort column ids bound into the projection (see [`CorkboardCardsModel::projection`]).
 pub const SORT_TITLE: &str = "title";
@@ -344,7 +338,7 @@ impl CorkboardViewModel {
     /// Esc→restore→blur cancel path are both quiet no-ops (no stray undo entry).
     pub fn rename(&self, _ctx: &mut EventContext, id: u64, title: &str) {
         let title = title.trim();
-        let current = self.item_dto(id).map(|d| d.title).unwrap_or_default();
+        let current = binder_ops::item_dto(&self.inner.app_ctx, id).map(|d| d.title).unwrap_or_default();
         if !title.is_empty() && title != current {
             let probe = SingleBinderItem::new(self.inner.app_ctx.clone());
             probe.set_id(Some(id));
@@ -508,7 +502,7 @@ impl CorkboardViewModel {
     // -- dialog entry points --
 
     pub fn begin_set_label(&self, ctx: &mut EventContext, id: u64) {
-        let current = self.item_dto(id).map(|d| d.label).unwrap_or_default();
+        let current = binder_ops::item_dto(&self.inner.app_ctx, id).map(|d| d.label).unwrap_or_default();
         let vm = self.clone();
         InputDialog::new(tr!(dialog_set_label()))
             .default_text(current)
@@ -537,7 +531,7 @@ impl CorkboardViewModel {
     // -- apply methods --
 
     pub fn set_label(&self, _ctx: &mut EventContext, id: u64, label: &str) {
-        if let Some(it) = self.item_dto(id) {
+        if let Some(it) = binder_ops::item_dto(&self.inner.app_ctx, id) {
             let mut dto = update_item_dto(&it);
             dto.label = label.to_string();
             let _ =
@@ -552,14 +546,27 @@ impl CorkboardViewModel {
         let Some(card) = self.ordered_cards().into_iter().find(|c| c.item_id == id) else {
             return;
         };
-        self.create_by_recommendation(id, &card.role, &card.sub_role, title);
+        binder_ops::create_by_recommendation(
+            &self.inner.app_ctx,
+            &self.inner.ids,
+            id,
+            &card.role,
+            &card.sub_role,
+            title,
+        );
     }
 
     pub fn move_up(&self, _ctx: &mut EventContext, id: u64) {
         if let Some((cards, pos)) = self.card_pos(id)
             && pos > 0
         {
-            self.move_relative(id, cards[pos - 1].item_id, MovePlace::Before);
+            binder_ops::move_relative(
+            &self.inner.app_ctx,
+            &self.inner.ids,
+            id,
+            cards[pos - 1].item_id,
+            MovePlace::Before,
+        );
         }
     }
 
@@ -567,7 +574,13 @@ impl CorkboardViewModel {
         if let Some((cards, pos)) = self.card_pos(id)
             && pos + 1 < cards.len()
         {
-            self.move_relative(id, cards[pos + 1].item_id, MovePlace::After);
+            binder_ops::move_relative(
+            &self.inner.app_ctx,
+            &self.inner.ids,
+            id,
+            cards[pos + 1].item_id,
+            MovePlace::After,
+        );
         }
     }
 
@@ -594,7 +607,7 @@ impl CorkboardViewModel {
     }
 
     pub fn trash(&self, _ctx: &mut EventContext, id: u64) {
-        if let Some((binder, _order, _pos)) = self.locate(id) {
+        if let Some((binder, _order, _pos)) = binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id) {
             let _ = trash_management_commands::trash_binder_items(
                 &self.inner.app_ctx,
                 self.stack(),
@@ -606,122 +619,14 @@ impl CorkboardViewModel {
         }
     }
 
-    // -- backend helpers (mirror StreamViewModel's private helpers) --
+    // -- backend helpers --
+    //
+    // The binder round-trips this used to carry (`chapter_mode`, `item_dto`, `locate`,
+    // `item_meta`, `create_by_recommendation`, `move_relative`) now live in
+    // `view_models::binder_ops`, shared with the stream and the outline.
 
     fn stack(&self) -> Option<u64> {
         self.inner.ids.stack_id.get()
-    }
-
-    fn chapter_mode(&self) -> skribisto_model::ChapterMode {
-        self.inner
-            .ids
-            .work_id
-            .get()
-            .and_then(|id| {
-                work_commands::get_work(&self.inner.app_ctx, &id)
-                    .ok()
-                    .flatten()
-            })
-            .map(|w| w.chapter_mode)
-            .unwrap_or_default()
-    }
-
-    fn item_dto(&self, id: u64) -> Option<BinderItemDto> {
-        binder_item_commands::get_binder_item(&self.inner.app_ctx, &id)
-            .ok()
-            .flatten()
-    }
-
-    /// Find the binder owning `id`, its ordered items, and `id`'s position.
-    fn locate(&self, id: u64) -> Option<(u64, Vec<u64>, usize)> {
-        let work_id = self.inner.ids.work_id.get()?;
-        let binders = work_commands::get_work_relationship(
-            &self.inner.app_ctx,
-            &work_id,
-            &WorkRelationshipField::Binders,
-        )
-        .ok()?;
-        for binder in binders {
-            let order = binder_commands::get_binder_relationship(
-                &self.inner.app_ctx,
-                &binder,
-                &BinderRelationshipField::BinderItems,
-            )
-            .unwrap_or_default();
-            if let Some(pos) = order.iter().position(|&x| x == id) {
-                return Some((binder, order, pos));
-            }
-        }
-        None
-    }
-
-    fn item_meta(&self, order: &[u64]) -> ItemMeta {
-        binder_item_commands::get_binder_item_multi(&self.inner.app_ctx, order)
-            .unwrap_or_default()
-            .into_iter()
-            .flatten()
-            .map(|it| (it.id, (it.indent, it.sub_role)))
-            .collect()
-    }
-
-    fn create_by_recommendation(
-        &self,
-        anchor_id: u64,
-        anchor_role: &BinderItemRole,
-        anchor_sub_role: &BinderItemSubRole,
-        title: &str,
-    ) {
-        let Some(rec) = skribisto_model::recommendations(anchor_role, anchor_sub_role)
-            .into_iter()
-            .next()
-        else {
-            return;
-        };
-        let (role, sub_role) = rec.create_type.combo(self.chapter_mode());
-        if skribisto_model::validate_item(&role, &sub_role, &[]).is_err() {
-            return;
-        }
-        let Some((binder, order, pos)) = self.locate(anchor_id) else {
-            return;
-        };
-        let meta = self.item_meta(&order);
-        let anchor_indent = meta.get(&anchor_id).map(|(i, _)| *i).unwrap_or(0);
-        let (index, indent) = binder_placement::insertion_point_for_item(
-            &order,
-            &meta,
-            pos,
-            anchor_indent,
-            rec.relation,
-        );
-        let dto = CreateBinderItemDto {
-            title: title.to_string(),
-            role,
-            sub_role,
-            activated: true,
-            is_exportable: true,
-            indent,
-            ..Default::default()
-        };
-        let _ = binder_item_commands::create_binder_item(
-            &self.inner.app_ctx,
-            self.stack(),
-            &dto,
-            binder,
-            index as i32,
-        );
-    }
-
-    fn move_relative(&self, id: u64, target: u64, place: MovePlace) {
-        let _ = binder_item_management_commands::move_items(
-            &self.inner.app_ctx,
-            self.stack(),
-            &MoveDto {
-                item_ids: vec![id],
-                target_id: Some(target),
-                target_is_binder: false,
-                move_place: place,
-            },
-        );
     }
 
     // ── Accessors for the view ───────────────────────────────────────────────
@@ -789,60 +694,6 @@ impl CorkboardViewModel {
         if self.inner.projecting.get() != projecting {
             self.inner.projecting.set(projecting);
         }
-    }
-}
-
-/// Does this `(role, sub_role)` carry scene prose? The constraint matrix decides
-/// (not `SubRoleExt`), matching the backend gate on merge — a card can only be
-/// merged where there is prose to concatenate.
-fn is_prose_bearing(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> bool {
-    skribisto_model::content_allowed(role, sub_role, &ContentRole::SceneText)
-}
-
-/// Split `doc` at char offset `caret` into two Djot strings, preserving inline
-/// formatting (mirrors the stream's helper) — used by the synopsis "Split scene".
-fn split_djot(doc: &TextDocument, caret: usize) -> anyhow::Result<(String, String)> {
-    let n = doc.character_count();
-    let caret = caret.min(n);
-    let extract = |from: usize, to: usize| -> anyhow::Result<String> {
-        let c = doc.cursor();
-        c.set_position(from, MoveMode::MoveAnchor);
-        c.set_position(to, MoveMode::KeepAnchor);
-        let frag = c.selection();
-        let tmp = TextDocument::new();
-        tmp.cursor().insert_fragment(&frag)?;
-        Ok(tmp.to_djot()?)
-    };
-    let before = extract(0, caret)?;
-    let after = extract(caret, n)?;
-    Ok((before, after))
-}
-
-/// Does this row open a structural section? Such a card must never be merged
-/// *away* — it would delete the boundary (and orphan a chapter folder's scenes).
-fn opens_a_section(sub_role: &BinderItemSubRole) -> bool {
-    sub_role.opens_chapter() || sub_role.opens_part() || sub_role.opens_book()
-}
-
-/// Build a scalar-only `UpdateBinderItemDto` from a fetched item (mirrors the
-/// stream/outline helper) — used to patch a single field (the label) back.
-fn update_item_dto(it: &BinderItemDto) -> UpdateBinderItemDto {
-    UpdateBinderItemDto {
-        id: it.id,
-        created_at: it.created_at,
-        updated_at: it.updated_at,
-        title: it.title.clone(),
-        sub_title: it.sub_title.clone(),
-        role: it.role.clone(),
-        sub_role: it.sub_role.clone(),
-        label: it.label.clone(),
-        activated: it.activated,
-        is_favorite: it.is_favorite,
-        is_exportable: it.is_exportable,
-        indent: it.indent,
-        word_count_goal: it.word_count_goal,
-        char_count_goal: it.char_count_goal,
-        dict_language: it.dict_language.clone(),
     }
 }
 

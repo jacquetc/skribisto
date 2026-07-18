@@ -38,28 +38,22 @@ use std::rc::Rc;
 
 use bastyde::data::ListModel;
 use bastyde::prelude::*; // EventContext, Signal, BuildContext, tr!
-use bastyde::text_document::{MoveMode, TextDocument};
 use bastyde::widgets::InputDialog;
 
 use frontend::AppContext;
-use frontend::binder_item_management::{MergeTwoScenesDto, MoveDto, MovePlace, SplitSceneDto};
+use frontend::binder_item_management::{MergeTwoScenesDto, MovePlace, SplitSceneDto};
 use frontend::commands::{
-    binder_commands, binder_item_commands, binder_item_management_commands,
-    trash_management_commands, work_commands,
+    binder_item_commands, binder_item_management_commands, trash_management_commands,
 };
-use frontend::common::direct_access::binder::BinderRelationshipField;
-use frontend::common::direct_access::work::WorkRelationshipField;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
-use frontend::direct_access::{BinderItemDto, CreateBinderItemDto, UpdateBinderItemDto};
 use frontend::trash_management::TrashBinderItemsDto;
 
-use skribisto_model::SubRoleExt;
-
 use crate::app_ids::AppIds;
-use crate::binder_placement::{self, ItemMeta};
 use crate::models::{OpenDoc, OpenDocsStore, StreamLevel, StreamRow, StreamRowsModel};
 use crate::singles::SingleBinderItem;
+
+use super::binder_ops::{self, is_prose_bearing, opens_a_section, split_djot, update_item_dto};
 
 /// Which of a row's two writing surfaces an action came from. The stream pane picks
 /// its body with this, and a split cuts *that* role at the caret.
@@ -399,7 +393,7 @@ impl StreamViewModel {
     }
 
     pub fn set_row_label(&self, _ctx: &mut EventContext, id: u64, label: &str) {
-        if let Some(it) = self.item_dto(id) {
+        if let Some(it) = binder_ops::item_dto(&self.inner.app_ctx, id) {
             let mut dto = update_item_dto(&it);
             dto.label = label.to_string();
             let _ =
@@ -419,7 +413,14 @@ impl StreamViewModel {
         let Some(row) = self.rows().into_iter().find(|r| r.item_id == id) else {
             return;
         };
-        self.create_by_recommendation(id, &row.role, &row.sub_role, title);
+        binder_ops::create_by_recommendation(
+            &self.inner.app_ctx,
+            &self.inner.ids,
+            id,
+            &row.role,
+            &row.sub_role,
+            title,
+        );
     }
 
     /// Append to the stream: after its last row if it has one, else as the container's
@@ -429,7 +430,9 @@ impl StreamViewModel {
             self.insert_after(ctx, last, title);
         } else {
             let sub_role = self.inner.container_sub_role.clone();
-            self.create_by_recommendation(
+            binder_ops::create_by_recommendation(
+                &self.inner.app_ctx,
+                &self.inner.ids,
                 self.inner.container_id,
                 &BinderItemRole::Folder,
                 &sub_role,
@@ -446,7 +449,13 @@ impl StreamViewModel {
         if pos == 0 {
             return;
         }
-        self.move_relative(id, ids[pos - 1], MovePlace::Before);
+        binder_ops::move_relative(
+            &self.inner.app_ctx,
+            &self.inner.ids,
+            id,
+            ids[pos - 1],
+            MovePlace::Before,
+        );
     }
 
     pub fn move_row_down(&self, _ctx: &mut EventContext, id: u64) {
@@ -457,7 +466,13 @@ impl StreamViewModel {
         if pos + 1 >= ids.len() {
             return;
         }
-        self.move_relative(id, ids[pos + 1], MovePlace::After);
+        binder_ops::move_relative(
+            &self.inner.app_ctx,
+            &self.inner.ids,
+            id,
+            ids[pos + 1],
+            MovePlace::After,
+        );
     }
 
     /// Merge this row into the previous one. The backend concatenates **both** writing
@@ -546,7 +561,7 @@ impl StreamViewModel {
     }
 
     pub fn trash_row(&self, _ctx: &mut EventContext, id: u64) {
-        if let Some((binder, _order, _pos)) = self.locate(id) {
+        if let Some((binder, _order, _pos)) = binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id) {
             let _ = trash_management_commands::trash_binder_items(
                 &self.inner.app_ctx,
                 self.stack(),
@@ -564,127 +579,8 @@ impl StreamViewModel {
         self.inner.ids.stack_id.get()
     }
 
-    /// The open project's chapter storage mode (mirrors `OutlineViewModel`).
-    fn chapter_mode(&self) -> skribisto_model::ChapterMode {
-        self.inner
-            .ids
-            .work_id
-            .get()
-            .and_then(|id| {
-                work_commands::get_work(&self.inner.app_ctx, &id)
-                    .ok()
-                    .flatten()
-            })
-            .map(|w| w.chapter_mode)
-            .unwrap_or_default()
-    }
-
-    fn item_dto(&self, id: u64) -> Option<BinderItemDto> {
-        binder_item_commands::get_binder_item(&self.inner.app_ctx, &id)
-            .ok()
-            .flatten()
-    }
-
     fn row_pos(&self, id: u64) -> Option<usize> {
         self.inner.rows.ids().iter().position(|&x| x == id)
-    }
-
-    /// Find the binder owning `id`, its ordered items, and `id`'s position.
-    fn locate(&self, id: u64) -> Option<(u64, Vec<u64>, usize)> {
-        let work_id = self.inner.ids.work_id.get()?;
-        let binders = work_commands::get_work_relationship(
-            &self.inner.app_ctx,
-            &work_id,
-            &WorkRelationshipField::Binders,
-        )
-        .ok()?;
-        for binder in binders {
-            let order = binder_commands::get_binder_relationship(
-                &self.inner.app_ctx,
-                &binder,
-                &BinderRelationshipField::BinderItems,
-            )
-            .unwrap_or_default();
-            if let Some(pos) = order.iter().position(|&x| x == id) {
-                return Some((binder, order, pos));
-            }
-        }
-        None
-    }
-
-    /// `{id -> (indent, sub_role)}` for a binder's items — the data `binder_placement`
-    /// walks.
-    fn item_meta(&self, order: &[u64]) -> ItemMeta {
-        binder_item_commands::get_binder_item_multi(&self.inner.app_ctx, order)
-            .unwrap_or_default()
-            .into_iter()
-            .flatten()
-            .map(|it| (it.id, (it.indent, it.sub_role)))
-            .collect()
-    }
-
-    /// Create the model's default recommendation for the anchor, placed by the relation
-    /// it recommends — through the shared `binder_placement` math, so the stream and the
-    /// outline place a new item identically.
-    fn create_by_recommendation(
-        &self,
-        anchor_id: u64,
-        anchor_role: &BinderItemRole,
-        anchor_sub_role: &BinderItemSubRole,
-        title: &str,
-    ) {
-        let Some(rec) = skribisto_model::recommendations(anchor_role, anchor_sub_role)
-            .into_iter()
-            .next()
-        else {
-            return;
-        };
-        let (role, sub_role) = rec.create_type.combo(self.chapter_mode());
-        if skribisto_model::validate_item(&role, &sub_role, &[]).is_err() {
-            return;
-        }
-        let Some((binder, order, pos)) = self.locate(anchor_id) else {
-            return;
-        };
-        let meta = self.item_meta(&order);
-        let anchor_indent = meta.get(&anchor_id).map(|(i, _)| *i).unwrap_or(0);
-        let (index, indent) = binder_placement::insertion_point_for_item(
-            &order,
-            &meta,
-            pos,
-            anchor_indent,
-            rec.relation,
-        );
-
-        let dto = CreateBinderItemDto {
-            title: title.to_string(),
-            role,
-            sub_role,
-            activated: true,
-            is_exportable: true,
-            indent,
-            ..Default::default()
-        };
-        let _ = binder_item_commands::create_binder_item(
-            &self.inner.app_ctx,
-            self.stack(),
-            &dto,
-            binder,
-            index as i32,
-        );
-    }
-
-    fn move_relative(&self, id: u64, target: u64, place: MovePlace) {
-        let _ = binder_item_management_commands::move_items(
-            &self.inner.app_ctx,
-            self.stack(),
-            &MoveDto {
-                item_ids: vec![id],
-                target_id: Some(target),
-                target_is_binder: false,
-                move_place: place,
-            },
-        );
     }
 }
 
@@ -721,68 +617,6 @@ fn can_merge_row(rows: &[StreamRow], id: u64) -> bool {
         && is_prose_bearing(&prev.role, &prev.sub_role)
 }
 
-/// Does this `(role, sub_role)` carry scene prose? The **constraint matrix** decides —
-/// not `SubRoleExt::carries_scene()` — because the matrix is the source of truth and
-/// the backend gates split/merge on exactly this predicate.
-pub(crate) fn is_prose_bearing(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> bool {
-    skribisto_model::content_allowed(role, sub_role, &ContentRole::SceneText)
-}
-
-/// Does this `(role, sub_role)` carry a synopsis? Same rule, other role — it is what
-/// decides whether a row gets an editor in the Full Synopsis flavour.
-pub(crate) fn is_synopsis_bearing(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> bool {
-    skribisto_model::content_allowed(role, sub_role, &ContentRole::SynopsisText)
-}
-
-/// Does this row open a structural section? Such a row must never be merged *away*: it
-/// would delete the boundary (and, for a chapter folder, orphan its child scenes).
-fn opens_a_section(sub_role: &BinderItemSubRole) -> bool {
-    sub_role.opens_chapter() || sub_role.opens_part() || sub_role.opens_book()
-}
-
-/// Build a scalar-only `UpdateBinderItemDto` from a fetched item (mirrors the outline's
-/// helper).
-fn update_item_dto(it: &BinderItemDto) -> UpdateBinderItemDto {
-    UpdateBinderItemDto {
-        id: it.id,
-        created_at: it.created_at,
-        updated_at: it.updated_at,
-        title: it.title.clone(),
-        sub_title: it.sub_title.clone(),
-        role: it.role.clone(),
-        sub_role: it.sub_role.clone(),
-        label: it.label.clone(),
-        activated: it.activated,
-        is_favorite: it.is_favorite,
-        is_exportable: it.is_exportable,
-        indent: it.indent,
-        word_count_goal: it.word_count_goal,
-        char_count_goal: it.char_count_goal,
-        dict_language: it.dict_language.clone(),
-    }
-}
-
-/// Split `doc` at char offset `caret` into two Djot strings, preserving inline
-/// formatting, via fragment extraction into fresh documents.
-fn split_djot(doc: &TextDocument, caret: usize) -> anyhow::Result<(String, String)> {
-    let n = doc.character_count();
-    let caret = caret.min(n);
-
-    let extract = |from: usize, to: usize| -> anyhow::Result<String> {
-        let c = doc.cursor();
-        c.set_position(from, MoveMode::MoveAnchor);
-        c.set_position(to, MoveMode::KeepAnchor);
-        let frag = c.selection();
-        let tmp = TextDocument::new();
-        tmp.cursor().insert_fragment(&frag)?;
-        Ok(tmp.to_djot()?)
-    };
-
-    let before = extract(0, caret)?;
-    let after = extract(caret, n)?;
-    Ok((before, after))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -814,44 +648,10 @@ mod tests {
         assert!(vm(Folder, Note).is_none());
     }
 
-    /// The prose/synopsis predicates read the constraint matrix, so they agree with what
-    /// the backend will accept: both encodings of a chapter carry prose; a part and a
-    /// book carry only a synopsis.
-    #[test]
-    fn editor_visibility_follows_the_constraint_matrix() {
-        assert!(is_prose_bearing(&Item, &Scene));
-        assert!(is_prose_bearing(&Item, &ChapterScene));
-        assert!(is_prose_bearing(&Folder, &ChapterScene));
-        assert!(!is_prose_bearing(&Folder, &Part));
-        assert!(!is_prose_bearing(&Folder, &Book));
-
-        // Every stream row has a synopsis — that is what makes the Full Synopsis stream
-        // a complete outline with no holes.
-        assert!(is_synopsis_bearing(&Item, &Scene));
-        assert!(is_synopsis_bearing(&Item, &ChapterScene));
-        assert!(is_synopsis_bearing(&Folder, &ChapterScene));
-        assert!(is_synopsis_bearing(&Folder, &Part));
-        assert!(is_synopsis_bearing(&Folder, &Book));
-    }
-
-    /// A row that opens a section can never be merged away: it would delete a
-    /// chapter/part/book boundary (and orphan a chapter folder's children).
-    #[test]
-    fn structural_openers_are_never_merged_away() {
-        assert!(opens_a_section(&ChapterScene));
-        assert!(opens_a_section(&Part));
-        assert!(opens_a_section(&Book));
-        assert!(!opens_a_section(&Scene));
-    }
-
-    #[test]
-    fn split_djot_cuts_at_the_caret() {
-        let doc = TextDocument::new();
-        let _ = doc.set_djot("HelloWorld").and_then(|op| op.wait());
-        let (before, after) = split_djot(&doc, 5).expect("split");
-        assert!(before.contains("Hello") && !before.contains("World"));
-        assert!(after.contains("World") && !after.contains("Hello"));
-    }
+    // The `is_prose_bearing` / `is_synopsis_bearing` / `opens_a_section` / `split_djot`
+    // tests moved to `view_models::binder_ops` along with the functions themselves. What
+    // stays here is what stays here: the `can_split_row` / `can_merge_row` row-list rules,
+    // which are the stream's own.
 
     fn row(item_id: u64, role: BinderItemRole, sub_role: BinderItemSubRole) -> StreamRow {
         StreamRow {
