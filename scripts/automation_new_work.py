@@ -320,20 +320,47 @@ print("PASS: empty name → Create disabled + inline validation shown")
 s.shot("/tmp/sk-new-work-invalid.png")
 
 
-# ── Drive the name field and assert the reactive path preview ─────────────────
-# Name field = the empty text field; Location field carries "/home/…". Set the
-# name and assert the "Will create …" preview computes "<location>/<slug>.skrib".
-name_field = next((n for n in text_fields if "/" not in val(n)), None)
-location_field = next((n for n in text_fields if "/" in val(n)), None)
-if name_field is None or location_field is None:
-    fail("could not identify the Work name / Location fields", s.app, s.mcp, s.log)
+# ── The modal must open with the Work name field focused ─────────────────────
+# Also how the name field is *identified*: "the empty text field" is ambiguous —
+# the Launcher window sits behind this modal and its "Search works" box is an
+# empty TextInput too, higher up the tree AND higher on screen (y≈57 vs y≈70), so
+# a first-match heuristic picks the Launcher's field and every later assertion
+# then tests the wrong widget.
+#
+# The focused node is unambiguous, and asserting it is worth doing in its own
+# right: NewWorkPanel draws its own header chrome (title strip + close X) above
+# the form, so the modal pipeline's `first_focusable_descendant` fallback used to
+# land on the close button — the dialog opened focused on "dismiss me" and
+# swallowed whatever the user typed first. `NewWorkPanel::initial_focus_hint`
+# now points at the name field.
+raw, _ = s.call("snapshot_tree")
+focus_id = json.loads(raw["content"][0]["text"]).get("focus")
+name_field = next((n for n in s.nodes() if n.get("id") == focus_id), None)
+if name_field is None or name_field.get("role") != "TextInput":
+    focused_role = name_field.get("role") if name_field else None
+    fail(f"New Work should open with the Work name field focused, but focus is on "
+         f"{focused_role!r} (id={focus_id}) — a user typing straight into the "
+         f"dialog would lose their keystrokes", s.app, s.mcp, s.log)
+if val(name_field):
+    fail(f"the focused field should be the empty Work name, got {val(name_field)!r}",
+         s.app, s.mcp, s.log)
+print("PASS: the modal opens with the Work name field focused")
+
+# Location is the field carrying a path; exclude the focused name field so the
+# Launcher's search box behind the modal can never be mistaken for either.
+location_field = next((n for n in text_fields
+                       if "/" in val(n) and n.get("id") != name_field.get("id")), None)
+if location_field is None:
+    fail("could not identify the Location field", s.app, s.mcp, s.log)
 loc = val(location_field)
 print(f"name field id={name_field.get('id')}; location={loc!r}")
 
-res, _ = s.call("set_value", {"node": name_field["id"], "value": "Tidewrack"})
+# `type_text`, not `set_value`: typing is what a user does, and it is what drives
+# the field's bound signal (and through it the VM's derived path preview).
+res, _ = s.call("type_text", {"node": name_field["id"], "text": "Tidewrack"})
 if isinstance(res, dict) and res.get("isError"):
-    fail(f"set_value on the name field errored: {res}", s.app, s.mcp, s.log)
-time.sleep(0.5)
+    fail(f"type_text into the name field errored: {res}", s.app, s.mcp, s.log)
+time.sleep(0.8)
 
 preview = find_value_contains(".skrib", timeout=6)
 if preview is None:

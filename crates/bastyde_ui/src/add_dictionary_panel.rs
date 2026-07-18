@@ -38,6 +38,9 @@ pub fn present_add_dictionary(ctx: &mut EventContext, dicts: DictionariesViewMod
 pub struct AddDictionaryPanel {
     vm: AddDictionaryViewModel,
     root_child: Option<WidgetId>,
+    /// The first form field, captured during `build` and handed to the modal
+    /// pipeline by [`Widget::initial_focus_hint`] — see the note there.
+    first_field: std::cell::Cell<Option<WidgetId>>,
 }
 
 impl AddDictionaryPanel {
@@ -45,6 +48,7 @@ impl AddDictionaryPanel {
         Self {
             vm,
             root_child: None,
+            first_field: std::cell::Cell::new(None),
         }
     }
 
@@ -116,7 +120,12 @@ impl std::fmt::Debug for AddDictionaryPanel {
 
 impl Widget for AddDictionaryPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let body = ScrollArea::new().child(Padding::symmetric(20.0, 22.0).child(self.form()));
+        // Build the form first so its first focusable descendant can be captured
+        // for `initial_focus_hint` (see the note there).
+        let form_id = ctx.add(self.form());
+        self.first_field.set(ctx.first_focusable_descendant(form_id));
+
+        let body = ScrollArea::new().child(Padding::symmetric(20.0, 22.0).child_id(form_id));
 
         let add_vm = self.vm.clone();
         let can_add = self.vm.can_add();
@@ -177,6 +186,17 @@ impl Widget for AddDictionaryPanel {
         );
         self.root_child = Some(root);
         vec![root]
+    }
+
+    /// Open with the first form field focused, so the dialog is typeable the
+    /// moment it appears.
+    ///
+    /// The modal pipeline's fallback is `first_focusable_descendant` of the whole
+    /// panel, and this panel draws its own header chrome (title strip + close X)
+    /// *above* the form — so the fallback picked the close button: the dialog
+    /// opened focused on "dismiss me" and swallowed whatever the user typed first.
+    fn initial_focus_hint(&self) -> Option<WidgetId> {
+        self.first_field.get()
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {

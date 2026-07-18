@@ -45,6 +45,9 @@ pub struct NewWorkPanel {
     /// Owns the form's signals for this modal session (created once in `new`).
     vm: NewWorkViewModel,
     root_child: Option<WidgetId>,
+    /// The Work-name field, captured during `build` and handed to the modal
+    /// pipeline by [`Widget::initial_focus_hint`] — see the note there.
+    name_field: std::cell::Cell<Option<WidgetId>>,
 }
 
 impl NewWorkPanel {
@@ -54,6 +57,7 @@ impl NewWorkPanel {
         Self {
             vm: NewWorkViewModel::new(app_ctx),
             root_child: None,
+            name_field: std::cell::Cell::new(None),
         }
     }
 
@@ -67,6 +71,7 @@ impl NewWorkPanel {
         Self {
             vm: NewWorkViewModel::new_for_launcher(app_ctx, factory),
             root_child: None,
+            name_field: std::cell::Cell::new(None),
         }
     }
 
@@ -258,8 +263,16 @@ impl std::fmt::Debug for NewWorkPanel {
 
 impl Widget for NewWorkPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Build the form first so its first focusable descendant — the Work name
+        // field — can be captured for `initial_focus_hint`. Without it the modal
+        // pipeline falls back to `first_focusable_descendant` of the whole panel,
+        // which is the header's close button: the dialog opened with the X focused
+        // and typing did nothing until the user clicked the field.
+        let form_id = ctx.add(self.form());
+        self.name_field.set(ctx.first_focusable_descendant(form_id));
+
         // Scrollable form column (design body scrolls; `overflow:auto`).
-        let body = ScrollArea::new().child(Padding::symmetric(20.0, 22.0).child(self.form()));
+        let body = ScrollArea::new().child(Padding::symmetric(20.0, 22.0).child_id(form_id));
 
         // The footer's "Create Work" — reactively disabled (greyed, unclickable)
         // until the form is valid: `enabled` tracks `can_create` (name +
@@ -332,6 +345,18 @@ impl Widget for NewWorkPanel {
         );
         self.root_child = Some(root);
         vec![root]
+    }
+
+    /// Open with the Work name field focused, so the dialog is typeable the moment
+    /// it appears.
+    ///
+    /// The modal pipeline's fallback is `first_focusable_descendant` of the whole
+    /// panel, and this panel draws its own header chrome (title strip + close X)
+    /// *above* the form — so the fallback picked the close button. Every field is
+    /// below it, which meant New Work opened focused on "dismiss me" and swallowed
+    /// whatever the user typed first.
+    fn initial_focus_hint(&self) -> Option<WidgetId> {
+        self.name_field.get()
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
