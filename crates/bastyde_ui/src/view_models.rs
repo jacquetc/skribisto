@@ -62,6 +62,7 @@ mod pace;
 mod progress_recorder;
 mod project_lifecycle;
 mod project_switch;
+pub mod project_switcher;
 mod backup_restore;
 mod save_as;
 mod save_queue;

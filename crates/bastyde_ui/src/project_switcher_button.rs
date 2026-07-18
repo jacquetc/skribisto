@@ -22,7 +22,6 @@
 //! popover) is *not* recreated. The trigger label stays on `ProjectSwitcherButton`
 //! and rebuilds only on the open Work's title / file_name / recents `version`.
 
-use std::collections::HashSet;
 use std::path::Path;
 use std::rc::Rc;
 
@@ -36,10 +35,9 @@ use bastyde::widgets::{
 
 use frontend::AppContext;
 
-use crate::intents::AppIntent;
 use crate::models::RecentWorkListModel;
-use crate::open_registry::{self, OpenEntry};
-use crate::process::{canon, spawn_new_process};
+use crate::open_registry;
+use crate::view_models::project_switcher as vm;
 use crate::singles::{SingleWork, SingleWorkInfo};
 
 /// Cap on a popover row's text column.
@@ -177,20 +175,15 @@ impl Widget for OpenProjectsMenu {
 
         let recents = self.model.items();
 
-        let open_entries: Vec<OpenEntry> = open_registry::scan();
-        let my_pid = open_registry::my_pid();
-        let open_paths: HashSet<String> = open_entries.iter().map(|e| e.path.clone()).collect();
-        let recent_not_open: Vec<_> = recents
-            .iter()
-            .filter(|r| !open_paths.contains(&canon(&r.absolute_path)))
-            .collect();
-
-        let has_open = !open_entries.is_empty();
-        let has_recent = !recent_not_open.is_empty();
+        // Which project belongs in which section is derived (and tested) in
+        // `view_models::project_switcher`; this build only renders the answer.
+        let split = vm::sections(open_registry::scan(), &recents, open_registry::my_pid());
+        let has_open = !split.open.is_empty();
+        let has_recent = !split.recent.is_empty();
 
         let mut menu = MenuList::new().max_visible_items(12);
 
-        if !has_open && !has_recent {
+        if split.is_empty() {
             menu = menu.item(
                 Padding::symmetric(8.0, 12.0).child(
                     TextWidget::new(tr!(no_recent_works()))
@@ -201,8 +194,8 @@ impl Widget for OpenProjectsMenu {
         } else {
             if has_open {
                 menu = menu.header(section(tr!(switcher_open_section())));
-                for entry in &open_entries {
-                    let is_self = entry.pid == my_pid;
+                for entry in &split.open {
+                    let is_self = entry.is_self;
                     let title = entry.title.clone();
                     let path = entry.path.clone();
                     let pid = entry.pid;
@@ -211,11 +204,7 @@ impl Widget for OpenProjectsMenu {
                         if is_self {
                             return; // already this window
                         }
-                        // Mint a token from this (focused) window, then ask the
-                        // owning instance to raise itself with it.
-                        ctx.request_activation_token_self(Box::new(move |tok| {
-                            let _ = crate::ipc::send_raise(pid, tok);
-                        }));
+                        vm::raise_instance(ctx, pid);
                     }));
                 }
             }
@@ -226,7 +215,7 @@ impl Widget for OpenProjectsMenu {
 
             if has_recent {
                 menu = menu.header(section(tr!(switcher_recent_section())));
-                for dto in &recent_not_open {
+                for dto in &split.recent {
                     let title = dto.title.clone();
                     let path = dto.absolute_path.clone();
                     let date = dto.last_opened_at.format("%Y-%m-%d %H:%M").to_string();
@@ -253,10 +242,7 @@ impl Widget for OpenProjectsMenu {
                                 .escape_button(StandardButton::Cancel)
                                 .on_result(move |r, ctx| match r.button {
                                     StandardButton::Open => {
-                                        let p = for_new.clone();
-                                        ctx.request_activation_token_self(Box::new(move |tok| {
-                                            spawn_new_process(&p, tok);
-                                        }));
+                                        vm::open_in_new_window(ctx, &for_new);
                                     }
                                     // "Open here" *replaces* this window's project, so
                                     // it goes through the `work.open_path` intent →
@@ -264,11 +250,7 @@ impl Widget for OpenProjectsMenu {
                                     // the open project is saved or explicitly
                                     // discarded. It used to call `load_work` outright
                                     // and bin those edits without asking.
-                                    StandardButton::Yes => {
-                                        ctx.send_intent(AppIntent::OpenWorkPath {
-                                            path: for_here.clone(),
-                                        });
-                                    }
+                                    StandardButton::Yes => vm::open_here(ctx, &for_here),
                                     _ => {}
                                 })
                                 .present(ctx);
