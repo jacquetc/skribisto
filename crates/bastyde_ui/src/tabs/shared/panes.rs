@@ -311,7 +311,7 @@ pub fn folder_segmented(
     // Corkboard is a real segment now; its Switcher child must sit at the same
     // positional index (Overview stays a disabled placeholder).
     bar = bar.segment(Segment::new(tr!(corkboard())));
-    content = content.child_boxed(super::corkboard::corkboard_pane(tab));
+    content = content.child_boxed(crate::tabs::corkboard::corkboard_pane(tab));
     let bar = bar.segment(Segment::new(tr!(overview())).disabled(true));
 
     let col = VStack::new()

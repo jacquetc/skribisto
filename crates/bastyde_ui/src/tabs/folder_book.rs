@@ -19,6 +19,6 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
         tab,
         tr!(segment_book()),
         tr!(full_book()),
-        Some((tr!(segment_pace()), shared::pace_pane(tab))),
+        Some((tr!(segment_pace()), super::pace::pace_pane(tab))),
     )
 }

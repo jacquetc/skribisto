@@ -57,6 +57,8 @@ mod item_note;
 mod item_part;
 mod item_scene;
 mod item_text;
+pub(crate) mod corkboard;
+pub(crate) mod pace;
 pub(crate) mod shared;
 
 /// Which of the item's two names this field edits.
