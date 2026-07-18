@@ -2000,7 +2000,7 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ctx: &mut EventContext) {
                     // Nothing here is destroyed, so there is nothing to guard.
                     if is_backup {
                         ectx2.request_activation_token_self(Box::new(move |tok| {
-                            crate::project_switcher_button::spawn_new_process(&file, tok);
+                            crate::process::spawn_new_process(&file, tok);
                         }));
                         return;
                     }

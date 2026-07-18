@@ -58,6 +58,7 @@ mod license_panel;
 mod models;
 mod new_work_panel;
 mod open_registry;
+mod process;
 mod project_switcher_button;
 mod restore_target_panel;
 mod save_indicator;

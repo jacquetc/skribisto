@@ -212,7 +212,7 @@ impl WelcomeViewModel {
                 // process's project) — see the backup-mode invariant.
                 if is_backup {
                     ectx.request_activation_token_self(Box::new(move |tok| {
-                        crate::project_switcher_button::spawn_new_process(&path, tok);
+                        crate::process::spawn_new_process(&path, tok);
                     }));
                     return;
                 }
@@ -261,7 +261,7 @@ impl WelcomeViewModel {
                     move |is_backup, ectx2| {
                         if is_backup {
                             ectx2.request_activation_token_self(Box::new(move |tok| {
-                                crate::project_switcher_button::spawn_new_process(&file, tok);
+                                crate::process::spawn_new_process(&file, tok);
                             }));
                             return;
                         }

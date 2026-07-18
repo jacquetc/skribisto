@@ -44,6 +44,7 @@
 //!   * Many-to-one / distant links graduate to the intent bus.
 
 mod add_dictionary;
+mod backups_list;
 mod backup_scheduler;
 mod backup_settings;
 mod binder_ops;
@@ -78,6 +79,7 @@ mod writing_session;
 
 pub use add_dictionary::AddDictionaryViewModel;
 pub use backup_scheduler::BackupSchedulerViewModel;
+pub use backups_list::{BackupRow, BackupsListViewModel};
 pub use backup_settings::BackupSettingsViewModel;
 pub use corkboard::CorkboardViewModel;
 pub use dictionaries::{DictionariesViewModel, InstallDictError, missing_from};

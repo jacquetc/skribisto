@@ -39,32 +39,8 @@ use frontend::AppContext;
 use crate::intents::AppIntent;
 use crate::models::RecentWorkListModel;
 use crate::open_registry::{self, OpenEntry};
+use crate::process::{canon, spawn_new_process};
 use crate::singles::{SingleWork, SingleWorkInfo};
-
-/// Best-effort canonical form for comparing project paths across the registry
-/// (which stores canonical paths) and the recents list.
-fn canon(path: &str) -> String {
-    std::fs::canonicalize(path)
-        .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| path.to_string())
-}
-
-/// Launch a fresh Skribisto process to open `path`, forwarding an activation
-/// `token` (so the new window comes up focused on Wayland via the main window's
-/// `activate_from_env`). Also used by the open-a-backup redirect (a backup always
-/// opens in its own instance).
-pub(crate) fn spawn_new_process(path: &str, token: Option<String>) {
-    let Ok(exe) = std::env::current_exe() else {
-        return;
-    };
-    let mut cmd = std::process::Command::new(exe);
-    cmd.arg(path);
-    if let Some(tok) = token {
-        cmd.env("XDG_ACTIVATION_TOKEN", &tok);
-        cmd.env("DESKTOP_STARTUP_ID", &tok);
-    }
-    let _ = cmd.spawn();
-}
 
 /// Cap on a popover row's text column.
 ///
