@@ -3,21 +3,14 @@
 
 # Configuration for `typos` — https://github.com/crate-ci/typos
 #
-# Skribisto is mid-rewrite: the active code lives under `crates/` (Rust). The
-# legacy C++/Qt6 tree and assorted data/asset files are kept for reference and
-# would otherwise bury real findings under false positives, so they are excluded
-# here. Run with:
+# The app lives under `crates/` (Rust). Only asset files that are data rather
+# than prose are excluded here, so they don't bury real findings under false
+# positives. Run with:
 #
 #     typos --config .github/typos.toml
 
 [files]
 extend-exclude = [
-    # Hunspell spell-check dictionaries — raw affix/word data, many languages.
-    "resources/dicts/",
-    # Legacy C++/Qt6 implementation and its tests, kept untouched as reference.
-    # Root-anchored so the Rust `crates/*/src` and `crates/*/tests` stay checked.
-    "/src/",
-    "/tests/",
     # Vector artwork / icon path data — not prose.
     "*.svg",
     # Non-English UI translations (the en-US/ locale stays spell-checked).

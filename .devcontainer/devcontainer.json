@@ -1,50 +1,32 @@
 {
-  "name": "Qt 6 Development - Fedora 42",
+  "name": "Skribisto (Rust + Bastyde)",
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind",
+  "workspaceFolder": "/workspaces/skribisto",
   "runArgs": [
-    "--privileged",
     "--net=host",
     "-e",
     "DISPLAY=${localEnv:DISPLAY}",
     "-e",
-    "XAUTHORITY=${localEnv:XAUTHORITY}",
+    "WAYLAND_DISPLAY=${localEnv:WAYLAND_DISPLAY}",
     "-e",
-    "QT_X11_NO_MITSHM=1",
+    "XDG_RUNTIME_DIR=${localEnv:XDG_RUNTIME_DIR}",
     "-v",
     "/tmp/.X11-unix:/tmp/.X11-unix:rw",
     "-v",
-    "${localEnv:XAUTHORITY}:${localEnv:XAUTHORITY}:rw"
+    "${localEnv:XDG_RUNTIME_DIR}:${localEnv:XDG_RUNTIME_DIR}:rw"
   ],
   "customizations": {
     "vscode": {
       "extensions": [
-        "ms-vscode.cpptools-extension-pack",
-        "ms-vscode.cmake-tools",
-        "twxs.cmake",
-        "ms-vscode.cpptools",
-        "tonka3000.qtvsctools",
-        "TheQtCompany.qt-core",
-        "TheQtCompany.qt-qml",
-        "TheQtCompany.qt-cpp",
-        "TheQtCompany.qt-ui",
-        "vector-wlc.qtconfigure",
-        "TheQtCompany.qt",
-        "TheQtCompany.qt-cpp-pack",
-        "hbenl.vscode-test-explorer"
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "tamasfe.even-better-toml"
       ]
     }
   },
-  "containerEnv": {
-    "QT_X11_NO_MITSHM": "1",
-    "QT_QPA_PLATFORM": "xcb",
-    "QT_LOGGING_RULES": "*.debug=true;qt.qml.debug=true;js.debug=true",
-    "QT_ASSUME_STDERR_HAS_CONSOLE": "1",
-    "QT_FORCE_STDERR_LOGGING": "1",
-    "QML_CONSOLE_INHERIT": "1"
-  },
-  "forwardPorts": [],
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "shutdownAction": "none"
 }

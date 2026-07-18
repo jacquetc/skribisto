@@ -17,11 +17,10 @@ The year is the year of the file's first commit, derived from
 the current year (override with `--fallback-year YYYY`). Existing
 headers whose year disagrees with git history are normalized.
 
-Scope note (Skribisto-specific): this is the Rust + Bastyde rewrite. The
-C++/Qt reference tree (`src/`), the reference/tool-managed Qleany manifests,
-and bundled icon/font/dictionary assets are deliberately excluded (see
-SKIP_* below) — the C++ tree is reference-only and never edited, and asset
-provenance is mixed, so stamping a copyright line on it would be wrong.
+Scope note (Skribisto-specific): the tool-managed Qleany manifest and the
+bundled icon/example/packaging assets are deliberately excluded (see SKIP_*
+below) — the manifest is generator-owned, and asset provenance is mixed, so
+stamping a copyright line on them would be wrong.
 
 Modes:
   --check          report missing / outdated headers, non-zero exit if any
@@ -105,25 +104,18 @@ SKIP_BASENAMES: set[str] = {
     "NOTICE",
     "CHANGELOG.md",
     "NEWS.yml",
-    # Reference / tool-managed manifests — Qleany owns these; a header comment
-    # would be churned by the generator and (for the cppqt one) edited into the
-    # C++ reference material we never touch.
+    # Tool-managed manifest — Qleany owns this; a header comment would be
+    # churned by the generator.
     "qleany.yaml",
-    "qleany.cppqt.yaml",
     # AppStream metainfo is validated by the packaging lint; keep it pristine.
     "eu.skribisto.skribisto.metainfo.xml",
 }
 
 # Path prefixes (relative to repo root, POSIX) that are excluded wholesale.
-# Matched with str.startswith — anchored, so `src/` here means the *repo-root*
-# C++ reference tree, NOT the `crates/*/src/` Rust sources.
+# Matched with str.startswith — anchored, so these are repo-root paths and do
+# not affect the `crates/*/src/` and `crates/*/tests/` Rust sources.
 SKIP_PATH_PREFIXES: tuple[str, ...] = (
-    "src/",          # C++/Qt reference tree — reference-only, never edited
-    "tests/",        # C++/Qt test suite (Qt Test) — reference-only; the Rust
-                     # rewrite's tests live under crates/*/tests/, still in scope
-    "3rdparty/",     # vendored third-party
-    "resources/",    # icons / fonts / dictionaries / example bundles (assets)
-    "cmake/",        # legacy C++ build system
+    "resources/",    # icons / example bundles / packaging assets
     "package/",      # packaging scaffolding
 )
 
