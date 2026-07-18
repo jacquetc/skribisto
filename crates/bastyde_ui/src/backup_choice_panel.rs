@@ -28,10 +28,10 @@ use bastyde::widgets::{
 };
 
 use crate::backup::BackupContext;
-use crate::view_models::RestoreViewModel;
+use crate::view_models::BackupRestoreViewModel;
 
 /// Restore button click: dismiss this modal, then start the restore flow.
-fn on_restore(restore: &RestoreViewModel, ctx: &mut EventContext) {
+fn on_restore(restore: &BackupRestoreViewModel, ctx: &mut EventContext) {
     ctx.dismiss_modal();
     restore.begin(ctx);
 }
@@ -60,7 +60,7 @@ const CARD_W: f32 = 560.0;
 const CARD_H: f32 = 320.0;
 
 pub struct BackupChoicePanel {
-    restore: RestoreViewModel,
+    restore: BackupRestoreViewModel,
     context: BackupContext,
     backup_mode: Signal<bool>,
     backup_context: Signal<Option<BackupContext>>,
@@ -69,7 +69,7 @@ pub struct BackupChoicePanel {
 
 impl BackupChoicePanel {
     pub fn new(
-        restore: RestoreViewModel,
+        restore: BackupRestoreViewModel,
         context: BackupContext,
         backup_mode: Signal<bool>,
         backup_context: Signal<Option<BackupContext>>,
@@ -202,10 +202,10 @@ mod tests {
     use frontend::AppContext;
     use std::rc::Rc;
 
-    fn make_restore(app_ctx: Rc<AppContext>) -> RestoreViewModel {
+    fn make_restore(app_ctx: Rc<AppContext>) -> BackupRestoreViewModel {
         let ids = crate::app_ids::AppIds::new();
         let single_work = crate::singles::SingleWork::new(app_ctx.clone());
-        RestoreViewModel::new(
+        BackupRestoreViewModel::new(
             app_ctx,
             ids,
             single_work,

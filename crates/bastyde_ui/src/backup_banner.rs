@@ -14,11 +14,11 @@ use bastyde::widgets::{Banner, Button, ButtonVariant, HStack};
 
 use crate::backup::BackupContext;
 use crate::singles::SingleWork;
-use crate::view_models::{RestoreViewModel, SaveAsViewModel};
+use crate::view_models::{BackupRestoreViewModel, SaveAsViewModel};
 
 pub struct BackupBanner {
     backup_context: Signal<Option<BackupContext>>,
-    restore: RestoreViewModel,
+    restore: BackupRestoreViewModel,
     save_as: SaveAsViewModel,
     single_work: SingleWork,
     root_child: Option<WidgetId>,
@@ -27,7 +27,7 @@ pub struct BackupBanner {
 impl BackupBanner {
     pub fn new(
         backup_context: Signal<Option<BackupContext>>,
-        restore: RestoreViewModel,
+        restore: BackupRestoreViewModel,
         save_as: SaveAsViewModel,
         single_work: SingleWork,
     ) -> Self {

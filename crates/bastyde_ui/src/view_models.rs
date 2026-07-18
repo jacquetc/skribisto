@@ -59,7 +59,7 @@ mod outline;
 mod pace;
 mod progress_recorder;
 mod project_switch;
-mod restore;
+mod backup_restore;
 mod save_as;
 mod save_queue;
 mod save_status;
@@ -90,7 +90,7 @@ pub use progress_recorder::ProgressRecorder;
 pub use project_switch::{
     PendingSwitch, ProjectSwitchViewModel, UnsavedDecision, unsaved_decision,
 };
-pub use restore::RestoreViewModel;
+pub use backup_restore::BackupRestoreViewModel;
 pub use save_as::SaveAsViewModel;
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
 pub use search_replace::SearchReplaceViewModel;

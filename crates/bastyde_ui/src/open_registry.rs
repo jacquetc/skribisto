@@ -9,7 +9,7 @@
 //! **not** assume "at most one project per process": a process may hold any
 //! number of claims at once, and two different processes may legitimately claim
 //! the *same* path for a moment (e.g. one closing while another opens it) — both
-//! must be visible to [`scan`] so callers like `RestoreViewModel::check_open_elsewhere`
+//! must be visible to [`scan`] so callers like `BackupRestoreViewModel::check_open_elsewhere`
 //! can tell a peer still has the project open before overwriting it.
 //!
 //! While a project is open, the claiming process writes a small lock file naming

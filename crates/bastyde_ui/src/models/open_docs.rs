@@ -60,6 +60,11 @@ pub struct OpenDoc {
     /// `true` once any editor bound to this doc edited a field since the last
     /// save. Cleared by [`flush`](Self::flush).
     pub dirty: Signal<bool>,
+    /// `true` while this item is in the trash (`!BinderItem.activated`). Seeded
+    /// on open and flipped live by `EditorsViewModel::items_updated` when the item
+    /// is trashed/restored — drives the tab's warning accent + the in-editor
+    /// "this item is in the Trash" banner. Shared, so both split panes react.
+    pub trashed: Signal<bool>,
     /// The store's aggregate "an edit happened" counter — bumped by every edit,
     /// observed by the debounced autosave timer.
     edited: Signal<u64>,
@@ -101,6 +106,7 @@ impl OpenDoc {
             main: None,
             synopsis: None,
             dirty: Signal::new(false),
+            trashed: Signal::new(false),
             edited,
             spell_main: None,
             spell_synopsis: None,
@@ -574,6 +580,8 @@ impl OpenDocsStore {
             &contents,
             self.inner.edited.clone(),
         ));
+        // Seed the trash state (a trashed item can be opened from the trash dock).
+        doc.trashed.set(!item.activated);
         self.inner.open.borrow_mut().insert(
             item_id,
             Entry {

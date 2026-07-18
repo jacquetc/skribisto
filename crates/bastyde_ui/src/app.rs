@@ -921,9 +921,9 @@ impl Widget for App {
             .cloned()
             .expect("BackupSettingsViewModel registered in main");
         let restore_vm = ctx
-            .app_state::<crate::view_models::RestoreViewModel>()
+            .app_state::<crate::view_models::BackupRestoreViewModel>()
             .cloned()
-            .expect("RestoreViewModel registered in main");
+            .expect("BackupRestoreViewModel registered in main");
         let save_as_vm = ctx
             .app_state::<SaveAsViewModel>()
             .cloned()
@@ -1558,6 +1558,15 @@ impl Widget for App {
                     move |event: &Event| editors.items_updated(&event.ids),
                 );
             }
+            // A hard-removed item (Delete Forever / Empty Trash of an open item)
+            // must not leave a tab pointing at a vanished entity — close it.
+            {
+                let editors = editors.clone();
+                ctx.subscribe_event(
+                    Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Removed)),
+                    move |event: &Event| editors.items_removed(&event.ids),
+                );
+            }
 
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
@@ -1860,7 +1869,7 @@ impl Widget for App {
             );
         }
 
-        // Route the restore's `save_as` op completion/failure to `RestoreViewModel`
+        // Route the restore's `save_as` op completion/failure to `BackupRestoreViewModel`
         // (it filters by its own op id, so save-as / backup / import events pass
         // through). On success it records WorkInfo and leaves backup mode.
         {

@@ -101,7 +101,7 @@ use models::{BackupSettingsService, OpenDocsStore, WorkspaceLayoutService};
 use singles::{SingleDictWord, SingleWork, SingleWorkInfo};
 use view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel,
-    OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel, RestoreViewModel, SaveAsViewModel,
+    OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel, BackupRestoreViewModel, SaveAsViewModel,
     WorkspaceLayoutViewModel,
 };
 
@@ -619,7 +619,7 @@ fn main() {
     // backup's content (reusing `save_as`), then leaves backup mode. Registered as
     // app-state so `App::build` routes its long-operation events + the choice modal
     // / banner reach it.
-    let restore_vm = RestoreViewModel::new(
+    let restore_vm = BackupRestoreViewModel::new(
         app_ctx.clone(),
         ids.clone(),
         single_work.clone(),

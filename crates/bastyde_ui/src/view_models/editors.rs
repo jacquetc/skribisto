@@ -291,6 +291,11 @@ impl EditorsViewModel {
             return;
         };
         let sub_role = doc.sub_role.clone();
+        // A trashed item can be open (from the trash dock) — tint its tab icon
+        // warning-orange, reactively (flips live on trash/restore, no rebuild).
+        let icon_color = doc
+            .trashed
+            .map(|t| if *t { TextRole::Warning } else { TextRole::Primary });
         let tab = ContentTab::new(
             self.app_ctx.clone(),
             self.ids.clone(),
@@ -314,7 +319,9 @@ impl EditorsViewModel {
             TabInfo::new()
                 .title(tab_title)
                 .closable(true)
-                .icon(move || crate::binder_icons::sub_role_icon(&sub_role)),
+                .icon(move || {
+                    crate::binder_icons::sub_role_icon(&sub_role).color(icon_color.clone())
+                }),
             tab,
         ));
         self.pane(side).selected.set(Some(id));
@@ -727,14 +734,37 @@ impl EditorsViewModel {
         for id in item_ids {
             probe.set_id(Some(*id));
             let Some(it) = probe.dto() else { continue };
+            // Trash / restore fire `BinderItem::Updated` too — flip the shared
+            // doc's trash state so the tab accent + banner react live.
+            let trashed = !it.activated;
+            if let Some(doc) = self.docs.peek(*id) {
+                doc.trashed.set(trashed);
+            }
             // A Promote rewrites the item's type. The open tab was built for the *old*
             // one — it is still showing a chapter's segments and a chapter's editors for
             // what is now a Part — and its `OpenDoc` still owns the old type's fields. Both
             // have to be rebuilt.
             if self.retype(*id, &it) {
+                // The rebuilt doc starts un-trashed; re-seed its trash state.
+                if let Some(doc) = self.docs.peek(*id) {
+                    doc.trashed.set(trashed);
+                }
                 continue; // the rebuilt tab already carries the new caption
             }
             self.retitle(*id, &it.title);
+        }
+    }
+
+    /// React to `BinderItem::Removed` for `item_ids`: close any open tab for a
+    /// hard-removed item (Delete Forever / Empty Trash of an item that was open),
+    /// so no tab is left pointing at a vanished entity.
+    pub fn items_removed(&self, item_ids: &[u64]) {
+        for &id in item_ids {
+            for side in [Side::Primary, Side::Secondary] {
+                if let Some(tid) = self.find_open(side, id) {
+                    self.close_in(side, tid);
+                }
+            }
         }
     }
 

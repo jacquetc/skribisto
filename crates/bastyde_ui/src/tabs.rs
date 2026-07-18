@@ -30,8 +30,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::text_document::TextDocument;
+use bastyde::widgets::{Banner, Button, ButtonVariant, Expand, VStack};
 use frontend::AppContext;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::direct_access::ContentDto;
@@ -245,24 +247,113 @@ pub fn tab_for(
 /// `(role, sub_role)` to its own visual-tab module. Mirrors
 /// `skribisto_model::COMBINATIONS`.
 pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
-    use BinderItemRole::*;
-    use BinderItemSubRole::*;
-    match (tab.role(), tab.sub_role()) {
-        (Item, Scene) => item_scene::render(tab),
-        (Item, ChapterScene) => item_chapter_scene::render(tab),
-        (Item, Note) => item_note::render(tab),
-        (Item, Part) => item_part::render(tab),
-        (Item, BookBegin) => item_book_begin::render(tab),
-        (Item, BookEnd) => item_book_end::render(tab),
-        (Item, Text) => item_text::render(tab),
-        (Folder, None) => folder_none::render(tab),
-        (Folder, Note) => folder_note::render(tab),
-        (Folder, ChapterScene) => folder_chapter_scene::render(tab),
-        (Folder, Part) => folder_part::render(tab),
-        (Folder, Book) => folder_book::render(tab),
-        // Any pair outside the constraint matrix is invalid by construction; fall
-        // back to the contentless placeholder rather than panic.
-        _ => item_text::render(tab),
+    let content: Box<dyn Widget> = {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        match (tab.role(), tab.sub_role()) {
+            (Item, Scene) => item_scene::render(tab),
+            (Item, ChapterScene) => item_chapter_scene::render(tab),
+            (Item, Note) => item_note::render(tab),
+            (Item, Part) => item_part::render(tab),
+            (Item, BookBegin) => item_book_begin::render(tab),
+            (Item, BookEnd) => item_book_end::render(tab),
+            (Item, Text) => item_text::render(tab),
+            (Folder, None) => folder_none::render(tab),
+            (Folder, Note) => folder_note::render(tab),
+            (Folder, ChapterScene) => folder_chapter_scene::render(tab),
+            (Folder, Part) => folder_part::render(tab),
+            (Folder, Book) => folder_book::render(tab),
+            // Any pair outside the constraint matrix is invalid by construction; fall
+            // back to the contentless placeholder rather than panic.
+            _ => item_text::render(tab),
+        }
+    };
+    // A trashed item can be open (from the trash dock) — show a permanent warning
+    // banner between the tab bar and the content, gated to zero height otherwise
+    // (the exact `VisibleWhen` shape the Ctrl+F find banner uses). Per-tab: if the
+    // same item is open in both split panes, each shows its own.
+    let trashed = tab.open_doc.trashed.clone();
+    let item_id = tab.item_id();
+    Box::new(
+        VStack::new()
+            .spacing(0.0)
+            .child(crate::tabs::shared::editor::VisibleWhen::new(
+                trashed,
+                trash_banner(item_id),
+            ))
+            .child(Expand::new().child(Boxed::new(content))),
+    )
+}
+
+/// The permanent "this item is in the Trash" warning banner shown above a trashed
+/// item's editor. Its Restore button fires [`AppIntent::RestoreTrashedItem`], which
+/// the trash view-model turns into the destination picker. No `on_dismiss` ⇒ a
+/// permanent reminder (the [`crate::backup_banner`] technique).
+fn trash_banner(item_id: u64) -> impl Widget {
+    Banner::warning(tr!(trash_banner_title()))
+        .description(tr!(trash_banner_description()))
+        .action(
+            Button::new(tr!(trash_banner_restore()))
+                .variant(ButtonVariant::Filled)
+                .on_activate_fn(move |c| {
+                    c.send_intent(crate::intents::AppIntent::RestoreTrashedItem { item_id })
+                }),
+        )
+}
+
+/// Wraps an already-boxed widget as an `impl Widget` that fills its bounds — so a
+/// `Box<dyn Widget>` (like `tab_pane`'s per-type body) can be a `VStack`/`Expand`
+/// child.
+struct Boxed {
+    pending: Option<Box<dyn Widget>>,
+    child_id: Option<WidgetId>,
+}
+
+impl Boxed {
+    fn new(child: Box<dyn Widget>) -> Self {
+        Self {
+            pending: Some(child),
+            child_id: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for Boxed {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Boxed").finish()
+    }
+}
+
+impl Widget for Boxed {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if let Some(w) = self.pending.take() {
+            self.child_id = Some(ctx.add_boxed(w));
+        }
+        self.child_id.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.child_id
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = bounds.origin();
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
     }
 }
 
@@ -603,6 +694,36 @@ mod tests {
                 "{role:?}/{sub_role:?} laid out to zero width"
             );
         }
+    }
+
+    /// A trashed open item shows the permanent "in the Trash" warning banner above
+    /// its editor (gated on `open_doc.trashed`), and the tab still lays out.
+    #[test]
+    fn a_trashed_tab_shows_the_restore_banner() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.open_doc.trashed.set(true);
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+        assert!(
+            first_of_type(&tree, id, "Banner").is_some(),
+            "a trashed tab must render the Trash banner"
+        );
+        assert!(tree.bounds(id).width > 0.0, "trashed tab laid out to zero width");
     }
 
     /// The three folder containers (Book / Part / Chapter) render a `SegmentedControl`

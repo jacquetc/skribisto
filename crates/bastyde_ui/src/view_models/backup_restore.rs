@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! `RestoreViewModel` — "restore this project to this backup".
+//! `BackupRestoreViewModel` — "restore this project to this backup".
 //!
 //! A backup is opened read-only-file in its own window (see [`crate::backup`]).
 //! Restoring writes the restored content — this window's store, the backup's
@@ -72,7 +72,7 @@ struct RestorePending {
 }
 
 #[derive(Clone)]
-pub struct RestoreViewModel {
+pub struct BackupRestoreViewModel {
     app_ctx: Rc<AppContext>,
     ids: AppIds,
     single_work: SingleWork,
@@ -85,7 +85,7 @@ pub struct RestoreViewModel {
     flush_hook: Rc<RefCell<Rc<dyn Fn()>>>,
 }
 
-impl RestoreViewModel {
+impl BackupRestoreViewModel {
     pub fn new(
         app_ctx: Rc<AppContext>,
         ids: AppIds,
