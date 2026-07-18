@@ -14,6 +14,7 @@
 //! `settings_panel.rs` for the `bati!` style.
 
 mod commands;
+mod wiring;
 
 use std::rc::Rc;
 
@@ -47,7 +48,7 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, DeferredResume, EditorsViewModel,
-    ExportViewModel, ImportPlumeViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel,
+    ExportViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel,
     SaveAsViewModel, SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision,
     unsaved_decision,
 };
@@ -639,59 +640,9 @@ impl Widget for App {
             .app_state::<crate::view_models::DictionariesViewModel>()
             .cloned()
             .expect("DictionariesViewModel registered in main");
-        // Squiggle colour from the theme's error role (re-attaches only on a real change, e.g.
-        // a light/dark switch).
-        spell_docs.set_squiggle_color(spell_underline_color(ctx.theme().colors.text_error));
-        // A dictionary installed or removed → drop the engine's per-id cache (so a cached miss
-        // can't hide a fresh install, nor a cached `Arc` keep a removed dictionary alive), then
-        // re-attach every open document (install paints new squiggles; remove degrades
-        // gracefully, never rewriting `dict_language`).
-        {
-            let docs = spell_docs.clone();
-            let spell = spellcheck.clone();
-            ctx.effect(&dictionaries.changed_signal(), move |_| {
-                spell.invalidate_dictionaries();
-                docs.attach_all();
-            });
-        }
-        // A personal-dictionary change — a word added/removed from the Settings
-        // pane or the editor's "Add to dictionary", including its undo/redo —
-        // re-runs the live spell-check: reload the personal words and re-attach
-        // every open document so squiggles update immediately. This is the single
-        // place a `DictWord` mutation touches the checker; the pane and the
-        // context menu both just create/remove the entity.
-        for dict_word_event in [
-            EntityEvent::Created,
-            EntityEvent::Updated,
-            EntityEvent::Removed,
-        ] {
-            let app_ctx = self.app_ctx.clone();
-            let docs = spell_docs.clone();
-            let spell = spellcheck.clone();
-            ctx.subscribe_event(
-                Origin::DirectAccess(DirectAccessEntity::DictWord(dict_word_event)),
-                move |_event: &Event| {
-                    crate::view_models::reload_personal_words(&app_ctx, &spell);
-                    docs.attach_all();
-                },
-            );
-        }
-        // Cross-process staleness: a peer window may have installed/removed a dictionary while
-        // this one was unfocused. Re-scan on the focus-regain edge — `rescan()` bumps `changed`,
-        // whose effect (above) drops the engine cache and re-attaches every document, so this must
-        // NOT invalidate/attach again or each focus-regain would do all that work twice.
-        {
-            let dictionaries = dictionaries.clone();
-            let was_active = std::cell::Cell::new(true);
-            let wsig = ctx.window_active_signal();
-            ctx.effect(&wsig, move |active| {
-                let regained = *active && !was_active.get();
-                was_active.set(*active);
-                if regained {
-                    dictionaries.rescan();
-                }
-            });
-        }
+        // Dictionary / personal-word / theme changes → re-attach every open document.
+        // See `app::wiring::spellcheck` for the re-attach policy.
+        wiring::spellcheck::install(ctx, &self.app_ctx, &spell_docs, &spellcheck, &dictionaries);
         // Live cross-process reload for `dictionaries.toml` (accepted licences), mirroring the
         // backup-settings registration below.
         if self.dictionary_settings_reloadable.is_none()
@@ -1177,180 +1128,11 @@ impl Widget for App {
             );
         }
 
-        // Route the Plume-import long operation's events to the shared
-        // `ImportPlumeViewModel`, which drives its progress / cancel / success /
-        // error toast. `subscribe_event_with_ctx` (not `subscribe_event`) because
-        // each callback needs a fresh `EventContext` to show/replace the toast —
-        // a plain subscription callback gets none. The VM filters by operation id,
-        // so events from other long operations (save / backup) are ignored.
-        if let Some(import_vm) = ctx.app_state::<ImportPlumeViewModel>().cloned() {
-            {
-                let vm = import_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Progress),
-                    move |e: &Event, c| vm.on_long_op_progress(c, e),
-                );
-            }
-            {
-                let vm = import_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Completed),
-                    move |e: &Event, c| vm.on_long_op_completed(c, e),
-                );
-            }
-            {
-                let vm = import_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Cancelled),
-                    move |e: &Event, c| vm.on_long_op_cancelled(c, e),
-                );
-            }
-            {
-                let vm = import_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Failed),
-                    move |e: &Event, c| vm.on_long_op_failed(c, e),
-                );
-            }
-        }
-
-        // Route the Export long operation's events to the shared `ExportViewModel`, which
-        // drives its progress / cancel / success / error toast. Filters by op id, so the
-        // save / import / backup long ops are ignored.
-        if let Some(export_vm) = ctx.app_state::<ExportViewModel>().cloned() {
-            {
-                let vm = export_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Progress),
-                    move |e: &Event, c| vm.on_long_op_progress(c, e),
-                );
-            }
-            {
-                let vm = export_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Completed),
-                    move |e: &Event, c| vm.on_long_op_completed(c, e),
-                );
-            }
-            {
-                let vm = export_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Cancelled),
-                    move |e: &Event, c| vm.on_long_op_cancelled(c, e),
-                );
-            }
-            {
-                let vm = export_vm.clone();
-                ctx.subscribe_event_with_ctx(
-                    Origin::LongOperation(LongOperationEvent::Failed),
-                    move |e: &Event, c| vm.on_long_op_failed(c, e),
-                );
-            }
-        }
-
-        // Route the Save-As long operation's completion/failure to the shared
-        // `SaveAsViewModel`, which — on success — records the new file_name/shape
-        // into WorkInfo synchronously on the UI thread (save_as itself is
-        // read-only). Filters by op id, so import/backup events are ignored.
-        {
-            let vm = save_as_vm.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Completed),
-                move |e: &Event, c| vm.on_long_op_completed(c, e),
-            );
-        }
-        {
-            let vm = save_as_vm.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Failed),
-                move |e: &Event, c| vm.on_long_op_failed(c, e),
-            );
-        }
-
-        // The progress-recorder cadence (silent, no toast): each `save_work`
-        // fires a throttled `count_words`, and its completion records today's
-        // `ProgressSnapshot`. Plain `subscribe_event` (no `EventContext`) — it
-        // shows no UI. Filters the completion by op id, so save / import /
-        // export / backup long ops are ignored.
-        if let Some(recorder) = ctx
-            .app_state::<crate::view_models::ProgressRecorder>()
-            .cloned()
-        {
-            {
-                let r = recorder.clone();
-                ctx.subscribe_event(
-                    Origin::WorkManagement(WorkManagementEvent::SaveWork),
-                    move |_e: &Event| r.recount_throttled(),
-                );
-            }
-            {
-                let r = recorder.clone();
-                ctx.subscribe_event(
-                    Origin::LongOperation(LongOperationEvent::Completed),
-                    move |e: &Event| r.on_completed(e),
-                );
-            }
-            {
-                let r = recorder.clone();
-                ctx.subscribe_event(
-                    Origin::LongOperation(LongOperationEvent::Failed),
-                    move |e: &Event| r.on_failed_or_cancelled(e),
-                );
-            }
-            {
-                let r = recorder.clone();
-                ctx.subscribe_event(
-                    Origin::LongOperation(LongOperationEvent::Cancelled),
-                    move |e: &Event| r.on_failed_or_cancelled(e),
-                );
-            }
-        }
-
-        // Route the backup long operation's progress/completion/failure to the
-        // shared `BackupSchedulerViewModel`, which records the per-destination
-        // success hash + path, shows a progress toast (retention now runs
-        // *inside* the operation — see the engine), shows the summary toast, and
-        // — for an on-close backup — performs the deferred close. Filters by op
-        // id (import/save-as events are ignored).
-        {
-            let vm = backup_scheduler.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Progress),
-                move |e: &Event, c| vm.on_long_op_progress(c, e),
-            );
-        }
-        {
-            let vm = backup_scheduler.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Completed),
-                move |e: &Event, c| vm.on_long_op_completed(c, e),
-            );
-        }
-        {
-            let vm = backup_scheduler.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Failed),
-                move |e: &Event, c| vm.on_long_op_failed(c, e),
-            );
-        }
-
-        // Route the restore's `save_as` op completion/failure to `BackupRestoreViewModel`
-        // (it filters by its own op id, so save-as / backup / import events pass
-        // through). On success it records WorkInfo and leaves backup mode.
-        {
-            let vm = restore_vm.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Completed),
-                move |e: &Event, c| vm.on_long_op_completed(c, e),
-            );
-        }
-        {
-            let vm = restore_vm.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Failed),
-                move |e: &Event, c| vm.on_long_op_failed(c, e),
-            );
-        }
+        // Long-operation routing: every background job (import, export, save-as, backup,
+        // restore, the progress recorder) reports through the same four events and filters
+        // by its own op id. Grouped in `app::wiring::long_ops`; the editors' own save
+        // routing stays below, since it also drives the deferred close/switch resumption.
+        wiring::long_ops::install(ctx, &save_as_vm, &backup_scheduler, &restore_vm);
 
         // On new work: same seeding as load (a project is now open), then write
         // the freshly-created project to the chosen path immediately — a
