@@ -59,6 +59,7 @@ mod new_work;
 mod outline;
 mod pace;
 mod progress_recorder;
+mod project_lifecycle;
 mod project_switch;
 mod backup_restore;
 mod save_as;
@@ -89,6 +90,8 @@ pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;
 pub use pace::PaceViewModel;
 pub use progress_recorder::ProgressRecorder;
+pub use project_lifecycle::ProjectLifecycleViewModel;
+pub(crate) use project_lifecycle::reload_personal_words;
 pub use project_switch::{
     PendingSwitch, ProjectSwitchViewModel, UnsavedDecision, unsaved_decision,
 };

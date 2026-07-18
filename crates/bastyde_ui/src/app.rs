@@ -335,35 +335,6 @@ fn spell_underline_color(c: bastyde::tokens::Color) -> bastyde::text_document::C
     bastyde::text_document::Color::rgb(to_u8(r), to_u8(g), to_u8(b))
 }
 
-/// Reload the open Work's personal words (`DictWord`) into the checker's personal
-/// set. The narrow half of [`refresh_project_spellcheck`]: no language re-point
-/// (that only changes on a project switch), no re-attach — the caller re-attaches
-/// so a project switch attaches once, not twice.
-fn reload_personal_words(app_ctx: &AppContext, spell: &crate::spellcheck::SpellcheckService) {
-    let personal: std::collections::HashSet<String> =
-        frontend::commands::dict_word_commands::get_all_dict_word(app_ctx)
-            .unwrap_or_default()
-            .into_iter()
-            .map(|w| w.word)
-            .collect();
-    spell.set_personal(personal);
-}
-
-/// Refresh the spell-checker for the freshly-live project: reload its personal words from
-/// `DictWord`, point the open-docs store at the project's default language, and re-attach every
-/// open document. Called from both the `LoadWork` and `NewWork` subscribers.
-fn refresh_project_spellcheck(
-    app_ctx: &AppContext,
-    docs: &crate::models::OpenDocsStore,
-    spell: &crate::spellcheck::SpellcheckService,
-    work_id: Option<u64>,
-    work_lang: String,
-) {
-    reload_personal_words(app_ctx, spell);
-    docs.set_project_language(work_id, work_lang);
-    docs.attach_all();
-}
-
 /// After a project becomes live, offer to install any dictionary its declared languages need
 /// but the machine lacks — one aggregated toast (never one per language), whose action opens
 /// Settings ▸ Dictionaries with the missing set highlighted. Purely additive and dismissible,
@@ -701,7 +672,7 @@ impl Widget for App {
             ctx.subscribe_event(
                 Origin::DirectAccess(DirectAccessEntity::DictWord(dict_word_event)),
                 move |_event: &Event| {
-                    reload_personal_words(&app_ctx, &spell);
+                    crate::view_models::reload_personal_words(&app_ctx, &spell);
                     docs.attach_all();
                 },
             );
@@ -900,6 +871,26 @@ impl Widget for App {
             .expect("SingleWorkInfo registered in main");
         single_work.wire(ctx);
         single_work_info.wire(ctx);
+
+        // The project-lifecycle view-model: the shared Load/New/Close sequence, which was
+        // three hand-kept-in-step closures here. Built fresh each build — it holds only
+        // clones of handles that are themselves stable across builds, so re-creating it is
+        // idempotent; the subscribers below capture their own clone.
+        let lifecycle = crate::view_models::ProjectLifecycleViewModel::new(
+            self.app_ctx.clone(),
+            ids.clone(),
+            outline.clone(),
+            editors.clone(),
+            trash.clone(),
+            single_work.clone(),
+            single_work_info.clone(),
+            spell_docs.clone(),
+            spellcheck.clone(),
+            self.dirty_seq.clone(),
+            self.backup_mode.clone(),
+            self.backup_context.clone(),
+            workspace_layout.clone(),
+        );
         // The personal-dictionary view-model (registered in `main`) — wire its
         // held list-model + single so the Settings pane stays live and the
         // editor's "Add to dictionary" reaches a wired handle.
@@ -1538,19 +1529,11 @@ impl Widget for App {
                 .build(),
         );
 
-        // On project load: seed the id-only global state from the freshly-loaded
-        // project, open the per-Work undo stack, re-point the singles, rebuild the
-        // tree and drop now-stale editor tabs.
+        // On project load: hand off to the lifecycle view-model (seed the ids, open the
+        // per-Work undo stack, re-point the singles, rebuild the tree, drop stale tabs).
+        // The two `BinderItem` subscribers below are not lifecycle — they run for every
+        // edit, not just at project boundaries — so they stay here.
         {
-            let ids = ids.clone();
-            let app_ctx = self.app_ctx.clone();
-            let outline = outline.clone();
-            let editors = editors.clone();
-            let single_work = single_work.clone();
-            let single_work_info = single_work_info.clone();
-            let spell_docs = spell_docs.clone();
-            let trash = trash.clone();
-            let spellcheck = spellcheck.clone();
             // An open tab does not follow its item by itself: `TabInfo::title` is a plain
             // string baked in at open time, and the `ContentTab` payload is built once for
             // the item's `(role, sub_role)`. So a rename must push the new caption, and a
@@ -1573,56 +1556,19 @@ impl Widget for App {
                 );
             }
 
+            // NOTE: the on-open backup trigger is fired from the SECOND `LoadWork`
+            // subscriber below (T2-4), once `backup_mode` is known — firing it here,
+            // before that sniff runs, could pump a freshly-opened *backup* file into the
+            // real project's retention pool before anyone knew it was a backup.
+            //
+            // The workspace-layout restore (open tabs + docks) is likewise driven from
+            // that SECOND subscriber: it already sniffs whether the file is a backup, and
+            // restore needs that answer (a backup gets a clean default desk, not the
+            // source project's) — so it is supplied there rather than re-sniffed here.
+            let lifecycle_load = lifecycle.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
-                move |_event: &Event| {
-                    ids.seed(&app_ctx);
-                    ids.open_stack(&app_ctx);
-                    // Start the freshly-loaded Work unfiltered: a stale binder
-                    // filter or query from the previous Work would empty the tree.
-                    outline.set_binder_filter(None);
-                    outline.clear_search();
-                    outline.reload();
-                    // Source the freshly-loaded project's trash (the model was
-                    // last sourced at construction, when no work was open yet).
-                    trash.reload();
-                    editors.close_all();
-                    single_work.set_id(ids.work_id.get());
-                    single_work_info.set_id(ids.work_info_id.get());
-                    // The freshly-loaded project is exactly what is on disk: nothing
-                    // is pending against it (`unsaved` is derived from this).
-                    editors.mark_clean();
-                    // Advertise this project as open so other instances' switchers
-                    // list it (and can raise this window). This window may already
-                    // hold a claim on a different path (Load supersedes New/Load/
-                    // Restore with no `CloseWork` in between) — `replace_claim`
-                    // drops that one first (T1-5).
-                    if let Some(path) = single_work_info.file_name().get() {
-                        crate::open_registry::replace_claim(&path, &single_work.title().get());
-                    }
-                    // Spell-check the freshly-loaded project (Step 6): load its personal words,
-                    // point the store at its default language. Documents re-open *after* this,
-                    // so each `open()` then attaches with the right language; this call's own
-                    // `attach_all` is a harmless no-op here (tabs were just closed).
-                    refresh_project_spellcheck(
-                        &app_ctx,
-                        &spell_docs,
-                        &spellcheck,
-                        ids.work_id.get(),
-                        single_work.dict_language().get(),
-                    );
-                    // NOTE: the on-open backup trigger is fired from the SECOND
-                    // `LoadWork` subscriber below (T2-4), once `backup_mode` is
-                    // known — firing it here, before that sniff runs, could pump a
-                    // freshly-opened *backup* file into the real project's
-                    // retention pool before anyone knew it was a backup.
-                    //
-                    // The workspace-layout restore (open tabs + docks) is likewise
-                    // driven from that SECOND subscriber: it already sniffs whether
-                    // the file is a backup, and restore needs that answer (a backup
-                    // gets a clean default desk, not the source project's) — so it is
-                    // supplied there rather than re-sniffed here.
-                },
+                move |_event: &Event| lifecycle_load.on_load(),
             );
         }
 
@@ -1920,61 +1866,10 @@ impl Widget for App {
         // `unsaved` only once the write actually lands — so an exit/close during
         // the in-flight write is caught by the guards instead of dropping the file.
         {
-            let ids = ids.clone();
-            let app_ctx = self.app_ctx.clone();
-            let outline = outline.clone();
-            let editors = editors.clone();
-            let single_work = single_work.clone();
-            let single_work_info = single_work_info.clone();
-            let dirty_seq = self.dirty_seq.clone();
-            let backup_mode = self.backup_mode.clone();
-            let backup_context = self.backup_context.clone();
-            let spell_docs = spell_docs.clone();
-            let spellcheck = spellcheck.clone();
-            let workspace_layout = workspace_layout.clone();
-            let trash = trash.clone();
+            let lifecycle_new = lifecycle.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::NewWork),
-                move |_event: &Event| {
-                    ids.seed(&app_ctx);
-                    ids.open_stack(&app_ctx);
-                    outline.set_binder_filter(None);
-                    outline.clear_search();
-                    outline.reload();
-                    // Clear any trash left over from an in-place project switch.
-                    trash.reload();
-                    editors.close_all();
-                    single_work.set_id(ids.work_id.get());
-                    single_work_info.set_id(ids.work_info_id.get());
-                    // A brand-new project isn't on disk yet: start from "everything
-                    // the previous project had is settled", then put this one one
-                    // step ahead so it reads as unsaved until the create-and-save
-                    // below actually lands.
-                    editors.mark_clean();
-                    dirty_seq.set(dirty_seq.get() + 1);
-                    if let Some(path) = single_work_info.file_name().get() {
-                        crate::open_registry::replace_claim(&path, &single_work.title().get());
-                    }
-                    // Spell-check the new project (Step 6) — same as LoadWork.
-                    refresh_project_spellcheck(
-                        &app_ctx,
-                        &spell_docs,
-                        &spellcheck,
-                        ids.work_id.get(),
-                        single_work.dict_language().get(),
-                    );
-                    // A brand-new project is never a backup.
-                    backup_mode.set(false);
-                    backup_context.set(None);
-                    editors.save_to_disk();
-                    // A fresh project has a fresh `unique_id` and so no saved layout:
-                    // this resets the docks to the default (bottom hidden) — dropping
-                    // any arrangement inherited from an in-place switch — over an
-                    // empty desk. Never a backup.
-                    if let Some(layout) = &workspace_layout {
-                        layout.restore(false);
-                    }
-                },
+                move |_event: &Event| lifecycle_new.on_new(),
             );
         }
 
@@ -2021,43 +1916,10 @@ impl Widget for App {
         // On work close: forget the ids, empty the tree, drop the tabs, and clear
         // the singles (the store no longer holds the work).
         {
-            let ids = ids.clone();
-            let outline = outline.clone();
-            let editors = editors.clone();
-            let single_work = single_work.clone();
-            let single_work_info = single_work_info.clone();
-            let backup_mode = self.backup_mode.clone();
-            let backup_context = self.backup_context.clone();
-            let spellcheck = spellcheck.clone();
-            let trash = trash.clone();
+            let lifecycle_close = lifecycle.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::CloseWork),
-                move |_event: &Event| {
-                    // Release exactly the project being closed, before the
-                    // singles are unpointed and its path becomes unreachable.
-                    // Not `release_all()`: a window may one day hold several
-                    // projects, and closing one must not drop the others' claims
-                    // (T1-5 — the registry is keyed on (pid, path), so a claim is
-                    // per project, not per process).
-                    if let Some(path) = single_work_info.file_name().get() {
-                        crate::open_registry::release(&path);
-                    }
-                    // Drop this project's dictionaries, mutes, and personal words (Step 6):
-                    // a fresh project reloads lazily and starts unmuted.
-                    spellcheck.clear();
-                    ids.clear();
-                    outline.set_binder_filter(None);
-                    outline.clear_search();
-                    outline.reload();
-                    trash.reload(); // clear the closed project's trash panel
-                    editors.close_all();
-                    single_work.set_id(None);
-                    single_work_info.set_id(None);
-                    // No project open — nothing can be pending against it.
-                    editors.mark_clean();
-                    backup_mode.set(false);
-                    backup_context.set(None);
-                },
+                move |_event: &Event| lifecycle_close.on_close(),
             );
         }
 
