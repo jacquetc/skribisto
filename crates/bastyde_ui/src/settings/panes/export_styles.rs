@@ -23,7 +23,7 @@ use bastyde::data::ListModel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     Badge, Button, ButtonVariant, ComboBox, FixedSize, FontPicker, FormLayout, GroupHeader, HStack,
-    ListView, MinSize, Padding, Segment, SegmentedControl, Spacer, StandardListItem, TextInput,
+    ListView, MaxSize, MinSize, Padding, Segment, SegmentedControl, Spacer, StandardListItem, TextInput,
     TextWidget, Toast, Toggle, VStack,
 };
 
@@ -106,10 +106,16 @@ pub fn export_styles_pane(ctx: &mut BuildContext, vm: &ExportStylesViewModel) ->
     VStack::new()
         .spacing(6.0)
         .child(GroupHeader::new(tr!(settings_styles_builtin())))
-        .child(Padding::symmetric(4.0, 0.0).child(MinSize::new(0.0, 170.0).child(builtin_list)))
+        // `MaxSize::height`, not `MinSize`: as a *minimum* the list grew to fit
+        // its content, and at ten built-in styles it swallowed the whole pane,
+        // pushing "My styles" and the editor below it out of the modal. A
+        // height-only `FixedSize` is not the fix either — it proposes
+        // `width: None`, which collapses the rows to the left. `MaxSize` caps
+        // the height and leaves the width to fill; each list scrolls internally.
+        .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(200.0).child(builtin_list)))
         .child(Padding::new(14.0, 0.0, 0.0, 0.0).child(GroupHeader::new(tr!(settings_styles_user()))))
         .child(Padding::symmetric(6.0, 4.0).child(toolbar))
-        .child(Padding::symmetric(4.0, 0.0).child(MinSize::new(0.0, 150.0).child(user_list)))
+        .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(150.0).child(user_list)))
         .child(
             Padding::new(14.0, 0.0, 0.0, 0.0)
                 .child(GroupHeader::new(tr!(settings_styles_editor_group()))),
