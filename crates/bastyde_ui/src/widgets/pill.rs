@@ -33,7 +33,7 @@ use bastyde::tokens::{BorderRole, CornerRadius};
 use bastyde::widgets::tooltip::{
     CompositeTooltipWidget, TooltipContent, attach_rich_tooltip_content_with_placement,
 };
-use bastyde::widgets::{Center, IconWidget, MinSize, Padding, RectWidget, TextWidget, ZStack};
+use bastyde::widgets::{Center, MinSize, Padding, RectWidget, TextWidget, ZStack};
 
 /// Dwell before a rich/composite tooltip pins itself open.
 ///
@@ -364,6 +364,7 @@ impl Widget for Pill {
 mod tests {
     use super::*;
     use bastyde::core::widget_tree::WidgetTree;
+    use bastyde::widgets::IconWidget;
 
     /// The visible chip's height, i.e. what `place_children` actually placed. The `Pill`
     /// widget itself is the test's root and so is handed the window-sized proposal whatever

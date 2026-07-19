@@ -7,6 +7,12 @@
 //! Business logic lives in [`TagsViewModel`](crate::view_models::TagsViewModel); this
 //! module is presentation and the data that is only meaningful to it.
 
+pub mod alias_pill_field;
+pub mod contrast;
 pub mod presets;
+pub mod tag_pill_field;
+pub mod tag_tooltip;
 
+pub use alias_pill_field::AliasPillField;
 pub use presets::Preset;
+pub use tag_pill_field::TagPillField;

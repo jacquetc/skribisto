@@ -43,3 +43,20 @@ tags-preset-red-herring = red herring
 tags-preset-historical-figure = historical figure
 tags-preset-source = source
 tags-preset-period-detail = period detail
+
+## The tag pill field (Inspector) and its "+" picker
+tags-pill-list = Tags
+tags-pill-add = Add a tag
+tags-pill-remove = Remove { $name }
+tags-pill-filter-placeholder = Filter or name a new tag
+tags-pill-no-match = No tag matches
+tags-pill-create = Create "{ $name }"
+tags-pill-new-discoverable = Story-bible tag
+tags-pill-new-discoverable-hint = Items with this tag are matched against your prose to fill the roster.
+
+## The alias pill field
+tags-alias-list = Also known as
+tags-alias-add = Add another name
+tags-alias-remove = Remove { $name }
+tags-alias-placeholder = Another name, then Enter
+tags-alias-hint = Names this appears under in your prose, beside its title.

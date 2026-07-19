@@ -44,3 +44,20 @@ tags-preset-red-herring = fausse piste
 tags-preset-historical-figure = personnage historique
 tags-preset-source = source
 tags-preset-period-detail = détail d'époque
+
+## Le champ d'étiquettes (inspecteur) et son sélecteur « + »
+tags-pill-list = Étiquettes
+tags-pill-add = Ajouter une étiquette
+tags-pill-remove = Retirer { $name }
+tags-pill-filter-placeholder = Filtrer ou nommer une étiquette
+tags-pill-no-match = Aucune étiquette ne correspond
+tags-pill-create = Créer « { $name } »
+tags-pill-new-discoverable = Étiquette de bible narrative
+tags-pill-new-discoverable-hint = Les éléments portant cette étiquette sont recherchés dans votre texte pour remplir la distribution.
+
+## Le champ des autres noms
+tags-alias-list = Aussi appelé
+tags-alias-add = Ajouter un autre nom
+tags-alias-remove = Retirer { $name }
+tags-alias-placeholder = Un autre nom, puis Entrée
+tags-alias-hint = Les noms sous lesquels cet élément apparaît dans votre texte, en plus de son titre.
