@@ -148,6 +148,10 @@ impl DuplicateUseCase {
 
                 // Copy the item itself (scalars incl. indent).
                 let created_item = uow.create_orphan_binder_item(&BinderItem {
+                    // A duplicate is a NEW row: it mints its own identity and
+                    // must never inherit the source's, or the two would be
+                    // indistinguishable to anything keyed by uid.
+                    uid: common::uid::new_uid(),
                     created_at: now,
                     updated_at: now,
                     title: src.title.clone(),

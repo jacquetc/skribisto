@@ -166,6 +166,8 @@ impl SplitSceneUseCase {
             src.indent
         };
         let new_item = uow.create_orphan_binder_item(&BinderItem {
+            // The second half of a split is a NEW row with its own identity.
+            uid: common::uid::new_uid(),
             created_at: now,
             updated_at: now,
             title: dto.new_title.clone(),

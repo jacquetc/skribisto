@@ -313,6 +313,11 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
 
     for lb in &loaded.binders {
         let created_binder = uow.create_orphan_binder(&Binder {
+            // Carried explicitly: `..Default::default()` below would otherwise
+            // drop the uid the format just supplied, so every row would land in
+            // the store with an empty identity. Minting when empty is the final
+            // backstop for any load path that failed to provide one.
+            uid: common::uid::heal_uid(&lb.binder.uid),
             created_at: lb.binder.created_at,
             updated_at: lb.binder.updated_at,
             name: lb.binder.name.clone(),
@@ -338,6 +343,8 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
 
             let i = &li.item;
             let created_item = uow.create_orphan_binder_item(&BinderItem {
+                // See the binder above: carried explicitly, healed if empty.
+                uid: common::uid::heal_uid(&i.uid),
                 created_at: i.created_at,
                 updated_at: i.updated_at,
                 title: i.title.clone(),
@@ -773,6 +780,10 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
             items.push(LoadedItem {
                 item: BinderItem {
                     id: ifid,
+                    // The legacy path builds its graph directly and never
+                    // constructs a `WorkBundle`, so `migrate_bundle`'s minting
+                    // step never sees these rows — mint here instead.
+                    uid: skrib::new_unique_id(),
                     created_at: now,
                     updated_at: now,
                     title: it.title.clone(),
@@ -795,6 +806,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         binders.push(LoadedBinder {
             binder: Binder {
                 id: bfid,
+                // See the item above — the legacy path mints its own.
+                uid: skrib::new_unique_id(),
                 created_at: now,
                 updated_at: now,
                 name: b.name.clone(),

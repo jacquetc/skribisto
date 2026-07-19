@@ -126,6 +126,7 @@ fn sample_inputs() -> (
             content_id += 1;
         }
         let item = BinderItem {
+            uid: "tests-fixture-3".to_string(),
             id: item_id,
             created_at: now,
             updated_at: now,
@@ -152,6 +153,7 @@ fn sample_inputs() -> (
 
     let binders = vec![BinderWithItems {
         binder: Binder {
+            uid: "tests-fixture-2".to_string(),
             id: 100,
             created_at: now,
             updated_at: now,
@@ -303,6 +305,7 @@ fn disallowed_content_is_dropped() {
     };
     let binders = vec![BinderWithItems {
         binder: Binder {
+            uid: "tests-fixture-1".to_string(),
             id: 100,
             created_at: now,
             updated_at: now,
@@ -539,4 +542,104 @@ fn mark_existing_as_backup_turns_a_regular_bundle_into_a_backup_in_place() {
     assert_eq!(reread.binders.len(), bundle.binders.len());
     assert_eq!(reread.manifest.work.title, bundle.manifest.work.title);
     assert_eq!(reread.tags, bundle.tags);
+}
+
+// ── uid: durable per-row identity (format v3) ───────────────────────────────
+
+#[test]
+fn uids_survive_a_write_read_round_trip_unchanged() {
+    // The whole point: unlike `file_id` (the store id at save time, re-minted on
+    // the next save), a uid written to disk must come back identical.
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    let before: Vec<&str> = bundle
+        .binders
+        .iter()
+        .flat_map(|b| {
+            std::iter::once(b.binder.uid.as_str())
+                .chain(b.items.iter().map(|i| i.item.uid.as_str()))
+        })
+        .collect();
+    let after: Vec<&str> = read
+        .binders
+        .iter()
+        .flat_map(|b| {
+            std::iter::once(b.binder.uid.as_str())
+                .chain(b.items.iter().map(|i| i.item.uid.as_str()))
+        })
+        .collect();
+    assert!(!before.is_empty(), "fixture must carry uids");
+    assert_eq!(before, after, "every uid must round-trip byte-identical");
+}
+
+#[test]
+fn migrating_a_pre_v3_bundle_mints_a_uid_for_every_row() {
+    // A v2 bundle has no uids at all. `migrate_bundle` must fill in every row --
+    // one missed row is an empty key that collides with every other empty key.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 2;
+    for b in &mut bundle.binders {
+        b.binder.uid.clear();
+        for i in &mut b.items {
+            i.item.uid.clear();
+        }
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+    let mut seen = std::collections::HashSet::new();
+    for b in &bundle.binders {
+        assert!(!b.binder.uid.is_empty(), "binder left without a uid");
+        assert!(seen.insert(b.binder.uid.clone()), "duplicate uid minted");
+        for i in &b.items {
+            assert!(!i.item.uid.is_empty(), "item left without a uid");
+            assert!(seen.insert(i.item.uid.clone()), "duplicate uid minted");
+        }
+    }
+}
+
+#[test]
+fn migration_is_idempotent_and_never_re_mints_an_existing_uid() {
+    // Re-running the step (or meeting a partially-migrated bundle) must not
+    // change identities that already exist -- that would orphan every
+    // reference to them.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 2;
+    // Only the FIRST item loses its uid: the rest must survive untouched.
+    let kept: Vec<String> = bundle.binders[0]
+        .items
+        .iter()
+        .map(|i| i.item.uid.clone())
+        .collect();
+    bundle.binders[0].items[0].item.uid.clear();
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    let after: Vec<String> = bundle.binders[0]
+        .items
+        .iter()
+        .map(|i| i.item.uid.clone())
+        .collect();
+    assert!(!after[0].is_empty(), "the empty one was filled");
+    assert_ne!(after[0], kept[0], "…with a fresh value");
+    assert_eq!(
+        after[1..],
+        kept[1..],
+        "every already-identified row must keep its uid"
+    );
+}
+
+#[test]
+fn a_bundle_from_a_newer_format_is_refused_not_silently_migrated() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = FORMAT_VERSION + 1;
+    assert!(
+        migration::migrate_bundle(&mut bundle).is_err(),
+        "a newer .skrib must be refused, not downgraded"
+    );
 }

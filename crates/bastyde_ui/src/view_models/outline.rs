@@ -520,6 +520,8 @@ impl OutlineViewModel {
                         id: b,
                         created_at: binder.created_at,
                         updated_at: binder.updated_at,
+                        // Durable identity: carried, never re-minted.
+                        uid: binder.uid.clone(),
                         name: title.to_string(),
                         activated: binder.activated,
                     };

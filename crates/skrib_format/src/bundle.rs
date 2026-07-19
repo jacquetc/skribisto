@@ -26,7 +26,13 @@ use std::collections::BTreeMap;
 /// v2 added `WorkFile.unique_id` (a stable project identity). It's
 /// `#[serde(default)]`, so v1 bundles still deserialize (empty id), and the
 /// load path mints a fresh id when it's empty — see `load_work_uc::materialize`.
-pub const FORMAT_VERSION: u32 = 2;
+///
+/// v3 added `BinderFile.uid` / `BinderItemFile.uid` — the same idea one level
+/// down, so a binder row can be referenced durably (expand state, bookmarks,
+/// cross-links) instead of by a position that every load renumbers. Also
+/// `#[serde(default)]`; `migration::step_v2_to_v3` mints the empties, which is
+/// the first real step the migration chain has ever had to run.
+pub const FORMAT_VERSION: u32 = 3;
 
 /// The shape recorded in `project.skrib` (informational; the real shape is the
 /// physical layout). Mirrors `common::entities::WorkShape`.
@@ -182,6 +188,13 @@ pub struct ProgressSnapshotFile {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinderFile {
     pub file_id: u64,
+    /// Durable per-row identity (UUID v4), stable across every save→load
+    /// cycle — unlike `file_id`, which is only the store id at save time and is
+    /// re-minted on the next save. `#[serde(default)]` so pre-v3 bundles still
+    /// deserialize (empty), and `migrate_bundle` fills them in.
+    #[serde(default)]
+    pub uid: String,
+
     pub created_at: String,
     pub updated_at: String,
     pub name: String,
@@ -216,6 +229,13 @@ pub struct ProseRef {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinderItemFile {
     pub file_id: u64,
+    /// Durable per-row identity (UUID v4), stable across every save→load
+    /// cycle — unlike `file_id`, which is only the store id at save time and is
+    /// re-minted on the next save. `#[serde(default)]` so pre-v3 bundles still
+    /// deserialize (empty), and `migrate_bundle` fills them in.
+    #[serde(default)]
+    pub uid: String,
+
     pub created_at: String,
     pub updated_at: String,
     pub title: String,

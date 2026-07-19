@@ -185,6 +185,9 @@ pub(crate) fn update_item_dto(it: &BinderItemDto) -> UpdateBinderItemDto {
         id: it.id,
         created_at: it.created_at,
         updated_at: it.updated_at,
+        // Carried through unchanged: `uid` is the item's durable identity,
+        // never re-minted by an edit.
+        uid: it.uid.clone(),
         title: it.title.clone(),
         sub_title: it.sub_title.clone(),
         role: it.role.clone(),
@@ -297,6 +300,7 @@ mod tests {
         let updated = chrono::DateTime::from_timestamp(1_700_009_999, 0).expect("ts");
         let src = BinderItemDto {
             id: 7,
+            uid: "durable-identity-7".into(),
             created_at: created,
             updated_at: updated,
             title: "Chapter One".into(),
@@ -321,6 +325,10 @@ mod tests {
         let out = update_item_dto(&src);
 
         assert_eq!(out.id, 7);
+        assert_eq!(
+            out.uid, "durable-identity-7",
+            "the durable identity must survive an edit unchanged -- re-minting              it here would orphan every reference to the row"
+        );
         assert_eq!(out.created_at, created);
         assert_eq!(out.updated_at, updated);
         assert_eq!(out.title, "Chapter One");

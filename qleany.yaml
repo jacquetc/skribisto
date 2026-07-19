@@ -351,6 +351,8 @@ entities:
   single_model: true
   inherits_from: EntityBase
   fields:
+  - name: uid
+    type: string
   - name: name
     type: string
   - name: activated
@@ -367,6 +369,8 @@ entities:
   single_model: true
   inherits_from: EntityBase
   fields:
+  - name: uid
+    type: string
   - name: title
     type: string
   - name: sub_title

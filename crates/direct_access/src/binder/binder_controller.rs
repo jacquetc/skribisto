@@ -15,6 +15,21 @@ use common::undo_redo::UndoRedoManager;
 use common::{database::db_context::DbContext, event::EventHub, types::EntityId};
 use std::sync::Arc;
 
+
+/// Guarantee every newly created row has a durable identity.
+///
+/// Minting here rather than at each call site makes this a property of the
+/// creation boundary: a caller that builds its DTO with `..Default::default()`
+/// (which most do) would otherwise produce an empty uid, and every such row
+/// would collide on the same key in anything that indexes by identity.
+/// A caller that DID supply one keeps it, so a load can carry uids through.
+fn with_identity(mut e: common::entities::Binder) -> common::entities::Binder {
+    if e.uid.is_empty() {
+        e.uid = common::uid::new_uid();
+    }
+    e
+}
+
 pub fn create_orphan(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
@@ -24,7 +39,7 @@ pub fn create_orphan(
 ) -> Result<BinderDto> {
     let uow_factory = BinderWriteUoWFactory::new(db_context, event_hub);
     let mut uc = use_cases::UndoableCreateOrphanUseCase::new(uow_factory);
-    let entity_in: common::entities::Binder = entity.into();
+    let entity_in: common::entities::Binder = with_identity(entity.into());
     let result = uc.execute(&entity_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
     Ok(result.into())
@@ -39,7 +54,7 @@ pub fn create_orphan_multi(
 ) -> Result<Vec<BinderDto>> {
     let uow_factory = BinderWriteUoWFactory::new(db_context, event_hub);
     let entities_in: Vec<common::entities::Binder> =
-        entities.iter().map(|dto| dto.into()).collect();
+        entities.iter().map(|dto| with_identity(dto.into())).collect();
     let mut uc = use_cases::UndoableCreateOrphanUseCase::new(uow_factory);
     let result = uc.execute_multi(&entities_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
@@ -56,7 +71,7 @@ pub fn create(
     index: i32,
 ) -> Result<BinderDto> {
     let uow_factory = BinderWriteUoWFactory::new(db_context, event_hub);
-    let entity_in: common::entities::Binder = entity.into();
+    let entity_in: common::entities::Binder = with_identity(entity.into());
     let strategy = use_cases::OwnerStrategy::Appending;
     let mut uc = use_cases::UndoableCreateUseCase::new(uow_factory, strategy);
     let result = uc.execute(&entity_in, owner_id, index)?;
@@ -75,7 +90,7 @@ pub fn create_multi(
 ) -> Result<Vec<BinderDto>> {
     let uow_factory = BinderWriteUoWFactory::new(db_context, event_hub);
     let entities_in: Vec<common::entities::Binder> =
-        entities.iter().map(|dto| dto.into()).collect();
+        entities.iter().map(|dto| with_identity(dto.into())).collect();
     let strategy = use_cases::OwnerStrategy::Appending;
     let mut uc = use_cases::UndoableCreateUseCase::new(uow_factory, strategy);
     let result = uc.execute_multi(&entities_in, owner_id, index)?;
@@ -113,7 +128,7 @@ pub fn update(
     entity: &UpdateBinderDto,
 ) -> Result<BinderDto> {
     let uow_factory = BinderWriteUoWFactory::new(db_context, event_hub);
-    let entity_in: common::entities::Binder = entity.into();
+    let entity_in: common::entities::Binder = with_identity(entity.into());
     let mut uc = use_cases::UndoableUpdateUseCase::new(uow_factory);
     let result = uc.execute(&entity_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
@@ -129,7 +144,7 @@ pub fn update_multi(
 ) -> Result<Vec<BinderDto>> {
     let uow_factory = BinderWriteUoWFactory::new(db_context, event_hub);
     let entities_in: Vec<common::entities::Binder> =
-        entities.iter().map(|dto| dto.into()).collect();
+        entities.iter().map(|dto| with_identity(dto.into())).collect();
     let mut uc = use_cases::UndoableUpdateUseCase::new(uow_factory);
     let result = uc.execute_multi(&entities_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
@@ -144,7 +159,7 @@ pub fn update_with_relationships(
     entity: &BinderDto,
 ) -> Result<BinderDto> {
     let uow_factory = BinderWriteUoWFactory::new(db_context, event_hub);
-    let entity_in: common::entities::Binder = entity.into();
+    let entity_in: common::entities::Binder = with_identity(entity.into());
     let mut uc = use_cases::UndoableUpdateWithRelationshipsUseCase::new(uow_factory);
     let result = uc.execute(&entity_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
@@ -160,7 +175,7 @@ pub fn update_with_relationships_multi(
 ) -> Result<Vec<BinderDto>> {
     let uow_factory = BinderWriteUoWFactory::new(db_context, event_hub);
     let entities_in: Vec<common::entities::Binder> =
-        entities.iter().map(|dto| dto.into()).collect();
+        entities.iter().map(|dto| with_identity(dto.into())).collect();
     let mut uc = use_cases::UndoableUpdateWithRelationshipsUseCase::new(uow_factory);
     let result = uc.execute_multi(&entities_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;

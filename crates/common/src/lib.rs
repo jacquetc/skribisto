@@ -11,4 +11,5 @@ pub mod event;
 pub mod long_operation;
 pub mod snapshot;
 pub mod types;
+pub mod uid;
 pub mod undo_redo;

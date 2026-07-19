@@ -67,7 +67,7 @@ pub use writer::{mark_existing_as_backup, verify_backup_at, write_bundle};
 /// `Work.unique_id` for brand-new projects, to heal a load whose source carries
 /// none, and by the Plume importer for the work it creates.
 pub fn new_unique_id() -> String {
-    uuid::Uuid::new_v4().to_string()
+    common::uid::new_uid()
 }
 
 impl From<SkribShape> for Option<ShapeTag> {

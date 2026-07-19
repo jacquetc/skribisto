@@ -51,6 +51,9 @@ mod imp {
             id: it.id,
             created_at: it.created_at,
             updated_at: it.updated_at,
+            // Carried through unchanged: `uid` is the item's durable identity,
+            // never re-minted by an edit.
+            uid: it.uid.clone(),
             title: it.title.clone(),
             sub_title: it.sub_title.clone(),
             role: it.role.clone(),
@@ -352,6 +355,10 @@ mod imp {
         };
         BinderItemDto {
             id,
+            // DETERMINISTIC, not `new_uid()` — see `single_binder::mock_dto`:
+            // a fresh random uid per call would make the same mock row change
+            // identity between refreshes.
+            uid: format!("mock-item-{id}"),
             title: title.to_string(),
             role,
             sub_role,

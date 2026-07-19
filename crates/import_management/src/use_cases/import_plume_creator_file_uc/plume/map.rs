@@ -169,6 +169,9 @@ fn make_binder(file_id: u64, name: &str, now: &str, items: Vec<BundledItem>) -> 
     BundledBinder {
         binder: BinderFile {
             file_id,
+            // The importer WRITES a v3 bundle, so it mints identities rather
+            // than leaning on the loader's heal-on-empty path.
+            uid: skrib_format::new_unique_id(),
             created_at: now.to_string(),
             updated_at: now.to_string(),
             name: name.to_string(),
@@ -660,6 +663,7 @@ impl<'a> Builder<'a> {
             BundledItem {
                 item: BinderItemFile {
                     file_id: item_id,
+                    uid: skrib_format::new_unique_id(),
                     created_at: self.now.clone(),
                     updated_at: self.now.clone(),
                     title: title.to_string(),

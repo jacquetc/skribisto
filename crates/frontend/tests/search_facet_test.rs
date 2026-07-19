@@ -32,6 +32,7 @@ const NEEDLE: &str = "Aurélien";
 fn item(role: BinderItemRole, sub_role: BinderItemSubRole, title: &str) -> CreateBinderItemDto {
     let now = chrono::Utc::now();
     CreateBinderItemDto {
+        uid: "search_facet_test-fixture-1".to_string(),
         created_at: now,
         updated_at: now,
         title: title.to_string(),

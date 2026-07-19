@@ -139,6 +139,7 @@ fn make_fixture() -> Fixture {
         &ctx,
         Some(setup),
         &CreateBinderDto {
+            uid: "binder_tree_actions_test-fixture-3".to_string(),
             created_at: now(),
             updated_at: now(),
             name: "Manuscript".into(),
@@ -152,6 +153,7 @@ fn make_fixture() -> Fixture {
         &ctx,
         Some(setup),
         &CreateBinderDto {
+            uid: "binder_tree_actions_test-fixture-2".to_string(),
             created_at: now(),
             updated_at: now(),
             name: "Notes".into(),
@@ -429,6 +431,50 @@ fn move_into_own_subtree_is_rejected() {
 }
 
 // ─────────────────────────────── duplicate ───────────────────────────────
+#[test]
+fn duplicate_mints_a_fresh_uid_and_never_inherits_the_source_s() {
+    // A duplicate is a NEW row. If it copied the source's uid the two would be
+    // indistinguishable to anything keyed by identity -- remembered expand
+    // state, bookmarks, cross-links -- which is the whole reason uids exist.
+    let fx = make_fixture();
+    let src = binder_item_commands::get_binder_item(&fx.ctx, &fx.a)
+        .expect("source item")
+        .expect("source item present");
+    assert!(!src.uid.is_empty(), "the fixture item must carry a uid");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let ret = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![fx.a],
+        },
+    )
+    .expect("duplicate");
+
+    let clone = binder_item_commands::get_binder_item(&fx.ctx, &ret.new_item_ids[0])
+        .expect("cloned item")
+        .expect("cloned item present");
+    assert!(!clone.uid.is_empty(), "the clone must be given an identity");
+    assert_ne!(
+        clone.uid, src.uid,
+        "the clone must NOT inherit the source's identity"
+    );
+
+    // And no two rows anywhere share one -- the backstop that catches any
+    // creation path that forgot to mint.
+    let all = binder_item_commands::get_all_binder_item(&fx.ctx).unwrap();
+    let mut seen = std::collections::HashSet::new();
+    for it in &all {
+        assert!(!it.uid.is_empty(), "item {} has no uid", it.id);
+        assert!(
+            seen.insert(it.uid.clone()),
+            "two items share the uid {}",
+            it.uid
+        );
+    }
+}
+
 
 #[test]
 fn duplicate_folder_subtree_clones_items_and_content() {
@@ -1144,6 +1190,7 @@ fn set_sub_role(fx: &Fixture, item_id: EntityId, sub_role: BinderItemSubRole) {
         &fx.ctx,
         Some(fx.setup),
         &frontend::direct_access::UpdateBinderItemDto {
+            uid: "binder_tree_actions_test-fixture-1".to_string(),
             id: dto.id,
             created_at: dto.created_at,
             updated_at: dto.updated_at,

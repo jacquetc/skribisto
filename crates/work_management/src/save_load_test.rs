@@ -60,6 +60,7 @@ fn item(
 ) -> ItemWithContents {
     ItemWithContents {
         item: BinderItem {
+            uid: "save_load_test-fixture-3".to_string(),
             id,
             created_at: ts(),
             updated_at: ts(),
@@ -132,6 +133,7 @@ fn sample_bundle() -> WorkBundle {
 
     let manuscript = BinderWithItems {
         binder: Binder {
+            uid: "save_load_test-fixture-2".to_string(),
             id: 100,
             created_at: ts(),
             updated_at: ts(),
@@ -186,6 +188,7 @@ fn sample_bundle() -> WorkBundle {
     };
     let characters = BinderWithItems {
         binder: Binder {
+            uid: "save_load_test-fixture-1".to_string(),
             id: 101,
             created_at: ts(),
             updated_at: ts(),
