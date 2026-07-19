@@ -126,7 +126,9 @@ fn sample_inputs() -> (
             content_id += 1;
         }
         let item = BinderItem {
-            uid: "tests-fixture-3".to_string(),
+            // Distinct per row: this is inside the `for … enumerate()` above, so a
+            // single literal would give every item the SAME identity.
+            uid: common::uid::fixture_uid(item_id),
             id: item_id,
             created_at: now,
             updated_at: now,
@@ -153,7 +155,7 @@ fn sample_inputs() -> (
 
     let binders = vec![BinderWithItems {
         binder: Binder {
-            uid: "tests-fixture-2".to_string(),
+            uid: common::uid::fixture_uid(2),
             id: 100,
             created_at: now,
             updated_at: now,
@@ -305,7 +307,7 @@ fn disallowed_content_is_dropped() {
     };
     let binders = vec![BinderWithItems {
         binder: Binder {
-            uid: "tests-fixture-1".to_string(),
+            uid: common::uid::fixture_uid(1),
             id: 100,
             created_at: now,
             updated_at: now,
@@ -556,20 +558,18 @@ fn uids_survive_a_write_read_round_trip_unchanged() {
     write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
     let read = read_bundle(root.to_str().unwrap()).unwrap();
 
-    let before: Vec<&str> = bundle
+    let before: Vec<uuid::Uuid> = bundle
         .binders
         .iter()
         .flat_map(|b| {
-            std::iter::once(b.binder.uid.as_str())
-                .chain(b.items.iter().map(|i| i.item.uid.as_str()))
+            std::iter::once(b.binder.uid).chain(b.items.iter().map(|i| i.item.uid))
         })
         .collect();
-    let after: Vec<&str> = read
+    let after: Vec<uuid::Uuid> = read
         .binders
         .iter()
         .flat_map(|b| {
-            std::iter::once(b.binder.uid.as_str())
-                .chain(b.items.iter().map(|i| i.item.uid.as_str()))
+            std::iter::once(b.binder.uid).chain(b.items.iter().map(|i| i.item.uid))
         })
         .collect();
     assert!(!before.is_empty(), "fixture must carry uids");
@@ -583,9 +583,9 @@ fn migrating_a_pre_v3_bundle_mints_a_uid_for_every_row() {
     let mut bundle = build_bundle(ShapeTag::Folder);
     bundle.manifest.format_version = 2;
     for b in &mut bundle.binders {
-        b.binder.uid.clear();
+        b.binder.uid = uuid::Uuid::nil();
         for i in &mut b.items {
-            i.item.uid.clear();
+            i.item.uid = uuid::Uuid::nil();
         }
     }
 
@@ -594,11 +594,11 @@ fn migrating_a_pre_v3_bundle_mints_a_uid_for_every_row() {
     assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
     let mut seen = std::collections::HashSet::new();
     for b in &bundle.binders {
-        assert!(!b.binder.uid.is_empty(), "binder left without a uid");
-        assert!(seen.insert(b.binder.uid.clone()), "duplicate uid minted");
+        assert!(!b.binder.uid.is_nil(), "binder left without a uid");
+        assert!(seen.insert(b.binder.uid), "duplicate uid minted");
         for i in &b.items {
-            assert!(!i.item.uid.is_empty(), "item left without a uid");
-            assert!(seen.insert(i.item.uid.clone()), "duplicate uid minted");
+            assert!(!i.item.uid.is_nil(), "item left without a uid");
+            assert!(seen.insert(i.item.uid), "duplicate uid minted");
         }
     }
 }
@@ -611,21 +611,21 @@ fn migration_is_idempotent_and_never_re_mints_an_existing_uid() {
     let mut bundle = build_bundle(ShapeTag::Folder);
     bundle.manifest.format_version = 2;
     // Only the FIRST item loses its uid: the rest must survive untouched.
-    let kept: Vec<String> = bundle.binders[0]
+    let kept: Vec<uuid::Uuid> = bundle.binders[0]
         .items
         .iter()
-        .map(|i| i.item.uid.clone())
+        .map(|i| i.item.uid)
         .collect();
-    bundle.binders[0].items[0].item.uid.clear();
+    bundle.binders[0].items[0].item.uid = uuid::Uuid::nil();
 
     migration::migrate_bundle(&mut bundle).unwrap();
 
-    let after: Vec<String> = bundle.binders[0]
+    let after: Vec<uuid::Uuid> = bundle.binders[0]
         .items
         .iter()
-        .map(|i| i.item.uid.clone())
+        .map(|i| i.item.uid)
         .collect();
-    assert!(!after[0].is_empty(), "the empty one was filled");
+    assert!(!after[0].is_nil(), "the nil one was filled");
     assert_ne!(after[0], kept[0], "…with a fresh value");
     assert_eq!(
         after[1..],
@@ -642,4 +642,30 @@ fn a_bundle_from_a_newer_format_is_refused_not_silently_migrated() {
         migration::migrate_bundle(&mut bundle).is_err(),
         "a newer .skrib must be refused, not downgraded"
     );
+}
+
+#[test]
+fn migrating_a_v1_bundle_walks_the_whole_chain() {
+    // The v1 path is the one with non-obvious control flow: two loop
+    // iterations, v1→v2 then v2→v3. Only v2 was covered, so a regression that
+    // broke the oldest files -- the ones most likely still in the wild --
+    // would have passed.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 1;
+    for b in &mut bundle.binders {
+        b.binder.uid = uuid::Uuid::nil();
+        for i in &mut b.items {
+            i.item.uid = uuid::Uuid::nil();
+        }
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+    for b in &bundle.binders {
+        assert!(!b.binder.uid.is_nil(), "v1 binder left unidentified");
+        for i in &b.items {
+            assert!(!i.item.uid.is_nil(), "v1 item left unidentified");
+        }
+    }
 }

@@ -300,7 +300,7 @@ mod tests {
         let updated = chrono::DateTime::from_timestamp(1_700_009_999, 0).expect("ts");
         let src = BinderItemDto {
             id: 7,
-            uid: "durable-identity-7".into(),
+            uid: common::uid::fixture_uid(7),
             created_at: created,
             updated_at: updated,
             title: "Chapter One".into(),
@@ -326,7 +326,8 @@ mod tests {
 
         assert_eq!(out.id, 7);
         assert_eq!(
-            out.uid, "durable-identity-7",
+            out.uid,
+            common::uid::fixture_uid(7),
             "the durable identity must survive an edit unchanged -- re-minting              it here would orphan every reference to the row"
         );
         assert_eq!(out.created_at, created);

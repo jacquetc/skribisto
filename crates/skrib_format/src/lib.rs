@@ -67,7 +67,10 @@ pub use writer::{mark_existing_as_backup, verify_backup_at, write_bundle};
 /// `Work.unique_id` for brand-new projects, to heal a load whose source carries
 /// none, and by the Plume importer for the work it creates.
 pub fn new_unique_id() -> String {
-    common::uid::new_uid()
+    // `Work.unique_id` is still a `string` field in the manifest, unlike the
+    // row-level `uid`s which are typed `uuid`. Same generator, different
+    // representation.
+    common::uid::new_uid().to_string()
 }
 
 impl From<SkribShape> for Option<ShapeTag> {

@@ -139,7 +139,7 @@ fn make_fixture() -> Fixture {
         &ctx,
         Some(setup),
         &CreateBinderDto {
-            uid: "binder_tree_actions_test-fixture-3".to_string(),
+            uid: common::uid::fixture_uid(3),
             created_at: now(),
             updated_at: now(),
             name: "Manuscript".into(),
@@ -153,7 +153,7 @@ fn make_fixture() -> Fixture {
         &ctx,
         Some(setup),
         &CreateBinderDto {
-            uid: "binder_tree_actions_test-fixture-2".to_string(),
+            uid: common::uid::fixture_uid(2),
             created_at: now(),
             updated_at: now(),
             name: "Notes".into(),
@@ -440,7 +440,7 @@ fn duplicate_mints_a_fresh_uid_and_never_inherits_the_source_s() {
     let src = binder_item_commands::get_binder_item(&fx.ctx, &fx.a)
         .expect("source item")
         .expect("source item present");
-    assert!(!src.uid.is_empty(), "the fixture item must carry a uid");
+    assert!(!src.uid.is_nil(), "the fixture item must carry a uid");
 
     let stack = undo_redo_commands::create_new_stack(&fx.ctx);
     let ret = binder_item_management_commands::duplicate(
@@ -455,7 +455,7 @@ fn duplicate_mints_a_fresh_uid_and_never_inherits_the_source_s() {
     let clone = binder_item_commands::get_binder_item(&fx.ctx, &ret.new_item_ids[0])
         .expect("cloned item")
         .expect("cloned item present");
-    assert!(!clone.uid.is_empty(), "the clone must be given an identity");
+    assert!(!clone.uid.is_nil(), "the clone must be given an identity");
     assert_ne!(
         clone.uid, src.uid,
         "the clone must NOT inherit the source's identity"
@@ -466,9 +466,9 @@ fn duplicate_mints_a_fresh_uid_and_never_inherits_the_source_s() {
     let all = binder_item_commands::get_all_binder_item(&fx.ctx).unwrap();
     let mut seen = std::collections::HashSet::new();
     for it in &all {
-        assert!(!it.uid.is_empty(), "item {} has no uid", it.id);
+        assert!(!it.uid.is_nil(), "item {} has no uid", it.id);
         assert!(
-            seen.insert(it.uid.clone()),
+            seen.insert(it.uid),
             "two items share the uid {}",
             it.uid
         );
@@ -1190,7 +1190,7 @@ fn set_sub_role(fx: &Fixture, item_id: EntityId, sub_role: BinderItemSubRole) {
         &fx.ctx,
         Some(fx.setup),
         &frontend::direct_access::UpdateBinderItemDto {
-            uid: "binder_tree_actions_test-fixture-1".to_string(),
+            uid: common::uid::fixture_uid(1),
             id: dto.id,
             created_at: dto.created_at,
             updated_at: dto.updated_at,

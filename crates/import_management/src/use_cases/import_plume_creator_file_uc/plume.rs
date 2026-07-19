@@ -493,6 +493,43 @@ mod tests {
     }
 
     #[test]
+    fn imported_bundle_carries_a_distinct_uid_for_every_row_on_disk() {
+        // The importer WRITES a v3 bundle, so it must mint identities itself
+        // rather than lean on the loader's heal-on-nil path. Without this the
+        // on-disk artifact would be wrong while the app still looked fine,
+        // because `materialize` would paper over it at load time.
+        let (_summary, bundle) = import_zip(&terminal_members());
+
+        assert_eq!(
+            bundle.manifest.format_version,
+            skrib_format::FORMAT_VERSION,
+            "the importer must write the current format"
+        );
+
+        let mut seen = std::collections::HashSet::new();
+        let mut rows = 0usize;
+        for b in &bundle.binders {
+            assert!(
+                !b.binder.uid.is_nil(),
+                "binder '{}' written without an identity",
+                b.binder.name
+            );
+            assert!(seen.insert(b.binder.uid), "two rows share a uid");
+            rows += 1;
+            for i in &b.items {
+                assert!(
+                    !i.item.uid.is_nil(),
+                    "item '{}' written without an identity",
+                    i.item.title
+                );
+                assert!(seen.insert(i.item.uid), "two rows share a uid");
+                rows += 1;
+            }
+        }
+        assert!(rows > 1, "fixture must produce several rows");
+    }
+
+    #[test]
     fn old_zip_schema_is_normalized() {
         // tree 0.4 (root plume-tree, no <trash>, separator without number),
         // attendance 0.3 (legacy char/item/place + level/role, no <group>).

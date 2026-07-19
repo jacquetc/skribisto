@@ -13,7 +13,7 @@ pub struct BinderDto {
     pub id: EntityId,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub uid: String,
+    pub uid: uuid::Uuid,
     pub name: String,
     pub activated: bool,
     pub binder_items: Vec<EntityId>,
@@ -65,7 +65,7 @@ impl From<Binder> for BinderDto {
 pub struct CreateBinderDto {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub uid: String,
+    pub uid: uuid::Uuid,
     pub name: String,
     pub activated: bool,
     pub binder_items: Vec<EntityId>,
@@ -116,7 +116,7 @@ pub struct UpdateBinderDto {
     pub id: EntityId,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub uid: String,
+    pub uid: uuid::Uuid,
     pub name: String,
     pub activated: bool,
 }

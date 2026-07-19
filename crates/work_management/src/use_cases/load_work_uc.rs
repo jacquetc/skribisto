@@ -317,7 +317,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             // drop the uid the format just supplied, so every row would land in
             // the store with an empty identity. Minting when empty is the final
             // backstop for any load path that failed to provide one.
-            uid: common::uid::heal_uid(&lb.binder.uid),
+            uid: common::uid::heal_uid(lb.binder.uid),
             created_at: lb.binder.created_at,
             updated_at: lb.binder.updated_at,
             name: lb.binder.name.clone(),
@@ -344,7 +344,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             let i = &li.item;
             let created_item = uow.create_orphan_binder_item(&BinderItem {
                 // See the binder above: carried explicitly, healed if empty.
-                uid: common::uid::heal_uid(&i.uid),
+                uid: common::uid::heal_uid(i.uid),
                 created_at: i.created_at,
                 updated_at: i.updated_at,
                 title: i.title.clone(),
@@ -783,7 +783,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     // The legacy path builds its graph directly and never
                     // constructs a `WorkBundle`, so `migrate_bundle`'s minting
                     // step never sees these rows — mint here instead.
-                    uid: skrib::new_unique_id(),
+                    uid: common::uid::new_uid(),
                     created_at: now,
                     updated_at: now,
                     title: it.title.clone(),
@@ -807,7 +807,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
             binder: Binder {
                 id: bfid,
                 // See the item above — the legacy path mints its own.
-                uid: skrib::new_unique_id(),
+                uid: common::uid::new_uid(),
                 created_at: now,
                 updated_at: now,
                 name: b.name.clone(),
@@ -840,5 +840,63 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         progress_snapshots: Vec::new(),
         references,
         absolute_path: p.absolute_path.clone(),
+    }
+}
+
+#[cfg(test)]
+mod legacy_uid_tests {
+    use super::*;
+
+    /// The legacy SQLite path builds its graph directly and never constructs a
+    /// `WorkBundle`, so `migrate_bundle`'s minting step never sees these rows.
+    /// A fix confined to `migration.rs` would silently miss every legacy
+    /// project -- this pins the independent mint.
+    #[test]
+    fn a_legacy_project_gets_a_distinct_uid_for_every_row() {
+        use legacy::{LegacyBinder, LegacyItem, LegacyProject};
+
+        let item = |old_id: i64, title: &str| LegacyItem {
+            old_id,
+            title: title.to_string(),
+            sub_title: String::new(),
+            role: common::entities::BinderItemRole::Item,
+            sub_role: common::entities::BinderItemSubRole::Scene,
+            label: String::new(),
+            activated: true,
+            indent: 0,
+            word_count_goal: 0,
+            char_count_goal: 0,
+            contents: Vec::new(),
+            tag_old_ids: Vec::new(),
+        };
+        let project = LegacyProject {
+            title: "Old Novel".into(),
+            author: "A".into(),
+            dict_language: "en-US".into(),
+            unique_id: String::new(),
+            absolute_path: "/tmp/old.skrib".into(),
+            tags: Vec::new(),
+            dict_words: Vec::new(),
+            binders: vec![LegacyBinder {
+                name: "Manuscript".into(),
+                is_note: false,
+                activated: true,
+                items: vec![item(1, "One"), item(2, "Two"), item(3, "Three")],
+            }],
+            references: Vec::new(),
+        };
+
+        let loaded = legacy_to_loaded(project, chrono::Utc::now());
+
+        let mut seen = std::collections::HashSet::new();
+        for b in &loaded.binders {
+            assert!(!b.binder.uid.is_nil(), "legacy binder left unidentified");
+            assert!(seen.insert(b.binder.uid), "duplicate uid across legacy rows");
+            for i in &b.items {
+                assert!(!i.item.uid.is_nil(), "legacy item left unidentified");
+                assert!(seen.insert(i.item.uid), "duplicate uid across legacy rows");
+            }
+        }
+        assert_eq!(seen.len(), 4, "one binder + three items, all distinct");
     }
 }

@@ -355,10 +355,8 @@ mod imp {
         };
         BinderItemDto {
             id,
-            // DETERMINISTIC, not `new_uid()` — see `single_binder::mock_dto`:
-            // a fresh random uid per call would make the same mock row change
-            // identity between refreshes.
-            uid: format!("mock-item-{id}"),
+            // DETERMINISTIC, not `new_uid()` — see `single_binder::mock_dto`.
+            uid: common::uid::fixture_uid(id),
             title: title.to_string(),
             role,
             sub_role,

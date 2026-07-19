@@ -156,9 +156,10 @@ mod imp {
             id,
             // DETERMINISTIC, not `new_uid()`: `mock_dto` is called on demand,
             // so a fresh random uid each call would make the same row change
-            // identity between refreshes — worse than the empty default, since
-            // anything keyed by uid would treat every refresh as a new row.
-            uid: format!("mock-binder-{id}"),
+            // identity between refreshes — anything keyed by uid would treat
+            // every refresh as a new row. Offset so a mock binder and a mock
+            // item with the same id never collide.
+            uid: common::uid::fixture_uid(1_000_000 + id),
             name: "Mock Binder".to_string(),
             activated: true,
             ..Default::default()

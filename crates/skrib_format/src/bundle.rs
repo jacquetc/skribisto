@@ -193,7 +193,7 @@ pub struct BinderFile {
     /// re-minted on the next save. `#[serde(default)]` so pre-v3 bundles still
     /// deserialize (empty), and `migrate_bundle` fills them in.
     #[serde(default)]
-    pub uid: String,
+    pub uid: uuid::Uuid,
 
     pub created_at: String,
     pub updated_at: String,
@@ -234,7 +234,7 @@ pub struct BinderItemFile {
     /// re-minted on the next save. `#[serde(default)]` so pre-v3 bundles still
     /// deserialize (empty), and `migrate_bundle` fills them in.
     #[serde(default)]
-    pub uid: String,
+    pub uid: uuid::Uuid,
 
     pub created_at: String,
     pub updated_at: String,

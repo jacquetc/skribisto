@@ -57,6 +57,7 @@ binder_ordering = { workspace = true }
 # retention policy type + the retention/fingerprint/sniff helpers used by the
 # backup scheduler, backups list, and open-a-backup flow.
 skrib_format = { workspace = true }
+common = { workspace = true }
 # The export compiler (Preset schema + built-in styles + one-TextDocument assembly)
 # drives the Export panel's live preview *client-side* — the same code path the
 # `export_work` long op runs, so preview and committed export cannot diverge.

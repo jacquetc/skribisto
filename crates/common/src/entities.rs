@@ -287,7 +287,7 @@ pub struct Binder {
     pub created_at: chrono::DateTime<chrono::Utc>,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub uid: String,
+    pub uid: uuid::Uuid,
     pub name: String,
     pub activated: bool,
     pub binder_items: Vec<EntityId>,
@@ -306,7 +306,7 @@ pub struct BinderItem {
     pub created_at: chrono::DateTime<chrono::Utc>,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub uid: String,
+    pub uid: uuid::Uuid,
     pub title: String,
     pub sub_title: String,
     pub role: BinderItemRole,

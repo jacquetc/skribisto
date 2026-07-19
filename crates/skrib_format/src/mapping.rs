@@ -92,7 +92,7 @@ pub fn from_entities(
             items.push(BundledItem {
                 item: BinderItemFile {
                     file_id: item.id,
-                    uid: item.uid.clone(),
+                    uid: item.uid,
                     created_at: fmt_dt(&item.created_at),
                     updated_at: fmt_dt(&item.updated_at),
                     title: item.title.clone(),
@@ -119,7 +119,7 @@ pub fn from_entities(
         bundled_binders.push(BundledBinder {
             binder: BinderFile {
                 file_id: bwi.binder.id,
-                uid: bwi.binder.uid.clone(),
+                uid: bwi.binder.uid,
                 created_at: fmt_dt(&bwi.binder.created_at),
                 updated_at: fmt_dt(&bwi.binder.updated_at),
                 name: bwi.binder.name.clone(),
@@ -313,7 +313,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
             id: bb.binder.file_id,
             // Explicit, NOT left to `..Default::default()`: an empty uid here
             // would collapse every row onto one key downstream.
-            uid: bb.binder.uid.clone(),
+            uid: bb.binder.uid,
             created_at: parse_dt(&bb.binder.created_at)?,
             updated_at: parse_dt(&bb.binder.updated_at)?,
             name: bb.binder.name.clone(),
@@ -361,7 +361,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                 item: BinderItem {
                     id: f.file_id,
                     // Explicit, NOT left to `..Default::default()` — see above.
-                    uid: f.uid.clone(),
+                    uid: f.uid,
                     created_at: parse_dt(&f.created_at)?,
                     updated_at: parse_dt(&f.updated_at)?,
                     title: f.title.clone(),

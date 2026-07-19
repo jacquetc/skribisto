@@ -884,6 +884,7 @@ dependencies = [
  "serde",
  "serde_json",
  "skribisto-binder-ordering",
+ "skribisto-common",
  "skribisto-compiler",
  "skribisto-export-management",
  "skribisto-fonts",

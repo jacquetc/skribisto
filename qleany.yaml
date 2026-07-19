@@ -352,7 +352,7 @@ entities:
   inherits_from: EntityBase
   fields:
   - name: uid
-    type: string
+    type: uuid
   - name: name
     type: string
   - name: activated
@@ -370,7 +370,7 @@ entities:
   inherits_from: EntityBase
   fields:
   - name: uid
-    type: string
+    type: uuid
   - name: title
     type: string
   - name: sub_title

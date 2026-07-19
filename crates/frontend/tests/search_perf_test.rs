@@ -70,7 +70,8 @@ fn big_manuscript() -> AppContext {
     let now = chrono::Utc::now();
     let items: Vec<CreateBinderItemDto> = (0..SCENES)
         .map(|i| CreateBinderItemDto {
-            uid: "search_perf_test-fixture-1".to_string(),
+            // Distinct per scene: this is inside `(0..SCENES).map(..)`.
+            uid: common::uid::fixture_uid(i as u64),
             created_at: now,
             updated_at: now,
             title: format!("Scène {i}"),

@@ -60,7 +60,7 @@ fn item(
 ) -> ItemWithContents {
     ItemWithContents {
         item: BinderItem {
-            uid: "save_load_test-fixture-3".to_string(),
+            uid: common::uid::fixture_uid(3),
             id,
             created_at: ts(),
             updated_at: ts(),
@@ -133,7 +133,7 @@ fn sample_bundle() -> WorkBundle {
 
     let manuscript = BinderWithItems {
         binder: Binder {
-            uid: "save_load_test-fixture-2".to_string(),
+            uid: common::uid::fixture_uid(2),
             id: 100,
             created_at: ts(),
             updated_at: ts(),
@@ -188,7 +188,7 @@ fn sample_bundle() -> WorkBundle {
     };
     let characters = BinderWithItems {
         binder: Binder {
-            uid: "save_load_test-fixture-1".to_string(),
+            uid: common::uid::fixture_uid(1),
             id: 101,
             created_at: ts(),
             updated_at: ts(),
