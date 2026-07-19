@@ -37,6 +37,23 @@ pub struct PlumeSource {
 
 const DICT_MEMBER: &str = "dicts/userDict.dict_plume";
 
+#[cfg(test)]
+impl PlumeSource {
+    /// An in-memory source carrying no HTML blobs, so the mapper can be exercised on
+    /// hand-built `PlumeTree`/`PlumeAttendance` fixtures without a real `.plume` zip.
+    /// Every `text`/`synopsis`/`note`/`attend_doc` lookup returns `None`, which the
+    /// mapper already handles (a Plume node may legitimately have no text member).
+    pub(super) fn for_tests() -> Self {
+        Self {
+            tree_xml: String::new(),
+            attendance_xml: None,
+            info_xml: None,
+            dict: None,
+            html: HashMap::new(),
+        }
+    }
+}
+
 impl PlumeSource {
     /// Open the project at `source_path` (a `.plume`/`.plume_backup` zip, or the
     /// loose `.plume` tree file of an old-system project).

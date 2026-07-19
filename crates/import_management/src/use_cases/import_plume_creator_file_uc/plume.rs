@@ -477,12 +477,27 @@ mod tests {
         let syn = prose(alice, ContentRole::SynopsisText);
         assert!(
             syn.contains("The hero")
-                && syn.contains("Al")
                 && syn.contains("Main")
                 && syn.contains("Protagonist")
                 && syn.contains("Age : 30"),
             "synopsis was: {syn:?}"
         );
+        // `aliases="Al"` is structured data now, not the first cell of the synopsis
+        // metadata line — that is what lets the mention index find "Al" in prose.
+        assert_eq!(alice.item.aliases, vec!["Al".to_string()]);
+        assert!(
+            !syn.contains(" Al ") && !syn.starts_with("Al"),
+            "the alias must not be duplicated back into the synopsis: {syn:?}"
+        );
+        // The story-bible group became a discoverable tag, and Alice carries it. Read off
+        // the re-read bundle, so this also proves the tags survive the zip round-trip.
+        let characters_tag = bundle
+            .tags
+            .iter()
+            .find(|t| t.name == "Characters")
+            .expect("a tag named after the story-bible group");
+        assert!(characters_tag.discoverable);
+        assert_eq!(alice.item.tag_ids, vec![characters_tag.file_id]);
 
         // Scene 1.1's attend="-10" resolved to Alice's item id.
         assert_eq!(scene11.item.reference_ids, vec![alice.item.file_id]);

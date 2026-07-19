@@ -137,11 +137,13 @@ fn parse_obj(o: &roxmltree::Node, catalogs: &[Vec<String>; 3]) -> PlumeObj {
     PlumeObj {
         number: parse_u32(o.attribute("number")),
         name,
-        aliases: o
-            .attribute("aliases")
-            .unwrap_or_default()
-            .trim()
-            .to_string(),
+        // Same `--` separator as the box catalogs (`split_catalog` below): it is Plume's
+        // list convention throughout the attendance file. Empty parts are dropped so a
+        // trailing separator cannot produce a blank alias that would match nothing.
+        aliases: split_catalog(o.attribute("aliases"))
+            .into_iter()
+            .filter(|a| !a.is_empty())
+            .collect(),
         quick_details: o.attribute("quickDetails").unwrap_or_default().to_string(),
         box_labels,
         spinbox,

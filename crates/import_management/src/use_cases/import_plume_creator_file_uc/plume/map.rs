@@ -18,9 +18,9 @@ use common::entities::BinderItemRole as Role;
 use common::entities::BinderItemSubRole as SubRole;
 use common::entities::ContentRole;
 use skrib_format::{
-    BinderFile, BinderItemFile, BundledBinder, BundledItem, DictWordFile, FORMAT_VERSION,
-    InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle, WorkFile, binder_dir_name,
-    html_to_djot, new_unique_id, prose_file_name, prose_kind, prose_relpath,
+    BinderFile, BinderItemFile, BinderTagFile, BundledBinder, BundledItem, DictWordFile,
+    FORMAT_VERSION, InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle, WorkFile,
+    binder_dir_name, html_to_djot, new_unique_id, prose_file_name, prose_kind, prose_relpath,
 };
 use skribisto_model::SubRoleExt;
 use skribisto_model::content_allowed;
@@ -74,6 +74,10 @@ pub fn build_bundle(
     let manuscript_bid = b.ids.take();
     let story_bid = b.ids.take();
 
+    // Status tags BEFORE the walk: `emit_*` attaches one per node as it goes, so the
+    // decision of whether badges are a vocabulary at all has to be already made.
+    b.prepare_badge_tags(tree);
+
     // Story bible FIRST — populates `attend_id_map` before the manuscript walk.
     let story_items = b.build_story_bible(attendance, story_bible_name);
 
@@ -112,7 +116,7 @@ pub fn build_bundle(
         title,
         author_name: String::new(),
         dict_language: String::new(),
-        tag_ids: Vec::new(),
+        tag_ids: b.tags.iter().map(|t| t.file_id).collect(),
         dict_word_ids: dict.iter().map(|d| d.file_id).collect(),
         unique_id: new_unique_id(),
         // Plume Creator organises chapters as folders of sheets → folder mode.
@@ -148,7 +152,7 @@ pub fn build_bundle(
             backup_of: None,
             backup_created_at: None,
         },
-        tags: Vec::new(),
+        tags: b.tags,
         dict_words: dict,
         trash_infos: Vec::new(),
         // Plume has no writing-plan or progress-history concept to import.
@@ -184,12 +188,37 @@ fn make_binder(file_id: u64, name: &str, now: &str, items: Vec<BundledItem>) -> 
 
 // ---------------------------------------------------------------------------
 
+/// Colours handed to synthesised tags, cycled by creation order.
+///
+/// Deliberately excludes near-black and near-white: a tag's colour is theme-constant, so
+/// either extreme disappears against one of the two surfaces. Ten distinct hues is more
+/// than any real Plume project needs (three story-bible groups is typical).
+const TAG_PALETTE: [&str; 10] = [
+    "#c0392b", // red
+    "#d35400", // orange
+    "#f39c12", // amber
+    "#27ae60", // green
+    "#16a085", // teal
+    "#2980b9", // blue
+    "#8e44ad", // purple
+    "#c2185b", // pink
+    "#795548", // brown
+    "#607d8b", // slate
+];
+
 struct Builder<'a> {
     ids: IdGen,
     source: &'a PlumeSource,
     now: String,
     /// Plume attendance obj `number` → the story-bible note item's file id.
     attend_id_map: HashMap<u32, u64>,
+    /// Synthesised palette rows, in creation order.
+    tags: Vec<BinderTagFile>,
+    /// Story-bible group name → its (discoverable) tag file id.
+    group_tag: HashMap<String, u64>,
+    /// Node badge value → its (non-discoverable) status tag file id. Empty when the
+    /// badges did not look like a reused vocabulary — see `badges_look_like_a_vocabulary`.
+    badge_tag: HashMap<String, u64>,
     warnings: Vec<String>,
     imported_items: u64,
     skipped_trashed: u64,
@@ -216,6 +245,9 @@ impl<'a> Builder<'a> {
             source,
             now: chrono::Utc::now().to_rfc3339(),
             attend_id_map: HashMap::new(),
+            tags: Vec::new(),
+            group_tag: HashMap::new(),
+            badge_tag: HashMap::new(),
             warnings: Vec::new(),
             imported_items: 0,
             skipped_trashed: 0,
@@ -224,6 +256,62 @@ impl<'a> Builder<'a> {
             total,
             done: 0,
             cancelled: false,
+        }
+    }
+
+    /// Mint a palette tag and return its file id. Colours cycle through `TAG_PALETTE`.
+    fn make_tag(&mut self, name: &str, details: &str, discoverable: bool) -> u64 {
+        let file_id = self.ids.take();
+        let color = TAG_PALETTE[self.tags.len() % TAG_PALETTE.len()].to_string();
+        self.tags.push(BinderTagFile {
+            file_id,
+            created_at: self.now.clone(),
+            updated_at: self.now.clone(),
+            name: name.to_string(),
+            color,
+            details: details.to_string(),
+            discoverable,
+        });
+        file_id
+    }
+
+    /// Mint the status tags, if the project's badges look like a reused vocabulary.
+    ///
+    /// Must run before the manuscript walk, because `emit_*` attaches the tag as each node
+    /// is emitted. When the heuristic declines, `badge_tag` stays empty and every badge is
+    /// left where it already was, in `BinderItem.label`.
+    fn prepare_badge_tags(&mut self, tree: &PlumeTree) {
+        let counts = count_badges(&tree.roots);
+        if !badges_look_like_a_vocabulary(&counts) {
+            if !counts.is_empty() {
+                self.warnings.push(format!(
+                    "{} distinct scene badges look like free text rather than a status \
+                     vocabulary — left as item labels instead of tags",
+                    counts.len()
+                ));
+            }
+            return;
+        }
+        // Sorted so the assigned colours are stable across runs of the same project
+        // rather than following HashMap iteration order.
+        let mut names: Vec<&String> = counts.keys().collect();
+        names.sort();
+        for name in names {
+            let id = self.make_tag(name, "", false);
+            self.badge_tag.insert(name.clone(), id);
+        }
+    }
+
+    /// Move a node's badge from its label onto a status tag, when the badges were imported
+    /// as tags. A no-op when the heuristic declined, leaving the badge in `label` exactly
+    /// as previous imports produced it.
+    ///
+    /// The label is cleared on success: `make_item` has already put the badge there, and
+    /// showing the same string as both a subtitle and a chip is duplication, not emphasis.
+    fn apply_badge(&self, badge: &str, bi: &mut BundledItem) {
+        if let Some(id) = self.badge_tag.get(badge.trim()) {
+            bi.item.tag_ids = vec![*id];
+            bi.item.label.clear();
         }
     }
 
@@ -262,6 +350,19 @@ impl<'a> Builder<'a> {
                 continue;
             }
 
+            // One discoverable tag per story-bible group, named by the writer's own group
+            // ("Personnages", "Lieux", or whatever they called it) rather than by three
+            // invented English names. Discoverable because these ARE the story-bible
+            // entities the mention index scans prose for.
+            let group_tag_id = match self.group_tag.get(&group.name) {
+                Some(id) => *id,
+                None => {
+                    let id = self.make_tag(&group.name, "", true);
+                    self.group_tag.insert(group.name.clone(), id);
+                    id
+                }
+            };
+
             let mut folder_contents = Vec::new();
             if !group_doc.is_empty() {
                 folder_contents.push((ContentRole::SynopsisText, group_doc));
@@ -287,7 +388,7 @@ impl<'a> Builder<'a> {
                 self.tick(&obj.name);
                 let note_text = self.attend_doc_djot(obj.number);
                 let synopsis = build_obj_synopsis(obj, &attendance.spinbox_label);
-                let (oid, obi) = self.make_item(
+                let (oid, mut obi) = self.make_item(
                     STORY_BIBLE_INDEX,
                     binder_name,
                     Role::Item,
@@ -302,6 +403,16 @@ impl<'a> Builder<'a> {
                     Vec::new(),
                     "",
                 );
+                // Set after construction rather than as two more `make_item` parameters:
+                // it already takes ten, and only story-bible objects have either.
+                //
+                // Plume has carried these aliases all along; the importer used to flatten
+                // them into the synopsis metadata line, where they were prose rather than
+                // data. As a real field they make an imported project's mention index work
+                // on day one with no author effort — the single strongest reason to import
+                // them at all.
+                obi.item.aliases = obj.aliases.clone();
+                obi.item.tag_ids = vec![group_tag_id];
                 out.push(obi);
                 if let Some(num) = obj.number {
                     self.attend_id_map.insert(num, oid);
@@ -395,7 +506,7 @@ impl<'a> Builder<'a> {
             contents.push((ContentRole::SynopsisText, synopsis));
         }
         let refs = self.resolve_attend(&node.attend);
-        let (_id, bi) = self.make_item(
+        let (_id, mut bi) = self.make_item(
             bindex,
             bname,
             Role::Folder,
@@ -407,6 +518,7 @@ impl<'a> Builder<'a> {
             refs,
             &node.badge,
         );
+        self.apply_badge(&node.badge, &mut bi);
         out.push(bi);
 
         // Overflow: the container's own T prose → a child Scene; own N → a child Note.
@@ -483,7 +595,7 @@ impl<'a> Builder<'a> {
         let scene = self.text_djot(node.number);
         let synopsis = self.synopsis_djot(node.number);
         let refs = self.resolve_attend(&node.attend);
-        let (_id, bi) = self.make_item(
+        let (_id, mut bi) = self.make_item(
             bindex,
             bname,
             Role::Item,
@@ -499,6 +611,7 @@ impl<'a> Builder<'a> {
             refs,
             &node.badge,
         );
+        self.apply_badge(&node.badge, &mut bi);
         out.push(bi);
         self.emit_sibling_note(node, indent, bindex, bname, out);
         self.warn_dropped_separators(node);
@@ -515,7 +628,7 @@ impl<'a> Builder<'a> {
         let scene = self.text_djot(node.number);
         let synopsis = self.synopsis_djot(node.number);
         let refs = self.resolve_attend(&node.attend);
-        let (_id, bi) = self.make_item(
+        let (_id, mut bi) = self.make_item(
             bindex,
             bname,
             Role::Item,
@@ -530,6 +643,7 @@ impl<'a> Builder<'a> {
             refs,
             &node.badge,
         );
+        self.apply_badge(&node.badge, &mut bi);
         out.push(bi);
         self.emit_sibling_note(node, indent, bindex, bname, out);
     }
@@ -774,11 +888,14 @@ impl IdGen {
 /// Compose an attendance obj's synopsis (plain Djot text, *not* HTML): its
 /// quick-details paragraph, then a metadata line of aliases · box labels ·
 /// `<spinbox_label> <value>`.
+/// The synopsis shown on an imported story-bible note: the quick-details paragraph, then a
+/// metadata line of box labels · spin-box value.
+///
+/// `obj.aliases` is deliberately absent. It used to lead this line, which turned structured
+/// data into prose — the aliases now live on `BinderItem.aliases`, where the mention index
+/// can actually use them, and repeating them here would only be noise.
 fn build_obj_synopsis(obj: &PlumeObj, spinbox_label: &str) -> String {
     let mut meta: Vec<String> = Vec::new();
-    if !obj.aliases.is_empty() {
-        meta.push(obj.aliases.clone());
-    }
     for label in &obj.box_labels {
         if !label.is_empty() {
             meta.push(label.clone());
@@ -800,6 +917,47 @@ fn build_obj_synopsis(obj: &PlumeObj, spinbox_label: &str) -> String {
         parts.push(meta.join(" · "));
     }
     parts.join("\n\n")
+}
+
+/// Count each distinct non-empty badge across the (non-trashed) tree.
+fn count_badges(nodes: &[PlumeNode]) -> HashMap<String, usize> {
+    let mut out = HashMap::new();
+    fn walk(nodes: &[PlumeNode], out: &mut HashMap<String, usize>) {
+        for n in nodes {
+            // Trashed subtrees are not emitted, so they must not sway the heuristic.
+            if n.is_trashed {
+                continue;
+            }
+            let badge = n.badge.trim();
+            if !badge.is_empty() {
+                *out.entry(badge.to_string()).or_insert(0) += 1;
+            }
+            walk(&n.children, out);
+        }
+    }
+    walk(nodes, &mut out);
+    out
+}
+
+/// Whether a project's badges look like a **reused vocabulary** ("draft", "to revise") as
+/// opposed to per-scene free text.
+///
+/// Plume's `badge` is an unvalidated free-text attribute — confirmed against the original
+/// C++ importer (`v1.9.43:.../skrplumecreatorimporter.cpp`), which read it and passed it
+/// straight through as a tree-item label with no enum, no validation and no vocabulary. So
+/// a project may carry hundreds of distinct badges, and turning each into a tag would bury
+/// the palette in junk.
+///
+/// Two conditions, both necessary: few enough distinct values to be a vocabulary at all,
+/// and each value reused on average across at least two items. Twelve distinct badges over
+/// four hundred scenes is a vocabulary; twelve over thirteen scenes is prose.
+fn badges_look_like_a_vocabulary(counts: &HashMap<String, usize>) -> bool {
+    const MAX_DISTINCT: usize = 12;
+    if counts.is_empty() || counts.len() > MAX_DISTINCT {
+        return false;
+    }
+    let total: usize = counts.values().sum();
+    counts.len() * 2 <= total
 }
 
 fn content_title(name: &str) -> String {
@@ -887,4 +1045,287 @@ fn first_non_empty<'a>(candidates: impl IntoIterator<Item = &'a str>) -> String 
         .find(|s| !s.is_empty())
         .unwrap_or("")
         .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::use_cases::import_plume_creator_file_uc::plume::model::PlumeGroup;
+
+    fn node(kind: PlumeKind, number: u32, name: &str, badge: &str) -> PlumeNode {
+        PlumeNode {
+            kind,
+            number: Some(number),
+            name: name.to_string(),
+            is_trashed: false,
+            badge: badge.to_string(),
+            attend: Vec::new(),
+            children: Vec::new(),
+        }
+    }
+
+    fn obj(number: u32, name: &str, aliases: &[&str]) -> PlumeObj {
+        PlumeObj {
+            number: Some(number),
+            name: name.to_string(),
+            aliases: aliases.iter().map(|a| a.to_string()).collect(),
+            quick_details: String::new(),
+            box_labels: [String::new(), String::new(), String::new()],
+            spinbox: String::new(),
+        }
+    }
+
+    fn map(tree: PlumeTree, attendance: PlumeAttendance) -> Mapped {
+        let source = PlumeSource::for_tests();
+        let info = PlumeInfo {
+            title: "T".into(),
+            created_at: None,
+            updated_at: None,
+        };
+        build_bundle(
+            &tree,
+            &attendance,
+            &info,
+            &[],
+            &source,
+            "Manuscript",
+            "Story Bible",
+            &|_, _| {},
+            &AtomicBool::new(false),
+        )
+    }
+
+    fn tag<'a>(m: &'a Mapped, name: &str) -> &'a BinderTagFile {
+        m.bundle
+            .tags
+            .iter()
+            .find(|t| t.name == name)
+            .unwrap_or_else(|| panic!("no tag named {name:?} in {:?}", names(m)))
+    }
+
+    fn names(m: &Mapped) -> Vec<&str> {
+        m.bundle.tags.iter().map(|t| t.name.as_str()).collect()
+    }
+
+    /// Every item across every binder, for assertions that don't care where it lives.
+    fn items(m: &Mapped) -> Vec<&BinderItemFile> {
+        m.bundle
+            .binders
+            .iter()
+            .flat_map(|b| b.items.iter().map(|i| &i.item))
+            .collect()
+    }
+
+    fn item<'a>(m: &'a Mapped, title: &str) -> &'a BinderItemFile {
+        items(m)
+            .into_iter()
+            .find(|i| i.title == title)
+            .unwrap_or_else(|| panic!("no item titled {title:?}"))
+    }
+
+    // --- the vocabulary heuristic ------------------------------------------
+
+    #[test]
+    fn no_badges_is_not_a_vocabulary() {
+        assert!(!badges_look_like_a_vocabulary(&HashMap::new()));
+    }
+
+    #[test]
+    fn a_few_values_reused_across_many_scenes_is_a_vocabulary() {
+        let counts = HashMap::from([
+            ("draft".to_string(), 40),
+            ("to revise".to_string(), 12),
+            ("done".to_string(), 8),
+        ]);
+        assert!(badges_look_like_a_vocabulary(&counts));
+    }
+
+    #[test]
+    fn one_distinct_badge_per_scene_is_free_text() {
+        // 5 distinct over 5 items: nothing is reused, so these are per-scene notes.
+        let counts: HashMap<String, usize> =
+            (0..5).map(|i| (format!("note {i}"), 1)).collect();
+        assert!(!badges_look_like_a_vocabulary(&counts));
+    }
+
+    #[test]
+    fn too_many_distinct_values_is_free_text_however_often_reused() {
+        // 13 distinct, each used 10 times: reuse is high, but no author keeps a
+        // thirteen-state workflow — this is a project using badges as a notes field.
+        let counts: HashMap<String, usize> =
+            (0..13).map(|i| (format!("v{i}"), 10)).collect();
+        assert!(!badges_look_like_a_vocabulary(&counts));
+    }
+
+    #[test]
+    fn trashed_nodes_do_not_sway_the_heuristic() {
+        let mut trashed = node(PlumeKind::Scene, 9, "Cut", "one-off badge");
+        trashed.is_trashed = true;
+        let roots = vec![
+            node(PlumeKind::Scene, 1, "A", "draft"),
+            node(PlumeKind::Scene, 2, "B", "draft"),
+            trashed,
+        ];
+        let counts = count_badges(&roots);
+        assert_eq!(counts.len(), 1, "the trashed node's badge is not counted");
+        assert_eq!(counts["draft"], 2);
+    }
+
+    // --- story-bible groups → discoverable tags ----------------------------
+
+    #[test]
+    fn story_bible_groups_become_discoverable_tags_carrying_their_objects() {
+        let attendance = PlumeAttendance {
+            spinbox_label: String::new(),
+            groups: vec![
+                PlumeGroup {
+                    number: Some(1),
+                    name: "Personnages".into(),
+                    objs: vec![obj(1, "Elise", &["Kiri"]), obj(2, "Marc", &[])],
+                },
+                PlumeGroup {
+                    number: Some(2),
+                    name: "Lieux".into(),
+                    objs: vec![obj(3, "Le phare", &[])],
+                },
+            ],
+        };
+        let m = map(
+            PlumeTree {
+                project_name: "P".into(),
+                roots: vec![],
+            },
+            attendance,
+        );
+
+        // Named by the writer's own groups, not by three invented English names.
+        assert_eq!(names(&m), vec!["Personnages", "Lieux"]);
+        assert!(tag(&m, "Personnages").discoverable);
+        assert!(tag(&m, "Lieux").discoverable);
+        assert_ne!(
+            tag(&m, "Personnages").color,
+            tag(&m, "Lieux").color,
+            "distinct hues so two groups are distinguishable at a glance"
+        );
+
+        let chars = tag(&m, "Personnages").file_id;
+        assert_eq!(item(&m, "Elise").tag_ids, vec![chars]);
+        assert_eq!(item(&m, "Marc").tag_ids, vec![chars]);
+        assert_eq!(item(&m, "Le phare").tag_ids, vec![tag(&m, "Lieux").file_id]);
+
+        // The palette is reachable from the Work, or the settings pane shows nothing.
+        let mut work_ids = m.bundle.manifest.work.tag_ids.clone();
+        work_ids.sort();
+        let mut all: Vec<u64> = m.bundle.tags.iter().map(|t| t.file_id).collect();
+        all.sort();
+        assert_eq!(work_ids, all);
+    }
+
+    // --- aliases ------------------------------------------------------------
+
+    #[test]
+    fn object_aliases_land_on_the_item_and_leave_the_synopsis() {
+        let attendance = PlumeAttendance {
+            spinbox_label: String::new(),
+            groups: vec![PlumeGroup {
+                number: Some(1),
+                name: "Characters".into(),
+                objs: vec![obj(1, "Elizabeth Bennet", &["Lizzy", "Miss Bennet"])],
+            }],
+        };
+        let m = map(
+            PlumeTree {
+                project_name: "P".into(),
+                roots: vec![],
+            },
+            attendance,
+        );
+
+        let it = item(&m, "Elizabeth Bennet");
+        assert_eq!(
+            it.aliases,
+            vec!["Lizzy".to_string(), "Miss Bennet".to_string()],
+            "multi-word aliases survive as separate entries"
+        );
+        // They used to lead the synopsis metadata line; as structured data they must not
+        // also appear as prose.
+        let prose: String = m
+            .bundle
+            .binders
+            .iter()
+            .flat_map(|b| b.items.iter())
+            .flat_map(|i| i.item.inline_contents.iter().map(|c| c.text.clone()))
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            !prose.contains("Lizzy"),
+            "aliases must not be duplicated into the synopsis: {prose:?}"
+        );
+    }
+
+    // --- badges → status tags ----------------------------------------------
+
+    #[test]
+    fn reused_badges_become_status_tags_and_vacate_the_label() {
+        let roots = vec![
+            node(PlumeKind::Scene, 1, "A", "draft"),
+            node(PlumeKind::Scene, 2, "B", "draft"),
+            node(PlumeKind::Scene, 3, "C", "done"),
+            node(PlumeKind::Scene, 4, "D", "done"),
+        ];
+        let m = map(
+            PlumeTree {
+                project_name: "P".into(),
+                roots,
+            },
+            PlumeAttendance {
+                spinbox_label: String::new(),
+                groups: vec![],
+            },
+        );
+
+        let draft = tag(&m, "draft");
+        assert!(!draft.discoverable, "a workflow state is not story-bible material");
+        assert_eq!(item(&m, "A").tag_ids, vec![draft.file_id]);
+        assert_eq!(
+            item(&m, "A").label,
+            "",
+            "the badge moved to a tag, so showing it as a label too would duplicate it"
+        );
+        assert_eq!(item(&m, "C").tag_ids, vec![tag(&m, "done").file_id]);
+    }
+
+    #[test]
+    fn free_text_badges_stay_as_labels_and_are_reported() {
+        // Four scenes, four distinct badges: not a vocabulary.
+        let roots = vec![
+            node(PlumeKind::Scene, 1, "A", "check the ferry timetable"),
+            node(PlumeKind::Scene, 2, "B", "rewrite the storm"),
+            node(PlumeKind::Scene, 3, "C", "too long?"),
+            node(PlumeKind::Scene, 4, "D", "cut this"),
+        ];
+        let m = map(
+            PlumeTree {
+                project_name: "P".into(),
+                roots,
+            },
+            PlumeAttendance {
+                spinbox_label: String::new(),
+                groups: vec![],
+            },
+        );
+
+        assert!(m.bundle.tags.is_empty(), "no junk tags: {:?}", names(&m));
+        assert_eq!(
+            item(&m, "A").label,
+            "check the ferry timetable",
+            "left exactly where earlier imports put it"
+        );
+        assert!(item(&m, "A").tag_ids.is_empty());
+        assert!(
+            m.warnings.iter().any(|w| w.contains("free text")),
+            "the writer should be told why: {:?}",
+            m.warnings
+        );
+    }
 }

@@ -61,7 +61,10 @@ pub struct PlumeObj {
     /// Plume `number` — keys `attend/A{n}.html` and is the cross-link target.
     pub number: Option<u32>,
     pub name: String,
-    pub aliases: String,
+    /// Other names this entry answers to, split on Plume's `--` list separator (the same
+    /// one the box catalogs use). These become `BinderItem.aliases`, which is what lets
+    /// the mention index find "Kiri" in prose for an entry named "Elise".
+    pub aliases: Vec<String>,
     pub quick_details: String,
     /// The classification-box labels already resolved against the root `--`
     /// catalogs (empty string where a box is absent, index 0, or unresolvable).
