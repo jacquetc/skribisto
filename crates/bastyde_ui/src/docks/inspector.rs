@@ -184,6 +184,72 @@ impl Widget for Inspector {
                         .content(promote_menu(outline, key)),
                     );
                 }
+                // Tags, and — only for story-bible material — the other names this item
+                // answers to in prose.
+                //
+                // Same shape as the language section below: a local mirror signal plus a
+                // probe fixed to *this* item, so a write started here still lands on the
+                // right item after focus moves on. The two writers differ underneath though:
+                // `set_tags` writes a relationship (already undoable on its own), while
+                // `set_aliases` is a scalar patch — see `SingleBinderItem`.
+                if let Some(tags_vm) = ctx.app_state::<crate::view_models::TagsViewModel>().cloned()
+                {
+                    let stack = self.outline.ids().stack_id.get();
+
+                    let tag_value = Signal::new(d.tags.clone());
+                    let tag_probe = SingleBinderItem::new(self.app_ctx.clone());
+                    tag_probe.set_id(Some(d.id));
+                    let set_tags: crate::tags::tag_pill_field::SetTags = {
+                        let mirror = tag_value.clone();
+                        Rc::new(move |ids: Vec<u64>, _c| {
+                            let _ = tag_probe.set_tags(&ids, stack);
+                            mirror.set(ids);
+                        })
+                    };
+                    col = col
+                        .child(
+                            TextWidget::new(tr!(inspector_tags()))
+                                .style(TextStyleRole::Tiny)
+                                .color(TextRole::Secondary),
+                        )
+                        .child(crate::tags::TagPillField::new(
+                            tag_value.clone(),
+                            set_tags,
+                            tags_vm.clone(),
+                        ));
+
+                    // Aliases only make sense on an item the mention index will actually
+                    // scan for: a discoverable tag is what puts it in that set, so aliases on
+                    // anything else would be indexed against nothing. Gating on the tags the
+                    // *mirror* holds (not the fetched DTO) means the field appears the moment
+                    // a discoverable tag is added, without waiting for a refetch.
+                    let discoverable: std::collections::HashSet<u64> = tags_vm
+                        .rows()
+                        .into_iter()
+                        .filter(|t| t.discoverable)
+                        .map(|t| t.id)
+                        .collect();
+                    if tag_value.get().iter().any(|id| discoverable.contains(id)) {
+                        let alias_value = Signal::new(d.aliases.clone());
+                        let alias_probe = SingleBinderItem::new(self.app_ctx.clone());
+                        alias_probe.set_id(Some(d.id));
+                        let set_aliases: crate::tags::alias_pill_field::SetAliases = {
+                            let mirror = alias_value.clone();
+                            Rc::new(move |names: Vec<String>, _c| {
+                                let _ = alias_probe.set_aliases(&names, stack);
+                                mirror.set(names);
+                            })
+                        };
+                        col = col
+                            .child(
+                                TextWidget::new(tr!(inspector_aliases()))
+                                    .style(TextStyleRole::Tiny)
+                                    .color(TextRole::Secondary),
+                            )
+                            .child(crate::tags::AliasPillField::new(alias_value, set_aliases));
+                    }
+                }
+
                 // Per-item language override (Step 9): the pill field over this item's own
                 // `dict_language`, with the Work's list as the placeholder shown when the item
                 // declares none of its own. Nothing inherits from a container — an item's tag

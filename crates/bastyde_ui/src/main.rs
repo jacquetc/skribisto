@@ -555,6 +555,13 @@ fn main() {
     let single_dict_word = SingleDictWord::new(app_ctx.clone());
     let user_dictionary =
         view_models::UserDictionaryViewModel::new(dict_words, single_dict_word, ids.clone());
+    // The tag palette + its view-model, on the same footing: registered as app-state so the
+    // Inspector's tag section, the Settings pane and (from Stage 4) the chip popover all
+    // reach the ONE instance. Sharing matters more here than for most view-models — every
+    // chip in the app resolves its colour through this model's lookup signal, so a second
+    // instance would mean a second subscription set and two palettes drifting apart.
+    let work_tags = models::WorkTagsListModel::new(app_ctx.clone());
+    let tags_vm = view_models::TagsViewModel::new(work_tags, ids.clone());
     // Backup-mode state: `backup_mode` is true while a *backup file* is open in
     // this window (Save + auto-backup off; the file is read-only, the content is
     // still editable). `backup_context` carries the open backup's details (drives
@@ -755,6 +762,7 @@ fn main() {
         .app_state(open_docs.clone())
         .app_state(spellcheck.clone())
         .app_state(dictionaries.clone())
+        .app_state(tags_vm.clone())
         .app_state(single_work.clone())
         .app_state(single_work_info.clone())
         .app_state(outline.clone())

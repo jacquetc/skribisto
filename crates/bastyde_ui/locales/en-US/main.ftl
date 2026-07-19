@@ -907,6 +907,8 @@ inspector-milestone = Milestone date
 inspector-milestone-none = No date
 inspector-milestone-clear = Clear
 # The language pill field (Inspector + Settings)
+inspector-tags = Tags
+inspector-aliases = Also known as
 inspector-dict-language = Language
 inspector-apply-language-to-children = Apply language to children
 settings-page-language = Language

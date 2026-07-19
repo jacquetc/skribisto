@@ -909,6 +909,8 @@ inspector-milestone = Date de jalon
 inspector-milestone-none = Aucune date
 inspector-milestone-clear = Effacer
 # Le champ de langues à pastilles (Inspecteur + Réglages)
+inspector-tags = Étiquettes
+inspector-aliases = Aussi appelé
 inspector-dict-language = Langue
 inspector-apply-language-to-children = Appliquer la langue aux enfants
 settings-page-language = Langue
