@@ -345,23 +345,51 @@ impl Widget for TagRowView {
                 });
             });
         }
+        // Both fields commit on Enter **and on blur**. Enter alone is not enough: nothing
+        // about a bare inline field says it must be confirmed, so typing a description and
+        // clicking away — or just closing Settings — silently threw the text away.
+        //
+        // Each commit compares against the model first. Blur fires whenever focus moves,
+        // including when nothing was typed, and an unguarded write would push an identical
+        // value through the command stack (an undo step that changes nothing) on every pass
+        // through the field.
         let name_field = {
             let vm = self.vm.clone();
-            let name = name.clone();
+            let sig = name.clone();
+            let commit = move || {
+                let typed = sig.get();
+                let current = vm.rows().into_iter().find(|r| r.id == id).map(|r| r.name);
+                // A blank name would leave a row that cannot be identified; keep the old one.
+                if !typed.trim().is_empty() && current.as_deref() != Some(typed.as_str()) {
+                    vm.rename(id, &typed);
+                }
+            };
+            let on_blur = commit.clone();
             TextInput::new(name.clone())
                 .variant(TextInputVariant::Bare)
                 .validation(validation)
-                .on_submit_fn(move |_c| vm.rename(id, &name.get()))
+                .on_submit_fn(move |_c| commit())
+                .on_blur_fn(move |_c| on_blur())
         };
 
         let details = Signal::new(self.row.details.clone());
         let details_field = {
             let vm = self.vm.clone();
-            let details = details.clone();
+            let sig = details.clone();
+            let commit = move || {
+                let typed = sig.get();
+                let current = vm.rows().into_iter().find(|r| r.id == id).map(|r| r.details);
+                // Blank IS meaningful here — it clears the description.
+                if current.as_deref() != Some(typed.as_str()) {
+                    vm.set_details(id, &typed);
+                }
+            };
+            let on_blur = commit.clone();
             TextInput::new(details.clone())
                 .variant(TextInputVariant::Bare)
                 .placeholder(tr!(settings_tags_details_placeholder()))
-                .on_submit_fn(move |_c| vm.set_details(id, &details.get()))
+                .on_submit_fn(move |_c| commit())
+                .on_blur_fn(move |_c| on_blur())
         };
 
         // The toggle writes only to its signal, so the write-back rides an effect. It

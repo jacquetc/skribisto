@@ -14,10 +14,13 @@
 //! so it carries a real accessible name instead of announcing "Tooltip".
 
 use bastyde::prelude::*;
-use bastyde::widgets::{HStack, MinSize, RectWidget, TextWidget, VStack};
+use bastyde::widgets::{Center, FixedSize, HStack, RectWidget, TextWidget, VStack};
 
 use crate::models::TagRow;
 use crate::tags::contrast;
+
+/// Diameter of the tooltip's colour dot.
+const SWATCH: f32 = 10.0;
 
 // The body **must** wrap rather than run: horizontal overflow in a composite tooltip is
 // silently clipped, not scrolled. `TextWidget` wraps within whatever width it is given, and
@@ -56,13 +59,20 @@ pub fn tag_tooltip_body(tag: &TagRow) -> impl Widget {
     // reason as everywhere else a tag colour is drawn: no token clears SC 1.4.11's 3:1
     // against an arbitrary fill, and `BorderRole::Default` here would additionally be a
     // content-surface token sitting on the tooltip surface.
-    let swatch = MinSize::new(10.0, 10.0).child(
-        RectWidget::new()
-            .background(fill)
-            .corner_radius(bastyde::tokens::CornerRadius::uniform(9999.0))
-            .border_color(contrast::outline_on(fill))
-            .border_width(1.0),
+    // `FixedSize` inside a `Center`, not `MinSize`: a minimum only floors the size, so the
+    // greedy `RectWidget` stretched to the full height of the tooltip body — which is what
+    // made a one-word tag tooltip 244 dp tall. The same mistake the settings pane's swatch
+    // made before it was pinned.
+    let swatch = Center::new().child(
+        FixedSize::new().width(SWATCH).height(SWATCH).child(
+            RectWidget::new()
+                .background(fill)
+                .corner_radius(bastyde::tokens::CornerRadius::uniform(9999.0))
+                .border_color(contrast::outline_on(fill))
+                .border_width(1.0),
+        ),
     );
 
     HStack::new().spacing(8.0).child(swatch).child(text)
 }
+
