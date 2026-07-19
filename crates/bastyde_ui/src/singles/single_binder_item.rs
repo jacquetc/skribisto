@@ -217,6 +217,51 @@ mod imp {
             Ok(())
         }
 
+        /// Set the item's aliases — the other names it answers to in prose, which the
+        /// mention index matches alongside its title.
+        ///
+        /// A list of primitives, not a relationship, so it rides the same scalar
+        /// read-modify-write as [`set_dict_language`](Self::set_dict_language).
+        pub fn set_aliases(&self, aliases: &[String], stack: Option<u64>) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            let Some(it) = self.dto() else {
+                anyhow::bail!("SingleBinderItem: item {id} not loaded");
+            };
+            let mut dto = update_dto(&it);
+            dto.aliases = aliases.to_vec();
+            dto.updated_at = chrono::Utc::now();
+            binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
+            self.refresh();
+            Ok(())
+        }
+
+        /// Set which palette tags this item carries.
+        ///
+        /// Unlike every other writer here this is a **relationship**, so it must NOT go
+        /// through `update_dto`: `UpdateBinderItemDto` deliberately carries no relationship
+        /// vectors, precisely so a scalar patch cannot clobber them (see
+        /// `view_models::binder_ops::update_item_dto`). Writing the junction directly is
+        /// also already undoable — `set_binder_item_relationship` is backed by
+        /// `UndoableSetRelationshipUseCase`, which stores the before-list itself.
+        pub fn set_tags(&self, tag_ids: &[u64], stack: Option<u64>) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            binder_item_commands::set_binder_item_relationship(
+                &self.inner.ctx,
+                stack,
+                &frontend::direct_access::BinderItemRelationshipDto {
+                    id,
+                    field: frontend::common::direct_access::binder_item::BinderItemRelationshipField::Tags,
+                    right_ids: tag_ids.to_vec(),
+                },
+            )?;
+            self.refresh();
+            Ok(())
+        }
+
         fn write_name(
             &self,
             text: &str,
@@ -449,6 +494,25 @@ mod imp {
         pub fn set_exportable(&self, on: bool, _stack: Option<u64>) -> anyhow::Result<()> {
             if let Some(mut d) = self.inner.dto.get() {
                 d.is_exportable = on;
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
+        }
+
+        pub fn set_aliases(&self, aliases: &[String], _stack: Option<u64>) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.aliases = aliases.to_vec();
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
+        }
+
+        /// Mirrors the real writer's *effect* (the DTO's `tags` vector changes) even though
+        /// the real one writes a junction rather than a DTO field — consumers must not be
+        /// able to tell the two halves apart.
+        pub fn set_tags(&self, tag_ids: &[u64], _stack: Option<u64>) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.tags = tag_ids.to_vec();
                 self.inner.dto.set(Some(d));
             }
             Ok(())

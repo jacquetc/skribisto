@@ -1,0 +1,558 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Reactive list model over the open Work's tag palette (`BinderTag`).
+//!
+//! The public surface is a `bastyde::data::ListModel<TagRow>` a `ListView` binds to (the
+//! Settings ▸ Tags pane), a `version` signal for consumers that observe rather than bind,
+//! and a **lookup** signal every chip renderer reads — see [`lookup_signal`].
+//!
+//! Two `#[cfg]`-gated `mod imp` variants share one public surface: the real one reads via
+//! `get_all_binder_tag` (there is one Work per process) and stays live on `BinderTag`
+//! events, tag-management events and project switches, with writes going through the
+//! generated `binder_tag_commands` plus `tag_management_commands::import_tags` for the
+//! bulk path; the mock one holds a fabricated palette and mutates it in place, since
+//! `--features mocks` has no real `Work` to own a created `BinderTag`.
+//!
+//! Rows are sorted case-insensitively by name. That ordering is load-bearing rather than
+//! cosmetic: it is what makes the `status/…` naming convention cluster in every list,
+//! which is why no explicit ordering was added to the entity.
+//!
+//! No text colour here — it is derived from `color` at paint time (see
+//! `crate::tags::contrast`), never stored.
+
+use std::collections::HashMap;
+
+/// One palette row.
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct TagRow {
+    pub id: u64,
+    pub name: String,
+    /// Background colour as the writer chose it, `#rrggbb`.
+    pub color: String,
+    /// A line or two on what the tag means; shown in its hover tooltip.
+    pub details: String,
+    /// Items carrying this tag are story-bible material for the mention index.
+    pub discoverable: bool,
+}
+
+/// Sort key: case-insensitive, then exact, so equal-fold names keep a deterministic order.
+fn sort_rows(rows: &mut [TagRow]) {
+    rows.sort_by(|a, b| {
+        a.name
+            .to_lowercase()
+            .cmp(&b.name.to_lowercase())
+            .then_with(|| a.name.cmp(&b.name))
+    });
+}
+
+/// The comparison key for "is this name already taken". Trimmed and lowercased — the
+/// backend permits duplicates, so this only drives the UI's warning and import's skip.
+pub fn name_key(name: &str) -> String {
+    name.trim().to_lowercase()
+}
+
+fn build_lookup(rows: &[TagRow]) -> HashMap<u64, TagRow> {
+    rows.iter().map(|r| (r.id, r.clone())).collect()
+}
+
+#[cfg(not(feature = "mocks"))]
+mod imp {
+    use std::cell::Cell;
+    use std::collections::HashMap;
+    use std::rc::Rc;
+
+    use bastyde::data::ListModel;
+    use bastyde::prelude::*;
+
+    use frontend::AppContext;
+    use frontend::commands::{binder_tag_commands, tag_management_commands};
+    use frontend::common::event::{
+        DirectAccessEntity, EntityEvent, Event, Origin, TagManagementEvent, WorkManagementEvent,
+    };
+    use frontend::direct_access::{CreateBinderTagDto, UpdateBinderTagDto};
+    use frontend::tag_management::ImportTagsDto;
+
+    use super::{TagRow, build_lookup, name_key, sort_rows};
+
+    struct Inner {
+        model: ListModel<TagRow>,
+        version: Signal<u64>,
+        lookup: Signal<Rc<HashMap<u64, TagRow>>>,
+        subscribed: Cell<bool>,
+        ctx: Rc<AppContext>,
+    }
+
+    #[derive(Clone)]
+    pub struct WorkTagsListModel {
+        inner: Rc<Inner>,
+    }
+
+    impl WorkTagsListModel {
+        pub fn new(ctx: Rc<AppContext>) -> Self {
+            let rows = load_rows(&ctx);
+            let lookup = Signal::new(Rc::new(build_lookup(&rows)));
+            Self {
+                inner: Rc::new(Inner {
+                    model: ListModel::from_vec(rows),
+                    version: Signal::new(0),
+                    lookup,
+                    subscribed: Cell::new(false),
+                    ctx,
+                }),
+            }
+        }
+
+        /// Subscribe (once) so the palette stays live: any `BinderTag` mutation — from the
+        /// settings pane, the inspector's "New tag…", a preset, or an undo/redo — re-reads
+        /// it, and a project switch replaces it wholesale.
+        pub fn wire(&self, ctx: &mut BuildContext) {
+            if self.inner.subscribed.replace(true) {
+                return;
+            }
+            for ev in [
+                EntityEvent::Created,
+                EntityEvent::Updated,
+                EntityEvent::Removed,
+            ] {
+                let me = self.clone();
+                ctx.subscribe_event(
+                    Origin::DirectAccess(DirectAccessEntity::BinderTag(ev)),
+                    move |_event: &Event| me.refresh(),
+                );
+            }
+            // `import_tags` creates through its own unit of work, so it publishes a feature
+            // event rather than N per-entity `Created` ones.
+            let me = self.clone();
+            ctx.subscribe_event(
+                Origin::TagManagement(TagManagementEvent::ImportTags),
+                move |_event: &Event| me.refresh(),
+            );
+            for wev in [
+                WorkManagementEvent::LoadWork,
+                WorkManagementEvent::NewWork,
+                WorkManagementEvent::CloseWork,
+            ] {
+                let me = self.clone();
+                ctx.subscribe_event(Origin::WorkManagement(wev), move |_event: &Event| {
+                    me.refresh()
+                });
+            }
+        }
+
+        /// The reactive model to bind a `ListView` to (through the pane's
+        /// `SortFilterListModel` search projection).
+        pub fn list_model(&self) -> ListModel<TagRow> {
+            self.inner.model.clone()
+        }
+
+        /// Bumped on each refresh; for consumers that observe rather than bind the model.
+        pub fn version_signal(&self) -> Signal<u64> {
+            self.inner.version.clone()
+        }
+
+        /// id → row, rebuilt once per refresh.
+        ///
+        /// Every chip on every stream row and corkboard card resolves its tag through this.
+        /// A linear scan of the model per chip would be O(rows × tags) per frame; one map
+        /// rebuilt per *mutation* is O(tags) per mutation and O(1) per chip.
+        pub fn lookup_signal(&self) -> Signal<Rc<HashMap<u64, TagRow>>> {
+            self.inner.lookup.clone()
+        }
+
+        /// Current rows, sorted — for export, dedup and the preset diff.
+        pub fn rows(&self) -> Vec<TagRow> {
+            snapshot(&self.inner.model)
+        }
+
+        pub fn len(&self) -> usize {
+            self.inner.model.len()
+        }
+
+        /// The row whose name collides with `candidate`, ignoring case and surrounding
+        /// space, excluding `exclude` (the tag being renamed never collides with itself).
+        pub fn colliding_name(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {
+            let key = name_key(candidate);
+            if key.is_empty() {
+                return None;
+            }
+            self.rows()
+                .into_iter()
+                .find(|r| Some(r.id) != exclude && name_key(&r.name) == key)
+                .map(|r| r.name)
+        }
+
+        /// Create one tag under `owner_id`. `None` when no project is open or the write
+        /// failed. The backend's `Created` event drives the refresh.
+        pub fn create(
+            &self,
+            name: &str,
+            color: &str,
+            details: &str,
+            discoverable: bool,
+            owner_id: Option<u64>,
+            stack_id: Option<u64>,
+        ) -> Option<u64> {
+            let owner = owner_id?;
+            let now = chrono::Utc::now();
+            let dto = CreateBinderTagDto {
+                created_at: now,
+                updated_at: now,
+                name: name.trim().to_string(),
+                color: color.to_string(),
+                details: details.to_string(),
+                discoverable,
+            };
+            match binder_tag_commands::create_binder_tag(
+                &self.inner.ctx,
+                stack_id,
+                &dto,
+                owner,
+                -1,
+            ) {
+                Ok(created) => Some(created.id),
+                Err(e) => {
+                    eprintln!("tags: create failed: {e}");
+                    None
+                }
+            }
+        }
+
+        /// Patch one tag. Every field is sent, so callers pass the row's current values
+        /// for whatever they are not changing (`update_binder_tag` replaces all scalars).
+        ///
+        /// Read-modify-write off the live entity rather than off a `TagRow`: the row does
+        /// not carry `created_at` (no renderer wants it), and inventing one here would
+        /// reset the tag's creation time on every rename — the same silent-wrong-timestamp
+        /// bug that had every progress snapshot stamped 1970.
+        pub fn update(
+            &self,
+            id: u64,
+            name: &str,
+            color: &str,
+            details: &str,
+            discoverable: bool,
+            stack_id: Option<u64>,
+        ) {
+            let existing = match binder_tag_commands::get_binder_tag(&self.inner.ctx, &id) {
+                Ok(Some(t)) => t,
+                Ok(None) => return,
+                Err(e) => {
+                    eprintln!("tags: update failed to read {id}: {e}");
+                    return;
+                }
+            };
+            let dto = UpdateBinderTagDto {
+                id,
+                created_at: existing.created_at,
+                updated_at: chrono::Utc::now(),
+                name: name.trim().to_string(),
+                color: color.to_string(),
+                details: details.to_string(),
+                discoverable,
+            };
+            if let Err(e) = binder_tag_commands::update_binder_tag(&self.inner.ctx, stack_id, &dto)
+            {
+                eprintln!("tags: update failed: {e}");
+            }
+        }
+
+        /// Remove the given ids in one undoable step. The generated `remove_multi` scrubs
+        /// the item junction too, so no manual detach is needed. Missing ids are a safe
+        /// no-op (a stale Undo after a manual delete).
+        pub fn remove_all(&self, ids: &[u64], stack_id: Option<u64>) {
+            let existing: std::collections::HashSet<u64> =
+                self.rows().into_iter().map(|r| r.id).collect();
+            let present: Vec<u64> = ids.iter().copied().filter(|id| existing.contains(id)).collect();
+            if present.is_empty() {
+                return;
+            }
+            if let Err(e) =
+                binder_tag_commands::remove_binder_tag_multi(&self.inner.ctx, stack_id, &present)
+            {
+                eprintln!("tags: remove failed: {e}");
+            }
+        }
+
+        /// Bulk-create as ONE undoable step (a CSV import, or applying a preset), skipping
+        /// names already present. Returns the names that were skipped, for the summary.
+        pub fn import(&self, rows: &[TagRow], stack_id: Option<u64>) -> Vec<String> {
+            if rows.is_empty() {
+                return Vec::new();
+            }
+            let dto = ImportTagsDto {
+                names: rows.iter().map(|r| r.name.clone()).collect(),
+                colors: rows.iter().map(|r| r.color.clone()).collect(),
+                details: rows.iter().map(|r| r.details.clone()).collect(),
+                discoverables: rows.iter().map(|r| r.discoverable).collect(),
+            };
+            match tag_management_commands::import_tags(&self.inner.ctx, stack_id, &dto) {
+                Ok(res) => res.skipped_names,
+                Err(e) => {
+                    eprintln!("tags: import failed: {e}");
+                    rows.iter().map(|r| r.name.clone()).collect()
+                }
+            }
+        }
+
+        fn refresh(&self) {
+            let rows = load_rows(&self.inner.ctx);
+            self.inner.lookup.set(Rc::new(build_lookup(&rows)));
+            self.inner.model.reconcile_by_key(rows, |r| r.id);
+            let v = &self.inner.version;
+            v.set(v.get().wrapping_add(1));
+        }
+    }
+
+    /// Read every `BinderTag` (one Work per process) into sorted rows.
+    fn load_rows(ctx: &AppContext) -> Vec<TagRow> {
+        let mut rows: Vec<TagRow> = binder_tag_commands::get_all_binder_tag(ctx)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|t| TagRow {
+                id: t.id,
+                name: t.name,
+                color: t.color,
+                details: t.details,
+                discoverable: t.discoverable,
+            })
+            .collect();
+        sort_rows(&mut rows);
+        rows
+    }
+
+    fn snapshot(model: &ListModel<TagRow>) -> Vec<TagRow> {
+        (0..model.len())
+            .filter_map(|i| model.with_item(i, |r| r.clone()))
+            .collect()
+    }
+}
+
+#[cfg(feature = "mocks")]
+mod imp {
+    use std::cell::Cell;
+    use std::collections::HashMap;
+    use std::rc::Rc;
+
+    use bastyde::data::ListModel;
+    use bastyde::prelude::*;
+
+    use frontend::AppContext;
+
+    use super::{TagRow, build_lookup, name_key, sort_rows};
+
+    struct Inner {
+        model: ListModel<TagRow>,
+        version: Signal<u64>,
+        lookup: Signal<Rc<HashMap<u64, TagRow>>>,
+        next_id: Cell<u64>,
+    }
+
+    #[derive(Clone)]
+    pub struct WorkTagsListModel {
+        inner: Rc<Inner>,
+    }
+
+    fn row(id: u64, name: &str, color: &str, details: &str, discoverable: bool) -> TagRow {
+        TagRow {
+            id,
+            name: name.to_string(),
+            color: color.to_string(),
+            details: details.to_string(),
+            discoverable,
+        }
+    }
+
+    impl WorkTagsListModel {
+        pub fn new(_ctx: Rc<AppContext>) -> Self {
+            // A palette shaped like the Basic preset: a status ladder that demonstrates
+            // the `status/…` clustering, two flags, and the discoverable taxonomy.
+            let mut rows = vec![
+                row(1, "status/draft", "#607d8b", "Written, not yet revised", false),
+                row(2, "status/finished", "#27ae60", "", false),
+                row(3, "status/outline", "#95a5a6", "", false),
+                row(4, "needs research", "#f39c12", "Check this before publishing", false),
+                row(5, "character", "#2980b9", "A person in the story", true),
+                row(6, "place", "#8e44ad", "", true),
+            ];
+            sort_rows(&mut rows);
+            let lookup = Signal::new(Rc::new(build_lookup(&rows)));
+            Self {
+                inner: Rc::new(Inner {
+                    model: ListModel::from_vec(rows),
+                    version: Signal::new(0),
+                    lookup,
+                    next_id: Cell::new(7),
+                }),
+            }
+        }
+
+        pub fn wire(&self, _ctx: &mut BuildContext) {}
+
+        pub fn list_model(&self) -> ListModel<TagRow> {
+            self.inner.model.clone()
+        }
+
+        pub fn version_signal(&self) -> Signal<u64> {
+            self.inner.version.clone()
+        }
+
+        pub fn lookup_signal(&self) -> Signal<Rc<HashMap<u64, TagRow>>> {
+            self.inner.lookup.clone()
+        }
+
+        pub fn rows(&self) -> Vec<TagRow> {
+            (0..self.inner.model.len())
+                .filter_map(|i| self.inner.model.with_item(i, |r| r.clone()))
+                .collect()
+        }
+
+        pub fn len(&self) -> usize {
+            self.inner.model.len()
+        }
+
+        pub fn colliding_name(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {
+            let key = name_key(candidate);
+            if key.is_empty() {
+                return None;
+            }
+            self.rows()
+                .into_iter()
+                .find(|r| Some(r.id) != exclude && name_key(&r.name) == key)
+                .map(|r| r.name)
+        }
+
+        pub fn create(
+            &self,
+            name: &str,
+            color: &str,
+            details: &str,
+            discoverable: bool,
+            _owner_id: Option<u64>,
+            _stack_id: Option<u64>,
+        ) -> Option<u64> {
+            let id = self.inner.next_id.get();
+            self.inner.next_id.set(id + 1);
+            let mut rows = self.rows();
+            rows.push(row(id, name.trim(), color, details, discoverable));
+            self.replace(rows);
+            Some(id)
+        }
+
+        pub fn update(
+            &self,
+            id: u64,
+            name: &str,
+            color: &str,
+            details: &str,
+            discoverable: bool,
+            _stack_id: Option<u64>,
+        ) {
+            let mut rows = self.rows();
+            if let Some(r) = rows.iter_mut().find(|r| r.id == id) {
+                r.name = name.trim().to_string();
+                r.color = color.to_string();
+                r.details = details.to_string();
+                r.discoverable = discoverable;
+            }
+            self.replace(rows);
+        }
+
+        pub fn remove_all(&self, ids: &[u64], _stack_id: Option<u64>) {
+            let keep: Vec<TagRow> = self
+                .rows()
+                .into_iter()
+                .filter(|r| !ids.contains(&r.id))
+                .collect();
+            self.replace(keep);
+        }
+
+        pub fn import(&self, rows: &[TagRow], _stack_id: Option<u64>) -> Vec<String> {
+            let mut current = self.rows();
+            let mut skipped = Vec::new();
+            for r in rows {
+                if r.name.trim().is_empty()
+                    || current.iter().any(|e| name_key(&e.name) == name_key(&r.name))
+                {
+                    skipped.push(r.name.clone());
+                    continue;
+                }
+                let id = self.inner.next_id.get();
+                self.inner.next_id.set(id + 1);
+                current.push(row(
+                    id,
+                    r.name.trim(),
+                    &r.color,
+                    &r.details,
+                    r.discoverable,
+                ));
+            }
+            self.replace(current);
+            skipped
+        }
+
+        fn replace(&self, mut rows: Vec<TagRow>) {
+            sort_rows(&mut rows);
+            self.inner.lookup.set(Rc::new(build_lookup(&rows)));
+            self.inner.model.replace_all(rows);
+            let v = &self.inner.version;
+            v.set(v.get().wrapping_add(1));
+        }
+    }
+}
+
+pub use imp::WorkTagsListModel;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn r(id: u64, name: &str) -> TagRow {
+        TagRow {
+            id,
+            name: name.to_string(),
+            ..Default::default()
+        }
+    }
+
+    /// Alphabetical ordering is what makes the `status/…` convention cluster — it is the
+    /// reason the entity carries no explicit ordering.
+    #[test]
+    fn sorting_clusters_the_status_prefix() {
+        let mut rows = vec![
+            r(1, "place"),
+            r(2, "status/outline"),
+            r(3, "character"),
+            r(4, "status/draft"),
+            r(5, "needs research"),
+        ];
+        sort_rows(&mut rows);
+        let names: Vec<&str> = rows.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(
+            names,
+            vec![
+                "character",
+                "needs research",
+                "place",
+                "status/draft",
+                "status/outline"
+            ]
+        );
+    }
+
+    #[test]
+    fn sorting_is_case_insensitive_but_deterministic() {
+        let mut rows = vec![r(1, "beta"), r(2, "Alpha"), r(3, "alpha")];
+        sort_rows(&mut rows);
+        let names: Vec<&str> = rows.iter().map(|r| r.name.as_str()).collect();
+        // Equal-fold names keep a stable relative order rather than swapping per run.
+        assert_eq!(names, vec!["Alpha", "alpha", "beta"]);
+    }
+
+    #[test]
+    fn name_key_ignores_case_and_surrounding_space() {
+        assert_eq!(name_key("  CHARACTER  "), "character");
+        assert_eq!(name_key("character"), name_key("Character"));
+        assert_eq!(name_key("   "), "");
+    }
+}
