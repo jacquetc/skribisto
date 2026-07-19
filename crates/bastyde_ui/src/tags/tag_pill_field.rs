@@ -109,6 +109,7 @@ impl Widget for TagPillField {
             flow = flow.child(
                 Pill::new(tag.name.clone(), lit!(tag.name.clone()))
                     .background(fill)
+                    .outline(contrast::outline_on(fill))
                     .text_color(contrast::text_on(fill))
                     .tooltip(PillTooltip::Composite {
                         body: Box::new(tag_tooltip_body(tag)),
@@ -268,10 +269,16 @@ impl Widget for TagPicker {
             let discoverable = self.new_discoverable.clone();
             let name = q.trim().to_string();
             col = col.child(Divider::new());
+            // Same registry key as the settings pane's switch, so the explanation cannot
+            // drift between the two places this flag is offered.
             col = col.child(
                 Toggle::new(self.new_discoverable.clone())
-                    .label(tr!(tags_pill_new_discoverable())),
+                    .label(tr!(tags_pill_new_discoverable()))
+                    .rich_tooltip(crate::tooltip_registry::WM_STORY_BIBLE),
             );
+            // The inline hint stays despite the tooltip: this is a creation form in a
+            // transient popover, where a hover-only explanation is easy to never find. The
+            // hint says what the switch does; the tooltip's disclosure teaches why.
             col = col.child(
                 TextWidget::new(tr!(tags_pill_new_discoverable_hint()))
                     .color(TextRole::Secondary)

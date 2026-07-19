@@ -55,12 +55,33 @@ pub fn text_on(fill: Color) -> Color {
 /// Whether a chip/dot of this colour needs its hairline outline to stay visible against
 /// `surface`.
 ///
-/// Every chip draws the outline unconditionally in practice (it costs nothing and keeps the
-/// look uniform); this is what the settings pane uses to *warn* the writer that a colour is
-/// doing no work — it will be visible thanks to the border, but it will not read as the
-/// colour they picked.
+/// Every chip draws the outline unconditionally (see [`outline_on`]); this is what the
+/// settings pane uses to *warn* the writer that a colour is doing no work — it will be
+/// visible thanks to the border, but it will not read as the colour they picked.
 pub fn needs_outline(fill: Color, surface: Color) -> bool {
     fill.contrast_ratio(surface) < GRAPHICAL_OBJECT_MIN
+}
+
+/// The hairline colour for a chip/dot of this fill — derived from the fill, exactly like
+/// [`text_on`], and for the same reason.
+///
+/// The obvious implementation, a themed border token, does not work and the numbers say so:
+/// `BorderRole::Default` resolves to `#E3E5EA`, which is **1.26:1** against a white card, and
+/// even `Strong` (`#A8ADBD`) only reaches **2.24:1** — both under SC 1.4.11's 3:1, so a
+/// near-white tag stayed invisible with the hairline dutifully drawn around it.
+///
+/// Deriving from the fill instead gives a *guarantee*. The ring is the fill's own
+/// best-contrast extreme, so it is always the far end of the luminance scale from the fill.
+/// Whenever the fill blends into the surface, the fill is near the surface in luminance —
+/// which puts the ring at the far end from the *surface* too. The two therefore cover each
+/// other: whichever one the surface swallows, the other stands out.
+/// `outline_guarantees_a_visible_boundary` walks the colour cube against a light and a dark
+/// surface and pins the worst case, which is 3.6:1.
+///
+/// This is also why the ring needs no theme awareness: it is a function of the tag colour
+/// alone, so it cannot fall out of step when the theme changes under it.
+pub fn outline_on(fill: Color) -> Color {
+    fill.best_contrast_text()
 }
 
 #[cfg(test)]
@@ -112,6 +133,61 @@ mod tests {
         assert_eq!(parse("#2e7d32"), Color::from_hex("#2e7d32"));
         assert_eq!(parse("#2E7D32"), Color::from_hex("#2E7D32"));
         assert_eq!(parse("#2e7d32ff"), Color::from_hex("#2e7d32ff"));
+    }
+
+    /// The claim [`outline_on`] rests on, checked rather than asserted in prose: for *every*
+    /// fill, against a light and a dark surface, either the fill or its ring clears SC
+    /// 1.4.11's 3:1 — so the dot always has a visible boundary.
+    ///
+    /// This test exists because the first implementation used a themed border token and was
+    /// wrong: `BorderRole::Default` is 1.26:1 on a white card, so a near-white tag rendered as
+    /// nothing at all while the code claimed a hairline kept it visible.
+    #[test]
+    fn outline_guarantees_a_visible_boundary() {
+        let surfaces = [
+            Color::from_hex("#ffffff"), // light theme card
+            Color::from_hex("#1e1e1e"), // dark theme card
+        ];
+        let mut worst = f32::MAX;
+        for surface in surfaces {
+            for r in (0..=255).step_by(5) {
+                for g in (0..=255).step_by(5) {
+                    for b in (0..=255).step_by(5) {
+                        let fill = Color::from_hex(&format!("#{r:02x}{g:02x}{b:02x}"));
+                        // The boundary reads if *either* edge of it does.
+                        let best = fill
+                            .contrast_ratio(surface)
+                            .max(outline_on(fill).contrast_ratio(surface));
+                        assert!(
+                            best >= GRAPHICAL_OBJECT_MIN,
+                            "#{r:02x}{g:02x}{b:02x} got {best:.2}:1 against {surface:?}, \
+                             below SC 1.4.11"
+                        );
+                        worst = worst.min(best);
+                    }
+                }
+            }
+        }
+        // Pinned so a future tweak that erodes the margin shows up as a failure rather than
+        // as a dot nobody can see.
+        assert!(worst > 3.5, "worst case fell to {worst:.2}:1");
+    }
+
+    /// The two fills that actually shipped broken, named so the regression is unmistakable.
+    #[test]
+    fn the_legacy_extremes_are_rescued_by_their_ring() {
+        let white_card = Color::from_hex("#ffffff");
+        let dark_card = Color::from_hex("#1e1e1e");
+
+        // "A" from the v2.0.7 test project: 1.03:1 against a white card on its own.
+        let near_white = Color::from_hex("#FFFAFA");
+        assert!(near_white.contrast_ratio(white_card) < GRAPHICAL_OBJECT_MIN);
+        assert!(outline_on(near_white).contrast_ratio(white_card) >= GRAPHICAL_OBJECT_MIN);
+
+        // "very looooooooooong tag" from the same project, in the dark theme.
+        let black = Color::from_hex("#000000");
+        assert!(black.contrast_ratio(dark_card) < GRAPHICAL_OBJECT_MIN);
+        assert!(outline_on(black).contrast_ratio(dark_card) >= GRAPHICAL_OBJECT_MIN);
     }
 
     /// The case the outline exists for: an extreme colour against the matching surface.

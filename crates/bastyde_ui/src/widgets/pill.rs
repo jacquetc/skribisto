@@ -107,6 +107,10 @@ pub struct Pill {
     leading: Option<Box<dyn Widget>>,
     leading_opacity: f32,
     background: ColorProp,
+    /// Hairline drawn when the chip is *not* focused. `None` for chips filled from a
+    /// semantic role, which the theme already keeps distinguishable; `Some` for chips
+    /// filled from user data, which it cannot.
+    outline: Option<ColorProp>,
     text_color: Option<ColorProp>,
     tooltip: PillTooltip,
     tooltip_placement: TooltipPlacement,
@@ -132,6 +136,7 @@ impl Pill {
             leading: None,
             leading_opacity: 1.0,
             background: SurfaceRole::AccentSubtle.into(),
+            outline: None,
             text_color: None,
             tooltip: PillTooltip::None,
             // A pill row is a `Wrap`: pills sit *horizontally* adjacent at a few dp, so a
@@ -153,6 +158,18 @@ impl Pill {
     pub fn leading(mut self, glyph: impl Widget + 'static, visible: bool) -> Self {
         self.leading = Some(Box::new(glyph));
         self.leading_opacity = if visible { 1.0 } else { 0.0 };
+        self
+    }
+
+    /// Hairline for a chip whose fill is user data rather than a semantic role.
+    ///
+    /// Without it a chip only has a border while it holds keyboard focus, so a near-white
+    /// tag on a light surface (or a near-black one in the dark theme) renders as text
+    /// floating in nothing: WCAG SC 1.4.11 wants ≥3:1 for a graphical object's boundary, and
+    /// an absent boundary scores none. Pass `contrast::outline_on(fill)`, which derives a
+    /// colour guaranteed to keep the chip bounded whatever the fill and whatever the theme.
+    pub fn outline(mut self, color: impl Into<ColorProp>) -> Self {
+        self.outline = Some(color.into());
         self
     }
 
@@ -254,13 +271,23 @@ impl Widget for Pill {
             .focused
             .zip(&focus_visible)
             .map(|(f, v)| if *f && *v { 1.5 } else { 0.0 });
+        // The fill carries the hairline; the ring rides above it in its own transparent rect.
+        // One rect cannot do both — there is a single border per rect, and swapping its
+        // colour on focus would need the theme at signal-map time, which is not available.
+        // Stacking keeps each concern static and lets the ring simply paint over the
+        // hairline while focused.
         let bg = RectWidget::new()
             .background(self.background.clone())
+            .corner_radius(CornerRadius::uniform(9999.0))
+            .border_color(self.outline.clone().unwrap_or(Color::TRANSPARENT.into()))
+            .border_width(if self.outline.is_some() { 1.0 } else { 0.0 });
+        let focus_ring = RectWidget::new()
             .corner_radius(CornerRadius::uniform(9999.0))
             .border_color(BorderRole::Focused)
             .border_width(ring);
         let chip = ZStack::new()
             .child(bg)
+            .child(focus_ring)
             .child(Padding::symmetric(8.0, 2.0).child(content));
 
         let hover = self.hover.clone();

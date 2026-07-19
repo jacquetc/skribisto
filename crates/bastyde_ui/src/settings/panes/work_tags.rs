@@ -26,7 +26,7 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::{
-    BuiltInIcons, Button, ButtonVariant, Center, ColorEdit, Expand, HStack, IconButton,
+    BuiltInIcons, Button, ButtonVariant, Center, ColorEdit, Expand, FixedSize, HStack, IconButton,
     IconLocation, IconWidget, ListView, MaxSize, MenuItem, MenuList, MinSize, Padding, Panel,
     PopoverButton, RectWidget, SearchField, Spacer, Switcher, TextInput, TextWidget, Toast, Toggle,
     VStack, ValidationState,
@@ -39,6 +39,7 @@ use crate::view_models::TagsViewModel;
 const NAME_COL: &str = "name";
 const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;
 const LIST_MIN_HEIGHT: f32 = 320.0;
+const SWATCH_SIZE: f32 = 12.0;
 
 /// Colour offered for a tag created here before the writer picks one. Mid-slate: legible in
 /// both themes and visibly "unset".
@@ -167,20 +168,24 @@ fn add_row(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
         .enabled(can_add)
         .on_activate_fn(move |ctx| commit(ctx));
 
+    // "Apply a preset…" lives here, beside "Add tag", rather than in the toolbar below: both
+    // controls create tags, and the toolbar is for acting on the tags that already exist.
+    //
+    // It also has to be here. The toolbar carries a filter field whose width is capped, so its
+    // buttons get whatever is left; adding a third one overflowed the pane and clipped
+    // "Export…" off the right edge. Shrinking the field would have papered over it in English
+    // only — "Appliquer un préréglage…" is half again as wide as "Apply a preset…", so French
+    // would still have clipped. The add row's field is `Expand`, so it absorbs whatever the
+    // buttons need in any locale.
     HStack::new()
         .spacing(10.0)
         .child(Expand::horizontal().child(field))
+        .child(preset_button(vm))
         .child(add_btn)
 }
 
-/// Filter + live count + "Apply a preset…" + Import/Export.
-fn toolbar_row(vm: &TagsViewModel, query: Signal<String>) -> impl Widget {
-    let count = {
-        let vm = vm.clone();
-        vm.changed_signal()
-            .map(move |_| tr!(settings_tags_count(n = vm.rows().len() as i64)).resolve_now())
-    };
-
+/// The preset catalogue, as a popover menu.
+fn preset_button(vm: &TagsViewModel) -> impl Widget {
     let mut menu = MenuList::new();
     for preset in Preset::ALL {
         let vm = vm.clone();
@@ -198,6 +203,22 @@ fn toolbar_row(vm: &TagsViewModel, query: Signal<String>) -> impl Widget {
         }));
     }
 
+    PopoverButton::new(
+        Button::new(tr!(settings_tags_apply_preset())).variant(ButtonVariant::Plain),
+    )
+    .bare()
+    .content(menu)
+}
+
+/// Filter + live count on the left, Import…/Export… pushed to the right — the same shape as
+/// the personal-dictionary pane's toolbar, and deliberately no wider.
+fn toolbar_row(vm: &TagsViewModel, query: Signal<String>) -> impl Widget {
+    let count = {
+        let vm = vm.clone();
+        vm.changed_signal()
+            .map(move |_| tr!(settings_tags_count(n = vm.rows().len() as i64)).resolve_now())
+    };
+
     HStack::new()
         .spacing(10.0)
         .child(
@@ -206,13 +227,6 @@ fn toolbar_row(vm: &TagsViewModel, query: Signal<String>) -> impl Widget {
         )
         .child(TextWidget::new(lit!("")).text(count).color(TextRole::Secondary))
         .child(Expand::horizontal().child(Spacer::new()))
-        .child(
-            PopoverButton::new(
-                Button::new(tr!(settings_tags_apply_preset())).variant(ButtonVariant::Plain),
-            )
-            .bare()
-            .content(menu),
-        )
         .child(import_button(vm))
         .child(export_button(vm))
 }
@@ -363,7 +377,12 @@ impl Widget for TagRowView {
                 }
             });
         }
-        let toggle = Toggle::new(discoverable).label(tr!(settings_tags_discoverable()));
+        // The row's one control whose label cannot explain itself: "Story bible" names the
+        // set the tag joins, not what switching it on makes Skribisto do. Bound by registry
+        // key so it reads identically here and in the pill field's "New tag…" form.
+        let toggle = Toggle::new(discoverable)
+            .label(tr!(settings_tags_discoverable()))
+            .rich_tooltip(crate::tooltip_registry::WM_STORY_BIBLE);
 
         let delete = {
             let vm = self.vm.clone();
@@ -414,16 +433,27 @@ impl Widget for TagRowView {
     }
 }
 
+/// The row's leading colour dot.
+///
+/// `FixedSize`, not `MinSize`: a minimum only floors the size, so inside the row's `HStack`
+/// the dot stretched to the full row height and rendered as a tall bar rather than a dot.
+///
+/// The hairline is what keeps a near-black or near-white tag visible against the matching
+/// surface — a tag colour is theme-constant, so either extreme would otherwise vanish in one
+/// theme. It is derived from the fill rather than taken from a border token because no token
+/// is strong enough: see [`contrast::outline_on`].
 fn swatch(color: bastyde::tokens::Color) -> impl Widget {
-    MinSize::new(12.0, 12.0).child(
-        RectWidget::new()
-            .background(color)
-            .corner_radius(CornerRadius::uniform(9999.0))
-            // The hairline is what keeps a near-black or near-white tag visible against the
-            // matching surface — a tag colour is theme-constant, so either extreme would
-            // otherwise vanish in one theme.
-            .border_color(BorderRole::Default)
-            .border_width(1.0),
+    Center::new().child(
+        FixedSize::new()
+            .width(SWATCH_SIZE)
+            .height(SWATCH_SIZE)
+            .child(
+                RectWidget::new()
+                    .background(color)
+                    .corner_radius(CornerRadius::uniform(9999.0))
+                    .border_color(contrast::outline_on(color))
+                    .border_width(1.0),
+            ),
     )
 }
 

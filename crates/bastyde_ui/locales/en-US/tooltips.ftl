@@ -35,3 +35,5 @@ scene-break-major-more =
     The same idea as an ordinary scene break, one step up. Use it when a plain break would understate the jump.
 
     Typed as `# # #`, and printed differently from the ordinary tier by the export style — Shunn's standard manuscript format sets `#` against `# # #` for exactly this distinction. Where a tradition has no stronger mark, both tiers print the same.
+wm-story-bible = Skribisto looks for this item in your prose.
+wm-story-bible-more = Turn this on for tags that name things you write about: characters, places, objects. Any item carrying such a tag is matched against your prose by its title and by the other names you give it, so each [scene](:wm-scene) lists who and what appears in it without you linking anything by hand. Leave it off for tags that describe an item rather than name one, such as a draft status or a reminder to check continuity.

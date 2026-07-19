@@ -50,6 +50,14 @@ pub const WM_SYNOPSIS: &str = "wm-synopsis";
 /// author places *in the prose*, bound by the Format menu's entries.
 pub const SCENE_BREAK_MINOR: &str = "scene-break-minor";
 pub const SCENE_BREAK_MAJOR: &str = "scene-break-major";
+/// The `discoverable` flag on a tag, surfaced as the "Story bible" switch.
+///
+/// Registered rather than written inline because it is the pane's one control
+/// whose label cannot explain itself: "Story bible" says what the tag *joins*,
+/// not what turning it on *does*. It is offered in two places — the switch on
+/// every row of the Tags settings pane, and the same switch in the tag pill
+/// field's "New tag…" form — and both must say the same thing.
+pub const WM_STORY_BIBLE: &str = "wm-story-bible";
 
 /// Every registered writing-model key. Consumed by the headless test that
 /// asserts every menu row's key and every `[..](:key)` cascade link in the
@@ -66,6 +74,7 @@ pub const WM_KEYS: &[&str] = &[
     WM_SYNOPSIS,
     SCENE_BREAK_MINOR,
     SCENE_BREAK_MAJOR,
+    WM_STORY_BIBLE,
 ];
 
 /// The writing-model rich tooltips, registered once at boot. Each carries a
@@ -92,6 +101,8 @@ pub fn writing_model_tooltips() -> Vec<TooltipContent> {
         TooltipContent::new(SCENE_BREAK_MAJOR, tr!(scene_break_major()))
             .with_more(tr!(scene_break_major_more()))
             .for_shortcut("format.major_scene_break"),
+        TooltipContent::new(WM_STORY_BIBLE, tr!(wm_story_bible()))
+            .with_more(tr!(wm_story_bible_more())),
     ]
 }
 
