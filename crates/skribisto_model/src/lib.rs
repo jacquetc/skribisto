@@ -25,6 +25,7 @@ use common::entities::ContentRole::*;
 /// Which language a scene is written in: the per-item → Work resolution chain,
 /// plus the `dict_language` tag-list grammar shared by search folding and spell-checking.
 pub mod language;
+pub mod mentions;
 
 /// The compile spine: fold the flat `(role, sub_role)` item stream into an export scope.
 /// Shares its structural predicates with the UI's Full Chapter/Part/Book stream view.
