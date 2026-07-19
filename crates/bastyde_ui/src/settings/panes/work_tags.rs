@@ -1,0 +1,460 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Settings ▸ Work ▸ **Tags** — the per-project tag palette manager.
+//!
+//! Shaped like the personal-dictionary pane next to it: a description, a prominent add row, a
+//! filter + live count + preset/import/export toolbar, and a bordered list. Each row edits one
+//! tag in place — rename, recolour, describe, mark story-bible, delete.
+//!
+//! Two things here that the dictionary pane has no equivalent of:
+//!
+//! * **A duplicate name is a warning, never a refusal.** The backend permits duplicates and
+//!   must not be made to care; two tags legitimately share a name for a moment while one is
+//!   being renamed. It is surfaced as `ValidationState::Warning` — "suspicious but accepted"
+//!   — which is reachable only by binding an external signal, since the
+//!   `ValidationOutcome → ValidationState` bridge has no path to `Warning` and `.validator()`
+//!   fires on commit rather than as you type.
+//! * **Deleting a tag in use detaches it from every item**, so the confirmation says how many.
+//!
+//! Like the dictionary pane it needs generic-closure widgets (`ListView`) the `bati!` DSL
+//! cannot express, so it is a chained-builder module.
+
+use bastyde::core::styles::TextInputVariant;
+use bastyde::data::SortFilterListModel;
+use bastyde::prelude::*;
+use bastyde::res;
+use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
+use bastyde::widgets::{
+    BuiltInIcons, Button, ButtonVariant, Center, ColorEdit, Expand, HStack, IconButton,
+    IconLocation, IconWidget, ListView, MaxSize, MenuItem, MenuList, MinSize, Padding, Panel,
+    PopoverButton, RectWidget, SearchField, Spacer, Switcher, TextInput, TextWidget, Toast, Toggle,
+    VStack, ValidationState,
+};
+
+use crate::models::TagRow;
+use crate::tags::{Preset, contrast};
+use crate::view_models::TagsViewModel;
+
+const NAME_COL: &str = "name";
+const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;
+const LIST_MIN_HEIGHT: f32 = 320.0;
+
+/// Colour offered for a tag created here before the writer picks one. Mid-slate: legible in
+/// both themes and visibly "unset".
+const DEFAULT_NEW_COLOR: &str = "#607d8b";
+
+fn add_glyph() -> IconWidget {
+    (BuiltInIcons::defaults().add)().icon_size(15.0)
+}
+fn import_glyph() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/settings/import.svg")).icon_size(15.0)
+}
+fn export_glyph() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/settings/export.svg")).icon_size(15.0)
+}
+
+pub fn work_tags_pane(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
+    let filtered = SortFilterListModel::new(vm.list_model()).with_predicate(NAME_COL, |text| {
+        let needle = text.trim().to_lowercase();
+        Box::new(move |row: &TagRow| {
+            needle.is_empty()
+                || row.name.to_lowercase().contains(&needle)
+                || row.details.to_lowercase().contains(&needle)
+        })
+    });
+    let query = Signal::new(String::new());
+    {
+        // Pushed imperatively — `filters_signal` would `observe` a derived signal.
+        let filter_view = filtered.clone();
+        ctx.effect(&query, move |q| filter_view.set_filter(NAME_COL, q));
+    }
+
+    let list_vm = vm.clone();
+    let list = ListView::from_source(filtered, move |_i, row: &TagRow, _selected| {
+        Box::new(TagRowView {
+            vm: list_vm.clone(),
+            row: row.clone(),
+            root_child: None,
+        })
+    })
+    .auto_item_height(52.0);
+
+    let empty_idx = {
+        let vm = vm.clone();
+        vm.changed_signal().map(move |_| usize::from(vm.is_empty()))
+    };
+    let list_card = Panel::new()
+        .background(SurfaceRole::Content)
+        .border_color(BorderRole::Default)
+        .border_width(1.0)
+        .corner_radius(8.0)
+        .padding(0.0)
+        .child(
+            // The floor goes on the card, not the list: a `Switcher` reports its active
+            // child's size, and a virtualised `ListView` given unbounded height inside the
+            // pane's own scroll reports ~nothing.
+            MinSize::new(0.0, LIST_MIN_HEIGHT).child(
+                Switcher::new(empty_idx)
+                    .child(Expand::vertical().child(list))
+                    .child(empty_state(vm)),
+            ),
+        );
+
+    VStack::new()
+        .spacing(16.0)
+        .child(TextWidget::new(tr!(settings_tags_desc())).color(TextRole::Secondary))
+        .child(add_row(ctx, vm))
+        .child(toolbar_row(vm, query))
+        .child(Expand::horizontal().child(list_card))
+}
+
+/// The prominent add row: name field with a leading `+`, and a filled button.
+fn add_row(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
+    let text = Signal::new(String::new());
+    // Owned rather than derived: `.validation()` treats a bound signal as a shared *write*
+    // target, and a `.map()` signal is lazy and read-only — binding one here would be wrong.
+    let validation = Signal::new(ValidationState::None);
+
+    {
+        // Live as the writer types, not on commit. `TextInput` has no change hook, so the
+        // warning is pushed from an effect on the text signal — the same imperative-push
+        // shape the filter above uses, and for the same reason.
+        //
+        // On commit would be useless anyway: the warning would arrive at the same moment as
+        // the tag it was meant to inform.
+        let vm = vm.clone();
+        let validation = validation.clone();
+        ctx.effect(&text, move |typed| {
+            validation.set(match vm.duplicate_name(typed, None) {
+                Some(existing) => ValidationState::Warning(tr!(settings_tags_duplicate(
+                    name = existing
+                ))),
+                None => ValidationState::None,
+            });
+        });
+    }
+
+    let commit = {
+        let vm = vm.clone();
+        let text = text.clone();
+        let validation = validation.clone();
+        move |ctx: &mut EventContext| {
+            let name = text.get().trim().to_string();
+            if name.is_empty() {
+                return;
+            }
+            if vm.create(&name, DEFAULT_NEW_COLOR, "", false).is_some() {
+                ctx.show_toast(Toast::info(tr!(settings_tags_added(name = name.clone()))).id("tags.added"));
+            }
+            text.set(String::new());
+            validation.set(ValidationState::None);
+        }
+    };
+
+    let field = {
+        let commit = commit.clone();
+        TextInput::new(text.clone())
+            .leading_slot(add_glyph().color(TextRole::Secondary))
+            .placeholder(tr!(settings_tags_add_placeholder()))
+            .validation(validation.clone())
+            .on_submit_fn(move |ctx| commit(ctx))
+    };
+
+    let can_add = text.map(|t| !t.trim().is_empty());
+    let add_btn = Button::new(tr!(settings_tags_add()))
+        .variant(ButtonVariant::Filled)
+        .enabled(can_add)
+        .on_activate_fn(move |ctx| commit(ctx));
+
+    HStack::new()
+        .spacing(10.0)
+        .child(Expand::horizontal().child(field))
+        .child(add_btn)
+}
+
+/// Filter + live count + "Apply a preset…" + Import/Export.
+fn toolbar_row(vm: &TagsViewModel, query: Signal<String>) -> impl Widget {
+    let count = {
+        let vm = vm.clone();
+        vm.changed_signal()
+            .map(move |_| tr!(settings_tags_count(n = vm.rows().len() as i64)).resolve_now())
+    };
+
+    let mut menu = MenuList::new();
+    for preset in Preset::ALL {
+        let vm = vm.clone();
+        menu = menu.item(MenuItem::new(preset.label()).on_activate_fn(move |c| {
+            let summary = vm.apply_preset(preset);
+            // Say what happened rather than just closing: re-applying a preset is a no-op by
+            // design (names already present are skipped), and silence would read as failure.
+            c.show_toast(
+                Toast::info(tr!(settings_tags_preset_applied(
+                    added = summary.added as i64,
+                    skipped = summary.duplicates as i64
+                )))
+                .id("tags.preset"),
+            );
+        }));
+    }
+
+    HStack::new()
+        .spacing(10.0)
+        .child(
+            MaxSize::width(FILTER_FIELD_MAX_WIDTH)
+                .child(SearchField::new(query).placeholder(tr!(settings_tags_filter()))),
+        )
+        .child(TextWidget::new(lit!("")).text(count).color(TextRole::Secondary))
+        .child(Expand::horizontal().child(Spacer::new()))
+        .child(
+            PopoverButton::new(
+                Button::new(tr!(settings_tags_apply_preset())).variant(ButtonVariant::Plain),
+            )
+            .bare()
+            .content(menu),
+        )
+        .child(import_button(vm))
+        .child(export_button(vm))
+}
+
+fn import_button(vm: &TagsViewModel) -> impl Widget {
+    let vm = vm.clone();
+    Button::new(tr!(settings_tags_import()))
+        .variant(ButtonVariant::Plain)
+        .icon(import_glyph(), IconLocation::Leading)
+        .on_activate_fn(move |ctx| {
+            let vm = vm.clone();
+            let req = FileDialogRequest::pick_file()
+                .title(tr!(settings_tags_import()))
+                .add_filter(&tr!(settings_tags_csv_filter()).resolve_now(), &["csv"]);
+            let _ = ctx.pick_file(req, move |res, c| {
+                    if let FileDialogResult::File(Some(path)) = res {
+                        match vm.import_from(&path) {
+                            Ok(s) => {
+                                c.show_toast(
+                                    Toast::info(tr!(settings_tags_imported(
+                                        added = s.added as i64,
+                                        skipped = (s.duplicates + s.malformed) as i64
+                                    )))
+                                    .id("tags.imported"),
+                                );
+                            }
+                            Err(e) => {
+                                c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("tags.error"));
+                            }
+                        }
+                    }
+                });
+        })
+}
+
+fn export_button(vm: &TagsViewModel) -> impl Widget {
+    let vm = vm.clone();
+    Button::new(tr!(settings_tags_export()))
+        .variant(ButtonVariant::Plain)
+        .icon(export_glyph(), IconLocation::Leading)
+        .on_activate_fn(move |ctx| {
+            let vm = vm.clone();
+            let req = FileDialogRequest::save_file()
+                .title(tr!(settings_tags_export()))
+                .default_file_name("tags.csv".to_string())
+                .add_filter(&tr!(settings_tags_csv_filter()).resolve_now(), &["csv"]);
+            let _ = ctx.save_file(req, move |res, c| {
+                    if let FileDialogResult::Saved(Some(mut path)) = res {
+                        if path.extension().and_then(|e| e.to_str()) != Some("csv") {
+                            path.set_extension("csv");
+                        }
+                        match vm.export_to(&path) {
+                            Ok(n) => {
+                                c.show_toast(
+                                    Toast::info(tr!(settings_tags_exported(n = n as i64)))
+                                        .id("tags.exported"),
+                                );
+                            }
+                            Err(e) => {
+                                c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("tags.error"));
+                            }
+                        }
+                    }
+                });
+        })
+}
+
+/// One palette row: swatch + colour picker, inline name, details, story-bible toggle, delete.
+///
+/// A real `Widget` rather than a plain builder function, because a row needs a
+/// `BuildContext`: `Toggle` and `TextInput` both write only to their signals (neither has a
+/// change callback), so persisting an edit means observing those signals from an effect —
+/// and `ctx` is the only place effects can be installed. A `ListView` delegate returning
+/// `Box<dyn Widget>` gives every row its own `build`, which is exactly the hook needed.
+struct TagRowView {
+    vm: TagsViewModel,
+    row: TagRow,
+    root_child: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for TagRowView {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TagRowView").field("name", &self.row.name).finish()
+    }
+}
+
+impl Widget for TagRowView {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let id = self.row.id;
+        let fill = contrast::parse(&self.row.color);
+
+        // Colour. `ColorEdit` is the DateEdit-shaped trigger+popover; seeding its grid with
+        // the framework palette keeps a writer picking coherent hues rather than typing hex.
+        let color_signal = Signal::new(fill);
+        let color_edit = {
+            let vm = self.vm.clone();
+            let color_signal = color_signal.clone();
+            ColorEdit::new(color_signal.clone())
+                .swatches(bastyde::widgets::color_picker::DEFAULT_SWATCHES.to_vec())
+                .on_close(move || vm.recolor(id, &color_signal.get().to_hex_lower(false)))
+        };
+
+        // Name, with the duplicate warning live as it is typed.
+        let name = Signal::new(self.row.name.clone());
+        let validation = Signal::new(ValidationState::None);
+        {
+            let vm = self.vm.clone();
+            let validation = validation.clone();
+            ctx.effect(&name, move |typed| {
+                // `Some(id)` excludes this row — a tag never collides with itself.
+                validation.set(match vm.duplicate_name(typed, Some(id)) {
+                    Some(existing) => {
+                        ValidationState::Warning(tr!(settings_tags_duplicate(name = existing)))
+                    }
+                    None => ValidationState::None,
+                });
+            });
+        }
+        let name_field = {
+            let vm = self.vm.clone();
+            let name = name.clone();
+            TextInput::new(name.clone())
+                .variant(TextInputVariant::Bare)
+                .validation(validation)
+                .on_submit_fn(move |_c| vm.rename(id, &name.get()))
+        };
+
+        let details = Signal::new(self.row.details.clone());
+        let details_field = {
+            let vm = self.vm.clone();
+            let details = details.clone();
+            TextInput::new(details.clone())
+                .variant(TextInputVariant::Bare)
+                .placeholder(tr!(settings_tags_details_placeholder()))
+                .on_submit_fn(move |_c| vm.set_details(id, &details.get()))
+        };
+
+        // The toggle writes only to its signal, so the write-back rides an effect. It
+        // compares against the model first: without that guard the refresh that follows the
+        // write would echo straight back in as a second write.
+        let discoverable = Signal::new(self.row.discoverable);
+        {
+            let vm = self.vm.clone();
+            ctx.effect(&discoverable, move |on| {
+                let current = vm.rows().into_iter().find(|r| r.id == id).map(|r| r.discoverable);
+                if current != Some(*on) {
+                    vm.set_discoverable(id, *on);
+                }
+            });
+        }
+        let toggle = Toggle::new(discoverable).label(tr!(settings_tags_discoverable()));
+
+        let delete = {
+            let vm = self.vm.clone();
+            let name = self.row.name.clone();
+            IconButton::clear()
+                .embedded()
+                .tooltip(tr!(settings_tags_delete(name = name.clone())))
+                .on_activate_fn(move |c| {
+                    // Deleting detaches the tag from every item carrying it, and undo restores
+                    // both. A timed toast is the right weight for a reversible action whose
+                    // result is visible on screen — a modal would be nagging.
+                    vm.delete(&[id]);
+                    c.show_toast(
+                        Toast::info(tr!(settings_tags_deleted(name = name.clone())))
+                            .id("tags.deleted"),
+                    );
+                })
+        };
+
+        let body = Padding::symmetric(6.0, 10.0).child(
+            VStack::new()
+                .spacing(2.0)
+                .child(
+                    HStack::new()
+                        .spacing(8.0)
+                        .child(swatch(fill))
+                        .child(color_edit)
+                        .child(Expand::horizontal().child(name_field))
+                        .child(toggle)
+                        .child(delete),
+                )
+                .child(Padding::new(0.0, 0.0, 0.0, 26.0).child(details_field)),
+        );
+        let root = ctx.add(body);
+        self.root_child = Some(root);
+        vec![root]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
+fn swatch(color: bastyde::tokens::Color) -> impl Widget {
+    MinSize::new(12.0, 12.0).child(
+        RectWidget::new()
+            .background(color)
+            .corner_radius(CornerRadius::uniform(9999.0))
+            // The hairline is what keeps a near-black or near-white tag visible against the
+            // matching surface — a tag colour is theme-constant, so either extreme would
+            // otherwise vanish in one theme.
+            .border_color(BorderRole::Default)
+            .border_width(1.0),
+    )
+}
+
+/// Shown instead of an empty bordered box, which reads as broken. Offers the preset menu
+/// again, since an empty palette is exactly when a writer wants one.
+fn empty_state(vm: &TagsViewModel) -> impl Widget {
+    let mut menu = MenuList::new();
+    for preset in Preset::ALL {
+        let vm = vm.clone();
+        menu = menu.item(MenuItem::new(preset.label()).on_activate_fn(move |c| {
+            let summary = vm.apply_preset(preset);
+            c.show_toast(
+                Toast::info(tr!(settings_tags_preset_applied(
+                    added = summary.added as i64,
+                    skipped = summary.duplicates as i64
+                )))
+                .id("tags.preset"),
+            );
+        }));
+    }
+    Center::new().child(
+        VStack::new()
+            .spacing(10.0)
+            .child(TextWidget::new(tr!(settings_tags_empty())).color(TextRole::Secondary))
+            .child(
+                PopoverButton::new(
+                    Button::new(tr!(settings_tags_apply_preset()))
+                        .variant(ButtonVariant::Filled),
+                )
+                .bare()
+                .content(menu),
+            ),
+    )
+}

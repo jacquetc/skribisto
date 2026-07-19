@@ -60,3 +60,31 @@ tags-alias-add = Add another name
 tags-alias-remove = Remove { $name }
 tags-alias-placeholder = Another name, then Enter
 tags-alias-hint = Names this appears under in your prose, beside its title.
+
+## Settings ▸ Work ▸ Tags
+settings-page-tags = Tags
+settings-tags-desc = Tags label the items in your binder. A story-bible tag also tells Skribisto to look for that item's names in your prose.
+settings-tags-add = Add tag
+settings-tags-add-placeholder = Name a new tag
+settings-tags-added = Added "{ $name }"
+settings-tags-duplicate = "{ $name }" already exists
+settings-tags-filter = Filter tags
+settings-tags-count = { $n ->
+    [one] 1 tag
+   *[other] { $n } tags
+}
+settings-tags-details-placeholder = What this tag means
+settings-tags-discoverable = Story bible
+settings-tags-delete = Delete { $name }
+settings-tags-deleted = Deleted "{ $name }" and removed it from every item
+settings-tags-empty = No tags yet.
+settings-tags-apply-preset = Apply a preset…
+settings-tags-preset-applied = Added { $added }, skipped { $skipped } already present
+settings-tags-csv-filter = CSV files
+settings-tags-import = Import…
+settings-tags-export = Export…
+settings-tags-imported = Imported { $added }, skipped { $skipped }
+settings-tags-exported = Exported { $n ->
+    [one] 1 tag
+   *[other] { $n } tags
+}

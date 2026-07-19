@@ -61,3 +61,31 @@ tags-alias-add = Ajouter un autre nom
 tags-alias-remove = Retirer { $name }
 tags-alias-placeholder = Un autre nom, puis Entrée
 tags-alias-hint = Les noms sous lesquels cet élément apparaît dans votre texte, en plus de son titre.
+
+## Réglages ▸ Projet ▸ Étiquettes
+settings-page-tags = Étiquettes
+settings-tags-desc = Les étiquettes servent à qualifier les éléments du classeur. Une étiquette de bible narrative indique en plus à Skribisto de chercher les noms de cet élément dans votre texte.
+settings-tags-add = Ajouter
+settings-tags-add-placeholder = Nommer une nouvelle étiquette
+settings-tags-added = « { $name } » ajoutée
+settings-tags-duplicate = « { $name } » existe déjà
+settings-tags-filter = Filtrer les étiquettes
+settings-tags-count = { $n ->
+    [one] 1 étiquette
+   *[other] { $n } étiquettes
+}
+settings-tags-details-placeholder = Ce que signifie cette étiquette
+settings-tags-discoverable = Bible narrative
+settings-tags-delete = Supprimer { $name }
+settings-tags-deleted = « { $name } » supprimée et retirée de tous les éléments
+settings-tags-empty = Aucune étiquette pour le moment.
+settings-tags-apply-preset = Appliquer un préréglage…
+settings-tags-preset-applied = { $added } ajoutée(s), { $skipped } déjà présente(s) ignorée(s)
+settings-tags-csv-filter = Fichiers CSV
+settings-tags-import = Importer…
+settings-tags-export = Exporter…
+settings-tags-imported = { $added } importée(s), { $skipped } ignorée(s)
+settings-tags-exported = { $n ->
+    [one] 1 étiquette exportée
+   *[other] { $n } étiquettes exportées
+}

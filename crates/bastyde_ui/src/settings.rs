@@ -106,6 +106,9 @@ enum Pane {
     /// tree). Appended last, same rule: a new discriminant must never renumber the ones the
     /// `Switcher` already indexes.
     Spellcheck,
+    /// Per-project tag palette (under the open Work's section). Appended last for the same
+    /// reason — its tree position is chosen in `build_tree`, not by this number.
+    WorkTags,
 }
 
 impl Pane {
@@ -133,6 +136,7 @@ impl Pane {
             Pane::WorkBackup => tr!(settings_page_work_backup()),
             Pane::WorkLanguage => tr!(settings_page_language()),
             Pane::WorkDictionary => tr!(settings_page_personal_dictionary()),
+            Pane::WorkTags => tr!(settings_page_tags()),
             Pane::Spellcheck => tr!(settings_page_spellcheck()),
         }
     }
@@ -578,6 +582,10 @@ impl SettingsPanel {
                 Pane::WorkDictionary,
                 model.insert_child(wk, 3, Node::Page(Pane::WorkDictionary)),
             );
+            nodes.insert(
+                Pane::WorkTags,
+                model.insert_child(wk, 4, Node::Page(Pane::WorkTags)),
+            );
             work_node = Some(wk);
         }
         // The dynamic section label needs the title inside the row closure.
@@ -661,7 +669,8 @@ impl SettingsPanel {
             Pane::WorkStructure
             | Pane::WorkLanguage
             | Pane::WorkBackup
-            | Pane::WorkDictionary => work_node,
+            | Pane::WorkDictionary
+            | Pane::WorkTags => work_node,
             Pane::Keymap => None,
         };
         if let Some(sec) = section_of(self.selected_pane.get()) {
@@ -904,6 +913,34 @@ impl Widget for SettingsPanel {
             )),
         };
 
+        // Work ▸ Tags — the per-project palette manager, over the shared `TagsViewModel`.
+        // Present in the Switcher regardless, an empty placeholder when no project is
+        // open (same as the other Work panes).
+        let tags_pane: Box<dyn Widget> = match (
+            ctx.app_state::<crate::view_models::TagsViewModel>().cloned(),
+            &work,
+        ) {
+            (Some(tvm), Some(w)) if w.id().is_some() => {
+                let title = w.title().get();
+                Box::new(pane_frame(
+                    crumb(
+                        Some(lit!(format!(
+                            "{}: {}",
+                            tr!(settings_sec_work()).resolve_now(),
+                            title
+                        ))),
+                        tr!(settings_page_tags()),
+                    ),
+                    crate::settings::panes::work_tags::work_tags_pane(ctx, &tvm),
+                ))
+            }
+            _ => Box::new(empty_pane(
+                None,
+                tr!(settings_page_tags()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+
         // Work ▸ Personal dictionary — the per-project word-list manager, over the
         // shared `UserDictionaryViewModel`. Present in the Switcher regardless, an
         // empty placeholder when no project is open (same as the other Work panes).
@@ -1021,6 +1058,7 @@ impl Widget for SettingsPanel {
             (Pane::WorkLanguage, language_pane),
             (Pane::WorkDictionary, dictionary_pane),
             (Pane::Spellcheck, Box::new(panes::spellcheck::spellcheck_pane(&vm))),
+            (Pane::WorkTags, tags_pane),
         ];
         if let Some((slot, (pane, _))) =
             panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)
