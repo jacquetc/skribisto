@@ -8,14 +8,16 @@
 the legacy fixture. This one covers what Stage 4 added: the dots that appear
 beside an item wherever it is listed.
 
-It runs on the bundled example rather than the legacy fixture for a structural
-reason — the legacy project's "Chapter 1" is a plain grouping folder, so it has
-no segmented control and therefore neither a manuscript stream nor a corkboard.
-There is nowhere in that project to *see* two of the three surfaces.
+It runs on `resources/test/skribisto_test_project.skrib`, whose "Chapter 1" is a
+`Folder`/`ChapterScene` — a structural container, and therefore the one place in
+the test corpus that renders a segmented control with a manuscript stream and a
+corkboard. Two of the three surfaces do not exist anywhere else to be looked at.
 
-The example ships with an empty palette, so the run creates its own tag through
-the very affordance under test (the picker's "Create ..." row) and then looks
-for it in each place:
+The run **assigns its own tag** rather than relying on the fixture carrying one,
+through the very affordance under test (the picker's "Create ..." row). That is
+deliberate: it exercises create-and-assign, and it survives the fixture being
+regenerated (the last regeneration kept the palette but dropped every item's
+assignments). It then looks for that tag in each place:
 
   1. the editor, under the title/subtitle;
   2. the manuscript stream's row header;
@@ -47,7 +49,13 @@ import time
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
 MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
-EXAMPLE = f"{ROOT}/resources/examples/Starforgers.skrib"
+FIXTURE = f"{ROOT}/resources/test/skribisto_test_project.skrib"
+
+# The one container in the fixture that renders Stream/Corkboard, and a scene
+# inside it. Named rather than discovered: the structure is fixed and known,
+# and guessing "the most-indented row" picked the wrong item on a flat binder.
+CONTAINER = "Chapter 1"
+SCENE = "1.1 Zeus"
 
 TAG = "chip-probe"
 
@@ -184,15 +192,15 @@ class Session:
             self.app.kill()
 
 
-print("== launch on the bundled example ==")
-s = Session([EXAMPLE])
+print("== launch on the test fixture ==")
+s = Session([FIXTURE])
 deadline = time.time() + 25
 while time.time() < deadline:
-    if any("starforgers" in (n.get("label") or "").lower() for n in s.nodes()):
+    if any(SCENE in (n.get("label") or "") for n in s.nodes()):
         break
     time.sleep(0.4)
 else:
-    fail("the example did not load", s.app, s.mcp, s.log)
+    fail("the fixture did not load", s.app, s.mcp, s.log)
 if any("mock" in (n.get("label") or "").lower() for n in s.nodes()):
     fail("this is a `--features mocks` build — rebuild with `cargo build -p bastyde_ui`",
          s.app, s.mcp, s.log)
@@ -242,15 +250,74 @@ def find(sub, role=None):
     return None
 
 
+HIT = 18.0  # one dot's hit cell, from tags/tag_chip.rs
+
+
 def dot_row():
-    """The dot row announces itself with every tag name it shows."""
+    """The dot row, identified by geometry as well as by text.
+
+    Text alone is not enough: the tag's own tooltip body is also a `Label`
+    containing the tag name, and matching that reported a "dot row" of 58x13 dp
+    on a surface where no dots were drawn at all — a false pass. The row is
+    exactly one hit-cell tall and a whole number of cells wide, which nothing
+    else on screen is.
+
+    It is a `Label` rather than a `Button` because the Popover's OverlayTrigger
+    already owns the button role at the same bounds; `Label`-role nodes carry
+    their text in `value`, not `label`.
+    """
     for n in s.nodes():
-        # A Label, not a Button: the Popover's OverlayTrigger owns the button role.
-        # Label-role nodes carry their text in `value`, not `label`.
+        if n.get("role") != "Label":
+            continue
         text = (n.get("value") or "") + " " + (n.get("label") or "")
-        if TAG in text and n.get("role") == "Label":
-            return n
+        if TAG not in text:
+            continue
+        b = n.get("bounds") or {}
+        w, h = b.get("width", 0), b.get("height", 0)
+        # Width is the reliable signal: the row is exactly one hit cell per tag.
+        # Height is NOT — a stream row header stretches the row to its own line
+        # height (24 dp observed) while the dots stay round inside it, so pinning
+        # height to 18 rejected a row that was rendering perfectly well.
+        cells = w / HIT
+        if abs(cells - round(cells)) > 0.08 or round(cells) < 1:
+            continue
+        if not (12.0 <= h <= 36.0):
+            continue
+        return n
     return None
+
+
+def content_pane():
+    """The editor pane's own scrollable body.
+
+    Picked by area, not by "first node past x=400": that matched a zero-width
+    splitter at x=846, so every scroll went to a widget that does not scroll and
+    the row below the fold was never reached."""
+    best, best_area = None, 0.0
+    for n in s.nodes():
+        b = n.get("bounds") or {}
+        x, w, h = b.get("x", 0), b.get("width", 0), b.get("height", 0)
+        if not (380 < x < 860 and w > 300 and h > 300):
+            continue
+        if w * h > best_area:
+            best, best_area = n, w * h
+    return best
+
+
+def scroll_for_dot_row(anchor, tries=12):
+    """Find the dot row, scrolling the pane if it is below the fold.
+
+    A stream is the whole chapter's prose, so a scene's row header can be a long
+    way down; the corkboard can likewise need scrolling once cards wrap.
+    """
+    for _ in range(tries):
+        row = dot_row()
+        if row:
+            return row
+        s.call("scroll", {"node": anchor["id"], "dx": 0, "dy": -240})
+        s.settle()
+        time.sleep(0.4)
+    return dot_row()
 
 
 # ── 1. Tag a scene, through the picker's own "Create" row ────────────────────
@@ -260,9 +327,11 @@ if not rows:
     s.dump("no binder")
     fail("no binder rows", s.app, s.mcp, s.log)
 
-# Pick a leaf (a scene), not a container: the deepest-indented row.
-leaf = max(rows, key=lambda n: (n.get("bounds") or {}).get("x", 0))
-scene_name = (leaf.get("label") or "").strip()
+leaf = next((n for n in rows if (n.get("label") or "").strip() == SCENE), None)
+if not leaf:
+    s.dump("no scene row")
+    fail(f"{SCENE!r} is not in the binder", s.app, s.mcp, s.log)
+scene_name = SCENE
 click(leaf.get("bounds") or {})
 s.settle()
 time.sleep(1.2)
@@ -313,7 +382,7 @@ if not wait_for(lambda: dot_row() is not None):
 row = dot_row()
 b = row.get("bounds") or {}
 print(f"  dot row {b.get('width', 0):.0f}x{b.get('height', 0):.0f} dp, announces "
-      f"{row.get('label')!r}")
+      f"{(row.get('value') or '')!r}")
 s.shot("/tmp/chips-editor.png")
 
 # Per-dot hover.
@@ -346,36 +415,65 @@ time.sleep(0.6)
 # ── 3+4. The stream and the corkboard ────────────────────────────────────────
 # Both live behind a container's segmented control, so open the scene's parent.
 print("\n== surfaces 2 and 3: stream and corkboard ==")
-parents = [n for n in binder_rows()
-           if (n.get("bounds") or {}).get("x", 0) < (leaf.get("bounds") or {}).get("x", 0)]
-opened = False
-for cand in reversed(parents):
-    click(cand.get("bounds") or {})
-    s.settle()
-    time.sleep(1.4)
-    if find("corkboard"):
-        print(f"  opened container {(cand.get('label') or '').strip()!r}")
-        opened = True
-        break
-if not opened:
-    s.dump("no container with a segmented control")
-    fail("could not open a container offering Stream/Corkboard", s.app, s.mcp, s.log)
+container = next((n for n in binder_rows()
+                  if (n.get("label") or "").strip() == CONTAINER), None)
+if not container:
+    s.dump("no container row")
+    fail(f"{CONTAINER!r} is not in the binder", s.app, s.mcp, s.log)
+click(container.get("bounds") or {})
+s.settle()
+time.sleep(1.6)
+if not find("corkboard"):
+    s.dump("no segmented control")
+    fail(f"{CONTAINER!r} offers no Stream/Corkboard segments — it must be a Folder whose "
+         "sub_role is Book/Part/ChapterScene", s.app, s.mcp, s.log)
+print(f"  opened container {CONTAINER!r}")
 
-if not wait_for(lambda: dot_row() is not None):
+
+def select_segment(name):
+    """Pick a segment by name and give it time to build.
+
+    Never assume which one is showing: the chosen segment is remembered per
+    container type *between launches*, so a run that ended on the corkboard
+    reopens there and a stream check would silently measure the wrong view."""
+    seg = find(name)
+    if not seg:
+        s.dump(f"no {name!r} segment")
+        fail(f"the container offers no {name!r} segment", s.app, s.mcp, s.log)
+    click(seg.get("bounds") or {})
+    s.settle()
+    # A stream builds a live editor per child, so it is slow to realize; a short
+    # wait here reported "no dots" against a pane that had not finished.
+    time.sleep(3.0)
+
+
+# "Full Chapter" is the manuscript stream: the container's own text followed by
+# each child's row header and prose.
+select_segment("full chapter")
+
+# The stream is the chapter's whole prose, so the tagged scene's row header is
+# usually below the fold.
+pane = content_pane()
+row = scroll_for_dot_row(pane) if pane else dot_row()
+if not row:
+    s.dump("no dot row in the stream")
     s.shot("/tmp/chips-stream-fail.png")
     fail("the manuscript stream's row header shows no dot row", s.app, s.mcp, s.log)
-print(f"  stream row header shows the dots: {dot_row().get('label')!r}")
+b = row.get("bounds") or {}
+print(f"  stream row header: {(row.get('value') or '')!r} "
+      f"({b.get('width', 0):.0f}x{b.get('height', 0):.0f} dp)")
 s.shot("/tmp/chips-stream.png")
 
-cb = find("corkboard")
-click(cb.get("bounds") or {})
-s.settle()
-time.sleep(1.8)
-if not wait_for(lambda: dot_row() is not None):
+select_segment("corkboard")
+pane = content_pane()
+row = scroll_for_dot_row(pane) if pane else dot_row()
+if not row:
     s.dump("no dots on any card")
     s.shot("/tmp/chips-corkboard-fail.png")
     fail("the corkboard card shows no dot row", s.app, s.mcp, s.log)
-print(f"  corkboard card shows the dots: {dot_row().get('label')!r}")
+b = row.get("bounds") or {}
+print(f"  corkboard card: {(row.get('value') or '')!r} "
+      f"({b.get('width', 0):.0f}x{b.get('height', 0):.0f} dp)")
 s.shot("/tmp/chips-corkboard.png")
 
 print("\nOK — tag dots verified on the editor, the stream and the corkboard.")

@@ -80,9 +80,29 @@ impl Widget for CorkboardTile {
                 .tooltip(tr!(corkboard_expand_synopsis()))
                 .on_activate_fn(move |ctx| present_synopsis_modal(&vm, &card, ctx))
         };
-        let footer = HStack::new()
-            .spacing(8.0)
-            .child(expand)
+        // The tag dots live in the footer, beside the expand button — not under the title.
+        // The card's middle slot is the synopsis, and anything added above it is taken out of
+        // the writer's own words; the footer is already the card's metadata strip (expand,
+        // counts), which is what the dots are.
+        let mut footer = HStack::new().spacing(8.0).child(expand);
+        if !self.card.tags.is_empty() {
+            let value = Signal::new(self.card.tags.clone());
+            let set: crate::tags::tag_pill_field::SetTags = {
+                let vm = self.vm.clone();
+                let id = self.card.item_id;
+                let mirror = value.clone();
+                Rc::new(move |ids: Vec<u64>, _c| {
+                    vm.set_card_tags(id, &ids);
+                    mirror.set(ids);
+                })
+            };
+            footer = footer.child(crate::tags::TagDotsRow::new(
+                value,
+                set,
+                crate::tags::tag_chip::MAX_VISIBLE_CORKBOARD,
+            ));
+        }
+        let footer = footer
             .child(Spacer::new())
             .child(FooterCount {
                 is_container: self.card.is_container,
@@ -103,26 +123,6 @@ impl Widget for CorkboardTile {
                     .color(TextRole::Secondary)
                     .max_lines(1),
             );
-        }
-        // The tag dots, under the label. `CardColumn` measures `top`, so this takes its
-        // height out of the synopsis rather than overflowing the card — and an untagged card
-        // renders nothing at all, so most cards are unchanged.
-        if !self.card.tags.is_empty() {
-            let value = Signal::new(self.card.tags.clone());
-            let set: crate::tags::tag_pill_field::SetTags = {
-                let vm = self.vm.clone();
-                let id = self.card.item_id;
-                let mirror = value.clone();
-                Rc::new(move |ids: Vec<u64>, _c| {
-                    vm.set_card_tags(id, &ids);
-                    mirror.set(ids);
-                })
-            };
-            top = top.child(crate::tags::TagDotsRow::new(
-                value,
-                set,
-                crate::tags::tag_chip::MAX_VISIBLE_CORKBOARD,
-            ));
         }
         // The card's inner content height (tile height minus its `Padding`), from the
         // size slider — the fixed-height GridView tile only proposes a card its width.
