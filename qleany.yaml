@@ -902,6 +902,47 @@ features:
       - name: trash_info_ids
         type: uinteger
         is_list: true
+- name: tag_management
+  use_cases:
+  # Deliberately only ONE use case. The generated BinderTag CRUD already covers
+  # create/rename/recolour/delete correctly — including the M2M cleanup, because
+  # `impl_leaf_entity_table!` scrubs every declared backward junction on remove
+  # (`jn_binder_tag_from_binder_item_tags` among them) and scoped restore puts them back
+  # on undo. Attach/detach is likewise covered by set_binder_item_relationship. So the
+  # only gap is batching:
+  #
+  # import_tags: bulk-create as ONE undoable action, serving both CSV import and preset
+  # application. Applying a 12-tag preset must be a single Ctrl+Z, not twelve — which the
+  # per-tag create_binder_tag command cannot give.
+  - name: import_tags
+    entities:
+    - Work
+    - BinderTag
+    undoable: true
+    dto_in:
+      name: ImportTagsDto
+      fields:
+      - name: names
+        type: string
+        is_list: true
+      - name: colors
+        type: string
+        is_list: true
+      - name: details
+        type: string
+        is_list: true
+      - name: discoverables
+        type: boolean
+        is_list: true
+    dto_out:
+      name: ImportTagsResultDto
+      fields:
+      - name: created_ids
+        type: uinteger
+        is_list: true
+      - name: skipped_names
+        type: string
+        is_list: true
 - name: binder_item_management
   use_cases:
   - name: duplicate

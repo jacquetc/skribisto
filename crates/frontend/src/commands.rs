@@ -32,6 +32,7 @@ pub mod import_management_commands;
 pub mod long_operation_commands;
 pub mod progress_management_commands;
 pub mod search_management_commands;
+pub mod tag_management_commands;
 pub mod trash_management_commands;
 pub mod undo_redo_commands;
 pub mod work_management_commands;

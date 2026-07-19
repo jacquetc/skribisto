@@ -96,6 +96,11 @@ pub enum TrashManagementEvent {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+pub enum TagManagementEvent {
+    ImportTags,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub enum BinderItemManagementEvent {
     Duplicate,
     MoveItems,
@@ -131,6 +136,7 @@ pub enum Origin {
     ExportManagement(ExportManagementEvent),
     ProgressManagement(ProgressManagementEvent),
     TrashManagement(TrashManagementEvent),
+    TagManagement(TagManagementEvent),
     BinderItemManagement(BinderItemManagementEvent),
     HandlingAppLifecycle(HandlingAppLifecycleEvent),
     ImportManagement(ImportManagementEvent),
@@ -193,6 +199,7 @@ impl Event {
             Origin::ExportManagement(event) => format!("export_management_{:?}", event),
             Origin::ProgressManagement(event) => format!("progress_management_{:?}", event),
             Origin::TrashManagement(event) => format!("trash_management_{:?}", event),
+            Origin::TagManagement(event) => format!("tag_management_{:?}", event),
             Origin::BinderItemManagement(event) => format!("binder_item_management_{:?}", event),
             Origin::HandlingAppLifecycle(event) => format!("handling_app_lifecycle_{:?}", event),
             Origin::ImportManagement(event) => format!("import_management_{:?}", event),

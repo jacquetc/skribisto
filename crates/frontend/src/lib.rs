@@ -52,6 +52,7 @@ pub use handling_app_lifecycle;
 pub use import_management;
 pub use progress_management;
 pub use search_management;
+pub use tag_management;
 pub use trash_management;
 pub use work_management;
 
