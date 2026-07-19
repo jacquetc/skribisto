@@ -54,7 +54,7 @@ Skribisto is built under the following seven rules. They apply to your contribut
 
 ## Contributor License Agreement
 
-Skribisto is free software, published under the **GNU General Public License v3.0** (see [LICENSE](LICENSE)). It is also developed under an **open-core model**: alongside the free, GPL-licensed community edition, the maintainer may offer a separate commercial edition ("Skribisto Pro") with additional features under proprietary terms. The project is currently held by its author, Cyril Jacquet; stewardship is intended to pass to **FernTech SASU** at a later date (see the "Maintainer" definition in [CLA.md](CLA.md)).
+Skribisto is free software, published under the **GNU General Public License v3.0** (see [LICENSE](LICENSE)). It is also developed under an **open-core model**: alongside the free, GPL-licensed community edition, the maintainer may offer a separate commercial edition ("Skribisto Pro") with additional features under proprietary terms. The project is currently held by its author, Cyril Jacquet; stewardship is intended to pass to **FernTech** at a later date (see the "Maintainer" definition in [CLA.md](CLA.md)).
 
 For that to be possible, the maintainer must hold the rights to include your contribution in **both** editions. A plain Developer Certificate of Origin cannot grant those rights, so — unlike the sibling FernTech libraries — Skribisto uses a **Contributor License Agreement (CLA)** instead.
 

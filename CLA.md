@@ -26,10 +26,12 @@ Contributions to the project.
   under common control with it are considered a single Contributor.
 - **"Maintainer"** means Cyril Jacquet, the current copyright holder and steward of the
   Skribisto project, together with any successor the Maintainer designates in writing to
-  administer this Agreement. The Maintainer intends, at a later date, to designate **FernTech
-  SASU** (a French *société par actions simplifiée unipersonnelle*) as such a successor; upon
-  that written designation, FernTech SASU assumes the Maintainer's rights and obligations
-  under this Agreement, and the licenses You grant below run to FernTech SASU accordingly.
+  administer this Agreement. The Maintainer intends, at a later date, to designate
+  **FernTech**, a French *société par actions simplifiée unipersonnelle* with a share capital
+  of €1,000, registered with the Registre du Commerce et des Sociétés of Toulouse under
+  number 942 100 017, as such a successor; upon that written designation, FernTech assumes the
+  Maintainer's rights and obligations under this Agreement, and the licenses You grant below
+  run to FernTech accordingly.
 
 - **"Project"** means Skribisto, including the community edition and any commercial edition
   derived from it.
