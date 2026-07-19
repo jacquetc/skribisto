@@ -33,6 +33,9 @@ menu-view = &Affichage
 menu-outline = &Plan
 menu-search = &Rechercher dans le projet
 menu-search-preview = &Aperçu de recherche
+menu-format = F&ormat
+menu-scene-break = Insérer un &saut de scène
+menu-major-scene-break = Insérer un saut de scène &majeur
 menu-tools = &Outils
 
 ## Menu contextuel du classeur
@@ -229,6 +232,7 @@ settings-styles-field-name = Nom
 settings-styles-field-chapters = Titres de chapitre
 settings-styles-field-parts = Titres de partie
 settings-styles-field-scene-break = Saut de scène
+settings-styles-field-major-scene-break = Saut de scène majeur
 settings-styles-field-spacing = Interligne
 settings-styles-field-justify = Justifier le texte
 settings-styles-field-notes = Inclure les notes
@@ -619,6 +623,13 @@ import-plume-cancelled = Importation annulée
 # Résultat
 import-plume-done = { $imported } éléments importés. { $skipped } éléments à la corbeille n'ont pas été migrés.
 import-plume-open-now = Ouvrir maintenant
+# Affiché quand l'importateur n'a pas pu tout reprendre à l'identique.
+import-plume-warnings = { $count ->
+    [one] 1 élément n'a pas pu être importé à l'identique
+   *[other] { $count } éléments n'ont pas pu être importés à l'identique
+}
+import-plume-details = Détails
+import-plume-warnings-title = Avertissements d'importation
 # Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
 import-plume-error-title = Impossible d'importer le projet
 import-plume-error-details = Détails
@@ -655,6 +666,10 @@ export-chip-chapters-both = Chapitres : numéro + titre
 export-chip-scene-break-glyph = Saut de scène : { $glyph }
 export-chip-scene-break-blank = Saut de scène : ligne vide
 export-chip-scene-break-none = Saut de scène : aucun
+export-chip-major-break-glyph = Saut majeur { $glyph }
+export-chip-major-break-blank = Saut majeur : ligne blanche
+export-chip-major-break-none = Saut majeur : aucun
+export-chip-major-break-same = Les deux niveaux identiques
 export-chip-spacing-single = Interligne : simple
 export-chip-spacing-onehalf = Interligne : 1½
 export-chip-spacing-double = Interligne : double
@@ -951,3 +966,28 @@ trash-banner-title = Cet élément est dans la corbeille
 trash-banner-description = Il n'apparaîtra ni dans le plan ni dans les exports tant que vous ne l'aurez pas restauré.
 trash-banner-restore = Restaurer…
 trash-tab-tooltip = Dans la corbeille
+
+# Infobulle composite : la fiche complète des paramètres d'un style d'export.
+settings-styles-sheet-yes = Oui
+settings-styles-sheet-no = Non
+settings-styles-sheet-font = Police
+settings-styles-sheet-indent = Alinéa
+settings-styles-sheet-para-spacing = Espacement des paragraphes
+settings-styles-sheet-page = Format de page
+settings-styles-sheet-margins = Marges (H/D/B/G)
+settings-styles-sheet-title-page = Page de titre
+settings-styles-sheet-heading-language = Langue des titres
+settings-styles-sheet-auto = Suit le texte
+settings-styles-sheet-digits = Chiffres
+settings-styles-sheet-direction = Sens du texte
+settings-styles-sheet-formats = Formats
+settings-styles-sheet-all-formats = Tous
+
+settings-styles-editor-group = Éditeur de style
+settings-styles-editor-missing = Ce style n'est plus disponible.
+
+settings-styles-page-letter = Letter
+settings-styles-digits-western = Occidentaux (0–9)
+settings-styles-digits-eastern-arabic = Arabes orientaux (٠–٩)
+settings-styles-direction-ltr = De gauche à droite
+settings-styles-direction-rtl = De droite à gauche

@@ -37,6 +37,10 @@ use crate::intents::AppIntent;
 /// Update-in-place key for the single toast the import drives through its
 /// lifecycle (loading → progress → success / cancelled / error).
 const IMPORT_TOAST_ID: &str = "import.plume";
+/// The warnings notice rides its own id so it does not replace — nor get
+/// replaced by — the progress/result toast, while still being replaceable by a
+/// later import's warnings instead of stacking.
+const IMPORT_WARNINGS_TOAST_ID: &str = "import.plume.warnings";
 
 /// Strip a `.plume` / `.plume_backup` extension from a source path's file name,
 /// yielding the default output base name (`"…/Le Visiteur.plume"` → `"Le Visiteur"`).
@@ -356,6 +360,30 @@ impl ImportPlumeViewModel {
                     imported = res.imported_items,
                     skipped = res.skipped_trashed
                 ));
+                // The mapper records what it could not carry over — prose on a
+                // separator, a separator with no scene to attach to, unresolved
+                // cross-links. These were collected end to end and then never
+                // read by anything, so an import quietly lost data. Surface them
+                // as a Details action, never as the headline.
+                if !res.warnings.is_empty() {
+                    let detail = res.warnings.join("\n");
+                    let count = res.warnings.len() as i64;
+                    // Carries its own id so a second import replaces this rather
+                    // than stacking another undismissable toast on top of it.
+                    ctx.show_toast(
+                        Toast::warning(tr!(import_plume_warnings(count = count)))
+                            .id(IMPORT_WARNINGS_TOAST_ID)
+                            .action(ToastAction::primary(
+                                tr!(import_plume_details()),
+                                move |c| {
+                                    MessageBox::warning(tr!(import_plume_warnings_title()))
+                                        .text(lit!(detail.clone()))
+                                        .buttons(MessageBoxButtons::Ok)
+                                        .present(c);
+                                },
+                            )),
+                    );
+                }
                 ctx.show_toast(Toast::success(done).id(IMPORT_TOAST_ID).action(
                     ToastAction::primary(tr!(import_plume_open_now()), move |c| {
                         // Opening the imported project *replaces* the one in this

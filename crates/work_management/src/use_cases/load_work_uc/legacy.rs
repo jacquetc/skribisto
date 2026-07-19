@@ -21,7 +21,9 @@ use anyhow::{Context, Result, anyhow};
 use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use rusqlite::Connection;
 use rusqlite::types::ValueRef;
+use skribisto_model::SubRoleExt;
 use skribisto_model::content_allowed;
+use skribisto_model::scene_break::{self, SceneBreakTier};
 use std::collections::HashMap;
 
 pub struct LegacyTag {
@@ -48,6 +50,59 @@ pub struct LegacyItem {
     pub char_count_goal: i64,
     pub contents: Vec<LegacyContent>,
     pub tag_old_ids: Vec<i64>,
+}
+
+/// Append a scene-break marker to the most recent scene-bearing item that can
+/// hold one, mapping the legacy separator's own title to a tier. Returns `false`
+/// only when no such item exists yet — a separator leading the binder.
+///
+/// Walks backwards rather than taking the last item because a note or another
+/// non-prose row may sit between the scene and its separator, and **keeps
+/// walking** past a scene that has no `SceneText` row (a legacy scene with only
+/// a synopsis): giving up on the first such item would discard the mark while
+/// reporting that no preceding scene existed, which is not true.
+fn append_marker_to_previous_scene(items: &mut [LegacyItem], tier: SceneBreakTier) -> bool {
+    for item in items.iter_mut().rev() {
+        if !item.sub_role.carries_scene() {
+            continue;
+        }
+        let Some(scene_text) = item
+            .contents
+            .iter_mut()
+            .find(|c| c.role == ContentRole::SceneText)
+        else {
+            continue;
+        };
+        if !scene_text.data.trim().is_empty() {
+            scene_text.data.push_str("\n\n");
+        }
+        scene_text.data.push_str(scene_break::canonical_djot(tier));
+        return true;
+    }
+    false
+}
+
+/// Prepend a marker to the first scene-bearing item that can hold one — used for
+/// a separator that arrived before any scene existed to attach it to.
+///
+/// `work_management` has no warnings channel, so a leading separator would
+/// otherwise be dropped in total silence. Carrying it forward to the next scene
+/// keeps the import lossless instead of merely reporting the loss.
+fn prepend_marker_to_item(item: &mut LegacyItem, tier: SceneBreakTier) -> bool {
+    let Some(scene_text) = item
+        .contents
+        .iter_mut()
+        .find(|c| c.role == ContentRole::SceneText)
+    else {
+        return false;
+    };
+    let mark = scene_break::canonical_djot(tier);
+    if scene_text.data.trim().is_empty() {
+        scene_text.data = mark.to_string();
+    } else {
+        scene_text.data = format!("{mark}\n\n{}", scene_text.data);
+    }
+    true
 }
 
 pub struct LegacyBinder {
@@ -385,8 +440,18 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
         })
     };
 
+    // A separator that arrives before any scene in its binder; carried forward
+    // and prepended to the next scene instead of being dropped. Reset per binder
+    // so it can never leak across one.
+    //
+    // If a binder ends with one still pending it had a separator and no scene at
+    // all, so there is no boundary for it to divide — dropping it there is
+    // correct, not a loss. (Plume's importer warns in the same situation for the
+    // same reason.) Every case where a scene *does* exist is now carried.
+    let mut pending_leading_break: Option<SceneBreakTier> = None;
     for row in &tree_rows {
         if row.indent == 1 && row.t_type == "FOLDER" {
+            pending_leading_break = None;
             binders.push(LegacyBinder {
                 name: row.title.clone(),
                 is_note: row.internal_title == "note_folder",
@@ -398,7 +463,22 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
             strays.push(row.clone());
         } else if let Some(binder) = binders.last_mut() {
             let is_note = binder.is_note;
-            if let Some(item) = make_item(
+            // A legacy `separator` section is exactly a scene break, so it becomes
+            // a marker paragraph in the preceding scene's prose rather than being
+            // discarded. The walk is ordered (`ORDER BY l_sort_order`), so the
+            // scene it belongs to is already in `binder.items`.
+            let is_separator = row.t_type == "SECTION"
+                && section_types.get(&row.old_id).map(String::as_str) == Some("separator");
+            if is_separator {
+                let tier = scene_break::tier_of_plain_line(&row.title)
+                    .unwrap_or(SceneBreakTier::Minor);
+                // If nothing precedes it, hold the mark for the next scene rather
+                // than dropping it — there is no warnings channel here, so a
+                // silent drop would be indistinguishable from a clean import.
+                if !append_marker_to_previous_scene(&mut binder.items, tier) {
+                    pending_leading_break = Some(tier);
+                }
+            } else if let Some(item) = make_item(
                 row,
                 is_note,
                 row.indent,
@@ -408,6 +488,13 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
                 &word_count_goals,
                 &char_count_goals,
             ) {
+                let mut item = item;
+                if let Some(tier) = pending_leading_break
+                    && item.sub_role.carries_scene()
+                    && prepend_marker_to_item(&mut item, tier)
+                {
+                    pending_leading_break = None;
+                }
                 binder.items.push(item);
             }
         } else {
@@ -453,4 +540,55 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
         binders,
         references,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_separator_walks_past_a_scene_that_has_no_prose_row() {
+        let mut items = vec![
+            LegacyItem {
+                old_id: 1, title: "A".into(), sub_title: String::new(),
+                role: BinderItemRole::Item, sub_role: BinderItemSubRole::Scene,
+                label: String::new(), activated: true, indent: 0,
+                word_count_goal: 0, char_count_goal: 0,
+                contents: vec![LegacyContent { role: ContentRole::SceneText, data: "One.".into() }],
+                tag_old_ids: Vec::new(),
+            },
+            // A scene carrying only a synopsis: no SceneText row to append to.
+            LegacyItem {
+                old_id: 2, title: "B".into(), sub_title: String::new(),
+                role: BinderItemRole::Item, sub_role: BinderItemSubRole::Scene,
+                label: String::new(), activated: true, indent: 0,
+                word_count_goal: 0, char_count_goal: 0,
+                contents: vec![LegacyContent { role: ContentRole::SynopsisText, data: "S".into() }],
+                tag_old_ids: Vec::new(),
+            },
+        ];
+        assert!(append_marker_to_previous_scene(&mut items, SceneBreakTier::Minor));
+        let a = &items[0].contents[0].data;
+        assert!(a.ends_with("\\* \\* \\*"), "must fall back to the scene before: {a:?}");
+    }
+
+    #[test]
+    fn a_leading_separator_is_carried_forward_not_dropped() {
+        // Nothing precedes it, so it must be held and prepended to the next
+        // scene — work_management has no warnings channel, so a drop would be
+        // completely silent.
+        let mut items: Vec<LegacyItem> = Vec::new();
+        assert!(!append_marker_to_previous_scene(&mut items, SceneBreakTier::Minor));
+
+        let mut next = LegacyItem {
+            old_id: 3, title: "C".into(), sub_title: String::new(),
+            role: BinderItemRole::Item, sub_role: BinderItemSubRole::Scene,
+            label: String::new(), activated: true, indent: 0,
+            word_count_goal: 0, char_count_goal: 0,
+            contents: vec![LegacyContent { role: ContentRole::SceneText, data: "Later.".into() }],
+            tag_old_ids: Vec::new(),
+        };
+        assert!(prepend_marker_to_item(&mut next, SceneBreakTier::Minor));
+        assert_eq!(next.contents[0].data, "\\* \\* \\*\n\nLater.");
+    }
 }

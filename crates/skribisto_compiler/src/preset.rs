@@ -86,17 +86,25 @@ impl Default for Margins {
     }
 }
 
-/// How to separate two scenes within a chapter (generated furniture, never the author's
-/// own prose).
+/// How a scene break the author marked in their prose is *rendered*.
+///
+/// The author owns **where** a break goes (a marker paragraph — see
+/// `skribisto_model::scene_break`); a preset owns **what it looks like**. That
+/// split is what lets the same manuscript export as Shunn `#` for a submission
+/// and a dinkus for an ebook without retyping anything.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum SceneBreak {
-    /// A centered glyph line, e.g. `#` (Shunn) or `* * *`.
+    /// A centered glyph line, e.g. `#` (Shunn) or `* * *` (the dinkus).
     Glyph(String),
-    /// A single blank line, no glyph.
+    /// No glyph — extra leading, and no first-line indent on the paragraph that
+    /// follows. The dominant *minor*-break convention outside the anglophone
+    /// world: French, German, Spanish (the RAE prefers it to asterisks
+    /// outright), Russian and Italian publishing, and Japanese print all use a
+    /// bare gap rather than a mark.
     #[default]
     BlankLine,
-    /// No separator at all.
+    /// No separator at all — the scenes run straight together.
     None,
 }
 
@@ -178,8 +186,14 @@ pub struct Preset {
     pub justify: bool,
 
     // Structure (generated furniture — never rewrites prose).
+    /// How an ordinary scene break renders — a shift of time, place or viewpoint.
     #[serde(default)]
     pub scene_break: SceneBreak,
+    /// How a *major* break renders — a large time skip or decisive viewpoint
+    /// change. Shunn codifies `#` vs `# # #` for exactly this distinction, and
+    /// it recurs independently in novelWriter and Russian editorial practice.
+    #[serde(default)]
+    pub major_scene_break: SceneBreak,
     #[serde(default)]
     pub chapter_heading: HeadingScheme,
     #[serde(default)]
@@ -226,6 +240,7 @@ impl Preset {
             paragraph_spacing_pt: 0.0,
             justify: false,
             scene_break: SceneBreak::BlankLine,
+            major_scene_break: SceneBreak::Glyph("* * *".to_string()),
             chapter_heading: HeadingScheme::NumberAndTitle,
             part_heading: HeadingScheme::NumberAndTitle,
             book_title_page: false,
@@ -249,6 +264,10 @@ pub fn builtin_presets() -> Vec<Preset> {
         // The manuscript presets differ by typography + scene break only; heading words stay
         // `HeadingLanguage::Auto` (base default) so "Chapter"/"Chapitre"/"Kapitel" follow each
         // scene's own resolved language rather than being forced by the chosen style.
+        // Shunn is explicit about the two tiers: `#` for an ordinary break, and
+        // `# # #` for a stronger one, because `#` is the typesetter's mark for
+        // space and tripling it reads as a higher-level division.
+        // https://www.shunn.net/format/scene_breaks/
         Preset {
             id: "manuscript-shunn".to_string(),
             name: "Standard Manuscript (Shunn)".to_string(),
@@ -256,6 +275,7 @@ pub fn builtin_presets() -> Vec<Preset> {
             line_spacing: LineSpacing::Double,
             first_line_indent_in: 0.5,
             scene_break: SceneBreak::Glyph("#".to_string()),
+            major_scene_break: SceneBreak::Glyph("# # #".to_string()),
             book_title_page: true,
             ..Preset::base("manuscript-shunn", "")
         },
@@ -263,14 +283,76 @@ pub fn builtin_presets() -> Vec<Preset> {
             id: "manuscript-fr".to_string(),
             name: "Manuscrit (français)".to_string(),
             font_family: "Times New Roman".to_string(),
-            scene_break: SceneBreak::Glyph("*".to_string()),
+            // French practice grades a blank line (ordinary) against one to
+            // three centred asterisks (stronger). The astérisme ⁂ is the
+            // Imprimerie nationale's formal mark but is vanishingly rare in
+            // modern fiction, so it is offered, not defaulted.
+            scene_break: SceneBreak::BlankLine,
+            major_scene_break: SceneBreak::Glyph("*".to_string()),
             ..Preset::base("manuscript-fr", "")
         },
         Preset {
             id: "manuscript-de".to_string(),
             name: "Manuskript (Normseite)".to_string(),
             font_family: "Courier New".to_string(),
+            // No DIN or Duden rule governs this; German trade books largely
+            // avoid asterisks and leave the choice to house layout, so a blank
+            // line is the ordinary break and `***` the manuscript-stage stronger one.
+            scene_break: SceneBreak::BlankLine,
+            major_scene_break: SceneBreak::Glyph("***".to_string()),
             ..Preset::base("manuscript-de", "")
+        },
+        Preset {
+            id: "manuscript-es".to_string(),
+            name: "Manuscrito (español)".to_string(),
+            // The RAE's Ortografía states that three centred asterisks
+            // traditionally marked a section end but that blank lines are used
+            // today, calling them "more elegant and less cumbersome" — so the
+            // ordinary break is the gap and the asterisks are the stronger tier.
+            // https://www.rae.es/ortografía/con-función-delimitadora
+            scene_break: SceneBreak::BlankLine,
+            major_scene_break: SceneBreak::Glyph("* * *".to_string()),
+            ..Preset::base("manuscript-es", "")
+        },
+        Preset {
+            id: "manuscript-ru".to_string(),
+            name: "Рукопись (русский)".to_string(),
+            // Russian editorial practice grades a silent gap against a graphic
+            // separator. Asterisks read as poetry-coded in Russian literary
+            // convention, so a row of dots is the idiomatic stronger mark.
+            scene_break: SceneBreak::BlankLine,
+            major_scene_break: SceneBreak::Glyph("…".to_string()),
+            ..Preset::base("manuscript-ru", "")
+        },
+        Preset {
+            id: "manuscript-it".to_string(),
+            name: "Manoscritto (italiano)".to_string(),
+            // Same gradient as French/Spanish: paragraph gap < `* * *` < new
+            // chapter. The triangular asterismo is almost never used in novels.
+            scene_break: SceneBreak::BlankLine,
+            major_scene_break: SceneBreak::Glyph("* * *".to_string()),
+            ..Preset::base("manuscript-it", "")
+        },
+        Preset {
+            id: "manuscript-ja-print".to_string(),
+            name: "原稿（印刷）".to_string(),
+            // Japanese commercial print fiction typically uses no symbol at all:
+            // vertical typesetting makes a bare gap plainly visible, so symbols
+            // are added only where clarity would otherwise suffer. Both tiers
+            // are therefore gaps — this is a real convention, not an oversight.
+            scene_break: SceneBreak::BlankLine,
+            major_scene_break: SceneBreak::BlankLine,
+            ..Preset::base("manuscript-ja-print", "")
+        },
+        Preset {
+            id: "manuscript-ja-web".to_string(),
+            name: "原稿（Web小説）".to_string(),
+            // Web novels are read horizontally by scrolling, where a lone blank
+            // line is easy to miss, so a symbol is conventional. `◇` is
+            // preferred over rule-like characters, which break mobile layouts.
+            scene_break: SceneBreak::Glyph("＊".to_string()),
+            major_scene_break: SceneBreak::Glyph("◇".to_string()),
+            ..Preset::base("manuscript-ja-web", "")
         },
         Preset {
             id: "ebook-clean".to_string(),
@@ -278,7 +360,11 @@ pub fn builtin_presets() -> Vec<Preset> {
             font_family: "Source Serif 4".to_string(),
             line_spacing: LineSpacing::Single,
             first_line_indent_in: 0.0,
+            // Anglophone trade: the dinkus is what published fiction prints. A
+            // bare blank line is avoided here on purpose — Shunn and CMOS 1.58
+            // both warn it vanishes when it lands at a page boundary.
             scene_break: SceneBreak::Glyph("* * *".to_string()),
+            major_scene_break: SceneBreak::Glyph("# # #".to_string()),
             chapter_heading: HeadingScheme::TitleOnly,
             formats: vec![ExportFormat::Epub, ExportFormat::Html],
             ..Preset::base("ebook-clean", "")

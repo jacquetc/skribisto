@@ -323,7 +323,7 @@ mod tests {
             100.0,
             "a successful import must finish at 100%"
         );
-        assert_eq!(summary.imported_items, 16);
+        assert_eq!(summary.imported_items, 15);
     }
 
     #[test]
@@ -370,7 +370,7 @@ mod tests {
 
         // Trashed: Trashed Chapter + Trashed Scene + Deleted Book = 3.
         assert_eq!(summary.skipped_trashed, 3);
-        assert_eq!(summary.imported_items, 16);
+        assert_eq!(summary.imported_items, 15);
         assert_eq!(bundle.binders.len(), 2);
 
         let manuscript = &bundle.binders[0];
@@ -423,10 +423,21 @@ mod tests {
         assert_eq!(scene11_notes.item.indent, 3);
         assert!(prose(scene11_notes, ContentRole::NoteText).contains("Note for scene 1.1."));
 
-        // Separator → a titled Text marker with no content.
-        let sep = find(manuscript, "* * *");
-        assert_eq!(sep.item.sub_role, SubRole::Text);
-        assert!(sep.item.prose_refs.is_empty() && sep.item.inline_contents.is_empty());
+        // Separator → a scene-break marker appended to the PRECEDING scene's
+        // prose, not an item of its own. Note that `Scene 1.1` pushed a sibling
+        // Note after itself, so this also exercises the backward walk past it.
+        assert!(
+            !manuscript
+                .items
+                .iter()
+                .any(|i| i.item.title == "* * *"),
+            "a separator must no longer occupy a binder slot"
+        );
+        assert!(
+            prose(scene11, ContentRole::SceneText).trim_end().ends_with("\\* \\* \\*"),
+            "the separator must land as an escaped marker at the end of Scene 1.1: {:?}",
+            prose(scene11, ContentRole::SceneText)
+        );
 
         // Leaf chapter (no scenes) → ChapterScene carrying its own prose.
         let direct = find(manuscript, "Direct Chapter");

@@ -25,3 +25,14 @@ wm-end-of-book = Marque la fin d’un livre.
 wm-end-of-book-more = Chaque livre partage une seule liste continue ; sa fin n’est donc pas déterminée par l’imbrication. Ce repère indique que le [livre](:wm-book) s’arrête ici. Tout ce qui suit appartient au livre suivant.
 wm-synopsis = Un résumé d’un élément d’écriture.
 wm-synopsis-more = Un résumé attaché à tout élément d’écriture, en général un court paragraphe mais aussi long que vous voulez. Utilisez-le pour préparer et naviguer avant que le texte n’existe. Il se place à côté du texte principal dans l’éditeur.
+
+scene-break-minor = Un saut de scène ordinaire — un changement de temps, de lieu ou de point de vue au sein d'un chapitre.
+scene-break-minor-more =
+    Marque une rupture *là où vous la placez*, y compris au milieu d'une [scène](:wm-scene) — découper le texte en deux éléments est un choix d'organisation, cela ne crée jamais de rupture en soi.
+
+    Se saisit dans le texte sous la forme `* * *`. Son rendu dépend du style d'export, pas de ce que vous tapez : un manuscrit Shunn l'imprime en `#`, un livre de poche en astérisques, et l'édition française, allemande, espagnole, russe ou italienne le plus souvent par un simple blanc, sans aucun signe.
+scene-break-major = Une rupture plus forte — une grande ellipse, ou un changement de point de vue décisif.
+scene-break-major-more =
+    La même idée qu'un saut de scène ordinaire, d'un cran au-dessus. À utiliser quand une rupture simple sous-estimerait le saut.
+
+    Se saisit sous la forme `# # #`, et le style d'export l'imprime différemment du niveau ordinaire — la norme Shunn oppose précisément `#` à `# # #`. Là où une tradition ne connaît pas de marque plus forte, les deux niveaux s'impriment de la même façon.

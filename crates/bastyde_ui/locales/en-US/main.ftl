@@ -33,6 +33,9 @@ menu-view = &View
 menu-outline = &Outline
 menu-search = &Search in Project
 menu-search-preview = Search &Preview
+menu-format = F&ormat
+menu-scene-break = Insert &scene break
+menu-major-scene-break = Insert &major scene break
 menu-tools = &Tools
 
 ## Binder context menu
@@ -228,6 +231,7 @@ settings-styles-field-name = Name
 settings-styles-field-chapters = Chapter headings
 settings-styles-field-parts = Part headings
 settings-styles-field-scene-break = Scene break
+settings-styles-field-major-scene-break = Major scene break
 settings-styles-field-spacing = Line spacing
 settings-styles-field-justify = Justify text
 settings-styles-field-notes = Include notes
@@ -617,6 +621,13 @@ import-plume-cancelled = Import cancelled
 # Result
 import-plume-done = Imported { $imported } items. { $skipped } trashed items were not migrated.
 import-plume-open-now = Open now
+# Shown when the importer could not carry something over verbatim.
+import-plume-warnings = { $count ->
+    [one] 1 thing could not be imported exactly
+   *[other] { $count } things could not be imported exactly
+}
+import-plume-details = Details
+import-plume-warnings-title = Import warnings
 # Error toast: a short reason in the body, the full technical chain behind Details
 import-plume-error-title = Could not import the project
 import-plume-error-details = Details
@@ -653,6 +664,10 @@ export-chip-chapters-both = Chapters: number + title
 export-chip-scene-break-glyph = Scene break: { $glyph }
 export-chip-scene-break-blank = Scene break: blank line
 export-chip-scene-break-none = Scene break: none
+export-chip-major-break-glyph = Major break { $glyph }
+export-chip-major-break-blank = Major break: blank line
+export-chip-major-break-none = Major break: none
+export-chip-major-break-same = Both break tiers alike
 export-chip-spacing-single = Spacing: single
 export-chip-spacing-onehalf = Spacing: 1½
 export-chip-spacing-double = Spacing: double
@@ -949,3 +964,28 @@ trash-banner-title = This item is in the Trash
 trash-banner-description = It won't appear in the outline or exports until you restore it.
 trash-banner-restore = Restore…
 trash-tab-tooltip = In Trash
+
+# Composite tooltip: the full parameter sheet shown on an export-style row.
+settings-styles-sheet-yes = Yes
+settings-styles-sheet-no = No
+settings-styles-sheet-font = Font
+settings-styles-sheet-indent = First-line indent
+settings-styles-sheet-para-spacing = Paragraph spacing
+settings-styles-sheet-page = Page size
+settings-styles-sheet-margins = Margins (T/R/B/L)
+settings-styles-sheet-title-page = Book title page
+settings-styles-sheet-heading-language = Heading language
+settings-styles-sheet-auto = Follows the text
+settings-styles-sheet-digits = Numerals
+settings-styles-sheet-direction = Text direction
+settings-styles-sheet-formats = Formats
+settings-styles-sheet-all-formats = All
+
+settings-styles-editor-group = Style editor
+settings-styles-editor-missing = That style is no longer available.
+
+settings-styles-page-letter = Letter
+settings-styles-digits-western = Western (0–9)
+settings-styles-digits-eastern-arabic = Eastern Arabic (٠–٩)
+settings-styles-direction-ltr = Left to right
+settings-styles-direction-rtl = Right to left

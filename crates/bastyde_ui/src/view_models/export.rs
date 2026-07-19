@@ -461,6 +461,18 @@ impl ExportViewModel {
                 SceneBreak::BlankLine => tr!(export_chip_scene_break_blank()),
                 SceneBreak::None => tr!(export_chip_scene_break_none()),
             },
+            // The major tier only earns its own chip when it actually differs —
+            // several regional styles (Japanese print, for one) render both the
+            // same, and a duplicate chip would read as a mistake.
+            if p.major_scene_break == p.scene_break {
+                tr!(export_chip_major_break_same())
+            } else {
+                match &p.major_scene_break {
+                    SceneBreak::Glyph(g) => tr!(export_chip_major_break_glyph(glyph = g.clone())),
+                    SceneBreak::BlankLine => tr!(export_chip_major_break_blank()),
+                    SceneBreak::None => tr!(export_chip_major_break_none()),
+                }
+            },
             if p.include_notes {
                 tr!(export_chip_notes_included())
             } else {

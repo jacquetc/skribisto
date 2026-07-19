@@ -292,6 +292,11 @@ impl ProjectWindowFactory {
         let single_work_info = self.single_work_info.clone();
         let autosave_menu = self.autosave_menu.clone();
         let spellcheck_menu = self.spellcheck_menu.clone();
+        // Per WINDOW, not per process: unlike `spellcheck_menu` (a global
+        // setting, correctly shared), this tracks which surface *this* window
+        // has focused. A process-wide one would let a second project window
+        // grey out this window's Format menu.
+        let scene_focused = Signal::new(false);
         let save_as_vm = self.save_as_vm.clone();
         let backup_mode = self.backup_mode.clone();
         let backup_context = self.backup_context.clone();
@@ -373,6 +378,7 @@ impl ProjectWindowFactory {
         // The menu closure below is `move`, so give it its own clone — the title-bar toggle
         // still needs the original (same reason `menu_autosave` exists).
         let menu_spellcheck = spellcheck_menu.clone();
+                        let menu_scene_focused = scene_focused.clone();
                         let menu_save_as = save_as_vm.clone();
                         let menu_backup_mode = backup_mode.clone();
                         let menu_unsaved = unsaved.clone();
@@ -614,6 +620,39 @@ impl ProjectWindowFactory {
                                 )
                             }
                         })
+                        // Format — marks the author places in the prose itself, as
+                        // opposed to Tools, which processes the manuscript. A scene
+                        // break lives here because it is something you *write*, not
+                        // something the compiler infers from binder structure.
+                        // `MenuEntry` carries no tooltip — the menubar model has no
+                        // such affordance — so the two tiers are explained by the
+                        // rich tooltips on their glyph pickers in
+                        // Settings ▸ Compile & Export, which is where a writer
+                        // decides what each one prints as.
+                        .menu(tr!(menu_format()), {
+                            // Enabled only while a scene's own prose is the active
+                            // surface — the same predicate the compiler uses to
+                            // decide what it scans, so the menu can never offer a
+                            // mark the exporter would ignore. The menu itself
+                            // stays visible and openable: a greyed row still
+                            // teaches that the feature exists and what its
+                            // shortcut is, and still reaches the a11y tree.
+                            let on_scene = menu_scene_focused.clone();
+                            move |m| {
+                                m.item(
+                                    MenuEntry::new(tr!(menu_scene_break()))
+                                        .enabled(on_scene.clone())
+                                        .intent("format.scene_break")
+                                        .shortcut("format.scene_break"),
+                                )
+                                .item(
+                                    MenuEntry::new(tr!(menu_major_scene_break()))
+                                        .enabled(on_scene.clone())
+                                        .intent("format.major_scene_break")
+                                        .shortcut("format.major_scene_break"),
+                                )
+                            }
+                        })
                         // Tools — where every office suite keeps spell-check. Its own
                         // top-level section rather than a View entry: View toggles what a
                         // *dock* shows, whereas this changes how the manuscript is *processed*.
@@ -698,6 +737,7 @@ impl ProjectWindowFactory {
                     outline.clone(),
                     autosave_menu.clone(),
                     spellcheck_menu.clone(),
+                    scene_focused.clone(),
                     unsaved.clone(),
                     pending_exit.clone(),
                     backup_mode.clone(),

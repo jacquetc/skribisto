@@ -114,6 +114,16 @@ impl Store {
     }
 }
 
+/// The uncached count of one scene's Djot prose.
+///
+/// Scene-break markers are stripped first: a break is typographic furniture the
+/// author placed, not three words they wrote. This is the single funnel every
+/// raw-Djot counter goes through — the persisted pace/progress history and the
+/// corkboard cards both land here — so they cannot disagree about it.
+fn count_prose(djot: &str, method: CountMethod) -> WordCharCounts {
+    count_djot(&crate::scene_break::strip_markers_djot(djot), method)
+}
+
 /// The count of one scene's Djot prose under `method` — from the cache if present, computed
 /// and cached if not.
 pub fn cached_count(djot: &str, method: CountMethod) -> WordCharCounts {
@@ -125,7 +135,7 @@ pub fn cached_count(djot: &str, method: CountMethod) -> WordCharCounts {
 
     // Built OUTSIDE the write lock — the parse dwarfs everything else; holding the lock
     // across it would serialise every scene behind one of them.
-    let counts = count_djot(djot, method);
+    let counts = count_prose(djot, method);
 
     if let Ok(mut guard) = CACHE.write() {
         guard.get_or_insert_with(Store::default).insert(djot, method, counts);
@@ -263,5 +273,40 @@ mod tests {
         assert!(heap_size() > 0);
         clear();
         assert_eq!(heap_size(), 0);
+    }
+
+    #[test]
+    fn scene_break_markers_are_not_counted_as_words() {
+        // A break is typographic furniture, not prose. `count_prose` is the
+        // single funnel the pace/progress history and the corkboard cards both
+        // go through, so pinning it here pins every raw-Djot counter at once.
+        // Tested off the global cache so it cannot race the cache's own tests.
+        let plain = "She closed the door.\n\nDawn found him waiting.";
+        let marked = "She closed the door.\n\n\\* \\* \\*\n\nDawn found him waiting.";
+        assert_eq!(
+            count_prose(marked, CountMethod::UnicodeWords).words,
+            count_prose(plain, CountMethod::UnicodeWords).words,
+            "a scene break must not add words"
+        );
+    }
+
+    #[test]
+    fn a_major_marker_is_not_counted_either() {
+        let plain = "One two three.";
+        let marked = "One two three.\n\n\\# # #";
+        assert_eq!(
+            count_prose(marked, CountMethod::UnicodeWords).words,
+            count_prose(plain, CountMethod::UnicodeWords).words
+        );
+    }
+
+    #[test]
+    fn prose_containing_an_asterisk_still_counts_normally() {
+        // The stripper must not eat emphasis or a footnote mark.
+        let escaped = "He was \\*emphatic\\* about it.";
+        assert_eq!(
+            count_prose(escaped, CountMethod::UnicodeWords).words,
+            count_prose("He was emphatic about it.", CountMethod::UnicodeWords).words
+        );
     }
 }

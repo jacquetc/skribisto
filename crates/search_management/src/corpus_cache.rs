@@ -144,6 +144,13 @@ impl Store {
     /// free function taking no `&self` — it must never be called with the lock held (see
     /// [`corpus_for`]).
     fn build(djot: &str, spec: &FoldSpec) -> Arc<Corpus> {
+        // Scene-break markers are deliberately NOT stripped here, unlike in
+        // `skribisto_model::counting`. This corpus is pinned as *exactly* the
+        // text the document itself searches, so that a match found here maps to
+        // a replace performed there; removing blocks would shift every later
+        // offset and silently corrupt replacements. A marker is part of the
+        // manuscript as written, so search sees it — that is the consistent
+        // answer, and the reason not to "fix" this later.
         let prose = djot_to_plain_text(djot, &DjotImportOptions::default());
         Arc::new(FoldedText::new(&prose, spec))
     }

@@ -31,6 +31,9 @@ skribisto_fonts = { workspace = true }
 # accessors always exist regardless of feature unification.
 bastyde-text = { path = "../../../bastyde/crates/bastyde-text", version = "0.6.2", features = ["fonts-arabic", "fonts-hebrew"] }
 
+[dev-dependencies]
+tempfile = "3"
+
 [features]
 # Opt-in: enables text-document's Typst-backed PDF exporter. Off by default so the standard
 # build carries no Typst dependency; `bastyde_ui`'s own `pdf` feature turns this on.

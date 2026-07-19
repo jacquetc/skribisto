@@ -381,6 +381,10 @@ pub struct App {
     /// (outside `App`) for the toggle's icon + the View ▸ Check spelling checkmark.
     /// `App::build` mirrors the store-backed setting into it.
     spellcheck_menu: Signal<bool>,
+    /// Live "a scene's prose is the active surface" flag, shared with the
+    /// title-bar's Format menu so its entries grey out off a scene. Written by
+    /// `EditorsViewModel`, which is the only thing that can compute it.
+    scene_focused: Signal<bool>,
     /// `true` while the open work has edits not yet written to disk. Read by the
     /// close guard, `work.close` and the switch guard to decide whether to prompt,
     /// and by `can_save` for the Save affordances.
@@ -462,6 +466,7 @@ impl App {
         outline: OutlineViewModel,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
+        scene_focused: Signal<bool>,
         unsaved: Signal<bool>,
         pending_exit: Signal<PendingExit>,
         backup_mode: Signal<bool>,
@@ -473,6 +478,7 @@ impl App {
             outline,
             autosave_menu,
             spellcheck_menu,
+            scene_focused,
             unsaved,
             dirty_seq: Signal::new(0),
             pending_exit,
@@ -592,6 +598,7 @@ impl Widget for App {
             .expect("OpenDocsStore registered in main");
         let backup_mode_for_editors = self.backup_mode.clone();
         let dirty_seq_for_editors = self.dirty_seq.clone();
+        let scene_focused_for_editors = self.scene_focused.clone();
         let editors = self
             .editors
             .get_or_insert_with(|| {
@@ -606,6 +613,7 @@ impl Widget for App {
                     docs,
                     backup_mode_for_editors,
                     dirty_seq_for_editors,
+                    scene_focused_for_editors,
                 )
             })
             .clone();

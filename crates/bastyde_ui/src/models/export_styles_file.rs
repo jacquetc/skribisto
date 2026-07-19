@@ -107,6 +107,24 @@ impl ExportStylesService {
         Rc::new(self.file.clone())
     }
 
+    /// One user preset by id, without materialising the rest.
+    ///
+    /// [`Self::user_presets`] deserializes **every** stored envelope on each
+    /// call, so looking a single style up through it costs N parses — and doing
+    /// that once per list row costs N². This stops at the first match.
+    pub fn user_preset(&self, id: &str) -> Option<Preset> {
+        self.file
+            .borrow()
+            .presets
+            .iter()
+            .filter_map(|j| serde_json::from_str::<Preset>(j).ok())
+            .find(|p| p.id == id)
+            .map(|mut p| {
+                p.builtin = false;
+                p
+            })
+    }
+
     /// The user's saved presets, parsed from their JSON envelopes (a corrupt entry is skipped).
     /// Each is stamped `builtin = false` defensively — a user file can't masquerade a preset as
     /// read-only.
@@ -215,6 +233,14 @@ mod tests {
             assert!(!stored.builtin, "a duplicated style is editable");
             // The data-bearing enum (SceneBreak::Glyph) must survive the JSON-in-TOML envelope.
             assert!(matches!(stored.scene_break, skribisto_compiler::SceneBreak::Glyph(_)));
+            // Both tiers, not just the first: `major_scene_break` carries
+            // `#[serde(default)]`, so a round trip that silently dropped it would
+            // still deserialize — and quietly reset every user's major break.
+            assert_eq!(stored.major_scene_break, base.major_scene_break);
+            assert_ne!(
+                stored.major_scene_break, stored.scene_break,
+                "the Shunn style distinguishes its two tiers"
+            );
         }
         // Reopen from disk: the user preset is still there, byte-identical.
         let svc2 = ExportStylesService::open_at(path.clone()).unwrap();
@@ -223,6 +249,7 @@ mod tests {
         assert_eq!(users[0].id, "manuscript-shunn-copy");
         assert_eq!(users[0].font_family, base.font_family);
         assert_eq!(users[0].scene_break, base.scene_break);
+        assert_eq!(users[0].major_scene_break, base.major_scene_break);
         let _ = std::fs::remove_file(&path);
     }
 

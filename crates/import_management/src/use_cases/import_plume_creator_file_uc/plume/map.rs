@@ -22,7 +22,9 @@ use skrib_format::{
     InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle, WorkFile, binder_dir_name,
     html_to_djot, new_unique_id, prose_file_name, prose_kind, prose_relpath,
 };
+use skribisto_model::SubRoleExt;
 use skribisto_model::content_allowed;
+use skribisto_model::scene_break::{self, SceneBreakTier};
 
 use super::model::{PlumeAttendance, PlumeInfo, PlumeKind, PlumeNode, PlumeObj, PlumeTree};
 use super::source::PlumeSource;
@@ -365,7 +367,7 @@ impl<'a> Builder<'a> {
                 }
             }
             PlumeKind::Scene => self.emit_scene(node, indent, bindex, bname, out),
-            PlumeKind::Separator => self.emit_separator(node, indent, bindex, bname, out),
+            PlumeKind::Separator => self.emit_separator(node, out),
         }
     }
 
@@ -529,16 +531,10 @@ impl<'a> Builder<'a> {
         self.emit_sibling_note(node, indent, bindex, bname, out);
     }
 
-    fn emit_separator(
-        &mut self,
-        node: &PlumeNode,
-        indent: i64,
-        bindex: usize,
-        bname: &str,
-        out: &mut Vec<BundledItem>,
-    ) {
-        // A separator has no valid content target (Item/Text carries none). Keep it
-        // as a titled marker; warn if it unexpectedly held prose.
+    /// A Plume separator becomes a scene-break marker in the *preceding* scene's
+    /// prose, so it needs neither a binder slot nor a name of its own — hence the
+    /// narrower signature than its `emit_*` siblings.
+    fn emit_separator(&mut self, node: &PlumeNode, out: &mut Vec<BundledItem>) {
         if !self.text_djot(node.number).is_empty()
             || !self.synopsis_djot(node.number).is_empty()
             || !self.note_djot(node.number).is_empty()
@@ -548,19 +544,17 @@ impl<'a> Builder<'a> {
                 node.name
             ));
         }
-        let (_id, bi) = self.make_item(
-            bindex,
-            bname,
-            Role::Item,
-            SubRole::Text,
-            &node.name,
-            indent,
-            true,
-            Vec::new(),
-            Vec::new(),
-            "",
-        );
-        out.push(bi);
+        // Plume's separator is exactly Skribisto's scene break, so it becomes a
+        // marker paragraph in the preceding scene's prose rather than a
+        // contentless item in the tree. Its `name` holds the glyph the author
+        // chose (typically "* * *"), which decides the tier.
+        let tier = scene_break::tier_of_plain_line(&node.name).unwrap_or(SceneBreakTier::Minor);
+        if !append_marker_to_previous_scene(out, tier) {
+            self.warnings.push(format!(
+                "separator '{}' had no preceding scene in its chapter to attach to and was dropped",
+                node.name
+            ));
+        }
     }
 
     /// Emit a scene/chapter-scene's own note as a following sibling `Note` (those
@@ -812,6 +806,48 @@ fn notes_title(name: &str) -> String {
 
 /// Count the meaningful (non-separator) nodes in a subtree — used for the
 /// `skipped_trashed` tally.
+/// Append a scene-break marker paragraph to the most recent scene-bearing item's
+/// `SceneText`. Returns `false` when there is none to attach to.
+///
+/// The walk goes backwards because `emit_scene` pushes a sibling `Note` right
+/// after the scene it belongs to, so the previous item is not reliably the
+/// scene. It stops at a structural opener (a Book/Part/Chapter container) so a
+/// separator that leads a chapter cannot reach back and mark the *previous*
+/// chapter's last scene — `carries_scene` is tested first, since a `ChapterScene`
+/// both opens a chapter and holds prose of its own.
+fn append_marker_to_previous_scene(out: &mut [BundledItem], tier: SceneBreakTier) -> bool {
+    for bi in out.iter_mut().rev() {
+        if bi.item.sub_role.carries_scene() {
+            // Keep walking past a scene that carries no `SceneText` row (a Plume
+            // scene with only a synopsis). Giving up on the first one would drop
+            // the mark while reporting that no preceding scene existed — which
+            // would be untrue, and the wrong thing to tell the writer.
+            let Some(file_id) = bi
+                .item
+                .prose_refs
+                .iter()
+                .find(|p| p.role == ContentRole::SceneText)
+                .map(|p| p.file_id)
+            else {
+                continue;
+            };
+            let text = bi.prose.entry(file_id).or_default();
+            if !text.trim().is_empty() {
+                text.push_str("\n\n");
+            }
+            text.push_str(scene_break::canonical_djot(tier));
+            return true;
+        }
+        if bi.item.sub_role.opens_book()
+            || bi.item.sub_role.opens_part()
+            || bi.item.sub_role.opens_chapter()
+        {
+            return false;
+        }
+    }
+    false
+}
+
 fn count_meaningful(node: &PlumeNode) -> u64 {
     let self_count = if node.kind == PlumeKind::Separator {
         0

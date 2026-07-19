@@ -122,6 +122,18 @@ impl FindViewModel {
         *self.handle.borrow_mut() = Some(handle);
     }
 
+    /// This tab's **main prose** editor handle, if an editor is currently built.
+    ///
+    /// The handle is not conceptually find's — it is "the prose editor of this
+    /// tab", which this view-model happens to own because it was the first
+    /// feature to need it, and which it keeps correctly re-pointed across tab
+    /// rebuilds. Other prose-editing commands read it through
+    /// [`EditorsViewModel::focused_prose_handle`] rather than re-plumbing the
+    /// same attachment through every `writing_column` call site.
+    pub fn editor_handle(&self) -> Option<EditorHandle> {
+        self.handle.borrow().clone()
+    }
+
     /// Create the `FindSession` if it doesn't exist yet, with the two theme-
     /// resolved highlight formats, and (re)apply the current query. Idempotent —
     /// the banner's `build` calls it every time; only the first does real work.

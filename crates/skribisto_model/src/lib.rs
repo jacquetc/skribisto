@@ -33,6 +33,7 @@ pub mod compile;
 /// Word/char counting **policy** (which method) + a content-addressed cache over scene
 /// prose. The mechanical primitive lives in `text-document`; this owns the method choice.
 pub mod counting;
+pub mod scene_break;
 
 /// The per-project chapter storage mode — generated on the `Work` entity, re-exported
 /// here so `CreateType::combo` and the UI can name it via `skribisto_model`.

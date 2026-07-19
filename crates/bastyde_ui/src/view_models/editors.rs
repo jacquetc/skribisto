@@ -16,6 +16,8 @@ use std::time::Instant;
 
 use bastyde::data::ListModel;
 use bastyde::prelude::*; // Signal, tr!, lit!
+use skribisto_model::SubRoleExt;
+use skribisto_model::scene_break::{self, SceneBreakTier};
 use bastyde::widgets::{Orientation, PaneDescriptor, SplitterModel, TabHandle, TabId, TabInfo};
 
 use frontend::AppContext;
@@ -89,6 +91,11 @@ pub struct EditorsViewModel {
     focused_side: Signal<Side>,
     /// The `BinderItem` of the focused pane's active tab — the "open document".
     active_item: Signal<Option<u64>>,
+    /// Whether the focused pane's active tab edits a scene's own prose — the
+    /// live form of [`Self::focused_carries_scene`], for menu enablement. Kept
+    /// as a signal (not a derived map) because it is computed by walking the
+    /// tab list, which is not itself in the signal graph.
+    scene_focused: Signal<bool>,
     column_width: Signal<f32>,
     show_synopsis: Signal<bool>,
     typography: EditorTypographySet,
@@ -131,6 +138,8 @@ impl EditorsViewModel {
         docs: OpenDocsStore,
         backup_mode: Signal<bool>,
         dirty_seq: Signal<u64>,
+        // Shared with the title-bar's Format menu — see `scene_focused_signal`.
+        scene_focused: Signal<bool>,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -155,6 +164,7 @@ impl EditorsViewModel {
             splitter,
             focused_side: Signal::new(Side::Primary),
             active_item: Signal::new(None),
+            scene_focused,
             column_width,
             show_synopsis,
             typography,
@@ -223,6 +233,10 @@ impl EditorsViewModel {
         if self.active_item.get() != active {
             self.active_item.set(active);
         }
+        let carries = self.focused_carries_scene();
+        if self.scene_focused.get() != carries {
+            self.scene_focused.set(carries);
+        }
     }
 
     /// Open the find banner (Ctrl+F) in the **focused** pane's active tab, if that
@@ -253,6 +267,87 @@ impl EditorsViewModel {
         if let Some(find) = self.focused_find() {
             find.prev(ctx);
         }
+    }
+
+    /// The focused prose editor's handle — `None` when nothing is open there or
+    /// the active tab has no main prose field. See
+    /// [`FindViewModel::editor_handle`] for why the handle lives there.
+    pub fn focused_prose_handle(&self) -> Option<bastyde::widgets::rich_text::EditorHandle> {
+        self.focused_find()?.editor_handle()
+    }
+
+    /// Insert a scene break of `tier` at the caret of the focused prose editor.
+    ///
+    /// A break is a paragraph of its own, so this splits the block at the caret,
+    /// types the canonical mark into the new block, and splits again — leaving
+    /// the prose that followed the caret in its own paragraph. Plain text is
+    /// right here: the mark is literal, and the Djot escaping that stops it
+    /// parsing as a (dropped) thematic break is applied on save.
+    ///
+    /// Deliberately prose-only. A synopsis has its own editor and a scene break
+    /// means nothing there, so there is no focused-editor ambiguity to resolve.
+    ///
+    /// Restricted to **scene-bearing** items. A Note has a main prose field (and
+    /// therefore a handle) but the compiler never scans notes for markers, so
+    /// inserting one there would write a mark the exporter silently ignores —
+    /// an action that appears to work and does nothing.
+    pub fn insert_scene_break(&self, tier: SceneBreakTier, ctx: &mut bastyde::prelude::EventContext) {
+        if !self.focused_carries_scene() {
+            return;
+        }
+        let Some(handle) = self.focused_prose_handle() else {
+            return;
+        };
+        // The gate above is per-TAB; this one is per-EDITOR. A Scene tab also
+        // hosts a synopsis box, and the handle here is always the *main prose*
+        // editor (only `writing_column` calls `attach_handle`). Without this,
+        // typing in the synopsis and pressing the shortcut would edit the
+        // manuscript prose instead, at whatever stale caret it still held.
+        if !handle.focused_signal().get() {
+            return;
+        }
+        // One atomic call rather than `insert_block` + `insert_text` +
+        // `insert_block`: three separate entries into the widget give the
+        // application three change notifications to react to mid-edit, and a
+        // rebuild between them leaves the rest of the sequence addressing a
+        // handle that no longer points at the mounted widget.
+        if !handle.insert_paragraph(scene_break::canonical_plain(tier)) {
+            // The edit did not land, so do not steal focus as if it had —
+            // leaving the caret where the writer left it is the honest failure.
+            return;
+        }
+        // Invoked from the menubar, focus is on the menu overlay, so the edit
+        // lands but nothing schedules the repaint that would show it — the mark
+        // only appeared once the writer clicked back into the prose. Focusing
+        // after the edit fixes that, and leaves the caret where writing resumes.
+        handle.focus(ctx);
+    }
+
+    /// Whether the focused pane's active tab edits a scene's own prose — the
+    /// same predicate `skribisto_compiler` uses to decide what to scan, so the
+    /// command surface and the exporter cannot disagree about where a scene
+    /// break is meaningful.
+    pub fn focused_carries_scene(&self) -> bool {
+        let side = self.focused_side.get();
+        let pane = self.pane(side);
+        let Some(tab_id) = pane.selected.get() else {
+            return false;
+        };
+        (0..pane.tabs.len())
+            .find_map(|i| {
+                pane.tabs
+                    .with_item(i, |h| {
+                        if h.id == tab_id {
+                            h.payload
+                                .downcast_ref::<ContentTab>()
+                                .map(|t| t.sub_role().carries_scene())
+                        } else {
+                            None
+                        }
+                    })
+                    .flatten()
+            })
+            .unwrap_or(false)
     }
 
     /// The `FindViewModel` of the focused pane's active tab — `None` when nothing
@@ -970,6 +1065,7 @@ mod tests {
             docs,
             Signal::new(false),
             Signal::new(0),
+            Signal::new(false),
         )
     }
 

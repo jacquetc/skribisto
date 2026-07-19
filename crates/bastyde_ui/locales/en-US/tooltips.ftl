@@ -24,3 +24,14 @@ wm-end-of-book = Marks where a book ends.
 wm-end-of-book-more = Every book shares one continuous list, so a book's end is not decided by nesting. This marker says the [book](:wm-book) stops here. Anything after it belongs to the next book.
 wm-synopsis = A summary of a writing item.
 wm-synopsis-more = A summary attached to any writing item, usually a short paragraph but as long as you like. Use it to plan and navigate before the prose exists. It sits beside the main text in the editor.
+
+scene-break-minor = An ordinary scene break — a shift of time, place or viewpoint within a chapter.
+scene-break-minor-more =
+    Marks a break *where you put it*, including in the middle of a [scene](:wm-scene) — splitting prose into two items is an organisational choice, so it never creates a break on its own.
+
+    Typed into the prose as `* * *`. How it prints is decided by the export style, not by what you type: a Shunn manuscript sets it as `#`, a trade paperback as a dinkus, and most French, German, Spanish, Russian and Italian publishing as a bare gap with no mark at all.
+scene-break-major = A stronger division — a large time skip, or a decisive change of viewpoint.
+scene-break-major-more =
+    The same idea as an ordinary scene break, one step up. Use it when a plain break would understate the jump.
+
+    Typed as `# # #`, and printed differently from the ordinary tier by the export style — Shunn's standard manuscript format sets `#` against `# # #` for exactly this distinction. Where a tradition has no stronger mark, both tiers print the same.

@@ -46,6 +46,10 @@ pub const WM_END_OF_BOOK: &str = "wm-end-of-book";
 /// A concept, not a create/convert row: cited by Scene / Note / Note folder /
 /// Folder, so it is a cascade target only.
 pub const WM_SYNOPSIS: &str = "wm-synopsis";
+/// The two scene-break tiers. Not create/convert rows — they are marks the
+/// author places *in the prose*, bound by the Format menu's entries.
+pub const SCENE_BREAK_MINOR: &str = "scene-break-minor";
+pub const SCENE_BREAK_MAJOR: &str = "scene-break-major";
 
 /// Every registered writing-model key. Consumed by the headless test that
 /// asserts every menu row's key and every `[..](:key)` cascade link in the
@@ -60,6 +64,8 @@ pub const WM_KEYS: &[&str] = &[
     WM_FOLDER,
     WM_END_OF_BOOK,
     WM_SYNOPSIS,
+    SCENE_BREAK_MINOR,
+    SCENE_BREAK_MAJOR,
 ];
 
 /// The writing-model rich tooltips, registered once at boot. Each carries a
@@ -78,6 +84,14 @@ pub fn writing_model_tooltips() -> Vec<TooltipContent> {
         TooltipContent::new(WM_END_OF_BOOK, tr!(wm_end_of_book()))
             .with_more(tr!(wm_end_of_book_more())),
         TooltipContent::new(WM_SYNOPSIS, tr!(wm_synopsis())).with_more(tr!(wm_synopsis_more())),
+        // The shortcut chip tracks a rebind, so the accelerator shown here can
+        // never drift from the one actually registered.
+        TooltipContent::new(SCENE_BREAK_MINOR, tr!(scene_break_minor()))
+            .with_more(tr!(scene_break_minor_more()))
+            .for_shortcut("format.scene_break"),
+        TooltipContent::new(SCENE_BREAK_MAJOR, tr!(scene_break_major()))
+            .with_more(tr!(scene_break_major_more()))
+            .for_shortcut("format.major_scene_break"),
     ]
 }
 

@@ -19,6 +19,7 @@ use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole};
 use skrib_format::Gathered;
 use skribisto_model::SubRoleExt;
 use skribisto_model::language;
+use skribisto_model::scene_break::{self, SceneBreakTier};
 use text_document::{
     DocxExportOptions, EpubExportOptions, PdfExportOptions, TextDirection, TextDocument,
 };
@@ -287,7 +288,11 @@ fn assemble(
     let mut out = String::new();
     let mut counters = Counters::default();
     let mut words = 0usize;
-    let mut last = Emitted::Nothing;
+    // Block attributes a scene break has queued for the *next* prose block: the
+    // suppressed first-line indent, plus the extra leading a `BlankLine` break
+    // renders as. It outlives the row loop because the paragraph following a
+    // break may belong to the next item.
+    let mut pending_attrs: Vec<String> = Vec::new();
 
     let work_rtl = is_rtl_row(preset, req.work_lang);
 
@@ -296,7 +301,6 @@ fn assemble(
         let w = &req.gathered.work;
         if !w.title.is_empty() {
             push_heading(&mut out, 1, &w.title, work_rtl);
-            last = Emitted::Heading;
         }
         if !w.author_name.is_empty() {
             push_para(&mut out, &w.author_name, work_rtl);
@@ -333,6 +337,12 @@ fn assemble(
         // 1. A structural heading, if this item opens a level; else a scene title, if kept.
         if let Some(level) = level_of(&row.item.sub_role) {
             counters.bump(level);
+            // Opening a structural level restarts the flow, so whatever a
+            // trailing break queued for "the next paragraph" stops here. This
+            // keys off the *structure*, not off whether a heading actually
+            // printed: a preset whose chapter scheme is `None` emits no text,
+            // and gating on that would let a break bleed across the seam.
+            pending_attrs.clear();
             // A book is titled, not numbered — and the title page (if on) already carries
             // it, so the opener then emits nothing. Parts/chapters use their own schemes.
             let scheme = match level {
@@ -348,7 +358,6 @@ fn assemble(
                     .map(|p| (p + 1).min(6))
                     .unwrap_or(1) as u8;
                 push_heading(&mut out, lvl, &text, heading_rtl);
-                last = Emitted::Heading;
                 contributed = true;
             }
         } else if preset.include_scene_titles && row.item.sub_role.carries_scene() {
@@ -357,7 +366,7 @@ fn assemble(
             let t = row.item.title.trim();
             if !t.is_empty() {
                 push_heading(&mut out, scene_title_level, t, row_rtl);
-                last = Emitted::Heading;
+                pending_attrs.clear();
                 contributed = true;
             }
         }
@@ -366,22 +375,26 @@ fn assemble(
         //    since it is already Djot.
         if let Some(role) = main_prose_role(&row.item.sub_role) {
             if let Some(prose) = content_of(row.contents, role) {
-                let is_scene = row.item.sub_role.carries_scene();
-                if is_scene && last == Emitted::SceneProse {
-                    push_scene_break(&mut out, &preset.scene_break);
-                }
-                push_prose(&mut out, prose, row_rtl);
-                words += prose.split_whitespace().count();
-                last = if is_scene { Emitted::SceneProse } else { Emitted::OtherProse };
-                contributed = true;
+                // Only a scene's own prose is scanned for break markers. A
+                // marker typed into a Note is just literal text — the model is
+                // about scene flow.
+                let scan = row.item.sub_role.carries_scene();
+                // A scene whose whole prose is a single break marker emits no
+                // prose at all, so it must not be counted as an emitted item —
+                // the marker is furniture, and the row contributed nothing.
+                let (w, emitted) = push_prose(&mut out, prose, row_rtl, preset, scan, &mut pending_attrs);
+                words += w;
+                contributed |= emitted;
             }
         }
 
         // 3. The synopsis, if the preset keeps it.
         if preset.include_synopses {
             if let Some(syn) = content_of(row.contents, ContentRole::SynopsisText) {
-                push_prose(&mut out, syn, row_rtl);
-                contributed = true;
+                // A synopsis is commentary, not the scene's prose — never
+                // scanned for markers, and its words are not the manuscript's.
+                let (_, emitted) = push_prose(&mut out, syn, row_rtl, preset, false, &mut pending_attrs);
+                contributed |= emitted;
             }
         }
 
@@ -434,14 +447,24 @@ fn flatten<'a>(req: &'a RenderRequest) -> Vec<Row<'a>> {
 // Djot builders
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// The `direction` attribute pair for a row, or `None` for LTR. The single
+/// encoding of the key — [`dir_attr`] and every attribute set below build from
+/// it, so the spelling lives in one place.
+fn dir_pair(rtl: bool) -> Option<&'static str> {
+    rtl.then_some("direction=rtl")
+}
+
 /// A Djot block-attribute line that sets direction, or empty. `{direction=rtl}` on the line
 /// before a block is what text-document's own Djot exporter writes and its importer reads.
-fn dir_attr(rtl: bool) -> &'static str {
-    if rtl { "{direction=rtl}\n" } else { "" }
+fn dir_attr(rtl: bool) -> String {
+    match dir_pair(rtl) {
+        Some(pair) => format!("{{{pair}}}\n"),
+        None => String::new(),
+    }
 }
 
 fn push_heading(out: &mut String, level: u8, text: &str, rtl: bool) {
-    out.push_str(dir_attr(rtl));
+    out.push_str(&dir_attr(rtl));
     for _ in 0..level.clamp(1, 6) {
         out.push('#');
     }
@@ -451,41 +474,178 @@ fn push_heading(out: &mut String, level: u8, text: &str, rtl: bool) {
 }
 
 fn push_para(out: &mut String, text: &str, rtl: bool) {
-    out.push_str(dir_attr(rtl));
+    out.push_str(&dir_attr(rtl));
     out.push_str(text.trim());
     out.push_str("\n\n");
 }
 
-/// Append a scene's prose. It is already Djot, so it goes in verbatim (never touched — the
-/// exporter generates furniture, it does not rewrite prose). For RTL each of the scene's
-/// blank-line-separated blocks gets a `{direction=rtl}` attribute.
-fn push_prose(out: &mut String, djot: &str, rtl: bool) {
+/// Append a row's prose, block by block. The prose itself is already Djot and
+/// goes in verbatim — the exporter generates furniture, it never rewrites what
+/// the author wrote.
+///
+/// Every block is inspected when `scan_markers` is set: a scene-break marker the
+/// author placed is replaced by the preset's rendering for its tier (and does
+/// not count as prose), while an ordinary block is emitted with whatever block
+/// attributes apply — RTL direction, plus anything a preceding break queued for
+/// it. They are merged into **one** `{...}` line, because a block carries a
+/// single attribute set.
+///
+/// Returns `(words, emitted_prose)` — the word count with markers excluded, and
+/// whether any actual prose block reached the document. A scene whose entire
+/// content is a break marker emits furniture but no prose, and must not be
+/// counted as an emitted item.
+fn push_prose(
+    out: &mut String,
+    djot: &str,
+    rtl: bool,
+    preset: &Preset,
+    scan_markers: bool,
+    pending: &mut Vec<String>,
+) -> (usize, bool) {
     let trimmed = djot.trim();
-    if !rtl {
+    // Fast path — and a correctness guard, not just an optimisation. Splitting
+    // on `"\n\n"` is not a Djot block split: a list with an indented
+    // continuation, or a fenced block containing a blank line, is one construct
+    // spanning several chunks. When there is nothing to scan for and no
+    // attribute to attach, the prose goes in verbatim exactly as it always did,
+    // so those constructs cannot be disturbed at all.
+    if trimmed.is_empty() {
+        return (0, false);
+    }
+    let could_hold_marker = scan_markers && scene_break::might_contain_marker(trimmed);
+    if !rtl && pending.is_empty() && !could_hold_marker {
         out.push_str(trimmed);
         out.push_str("\n\n");
-        return;
+        return (trimmed.split_whitespace().count(), true);
     }
-    for block in trimmed.split("\n\n") {
-        let b = block.trim();
-        if b.is_empty() {
-            continue;
+    let mut words = 0usize;
+    let mut emitted_prose = false;
+    // Non-marker blocks are flushed as one contiguous, verbatim run rather than
+    // one at a time. `split("\n\n")` is not a Djot block split — a fenced block
+    // containing a blank line is one construct spanning several chunks — so
+    // rejoining a run reverses the split exactly and cannot disturb it. Only the
+    // first block of a run carries the queued attributes.
+    let blocks: Vec<&str> = trimmed.split("\n\n").collect();
+    let mut offsets: Vec<(usize, usize)> = Vec::with_capacity(blocks.len());
+    let mut cursor = 0usize;
+    for b in &blocks {
+        offsets.push((cursor, cursor + b.len()));
+        cursor += b.len() + 2;
+    }
+    let mut run_start: Option<usize> = None;
+    let mut flush = |out: &mut String, range: Option<(usize, usize)>, pending: &mut Vec<String>| {
+        let Some((a, b)) = range else { return false };
+        let text = trimmed[a..b.min(trimmed.len())].trim_end();
+        if text.trim().is_empty() {
+            return false;
         }
-        out.push_str("{direction=rtl}\n");
-        out.push_str(b);
+        let mut attrs: Vec<String> = Vec::new();
+        attrs.extend(dir_pair(rtl).map(str::to_string));
+        // Only manuscript prose inherits what a break queued. A synopsis or a
+        // note between two scenes is commentary, not the flow the break divides.
+        if scan_markers {
+            attrs.append(pending);
+        }
+        if !attrs.is_empty() {
+            out.push('{');
+            out.push_str(&attrs.join(" "));
+            out.push_str("}\n");
+        }
+        out.push_str(text);
         out.push_str("\n\n");
+        true
+    };
+    for (i, block) in blocks.iter().enumerate() {
+        let tier = if scan_markers {
+            scene_break::tier_of_djot_block(block)
+        } else {
+            None
+        };
+        let Some(tier) = tier else {
+            // RTL needs its attribute on every block, so it cannot batch.
+            if rtl {
+                if flush(out, Some(offsets[i]), pending) {
+                    emitted_prose = true;
+                }
+            } else {
+                run_start.get_or_insert(offsets[i].0);
+            }
+            words += block.split_whitespace().count();
+            continue;
+        };
+        if flush(out, run_start.take().map(|a| (a, offsets[i].0)), pending) {
+            emitted_prose = true;
+        }
+        let style = match tier {
+            SceneBreakTier::Minor => &preset.scene_break,
+            SceneBreakTier::Major => &preset.major_scene_break,
+        };
+        push_scene_break(out, style, preset, rtl, pending);
     }
+    if flush(out, run_start.take().map(|a| (a, trimmed.len())), pending) {
+        emitted_prose = true;
+    }
+    (words, emitted_prose)
 }
 
-fn push_scene_break(out: &mut String, sep: &SceneBreak) {
+/// The gap a `BlankLine` break opens above the paragraph that follows it, in
+/// logical pixels — one empty line *at this preset's body size*, so it stays
+/// "about a blank line" whether the manuscript is set at 8pt or 24pt.
+///
+/// It has to be a real margin: Djot cannot express "one blank line" on its own,
+/// since consecutive blank lines collapse into the ordinary block separator.
+/// 96 px = 72 pt, hence the 4/3.
+fn blank_line_gap_px(preset: &Preset) -> i64 {
+    let multiple = match preset.line_spacing {
+        LineSpacing::Single => 1.0,
+        LineSpacing::OneAndHalf => 1.5,
+        LineSpacing::Double => 2.0,
+    };
+    // A preset that already spaces paragraphs contributes part of the gap on its
+    // own; only the remainder is needed here, or a spaced preset would open a
+    // visibly double break.
+    let line_px = (preset.font_size_pt as f64) * 4.0 / 3.0 * multiple;
+    let already_px = (preset.paragraph_spacing_pt as f64) * 4.0 / 3.0;
+    (line_px - already_px).round().max(1.0) as i64
+}
+
+/// Render a scene break the author marked, and queue the block attributes that
+/// belong on the paragraph after it.
+///
+/// Both visible tiers suppress that paragraph's first-line indent, which is what
+/// print typography actually does at a scene break — the indent would otherwise
+/// read as an ordinary new paragraph and undo the separation.
+fn push_scene_break(
+    out: &mut String,
+    sep: &SceneBreak,
+    preset: &Preset,
+    rtl: bool,
+    pending: &mut Vec<String>,
+) {
+    // The most recent break wins: two markers in a row must not stack their
+    // attributes onto the same following paragraph.
+    pending.clear();
     match sep {
-        // The blank line between blocks is already the gap.
-        SceneBreak::None | SceneBreak::BlankLine => {}
-        // Escape a leading Djot block-marker so the glyph stays literal text — an
-        // unescaped `#` is a heading, `* * *` / `---` a (dropped) thematic break.
+        // Rendered as nothing at all, so the following paragraph is ordinary too.
+        SceneBreak::None => {}
+        SceneBreak::BlankLine => {
+            pending.push(format!("top_margin={}", blank_line_gap_px(preset)));
+            pending.push("text_indent=0".to_string());
+        }
         SceneBreak::Glyph(g) => {
+            // Centred, as a dinkus is set in print — and carrying the row's own
+            // direction, so the glyph line does not fall back to LTR inside an
+            // otherwise right-to-left manuscript.
+            let mut attrs = vec!["alignment=center".to_string()];
+            attrs.extend(dir_pair(rtl).map(str::to_string));
+            out.push('{');
+            out.push_str(&attrs.join(" "));
+            out.push_str("}\n");
+            // Escape a leading Djot block-marker so the glyph stays literal text — an
+            // unescaped `#` is a heading, `* * *` / `---` a (dropped) thematic break.
             out.push_str(&escape_block_leading(g.trim()));
             out.push_str("\n\n");
+            pending.push("text_indent=0".to_string());
         }
     }
 }
@@ -534,13 +694,6 @@ impl Counters {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy)]
-enum Emitted {
-    Nothing,
-    Heading,
-    SceneProse,
-    OtherProse,
-}
 
 fn level_of(sr: &BinderItemSubRole) -> Option<Level> {
     if sr.opens_book() {
@@ -769,13 +922,273 @@ mod tests {
         assert!(html.contains("rtl"), "RTL direction should reach the HTML: {html}");
     }
 
+    /// `flat_book`, but the second scene's prose opens with an author-placed
+    /// minor break marker — in the ESCAPED form the editor really persists.
+    fn book_with_marker(marker: &str) -> Gathered {
+        gathered(
+            vec![
+                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "en",
+                    vec![
+                        c(2, ContentRole::ChapterTitle, "Storms"),
+                        c(3, ContentRole::SceneText, "The wind rose over the hills."),
+                    ],
+                ),
+                iwc(
+                    102,
+                    SR::Scene,
+                    "en",
+                    vec![c(
+                        4,
+                        ContentRole::SceneText,
+                        &format!("{marker}\n\nShe walked on into the dark."),
+                    )],
+                ),
+            ],
+            "en",
+        )
+    }
+
     #[test]
-    fn a_glyph_scene_break_separates_two_scenes() {
+    fn adjacent_scene_items_do_not_break_by_default() {
+        // The flagship guarantee: the binder is organisational, so two scenes
+        // sitting next to each other say nothing about typography. Without a
+        // marker the prose must run straight on, even with a glyph configured.
         let g = flat_book();
         let mut p = preset("neutral");
         p.scene_break = SceneBreak::Glyph("###".to_string());
+        p.major_scene_break = SceneBreak::Glyph("+++".to_string());
         let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
-        assert!(txt.contains("###"), "scene break glyph between the two scenes: {txt}");
+        assert!(!txt.contains("###"), "no marker, so no break may appear: {txt}");
+        assert!(!txt.contains("+++"), "no marker, so no break may appear: {txt}");
+    }
+
+    #[test]
+    fn an_authored_marker_renders_as_the_presets_glyph() {
+        let g = book_with_marker("\\* \\* \\*");
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(txt.contains("###"), "the marker must render as the glyph: {txt}");
+        assert!(
+            !txt.contains("* * *"),
+            "the marker itself must be consumed, not printed: {txt}"
+        );
+    }
+
+    #[test]
+    fn the_two_tiers_render_distinctly() {
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        p.major_scene_break = SceneBreak::Glyph("+++".to_string());
+
+        let minor = render_to_string(&req(
+            &book_with_marker("\\* \\* \\*"),
+            &[100, 101, 102],
+            &p,
+            ExportFormat::PlainText,
+        ))
+        .unwrap();
+        assert!(minor.contains("###") && !minor.contains("+++"), "{minor}");
+
+        let major = render_to_string(&req(
+            &book_with_marker("\\# # #"),
+            &[100, 101, 102],
+            &p,
+            ExportFormat::PlainText,
+        ))
+        .unwrap();
+        assert!(major.contains("+++") && !major.contains("###"), "{major}");
+    }
+
+    #[test]
+    fn a_marker_mid_scene_breaks_inside_one_item() {
+        // The case a per-item flag or a marker item structurally cannot express:
+        // a viewpoint shift inside one scene, with no binder change at all.
+        let g = gathered(
+            vec![iwc(
+                100,
+                SR::Scene,
+                "en",
+                vec![c(
+                    1,
+                    ContentRole::SceneText,
+                    "She closed the door.\n\n\\* \\* \\*\n\nDawn found him waiting.",
+                )],
+            )],
+            "en",
+        );
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        let txt = render_to_string(&req(&g, &[100], &p, ExportFormat::PlainText)).unwrap();
+        assert!(txt.contains("She closed the door."), "{txt}");
+        assert!(txt.contains("###"), "mid-scene break must render: {txt}");
+        assert!(txt.contains("Dawn found him waiting."), "{txt}");
+    }
+
+    #[test]
+    fn every_accepted_spelling_of_a_marker_is_recognised() {
+        // Guards the escaped forms specifically: these are the bytes that
+        // actually reach `Content.data`, not idealised raw strings.
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        p.major_scene_break = SceneBreak::Glyph("+++".to_string());
+        for (marker, expected) in [
+            ("\\* \\* \\*", "###"),
+            ("\\*\\*\\*", "###"),
+            ("\\*", "###"),
+            ("\\#", "###"),
+            ("\\# # #", "+++"),
+            ("\\#\\#\\#", "+++"),
+        ] {
+            let g = book_with_marker(marker);
+            let txt =
+                render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+            assert!(txt.contains(expected), "marker {marker:?} → {expected:?}: {txt}");
+        }
+    }
+
+    #[test]
+    fn prose_that_merely_resembles_a_marker_is_left_alone() {
+        // Exact-match by intent: ordinary prose containing an asterisk must not
+        // be silently eaten and replaced by a scene break.
+        let g = book_with_marker("He was \\*emphatic\\* about it.");
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(txt.contains("emphatic"), "prose must survive: {txt}");
+        assert!(!txt.contains("###"), "prose must not become a break: {txt}");
+    }
+
+    #[test]
+    fn a_blank_line_break_is_no_longer_identical_to_none() {
+        // `BlankLine` used to be a byte-for-byte no-op. It now renders as real
+        // leading plus a suppressed indent on the following paragraph, which is
+        // what most of the world's publishing traditions actually use.
+        let g = book_with_marker("\\* \\* \\*");
+        let mut blank = preset("neutral");
+        blank.scene_break = SceneBreak::BlankLine;
+        let mut none = preset("neutral");
+        none.scene_break = SceneBreak::None;
+
+        let with_blank =
+            render_to_string(&req(&g, &[100, 101, 102], &blank, ExportFormat::Html)).unwrap();
+        let with_none =
+            render_to_string(&req(&g, &[100, 101, 102], &none, ExportFormat::Html)).unwrap();
+        assert_ne!(
+            with_blank, with_none,
+            "BlankLine must differ from None:\n{with_blank}"
+        );
+        assert!(
+            with_blank.contains("margin-top"),
+            "BlankLine must open a real gap: {with_blank}"
+        );
+    }
+
+    #[test]
+    fn a_break_suppresses_the_next_paragraphs_first_line_indent() {
+        let g = book_with_marker("\\* \\* \\*");
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
+        assert!(
+            html.contains("text-indent: 0px"),
+            "the paragraph after a break must not be indented: {html}"
+        );
+    }
+
+    #[test]
+    fn a_glyph_break_is_centred() {
+        let g = book_with_marker("\\* \\* \\*");
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
+        assert!(
+            html.contains("text-align: center"),
+            "a dinkus is centred in print: {html}"
+        );
+    }
+
+    #[test]
+    fn a_marker_does_not_count_as_prose_words() {
+        let plain = flat_book();
+        let marked = book_with_marker("\\* \\* \\*");
+        let p = preset("neutral");
+        let words_of = |g: &Gathered| {
+            assemble(
+                &req(g, &[100, 101, 102], &p, ExportFormat::PlainText),
+                &|_| {},
+                &AtomicBool::new(false),
+            )
+            .unwrap()
+            .1
+            .words
+        };
+        let (a, b) = (words_of(&plain), words_of(&marked));
+        assert_eq!(a, b, "a scene break is furniture, not three words");
+    }
+
+    #[test]
+    fn a_break_does_not_leak_across_a_chapter_boundary() {
+        // A marker ending one chapter must not style the first paragraph of the
+        // next. The old adjacency machinery had exactly this leak whenever a
+        // preset emitted no chapter heading.
+        let g = gathered(
+            vec![
+                iwc(
+                    100,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(1, ContentRole::SceneText, "End of one.\n\n\\* \\* \\*")],
+                ),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(2, ContentRole::SceneText, "Start of two.")],
+                ),
+            ],
+            "en",
+        );
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::BlankLine;
+        p.chapter_heading = HeadingScheme::None;
+        let html = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Html)).unwrap();
+        assert!(
+            !html.contains("margin-top"),
+            "a trailing break must not carry into the next chapter: {html}"
+        );
+    }
+
+    #[test]
+    fn multi_paragraph_prose_survives_block_splitting_in_both_directions() {
+        // `push_prose` now walks every block in both LTR and RTL. Nothing may be
+        // lost or reordered by that — no existing test covered multi-block prose.
+        for (lang, marker) in [("en", "\\* \\* \\*"), ("ar", "\\* \\* \\*")] {
+            let g = gathered(
+                vec![iwc(
+                    100,
+                    SR::Scene,
+                    lang,
+                    vec![c(
+                        1,
+                        ContentRole::SceneText,
+                        &format!("One.\n\nTwo.\n\n{marker}\n\nThree.\n\nFour."),
+                    )],
+                )],
+                lang,
+            );
+            let mut p = preset("neutral");
+            p.scene_break = SceneBreak::Glyph("###".to_string());
+            let txt = render_to_string(&req(&g, &[100], &p, ExportFormat::PlainText)).unwrap();
+            for para in ["One.", "Two.", "Three.", "Four."] {
+                assert!(txt.contains(para), "lang={lang} lost {para}: {txt}");
+            }
+            assert!(txt.contains("###"), "lang={lang}: {txt}");
+        }
     }
 
     #[test]
@@ -937,4 +1350,249 @@ mod tests {
         assert!(with.contains("Opening") && with.contains("Ending"), "scene titles: {with}");
         assert!(with.contains("<h1"), "scene titles head at h1 with no structural levels: {with}");
     }
+
+    #[test]
+    fn a_synopsis_does_not_steal_the_breaks_styling() {
+        // A break at the end of a scene belongs to the NEXT scene's opening
+        // paragraph. A synopsis is commentary sitting between them, and must not
+        // consume the queued attributes on its way past.
+        let g = gathered(
+            vec![
+                iwc(
+                    100,
+                    SR::Scene,
+                    "en",
+                    vec![
+                        c(1, ContentRole::SceneText, "End of one.\n\n\\* \\* \\*"),
+                        c(2, ContentRole::SynopsisText, "A synopsis line."),
+                    ],
+                ),
+                iwc(101, SR::Scene, "en", vec![c(3, ContentRole::SceneText, "Start of two.")]),
+            ],
+            "en",
+        );
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::BlankLine;
+        p.include_synopses = true;
+        let html = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Html)).unwrap();
+        let syn = html.split("A synopsis line").next().unwrap();
+        assert!(
+            !syn.ends_with("text-indent: 0px\">"),
+            "the synopsis must not carry the break's styling: {html}"
+        );
+        assert!(
+            html.contains("margin-top") && html.contains("Start of two."),
+            "the next scene's opening paragraph must carry it: {html}"
+        );
+    }
+
+    #[test]
+    fn a_multi_block_construct_survives_alongside_a_marker() {
+        // `split("\\n\\n")` is not a Djot block split: a fenced block containing a
+        // blank line is ONE construct spanning two chunks. Scanning for markers
+        // must not tear it apart — hence contiguous non-marker blocks are flushed
+        // as a single verbatim run. The fence holds a `#` so the scan really runs.
+        let g = gathered(
+            vec![iwc(
+                100,
+                SR::Scene,
+                "en",
+                vec![c(
+                    1,
+                    ContentRole::SceneText,
+                    "```\n# code a\n\ncode b\n```\n\n\\* \\* \\*\n\nAfter.",
+                )],
+            )],
+            "en",
+        );
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        let html = render_to_string(&req(&g, &[100], &p, ExportFormat::Html)).unwrap();
+        assert!(
+            html.matches("<pre>").count() == 1,
+            "the fenced block must stay one construct: {html}"
+        );
+        assert!(html.contains("code a") && html.contains("code b"), "{html}");
+        assert!(html.contains("###"), "the marker still renders: {html}");
+    }
+
+    #[test]
+    fn a_marker_only_scene_is_not_counted_as_an_emitted_item() {
+        let g = gathered(
+            vec![iwc(
+                100,
+                SR::Scene,
+                "en",
+                vec![c(1, ContentRole::SceneText, "\\* \\* \\*")],
+            )],
+            "en",
+        );
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        let stats = assemble(
+            &req(&g, &[100], &p, ExportFormat::PlainText),
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap()
+        .1;
+        assert_eq!(stats.items, 0, "a marker is furniture, not an emitted item");
+    }
+
+    #[test]
+    fn a_glyph_break_keeps_the_rows_direction_in_rtl() {
+        let g = gathered(
+            vec![iwc(
+                100,
+                SR::Scene,
+                "ar",
+                vec![c(1, ContentRole::SceneText, "\u{0623}.\n\n\\* \\* \\*\n\n\u{0628}.")],
+            )],
+            "ar",
+        );
+        let mut p = preset("neutral");
+        p.scene_break = SceneBreak::Glyph("###".to_string());
+        let html = render_to_string(&req(&g, &[100], &p, ExportFormat::Html)).unwrap();
+        let glyph_para = html
+            .split("###")
+            .next()
+            .and_then(|s| s.rfind("<p").map(|i| s[i..].to_string()))
+            .unwrap_or_default();
+        assert!(
+            glyph_para.contains("rtl"),
+            "the glyph line must not fall back to LTR: {html}"
+        );
+    }
+
+    #[test]
+    fn the_blank_line_gap_scales_with_body_size() {
+        let g = book_with_marker("\\* \\* \\*");
+        let gap = |pt: f32| {
+            let mut p = preset("neutral");
+            p.scene_break = SceneBreak::BlankLine;
+            p.font_size_pt = pt;
+            let html =
+                render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
+            html.split("margin-top: ")
+                .nth(1)
+                .and_then(|s| s.split("px").next())
+                .and_then(|s| s.parse::<i64>().ok())
+                .unwrap_or(0)
+        };
+        assert!(
+            gap(24.0) > gap(8.0),
+            "a blank-line break must be about one line at the preset's own size"
+        );
+    }
+
+
+    #[test]
+    fn every_builtin_preset_exports_every_format_with_both_tiers() {
+        // The end-to-end guard: a manuscript carrying both tiers must survive the
+        // whole stack — recogniser → assembled Djot → text-document parse → each
+        // renderer — under every regional style we ship, not just in unit tests.
+        let g = gathered(
+            vec![
+                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "en",
+                    vec![
+                        c(2, ContentRole::ChapterTitle, "Storms"),
+                        c(3, ContentRole::SceneText, "The wind rose.\n\n\\* \\* \\*\n\nShe waited."),
+                    ],
+                ),
+                iwc(
+                    102,
+                    SR::Scene,
+                    "en",
+                    vec![c(4, ContentRole::SceneText, "\\# # #\n\nA year passed.")],
+                ),
+            ],
+            "en",
+        );
+        let text_formats = [
+            ExportFormat::PlainText,
+            ExportFormat::Markdown,
+            ExportFormat::Html,
+            ExportFormat::Djot,
+        ];
+        // A unique directory per run: a fixed shared path would let two
+        // concurrent `cargo test` invocations overwrite each other's output and
+        // let the first to finish delete files the second is still asserting on.
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        for p in builtin_presets() {
+            for f in text_formats {
+                let out = render_to_string(&req(&g, &[100, 101, 102], &p, f))
+                    .unwrap_or_else(|e| panic!("{} / {f:?}: {e:#}", p.id));
+                // No trailing period in the needles: Markdown/Djot escape it as
+                // `\.`, which is correct output, not a loss.
+                assert!(out.contains("The wind rose"), "{} / {f:?}: {out}", p.id);
+                assert!(out.contains("She waited"), "{} / {f:?}: {out}", p.id);
+                assert!(out.contains("A year passed"), "{} / {f:?}: {out}", p.id);
+            }
+            // PDF rides the opt-in `pdf` feature (Typst is a heavy dependency),
+            // so it joins the matrix only when that feature is on.
+            #[cfg(feature = "pdf")]
+            let binary = vec![ExportFormat::Docx, ExportFormat::Epub, ExportFormat::Pdf];
+            #[cfg(not(feature = "pdf"))]
+            let binary = vec![ExportFormat::Docx, ExportFormat::Epub];
+            for f in binary {
+                let path = dir.join(format!("{}-{f:?}", p.id));
+                let stats = render_to_file(
+                    &req(&g, &[100, 101, 102], &p, f),
+                    &path,
+                    &|_| {},
+                    &AtomicBool::new(false),
+                )
+                .unwrap_or_else(|e| panic!("{} / {f:?}: {e:#}", p.id));
+                assert!(
+                    std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0) > 0,
+                    "{} / {f:?} wrote nothing",
+                    p.id
+                );
+                assert!(stats.words > 0, "{} / {f:?} counted no words", p.id);
+            }
+        }
+    }
+
+
+    #[test]
+    fn empty_prose_emits_no_block_separator() {
+        // A Scene whose SceneText row exists but holds only whitespace must add
+        // nothing at all to the assembled Djot — not even a bare separator.
+        let g = gathered(
+            vec![iwc(100, SR::Scene, "en", vec![c(1, ContentRole::SceneText, "   \n\n  ")])],
+            "en",
+        );
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[100], &p, ExportFormat::Djot)).unwrap();
+        assert!(out.trim().is_empty(), "empty prose must emit nothing: {out:?}");
+    }
+
+    #[test]
+    fn the_blank_line_gap_accounts_for_paragraph_spacing() {
+        // A preset that already spaces paragraphs supplies part of the gap, so
+        // the break must add only the remainder rather than doubling it.
+        let g = book_with_marker("\\* \\* \\*");
+        let gap = |spacing_pt: f32| {
+            let mut p = preset("neutral");
+            p.scene_break = SceneBreak::BlankLine;
+            p.paragraph_spacing_pt = spacing_pt;
+            let html =
+                render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
+            html.split("margin-top: ")
+                .nth(1)
+                .and_then(|s| s.split("px").next())
+                .and_then(|s| s.parse::<i64>().ok())
+                .unwrap_or(0)
+        };
+        assert!(
+            gap(6.0) < gap(0.0),
+            "an already-spaced preset must not get the full extra gap"
+        );
+    }
+
 }

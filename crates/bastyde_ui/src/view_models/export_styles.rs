@@ -71,7 +71,7 @@ impl ExportStylesViewModel {
 
     /// The user preset with `id`, if any (the editor reads this to seed its fields).
     pub fn user_preset(&self, id: &str) -> Option<Preset> {
-        self.inner.service.user_presets().into_iter().find(|p| p.id == id)
+        self.inner.service.user_preset(id)
     }
 
     /// The `Reloadable` hook for the app's shared `SettingsRegistry` (keep the returned handle

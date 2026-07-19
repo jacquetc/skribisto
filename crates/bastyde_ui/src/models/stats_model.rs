@@ -91,6 +91,11 @@ impl StatsModel {
         // Only prose-bearing items (Scene / ChapterScene / Note) own a `main` field.
         let field = doc.main.as_ref()?;
         let text = field.doc.to_plain_text().ok()?;
+        // This is the one counter that sees *parsed* text rather than raw Djot,
+        // so it needs the plain-text entry point — the markers read `* * *`
+        // here, not `\* \* \*`. Without this the status bar would disagree with
+        // the pace history the moment the author inserts a break.
+        let text = skribisto_model::scene_break::strip_markers_plain(&text);
         let lang = self.inner.open_docs.effective_language(id);
         let method = counting::resolve_method(
             self.inner.method.get(),
