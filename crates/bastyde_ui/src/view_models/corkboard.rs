@@ -347,6 +347,17 @@ impl CorkboardViewModel {
         self.inner.editing_item.set(None);
     }
 
+    /// Persist a card's tag ids, from the dot row's picker.
+    ///
+    /// A transient probe, exactly as `commit_rename` above does: the corkboard keeps no
+    /// per-card `SingleBinderItem` (only `container_probe`), and a write is rare enough that
+    /// standing one up per card would cost more than it saves.
+    pub fn set_card_tags(&self, id: u64, tags: &[u64]) {
+        let probe = SingleBinderItem::new(self.inner.app_ctx.clone());
+        probe.set_id(Some(id));
+        let _ = probe.set_tags(tags, self.stack());
+    }
+
     // ── Shared synopsis documents (one per card, shared with the editor panes) ──
 
     /// The shared `OpenDoc` for a card's synopsis, opened once and reused while the

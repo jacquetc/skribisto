@@ -65,6 +65,14 @@ pub struct OpenDoc {
     /// is trashed/restored — drives the tab's warning accent + the in-editor
     /// "this item is in the Trash" banner. Shared, so both split panes react.
     pub trashed: Signal<bool>,
+    /// The item's tag ids — the editor subtitle's dot row. Lives on the doc rather than in
+    /// a per-pane probe because `panes.rs` builds from `&ContentTab` with no context of its
+    /// own, and `items_updated` already fetches the DTO this reads.
+    pub tags: Signal<Vec<u64>>,
+    /// Writer for [`tags`](Self::tags). Tags are a *relationship*, so they cannot ride the
+    /// scalar DTO update the title fields use; this probe issues the relationship command.
+    /// Held here because the panes compose from `&ContentTab` and have no `AppContext`.
+    pub tag_probe: SingleBinderItem,
     /// The store's aggregate "an edit happened" counter — bumped by every edit,
     /// observed by the debounced autosave timer.
     edited: Signal<u64>,
@@ -107,6 +115,12 @@ impl OpenDoc {
             synopsis: None,
             dirty: Signal::new(false),
             trashed: Signal::new(false),
+            tags: Signal::new(Vec::new()),
+            tag_probe: {
+                let p = SingleBinderItem::new(ctx.clone());
+                p.set_id(Some(item_id));
+                p
+            },
             edited,
             spell_main: None,
             spell_synopsis: None,
@@ -582,6 +596,7 @@ impl OpenDocsStore {
         ));
         // Seed the trash state (a trashed item can be opened from the trash dock).
         doc.trashed.set(!item.activated);
+        doc.tags.set(item.tags.clone());
         self.inner.open.borrow_mut().insert(
             item_id,
             Entry {

@@ -266,6 +266,33 @@ impl StreamViewModel {
         }
     }
 
+    /// The row's tag ids, live.
+    ///
+    /// Read from the row's own probe rather than baked into `StreamRow`, because
+    /// `StreamRowsModel` deliberately does not watch `BinderItem(Updated)` — a baked field
+    /// would go stale the moment a tag was assigned. This is the same shape as
+    /// [`row_label`](Self::row_label), and for the same reason.
+    pub fn row_tags(&self, id: u64) -> Signal<Vec<u64>> {
+        match self.handle(id) {
+            Some(h) => h
+                .probe
+                .dto_signal()
+                .map(|d| d.as_ref().map(|x| x.tags.clone()).unwrap_or_default()),
+            None => Signal::new(Vec::new()),
+        }
+    }
+
+    /// Persist a row's tag ids.
+    ///
+    /// Tags are a *relationship*, not a scalar on the DTO, so this cannot go through
+    /// `update_binder_item` the way [`set_row_label`](Self::set_row_label) does — it writes
+    /// through the probe's `set_tags`, which issues the relationship command.
+    pub fn set_row_tags(&self, id: u64, tags: &[u64]) {
+        if let Some(h) = self.handle(id) {
+            let _ = h.probe.set_tags(tags, self.stack());
+        }
+    }
+
     /// Get-or-open the row's handle. Opening refs the document in the store; the ref is
     /// dropped when the row leaves the stream (see [`wire`](Self::wire)) or the tab
     /// closes (see `Drop for Inner`).

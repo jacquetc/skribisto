@@ -104,6 +104,26 @@ impl Widget for CorkboardTile {
                     .max_lines(1),
             );
         }
+        // The tag dots, under the label. `CardColumn` measures `top`, so this takes its
+        // height out of the synopsis rather than overflowing the card — and an untagged card
+        // renders nothing at all, so most cards are unchanged.
+        if !self.card.tags.is_empty() {
+            let value = Signal::new(self.card.tags.clone());
+            let set: crate::tags::tag_pill_field::SetTags = {
+                let vm = self.vm.clone();
+                let id = self.card.item_id;
+                let mirror = value.clone();
+                Rc::new(move |ids: Vec<u64>, _c| {
+                    vm.set_card_tags(id, &ids);
+                    mirror.set(ids);
+                })
+            };
+            top = top.child(crate::tags::TagDotsRow::new(
+                value,
+                set,
+                crate::tags::tag_chip::MAX_VISIBLE_CORKBOARD,
+            ));
+        }
         // The card's inner content height (tile height minus its `Padding`), from the
         // size slider — the fixed-height GridView tile only proposes a card its width.
         let total = Signal::new(card_tile_height(self.vm.card_size().get()) - CARD_PADDING);

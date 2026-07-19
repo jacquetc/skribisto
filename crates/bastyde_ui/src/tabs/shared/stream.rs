@@ -288,6 +288,17 @@ fn row_header(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
                 .text(vm.row_label(id))
                 .color(TextRole::Secondary),
         )
+        // Tag dots, between the label and the rule. Takes no space when the row is untagged.
+        .child(crate::tags::TagDotsRow::new(
+            vm.row_tags(id),
+            {
+                let vm = vm.clone();
+                std::rc::Rc::new(move |ids: Vec<u64>, _c: &mut EventContext| {
+                    vm.set_row_tags(id, &ids);
+                })
+            },
+            crate::tags::tag_chip::MAX_VISIBLE_STREAM,
+        ))
         .child(Expand::horizontal().child(Divider::new()))
         .child(row_menu(vm, row))
 }

@@ -45,6 +45,10 @@ pub struct CorkboardCard {
     pub is_container: bool,
     /// Direct child count, for a container card's footer ("N items"). `0` for leaves.
     pub child_count: usize,
+    /// The item's tag ids, for the dot row. Baked rather than probed per card: this model
+    /// already refetches on `BinderItem(Updated)` (unlike the stream's), so the ids stay
+    /// live for free and a card needs no `SingleBinderItem` of its own.
+    pub tags: Vec<u64>,
 }
 
 /// Whether a card matches the corkboard's text filter — a case-insensitive
@@ -459,6 +463,7 @@ mod imp {
             label: it.label.clone(),
             is_container,
             child_count,
+            tags: it.tags.clone(),
         }
     }
 
@@ -571,36 +576,45 @@ mod imp {
     fn mock_cards(container_id: u64, nested: bool) -> Vec<CorkboardCard> {
         use BinderItemRole::{Folder, Item};
         use BinderItemSubRole::{ChapterScene, Note, Scene};
-        let card =
-            |item_id, role, sub_role, title: &str, is_container, child_count| CorkboardCard {
-                item_id,
-                role,
-                sub_role,
-                title: title.to_string(),
-                label: String::new(),
-                is_container,
-                child_count,
-            };
+        // Tag ids point at the mock palette in `WorkTagsListModel`: 1 = status/draft,
+        // 4 = needs research, 5 = character (discoverable). Given so the mock corkboard
+        // actually renders a dot row, including the discoverable ring and an overflow cell.
+        let card = |item_id,
+                    role,
+                    sub_role,
+                    title: &str,
+                    is_container,
+                    child_count,
+                    tags: &[u64]| CorkboardCard {
+            item_id,
+            role,
+            sub_role,
+            title: title.to_string(),
+            label: String::new(),
+            is_container,
+            child_count,
+            tags: tags.to_vec(),
+        };
         match (container_id, nested) {
             // The chapter-folder's own scenes.
             (104, _) => vec![
-                card(201, Item, Scene, "Into the Dark", false, 0),
-                card(202, Item, Scene, "The light returns", false, 0),
-                card(203, Item, Note, "First night", false, 0),
+                card(201, Item, Scene, "Into the Dark", false, 0, &[1, 5]),
+                card(202, Item, Scene, "The light returns", false, 0, &[2]),
+                card(203, Item, Note, "First night", false, 0, &[]),
             ],
             // A part, nested: its chapters.
             (301, true) => vec![
-                card(104, Folder, ChapterScene, "The Keeper", true, 3),
-                card(302, Item, ChapterScene, "The ferry", false, 0),
+                card(104, Folder, ChapterScene, "The Keeper", true, 3, &[1, 4, 5, 6, 2, 3]),
+                card(302, Item, ChapterScene, "The ferry", false, 0, &[4]),
             ],
             // A part, flat: every descendant — the chapter-folder (kept for its own
             // synopsis) plus every leaf under it.
             (301, false) => vec![
-                card(104, Folder, ChapterScene, "The Keeper", true, 3),
-                card(201, Item, Scene, "Into the Dark", false, 0),
-                card(202, Item, Scene, "The light returns", false, 0),
-                card(203, Item, Note, "First night", false, 0),
-                card(302, Item, ChapterScene, "The ferry", false, 0),
+                card(104, Folder, ChapterScene, "The Keeper", true, 3, &[1, 4, 5, 6, 2, 3]),
+                card(201, Item, Scene, "Into the Dark", false, 0, &[1, 5]),
+                card(202, Item, Scene, "The light returns", false, 0, &[2]),
+                card(203, Item, Note, "First night", false, 0, &[]),
+                card(302, Item, ChapterScene, "The ferry", false, 0, &[4]),
             ],
             _ => Vec::new(),
         }

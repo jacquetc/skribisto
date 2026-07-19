@@ -88,3 +88,9 @@ settings-tags-exported = Exported { $n ->
     [one] 1 tag
    *[other] { $n } tags
 }
+
+## The dot row shown on the stream, corkboard and editor subtitle
+tags-chip-more = { $n ->
+    [one] 1 more tag
+   *[other] { $n } more tags
+}

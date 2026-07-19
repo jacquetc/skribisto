@@ -17,8 +17,8 @@ use bastyde::core::widget::WidgetPlacement;
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Center, Expand, GroupHeader, ScrollArea, Segment, SegmentedControl, Switcher, TextWidget,
-    VStack,
+    Center, Expand, GroupHeader, HStack, ScrollArea, Segment, SegmentedControl, Spacer, Switcher,
+    TextWidget, VStack,
 };
 
 use frontend::common::entities::BinderItemSubRole;
@@ -68,6 +68,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             &tab.column_width,
         ));
     }
+    col = col.child(centered(subtitle_tag_dots(tab), &tab.column_width));
     if let Some(s) = tab.synopsis() {
         col = col
             .child(vspace(4.0))
@@ -123,6 +124,10 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             ))
             .child(vspace(6.0));
     }
+    // A plain Scene has no title field here — its name lives in the tab — so this is the
+    // only place its tags can appear while it is being written. Untagged scenes, which are
+    // most of them, get nothing: the row collapses to zero.
+    col = col.child(centered(subtitle_tag_dots(tab), &tab.column_width));
     if let Some(s) = tab.synopsis() {
         // The synopsis pane is user-toggleable (Settings ▸ Manuscript & Fonts).
         // Hidden, it goes dormant: no space, no paint, out of the a11y tree and the
@@ -207,6 +212,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
             &tab.column_width,
         ));
     }
+    col = col.child(centered(subtitle_tag_dots(tab), &tab.column_width));
     if let Some(s) = tab.synopsis() {
         // On a heading tab the synopsis *is* the page — it grows, like any primary
         // writing surface (contrast the compact box above a scene's prose).
@@ -442,4 +448,23 @@ impl Widget for RememberSegment {
     fn children(&self) -> Vec<WidgetId> {
         self.child_id.into_iter().collect()
     }
+}
+
+/// The editor's tag dots, under the subtitle.
+///
+/// A free function rather than an inline `.child(..)` only so the two panes that render a
+/// subtitle (`folder_own_pane` and `heading`) cannot drift apart. `TagDotsRow` collapses to
+/// nothing when the item is untagged, so this costs an untagged item no height.
+fn subtitle_tag_dots(tab: &ContentTab) -> impl Widget {
+    // The dots hug their content, and `centered` centres whatever it is given inside the
+    // pane — so on their own they floated in the middle of the page, aligned with nothing.
+    // The trailing spacer pushes the row out to the full column width so the dots start at
+    // the same left edge as the title and the prose beneath them.
+    HStack::new()
+        .child(crate::tags::TagDotsRow::new(
+            tab.open_doc.tags.clone(),
+            tab.set_tags_fn(),
+            crate::tags::tag_chip::MAX_VISIBLE_EDITOR,
+        ))
+        .child(Expand::horizontal().child(Spacer::new()))
 }

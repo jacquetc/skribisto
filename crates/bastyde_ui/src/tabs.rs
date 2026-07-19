@@ -560,6 +560,21 @@ impl ContentTab {
             }
         }
     }
+
+    /// Writer for the subtitle's tag dots.
+    ///
+    /// Handed out as a closure for the same reason `commit_names_fn` is: `panes.rs` composes
+    /// from `&ContentTab` with no context and no access to the stack id, so the tab builds
+    /// the writer and the pane just mounts it. The local mirror keeps the dots in step with
+    /// a tick before the entity write echoes back.
+    pub fn set_tags_fn(&self) -> crate::tags::tag_pill_field::SetTags {
+        let doc = self.open_doc.clone();
+        let stack = self.ids.stack_id.clone();
+        std::rc::Rc::new(move |ids: Vec<u64>, _c: &mut EventContext| {
+            let _ = doc.tag_probe.set_tags(&ids, stack.get());
+            doc.tags.set(ids);
+        })
+    }
 }
 
 impl TitleField {

@@ -840,6 +840,8 @@ impl EditorsViewModel {
             let trashed = !it.activated;
             if let Some(doc) = self.docs.peek(*id) {
                 doc.trashed.set(trashed);
+                // Same event, same fetched DTO: keep the subtitle's dot row live.
+                doc.tags.set(it.tags.clone());
             }
             // A Promote rewrites the item's type. The open tab was built for the *old*
             // one — it is still showing a chapter's segments and a chapter's editors for
@@ -849,6 +851,7 @@ impl EditorsViewModel {
                 // The rebuilt doc starts un-trashed; re-seed its trash state.
                 if let Some(doc) = self.docs.peek(*id) {
                     doc.trashed.set(trashed);
+                    doc.tags.set(it.tags.clone());
                 }
                 continue; // the rebuilt tab already carries the new caption
             }

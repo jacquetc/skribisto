@@ -297,8 +297,44 @@ def pointer_click(b, dx=None):
         return False
     cx = b["x"] + (dx if dx is not None else b.get("width", 0) / 2)
     cy = b["y"] + b.get("height", 0) / 2
-    s.call("inject_pointer", {"x": cx, "y": cy, "kind": "click"})
+    # The parameter is `action`, not `kind`. Sibling scripts pass `kind`, which the
+    # bridge ignores — they work only because "click" is the default.
+    s.call("inject_pointer", {"x": cx, "y": cy, "action": "click"})
     return True
+
+
+def hover(b):
+    """Approach from outside, then jiggle inside.
+
+    A single `move` that lands on the widget is not reliably read as a hover
+    *enter* — the dwell timer starts on motion within the widget, so one event
+    arriving already-inside can leave it unarmed."""
+    if not (isinstance(b, dict) and "x" in b):
+        return False
+    cx = b["x"] + b.get("width", 0) / 2
+    cy = b["y"] + b.get("height", 0) / 2
+    s.call("inject_pointer", {"x": cx - 160, "y": cy, "action": "move"})
+    time.sleep(0.25)
+    s.call("inject_pointer", {"x": cx, "y": cy, "action": "move"})
+    time.sleep(0.1)
+    s.call("inject_pointer", {"x": cx + 1, "y": cy + 1, "action": "move"})
+    return True
+
+
+def wait_for(pred, tries=15, delay=0.3):
+    for _ in range(tries):
+        time.sleep(delay)
+        if pred():
+            return True
+    return False
+
+
+def node_text(n):
+    """A node's visible text, wherever it lives: `Label`-role nodes carry theirs in
+    `value`, everything else in `label`."""
+    if not n:
+        return ""
+    return ((n.get("value") or "") + " " + (n.get("label") or "")).strip()
 
 
 def breadcrumb():
@@ -626,6 +662,133 @@ else:
     # Not fatal: the tooltip's own surface colours are asserted by unit tests, and
     # hover timing here is the least reliable thing in the harness.
     print("  (tooltip did not open within the poll window; skipping the screenshot)")
+
+# ── The dot row: on the editor subtitle, per-dot hover, whole-row click ──────
+print("\n== tag dots in context ==")
+
+# The tagged item is open in the editor from the Inspector walk above, so its
+# subtitle should now carry a dot row. It announces itself with every tag name,
+# which is also the only way a screen reader reaches the dots at all.
+dot_row = None
+for n in s.nodes():
+    # The row is a Label naming every tag; the Popover's trigger supplies the button.
+    # Label-role nodes carry their text in `value`.
+    text = ((n.get("value") or "") + " " + (n.get("label") or "")).lower()
+    if all(t in text for t in LEGACY_TAGS) and n.get("role") == "Label":
+        dot_row = n
+        break
+if not dot_row:
+    s.dump("no dot row found")
+    s.shot("/tmp/tags-dots-fail.png")
+    fail("no tag dot row announcing all three tags", s.app, s.mcp, s.log)
+print(f"  dot row announces: {node_text(dot_row)!r}")
+
+b = dot_row.get("bounds") or {}
+print(f"  dot row is {b.get('width', 0):.0f}x{b.get('height', 0):.0f} dp")
+s.shot("/tmp/tags-dots-row.png")
+
+# Hovering one dot must show that dot's tooltip, not the row's. The row spans
+# every dot, so aim at the first cell rather than the row's centre.
+print("\n== per-dot tooltip ==")
+first_dot = {"x": b.get("x", 0), "y": b.get("y", 0),
+             "width": 18.0, "height": b.get("height", 18.0)}
+hover(first_dot)
+if wait_for(lambda: any(
+        (n.get("role") or "") in ("Tooltip", "Dialog")
+        and (n.get("label") or "").strip().lower() in LEGACY_TAGS_SET
+        for n in s.nodes())):
+    tip = next(n for n in s.nodes()
+               if (n.get("role") or "") in ("Tooltip", "Dialog")
+               and (n.get("label") or "").strip().lower() in LEGACY_TAGS_SET)
+    print(f"  hovering the first dot shows {tip.get('label')!r} alone")
+    s.shot("/tmp/tags-dot-tooltip.png")
+else:
+    print("  (no per-dot tooltip within the poll window)")
+    s.shot("/tmp/tags-dot-tooltip-miss.png")
+
+# Clicking anywhere on the row — including on a dot — opens the picker. This is
+# the assertion that the dots' lack of an on_tap actually lets the press bubble
+# to the Popover trigger; if a dot ever grows a handler, this fails.
+print("\n== whole-row click opens the picker ==")
+s.call("inject_pointer", {"x": b.get("x", 0) + 4, "y": b.get("y", 0) + b.get("height", 18) / 2,
+                          "action": "move"})
+time.sleep(0.2)
+pointer_click({"x": b.get("x", 0), "y": b.get("y", 0), "width": 8.0,
+               "height": b.get("height", 18.0)})
+s.settle()
+
+def picker_open():
+    # The picker lists every palette tag as a tickable option.
+    opts = [n for n in s.nodes() if n.get("role") == "ListBoxOption"]
+    return len(opts) >= len(LEGACY_TAGS)
+
+if not wait_for(picker_open):
+    s.dump("picker did not open")
+    s.shot("/tmp/tags-picker-fail.png")
+    fail("clicking a dot did not open the tag picker — the dots are swallowing "
+         "the row's tap (did one grow an on_tap?)", s.app, s.mcp, s.log)
+
+opts = [n for n in s.nodes() if n.get("role") == "ListBoxOption"]
+ticked = [n for n in opts if n.get("selected")]
+print(f"  picker lists {len(opts)} tags, {len(ticked)} ticked")
+if len(ticked) < len(LEGACY_TAGS):
+    print("  options:", [(n.get("label"), n.get("selected")) for n in opts])
+    s.shot("/tmp/tags-picker-fail.png")
+    fail("the item's three tags should all be ticked", s.app, s.mcp, s.log)
+print("  every tag on the item is ticked")
+s.shot("/tmp/tags-picker.png")
+
+# Untick one. The assertion is on the dot row, not on the tick: the row is what
+# the writer actually sees, and it is the end of the whole chain (picker tap ->
+# relationship write -> DTO refetch -> signal -> repaint).
+print("\n== unticking removes the tag ==")
+
+
+def dots_row():
+    # The row is a Label, not a Button: the Popover's OverlayTrigger owns the button
+    # role at the same bounds, and two would be announced twice. A Label-role node
+    # carries its text in `value`, so match on either field.
+    for n in s.nodes():
+        text = (n.get("value") or "") + " " + (n.get("label") or "")
+        if "very looooooooooong tag" in text and n.get("role") == "Label" and "," in text:
+            return n
+    return None
+
+
+before = dots_row()
+before_w = (before.get("bounds") or {}).get("width", 0) if before else 0
+target = next(n for n in opts if (n.get("label") or "").strip().lower() == "b")
+pointer_click(target.get("bounds") or {})
+s.settle()
+
+if not wait_for(lambda: "B," not in node_text(dots_row())):
+    s.shot("/tmp/tags-untick-fail.png")
+    fail("unticking 'B' did not drop it from the dot row", s.app, s.mcp, s.log)
+
+after = dots_row()
+after_w = (after.get("bounds") or {}).get("width", 0) if after else 0
+print(f"  row went {before_w:.0f} -> {after_w:.0f} dp, now {node_text(after)!r}")
+if after_w >= before_w:
+    fail(f"the row should have lost a dot ({before_w} -> {after_w})", s.app, s.mcp, s.log)
+
+# The picker must survive the toggle. It used to die: the row owned the popover
+# AND rebuilt on every tag change, so each tick tore down its own picker.
+if not any(n.get("role") == "ListBoxOption" for n in s.nodes()):
+    s.shot("/tmp/tags-picker-closed.png")
+    fail("the picker closed on the first tick — unticking several tags would mean "
+         "reopening it each time", s.app, s.mcp, s.log)
+print("  the picker stayed open, so several tags can be toggled in one visit")
+s.shot("/tmp/tags-unticked.png")
+
+# Put it back, so the fixture is left as found.
+back = next((n for n in s.nodes()
+             if n.get("role") == "ListBoxOption"
+             and (n.get("label") or "").strip().lower() == "b"), None)
+if back:
+    pointer_click(back.get("bounds") or {})
+    s.settle()
+    time.sleep(0.5)
+    print("  re-ticked 'B' to leave the fixture as found")
 
 print("\nOK — tags verified end-to-end on a legacy project.")
 s.close()

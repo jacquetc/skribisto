@@ -24,8 +24,8 @@ use bastyde::core::accesskit::Role;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Divider, HStack, IconButton, MaxSize, Padding, PopoverIconButton, ScrollArea, TextInput,
-    TextWidget, Toggle, VStack, Wrap,
+    Divider, HStack, IconButton, IconWidget, MaxSize, Padding, Panel, PopoverIconButton,
+    ScrollArea, TextInput, TextWidget, Toggle, VStack, Wrap,
 };
 
 use crate::models::{TagRow, name_key};
@@ -121,17 +121,17 @@ impl Widget for TagPillField {
             );
         }
 
-        let picker = TagPicker {
-            query: self.query.clone(),
-            new_discoverable: self.new_discoverable.clone(),
-            palette,
-            assigned: assigned_ids,
-            value: self.value.clone(),
-            set: self.set.clone(),
-            vm: self.vm.clone(),
-            root_child: None,
-        };
-        // `.bare()`: the picker draws its own panel, so skip the popover's second chrome.
+        // `.bare()` + an explicit panel: `PopoverIconButton`'s own chrome is skipped and this
+        // call site supplies it, because the picker itself is now bare so that
+        // `TagDotsRow` can drop it straight into a `Popover`, which brings its own surface.
+        let picker = Panel::new()
+            .child(Padding::uniform(8.0).child(TagPicker::new(
+                self.value.clone(),
+                self.set.clone(),
+                self.vm.clone(),
+            )))
+            .access_role(Role::Dialog)
+            .access_label(tr!(tags_pill_add()));
         flow = flow.child(
             PopoverIconButton::new(IconButton::add().tooltip(tr!(tags_pill_add())))
                 .bare()
@@ -168,16 +168,39 @@ impl Widget for TagPillField {
     }
 }
 
-/// The "+" popover body: filter, unassigned matches, and a create row.
-struct TagPicker {
+/// The tag popover body: filter, one tickable row per palette tag, and a create row.
+///
+/// Bare on purpose — it draws no panel of its own. Both call sites wrap it: the "+" button
+/// with an explicit `Panel` (its `PopoverIconButton` is `.bare()`), and [`TagDotsRow`] by
+/// handing it to a `Popover`, which supplies a themed surface. Self-chroming would nest a
+/// second panel inside that surface.
+///
+/// Rows **tick** rather than only add. The pill field can unassign with each chip's `×`, but
+/// a dot row has no such affordance — from a corkboard card the popover is the only way to
+/// take a tag off, so it has to be able to. One list that toggles serves both, and needs no
+/// mode flag.
+///
+/// [`TagDotsRow`]: crate::tags::TagDotsRow
+pub(crate) struct TagPicker {
     query: Signal<String>,
     new_discoverable: Signal<bool>,
-    palette: Vec<TagRow>,
-    assigned: Vec<u64>,
     value: Signal<Vec<u64>>,
     set: SetTags,
     vm: TagsViewModel,
     root_child: Option<WidgetId>,
+}
+
+impl TagPicker {
+    pub(crate) fn new(value: Signal<Vec<u64>>, set: SetTags, vm: TagsViewModel) -> Self {
+        Self {
+            query: Signal::new(String::new()),
+            new_discoverable: Signal::new(false),
+            value,
+            set,
+            vm,
+            root_child: None,
+        }
+    }
 }
 
 impl std::fmt::Debug for TagPicker {
@@ -195,9 +218,15 @@ impl Widget for TagPicker {
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
+        // Also the item's own tags: a tick has to flip the moment it is clicked, and the
+        // popover stays open across several toggles.
+        self.value
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
         let q = self.query.get();
         let key = name_key(&q);
+        let palette = self.vm.rows();
+        let assigned = self.value.get();
 
         let mut col = VStack::new().spacing(6.0);
         col = col.child(
@@ -206,14 +235,14 @@ impl Widget for TagPicker {
                 .min_width(220.0),
         );
 
-        let unassigned: Vec<&TagRow> = self
-            .palette
+        // Every palette tag, ticked or not — not just the unassigned ones, so the same list
+        // both adds and removes.
+        let matching: Vec<&TagRow> = palette
             .iter()
-            .filter(|t| !self.assigned.contains(&t.id))
             .filter(|t| key.is_empty() || name_key(&t.name).contains(&key))
             .collect();
 
-        if unassigned.is_empty() && !key.is_empty() {
+        if matching.is_empty() && !key.is_empty() {
             col = col.child(
                 Padding::symmetric(4.0, 6.0)
                     .child(TextWidget::new(tr!(tags_pill_no_match())).color(TextRole::Secondary)),
@@ -221,32 +250,30 @@ impl Widget for TagPicker {
         }
 
         let mut list = VStack::new().spacing(2.0);
-        for tag in unassigned {
-            let fill = contrast::parse(&tag.color);
+        for tag in matching {
             let set = self.set.clone();
             let value = self.value.clone();
             let id = tag.id;
-            let query = self.query.clone();
-            list = list.child(
-                HStack::new()
-                    .spacing(6.0)
-                    .child(swatch(fill))
-                    .child(TextWidget::new(lit!(tag.name.clone())))
-                    .access_role(Role::ListItem)
-                    .access_label(lit!(tag.name.clone()))
-                    .focusable(true)
-                    .on_tap(move |_e, c| {
-                        let mut next = value.get();
-                        if !next.contains(&id) {
-                            next.push(id);
-                        }
-                        value.set(next.clone());
-                        set(next, c);
-                        // Clear the filter so the popover is ready for the next pick rather
-                        // than still showing a one-item list.
-                        query.set(String::new());
-                    }),
-            );
+            let on = assigned.contains(&id);
+            list = list.child(TagPickRow {
+                tag: (*tag).clone(),
+                checked: on,
+                // Toggling does NOT clear the filter. The old add-only list cleared it so the
+                // popover was ready for the next pick, but a tick is a state you may want to
+                // flip back immediately, and losing the row you just clicked makes that
+                // impossible.
+                on_toggle: Rc::new(move |c: &mut EventContext| {
+                    let mut next = value.get();
+                    if on {
+                        next.retain(|t| *t != id);
+                    } else if !next.contains(&id) {
+                        next.push(id);
+                    }
+                    value.set(next.clone());
+                    set(next, c);
+                }),
+                root_child: None,
+            });
         }
         // Capped and scrollable: a project with forty tags must not grow a popover taller
         // than the window. `MaxSize` does the capping — `ScrollArea` has no height setter of
@@ -256,11 +283,7 @@ impl Widget for TagPicker {
         // Create, only when the typed name is new. Comparing case-insensitively against the
         // WHOLE palette, not just the unassigned ones: offering "Create «character»" when a
         // `character` tag already exists on this item would silently make a second one.
-        let exact_exists = !key.is_empty()
-            && self
-                .palette
-                .iter()
-                .any(|t| name_key(&t.name) == key);
+        let exact_exists = !key.is_empty() && palette.iter().any(|t| name_key(&t.name) == key);
         if !key.is_empty() && !exact_exists {
             let vm = self.vm.clone();
             let set = self.set.clone();
@@ -310,18 +333,78 @@ impl Widget for TagPicker {
             );
         }
 
-        let id = ctx.add(
-            bastyde::widgets::Panel::new()
-                .child(Padding::uniform(8.0).child(col))
-                .access_role(Role::Dialog)
-                .access_label(tr!(tags_pill_add())),
-        );
+        // Bare: no panel, no `Role::Dialog`. Whoever mounts this supplies the surface — see
+        // the type docs.
+        let id = ctx.add(col);
         self.root_child = Some(id);
         vec![id]
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        // Popover content: size to the panel, never to the (unbounded) overlay proposal.
+        // Popover content: size to the content, never to the (unbounded) overlay proposal.
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
+/// One tickable palette row: check, swatch, name.
+///
+/// Its own `Widget` rather than a decorated `HStack` because the tick has to reach the
+/// accessibility tree as *state*, not as a glyph: `accessibility` reports
+/// `Role::ListBoxOption` + `set_selected`, the shape `SearchField`'s suggestion rows already
+/// use. Encoding it in the label instead ("✓ character") would read as a name, not a
+/// toggle, and would not update when the state flips.
+struct TagPickRow {
+    tag: TagRow,
+    checked: bool,
+    on_toggle: Rc<dyn Fn(&mut EventContext)>,
+    root_child: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for TagPickRow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TagPickRow")
+            .field("tag", &self.tag.name)
+            .field("checked", &self.checked)
+            .finish()
+    }
+}
+
+impl Widget for TagPickRow {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let on_toggle = self.on_toggle.clone();
+        // The check is always laid out and merely faded, so ticking a row never shifts the
+        // names beside it — the same trick the language pill's checkmark uses.
+        let check = IconWidget::checkmark(11.0).color(TextRole::Accent);
+        let check_id = ctx.add(check);
+        ctx.set_opacity(check_id, if self.checked { 1.0 } else { 0.0 });
+
+        let id = ctx.add(
+            HStack::new()
+                .spacing(6.0)
+                .add_child(check_id)
+                .child(swatch(contrast::parse(&self.tag.color)))
+                .child(TextWidget::new(lit!(self.tag.name.clone())))
+                .focusable(true)
+                .on_tap(move |_e, c| on_toggle(c)),
+        );
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn accessibility(&self, builder: &mut bastyde::core::accessibility::AccessNodeBuilder) {
+        builder.set_role(Role::ListBoxOption);
+        builder.set_name(self.tag.name.clone());
+        builder.set_selected(self.checked);
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
         self.root_child
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)

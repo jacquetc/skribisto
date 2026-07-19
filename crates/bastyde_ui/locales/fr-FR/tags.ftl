@@ -89,3 +89,9 @@ settings-tags-exported = { $n ->
     [one] 1 étiquette exportée
    *[other] { $n } étiquettes exportées
 }
+
+## La rangée de pastilles affichée dans le flux, le tableau et le sous-titre de l’éditeur
+tags-chip-more = { $n ->
+    [one] 1 étiquette de plus
+   *[other] { $n } étiquettes de plus
+}
