@@ -12,7 +12,7 @@ Description:
 - "Trash with restore and undo"
 - "Backups with a retention policy, several destinations, a scheduler, and read-only opening"
 - "Import projects from Plume Creator"
-- "Export to plain text, Markdown, HTML, DOCX, EPUB and PDF"
+- "Export to Word (DOCX), EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live preview"
 - "Spell checking with downloadable dictionaries"
 - "Light and dark themes, and per-editor typography"
 - "Open several projects side by side, each in its own window"

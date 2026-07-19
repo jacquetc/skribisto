@@ -28,12 +28,18 @@
   </provides>
   <screenshots>
     <screenshot type="default">
+      <caption>The binder and the editor, with prose and its synopsis side by side</caption>
+      <caption xml:lang="fr">Le classeur et l'éditeur, avec le texte et son synopsis côte à côte</caption>
       <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot1.png</image>
     </screenshot>
     <screenshot>
+      <caption>Exporting, with a live preview of the compiled manuscript</caption>
+      <caption xml:lang="fr">L'export, avec un aperçu en direct du manuscrit compilé</caption>
       <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot2.png</image>
     </screenshot>
     <screenshot>
+      <caption>The launcher, listing recent projects and bundled examples</caption>
+      <caption xml:lang="fr">Le lanceur, avec les projets récents et les exemples fournis</caption>
       <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot3.png</image>
     </screenshot>
   </screenshots>
@@ -51,7 +57,7 @@
           <li>Trash with restore and undo</li>
           <li>Backups with a retention policy, several destinations, a scheduler, and read-only opening</li>
           <li>Import projects from Plume Creator</li>
-          <li>Export to plain text, Markdown, HTML, DOCX, EPUB and PDF</li>
+          <li>Export to Word (DOCX), EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live preview</li>
           <li>Spell checking with downloadable dictionaries</li>
           <li>Light and dark themes, and per-editor typography</li>
           <li>Open several projects side by side, each in its own window</li>
