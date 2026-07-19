@@ -247,9 +247,18 @@ impl Widget for Pill {
             // `PointerEnter` before it reached the chip, so the chip's `on_hover(true)`
             // would never re-fire after the `on_hover(false)` that fired when the pointer
             // left the body — and the × would vanish the instant you reached for it.
+            // Follows the chip's own text colour when it has one. `TextRole::Secondary` is a
+            // mid grey resolved against the *content* surface, but this glyph sits on the
+            // chip's fill — which for a tag is user data. On a black tag it was grey on
+            // black. Where no text colour is set (a chip filled from a semantic role), the
+            // theme's Secondary is still right.
             let x_glyph = (bastyde::widgets::BuiltInIcons::defaults().clear)()
                 .icon_size(12.0)
-                .color(TextRole::Secondary);
+                .color(
+                    self.text_color
+                        .clone()
+                        .unwrap_or_else(|| TextRole::Secondary.into()),
+                );
             let x_id = ctx.add(
                 MinSize::new(16.0, 16.0)
                     .child(Center::new().child(x_glyph))
@@ -288,7 +297,10 @@ impl Widget for Pill {
         let chip = ZStack::new()
             .child(bg)
             .child(focus_ring)
-            .child(Padding::symmetric(8.0, 2.0).child(content));
+            // `symmetric` is (vertical, horizontal) — 2 dp above and below, 8 dp either
+            // side. Transposing these is what made every pill in the app 32 dp tall around a
+            // 16 dp line of text, and squeezed short labels like "A" into circles.
+            .child(Padding::symmetric(2.0, 8.0).child(content));
 
         let hover = self.hover.clone();
         let focused = self.focused.clone();
@@ -393,6 +405,7 @@ mod tests {
     use bastyde::core::widget_tree::WidgetTree;
     use bastyde::widgets::IconWidget;
 
+
     /// The visible chip's height, i.e. what `place_children` actually placed. The `Pill`
     /// widget itself is the test's root and so is handed the window-sized proposal whatever
     /// its `layout_response` says — measuring it would only ever report the proposal back.
@@ -417,6 +430,45 @@ mod tests {
         assert!(
             h > 0.0 && h < 60.0,
             "the chip in a 200 px row should hug its content, got {h}"
+        );
+    }
+
+    /// The bound above is loose enough to pass at nearly twice the right height, and did:
+    /// `Padding::symmetric` is (vertical, horizontal), the call passed (8, 2), and every pill
+    /// shipped 32 dp tall around a 16 dp line of text. Pin the arithmetic so a transposition
+    /// cannot pass again: one Tiny line (16 dp) plus 2 dp above and below.
+    #[test]
+    fn a_chip_is_its_line_height_plus_its_vertical_padding() {
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(Pill::new("Français (fr-FR)", lit!("Français"))));
+        tree.layout(SizeProposal::exact(400.0, 200.0));
+        let h = chip_height(&tree, id);
+        assert!(
+            (h - 20.0).abs() < 0.51,
+            "expected a 16 dp line + 2 dp padding either side = 20, got {h}"
+        );
+    }
+
+    /// The same transposition also starved the chip horizontally: 2 dp of side padding turned
+    /// a one-letter tag into a circle. A short label must still read as a pill, i.e. be
+    /// meaningfully wider than it is tall.
+    #[test]
+    fn a_one_letter_chip_is_still_wider_than_it_is_tall() {
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(Pill::new("A", lit!("A"))));
+        tree.layout(SizeProposal::exact(400.0, 200.0));
+        let chip = tree.children(id)[0];
+        // `place_children` hands the chip the full row width, so measure the padded content
+        // rather than the placement.
+        let content_w = tree
+            .children(chip)
+            .last()
+            .map(|c| tree.bounds(*c).width)
+            .expect("the chip stacks a background and its content");
+        let h = chip_height(&tree, id);
+        assert!(
+            content_w > h,
+            "a one-letter chip should be wider ({content_w}) than tall ({h})"
         );
     }
 

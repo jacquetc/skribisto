@@ -339,7 +339,10 @@ fn swatch(color: bastyde::tokens::Color) -> impl Widget {
         bastyde::widgets::RectWidget::new()
             .background(color)
             .corner_radius(bastyde::tokens::CornerRadius::uniform(9999.0))
-            .border_color(BorderRole::Default)
+            // Derived, not a border token: see `contrast::outline_on`. A picker row for a
+            // near-white tag is exactly where an invisible dot is most confusing, since the
+            // row is what you use to tell tags apart.
+            .border_color(contrast::outline_on(color))
             .border_width(1.0),
     )
 }

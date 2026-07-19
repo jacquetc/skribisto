@@ -27,8 +27,16 @@ use crate::tags::contrast;
 pub fn tag_tooltip_body(tag: &TagRow) -> impl Widget {
     let fill = contrast::parse(&tag.color);
 
+    // Both lines take `TooltipText`, the role for the tooltip's own surface — not the
+    // content-surface roles a body normally uses. This is not a nicety: the tooltip
+    // background is dark in *both* themes (`tooltip_bg` #1E1F22), while light-theme
+    // `text_primary` is #000000. Defaulting the name to Primary painted black on near-black
+    // at 1.27:1, and Secondary on the details line reached only 2.75:1. Hierarchy between
+    // the two lines comes from the type scale (Body vs Tiny), which is surface-independent.
     let mut text = VStack::new().spacing(2.0).child(
-        TextWidget::new(lit!(tag.name.clone())).style(TextStyleRole::Body),
+        TextWidget::new(lit!(tag.name.clone()))
+            .style(TextStyleRole::Body)
+            .color(TextRole::TooltipText),
     );
 
     // The details line is omitted entirely rather than left blank, so a tag with no
@@ -37,18 +45,22 @@ pub fn tag_tooltip_body(tag: &TagRow) -> impl Widget {
         text = text.child(
             TextWidget::new(lit!(tag.details.clone()))
                 .style(TextStyleRole::Tiny)
-                .color(TextRole::Secondary),
+                .color(TextRole::TooltipText),
         );
     }
 
     // The swatch is decorative — the name is right beside it and carries the meaning. A
     // `RectWidget` contributes no accessibility node of its own, so it needs no explicit
     // hiding; the tooltip's own `access_label` is what a screen reader announces.
+    // The hairline is derived from the fill, not taken from a border token, for the same
+    // reason as everywhere else a tag colour is drawn: no token clears SC 1.4.11's 3:1
+    // against an arbitrary fill, and `BorderRole::Default` here would additionally be a
+    // content-surface token sitting on the tooltip surface.
     let swatch = MinSize::new(10.0, 10.0).child(
         RectWidget::new()
             .background(fill)
             .corner_radius(bastyde::tokens::CornerRadius::uniform(9999.0))
-            .border_color(BorderRole::Default)
+            .border_color(contrast::outline_on(fill))
             .border_width(1.0),
     );
 

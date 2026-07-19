@@ -536,31 +536,40 @@ if done:
 if settings_open():
     fail("Settings would not close", s.app, s.mcp, s.log)
 
-# Show the binder explicitly first. Which activity-bar panel is open is *persisted
-# between launches*, so a run that ever left the Trash showing makes every later
-# run start there — which looks exactly like "the tags are missing" (the trash
-# holds 6 items and none of them is the tagged one).
-for n in s.nodes():
-    b = n.get("bounds") or {}
-    if (n.get("label") or "").strip().lower() in ("binder", "classeur") and b.get("x", 999) < 45:
-        pointer_click(b)
-        s.settle()
-        time.sleep(0.6)
-        break
+def binder_tree_rows():
+    """The binder's own tree rows: role "Unknown" at x≈48.
+
+    The x window is narrow on purpose. `x < 120` alone also swept up the activity
+    bar at x≈28 (Binder / Search / Trash / Settings) and the hamburger menu at
+    x≈24; clicking through those closed the project and left an earlier run
+    asserting against the Welcome screen.
+    """
+    return [n for n in s.nodes()
+            if n.get("role") == "Unknown"
+            and 40 <= (n.get("bounds") or {}).get("x", 9999) <= 140
+            and (n.get("label") or "").strip()]
+
+
+# Make sure the binder is the visible panel — but only act if it is not already,
+# because the activity-bar entry *toggles*. Which panel is showing is persisted
+# between launches, so a run that left the Trash up (or the binder hidden) would
+# otherwise poison every run after it, in a way that reads as "the tags are
+# missing" rather than "you are looking at the wrong panel".
+if not binder_tree_rows():
+    for n in s.nodes():
+        b = n.get("bounds") or {}
+        lab = (n.get("label") or "").strip().lower()
+        if lab in ("binder", "classeur") and b.get("x", 999) < 45:
+            pointer_click(b)
+            s.settle()
+            time.sleep(0.8)
+            break
 
 # All three tags hang off one binder item ("1.1 Zeus", tree code 14 in the legacy
 # DB), so walk the binder until the Inspector shows them. Snapshot the rows up
 # front: clicking changes the tree, and iterating a live snapshot would skip
 # entries.
-#
-# The x window is narrow on purpose. `x < 120` alone also swept up the activity
-# bar at x≈28 (Binder / Search / Trash / Settings) and the hamburger menu at
-# x≈24; clicking through those closed the project and left the run asserting
-# against the Welcome screen. Binder tree rows sit at x≈48 with role "Unknown".
-binder_rows = [n for n in s.nodes()
-               if n.get("role") == "Unknown"
-               and 40 <= (n.get("bounds") or {}).get("x", 9999) <= 140
-               and (n.get("label") or "").strip()]
+binder_rows = binder_tree_rows()
 if not binder_rows:
     s.dump("no binder rows found")
     fail("could not find the binder tree", s.app, s.mcp, s.log)
@@ -586,6 +595,37 @@ if not found_on:
     fail("no binder item shows its three tags in the Inspector", s.app, s.mcp, s.log)
 print(f"  Inspector shows all three tags on {found_on!r}")
 s.shot("/tmp/tags-inspector.png")
+
+# ── A tag pill's composite tooltip renders on the tooltip surface ────────────
+print("\n== tag pill tooltip ==")
+pill = next((n for n in s.nodes()
+             if n.get("role") == "ListItem"
+             and (n.get("label") or "").strip().lower() == "very looooooooooong tag"), None)
+if not pill:
+    fail("no tag pill to hover in the Inspector", s.app, s.mcp, s.log)
+b = pill.get("bounds") or {}
+cx, cy = b["x"] + b.get("width", 0) / 2, b["y"] + b.get("height", 0) / 2
+s.call("inject_pointer", {"x": cx - 200, "y": cy, "action": "move"})
+time.sleep(0.25)
+s.call("inject_pointer", {"x": cx, "y": cy, "action": "move"})
+time.sleep(0.1)
+s.call("inject_pointer", {"x": cx + 2, "y": cy + 1, "action": "move"})
+# Composite tooltips use `tooltip_delay_heavy` (400 ms), not the rich delay.
+shown = False
+for _ in range(15):
+    time.sleep(0.3)
+    if any((n.get("role") or "") in ("Tooltip", "Dialog")
+           and "very looooooooooong tag" in (n.get("label") or "").lower()
+           for n in s.nodes()):
+        shown = True
+        break
+if shown:
+    print("  the tag's composite tooltip opens")
+    s.shot("/tmp/tags-pill-tooltip.png")
+else:
+    # Not fatal: the tooltip's own surface colours are asserted by unit tests, and
+    # hover timing here is the least reliable thing in the harness.
+    print("  (tooltip did not open within the poll window; skipping the screenshot)")
 
 print("\nOK — tags verified end-to-end on a legacy project.")
 s.close()
