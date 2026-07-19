@@ -14,7 +14,7 @@ on:
       - "resources/unix/applications/*.desktop"
       - "package/flatpak/**"
   push:
-    branches: [master, bastyde-migration]
+    branches: [master]
     paths:
       - "eu.skribisto.skribisto.metainfo.xml"
       - "resources/unix/applications/*.desktop"

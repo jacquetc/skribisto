@@ -5,7 +5,7 @@ name: Security Audit
 
 on:
   push:
-    branches: [master, bastyde-migration]
+    branches: [master]
     paths:
       - "**/Cargo.toml"
       - "**/Cargo.lock"

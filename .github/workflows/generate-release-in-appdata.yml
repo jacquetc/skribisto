@@ -9,7 +9,7 @@ name: Generate releases in metainfo from NEWS.yml
 
 on:
   push:
-    branches: [master, bastyde-migration]
+    branches: [master]
     paths:
       - "NEWS.yml"
   workflow_dispatch:

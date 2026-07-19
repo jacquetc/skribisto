@@ -15,7 +15,6 @@ on:
   push:
     branches:
       - master
-      - bastyde-migration
     paths:
       - "**"
       - "!**.md"
