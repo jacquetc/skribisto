@@ -86,6 +86,7 @@ fn big_manuscript() -> AppContext {
             word_count_goal: 0,
             char_count_goal: 0,
             dict_language: String::new(),
+            aliases: Vec::new(),
             contents: vec![],
             references: vec![],
             tags: vec![],

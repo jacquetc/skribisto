@@ -15,7 +15,8 @@ pub struct BinderTagDto {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub name: String,
     pub color: String,
-    pub text_color: String,
+    pub details: String,
+    pub discoverable: bool,
 }
 
 impl From<BinderTagDto> for BinderTag {
@@ -26,7 +27,8 @@ impl From<BinderTagDto> for BinderTag {
             updated_at: dto.updated_at,
             name: dto.name,
             color: dto.color,
-            text_color: dto.text_color,
+            details: dto.details,
+            discoverable: dto.discoverable,
         }
     }
 }
@@ -39,7 +41,8 @@ impl From<&BinderTagDto> for BinderTag {
             updated_at: dto.updated_at.clone(),
             name: dto.name.clone(),
             color: dto.color.clone(),
-            text_color: dto.text_color.clone(),
+            details: dto.details.clone(),
+            discoverable: dto.discoverable.clone(),
         }
     }
 }
@@ -52,7 +55,8 @@ impl From<BinderTag> for BinderTagDto {
             updated_at: entity.updated_at,
             name: entity.name,
             color: entity.color,
-            text_color: entity.text_color,
+            details: entity.details,
+            discoverable: entity.discoverable,
         }
     }
 }
@@ -63,7 +67,8 @@ pub struct CreateBinderTagDto {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub name: String,
     pub color: String,
-    pub text_color: String,
+    pub details: String,
+    pub discoverable: bool,
 }
 
 impl From<CreateBinderTagDto> for BinderTag {
@@ -74,7 +79,8 @@ impl From<CreateBinderTagDto> for BinderTag {
             updated_at: dto.updated_at,
             name: dto.name,
             color: dto.color,
-            text_color: dto.text_color,
+            details: dto.details,
+            discoverable: dto.discoverable,
         }
     }
 }
@@ -87,7 +93,8 @@ impl From<&CreateBinderTagDto> for BinderTag {
             updated_at: dto.updated_at.clone(),
             name: dto.name.clone(),
             color: dto.color.clone(),
-            text_color: dto.text_color.clone(),
+            details: dto.details.clone(),
+            discoverable: dto.discoverable.clone(),
         }
     }
 }
@@ -99,7 +106,8 @@ impl From<BinderTag> for CreateBinderTagDto {
             updated_at: entity.updated_at,
             name: entity.name,
             color: entity.color,
-            text_color: entity.text_color,
+            details: entity.details,
+            discoverable: entity.discoverable,
         }
     }
 }
@@ -110,7 +118,8 @@ pub struct UpdateBinderTagDto {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub name: String,
     pub color: String,
-    pub text_color: String,
+    pub details: String,
+    pub discoverable: bool,
 }
 
 impl From<UpdateBinderTagDto> for BinderTag {
@@ -121,7 +130,8 @@ impl From<UpdateBinderTagDto> for BinderTag {
             updated_at: dto.updated_at,
             name: dto.name,
             color: dto.color,
-            text_color: dto.text_color,
+            details: dto.details,
+            discoverable: dto.discoverable,
         }
     }
 }
@@ -134,7 +144,8 @@ impl From<&UpdateBinderTagDto> for BinderTag {
             updated_at: dto.updated_at.clone(),
             name: dto.name.clone(),
             color: dto.color.clone(),
-            text_color: dto.text_color.clone(),
+            details: dto.details.clone(),
+            discoverable: dto.discoverable.clone(),
         }
     }
 }
@@ -147,7 +158,8 @@ impl From<BinderTag> for UpdateBinderTagDto {
             updated_at: entity.updated_at,
             name: entity.name,
             color: entity.color,
-            text_color: entity.text_color,
+            details: entity.details,
+            discoverable: entity.discoverable,
         }
     }
 }
@@ -160,7 +172,8 @@ impl From<BinderTagDto> for UpdateBinderTagDto {
             updated_at: dto.updated_at,
             name: dto.name,
             color: dto.color,
-            text_color: dto.text_color,
+            details: dto.details,
+            discoverable: dto.discoverable,
         }
     }
 }

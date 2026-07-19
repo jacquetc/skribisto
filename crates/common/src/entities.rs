@@ -319,6 +319,7 @@ pub struct BinderItem {
     pub word_count_goal: i64,
     pub char_count_goal: i64,
     pub dict_language: String,
+    pub aliases: Vec<String>,
     pub contents: Vec<EntityId>,
     pub references: Vec<EntityId>,
     pub tags: Vec<EntityId>,
@@ -358,7 +359,8 @@ pub struct BinderTag {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub name: String,
     pub color: String,
-    pub text_color: String,
+    pub details: String,
+    pub discoverable: bool,
 }
 
 impl HasId for BinderTag {

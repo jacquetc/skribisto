@@ -107,6 +107,7 @@ pub fn from_entities(
                     word_count_goal: item.word_count_goal,
                     char_count_goal: item.char_count_goal,
                     dict_language: item.dict_language.clone(),
+                    aliases: item.aliases.clone(),
                     inline_contents,
                     prose_refs,
                     reference_ids: item.references.clone(),
@@ -160,7 +161,8 @@ pub fn from_entities(
                 updated_at: fmt_dt(&t.updated_at),
                 name: t.name.clone(),
                 color: t.color.clone(),
-                text_color: t.text_color.clone(),
+                details: t.details.clone(),
+                discoverable: t.discoverable,
             })
             .collect(),
         dict_words: dict_words
@@ -287,7 +289,8 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                 updated_at: parse_dt(&t.updated_at)?,
                 name: t.name.clone(),
                 color: t.color.clone(),
-                text_color: t.text_color.clone(),
+                details: t.details.clone(),
+                discoverable: t.discoverable,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -376,6 +379,9 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                     word_count_goal: f.word_count_goal,
                     char_count_goal: f.char_count_goal,
                     dict_language: f.dict_language.clone(),
+                    // Must be set explicitly: the `..Default::default()` below would
+                    // otherwise swallow it silently and aliases would never load.
+                    aliases: f.aliases.clone(),
                     ..Default::default()
                 },
                 contents,

@@ -1206,6 +1206,7 @@ fn set_sub_role(fx: &Fixture, item_id: EntityId, sub_role: BinderItemSubRole) {
             word_count_goal: dto.word_count_goal,
             char_count_goal: dto.char_count_goal,
             dict_language: dto.dict_language,
+            aliases: dto.aliases,
         },
     )
     .expect("set sub_role");
@@ -1337,7 +1338,8 @@ fn duplicate_reverts_cloned_tag_links() {
             updated_at: now(),
             name: "Important".into(),
             color: "#f00".into(),
-            text_color: "#fff".into(),
+            details: String::new(),
+            discoverable: false,
         },
     )
     .expect("create tag")
@@ -1384,6 +1386,131 @@ fn duplicate_reverts_cloned_tag_links() {
         "shared tag must not be deleted"
     );
     assert_eq!(item_tags(&fx, source), vec![tag], "source keeps its tag");
+}
+
+/// Set an item's aliases through the scalar patch DTO (a read-modify-write, exactly as
+/// the Inspector does it).
+fn set_aliases(fx: &Fixture, item_id: EntityId, aliases: &[&str]) {
+    let dto = item(&fx.ctx, item_id);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            id: dto.id,
+            // Carried through unchanged: this is an update, and re-minting the uid would
+            // hand the row a new durable identity.
+            uid: dto.uid,
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            title: dto.title,
+            sub_title: dto.sub_title,
+            role: dto.role,
+            sub_role: dto.sub_role,
+            label: dto.label,
+            activated: dto.activated,
+            is_favorite: dto.is_favorite,
+            is_exportable: dto.is_exportable,
+            indent: dto.indent,
+            word_count_goal: dto.word_count_goal,
+            char_count_goal: dto.char_count_goal,
+            dict_language: dto.dict_language,
+            aliases: aliases.iter().map(|s| s.to_string()).collect(),
+        },
+    )
+    .expect("set aliases");
+}
+
+/// `duplicate` copies aliases along with the rest of the item's scalars.
+///
+/// Regression: the construction uses `..Default::default()`, so omitting `aliases`
+/// compiles fine and silently blanks them. Because duplicate *does* copy the Tags M2M,
+/// the clone would keep a `discoverable` tag while losing every name the mention index
+/// matches on — a story-bible note that can never be detected.
+#[test]
+fn duplicate_copies_aliases() {
+    let fx = make_fixture();
+    let source = mk_scene(&fx, "Elizabeth Bennet");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source]);
+    set_aliases(&fx, source, &["Lizzy", "Miss Bennet"]);
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    assert_eq!(
+        item(&fx.ctx, clone).aliases,
+        vec!["Lizzy".to_string(), "Miss Bennet".to_string()],
+        "the clone must answer to the same names as its source"
+    );
+    // Multi-word aliases must survive as single entries, not be split on whitespace.
+    assert_eq!(item(&fx.ctx, clone).aliases.len(), 2);
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(
+        item(&fx.ctx, source).aliases,
+        vec!["Lizzy".to_string(), "Miss Bennet".to_string()],
+        "undo must leave the source's aliases untouched"
+    );
+}
+
+/// `split_scene` carries the source's per-item language onto the new half.
+///
+/// Regression: the new scene is built with `..Default::default()`, so an explicit
+/// override (a French passage inside an English project) silently reverted to the Work
+/// language for spell-checking and search folding. Aliases are deliberately *not*
+/// carried — splitting makes a new scene, not a second copy of the same entity.
+#[test]
+fn split_scene_carries_dict_language_but_not_aliases() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Full");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "AB");
+    set_aliases(&fx, s, &["Lizzy"]);
+
+    // An explicit per-item override, different from the Work language.
+    let dto = item(&fx.ctx, s);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            dict_language: "fr-FR".into(),
+            ..frontend::direct_access::UpdateBinderItemDto::from(dto)
+        },
+    )
+    .expect("set language");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::split_scene(
+        &fx.ctx,
+        Some(stack),
+        &SplitSceneDto {
+            source_id: s,
+            before_text: "A".into(),
+            after_text: "B".into(),
+            before_synopsis: String::new(),
+            after_synopsis: String::new(),
+            new_title: "Second".into(),
+        },
+    )
+    .expect("split");
+
+    let new_scene = order(&fx.ctx, fx.binder2)[1];
+    assert_eq!(
+        item(&fx.ctx, new_scene).dict_language,
+        "fr-FR",
+        "the new half is the same prose in the same language"
+    );
+    assert!(
+        item(&fx.ctx, new_scene).aliases.is_empty(),
+        "a split produces a new scene, not a second item answering to the same name"
+    );
 }
 
 // ──────────────────── restore_items_to (item-keyed relocate) ────────────────────

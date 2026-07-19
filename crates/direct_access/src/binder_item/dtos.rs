@@ -28,6 +28,7 @@ pub struct BinderItemDto {
     pub word_count_goal: i64,
     pub char_count_goal: i64,
     pub dict_language: String,
+    pub aliases: Vec<String>,
     pub contents: Vec<EntityId>,
     pub references: Vec<EntityId>,
     pub tags: Vec<EntityId>,
@@ -52,6 +53,7 @@ impl From<BinderItemDto> for BinderItem {
             word_count_goal: dto.word_count_goal,
             char_count_goal: dto.char_count_goal,
             dict_language: dto.dict_language,
+            aliases: dto.aliases,
             contents: dto.contents,
             references: dto.references,
             tags: dto.tags,
@@ -78,6 +80,7 @@ impl From<&BinderItemDto> for BinderItem {
             word_count_goal: dto.word_count_goal.clone(),
             char_count_goal: dto.char_count_goal.clone(),
             dict_language: dto.dict_language.clone(),
+            aliases: dto.aliases.clone(),
             contents: dto.contents.clone(),
             references: dto.references.clone(),
             tags: dto.tags.clone(),
@@ -104,6 +107,7 @@ impl From<BinderItem> for BinderItemDto {
             word_count_goal: entity.word_count_goal,
             char_count_goal: entity.char_count_goal,
             dict_language: entity.dict_language,
+            aliases: entity.aliases,
             contents: entity.contents,
             references: entity.references,
             tags: entity.tags,
@@ -128,6 +132,7 @@ pub struct CreateBinderItemDto {
     pub word_count_goal: i64,
     pub char_count_goal: i64,
     pub dict_language: String,
+    pub aliases: Vec<String>,
     pub contents: Vec<EntityId>,
     pub references: Vec<EntityId>,
     pub tags: Vec<EntityId>,
@@ -152,6 +157,7 @@ impl From<CreateBinderItemDto> for BinderItem {
             word_count_goal: dto.word_count_goal,
             char_count_goal: dto.char_count_goal,
             dict_language: dto.dict_language,
+            aliases: dto.aliases,
             contents: dto.contents,
             references: dto.references,
             tags: dto.tags,
@@ -178,6 +184,7 @@ impl From<&CreateBinderItemDto> for BinderItem {
             word_count_goal: dto.word_count_goal.clone(),
             char_count_goal: dto.char_count_goal.clone(),
             dict_language: dto.dict_language.clone(),
+            aliases: dto.aliases.clone(),
             contents: dto.contents.clone(),
             references: dto.references.clone(),
             tags: dto.tags.clone(),
@@ -203,6 +210,7 @@ impl From<BinderItem> for CreateBinderItemDto {
             word_count_goal: entity.word_count_goal,
             char_count_goal: entity.char_count_goal,
             dict_language: entity.dict_language,
+            aliases: entity.aliases,
             contents: entity.contents,
             references: entity.references,
             tags: entity.tags,
@@ -227,6 +235,7 @@ pub struct UpdateBinderItemDto {
     pub word_count_goal: i64,
     pub char_count_goal: i64,
     pub dict_language: String,
+    pub aliases: Vec<String>,
 }
 
 impl From<UpdateBinderItemDto> for BinderItem {
@@ -248,6 +257,7 @@ impl From<UpdateBinderItemDto> for BinderItem {
             word_count_goal: dto.word_count_goal,
             char_count_goal: dto.char_count_goal,
             dict_language: dto.dict_language,
+            aliases: dto.aliases,
             contents: Default::default(),
             references: Default::default(),
             tags: Default::default(),
@@ -274,6 +284,7 @@ impl From<&UpdateBinderItemDto> for BinderItem {
             word_count_goal: dto.word_count_goal.clone(),
             char_count_goal: dto.char_count_goal.clone(),
             dict_language: dto.dict_language.clone(),
+            aliases: dto.aliases.clone(),
             contents: Default::default(),
             references: Default::default(),
             tags: Default::default(),
@@ -300,6 +311,7 @@ impl From<BinderItem> for UpdateBinderItemDto {
             word_count_goal: entity.word_count_goal,
             char_count_goal: entity.char_count_goal,
             dict_language: entity.dict_language,
+            aliases: entity.aliases,
         }
     }
 }
@@ -323,6 +335,7 @@ impl From<BinderItemDto> for UpdateBinderItemDto {
             word_count_goal: dto.word_count_goal,
             char_count_goal: dto.char_count_goal,
             dict_language: dto.dict_language,
+            aliases: dto.aliases,
         }
     }
 }

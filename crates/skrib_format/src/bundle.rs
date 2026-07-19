@@ -99,6 +99,22 @@ pub struct WorkFile {
 }
 
 /// `tags.ron`
+///
+/// No text colour is stored: it is derived from `color` at render time via
+/// `Color::best_contrast_text`, which always clears WCAG AA. Persisting it would be
+/// redundant state every write path would have to keep in step.
+///
+/// **This revision is not purely additive** — it added `details`/`discoverable` *and*
+/// dropped `text_color`, so unlike `WorkFile.unique_id`/`chapter_flat` the two directions
+/// differ:
+/// * *Reading older bundles still works*: the new fields default, and serde ignores the
+///   now-unknown `text_color` (no `deny_unknown_fields` anywhere in this crate).
+/// * *Older builds cannot read what we now write*: `text_color` is absent and they
+///   require it. `FORMAT_VERSION` is deliberately left at 2 anyway, because the project
+///   has no external users and no back-compat obligation — but be aware that the failure
+///   mode is a raw serde "missing field" error rather than `migrate_bundle`'s friendly
+///   "written by a newer Skribisto", which only triggers on a version *greater* than ours.
+///   Bump `FORMAT_VERSION` if that error quality ever starts to matter.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinderTagFile {
     pub file_id: u64,
@@ -106,7 +122,12 @@ pub struct BinderTagFile {
     pub updated_at: String,
     pub name: String,
     pub color: String,
-    pub text_color: String,
+    /// What the tag means, shown in its hover tooltip.
+    #[serde(default)]
+    pub details: String,
+    /// Items carrying this tag are story-bible material for the mention index.
+    #[serde(default)]
+    pub discoverable: bool,
 }
 
 /// `dictionary.ron`
@@ -250,6 +271,11 @@ pub struct BinderItemFile {
     pub word_count_goal: i64,
     pub char_count_goal: i64,
     pub dict_language: String,
+    /// Other names this item answers to in prose, matched alongside its title by the
+    /// mention index. Purely additive, so an existing `items.ron` reads back with an
+    /// empty vector (`parses_a_bundle_written_before_these_fields_existed` covers it).
+    #[serde(default)]
+    pub aliases: Vec<String>,
     pub inline_contents: Vec<InlineContent>,
     pub prose_refs: Vec<ProseRef>,
     /// M2M self-references (cross-links), as `file_id`s.

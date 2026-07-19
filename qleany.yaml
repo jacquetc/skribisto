@@ -414,6 +414,13 @@ entities:
     type: integer
   - name: dict_language
     type: string
+  # Other names this item answers to in prose ("Lizzy", "Miss Bennet" for a note
+  # titled "Elizabeth Bennet"). Read by the mention index, which matches an item's
+  # title *and* its aliases against scene/synopsis/note text. Only meaningful on
+  # items carrying a discoverable BinderTag.
+  - name: aliases
+    type: string
+    is_list: true
   - name: contents
     type: entity
     entity: Content
@@ -435,10 +442,21 @@ entities:
   fields:
   - name: name
     type: string
+  # Background colour, chosen by the writer. The *text* colour is deliberately not
+  # stored: it is derived at render time from this one via `Color::best_contrast_text`,
+  # which always clears WCAG AA (the worse of black/white is still 4.58:1). Storing it
+  # would be redundant state that five write paths would each have to keep in step.
   - name: color
     type: string
-  - name: text_color
+  # A line or two saying what the tag means, shown in its hover tooltip. Tag meaning
+  # decays — "Thread B" is opaque six months later.
+  - name: details
     type: string
+  # Items carrying this tag are story-bible material: the mention index matches their
+  # title + aliases against prose to build the per-scene roster and per-note backlinks.
+  # A plain workflow tag ("status/draft") leaves this false.
+  - name: discoverable
+    type: boolean
   undoable: true
 - name: Content
   single_model: true

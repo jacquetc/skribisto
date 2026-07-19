@@ -76,6 +76,17 @@ fn item(
             word_count_goal: 500,
             char_count_goal: 2000,
             dict_language: "en-US".into(),
+            // Derived from `id` so every item's aliases are distinct: `materialize`
+            // rebuilds each item under a fresh id and remaps by `item_map`, so a
+            // mis-assignment that handed one item another's aliases would be invisible
+            // if every fixture row carried the same vector. Odd ids stay empty to cover
+            // the absent case, and one entry is multi-word because that is the whole
+            // point of `Vec<String>` over a space-separated field.
+            aliases: if id % 2 == 0 {
+                vec![format!("Alias{id}"), format!("Miss Bennet {id}")]
+            } else {
+                Vec::new()
+            },
             contents: Vec::new(),
             references: Vec::new(),
             tags: Vec::new(),
@@ -113,7 +124,8 @@ fn sample_bundle() -> WorkBundle {
             updated_at: ts(),
             name: "Important".into(),
             color: "#f00".into(),
-            text_color: "#fff".into(),
+            details: "Needs a second pass".into(),
+            discoverable: false,
         },
         BinderTag {
             id: 11,
@@ -121,7 +133,8 @@ fn sample_bundle() -> WorkBundle {
             updated_at: ts(),
             name: "Idea".into(),
             color: "#0f0".into(),
-            text_color: "#000".into(),
+            details: String::new(),
+            discoverable: true,
         },
     ];
     let dict_words = vec![DictWord {
@@ -239,6 +252,7 @@ struct NormItem {
     label: String,
     is_exportable: bool,
     wcg: i64,
+    aliases: Vec<String>,
     inline: Vec<(String, String)>,
     prose: Vec<(String, String)>,
 }
@@ -248,13 +262,24 @@ struct NormBinder {
     activated: bool,
     items: Vec<NormItem>,
 }
+/// A tag as compared across the round-trip. Named rather than a tuple: two adjacent
+/// `String` fields in a tuple can be transposed in both the construction and the
+/// assertion and still compare equal, silently checking nothing.
+/// No text colour — it is derived from `color` at render time, not persisted.
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
+struct NormTag {
+    name: String,
+    color: String,
+    details: String,
+    discoverable: bool,
+}
 #[derive(Debug, PartialEq)]
 struct Norm {
     title: String,
     author: String,
     lang: String,
     unique_id: String,
-    tags: Vec<(String, String, String)>,
+    tags: Vec<NormTag>,
     words: Vec<String>,
     binders: Vec<NormBinder>,
     trash: usize,
@@ -265,7 +290,12 @@ fn norm(b: &WorkBundle) -> Norm {
     let mut tags: Vec<_> = b
         .tags
         .iter()
-        .map(|t| (t.name.clone(), t.color.clone(), t.text_color.clone()))
+        .map(|t| NormTag {
+            name: t.name.clone(),
+            color: t.color.clone(),
+            details: t.details.clone(),
+            discoverable: t.discoverable,
+        })
         .collect();
     tags.sort();
     let mut words: Vec<_> = b.dict_words.iter().map(|w| w.word.clone()).collect();
@@ -306,6 +336,7 @@ fn norm(b: &WorkBundle) -> Norm {
                         label: f.label.clone(),
                         is_exportable: f.is_exportable,
                         wcg: f.word_count_goal,
+                        aliases: f.aliases.clone(),
                         inline,
                         prose,
                     }

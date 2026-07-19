@@ -26,10 +26,12 @@ use skribisto_model::content_allowed;
 use skribisto_model::scene_break::{self, SceneBreakTier};
 use std::collections::HashMap;
 
+/// A row of the legacy `tbl_tag`. Its `t_text_color` column is deliberately not read:
+/// text colour is derived from `color` at render time now, so a value chosen for the
+/// old light-only UI would only be misleading.
 pub struct LegacyTag {
     pub name: String,
     pub color: String,
-    pub text_color: String,
 }
 
 pub struct LegacyContent {
@@ -222,7 +224,7 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
     let mut tags: Vec<(i64, LegacyTag)> = Vec::new();
     {
         let mut stmt = conn.prepare(
-            "SELECT l_tag_id, COALESCE(t_name,''), COALESCE(t_color,''), COALESCE(t_text_color,'') \
+            "SELECT l_tag_id, COALESCE(t_name,''), COALESCE(t_color,'') \
              FROM tbl_tag ORDER BY l_tag_id",
         )?;
         let rows = stmt.query_map([], |r| {
@@ -231,7 +233,6 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
                 LegacyTag {
                     name: r.get::<_, String>(1)?,
                     color: r.get::<_, String>(2)?,
-                    text_color: r.get::<_, String>(3)?,
                 },
             ))
         })?;

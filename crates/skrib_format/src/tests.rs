@@ -77,13 +77,17 @@ fn sample_inputs() -> (
         paces: vec![],
     };
     let tags = vec![
+        // Non-default `details`/`discoverable` on purpose: the folder and zip
+        // round-trip tests compare whole bundles, so these two rows are what proves
+        // the new fields actually survive a write/read cycle.
         BinderTag {
             id: 10,
             created_at: now,
             updated_at: now,
             name: "Important".into(),
             color: "#f00".into(),
-            text_color: "#fff".into(),
+            details: "Needs a second pass before the beta read".into(),
+            discoverable: false,
         },
         BinderTag {
             id: 11,
@@ -91,7 +95,8 @@ fn sample_inputs() -> (
             updated_at: now,
             name: "Idea".into(),
             color: "#0f0".into(),
-            text_color: "#000".into(),
+            details: String::new(),
+            discoverable: true,
         },
     ];
     let dict_words = vec![
@@ -144,6 +149,15 @@ fn sample_inputs() -> (
             word_count_goal: 1000,
             char_count_goal: 5000,
             dict_language: "en-US".into(),
+            // One item carries multi-word aliases and the rest carry none, so the
+            // round-trip covers both the populated and the empty case. Multi-word is
+            // the point of `Vec<String>`: a space-separated string could not hold
+            // "Miss Bennet" as one alias.
+            aliases: if i == 0 {
+                vec!["Lizzy".into(), "Miss Bennet".into()]
+            } else {
+                Vec::new()
+            },
             contents: Vec::new(),
             references: Vec::new(),
             tags: vec![10],
@@ -668,4 +682,66 @@ fn migrating_a_v1_bundle_walks_the_whole_chain() {
             assert!(!i.item.uid.is_nil(), "v1 item left unidentified");
         }
     }
+}
+
+/// A bundle written before `details`/`discoverable`/`aliases` existed must still parse.
+///
+/// The round-trip tests above always write with the current code, so they can never
+/// exercise the `#[serde(default)]` attributes those three fields carry — a dropped
+/// `default` would sail through them and only fail on a real pre-existing project. The
+/// RON below is hand-written to match exactly what an older build emitted: `struct_names`
+/// on, `BinderTagFile.text_color` present (now unknown, and silently ignored because this
+/// crate sets `deny_unknown_fields` nowhere), and the three new fields absent.
+#[test]
+fn parses_a_bundle_written_before_these_fields_existed() {
+    // `r##"…"##`: the colour literals contain `"#`, which would close an `r#"…"#`.
+    let old_tags = r##"[
+        BinderTagFile(
+            file_id: 10,
+            created_at: "2023-11-14T22:13:20Z",
+            updated_at: "2023-11-14T22:13:20Z",
+            name: "Important",
+            color: "#f00",
+            text_color: "#fff",
+        ),
+    ]"##;
+    let tags: Vec<BinderTagFile> = ron::from_str(old_tags).expect("old tags.ron must parse");
+    assert_eq!(tags.len(), 1);
+    assert_eq!(tags[0].name, "Important");
+    assert_eq!(tags[0].color, "#f00");
+    // Defaulted, not carried over from the dropped `text_color`.
+    assert_eq!(tags[0].details, "");
+    assert!(!tags[0].discoverable);
+
+    let old_items = r##"[
+        BinderItemFile(
+            file_id: 300,
+            created_at: "2023-11-14T22:13:20Z",
+            updated_at: "2023-11-14T22:13:20Z",
+            title: "The ferry",
+            sub_title: "",
+            role: Item,
+            sub_role: Scene,
+            label: "",
+            activated: true,
+            is_favorite: false,
+            is_exportable: true,
+            indent: 0,
+            word_count_goal: 0,
+            char_count_goal: 0,
+            dict_language: "en-US",
+            inline_contents: [],
+            prose_refs: [],
+            reference_ids: [301],
+            tag_ids: [10],
+        ),
+    ]"##;
+    let items: Vec<BinderItemFile> = ron::from_str(old_items).expect("old items.ron must parse");
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0].title, "The ferry");
+    // The pre-existing relationships must survive untouched...
+    assert_eq!(items[0].reference_ids, vec![301]);
+    assert_eq!(items[0].tag_ids, vec![10]);
+    // ...and the new field defaults rather than failing the parse.
+    assert!(items[0].aliases.is_empty());
 }

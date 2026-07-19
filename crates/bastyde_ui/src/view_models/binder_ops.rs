@@ -295,6 +295,7 @@ pub(crate) fn update_item_dto(it: &BinderItemDto) -> UpdateBinderItemDto {
         word_count_goal: it.word_count_goal,
         char_count_goal: it.char_count_goal,
         dict_language: it.dict_language.clone(),
+        aliases: it.aliases.clone(),
     }
 }
 
@@ -410,6 +411,10 @@ mod tests {
             word_count_goal: 1200,
             char_count_goal: 6000,
             dict_language: "fr-FR".into(),
+            // A list of primitives, not a relationship: it *is* a scalar as far as the
+            // patch DTO is concerned and must survive, or renaming an item would wipe
+            // the aliases the mention index depends on.
+            aliases: vec!["Lizzy".into(), "Miss Bennet".into()],
             // The relationship vectors below are exactly what must NOT survive into the
             // update DTO — it has no fields for them.
             contents: vec![41, 42],
@@ -439,6 +444,7 @@ mod tests {
         assert_eq!(out.word_count_goal, 1200);
         assert_eq!(out.char_count_goal, 6000);
         assert_eq!(out.dict_language, "fr-FR");
+        assert_eq!(out.aliases, vec!["Lizzy", "Miss Bennet"]);
     }
 
     /// Splitting cuts exactly at the caret and loses nothing.

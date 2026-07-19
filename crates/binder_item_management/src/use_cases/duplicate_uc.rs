@@ -166,6 +166,13 @@ impl DuplicateUseCase {
                     word_count_goal: src.word_count_goal,
                     char_count_goal: src.char_count_goal,
                     dict_language: src.dict_language.clone(),
+                    // Copied deliberately, and it must stay explicit: `..Default::default()`
+                    // below would silently blank it. A clone that kept its `character` tag
+                    // (see the Tags copy further down) but lost every name the mention
+                    // index matches on would be discoverable yet undetectable. Two items
+                    // answering to one name is the intended outcome here — the roster
+                    // shows both.
+                    aliases: src.aliases.clone(),
                     ..Default::default()
                 })?;
 

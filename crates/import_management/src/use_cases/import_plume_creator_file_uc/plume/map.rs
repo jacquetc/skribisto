@@ -678,6 +678,16 @@ impl<'a> Builder<'a> {
                     word_count_goal: 0,
                     char_count_goal: 0,
                     dict_language: String::new(),
+                    // `make_item` is the single item constructor — it builds both ordinary
+                    // tree items AND the story-bible objects (see the `for obj in
+                    // &group.objs` loop), and it is those objects that carry Plume's
+                    // `aliases` attribute. That attribute is currently flattened into the
+                    // note's prose metadata line by `build_obj_synopsis` instead of landing
+                    // here, so structured alias data is lost on import. Threading it
+                    // through (with a per-caller argument, since tree items have none) is
+                    // its own change, together with synthesising tags from the story-bible
+                    // group names and status badges.
+                    aliases: Vec::new(),
                     inline_contents,
                     prose_refs,
                     reference_ids,

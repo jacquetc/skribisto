@@ -66,6 +66,7 @@ mod imp {
             word_count_goal: it.word_count_goal,
             char_count_goal: it.char_count_goal,
             dict_language: it.dict_language.clone(),
+            aliases: it.aliases.clone(),
         }
     }
 

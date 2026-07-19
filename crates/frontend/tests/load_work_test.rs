@@ -8,10 +8,11 @@
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_commands, binder_item_commands, content_commands, trash_info_commands, work_commands,
-    work_management_commands,
+    binder_commands, binder_item_commands, binder_tag_commands, content_commands,
+    trash_info_commands, work_commands, work_management_commands,
 };
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+use frontend::common::direct_access::work::WorkRelationshipField;
 use skribisto_model::validate_item;
 use work_management::LoadWorkDto;
 
@@ -109,6 +110,74 @@ fn load_legacy_fixture_populates_store() {
         indexed_item_ids, trashed_item_ids,
         "every trashed BinderItem must have exactly one TrashInfo, and vice versa"
     );
+
+    // Tags migrate from the legacy `tbl_tag` / `tbl_tag_relationship`. This is the whole
+    // point of the tag work: a v2.0.7 project has carried its tags through open/save
+    // invisibly, and nothing verified they survived the trip. The fixture holds three
+    // tags, all attached to one tree item.
+    let work_id = works[0].id;
+    let work_tag_ids = work_commands::get_work_relationship(&ctx, &work_id, &WorkRelationshipField::Tags)
+        .expect("Work Tags relationship");
+    let mut tags: Vec<_> = binder_tag_commands::get_binder_tag_multi(&ctx, &work_tag_ids)
+        .expect("get_binder_tag_multi")
+        .into_iter()
+        .flatten()
+        .collect();
+    tags.sort_by(|a, b| a.name.cmp(&b.name));
+
+    let names: Vec<&str> = tags.iter().map(|t| t.name.as_str()).collect();
+    assert_eq!(
+        names,
+        vec!["A", "B", "very looooooooooong tag"],
+        "the fixture's three legacy tags must migrate, names intact"
+    );
+    // Colours survive; the legacy `t_text_color` is deliberately dropped (text colour is
+    // derived from `color` at render time), and neither new field has a legacy source.
+    assert_eq!(tags[0].color, "#FFFAFA");
+    assert_eq!(tags[2].color, "#000000");
+    for t in &tags {
+        assert_eq!(t.details, "", "legacy projects have no tag descriptions");
+        assert!(
+            !t.discoverable,
+            "nothing in a legacy project is story-bible material"
+        );
+    }
+
+    // ...and the assignments survive too: the fixture links all three to one item.
+    let tag_id_set: std::collections::HashSet<_> = tags.iter().map(|t| t.id).collect();
+    let tagged: Vec<_> = items
+        .iter()
+        .filter_map(|i| {
+            let ids = binder_item_commands::get_binder_item_relationship(
+                &ctx,
+                &i.id,
+                &BinderItemRelationshipField::Tags,
+            )
+            .expect("binder_item Tags relationship");
+            (!ids.is_empty()).then_some(ids)
+        })
+        .collect();
+    assert_eq!(
+        tagged.len(),
+        1,
+        "the fixture tags exactly one item, got {} tagged items",
+        tagged.len()
+    );
+    let on_item: std::collections::HashSet<_> = tagged[0].iter().copied().collect();
+    assert_eq!(
+        on_item, tag_id_set,
+        "that item must carry all three migrated tags"
+    );
+
+    // No dangling ids: every tag id on an item must exist in the store.
+    for ids in &tagged {
+        for id in ids {
+            assert!(
+                tag_id_set.contains(id),
+                "item references tag {id}, which is not one of the Work's tags"
+            );
+        }
+    }
 
     // Every migrated item must satisfy the writing-model constraint matrix:
     // a valid (role, sub_role) pair carrying only permitted content roles.

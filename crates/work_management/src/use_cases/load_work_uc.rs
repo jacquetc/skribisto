@@ -286,7 +286,8 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             updated_at: t.updated_at,
             name: t.name.clone(),
             color: t.color.clone(),
-            text_color: t.text_color.clone(),
+            details: t.details.clone(),
+            discoverable: t.discoverable,
             ..Default::default()
         })?;
         tag_map.insert(t.id, created.id);
@@ -359,6 +360,10 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
                 word_count_goal: i.word_count_goal,
                 char_count_goal: i.char_count_goal,
                 dict_language: i.dict_language.clone(),
+                // Must be explicit: `..Default::default()` below would silently swallow
+                // it, and the aliases would be dropped on every load with nothing to
+                // show for it. (`save_load_round_trip_through_store` covers this.)
+                aliases: i.aliases.clone(),
                 ..Default::default()
             })?;
 
@@ -709,7 +714,12 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                 updated_at: now,
                 name: t.name.clone(),
                 color: t.color.clone(),
-                text_color: t.text_color.clone(),
+                // The legacy schema has no equivalent of either: a pre-3.0 project
+                // never had tag descriptions, and nothing in it was story-bible
+                // material for the mention index. Its `t_text_color` is deliberately
+                // dropped — text colour is derived from `color` at render time now.
+                details: String::new(),
+                discoverable: false,
             }
         })
         .collect();

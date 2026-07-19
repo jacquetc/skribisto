@@ -100,7 +100,15 @@ impl RecordProgressSnapshotUseCase {
             }
         }
 
+        // `created_at`/`updated_at` must be set explicitly: `DateTime<Utc>::default()` is
+        // the Unix epoch, not "now", so letting `..Default::default()` cover them stamps
+        // every snapshot 1970-01-01 — and those two fields are persisted into the bundle
+        // by `ProgressSnapshotFile`. Every other entity-creation site in the workspace
+        // passes a real timestamp; this one was the outlier.
+        let now = chrono::Utc::now();
         let created = uow.create_orphan_progress_snapshot(&ProgressSnapshot {
+            created_at: now,
+            updated_at: now,
             day: day_key,
             total_word_count: dto.total_word_count,
             total_char_count: Some(dto.total_char_count),

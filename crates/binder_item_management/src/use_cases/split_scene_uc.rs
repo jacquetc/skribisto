@@ -176,6 +176,21 @@ impl SplitSceneUseCase {
             activated: true,
             is_exportable: true,
             indent,
+            // Both halves are the same prose in the same language: without this the new
+            // half falls back to the Work language, silently losing a per-item override
+            // (a French passage inside an English project reverts to English for
+            // spell-checking and search folding).
+            dict_language: src.dict_language.clone(),
+            // Everything else is deliberately NOT carried from `src`, unlike `duplicate`:
+            // duplicating makes a second copy of the same thing, whereas splitting makes a
+            // genuinely new scene that happens to start with the source's back half.
+            //   * `aliases` — two scenes answering to one entity's name would be wrong.
+            //   * `word_count_goal`/`char_count_goal` — per-scene targets; inheriting them
+            //     would silently double the project's total goal on every split.
+            //   * `is_favorite`, `label`, `sub_title` — the author's annotations about the
+            //     *source* scene, not facts about the prose that moved.
+            // `dict_language` above is the sole exception because it describes the prose
+            // itself, and the prose is the one thing genuinely shared between the halves.
             ..Default::default()
         })?;
         let mut new_content_ids = Vec::new();

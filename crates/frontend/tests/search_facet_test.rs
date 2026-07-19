@@ -49,6 +49,7 @@ fn item(role: BinderItemRole, sub_role: BinderItemSubRole, title: &str) -> Creat
         word_count_goal: 0,
         char_count_goal: 0,
         dict_language: String::new(),
+        aliases: Vec::new(),
         contents: vec![],
         references: vec![],
         tags: vec![],
