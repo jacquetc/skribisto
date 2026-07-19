@@ -47,6 +47,10 @@ thiserror = "2.0"
 anyhow = "1.0"
 flume = "0.12"
 serde = { version = "1", features = ["derive"] }
+# Tag palette import/export. A tag is four fields, so a one-per-line .txt (what the
+# personal dictionary uses) cannot carry it; RFC-4180 quoting also means a tag name may
+# contain a comma without corrupting the file.
+csv = "1.4"
 chrono = { version = "0.4" , features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 

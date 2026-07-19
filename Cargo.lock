@@ -875,6 +875,7 @@ dependencies = [
  "bastyde-charts",
  "blake3",
  "chrono",
+ "csv",
  "encoding_rs",
  "interprocess",
  "jiff",
