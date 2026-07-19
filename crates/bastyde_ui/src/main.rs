@@ -48,6 +48,7 @@ mod settings;
 mod singles;
 mod spellcheck;
 mod tags;
+mod widgets;
 mod tabs;
 // Gated on `mocks` as well as `test`: its only consumers today are the mocks-gated
 // pane tests (a pane needs fixture rows to render). Widen the gate the day a
