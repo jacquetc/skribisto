@@ -87,16 +87,9 @@ pub fn attach_labelled_composite_tooltip(
 ) -> WidgetId {
     let tooltip = CompositeTooltipWidget::new()
         .content_boxed(body)
-        // A composite tooltip does NOT hug its content: it clamps the overlay's unbounded
-        // proposal to `COMPOSITE_TOOLTIP_MAX_WIDTH` (480) and then proposes *that* as an
-        // exact size, and its internal `ScrollArea` — with horizontal scrolling off — fills
-        // whatever width it is given. So the default is a 480 dp panel around a two-word tag
-        // name, whatever the body does. Wrapping the body to report its natural size does
-        // not help; the scroll area above it has already taken the width.
-        //
-        // Capping the maximum is the only lever available from here. It is still a fixed
-        // width rather than a hugging one, but a proportionate one for the short bodies
-        // these tooltips carry (a tag name, a description, later a sentence of evidence).
+        // A genuine maximum: composite tooltips hug their content (fixed in bastyde), so
+        // this only bites when a description runs long, keeping it a readable column rather
+        // than a single 480 dp line.
         .max_width(COMPOSITE_TOOLTIP_WIDTH)
         .access_label(access_label);
     let sink = tooltip.shown_at_sink();
