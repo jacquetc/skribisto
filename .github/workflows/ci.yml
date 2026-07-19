@@ -42,7 +42,7 @@ jobs:
   # passed. Set branch protection to require this "CI" job, not each leg.
   ci:
     name: CI
-    needs: [test-linux, test-cross, check, rustfmt, clippy, docs, spdx]
+    needs: [test-linux, test-cross, check, rustfmt, clippy, docs, spdx, locales]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +54,8 @@ jobs:
              [[ "${{ needs.rustfmt.result }}" != "success" ]] || \
              [[ "${{ needs.clippy.result }}" != "success" ]] || \
              [[ "${{ needs.docs.result }}" != "success" ]] || \
-             [[ "${{ needs.spdx.result }}" != "success" ]]; then
+             [[ "${{ needs.spdx.result }}" != "success" ]] || \
+             [[ "${{ needs.locales.result }}" != "success" ]]; then
             echo "One or more jobs failed"
             exit 1
           fi
@@ -266,3 +267,25 @@ jobs:
 
       - name: Check SPDX headers
         run: python3 tools/check_spdx_headers.py --check
+
+  locales:
+    name: Locales
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # `tr!` validates keys against en-US only — a translation locale is
+      # loaded at runtime and falls back per key, so a missing, extra or
+      # renamed-variable string in fr-FR compiles and tests green and only
+      # shows up as English text (or a broken interpolation) in the app.
+      # Nothing else in this workflow can catch that.
+      - name: Check translations against en-US
+        run: python3 tools/check_locales.py --format github
+
+      # The checker is the gate, so its own checks have to be exercised —
+      # a parser bug would otherwise turn the job above into a no-op that
+      # reports "in sync" forever.
+      - name: Test the locale checker
+        run: python3 -m unittest discover -s tools -p "test_*.py" -v
