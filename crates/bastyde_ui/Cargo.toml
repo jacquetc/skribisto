@@ -168,6 +168,10 @@ pdf = ["skribisto_compiler/pdf"]
 [dev-dependencies]
 # Import-panel validation tests probe the filesystem for an existing target.
 tempfile = "3"
+# `WidgetId` is a slotmap key. The formatting registry is keyed on one, so its
+# headless tests need to mint a couple of distinct ids without standing up a
+# whole `WidgetTree`. Already in the lockfile via bastyde-core — no new crate.
+slotmap = "1"
 
 [lints]
 workspace = true

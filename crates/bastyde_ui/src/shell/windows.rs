@@ -236,6 +236,7 @@ fn mark(
         .on_activate(move |c| {
             run(&vm);
             c.request_frame();
+            vm.refocus(c);
         })
 }
 
@@ -243,7 +244,10 @@ fn mark(
 ///
 /// Like the dock's buttons it requests a frame: the pointer is on the menu
 /// overlay and the editor is unfocused, so nothing else schedules the repaint
-/// that shows the edit.
+/// that shows the edit. It then puts focus back where the writer was typing —
+/// reaching a menu item took it away, and the dock and context menu do not have
+/// that problem (the dock's buttons are non-focusable, and dismissing the
+/// context menu restores focus by itself).
 fn command(
     vm: &FormatViewModel,
     label: bastyde::i18n::LocalizedString,
@@ -256,6 +260,7 @@ fn command(
         .on_activate(move |c| {
             run(&vm);
             c.request_frame();
+            vm.refocus(c);
         })
 }
 
@@ -750,6 +755,7 @@ impl ProjectWindowFactory {
                                                     .on_activate(move |c| {
                                                         f.set_heading(level);
                                                         c.request_frame();
+                                                        f.refocus(c);
                                                     }),
                                             );
                                         }
@@ -774,6 +780,7 @@ impl ProjectWindowFactory {
                                                     .on_activate(move |c| {
                                                         f.set_alignment(idx);
                                                         c.request_frame();
+                                                        f.refocus(c);
                                                     }),
                                             );
                                         }
@@ -826,6 +833,7 @@ impl ProjectWindowFactory {
                                                                     .on_activate(move |c| {
                                                                         f.insert_table(n, n);
                                                                         c.request_frame();
+                                                                        f.refocus(c);
                                                                     }),
                                                             );
                                                         }

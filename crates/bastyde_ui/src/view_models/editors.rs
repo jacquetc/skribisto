@@ -368,7 +368,9 @@ impl EditorsViewModel {
     ///
     /// Prefers the tab's prose editor, falling back to its synopsis. `None` for
     /// a stream row's synopsis or a corkboard card: those build many editors per
-    /// tab, so no single per-tab handle can say which one.
+    /// tab, so no single per-tab handle can say which one. Those are not
+    /// unreachable — they register themselves with `FormatViewModel`, which
+    /// prefers whichever registered editor holds focus over this answer.
     pub fn format_target(&self) -> Option<(bastyde::widgets::rich_text::EditorHandle, bool, bool)> {
         self.with_focused_tab(|tab| {
             let prose = tab.find().and_then(|f| f.editor_handle());

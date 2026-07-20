@@ -104,10 +104,11 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     tab.mark_dirty_fn(),
                     Option::None,
                     tab.open_doc.spell_synopsis(),
-                    // A stream shows one synopsis per row, so a single per-tab
-                    // sink cannot say *which* — the last row built would win.
-                    // The format dock therefore treats a stream synopsis the
-                    // way it treats a corkboard card: not a formattable target.
+                    // No per-tab sink: a stream shows one synopsis per row, so
+                    // the last row built would win it. These rows reach the
+                    // formatting surfaces through the editor registry instead
+                    // (see `FormatViewModel`), which resolves by focus and so
+                    // can name the row the caret is actually in.
                     Option::None,
                 )),
             };
@@ -258,6 +259,7 @@ fn stream_row(
                         split,
                         doc.spell_synopsis(),
                         // One synopsis per stream row — see the sibling call.
+                        // Formatting reaches it through the editor registry.
                         Option::None,
                     ));
                 }

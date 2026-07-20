@@ -15,6 +15,14 @@
 //! already resolves its target. The same reason [`FindViewModel`] is re-attached
 //! on every rebuild rather than held.
 //!
+//! The editor **registry** below does hold handles, and does not break that
+//! rule: an entry is created in a widget's `build` and withdrawn in its `Drop`,
+//! so a handle is never reachable for longer than the editor it addresses is
+//! mounted, and a rebuild re-points the entry at the fresh handle. The registry
+//! exists because the resolver reaches one editor per tab, while a Full
+//! Chapter/Part/Book stream builds one per row and a corkboard builds one per
+//! card — the editors the writer is most often actually typing in.
+//!
 //! **The mirror signals are pushed, not derived.** `IconButton::toggle` and
 //! `MenuEntry::checked` both want a plain `Signal<bool>` they can read (and, for
 //! the button, write), and a derived signal is read-only. So the state is
@@ -49,7 +57,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use bastyde::prelude::Signal;
+use bastyde::prelude::{Signal, WidgetId};
 use bastyde::text_document::Alignment;
 use bastyde::widgets::rich_text::EditorHandle;
 
@@ -100,11 +108,12 @@ pub enum FormatSurface {
     /// and lists apply; but a synopsis is not chapter-structured, so headings,
     /// alignment, blockquote, tables and scene breaks do not.
     ///
-    /// Reached through `EditorsViewModel::focused_format_target`, which prefers
-    /// the tab's prose editor and falls back to its synopsis — whichever holds
-    /// keyboard focus. A stream row's synopsis and a corkboard card do **not**
-    /// produce this: those build many editors per tab, so no single per-tab
-    /// handle can say which one the caret is in.
+    /// Reached two ways: through `EditorsViewModel::format_target`, which
+    /// prefers the tab's prose editor and falls back to its synopsis; and
+    /// through the editor registry, which is how a **stream row's synopsis** and
+    /// a **corkboard card** get here. Those build many editors per tab, so no
+    /// single per-tab handle can say which one the caret is in — the registry
+    /// asks the editors themselves and lets focus decide.
     Synopsis,
     /// Nothing formattable has focus — the binder, a dock, the title field
     /// (a plain `TextInput`, not a rich editor). The dock shows its empty
@@ -164,6 +173,50 @@ impl FormatSurface {
 /// can see both the pane/tab structure and the editors.
 type ResolveTarget = Rc<dyn Fn() -> (Option<EditorHandle>, FormatSurface)>;
 
+/// What a **registered** editor knows about its own content.
+///
+/// Deliberately coarser than [`FormatSurface`]: an editor holding prose cannot
+/// tell a scene from a note — that is a property of the *item* the tab was
+/// opened on, which only the resolver can see. [`FormatViewModel::target`]
+/// refines this against the resolver's answer.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum EditorKind {
+    /// A manuscript-prose editor (`writing_column`).
+    Prose,
+    /// A synopsis editor — the tab's own, a stream row's, or a corkboard card's.
+    Synopsis,
+}
+
+/// One live editor widget, registered while it is mounted.
+///
+/// The registry is what lets the formatting surfaces reach the editors the
+/// per-tab resolver structurally cannot: a **stream row** (Full Chapter/Part/
+/// Book builds one editor per row) and a **corkboard card** (one per card).
+/// A single per-tab handle cannot say *which* of those the writer is in, so
+/// each editor registers itself and focus picks the winner.
+///
+/// Registration is owned by `TypographyBoundEditor` — every writing editor in
+/// the app is wrapped in one — which registers in `build` and unregisters in
+/// `Drop`. That is why entries never go stale: the widget's own lifetime is the
+/// entry's lifetime, so a handle is dropped from here the moment the editor it
+/// addresses stops existing.
+struct RegisteredEditor {
+    /// The wrapper's `self_id` — the same identity `wire_spell` uses as its
+    /// per-view token.
+    ///
+    /// Keying on it is safe against the build/drop interleaving, which is worth
+    /// stating because getting it wrong would silently unregister a live editor:
+    /// on the default rebuild path `rebuild_single_widget` destroys the old
+    /// children *before* `build()` runs, so the old entry is withdrawn before
+    /// the new one arrives; on the preserve path a re-attached child keeps its
+    /// id and is not rebuilt at all. A `WidgetId` is a slotmap key, so even a
+    /// reused slot comes back with a bumped version — a freed id can never
+    /// collide with a live one.
+    id: WidgetId,
+    handle: EditorHandle,
+    kind: EditorKind,
+}
+
 /// One gate per control group, for the dock to hang `visible_when` on.
 ///
 /// The dock **hides** groups that do not apply rather than greying them out: a
@@ -220,6 +273,21 @@ pub struct FormatViewModel {
     ///
     /// Inert until then: no target, nothing to format, every group hidden.
     resolve: Rc<RefCell<Option<ResolveTarget>>>,
+    /// Every mounted writing editor, whether or not the resolver can see it.
+    /// See [`RegisteredEditor`].
+    registry: Rc<RefCell<Vec<RegisteredEditor>>>,
+    /// The last registered editor to hold focus, kept so the **menu** still has
+    /// a target after opening it moved focus to the overlay.
+    ///
+    /// Written by [`Self::target`], which [`Self::refresh`] calls on every
+    /// pumped frame — so it is current by the time focus moves anywhere, a
+    /// focus change being itself a repaint.
+    ///
+    /// The resolver provides this stickiness for the editors it can reach; a
+    /// stream row or a corkboard card has no per-tab slot to be sticky in, so
+    /// the latch does it for them. Cleared when that editor unregisters, so it
+    /// can never outlive the widget.
+    sticky: Rc<RefCell<Option<(WidgetId, EditorHandle, EditorKind)>>>,
     /// Which groups apply. Read by the dock to decide what to show and by the
     /// menu to decide what to enable.
     surface: Signal<FormatSurface>,
@@ -293,6 +361,8 @@ impl FormatViewModel {
     pub fn detached() -> Self {
         Self {
             resolve: Rc::new(RefCell::new(None)),
+            registry: Rc::new(RefCell::new(Vec::new())),
+            sticky: Rc::new(RefCell::new(None)),
             surface: Signal::new(FormatSurface::None),
             bold: Signal::new(false),
             italic: Signal::new(false),
@@ -323,12 +393,115 @@ impl FormatViewModel {
         *self.resolve.borrow_mut() = Some(resolve);
     }
 
+    /// Announce a mounted writing editor. Called from `TypographyBoundEditor`'s
+    /// `build`, which wraps every writing editor in the app; paired with
+    /// [`Self::unregister`] from its `Drop`.
+    ///
+    /// Re-registering the same `id` replaces the entry — a rebuild mints a fresh
+    /// handle for the same widget slot, and the new one must win.
+    pub fn register(&self, id: WidgetId, handle: EditorHandle, kind: EditorKind) {
+        let mut registry = self.registry.borrow_mut();
+        match registry.iter_mut().find(|e| e.id == id) {
+            Some(entry) => {
+                entry.handle = handle.clone();
+                entry.kind = kind;
+            }
+            None => registry.push(RegisteredEditor {
+                id,
+                handle: handle.clone(),
+                kind,
+            }),
+        }
+        // A rebuild of the editor the menu is sticky on must re-point the latch
+        // too, or the next command would address the previous widget's state.
+        let mut sticky = self.sticky.borrow_mut();
+        if let Some((sticky_id, sticky_handle, sticky_kind)) = sticky.as_mut()
+            && *sticky_id == id
+        {
+            *sticky_handle = handle;
+            *sticky_kind = kind;
+        }
+    }
+
+    /// Drop a torn-down editor. Also clears the sticky latch when it named this
+    /// editor, so the menu can never act through a handle whose widget is gone.
+    pub fn unregister(&self, id: WidgetId) {
+        self.registry.borrow_mut().retain(|e| e.id != id);
+        let mut sticky = self.sticky.borrow_mut();
+        if sticky.as_ref().is_some_and(|(s, _, _)| *s == id) {
+            *sticky = None;
+        }
+    }
+
+    /// The registered editor holding keyboard focus, if any. At most one widget
+    /// in the window has focus, so this never has to break a tie.
+    fn focused_registered(&self) -> Option<(WidgetId, EditorHandle, EditorKind)> {
+        self.registry
+            .borrow()
+            .iter()
+            .find(|e| e.handle.focused_signal().get())
+            .map(|e| (e.id, e.handle.clone(), e.kind))
+    }
+
     /// The current target and what kind of text it is. `(None, None)` before
     /// `App` has attached a resolver.
+    ///
+    /// Three sources, most specific first:
+    ///   1. a **registered editor with focus** — the only answer that can name a
+    ///      stream row or a corkboard card, and always the right one when it
+    ///      exists (it is literally where the caret is);
+    ///   2. the **sticky latch** — that same editor, remembered across the focus
+    ///      loss that opening the Format menu causes (target only: the surface
+    ///      stays live, so the dock still empties);
+    ///   3. the **resolver** — the focused pane's active tab, which stays correct
+    ///      for the scene/note/synopsis tabs it can see and is the honest `None`
+    ///      when nothing is open.
     fn target(&self) -> (Option<EditorHandle>, FormatSurface) {
-        match self.resolve.borrow().as_ref() {
+        let fallback = match self.resolve.borrow().as_ref() {
             Some(resolve) => resolve(),
             None => (None, FormatSurface::None),
+        };
+        let live = self.focused_registered();
+        if let Some((id, handle, kind)) = live {
+            *self.sticky.borrow_mut() = Some((id, handle.clone(), kind));
+            return (Some(handle), self.classify(kind, fallback.1));
+        }
+        // Nothing focused: keep the latched *target*, so a card or a stream row
+        // survives the trip through the menu bar — but take the resolver's
+        // *surface* verbatim. It reports `None` the moment focus leaves the
+        // editors, and that liveness is what empties the dock. Sticky target,
+        // live surface: the same split `App`'s resolver already makes, extended
+        // to the editors it cannot see.
+        let sticky = self.sticky.borrow().clone();
+        if let Some((_, handle, _)) = sticky {
+            return (Some(handle), fallback.1);
+        }
+        fallback
+    }
+
+    /// Widen a registered editor's coarse [`EditorKind`] into a [`FormatSurface`].
+    ///
+    /// Synopsis is self-describing. Prose is not: only the tab knows whether the
+    /// item is a note, so the resolver's classification is kept when it says so,
+    /// and anything else (including a stream row, whose tab is a container) is a
+    /// scene — manuscript prose, where scene breaks belong.
+    fn classify(&self, kind: EditorKind, resolved: FormatSurface) -> FormatSurface {
+        match kind {
+            EditorKind::Synopsis => FormatSurface::Synopsis,
+            EditorKind::Prose if resolved == FormatSurface::Note => FormatSurface::Note,
+            EditorKind::Prose => FormatSurface::Scene,
+        }
+    }
+
+    /// Return keyboard focus to the editor a command just acted on.
+    ///
+    /// The Format **menu** needs this and the dock does not: reaching a menu
+    /// item moves focus to the menu overlay, so without this the writer is left
+    /// with no caret and has to click back into the prose before typing. Same
+    /// reason — and same fix — as `EditorsViewModel::insert_scene_break`.
+    pub fn refocus(&self, ctx: &mut bastyde::prelude::EventContext) {
+        if let Some(handle) = self.handle() {
+            handle.focus(ctx);
         }
     }
 
@@ -383,7 +556,20 @@ impl FormatViewModel {
     pub fn can_redo(&self) -> Signal<bool> {
         self.can_redo.clone()
     }
-    /// Whether any editor is available to format — see [`Self::has_target`].
+    /// Whether any editor is available to format. The Format menu's enablement
+    /// gate — the dock hides groups instead, so it does not read this.
+    ///
+    /// Sticky by construction (see [`Self::target`]): it must not drop to false
+    /// when opening the menu blurs the editor, or every row would grey out at
+    /// the instant the writer reached for one.
+    ///
+    /// This gate once disabled the *entire* Format menu, and the reason is worth
+    /// keeping: before the editor registry, the target came only from the
+    /// focused tab's prose/synopsis handle, and a Full Chapter/Part/Book or
+    /// corkboard tab attaches neither (its rows pass `None` for both the find
+    /// and the synopsis sink). So in exactly the views a writer drafts in, there
+    /// was no target, and every row was correctly-but-uselessly disabled. The
+    /// registry is what makes this signal true there.
     pub fn has_target(&self) -> Signal<bool> {
         self.has_target.clone()
     }
@@ -754,6 +940,176 @@ mod tests {
     /// A view-model with nothing focused.
     fn vm_detached() -> FormatViewModel {
         FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)))
+    }
+
+    /// Two distinct `WidgetId`s. It is a slotmap key type, so the only way to
+    /// mint one is from a slotmap — a throwaway one does fine, and this keeps
+    /// the registry tests free of a `WidgetTree`.
+    fn two_ids() -> (WidgetId, WidgetId) {
+        let mut keys: slotmap::SlotMap<WidgetId, ()> = slotmap::SlotMap::with_key();
+        (keys.insert(()), keys.insert(()))
+    }
+
+    /// A standalone editor over `text`, and its handle.
+    ///
+    /// Everything is selected up front: `is_bold` and friends probe the format
+    /// at the **selection start**, so without a selection a toggle only changes
+    /// the typing format and the character there is still unmarked — the round
+    /// trip would be invisible. Same reason `toggling_bold_mirrors_the_editors_answer`
+    /// selects before asserting.
+    fn loose_editor(text: &str) -> (RichTextEditor, EditorHandle) {
+        let doc = TextDocument::new();
+        doc.set_markdown(text)
+            .expect("parse")
+            .wait()
+            .expect("import");
+        let editor = RichTextEditor::editor(doc);
+        let handle = editor.handle();
+        editor.select_all();
+        (editor, handle)
+    }
+
+    /// The registry's whole reason to exist: a corkboard card and a stream row
+    /// build editors the per-tab resolver structurally cannot name, so without
+    /// this the formatting surfaces would act on the wrong document — or on
+    /// nothing at all.
+    ///
+    /// Asserted by *effect* rather than by comparing handles: `EditorHandle` has
+    /// no identity API, and "the command reached this document and not that one"
+    /// is the property that actually matters.
+    #[test]
+    fn a_focused_registered_editor_outranks_the_resolvers_answer() {
+        let (_tab_editor, tab_handle) = loose_editor("tab prose");
+        let (_card_editor, card_handle) = loose_editor("card synopsis");
+        let resolved = tab_handle.clone();
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(resolved.clone()), FormatSurface::Scene)
+        }));
+        let (card_id, _) = two_ids();
+        vm.register(card_id, card_handle.clone(), EditorKind::Synopsis);
+
+        // Not focused yet: the resolver still owns the answer.
+        assert_eq!(vm.target().1, FormatSurface::Scene);
+        vm.toggle_bold();
+        assert!(
+            tab_handle.is_bold(),
+            "the resolver's editor took the command"
+        );
+        assert!(!card_handle.is_bold());
+
+        // The writer clicks into the card. Now the card wins, and it is
+        // classified as a synopsis however the resolver classified the tab.
+        card_handle.focused_signal().set(true);
+        assert_eq!(vm.target().1, FormatSurface::Synopsis);
+        vm.toggle_italic();
+        assert!(card_handle.is_italic(), "the focused card took the command");
+        assert!(!tab_handle.is_italic());
+    }
+
+    /// Opening the Format menu blurs the editor. For a tab the resolver stays
+    /// sticky on its own; a card has no per-tab slot to be sticky in, so the
+    /// latch has to carry it — otherwise every Format command would land on the
+    /// tab's prose instead of the card the writer was editing.
+    #[test]
+    fn a_card_stays_the_target_after_the_menu_takes_focus() {
+        let (_tab_editor, tab_handle) = loose_editor("tab prose");
+        let (_card_editor, card_handle) = loose_editor("card synopsis");
+        let resolved = tab_handle.clone();
+        // The live resolver reports `None` for the surface once focus has left
+        // the editors — exactly what `App` wires.
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(resolved.clone()), FormatSurface::None)
+        }));
+        let (card_id, _) = two_ids();
+        vm.register(card_id, card_handle.clone(), EditorKind::Synopsis);
+
+        card_handle.focused_signal().set(true);
+        // The per-frame refresh `App` drives off the frame tick. This is what
+        // writes the latch, and a focus change always pumps a frame (the caret
+        // has to appear), so in the app it has always run by this point.
+        vm.refresh();
+        // The menu bar takes focus away.
+        card_handle.focused_signal().set(false);
+
+        vm.toggle_bold();
+        assert!(
+            card_handle.is_bold(),
+            "the command must still reach the card the writer was in"
+        );
+        assert!(!tab_handle.is_bold());
+        assert_eq!(
+            vm.target().1,
+            FormatSurface::None,
+            "the surface stays live so the dock empties — only the target is sticky"
+        );
+    }
+
+    /// The registry entry lives exactly as long as the widget. A stream row
+    /// scrolled out of existence must not stay formattable.
+    #[test]
+    fn unregistering_drops_the_entry_and_the_latch() {
+        let (_tab_editor, tab_handle) = loose_editor("tab prose");
+        let (_row_editor, row_handle) = loose_editor("row prose");
+        let resolved = tab_handle.clone();
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(resolved.clone()), FormatSurface::Scene)
+        }));
+        let (row_id, _) = two_ids();
+        vm.register(row_id, row_handle.clone(), EditorKind::Prose);
+        row_handle.focused_signal().set(true);
+        row_handle.focused_signal().set(false);
+
+        // The row is torn down while still holding the latch.
+        vm.unregister(row_id);
+        assert!(vm.registry.borrow().is_empty());
+        vm.toggle_bold();
+        assert!(
+            tab_handle.is_bold(),
+            "with the row gone the resolver's tab editor is the answer again"
+        );
+        assert!(!row_handle.is_bold());
+    }
+
+    /// A rebuild mints a fresh `EditorState` for the same widget slot, so the
+    /// registry must re-point rather than accumulate — and the latch with it,
+    /// or a command would address the widget's previous state.
+    #[test]
+    fn rebuilding_repoints_the_entry_instead_of_duplicating_it() {
+        let (_first, first_handle) = loose_editor("before rebuild");
+        let (_second, second_handle) = loose_editor("after rebuild");
+        let vm = vm_detached();
+        let (id, _) = two_ids();
+
+        vm.register(id, first_handle.clone(), EditorKind::Prose);
+        first_handle.focused_signal().set(true);
+        vm.refresh(); // latches, as the frame tick would
+        first_handle.focused_signal().set(false);
+
+        // Same widget id, fresh handle — a theme or locale switch is enough.
+        vm.register(id, second_handle.clone(), EditorKind::Prose);
+        assert_eq!(vm.registry.borrow().len(), 1, "one slot, one entry");
+        vm.toggle_bold();
+        assert!(
+            second_handle.is_bold(),
+            "the latch must follow the rebuild, not keep the dead state"
+        );
+        assert!(!first_handle.is_bold());
+    }
+
+    /// A prose editor cannot tell a scene from a note; the tab can. The
+    /// registry must not flatten a note into a scene and start offering scene
+    /// breaks the exporter would ignore.
+    #[test]
+    fn a_registered_prose_editor_keeps_the_tabs_note_classification() {
+        let (_editor, handle) = loose_editor("a note");
+        let resolved = handle.clone();
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(resolved.clone()), FormatSurface::Note)
+        }));
+        let (id, _) = two_ids();
+        vm.register(id, handle.clone(), EditorKind::Prose);
+        handle.focused_signal().set(true);
+        assert_eq!(vm.target().1, FormatSurface::Note);
     }
 
     #[test]

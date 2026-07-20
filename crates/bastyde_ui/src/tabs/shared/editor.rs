@@ -31,7 +31,7 @@ const FIND_FIELD_MAX_WIDTH: f32 = 240.0;
 use crate::intents::AppIntent;
 use crate::spellcheck::SpellSession;
 use crate::tabs::TitleField;
-use crate::view_models::{EditorTypography, FindViewModel};
+use crate::view_models::{EditorKind, EditorTypography, FindViewModel, FormatViewModel};
 
 /// A caret-aware "split scene" action for a writing editor's context menu:
 /// invoked with the event context and the current caret offset.
@@ -115,7 +115,7 @@ pub fn writing_column(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
             Expand::horizontal {
-                child: TypographyBoundEditor::new(editor, typo.clone(), spell)
+                child: TypographyBoundEditor::new(editor, typo.clone(), spell, EditorKind::Prose)
             }
         }
     ))
@@ -265,14 +265,16 @@ fn format_row(handle: &EditorHandle) -> Padding {
                 // the editor is not focused, so nothing schedules the frame
                 // that would drain the document's events and repaint it — the
                 // formatting only appeared once the menu was dismissed.
-                //
-                // `request_frame` rather than `handle.focus(ctx)` (which is
-                // what `insert_scene_break` does for the same symptom): that
-                // menu is closing anyway and wants the caret back in the prose,
-                // whereas this strip is meant to stay open so bold and italic
-                // can be applied in one visit. Pulling focus out of the menu to
-                // force a repaint would defeat the point of it.
                 ctx.request_frame();
+                // Close the menu, exactly like every other item in it. The
+                // strip was first written to stay open so bold and italic could
+                // be applied in one visit, but that left the writer with no
+                // caret and no way back to the prose except Escape — a menu
+                // that swallows focus and will not close is a worse trade than
+                // a second right-click. Dismissing also restores focus to the
+                // editor for free: `show_context_menu_for` owns the overlay
+                // lifecycle and puts focus back where it took it from.
+                ctx.dismiss_top_overlay();
             })
     }
 
@@ -399,7 +401,7 @@ pub fn synopsis_editor(
             border_color: BorderRole::Default
             border_width: 1.0
             corner_radius: 6.0
-            child: TypographyBoundEditor::new(editor, typo.clone(), spell)
+            child: TypographyBoundEditor::new(editor, typo.clone(), spell, EditorKind::Synopsis)
         }
     )
 }
@@ -453,7 +455,7 @@ pub fn card_synopsis_editor(
             )))
         });
     }
-    TypographyBoundEditor::new(editor, typo.clone(), spell)
+    TypographyBoundEditor::new(editor, typo.clone(), spell, EditorKind::Synopsis)
 }
 
 /// A one-line name input bound to `field.value`, wired so an edit marks the tab dirty.
@@ -1186,6 +1188,13 @@ struct TypographyBoundEditor {
     /// `ctx.self_id()`, read by `Drop` to un-focus the session when the widget is torn down.
     token: Option<WidgetId>,
     child_id: Option<WidgetId>,
+    /// Whether this editor holds manuscript prose or a synopsis — the one thing the
+    /// formatting registry cannot work out for itself. See [`EditorKind`].
+    kind: EditorKind,
+    /// The formatting registry this editor announced itself to, and under which id,
+    /// so `Drop` can withdraw it. `None` when no `FormatViewModel` is in app state
+    /// (the widget tests, which build editors with no app around them).
+    format: Option<(FormatViewModel, WidgetId)>,
 }
 
 impl TypographyBoundEditor {
@@ -1193,6 +1202,7 @@ impl TypographyBoundEditor {
         editor: RichTextEditor,
         typo: EditorTypography,
         spell: Option<Rc<crate::spellcheck::SpellSession>>,
+        kind: EditorKind,
     ) -> Self {
         Self {
             editor: Some(editor),
@@ -1200,6 +1210,8 @@ impl TypographyBoundEditor {
             spell,
             token: None,
             child_id: None,
+            kind,
+            format: None,
         }
     }
 }
@@ -1211,6 +1223,13 @@ impl Drop for TypographyBoundEditor {
         // and pin a frozen exemption.
         if let (Some(spell), Some(token)) = (&self.spell, self.token) {
             spell.on_blur(token);
+        }
+        // Withdraw from the formatting registry in the same breath. Tying the
+        // entry to this widget's lifetime is what keeps the registry honest: a
+        // handle can never outlive the editor it addresses, so the dock and the
+        // menu cannot format a stream row that has scrolled out of existence.
+        if let Some((format, id)) = &self.format {
+            format.unregister(*id);
         }
     }
 }
@@ -1267,6 +1286,19 @@ impl Widget for TypographyBoundEditor {
         // Caret-aware spell-check: feed this view's focus + caret and drive the per-frame recompute.
         if let Some(spell) = self.spell.clone() {
             self.token = Some(wire_spell(ctx, &handle, &spell));
+        }
+        // Announce this editor to the formatting surfaces. Done here rather than
+        // at the ~six call sites because *every* writing editor in the app is
+        // wrapped in this widget — the scene tab's prose, a Full Chapter/Part/
+        // Book row, a Full Synopsis row, a corkboard card — so one hook reaches
+        // all of them, and the ones the per-tab resolver cannot see get found by
+        // focus instead. Re-registering on rebuild re-points the entry at the
+        // fresh handle, which is exactly the staleness rule this app follows for
+        // handles everywhere else.
+        if let Some(format) = ctx.app_state::<FormatViewModel>().cloned() {
+            let self_id = ctx.self_id();
+            format.register(self_id, handle.clone(), self.kind);
+            self.format = Some((format, self_id));
         }
         vec![id]
     }
