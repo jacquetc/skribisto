@@ -36,6 +36,7 @@ mod search_settings_file;
 mod stats_model;
 mod stream_rows_model;
 mod trash_tree_model;
+mod tree_expansion_file;
 mod workspace_layout_file;
 
 pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
@@ -64,4 +65,5 @@ pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use stats_model::StatsModel;
 pub use stream_rows_model::{StreamLevel, StreamRow, StreamRowsModel};
 pub use trash_tree_model::{TrashNode, TrashRootKind, TrashTreeKey, TrashTreeModel};
+pub use tree_expansion_file::TreeExpansionService;
 pub use workspace_layout_file::{PaneLayout, PerProjectLayout, WorkspaceLayoutService};

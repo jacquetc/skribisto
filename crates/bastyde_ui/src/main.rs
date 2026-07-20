@@ -77,12 +77,12 @@ use frontend::common::event::{Event, Origin};
 
 use app::PendingExit;
 use app_ids::AppIds;
-use models::{BackupSettingsService, OpenDocsStore, WorkspaceLayoutService};
+use models::{BackupSettingsService, OpenDocsStore, TreeExpansionService, WorkspaceLayoutService};
 use singles::{SingleDictWord, SingleWork, SingleWorkInfo};
 use view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel,
     OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel, BackupRestoreViewModel, SaveAsViewModel,
-    WorkspaceLayoutViewModel,
+    TreeExpansionViewModel, WorkspaceLayoutViewModel,
 };
 
 /// The currently-open project's path (from `WorkInfo`), if any.
@@ -507,6 +507,16 @@ fn main() {
                 .ok()
         })
         .unwrap_or_else(WorkspaceLayoutService::in_memory_default);
+    // Remembered Overview expand state, keyed per project + per container by durable uid
+    // (`tree_expansion.toml`). A fourth `SettingsFile` sibling; on failure the feature
+    // simply goes quiet rather than blocking startup, exactly as the layout service does.
+    let tree_expansion_service = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| {
+            TreeExpansionService::open(&paths)
+                .map_err(|e| eprintln!("tree expansion: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(TreeExpansionService::in_memory_default);
     // The progress recorder (writing-cadence): on each save it recounts the
     // project's words and records a daily `ProgressSnapshot` feeding the Pace
     // charts. Registered as app-state so `App::build` can route the save +
@@ -551,6 +561,8 @@ fn main() {
     // Per-work workspace layout view-model (built here, once `backup_mode` exists —
     // capture is inert in backup mode). It drives the shared `DockingModel` (via the
     // outline handle) and is handed the editors once `App::build` creates them.
+    let tree_expansion =
+        TreeExpansionViewModel::new(app_ctx.clone(), ids.clone(), tree_expansion_service);
     let workspace_layout = WorkspaceLayoutViewModel::new(
         app_ctx.clone(),
         workspace_layout_service,
@@ -743,6 +755,7 @@ fn main() {
         .app_state(single_work_info.clone())
         .app_state(outline.clone())
         .app_state(workspace_layout.clone())
+        .app_state(tree_expansion.clone())
         .app_state(progress_recorder.clone())
         .app_state(import_plume.clone())
         .app_state(export.clone())

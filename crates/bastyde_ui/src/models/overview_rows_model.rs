@@ -329,6 +329,20 @@ impl OverviewRowsModel {
         self.container_present.clone()
     }
 
+    /// The expanded set, by durable uid — what expand-state persistence stores.
+    ///
+    /// Reads the **real** set, never the search reveal override, so capturing while a
+    /// filter is open records what the writer actually collapsed rather than
+    /// "everything, because a search was running".
+    pub fn expanded_uids(&self) -> Vec<Uuid> {
+        self.slice.expanded_keys()
+    }
+
+    /// Apply a remembered expanded set.
+    pub fn set_expanded_uids(&self, uids: &[Uuid]) {
+        self.slice.set_expanded_keys(uids);
+    }
+
     pub fn expand_all(&self) {
         self.slice.expand_all();
     }

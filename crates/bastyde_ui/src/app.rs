@@ -219,6 +219,50 @@ pub(crate) fn capture_workspace_layout(ctx: &mut EventContext) {
     {
         layout.capture();
     }
+    capture_tree_expansion(ctx);
+}
+
+/// Persist every open container tab's Overview expand state, in one batched write.
+///
+/// Shares the desk's doors rather than having its own: both answer "the writer is leaving
+/// this project", both need the store alive to read, and a second set of call sites would
+/// be a second set of places to forget.
+///
+/// **`App` gathers the tabs, not the view-model.** The tabs belong to
+/// `EditorsViewModel`, and `TreeExpansionViewModel` is its peer — peers do not import each
+/// other, so the mediation happens here. This is also why no registry of live Overviews is
+/// needed: the open tabs already are that list.
+fn capture_tree_expansion(ctx: &mut EventContext) {
+    let (Some(expansion), Some(editors)) = (
+        ctx.app_state::<crate::view_models::TreeExpansionViewModel>()
+            .cloned(),
+        ctx.app_state::<crate::view_models::EditorsViewModel>().cloned(),
+    ) else {
+        return;
+    };
+    let mut folders: Vec<(uuid::Uuid, Vec<uuid::Uuid>)> = Vec::new();
+    for side in [
+        crate::view_models::Side::Primary,
+        crate::view_models::Side::Secondary,
+    ] {
+        let tabs = editors.tabs(side);
+        for i in 0..tabs.len() {
+            let snapshot = tabs.with_item(i, |h| {
+                h.payload
+                    .downcast_ref::<crate::tabs::ContentTab>()
+                    .and_then(|t| t.overview())
+                    .and_then(|o| o.expansion_snapshot())
+            });
+            // The same container can be open in both panes; its two Overviews share a
+            // container uid, so keep the first and let the write stay idempotent.
+            if let Some(Some((container, expanded))) = snapshot
+                && !folders.iter().any(|(c, _)| *c == container)
+            {
+                folders.push((container, expanded));
+            }
+        }
+    }
+    expansion.capture(&folders);
 }
 
 /// Perform `outcome` immediately — `close_work_and_return_to_launcher` for

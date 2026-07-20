@@ -94,6 +94,9 @@ struct Inner {
     observers: RefCell<Vec<ObserverHandle>>,
     /// One-shot guard for the count observer (see `wire`).
     count_wired: Cell<bool>,
+    /// One-shot guard for the expand-state restore — a second `wire` (a segment switch)
+    /// must not undo collapses the writer has made since the first.
+    expansion_restored: Cell<bool>,
 }
 
 #[derive(Clone)]
@@ -140,6 +143,7 @@ impl OverviewViewModel {
                 ids,
                 observers: RefCell::new(Vec::new()),
                 count_wired: Cell::new(false),
+                expansion_restored: Cell::new(false),
             }),
         })
     }
@@ -150,6 +154,7 @@ impl OverviewViewModel {
         self.inner.rows.wire(ctx);
         self.inner.container_probe.wire(ctx);
         self.install_reorder();
+        self.restore_expansion(ctx);
 
         // Search / sort → `projecting`, which gates reordering. Guarded so the signal
         // only notifies on a real change.
@@ -176,6 +181,40 @@ impl OverviewViewModel {
                 .observe(move |_| count.set(rows2.visible_count()));
             self.inner.observers.borrow_mut().push(handle);
         }
+    }
+
+    /// Apply this container's remembered expand set, once.
+    ///
+    /// Runs after `rows.wire`, which performs the first load — restoring onto an unloaded
+    /// slice would apply the keys to nothing. Keyed by the container's **uid**, so what
+    /// was written last session is what is read now, with no translation step and no
+    /// ordering constraint against the workspace-layout restore.
+    ///
+    /// Reached through `app_state` rather than a held reference: the service is app-wide
+    /// and this view-model is per tab, so threading it through `ContentTab::new` would
+    /// make every tab constructor carry a dependency only this pane uses.
+    fn restore_expansion(&self, ctx: &mut BuildContext) {
+        if self.inner.expansion_restored.replace(true) {
+            return;
+        }
+        let Some(vm) = ctx.app_state::<crate::view_models::TreeExpansionViewModel>().cloned() else {
+            return; // no service registered (a launcher window, or a headless test)
+        };
+        let Some(container_uid) = self.inner.container_probe.dto().map(|d| d.uid) else {
+            return; // the probe has not resolved the container yet
+        };
+        let remembered = vm.expanded_for(container_uid);
+        if !remembered.is_empty() {
+            self.inner.rows.set_expanded_uids(&remembered);
+        }
+    }
+
+    /// This container's uid and its live expand set — what `App` gathers at a door to
+    /// hand to [`TreeExpansionViewModel::capture`]. `None` before the container probe has
+    /// resolved, which is also when there is nothing worth remembering.
+    pub fn expansion_snapshot(&self) -> Option<(Uuid, Vec<Uuid>)> {
+        let container_uid = self.inner.container_probe.dto().map(|d| d.uid)?;
+        Some((container_uid, self.inner.rows.expanded_uids()))
     }
 
     /// Inject the drag-reorder commit.
