@@ -101,7 +101,14 @@ ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
 MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from automation_fixture import SCRATCH, assert_no_running_instance  # noqa: E402
+from automation_fixture import (  # noqa: E402
+    SCRATCH,
+    assert_no_running_instance,
+    isolated_config,
+)
+
+#: French, in a scratch config dir: this probe checks that presets translate.
+PROBE_ENV = isolated_config(locale="fr-FR", label="presets")
 
 # Before anything else: a live instance would swallow this launch (see the
 # helper's docstring) and every later failure would name the wrong cause.
@@ -196,8 +203,12 @@ class Session:
         self.mcp = None
         self.app = None
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
+        # A private config dir pinning the locale to French. This probe asserts
+        # that presets come out TRANSLATED, so it must set the language rather
+        # than inherit whatever the operator's `general.toml` happens to say —
+        # see `isolated_config`'s docstring for what inheriting it cost.
         self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
+                                    stderr=subprocess.STDOUT, env=PROBE_ENV)
         sock = tok = None
         deadline = time.time() + 25
         while time.time() < deadline:
@@ -482,6 +493,66 @@ def page_reached(s, target):
     return None
 
 
+#: The settings rail's own filter field ("Rechercher un paramètre" / "Search a setting").
+SETTINGS_SEARCH = ("rechercher un paramètre", "search a setting", "rechercher", "search")
+
+
+def settings_search_field(s):
+    """The settings rail's filter field, or None.
+
+    Scoped the same way `rail_node` is (x < 480 keeps it inside the modal's left
+    column) and matched on its placeholder, which the AT tree exposes as the
+    node's label.
+    """
+    for n in s.nodes():
+        if n.get("role") not in ("TextInput", "SearchBox"):
+            continue
+        b = n.get("bounds") or {}
+        if b.get("x", 9999) >= 480:
+            continue
+        lab = ((n.get("label") or "") + " " + (n.get("value") or "")).strip().lower()
+        if any(v in lab for v in SETTINGS_SEARCH):
+            return n
+    return None
+
+
+def search_page(s, target):
+    """Filter the rail to `target`, then click the row that survives.
+
+    Preferred over walking. The Work section's pages sit below the rail's scroll
+    viewport on a real project (`Structure`, `Langue`, `Copies de secours`, …
+    push `Étiquettes` off the bottom), and the previous strategy — click the
+    section header to seed focus, then arrow down — does not work from a header:
+    clicking one toggles its expansion instead of focusing a row, so the arrows
+    went nowhere and the page was reported unreachable. The field is always on
+    screen and filtering lifts the wanted page to the top, where a click cannot
+    miss and no geometry has to be guessed.
+    """
+    fld = settings_search_field(s)
+    if not fld:
+        return None
+    for spelling in (target if isinstance(target, (tuple, list)) else (target,)):
+        s.call("invoke_action", {"node": fld["id"], "action": "focus"})
+        time.sleep(0.25)
+        # Clear whatever the previous spelling left behind.
+        cur = (settings_search_field(s) or {}).get("value") or ""
+        for _ in range(len(cur) + 4):
+            s.call("inject_key", {"key": "Backspace"})
+        live = settings_search_field(s) or fld
+        s.call("type_text", {"node": live["id"], "text": spelling})
+        s.settle()
+        time.sleep(0.9)
+        row = rail_node(s, (spelling,), exact=True)
+        if row:
+            click(s, row.get("bounds") or {})
+            s.settle()
+            time.sleep(0.8)
+            got = page_reached(s, target)
+            if got:
+                return got
+    return None
+
+
 def select_page(s, target, anchor_node, steps=14):
     """Select a rail page by walking to it (keyboard) from a visible anchor
     row — a row far enough down the rail is laid out below the scroll
@@ -492,6 +563,9 @@ def select_page(s, target, anchor_node, steps=14):
     target is not known ahead of time.
     """
     got = page_reached(s, target)
+    if got:
+        return got
+    got = search_page(s, target)
     if got:
         return got
     if not anchor_node:
@@ -539,13 +613,32 @@ def read_all_tag_rows(s, max_passes=10):
     lst = next((n for n in s.nodes() if n.get("role") == "ListBox"), None)
     if not lst:
         return []
+
+    def scroll_by(dy):
+        """Scroll the list AND the pane's scroll view.
+
+        Sending this only to the `ListBox` silently did nothing: the palette card
+        sits inside the pane's own `ScrollView`, and that is what actually moves.
+        The failure was invisible for a long time because the viewport happens to
+        fit eleven rows — with ten tags everything was on screen and the reader
+        looked correct, and only at thirteen did it start losing the last two
+        (`vaisseau` and `vérifier la continuité`, alphabetically last) and report
+        "expected 13 rows, got 11" as though the preset had under-applied.
+        """
+        targets = [lst["id"]]
+        targets += [n["id"] for n in s.nodes()
+                    if n.get("role") == "ScrollView"
+                    and (n.get("bounds") or {}).get("x", 0) > 400]
+        for tid in targets:
+            s.call("scroll", {"node": tid, "dx": 0, "dy": dy})
+        s.settle()
+        time.sleep(0.2)
+
     # Scroll to the top first. `automation_tag_chips.py`'s `scroll_for_dot_row`
     # established live that a NEGATIVE dy reveals content further down the
     # pane — so a large POSITIVE dy walks back up to the very start.
     for _ in range(4):
-        s.call("scroll", {"node": lst["id"], "dx": 0, "dy": 2000})
-        s.settle()
-        time.sleep(0.2)
+        scroll_by(2000)
 
     seen = {}
     stall = 0
@@ -573,9 +666,7 @@ def read_all_tag_rows(s, max_passes=10):
         # LIST_MIN_HEIGHT is 320dp (work_tags.rs); a step smaller than that
         # keeps consecutive windows overlapping, so nothing between two reads
         # is skipped.
-        s.call("scroll", {"node": lst["id"], "dx": 0, "dy": -200})
-        s.settle()
-        time.sleep(0.2)
+        scroll_by(-200)
     return [name for name, _y in sorted(seen.items(), key=lambda kv: kv[1])]
 
 

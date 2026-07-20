@@ -99,6 +99,47 @@ def assert_no_running_instance(binary=None):
         )
 
 
+def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True):
+    """A private `XDG_CONFIG_HOME` pinning the app's locale. Returns an env dict.
+
+    A probe that asserts on translated text must SET the language, never inherit
+    it. This one learned that the expensive way: `automation_tag_presets.py`
+    asserts the Basic preset's tags come out in French (plan step 9 — presets are
+    generated through `tr!`, so they must translate), but the app reads its
+    locale from `~/.config/skribisto/general.toml` and that file says
+    `[ui] locale = "en-US"`, with `auto_detect_os_locale(false)` in main.rs
+    meaning the machine's French locale is never consulted. The probe therefore
+    compared French expectations against a correctly-English app and reported a
+    translation bug that did not exist — and the diagnosis that followed chased a
+    non-existent fault in bastyde's i18n layer for some time before the probe's
+    own output turned out to be printing its French constants unconditionally.
+
+    Pointing `XDG_CONFIG_HOME` at a scratch directory fixes both halves: the
+    locale is whatever the probe says, and the run cannot read or write the
+    operator's real settings. It also side-steps a settings file written by a
+    newer build (`workspace.toml` on schema v3 against a v2 reader), which
+    otherwise makes every launch fall back to in-memory defaults.
+
+    `AppPaths::new("eu", "skribisto", "Skribisto")` resolves to
+    `$XDG_CONFIG_HOME/skribisto` on Linux, and `config_file("general")` appends
+    `.toml` — hence the layout written here.
+    """
+    base = SCRATCH if os.path.isdir(SCRATCH) else tempfile.gettempdir()
+    root = os.path.join(base, f"probe-config-{label}-{os.getpid()}")
+    cfg = os.path.join(root, "skribisto")
+    os.makedirs(cfg, exist_ok=True)
+    with open(os.path.join(cfg, "general.toml"), "w", encoding="utf-8") as fh:
+        fh.write(
+            "[ui]\n"
+            f"dark = {str(bool(dark)).lower()}\n"
+            f'locale = "{locale}"\n'
+            f"show_welcome = {str(bool(show_welcome)).lower()}\n"
+        )
+    env = dict(os.environ)
+    env["XDG_CONFIG_HOME"] = root
+    return env
+
+
 def _make_writable(path):
     """Give the owner write permission, for a file or a whole tree."""
     def w(p):
