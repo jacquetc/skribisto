@@ -502,7 +502,7 @@ mod tests {
     /// A view-model with nothing focused — enough to build the dock, since the
     /// dock reads groups and signals, never the editor directly.
     fn vm() -> FormatViewModel {
-        FormatViewModel::new(Rc::new(|| None))
+        FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)))
     }
 
     /// The dock builds and lays out at the trailing side's real width.

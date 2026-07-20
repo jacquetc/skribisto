@@ -54,9 +54,6 @@ pub fn overview_pane(tab: &super::ContentTab) -> Box<dyn Widget> {
             .spacing(0.0)
             .child(WireOverview { vm: vm.clone() })
             .child(overview_header(&vm))
-            .child(Expand::new().child(OverviewTable {
-                vm,
-                root: None,
-            })),
+            .child(Expand::new().child(OverviewTable { vm, root: None })),
     )
 }

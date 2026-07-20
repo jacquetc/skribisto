@@ -693,31 +693,30 @@ impl Widget for App {
             .format
             .get_or_insert_with(|| {
                 let target = editors.clone();
-                let classify = editors.clone();
                 crate::view_models::FormatViewModel::new(Rc::new(move || {
-                    target.focused_prose_handle()
-                }))
-                .with_surface_resolver(Rc::new(move |handle| {
                     use crate::view_models::FormatSurface;
-                    // Live keyboard focus, not "which tab is selected". The dock
-                    // shows what the caret is in; clicking into the binder or a
-                    // dock genuinely leaves nothing to format, and the dock says
-                    // so. (Its own buttons are `focusable(false)`, so pressing
-                    // one never blurs the editor out from under itself.)
-                    let Some(handle) = handle else {
-                        return FormatSurface::None;
+                    // One walk answers both halves: which editor to act on, and
+                    // what kind of text it holds. Keyed on live keyboard focus,
+                    // not "which tab is selected" — clicking into the binder or
+                    // a dock genuinely leaves nothing to format, and the dock
+                    // says so rather than acting on whatever it touched last.
+                    // (Its own buttons are `focusable(false)`, so pressing one
+                    // never blurs the editor out from under itself.)
+                    let Some((handle, is_synopsis)) = target.focused_format_target() else {
+                        return (None, FormatSurface::None);
                     };
-                    if !handle.focused_signal().get() {
-                        return FormatSurface::None;
+                    if is_synopsis {
+                        return (Some(handle), FormatSurface::Synopsis);
                     }
                     // The same predicate the compiler uses to decide what it
                     // scans, so the dock cannot offer a scene break where the
                     // exporter would ignore one.
-                    if classify.focused_carries_scene() {
+                    let surface = if target.focused_carries_scene() {
                         FormatSurface::Scene
                     } else {
                         FormatSurface::Note
-                    }
+                    };
+                    (Some(handle), surface)
                 }))
             })
             .clone();

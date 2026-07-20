@@ -230,7 +230,10 @@ fn is_wordlike(word: &str) -> bool {
 /// Dedup exact-case, preserving first-seen order/casing.
 fn dedup_keep_first(words: Vec<String>) -> Vec<String> {
     let mut seen = std::collections::HashSet::new();
-    words.into_iter().filter(|w| seen.insert(w.clone())).collect()
+    words
+        .into_iter()
+        .filter(|w| seen.insert(w.clone()))
+        .collect()
 }
 
 #[cfg(test)]
@@ -279,8 +282,14 @@ mod tests {
         let menu = resolve_spelling(&d, &handle, Some(&spell));
 
         assert_eq!(menu.words, ["wrld"], "the flagged word is addable");
-        let c = menu.correction.expect("a flagged word under the caret is correctable");
-        assert_eq!((c.start, c.end), (6, 10), "the span the replacement rewrites");
+        let c = menu
+            .correction
+            .expect("a flagged word under the caret is correctable");
+        assert_eq!(
+            (c.start, c.end),
+            (6, 10),
+            "the span the replacement rewrites"
+        );
         assert!(
             c.suggestions.contains(&"world".to_string()),
             "the dictionary corrects it, got {:?}",
@@ -297,7 +306,9 @@ mod tests {
         handle.select_range(6, 10); // exactly "wrld", as a double-click selects it
         let menu = resolve_spelling(&d, &handle, Some(&spell));
 
-        let c = menu.correction.expect("one selected word is a correction target");
+        let c = menu
+            .correction
+            .expect("one selected word is a correction target");
         assert_eq!((c.start, c.end), (6, 10));
         assert!(c.suggestions.contains(&"world".to_string()));
         assert_eq!(menu.words, ["wrld"]);
@@ -341,7 +352,11 @@ mod tests {
             menu.correction.is_none(),
             "no single target, so nothing to correct"
         );
-        assert_eq!(menu.words, ["wrld", "helo"], "both flagged words are addable");
+        assert_eq!(
+            menu.words,
+            ["wrld", "helo"],
+            "both flagged words are addable"
+        );
     }
 
     #[test]
@@ -385,7 +400,10 @@ mod tests {
         let (d, handle, spell, _tree) = editor("hello wrld");
         handle.select_range(5, 5); // on the space — but inclusive edges make this "hello"
         let menu = resolve_spelling(&d, &handle, Some(&spell));
-        assert!(menu.words.is_empty(), "'hello' is correct, so nothing is offered");
+        assert!(
+            menu.words.is_empty(),
+            "'hello' is correct, so nothing is offered"
+        );
 
         let (d2, handle2, spell2, _tree2) = editor("12 345");
         handle2.select_range(1, 1);
@@ -424,7 +442,11 @@ mod tests {
         assert_eq!(word_spanning(&d, 0, 5).as_deref(), Some("Hello"));
         // A partial word, a span with a trailing space, and a two-word span all decline.
         assert_eq!(word_spanning(&d, 6, 9), None, "partial word");
-        assert_eq!(word_spanning(&d, 6, 11), None, "word plus the following space");
+        assert_eq!(
+            word_spanning(&d, 6, 11),
+            None,
+            "word plus the following space"
+        );
         assert_eq!(word_spanning(&d, 0, 10), None, "two words");
         assert_eq!(word_spanning(&doc("12 345"), 0, 2), None, "not word-like");
     }

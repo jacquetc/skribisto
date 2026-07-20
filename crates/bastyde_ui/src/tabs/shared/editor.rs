@@ -6,6 +6,7 @@
 //! the title field, and the live typography plumbing. Composite pane renders
 //! (heading form, dual-pane prose, folder synopsis) live in [`super::panes`].
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use bastyde::core::binding::BindingLevel;
@@ -345,6 +346,9 @@ pub fn synopsis_editor(
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
     spell: Option<Rc<SpellSession>>,
+    // Where to re-attach this editor's handle so tab-level commands can find
+    // it. `None` for surfaces with no tab (the corkboard card's own editor).
+    handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -353,6 +357,12 @@ pub fn synopsis_editor(
         .text_color(TextRole::Secondary)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
+    // Re-attached on every rebuild, exactly as `writing_column` does for the
+    // prose handle: a tab rebuild mints a fresh editor, so a stored handle would
+    // address the one the writer *used* to be typing in.
+    if let Some(sink) = &handle_sink {
+        *sink.borrow_mut() = Some(editor.handle());
+    }
     editor = match fit {
         SynopsisFit::Compact => editor
             .min_lines(1)
@@ -550,6 +560,9 @@ pub fn synopsis_section(
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
     spell: Option<Rc<SpellSession>>,
+    // Where the built editor re-attaches its handle, so tab-level commands
+    // (the format dock) can act on the synopsis the caret is actually in.
+    handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
@@ -570,6 +583,7 @@ pub fn synopsis_section(
                             on_change,
                             Option::None,
                             spell,
+                            handle_sink,
                         )
                     }
                 }
@@ -594,13 +608,16 @@ pub fn synopsis_column(
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
     spell: Option<Rc<SpellSession>>,
+    // Where the built editor re-attaches its handle, so tab-level commands
+    // (the format dock) can act on the synopsis the caret is actually in.
+    handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(
         MaxSize::width(synopsis_width.get()) {
             max_width: synopsis_width.clone()
             Expand::horizontal {
-                child: synopsis_editor(doc, typo, SynopsisFit::Growing, on_change, split, spell)
+                child: synopsis_editor(doc, typo, SynopsisFit::Growing, on_change, split, spell, handle_sink)
             }
         }
     ))

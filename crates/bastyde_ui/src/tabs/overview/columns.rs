@@ -85,21 +85,25 @@ fn with_row_menu(
 /// outliner, and the alternative is a modal for a five-character change.
 fn title_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     let vm = vm.clone();
-    Column::new(COL_TITLE, tr!(overview_col_title()), move |row: &OverviewRow, cx: &CellContext| {
-        if cx.is_editing {
-            return Box::new(cell_editor(&vm, row.uid, COL_TITLE));
-        }
-        // The row's icon comes from its sub-role, exactly as in the outline tree — the
-        // same item must not wear two different glyphs in two views.
-        with_row_menu(
-            &vm,
-            row,
-            HStack::new()
-                .spacing(6.0)
-                .child(crate::binder::icons::sub_role_icon(&row.sub_role))
-                .child(TextWidget::new(lit!(row.title.clone())).single_line()),
-        )
-    })
+    Column::new(
+        COL_TITLE,
+        tr!(overview_col_title()),
+        move |row: &OverviewRow, cx: &CellContext| {
+            if cx.is_editing {
+                return Box::new(cell_editor(&vm, row.uid, COL_TITLE));
+            }
+            // The row's icon comes from its sub-role, exactly as in the outline tree — the
+            // same item must not wear two different glyphs in two views.
+            with_row_menu(
+                &vm,
+                row,
+                HStack::new()
+                    .spacing(6.0)
+                    .child(crate::binder::icons::sub_role_icon(&row.sub_role))
+                    .child(TextWidget::new(lit!(row.title.clone())).single_line()),
+            )
+        },
+    )
     .width(ColumnWidth::Flex(3.0))
     .min_width(120.0)
     .pinned(PinnedSide::Leading)
@@ -135,18 +139,22 @@ fn type_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
 /// text by design: a fixed status vocabulary is someone else's process.
 fn label_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     let vm = vm.clone();
-    Column::new(COL_LABEL, tr!(overview_col_label()), move |row: &OverviewRow, cx: &CellContext| {
-        if cx.is_editing {
-            return Box::new(cell_editor(&vm, row.uid, COL_LABEL));
-        }
-        with_row_menu(
-            &vm,
-            row,
-            TextWidget::new(lit!(row.label.clone()))
-                .color(TextRole::Secondary)
-                .single_line(),
-        )
-    })
+    Column::new(
+        COL_LABEL,
+        tr!(overview_col_label()),
+        move |row: &OverviewRow, cx: &CellContext| {
+            if cx.is_editing {
+                return Box::new(cell_editor(&vm, row.uid, COL_LABEL));
+            }
+            with_row_menu(
+                &vm,
+                row,
+                TextWidget::new(lit!(row.label.clone()))
+                    .color(TextRole::Secondary)
+                    .single_line(),
+            )
+        },
+    )
     .width(ColumnWidth::Flex(1.5))
     .min_width(72.0)
     .sortable(true)
@@ -173,28 +181,32 @@ fn label_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
 /// holds **uncommitted input**, which a rebuild would destroy.
 fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     let vm = vm.clone();
-    Column::new(COL_TAGS, tr!(overview_col_tags()), move |row: &OverviewRow, _cx| {
-        if row.tags.is_empty() {
-            // An untagged row gets an empty cell, not an empty dot row — the whole point
-            // of the column is that a glance distinguishes tagged from untagged.
-            return with_row_menu(&vm, row, TextWidget::new(lit!(String::new())));
-        }
-        let value = Signal::new(row.tags.clone());
-        let set: crate::tags::tag_pill_field::SetTags = {
-            let vm = vm.clone();
-            let item_id = row.item_id;
-            let mirror = value.clone();
-            Rc::new(move |ids: Vec<u64>, _ctx| {
-                vm.set_tags(item_id, &ids);
-                mirror.set(ids); // optimistic; the reload re-seeds from the backend
-            })
-        };
-        Box::new(crate::tags::TagDotsRow::new(
-            value,
-            set,
-            crate::tags::tag_chip::MAX_VISIBLE_OVERVIEW,
-        ))
-    })
+    Column::new(
+        COL_TAGS,
+        tr!(overview_col_tags()),
+        move |row: &OverviewRow, _cx| {
+            if row.tags.is_empty() {
+                // An untagged row gets an empty cell, not an empty dot row — the whole point
+                // of the column is that a glance distinguishes tagged from untagged.
+                return with_row_menu(&vm, row, TextWidget::new(lit!(String::new())));
+            }
+            let value = Signal::new(row.tags.clone());
+            let set: crate::tags::tag_pill_field::SetTags = {
+                let vm = vm.clone();
+                let item_id = row.item_id;
+                let mirror = value.clone();
+                Rc::new(move |ids: Vec<u64>, _ctx| {
+                    vm.set_tags(item_id, &ids);
+                    mirror.set(ids); // optimistic; the reload re-seeds from the backend
+                })
+            };
+            Box::new(crate::tags::TagDotsRow::new(
+                value,
+                set,
+                crate::tags::tag_chip::MAX_VISIBLE_OVERVIEW,
+            ))
+        },
+    )
     .width(ColumnWidth::Fixed(72.0))
     // The dot row caps itself at MAX_VISIBLE_OVERVIEW and shows its own overflow
     // count, so there is nothing for the column to elide - an ellipsis after the
@@ -210,9 +222,11 @@ fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
 /// answer.
 fn own_words_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     let vm = vm.clone();
-    Column::new(COL_OWN_WORDS, tr!(overview_col_own_words()), move |row, _cx| {
-        with_row_menu(&vm, row, word_cell(row.own_words))
-    })
+    Column::new(
+        COL_OWN_WORDS,
+        tr!(overview_col_own_words()),
+        move |row, _cx| with_row_menu(&vm, row, word_cell(row.own_words)),
+    )
     .width(ColumnWidth::Fixed(76.0))
     .alignment(TableAlignment::Trailing)
     .sortable(true)
@@ -230,7 +244,6 @@ fn total_words_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     .alignment(TableAlignment::Trailing)
     .sortable(true)
 }
-
 
 /// A right-aligned count, or a muted dash when there is nothing to count.
 fn word_cell(words: Option<usize>) -> impl Widget {

@@ -100,16 +100,11 @@ pub enum FormatSurface {
     /// and lists apply; but a synopsis is not chapter-structured, so headings,
     /// alignment, blockquote, tables and scene breaks do not.
     ///
-    /// **Not yet reachable from live focus.** `App` classifies from
-    /// `EditorsViewModel::focused_prose_handle`, which resolves only a tab's
-    /// *main prose* editor — `writing_column` is the sole caller of
-    /// `attach_handle`, and the synopsis editor's handle is retained nowhere.
-    /// So with the caret in a synopsis the dock reports [`Self::None`] and shows
-    /// its empty state instead of this. Reaching it needs a synopsis attach
-    /// point on `ContentTab`, populated on every `synopsis_editor` rebuild the
-    /// way `writing_column` populates the find one. The variant, its gates and
-    /// its tests are kept because that wiring is the next step, not a
-    /// hypothetical — but nothing here should be read as working today.
+    /// Reached through `EditorsViewModel::focused_format_target`, which prefers
+    /// the tab's prose editor and falls back to its synopsis — whichever holds
+    /// keyboard focus. A stream row's synopsis and a corkboard card do **not**
+    /// produce this: those build many editors per tab, so no single per-tab
+    /// handle can say which one the caret is in.
     Synopsis,
     /// Nothing formattable has focus — the binder, a dock, the title field
     /// (a plain `TextInput`, not a rich editor). The dock shows its empty
@@ -161,17 +156,13 @@ impl FormatSurface {
     }
 }
 
-/// Resolves the editor the formatting commands should act on, at the moment
-/// they are invoked. `None` when nothing formattable is focused.
-type ResolveEditor = Rc<dyn Fn() -> Option<EditorHandle>>;
-
-/// Classifies what kind of text has focus. Injected by `App`, which is the only
-/// layer that can see both the pane/tab structure and the editors.
+/// Resolves the editor to act on **and** what kind of text it is, together.
 ///
-/// Takes the already-resolved handle rather than looking it up again: resolving
-/// one walks the focused pane's tab list, and this runs on every pumped frame —
-/// i.e. continuously while the writer types. One walk per frame, not two.
-type ResolveSurface = Rc<dyn Fn(Option<&EditorHandle>) -> FormatSurface>;
+/// One closure rather than two because both answers come from the same walk of
+/// the focused pane's tab list, and this runs on every pumped frame — i.e.
+/// continuously while the writer types. Injected by `App`, the only layer that
+/// can see both the pane/tab structure and the editors.
+type ResolveTarget = Rc<dyn Fn() -> (Option<EditorHandle>, FormatSurface)>;
 
 /// One gate per control group, for the dock to hang `visible_when` on.
 ///
@@ -221,10 +212,7 @@ impl GroupVisibility {
 pub struct FormatViewModel {
     /// How to find the current editor. Called fresh on every command and every
     /// [`Self::refresh`] — see the module docs on handle staleness.
-    resolve: ResolveEditor,
-    /// How to classify what has focus, when `App` has wired it. Absent in tests,
-    /// where [`Self::set_surface`] is driven directly.
-    resolve_surface: Option<ResolveSurface>,
+    resolve: ResolveTarget,
     /// Which groups apply. Read by the dock to decide what to show and by the
     /// menu to decide what to enable.
     surface: Signal<FormatSurface>,
@@ -280,10 +268,9 @@ impl FormatViewModel {
     /// `resolve` is called every time a command runs or the mirrors refresh; it
     /// must walk to the currently-focused editor rather than returning a stored
     /// handle. `App` wires it to `EditorsViewModel::focused_prose_handle`.
-    pub fn new(resolve: ResolveEditor) -> Self {
+    pub fn new(resolve: ResolveTarget) -> Self {
         Self {
             resolve,
-            resolve_surface: None,
             surface: Signal::new(FormatSurface::None),
             bold: Signal::new(false),
             italic: Signal::new(false),
@@ -304,19 +291,11 @@ impl FormatViewModel {
         }
     }
 
-    /// Wire live surface classification. Without this the surface only changes
-    /// when something calls [`Self::set_surface`], which is what the headless
-    /// tests do; with it, [`Self::refresh`] reclassifies every frame.
-    pub fn with_surface_resolver(mut self, resolve: ResolveSurface) -> Self {
-        self.resolve_surface = Some(resolve);
-        self
-    }
-
     // ── The current editor ────────────────────────────────────────────────
 
     /// The editor to act on right now, or `None`.
     fn handle(&self) -> Option<EditorHandle> {
-        (self.resolve)()
+        (self.resolve)().0
     }
 
     // ── Signals the views bind to ─────────────────────────────────────────
@@ -396,10 +375,8 @@ impl FormatViewModel {
         // than only when the caret moves: focus can move between editors — or
         // out of them entirely — without the document changing at all, and the
         // dock would otherwise keep showing the previous surface's groups.
-        let handle = self.handle();
-        if let Some(resolve) = &self.resolve_surface {
-            self.set_surface(resolve(handle.as_ref()));
-        }
+        let (handle, surface) = (self.resolve)();
+        self.set_surface(surface);
 
         let Some(handle) = handle else {
             self.clear_mirrors();
@@ -723,13 +700,17 @@ mod tests {
             .expect("import");
         let editor = RichTextEditor::editor(doc.clone());
         let handle = editor.handle();
-        let vm = FormatViewModel::new(Rc::new(move || Some(handle.clone())));
+        // Scene rather than None so the target reads as real prose; the tests
+        // that care about grouping drive `set_surface` themselves.
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(handle.clone()), FormatSurface::Scene)
+        }));
         (vm, editor, doc)
     }
 
     /// A view-model with nothing focused.
     fn vm_detached() -> FormatViewModel {
-        FormatViewModel::new(Rc::new(|| None))
+        FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)))
     }
 
     #[test]
@@ -1026,6 +1007,48 @@ mod tests {
         assert!(vm.in_table().get(), "and the table group unlocks");
     }
 
+    /// A synopsis is a real formatting target, not a second-class one: the
+    /// commands must reach it, and the surface must say what it is so the dock
+    /// drops the groups a synopsis has no use for.
+    ///
+    /// This is the gap that shipped first time round — `App` could only ever
+    /// resolve a tab's *main prose* handle, so the caret sitting in a synopsis
+    /// produced `None` and the dock showed its empty state over perfectly
+    /// formattable text.
+    #[test]
+    fn a_synopsis_is_a_formattable_target_of_its_own_kind() {
+        let doc = TextDocument::new();
+        doc.set_markdown("a synopsis line")
+            .expect("parse")
+            .wait()
+            .expect("import");
+        let editor = RichTextEditor::editor(doc);
+        editor.select_all();
+        let handle = editor.handle();
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(handle.clone()), FormatSurface::Synopsis)
+        }));
+
+        vm.refresh();
+        assert_eq!(vm.surface_signal().get(), FormatSurface::Synopsis);
+
+        let g = vm.groups();
+        assert!(
+            g.marks.get() && g.lists.get() && g.history.get(),
+            "a synopsis is prose: marks, lists and history all apply"
+        );
+        assert!(
+            !g.block.get() && !g.tables.get() && !g.scene_breaks.get(),
+            "but it is not chapter-structured, so those go"
+        );
+        assert!(!g.empty.get(), "and it is emphatically not the empty state");
+
+        // The commands reach it like any other editor.
+        vm.toggle_bold();
+        assert!(vm.bold().get(), "bold must apply to a synopsis");
+        assert!(editor.handle().is_bold());
+    }
+
     #[test]
     fn surface_decides_which_groups_appear() {
         use FormatSurface::*;
@@ -1085,7 +1108,13 @@ mod tests {
 
         let handle = editor.handle();
         let gate = flip.clone();
-        let vm = FormatViewModel::new(Rc::new(move || gate.get().then(|| handle.clone())));
+        let vm = FormatViewModel::new(Rc::new(move || {
+            if gate.get() {
+                (Some(handle.clone()), FormatSurface::Scene)
+            } else {
+                (None, FormatSurface::None)
+            }
+        }));
 
         vm.refresh();
         assert!(vm.bold().get());

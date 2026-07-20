@@ -27,7 +27,13 @@ impl PaceWire {
         active_local: Signal<bool>,
         has_pace: Signal<usize>,
     ) -> Self {
-        Self { vm, goal_local, end_local, active_local, has_pace }
+        Self {
+            vm,
+            goal_local,
+            end_local,
+            active_local,
+            has_pace,
+        }
     }
 }
 

@@ -37,7 +37,11 @@ impl Widget for WireOverview {
 /// alone. The mutations themselves are the same backend calls the outline and the
 /// corkboard make (shared in `binder_ops`), so there is one implementation per verb; what
 /// is local is only *which rows* it applies to.
-pub(super) fn overview_context_menu(vm: OverviewViewModel, uid: Uuid, row: OverviewRow) -> MenuList {
+pub(super) fn overview_context_menu(
+    vm: OverviewViewModel,
+    uid: Uuid,
+    row: OverviewRow,
+) -> MenuList {
     let batch = vm.batch_for(uid);
 
     let open_title = row.title.clone();
@@ -54,14 +58,12 @@ pub(super) fn overview_context_menu(vm: OverviewViewModel, uid: Uuid, row: Overv
     let trash_batch = batch;
 
     let mut menu = MenuList::new()
-        .item(
-            MenuItem::new(tr!(ctx_open())).on_activate_fn(move |ctx| {
-                ctx.send_intent(crate::intents::AppIntent::OpenItem {
-                    item_id: open_id,
-                    title: open_title.clone(),
-                })
-            }),
-        )
+        .item(MenuItem::new(tr!(ctx_open())).on_activate_fn(move |ctx| {
+            ctx.send_intent(crate::intents::AppIntent::OpenItem {
+                item_id: open_id,
+                title: open_title.clone(),
+            })
+        }))
         .item(
             MenuItem::new(tr!(ctx_open_to_side()))
                 .on_activate_fn(move |ctx| side.open_to_side(ctx, uid)),
@@ -105,10 +107,7 @@ pub(super) fn overview_context_menu(vm: OverviewViewModel, uid: Uuid, row: Overv
         menu = menu
             .separator()
             .item(MenuItem::new(tr!(ctx_move_up())).on_activate_fn(move |_| up.move_up(uid)))
-            .item(
-                MenuItem::new(tr!(ctx_move_down()))
-                    .on_activate_fn(move |_| down.move_down(uid)),
-            );
+            .item(MenuItem::new(tr!(ctx_move_down())).on_activate_fn(move |_| down.move_down(uid)));
     }
 
     menu.separator()
@@ -125,8 +124,8 @@ fn add_recommendations_menu(vm: OverviewViewModel, uid: Uuid) -> MenuList {
     for rec in &recs {
         let vm = vm.clone();
         let rec_owned = *rec;
-        let placement = recommendation_placement(Some(anchor_title.as_str()), rec.relation)
-            .resolve_now();
+        let placement =
+            recommendation_placement(Some(anchor_title.as_str()), rec.relation).resolve_now();
         menu = menu.item(
             MenuItem::new(recommendation_label(rec.create_type))
                 .icon(crate::binder::icons::create_type_icon(rec.create_type))

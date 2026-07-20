@@ -32,16 +32,16 @@ use crate::view_models::PaceViewModel;
 
 use super::shared::{tab_backdrop, vspace};
 
-mod wire;
-mod planner;
 mod editors;
+mod planner;
 mod stats;
+mod wire;
 
+use editors::*;
+use planner::*;
+use stats::*;
 #[allow(unused_imports)]
 use wire::*;
-use planner::*;
-use editors::*;
-use stats::*;
 
 /// (bit, ftl label) for the seven weekday chips. Mon = 1, … Sun = 64 - the mask
 /// convention `is_scheduled_day` uses.
@@ -62,7 +62,8 @@ pub fn pace_pane(tab: &ContentTab) -> Box<dyn Widget> {
         // Only a Book has a Pace view-model; the segment is Book-only, so this is
         // unreachable - fall back to the shell text rather than panic.
         return Box::new(
-            Center::new().child(TextWidget::new(tr!(pace_placeholder())).color(TextRole::Secondary)),
+            Center::new()
+                .child(TextWidget::new(tr!(pace_placeholder())).color(TextRole::Secondary)),
         );
     };
     // Local mirror signals for the two-way-bound fields, seeded from the VM and
@@ -89,7 +90,13 @@ pub fn pace_pane(tab: &ContentTab) -> Box<dyn Widget> {
         // column count at every viewport width. `PaceBody` builds only the active child
         // and forwards layout to it, so the scroll viewport's bounded width reaches the
         // flow and it reflows.
-        .child(PaceBody::new(vm, goal_local, end_local, active_local, has_pace))
+        .child(PaceBody::new(
+            vm,
+            goal_local,
+            end_local,
+            active_local,
+            has_pace,
+        ))
         .child(vspace(28.0));
 
     // A stats dashboard, not a prose column: fill the scroll viewport's width and let the
@@ -195,10 +202,12 @@ pub(super) fn empty_state(vm: &PaceViewModel) -> impl Widget {
         )
         .child(TextWidget::new(tr!(pace_empty_body())).color(TextRole::Secondary))
         .child(vspace(4.0))
-        .child(Button::new(tr!(pace_start_planning())).on_activate_fn(move |_c| {
-            let today = Utc::now().date_naive();
-            vm.set_dates(today, today + Duration::days(90));
-        }))
+        .child(
+            Button::new(tr!(pace_start_planning())).on_activate_fn(move |_c| {
+                let today = Utc::now().date_naive();
+                vm.set_dates(today, today + Duration::days(90));
+            }),
+        )
 }
 
 /// The planner, once a Pace exists: the schedule, statistics, charts, holidays and

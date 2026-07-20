@@ -104,6 +104,11 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     tab.mark_dirty_fn(),
                     Option::None,
                     tab.open_doc.spell_synopsis(),
+                    // A stream shows one synopsis per row, so a single per-tab
+                    // sink cannot say *which* — the last row built would win.
+                    // The format dock therefore treats a stream synopsis the
+                    // way it treats a corkboard card: not a formattable target.
+                    Option::None,
                 )),
             };
             col = col.child(vspace(6.0));
@@ -252,6 +257,8 @@ fn stream_row(
                         on_change,
                         split,
                         doc.spell_synopsis(),
+                        // One synopsis per stream row — see the sibling call.
+                        Option::None,
                     ));
                 }
             }

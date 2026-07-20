@@ -18,8 +18,8 @@ use std::rc::Rc;
 
 use bastyde::canvas::{EdgeInsets, Rect};
 use bastyde::core::BindingLevel;
-use bastyde::core::widget::WidgetPlacement;
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
+use bastyde::core::widget::WidgetPlacement;
 use bastyde::data::ListDataSource;
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
@@ -44,19 +44,19 @@ use crate::models::{CorkboardCard, OpenDoc};
 use crate::singles::SingleCorkboardCard;
 use crate::view_models::CorkboardViewModel;
 
+mod card;
+mod chrome;
+mod grid;
 /// The fixed "＋" glyph for the create button's main region.
 mod header;
-mod grid;
-mod card;
 mod synopsis;
-mod chrome;
 
+use card::*;
+use chrome::*;
+use grid::*;
 #[allow(unused_imports)]
 use header::*;
-use grid::*;
-use card::*;
 use synopsis::*;
-use chrome::*;
 
 pub(super) fn add_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/add.svg")).icon_size(14.0)

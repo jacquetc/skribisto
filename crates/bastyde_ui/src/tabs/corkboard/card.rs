@@ -102,15 +102,13 @@ impl Widget for CorkboardTile {
                 crate::tags::tag_chip::MAX_VISIBLE_CORKBOARD,
             ));
         }
-        let footer = footer
-            .child(Spacer::new())
-            .child(FooterCount {
-                is_container: self.card.is_container,
-                child_count: self.card.child_count,
-                word_count: single.word_count(),
-                show_wc: self.show_wc.clone(),
-                root: None,
-            });
+        let footer = footer.child(Spacer::new()).child(FooterCount {
+            is_container: self.card.is_container,
+            child_count: self.card.child_count,
+            word_count: single.word_count(),
+            show_wc: self.show_wc.clone(),
+            root: None,
+        });
 
         // The `top` slot: the header, then the free-text status label directly under
         // the title (when present). `CardColumn` measures this and the footer, so the

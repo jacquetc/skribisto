@@ -30,9 +30,11 @@ impl std::fmt::Debug for WeekdayChips {
 
 impl Widget for WeekdayChips {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.vm
-            .weekday_mask()
-            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.vm.weekday_mask().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
         let mask = self.vm.weekday_mask().get();
 
         let mut row = Wrap::new().spacing(6.0).line_spacing(6.0);
@@ -100,9 +102,8 @@ impl Widget for PaceCharts {
 
         let actual = self.vm.actual_series();
         if actual.is_empty() {
-            self.root = Some(ctx.add(
-                TextWidget::new(tr!(pace_charts_empty())).color(TextRole::Secondary),
-            ));
+            self.root =
+                Some(ctx.add(TextWidget::new(tr!(pace_charts_empty())).color(TextRole::Secondary)));
             return self.root.into_iter().collect();
         }
 
@@ -116,7 +117,10 @@ impl Widget for PaceCharts {
         if actual.iter().any(|(d, _)| self.vm.target_for(*d).is_some()) {
             let mut target = ChartSeries::new(tr!(pace_series_target()).resolve_now());
             for (date, _) in &actual {
-                target.push(day_label(*date), self.vm.target_for(*date).unwrap_or(0) as f32);
+                target.push(
+                    day_label(*date),
+                    self.vm.target_for(*date).unwrap_or(0) as f32,
+                );
             }
             line_series.push(target);
         }

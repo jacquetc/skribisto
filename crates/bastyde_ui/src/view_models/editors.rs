@@ -16,9 +16,9 @@ use std::time::Instant;
 
 use bastyde::data::ListModel;
 use bastyde::prelude::*; // Signal, tr!, lit!
+use bastyde::widgets::{Orientation, PaneDescriptor, SplitterModel, TabHandle, TabId, TabInfo};
 use skribisto_model::SubRoleExt;
 use skribisto_model::scene_break::{self, SceneBreakTier};
-use bastyde::widgets::{Orientation, PaneDescriptor, SplitterModel, TabHandle, TabId, TabInfo};
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
@@ -291,7 +291,11 @@ impl EditorsViewModel {
     /// therefore a handle) but the compiler never scans notes for markers, so
     /// inserting one there would write a mark the exporter silently ignores —
     /// an action that appears to work and does nothing.
-    pub fn insert_scene_break(&self, tier: SceneBreakTier, ctx: &mut bastyde::prelude::EventContext) {
+    pub fn insert_scene_break(
+        &self,
+        tier: SceneBreakTier,
+        ctx: &mut bastyde::prelude::EventContext,
+    ) {
         if !self.focused_carries_scene() {
             return;
         }
@@ -350,9 +354,32 @@ impl EditorsViewModel {
             .unwrap_or(false)
     }
 
-    /// The `FindViewModel` of the focused pane's active tab — `None` when nothing
-    /// is open there or the active tab has no main prose field.
-    fn focused_find(&self) -> Option<crate::view_models::FindViewModel> {
+    /// The editor the formatting surfaces should act on, and whether it is the
+    /// tab's synopsis rather than its main prose.
+    ///
+    /// Prefers the prose editor when both exist, and only returns an editor that
+    /// actually holds keyboard focus — clicking into the binder or a dock leaves
+    /// nothing to format, and the dock says so rather than acting on whatever it
+    /// touched last. One walk of the focused pane's tab list serves both answers.
+    ///
+    /// `None` for a stream row's synopsis or a corkboard card: those build many
+    /// editors per tab, so no single per-tab handle can say which one.
+    pub fn focused_format_target(
+        &self,
+    ) -> Option<(bastyde::widgets::rich_text::EditorHandle, bool)> {
+        self.with_focused_tab(|tab| {
+            if let Some(prose) = tab.find().and_then(|f| f.editor_handle())
+                && prose.focused_signal().get()
+            {
+                return Some((prose, false));
+            }
+            let synopsis = tab.synopsis_handle()?;
+            synopsis.focused_signal().get().then_some((synopsis, true))
+        })
+    }
+
+    /// Run `read` against the focused pane's active `ContentTab`.
+    fn with_focused_tab<R>(&self, read: impl Fn(&ContentTab) -> Option<R>) -> Option<R> {
         let side = self.focused_side.get();
         let pane = self.pane(side);
         let tab_id = pane.selected.get()?;
@@ -360,15 +387,19 @@ impl EditorsViewModel {
             pane.tabs
                 .with_item(i, |h| {
                     if h.id == tab_id {
-                        h.payload
-                            .downcast_ref::<ContentTab>()
-                            .and_then(|t| t.find().cloned())
+                        h.payload.downcast_ref::<ContentTab>().and_then(&read)
                     } else {
                         None
                     }
                 })
                 .flatten()
         })
+    }
+
+    /// The `FindViewModel` of the focused pane's active tab — `None` when nothing
+    /// is open there or the active tab has no main prose field.
+    fn focused_find(&self) -> Option<crate::view_models::FindViewModel> {
+        self.with_focused_tab(|t| t.find().cloned())
     }
 
     // ── Open ────────────────────────────────────────────────────────────────
@@ -388,9 +419,13 @@ impl EditorsViewModel {
         let sub_role = doc.sub_role.clone();
         // A trashed item can be open (from the trash dock) — tint its tab icon
         // warning-orange, reactively (flips live on trash/restore, no rebuild).
-        let icon_color = doc
-            .trashed
-            .map(|t| if *t { TextRole::Warning } else { TextRole::Primary });
+        let icon_color = doc.trashed.map(|t| {
+            if *t {
+                TextRole::Warning
+            } else {
+                TextRole::Primary
+            }
+        });
         let tab = ContentTab::new(
             self.app_ctx.clone(),
             self.ids.clone(),
